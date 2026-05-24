@@ -104,6 +104,18 @@ function normalizePhoneDigitsForCountry(phone, countryCode) {
   return { countryCode: cc, digits };
 }
 
+/** 管理端/未传国家码时，按号码形态推断 +86 / +60 */
+function inferCountryCodeForPhone(phone) {
+  const digits = toDigits(phone);
+  if (!digits) return '';
+  if (/^1[3-9]\d{9}$/.test(digits)) return '86';
+  if (digits.startsWith('86') && digits.length >= 12) return '86';
+  if (digits.startsWith('60') && digits.length >= 10) return '60';
+  const local = digits.replace(/^0+/, '') || digits;
+  if (/^1\d{8,9}$/.test(local)) return '60';
+  return '';
+}
+
 function validatePhoneForCountry(phone, countryCode) {
   const { countryCode: cc, digits } = normalizePhoneDigitsForCountry(phone, countryCode);
   if (!cc) return '请选择正确的国家或地区代码';
@@ -123,4 +135,5 @@ module.exports = {
   buildPhoneLookupCandidates,
   normalizePhoneDigitsForCountry,
   validatePhoneForCountry,
+  inferCountryCodeForPhone,
 };

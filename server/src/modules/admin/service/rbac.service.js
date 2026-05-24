@@ -6,6 +6,40 @@ const { ALL_ADMIN_PERMISSION_CODES } = require('../../../constants/adminPermissi
 const { passwordSchema } = require('../../auth/schemas/auth.schemas');
 const repo = require('../repository/rbac.repository');
 const mfaRepo = require('../repository/adminMfa.repository');
+const {
+  buildPhoneLookupCandidates,
+  inferCountryCodeForPhone,
+  normalizeIntlPhone,
+  validatePhoneForCountry,
+} = require('../../../utils/phone');
+
+function getAuthApi() {
+  return /** @type {any} */ (require('../../auth')).api || {};
+}
+
+function requireAuthApi(name) {
+  const fn = getAuthApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Auth module API is missing method: ${name}`);
+  }
+  return fn;
+}
+
+function sortUsersForAdminLogin(users) {
+  const rank = (user) => {
+    if (user?.role === 'super_admin') return 0;
+    if (user?.role === 'admin') return 1;
+    if (user?.role === 'disabled') return 2;
+    return 3;
+  };
+  return [...users].sort((a, b) => {
+    const byRole = rank(a) - rank(b);
+    if (byRole !== 0) return byRole;
+    const at = new Date(a.created_at || 0).getTime();
+    const bt = new Date(b.created_at || 0).getTime();
+    return bt - at;
+  });
+}
 
 const PRIVILEGED_ROLE_CODES = new Set(['super_admin', 'admin_manager']);
 
@@ -193,13 +227,19 @@ async function deleteRole(roleId, actor, req) {
 
 async function createAdminUser(body, actor, req) {
   assertCanManageAdminAccounts(actor);
-  const { phone, password, nickname, roleIds } = body;
+  const { phone, password, nickname, roleIds, countryCode } = body;
   if (!phone || !password) throw new BusinessError(400, '手机号和密码必填');
 
   const parsedPassword = passwordSchema.safeParse(password);
   if (!parsedPassword.success) {
     throw new BusinessError(400, parsedPassword.error.issues[0]?.message || '密码强度不符合要求');
   }
+
+  const cc = countryCode || inferCountryCodeForPhone(phone) || '86';
+  const phoneError = validatePhoneForCountry(phone, cc);
+  if (phoneError) throw new BusinessError(400, phoneError);
+  const normalizedPhone = normalizeIntlPhone(phone, cc);
+  if (!normalizedPhone) throw new BusinessError(400, '手机号格式不正确');
 
   let assignedRoleIds = Array.isArray(roleIds)
     ? roleIds.map(Number).filter((n) => Number.isFinite(n) && n > 0)
@@ -211,16 +251,48 @@ async function createAdminUser(body, actor, req) {
   }
   const { ids, roles } = await assertAssignableRoles(actor, assignedRoleIds);
 
-  const id = generateId();
   const hash = await bcrypt.hash(parsedPassword.data, 10);
-  await repo.createAdminUserWithRoles({
-    id,
-    phone,
-    passwordHash: hash,
-    nickname,
-    legacyRole: 'admin',
-    roleIds: ids,
-  });
+  const lookupPhones = buildPhoneLookupCandidates(normalizedPhone, cc);
+  const existingUsers = sortUsersForAdminLogin(
+    await requireAuthApi('findUsersByPhones')(lookupPhones),
+  );
+  const existingAdmin = existingUsers.find((user) => isRbacAdminTarget(user));
+
+  let id;
+  let message = '管理员已创建';
+  if (existingAdmin) {
+    throw new BusinessError(409, '该手机号已是管理员，请使用「重置密码」更新登录密码');
+  }
+  if (existingUsers.length) {
+    const storefrontUser = existingUsers[0];
+    id = storefrontUser.id;
+    await repo.promoteUserToAdminWithRoles({
+      userId: id,
+      phone: normalizedPhone,
+      passwordHash: hash,
+      nickname,
+      legacyRole: 'admin',
+      roleIds: ids,
+    });
+    message = '已将该手机号商城账号升级为管理员，请使用新密码登录';
+  } else {
+    id = generateId();
+    try {
+      await repo.createAdminUserWithRoles({
+        id,
+        phone: normalizedPhone,
+        passwordHash: hash,
+        nickname,
+        legacyRole: 'admin',
+        roleIds: ids,
+      });
+    } catch (err) {
+      if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
+        throw new BusinessError(409, '该手机号已存在，请检查是否已有商城账号或管理员账号');
+      }
+      throw err;
+    }
+  }
 
   const { writeAuditLog } = require('../../../utils/auditLog');
   await writeAuditLog({
@@ -229,11 +301,11 @@ async function createAdminUser(body, actor, req) {
     actionType: 'admin.create_user',
     objectType: 'user',
     objectId: id,
-    summary: `创建管理员 ${phone}`,
+    summary: `创建管理员 ${normalizedPhone}`,
     after: { roleIds: ids, roleCodes: roles.map((role) => role.code) },
     result: 'success',
   });
-  return { data: { id, phone, nickname }, message: '管理员已创建' };
+  return { data: { id, phone: normalizedPhone, nickname }, message };
 }
 
 async function toggleAdminUser(userId, enabled, actor, req) {
@@ -435,6 +507,7 @@ async function revokeAdminTrustedDevice(userId, deviceId, actor, req) {
 }
 
 module.exports = {
+  sortUsersForAdminLogin,
   getAccessContext,
   listPermissions,
   listRoles,
@@ -455,7 +528,6 @@ module.exports = {
   revokeAdminTrustedDevice,
   ALL_ADMIN_PERMISSION_CODES,
 };
-
 
 
 

@@ -1,22 +1,33 @@
 const { BusinessError } = require('../../../errors/BusinessError');
 const { AuthError } = require('../../../errors');
-const authModule = require('../../auth');
 const { comparePassword, signToken, verifyToken } = require('../../../utils/helpers');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const rbacService = require('./rbac.service');
 const adminMfaService = require('./adminMfa.service');
-const { buildPhoneLookupCandidates } = require('../../../utils/phone');
+const { buildPhoneLookupCandidates, inferCountryCodeForPhone } = require('../../../utils/phone');
+const { sortUsersForAdminLogin } = require('./rbac.service');
 
-const authApi = /** @type {any} */ (authModule).api || {};
 const PUBLIC_LOGIN_FAILURE_MESSAGE = '账号或密码错误';
-const CAPTCHA_FAILURE_THRESHOLD = Number(process.env.ADMIN_LOGIN_CAPTCHA_FAILURES || 3);
+/** 仅当服务端配置了 Turnstile 且登录页可提交 token 时才启用验证码门槛 */
+const ADMIN_CAPTCHA_CONFIGURED = Boolean(
+  process.env.ADMIN_TURNSTILE_SECRET_KEY || process.env.TURNSTILE_SECRET_KEY,
+);
+const CAPTCHA_FAILURE_THRESHOLD = ADMIN_CAPTCHA_CONFIGURED
+  ? Number(process.env.ADMIN_LOGIN_CAPTCHA_FAILURES || 3)
+  : 0;
 const LOCK_FAILURE_THRESHOLD = Number(process.env.ADMIN_LOGIN_LOCK_FAILURES || 10);
+const SKIP_LOGIN_RISK_INCREMENT = new Set([
+  'ACCOUNT_LOCKED',
+  'CAPTCHA_REQUIRED',
+  'MISSING_CREDENTIALS',
+]);
 const LOCK_MS = Number(process.env.ADMIN_LOGIN_LOCK_MINUTES || 30) * 60 * 1000;
 const loginRiskState = new Map();
 const ADMIN_ACCESS_EXPIRES_IN = process.env.ADMIN_JWT_EXPIRES_IN || '15m';
 const ADMIN_ACCESS_EXPIRES_SECONDS = Number(process.env.ADMIN_JWT_EXPIRES_SECONDS || 15 * 60);
 
 function requireAuthApi(name) {
+  const authApi = /** @type {any} */ (require('../../auth')).api || {};
   const fn = authApi[name];
   if (typeof fn !== 'function') {
     throw new Error(`Auth module API is missing method: ${name}`);
@@ -81,7 +92,7 @@ function assertLoginRiskAllowed(phone, body, req) {
   }
 
   const hasCaptcha = Boolean(body?.captchaToken || body?.turnstileToken);
-  if (getMaxFailures(keys) >= CAPTCHA_FAILURE_THRESHOLD && !hasCaptcha) {
+  if (ADMIN_CAPTCHA_CONFIGURED && CAPTCHA_FAILURE_THRESHOLD > 0 && getMaxFailures(keys) >= CAPTCHA_FAILURE_THRESHOLD && !hasCaptcha) {
     throw decorateLoginError(new BusinessError(401, PUBLIC_LOGIN_FAILURE_MESSAGE), 'CAPTCHA_REQUIRED');
   }
 }
@@ -114,7 +125,7 @@ function coerceHash(hash) {
 
 async function login(body, req) {
   const phone = normalizeLoginAccount(body.phone || body.username);
-  const countryCode = body.countryCode;
+  const countryCode = body.countryCode || inferCountryCodeForPhone(phone);
   const password = String(body.password || '');
   try {
     if (!phone || !password) {
@@ -122,15 +133,23 @@ async function login(body, req) {
     }
     assertLoginRiskAllowed(phone, body, req);
 
-    const matchedUsers = await requireAuthApi('findUsersByPhones')(buildPhoneLookupCandidates(phone, countryCode));
-    if (!matchedUsers.length) {
-      throw decorateLoginError(new BusinessError(401, PUBLIC_LOGIN_FAILURE_MESSAGE), 'ADMIN_NOT_FOUND');
+    const matchedUsers = sortUsersForAdminLogin(
+      await requireAuthApi('findUsersByPhones')(buildPhoneLookupCandidates(phone, countryCode)),
+    );
+    const adminCandidates = matchedUsers.filter(
+      (cand) => cand.role === 'admin' || cand.role === 'super_admin',
+    );
+    if (!adminCandidates.length) {
+      throw decorateLoginError(
+        new BusinessError(401, PUBLIC_LOGIN_FAILURE_MESSAGE),
+        matchedUsers.length ? 'NOT_ADMIN' : 'ADMIN_NOT_FOUND',
+      );
     }
 
     let user = null;
     try {
-      for (let i = 0; i < matchedUsers.length; i += 1) {
-        const cand = matchedUsers[i];
+      for (let i = 0; i < adminCandidates.length; i += 1) {
+        const cand = adminCandidates[i];
         const stored = coerceHash(cand.password_hash);
         if (!stored) continue;
         if (await comparePassword(password, stored)) {
@@ -144,10 +163,6 @@ async function login(body, req) {
     }
     if (!user) {
       throw decorateLoginError(new BusinessError(401, PUBLIC_LOGIN_FAILURE_MESSAGE), 'PASSWORD_WRONG');
-    }
-
-    if (user.role !== 'admin' && user.role !== 'super_admin') {
-      throw decorateLoginError(new BusinessError(403, PUBLIC_LOGIN_FAILURE_MESSAGE), 'NOT_ADMIN');
     }
     if (user.account_status === 'disabled' || user.account_status === 'blacklisted') {
       throw decorateLoginError(new BusinessError(403, PUBLIC_LOGIN_FAILURE_MESSAGE), 'ADMIN_DISABLED');
@@ -213,7 +228,9 @@ async function login(body, req) {
       message: '登录成功',
     };
   } catch (err) {
-    recordLoginFailure(phone, req);
+    if (!SKIP_LOGIN_RISK_INCREMENT.has(err.auditReason)) {
+      recordLoginFailure(phone, req);
+    }
     await writeAuditLog({
       req,
       operatorId: null,

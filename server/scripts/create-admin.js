@@ -13,6 +13,11 @@ require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") }
 const db = require("../src/config/db");
 const { generateId, generateInviteCode, hashPassword } = require("../src/utils/helpers");
 const { syncAdminLegacyRoleToUserRoles } = require("./adminRbacSync");
+const {
+  buildPhoneLookupCandidates,
+  inferCountryCodeForPhone,
+  normalizeIntlPhone,
+} = require("../src/utils/phone");
 
 async function uniqueInviteCode() {
   for (let i = 0; i < 30; i += 1) {
@@ -48,27 +53,37 @@ async function main() {
 
   const legacyRole = isSuper ? "super_admin" : "admin";
   const hash = await hashPassword(password);
-  const [[existing]] = await db.query("SELECT id FROM users WHERE phone = ?", [phone]);
+  const cc = inferCountryCodeForPhone(phone) || "86";
+  const normalizedPhone = normalizeIntlPhone(phone, cc) || phone;
+  const lookupPhones = buildPhoneLookupCandidates(normalizedPhone, cc);
+  const placeholders = lookupPhones.map(() => "?").join(",");
+  const [existingRows] = await db.query(
+    `SELECT id, phone FROM users WHERE phone IN (${placeholders}) AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+    lookupPhones,
+  );
+  const existing = existingRows[0];
 
   if (existing) {
-    await db.query("UPDATE users SET password_hash = ?, role = ? WHERE phone = ?", [hash, legacyRole, phone]);
+    await db.query(
+      "UPDATE users SET phone = ?, password_hash = ?, role = ?, account_status = 'normal' WHERE id = ?",
+      [normalizedPhone, hash, legacyRole, existing.id],
+    );
     await syncAdminLegacyRoleToUserRoles(existing.id, legacyRole);
     console.log(`✅ 已将该手机号设为${isSuper ? "超级" : ""}管理员并重置密码`);
   } else {
     const id = generateId();
     const invite = await uniqueInviteCode();
     await db.query(
-      `INSERT INTO users (id, phone, password_hash, nickname, invite_code, parent_invite_code)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, phone, hash, isSuper ? "超级管理员" : "管理员", invite, ""],
+      `INSERT INTO users (id, phone, password_hash, nickname, invite_code, parent_invite_code, role, account_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'normal')`,
+      [id, normalizedPhone, hash, isSuper ? "超级管理员" : "管理员", invite, "", legacyRole],
     );
-    await db.query("UPDATE users SET role = ? WHERE phone = ?", [legacyRole, phone]);
     await syncAdminLegacyRoleToUserRoles(id, legacyRole);
     console.log(`✅ 已新建${isSuper ? "超级" : ""}管理员账号`);
   }
 
   console.log("");
-  console.log("  手机号:", phone);
+  console.log("  手机号:", normalizedPhone);
   console.log("  密码:  ", password);
   console.log("  角色:  ", legacyRole);
   console.log("  后台:  使用站点域名 /admin/login");

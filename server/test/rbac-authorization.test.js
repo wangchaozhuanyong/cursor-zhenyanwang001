@@ -13,6 +13,13 @@ const { BusinessError } = require('../src/errors');
 const { generateId } = require('../src/utils/helpers');
 
 const mockReq = { headers: {}, ip: '127.0.0.1' };
+let phoneSeq = 0;
+
+function uniqueMalaysiaPhone() {
+  phoneSeq += 1;
+  const seed = String(Date.now() + phoneSeq).slice(-8).padStart(8, '0');
+  return `01${seed}`;
+}
 
 async function expectBusinessError(promise, statusCode, messagePattern) {
   await assert.rejects(promise, (err) => {
@@ -142,7 +149,7 @@ describe('rbac authorization boundaries', () => {
   });
 
   test('createAdminUser rejects privileged roleIds for non-super actor', async () => {
-    const phone = `rbac-create-${Date.now()}`;
+    const phone = uniqueMalaysiaPhone();
     await expectBusinessError(
       rbac.createAdminUser(
         {
@@ -160,7 +167,7 @@ describe('rbac authorization boundaries', () => {
   });
 
   test('createAdminUser without roleIds falls back to customer_service', async () => {
-    const phone = `rbac-fallback-${Date.now()}`;
+    const phone = uniqueMalaysiaPhone();
     const created = await rbac.createAdminUser(
       {
         phone,
@@ -178,7 +185,7 @@ describe('rbac authorization boundaries', () => {
   });
 
   test('createAdminUser rejects invalid role id', async () => {
-    const phone = `rbac-bad-role-${Date.now()}`;
+    const phone = uniqueMalaysiaPhone();
     await expectBusinessError(
       rbac.createAdminUser(
         {
@@ -196,7 +203,7 @@ describe('rbac authorization boundaries', () => {
   });
 
   test('regular admin can create user with customer_service role', async () => {
-    const phone = `rbac-ok-${Date.now()}`;
+    const phone = uniqueMalaysiaPhone();
     const created = await rbac.createAdminUser(
       {
         phone,

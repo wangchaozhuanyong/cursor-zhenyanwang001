@@ -11,18 +11,21 @@
  */
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const db = require("../src/config/db");
+const {
+  buildPhoneLookupCandidates,
+  inferCountryCodeForPhone,
+  normalizeIntlPhone,
+} = require("../src/utils/phone");
 
 const phoneArg = (process.argv[2] || "").trim();
 const execute = process.argv.includes("--execute");
 const purgeTraces = process.argv.includes("--purge-traces");
 
 function phoneCandidates(phone) {
-  const raw = phone.trim();
-  const digits = raw.replace(/\D/g, "");
-  const set = new Set([raw, digits]);
-  if (digits.startsWith("60") && digits.length > 2) set.add(digits.slice(2));
-  if (digits.startsWith("0")) set.add(digits.replace(/^0+/, ""));
-  if (!digits.startsWith("60") && digits.length >= 9) set.add(`60${digits}`);
+  const cc = inferCountryCodeForPhone(phone) || "86";
+  const normalized = normalizeIntlPhone(phone, cc);
+  const set = new Set(buildPhoneLookupCandidates(phone, cc));
+  if (normalized) set.add(normalized);
   return [...set].filter(Boolean);
 }
 

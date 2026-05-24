@@ -230,6 +230,30 @@ async function bumpRefreshTokenVersion(userId) {
   );
 }
 
+async function promoteUserToAdminWithRoles({ userId, phone, passwordHash, nickname, legacyRole, roleIds }) {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query(
+      `UPDATE users
+       SET phone = ?, password_hash = ?, nickname = COALESCE(?, nickname), role = ?, account_status = 'normal',
+           refresh_token_version = refresh_token_version + 1
+       WHERE id = ? AND deleted_at IS NULL`,
+      [phone, passwordHash, nickname || null, legacyRole || 'admin', userId],
+    );
+    await conn.query(`DELETE FROM user_roles WHERE user_id = ?`, [userId]);
+    for (const roleId of roleIds) {
+      await conn.query(`INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)`, [userId, roleId]);
+    }
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
 async function createAdminUserWithRoles({ id, phone, passwordHash, nickname, legacyRole, roleIds }) {
   const inviteCode = id.replace(/-/g, '').slice(0, 8).toUpperCase();
   const conn = await db.getConnection();
@@ -315,6 +339,7 @@ module.exports = {
   softDeleteAdminUser,
   updatePasswordHash,
   bumpRefreshTokenVersion,
+  promoteUserToAdminWithRoles,
   createAdminUserWithRoles,
   insertRole,
   updateRoleById,

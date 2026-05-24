@@ -2,6 +2,7 @@ import type { AdminLocale, AdminMessages } from "./types";
 import { adminMessagesZh } from "./messages/zh";
 import { adminMessagesEn } from "./messages/en";
 import { adminZhToEn } from "./zhToEn";
+import { fallbackTranslateAdminZh } from "./fallbackTranslate";
 
 export const ADMIN_LOCALE_STORAGE_KEY = "admin-locale";
 
@@ -36,7 +37,11 @@ export function translateAdmin(
 
 export function translateAdminText(locale: AdminLocale, zh: string): string {
   if (locale === "zh") return zh;
-  return adminZhToEn[zh] ?? zh;
+  const mapped = adminZhToEn[zh];
+  if (mapped && mapped !== zh && !/[\u4e00-\u9fff]/.test(mapped)) return mapped;
+  const fallback = fallbackTranslateAdminZh(zh);
+  if (fallback !== zh && !/[\u4e00-\u9fff]/.test(fallback)) return fallback;
+  return mapped ?? zh;
 }
 
 export type { AdminLocale, AdminMessages };

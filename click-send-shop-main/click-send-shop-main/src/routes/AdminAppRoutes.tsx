@@ -9,6 +9,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import AdminLayout from "@/layouts/AdminLayout";
 import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
 import AdminMfaStepUpHost from "@/components/admin/AdminMfaStepUpHost";
+import ChinaBrowserCompatNotice from "@/components/ChinaBrowserCompatNotice";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -170,6 +171,7 @@ export function AdminAppRoutes() {
             <SiteIdentitySync />
             <AppScopeSync />
             <AdminTitleSync />
+            <ChinaBrowserCompatNotice />
             <Suspense fallback={<AppRouteFallback />}>
               <Routes>
                 <Route path="/" element={<Navigate to="/admin/login" replace />} />

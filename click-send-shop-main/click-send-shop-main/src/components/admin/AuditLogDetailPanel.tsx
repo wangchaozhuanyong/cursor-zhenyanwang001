@@ -5,7 +5,8 @@ import {
   type AuditSnapshotRow,
   zhActionType,
   zhAuditErrorMessage,
-  zhAuditSummary,
+  applyAdminTextTranslation,
+  localizedAuditSummary,
   zhObjectType,
   zhRequestPath,
   zhUserAgentBrief,
@@ -15,7 +16,23 @@ import { Tx } from "@/components/admin/AdminText";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import { useAdminT } from "@/hooks/useAdminT";
 
-function SnapshotBlock({ title, rows }: { title: string; rows: AuditSnapshotRow[] }) {
+function localizeSnapshotRows(
+  rows: AuditSnapshotRow[],
+  labelize: (zh: string) => string,
+) {
+  return rows.map((row) => ({
+    label: labelize(row.label),
+    value: labelize(String(row.value)),
+  }));
+}
+
+function SnapshotBlock({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: AuditSnapshotRow[];
+}) {
   if (rows.length === 0) return null;
   return (
     <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)]/40 p-2.5">
@@ -40,11 +57,11 @@ type Props = {
 
 export default function AuditLogDetailPanel({ detail, onClose, embedded = false }: Props) {
   const { tText } = useAdminT();
+  const labelize = (zh: string) => applyAdminTextTranslation(zh, tText);
   const changes = buildAuditChangeSummary(detail.before_json, detail.after_json);
-  const beforeRows = buildAuditSnapshotRows(detail.before_json);
-  const afterRows = buildAuditSnapshotRows(detail.after_json);
+  const beforeRows = localizeSnapshotRows(buildAuditSnapshotRows(detail.before_json), labelize);
+  const afterRows = localizeSnapshotRows(buildAuditSnapshotRows(detail.after_json), labelize);
   const userAgent = zhUserAgentBrief(detail.user_agent);
-  const objectHint = detail.object_id ? ` · ${shortId(detail.object_id, 8)}` : "";
 
   return (
     <div
@@ -59,22 +76,22 @@ export default function AuditLogDetailPanel({ detail, onClose, embedded = false 
       <dl className="space-y-2.5 text-xs">
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground"><Tx>动作</Tx></dt>
-          <dd className="text-right font-semibold">{zhActionType(detail.action_type)}</dd>
+          <dd className="text-right font-semibold">{labelize(zhActionType(detail.action_type))}</dd>
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground"><Tx>摘要</Tx></dt>
-          <dd className="max-w-[72%] text-right break-words">{zhAuditSummary(detail.summary)}</dd>
+          <dd className="max-w-[72%] text-right break-words">{localizedAuditSummary(detail.summary, tText)}</dd>
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground"><Tx>对象</Tx></dt>
           <dd className="text-right" title={detail.object_id || undefined}>
-            {zhObjectType(detail.object_type)}
-            {detail.object_id ? ` · 已关联${objectHint}` : ""}
+            {labelize(zhObjectType(detail.object_type))}
+            {detail.object_id ? ` · ${labelize("已关联")} ${shortId(detail.object_id, 8)}` : ""}
           </dd>
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground"><Tx>请求</Tx></dt>
-          <dd className="text-right font-medium">{zhRequestPath(detail.request_method, detail.request_path)}</dd>
+          <dd className="text-right font-medium">{labelize(zhRequestPath(detail.request_method, detail.request_path))}</dd>
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground"><Tx>IP 地址</Tx></dt>
@@ -82,7 +99,7 @@ export default function AuditLogDetailPanel({ detail, onClose, embedded = false 
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground"><Tx>访问设备</Tx></dt>
-          <dd className="text-right">{userAgent.brief}</dd>
+          <dd className="text-right">{labelize(userAgent.brief)}</dd>
         </div>
       </dl>
 
@@ -94,7 +111,7 @@ export default function AuditLogDetailPanel({ detail, onClose, embedded = false 
       ) : null}
 
       {detail.result === "failure" && detail.error_message ? (
-        <div className={`mt-3 rounded-lg p-2 text-xs ${THEME_ALERT_ERROR_SOFT}`}>{zhAuditErrorMessage(detail.error_message)}</div>
+        <div className={`mt-3 rounded-lg p-2 text-xs ${THEME_ALERT_ERROR_SOFT}`}>{labelize(zhAuditErrorMessage(detail.error_message))}</div>
       ) : null}
 
       {changes.length > 0 ? (
@@ -103,11 +120,11 @@ export default function AuditLogDetailPanel({ detail, onClose, embedded = false 
           <div className="space-y-1.5 text-[11px]">
             {changes.map((item) => (
               <div key={item.key} className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="text-muted-foreground">{item.label}</span>
+                <span className="text-muted-foreground">{labelize(item.label)}</span>
                 <span className="text-right text-foreground">
-                  <span className="text-muted-foreground">{item.fromText}</span>
+                  <span className="text-muted-foreground">{labelize(item.fromText)}</span>
                   <span className="mx-1 text-muted-foreground">→</span>
-                  <span className="font-medium">{item.toText}</span>
+                  <span className="font-medium">{labelize(item.toText)}</span>
                 </span>
               </div>
             ))}

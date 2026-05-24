@@ -12,6 +12,7 @@ import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
   buildReportFilterChips,
   clearReportFilters,
@@ -207,7 +208,9 @@ export default function AdminReportGenericPage({
     [searchParams, enabledFilters],
   );
   const filtersActive = hasActiveReportFilters(searchParams, enabledFilters);
-  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.reportDataFiltered : ADMIN_EMPTY_GUIDES.reportData;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.reportDataFiltered : ADMIN_EMPTY_GUIDES.reportData,
+  );
   const summaryOnly = list.length === 0 && Object.keys(summary).length > 0;
 
   const handleClearFilters = () => {

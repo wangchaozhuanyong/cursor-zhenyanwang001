@@ -29,6 +29,10 @@ const couponTypes = [
 
 export default function AdminCouponForm() {
   const { tText } = useAdminT();
+  const couponTypeOptions = useMemo(
+    () => couponTypes.map((item) => ({ ...item, label: tText(item.label) })),
+    [tText],
+  );
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const navigate = useNavigate();
@@ -116,10 +120,10 @@ export default function AdminCouponForm() {
     if (couponQuery.error instanceof Error && couponQuery.error.message === "NOT_FOUND") {
       toast.error(tText("未找到该优惠券，可能已删除"));
     } else {
-      toast.error(toastErrorMessage(couponQuery.error, "加载优惠券失败"));
+      toast.error(toastErrorMessage(couponQuery.error, tText("加载优惠券失败")));
     }
     navigate("/admin/marketing/coupons", { replace: true });
-  }, [couponId, couponQuery.error, couponQuery.isError, isEdit, navigate]);
+  }, [couponId, couponQuery.error, couponQuery.isError, isEdit, navigate, tText]);
 
   useEffect(() => {
     if (!couponQuery.data) return;
@@ -210,7 +214,7 @@ export default function AdminCouponForm() {
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() });
       navigate("/admin/marketing/coupons");
     } catch (e) {
-      toast.error(toastErrorMessage(e, "保存失败，请重试"));
+      toast.error(toastErrorMessage(e, tText("保存失败，请重试")));
     } finally {
       setSaving(false);
     }
@@ -227,7 +231,7 @@ export default function AdminCouponForm() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <button type="button" onClick={goBack}><ArrowLeft size={20} className="text-foreground" /></button>
-        <h2 className="text-lg font-semibold text-foreground">{isNew ? "新建优惠券" : "编辑优惠券"}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{isNew ? tText("新建优惠券") : tText("编辑优惠券")}</h2>
       </div>
 
       {loading ? <AdminFormSectionsSkeleton sections={3} className="max-w-2xl" /> : (
@@ -246,11 +250,11 @@ export default function AdminCouponForm() {
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>类型</Tx></label>
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none">
-                  {couponTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  {couponTypeOptions.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">{form.type === "percentage" ? "折扣比例 (%)" : "优惠金额 (RM)"}</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">{form.type === "percentage" ? tText("折扣比例 (%)") : tText("优惠金额 (RM)")}</label>
                 <input value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none" />
               </div>
             </div>
@@ -323,7 +327,7 @@ export default function AdminCouponForm() {
             {form.usable_scope_type === "category" ? (
               <div className="space-y-2 rounded-lg border border-border bg-secondary/40 p-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">已选 {form.usable_category_ids.length} 项</span>
+                  <span className="text-muted-foreground">{tText(`已选 ${form.usable_category_ids.length} 项`)}</span>
                   <div className="flex gap-2">
                     <button type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: categoryOptions.map((x) => x.id) }))}><Tx>全选</Tx></button>
                     <button type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: [] }))}><Tx>清空</Tx></button>
@@ -363,7 +367,7 @@ export default function AdminCouponForm() {
                     className="w-full rounded-lg bg-card px-3 py-2 text-sm text-foreground outline-none"
                     placeholder={tText("搜索商品名")}
                   />
-                  <span className="whitespace-nowrap text-xs text-muted-foreground">已选 {form.usable_product_ids.length}</span>
+                  <span className="whitespace-nowrap text-xs text-muted-foreground">{tText(`已选 ${form.usable_product_ids.length}`)}</span>
                 </div>
                 <div className="flex gap-2 text-xs">
                   <button
@@ -371,21 +375,21 @@ export default function AdminCouponForm() {
                     className="rounded border border-border px-2 py-1"
                     onClick={() => setForm((prev) => ({ ...prev, usable_product_ids: [...new Set([...prev.usable_product_ids, ...products.map((p) => p.id)])] }))}
                   >
-                    本页全选
+                    <Tx>本页全选</Tx>
                   </button>
                   <button
                     type="button"
                     className="rounded border border-border px-2 py-1"
                     onClick={() => setForm((prev) => ({ ...prev, usable_product_ids: prev.usable_product_ids.filter((id) => !products.some((p) => p.id === id)) }))}
                   >
-                    清空本页
+                    <Tx>清空本页</Tx>
                   </button>
                   <button
                     type="button"
                     className="rounded border border-border px-2 py-1"
                     onClick={() => setForm((prev) => ({ ...prev, usable_product_ids: [] }))}
                   >
-                    全部清空
+                    <Tx>全部清空</Tx>
                   </button>
                 </div>
                 <div className="max-h-56 space-y-2 overflow-auto">
@@ -406,7 +410,7 @@ export default function AdminCouponForm() {
                         />
                         <span className="min-w-0">
                           <span className="block truncate">{p.name}</span>
-                          <span className="block text-xs text-muted-foreground">库存 {p.stock} · 价格 RM {p.price}</span>
+                          <span className="block text-xs text-muted-foreground">{tText(`库存 ${p.stock} · 价格 RM ${p.price}`)}</span>
                         </span>
                       </label>
                     );
@@ -414,7 +418,7 @@ export default function AdminCouponForm() {
                   {!productLoading && !filteredProducts.length ? <p className="text-xs text-muted-foreground"><Tx>未找到匹配商品</Tx></p> : null}
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>第 {productPage} 页 · 共 {Math.max(1, Math.ceil(productTotal / 50))} 页</span>
+                  <span>{tText(`第 ${productPage} 页 · 共 ${Math.max(1, Math.ceil(productTotal / 50))} 页`)}</span>
                   <div className="flex gap-2">
                     <button type="button" disabled={productPage <= 1 || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => Math.max(1, p - 1))}><Tx>上一页</Tx></button>
                     <button type="button" disabled={productPage >= Math.max(1, Math.ceil(productTotal / 50)) || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => p + 1)}><Tx>下一页</Tx></button>
@@ -450,7 +454,7 @@ export default function AdminCouponForm() {
 
           <div className="flex gap-3">
             <PermissionGate permission="coupon.manage">
-              <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} onClick={() => adminConfirmSave(confirm, isEdit ? "优惠券修改" : "新优惠券", () => handleSave())} className="rounded-lg px-6 py-2.5 text-sm font-semibold">
+              <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} onClick={() => adminConfirmSave(confirm, isEdit ? tText("优惠券修改") : tText("新优惠券"), () => handleSave())} className="rounded-lg px-6 py-2.5 text-sm font-semibold">
                 <Tx>保存</Tx>
               </LoadingButton>
             </PermissionGate>

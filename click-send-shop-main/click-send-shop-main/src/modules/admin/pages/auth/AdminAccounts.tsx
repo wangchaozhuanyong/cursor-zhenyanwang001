@@ -37,6 +37,7 @@ import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 
 const ROLE_BADGE: Record<string, { cls: string; text: string }> = {
   super_admin: { cls: THEME_BADGE_DANGER, text: "超级管理员" },
@@ -116,9 +117,18 @@ export default function AdminAccounts() {
   const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filtered, 10);
 
   const filterState = useMemo(() => ({ search }), [search]);
-  const filterChips = useMemo(() => buildAdminAccountFilterChips(filterState), [filterState]);
+  const filterChips = useMemo(
+    () => buildAdminAccountFilterChips(filterState).map((chip) => ({ ...chip, label: tText(chip.label) })),
+    [filterState, tText],
+  );
+  const tableHeaders = useMemo(
+    () => ["管理员", "手机号", "角色", "创建时间", "最后登录", "操作"].map((h) => tText(h)),
+    [tText],
+  );
   const filtersActive = hasActiveAdminAccountFilters(filterState);
-  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.adminAccountsFiltered : ADMIN_EMPTY_GUIDES.adminAccounts;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.adminAccountsFiltered : ADMIN_EMPTY_GUIDES.adminAccounts,
+  );
 
   const clearFilters = () => {
     setSearch("");
@@ -156,7 +166,7 @@ export default function AdminAccounts() {
       setCreateForm({ phone: "", password: "", nickname: "", roleIds: [] });
       void invalidateAccounts();
     } catch (err) {
-      toast.error(toastErrorMessage(err, "创建失败"));
+      toast.error(toastErrorMessage(err, tText("创建失败")));
     }
   };
 
@@ -164,10 +174,10 @@ export default function AdminAccounts() {
     const enabled = user.role === "disabled";
     try {
       await rbacService.toggleAdminUser(user.id, enabled);
-      toast.success(enabled ? "已启用" : "已禁用");
+      toast.success(enabled ? tText("已启用") : tText("已禁用"));
       void invalidateAccounts();
     } catch (err) {
-      toast.error(toastErrorMessage(err, "操作失败"));
+      toast.error(toastErrorMessage(err, tText("操作失败")));
     }
   };
 
@@ -182,7 +192,7 @@ export default function AdminAccounts() {
       setResetTarget(null);
       setNewPassword("");
     } catch (err) {
-      toast.error(toastErrorMessage(err, "重置失败"));
+      toast.error(toastErrorMessage(err, tText("重置失败")));
     }
   };
 
@@ -209,7 +219,7 @@ export default function AdminAccounts() {
             contentClassName="max-w-sm"
             text={(
               <p>
-                当前页面用于管理普通管理员。若数据库中没有任何 super_admin，请使用下方命令行恢复权限。
+                <Tx>当前页面用于管理普通管理员。若数据库中没有任何 super_admin，请使用下方命令行恢复权限。</Tx>
               </p>
             )}
           />
@@ -219,13 +229,13 @@ export default function AdminAccounts() {
           className="mt-2 rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary"
           onClick={() => setShowOpsHelp((v) => !v)}
         >
-          {showOpsHelp ? "收起命令" : "展开命令"}
+          {showOpsHelp ? tText("收起命令") : tText("展开命令")}
         </button>
         {showOpsHelp ? (
           <div className="mt-2 space-y-2 rounded-lg border border-border bg-background/60 p-2">
             {HELP_COMMANDS.map((item) => (
               <div key={item.command} className="rounded border border-border bg-card p-2">
-                <p className="text-[11px] text-muted-foreground">{item.label}</p>
+                <p className="text-[11px] text-muted-foreground">{tText(item.label)}</p>
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <code className="min-w-0 truncate rounded bg-muted px-1.5 py-0.5 text-[11px]">{item.command}</code>
                   <button
@@ -237,7 +247,7 @@ export default function AdminAccounts() {
                     }}
                   >
                     <Copy size={12} />
-                    复制
+                    <Tx>复制</Tx>
                   </button>
                 </div>
               </div>
@@ -257,7 +267,7 @@ export default function AdminAccounts() {
         theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
         thead={(
           <tr>
-            {["管理员", "手机号", "角色", "创建时间", "最后登录", "操作"].map((h) => (
+            {tableHeaders.map((h) => (
               <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
             ))}
           </tr>
@@ -275,7 +285,7 @@ export default function AdminAccounts() {
                   onClick={() => setShowCreate(true)}
                   className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground"
                 >
-                  新建管理员
+                  <Tx>新建管理员</Tx>
                 </button>
               </PermissionGate>
             ) : null}
@@ -295,15 +305,15 @@ export default function AdminAccounts() {
               <td className="px-4 py-3 text-foreground">{a.phone}</td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{tText(badge.text)}</span>
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${a.mfa?.enabled ? THEME_BADGE_PRIMARY : a.mfa?.required ? "bg-amber-100 text-amber-700" : THEME_BADGE_MUTED}`}>
                     <ShieldCheck size={11} />
-                    {a.mfa?.enabled ? "MFA 已启用" : a.mfa?.required ? "待绑定 MFA" : "未要求 MFA"}
+                    {a.mfa?.enabled ? tText("MFA 已启用") : a.mfa?.required ? tText("待绑定 MFA") : tText("未要求 MFA")}
                   </span>
                   {Number(a.mfa?.trustedDeviceCount || 0) > 0 ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
                       <Smartphone size={11} />
-                      {a.mfa?.trustedDeviceCount} 台设备
+                      {tText(`${a.mfa?.trustedDeviceCount} 台设备`)}
                     </span>
                   ) : null}
                 </div>
@@ -315,7 +325,7 @@ export default function AdminAccounts() {
                   <PermissionGate permission="role.manage">
                     {!targetLocked && a.role !== "super_admin" && (
                       <>
-                        <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? "启用" : "禁用"}>
+                        <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? tText("启用") : tText("禁用")}>
                           {a.role === "disabled" ? <ToggleRight size={14} className={THEME_TEXT_SUCCESS_SOFT} /> : <ToggleLeft size={14} />}
                         </button>
                         {(isSuperAdminViewer || !hasPrivilegedRole(a)) && (
@@ -357,7 +367,7 @@ export default function AdminAccounts() {
         open={showCreate}
         onOpenChange={setShowCreate}
         title={<span className="flex items-center gap-2"><UserCog size={18} /><Tx>创建管理员</Tx></span>}
-        submitText="创建"
+        submitText={tText("创建")}
         submitDisabled={!createForm.phone || !isStrongAdminPassword(createForm.password) || createForm.roleIds.length === 0}
         onSubmit={handleCreate}
         size="sm"
@@ -368,7 +378,7 @@ export default function AdminAccounts() {
         <div>
           <div className="mb-2 flex items-center gap-1.5">
             <span className="text-xs font-medium text-muted-foreground"><Tx>初始角色</Tx></span>
-            <AdminFieldHint text="创建后也可以在「角色权限」里继续调整。普通管理员不能分配 admin_manager / super_admin。" />
+            <AdminFieldHint text={tText("创建后也可以在「角色权限」里继续调整。普通管理员不能分配 admin_manager / super_admin。")} />
           </div>
           <AdminRolePicker
             roles={roles}
@@ -389,8 +399,8 @@ export default function AdminAccounts() {
           }
         }}
         title={<Tx>重置密码</Tx>}
-        description={resetTarget ? `为 ${resetTarget.nickname || resetTarget.phone} 设置新密码` : undefined}
-        submitText="确认重置"
+        description={resetTarget ? tText(`为 ${resetTarget.nickname || resetTarget.phone} 设置新密码`) : undefined}
+        submitText={tText("确认重置")}
         submitDisabled={!isStrongAdminPassword(newPassword)}
         onSubmit={handleReset}
         size="sm"
@@ -421,6 +431,7 @@ function AdminSecurityDialog({
   onOpenChange: (open: boolean) => void;
   onChanged: () => void;
 }) {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const queryKey = adminQueryKeys.accountSecurity(target.id);
   const securityQuery = useQuery({
@@ -441,10 +452,10 @@ function AdminSecurityDialog({
   const setMfaRequiredMutation = useMutation({
     mutationFn: (required: boolean) => rbacService.updateAdminUserMfaRequired(target.id, required),
     onSuccess: async (_data, required) => {
-      toast.success(required ? "已要求该员工下次登录绑定 MFA" : "已关闭该员工 MFA 要求");
+      toast.success(required ? tText("已要求该员工下次登录绑定 MFA") : tText("已关闭该员工 MFA 要求"));
       await refresh();
     },
-    onError: (err) => toast.error(toastErrorMessage(err, "安全设置更新失败")),
+    onError: (err) => toast.error(toastErrorMessage(err, tText("安全设置更新失败"))),
   });
 
   const resetMfaMutation = useMutation({
@@ -453,16 +464,16 @@ function AdminSecurityDialog({
       toast.success(tText("MFA 已重置，下次登录需要重新绑定"));
       await refresh();
     },
-    onError: (err) => toast.error(toastErrorMessage(err, "MFA 重置失败")),
+    onError: (err) => toast.error(toastErrorMessage(err, tText("MFA 重置失败"))),
   });
 
   const revokeAllDevicesMutation = useMutation({
     mutationFn: () => rbacService.revokeAdminTrustedDevices(target.id),
     onSuccess: async (data) => {
-      toast.success(`已撤销 ${data?.revoked ?? 0} 台可信设备`);
+      toast.success(tText(`已撤销 ${data?.revoked ?? 0} 台可信设备`));
       await refresh();
     },
-    onError: (err) => toast.error(toastErrorMessage(err, "可信设备撤销失败")),
+    onError: (err) => toast.error(toastErrorMessage(err, tText("可信设备撤销失败"))),
   });
 
   const revokeDeviceMutation = useMutation({
@@ -471,7 +482,7 @@ function AdminSecurityDialog({
       toast.success(tText("可信设备已撤销"));
       await refresh();
     },
-    onError: (err) => toast.error(toastErrorMessage(err, "可信设备撤销失败")),
+    onError: (err) => toast.error(toastErrorMessage(err, tText("可信设备撤销失败"))),
   });
 
   const busy = setMfaRequiredMutation.isPending
@@ -486,10 +497,10 @@ function AdminSecurityDialog({
       title={
         <span className="flex items-center gap-2">
           <ShieldCheck size={18} />
-          员工安全设置
+          <Tx>员工安全设置</Tx>
         </span>
       }
-      description={`${target.nickname || target.phone} · ${target.phone}`}
+      description={tText(`${target.nickname || target.phone} · ${target.phone}`)}
       size="xl"
       height="85vh"
     >
@@ -500,9 +511,9 @@ function AdminSecurityDialog({
         ) : (
           <div className="mt-5 space-y-4">
             <div className="grid gap-3 md:grid-cols-3">
-              <SecurityMetric label={tText("MFA 要求")} value={security?.mfa.required ? "已要求" : "未要求"} />
-              <SecurityMetric label={tText("MFA 状态")} value={security?.mfa.enabled ? "已启用" : "未启用"} />
-              <SecurityMetric label={tText("可信设备")} value={`${activeDevices.length} 台有效`} />
+              <SecurityMetric label={tText("MFA 要求")} value={security?.mfa.required ? tText("已要求") : tText("未要求")} />
+              <SecurityMetric label={tText("MFA 状态")} value={security?.mfa.enabled ? tText("已启用") : tText("未启用")} />
+              <SecurityMetric label={tText("可信设备")} value={tText(`${activeDevices.length} 台有效`)} />
             </div>
 
             <div className="rounded-lg border border-border p-4">
@@ -510,7 +521,7 @@ function AdminSecurityDialog({
                 <div>
                   <p className="text-sm font-semibold text-foreground"><Tx>MFA 登录保护</Tx></p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    开启后，该员工下次登录需要绑定身份验证器；重置会撤销旧绑定和可信设备。
+                    <Tx>开启后，该员工下次登录需要绑定身份验证器；重置会撤销旧绑定和可信设备。</Tx>
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -520,7 +531,7 @@ function AdminSecurityDialog({
                     onClick={() => setMfaRequiredMutation.mutate(true)}
                     className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                   >
-                    要求 MFA
+                    <Tx>要求 MFA</Tx>
                   </button>
                   <button
                     type="button"
@@ -528,7 +539,7 @@ function AdminSecurityDialog({
                     onClick={() => setMfaRequiredMutation.mutate(false)}
                     className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                   >
-                    关闭要求
+                    <Tx>关闭要求</Tx>
                   </button>
                   <button
                     type="button"
@@ -537,7 +548,7 @@ function AdminSecurityDialog({
                     className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                   >
                     <RotateCcw size={13} />
-                    重置 MFA
+                    <Tx>重置 MFA</Tx>
                   </button>
                 </div>
               </div>
@@ -558,7 +569,7 @@ function AdminSecurityDialog({
                   onClick={() => revokeAllDevicesMutation.mutate()}
                   className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                 >
-                  撤销全部设备
+                  <Tx>撤销全部设备</Tx>
                 </button>
               </div>
 
@@ -571,10 +582,10 @@ function AdminSecurityDialog({
                       <div className="text-xs text-muted-foreground">
                         <div className="flex items-center gap-2 text-foreground">
                           <Smartphone size={14} />
-                          <span>{device.active ? "有效设备" : "已失效设备"}</span>
+                          <span>{device.active ? tText("有效设备") : tText("已失效设备")}</span>
                         </div>
-                        <p className="mt-1">最近使用：{device.lastSeenAt ? formatDateTime(device.lastSeenAt) : "-"}</p>
-                        <p>到期时间：{device.expiresAt ? formatDateTime(device.expiresAt) : "-"}</p>
+                        <p className="mt-1">{tText("最近使用")}：{device.lastSeenAt ? formatDateTime(device.lastSeenAt) : "-"}</p>
+                        <p>{tText("到期时间")}：{device.expiresAt ? formatDateTime(device.expiresAt) : "-"}</p>
                       </div>
                       <button
                         type="button"
@@ -582,7 +593,7 @@ function AdminSecurityDialog({
                         onClick={() => revokeDeviceMutation.mutate(device.id)}
                         className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                       >
-                        撤销
+                        <Tx>撤销</Tx>
                       </button>
                     </div>
                   ))

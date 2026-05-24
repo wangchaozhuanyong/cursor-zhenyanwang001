@@ -24,6 +24,7 @@ const EMPTY_MARKETING_STATS = {
 };
 
 export default function AdminMarketingDashboard() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
 
   const dashboardQuery = useQuery({
@@ -69,14 +70,14 @@ export default function AdminMarketingDashboard() {
 
   const cards = useMemo(
     () => [
-      { t: "进行中活动", v: stats.active },
-      { t: "即将开始", v: stats.upcoming },
-      { t: "已结束", v: stats.ended },
-      { t: "可用优惠券", v: stats.coupons },
-      { t: "今日积分发放", v: stats.pointsToday },
-      { t: "今日返现金额", v: stats.rewardToday.toFixed(2) },
+      { t: tText("进行中活动"), v: stats.active },
+      { t: tText("即将开始"), v: stats.upcoming },
+      { t: tText("已结束"), v: stats.ended },
+      { t: tText("可用优惠券"), v: stats.coupons },
+      { t: tText("今日积分发放"), v: stats.pointsToday },
+      { t: tText("今日返现金额"), v: stats.rewardToday.toFixed(2) },
     ],
-    [stats],
+    [stats, tText],
   );
 
   return (

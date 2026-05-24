@@ -21,6 +21,7 @@ import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
   buildRewardRecordFilterChips,
   hasActiveRewardRecordFilters,
@@ -143,7 +144,9 @@ export default function AdminRewardRecords() {
   const filterState = useMemo(() => ({ keyword, status }), [keyword, status]);
   const filterChips = useMemo(() => buildRewardRecordFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveRewardRecordFilters(filterState);
-  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.rewardRecordsFiltered : ADMIN_EMPTY_GUIDES.rewardRecords;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.rewardRecordsFiltered : ADMIN_EMPTY_GUIDES.rewardRecords,
+  );
 
   const clearFilters = () => {
     setKeyword("");

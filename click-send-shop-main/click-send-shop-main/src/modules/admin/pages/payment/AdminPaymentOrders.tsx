@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
@@ -117,6 +121,64 @@ export default function AdminPaymentOrders() {
 
   const rows = ordersQuery.data?.list || [];
   const total = ordersQuery.data?.total || 0;
+
+  const renderMobileCard = (row: PaymentOrderAdminRow) => {
+    const orderNo = row.order_no || shortId(row.order_id, 8);
+    const channelLabel = resolveChannelLabel(row.channel_code, tText);
+    const txnRaw = row.payment_transaction_no?.trim() || "";
+    const txnNo = txnRaw || "—";
+    const paidAt = row.payment_time ? formatDateTime(row.payment_time) : formatDateTime(row.created_at);
+
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div>
+            <p className="font-mono text-sm font-semibold">{orderNo}</p>
+            <p className="font-mono text-[11px] text-muted-foreground">{tText("支付单")} {shortId(row.id)}</p>
+          </div>
+          <PaymentStatusBadge status={row.status} />
+        </div>
+        <p className="mb-2 text-base font-semibold text-[var(--theme-price)]">{money(row.amount, row.currency)}</p>
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{channelLabel}</span>
+        </div>
+        <div className="space-y-2">
+          <AdminTableMobileCardField label={tText("用户")}>
+            <span className="text-xs text-muted-foreground">
+              {row.buyer_phone || tText("未留手机号")} · {shortId(row.user_id)}
+            </span>
+          </AdminTableMobileCardField>
+          {txnRaw ? (
+            <AdminTableMobileCardField label={tText("交易号")}>
+              <span className="font-mono text-xs text-muted-foreground break-all">{txnNo}</span>
+            </AdminTableMobileCardField>
+          ) : null}
+          <AdminTableMobileCardField label={tText("支付时间")}>
+            <span className="text-xs text-muted-foreground">{paidAt}</span>
+          </AdminTableMobileCardField>
+        </div>
+        <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+          {row.order_id ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/admin/orders/${row.order_id}`)}
+              className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"
+            >
+              <Tx>查看订单</Tx>
+            </button>
+          ) : null}
+          <button
+            type="button"
+            disabled={row.status === "paid"}
+            onClick={() => setMarkingRow(row)}
+            className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Tx>人工确认</Tx>
+          </button>
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
 
   const renderRow = (row: PaymentOrderAdminRow) => {
     const orderNo = row.order_no || shortId(row.order_id, 8);
@@ -281,6 +343,7 @@ export default function AdminPaymentOrders() {
             </tr>
           )}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+          renderMobileCard={renderMobileCard}
           renderRow={renderRow}
         />
 

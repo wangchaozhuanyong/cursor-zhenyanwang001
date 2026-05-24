@@ -784,6 +784,86 @@ export function buildAuditChangeSummary(beforeJson: unknown, afterJson: unknown,
 
 export type AuditFilterOption = { value: string; label: string };
 
+let auditZhGlossaryCache: string[] | null = null;
+
+/** 审计模块内所有可替换的中文词表（长词优先，用于英文模式逐段翻译） */
+function getAuditZhGlossary(): string[] {
+  if (auditZhGlossaryCache) return auditZhGlossaryCache;
+  const set = new Set<string>();
+  const addFrom = (obj: Record<string, string>) => {
+    for (const v of Object.values(obj)) {
+      if (typeof v === "string" && v.trim()) set.add(v);
+    }
+  };
+  addFrom(OBJECT_TYPE_ZH);
+  addFrom(ACTION_ZH);
+  addFrom(MODULE_ZH);
+  addFrom(TOKEN_ZH);
+  addFrom(FIELD_ZH);
+  addFrom(ROLE_ZH);
+  addFrom(STATUS_VALUE_ZH);
+  addFrom(SUMMARY_EXACT_ZH);
+  addFrom(ERROR_MSG_ZH);
+  addFrom(REQUEST_PATH_ZH);
+  addFrom(HTTP_METHOD_ZH);
+  [
+    "成功",
+    "失败",
+    "是",
+    "否",
+    "（无）",
+    "（已清空）",
+    "（数据过长已截断）",
+    "内容",
+    "关键词",
+    "结果",
+    "开始",
+    "结束",
+    "操作人编号",
+    "对象类型",
+    "对象编号",
+    "动作",
+    "已关联对象",
+    "已关联",
+    "未知设备",
+    "Android 手机",
+    "Mac 电脑",
+    "Windows 电脑",
+    "其他浏览器",
+    "用户提交订单",
+    "列表",
+    "项",
+    "个字段",
+  ].forEach((s) => set.add(s));
+  auditZhGlossaryCache = [...set].sort((a, b) => b.length - a.length);
+  return auditZhGlossaryCache;
+}
+
+/** 先整句查词典，再按审计词表替换句内已知中文片段 */
+export function applyAdminTextTranslation(text: string, tText: (zh: string) => string): string {
+  const raw = String(text ?? "");
+  if (!raw.trim()) return raw;
+  const whole = tText(raw);
+  if (whole !== raw) return whole;
+
+  const listMatch = raw.match(/^列表（(\d+) 项）$/);
+  if (listMatch) return `${tText("列表")} (${listMatch[1]} ${tText("项")})`;
+  const objectMatch = raw.match(/^对象（(\d+) 个字段）$/);
+  if (objectMatch) return `${tText("对象")} (${objectMatch[1]} ${tText("个字段")})`;
+
+  let out = raw;
+  for (const zh of getAuditZhGlossary()) {
+    if (zh.length < 2 || !out.includes(zh)) continue;
+    const translated = tText(zh);
+    if (translated !== zh) out = out.split(zh).join(translated);
+  }
+  return out;
+}
+
+export function localizedAuditSummary(summary: string | undefined, tText: (zh: string) => string): string {
+  return applyAdminTextTranslation(zhAuditSummary(summary), tText);
+}
+
 function sortOptionsZh(options: AuditFilterOption[]) {
   return [...options].sort((a, b) => a.label.localeCompare(b.label, "zh-Hans"));
 }

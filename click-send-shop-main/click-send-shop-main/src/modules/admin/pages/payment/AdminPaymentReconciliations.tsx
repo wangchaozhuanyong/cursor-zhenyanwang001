@@ -24,9 +24,11 @@ import {
 } from "@/utils/paymentAdminLabels";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 
 export default function AdminPaymentReconciliations() {
   const { tText } = useAdminT();
+  const reconciliationsEmptyGuide = useLocalizedAdminEmptyGuide(ADMIN_EMPTY_GUIDES.paymentReconciliations);
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -179,10 +181,10 @@ export default function AdminPaymentReconciliations() {
             </tr>
           )}
           footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
-          emptyIcon={ADMIN_EMPTY_GUIDES.paymentReconciliations.icon}
-          emptyTitle={ADMIN_EMPTY_GUIDES.paymentReconciliations.title}
-          emptyDescription={ADMIN_EMPTY_GUIDES.paymentReconciliations.description}
-          emptyAction={<AdminEmptyGuideActions guide={ADMIN_EMPTY_GUIDES.paymentReconciliations} />}
+          emptyIcon={reconciliationsEmptyGuide.icon}
+          emptyTitle={reconciliationsEmptyGuide.title}
+          emptyDescription={reconciliationsEmptyGuide.description}
+          emptyAction={<AdminEmptyGuideActions guide={reconciliationsEmptyGuide} />}
           renderRow={(r) => (
             <>
               <td className="px-3 py-2">{r.reconcile_date}</td>

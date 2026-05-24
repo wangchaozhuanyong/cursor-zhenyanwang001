@@ -57,14 +57,28 @@ function stripImportMetaResolveGuard(): Plugin {
     apply: "build",
     enforce: "post",
     generateBundle(_options, bundle) {
-      const pattern = /import'data:text\/javascript,[^']+';/g;
+      const dataUriGuard = /import'data:text\/javascript,[^']+';/g;
+      const typeofResolveGuard = /typeof\s+import\.meta\.resolve\s*===?\s*["']function["']\s*&&[^;]+;/g;
       for (const item of Object.values(bundle)) {
         if (item.type !== "chunk" || !item.code?.includes("import.meta.resolve")) continue;
-        item.code = item.code.replace(pattern, "");
+        let next = item.code.replace(dataUriGuard, "");
+        next = next.replace(typeofResolveGuard, "");
+        item.code = next;
       }
     },
   };
 }
+
+/** 面向中国常用 Chromium 壳 / 旧 Android WebView；默认开启，仅当 VITE_LEGACY_BUILD=0 时关闭 */
+const CHINA_BROWSER_TARGETS = [
+  "Chrome >= 64",
+  "ChromeAndroid >= 64",
+  "Safari >= 12",
+  "iOS >= 12",
+  "Android >= 7",
+  "Samsung >= 9",
+  "not IE 11",
+] as const;
 
 /**
  * Vite 8（Rolldown dev）在部分环境下会漏替换 @vite/client 里的内部占位符，
@@ -91,7 +105,7 @@ function replaceViteClientPlaceholders(): Plugin {
 }
 
 const thirdPartyLoginEnabled = process.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
-const legacyEnabled = process.env.VITE_LEGACY_BUILD === "1";
+const legacyEnabled = process.env.VITE_LEGACY_BUILD !== "0";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -135,6 +149,7 @@ return ({
         "favicon-32x32.png",
         "favicon.webp",
         "offline.html",
+        "browser-preboot.js",
       ],
       workbox: {
         swDest: "sw.js",
@@ -306,10 +321,11 @@ return ({
         enabled: false,
       },
     }),
-    ...(!isAdminBuild && legacyEnabled
+    ...(legacyEnabled
       ? [
           legacy({
-            targets: ["Chrome >= 64", "Safari >= 12", "iOS >= 12", "Android >= 7", "not IE 11"],
+            targets: [...CHINA_BROWSER_TARGETS],
+            modernTargets: ["Chrome >= 80", "Safari >= 13", "iOS >= 13", "Android >= 80"],
             modernPolyfills: true,
             renderLegacyChunks: true,
           }),

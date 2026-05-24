@@ -17,6 +17,7 @@ import {
 } from "@/components/admin/AdminTableMobileCard";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as orderService from "@/services/admin/orderService";
@@ -78,30 +79,32 @@ function shortId(value?: string): string {
   return raw ? raw.slice(-6) : "-";
 }
 
-function getFirstItemSummary(items?: Order["items"]): string {
+function getFirstItemSummary(items: Order["items"] | undefined, tText: (zh: string) => string): string {
   const first = items?.[0];
   if (!first) return "-";
-  const name = first.product?.name || "商品";
-  const suffix = items && items.length > 1 ? `，另 ${items.length - 1} 件` : "";
+  const name = first.product?.name || tText("商品");
+  const suffix = items && items.length > 1 ? tText(`，另 ${items.length - 1} 件`) : "";
   return `${name} ×${first.qty}${suffix}`;
 }
 
-function buildOrderBadges(order: Order): string[] {
-  if (Array.isArray(order.risk_badges) && order.risk_badges.length) return order.risk_badges;
+function buildOrderBadges(order: Order, tText: (zh: string) => string): string[] {
+  if (Array.isArray(order.risk_badges) && order.risk_badges.length) {
+    return order.risk_badges.map((badge) => tText(badge));
+  }
   const badges: string[] = [];
-  if (order.note) badges.push("买家备注");
-  if ((order.active_return_count || 0) > 0) badges.push("售后中");
-  if (Number(order.refund_amount || 0) > 0) badges.push("有退款");
-  if (order.cost_snapshot_source === "missing" || Number(order.missing_cost_item_count || 0) > 0) badges.push("缺成本");
-  if (Number(order.total_amount || 0) >= 500) badges.push("高金额");
+  if (order.note) badges.push(tText("买家备注"));
+  if ((order.active_return_count || 0) > 0) badges.push(tText("售后中"));
+  if (Number(order.refund_amount || 0) > 0) badges.push(tText("有退款"));
+  if (order.cost_snapshot_source === "missing" || Number(order.missing_cost_item_count || 0) > 0) badges.push(tText("缺成本"));
+  if (Number(order.total_amount || 0) >= 500) badges.push(tText("高金额"));
   return badges;
 }
 
-function afterSaleLabel(order: Order): { text: string; className: string } {
-  if ((order.active_return_count || 0) > 0) return { text: "售后中", className: "bg-amber-100 text-amber-700" };
-  if (Number(order.refund_amount || 0) > 0 || order.payment_status === "refunded") return { text: "已退款", className: "bg-red-100 text-red-700" };
-  if (order.payment_status === "partially_refunded") return { text: "部分退款", className: "bg-orange-100 text-orange-700" };
-  return { text: "无售后", className: "bg-slate-100 text-slate-600" };
+function afterSaleLabel(order: Order, tText: (zh: string) => string): { text: string; className: string } {
+  if ((order.active_return_count || 0) > 0) return { text: tText("售后中"), className: "bg-amber-100 text-amber-700" };
+  if (Number(order.refund_amount || 0) > 0 || order.payment_status === "refunded") return { text: tText("已退款"), className: "bg-red-100 text-red-700" };
+  if (order.payment_status === "partially_refunded") return { text: tText("部分退款"), className: "bg-orange-100 text-orange-700" };
+  return { text: tText("无售后"), className: "bg-slate-100 text-slate-600" };
 }
 
 export default function AdminOrders() {
@@ -204,9 +207,18 @@ export default function AdminOrders() {
       statusFilter,
     ],
   );
-  const filterChips = useMemo(() => buildOrderFilterChips(filterState), [filterState]);
+  const filterChips = useMemo(
+    () => buildOrderFilterChips(filterState).map((chip) => ({ ...chip, label: tText(chip.label) })),
+    [filterState, tText],
+  );
+  const tableHeaders = useMemo(
+    () => ["订单", "用户/收货人", "商品", "金额", "支付", "履约/物流", "售后", "标记", "创建时间", "操作"].map((h) => tText(h)),
+    [tText],
+  );
   const filtersActive = hasActiveOrderFilters(filterState);
-  const ordersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.ordersFiltered : ADMIN_EMPTY_GUIDES.orders;
+  const ordersEmptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.ordersFiltered : ADMIN_EMPTY_GUIDES.orders,
+  );
 
   const queryParams = useMemo<OrderListParams>(() => ({
     page,
@@ -289,13 +301,13 @@ export default function AdminOrders() {
     () => [
       { label: tText("待付款"), value: summary.pending, status: ORDER_STATUS.PENDING, sub: `RM ${money(summary.pending_payment_amount)}` },
       { label: tText("待发货"), value: summary.pending_shipment_count ?? summary.paid, status: ORDER_STATUS.PAID, sub: `RM ${money(summary.pending_shipment_amount)}` },
-      { label: tText("售后中"), value: summary.active_return_count ?? summary.refunding, status: ORDER_STATUS.REFUNDING, sub: `退款 RM ${money(summary.today_refund_amount)}` },
-      { label: tText("今日订单"), value: summary.today_order_count ?? 0, status: "", sub: `全站 · ${summary.today_paid_order_count ?? 0} 单已支付` },
-      { label: tText("今日实收"), value: `RM ${money(summary.today_paid_amount)}`, status: "", sub: "全站 · 按支付时间" },
-      { label: tText("今日毛利"), value: `RM ${money(summary.today_gross_profit_amount)}`, status: "", sub: "全站 · 商品毛利" },
-      { label: tText("今日净利润"), value: `RM ${money(summary.today_net_profit_amount ?? summary.today_gross_profit_amount)}`, status: "", sub: "全站 · 含物流/手续费" },
+      { label: tText("售后中"), value: summary.active_return_count ?? summary.refunding, status: ORDER_STATUS.REFUNDING, sub: tText(`退款 RM ${money(summary.today_refund_amount)}`) },
+      { label: tText("今日订单"), value: summary.today_order_count ?? 0, status: "", sub: tText(`全站 · ${summary.today_paid_order_count ?? 0} 单已支付`) },
+      { label: tText("今日实收"), value: `RM ${money(summary.today_paid_amount)}`, status: "", sub: tText("全站 · 按支付时间") },
+      { label: tText("今日毛利"), value: `RM ${money(summary.today_gross_profit_amount)}`, status: "", sub: tText("全站 · 商品毛利") },
+      { label: tText("今日净利润"), value: `RM ${money(summary.today_net_profit_amount ?? summary.today_gross_profit_amount)}`, status: "", sub: tText("全站 · 含物流/手续费") },
     ],
-    [summary],
+    [summary, tText],
   );
 
   const applyQuickStatusFilter = (status: string) => {
@@ -345,7 +357,7 @@ export default function AdminOrders() {
       await orderService.exportOrdersCsv(queryParams);
       toast.success(tText("已开始下载 CSV"));
     } catch (e) {
-      toast.error(toastErrorMessage(e, "导出失败"));
+      toast.error(toastErrorMessage(e, tText("导出失败")));
     } finally {
       setExportingScope(null);
     }
@@ -359,9 +371,9 @@ export default function AdminOrders() {
     setExportingScope("selected");
     try {
       await orderService.exportOrdersCsv({ ids: selectedOrderIds });
-      toast.success(`已开始导出 ${selectedOrderIds.length} 个订单`);
+      toast.success(tText(`已开始导出 ${selectedOrderIds.length} 个订单`));
     } catch (e) {
-      toast.error(toastErrorMessage(e, "批量导出失败"));
+      toast.error(toastErrorMessage(e, tText("批量导出失败")));
     } finally {
       setExportingScope(null);
     }
@@ -390,7 +402,7 @@ export default function AdminOrders() {
           await statusMutation.mutateAsync({ orderId, nextStatus });
           await reloadAfterAction(successMessage, orderId);
         } catch (e) {
-          toast.error(toastErrorMessage(e, "订单操作失败"));
+          toast.error(toastErrorMessage(e, tText("订单操作失败")));
         }
       },
     });
@@ -405,11 +417,11 @@ export default function AdminOrders() {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                confirmStatusChange(o.id, ORDER_STATUS.PAID, "确认收款", `确定将订单「${o.order_no}」标记为已付款？`, "订单已确认收款");
+                confirmStatusChange(o.id, ORDER_STATUS.PAID, tText("确认收款"), tText(`确定将订单「${o.order_no}」标记为已付款？`), tText("订单已确认收款"));
               }}
               className={`rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_SUCCESS}`}
             >
-              确认收款
+              <Tx>确认收款</Tx>
             </button>
           </PermissionGate>
           <PermissionGate permission="order.update">
@@ -417,11 +429,11 @@ export default function AdminOrders() {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                confirmStatusChange(o.id, ORDER_STATUS.CANCELLED, "取消订单", `确定取消订单「${o.order_no}」？取消后会释放库存并回滚相关权益。`, "订单已取消", true);
+                confirmStatusChange(o.id, ORDER_STATUS.CANCELLED, tText("取消订单"), tText(`确定取消订单「${o.order_no}」？取消后会释放库存并回滚相关权益。`), tText("订单已取消"), true);
               }}
               className={`rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_DANGER}`}
             >
-              取消订单
+              <Tx>取消订单</Tx>
             </button>
           </PermissionGate>
         </div>
@@ -439,7 +451,7 @@ export default function AdminOrders() {
             }}
             className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_PRIMARY}`}
           >
-            <Truck size={12} /> 发货
+            <Truck size={12} /> <Tx>发货</Tx>
           </button>
         </PermissionGate>
       );
@@ -452,11 +464,11 @@ export default function AdminOrders() {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              confirmStatusChange(o.id, ORDER_STATUS.COMPLETED, "标记完成", `确定将订单「${o.order_no}」标记为已完成？`, "订单已完成");
+              confirmStatusChange(o.id, ORDER_STATUS.COMPLETED, tText("标记完成"), tText(`确定将订单「${o.order_no}」标记为已完成？`), tText("订单已完成"));
             }}
             className="rounded-md border border-[var(--theme-border)] px-2 py-1 text-[11px]"
           >
-            标记完成
+            <Tx>标记完成</Tx>
           </button>
         </PermissionGate>
       );
@@ -467,20 +479,20 @@ export default function AdminOrders() {
 
   const renderRow = (o: Order) => {
     const checked = selectedOrderIds.includes(o.id);
-    const afterSale = afterSaleLabel(o);
-    const badges = buildOrderBadges(o);
+    const afterSale = afterSaleLabel(o, tText);
+    const badges = buildOrderBadges(o, tText);
     const discount = Number(o.discount_amount || 0) + Number(o.points_discount_amount || 0) + Number(o.reward_cash_discount_amount || 0);
     const phone = o.shipping_phone_masked || o.contact_phone_masked || maskPhone(o.shipping_phone || o.contact_phone) || "-";
     const shippedWithoutTracking = o.status === ORDER_STATUS.SHIPPED && !o.tracking_no;
 
-    const itemsSummary = o.items_summary || getFirstItemSummary(o.items);
+    const itemsSummary = o.items_summary || getFirstItemSummary(o.items, tText);
     const itemQty = o.items_count || o.items?.reduce((sum, item) => sum + Number(item.qty || 0), 0) || 0;
     const amountTooltip = [
-      `实付 RM ${money(o.total_amount)}`,
-      `优惠 RM ${money(discount)}`,
-      Number(o.refund_amount || 0) > 0 ? `退款 RM ${money(o.refund_amount)}` : null,
-      o.gross_profit_amount !== undefined ? `毛利 RM ${money(o.gross_profit_amount)}` : null,
-      o.net_profit_amount !== undefined ? `净利 RM ${money(o.net_profit_amount)}` : null,
+      tText(`实付 RM ${money(o.total_amount)}`),
+      tText(`优惠 RM ${money(discount)}`),
+      Number(o.refund_amount || 0) > 0 ? tText(`退款 RM ${money(o.refund_amount)}`) : null,
+      o.gross_profit_amount !== undefined ? tText(`毛利 RM ${money(o.gross_profit_amount)}`) : null,
+      o.net_profit_amount !== undefined ? tText(`净利 RM ${money(o.net_profit_amount)}`) : null,
     ].filter(Boolean) as string[];
 
     return (
@@ -491,7 +503,7 @@ export default function AdminOrders() {
             checked={checked}
             onClick={(e) => e.stopPropagation()}
             onChange={() => toggleOrderSelection(o.id)}
-            aria-label={`选择订单 ${o.order_no}`}
+            aria-label={tText(`选择订单 ${o.order_no}`)}
           />
         </td>
         <td className="max-w-[9rem] px-4 py-2.5 align-middle">
@@ -501,21 +513,21 @@ export default function AdminOrders() {
               { text: o.order_no, mono: true },
               { text: `UID ${shortId(o.user_id)}`, muted: true, mono: true },
             ]}
-            tooltipLines={[`订单号：${o.order_no}`, `用户 ID：${o.user_id || "-"}`]}
+            tooltipLines={[tText(`订单号：${o.order_no}`), tText(`用户 ID：${o.user_id || "-"}`)]}
           />
         </td>
         <td className="max-w-[11rem] px-4 py-2.5 align-middle">
           <AdminTableCellGroup
             maxWidth="10.5rem"
             lines={[
-              { text: o.user_nickname || "未命名用户" },
-              { text: `电话 ${phone}`, muted: true },
+              { text: o.user_nickname || tText("未命名用户") },
+              { text: `${tText("电话")} ${phone}`, muted: true },
             ]}
             tooltipLines={[
-              `昵称：${o.user_nickname || "未命名用户"}`,
-              `收货人：${o.contact_name || "-"}`,
-              `电话：${phone}`,
-              `历史订单：${o.user_order_count || 0} 单${o.member_level_name ? ` · ${o.member_level_name}` : ""}`,
+              tText(`昵称：${o.user_nickname || "未命名用户"}`),
+              tText(`收货人：${o.contact_name || "-"}`),
+              tText(`电话：${phone}`),
+              tText(`历史订单：${o.user_order_count || 0} 单${o.member_level_name ? ` · ${o.member_level_name}` : ""}`),
             ]}
           />
         </td>
@@ -526,9 +538,9 @@ export default function AdminOrders() {
               maxWidth="10rem"
               lines={[
                 { text: itemsSummary },
-                { text: `${itemQty} 件 / ${o.sku_count || o.items?.length || 0} SKU`, muted: true },
+                { text: tText(`${itemQty} 件 / ${o.sku_count || o.items?.length || 0} SKU`), muted: true },
               ]}
-              tooltipLines={[itemsSummary, `${itemQty} 件，${o.sku_count || o.items?.length || 0} 个 SKU`]}
+              tooltipLines={[itemsSummary, tText(`${itemQty} 件，${o.sku_count || o.items?.length || 0} 个 SKU`)]}
             />
           </div>
         </td>
@@ -537,7 +549,7 @@ export default function AdminOrders() {
             maxWidth="7.5rem"
             lines={[
               { text: `RM ${money(o.total_amount)}` },
-              { text: `优惠 RM ${money(discount)}`, muted: true },
+              { text: tText(`优惠 RM ${money(discount)}`), muted: true },
             ]}
             tooltipLines={amountTooltip}
           />
@@ -547,7 +559,7 @@ export default function AdminOrders() {
             <PaymentStatusBadge status={o.payment_status || PAYMENT_STATUS.PENDING} />
             <AdminTableCell
               value={`${o.payment_method || "-"}${o.payment_channel ? ` / ${o.payment_channel}` : ""}`}
-              fullText={`${o.payment_method || "-"}${o.payment_channel ? ` / ${o.payment_channel}` : ""}\n${formatDateTime(o.paid_at || o.payment_time || "") || "未支付"}`}
+              fullText={`${o.payment_method || "-"}${o.payment_channel ? ` / ${o.payment_channel}` : ""}\n${formatDateTime(o.paid_at || o.payment_time || "") || tText("未支付")}`}
               maxWidth="8.5rem"
               muted
             />
@@ -557,11 +569,11 @@ export default function AdminOrders() {
           <div className="min-w-0 space-y-1">
             <OrderStatusBadge status={o.status} />
             <AdminTableCell
-              value={shippedWithoutTracking ? "已发货·无单号" : (o.tracking_no || "无单号")}
+              value={shippedWithoutTracking ? tText("已发货·无单号") : (o.tracking_no || tText("无单号"))}
               fullText={[
-                `配送：${o.shipping_name || o.carrier || "-"}`,
-                shippedWithoutTracking ? "已发货但未填写物流单号" : `单号：${o.tracking_no || "无"}`,
-                `发货时间：${formatDateTime(o.shipped_at || "") || "未发货"}`,
+                tText(`配送：${o.shipping_name || o.carrier || "-"}`),
+                shippedWithoutTracking ? tText("已发货但未填写物流单号") : tText(`单号：${o.tracking_no || "无"}`),
+                tText(`发货时间：${formatDateTime(o.shipped_at || "") || "未发货"}`),
               ].join("\n")}
               maxWidth="8.5rem"
               muted
@@ -573,11 +585,11 @@ export default function AdminOrders() {
           <div className="min-w-0 space-y-1">
             <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${afterSale.className}`}>{afterSale.text}</span>
             <AdminTableCell
-              value={`售后 ${o.return_request_count || 0} 单`}
+              value={tText(`售后 ${o.return_request_count || 0} 单`)}
               fullText={[
                 afterSale.text,
-                `售后单数：${o.return_request_count || 0}`,
-                Number(o.refund_amount || 0) > 0 ? `退款 RM ${money(o.refund_amount)}` : "",
+                tText(`售后单数：${o.return_request_count || 0}`),
+                Number(o.refund_amount || 0) > 0 ? tText(`退款 RM ${money(o.refund_amount)}`) : "",
               ].filter(Boolean).join("\n")}
               maxWidth="6.5rem"
               muted
@@ -607,11 +619,11 @@ export default function AdminOrders() {
 
   const renderMobileCard = (o: Order) => {
     const checked = selectedOrderIds.includes(o.id);
-    const afterSale = afterSaleLabel(o);
-    const badges = buildOrderBadges(o);
+    const afterSale = afterSaleLabel(o, tText);
+    const badges = buildOrderBadges(o, tText);
     const discount = Number(o.discount_amount || 0) + Number(o.points_discount_amount || 0) + Number(o.reward_cash_discount_amount || 0);
     const phone = o.shipping_phone_masked || o.contact_phone_masked || maskPhone(o.shipping_phone || o.contact_phone) || "-";
-    const itemsSummary = o.items_summary || getFirstItemSummary(o.items);
+    const itemsSummary = o.items_summary || getFirstItemSummary(o.items, tText);
     const itemQty = o.items_count || o.items?.reduce((sum, item) => sum + Number(item.qty || 0), 0) || 0;
 
     return (
@@ -622,7 +634,7 @@ export default function AdminOrders() {
             checked={checked}
             onClick={(e) => e.stopPropagation()}
             onChange={() => toggleOrderSelection(o.id)}
-            aria-label={`选择订单 ${o.order_no}`}
+            aria-label={tText(`选择订单 ${o.order_no}`)}
             className="mt-1"
           />
           <div className="min-w-0 flex-1">
@@ -649,20 +661,20 @@ export default function AdminOrders() {
         </div>
 
         <div className="space-y-2">
-          <AdminTableMobileCardField label="用户">
-            <span className="block truncate">{o.user_nickname || "未命名用户"}</span>
+          <AdminTableMobileCardField label={tText("用户")}>
+            <span className="block truncate">{o.user_nickname || tText("未命名用户")}</span>
             <span className="block text-xs text-muted-foreground">{phone}</span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label="商品">
+          <AdminTableMobileCardField label={tText("商品")}>
             <span className="block truncate">{itemsSummary}</span>
-            <span className="block text-xs text-muted-foreground">{itemQty} 件</span>
+            <span className="block text-xs text-muted-foreground">{tText(`${itemQty} 件`)}</span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label="金额">
+          <AdminTableMobileCardField label={tText("金额")}>
             <span className="font-semibold text-[var(--theme-price)]">RM {money(o.total_amount)}</span>
-            {discount > 0 ? <span className="block text-xs text-muted-foreground">优惠 RM {money(discount)}</span> : null}
+            {discount > 0 ? <span className="block text-xs text-muted-foreground">{tText(`优惠 RM ${money(discount)}`)}</span> : null}
           </AdminTableMobileCardField>
           {badges.length ? (
-            <AdminTableMobileCardField label="标记">
+            <AdminTableMobileCardField label={tText("标记")}>
               <span className="text-xs text-muted-foreground">{badges.join(" · ")}</span>
             </AdminTableMobileCardField>
           ) : null}
@@ -709,7 +721,7 @@ export default function AdminOrders() {
             className="w-full text-left text-sm font-medium text-foreground"
             aria-expanded={advancedFiltersOpen}
           >
-            {advancedFiltersOpen ? "收起高级筛选" : "展开高级筛选"}
+            {advancedFiltersOpen ? tText("收起高级筛选") : tText("展开高级筛选")}
           </button>
           {advancedFiltersOpen ? (
             <div className="mt-3 space-y-2 border-t border-[var(--theme-border)] pt-3">
@@ -770,7 +782,7 @@ export default function AdminOrders() {
                 </select>
                 <button type="button" disabled={exportingScope !== null} onClick={handleExportCsv} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--theme-border)] px-3 text-sm disabled:opacity-60">
                   {exportingScope === "filtered" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                  导出
+                  <Tx>导出</Tx>
                 </button>
               </div>
             </div>
@@ -779,7 +791,7 @@ export default function AdminOrders() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted-foreground">已选 {selectedOrderIds.length} 单</span>
+        <span className="text-xs text-muted-foreground">{tText(`已选 ${selectedOrderIds.length} 单`)}</span>
         <button
           type="button"
           disabled={selectedOrderIds.length === 0 || exportingScope !== null}
@@ -787,7 +799,7 @@ export default function AdminOrders() {
           className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs font-medium transition hover:bg-[var(--theme-bg)] disabled:opacity-60"
         >
           {exportingScope === "selected" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-          批量导出 ({selectedOrderIds.length})
+          {tText(`批量导出 (${selectedOrderIds.length})`)}
         </button>
         {selectedOrderIds.length > 0 ? (
           <button
@@ -795,7 +807,7 @@ export default function AdminOrders() {
             onClick={() => setSelectedOrderIds([])}
             className="min-h-[36px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs font-medium transition hover:bg-[var(--theme-bg)]"
           >
-            清空选择
+            <Tx>清空选择</Tx>
           </button>
         ) : null}
       </div>
@@ -822,9 +834,10 @@ export default function AdminOrders() {
                 aria-label={tText("全选当前页订单")}
               />
             </th>
-            {["订单", "用户/收货人", "商品", "金额", "支付", "履约/物流", "售后", "标记", "创建时间", "操作", ""].map((h) => (
+            {tableHeaders.map((h) => (
               <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
             ))}
+            <th className="px-4 py-3" aria-hidden />
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} />}
@@ -844,10 +857,10 @@ export default function AdminOrders() {
           if (!shipTarget) return;
           try {
             await shipMutation.mutateAsync({ orderId: shipTarget.id, trackingNo, carrier, shippingCostAmount });
-            await reloadAfterAction("订单已发货", shipTarget.id);
+            await reloadAfterAction(tText("订单已发货"), shipTarget.id);
             setShipTarget(null);
           } catch (e) {
-            toast.error(toastErrorMessage(e, "发货失败"));
+            toast.error(toastErrorMessage(e, tText("发货失败")));
             throw e;
           }
         }}

@@ -21,6 +21,7 @@ import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
   buildPointsRecordFilterChips,
   hasActivePointsRecordFilters,
@@ -74,7 +75,7 @@ function normalizePointsRules(data: PointsRule[]): PointsRuleEditRow[] {
     id: String(r.id ?? idx),
     name: String(r.name ?? "积分规则"),
     action: String((r as PointsRule & { action?: string }).action ?? ""),
-    points: Number((r as PointsRule & { points?: number }).points ?? r.sign_in_points ?? 0),
+    points: Number(r.points ?? 0),
     enabled: Boolean(r.enabled ?? true),
   }));
 }
@@ -139,7 +140,7 @@ export default function AdminPointsRecords() {
     setRulesSaving(true);
     try {
       for (const rule of rules) {
-        await updatePointsRule(rule.id, { name: rule.name, enabled: rule.enabled, sign_in_points: rule.points });
+        await updatePointsRule(rule.id, { name: rule.name, enabled: rule.enabled, points: rule.points });
       }
       toast.success(tText("积分规则已保存"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.pointsRules() });
@@ -153,7 +154,9 @@ export default function AdminPointsRecords() {
   const filterState = useMemo(() => ({ keyword, action }), [keyword, action]);
   const filterChips = useMemo(() => buildPointsRecordFilterChips(filterState), [filterState]);
   const filtersActive = hasActivePointsRecordFilters(filterState);
-  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.pointsRecordsFiltered : ADMIN_EMPTY_GUIDES.pointsRecords;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.pointsRecordsFiltered : ADMIN_EMPTY_GUIDES.pointsRecords,
+  );
 
   const clearFilters = () => {
     setKeyword("");

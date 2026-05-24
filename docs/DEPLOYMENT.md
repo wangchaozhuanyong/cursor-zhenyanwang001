@@ -150,7 +150,7 @@ GIT_BRANCH=master bash deploy/production-deploy.sh
 - 健康检查
 
 ### 强制服务器构建（仅临时）
-- `BUILD_FRONTEND_ON_SERVER=1 FRONTEND_BUILD_HEAP_MB=768 VITE_LEGACY_BUILD=0 bash deploy/production-deploy.sh`
+- `BUILD_FRONTEND_ON_SERVER=1 FRONTEND_BUILD_HEAP_MB=768 bash deploy/production-deploy.sh`（默认 `VITE_LEGACY_BUILD=1`，面向百度/UC/QQ/360 等国产浏览器；若需缩小包体可设 `VITE_LEGACY_BUILD=0`）
 
 说明：
 - `BUILD_FRONTEND_ON_SERVER=1` 时才会执行前端 `npm ci` 与 `vite build`。

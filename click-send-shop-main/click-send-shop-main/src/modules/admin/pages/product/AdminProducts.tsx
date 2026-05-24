@@ -15,6 +15,7 @@ import {
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import AdminCsvImportDialog from "@/components/admin/AdminCsvImportDialog";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -151,7 +152,9 @@ export default function AdminProducts() {
     return chips;
   }, [costFilter, search, sort, statusFilter, stockFilter, tText]);
 
-  const emptyGuide = hasProductFilters ? ADMIN_EMPTY_GUIDES.productsFiltered : ADMIN_EMPTY_GUIDES.products;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    hasProductFilters ? ADMIN_EMPTY_GUIDES.productsFiltered : ADMIN_EMPTY_GUIDES.products,
+  );
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);

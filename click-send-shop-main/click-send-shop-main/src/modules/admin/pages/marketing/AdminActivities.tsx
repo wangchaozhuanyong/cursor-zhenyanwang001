@@ -20,11 +20,16 @@ import {
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
   buildActivityFilterChips,
   hasActiveActivityFilters,
@@ -112,9 +117,9 @@ export default function AdminActivities() {
   const filterState = useMemo(() => ({ keyword, type, status }), [keyword, type, status]);
   const filterChips = useMemo(() => buildActivityFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveActivityFilters(filterState);
-  const activitiesEmptyGuide = filtersActive
-    ? ADMIN_EMPTY_GUIDES.activitiesFiltered
-    : ADMIN_EMPTY_GUIDES.activities;
+  const activitiesEmptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.activitiesFiltered : ADMIN_EMPTY_GUIDES.activities,
+  );
 
   const clearActivityFilters = () => {
     setKeyword("");
@@ -141,6 +146,27 @@ export default function AdminActivities() {
     const path = getActivityPreviewPath(activity);
     window.open(path, "_blank", "noopener,noreferrer");
   };
+
+  const renderMobileCard = (activity: MarketingActivity) => (
+    <AdminTableMobileCard>
+      <div className="mb-2">
+        <p className="line-clamp-2 text-sm font-semibold">{activity.title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{labelActivityType(activity.type)} · {activity.status_label ? tText(activity.status_label) : "-"}</p>
+      </div>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={tText("活动时间")}>
+          <span className="text-xs text-muted-foreground">{formatAdminDateTime(activity.start_at)} — {formatAdminDateTime(activity.end_at)}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("商品/库存")}>
+          <span className="text-xs">{tText("商品")} {activity.product_count || 0} · {tText("库存")} {activity.activity_stock_total || 0} · {tText("已售")} {activity.sold_count_total || 0}</span>
+        </AdminTableMobileCardField>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+        <button type="button" onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>编辑</Tx></button>
+        <button type="button" onClick={() => navigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>查看数据</Tx></button>
+      </div>
+    </AdminTableMobileCard>
+  );
 
   return (
     <div className="space-y-5">
@@ -204,6 +230,7 @@ export default function AdminActivities() {
               onClearFilters={clearActivityFilters}
             />
           )}
+          renderMobileCard={renderMobileCard}
           renderRow={(activity) => (
             <>
               <td className="max-w-[14rem] px-4 py-3 align-middle">

@@ -17,6 +17,7 @@ import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
   buildReviewFilterChips,
   hasActiveReviewFilters,
@@ -198,7 +199,9 @@ export default function AdminReviews() {
   const filterState = useMemo(() => ({ keyword, status, rating, complaintStatus }), [keyword, status, rating, complaintStatus]);
   const filterChips = useMemo(() => buildReviewFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveReviewFilters(filterState);
-  const reviewsEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.reviewsFiltered : ADMIN_EMPTY_GUIDES.reviews;
+  const reviewsEmptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.reviewsFiltered : ADMIN_EMPTY_GUIDES.reviews,
+  );
 
   const clearReviewFilters = () => {
     setKeyword("");

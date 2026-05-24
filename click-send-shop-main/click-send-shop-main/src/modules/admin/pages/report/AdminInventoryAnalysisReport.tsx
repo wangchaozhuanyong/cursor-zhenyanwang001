@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
@@ -109,7 +110,7 @@ export default function AdminInventoryAnalysisReport() {
     return keys.filter((key) => summary[key] !== undefined).map((key) => [key, summary[key]] as const);
   }, [summary]);
 
-  const emptyGuide = ADMIN_EMPTY_GUIDES.reportData;
+  const emptyGuide = useLocalizedAdminEmptyGuide(ADMIN_EMPTY_GUIDES.reportData);
 
   const updateSort = (nextSortBy: string, nextSortOrder: string) => {
     const next = new URLSearchParams(searchParams);

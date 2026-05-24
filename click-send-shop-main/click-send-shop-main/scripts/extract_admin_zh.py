@@ -7,13 +7,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DIRS = [
     ROOT / "src/modules/admin",
-    ROOT / "src/layouts/AdminLayout.tsx",
+    ROOT / "src/layouts",
     ROOT / "src/components/admin",
     ROOT / "src/components/SkinPickerDialog.tsx",
+    ROOT / "src/config/adminEmptyStateGuides.ts",
+    ROOT / "src/utils/auditLogI18n.ts",
+    ROOT / "src/utils/adminAuditLogFilters.ts",
+    ROOT / "src/utils/adminEventLabels.ts",
+    ROOT / "src/utils/adminReportFilters.ts",
+    ROOT / "src/utils/adminActivityFilters.ts",
 ]
 
 CJK = re.compile(r"[\u4e00-\u9fff]")
-STRING_RE = re.compile(r"""(?:'([^'\\]*(?:\\.[^'\\]*)*)'|"([^"\\]*(?:\\.[^"\\]*)*)")""")
+STRING_RE = re.compile(r"""(?:'([^'\\]*(?:\\.[^'\\]*)*)'|"([^"\\]*(?:\\.[^'\\]*)*)")""")
+TX_RE = re.compile(r"<Tx>([^<]+)</Tx>")
+TTEXT_RE = re.compile(r"""tText\(\s*(['"])(.*?)\1""", re.DOTALL)
 
 SKIP_SUBSTR = (
     "/admin", "http", "className", "var(--", "hsl(", "text-", "bg-", "flex ",
@@ -47,6 +55,16 @@ def collect_from_file(path: Path, found: set[str]) -> None:
     for m in STRING_RE.finditer(text):
         s = m.group(1) or m.group(2) or ""
         s = s.strip()
+        if should_skip(s):
+            continue
+        found.add(s)
+    for m in TX_RE.finditer(text):
+        s = m.group(1).strip()
+        if should_skip(s):
+            continue
+        found.add(s)
+    for m in TTEXT_RE.finditer(text):
+        s = m.group(2).strip()
         if should_skip(s):
             continue
         found.add(s)

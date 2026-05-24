@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import * as notificationService from "@/services/admin/notificationService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -226,6 +230,43 @@ export default function AdminNotifications() {
     );
   };
 
+  const renderMobileCard = (row: Notification) => {
+    const rowAction = getRowAction(row);
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-sm font-semibold">{row.title}</p>
+            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{row.content || "—"}</p>
+          </div>
+          <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs">{label(STATUS_LABELS, row.send_status || row.workflow_status)}</span>
+        </div>
+        <div className="space-y-2">
+          <AdminTableMobileCardField label="类型">{label(TYPE_LABELS, row.type)}</AdminTableMobileCardField>
+          <AdminTableMobileCardField label="受众">{label(AUDIENCE_LABELS, row.audience_type)}</AdminTableMobileCardField>
+          <AdminTableMobileCardField label="触达 / 已读">
+            <span className="text-xs text-muted-foreground">{row.recipient_count || 0} / {row.read_count || 0}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label="时间">
+            <span className="text-xs text-muted-foreground">{formatDateTime(row.sent_at || row.scheduled_at || row.created_at)}</span>
+          </AdminTableMobileCardField>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+          <button type="button" onClick={() => navigate(`/admin/notifications/${row.id}`)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+            详情
+          </button>
+          {rowAction ? (
+            <PermissionGate anyOf={rowAction.permissions}>
+              <button type="button" onClick={() => deleteMutation.mutate(row)} disabled={deleteMutation.isPending} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">
+                {rowAction.label}
+              </button>
+            </PermissionGate>
+          ) : null}
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
+
   return (
     <PermissionGate anyOf={NOTIFICATION_PAGE_PERMISSIONS}>
       <div className="p-4 md:p-6">
@@ -288,6 +329,7 @@ export default function AdminNotifications() {
               theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
               thead={<tr>{['标题', '类型', '受众', '发送状态', '触达 / 已读', '时间', '操作'].map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
               footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+              renderMobileCard={renderMobileCard}
               renderRow={(row) => {
                 const rowAction = getRowAction(row);
                 return (

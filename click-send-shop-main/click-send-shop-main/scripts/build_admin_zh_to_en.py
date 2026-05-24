@@ -72,6 +72,10 @@ def main() -> None:
     for zh in all_strings:
         en = translate_admin_zh(zh)
         en = polish_translation(zh, en)
+        if en == zh or re.search(r"[\u4e00-\u9fff]", en):
+            retry = polish_translation(zh, translate_admin_zh(zh))
+            if retry != zh and not re.search(r"[\u4e00-\u9fff]", retry):
+                en = retry
         mapping[zh] = en
 
     lines = [

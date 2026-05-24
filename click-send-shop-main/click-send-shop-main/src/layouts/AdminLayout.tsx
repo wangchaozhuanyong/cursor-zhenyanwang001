@@ -64,6 +64,11 @@ import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
 import { getSecurityAlerts, type SecurityAlertSummary } from "@/api/admin/audit";
 import { REPORT_REGISTRY, type ReportGroup } from "@/modules/admin/pages/report/reportRegistry";
 import { Tx } from "@/components/admin/AdminText";
+import {
+  applyAdminTextTranslation,
+  localizedAuditSummary,
+  zhActionType,
+} from "@/utils/auditLogI18n";
 
 type NavPerm = string | { anyOf: string[] };
 
@@ -598,7 +603,11 @@ function AdminNavTab({
 function AdminLayoutContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t, locale, setLocale } = useAdminT();
+  const { t, locale, setLocale, tText } = useAdminT();
+  const labelize = useCallback(
+    (zh: string) => applyAdminTextTranslation(zh, tText),
+    [tText],
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [skinPickerOpen, setSkinPickerOpen] = useState(false);
@@ -840,7 +849,7 @@ function AdminLayoutContent() {
                           navigate("/admin/audit-logs?keyword=security");
                         }}
                       >
-                        审计日志
+                        <Tx>审计日志</Tx>
                       </button>
                     </div>
                     <div className="max-h-72 overflow-y-auto">
@@ -857,7 +866,11 @@ function AdminLayoutContent() {
                           >
                             <AlertTriangle size={15} className={`mt-0.5 shrink-0 ${item.result === "failure" ? "text-destructive" : "text-[var(--theme-primary)]"}`} />
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-xs font-medium text-foreground">{item.summary || item.action_type}</span>
+                              <span className="block truncate text-xs font-medium text-foreground">
+                                {item.summary
+                                  ? localizedAuditSummary(item.summary, tText)
+                                  : labelize(zhActionType(item.action_type))}
+                              </span>
                               <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{item.ip || "-"} · {new Date(item.created_at).toLocaleString()}</span>
                             </span>
                           </button>

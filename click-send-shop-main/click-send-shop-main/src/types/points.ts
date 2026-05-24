@@ -48,9 +48,8 @@ export interface AdminPointsRecordsResponse {
 export interface PointsRule {
   id: string;
   name: string;
-  description: string;
-  points_per_yuan: number;
-  sign_in_points: number;
+  action?: string;
+  points: number;
   enabled: boolean;
 }
 

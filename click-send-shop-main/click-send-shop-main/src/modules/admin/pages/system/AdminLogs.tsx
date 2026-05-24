@@ -22,11 +22,12 @@ import type { AuditLogRow } from "@/services/admin/logService";
 import AuditLogDetailPanel from "@/components/admin/AuditLogDetailPanel";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import {
+  applyAdminTextTranslation,
   getAuditActionTypeFilterOptions,
   getAuditObjectTypeFilterOptions,
+  localizedAuditSummary,
   zhActionType,
   zhAuditResult,
-  zhAuditSummary,
   zhObjectType,
   zhOperatorRole,
 } from "@/utils/auditLogI18n";
@@ -35,6 +36,7 @@ import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { THEME_BADGE_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys, type AuditLogListParams } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 
 export default function AdminLogs() {
   const { tText } = useAdminT();
@@ -137,9 +139,15 @@ export default function AdminLogs() {
     () => ({ keyword: auditKeyword, result: auditResult, dateFrom, dateTo, operatorId, objectType, objectId, actionType }),
     [actionType, auditKeyword, auditResult, dateFrom, dateTo, objectId, objectType, operatorId],
   );
-  const filterChips = useMemo(() => buildAuditLogFilterChips(filterState), [filterState]);
+  const labelize = useCallback((zh: string) => applyAdminTextTranslation(zh, tText), [tText]);
+  const filterChips = useMemo(
+    () => buildAuditLogFilterChips(filterState, labelize),
+    [filterState, labelize],
+  );
   const filtersActive = hasActiveAuditLogFilters(filterState);
-  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.auditLogsFiltered : ADMIN_EMPTY_GUIDES.auditLogs;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.auditLogsFiltered : ADMIN_EMPTY_GUIDES.auditLogs,
+  );
 
   const clearFilters = () => {
     setAuditKeyword("");
@@ -259,7 +267,7 @@ export default function AdminLogs() {
               >
                 <option value=""><Tx>全部类型</Tx></option>
                 {objectTypeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{tText(opt.label)}</option>
                 ))}
               </select>
             </div>
@@ -282,7 +290,7 @@ export default function AdminLogs() {
               >
                 <option value=""><Tx>全部动作</Tx></option>
                 {actionTypeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{tText(opt.label)}</option>
                 ))}
               </select>
             </div>
@@ -329,16 +337,16 @@ export default function AdminLogs() {
             <div className="flex items-start justify-between gap-2">
               <p className="text-[11px] text-muted-foreground">{row.created_at ? formatDateTime(row.created_at) : "—"}</p>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : THEME_BADGE_DANGER}`}>
-                {zhAuditResult(row.result)}
+                {labelize(zhAuditResult(row.result))}
               </span>
             </div>
             <p className="mt-2 text-sm font-medium text-foreground">{row.operator_name || "—"}</p>
-            <p className="text-xs text-muted-foreground">{zhOperatorRole(row.operator_role)}</p>
-            <p className="mt-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</p>
+            <p className="text-xs text-muted-foreground">{labelize(zhOperatorRole(row.operator_role))}</p>
+            <p className="mt-2 text-xs font-semibold text-foreground">{labelize(zhActionType(row.action_type))}</p>
             <p className="mt-1 text-xs text-muted-foreground" title={row.object_id || undefined}>
-              {zhObjectType(row.object_type)}{row.object_id ? " · 已关联对象" : ""}
+              {labelize(zhObjectType(row.object_type))}{row.object_id ? ` · ${labelize("已关联对象")}` : ""}
             </p>
-            <p className="mt-2 line-clamp-3 text-xs text-foreground">{zhAuditSummary(row.summary)}</p>
+            <p className="mt-2 line-clamp-3 text-xs text-foreground">{localizedAuditSummary(row.summary, tText)}</p>
             <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]"><Tx>
               详情 </Tx><ChevronRight size={16} />
             </button>
@@ -397,27 +405,27 @@ export default function AdminLogs() {
                   maxWidth="8.5rem"
                   lines={[
                     { text: row.operator_name || "—" },
-                    { text: zhOperatorRole(row.operator_role), muted: true },
+                    { text: labelize(zhOperatorRole(row.operator_role)), muted: true },
                   ]}
                 />
               </td>
-              <td className="px-3 py-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</td>
+              <td className="px-3 py-2 text-xs font-semibold text-foreground">{labelize(zhActionType(row.action_type))}</td>
               <td className="px-3 py-2 text-xs">
-                <span className="text-muted-foreground">{zhObjectType(row.object_type)}</span>
+                <span className="text-muted-foreground">{labelize(zhObjectType(row.object_type))}</span>
                 {row.object_id ? (
                   <div className="text-[10px] text-muted-foreground" title={row.object_id}><Tx>已关联</Tx></div>
                 ) : null}
               </td>
               <td className="max-w-[12rem] px-3 py-2 align-middle">
                 <AdminTableCell
-                  value={zhAuditSummary(row.summary)}
-                  fullText={zhAuditSummary(row.summary)}
+                  value={localizedAuditSummary(row.summary, tText)}
+                  fullText={localizedAuditSummary(row.summary, tText)}
                   maxWidth="11rem"
                 />
               </td>
               <td className="px-3 py-2">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : THEME_BADGE_DANGER}`}>
-                  {zhAuditResult(row.result)}
+                  {labelize(zhAuditResult(row.result))}
                 </span>
               </td>
               <td className="px-3 py-2">

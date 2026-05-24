@@ -23,6 +23,7 @@ import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
   buildRecycleBinFilterChips,
   hasActiveRecycleBinFilters,
@@ -101,7 +102,9 @@ export default function AdminRecycleBin() {
   const filterState = useMemo(() => ({ typeFilter }), [typeFilter]);
   const filterChips = useMemo(() => buildRecycleBinFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveRecycleBinFilters(filterState);
-  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.recycleBinFiltered : ADMIN_EMPTY_GUIDES.recycleBin;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.recycleBinFiltered : ADMIN_EMPTY_GUIDES.recycleBin,
+  );
 
   const clearFilters = () => {
     setTypeFilter("");

@@ -1,5 +1,7 @@
 /** 后台事件中心：状态、分类、事件类型中文展示 */
 
+import { formatBackupAlertMessage, formatBackupAlertTitle } from "./backupLabels";
+
 export const ADMIN_EVENT_STATUS_LABELS: Record<string, string> = {
   open: "待处理",
   acknowledged: "已确认",
@@ -90,7 +92,44 @@ export const ADMIN_EVENT_TYPE_LABELS: Record<string, string> = {
   "system.upload_failed": "上传失败",
   "system.backup_failed": "备份失败",
   "system.api_error_spike": "API 错误激增",
+
+  "backup.full_failed": "数据库全量备份失败",
+  "backup.binlog_upload_failed": "数据库增量日志上传失败",
+  "backup.s3_upload_failed": "云端上传失败",
+  "backup.verify_failed": "备份校验失败",
+  "backup.stale_backup": "备份过期",
+  "backup.restore_drill_failed": "恢复演练失败",
+  "backup.disk_low": "磁盘空间不足",
+  "backup.restore_failed": "恢复失败",
 };
+
+/** 通用英文系统错误 → 中文说明 */
+const SYSTEM_ERROR_MESSAGE_PATTERNS: Array<[RegExp, string]> = [
+  [/EACCES.*permission denied.*(?:scandir|readdir|read|access).*mysql/i, "无权限访问 MySQL 数据目录，请检查运行账号对数据库目录的读取权限。"],
+  [/EACCES.*permission denied/i, "文件或目录权限不足，请检查服务运行账号权限。"],
+  [/ENOSPC.*no space left/i, "磁盘空间已满，无法继续写入，请尽快清理磁盘。"],
+  [/ENOENT.*no such file or directory/i, "找不到指定文件或目录，请检查路径配置是否正确。"],
+  [/ECONNREFUSED|ENOTFOUND/i, "无法连接目标服务，请检查网络与服务状态。"],
+  [/ETIMEDOUT|ECONNRESET/i, "网络连接超时或被重置，请检查网络与服务状态。"],
+  [/EPERM.*operation not permitted/i, "操作被拒绝，请检查系统权限与安全策略。"],
+];
+
+function isBackupEvent(eventType: string | null | undefined, category: string | null | undefined): boolean {
+  return category === "backup" || Boolean(eventType?.startsWith("backup."));
+}
+
+function backupAlertTypeFromEventType(eventType: string | null | undefined): string | null {
+  if (!eventType?.startsWith("backup.")) return null;
+  return eventType.slice("backup.".length) || null;
+}
+
+function translateTechnicalMessage(raw: string): string | null {
+  if (/[\u4e00-\u9fff]/.test(raw)) return raw;
+  for (const [pattern, zh] of SYSTEM_ERROR_MESSAGE_PATTERNS) {
+    if (pattern.test(raw)) return zh;
+  }
+  return null;
+}
 
 export function labelAdminEventStatus(status: string | null | undefined): string {
   if (!status) return "—";
@@ -110,8 +149,52 @@ export function labelAdminEventType(eventType: string | null | undefined): strin
     .replace(/\./g, " · ");
 }
 
-export function formatAdminEventSubtitle(message: string | null | undefined, eventType: string | null | undefined): string {
+export function formatAdminEventTitle(
+  title: string | null | undefined,
+  eventType: string | null | undefined,
+  category?: string | null | undefined,
+): string {
+  const raw = title?.trim();
+  if (raw && /[\u4e00-\u9fff]/.test(raw)) return raw;
+
+  if (isBackupEvent(eventType, category)) {
+    const fromBackup = formatBackupAlertTitle(raw, backupAlertTypeFromEventType(eventType));
+    if (fromBackup && fromBackup !== "备份告警") return fromBackup;
+  }
+
+  if (eventType && ADMIN_EVENT_TYPE_LABELS[eventType]) {
+    return ADMIN_EVENT_TYPE_LABELS[eventType];
+  }
+
+  if (raw) {
+    const fromBackup = formatBackupAlertTitle(raw, backupAlertTypeFromEventType(eventType));
+    if (fromBackup && fromBackup !== raw) return fromBackup;
+    return raw;
+  }
+
+  return labelAdminEventType(eventType);
+}
+
+export function formatAdminEventSubtitle(
+  message: string | null | undefined,
+  eventType: string | null | undefined,
+  category?: string | null | undefined,
+): string {
   const trimmed = message?.trim();
-  if (trimmed) return trimmed;
+
+  if (isBackupEvent(eventType, category)) {
+    return formatBackupAlertMessage(trimmed, backupAlertTypeFromEventType(eventType));
+  }
+
+  if (trimmed) {
+    const translated = translateTechnicalMessage(trimmed);
+    if (translated) return translated;
+    if (/[\u4e00-\u9fff]/.test(trimmed)) return trimmed;
+    if (/^[A-Z_]+:/.test(trimmed) || /\b(failed|error|denied|timeout)\b/i.test(trimmed)) {
+      return "系统出现异常，请联系技术人员查看服务器日志。";
+    }
+    return trimmed;
+  }
+
   return labelAdminEventType(eventType);
 }

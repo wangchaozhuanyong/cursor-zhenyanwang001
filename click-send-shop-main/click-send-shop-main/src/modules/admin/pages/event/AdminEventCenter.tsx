@@ -9,6 +9,7 @@ import { useAdminT } from "@/hooks/useAdminT";
 import {
   ADMIN_EVENT_CATEGORY_LABELS,
   formatAdminEventSubtitle,
+  formatAdminEventTitle,
   labelAdminEventCategory,
   labelAdminEventStatus,
 } from "@/utils/adminEventLabels";
@@ -138,8 +139,8 @@ export default function AdminEventCenter() {
               {tText(labelAdminEventCategory(item.category))}
             </div>
             <div className="min-w-0">
-              <div className="truncate font-medium text-foreground">{item.title}</div>
-              <div className="mt-1 truncate text-xs text-muted-foreground">{tText(formatAdminEventSubtitle(item.message, item.eventType))}</div>
+              <div className="truncate font-medium text-foreground">{tText(formatAdminEventTitle(item.title, item.eventType, item.category))}</div>
+              <div className="mt-1 truncate text-xs text-muted-foreground">{tText(formatAdminEventSubtitle(item.message, item.eventType, item.category))}</div>
             </div>
             <div className="text-muted-foreground">{tText(labelAdminEventStatus(item.status))}</div>
             <div className="flex flex-wrap gap-1">

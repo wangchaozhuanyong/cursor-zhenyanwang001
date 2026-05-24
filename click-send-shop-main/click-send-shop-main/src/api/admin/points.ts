@@ -2,12 +2,10 @@ import { del, get, post, put } from "@/api/request";
 import type { AdminPointsRecordsResponse, PointsListParams, PointsRule } from "@/types/points";
 
 export function getPointsRules() {
-  // legacy: only for sign-in rule compatibility
   return get<PointsRule[]>("/admin/points/rules");
 }
 
 export function updatePointsRule(id: string, data: Partial<PointsRule>) {
-  // legacy: only for sign-in rule compatibility
   return put<PointsRule>(`/admin/points/rules/${id}`, data);
 }
 

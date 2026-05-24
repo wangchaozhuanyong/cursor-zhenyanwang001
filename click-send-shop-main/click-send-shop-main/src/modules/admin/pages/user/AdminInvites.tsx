@@ -20,6 +20,7 @@ import {
 } from "@/utils/adminInviteRecordFilters";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 
 export default function AdminInvites() {
   const { tText } = useAdminT();
@@ -55,7 +56,9 @@ export default function AdminInvites() {
     [tText],
   );
   const filtersActive = hasActiveInviteRecordFilters(filterState);
-  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.invitesFiltered : ADMIN_EMPTY_GUIDES.invites;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.invitesFiltered : ADMIN_EMPTY_GUIDES.invites,
+  );
 
   const clearFilters = () => {
     setSearch("");
@@ -141,8 +144,8 @@ export default function AdminInvites() {
         ) : invites.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-6 text-center">
             <Users className="mx-auto h-8 w-8 text-muted-foreground" />
-            <p className="mt-2 text-sm font-medium text-foreground">{emptyGuide.title}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{emptyGuide.description}</p>
+            <p className="mt-2 text-sm font-medium text-foreground">{tText(emptyGuide.title)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{tText(emptyGuide.description)}</p>
             {filtersActive ? (
               <button type="button" onClick={clearFilters} className="mt-3 rounded-lg border border-border px-3 py-1.5 text-xs">
                 <Tx>清除筛选</Tx>

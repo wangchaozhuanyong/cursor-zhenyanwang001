@@ -5,6 +5,10 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
@@ -303,6 +307,119 @@ export default function AdminInventory() {
 
   const renderSkuOptions = (selectedId?: string) => skus.map((sku) => <option key={`${selectedId || ""}-${sku.variant_id}`} value={sku.variant_id}>{skuLabel(sku, L)}</option>);
 
+  const renderSkuMobileCard = (sku: InventorySku) => {
+    const checked = selectedVariantIds.includes(sku.variant_id);
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-3 flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={() => toggleVariantSelect(sku.variant_id)}
+            className="mt-1"
+            aria-label={`选择 ${sku.product_name}`}
+          />
+          {sku.cover_image ? (
+            <img src={sku.cover_image} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+          ) : (
+            <div className="h-11 w-11 shrink-0 rounded-lg bg-secondary" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-sm font-semibold">{sku.product_name}</p>
+            <p className="text-xs text-muted-foreground">{sku.variant_title || sku.spec_text || L("默认规格")}</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <AdminTableMobileCardField label={L("库存")}>
+            <span className={sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium"}>
+              {sku.available_stock} {sku.unit_name || L("件")}
+            </span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={L("状态")}>
+            <span className="text-xs">{stockStatusText(sku, L)}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label="SKU">
+            <span className="font-mono text-xs text-muted-foreground">{sku.sku_code || "-"}</span>
+          </AdminTableMobileCardField>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+          <button type="button" onClick={() => setAdjusting({ sku, change_type: "in", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`touch-manipulation rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>入库</Tx></button>
+          <button type="button" onClick={() => setAdjusting({ sku, change_type: "out", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`touch-manipulation rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>出库</Tx></button>
+          <button type="button" onClick={() => setAdjusting({ sku, change_type: "adjust", quantity: String(sku.stock), reason: "", remark: "", source_no: "", cost_price: "" })} className="touch-manipulation rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></button>
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
+
+  const renderRecordMobileCard = (row: InventoryStockRecord) => (
+    <AdminTableMobileCard>
+      <p className="mb-2 text-xs text-muted-foreground">{formatDateTime(row.created_at)}</p>
+      <p className="mb-1 text-sm font-semibold">{row.product_name}</p>
+      <p className="mb-3 text-xs text-muted-foreground">{row.variant_name || "-"} / {row.sku_code || "-"}</p>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={L("类型")}>{changeLabel(row.change_type)}</AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("变化")}>
+          <span className={row.quantity_delta >= 0 ? THEME_TEXT_SUCCESS_SOFT : THEME_TEXT_DANGER}>
+            {row.quantity_delta > 0 ? "+" : ""}{row.quantity_delta}
+          </span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("变更前后")}>
+          <span className="text-xs">{row.before_stock} → {row.after_stock}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("原因")}>
+          <span className="text-xs text-muted-foreground line-clamp-2">{row.reason || row.remark || "-"}</span>
+        </AdminTableMobileCardField>
+      </div>
+    </AdminTableMobileCard>
+  );
+
+  const renderRuleMobileCard = (row: InventoryPackRule) => (
+    <AdminTableMobileCard>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={L("大包装 SKU")}>
+          <span className="text-xs">{row.parent_product_name}<br />{row.parent_variant_name || L("默认规格")} / {row.parent_sku_code || "-"}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("小包装 SKU")}>
+          <span className="text-xs">{row.child_product_name}<br />{row.child_variant_name || L("默认规格")} / {row.child_sku_code || "-"}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("换算")}>
+          <span className="text-xs">{row.parent_qty} {row.parent_unit_name} = {row.child_qty} {row.child_unit_name}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("当前库存")}>
+          <span className="text-xs">{L("大包")} {row.parent_stock} / {L("小包")} {row.child_stock}</span>
+        </AdminTableMobileCardField>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+        <button type="button" onClick={() => setConvertForm({ type: "unpack", rule: row, parent_qty: "1", remark: "" })} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即拆包</Tx></button>
+        <button type="button" onClick={() => setConvertForm({ type: "assemble", rule: row, parent_qty: "1", remark: "" })} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即组装</Tx></button>
+        <button type="button" onClick={() => setRuleForm(row)} className="touch-manipulation rounded-lg bg-secondary px-3 py-1.5 text-xs"><Tx>编辑</Tx></button>
+      </div>
+    </AdminTableMobileCard>
+  );
+
+  const renderConversionMobileCard = (row: InventoryConversionOrder) => (
+    <AdminTableMobileCard>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <p className="font-medium">{row.order_no}</p>
+        <span className="text-xs text-muted-foreground">{conversionLabel(row.type)}</span>
+      </div>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={L("大包装")}>
+          <span className="text-xs">{row.parent_product_name_snapshot}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("小包装")}>
+          <span className="text-xs">{row.child_product_name_snapshot}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("数量")}>
+          <span className="text-xs">{row.parent_qty} {row.parent_unit_name_snapshot} → {row.child_total_qty} {row.child_unit_name_snapshot}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("时间")}>
+          <span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>
+        </AdminTableMobileCardField>
+      </div>
+    </AdminTableMobileCard>
+  );
+
   return (
     <PermissionGate permission="inventory.manage">
       <div className="space-y-6">
@@ -369,6 +486,7 @@ export default function AdminInventory() {
                 ))}
               </tr>
             )}
+              renderMobileCard={renderSkuMobileCard}
               renderRow={(sku) => {
                 const checked = selectedVariantIds.includes(sku.variant_id);
                 return (
@@ -412,6 +530,7 @@ export default function AdminInventory() {
         {tab === "records" ? (
           <>
             <AnimatedTable embedded loading={recordsQuery.isLoading} rows={records} rowKey={(row) => row.id} skeletonRows={8} skeletonCols={9} tableClassName="w-full min-w-[1200px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={History} emptyTitle={L("暂无库存流水")} emptyDescription={L("库存调整、订单扣减、拆包组装会写入流水。")} thead={<tr>{["时间", "商品", "规格/SKU", "类型", "变化", "变更前后", "原因", "单据", "操作人"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+              renderMobileCard={renderRecordMobileCard}
               renderRow={(row: InventoryStockRecord) => <><td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(row.created_at)}</td><td className="max-w-[10rem] px-4 py-3 align-middle"><AdminTableCell value={row.product_name} maxWidth="9.5rem" /></td><td className="max-w-[9rem] px-4 py-3 align-middle"><AdminTableCell value={`${row.variant_name || "-"} / ${row.sku_code || "-"}`} fullText={`${L("规格")}：${row.variant_name || "-"}\nSKU：${row.sku_code || "-"}`} maxWidth="8.5rem" muted /></td><td className="px-4 py-3 text-xs">{changeLabel(row.change_type)}</td><td className={`px-4 py-3 font-semibold ${row.quantity_delta >= 0 ? THEME_TEXT_SUCCESS_SOFT : THEME_TEXT_DANGER}`}>{row.quantity_delta > 0 ? "+" : ""}{row.quantity_delta}</td><td className="px-4 py-3 text-muted-foreground">{row.before_stock} → {row.after_stock}</td><td className="max-w-[11rem] px-4 py-3 align-middle"><AdminTableCell value={row.reason || row.remark || "-"} fullText={[row.reason, row.remark].filter(Boolean).join("\n") || "-"} maxWidth="10.5rem" muted /></td><td className="px-4 py-3 text-xs text-muted-foreground">{row.order_no || row.source_no || "-"}</td><td className="px-4 py-3 text-muted-foreground">{row.operator_name || L("系统")}</td></>}
             />
             <Pagination total={recordsQuery.data?.total || 0} page={recordsPage} pageSize={PAGE_SIZE} onPageChange={setRecordsPage} onPageSizeChange={() => undefined} />
@@ -421,6 +540,7 @@ export default function AdminInventory() {
         {tab === "rules" ? (
           <>
             <AnimatedTable embedded loading={rulesQuery.isLoading} rows={rules} rowKey={(row) => row.id} skeletonRows={8} skeletonCols={8} tableClassName="w-full min-w-[1260px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={SplitSquareHorizontal} emptyTitle={L("暂无组装拆包规则")} emptyDescription={L("新增规则后可手动拆包、组装，也可支持订单自动拆包。")} thead={<tr>{["大包装 SKU", "小包装 SKU", "换算", "当前库存", "自动拆包", "启用", "备注", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+              renderMobileCard={renderRuleMobileCard}
               renderRow={(row: InventoryPackRule) => <><td className="px-4 py-3"><p>{row.parent_product_name}</p><p className="text-xs text-muted-foreground">{row.parent_variant_name || L("默认规格")} / {row.parent_sku_code || "-"}</p></td><td className="px-4 py-3"><p>{row.child_product_name}</p><p className="text-xs text-muted-foreground">{row.child_variant_name || L("默认规格")} / {row.child_sku_code || "-"}</p></td><td className="px-4 py-3">{row.parent_qty} {row.parent_unit_name} = {row.child_qty} {row.child_unit_name}</td><td className="px-4 py-3 text-xs text-muted-foreground">{L("大包")} {row.parent_stock} / {L("小包")} {row.child_stock}</td><td className="px-4 py-3">{row.auto_unpack_enabled ? L("已开启") : L("关闭")}</td><td className="px-4 py-3">{row.enabled ? L("启用") : L("停用")}</td><td className="px-4 py-3 text-muted-foreground">{row.remark || "-"}</td><td className="px-4 py-3"><div className="flex justify-end gap-2"><button onClick={() => setConvertForm({ type: "unpack", rule: row, parent_qty: "1", remark: "" })} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即拆包</Tx></button><button onClick={() => setConvertForm({ type: "assemble", rule: row, parent_qty: "1", remark: "" })} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即组装</Tx></button><button onClick={() => setRuleForm(row)} className="rounded-lg bg-secondary px-3 py-1.5 text-xs"><Tx>编辑</Tx></button><button onClick={() => deleteRuleMutation.mutate(row.id)} className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600"><Tx>删除</Tx></button></div></td></>}
             />
             <Pagination total={rulesQuery.data?.total || 0} page={rulesPage} pageSize={PAGE_SIZE} onPageChange={setRulesPage} onPageSizeChange={() => undefined} />
@@ -430,6 +550,7 @@ export default function AdminInventory() {
         {tab === "conversions" ? (
           <>
             <AnimatedTable embedded loading={conversionsQuery.isLoading} rows={conversions} rowKey={(row) => row.id} skeletonRows={8} skeletonCols={9} tableClassName="w-full min-w-[1320px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={History} emptyTitle={L("暂无组装拆包单据")} emptyDescription={L("手动拆包、手动组装和自动拆包都会生成单据。")} thead={<tr>{["单据号", "类型", "大包装", "小包装", "数量", "大包装库存", "小包装库存", "来源订单", "时间"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+              renderMobileCard={renderConversionMobileCard}
               renderRow={(row: InventoryConversionOrder) => <><td className="px-4 py-3 font-medium">{row.order_no}</td><td className="px-4 py-3">{conversionLabel(row.type)}</td><td className="px-4 py-3"><p>{row.parent_product_name_snapshot}</p><p className="text-xs text-muted-foreground">{row.parent_variant_name_snapshot || L("默认规格")} / {row.parent_sku_code_snapshot || "-"}</p></td><td className="px-4 py-3"><p>{row.child_product_name_snapshot}</p><p className="text-xs text-muted-foreground">{row.child_variant_name_snapshot || L("默认规格")} / {row.child_sku_code_snapshot || "-"}</p></td><td className="px-4 py-3">{row.parent_qty} {row.parent_unit_name_snapshot} → {row.child_total_qty} {row.child_unit_name_snapshot}</td><td className="px-4 py-3">{row.parent_before_stock} → {row.parent_after_stock}</td><td className="px-4 py-3">{row.child_before_stock} → {row.child_after_stock}</td><td className="px-4 py-3 text-muted-foreground">{row.source_order_no || "-"}</td><td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(row.created_at)}</td></>}
             />
             <Pagination total={conversionsQuery.data?.total || 0} page={conversionsPage} pageSize={PAGE_SIZE} onPageChange={setConversionsPage} onPageSizeChange={() => undefined} />

@@ -26,6 +26,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { EXPORTABLE_REPORTS } from "./reportRegistry";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   pending: <Clock size={14} className={`animate-pulse ${THEME_TEXT_WARNING}`} />,
@@ -52,6 +53,7 @@ export default function AdminExportCenter() {
     [tText],
   );
   const { confirm } = useAdminConfirm();
+  const exportTasksEmptyGuide = useLocalizedAdminEmptyGuide(ADMIN_EMPTY_GUIDES.exportTasks);
   const queryClient = useQueryClient();
   const capabilities = useSiteCapabilities();
   const [creating, setCreating] = useState(false);
@@ -165,10 +167,10 @@ export default function AdminExportCenter() {
             ))}
           </tr>
         )}
-        emptyIcon={ADMIN_EMPTY_GUIDES.exportTasks.icon}
-        emptyTitle={ADMIN_EMPTY_GUIDES.exportTasks.title}
-        emptyDescription={ADMIN_EMPTY_GUIDES.exportTasks.description}
-        emptyAction={<AdminEmptyGuideActions guide={ADMIN_EMPTY_GUIDES.exportTasks} />}
+        emptyIcon={exportTasksEmptyGuide.icon}
+        emptyTitle={exportTasksEmptyGuide.title}
+        emptyDescription={exportTasksEmptyGuide.description}
+        emptyAction={<AdminEmptyGuideActions guide={exportTasksEmptyGuide} />}
         renderRow={(t) => (
           <>
             <td className="px-4 py-3 text-foreground">{t.file_name}</td>

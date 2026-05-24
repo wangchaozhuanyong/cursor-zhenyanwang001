@@ -81,6 +81,13 @@ const BACKUP_ALERT_MESSAGE_PATTERNS: Array<[RegExp, string]> = [
   [/binlog.*upload.*fail/i, "增量日志上传到云端失败，请检查对象存储与网络配置。"],
   [/S3|s3/i, "对象存储上传异常，请检查存储桶权限与密钥。"],
   [/ECONNREFUSED|ENOTFOUND/i, "无法连接数据库或存储服务，请检查网络与服务状态。"],
+  [/EACCES.*permission denied.*(?:scandir|readdir|read|access).*mysql/i, "无权限访问 MySQL 数据目录，请检查运行账号对数据库目录的读取权限。"],
+  [/EACCES.*permission denied/i, "文件或目录权限不足，请检查服务运行账号权限。"],
+  [/ENOSPC.*no space left/i, "磁盘空间已满，无法继续写入备份文件，请尽快清理磁盘。"],
+  [/ENOENT.*no such file or directory/i, "找不到指定文件或目录，请检查路径配置是否正确。"],
+  [/ETIMEDOUT|ECONNRESET/i, "网络连接超时或被重置，请检查网络与服务状态。"],
+  [/EPERM.*operation not permitted/i, "操作被拒绝，请检查系统权限与安全策略。"],
+  [/MYSQL_BINLOG_DIR is required/i, "未配置 MySQL 增量日志目录，请在环境变量中设置 MYSQL_BINLOG_DIR。"],
 ];
 
 export function formatBackupFileKind(kind?: string | null): string {

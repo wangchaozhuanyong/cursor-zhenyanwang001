@@ -16,6 +16,7 @@ import {
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import UserTagManageDialog from "@/modules/admin/components/user/UserTagManageDialog";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import * as userService from "@/services/admin/userService";
@@ -252,7 +253,9 @@ export default function AdminUsers() {
     [tText],
   );
 
-  const usersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.usersFiltered : ADMIN_EMPTY_GUIDES.users;
+  const usersEmptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.usersFiltered : ADMIN_EMPTY_GUIDES.users,
+  );
 
   const clearFilters = () => {
     setSearch("");
@@ -606,57 +609,6 @@ export default function AdminUsers() {
           }}
         />
       </PermissionGate>
-
-      const renderMobileCard = (user: UserProfile) => {
-        const checked = selectedUserIds.includes(user.id);
-        return (
-          <AdminTableMobileCard>
-            <motion.div className="mb-3 flex items-start gap-2">
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={(e) =>
-                  setSelectedUserIds((prev) => (e.target.checked ? [...prev, user.id] : prev.filter((id) => id !== user.id)))
-                }
-                className="mt-1"
-                aria-label={`选择用户 ${user.nickname || user.phone || user.id}`}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{user.nickname || user.phone || user.id}</p>
-                    <p className="text-xs text-muted-foreground">{user.phone || "-"}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/admin/users/${user.id}`)}
-                    className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
-                  >
-                    详情
-                  </button>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {user.member_level_name || user.memberLevel?.name || "普通会员"} · 积分 {user.points_balance ?? user.pointsBalance ?? 0}
-                </p>
-              </div>
-            </div>
-            <div className="mb-3">
-              <UserStatusBadges user={user} />
-            </div>
-            <div className="space-y-2">
-              <AdminTableMobileCardField label="标签">
-                <UserTagBadges tags={user.tags} />
-              </AdminTableMobileCardField>
-              <AdminTableMobileCardField label="邀请码">
-                <span className="font-mono text-xs">{user.invite_code || user.inviteCode || "-"}</span>
-              </AdminTableMobileCardField>
-              <AdminTableMobileCardField label="注册">
-                <span className="text-xs text-muted-foreground">{user.created_at ? formatDateTime(user.created_at) : "-"}</span>
-              </AdminTableMobileCardField>
-            </div>
-          </AdminTableMobileCard>
-        );
-      };
 
       <AnimatedTable
         loading={usersQuery.isLoading}

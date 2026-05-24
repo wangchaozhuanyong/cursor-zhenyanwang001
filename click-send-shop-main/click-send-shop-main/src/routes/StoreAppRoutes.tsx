@@ -11,6 +11,7 @@ import RouteAnalyticsTracker from "@/components/RouteAnalyticsTracker";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
 import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
+import ChinaBrowserCompatNotice from "@/components/ChinaBrowserCompatNotice";
 import FrontLayout from "@/layouts/FrontLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthSessionSync from "@/components/AuthSessionSync";
@@ -165,6 +166,7 @@ export function StoreAppRoutes() {
           <RouteAnalyticsTracker />
           <RouteSeoGuard />
           {/* <PwaUpdateToast /> */}
+          <ChinaBrowserCompatNotice />
           <LanguageGate />
           <AgeGate />
           <Suspense fallback={<AppRouteFallback />}>

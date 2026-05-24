@@ -1,3 +1,10 @@
+import {
+  detectChinaBrowserVendor,
+  isChinaChromiumShell,
+  isLikelyLegacyChinaBrowserMode,
+  type ChinaBrowserVendor,
+} from "@/utils/chinaBrowser";
+
 export type BrowserPlatform = "ios" | "android" | "desktop";
 
 export interface BrowserEnv {
@@ -8,6 +15,10 @@ export interface BrowserEnv {
   isChrome: boolean;
   isDesktopChromium: boolean;
   isInAppBrowser: boolean;
+  /** 识别到的国产浏览器厂商（微信/百度/UC 等），无则为 null */
+  chinaBrowserVendor: ChinaBrowserVendor | null;
+  isChinaChromiumShell: boolean;
+  isLegacyChinaBrowserMode: boolean;
 }
 
 const IN_APP_PATTERNS = [
@@ -44,6 +55,9 @@ export function detectBrowserEnv(): BrowserEnv {
       isChrome: false,
       isDesktopChromium: false,
       isInAppBrowser: false,
+      chinaBrowserVendor: null,
+      isChinaChromiumShell: false,
+      isLegacyChinaBrowserMode: false,
     };
   }
 
@@ -64,6 +78,8 @@ export function detectBrowserEnv(): BrowserEnv {
 
   const platform: BrowserPlatform = isIOS ? "ios" : isAndroid ? "android" : "desktop";
 
+  const chinaBrowserVendor = detectChinaBrowserVendor(ua);
+
   return {
     platform,
     isIOS,
@@ -72,6 +88,9 @@ export function detectBrowserEnv(): BrowserEnv {
     isChrome,
     isDesktopChromium,
     isInAppBrowser,
+    chinaBrowserVendor,
+    isChinaChromiumShell: isChinaChromiumShell(ua),
+    isLegacyChinaBrowserMode: isLikelyLegacyChinaBrowserMode(ua),
   };
 }
 

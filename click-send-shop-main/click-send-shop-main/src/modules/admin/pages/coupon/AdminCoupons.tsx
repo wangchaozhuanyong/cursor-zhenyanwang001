@@ -16,10 +16,15 @@ import { formatAdminDateRange } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import {
   THEME_BADGE_DANGER,
@@ -69,6 +74,7 @@ export default function AdminCoupons() {
     [tagsQuery.data],
   );
   const loading = couponsQuery.isLoading && !couponsQuery.data;
+  const couponsEmptyGuide = useLocalizedAdminEmptyGuide(ADMIN_EMPTY_GUIDES.coupons);
 
   const filteredCoupons = coupons.filter((coupon) => {
     if (!search) return true;
@@ -95,6 +101,41 @@ export default function AdminCoupons() {
     },
     onError: (error) => toast.error(toastErrorMessage(error, "发放失败")),
   });
+
+  const renderMobileCard = (coupon: Coupon) => {
+    const typeLabel = typeLabels[coupon.type]?.label ? L(typeLabels[coupon.type].label) : labelCouponType(coupon.type);
+    const statusLabel = statusLabels[coupon.status]?.label ? L(statusLabels[coupon.status].label) : labelCouponStatus(coupon.status);
+    const typeColor = typeLabels[coupon.type]?.color || "bg-secondary text-foreground";
+    const statusColor = statusLabels[coupon.status]?.color || "bg-secondary text-foreground";
+
+    return (
+      <AdminTableMobileCard>
+        <motion.div className="mb-2 flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold">{coupon.title}</p>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${statusColor}`}>{statusLabel}</span>
+        </motion.div>
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          <span className={`rounded-full px-2 py-0.5 text-xs ${typeColor}`}>{typeLabel}</span>
+          {coupon.code ? <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-xs">{coupon.code}</span> : null}
+        </div>
+        <div className="space-y-2">
+          <AdminTableMobileCardField label={tText("面额 / 门槛")}>
+            <span className="text-xs text-muted-foreground">{coupon.value} · {tText("门槛")} {coupon.min_amount}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("有效期")}>
+            <span className="text-xs text-muted-foreground">{formatAdminDateRange(coupon.start_date, coupon.end_date)}</span>
+          </AdminTableMobileCardField>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+          <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>编辑</Tx></button>
+          <PermissionGate permission="coupon.manage">
+            <button type="button" onClick={() => setIssueCouponId(coupon.id)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>发券</Tx></button>
+            <button type="button" onClick={() => setDeleteId(coupon.id)} className={`touch-manipulation rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_DANGER}`}><Trash2 size={13} className="inline" /></button>
+          </PermissionGate>
+        </motion.div>
+      </AdminTableMobileCard>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -137,10 +178,11 @@ export default function AdminCoupons() {
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-        emptyIcon={ADMIN_EMPTY_GUIDES.coupons.icon}
-        emptyTitle={ADMIN_EMPTY_GUIDES.coupons.title}
-        emptyDescription={ADMIN_EMPTY_GUIDES.coupons.description}
-        emptyAction={<AdminEmptyGuideActions guide={ADMIN_EMPTY_GUIDES.coupons} />}
+        emptyIcon={couponsEmptyGuide.icon}
+        emptyTitle={couponsEmptyGuide.title}
+        emptyDescription={couponsEmptyGuide.description}
+        emptyAction={<AdminEmptyGuideActions guide={couponsEmptyGuide} />}
+        renderMobileCard={renderMobileCard}
         renderRow={(coupon) => (
           <>
             <td className="max-w-[12rem] px-4 py-3 align-middle">

@@ -13,6 +13,7 @@ import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
   buildCouponRecordFilterChips,
   hasActiveCouponRecordFilters,
@@ -60,7 +61,9 @@ export default function AdminCouponRecords() {
   const filterState = useMemo(() => ({ search, statusFilter }), [search, statusFilter]);
   const filterChips = useMemo(() => buildCouponRecordFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveCouponRecordFilters(filterState);
-  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.couponRecordsFiltered : ADMIN_EMPTY_GUIDES.couponRecords;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.couponRecordsFiltered : ADMIN_EMPTY_GUIDES.couponRecords,
+  );
 
   const clearFilters = () => {
     setSearch("");

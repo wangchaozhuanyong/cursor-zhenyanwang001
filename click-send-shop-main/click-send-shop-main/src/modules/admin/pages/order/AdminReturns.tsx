@@ -5,6 +5,10 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import * as returnService from "@/services/admin/returnService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -134,6 +138,29 @@ export default function AdminReturns() {
     setAdminRemark("");
   };
 
+  const renderMobileCard = (row: ReturnRequest) => (
+    <AdminTableMobileCard>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div>
+          <p className="font-medium">{row.order_no}</p>
+          <p className="font-mono text-[11px] text-muted-foreground">{row.id}</p>
+        </div>
+        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{labelStatus(row.status)}</span>
+      </div>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={tText("类型")}>{labelReturnType(row.type)}</AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("退款")}><span className="font-semibold">{money(row.refund_amount)}</span></AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("原因")}><span className="text-xs text-muted-foreground line-clamp-2">{row.reason || row.description || "-"}</span></AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("时间")}><span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span></AdminTableMobileCardField>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+        <button type="button" onClick={() => setSelectedId(row.id)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>详情</Tx></button>
+        <button type="button" onClick={() => openReview("approve", row)} className="touch-manipulation rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>通过</Tx></button>
+        <button type="button" onClick={() => openReview("reject", row)} className="touch-manipulation rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>拒绝</Tx></button>
+      </div>
+    </AdminTableMobileCard>
+  );
+
   return (
     <PermissionGate permission="order.return.manage">
       <div className="p-4 md:p-6">
@@ -174,6 +201,7 @@ export default function AdminReturns() {
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
           thead={<tr>{TABLE_HEADERS.map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{tText(head)}</th>)}</tr>}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+          renderMobileCard={renderMobileCard}
           renderRow={(row) => (
             <>
               <td className="px-4 py-3 font-mono text-xs text-foreground">{row.id}</td>

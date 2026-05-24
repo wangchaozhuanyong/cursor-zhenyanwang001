@@ -29,6 +29,18 @@ export type AdminEmptyGuide = {
   secondaryPath?: string;
 };
 
+/** 将空状态引导文案按当前管理后台语言本地化（title/description 用于表格空态） */
+export function localizeAdminEmptyGuide(
+  guide: AdminEmptyGuide,
+  tText: (zh: string) => string,
+): AdminEmptyGuide {
+  return {
+    ...guide,
+    title: tText(guide.title),
+    description: tText(guide.description),
+  };
+}
+
 export const ADMIN_EMPTY_GUIDES = {
   products: {
     icon: Package,

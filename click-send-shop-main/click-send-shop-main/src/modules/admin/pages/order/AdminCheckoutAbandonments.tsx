@@ -6,6 +6,7 @@ import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
   CHECKOUT_ABANDONMENT_DEFAULT_STATUS_LABEL,
   hasActiveCheckoutAbandonmentFilters,
@@ -165,9 +166,9 @@ export default function AdminCheckoutAbandonments() {
     return chips;
   }, [filterState, tText]);
   const filtersActive = hasActiveCheckoutAbandonmentFilters(filterState);
-  const emptyGuide = filtersActive
-    ? ADMIN_EMPTY_GUIDES.checkoutAbandonmentsFiltered
-    : ADMIN_EMPTY_GUIDES.checkoutAbandonments;
+  const emptyGuide = useLocalizedAdminEmptyGuide(
+    filtersActive ? ADMIN_EMPTY_GUIDES.checkoutAbandonmentsFiltered : ADMIN_EMPTY_GUIDES.checkoutAbandonments,
+  );
 
   const clearFilters = () => {
     setKeyword("");

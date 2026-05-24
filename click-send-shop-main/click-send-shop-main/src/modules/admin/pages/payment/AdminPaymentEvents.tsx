@@ -5,6 +5,10 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
@@ -86,6 +90,36 @@ export default function AdminPaymentEvents() {
   const rows = eventsQuery.data?.list || [];
   const total = eventsQuery.data?.total || 0;
 
+  const renderMobileCard = (row: PaymentEventAdminRow) => (
+    <AdminTableMobileCard>
+      <div className="mb-2">
+        <p className="text-sm font-semibold">{labelEventType(row.event_type)}</p>
+        <p className="font-mono text-[11px] text-muted-foreground">{row.provider_event_id || row.id}</p>
+      </div>
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(PROVIDER_LABELS, row.provider, tText)}</span>
+        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(VERIFY_LABELS, row.verify_status, tText)}</span>
+        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(RESULT_LABELS, row.processing_result, tText)}</span>
+      </div>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={tText("支付单")}>
+          <span className="font-mono text-xs text-muted-foreground">{row.payment_order_id || row.order_id || "-"}</span>
+        </AdminTableMobileCardField>
+        {row.error_message ? (
+          <AdminTableMobileCardField label={tText("错误信息")}>
+            <span className="text-xs text-red-500 line-clamp-2">{row.error_message}</span>
+          </AdminTableMobileCardField>
+        ) : null}
+        <AdminTableMobileCardField label={tText("创建时间")}>
+          <span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>
+        </AdminTableMobileCardField>
+      </div>
+      <div className="mt-3 border-t border-border pt-3">
+        <button type="button" onClick={() => replayMutation.mutate(row)} disabled={replayMutation.isPending} className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-60"><Tx>重新处理</Tx></button>
+      </div>
+    </AdminTableMobileCard>
+  );
+
   return (
     <PermissionGate permission="payment.view">
       <div className="p-4 md:p-6">
@@ -125,6 +159,7 @@ export default function AdminPaymentEvents() {
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
           thead={<tr>{tableHeaders.map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+          renderMobileCard={renderMobileCard}
           renderRow={(row) => (
             <>
               <td className="max-w-[11rem] px-4 py-3 align-middle">

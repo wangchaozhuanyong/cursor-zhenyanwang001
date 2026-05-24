@@ -188,7 +188,7 @@ else
   cd "$FRONTEND_DIR" || exit 1
   maybe_install_frontend_deps
   export NODE_OPTIONS="--max-old-space-size=${FRONTEND_BUILD_HEAP_MB}"
-  export VITE_LEGACY_BUILD="${VITE_LEGACY_BUILD:-0}"
+  export VITE_LEGACY_BUILD="${VITE_LEGACY_BUILD:-1}"
   export VITE_API_BASE_URL
   node ./node_modules/vite/bin/vite.js build
   npm run build:admin

@@ -21,7 +21,7 @@ import {
   THEME_BTN_PRICE,
 } from "@/utils/themeVisuals";
 
-type DisplayStatus = "available" | "claimed" | "used" | "expired";
+type DisplayStatus = "available" | "claimed" | "pending" | "used" | "expired" | "invalidated";
 
 interface DisplayCoupon {
   id: string;
@@ -33,12 +33,16 @@ interface DisplayCoupon {
   expire: string;
   status: DisplayStatus;
   code: string;
+  orderNo?: string;
+  invalidReason?: string;
 }
 
 function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
   const displayStatus: DisplayStatus =
-    uc.status === "used" ? "used"
+    uc.status === "pending" ? "pending"
+    : uc.status === "used" ? "used"
     : uc.status === "expired" ? "expired"
+    : uc.status === "invalidated" || uc.status === "cancelled" ? "invalidated"
     : uc.claimed_at ? "claimed"
     : "available";
 
@@ -53,10 +57,12 @@ function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
     expire: d.expireText,
     status: displayStatus,
     code: d.code,
+    orderNo: uc.order_no,
+    invalidReason: uc.invalid_reason,
   };
 }
 
-type Tab = "available" | "mine";
+type Tab = "available" | "mine" | "pending" | "used" | "expired" | "invalidated";
 
 export default function Coupons() {
   const goBack = useGoBack();
@@ -72,6 +78,10 @@ export default function Coupons() {
 
   const available = coupons.filter((c) => c.status === "available");
   const mine = coupons.filter((c) => c.status === "claimed");
+  const pending = coupons.filter((c) => c.status === "pending");
+  const used = coupons.filter((c) => c.status === "used");
+  const expired = coupons.filter((c) => c.status === "expired");
+  const invalidated = coupons.filter((c) => c.status === "invalidated");
   const claimedCount = mine.length;
 
   const handleClaim = async (coupon: DisplayCoupon) => {
@@ -86,7 +96,12 @@ export default function Coupons() {
     }
   };
 
-  const list = tab === "available" ? available : mine;
+  const list = tab === "available" ? available
+    : tab === "mine" ? mine
+    : tab === "pending" ? pending
+    : tab === "used" ? used
+    : tab === "expired" ? expired
+    : invalidated;
 
   if (loading && rawCoupons.length === 0) {
     return (
@@ -147,7 +162,11 @@ export default function Coupons() {
         <div className="mt-5 flex rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] p-1 ring-1 ring-[var(--theme-border)]">
           {([
             { key: "available" as Tab, label: "领券中心", count: available.length },
-            { key: "mine" as Tab, label: "我的券", count: mine.length },
+            { key: "mine" as Tab, label: "可使用", count: mine.length },
+            { key: "pending" as Tab, label: "未生效", count: pending.length },
+            { key: "used" as Tab, label: "已使用", count: used.length },
+            { key: "expired" as Tab, label: "已过期", count: expired.length },
+            { key: "invalidated" as Tab, label: "已失效", count: invalidated.length },
           ]).map((t) => (
             <button
               key={t.key}
@@ -186,12 +205,7 @@ export default function Coupons() {
                 className="flex flex-col items-center py-16 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]"
               >
                 <Ticket size={48} className="mb-3 opacity-20" />
-                <p className="text-sm">{tab === "mine" ? "暂无可用优惠券" : "暂无可领取优惠券"}</p>
-                {tab === "mine" ? (
-                  <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_60%,var(--theme-text-muted))]">
-                    已使用或已过期的券不再展示
-                  </p>
-                ) : null}
+                <p className="text-sm">{tab === "available" ? "暂无可领取优惠券" : "暂无优惠券记录"}</p>
               </motion.div>
             )}
             {list.map((coupon, i) => (
@@ -220,7 +234,7 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
   { coupon, index, claiming, onClaim },
   ref,
 ) {
-  const isDisabled = coupon.status === "used" || coupon.status === "expired";
+  const isDisabled = coupon.status === "used" || coupon.status === "expired" || coupon.status === "pending" || coupon.status === "invalidated";
 
   return (
     <motion.div
@@ -246,6 +260,8 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
         actionDisabled={claiming}
         onAction={coupon.status === "available" ? onClaim : undefined}
       />
+      {coupon.orderNo ? <p className="mt-1 px-3 text-xs text-theme-muted">使用订单：{coupon.orderNo}</p> : null}
+      {coupon.invalidReason ? <p className="mt-1 px-3 text-xs text-[var(--theme-danger)]">{coupon.invalidReason}</p> : null}
     </motion.div>
   );
 });

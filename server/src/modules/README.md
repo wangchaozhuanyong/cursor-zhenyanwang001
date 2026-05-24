@@ -1,88 +1,74 @@
-# server/src/modules 架构说明（模块化单体 + 分层）
+# server/src/modules Architecture
 
-本项目后端采用模块化单体（Modular Monolith），所有接口统一挂载在 `/api` 前缀下。
+The backend is a modular monolith. All business APIs are mounted under `/api`, and every new backend change must first decide module ownership, then layer ownership.
 
-## API 约定
+## API Contract
 
-- 公共接口：`/api/*`
-- 管理后台接口：`/api/admin/*`
-- 健康检查：`/api/health/live`、`/api/health/ready`
+- Public APIs: `/api/*`
+- Admin APIs: `/api/admin/*`
+- Health checks: `/api/health/live` and `/api/health/ready`
 
-## 当前模块（以代码现状为准）
+## Fixed Backend Modules
 
-- `health`：健康检查
-- `auth`：认证与会话
-- `user`：用户资料、地址、收藏、积分、优惠券、邀请、主题配置
-- `product`：商品、分类、内容、前台展示数据
-- `cart`：购物车
-- `order`：订单与售后
-- `payment`：支付聚合入口、支付事件、支付渠道能力
-- `admin`：后台管理聚合（按子域拆分 controller/service/repository）
-- `search`：搜索与关键词
-- `analytics`：行为与统计事件
-- `privacy`：隐私与合规模块
-- `seo`：SEO 相关接口
-- `logistics`：物流能力
-- `myinvois`：电子发票能力
-- `pwa`：PWA manifest 与图标能力
-- `telegram`：Telegram 通知能力
-- `siteCapabilities`：站点功能开关能力
+The current fixed module list is the actual directory list under `server/src/modules`:
 
-说明：通知、主题当前不是独立后端模块；通知能力归入 `user` / `admin`，主题能力归入 `user` 并通过模块公开 API 供后台编排。
+1. `admin`
+2. `analytics`
+3. `auth`
+4. `cart`
+5. `dataRetention`
+6. `health`
+7. `home`
+8. `logistics`
+9. `loyalty`
+10. `marketing`
+11. `monitoring`
+12. `myinvois`
+13. `notification`
+14. `order`
+15. `payment`
+16. `privacy`
+17. `product`
+18. `pwa`
+19. `search`
+20. `seo`
+21. `siteCapabilities`
+22. `telegram`
+23. `theme`
+24. `user`
 
-## 模块内分层约束
+## Required Module Structure
 
-标准分层：`routes -> controller -> service -> repository`
-
-## 固定目录划分（强制）
-
-每个模块目录下必须固定包含以下子目录：
+Every module must contain these layer directories:
 
 - `routes/`
 - `controller/`
 - `service/`
 - `repository/`
 
-说明：
+Optional directories such as `schemas/` are allowed when needed. Existing domain support directories such as `jobs/`, `rules/`, `adapters/`, and `providers/` are historical or domain support areas; new request/response, business, and data-access code must still go into the standard layer.
 
-- 该结构已通过 `npm run check:module-structure` 强制校验。
-- 现有历史文件允许逐步迁移，但新代码必须优先进入上述固定目录。
-- 完成迁移后，模块内应仅保留入口文件（如 `index.js`）与非分层辅助目录（例如 `schemas/`）。
+## Layer Rules
 
-- `routes`
-  - 仅路由绑定、中间件绑定、参数校验绑定
-  - 禁止业务逻辑
-  - 禁止 SQL
+- `routes`: route and middleware binding only; no business logic and no SQL.
+- `controller`: receive request parameters, call service, and return responses only; no business logic, SQL, or direct repository calls.
+- `service`: business rules, state transitions, and orchestration only; no direct SQL or direct `config/db` dependency.
+- `repository`: database access only; no business decisions and no HTTP response shape.
 
-- `controller`
-  - 仅处理请求参数、调用 service、返回响应
-  - 禁止业务逻辑
-  - 禁止 SQL
-  - 禁止直接调用 repository
+## Cross-Module Rules
 
-- `service`
-  - 仅业务规则、状态流转、事务编排
-  - 禁止直接写 SQL（禁止 `pool.query` / `conn.query`）
-  - 禁止直接依赖 `config/db`
+- Prefer module public APIs exposed by each module entrypoint.
+- Do not import another module's internal controller, service, or repository directly.
+- Cross-module writes must be explicitly orchestrated in the owning service layer.
+- Avoid circular dependencies.
 
-- `repository`
-  - 仅数据库访问（SQL、读写）
-  - 禁止业务规则判断
-  - 禁止 HTTP 响应结构
+## Refactor Rules
 
-## 跨模块依赖原则
+- Do structural refactors only; do not change business behavior.
+- Do not change API paths, database fields, or core order, inventory, and payment logic during structural cleanup.
+- After backend structure changes, run:
+  - `npm run check:module-structure`
+  - `npm run check:service-layer`
+  - `npm run audit:module-boundaries`
 
-- 优先通过模块公开 API（例如 `module/index.js` 导出的 api）交互
-- 避免跨模块直接引用内部 repository
-- 禁止形成循环依赖
-- 若出现跨模块写操作，必须在 service 层显式编排
-
-## 重构原则
-
-- 只做结构重构，不改变业务功能
-- 不修改 API 路径
-- 不修改数据库字段
-- 不改变订单、库存、支付核心逻辑
-- 每次改动后执行：
-  - `cd server && npm run check:service-layer`
-  - `cd server && npm run typecheck`
+Use `npm run check:module-boundaries` only when the legacy cross-module import list has been cleared; strict mode is intentionally available but not yet part of the normal gate.

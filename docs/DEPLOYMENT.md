@@ -74,7 +74,7 @@
    - 入口文件 **必须** 为 `server/src/index.js`（`server/src/app.js` 仅导出 Express app，**不会** `listen`）。
    - `server/package.json` 中的 `start` / `start:prod` 仅供测试/排障使用，生产环境一律走 PM2。
 
-7. **HTTPS / Nginx（damatong.net）**：使用 `deploy/nginx/damatong.prod.conf`（商城 + `console.damatong.net` 管理端），在服务器执行 `bash deploy/nginx/install-damatong-nginx.sh` 启用并禁用旧的 `cursor-main-frontend.conf`（flashcast.com.my）。详见 `docs/PRODUCTION_DOMAINS.md`。
+7. **HTTPS / Nginx（damatong.net）**：使用 `deploy/nginx/damatong.prod.conf`（商城 + `console.damatong.net` 管理端），在服务器执行 `bash deploy/nginx/install-damatong-nginx.sh`。详见 `docs/PRODUCTION_DOMAINS.md`。
 8. **HTTPS（通用）**：亦可使用 Caddy / 其他 Nginx 模板，反代到 `127.0.0.1:3001`（参考 `deploy/nginx.example.conf`）。
 9. **部署后验收（强制）**：
 

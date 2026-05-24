@@ -69,7 +69,7 @@ function SiteIdentitySync() {
       if (sizes) link.sizes = sizes;
       document.head.appendChild(link);
     });
-  }, [siteInfo.faviconUrl, siteInfo.logoUrl]);
+  }, [siteInfo]);
 
   return null;
 }

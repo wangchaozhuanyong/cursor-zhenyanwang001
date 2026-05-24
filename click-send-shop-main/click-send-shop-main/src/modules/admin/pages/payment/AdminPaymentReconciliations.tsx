@@ -2,6 +2,10 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Scale } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -74,6 +78,30 @@ export default function AdminPaymentReconciliations() {
   });
 
   const create = () => createMutation.mutate();
+
+  const renderMobileCard = (r: PaymentReconciliationRow) => (
+    <AdminTableMobileCard>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold">{r.reconcile_date}</p>
+        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{tText(labelReconciliationStatus(r.status))}</span>
+      </div>
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{tText(labelProvider(r.provider))}</span>
+        {r.channel_code ? <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{tText(labelChannelCode(r.channel_code))}</span> : null}
+      </div>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={tText("笔数")}>
+          <span className="text-xs text-muted-foreground">{r.order_count}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("成功金额")}>
+          <span className="text-sm font-semibold text-[var(--theme-price)]">RM {Number(r.success_amount).toFixed(2)}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("差异")}>
+          <span className="text-xs text-muted-foreground">RM {Number(r.diff_amount).toFixed(2)}</span>
+        </AdminTableMobileCardField>
+      </div>
+    </AdminTableMobileCard>
+  );
 
   return (
     <PermissionGate permission="payment.manage">
@@ -185,6 +213,7 @@ export default function AdminPaymentReconciliations() {
           emptyTitle={reconciliationsEmptyGuide.title}
           emptyDescription={reconciliationsEmptyGuide.description}
           emptyAction={<AdminEmptyGuideActions guide={reconciliationsEmptyGuide} />}
+          renderMobileCard={renderMobileCard}
           renderRow={(r) => (
             <>
               <td className="px-3 py-2">{r.reconcile_date}</td>

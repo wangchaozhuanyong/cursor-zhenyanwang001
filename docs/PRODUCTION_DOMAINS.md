@@ -7,8 +7,6 @@
 | 商城前台 | `https://damatong.net`、`https://www.damatong.net` |
 | 管理后台 | `https://console.damatong.net` |
 
-**已下线**：`flashcast.com.my`（勿在 Nginx、`.env`、脚本默认值中再使用）。
-
 ## Nginx
 
 - **唯一推荐配置**：`deploy/nginx/damatong.prod.conf`
@@ -18,11 +16,7 @@
 bash deploy/nginx/install-damatong-nginx.sh
 ```
 
-该脚本会：
-
-1. 启用 `sites-available/damatong.prod.conf`
-2. 禁用 `cursor-main-frontend.conf`（原 flashcast.com.my + `public-frontend` 方案）
-3. 禁用已废弃的 `flashcast.prod.conf` 站点链接（若存在）
+该脚本会启用 `sites-available/damatong.prod.conf`，并移除 `sites-enabled` 下已知的旧站配置。
 
 ## 静态文件路径
 
@@ -30,8 +24,6 @@ bash deploy/nginx/install-damatong-nginx.sh
 |------|------------|
 | 商城 `dist` | `/var/www/flashcast/dist` |
 | 管理端 `admin-dist` | `/var/www/flashcast/admin-dist` |
-
-目录名 `flashcast` 为历史路径，与 `flashcast.com.my` 域名无关。
 
 ## 后端环境变量（`server/.env`）
 

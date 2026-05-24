@@ -18,11 +18,12 @@ interface CouponPickerProps {
 
 function useCouponHelpers(totalAmount: number, shippingFee: number) {
   const getDiscountAmount = (c: CheckoutPickerCoupon) => {
+    if (c.discountAmount != null && c.discountAmount > 0) return c.discountAmount;
     if (c.discountType === "percentage") return Math.min(totalAmount, Math.floor((totalAmount * c.discount) / 100));
     if (c.discountType === "shipping") return Math.min(shippingFee, c.discount > 0 ? c.discount : shippingFee);
     return Math.min(totalAmount, c.discount);
   };
-  const isUsable = (c: CheckoutPickerCoupon) => totalAmount >= c.condition && (c.discountType !== "shipping" || shippingFee > 0);
+  const isUsable = (c: CheckoutPickerCoupon) => c.usable !== false && totalAmount >= c.condition && (c.discountType !== "shipping" || shippingFee > 0);
   const getAmountParts = (c: CheckoutPickerCoupon) => {
     if (c.discountType === "percentage") return { amountPrefix: "", amount: `${c.discount}%` };
     if (c.discountType === "shipping" && c.discount <= 0) return { amountPrefix: "", amount: "免运" };
@@ -93,7 +94,7 @@ function CouponListBody(props: {
             ) : null}
             {!usable && (
               <p className="mt-1 px-2 text-[11px] text-[var(--theme-danger)]">
-                {totalAmount < coupon.condition ? `还差 RM ${coupon.condition - totalAmount} 可用` : "当前订单无运费可抵扣"}
+                {coupon.reason || (totalAmount < coupon.condition ? `还差 RM ${coupon.condition - totalAmount} 可用` : "当前订单无运费可抵扣")}
               </p>
             )}
           </motion.div>

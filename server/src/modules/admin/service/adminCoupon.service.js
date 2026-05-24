@@ -3,6 +3,18 @@ const { BusinessError } = require('../../../errors/BusinessError');
 const repo = require('../repository/adminCoupon.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 
+function getUserApi() {
+  return /** @type {any} */ (require('../../user')).api || {};
+}
+
+function requireUserApi(name) {
+  const fn = getUserApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`User module API missing method: ${name}`);
+  }
+  return fn;
+}
+
 function formatCouponRow(row) {
   if (!row) return row;
   const r = { ...row };
@@ -18,6 +30,12 @@ function formatCouponRow(row) {
     : [];
   r.total_quantity = Number(r.total_quantity || 0);
   r.per_user_limit = Number(r.per_user_limit || 1);
+  r.claimed_count = Number(r.claimed_count_real ?? r.claimed_count ?? 0);
+  r.used_count = Number(r.used_count_real ?? r.used_count ?? 0);
+  r.expired_count = Number(r.expired_count_real || 0);
+  r.available_user_coupon_count = Number(r.available_user_coupon_count || 0);
+  r.remaining_quantity = r.total_quantity > 0 ? Math.max(0, r.total_quantity - r.claimed_count) : null;
+  r.usage_rate = r.claimed_count > 0 ? Number((r.used_count / r.claimed_count).toFixed(4)) : 0;
   if (r.status === 'available' && dateOnly(r.end_date) && dateOnly(r.end_date) < new Date().toISOString().slice(0, 10)) {
     r.status = 'expired';
   }
@@ -25,6 +43,9 @@ function formatCouponRow(row) {
   r.member_only = !!r.member_only;
   r.auto_issue = !!r.auto_issue;
   r.stackable_with_activity = r.stackable_with_activity !== 0;
+  r.publish_status = r.publish_status || (r.status === 'available' ? 'active' : r.status || 'active');
+  r.validity_mode = r.validity_mode || 'absolute';
+  r.issue_mode = r.issue_mode || (r.auto_issue ? 'auto' : 'manual');
   r.usable_scope_type = r.usable_scope_type || 'all';
   try { r.usable_product_ids = r.usable_product_ids ? JSON.parse(r.usable_product_ids) : []; } catch { r.usable_product_ids = []; }
   try { r.usable_category_ids = r.usable_category_ids ? JSON.parse(r.usable_category_ids) : []; } catch { r.usable_category_ids = []; }
@@ -38,11 +59,13 @@ function dateOnly(value) {
 }
 
 function assertCouponActiveForIssue(coupon) {
-  if (coupon.status !== 'available') {
+  if (!coupon) throw new BusinessError(404, '优惠券不存在');
+  const publishStatus = String(coupon.publish_status || (coupon.status === 'available' ? 'active' : coupon.status || ''));
+  if (coupon.deleted_at || coupon.archived_at || coupon.invalidated_at || publishStatus !== 'active' || !['available', 'active'].includes(String(coupon.status || 'available'))) {
     throw new BusinessError(400, '该优惠券未启用，不能发放');
   }
   const today = new Date().toISOString().slice(0, 10);
-  if (dateOnly(coupon.start_date) > today || dateOnly(coupon.end_date) < today) {
+  if (dateOnly(coupon.claim_start_at || coupon.start_date) > today || dateOnly(coupon.claim_end_at || coupon.end_date) < today) {
     throw new BusinessError(400, '该优惠券不在有效期内，不能发放');
   }
 }
@@ -74,9 +97,16 @@ function assertCouponPayloadValid(body, options = {}) {
   }
 }
 
+const CORE_FIELDS = new Set([
+  'code', 'type', 'value', 'min_amount', 'scope_type', 'category_ids',
+  'usable_scope_type', 'usable_product_ids', 'usable_category_ids',
+  'stackable_with_activity', 'new_user_only', 'member_only',
+  'validity_mode', 'valid_days_after_claim', 'follow_activity_id',
+]);
+
 async function listCoupons(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
+  const pageSize = Math.min(100, Math.max(1, parseInt(query.pageSize, 10) || 20));
   const total = await repo.countCoupons();
   const offset = (page - 1) * pageSize;
   const rows = await repo.selectCouponsPage(pageSize, offset);
@@ -89,6 +119,8 @@ async function createCoupon(body, adminUserId, req) {
     code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge, category_ids,
     total_quantity, per_user_limit, new_user_only, member_only, auto_issue,
     usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity,
+    publish_status, claim_start_at, claim_end_at, use_start_at, use_end_at,
+    validity_mode, valid_days_after_claim, follow_activity_id, issue_mode,
   } = body;
   if (!code || !title) throw new BusinessError(400, '编码和标题不能为空');
   assertCouponPayloadValid({ ...body, type: type || 'fixed' });
@@ -97,26 +129,36 @@ async function createCoupon(body, adminUserId, req) {
   const normalizedCategoryIds = Array.isArray(category_ids)
     ? [...new Set(category_ids.map((x) => String(x).trim()).filter(Boolean))]
     : [];
-
   await repo.insertCoupon({
-    id, code, title,
+    id,
+    code,
+    title,
     type: type || 'fixed',
-    value: value || 0,
-    min_amount: min_amount || 0,
+    value,
+    min_amount,
     start_date: start_date || new Date().toISOString().slice(0, 10),
     end_date: end_date || '2026-12-31',
     description: description || '',
     scope_type: scopeType,
     display_badge: display_badge || '',
-    total_quantity: Number(total_quantity || 0),
-    per_user_limit: Math.max(1, Number(per_user_limit || 1)),
-    new_user_only: !!new_user_only,
-    member_only: !!member_only,
-    auto_issue: !!auto_issue,
+    total_quantity,
+    per_user_limit,
+    new_user_only,
+    member_only,
+    auto_issue,
     usable_scope_type: usable_scope_type || 'all',
     usable_product_ids: Array.isArray(usable_product_ids) ? usable_product_ids : [],
     usable_category_ids: Array.isArray(usable_category_ids) ? usable_category_ids : [],
     stackable_with_activity: stackable_with_activity !== false,
+    publish_status: publish_status || 'active',
+    claim_start_at: claim_start_at || (start_date ? `${start_date} 00:00:00` : null),
+    claim_end_at: claim_end_at || (end_date ? `${end_date} 23:59:59` : null),
+    use_start_at: use_start_at || (start_date ? `${start_date} 00:00:00` : null),
+    use_end_at: use_end_at || (end_date ? `${end_date} 23:59:59` : null),
+    validity_mode: validity_mode || 'absolute',
+    valid_days_after_claim,
+    follow_activity_id,
+    issue_mode: issue_mode || (auto_issue ? 'auto' : 'manual'),
   });
   if (scopeType === 'category') {
     for (const categoryId of normalizedCategoryIds) {
@@ -130,9 +172,23 @@ async function createCoupon(body, adminUserId, req) {
 
 async function updateCoupon(id, body, adminUserId, req) {
   assertCouponPayloadValid(body, { partial: true });
+  const existing = await repo.selectCouponById(id);
+  if (!existing || existing.deleted_at) throw new BusinessError(404, '优惠券不存在');
+  const claimedCount = await repo.countUserCouponsByCouponId(id);
+  if (claimedCount > 0) {
+    const touchedCore = Object.keys(body).some((key) => CORE_FIELDS.has(key));
+    if (touchedCore) {
+      throw new BusinessError(409, '该优惠券已有领取记录，核心规则已锁定。请新建优惠券，或仅修改标题、说明、角标和延长使用结束时间。');
+    }
+    if (body.use_end_at !== undefined || body.end_date !== undefined) {
+      const beforeEnd = new Date(existing.use_end_at || existing.end_date || 0).getTime();
+      const nextEnd = new Date(body.use_end_at || (body.end_date ? `${body.end_date} 23:59:59` : 0)).getTime();
+      if (beforeEnd && nextEnd && nextEnd < beforeEnd) throw new BusinessError(409, '已有领取记录后，使用结束时间只能延长，不能缩短');
+    }
+  }
   const fragments = [];
   const values = [];
-  for (const f of ['code', 'title', 'type', 'description', 'start_date', 'end_date', 'scope_type', 'display_badge', 'total_quantity', 'per_user_limit', 'usable_scope_type']) {
+  for (const f of ['code', 'title', 'type', 'description', 'start_date', 'end_date', 'scope_type', 'display_badge', 'total_quantity', 'per_user_limit', 'usable_scope_type', 'publish_status', 'claim_start_at', 'claim_end_at', 'use_start_at', 'use_end_at', 'validity_mode', 'valid_days_after_claim', 'follow_activity_id', 'issue_mode']) {
     if (body[f] !== undefined) {
       fragments.push(`${f} = ?`);
       values.push(body[f]);
@@ -179,9 +235,40 @@ async function updateCoupon(id, body, adminUserId, req) {
 }
 
 async function deleteCoupon(id, adminUserId, req) {
-  await repo.deleteCouponById(id);
+  const claimedCount = await repo.countUserCouponsByCouponId(id);
+  if (claimedCount > 0) {
+    throw new BusinessError(409, '该优惠券已有领取记录，不能直接删除。请使用归档、暂停领取、停止使用或作废已领取券。');
+  }
+  await repo.deleteCouponById(id, adminUserId);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'coupon.delete', objectType: 'coupon', objectId: id, summary: `删除优惠券 ${id}`, result: 'success' });
   return { data: null, message: '已删除' };
+}
+
+async function pauseClaimCoupon(id, adminUserId, req) {
+  await repo.updateCouponDynamic(['publish_status = ?', 'stop_claim_at = NOW()'], ['paused'], id);
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'coupon.pause_claim', objectType: 'coupon', objectId: id, summary: `暂停领取优惠券 ${id}`, result: 'success' });
+  return { data: null, message: '已暂停领取' };
+}
+
+async function disableUseCoupon(id, adminUserId, req) {
+  await repo.updateCouponDynamic(['publish_status = ?', 'stop_use_at = NOW()'], ['disabled'], id);
+  await repo.invalidateUsableUserCouponsByCoupon(id, '优惠券已停止使用');
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'coupon.disable_use', objectType: 'coupon', objectId: id, summary: `停止使用优惠券 ${id}`, result: 'success' });
+  return { data: null, message: '已停止使用并作废未使用券' };
+}
+
+async function archiveCoupon(id, adminUserId, req) {
+  await repo.updateCouponDynamic(['publish_status = ?', 'archived_at = NOW()'], ['archived'], id);
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'coupon.archive', objectType: 'coupon', objectId: id, summary: `归档优惠券 ${id}`, result: 'success' });
+  return { data: null, message: '已归档' };
+}
+
+async function invalidateUserCoupons(id, body, adminUserId, req) {
+  const reason = String(body?.reason || '后台作废优惠券').slice(0, 255);
+  const result = await repo.invalidateUsableUserCouponsByCoupon(id, reason);
+  const affected = result?.affectedRows || 0;
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'coupon.invalidate_user_coupons', objectType: 'coupon', objectId: id, summary: `作废已领取优惠券 ${id}`, after: { reason, affected }, result: 'success' });
+  return { data: { affected }, message: '已作废未使用券' };
 }
 
 async function getAllCouponRecords(query) {
@@ -212,14 +299,12 @@ async function issueCouponByTag(couponId, body, adminUserId, req) {
   if (!tagIds.length) throw new BusinessError(400, 'tagIds 不能为空');
   const userIds = await repo.selectUserIdsByTagIds(tagIds);
   if (!userIds.length) throw new BusinessError(400, '当前标签下无可发放用户');
-  const totalQty = Number(coupon.total_quantity || 0);
-  const totalClaims = totalQty > 0 ? await repo.countUserCouponsByCouponId(couponId) : 0;
-  const remaining = totalQty > 0 ? Math.max(0, totalQty - totalClaims) : Infinity;
-  if (remaining <= 0) throw new BusinessError(409, '优惠券已发放完');
-  const affected = await repo.batchIssueCouponToUsers(couponId, userIds, generateId, {
-    perUserLimit: coupon.per_user_limit,
-    remaining,
+  const issueResult = await requireUserApi('issueCouponToUsers')(couponId, userIds, {
+    issueChannel: 'tag',
+    adminUserId,
+    metadata: { tagIds },
   });
+  const affected = Number(issueResult?.issued || 0);
   await writeAuditLog({
     req,
     operatorId: adminUserId,
@@ -238,14 +323,11 @@ module.exports = {
   createCoupon,
   updateCoupon,
   deleteCoupon,
+  pauseClaimCoupon,
+  disableUseCoupon,
+  archiveCoupon,
+  invalidateUserCoupons,
   getAllCouponRecords,
   getCouponRecords,
   issueCouponByTag,
 };
-
-
-
-
-
-
-

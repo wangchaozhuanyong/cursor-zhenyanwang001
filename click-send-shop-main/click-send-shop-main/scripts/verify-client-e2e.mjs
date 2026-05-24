@@ -140,6 +140,26 @@ async function flowSearch(page) {
   }
 }
 
+async function flowCheckoutGuard(page) {
+  const area = "结算页守卫";
+  try {
+    await page.goto(`${BASE}/checkout`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.waitForTimeout(1200);
+    const url = page.url();
+    if (await page.getByText("页面出错了").isVisible().catch(() => false)) {
+      record("error", area, "结算页错误边界", { url });
+      return;
+    }
+    const onLogin = /\/login/i.test(url);
+    const onCart = /\/cart/i.test(url);
+    if (!onLogin && !onCart && !url.includes("/checkout")) {
+      record("warn", area, "未登录时未重定向到登录或购物车", { url });
+    }
+  } catch (err) {
+    record("error", area, err instanceof Error ? err.message : String(err));
+  }
+}
+
 async function flowBottomNav(page) {
   const area = "底部导航";
   const tabs = [
@@ -254,6 +274,7 @@ async function main() {
   await flowCategories(page);
   await flowSearch(page);
   await flowBottomNav(page);
+  await flowCheckoutGuard(page);
   await flowLoginCarousel(page);
 
   await browser.close();

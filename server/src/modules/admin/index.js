@@ -4,6 +4,10 @@
 const { Router } = require('express');
 const triggerApi = require('./notificationTriggerApi');
 const homeOpsService = require('./service/adminHomeOps.service');
+const adminEventService = require('./service/adminEvent.service');
+const adminEventBus = require('./service/adminEventBus.service');
+const adminEventRepo = require('./repository/adminEvent.repository');
+const adminSiteSettingsRepo = require('./repository/adminSiteSettings.repository');
 
 const router = Router();
 
@@ -12,9 +16,14 @@ const router = Router();
   isNotificationTriggerEnabled: triggerApi.isNotificationTriggerEnabled,
   getResolvedTriggerCopy: triggerApi.getResolvedTriggerCopy,
   getPublicHomeOps: homeOpsService.getPublicHomeOps,
+  emitEvent: adminEventService.emitEvent,
+  autoResolveEventByFingerprint: adminEventService.autoResolveByFingerprint,
+  publishAdminEvent: adminEventBus.publishAdminEvent,
+  listActiveEventRecordsByTypes: adminEventRepo.listActiveRecordsByTypes,
+  selectSiteSettingValue: adminSiteSettingsRepo.selectSettingValue,
+  upsertSiteSetting: adminSiteSettingsRepo.upsertSetting,
 };
 
 router.use('/admin', require('./routes/admin.routes'));
 
 module.exports = router;
-

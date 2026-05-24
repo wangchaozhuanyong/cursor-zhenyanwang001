@@ -2,9 +2,15 @@
  * Lightweight CSV helpers (RFC 4180 basics): commas/newlines are wrapped in quotes.
  */
 
+/** Spreadsheet formula injection: prefix cells starting with = + - @ tab CR */
+function neutralizeSpreadsheetFormula(str) {
+  if (/^[=+\-@\t\r]/.test(str)) return `'${str}`;
+  return str;
+}
+
 function csvEscape(s) {
   if (s === null || s === undefined) return '';
-  const str = String(s);
+  const str = neutralizeSpreadsheetFormula(String(s));
   if (/[",\r\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
   return str;
 }

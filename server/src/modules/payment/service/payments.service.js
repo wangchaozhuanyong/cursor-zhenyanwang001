@@ -14,7 +14,7 @@ const payDb = payRepo.getPool();
 
 function publishAdminEvent(event) {
   try {
-    require('../../admin/service/adminEventBus.service').publishAdminEvent(event);
+    getAdminApi().publishAdminEvent(event);
   } catch {
     // Best-effort realtime signal; payment processing must not depend on SSE.
   }
@@ -22,7 +22,7 @@ function publishAdminEvent(event) {
 
 function emitAdminEvent(event, options = {}) {
   try {
-    void require('../../admin/service/adminEvent.service').emitEvent(event, {
+    void getAdminApi().emitEvent(event, {
       operatorId: options.operatorId || null,
       operatorType: options.operatorType || 'system',
       source: options.source || event.source || 'payment',
@@ -30,6 +30,10 @@ function emitAdminEvent(event, options = {}) {
   } catch {
     // Event center is best-effort; payment state changes must not depend on it.
   }
+}
+
+function getLoyaltyApi() {
+  return /** @type {any} */ (require('../../loyalty')).api || {};
 }
 
 function getTelegramApi() {
@@ -85,11 +89,10 @@ const checkoutAbandonmentRepo = {
   markPaidByOrderId: (...args) => requireOrderApi('markCheckoutAbandonmentPaidByOrderId')(...args),
 };
 
-const orderPoints = require('../../order/service/orderPoints.service');
 
 async function grantPaymentSuccessPoints(conn, order, trigger) {
   try {
-    await orderPoints.maybeGrantOrderEarnOnPaymentSuccess(conn, order, { trigger });
+    await getOrderApi().maybeGrantOrderEarnOnPaymentSuccess(conn, order, { trigger });
   } catch (err) {
     console.error(`[payments] grant points on ${trigger} failed:`, err?.message || err);
   }
@@ -586,8 +589,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     return { skipped: true, reason: 'already_paid' };
   }
   if (isGiftCashOrder) {
-    const giftSvc = require('../../loyalty/service/pointsGiftRedemption.service');
-    await giftSvc.finalizeGiftOrderFulfillment(conn, order);
+    await getLoyaltyApi().finalizeGiftOrderFulfillment(conn, order);
   } else {
     const lineItems = await orderRepo.selectOrderItemQtyRows(conn, order.id);
     for (const it of lineItems) {
@@ -870,8 +872,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
 
     const isGiftOrder = String(order.order_type || '') === 'points_gift';
     if (isGiftOrder) {
-      const giftSvc = require('../../loyalty/service/pointsGiftRedemption.service');
-      await giftSvc.finalizeGiftOrderFulfillment(conn, order);
+      await getLoyaltyApi().finalizeGiftOrderFulfillment(conn, order);
     } else {
       const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
       for (const it of itemRows) {

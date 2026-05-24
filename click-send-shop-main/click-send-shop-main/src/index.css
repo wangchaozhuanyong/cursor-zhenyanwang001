@@ -867,6 +867,8 @@ html[data-app-scope="admin"] .admin-tech-path {
     touch-action: manipulation;
   }
   .admin-mobile-main {
+    min-width: 0;
+    overflow-x: hidden;
     padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
   }
   @media (min-width: 1024px) {

@@ -36,7 +36,7 @@ export const useCouponStore = create<CouponState>((set, get) => ({
 
       do {
         const userData = await couponService.fetchUserCoupons({
-          status: "available",
+          status: "all",
           page,
           pageSize: COUPON_PAGE_SIZE,
         });

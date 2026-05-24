@@ -5,6 +5,10 @@ import { Search, Shield, ChevronRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -140,6 +144,36 @@ export default function AdminLogs() {
     [actionType, auditKeyword, auditResult, dateFrom, dateTo, objectId, objectType, operatorId],
   );
   const labelize = useCallback((zh: string) => applyAdminTextTranslation(zh, tText), [tText]);
+
+  const renderMobileCard = (row: AuditLogRow) => (
+    <AdminTableMobileCard>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[11px] text-muted-foreground">{row.created_at ? formatDateTime(row.created_at) : "—"}</p>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : THEME_BADGE_DANGER}`}>
+          {labelize(zhAuditResult(row.result))}
+        </span>
+      </div>
+      <p className="mt-2 text-sm font-medium text-foreground">{row.operator_name || "—"}</p>
+      <p className="text-xs text-muted-foreground">{labelize(zhOperatorRole(row.operator_role))}</p>
+      <div className="mt-2 space-y-2">
+        <AdminTableMobileCardField label={tText("动作")}>
+          <span className="text-xs font-semibold text-foreground">{labelize(zhActionType(row.action_type))}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("对象")}>
+          <span className="text-xs text-muted-foreground">
+            {labelize(zhObjectType(row.object_type))}{row.object_id ? ` · ${labelize("已关联对象")}` : ""}
+          </span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("摘要")}>
+          <span className="text-xs text-foreground line-clamp-3">{localizedAuditSummary(row.summary, tText)}</span>
+        </AdminTableMobileCardField>
+      </div>
+      <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]">
+        <Tx>详情</Tx><ChevronRight size={16} />
+      </button>
+    </AdminTableMobileCard>
+  );
+
   const filterChips = useMemo(
     () => buildAuditLogFilterChips(filterState, labelize),
     [filterState, labelize],
@@ -321,50 +355,7 @@ export default function AdminLogs() {
         </details>
       </div>
 
-      <div className="space-y-3 md:hidden">
-        {auditLoading
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow space-y-3">
-                <div className="skeleton-base skeleton-shimmer h-3 w-28 rounded" />
-                <div className="skeleton-base skeleton-shimmer h-4 w-2/3 rounded" />
-                <div className="skeleton-base skeleton-shimmer h-3 w-full rounded" />
-                <div className="skeleton-base skeleton-shimmer h-10 w-full rounded-lg" />
-              </div>
-            ))
-          : null}
-        {!auditLoading && auditList.map((row) => (
-          <div key={row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-[11px] text-muted-foreground">{row.created_at ? formatDateTime(row.created_at) : "—"}</p>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : THEME_BADGE_DANGER}`}>
-                {labelize(zhAuditResult(row.result))}
-              </span>
-            </div>
-            <p className="mt-2 text-sm font-medium text-foreground">{row.operator_name || "—"}</p>
-            <p className="text-xs text-muted-foreground">{labelize(zhOperatorRole(row.operator_role))}</p>
-            <p className="mt-2 text-xs font-semibold text-foreground">{labelize(zhActionType(row.action_type))}</p>
-            <p className="mt-1 text-xs text-muted-foreground" title={row.object_id || undefined}>
-              {labelize(zhObjectType(row.object_type))}{row.object_id ? ` · ${labelize("已关联对象")}` : ""}
-            </p>
-            <p className="mt-2 line-clamp-3 text-xs text-foreground">{localizedAuditSummary(row.summary, tText)}</p>
-            <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]"><Tx>
-              详情 </Tx><ChevronRight size={16} />
-            </button>
-          </div>
-        ))}
-        {!auditLoading && auditList.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground"><Tx>暂无审计记录</Tx></div>
-        )}
-        <Pagination
-          total={auditTotal}
-          page={auditPage}
-          pageSize={auditPageSize}
-          onPageChange={setAuditPage}
-          onPageSizeChange={(n) => { setAuditPageSize(n); setAuditPage(1); }}
-        />
-      </div>
-
-      <div className="hidden md:block theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-hidden">
+      <div className=" theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-hidden">
         <AnimatedTable
           embedded
           loading={auditLoading}
@@ -395,6 +386,8 @@ export default function AdminLogs() {
               onClearFilters={clearFilters}
             />
           )}
+          mobileCardFrom="md"
+          renderMobileCard={renderMobileCard}
           renderRow={(row) => (
             <>
               <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">

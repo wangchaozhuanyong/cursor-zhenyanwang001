@@ -27,22 +27,15 @@ const logisticsModule = require('../../logistics');
 const orderDb = repo.getPool();
 const orderPricing = require('../order.pricing');
 const orderPoints = require('./orderPoints.service');
-const siteCapabilitiesService = require('../../siteCapabilities/service/siteCapabilities.service');
-
-function publishAdminEvent(event) {
-  try {
-    require('../../admin/service/adminEventBus.service').publishAdminEvent(event);
-  } catch {
-    // Realtime refresh is best-effort and must never block checkout.
-  }
+const orderCheckout = require('./orderCheckout.service');
+function getSiteCapabilitiesApi() {
+  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
 }
 
-function emitAdminEvent(event) {
-  try {
-    void require('../../admin/service/adminEvent.service').emitEvent(event, { operatorType: 'system' });
-  } catch {
-    // Monitoring is best-effort and must never block checkout.
-  }
+const { publishAdminEvent, emitAdminEvent } = require('../orderAdminEvents');
+
+function getLoyaltyApi() {
+  return /** @type {any} */ (require('../../loyalty')).api || {};
 }
 
 function getUserApi() {
@@ -88,34 +81,6 @@ function canBuyerDeleteOrder(order, returnSummary = null) {
     ORDER_STATUS.COMPLETED,
     ORDER_STATUS.REFUNDED,
   ].includes(order.status);
-}
-
-async function assertOrderCapabilityUsage(body = {}) {
-  const [pointsEnabled, couponEnabled] = await Promise.all([
-    siteCapabilitiesService.isCapabilityEnabled('pointsEnabled'),
-    siteCapabilitiesService.isCapabilityEnabled('couponEnabled'),
-  ]);
-  if (!pointsEnabled && (body.use_points || Number(body.points_to_use || 0) > 0)) {
-    throw new ForbiddenError('积分功能已关闭');
-  }
-  if (!couponEnabled && (body.coupon_id || body.coupon_title)) {
-    throw new ForbiddenError('优惠券功能已关闭');
-  }
-}
-
-function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
-  const type = coupon.type === 'amount' ? 'fixed' : coupon.type === 'percent' ? 'percentage' : coupon.type;
-  const value = parseFloat(coupon.value) || 0;
-  if (type === 'fixed') {
-    return Math.min(value, rawAmount);
-  }
-  if (type === 'percentage') {
-    return Math.min(rawAmount, Math.floor(rawAmount * value / 100));
-  }
-  if (type === 'shipping') {
-    return Math.min(shippingFee, value > 0 ? value : shippingFee);
-  }
-  return 0;
 }
 
 function money(value) {
@@ -276,7 +241,7 @@ function normalizeMalaysiaAddress(address, contactName, contactPhone) {
  * @param {object} body
  */
 async function createOrder(userId, body) {
-  await assertOrderCapabilityUsage(body);
+  await orderCheckout.assertOrderCapabilityUsage(body);
   const {
     items, contact_name, contact_phone, address, note,
     coupon_id, coupon_title, shipping_template_id, shipping_name, payment_method,
@@ -420,6 +385,7 @@ async function createOrder(userId, body) {
 
     let discountAmount = fullReductionDiscount;
     let usedCouponUcId = null;
+    let usedCouponCouponId = null;
     let usedCouponTitle = coupon_title;
     let couponType = null;
     let couponDiscountValue = 0;
@@ -443,10 +409,12 @@ async function createOrder(userId, body) {
         await conn.rollback();
         throw e;
       }
-      couponType = uc.type;
+      const effectiveCoupon = getUserApi().buildEffectiveCoupon(uc);
+      couponType = effectiveCoupon.type;
       discountAmount += couponDiscountValue;
       usedCouponUcId = uc.uc_id;
-      usedCouponTitle = uc.title || coupon_title;
+      usedCouponCouponId = effectiveCoupon.id;
+      usedCouponTitle = effectiveCoupon.title || coupon_title;
     }
 
     const nonShippingGoodsCoupon = couponType === 'shipping' ? 0 : couponDiscountValue;
@@ -482,9 +450,6 @@ async function createOrder(userId, body) {
       reward_cash_discount: Number(loyalty.reward_cash_discount_amount || 0),
       lines: pricing.discount_lines || [],
     };
-    if (usedCouponUcId) {
-      await repo.updateUserCouponUsed(conn, usedCouponUcId);
-    }
     const normalizedAddress = normalizeMalaysiaAddress(address, contact_name, contact_phone);
     const profitSnapshot = allocateOrderProfitSnapshot(orderItems, {
       rawAmount,
@@ -558,6 +523,13 @@ async function createOrder(userId, body) {
 
     if (usedCouponUcId) {
       await repo.updateOrderCouponUcId(conn, orderId, usedCouponUcId);
+      await repo.updateUserCouponUsed(conn, usedCouponUcId, {
+        orderId,
+        orderNo,
+        userId,
+        couponId: usedCouponCouponId,
+        discountAmount: couponDiscountValue,
+      });
     }
     if (body.checkout_abandonment_id) {
       await checkoutAbandonmentRepo.markOrdered(conn, body.checkout_abandonment_id, userId, {
@@ -818,8 +790,7 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
   }
 
   if (String(order.order_type || '') === 'points_gift') {
-    const giftRedemption = require('../../loyalty/service/pointsGiftRedemption.service');
-    await giftRedemption.reverseGiftRedemptionForCancelledOrder(conn, order);
+    await getLoyaltyApi().reverseGiftRedemptionForCancelledOrder(conn, order);
   } else {
     await orderPoints.refundOrderRedeemOnly(conn, order, {
       trigger,
@@ -934,49 +905,15 @@ async function confirmReceive(userId, orderId) {
   }
 }
 
-async function previewOrder(userId, body) {
-  await assertOrderCapabilityUsage(body);
-  const pricing = await orderPricing.buildOrderPricing(userId, body, null);
-  return {
-    data: {
-      goods_amount: pricing.rawAmount,
-      flash_sale_discount: pricing.flashSaleDiscount,
-      full_reduction_discount: pricing.fullReductionDiscount,
-      coupon_discount: pricing.couponDiscount,
-      discount_amount: pricing.discountAmount,
-      shipping_fee: pricing.shippingFee,
-      final_amount: pricing.finalTotal,
-      total_points: pricing.totalPoints,
-      earned_points: pricing.loyalty?.earned_points || pricing.totalPoints || 0,
-      points_used: pricing.loyalty?.points_used || 0,
-      available_points: pricing.loyalty?.available_points || 0,
-      max_usable_points: pricing.loyalty?.max_usable_points || 0,
-      points_discount_amount: pricing.loyalty?.points_discount_amount || 0,
-      point_value_myr: pricing.loyalty?.point_value_myr || 0.01,
-      min_redeem_points: pricing.loyalty?.min_redeem_points || 0,
-      redeem_step: pricing.loyalty?.redeem_step || 1,
-      disabled_reason: pricing.loyalty?.disabled_reason || '',
-      adjusted: !!pricing.loyalty?.adjusted,
-      points_summary: pricing.loyalty?.points_summary || null,
-      loyalty_meta: pricing.loyalty?.points_summary || null,
-      available_reward_balance: pricing.loyalty?.available_reward_balance || 0,
-      max_usable_reward_cash: pricing.loyalty?.max_usable_reward_cash || 0,
-      reward_cash_discount_amount: pricing.loyalty?.reward_cash_discount_amount || 0,
-      discount_lines: pricing.discount_lines,
-      points_bonus_lines: pricing.points_bonus_lines || [],
-      tax: pricing.taxSnap,
-    },
-  };
-}
-
 module.exports = {
   createOrder,
-  previewOrder,
+  previewOrder: orderCheckout.previewOrder,
   getOrders,
   getOrderSummary,
   getOrderById,
   deleteOrderForBuyer,
   cancelOrder,
+  getCheckoutCoupons: orderCheckout.getCheckoutCoupons,
   payOrder,
   createStripeCheckoutSession,
   confirmReceive,

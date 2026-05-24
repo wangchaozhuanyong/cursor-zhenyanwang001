@@ -1,6 +1,6 @@
 import { del, get, patch, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
-import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventorySku, InventoryStockRecord, InventorySummary } from "@/types/inventory";
+import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, InventorySummary, PurchaseOrder, PurchaseOrderDetail } from "@/types/inventory";
 import { getAdminAccessToken } from "@/utils/token";
 
 export function getInventorySummary() {
@@ -54,6 +54,47 @@ export function getInventoryRecords(params?: {
   date_to?: string;
 }) {
   return get<PaginatedData<InventoryStockRecord>>("/admin/inventory/records", params as unknown as Record<string, unknown>);
+}
+
+export function getReplenishmentAlerts(params?: {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  status?: string;
+  variant_id?: string;
+}) {
+  return get<PaginatedData<InventoryReplenishmentAlert>>("/admin/inventory/replenishment-alerts", params as unknown as Record<string, unknown>);
+}
+
+export function generateReplenishmentAlerts() {
+  return post<{ created: number; updated: number; scanned: number }>("/admin/inventory/replenishment-alerts/generate", {});
+}
+
+export function createPurchaseOrderFromAlert(
+  alertId: string,
+  data: { ordered_qty?: number; unit_cost?: number; expected_arrival_date?: string; remark?: string },
+) {
+  return post<{ id: string; order_no: string; item_id: string; ordered_qty: number }>(`/admin/inventory/replenishment-alerts/${alertId}/create-purchase-order`, data);
+}
+
+export function getPurchaseOrders(params?: {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  status?: string;
+}) {
+  return get<PaginatedData<PurchaseOrder>>("/admin/purchase-orders", params as unknown as Record<string, unknown>);
+}
+
+export function getPurchaseOrder(id: string) {
+  return get<PurchaseOrderDetail>(`/admin/purchase-orders/${id}`);
+}
+
+export function receivePurchaseOrder(
+  id: string,
+  data: { actual_arrival_date?: string; remark?: string; items?: Array<{ id: string; received_qty: number; unit_cost?: number }> } = {},
+) {
+  return post<{ received_qty: number; status: string }>(`/admin/purchase-orders/${id}/receive`, data);
 }
 
 export function getInventoryPackRules(params?: {

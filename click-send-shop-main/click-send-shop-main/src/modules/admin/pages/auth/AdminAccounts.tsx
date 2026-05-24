@@ -3,6 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, Copy, ShieldCheck, Smartphone, RotateCcw } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -23,7 +27,8 @@ import type { RbacAdminUserRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
-import AdminRolePicker, { getDefaultAdminRoleIds } from "@/components/admin/AdminRolePicker";
+import AdminRolePicker from "@/components/admin/AdminRolePicker";
+import { getDefaultAdminRoleIds } from "@/components/admin/adminRolePickerUtils";
 import {
   THEME_ALERT_ERROR_SOFT,
   THEME_BADGE_DANGER,
@@ -91,7 +96,7 @@ export default function AdminAccounts() {
   });
 
   const admins = adminsQuery.data ?? [];
-  const roles = rolesQuery.data ?? [];
+  const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
   const loading = adminsQuery.isLoading && !adminsQuery.data;
 
   useEffect(() => {
@@ -196,6 +201,65 @@ export default function AdminAccounts() {
     }
   };
 
+  const renderMobileCard = (a: RbacAdminUserRow) => {
+    const badge = ROLE_BADGE[a.role] || ROLE_BADGE.admin;
+    const targetLocked = !isSuperAdminViewer && hasPrivilegedRole(a);
+
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold">{a.nickname || "-"}</p>
+            <p className="text-xs text-muted-foreground">{a.phone}</p>
+          </div>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{tText(badge.text)}</span>
+        </div>
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${a.mfa?.enabled ? THEME_BADGE_PRIMARY : a.mfa?.required ? "bg-amber-100 text-amber-700" : THEME_BADGE_MUTED}`}>
+            <ShieldCheck size={11} />
+            {a.mfa?.enabled ? tText("MFA 已启用") : a.mfa?.required ? tText("待绑定 MFA") : tText("未要求 MFA")}
+          </span>
+        </div>
+        <div className="space-y-2">
+          <AdminTableMobileCardField label={tText("创建时间")}>
+            <span className="text-xs text-muted-foreground">{a.created_at ? formatDateTime(a.created_at) : "-"}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("最后登录")}>
+            <span className="text-xs text-muted-foreground">{a.last_login_at ? formatDateTime(a.last_login_at) : tText("从未登录")}</span>
+          </AdminTableMobileCardField>
+        </div>
+        <PermissionGate permission="role.manage">
+          {!targetLocked && a.role !== "super_admin" ? (
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+              <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary">
+                {a.role === "disabled" ? tText("启用") : tText("禁用")}
+              </button>
+              {(isSuperAdminViewer || !hasPrivilegedRole(a)) ? (
+                <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>重置密码</Tx></button>
+              ) : null}
+              <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>安全</Tx></button>
+              <button
+                type="button"
+                onClick={() =>
+                  adminConfirmDelete(askConfirm, a.nickname || a.phone, async () => {
+                    await rbacService.deleteAdminUser(a.id);
+                    toast.success(tText("管理员已删除"));
+                    void invalidateAccounts();
+                  })
+                }
+                className={`touch-manipulation rounded-lg border border-border px-3 py-2 text-xs ${THEME_TEXT_DANGER}`}
+              >
+                <Tx>删除</Tx>
+              </button>
+            </div>
+          ) : targetLocked ? (
+            <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground"><Shield size={12} className="mr-1 inline" /><Tx>不可操作</Tx></p>
+          ) : null}
+        </PermissionGate>
+      </AdminTableMobileCard>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -296,6 +360,7 @@ export default function AdminAccounts() {
             />
           </div>
         )}
+        renderMobileCard={renderMobileCard}
         renderRow={(a) => {
           const badge = ROLE_BADGE[a.role] || ROLE_BADGE.admin;
           const targetLocked = !isSuperAdminViewer && hasPrivilegedRole(a);

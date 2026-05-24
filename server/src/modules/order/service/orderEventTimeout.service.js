@@ -1,6 +1,10 @@
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const timeoutRepo = require('../repository/orderEventTimeout.repository');
 
+function getAdminApi() {
+  return /** @type {any} */ (require('../../admin')).api || {};
+}
+
 let schedulerTimer = null;
 
 function parseMinutes(raw, fallback) {
@@ -23,7 +27,7 @@ function eventFingerprint(eventType, orderId) {
 }
 
 async function emitOrderTimeoutEvents(orders, eventType, options = {}) {
-  const eventService = require('../../admin/service/adminEvent.service');
+  const eventService = getAdminApi();
   let emitted = 0;
   for (const order of orders) {
     const title = eventType === 'order.ship_timeout' ? '订单发货超时' : '已付款订单待处理超时';
@@ -53,7 +57,7 @@ async function emitOrderTimeoutEvents(orders, eventType, options = {}) {
 
 async function autoResolveRecoveredOrderEvents(activeEvents) {
   if (!activeEvents.length) return 0;
-  const eventService = require('../../admin/service/adminEvent.service');
+  const eventService = getAdminApi();
   const ids = [...new Set(activeEvents.map((event) => event.entity_id).filter(Boolean))];
   const orderById = await timeoutRepo.selectOrderStates(ids);
   let resolved = 0;
@@ -77,11 +81,10 @@ async function runOrderTimeoutEventScan() {
   const settings = getSettings();
   if (!settings.enabled) return { skipped: true, reason: 'disabled' };
 
-  const eventRepo = require('../../admin/repository/adminEvent.repository');
   const [paidUnhandled, shipTimeout, activeEvents] = await Promise.all([
     timeoutRepo.selectPaidUnhandledOrders(settings.paidUnhandledMinutes),
     timeoutRepo.selectShipTimeoutOrders(settings.shipTimeoutMinutes),
-    eventRepo.listActiveRecordsByTypes(['order.paid_unhandled_timeout', 'order.ship_timeout']),
+    getAdminApi().listActiveEventRecordsByTypes(['order.paid_unhandled_timeout', 'order.ship_timeout']),
   ]);
 
   const paidUnhandledEmitted = await emitOrderTimeoutEvents(paidUnhandled, 'order.paid_unhandled_timeout', {
@@ -118,7 +121,7 @@ function startOrderTimeoutEventScheduler() {
 }
 
 async function autoResolveOrderTimeoutEvents(orderId, metadata = {}) {
-  const eventService = require('../../admin/service/adminEvent.service');
+  const eventService = getAdminApi();
   const eventTypes = ['order.paid_unhandled_timeout', 'order.ship_timeout'];
   const results = [];
   for (const eventType of eventTypes) {

@@ -199,11 +199,11 @@ async function selectOrderOperationalSummary(where, params) {
          AND o.payment_status IN ('paid', 'partially_refunded') THEN ${grossCol} ELSE 0 END), 0) AS today_gross_profit_amount,
        COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
          AND o.payment_status IN ('paid', 'partially_refunded') THEN ${netCol} ELSE 0 END), 0) AS today_net_profit_amount,
-       COALESCE(SUM(CASE WHEN COALESCE(o.payment_status, 'pending') = 'pending' THEN o.total_amount ELSE 0 END), 0) AS pending_payment_amount,
+       COALESCE(SUM(CASE WHEN o.status = 'pending' AND COALESCE(o.payment_status, 'pending') = 'pending' THEN o.total_amount ELSE 0 END), 0) AS pending_payment_amount,
        COALESCE(SUM(CASE WHEN o.status = 'paid' AND o.payment_status IN ('paid', 'partially_refunded') THEN 1 ELSE 0 END), 0) AS pending_shipment_count,
        COALESCE(SUM(CASE WHEN o.status = 'paid' AND o.payment_status IN ('paid', 'partially_refunded') THEN o.total_amount ELSE 0 END), 0) AS pending_shipment_amount,
        COALESCE(SUM(CASE WHEN return_stats.active_return_count > 0 THEN return_stats.active_return_count ELSE 0 END), 0) AS active_return_count,
-       COALESCE(SUM(CASE WHEN COALESCE(o.payment_status, 'pending') = 'pending'
+       COALESCE(SUM(CASE WHEN o.status = 'pending' AND COALESCE(o.payment_status, 'pending') = 'pending'
          AND o.created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR) THEN 1 ELSE 0 END), 0) AS overdue_unpaid_count,
        COALESCE(SUM(CASE WHEN o.status = 'paid' AND o.payment_status IN ('paid', 'partially_refunded')
          AND COALESCE(o.paid_at, o.payment_time, o.created_at) < DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END), 0) AS overdue_shipment_count

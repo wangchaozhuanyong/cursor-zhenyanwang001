@@ -22,14 +22,21 @@ async function getRedisReadiness() {
   }
 }
 
+function isVerboseHealthProbe() {
+  return String(process.env.HEALTH_PROBE_VERBOSE || '').trim() === '1';
+}
+
 function getLivenessPayload() {
-  return {
+  const payload = {
     status: 'live',
     uptime: Math.floor(process.uptime()),
-    node: process.version,
-    env: process.env.NODE_ENV || 'development',
-    instance: getInstanceInfo(),
   };
+  if (isVerboseHealthProbe()) {
+    payload.node = process.version;
+    payload.env = process.env.NODE_ENV || 'development';
+    payload.instance = getInstanceInfo();
+  }
+  return payload;
 }
 
 async function getReadinessPayload() {
@@ -38,7 +45,9 @@ async function getReadinessPayload() {
     await repo.ping();
     database = true;
   } catch {
-    return { ok: false, data: { database: false, redis: null, instance: getInstanceInfo() } };
+    const data = { database: false, redis: null };
+    if (isVerboseHealthProbe()) data.instance = getInstanceInfo();
+    return { ok: false, data };
   }
 
   const redis = await getRedisReadiness();
@@ -46,27 +55,25 @@ async function getReadinessPayload() {
   const redisRequired = isProd && redis.configured;
 
   if (redisRequired && !redis.ok) {
-    return {
-      ok: false,
-      data: {
-        database: true,
-        redis: false,
-        redisConfigured: true,
-        instance: getInstanceInfo(),
-      },
+    const data = {
+      database: true,
+      redis: false,
+      redisConfigured: true,
     };
+    if (isVerboseHealthProbe()) data.instance = getInstanceInfo();
+    return { ok: false, data };
   }
 
-  return {
-    ok: true,
-    data: {
-      status: 'ready',
-      database: true,
-      redis: redis.skipped ? 'not_configured' : redis.ok,
-      ...(redis.configured && redis.latencyMs != null ? { redisLatencyMs: redis.latencyMs } : {}),
-      instance: getInstanceInfo(),
-    },
+  const data = {
+    status: 'ready',
+    database: true,
+    redis: redis.skipped ? 'not_configured' : redis.ok,
   };
+  if (isVerboseHealthProbe()) {
+    data.instance = getInstanceInfo();
+    if (redis.configured && redis.latencyMs != null) data.redisLatencyMs = redis.latencyMs;
+  }
+  return { ok: true, data };
 }
 
 module.exports = {

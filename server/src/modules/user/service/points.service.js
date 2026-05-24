@@ -2,10 +2,15 @@ const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
 const { klDateString } = require('../../../utils/klDateRange');
-const { normalizeSettings } = require('../../loyalty/service/pointsEngine.service');
-const { getOrderPointsHint } = require('../../loyalty/service/pointsLoyaltyHints');
-const loyaltyRepo = require('../../loyalty/repository/loyalty.repository');
 const repo = require('../repository/points.repository');
+
+function getLoyaltyApi() {
+  return /** @type {any} */ (require('../../loyalty')).api || {};
+}
+
+function getOrderApi() {
+  return /** @type {any} */ (require('../../order')).api || {};
+}
 
 function toInt(value) {
   const n = Number(value);
@@ -245,7 +250,7 @@ async function resolveSignInAward() {
 
 async function getClientPointsConfig() {
   const { points, enabled, hasRule } = await resolveSignInAward();
-  const pointsSettings = await loyaltyRepo.selectPointsSettings();
+  const pointsSettings = await getLoyaltyApi().selectPointsSettings();
   const settleTiming = pointsSettings?.settle_timing || 'order_completed';
   const p = toInt(points);
   const configInvalid = hasRule && enabled && p < 1;
@@ -263,7 +268,7 @@ async function getClientPointsConfig() {
             ? '每日签到积分必须至少为 1'
             : null,
     },
-    orderPointsHint: getOrderPointsHint(settleTiming),
+    orderPointsHint: getLoyaltyApi().getOrderPointsHint(settleTiming),
     settleTiming,
   };
 }
@@ -290,8 +295,8 @@ async function signIn(userId) {
 }
 
 async function adjustUserPoints(userId, amount, reason, operatorId) {
-  const pointsSettings = await loyaltyRepo.selectPointsSettings();
-  const allowNegative = !!normalizeSettings(pointsSettings || {}).allow_negative_points;
+  const pointsSettings = await getLoyaltyApi().selectPointsSettings();
+  const allowNegative = !!getLoyaltyApi().normalizePointsSettings(pointsSettings || {}).allow_negative_points;
   return runInTransaction((conn) => changeUserPoints(conn, {
     userId,
     amount,
@@ -304,11 +309,11 @@ async function adjustUserPoints(userId, amount, reason, operatorId) {
 }
 
 async function settleOrderPoints(conn, order, options = {}) {
-  return require('../../order/service/orderPoints.service').grantOrderEarnPoints(conn, order, options);
+  return getOrderApi().grantOrderEarnPoints(conn, order, options);
 }
 
 async function reverseOrderPoints(conn, order, reason, options = {}) {
-  return require('../../order/service/orderPoints.service').reverseOrderEarnPoints(conn, order, {
+  return getOrderApi().reverseOrderEarnPoints(conn, order, {
     ...options,
     description: reason || options.description,
   });

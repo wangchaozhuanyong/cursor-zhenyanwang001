@@ -48,29 +48,36 @@ function resolvePublicUrl(req, maybeUrl) {
   return `${proto}://${host}${value.startsWith('/') ? value : `/${value}`}`;
 }
 
+function normalizeIpAddress(ip) {
+  if (!ip) return '';
+  if (net.isIPv4(ip)) return ip;
+  const lower = String(ip).toLowerCase();
+  const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mapped) return mapped[1];
+  return lower;
+}
+
 function isPrivateIp(ip) {
-  if (!ip) return true;
-  if (net.isIPv4(ip)) {
-    const parts = ip.split('.').map((x) => Number(x));
+  const normalized = normalizeIpAddress(ip);
+  if (!normalized) return true;
+  if (net.isIPv4(normalized)) {
+    const parts = normalized.split('.').map((x) => Number(x));
     const [a, b] = parts;
     return a === 10
       || a === 127
       || (a === 169 && b === 254)
       || (a === 172 && b >= 16 && b <= 31)
       || (a === 192 && b === 168)
+      || (a === 100 && b >= 64 && b <= 127)
       || a === 0;
   }
-  const normalized = ip.toLowerCase();
   return normalized === '::1'
     || normalized.startsWith('fc')
     || normalized.startsWith('fd')
-    || normalized.startsWith('fe80:')
-    || normalized.startsWith('::ffff:10.')
-    || normalized.startsWith('::ffff:127.')
-    || normalized.startsWith('::ffff:192.168.');
+    || normalized.startsWith('fe80:');
 }
 
-async function assertSafeRemoteImageUrl(sourceUrl) {
+async function resolveSafeRemoteFetchTarget(sourceUrl) {
   let parsed;
   try {
     parsed = new URL(sourceUrl);
@@ -81,9 +88,16 @@ async function assertSafeRemoteImageUrl(sourceUrl) {
     throw new Error('Unsupported PWA logo URL protocol');
   }
   const records = await dns.lookup(parsed.hostname, { all: true, verbatim: true });
-  if (!records.length || records.some((record) => isPrivateIp(record.address))) {
+  const publicRecord = records.find((record) => !isPrivateIp(record.address));
+  if (!publicRecord) {
     throw new Error('PWA logo URL resolves to a private address');
   }
+  const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
+  const pathWithQuery = `${parsed.pathname}${parsed.search}`;
+  return {
+    fetchUrl: `${parsed.protocol}//${publicRecord.address}:${port}${pathWithQuery}`,
+    hostHeader: parsed.hostname,
+  };
 }
 
 async function loadSiteInfoSafe() {
@@ -102,12 +116,16 @@ async function loadImageBuffer(sourceUrl) {
     if (!match) throw new Error('Invalid PWA data image');
     return Buffer.from(match[1], 'base64');
   }
-  await assertSafeRemoteImageUrl(sourceUrl);
+  const { fetchUrl, hostHeader } = await resolveSafeRemoteFetchTarget(sourceUrl);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 3000);
   let response;
   try {
-    response = await fetch(sourceUrl, { redirect: 'error', signal: controller.signal });
+    response = await fetch(fetchUrl, {
+      redirect: 'error',
+      signal: controller.signal,
+      headers: { Host: hostHeader },
+    });
   } finally {
     clearTimeout(timer);
   }

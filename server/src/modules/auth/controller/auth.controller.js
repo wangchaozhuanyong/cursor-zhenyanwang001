@@ -1,8 +1,8 @@
 const authService = require('../service/auth.service');
-const authApiService = require('../services/auth.api.service');
-const oauthService = require('../services/oauth.service');
-const wechatService = require('../services/wechat.service');
-const otpService = require('../services/otp.service');
+const authApiService = require('../service/auth.api.service');
+const oauthService = require('../service/oauth.service');
+const wechatService = require('../service/wechat.service');
+const otpService = require('../service/otp.service');
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const { ValidationError } = require('../../../errors');
 const {

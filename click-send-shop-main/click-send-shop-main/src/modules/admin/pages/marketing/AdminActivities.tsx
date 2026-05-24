@@ -140,7 +140,7 @@ export default function AdminActivities() {
     { label: tText("秒杀"), to: "/admin/marketing/activities/new?type=flash_sale" },
     { label: tText("满减"), to: "/admin/marketing/activities/new?type=full_reduction" },
     { label: tText("优惠券"), to: "/admin/marketing/coupons/new" },
-  ], []);
+  ], [tText]);
 
   const openPreview = (activity: MarketingActivity) => {
     const path = getActivityPreviewPath(activity);

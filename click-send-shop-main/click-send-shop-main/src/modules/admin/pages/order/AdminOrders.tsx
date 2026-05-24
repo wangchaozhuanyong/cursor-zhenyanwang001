@@ -269,7 +269,7 @@ export default function AdminOrders() {
     refetchInterval: 60_000,
   });
 
-  const orders = ordersQuery.data?.list ?? [];
+  const orders = useMemo(() => ordersQuery.data?.list ?? [], [ordersQuery.data?.list]);
   const loading = ordersQuery.isLoading && !ordersQuery.data;
   const total = ordersQuery.data?.total ?? 0;
   const summary = ordersQuery.data?.summary ?? initialSummary;
@@ -298,16 +298,19 @@ export default function AdminOrders() {
   });
 
   const stats = useMemo(
-    () => [
-      { label: tText("待付款"), value: summary.pending, status: ORDER_STATUS.PENDING, sub: `RM ${money(summary.pending_payment_amount)}` },
-      { label: tText("待发货"), value: summary.pending_shipment_count ?? summary.paid, status: ORDER_STATUS.PAID, sub: `RM ${money(summary.pending_shipment_amount)}` },
-      { label: tText("售后中"), value: summary.active_return_count ?? summary.refunding, status: ORDER_STATUS.REFUNDING, sub: tText(`退款 RM ${money(summary.today_refund_amount)}`) },
-      { label: tText("今日订单"), value: summary.today_order_count ?? 0, status: "", sub: tText(`全站 · ${summary.today_paid_order_count ?? 0} 单已支付`) },
-      { label: tText("今日实收"), value: `RM ${money(summary.today_paid_amount)}`, status: "", sub: tText("全站 · 按支付时间") },
-      { label: tText("今日毛利"), value: `RM ${money(summary.today_gross_profit_amount)}`, status: "", sub: tText("全站 · 商品毛利") },
-      { label: tText("今日净利润"), value: `RM ${money(summary.today_net_profit_amount ?? summary.today_gross_profit_amount)}`, status: "", sub: tText("全站 · 含物流/手续费") },
-    ],
-    [summary, tText],
+    () => {
+      const filterScope = filtersActive ? tText("当前筛选") : tText("全站");
+      return [
+        { label: tText("待付款"), value: summary.pending, status: ORDER_STATUS.PENDING, sub: `${filterScope} · RM ${money(summary.pending_payment_amount)}` },
+        { label: tText("待发货"), value: summary.pending_shipment_count ?? summary.paid, status: ORDER_STATUS.PAID, sub: `${filterScope} · RM ${money(summary.pending_shipment_amount)}` },
+        { label: tText("售后中"), value: summary.active_return_count ?? summary.refunding, status: ORDER_STATUS.REFUNDING, sub: `${filterScope} · ${tText("退款")} RM ${money(summary.today_refund_amount)}` },
+        { label: tText("今日订单"), value: summary.today_order_count ?? 0, status: "", sub: tText(`全站 · ${summary.today_paid_order_count ?? 0} 单已支付`) },
+        { label: tText("今日实收"), value: `RM ${money(summary.today_paid_amount)}`, status: "", sub: tText("全站 · 按支付时间") },
+        { label: tText("今日毛利"), value: `RM ${money(summary.today_gross_profit_amount)}`, status: "", sub: tText("全站 · 商品毛利") },
+        { label: tText("今日净利润"), value: `RM ${money(summary.today_net_profit_amount ?? summary.today_gross_profit_amount)}`, status: "", sub: tText("全站 · 含物流/手续费") },
+      ];
+    },
+    [filtersActive, summary, tText],
   );
 
   const applyQuickStatusFilter = (status: string) => {
@@ -688,8 +691,8 @@ export default function AdminOrders() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7">
+    <div className="min-w-0 space-y-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7">
         {stats.map((stat) => {
           const active = statusFilter === stat.status && !!stat.status;
           return (

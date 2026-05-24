@@ -1,17 +1,8 @@
 import { Building2, CreditCard, MessageSquare, Smartphone, Wallet } from "lucide-react";
 import type { PublicPaymentChannel } from "@/services/paymentService";
+import { shouldShowPaymentOption } from "@/utils/checkoutPaymentMethod";
 
 export type PaymentMethod = "online" | "reward_wallet" | "whatsapp";
-
-export function shouldShowPaymentOption(
-  id: PaymentMethod,
-  showOnline: boolean,
-  showCustomerService: boolean,
-): boolean {
-  if (id === "online") return showOnline;
-  if (id === "whatsapp") return showCustomerService;
-  return true;
-}
 
 interface PaymentMethodPickerProps {
   value: PaymentMethod;

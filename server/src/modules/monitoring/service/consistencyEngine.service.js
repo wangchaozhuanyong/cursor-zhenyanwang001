@@ -5,6 +5,10 @@ const notification = require('./monitoringNotification.service');
 const autoFix = require('./autoFix.service');
 const { localizeDbError } = require('../../../utils/localizeDbError');
 
+function getAdminApi() {
+  return /** @type {any} */ (require('../../admin')).api || {};
+}
+
 function normalizeAnomaly(item, rule = {}) {
   return {
     ...item,
@@ -106,16 +110,19 @@ async function rescanAnomaly(anomalyId, options = {}) {
   ));
   if (!matched) {
     try {
-      await require('../../admin/service/adminEvent.service').autoResolveByFingerprint({
-        eventType: anomaly.rule_code || anomaly.severity,
-        entityType: anomaly.entity_type,
-        entityId: anomaly.entity_id,
-        anomalyId: anomaly.id || null,
-      }, {
-        operatorId: options.operatorId || null,
-        remark: '数据一致性重新扫描正常后自动关闭',
-        metadata: { anomalyId },
-      });
+      const autoResolve = getAdminApi().autoResolveEventByFingerprint;
+      if (typeof autoResolve === 'function') {
+        await autoResolve({
+          eventType: anomaly.rule_code || anomaly.severity,
+          entityType: anomaly.entity_type,
+          entityId: anomaly.entity_id,
+          anomalyId: anomaly.id || null,
+        }, {
+          operatorId: options.operatorId || null,
+          remark: '数据一致性重新扫描正常后自动关闭',
+          metadata: { anomalyId },
+        });
+      }
     } catch (error) {
       console.warn('[consistencyEngine] auto resolve admin event failed:', error?.message || error);
     }
@@ -131,3 +138,4 @@ module.exports = {
   normalizeAnomaly,
   upsertAnomaly,
 };
+

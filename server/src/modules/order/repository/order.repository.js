@@ -262,11 +262,21 @@ async function selectActivePointsBonusActivitiesRead(q) {
 
 async function selectUserCouponRead(q, ucId, userId) {
   const [[row]] = await q.query(
-    `SELECT uc.id AS uc_id, c.* FROM user_coupons uc
-     JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
-     WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 'available'
-       AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()
-       AND c.status = 'available'`,
+    `SELECT uc.id AS uc_id, uc.status AS user_coupon_status, uc.coupon_snapshot,
+            uc.valid_from, uc.valid_until, uc.order_id, uc.order_no, uc.discount_amount,
+            uc.invalid_reason, uc.locked_at,
+            c.*, c.publish_status AS coupon_publish_status
+       FROM user_coupons uc
+       LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+      WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 'available'
+        AND (uc.valid_from IS NULL OR uc.valid_from <= NOW())
+        AND (uc.valid_until IS NULL OR uc.valid_until >= NOW())
+        AND (c.id IS NULL OR (
+          c.deleted_at IS NULL
+          AND c.invalidated_at IS NULL
+          AND c.stop_use_at IS NULL
+          AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) NOT IN ('disabled','archived')
+        ))`,
     [ucId, userId],
   );
   return row || null;
@@ -306,12 +316,22 @@ async function selectDefaultEnabledShippingTemplate(q) {
 
 async function selectUserCouponForUpdate(q, ucId, userId) {
   const [[row]] = await q.query(
-    `SELECT uc.id AS uc_id, c.* FROM user_coupons uc
-     JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
-     WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 'available'
-       AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()
-       AND c.status = 'available'
-     FOR UPDATE`,
+    `SELECT uc.id AS uc_id, uc.status AS user_coupon_status, uc.coupon_snapshot,
+            uc.valid_from, uc.valid_until, uc.order_id, uc.order_no, uc.discount_amount,
+            uc.invalid_reason, uc.locked_at,
+            c.*, c.publish_status AS coupon_publish_status
+       FROM user_coupons uc
+       LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+      WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 'available'
+        AND (uc.valid_from IS NULL OR uc.valid_from <= NOW())
+        AND (uc.valid_until IS NULL OR uc.valid_until >= NOW())
+        AND (c.id IS NULL OR (
+          c.deleted_at IS NULL
+          AND c.invalidated_at IS NULL
+          AND c.stop_use_at IS NULL
+          AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) NOT IN ('disabled','archived')
+        ))
+      FOR UPDATE`,
     [ucId, userId],
   );
   return row || null;
@@ -325,8 +345,36 @@ async function selectCouponCategoryIds(q, couponId) {
   return rows.map((r) => r.category_id).filter(Boolean);
 }
 
-async function updateUserCouponUsed(q, ucId) {
-  await q.query("UPDATE user_coupons SET status = 'used', used_at = NOW() WHERE id = ?", [ucId]);
+async function updateUserCouponUsed(q, ucId, meta = {}) {
+  await q.query(
+    `UPDATE user_coupons
+        SET status = 'used',
+            used_at = NOW(),
+            order_id = ?,
+            order_no = ?,
+            discount_amount = ?
+      WHERE id = ?`,
+    [meta.orderId || null, meta.orderNo || null, meta.discountAmount ?? null, ucId],
+  );
+  if (meta.couponId) {
+    await q.query('UPDATE coupons SET used_count = COALESCE(used_count, 0) + 1 WHERE BINARY id = BINARY ?', [meta.couponId]).catch(() => {});
+    await q.query(
+      `INSERT INTO coupon_events
+        (id, coupon_id, user_coupon_id, user_id, event_type, order_id, order_no, reason, metadata)
+       VALUES (?,?,?,?,?,?,?,?,?)`,
+      [
+        meta.eventId || require('../../../utils/helpers').generateId(),
+        meta.couponId,
+        ucId,
+        meta.userId || null,
+        'used',
+        meta.orderId || null,
+        meta.orderNo || null,
+        '下单使用优惠券',
+        JSON.stringify({ discountAmount: meta.discountAmount ?? null }),
+      ],
+    ).catch(() => {});
+  }
 }
 
 function parseLoyaltyMeta(raw) {
@@ -1057,16 +1105,25 @@ async function decrementUserPoints(q, userId, points) {
 }
 
 async function restoreUserCouponById(q, ucId) {
-  await q.query("UPDATE user_coupons SET status = 'available', used_at = NULL WHERE id = ?", [ucId]);
+  return /** @type {any} */ (require('../../user')).api.restoreCouponAfterOrderCancelled(q, ucId, {
+    reason: '订单取消返还优惠券',
+  });
 }
 
 async function restoreUserCouponHeuristic(q, userId, createdAt) {
-  await q.query(
-    `UPDATE user_coupons SET status = 'available', used_at = NULL
+  const [[row]] = await q.query(
+    `SELECT id FROM user_coupons
      WHERE user_id = ? AND status = 'used'
-     AND used_at >= ? AND used_at <= DATE_ADD(?, INTERVAL 1 MINUTE) LIMIT 1`,
+       AND used_at >= ? AND used_at <= DATE_ADD(?, INTERVAL 1 MINUTE)
+     ORDER BY used_at DESC LIMIT 1`,
     [userId, createdAt, createdAt],
   );
+  if (row?.id) {
+    return /** @type {any} */ (require('../../user')).api.restoreCouponAfterOrderCancelled(q, row.id, {
+      reason: '订单取消返还优惠券',
+    });
+  }
+  return { restored: false, status: null };
 }
 
 async function updateOrderPaid(q, orderId, params = {}) {

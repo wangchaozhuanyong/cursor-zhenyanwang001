@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const repo = require('../repository/adminEvent.repository');
 const eventBus = require('./adminEventBus.service');
+const telegramModule = require('../../telegram');
 
 const VALID_STATUSES = new Set(['open', 'acknowledged', 'in_progress', 'resolved', 'auto_resolved', 'ignored', 'expired']);
 const ACTIVE_STATUSES = new Set(['open', 'acknowledged', 'in_progress']);
@@ -113,6 +114,18 @@ function publishChange(type, record) {
     status: record?.status,
     category: record?.category,
   });
+}
+
+function getTelegramApi() {
+  return /** @type {any} */ (telegramModule).api || {};
+}
+
+function requireTelegramApi(name) {
+  const fn = getTelegramApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Telegram module API missing method: ${name}`);
+  }
+  return fn;
 }
 
 async function emitEvent(input = {}, options = {}) {
@@ -294,12 +307,11 @@ function buildEscalationText(event) {
 }
 
 async function sendTelegramEscalation(event) {
-  const telegram = require('../../telegram/service/telegram.service');
-  const config = await telegram.loadConfig();
+  const config = await requireTelegramApi('loadConfig')();
   if (!config.enabled || !config.botToken || !config.adminChatId) {
     return { sent: false, reason: 'telegram_not_configured' };
   }
-  const providerMessageId = await telegram.sendMessage(config.adminChatId, buildEscalationText(event), {
+  const providerMessageId = await requireTelegramApi('sendMessage')(config.adminChatId, buildEscalationText(event), {
     parseMode: config.parseMode,
   });
   return { sent: true, providerMessageId };

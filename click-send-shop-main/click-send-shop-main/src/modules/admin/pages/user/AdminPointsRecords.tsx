@@ -182,6 +182,41 @@ export default function AdminPointsRecords() {
     { label: tText("涉及用户"), value: String(intValue(stats.activeUsers)), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
 
+  const renderMobileCard = (record: PointsRecord) => {
+    const amount = intValue(record.amount);
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold">{formatUserDisplay(record.user_nickname, record.user_phone)}</p>
+          <span className={`shrink-0 text-sm font-semibold ${amount >= 0 ? "text-[var(--theme-price)]" : THEME_TEXT_DANGER}`}>
+            {amount > 0 ? "+" : ""}{amount}
+          </span>
+        </div>
+        <div className="mb-2">
+          <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{labelPointsAction(record.action)}</span>
+        </div>
+        <div className="space-y-2">
+          {record.order_no ? (
+            <AdminTableMobileCardField label={tText("订单号")}>
+              <span className="font-mono text-xs text-muted-foreground">{record.order_no}</span>
+            </AdminTableMobileCardField>
+          ) : null}
+          <AdminTableMobileCardField label={tText("余额变动")}>
+            <span className="text-xs text-muted-foreground">{record.balance_before ?? "—"} → {record.balance_after ?? "—"}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("说明")}>
+            <span className="text-xs text-muted-foreground line-clamp-2">
+              {formatPointsRecordLabel({ action: record.action, description: record.description }) || "—"}
+            </span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("时间")}>
+            <span className="text-xs text-muted-foreground">{record.created_at ? formatDateTime(record.created_at) : "—"}</span>
+          </AdminTableMobileCardField>
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
+
   return (
     <div className="space-y-5">
       <div>
@@ -328,6 +363,7 @@ export default function AdminPointsRecords() {
             onClearFilters={clearFilters}
           />
         )}
+        renderMobileCard={renderMobileCard}
         renderRow={(record) => {
           const amount = intValue(record.amount);
           return (

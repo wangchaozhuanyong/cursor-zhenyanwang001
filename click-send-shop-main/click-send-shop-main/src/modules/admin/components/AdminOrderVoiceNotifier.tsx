@@ -15,6 +15,7 @@ const VOLUME_KEY = "admin_order_voice_volume";
 const VISIBLE_POLL_MS = 10_000;
 const HIDDEN_POLL_MS = 30_000;
 const MAX_PLAYED_IDS = 100;
+const MAX_LOCAL_SINCE_AGE_MS = 10 * 60 * 1000;
 
 type QueueItem = {
   text: string;
@@ -25,6 +26,19 @@ function readVolume() {
   if (typeof window === "undefined") return 1;
   const value = Number(window.localStorage.getItem(VOLUME_KEY));
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1;
+}
+
+function readLastCheckedAt() {
+  if (typeof window === "undefined") return undefined;
+  const raw = window.localStorage.getItem(LAST_CHECKED_KEY);
+  if (!raw) return undefined;
+  const time = new Date(raw).getTime();
+  const now = Date.now();
+  if (!Number.isFinite(time) || time > now + 30_000 || time < now - MAX_LOCAL_SINCE_AGE_MS) {
+    window.localStorage.removeItem(LAST_CHECKED_KEY);
+    return undefined;
+  }
+  return raw;
 }
 
 function readPlayedIds() {
@@ -148,16 +162,29 @@ async function playBeep(volume: number) {
   if (ctx.state === "suspended") {
     await ctx.resume();
   }
-  const oscillator = ctx.createOscillator();
-  const gain = ctx.createGain();
-  oscillator.type = "sine";
-  oscillator.frequency.value = 880;
-  gain.gain.value = Math.max(0.02, volume * 0.18);
-  oscillator.connect(gain);
-  gain.connect(ctx.destination);
-  oscillator.start();
-  oscillator.stop(ctx.currentTime + 0.18);
-  await new Promise((resolve) => window.setTimeout(resolve, 220));
+  const baseVolume = Math.max(0.08, volume * 0.45);
+  const tones = [
+    { frequency: 880, start: 0, duration: 0.16 },
+    { frequency: 1175, start: 0.2, duration: 0.18 },
+    { frequency: 988, start: 0.44, duration: 0.22 },
+  ];
+
+  for (const tone of tones) {
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const startAt = ctx.currentTime + tone.start;
+    const endAt = startAt + tone.duration;
+    oscillator.type = "triangle";
+    oscillator.frequency.value = tone.frequency;
+    gain.gain.setValueAtTime(0.001, startAt);
+    gain.gain.linearRampToValueAtTime(baseVolume, startAt + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.001, endAt);
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(startAt);
+    oscillator.stop(endAt + 0.02);
+  }
+  await new Promise((resolve) => window.setTimeout(resolve, 720));
 }
 
 const TEST_PLAY_SAMPLE = "叮咚，您有新的订单，请及时处理。";
@@ -270,6 +297,7 @@ export default function AdminOrderVoiceNotifier() {
         const item = queueRef.current.shift();
         if (!item) continue;
         try {
+          await playBeep(volumeRef.current);
           await speakText(item.text);
         } catch {
           try {
@@ -284,7 +312,7 @@ export default function AdminOrderVoiceNotifier() {
     } finally {
       playingRef.current = false;
     }
-  }, [speakText]);
+  }, [speakText, tText]);
 
   const enqueueEvents = useCallback((events: AdminOrderVoiceEvent[]) => {
     if (events.length === 0) return;
@@ -296,7 +324,7 @@ export default function AdminOrderVoiceNotifier() {
     if (!enabledRef.current || pollingRef.current) return;
     pollingRef.current = true;
     try {
-      const since = window.localStorage.getItem(LAST_CHECKED_KEY) || undefined;
+      const since = readLastCheckedAt();
       const result = await orderService.fetchRecentOrderEvents(since);
       const events = result.events || [];
       const checkedAt = result.checkedAt || new Date().toISOString();
@@ -347,6 +375,7 @@ export default function AdminOrderVoiceNotifier() {
 
   const verifyPlaybackForEnable = useCallback(async (): Promise<"speech" | "beep"> => {
     await ensureAudioUnlocked();
+    await playBeep(volumeRef.current);
     if (getSpeechSupport()) {
       try {
         await speakText("订单语音提醒已开启。", { interrupt: true, allowCanceled: false });
@@ -378,6 +407,7 @@ export default function AdminOrderVoiceNotifier() {
     setTesting(true);
     try {
       await ensureAudioUnlocked();
+      await playBeep(volumeRef.current);
       try {
         await speakText(TEST_PLAY_SAMPLE, { interrupt: true, allowCanceled: false });
         toast.success(tText("测试播放完成"));

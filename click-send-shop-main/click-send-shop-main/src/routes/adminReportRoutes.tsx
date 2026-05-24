@@ -1,7 +1,7 @@
-import { Navigate, Route, useLocation } from "react-router-dom";
+import { Route } from "react-router-dom";
 import type { ReactNode } from "react";
 import type { SiteCapabilities } from "@/types/siteCapabilities";
-import { REPORT_REGISTRY, type ReportRegistryItem } from "@/modules/admin/pages/report/reportRegistry";
+import { REPORT_REGISTRY } from "@/modules/admin/pages/report/reportRegistry";
 import {
   AdminActivityAnalysisReport,
   AdminCategoryAnalysisReport,
@@ -20,41 +20,12 @@ import {
   AdminSearchAnalysisReport,
   AdminTrafficAnalysisReport,
 } from "@/routes/adminLazyPages";
-
-function AdminReportUnavailable() {
-  return (
-    <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 text-sm text-[var(--theme-text-muted)]">
-      该报表对应的功能开关已关闭，暂不可访问。
-    </div>
-  );
-}
-
-function ReportCapabilityRoute({ report, capabilities, children }: { report: ReportRegistryItem; capabilities: SiteCapabilities; children: ReactNode }) {
-  if (report.capability && !capabilities[report.capability]) {
-    return <AdminReportUnavailable />;
-  }
-  return <>{children}</>;
-}
-
-function relativeAdminPath(path: string) {
-  return path.replace(/^\/admin\/?/, "");
-}
-
-function ProfitLegacyRedirect() {
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const target = params.get("profit_period") === "monthly"
-    ? "/admin/reports/profit/monthly"
-    : "/admin/reports/profit/daily";
-  params.delete("profit_period");
-  const query = params.toString();
-  return <Navigate to={`${target}${query ? `?${query}` : ""}`} replace />;
-}
-
-function LegacyReportRedirect({ to }: { to: string }) {
-  const location = useLocation();
-  return <Navigate to={`${to}${location.search || ""}`} replace />;
-}
+import {
+  LegacyReportRedirect,
+  ProfitLegacyRedirect,
+  ReportCapabilityRoute,
+} from "@/routes/adminReportRouteComponents";
+import { relativeAdminPath } from "@/routes/adminReportRouteUtils";
 
 const REPORT_ELEMENTS: Record<string, ReactNode> = {
   overview: <AdminReportOverview />,

@@ -1,6 +1,6 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminUser.service');
-const dataChangeTracker = require('../../monitoring/service/dataChangeTracker.service');
+const dataChangeTracker = require('../service/adminDataChange.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listUsers(req.query);
@@ -121,4 +121,3 @@ exports.unbindWechat = asyncRoute(async (req, res) => {
   const r = await svc.adminUnbindWechat(req.params.id, req.user?.id, req);
   res.success(r.data, r.message);
 });
-

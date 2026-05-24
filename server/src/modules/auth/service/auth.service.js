@@ -20,7 +20,7 @@ const {
 } = require('../../../errors');
 const crypto = require('crypto');
 const repo = require('../repository/auth.repository');
-const wechatService = require('../services/wechat.service');
+const wechatService = require('./wechat.service');
 const { formatUserResponse } = require('../../../utils/formatUserResponse');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
 
@@ -73,8 +73,10 @@ async function register(body) {
   }
 
   try {
-    const newUserGift = require('../../marketing/service/newUserGift.service');
-    await newUserGift.issueNewUserGiftPack(id);
+    const marketingApi = /** @type {any} */ (require('../../marketing')).api || {};
+    if (typeof marketingApi.issueNewUserGiftPack === 'function') {
+      await marketingApi.issueNewUserGiftPack(id);
+    }
   } catch (e) {
     console.warn(`[auth.register] new user gift issue skipped: ${e?.message || e}`);
   }
@@ -405,4 +407,3 @@ module.exports = {
 
 // 鍏煎鍘嗗彶锛氫繚鐣欏叿鍚嶅鍑?BusinessError 浠ラ槻鏈夊閮?require 璇ユā鍧楁椂浣跨敤
 module.exports.BusinessError = BusinessError;
-

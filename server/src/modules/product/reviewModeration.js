@@ -1,4 +1,6 @@
-const siteSettingsRepo = require('../admin/repository/adminSiteSettings.repository');
+function getAdminApi() {
+  return /** @type {any} */ (require('../admin')).api || {};
+}
 
 const DEFAULT_SENSITIVE_WORDS = ['wechat', 'qrcode', 'fake', 'scam', 'complaint'];
 
@@ -14,7 +16,7 @@ function containsSensitive(text, words) {
 
 async function getReviewSettings() {
   try {
-    const raw = await siteSettingsRepo.selectSettingValue('review_settings');
+    const raw = await getAdminApi().selectSiteSettingValue('review_settings');
     if (!raw) return { auto_approve: true, sensitive_words: DEFAULT_SENSITIVE_WORDS };
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
     return {

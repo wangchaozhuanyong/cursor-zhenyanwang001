@@ -10,6 +10,11 @@ const uploadCtrl = require('./controller/upload.controller');
 const uploadPresignCtrl = require('./controller/uploadPresign.controller');
 const themeService = require('./service/theme.service');
 const rewardServiceApi = require('./service/reward.service');
+const couponAdminIssueService = require('./service/couponAdminIssue.service');
+const couponLifecycle = require('./service/couponLifecycle.service');
+const couponRepo = require('./repository/coupon.repository');
+const pointsRepo = require('./repository/points.repository');
+const rewardRepo = require('./repository/reward.repository');
 
 const router = Router();
 
@@ -55,10 +60,21 @@ router.use('/theme', require('./routes/theme.routes'));
   updateThemeConfig: themeService.updateThemeConfig,
   updateThemeSkins: themeService.updateThemeSkins,
   getAdminRewardRecords: rewardServiceApi.getAdminRecords,
+  issueCouponToUsers: couponAdminIssueService.issueCouponToUsers,
+  buildEffectiveCoupon: couponLifecycle.buildEffectiveCoupon,
+  resolveUserCouponRuntimeStatus: couponLifecycle.resolveUserCouponRuntimeStatus,
+  restoreCouponAfterOrderCancelled: couponLifecycle.restoreCouponAfterOrderCancelled,
+  selectUserCouponsPage: couponRepo.selectUserCouponsPage,
+  selectUserPointsBalance: pointsRepo.selectUserPointsBalance,
+  hasPendingReverse: pointsRepo.hasPendingReverse,
+  sumUserRewardTransactions: rewardRepo.sumUserRewardTransactions,
+  selectSuccessLedgerForUser: pointsRepo.selectSuccessLedgerForUser,
+  selectUserIdsWithPositiveBalance: pointsRepo.selectUserIdsWithPositiveBalance,
+  getPointsConnection: pointsRepo.getConnection,
+  selectPointsRecordByRelatedForUpdate: pointsRepo.selectRecordByRelatedForUpdate,
 };
 
 module.exports = router;
-
 
 
 

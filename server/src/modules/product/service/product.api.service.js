@@ -1,7 +1,4 @@
-/**
- * 商品公开 API 业务入口（门面），委托给 catalog.service
- */
-const catalogService = require('../service/catalog.service');
+const catalogService = require('./catalog.service');
 const { BusinessError } = require('../../../errors/BusinessError');
 
 async function listProducts(query) {
@@ -18,5 +15,3 @@ module.exports = {
   listProducts,
   getProductById,
 };
-
-

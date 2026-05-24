@@ -1,6 +1,7 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminInventory.service');
-const dataChangeTracker = require('../../monitoring/service/dataChangeTracker.service');
+const replenishmentSvc = require('../service/adminReplenishment.service');
+const dataChangeTracker = require('../service/adminDataChange.service');
 
 exports.summary = asyncRoute(async (req, res) => {
   const r = await svc.getSummary();
@@ -74,6 +75,60 @@ exports.listRecords = asyncRoute(async (req, res) => {
   res.success(r);
 });
 
+exports.generateReplenishmentAlerts = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.generateReplenishmentAlerts();
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'inventory',
+    entityType: 'replenishment_alert',
+    entityId: 'batch',
+    action: 'replenishment_alert.generate',
+    beforeData: {},
+    afterData: r,
+  });
+  res.success(r, '补货预警已扫描');
+});
+
+exports.listReplenishmentAlerts = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.listReplenishmentAlerts(req.query || {});
+  res.success(r);
+});
+
+exports.createPurchaseOrderFromAlert = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.createPurchaseOrderFromAlert(req.params.id, req.body || {}, req.user?.id);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'inventory',
+    entityType: 'purchase_order',
+    entityId: r.id,
+    action: 'purchase_order.create_from_alert',
+    beforeData: { alertId: req.params.id },
+    afterData: r,
+  });
+  res.success(r, '采购单已创建');
+});
+
+exports.listPurchaseOrders = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.listPurchaseOrders(req.query || {});
+  res.success(r);
+});
+
+exports.getPurchaseOrder = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.getPurchaseOrder(req.params.id);
+  res.success(r);
+});
+
+exports.receivePurchaseOrder = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.receivePurchaseOrder(req.params.id, req.body || {}, req.user?.id);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'inventory',
+    entityType: 'purchase_order',
+    entityId: req.params.id,
+    action: 'purchase_order.receive',
+    beforeData: req.body || {},
+    afterData: r,
+  });
+  res.success(r, '采购到货已入库');
+});
+
 exports.exportSkusCsv = asyncRoute(async (req, res) => {
   const { csv, filename } = await svc.exportSkusCsv(req.query || {});
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -127,5 +182,4 @@ exports.getConversion = asyncRoute(async (req, res) => {
   const r = await svc.getConversion(req.params.id);
   res.success(r.data);
 });
-
 

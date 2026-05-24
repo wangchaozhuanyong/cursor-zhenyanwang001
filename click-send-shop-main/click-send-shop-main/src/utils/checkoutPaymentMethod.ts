@@ -17,3 +17,13 @@ export function canStartOnlinePayment(
   const onlineLike = m === "online" || m === "points_plus_cash";
   return onlineLike && onlinePaymentEnabled;
 }
+
+export function shouldShowPaymentOption(
+  id: PaymentMethod,
+  showOnline: boolean,
+  showCustomerService: boolean,
+): boolean {
+  if (id === "online") return showOnline;
+  if (id === "whatsapp") return showCustomerService;
+  return true;
+}

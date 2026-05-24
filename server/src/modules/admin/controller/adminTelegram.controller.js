@@ -1,31 +1,32 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
-const telegramService = require('../../telegram/service/telegram.service');
+const telegramService = require('../service/adminTelegram.service');
 
 exports.getStatus = asyncRoute(async (_req, res) => {
-  res.success(await telegramService.getStatus());
+  const data = await telegramService.getStatus();
+  res.success(data);
 });
 
 exports.getSettings = asyncRoute(async (_req, res) => {
-  res.success(await telegramService.getAdminSettings());
+  const data = await telegramService.getSettings();
+  res.success(data);
 });
 
 exports.updateSettings = asyncRoute(async (req, res) => {
-  const data = await telegramService.saveAdminSettings(req.body, req.user?.id, req);
+  const data = await telegramService.updateSettings(req.body, req.user?.id, req);
   res.success(data, 'Telegram 设置已保存');
 });
 
 exports.previewMessage = asyncRoute(async (req, res) => {
-  const data = await telegramService.buildMessagePreview(req.body || {});
+  const data = await telegramService.previewMessage(req.body);
   res.success(data);
 });
 
 exports.testSend = asyncRoute(async (_req, res) => {
-  const result = await telegramService.sendTestMessage();
+  const result = await telegramService.testSend();
   res.success(result, 'Telegram 测试消息已发送');
 });
 
 exports.listLogs = asyncRoute(async (req, res) => {
-  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
-  const list = await telegramService.listLogs(limit);
+  const list = await telegramService.listLogs(req.query);
   res.success(list);
 });

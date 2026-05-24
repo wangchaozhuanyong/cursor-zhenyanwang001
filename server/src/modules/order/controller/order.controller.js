@@ -1,5 +1,5 @@
 const orderService = require('../service/order.service');
-const orderApiService = require('../services/order.api.service');
+const orderApiService = require('../service/order.api.service');
 const checkoutAbandonmentService = require('../service/checkoutAbandonment.service');
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const { writeAuditLog } = require('../../../utils/auditLog');
@@ -50,6 +50,11 @@ exports.recordCheckoutAbandonment = asyncRoute(async (req, res) => {
 exports.previewOrder = asyncRoute(async (req, res) => {
   const result = await orderService.previewOrder(req.user.id, req.body);
   res.success(result.data);
+});
+
+exports.checkoutCoupons = asyncRoute(async (req, res) => {
+  const data = await orderService.getCheckoutCoupons(req.user.id, req.body);
+  res.success(data);
 });
 
 exports.getOrders = asyncRoute(async (req, res) => {
@@ -163,5 +168,3 @@ exports.confirmReceive = asyncRoute(async (req, res) => {
     throw err;
   }
 });
-
-

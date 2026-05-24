@@ -1,6 +1,6 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminOrder.service');
-const dataChangeTracker = require('../../monitoring/service/dataChangeTracker.service');
+const dataChangeTracker = require('../service/adminDataChange.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listOrders(req.query);
@@ -72,4 +72,3 @@ exports.batchShip = asyncRoute(async (req, res) => {
   });
   res.success(r.data, r.message);
 });
-

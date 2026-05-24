@@ -5,6 +5,7 @@ const { rowsToCsvLocalized, labelInventoryChangeType } = require('../../../utils
 const repo = require('../repository/adminInventory.repository');
 
 const CHANGE_TYPES = new Set(['in', 'out', 'adjust']);
+const DEFAULT_VARIANT_TITLE = '默认规格';
 
 function parseBool(v) {
   return v === true || v === 'true' || v === '1' || v === 1;
@@ -151,6 +152,7 @@ function buildRecordWhere(query) {
 }
 
 function formatSku(row) {
+  const variantTitle = row.variant_title || DEFAULT_VARIANT_TITLE;
   return {
     product_id: row.product_id,
     product_name: row.product_name,
@@ -158,8 +160,8 @@ function formatSku(row) {
     category_name: row.category_name || '',
     lifecycle_status: row.lifecycle_status,
     variant_id: row.variant_id,
-    variant_title: row.variant_title || '',
-    spec_text: row.spec_text || row.variant_title || '',
+    variant_title: variantTitle,
+    spec_text: row.spec_text || variantTitle,
     sku_code: row.sku_code || '',
     barcode: row.barcode || '',
     price: Number(row.price || 0),
@@ -720,8 +722,8 @@ async function exportSkusCsv(query) {
     product_id: r.product_id,
     product_name: r.product_name,
     variant_id: r.variant_id,
-    variant_title: r.variant_title || '',
-    spec_text: r.spec_text || r.variant_title || '',
+    variant_title: r.variant_title || DEFAULT_VARIANT_TITLE,
+    spec_text: r.spec_text || r.variant_title || DEFAULT_VARIANT_TITLE,
     sku_code: r.sku_code || '',
     barcode: r.barcode || '',
     price: Number(r.price || 0),

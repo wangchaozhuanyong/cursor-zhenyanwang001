@@ -133,3 +133,91 @@ export interface InventoryStockRecord {
   created_at: string;
 }
 
+export type ReplenishmentAlertStatus =
+  | "pending"
+  | "suggested"
+  | "ordered"
+  | "in_transit"
+  | "partial_received"
+  | "resolved"
+  | "cancelled"
+  | "overdue"
+  | "ignored"
+  | "snoozed";
+
+export interface InventoryReplenishmentAlert {
+  id: string;
+  variant_id: string;
+  product_id: string;
+  product_name: string;
+  cover_image?: string;
+  variant_title: string;
+  sku_code?: string;
+  unit_name: string;
+  alert_status: ReplenishmentAlertStatus;
+  current_stock: number;
+  available_stock: number;
+  warning_stock: number;
+  suggested_qty: number;
+  ordered_qty: number;
+  received_qty: number;
+  in_transit_qty: number;
+  expected_available_stock: number;
+  purchase_order_id?: string | null;
+  purchase_order_no?: string;
+  purchase_order_status?: string;
+  expected_arrival_date?: string | null;
+  reason?: string;
+  remark?: string;
+  last_alert_at?: string | null;
+  snoozed_until?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type PurchaseOrderStatus = "draft" | "ordered" | "in_transit" | "partial_received" | "received" | "cancelled" | "overdue";
+
+export interface PurchaseOrder {
+  id: string;
+  order_no: string;
+  supplier_id?: string | null;
+  status: PurchaseOrderStatus;
+  expected_arrival_date?: string | null;
+  actual_arrival_date?: string | null;
+  total_amount: number;
+  remark?: string;
+  item_count: number;
+  ordered_qty: number;
+  received_qty: number;
+  in_transit_qty: number;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  purchase_order_id: string;
+  variant_id: string;
+  product_id: string;
+  product_name: string;
+  variant_title: string;
+  sku_code?: string;
+  unit_name: string;
+  ordered_qty: number;
+  received_qty: number;
+  remaining_qty: number;
+  unit_cost?: number | null;
+  batch_no?: string;
+  production_date?: string | null;
+  shelf_life_days?: number | null;
+  expiry_date?: string | null;
+  supplier_sku?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PurchaseOrderDetail extends PurchaseOrder {
+  items: PurchaseOrderItem[];
+}
+

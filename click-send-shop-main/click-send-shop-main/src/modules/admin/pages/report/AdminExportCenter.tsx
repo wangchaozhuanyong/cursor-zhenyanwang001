@@ -3,6 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, FileSpreadsheet } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -12,11 +16,10 @@ import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { toast } from "sonner";
 import {
   createExportTask,
-  getExportDownloadUrl,
+  downloadExportTask,
   loadExportTasks,
 } from "@/services/admin/exportCenterService";
 import type { ExportTask } from "@/services/admin/exportCenterService";
-import { getAdminAccessToken } from "@/utils/token";
 import { EXPORT_TASK_STATUS, EXPORT_TASK_STATUS_META } from "@/constants/statusDictionary";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -101,14 +104,43 @@ export default function AdminExportCenter() {
     }
   };
 
-  const handleDownload = (task: ExportTask) => {
-    const url = getExportDownloadUrl(task.id);
-    const token = getAdminAccessToken();
-    const a = document.createElement("a");
-    a.href = token ? `${url}?token=${token}` : url;
-    a.download = task.file_name;
-    a.click();
+  const handleDownload = async (task: ExportTask) => {
+    try {
+      await downloadExportTask(task);
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "下载失败"));
+    }
   };
+
+  const renderMobileCard = (task: ExportTask) => (
+    <AdminTableMobileCard>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold break-all">{task.file_name}</p>
+        <div className="flex shrink-0 items-center gap-1 text-xs">{STATUS_ICON[task.status]} {exportStatusText[task.status] || tText("未知")}</div>
+      </div>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={tText("类型")}>
+          <span className="text-xs text-muted-foreground">{exportTypes.find((x) => x.value === task.type)?.label || labelExportType(task.type)}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("大小")}>
+          <span className="text-xs text-muted-foreground">{formatBytes(task.file_size)}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("创建时间")}>
+          <span className="text-xs text-muted-foreground">{task.created_at ? formatDateTime(task.created_at) : "-"}</span>
+        </AdminTableMobileCardField>
+        {task.finished_at ? (
+          <AdminTableMobileCardField label={tText("完成时间")}>
+            <span className="text-xs text-muted-foreground">{formatDateTime(task.finished_at)}</span>
+          </AdminTableMobileCardField>
+        ) : null}
+      </div>
+      {task.status === EXPORT_TASK_STATUS.SUCCESS ? (
+        <div className="mt-3 border-t border-border pt-3">
+          <button type="button" onClick={() => handleDownload(task)} className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs text-theme-price hover:bg-secondary"><Tx>下载</Tx></button>
+        </div>
+      ) : null}
+    </AdminTableMobileCard>
+  );
 
   return (
     <div className="space-y-4">
@@ -171,6 +203,7 @@ export default function AdminExportCenter() {
         emptyTitle={exportTasksEmptyGuide.title}
         emptyDescription={exportTasksEmptyGuide.description}
         emptyAction={<AdminEmptyGuideActions guide={exportTasksEmptyGuide} />}
+        renderMobileCard={renderMobileCard}
         renderRow={(t) => (
           <>
             <td className="px-4 py-3 text-foreground">{t.file_name}</td>

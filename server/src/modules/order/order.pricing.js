@@ -1,14 +1,24 @@
 const { ForbiddenError, ValidationError } = require('../../errors');
 const repo = require('./repository/order.repository');
 const siteSettingsRepo = require('./repository/siteSettings.repository');
-const loyaltyRepo = require('../loyalty/repository/loyalty.repository');
-const pointsRepo = require('../user/repository/points.repository');
-const rewardRepo = require('../user/repository/reward.repository');
 const sstTax = require('./sstTax');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
-const pointsEngine = require('../loyalty/service/pointsEngine.service');
-const pointsBonusResolver = require('../loyalty/service/pointsBonusResolver.service');
-const siteCapabilitiesService = require('../siteCapabilities/service/siteCapabilities.service');
+
+function getUserApi() {
+  return /** @type {any} */ (require('../user')).api || {};
+}
+
+function getLoyaltyApi() {
+  return /** @type {any} */ (require('../loyalty')).api || {};
+}
+
+function getSiteCapabilitiesApi() {
+  return /** @type {any} */ (require('../siteCapabilities')).api || {};
+}
+
+function getAuthApi() {
+  return /** @type {any} */ (require('../auth')).api || {};
+}
 
 function parseActivityConfig(raw) {
   if (!raw) return null;
@@ -158,14 +168,21 @@ function assertCouponUsableOnOrder({
   hasActivityDiscount,
   activityAllowsCoupon,
 }) {
-  const minAmount = parseFloat(uc.min_amount);
+  const userApi = getUserApi();
+  const effectiveCoupon = userApi.buildEffectiveCoupon(uc);
+  const runtimeStatus = userApi.resolveUserCouponRuntimeStatus({ ...uc, status: uc.user_coupon_status || uc.status });
+  if (runtimeStatus === 'pending') throw new ValidationError('优惠券未到使用时间');
+  if (runtimeStatus === 'expired') throw new ValidationError('优惠券已过期');
+  if (runtimeStatus === 'invalidated') throw new ValidationError('优惠券已被作废');
+  if (runtimeStatus !== 'available') throw new ValidationError('优惠券不可用');
+  const minAmount = Number(effectiveCoupon.min_amount || 0);
   if (goodsAmountAfterFullReduction < minAmount) {
     throw new ValidationError('订单金额未满足优惠券使用门槛');
   }
 
-  const usableScope = uc.usable_scope_type || uc.scope_type || 'all';
-  const usableProductIds = parseIdList(uc.usable_product_ids);
-  const usableCategoryIds = parseIdList(uc.usable_category_ids);
+  const usableScope = effectiveCoupon.usable_scope_type || effectiveCoupon.scope_type || 'all';
+  const usableProductIds = parseIdList(effectiveCoupon.usable_product_ids);
+  const usableCategoryIds = parseIdList(effectiveCoupon.usable_category_ids);
 
   if (usableScope === 'product' && usableProductIds.length) {
     const ids = orderItems.map((oi) => oi.productId);
@@ -179,8 +196,8 @@ function assertCouponUsableOnOrder({
       throw new ValidationError('优惠券不适用于当前商品分类');
     }
   }
-  if (uc.scope_type === 'category') {
-    const allowedCategoryIds = parseIdList(uc.category_ids);
+  if (effectiveCoupon.scope_type === 'category') {
+    const allowedCategoryIds = parseIdList(effectiveCoupon.category_ids);
     if (allowedCategoryIds.length) {
       const orderCategoryIds = [...new Set(orderItems.map((oi) => productMap[oi.productId]?.category_id).filter(Boolean))];
       if (!orderCategoryIds.some((cid) => allowedCategoryIds.includes(String(cid)))) {
@@ -189,16 +206,16 @@ function assertCouponUsableOnOrder({
     }
   }
 
-  if (hasActivityDiscount && uc.stackable_with_activity === 0) {
+  if (hasActivityDiscount && effectiveCoupon.stackable_with_activity === false) {
     throw new ValidationError('该优惠券不可与营销活动叠加使用');
   }
   if (hasActivityDiscount && activityAllowsCoupon === false) {
     throw new ValidationError('当前活动不可与优惠券叠加');
   }
 
-  const couponDiscount = calculateCouponDiscount(uc, goodsAmountAfterFullReduction, shippingFee);
+  const couponDiscount = calculateCouponDiscount(effectiveCoupon, goodsAmountAfterFullReduction, shippingFee);
   if (couponDiscount <= 0) {
-    throw new ValidationError(uc.type === 'shipping' ? '当前订单没有可抵扣的运费' : '优惠券无法用于当前订单');
+    throw new ValidationError(effectiveCoupon.type === 'shipping' ? '当前订单没有可抵扣的运费' : '优惠券无法用于当前订单');
   }
   return couponDiscount;
 }
@@ -210,8 +227,8 @@ async function buildOrderPricing(userId, body, conn = null) {
   const q = conn || repo.getPool();
   const { items, coupon_id, shipping_template_id, estimated_weight_kg } = body;
   const [pointsEnabled, couponEnabled] = await Promise.all([
-    siteCapabilitiesService.isCapabilityEnabled('pointsEnabled'),
-    siteCapabilitiesService.isCapabilityEnabled('couponEnabled'),
+    getSiteCapabilitiesApi().isCapabilityEnabled('pointsEnabled'),
+    getSiteCapabilitiesApi().isCapabilityEnabled('couponEnabled'),
   ]);
   if (!couponEnabled && (coupon_id || body.coupon_title)) {
     throw new ForbiddenError('优惠券功能已关闭');
@@ -253,10 +270,9 @@ async function buildOrderPricing(userId, body, conn = null) {
     : await repo.selectActivePointsBonusActivitiesRead(q);
   let pointsBonusUserContext = {};
   if (userId) {
-    const authRepo = require('../auth/repository/auth.repository');
     const { klYear } = require('../../utils/birthdayWindow');
     const { klDateString } = require('../../utils/klDateRange');
-    const birthdayRow = await authRepo.selectUserBirthdayFields(userId);
+    const birthdayRow = await getAuthApi().selectUserBirthdayFields(userId);
     const consumedBirthdayActivityIds = await repo.selectBirthdayBonusActivityIdsUsedInYear(
       q,
       userId,
@@ -327,6 +343,7 @@ async function buildOrderPricing(userId, body, conn = null) {
       ? await repo.selectUserCouponForUpdate(conn, coupon_id, userId)
       : await repo.selectUserCouponRead(q, coupon_id, userId);
     if (!uc) throw new ValidationError('优惠券不存在、已使用或不可用');
+    const effectiveCoupon = getUserApi().buildEffectiveCoupon(uc);
     couponDiscount = assertCouponUsableOnOrder({
       uc,
       goodsAmountAfterFullReduction,
@@ -336,15 +353,16 @@ async function buildOrderPricing(userId, body, conn = null) {
       hasActivityDiscount,
       activityAllowsCoupon,
     });
-    couponTitle = uc.title;
-    couponType = uc.type;
+    couponTitle = effectiveCoupon.title;
+    couponType = effectiveCoupon.type;
   }
 
   const nonShippingGoodsCoupon = couponType === 'shipping' ? 0 : couponDiscount;
-  const pointsSettings = await loyaltyRepo.selectPointsSettings();
-  const rewardSettings = await loyaltyRepo.selectRewardSettings();
-  const productRules = await loyaltyRepo.selectProductRules(q);
-  const memberLevel = await loyaltyRepo.selectUserMemberLevel(q, userId);
+  const loyaltyApi = getLoyaltyApi();
+  const pointsSettings = await loyaltyApi.selectPointsSettings();
+  const rewardSettings = await loyaltyApi.selectRewardSettings();
+  const productRules = await loyaltyApi.selectProductRules(q);
+  const memberLevel = await loyaltyApi.selectUserMemberLevel(q, userId);
   const memberDiscountRate = memberLevel
     ? Math.min(1, Math.max(0.01, Number(memberLevel.discount_rate || 1)))
     : 1;
@@ -355,9 +373,10 @@ async function buildOrderPricing(userId, body, conn = null) {
   const pointMethods = parseJsonArray(pointsSettings?.allowed_payment_methods, ['online', 'whatsapp']);
   const rewardMethods = parseJsonArray(rewardSettings?.allowed_payment_methods, ['online', 'whatsapp']);
 
-  const pointsBalance = userId ? Number(await pointsRepo.selectUserPointsBalance(userId)) : 0;
-  const hasPendingPointsReverse = userId ? await pointsRepo.hasPendingReverse(userId) : false;
-  const rewardBalance = userId ? Number(await rewardRepo.sumUserRewardTransactions(q, userId)) : 0;
+  const userApi = getUserApi();
+  const pointsBalance = userId ? Number(await userApi.selectUserPointsBalance(userId)) : 0;
+  const hasPendingPointsReverse = userId ? await userApi.hasPendingReverse(userId) : false;
+  const rewardBalance = userId ? Number(await userApi.sumUserRewardTransactions(q, userId)) : 0;
 
   const usePoints = pointsEnabled && !!body.use_points;
   const useRewardCashRequested = !!body.use_reward_cash;
@@ -365,14 +384,14 @@ async function buildOrderPricing(userId, body, conn = null) {
   if (usePoints && !isPaymentMethodAllowedForPoints(pointsSettings, body.payment_method)) {
     throw new ValidationError('当前支付方式不支持积分抵扣');
   }
-  if (usePoints && useRewardCashRequested && !pointsEngine.normalizeSettings(pointsSettings).allow_with_reward_cash) {
+  if (usePoints && useRewardCashRequested && !loyaltyApi.normalizePointsSettings(pointsSettings).allow_with_reward_cash) {
     throw new ValidationError('返现余额不能与积分抵扣同时使用');
   }
   const memberLevelDiscountBase = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon);
   const memberLevelDiscount = memberDiscountRate < 1
-    ? pointsEngine.money(memberLevelDiscountBase * (1 - memberDiscountRate))
+    ? loyaltyApi.pointsMoney(memberLevelDiscountBase * (1 - memberDiscountRate))
     : 0;
-  const memberShippingDiscount = memberFreeShipping ? pointsEngine.money(originalShippingFee) : 0;
+  const memberShippingDiscount = memberFreeShipping ? loyaltyApi.pointsMoney(originalShippingFee) : 0;
   const totalGoodsDiscount = fullReductionDiscount + couponDiscount + memberLevelDiscount;
   const basePayableBeforeLoyaltyWithMember = Math.max(0, rawAmount - totalGoodsDiscount + shippingFee);
   const goodsInclusiveTaxable = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon - memberLevelDiscount);
@@ -395,12 +414,12 @@ async function buildOrderPricing(userId, body, conn = null) {
       price: oi.price,
       subtotal: lineSubtotal,
       line_paid_amount: Math.max(0, lineSubtotal - discountShare),
-      member_discount_share: pointsEngine.money(memberDiscountShare),
+      member_discount_share: loyaltyApi.pointsMoney(memberDiscountShare),
       activity_id: oi.activityId,
       allow_points_stack: flash ? flash.allow_points_stack !== 0 : !fullReductionBlocksPoints,
     };
   });
-  const pointsBonusResolved = pointsBonusResolver.resolvePointsBonusForPricing({
+  const pointsBonusResolved = loyaltyApi.resolvePointsBonusForPricing({
     pointsBonusActivities,
     orderItems,
     productMap,
@@ -432,7 +451,7 @@ async function buildOrderPricing(userId, body, conn = null) {
       adjusted_reason: usePoints ? 'pending_reverse' : '',
       item_results: [],
     }
-    : pointsEngine.calculateMaxUsablePoints({
+    : loyaltyApi.calculateMaxUsablePoints({
       settings: pointsSettings,
       userPointsBalance: pointsBalance,
       orderItems: loyaltyItemsWithBonus,
@@ -471,7 +490,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     line_paid_amount: Math.max(0, item.line_paid_amount - (pointsSettings?.earn_after_points_redeem ? points_discount_amount * (item.line_paid_amount / Math.max(goodsInclusiveTaxable || 1, 1)) : 0)),
   }));
   const pointsEarn = paymentAllowsPoints
-    ? pointsEngine.calculateOrderEarnedPoints({
+    ? loyaltyApi.calculateOrderEarnedPoints({
       settings: pointsSettings,
       productRules,
       orderItems: earnOrderItems,
@@ -487,7 +506,7 @@ async function buildOrderPricing(userId, body, conn = null) {
       item_results: [],
       product_rule_snapshots: [],
       disabled_reason: '当前支付方式不支持积分',
-      calculation_version: pointsEngine.CALCULATION_VERSION,
+      calculation_version: loyaltyApi.POINTS_CALCULATION_VERSION,
     };
   const earned_points = Number(pointsEarn.earned_points || 0);
   const points_bonus_lines = (pointsBonusResolved.points_bonus_snapshots || [])
@@ -505,37 +524,37 @@ async function buildOrderPricing(userId, body, conn = null) {
 
   const discount_lines = [];
   if (flashSaleDiscount > 0) {
-    discount_lines.push({ type: 'flash_sale', label: '秒杀优惠', amount: pointsEngine.money(flashSaleDiscount) });
+    discount_lines.push({ type: 'flash_sale', label: '秒杀优惠', amount: loyaltyApi.pointsMoney(flashSaleDiscount) });
   }
   if (fullReductionDiscount > 0) {
-    discount_lines.push({ type: 'full_reduction', label: '满减优惠', amount: pointsEngine.money(fullReductionDiscount) });
+    discount_lines.push({ type: 'full_reduction', label: '满减优惠', amount: loyaltyApi.pointsMoney(fullReductionDiscount) });
   }
   if (couponDiscount > 0) {
     discount_lines.push({
       type: 'coupon',
       label: couponTitle ? `优惠券抵扣：${couponTitle}` : '优惠券抵扣',
-      amount: pointsEngine.money(couponDiscount),
+      amount: loyaltyApi.pointsMoney(couponDiscount),
     });
   }
   if (memberLevelDiscount > 0) {
     discount_lines.push({
       type: 'member_level_discount',
       label: memberLevel?.name ? `会员折扣：${memberLevel.name}` : '会员折扣',
-      amount: pointsEngine.money(memberLevelDiscount),
+      amount: loyaltyApi.pointsMoney(memberLevelDiscount),
     });
   }
   if (memberShippingDiscount > 0) {
     discount_lines.push({
       type: 'member_free_shipping',
       label: memberLevel?.name ? `会员免邮：${memberLevel.name}` : '会员免邮',
-      amount: pointsEngine.money(memberShippingDiscount),
+      amount: loyaltyApi.pointsMoney(memberShippingDiscount),
     });
   }
   if (points_discount_amount > 0) {
-    discount_lines.push({ type: 'points', label: '积分抵扣', amount: pointsEngine.money(points_discount_amount) });
+    discount_lines.push({ type: 'points', label: '积分抵扣', amount: loyaltyApi.pointsMoney(points_discount_amount) });
   }
   if (reward_cash_discount_amount > 0) {
-    discount_lines.push({ type: 'reward_cash', label: '返现余额抵扣', amount: pointsEngine.money(reward_cash_discount_amount) });
+    discount_lines.push({ type: 'reward_cash', label: '返现余额抵扣', amount: loyaltyApi.pointsMoney(reward_cash_discount_amount) });
   }
 
   return {
@@ -590,7 +609,7 @@ async function buildOrderPricing(userId, body, conn = null) {
         discount_lines,
         disabled_reason: pointsRedeem.disabled_reason || '',
         adjusted: !!pointsRedeem.adjusted,
-        calculation_version: pointsEarn.calculation_version || pointsEngine.CALCULATION_VERSION,
+        calculation_version: pointsEarn.calculation_version || loyaltyApi.POINTS_CALCULATION_VERSION,
         points_bonus_lines,
         points_bonus_snapshots: pointsBonusResolved.points_bonus_snapshots || [],
       },
@@ -601,7 +620,7 @@ async function buildOrderPricing(userId, body, conn = null) {
       redeem_item_results: pointsRedeem.item_results || [],
       points_bonus_snapshots: pointsBonusResolved.points_bonus_snapshots || [],
       points_bonus_lines,
-      calculation_version: pointsEarn.calculation_version || pointsEngine.CALCULATION_VERSION,
+      calculation_version: pointsEarn.calculation_version || loyaltyApi.POINTS_CALCULATION_VERSION,
       point_payment_method_whitelist: pointMethods,
       reward_payment_method_whitelist: rewardMethods,
     },

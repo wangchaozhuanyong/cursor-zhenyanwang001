@@ -784,7 +784,7 @@ function AdminLayoutContent() {
         ) : null}
       </AnimatePresence>
 
-      <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col">
+      <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col overflow-x-hidden">
         <header className="safe-area-pt sticky top-0 z-30 flex flex-col border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
           <div className="flex min-h-[48px] items-center gap-2 px-[var(--admin-mobile-page-x)] py-2 sm:px-4 lg:px-6">
             <button

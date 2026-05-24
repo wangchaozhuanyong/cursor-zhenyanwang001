@@ -3,6 +3,32 @@ const path = require('path');
 
 const modulesRoot = path.resolve(__dirname, '..', 'src', 'modules');
 const requiredDirs = ['routes', 'controller', 'service', 'repository'];
+const expectedModules = [
+  'admin',
+  'analytics',
+  'auth',
+  'cart',
+  'dataRetention',
+  'health',
+  'home',
+  'logistics',
+  'loyalty',
+  'marketing',
+  'monitoring',
+  'myinvois',
+  'notification',
+  'order',
+  'payment',
+  'privacy',
+  'product',
+  'pwa',
+  'search',
+  'seo',
+  'siteCapabilities',
+  'telegram',
+  'theme',
+  'user',
+];
 
 function isDirectory(p) {
   try {
@@ -26,6 +52,15 @@ function run() {
 
   const missing = [];
   const legacyLayerFiles = [];
+  const missingModules = expectedModules.filter((name) => !moduleNames.includes(name));
+  const unexpectedModules = moduleNames.filter((name) => !expectedModules.includes(name));
+
+  if (missingModules.length > 0 || unexpectedModules.length > 0) {
+    console.error('[check:module-structure] Backend module list does not match the fixed baseline:');
+    for (const item of missingModules) console.error(`- missing module: ${item}`);
+    for (const item of unexpectedModules) console.error(`- unexpected module: ${item}`);
+    process.exit(1);
+  }
 
   for (const moduleName of moduleNames) {
     const modulePath = path.join(modulesRoot, moduleName);

@@ -14,6 +14,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import { AdminTableMobileCard } from "@/components/admin/AdminTableMobileCard";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -95,20 +96,6 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function SkeletonRow() {
-  return (
-    <div className="animate-pulse rounded-xl border border-border bg-card p-4">
-      <div className="flex gap-3">
-        <div className="h-10 w-10 rounded-full bg-muted" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 w-1/3 rounded bg-muted" />
-          <div className="h-3 w-2/3 rounded bg-muted" />
-          <div className="h-3 w-1/2 rounded bg-muted" />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function AdminReviews() {
   const { tText } = useAdminT();
@@ -305,65 +292,11 @@ export default function AdminReviews() {
     else setSelected(reviews.map((r) => r.id));
   };
 
-  if (error && !loading) {
+  const renderMobileCard = (r: AdminReview) => {
+    const badge = STATUS_BADGE[r.status] || STATUS_BADGE.normal;
     return (
-      <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
-        <AlertTriangle size={32} />
-        <p>{error}</p>
-        <button type="button" onClick={() => void listQuery.refetch()} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>重试</Tx></button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <SearchBar placeholder={tText("搜索评论内容 / 用户名 / 商品名...")} value={keyword} onChange={(v) => { setKeyword(v); setPage(1); }} />
-        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearReviewFilters} onRemove={handleRemoveFilterChip} />
-        <details className="group rounded-xl border border-border bg-card px-3 py-2">
-          <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none">
-            <span className="text-muted-foreground group-open:hidden"><Tx>展开高级筛选</Tx></span>
-            <span className="hidden group-open:inline"><Tx>收起高级筛选</Tx></span>
-          </summary>
-          <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
-              {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            <select value={rating} onChange={(e) => { setRating(Number(e.target.value)); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
-              {RATING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            <select value={complaintStatus} onChange={(e) => { setComplaintStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
-              {COMPLAINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-        </details>
-      </div>
-
-      {/* Batch actions */}
-      {selected.length > 0 && status !== "deleted" && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/5 px-3 py-3">
-          <span className="text-sm font-medium text-foreground">已选 {selected.length} 项</span>
-          <span className="h-4 w-px bg-border" />
-          <PermissionGate anyOf={REVIEW_MODERATE}>
-            <button type="button" onClick={() => confirm({ title: tText("确认批量隐藏"), description: `确定隐藏选中的 ${selected.length} 条评论？`, confirmText: "隐藏", onConfirm: () => handleBatchHide() })} className="touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:bg-secondary">
-              <EyeOff size={14} /><Tx>批量隐藏</Tx>
-            </button>
-          </PermissionGate>
-          <PermissionGate anyOf={REVIEW_DELETE}>
-            <button type="button" onClick={() => confirm({ title: tText("确认批量删除"), description: `确定删除选中的 ${selected.length} 条评论？`, confirmText: "删除", danger: true, onConfirm: () => handleBatchDelete() })} className={`touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
-              <Trash2 size={14} /><Tx>批量删除</Tx>
-            </button>
-          </PermissionGate>
-        </div>
-      )}
-
-      <div className="space-y-3 md:hidden">
-        {loading ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />) : null}
-        {!loading && reviews.map((r) => {
-              const badge = STATUS_BADGE[r.status] || STATUS_BADGE.normal;
-              return (
-                <div key={r.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                  <div className="flex items-start gap-3">
+      <AdminTableMobileCard className="p-4 shadow-sm">
+<div className="flex items-start gap-3">
                     <input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-gold mt-1 h-5 w-5 shrink-0" />
                     {r.avatar ? (
                       <img src={r.avatar} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
@@ -446,16 +379,64 @@ export default function AdminReviews() {
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-        {!loading && reviews.length === 0 && (
-          <div className="py-16 text-center text-sm text-muted-foreground"><Tx>暂无评论数据</Tx></div>
-        )}
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+      </AdminTableMobileCard>
+    );
+  };
+
+
+  if (error && !loading) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
+        <AlertTriangle size={32} />
+        <p>{error}</p>
+        <button type="button" onClick={() => void listQuery.refetch()} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>重试</Tx></button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <SearchBar placeholder={tText("搜索评论内容 / 用户名 / 商品名...")} value={keyword} onChange={(v) => { setKeyword(v); setPage(1); }} />
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearReviewFilters} onRemove={handleRemoveFilterChip} />
+        <details className="group rounded-xl border border-border bg-card px-3 py-2">
+          <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none">
+            <span className="text-muted-foreground group-open:hidden"><Tx>展开高级筛选</Tx></span>
+            <span className="hidden group-open:inline"><Tx>收起高级筛选</Tx></span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+              {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <select value={rating} onChange={(e) => { setRating(Number(e.target.value)); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+              {RATING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <select value={complaintStatus} onChange={(e) => { setComplaintStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+              {COMPLAINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+        </details>
       </div>
 
-      <div className="hidden md:block rounded-xl border border-border bg-card">
+      {/* Batch actions */}
+      {selected.length > 0 && status !== "deleted" && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/5 px-3 py-3">
+          <span className="text-sm font-medium text-foreground">已选 {selected.length} 项</span>
+          <span className="h-4 w-px bg-border" />
+          <PermissionGate anyOf={REVIEW_MODERATE}>
+            <button type="button" onClick={() => confirm({ title: tText("确认批量隐藏"), description: `确定隐藏选中的 ${selected.length} 条评论？`, confirmText: "隐藏", onConfirm: () => handleBatchHide() })} className="touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:bg-secondary">
+              <EyeOff size={14} /><Tx>批量隐藏</Tx>
+            </button>
+          </PermissionGate>
+          <PermissionGate anyOf={REVIEW_DELETE}>
+            <button type="button" onClick={() => confirm({ title: tText("确认批量删除"), description: `确定删除选中的 ${selected.length} 条评论？`, confirmText: "删除", danger: true, onConfirm: () => handleBatchDelete() })} className={`touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
+              <Trash2 size={14} /><Tx>批量删除</Tx>
+            </button>
+          </PermissionGate>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-border bg-card">
         <AnimatedTable
           embedded
           loading={loading}
@@ -485,6 +466,8 @@ export default function AdminReviews() {
               onClearFilters={clearReviewFilters}
             />
           )}
+          mobileCardFrom="md"
+          renderMobileCard={renderMobileCard}
           renderRow={(r) => {
             const badge = STATUS_BADGE[r.status] || STATUS_BADGE.normal;
             return (

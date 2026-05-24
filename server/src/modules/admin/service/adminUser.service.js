@@ -4,15 +4,19 @@ const repo = require('../repository/adminUser.repository');
 const auditRepo = require('../repository/auditLog.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { formatUserResponse } = require('../../../utils/formatUserResponse');
-const userModule = require('../../user');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
 const { generateId } = require('../../../utils/helpers');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
-const adjustUserPointsFn = /** @type {any} */ (userModule).api?.adjustUserPoints;
-if (typeof adjustUserPointsFn !== 'function') {
-  throw new Error('User module api.adjustUserPoints is required');
+function getUserApi() {
+  return /** @type {any} */ (require('../../user')).api || {};
+}
+
+function requireAdjustUserPoints() {
+  const fn = getUserApi().adjustUserPoints;
+  if (typeof fn !== 'function') throw new Error('User module api.adjustUserPoints is required');
+  return fn;
 }
 
 const ADMIN_USER_MESSAGE = '管理员账号请到“员工账号 / 角色权限”模块管理。';
@@ -285,7 +289,7 @@ async function adjustUserPoints(userId, body, adminUserId, req) {
   if (points === undefined) throw new BusinessError(400, '请输入积分数值');
   const delta = Number(points);
   if (!Number.isFinite(delta) || !delta) throw new BusinessError(400, '积分数值不正确');
-  await adjustUserPointsFn(userId, delta, reason || '管理员调整', adminUserId);
+  await requireAdjustUserPoints()(userId, delta, reason || '管理员调整', adminUserId);
   const afterBal = beforeBal + delta;
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'user.points_adjust', objectType: 'user', objectId: userId, summary: `积分调整 ${points > 0 ? '+' : ''}${points} ${reason || ''}`.trim(), before: { points_balance: beforeBal }, after: { points_balance: afterBal }, result: 'success' });
   return { data: null, message: '积分已调整' };

@@ -13,8 +13,6 @@ const repo = require('../repository/adminOrder.repository');
 const adminEventBus = require('./adminEventBus.service');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../../constants/status');
-const orderPoints = require('../../order/service/orderPoints.service');
-const orderTimeoutEvents = require('../../order/service/orderEventTimeout.service');
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
 }
@@ -439,7 +437,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         && fullOrder
       ) {
         await requireUserApi('syncStatsAfterOrderPaid')(fullOrder.user_id, fullOrder.total_amount, fullOrder.id, conn);
-        await orderPoints.maybeGrantOrderEarnOnPaymentSuccess(conn, fullOrder, {
+        await requireOrderApi('maybeGrantOrderEarnOnPaymentSuccess')(conn, fullOrder, {
           operatorId: adminUserId,
           trigger: 'admin_order_status_paid',
         });
@@ -496,7 +494,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       }
 
       if (status === ORDER_STATUS.SHIPPED && fullOrder) {
-        await orderPoints.maybeGrantOrderEarnPoints(conn, fullOrder, {
+        await requireOrderApi('maybeGrantOrderEarnPoints')(conn, fullOrder, {
           operatorId: adminUserId,
           trigger: 'order_shipped',
           timing: 'order_shipped',
@@ -504,7 +502,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       }
 
       if (status === ORDER_STATUS.COMPLETED && fullOrder) {
-        await orderPoints.maybeGrantOrderEarnPoints(conn, fullOrder, {
+        await requireOrderApi('maybeGrantOrderEarnPoints')(conn, fullOrder, {
           operatorId: adminUserId,
           trigger: 'admin_order_completed',
           timing: 'order_completed',
@@ -516,7 +514,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       }
 
       if ((status === ORDER_STATUS.CANCELLED || status === ORDER_STATUS.REFUNDED) && fullOrder) {
-        await orderPoints.rollbackOrderPoints(conn, fullOrder, {
+        await requireOrderApi('rollbackOrderPoints')(conn, fullOrder, {
           operatorId: adminUserId,
           trigger: `admin_order_${status}`,
           description: `Order status changed to ${status}; rollback earned points`,
@@ -644,7 +642,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
           shippingCostAmount: Number(shippingCostAmountInput || 0),
         });
       }
-      await orderPoints.maybeGrantOrderEarnPoints(pointsConn, order, {
+      await requireOrderApi('maybeGrantOrderEarnPoints')(pointsConn, order, {
         operatorId: adminUserId,
         trigger: 'order_shipped',
         timing: 'order_shipped',
@@ -689,7 +687,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
       objectId: orderId,
       summary: `订单发货 ${order.order_no}`,
     });
-    await orderTimeoutEvents.autoResolveOrderTimeoutEvents(orderId, {
+    await requireOrderApi('autoResolveOrderTimeoutEvents')(orderId, {
       trigger: 'admin_ship_order',
       orderNo: order.order_no,
       carrier,
@@ -813,7 +811,7 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
     const pointsConn = await repo.getConnection();
     try {
       await pointsConn.beginTransaction();
-      await orderPoints.maybeGrantOrderEarnPoints(pointsConn, row, {
+      await requireOrderApi('maybeGrantOrderEarnPoints')(pointsConn, row, {
         operatorId: adminUserId,
         trigger: 'order_shipped',
         timing: 'order_shipped',
@@ -827,7 +825,7 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
       pointsConn.release();
     }
     shipped += 1;
-    await orderTimeoutEvents.autoResolveOrderTimeoutEvents(orderId, {
+    await requireOrderApi('autoResolveOrderTimeoutEvents')(orderId, {
       trigger: 'admin_batch_ship_order',
       orderNo: row.order_no,
       carrier,

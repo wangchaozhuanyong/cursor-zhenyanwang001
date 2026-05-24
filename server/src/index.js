@@ -17,6 +17,7 @@ const {
 } = require('./modules/monitoring/service/monitoringScheduler.service');
 const { startDataRetentionScheduler } = require('./modules/dataRetention/service/dataRetention.service');
 const { startPointsExpireScheduler } = require('./modules/loyalty/service/pointsExpireScheduler.service');
+const { startCouponExpireScheduler } = require('./modules/user/service/couponExpireScheduler.service');
 const { getRedisUrl, pingRedis } = require('./config/redis');
 const { getStorageHealthReport } = require('./utils/objectStorage');
 const { ensureDefaultLegalContentPages } = require('./modules/admin/service/adminExtended.service');
@@ -82,6 +83,7 @@ bootPromise
 
     startDataRetentionScheduler();
     startPointsExpireScheduler();
+    startCouponExpireScheduler();
     startNotificationScheduler();
     startAdminEventEscalationScheduler();
     startAutoConfirmReceiveScheduler();

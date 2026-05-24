@@ -1,4 +1,6 @@
-const adminEventService = require('../../admin/service/adminEvent.service');
+function getAdminApi() {
+  return /** @type {any} */ (require('../../admin')).api || {};
+}
 
 async function notifyHighRisk(anomaly) {
   if (!['P0', 'P1'].includes(anomaly.severity)) return;
@@ -7,7 +9,10 @@ async function notifyHighRisk(anomaly) {
   const rootCause = anomaly.root_cause_message || anomaly.rootCauseMessage || '待分析';
   const ruleCode = anomaly.rule_code || anomaly.ruleCode;
 
-  await adminEventService.emitEvent({
+  const emitEvent = getAdminApi().emitEvent;
+  if (typeof emitEvent !== 'function') return;
+
+  await emitEvent({
     eventType: ruleCode || (anomaly.severity === 'P0' ? 'consistency.anomaly_p0' : 'consistency.anomaly_p1'),
     category: 'consistency',
     severity: anomaly.severity,

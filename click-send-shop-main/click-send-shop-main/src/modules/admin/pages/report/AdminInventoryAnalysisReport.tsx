@@ -3,6 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
@@ -132,6 +136,28 @@ export default function AdminInventoryAnalysisReport() {
     }
   };
 
+  const renderMobileCard = (row: Record<string, unknown>) => {
+    const status = String(row.stock_status || "normal");
+    const statusLabel = formatCell("stock_status", status);
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold">{formatCell("product_name", row.product_name)}</p>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_BADGE_CLASS[status] || STATUS_BADGE_CLASS.normal}`}>
+            {statusLabel}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+          {(["current_stock", "warning_stock", "sales_7d", "sales_30d", "avg_daily_sales", "available_stock_days"] as const).map((key) => (
+            <AdminTableMobileCardField key={key} label={labelReportColumn(key)}>
+              <span className="text-xs text-foreground">{formatCell(key, row[key])}</span>
+            </AdminTableMobileCardField>
+          ))}
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <ReportPageHeader
@@ -206,6 +232,7 @@ export default function AdminInventoryAnalysisReport() {
         emptyIcon={emptyGuide.icon}
         emptyTitle={emptyGuide.title}
         emptyDescription={emptyGuide.description}
+        renderMobileCard={renderMobileCard}
         renderRow={(row) => (
           <>
             {TABLE_COLUMNS.map((key) => {

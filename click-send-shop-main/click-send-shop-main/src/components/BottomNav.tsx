@@ -8,6 +8,7 @@ import { isLoggedIn } from "@/utils/token";
 import { cn } from "@/lib/utils";
 import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { shouldHideBottomNav } from "./bottomNavVisibility";
 
 const tabs = [
   { path: "/", label: "\u9996\u9875", icon: Home },
@@ -17,7 +18,7 @@ const tabs = [
   { path: "/profile", label: "\u6211\u7684", icon: User },
 ];
 
-/** 杞昏Е鍏佽鐨勬渶澶т綅绉伙紙px锛夛紱鐣ユ斁瀹斤紝閬垮厤銆屽垰婊戝畬椤甸潰灏辩偣搴曟爮銆嶈璇垽涓烘粦鍔?*/
+/** 轻触允许的最大位移（px）；略放宽，避免「刚滑完页面就点底栏」被误判为滑动 */
 const TAP_MOVE_THRESHOLD = 28;
 type ActivePointer = {
   path: string;
@@ -53,15 +54,7 @@ export default function BottomNav() {
     };
   }, []);
 
-  if (location.pathname.startsWith("/checkout")) return null;
-
   const requiresAuth = (path: string) => path.split("?")[0] === "/profile";
-
-  const isTabActive = (path: string) => {
-    const base = path.split("?")[0];
-    return location.pathname === base;
-  };
-  const visibleTabs = tabs.filter((tab) => capabilities.mallEnabled || !["/categories", "/cart"].includes(tab.path.split("?")[0]));
 
   const handleNavigate = useCallback((path: string) => {
     const base = path.split("?")[0];
@@ -89,6 +82,14 @@ export default function BottomNav() {
     lastNavTapRef.current = { path, at: now };
     handleNavigate(path);
   }, [handleNavigate]);
+
+  if (shouldHideBottomNav(location.pathname)) return null;
+
+  const isTabActive = (path: string) => {
+    const base = path.split("?")[0];
+    return location.pathname === base;
+  };
+  const visibleTabs = tabs.filter((tab) => capabilities.mallEnabled || !["/categories", "/cart"].includes(tab.path.split("?")[0]));
 
   const isTapIntent = (active: ActivePointer) => active.maxMove <= TAP_MOVE_THRESHOLD;
 

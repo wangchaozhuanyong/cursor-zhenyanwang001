@@ -6,7 +6,6 @@ const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.servic
 const adminEventBus = require('./adminEventBus.service');
 const { normalizeKnownMojibakeText } = require('../../../utils/textNormalize');
 const { sanitizeCmsHtml } = require('../../../utils/cmsSanitizer');
-const orderPoints = require('../../order/service/orderPoints.service');
 
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
@@ -1093,7 +1092,6 @@ module.exports = {
   ensureDefaultLegalContentPages,
   _sanitizeCmsHtmlForTest: sanitizeCmsHtml,
 };
-
 
 
 

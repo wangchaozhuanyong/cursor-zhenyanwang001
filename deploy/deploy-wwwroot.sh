@@ -131,7 +131,7 @@ echo "🗄 执行数据库迁移..." | tee -a "$LOG_FILE"
 npm run migrate
 
 if [[ "$INSTALL_NGINX" == "1" ]]; then
-  echo "🌐 安装 damatong Nginx（并禁用 cursor-main-frontend / flashcast.com.my）..." | tee -a "$LOG_FILE"
+  echo "🌐 安装 damatong Nginx..." | tee -a "$LOG_FILE"
   bash "$PROJECT_DIR/deploy/nginx/install-damatong-nginx.sh" | tee -a "$LOG_FILE"
 else
   echo "⏭ 跳过 Nginx（INSTALL_NGINX=0；生产请单独执行 deploy/nginx/install-damatong-nginx.sh）" | tee -a "$LOG_FILE"

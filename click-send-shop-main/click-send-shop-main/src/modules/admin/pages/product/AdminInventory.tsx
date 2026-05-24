@@ -18,6 +18,7 @@ import {
   assembleInventoryRule,
   batchAdjustInventory,
   batchUpdateInventoryWarningThreshold,
+  createPurchaseOrderFromAlert,
   createInventoryPackRule,
   deleteInventoryPackRule,
   exportInventoryRecordsCsv,
@@ -27,11 +28,16 @@ import {
   fetchInventoryRecords,
   fetchInventorySkus,
   fetchInventorySummary,
+  fetchPurchaseOrder,
+  fetchPurchaseOrders,
+  fetchReplenishmentAlerts,
+  generateReplenishmentAlerts,
+  receivePurchaseOrder,
   unpackInventoryRule,
   updateInventoryPackRule,
   updateInventorySkuWarningThreshold,
 } from "@/services/admin/inventoryService";
-import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventorySku, InventoryStockRecord } from "@/types/inventory";
+import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, PurchaseOrder } from "@/types/inventory";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { THEME_BADGE_SUCCESS, THEME_BADGE_WARNING, THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
@@ -50,12 +56,19 @@ const EMPTY_BATCH_ADJUST: BatchAdjustForm = {
   cost_price: "",
 };
 
-type TabKey = "skus" | "records" | "rules" | "conversions";
+type TabKey = "skus" | "alerts" | "purchaseOrders" | "records" | "rules" | "conversions";
 type AdjustForm = { sku: InventorySku; change_type: "in" | "out" | "adjust"; quantity: string; reason: string; remark: string; source_no: string; cost_price: string };
 type BatchAdjustForm = { change_type: "in" | "out" | "adjust"; quantity: string; reason: string; remark: string; source_no: string; cost_price: string };
 type BatchThresholdForm = { threshold: string };
 type RuleForm = Partial<InventoryPackRule> & { id?: string };
 type ConvertForm = { type: "unpack" | "assemble"; rule: InventoryPackRule; parent_qty: string; remark: string };
+type PurchaseFromAlertForm = { alert: InventoryReplenishmentAlert; ordered_qty: string; unit_cost: string; expected_arrival_date: string; remark: string };
+type ReceivePurchaseOrderForm = {
+  order: PurchaseOrder;
+  remark: string;
+  actual_arrival_date: string;
+  items: Record<string, { received_qty: string; unit_cost: string }>;
+};
 
 const CHANGE_LABEL: Record<InventoryChangeType, string> = {
   in: "入库",
@@ -75,6 +88,29 @@ const CONVERSION_LABEL: Record<string, string> = {
   unpack: "手动拆包",
   assemble: "手动组装",
   auto_unpack: "自动拆包",
+};
+
+const ALERT_STATUS_LABEL: Record<string, string> = {
+  pending: "待补货",
+  suggested: "已生成建议",
+  ordered: "已下单",
+  in_transit: "已补货待到货",
+  partial_received: "部分到货",
+  resolved: "已完成",
+  cancelled: "已取消",
+  overdue: "已延期",
+  ignored: "已忽略",
+  snoozed: "延后提醒",
+};
+
+const PURCHASE_STATUS_LABEL: Record<string, string> = {
+  draft: "草稿",
+  ordered: "已下单",
+  in_transit: "在途",
+  partial_received: "部分到货",
+  received: "已全部到货",
+  cancelled: "已取消",
+  overdue: "已延期",
 };
 
 function skuLabel(sku: InventorySku | null | undefined, tText: (zh: string) => string) {
@@ -108,11 +144,15 @@ export default function AdminInventory() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabKey>("skus");
   const [page, setPage] = useState(1);
+  const [alertsPage, setAlertsPage] = useState(1);
+  const [purchaseOrdersPage, setPurchaseOrdersPage] = useState(1);
   const [recordsPage, setRecordsPage] = useState(1);
   const [rulesPage, setRulesPage] = useState(1);
   const [conversionsPage, setConversionsPage] = useState(1);
   const [keyword, setKeyword] = useState("");
   const [stockStatus, setStockStatus] = useState<"" | "normal" | "low" | "out">("");
+  const [alertStatus, setAlertStatus] = useState("");
+  const [purchaseStatus, setPurchaseStatus] = useState("");
   const [changeType, setChangeType] = useState("");
   const [conversionType, setConversionType] = useState("");
   const [adjusting, setAdjusting] = useState<AdjustForm | null>(null);
@@ -122,16 +162,28 @@ export default function AdminInventory() {
   const [batchAdjust, setBatchAdjust] = useState<BatchAdjustForm | null>(null);
   const [ruleForm, setRuleForm] = useState<RuleForm | null>(null);
   const [convertForm, setConvertForm] = useState<ConvertForm | null>(null);
+  const [purchaseFromAlert, setPurchaseFromAlert] = useState<PurchaseFromAlertForm | null>(null);
+  const [receivingOrder, setReceivingOrder] = useState<ReceivePurchaseOrderForm | null>(null);
 
   const keywordValue = keyword.trim() || undefined;
   const summaryQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "summary"], queryFn: fetchInventorySummary, staleTime: 60_000, refetchInterval: 90_000 });
 
   const skuParams = useMemo(() => ({ page, pageSize: PAGE_SIZE, keyword: keywordValue, stock_status: stockStatus || undefined }), [keywordValue, page, stockStatus]);
+  const alertParams = useMemo(() => ({ page: alertsPage, pageSize: PAGE_SIZE, keyword: keywordValue, status: alertStatus || undefined }), [alertStatus, alertsPage, keywordValue]);
+  const purchaseOrderParams = useMemo(() => ({ page: purchaseOrdersPage, pageSize: PAGE_SIZE, keyword: keywordValue, status: purchaseStatus || undefined }), [keywordValue, purchaseOrdersPage, purchaseStatus]);
   const recordsParams = useMemo(() => ({ page: recordsPage, pageSize: PAGE_SIZE, keyword: keywordValue, change_type: changeType || undefined }), [changeType, keywordValue, recordsPage]);
   const rulesParams = useMemo(() => ({ page: rulesPage, pageSize: PAGE_SIZE, keyword: keywordValue }), [keywordValue, rulesPage]);
   const conversionsParams = useMemo(() => ({ page: conversionsPage, pageSize: PAGE_SIZE, keyword: keywordValue, type: conversionType || undefined }), [conversionType, conversionsPage, keywordValue]);
 
   const skusQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "skus", skuParams], queryFn: () => fetchInventorySkus(skuParams), enabled: tab === "skus", staleTime: 60_000, refetchInterval: 90_000 });
+  const alertsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "replenishment-alerts", alertParams], queryFn: () => fetchReplenishmentAlerts(alertParams), enabled: tab === "alerts", staleTime: 30_000, refetchInterval: 90_000 });
+  const purchaseOrdersQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "purchase-orders", purchaseOrderParams], queryFn: () => fetchPurchaseOrders(purchaseOrderParams), enabled: tab === "purchaseOrders", staleTime: 30_000, refetchInterval: 90_000 });
+  const receivingOrderDetailQuery = useQuery({
+    queryKey: [...adminQueryKeys.inventoryRoot(), "purchase-order", receivingOrder?.order.id],
+    queryFn: () => fetchPurchaseOrder(receivingOrder!.order.id),
+    enabled: !!receivingOrder,
+    staleTime: 0,
+  });
   const recordsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "records", recordsParams], queryFn: () => fetchInventoryRecords(recordsParams), enabled: tab === "records", staleTime: 60_000, refetchInterval: 90_000 });
   const rulesQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "rules", rulesParams], queryFn: () => fetchInventoryPackRules(rulesParams), enabled: tab === "rules" || !!ruleForm || !!convertForm, staleTime: 60_000 });
   const conversionsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "conversions", conversionsParams], queryFn: () => fetchInventoryConversions(conversionsParams), enabled: tab === "conversions", staleTime: 60_000, refetchInterval: 90_000 });
@@ -256,8 +308,67 @@ export default function AdminInventory() {
     onError: (error) => toast.error(toastErrorMessage(error, L("操作失败"))),
   });
 
+  const generateAlertsMutation = useMutation({
+    mutationFn: generateReplenishmentAlerts,
+    onSuccess: async (result) => {
+      toast.success(`${L("已扫描")} ${result.scanned} ${L("个 SKU，新增")} ${result.created} ${L("条，更新")} ${result.updated} ${L("条预警")}`);
+      await invalidateInventory();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("生成补货预警失败"))),
+  });
+
+  const createPoMutation = useMutation({
+    mutationFn: async () => {
+      if (!purchaseFromAlert) return;
+      const qty = Number(purchaseFromAlert.ordered_qty);
+      if (!Number.isInteger(qty) || qty <= 0) throw new Error(L("采购数量必须为大于 0 的整数"));
+      await createPurchaseOrderFromAlert(purchaseFromAlert.alert.id, {
+        ordered_qty: qty,
+        unit_cost: purchaseFromAlert.unit_cost ? Number(purchaseFromAlert.unit_cost) : undefined,
+        expected_arrival_date: purchaseFromAlert.expected_arrival_date || undefined,
+        remark: purchaseFromAlert.remark.trim() || undefined,
+      });
+    },
+    onSuccess: async () => {
+      toast.success(L("采购单已创建"));
+      setPurchaseFromAlert(null);
+      await invalidateInventory();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("创建采购单失败"))),
+  });
+
+  const receivePoMutation = useMutation({
+    mutationFn: async () => {
+      if (!receivingOrder) return;
+      const detail = receivingOrderDetailQuery.data;
+      const items = detail?.items
+        .map((item) => {
+          const formItem = receivingOrder.items[item.id];
+          const receivedQty = Number(formItem?.received_qty ?? item.remaining_qty);
+          return {
+            id: item.id,
+            received_qty: Number.isFinite(receivedQty) ? receivedQty : 0,
+            unit_cost: formItem?.unit_cost ? Number(formItem.unit_cost) : item.unit_cost ?? undefined,
+          };
+        })
+        .filter((item) => item.received_qty > 0);
+      if (detail && items.length === 0) throw new Error(L("请至少填写一项本次到货数量"));
+      await receivePurchaseOrder(receivingOrder.order.id, {
+        actual_arrival_date: receivingOrder.actual_arrival_date || undefined,
+        remark: receivingOrder.remark.trim() || undefined,
+        items,
+      });
+    },
+    onSuccess: async () => {
+      toast.success(L("采购到货已入库"));
+      setReceivingOrder(null);
+      await invalidateInventory();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("确认入库失败"))),
+  });
+
   const summary = summaryQuery.data;
-  const skus = skusQuery.data?.list || [];
+  const skus = useMemo(() => skusQuery.data?.list || [], [skusQuery.data?.list]);
   const pageVariantIds = useMemo(() => skus.map((sku) => sku.variant_id), [skus]);
   const allSelectedOnPage = pageVariantIds.length > 0 && pageVariantIds.every((id) => selectedVariantIds.includes(id));
   const selectedCount = selectedVariantIds.length;
@@ -293,6 +404,8 @@ export default function AdminInventory() {
   );
 
   const records = recordsQuery.data?.list || [];
+  const alerts = alertsQuery.data?.list || [];
+  const purchaseOrders = purchaseOrdersQuery.data?.list || [];
   const rules = rulesQuery.data?.list || [];
   const conversions = conversionsQuery.data?.list || [];
 
@@ -373,6 +486,49 @@ export default function AdminInventory() {
     </AdminTableMobileCard>
   );
 
+  const renderAlertMobileCard = (row: InventoryReplenishmentAlert) => (
+    <AdminTableMobileCard>
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold">{row.product_name}</p>
+          <p className="text-xs text-muted-foreground">{row.variant_title || L("默认规格")} / {row.sku_code || "-"}</p>
+        </div>
+        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{L(ALERT_STATUS_LABEL[row.alert_status] || row.alert_status)}</span>
+      </div>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={L("库存")}>{row.available_stock} / {L("预警")} {row.warning_stock}</AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("在途")}>{row.in_transit_qty} {row.unit_name || L("件")}</AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("建议补货")}>{row.suggested_qty} {row.unit_name || L("件")}</AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("原因")}><span className="text-xs text-muted-foreground">{row.reason || "-"}</span></AdminTableMobileCardField>
+      </div>
+      {row.alert_status !== "resolved" ? (
+        <div className="mt-3 border-t border-border pt-3">
+          <button type="button" onClick={() => setPurchaseFromAlert({ alert: row, ordered_qty: String(Math.max(row.suggested_qty, row.warning_stock - row.available_stock, 1)), unit_cost: "", expected_arrival_date: "", remark: "" })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>生成采购单</Tx></button>
+        </div>
+      ) : null}
+    </AdminTableMobileCard>
+  );
+
+  const renderPurchaseOrderMobileCard = (row: PurchaseOrder) => (
+    <AdminTableMobileCard>
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <p className="font-semibold">{row.order_no}</p>
+        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{L(PURCHASE_STATUS_LABEL[row.status] || row.status)}</span>
+      </div>
+      <div className="space-y-2">
+        <AdminTableMobileCardField label={L("数量")}>{row.received_qty} / {row.ordered_qty}</AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("在途")}>{row.in_transit_qty}</AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("预计到货")}>{row.expected_arrival_date || "-"}</AdminTableMobileCardField>
+        <AdminTableMobileCardField label={L("创建时间")}><span className="text-xs text-muted-foreground">{row.created_at ? formatDateTime(row.created_at) : "-"}</span></AdminTableMobileCardField>
+      </div>
+      {!["received", "cancelled"].includes(row.status) ? (
+        <div className="mt-3 border-t border-border pt-3">
+          <button type="button" onClick={() => setReceivingOrder({ order: row, remark: "", actual_arrival_date: "", items: {} })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>确认到货入库</Tx></button>
+        </div>
+      ) : null}
+    </AdminTableMobileCard>
+  );
+
   const renderRuleMobileCard = (row: InventoryPackRule) => (
     <AdminTableMobileCard>
       <div className="space-y-2">
@@ -447,6 +603,8 @@ export default function AdminInventory() {
           <div className="flex flex-wrap gap-2 border-b border-border p-3">
             {([
               ["skus", "SKU 库存"],
+              ["alerts", "补货预警"],
+              ["purchaseOrders", "采购单"],
               ["records", "库存流水"],
               ["rules", "组装拆包规则"],
               ["conversions", "组装拆包单据"],
@@ -455,7 +613,7 @@ export default function AdminInventory() {
           <div className="flex flex-wrap items-center gap-2 border-b border-border p-4">
             <div className="relative min-w-[260px] max-w-sm flex-1">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); setRecordsPage(1); setRulesPage(1); setConversionsPage(1); }} placeholder={tText("搜索商品、SKU、单据号...")} className="w-full rounded-lg bg-secondary py-2.5 pl-9 pr-4 text-sm" />
+              <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); setAlertsPage(1); setPurchaseOrdersPage(1); setRecordsPage(1); setRulesPage(1); setConversionsPage(1); }} placeholder={tText("搜索商品、SKU、单据号...")} className="w-full rounded-lg bg-secondary py-2.5 pl-9 pr-4 text-sm" />
             </div>
             {tab === "skus" ? (
               <>
@@ -466,6 +624,23 @@ export default function AdminInventory() {
                   <button type="button" onClick={() => setSelectedVariantIds([])} className="rounded-lg bg-secondary px-3 py-2.5 text-xs text-muted-foreground"><Tx>清空选择</Tx></button>
                 ) : null}
               </>
+            ) : null}
+            {tab === "alerts" ? (
+              <>
+                <select value={alertStatus} onChange={(e) => { setAlertStatus(e.target.value); setAlertsPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm">
+                  <option value=""><Tx>全部预警状态</Tx></option>
+                  {Object.entries(ALERT_STATUS_LABEL).map(([key, label]) => <option key={key} value={key}>{L(label)}</option>)}
+                </select>
+                <button type="button" onClick={() => generateAlertsMutation.mutate()} disabled={generateAlertsMutation.isPending} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                  {generateAlertsMutation.isPending ? L("扫描中...") : L("扫描生成预警")}
+                </button>
+              </>
+            ) : null}
+            {tab === "purchaseOrders" ? (
+              <select value={purchaseStatus} onChange={(e) => { setPurchaseStatus(e.target.value); setPurchaseOrdersPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm">
+                <option value=""><Tx>全部采购状态</Tx></option>
+                {Object.entries(PURCHASE_STATUS_LABEL).map(([key, label]) => <option key={key} value={key}>{L(label)}</option>)}
+              </select>
             ) : null}
             {tab === "records" ? <select value={changeType} onChange={(e) => { setChangeType(e.target.value); setRecordsPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value=""><Tx>全部流水类型</Tx></option>{Object.entries(CHANGE_LABEL).map(([key, value]) => <option key={key} value={key}>{L(value)}</option>)}</select> : null}
             {tab === "conversions" ? <select value={conversionType} onChange={(e) => { setConversionType(e.target.value); setConversionsPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value=""><Tx>全部单据类型</Tx></option><option value="unpack"><Tx>手动拆包</Tx></option><option value="assemble"><Tx>手动组装</Tx></option><option value="auto_unpack"><Tx>自动拆包</Tx></option></select> : null}
@@ -527,6 +702,57 @@ export default function AdminInventory() {
           </>
         ) : null}
 
+        {tab === "alerts" ? (
+          <>
+            <AnimatedTable embedded loading={alertsQuery.isLoading} rows={alerts} rowKey={(row) => row.id} skeletonRows={8} skeletonCols={9} tableClassName="w-full min-w-[1180px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={Package} emptyTitle={L("暂无补货预警")} emptyDescription={L("点击扫描生成预警，系统会按 SKU 库存和在途数量生成补货事项。")} thead={<tr>{["商品", "SKU", "状态", "可用/预警", "在途", "预计可用", "建议补货", "预计到货", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+              renderMobileCard={renderAlertMobileCard}
+              renderRow={(row: InventoryReplenishmentAlert) => (
+                <>
+                  <td className="px-4 py-3"><AdminTableCell value={row.product_name} maxWidth="12rem" /></td>
+                  <td className="px-4 py-3"><p>{row.variant_title || L("默认规格")}</p><p className="text-xs text-muted-foreground">{row.sku_code || "-"}</p></td>
+                  <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2 py-1 text-xs">{L(ALERT_STATUS_LABEL[row.alert_status] || row.alert_status)}</span></td>
+                  <td className="px-4 py-3">{row.available_stock} / {row.warning_stock}</td>
+                  <td className="px-4 py-3">{row.in_transit_qty} {row.unit_name || L("件")}</td>
+                  <td className="px-4 py-3">{row.expected_available_stock}</td>
+                  <td className="px-4 py-3 font-semibold">{row.suggested_qty}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.expected_arrival_date || "-"}</td>
+                  <td className="px-4 py-3">
+                    {row.alert_status !== "resolved" ? (
+                      <button type="button" onClick={() => setPurchaseFromAlert({ alert: row, ordered_qty: String(Math.max(row.suggested_qty, row.warning_stock - row.available_stock, 1)), unit_cost: "", expected_arrival_date: "", remark: "" })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>生成采购单</Tx></button>
+                    ) : <span className="text-xs text-muted-foreground">-</span>}
+                  </td>
+                </>
+              )}
+            />
+            <Pagination total={alertsQuery.data?.total || 0} page={alertsPage} pageSize={PAGE_SIZE} onPageChange={setAlertsPage} onPageSizeChange={() => undefined} />
+          </>
+        ) : null}
+
+        {tab === "purchaseOrders" ? (
+          <>
+            <AnimatedTable embedded loading={purchaseOrdersQuery.isLoading} rows={purchaseOrders} rowKey={(row) => row.id} skeletonRows={8} skeletonCols={8} tableClassName="w-full min-w-[1080px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={Package} emptyTitle={L("暂无采购单")} emptyDescription={L("从补货预警生成采购单后，会在这里跟进入库状态。")} thead={<tr>{["采购单", "状态", "明细数", "数量", "在途", "预计到货", "金额", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+              renderMobileCard={renderPurchaseOrderMobileCard}
+              renderRow={(row: PurchaseOrder) => (
+                <>
+                  <td className="px-4 py-3 font-medium">{row.order_no}</td>
+                  <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2 py-1 text-xs">{L(PURCHASE_STATUS_LABEL[row.status] || row.status)}</span></td>
+                  <td className="px-4 py-3">{row.item_count}</td>
+                  <td className="px-4 py-3">{row.received_qty} / {row.ordered_qty}</td>
+                  <td className="px-4 py-3">{row.in_transit_qty}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.expected_arrival_date || "-"}</td>
+                  <td className="px-4 py-3">RM {Number(row.total_amount || 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">
+                    {!["received", "cancelled"].includes(row.status) ? (
+                      <button type="button" onClick={() => setReceivingOrder({ order: row, remark: "", actual_arrival_date: "", items: {} })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>确认到货入库</Tx></button>
+                    ) : <span className="text-xs text-muted-foreground">-</span>}
+                  </td>
+                </>
+              )}
+            />
+            <Pagination total={purchaseOrdersQuery.data?.total || 0} page={purchaseOrdersPage} pageSize={PAGE_SIZE} onPageChange={setPurchaseOrdersPage} onPageSizeChange={() => undefined} />
+          </>
+        ) : null}
+
         {tab === "records" ? (
           <>
             <AnimatedTable embedded loading={recordsQuery.isLoading} rows={records} rowKey={(row) => row.id} skeletonRows={8} skeletonCols={9} tableClassName="w-full min-w-[1200px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={History} emptyTitle={L("暂无库存流水")} emptyDescription={L("库存调整、订单扣减、拆包组装会写入流水。")} thead={<tr>{["时间", "商品", "规格/SKU", "类型", "变化", "变更前后", "原因", "单据", "操作人"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
@@ -556,6 +782,108 @@ export default function AdminInventory() {
             <Pagination total={conversionsQuery.data?.total || 0} page={conversionsPage} pageSize={PAGE_SIZE} onPageChange={setConversionsPage} onPageSizeChange={() => undefined} />
           </>
         ) : null}
+
+        <AdminFormSheet
+          open={!!purchaseFromAlert}
+          onOpenChange={(open) => !open && setPurchaseFromAlert(null)}
+          title={L("生成采购单")}
+          description={purchaseFromAlert ? `${purchaseFromAlert.alert.product_name} / ${purchaseFromAlert.alert.variant_title || L("默认规格")}` : undefined}
+          submitText={L("创建采购单")}
+          loading={createPoMutation.isPending}
+          onSubmit={async () => { await createPoMutation.mutateAsync(); }}
+          size="sm"
+        >
+          {purchaseFromAlert ? (
+            <div className="space-y-3">
+              <div className="rounded-xl bg-secondary p-3 text-xs text-muted-foreground">
+                <p>{L("可用库存")}：{purchaseFromAlert.alert.available_stock}</p>
+                <p>{L("预警库存")}：{purchaseFromAlert.alert.warning_stock}</p>
+                <p>{L("在途库存")}：{purchaseFromAlert.alert.in_transit_qty}</p>
+                <p>{L("建议补货")}：{purchaseFromAlert.alert.suggested_qty}</p>
+              </div>
+              <input type="number" min={1} value={purchaseFromAlert.ordered_qty} onChange={(e) => setPurchaseFromAlert({ ...purchaseFromAlert, ordered_qty: e.target.value })} placeholder={tText("采购数量")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <input type="number" min={0} value={purchaseFromAlert.unit_cost} onChange={(e) => setPurchaseFromAlert({ ...purchaseFromAlert, unit_cost: e.target.value })} placeholder={tText("采购单价（可选）")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <input type="date" value={purchaseFromAlert.expected_arrival_date} onChange={(e) => setPurchaseFromAlert({ ...purchaseFromAlert, expected_arrival_date: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <textarea value={purchaseFromAlert.remark} onChange={(e) => setPurchaseFromAlert({ ...purchaseFromAlert, remark: e.target.value })} placeholder={tText("采购备注（可选）")} className="min-h-20 w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            </div>
+          ) : null}
+        </AdminFormSheet>
+
+        <AdminFormSheet
+          open={!!receivingOrder}
+          onOpenChange={(open) => !open && setReceivingOrder(null)}
+          title={L("确认采购到货入库")}
+          description={receivingOrder ? `${receivingOrder.order.order_no} · ${L("剩余在途")} ${receivingOrder.order.in_transit_qty}` : undefined}
+          submitText={L("确认入库")}
+          loading={receivePoMutation.isPending}
+          submitDisabled={receivingOrderDetailQuery.isLoading}
+          onSubmit={async () => { await receivePoMutation.mutateAsync(); }}
+          size="sm"
+        >
+          {receivingOrder ? (
+            <div className="space-y-3">
+              <div className="rounded-xl bg-secondary p-3 text-xs text-muted-foreground">
+                <p>{L("下单数量")}：{receivingOrder.order.ordered_qty}</p>
+                <p>{L("已到货")}：{receivingOrder.order.received_qty}</p>
+                <p>{L("剩余在途")}：{receivingOrder.order.in_transit_qty}</p>
+              </div>
+              {receivingOrderDetailQuery.isLoading ? (
+                <div className="rounded-xl bg-secondary p-4 text-sm text-muted-foreground"><Tx>正在加载采购明细...</Tx></div>
+              ) : (
+                <div className="max-h-80 space-y-2 overflow-y-auto">
+                  {(receivingOrderDetailQuery.data?.items || []).map((item) => {
+                    const formItem = receivingOrder.items[item.id] || {
+                      received_qty: String(item.remaining_qty),
+                      unit_cost: item.unit_cost == null ? "" : String(item.unit_cost),
+                    };
+                    return (
+                      <div key={item.id} className="rounded-xl border border-border p-3">
+                        <div className="mb-2">
+                          <p className="text-sm font-medium">{item.product_name}</p>
+                          <p className="text-xs text-muted-foreground">{item.variant_title || L("默认规格")} / {item.sku_code || "-"}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{L("已到货")} {item.received_qty} / {item.ordered_qty}，{L("未到货")} {item.remaining_qty} {item.unit_name || L("件")}</p>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <input
+                            type="number"
+                            min={0}
+                            max={item.remaining_qty}
+                            value={formItem.received_qty}
+                            onChange={(e) => setReceivingOrder({
+                              ...receivingOrder,
+                              items: {
+                                ...receivingOrder.items,
+                                [item.id]: { ...formItem, received_qty: e.target.value },
+                              },
+                            })}
+                            placeholder={tText("本次到货数量")}
+                            className="w-full rounded-lg bg-secondary px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="number"
+                            min={0}
+                            value={formItem.unit_cost}
+                            onChange={(e) => setReceivingOrder({
+                              ...receivingOrder,
+                              items: {
+                                ...receivingOrder.items,
+                                [item.id]: { ...formItem, unit_cost: e.target.value },
+                              },
+                            })}
+                            placeholder={tText("本次成本价")}
+                            className="w-full rounded-lg bg-secondary px-3 py-2 text-sm"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <input type="date" value={receivingOrder.actual_arrival_date} onChange={(e) => setReceivingOrder({ ...receivingOrder, actual_arrival_date: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <textarea value={receivingOrder.remark} onChange={(e) => setReceivingOrder({ ...receivingOrder, remark: e.target.value })} placeholder={tText("入库备注（可选）")} className="min-h-20 w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            </div>
+          ) : null}
+        </AdminFormSheet>
 
         <AdminFormSheet
           open={!!batchThreshold}

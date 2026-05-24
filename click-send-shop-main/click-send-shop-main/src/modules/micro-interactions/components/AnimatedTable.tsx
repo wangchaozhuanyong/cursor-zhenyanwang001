@@ -2,10 +2,8 @@ import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AdminTableScrollContainer } from "@/components/admin/AdminTableScrollContainer";
-import {
-  AdminTableMobileCardSkeleton,
-  adminTableMobileVisibility,
-} from "@/components/admin/AdminTableMobileCard";
+import { AdminTableMobileCardSkeleton } from "@/components/admin/AdminTableMobileCard";
+import { adminTableMobileVisibility } from "@/components/admin/adminTableMobileCardUtils";
 import { adminTableClassName, ADMIN_TABLE_STICKY_FIRST_CLASS } from "@/utils/adminTableClasses";
 import type { LucideIcon } from "lucide-react";
 import { useMotionConfig } from "../hooks/useMotionConfig";

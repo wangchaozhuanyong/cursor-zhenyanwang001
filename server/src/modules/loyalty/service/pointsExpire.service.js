@@ -1,7 +1,6 @@
 const { klDateString } = require('../../../utils/klDateRange');
 const { normalizeSettings } = require('./pointsEngine.service');
 const loyaltyRepo = require('../repository/loyalty.repository');
-const pointsRepo = require('../../user/repository/points.repository');
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
 
 function getUserApi() {
@@ -40,7 +39,7 @@ async function expirePointsForUser(conn, userId, settings, options = {}) {
   if (!normalized.expire_enabled) return { skipped: true, reason: 'expire_disabled' };
   if (normalized.expire_days <= 0) return { skipped: true, reason: 'expire_days_not_configured' };
 
-  const records = await pointsRepo.selectSuccessLedgerForUser(conn, userId);
+  const records = await getUserApi().selectSuccessLedgerForUser(conn, userId);
   const expireAmount = computeExpiredAmount(records, normalized.expire_days, options.now);
   if (expireAmount <= 0) return { skipped: true, reason: 'nothing_to_expire' };
 
@@ -62,10 +61,10 @@ async function runPointsExpireTick(options = {}) {
   const normalized = normalizeSettings(settings || {});
   if (!normalized.expire_enabled || normalized.expire_days <= 0) return { skipped: true, processed: 0 };
 
-  const userIds = await pointsRepo.selectUserIdsWithPositiveBalance(options.limit || 200);
+  const userIds = await getUserApi().selectUserIdsWithPositiveBalance(options.limit || 200);
   let processed = 0;
   for (const userId of userIds) {
-    const conn = await pointsRepo.getConnection();
+    const conn = await getUserApi().getPointsConnection();
     try {
       await conn.beginTransaction();
       const result = await expirePointsForUser(conn, userId, settings, options);

@@ -17,6 +17,10 @@ import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -168,6 +172,38 @@ export default function AdminRewardRecords() {
     { label: tText("获奖用户"), value: String(stats.rewardedUsers || 0), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
 
+  const renderMobileCard = (record: RewardRecord) => {
+    const status = statusLabels[record.status]
+      ? { label: L(statusLabels[record.status].label), className: statusLabels[record.status].className }
+      : { label: labelRewardStatus(record.status), className: "bg-muted text-muted-foreground" };
+
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold">{formatUserDisplay(record.user_nickname, record.user_phone)}</p>
+          <span className={`shrink-0 rounded-full px-2 py-1 text-xs ${status.className}`}>{status.label}</span>
+        </div>
+        <p className="mb-2 text-base font-semibold text-[var(--theme-price)]">RM {money(record.amount)}</p>
+        <div className="space-y-2">
+          <AdminTableMobileCardField label={tText("订单号")}>
+            <span className="font-mono text-xs text-muted-foreground">{record.order_no || "—"}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("订单 / 比例")}>
+            <span className="text-xs text-muted-foreground">RM {money(record.order_amount)} · {money(record.rate)}% · {tText("层级")} {record.level || 1}</span>
+          </AdminTableMobileCardField>
+          {record.remark ? (
+            <AdminTableMobileCardField label={tText("备注")}>
+              <span className="text-xs text-muted-foreground line-clamp-2">{record.remark}</span>
+            </AdminTableMobileCardField>
+          ) : null}
+          <AdminTableMobileCardField label={tText("时间")}>
+            <span className="text-xs text-muted-foreground">{record.created_at ? formatDateTime(record.created_at) : "—"}</span>
+          </AdminTableMobileCardField>
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
+
   return (
     <div className="space-y-5">
       <div>
@@ -307,6 +343,7 @@ export default function AdminRewardRecords() {
             onClearFilters={clearFilters}
           />
         )}
+        renderMobileCard={renderMobileCard}
         renderRow={(record) => {
           const label = statusLabels[record.status]
             ? { label: L(statusLabels[record.status].label), className: statusLabels[record.status].className }

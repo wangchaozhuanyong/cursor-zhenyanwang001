@@ -12,6 +12,13 @@
     "src/types/**/*.ts",
     "src/utils/token.ts",
     "src/utils/cartNormalize.ts",
+    "src/utils/checkoutPaymentMethod.ts",
+    "src/components/bottomNavVisibility.ts",
+    "src/modules/public/pages/order/utils/checkoutCouponDiscount.ts",
+    "src/modules/public/pages/order/utils/checkoutSubmitValidation.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutAddress.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutPaymentSetup.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutSubmission.ts",
     "src/stores/useCartStore.ts"
   ]
 }

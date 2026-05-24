@@ -90,7 +90,7 @@ test('cancel/refund redeem-only path refunds redeemed points without earned roll
 
 test('earned rollback skips when order earn record does not exist', async () => {
   const calls = [];
-  pointsRepo.selectRecordByRelatedForUpdate = async () => null;
+  userModule.api.selectPointsRecordByRelatedForUpdate = async () => null;
   userModule.api.changeUserPoints = async (_conn, payload) => {
     calls.push(payload);
     return { skipped: false };
@@ -104,7 +104,7 @@ test('earned rollback skips when order earn record does not exist', async () => 
 
 test('completed order full refund rolls back granted earned points with fixed idempotency key', async () => {
   const calls = [];
-  pointsRepo.selectRecordByRelatedForUpdate = async (_conn, related, action) => (
+  userModule.api.selectPointsRecordByRelatedForUpdate = async (_conn, related, action) => (
     related === 'order_earn:order-1' && action === 'order_earn' ? { id: 'earned' } : null
   );
   userModule.api.changeUserPoints = async (_conn, payload) => {
@@ -121,7 +121,7 @@ test('completed order full refund rolls back granted earned points with fixed id
 
 test('partial refund rolls back earned and redeemed points proportionally after completion', async () => {
   const calls = [];
-  pointsRepo.selectRecordByRelatedForUpdate = async (_conn, related, action) => (
+  userModule.api.selectPointsRecordByRelatedForUpdate = async (_conn, related, action) => (
     related === 'order_earn:order-1' && action === 'order_earn' ? { id: 'earned' } : null
   );
   userModule.api.changeUserPoints = async (_conn, payload) => {
@@ -145,7 +145,7 @@ test('partial refund rolls back earned and redeemed points proportionally after 
 
 test('partial refund before completion skips earned rollback and only refunds redeemed points', async () => {
   const calls = [];
-  pointsRepo.selectRecordByRelatedForUpdate = async () => null;
+  userModule.api.selectPointsRecordByRelatedForUpdate = async () => null;
   userModule.api.changeUserPoints = async (_conn, payload) => {
     calls.push(payload);
     return { skipped: false };

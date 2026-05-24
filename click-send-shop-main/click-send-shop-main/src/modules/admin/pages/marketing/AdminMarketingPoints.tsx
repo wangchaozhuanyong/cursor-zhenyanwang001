@@ -4,6 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Coins, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import { ADMIN_TABLE_NOWRAP_CLASS, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
@@ -170,6 +174,37 @@ export default function AdminMarketingPoints() {
 
   const editRule = (rule: ProductPointRule) => setRuleForm({ ...defaultRule, ...rule });
 
+  const renderRuleMobileCard = (r: ProductPointRule) => (
+    <AdminTableMobileCard>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold">{r.name}</p>
+        <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs">{r.enabled ? tText("启用") : tText("停用")}</span>
+      </div>
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{r.scope_type}:{r.scope_id || "all"}</span>
+        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{r.earn_mode}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+        <AdminTableMobileCardField label={tText("固定积分")}>
+          <span className="text-xs text-muted-foreground">{r.fixed_points || 0}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("百分比")}>
+          <span className="text-xs text-muted-foreground">{r.points_percent || 0}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("倍率")}>
+          <span className="text-xs text-muted-foreground">{r.multiplier_percent || 100}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("优先级")}>
+          <span className="text-xs text-muted-foreground">{r.priority}</span>
+        </AdminTableMobileCardField>
+      </div>
+      <div className="mt-3 flex gap-2 border-t border-border pt-3">
+        <button type="button" onClick={() => editRule(r)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs text-theme-price hover:bg-secondary"><Tx>编辑</Tx></button>
+        <button type="button" onClick={() => r.id && deleteRuleMutation.mutate(r.id)} className="touch-manipulation rounded-lg border border-border px-3 py-2 text-xs text-destructive hover:bg-secondary"><Trash2 className="inline h-4 w-4" /></button>
+      </div>
+    </AdminTableMobileCard>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -253,6 +288,7 @@ export default function AdminMarketingPoints() {
             emptyIcon={Coins}
             emptyTitle="暂无商品积分规则"
             emptyDescription="填写上方表单并保存后，规则会显示在此列表。"
+            renderMobileCard={renderRuleMobileCard}
             renderRow={(r) => (
               <>
                 <td className={adminTdClassName()}>{r.name}</td>

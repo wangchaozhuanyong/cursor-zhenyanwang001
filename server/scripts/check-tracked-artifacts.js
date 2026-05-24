@@ -15,6 +15,11 @@ const FORBIDDEN_PATTERNS = [
   /(^|\/)dist\//,
   /(^|\/)dist-ssr\//,
   /(^|\/)bun\.lockb$/,
+  /^\.env$/,
+  /^server\/\.env$/,
+  /^click-send-shop-main\/click-send-shop-main\/\.env$/,
+  /\.env\.local$/,
+  /\.env\.production$/,
 ];
 
 function listTrackedFiles() {

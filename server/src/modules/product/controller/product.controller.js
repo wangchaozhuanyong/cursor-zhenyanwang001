@@ -1,5 +1,5 @@
 const catalogService = require('../service/catalog.service');
-const productApiService = require('../services/product.api.service');
+const productApiService = require('../service/product.api.service');
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 
 exports.getProducts = asyncRoute(async (req, res) => {
@@ -35,5 +35,4 @@ exports.trackHomeEvent = asyncRoute(async (req, res) => {
   await catalogService.trackHomeEngagement(req.body || {});
   res.success(null, 'ok');
 });
-
 

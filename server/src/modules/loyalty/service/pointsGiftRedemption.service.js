@@ -1,11 +1,19 @@
 const { generateId, generateOrderNo } = require('../../../utils/helpers');
 const { ValidationError, NotFoundError, BusinessError } = require('../../../errors');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
-const orderRepo = require('../../order/repository/order.repository');
 const giftRepo = require('../repository/pointsGift.repository');
-const orderPoints = require('../../order/service/orderPoints.service');
-const catalogService = require('../../product/service/catalog.service');
-const pointsRepo = require('../../user/repository/points.repository');
+
+function getOrderApi() {
+  return /** @type {any} */ (require('../../order')).api || {};
+}
+
+function getProductApi() {
+  return /** @type {any} */ (require('../../product')).api || {};
+}
+
+function getUserApi() {
+  return /** @type {any} */ (require('../../user')).api || {};
+}
 
 function normalizeMalaysiaAddress(address, contactName, contactPhone) {
   if (address && typeof address === 'object') {
@@ -64,10 +72,10 @@ function formatGiftItem(row, product) {
 }
 
 async function listActiveGiftItems() {
-  const rows = await giftRepo.selectActiveGiftItems(orderRepo.getPool());
+  const rows = await giftRepo.selectActiveGiftItems(getOrderApi().getPool());
   const out = [];
   for (const row of rows) {
-    const product = await catalogService.getProductById(row.product_id);
+    const product = await getProductApi().getProductById(row.product_id);
     if (!product) continue;
     out.push(formatGiftItem(row, product));
   }
@@ -75,9 +83,9 @@ async function listActiveGiftItems() {
 }
 
 async function getGiftItem(id) {
-  const row = await giftRepo.selectGiftItemById(orderRepo.getPool(), id);
+  const row = await giftRepo.selectGiftItemById(getOrderApi().getPool(), id);
   if (!row || !row.enabled) throw new NotFoundError('礼品不存在或已下架');
-  const product = await catalogService.getProductById(row.product_id);
+  const product = await getProductApi().getProductById(row.product_id);
   if (!product) throw new NotFoundError('关联商品不存在');
   return { data: formatGiftItem(row, product) };
 }
@@ -98,7 +106,7 @@ async function redeemGift(userId, body) {
     throw new ValidationError('请填写收货人、电话和地址');
   }
 
-  const conn = await orderRepo.getConnection();
+  const conn = await getOrderApi().getConnection();
   try {
     await conn.beginTransaction();
     const gift = await giftRepo.selectGiftItemByIdForUpdate(conn, giftItemId);
@@ -125,24 +133,24 @@ async function redeemGift(userId, body) {
 
     const pointsNeeded = Number(gift.required_points || 0) * quantity;
     const cashAmount = Number(gift.cash_amount || 0) * quantity;
-    const balance = Number(await pointsRepo.selectUserPointsBalance(userId));
+    const balance = Number(await getUserApi().selectUserPointsBalance(userId));
     if (balance < pointsNeeded) throw new ValidationError('积分不足');
 
-    const product = await catalogService.getProductById(gift.product_id);
+    const product = await getProductApi().getProductById(gift.product_id);
     if (!product) throw new ValidationError('关联商品不存在');
 
     let variantId = gift.variant_id || null;
     const productIds = [gift.product_id];
     const variants = variantId
-      ? await orderRepo.selectVariantsForUpdate(conn, [variantId])
-      : await orderRepo.selectDefaultVariantsForProducts(conn, productIds);
+      ? await getOrderApi().selectVariantsForUpdate(conn, [variantId])
+      : await getOrderApi().selectDefaultVariantsForProducts(conn, productIds);
     const variant = variantId
       ? variants.find((v) => v.id === variantId)
       : variants[0];
     if (!variant) throw new ValidationError('商品规格不可用');
     variantId = variant.id;
 
-    const stockResult = await orderRepo.ensureVariantStockWithAutoUnpack(conn, variantId, quantity, {
+    const stockResult = await getOrderApi().ensureVariantStockWithAutoUnpack(conn, variantId, quantity, {
       reason: '积分礼品兑换扣库存',
     });
     if (!stockResult.ok) throw new ValidationError('商品库存不足');
@@ -164,7 +172,7 @@ async function redeemGift(userId, body) {
       calculation_version: 'points_gift_v1',
     };
 
-    await orderRepo.insertOrder(conn, {
+    await getOrderApi().insertOrder(conn, {
       id: orderId,
       userId,
       orderNo,
@@ -202,7 +210,7 @@ async function redeemGift(userId, body) {
       netProfitAmount: cashAmount - Number(variant.cost_price || 0) * quantity,
     });
 
-    await orderRepo.insertOrderItem(conn, {
+    await getOrderApi().insertOrderItem(conn, {
       id: generateId(),
       orderId,
       productId: gift.product_id,
@@ -248,7 +256,7 @@ async function redeemGift(userId, body) {
       metadata: { gift_title: gift.title || product.name },
     });
 
-    const stockDeducted = await orderRepo.deductVariantStock(conn, variantId, quantity, {
+    const stockDeducted = await getOrderApi().deductVariantStock(conn, variantId, quantity, {
       refType: 'order',
       refId: orderId,
       orderNo,
@@ -258,7 +266,7 @@ async function redeemGift(userId, body) {
       throw new ValidationError('商品库存不足');
     }
 
-    await orderPoints.applyGiftRedeem(conn, {
+    await getOrderApi().applyGiftRedeem(conn, {
       id: orderId,
       user_id: userId,
       order_no: orderNo,
@@ -266,7 +274,7 @@ async function redeemGift(userId, body) {
     }, { giftItemId, redemptionId });
 
     if (paymentStatus === PAYMENT_STATUS.PAID) {
-      await orderRepo.updateOrderGiftRedeemPaid(conn, orderId);
+      await getOrderApi().updateOrderGiftRedeemPaid(conn, orderId);
       await finalizeGiftOrderFulfillment(conn, {
         id: orderId,
         user_id: userId,
@@ -320,10 +328,10 @@ async function finalizeGiftOrderFulfillment(conn, order, orderItems = []) {
   }
   const items = orderItems.length
     ? orderItems
-    : await orderRepo.selectOrderItemQtyRows(conn, order.id);
+    : await getOrderApi().selectOrderItemQtyRows(conn, order.id);
   for (const it of items) {
     if (it.product_id) {
-      await orderRepo.incrementProductSales(conn, it.product_id, Number(it.qty || 1));
+      await getOrderApi().incrementProductSales(conn, it.product_id, Number(it.qty || 1));
     }
   }
   await syncGiftRedemptionOnOrderPaid(conn, order);
@@ -333,7 +341,7 @@ async function finalizeGiftOrderFulfillment(conn, order, orderItems = []) {
 async function reverseGiftRedemptionForCancelledOrder(conn, order) {
   const redemption = await giftRepo.selectGiftRedemptionByOrderId(conn, order.id);
   if (!redemption) return { skipped: true };
-  await orderPoints.reverseGiftRedeem(conn, order, {
+  await getOrderApi().reverseGiftRedeem(conn, order, {
     trigger: 'order_cancel',
     description: `礼品兑换取消退回积分 ${order.order_no}`,
   });

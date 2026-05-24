@@ -7,6 +7,8 @@ const orderService = require('./service/order.service');
 const orderProfitService = require('./service/orderProfit.service');
 const orderRefundCompensation = require('./service/orderRefundCompensation.service');
 const checkoutAbandonmentService = require('./service/checkoutAbandonment.service');
+const orderPoints = require('./service/orderPoints.service');
+const orderTimeoutEvents = require('./service/orderEventTimeout.service');
 
 const router = Router();
 
@@ -29,6 +31,13 @@ const router = Router();
   selectOrderByIdOrOrderNoForUpdate: orderRepo.selectOrderByIdOrOrderNoForUpdate,
   updateOrderPaid: orderRepo.updateOrderPaid,
   updateOrderRefundState: orderRepo.updateOrderRefundState,
+  selectVariantsForUpdate: orderRepo.selectVariantsForUpdate,
+  selectDefaultVariantsForProducts: orderRepo.selectDefaultVariantsForProducts,
+  ensureVariantStockWithAutoUnpack: orderRepo.ensureVariantStockWithAutoUnpack,
+  insertOrder: orderRepo.insertOrder,
+  insertOrderItem: orderRepo.insertOrderItem,
+  deductVariantStock: orderRepo.deductVariantStock,
+  updateOrderGiftRedeemPaid: orderRepo.updateOrderGiftRedeemPaid,
   selectOrderItemQtyRows: orderRepo.selectOrderItemQtyRows,
   decrementActivitySold: orderRepo.decrementActivitySold,
   restoreVariantStock: orderRepo.restoreVariantStock,
@@ -42,10 +51,23 @@ const router = Router();
   listDueCheckoutReminders: checkoutAbandonmentService.listDueCheckoutReminders,
   markCheckoutReminderSent: checkoutAbandonmentService.markCheckoutReminderSent,
   recomputeOrderProfitAmounts: orderProfitService.recomputeOrderProfitAmounts,
+  getOrderSummary: orderService.getOrderSummary,
+  maybeGrantOrderEarnPoints: orderPoints.maybeGrantOrderEarnPoints,
+  maybeGrantOrderEarnOnPaymentSuccess: orderPoints.maybeGrantOrderEarnOnPaymentSuccess,
+  rollbackOrderPoints: orderPoints.rollbackOrderPoints,
+  applyOrderRedeem: orderPoints.applyOrderRedeem,
+  applyGiftRedeem: orderPoints.applyGiftRedeem,
+  reverseGiftRedeem: orderPoints.reverseGiftRedeem,
+  reverseOrderRedeem: orderPoints.reverseOrderRedeem,
+  grantOrderEarnPoints: orderPoints.grantOrderEarnPoints,
+  reverseOrderEarnPoints: orderPoints.reverseOrderEarnPoints,
+  refundOrderRedeemOnly: orderPoints.refundOrderRedeemOnly,
+  reverseOrderEarnOnly: orderPoints.reverseOrderEarnOnly,
+  rollbackOrderPointsForPartialRefund: orderPoints.rollbackOrderPointsForPartialRefund,
+  autoResolveOrderTimeoutEvents: orderTimeoutEvents.autoResolveOrderTimeoutEvents,
 };
 
 router.use('/orders', require('./routes/orders.routes'));
 router.use('/returns', require('./routes/returns.routes'));
 
 module.exports = router;
-

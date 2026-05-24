@@ -9,6 +9,10 @@ import ReportKpiGrid from "@/components/admin/report/ReportKpiGrid";
 import ReportAlertBanners from "@/components/admin/report/ReportAlertBanners";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -238,6 +242,35 @@ export default function AdminReportGenericPage({
     }
   }, [exportType, exportMode, filterParams, tText]);
 
+  const renderMobileCard = (row: Record<string, unknown>) => {
+    const titleKey = columns.find((k) => stickyKeys.has(k)) ?? columns[0];
+    const title = titleKey ? formatCellValueLocalized(titleKey, row[titleKey]) : "-";
+    const fieldKeys = columns.filter((k) => k !== titleKey && k !== "cover_image").slice(0, 6);
+    return (
+      <AdminTableMobileCard>
+        <p className="mb-2 text-sm font-semibold">{title}</p>
+        <div className="space-y-2">
+          {fieldKeys.map((k) => (
+            <AdminTableMobileCardField key={k} label={labelReportColumn(k)}>
+              <span className="text-xs text-muted-foreground">{formatCellValueLocalized(k, row[k])}</span>
+            </AdminTableMobileCardField>
+          ))}
+        </div>
+        {columns.includes("cover_image") ? (
+          <div className="mt-3 border-t border-border pt-3">
+            <button
+              type="button"
+              onClick={() => openCoverPreview(row.cover_image)}
+              className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"
+            >
+              <Tx>查看图片</Tx>
+            </button>
+          </div>
+        ) : null}
+      </AdminTableMobileCard>
+    );
+  };
+
   const openCoverPreview = (url: unknown) => {
     const source = String(url ?? "").trim();
     if (!source) {
@@ -330,6 +363,7 @@ export default function AdminReportGenericPage({
                 onClearFilters={handleClearFilters}
               />
             )}
+            renderMobileCard={renderMobileCard}
             renderRow={(row) => (
               <>
                 {columns.map((k) => {

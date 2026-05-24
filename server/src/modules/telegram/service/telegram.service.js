@@ -1,7 +1,12 @@
 const repo = require('../repository/telegram.repository');
 const templates = require('../telegram.templates');
-const siteSettingsRepo = require('../../admin/repository/adminSiteSettings.repository');
-const siteCapabilitiesService = require('../../siteCapabilities/service/siteCapabilities.service');
+function getAdminApi() {
+  return /** @type {any} */ (require('../../admin')).api || {};
+}
+
+function getSiteCapabilitiesApi() {
+  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+}
 const { writeAuditLog } = require('../../../utils/auditLog');
 const {
   SETTING_KEY,
@@ -24,7 +29,7 @@ function invalidateConfigCache() {
 
 async function loadConfig() {
   if (configCache) return configCache;
-  const raw = await siteSettingsRepo.selectSettingValue(SETTING_KEY);
+  const raw = await getAdminApi().selectSiteSettingValue(SETTING_KEY);
   const stored = parseStoredConfig(raw);
   const merged = mergeTelegramNotifyConfig(readEnvTelegramConfig(), stored);
   configCache = {
@@ -82,11 +87,11 @@ async function saveAdminSettings(body, adminUserId, req) {
   const normalized = normalizeTelegramNotifyConfig(body);
   normalized.botToken = resolveBotTokenOnSave(body?.botToken, current.botToken);
 
-  await siteSettingsRepo.upsertSetting(SETTING_KEY, JSON.stringify(normalized));
+  await getAdminApi().upsertSiteSetting(SETTING_KEY, JSON.stringify(normalized));
   invalidateConfigCache();
 
-  const caps = await siteCapabilitiesService.getSiteCapabilities();
-  await siteCapabilitiesService.saveSiteCapabilities({
+  const caps = await getSiteCapabilitiesApi().getSiteCapabilities();
+  await getSiteCapabilitiesApi().saveSiteCapabilities({
     ...caps,
     telegramOrderNotifyEnabled: normalized.enabled,
   });
@@ -230,7 +235,7 @@ async function notifyOrderPaid(orderId, source = '') {
   const eventType = EVENT_PAYMENT_SUCCESS;
   const config = await loadConfig();
 
-  if (!(await siteCapabilitiesService.isCapabilityEnabled('telegramOrderNotifyEnabled'))) {
+  if (!(await getSiteCapabilitiesApi().isCapabilityEnabled('telegramOrderNotifyEnabled'))) {
     await writeLog({ orderId, eventType, status: 'skipped', errorMessage: 'Telegram feature disabled' });
     return { skipped: true, reason: 'feature_disabled' };
   }

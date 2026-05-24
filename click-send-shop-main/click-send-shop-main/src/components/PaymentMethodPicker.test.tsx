@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldShowPaymentOption } from "./PaymentMethodPicker";
+import { shouldShowPaymentOption } from "@/utils/checkoutPaymentMethod";
 
 describe("shouldShowPaymentOption", () => {
   it("shows reward_wallet when customer service and online are hidden", () => {

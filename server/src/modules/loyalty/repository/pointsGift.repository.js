@@ -1,15 +1,21 @@
+const db = require('../../../config/db');
+
+function runner(q) {
+  return q || db;
+}
+
 async function selectGiftItemByIdForUpdate(q, id) {
-  const [[row]] = await q.query('SELECT * FROM points_gift_items WHERE id = ? FOR UPDATE', [id]);
+  const [[row]] = await runner(q).query('SELECT * FROM points_gift_items WHERE id = ? FOR UPDATE', [id]);
   return row || null;
 }
 
 async function selectGiftItemById(q, id) {
-  const [[row]] = await q.query('SELECT * FROM points_gift_items WHERE id = ?', [id]);
+  const [[row]] = await runner(q).query('SELECT * FROM points_gift_items WHERE id = ?', [id]);
   return row || null;
 }
 
 async function selectActiveGiftItems(q) {
-  const [rows] = await q.query(
+  const [rows] = await runner(q).query(
     `SELECT * FROM points_gift_items
      WHERE enabled = 1
        AND (start_at IS NULL OR start_at <= NOW())
@@ -24,6 +30,7 @@ async function selectActiveGiftItems(q) {
  * @param {{ page?: number|string; pageSize?: number|string; enabled?: boolean|number|string }} [options]
  */
 async function selectGiftItemsPage(q, { page = 1, pageSize = 20, enabled } = {}) {
+  const dbRunner = runner(q);
   const where = ['1=1'];
   const params = [];
   if (enabled === '1' || enabled === 1 || enabled === true) {
@@ -33,11 +40,11 @@ async function selectGiftItemsPage(q, { page = 1, pageSize = 20, enabled } = {})
   }
   const offset = (Math.max(Number(page) || 1, 1) - 1) * Math.max(Number(pageSize) || 20, 1);
   const limit = Math.min(Math.max(Number(pageSize) || 20, 1), 100);
-  const [[{ total }]] = await q.query(
+  const [[{ total }]] = await dbRunner.query(
     `SELECT COUNT(*) AS total FROM points_gift_items WHERE ${where.join(' AND ')}`,
     params,
   );
-  const [rows] = await q.query(
+  const [rows] = await dbRunner.query(
     `SELECT * FROM points_gift_items WHERE ${where.join(' AND ')}
      ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?`,
     [...params, limit, offset],
@@ -46,7 +53,7 @@ async function selectGiftItemsPage(q, { page = 1, pageSize = 20, enabled } = {})
 }
 
 async function insertGiftItem(q, row) {
-  await q.query(
+  await runner(q).query(
     `INSERT INTO points_gift_items
       (id, product_id, variant_id, title, image, required_points, cash_amount,
        stock_limit, redeemed_count, limit_per_user, start_at, end_at, enabled, sort_order)
@@ -62,15 +69,15 @@ async function insertGiftItem(q, row) {
 
 async function updateGiftItem(q, id, fields, values) {
   if (!fields.length) return;
-  await q.query(`UPDATE points_gift_items SET ${fields.join(', ')} WHERE id = ?`, [...values, id]);
+  await runner(q).query(`UPDATE points_gift_items SET ${fields.join(', ')} WHERE id = ?`, [...values, id]);
 }
 
 async function deleteGiftItem(q, id) {
-  await q.query('DELETE FROM points_gift_items WHERE id = ?', [id]);
+  await runner(q).query('DELETE FROM points_gift_items WHERE id = ?', [id]);
 }
 
 async function incrementGiftRedeemedCount(q, id, qty) {
-  const [result] = await q.query(
+  const [result] = await runner(q).query(
     `UPDATE points_gift_items
      SET redeemed_count = redeemed_count + ?
      WHERE id = ?
@@ -81,15 +88,16 @@ async function incrementGiftRedeemedCount(q, id, qty) {
 }
 
 async function decrementGiftRedeemedCount(q, id, qty) {
-  await q.query(
+  await runner(q).query(
     'UPDATE points_gift_items SET redeemed_count = GREATEST(0, redeemed_count - ?) WHERE id = ?',
     [qty, id],
   );
 }
 
 async function countUserGiftRedemptions(q, userId, giftItemId, { excludeStatuses = ['cancelled'] } = {}) {
+  const dbRunner = runner(q);
   const placeholders = excludeStatuses.map(() => '?').join(',');
-  const [[row]] = await q.query(
+  const [[row]] = await dbRunner.query(
     `SELECT COALESCE(SUM(quantity), 0) AS total_qty
      FROM points_gift_redemptions
      WHERE user_id = ? AND gift_item_id = ?
@@ -100,7 +108,7 @@ async function countUserGiftRedemptions(q, userId, giftItemId, { excludeStatuses
 }
 
 async function insertGiftRedemption(q, row) {
-  await q.query(
+  await runner(q).query(
     `INSERT INTO points_gift_redemptions
       (id, user_id, gift_item_id, order_id, order_no, product_id, variant_id, quantity,
        points_used, cash_amount, status, address_snapshot, metadata)
@@ -116,11 +124,11 @@ async function insertGiftRedemption(q, row) {
 }
 
 async function updateGiftRedemptionStatus(q, id, status) {
-  await q.query('UPDATE points_gift_redemptions SET status = ? WHERE id = ?', [status, id]);
+  await runner(q).query('UPDATE points_gift_redemptions SET status = ? WHERE id = ?', [status, id]);
 }
 
 async function selectGiftRedemptionByOrderId(q, orderId) {
-  const [[row]] = await q.query('SELECT * FROM points_gift_redemptions WHERE order_id = ? LIMIT 1', [orderId]);
+  const [[row]] = await runner(q).query('SELECT * FROM points_gift_redemptions WHERE order_id = ? LIMIT 1', [orderId]);
   return row || null;
 }
 
@@ -129,6 +137,7 @@ async function selectGiftRedemptionByOrderId(q, orderId) {
  * @param {{ page?: number|string; pageSize?: number|string; userId?: string; giftItemId?: string }} [options]
  */
 async function selectGiftRedemptionsPage(q, { page = 1, pageSize = 20, userId, giftItemId } = {}) {
+  const dbRunner = runner(q);
   const where = ['1=1'];
   const params = [];
   if (userId) {
@@ -141,11 +150,11 @@ async function selectGiftRedemptionsPage(q, { page = 1, pageSize = 20, userId, g
   }
   const limit = Math.min(Math.max(Number(pageSize) || 20, 1), 100);
   const offset = (Math.max(Number(page) || 1, 1) - 1) * limit;
-  const [[{ total }]] = await q.query(
+  const [[{ total }]] = await dbRunner.query(
     `SELECT COUNT(*) AS total FROM points_gift_redemptions WHERE ${where.join(' AND ')}`,
     params,
   );
-  const [rows] = await q.query(
+  const [rows] = await dbRunner.query(
     `SELECT * FROM points_gift_redemptions WHERE ${where.join(' AND ')}
      ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     [...params, limit, offset],

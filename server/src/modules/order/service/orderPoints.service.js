@@ -1,11 +1,13 @@
-const pointsRepo = require('../../user/repository/points.repository');
-const loyaltyRepo = require('../../loyalty/repository/loyalty.repository');
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
 
 const SETTLE_TIMINGS = new Set(['payment_success', 'order_shipped', 'order_completed']);
 
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
+}
+
+function getLoyaltyApi() {
+  return /** @type {any} */ (require('../../loyalty')).api || {};
 }
 
 function requireUserApi(name) {
@@ -59,7 +61,7 @@ async function reverseOrderRedeem(conn, order, options = {}) {
 
 async function resolveConfiguredSettleTiming(options = {}) {
   if (options.settleTiming && SETTLE_TIMINGS.has(options.settleTiming)) return options.settleTiming;
-  const settings = options.pointsSettings || await loyaltyRepo.selectPointsSettings();
+  const settings = options.pointsSettings || await getLoyaltyApi().selectPointsSettings();
   const timing = settings?.settle_timing || 'order_completed';
   return SETTLE_TIMINGS.has(timing) ? timing : 'order_completed';
 }
@@ -102,7 +104,7 @@ async function grantOrderEarnPoints(conn, order, options = {}) {
 async function reverseOrderEarnPoints(conn, order, options = {}) {
   const amount = toInt(order?.total_points);
   if (!order?.id || !order.user_id || amount <= 0) return { skipped: true };
-  const earned = await pointsRepo.selectRecordByRelatedForUpdate(conn, `order_earn:${order.id}`, POINTS_ACTION.ORDER_EARN);
+  const earned = await getUserApi().selectPointsRecordByRelatedForUpdate(conn, `order_earn:${order.id}`, POINTS_ACTION.ORDER_EARN);
   if (!earned) return { skipped: true, reason: 'order_points_not_granted' };
   return requireUserApi('changeUserPoints')(conn, {
     userId: order.user_id,
@@ -170,7 +172,7 @@ async function applyGiftRedeem(conn, order, options = {}) {
 async function reverseGiftRedeem(conn, order, options = {}) {
   const pointsUsed = toInt(order?.points_used);
   if (!order?.id || !order.user_id || pointsUsed <= 0) return { skipped: true };
-  const existing = await pointsRepo.selectRecordByRelatedForUpdate(
+  const existing = await getUserApi().selectPointsRecordByRelatedForUpdate(
     conn,
     `gift_redeem_reverse:${order.id}`,
     POINTS_ACTION.GIFT_REDEEM_REVERSE,
@@ -233,7 +235,7 @@ async function rollbackOrderPointsForPartialRefund(conn, order, refundAmount, op
   const redeemRefund = Math.floor(Number(order.points_used || 0) * ratio);
   const results = {};
 
-  const earned = await pointsRepo.selectRecordByRelatedForUpdate(conn, `order_earn:${order.id}`, POINTS_ACTION.ORDER_EARN);
+  const earned = await getUserApi().selectPointsRecordByRelatedForUpdate(conn, `order_earn:${order.id}`, POINTS_ACTION.ORDER_EARN);
   if (earned && earnedRollback > 0) {
     results.earn = await requireUserApi('changeUserPoints')(conn, {
       userId: order.user_id,

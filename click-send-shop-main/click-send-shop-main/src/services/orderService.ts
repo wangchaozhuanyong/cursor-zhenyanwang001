@@ -1,6 +1,7 @@
 import * as orderApi from "@/api/modules/order";
 import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayload, OrderSummary } from "@/types/order";
 import type { OrderPreviewResult } from "@/types/orderPreview";
+import type { CheckoutCouponsResult } from "@/types/coupon";
 import type { PaginatedData } from "@/types/common";
 import { unwrapPaginated } from "@/services/responseNormalize";
 import { hasPendingReview } from "@/utils/orderBuyerStatus";
@@ -57,6 +58,11 @@ export async function submitOrder(params: SubmitOrderParams) {
 
 export async function previewOrder(params: SubmitOrderParams): Promise<OrderPreviewResult> {
   const res = await orderApi.previewOrder(params);
+  return res.data;
+}
+
+export async function checkoutCoupons(params: SubmitOrderParams): Promise<CheckoutCouponsResult> {
+  const res = await orderApi.checkoutCoupons(params);
   return res.data;
 }
 

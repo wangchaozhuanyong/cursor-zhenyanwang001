@@ -10,8 +10,7 @@ param(
   [string]$ServerUser = "ubuntu",
   [string]$RemoteProjectRoot = "/var/www/click-send-shop",
   [string]$IdentityFile = "E:\yamaxunmishi\aws-key.pem",
-  [switch]$SkipBuild,
-  [switch]$SyncLegacyPublicFrontend
+  [switch]$SkipBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -116,13 +115,6 @@ test -f '$RemotePublicDist/index.html'
 test -f '$RemotePublicAdminDist/admin-index.html'
 "@
 Invoke-Native ssh ($sshOpts + @("${ServerUser}@${ServerHost}", $syncCmd))
-
-if ($SyncLegacyPublicFrontend) {
-  $legacyPublic = "$RemoteProjectRoot/public-frontend"
-  Write-Host "[4c] Legacy: also sync -> $legacyPublic (deprecated flashcast.com.my path) ..."
-  $legacyCmd = "set -euo pipefail; mkdir -p '$legacyPublic'; rsync -a --delete '$RemoteDist/' '$legacyPublic/'"
-  Invoke-Native ssh ($sshOpts + @("${ServerUser}@${ServerHost}", $legacyCmd))
-}
 
 Remove-Item $archivePath -Force -ErrorAction SilentlyContinue
 

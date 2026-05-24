@@ -1,24 +1,23 @@
-const { generateId } = require('../../../utils/helpers');
 const marketingRepo = require('../repository/marketing.repository');
-const couponRepo = require('../../user/repository/coupon.repository');
 
-async function issueCouponIfEligible(userId, coupon) {
-  const existing = await couponRepo.findUserCoupon(userId, coupon.id);
-  if (existing) return { skipped: true, reason: 'already_claimed' };
+function getUserApi() {
+  return /** @type {any} */ (require('../../user')).api || {};
+}
 
-  const perUserLimit = Math.max(1, Number(coupon.per_user_limit || 1));
-  const userClaims = await couponRepo.countUserClaimsForCoupon(userId, coupon.id);
-  if (userClaims >= perUserLimit) return { skipped: true, reason: 'per_user_limit' };
-
-  const totalQty = Number(coupon.total_quantity || 0);
-  if (totalQty > 0) {
-    const totalClaims = await couponRepo.countTotalClaimsForCoupon(coupon.id);
-    if (totalClaims >= totalQty) return { skipped: true, reason: 'sold_out' };
+function requireUserApi(name) {
+  const fn = getUserApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`User module API missing method: ${name}`);
   }
+  return fn;
+}
 
-  const id = generateId();
-  await couponRepo.insertUserCoupon(id, userId, coupon.id);
-  return { issued: true, userCouponId: id, couponId: coupon.id };
+async function issueCouponIfEligible(userId, coupon, activityId) {
+  const result = await requireUserApi('issueCouponToUsers')(coupon.id, [userId], {
+    issueChannel: 'new_user_gift',
+    metadata: { activityId },
+  });
+  return { issued: Number(result?.issued || 0) > 0, couponId: coupon.id };
 }
 
 /**
@@ -33,9 +32,9 @@ async function issueNewUserGiftPack(userId) {
     if (!couponIds.length) continue;
     const coupons = await marketingRepo.selectCouponsByIds(couponIds);
     for (const coupon of coupons) {
-      const r = await issueCouponIfEligible(userId, coupon);
+      const r = await issueCouponIfEligible(userId, coupon, activity.id);
       if (r.issued) {
-        issued.push({ activity_id: activity.id, coupon_id: coupon.id, user_coupon_id: r.userCouponId });
+        issued.push({ activity_id: activity.id, coupon_id: coupon.id });
       }
     }
   }

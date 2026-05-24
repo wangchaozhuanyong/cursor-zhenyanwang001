@@ -2,6 +2,7 @@
 /**
  * 棣栭〉鍐呭妯″潡寮€鍏充笌灞曠ず鍙傛暟锛堝瓨 site_settings.home_module_settings JSON锛? */
 const siteSettingsRepo = require('./repository/adminSiteSettings.repository');
+const productModule = require('../product');
 
 const SETTING_KEY = 'home_module_settings';
 
@@ -112,8 +113,8 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
   await siteSettingsRepo.upsertSetting(SETTING_KEY, JSON.stringify(next));
 
   try {
-    const { clearCatalogCache } = require('../product/service/catalog.service');
-    clearCatalogCache();
+    const productApi = /** @type {any} */ (productModule).api || {};
+    if (typeof productApi.clearCatalogCache === 'function') productApi.clearCatalogCache();
   } catch {
     /* catalog 鏈姞杞芥椂蹇界暐 */
   }
@@ -142,5 +143,4 @@ module.exports = {
   getHomeModuleSettings,
   saveHomeModuleSettings,
 };
-
 

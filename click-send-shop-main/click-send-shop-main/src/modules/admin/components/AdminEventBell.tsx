@@ -149,7 +149,7 @@ export default function AdminEventBell() {
     { label: tText("未处理"), value: summary?.unresolvedCount || 0 },
     { label: "P0", value: summary?.p0Count || 0 },
     { label: tText("安全"), value: summary?.securityCount || 0 },
-  ], [summary]);
+  ], [summary, tText]);
 
   return (
     <div ref={anchorRef} className="relative shrink-0">

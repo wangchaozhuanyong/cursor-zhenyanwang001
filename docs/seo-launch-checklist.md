@@ -33,7 +33,7 @@
     - OG
     - favicon
     - GSC verification
-23. Search codebase: no `flashcast.com.my` (canonical production: `damatong.net`).
+23. Confirm canonical production domain is `damatong.net` (not legacy domains).
 24. Search codebase: no `真烟网`.
 25. Confirm legal pages are CMS-editable:
     - `/content/privacy-policy`

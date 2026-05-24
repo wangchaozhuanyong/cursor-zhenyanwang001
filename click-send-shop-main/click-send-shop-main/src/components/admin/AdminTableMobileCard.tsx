@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { adminTableMobileVisibility } from "./adminTableMobileCardUtils";
 
 type AdminTableMobileCardProps = {
   children: ReactNode;
@@ -57,10 +58,4 @@ export function AdminTableMobileCardSkeleton({ rows = 4, from = "lg" }: { rows?:
       ))}
     </div>
   );
-}
-
-export function adminTableMobileVisibility(from: "md" | "lg" = "lg") {
-  const hideDesktop = from === "md" ? "md:hidden" : "lg:hidden";
-  const hideMobile = from === "md" ? "hidden md:block" : "hidden lg:block";
-  return { hideDesktop, hideMobile };
 }

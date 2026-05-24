@@ -6,7 +6,7 @@ const { ValidationError } = require('../../../errors');
 const { decodeCsvBuffer } = require('../../../utils/csv');
 const svc = require('../service/adminProduct.service');
 const adminExtended = require('../service/adminExtended.service');
-const dataChangeTracker = require('../../monitoring/service/dataChangeTracker.service');
+const dataChangeTracker = require('../service/adminDataChange.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listProducts(req.query);

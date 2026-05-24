@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 const test = require('node:test');
 
-const smsOtp = require('../src/modules/auth/services/smsOtp.adapter');
+const smsOtp = require('../src/modules/auth/service/smsOtp.adapter');
 const { ValidationError } = require('../src/errors');
 
 function withEnv(vars, fn) {

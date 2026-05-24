@@ -1,5 +1,5 @@
 import * as inventoryApi from "@/api/admin/inventory";
-import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventorySku, InventoryStockRecord, InventorySummary } from "@/types/inventory";
+import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, InventorySummary, PurchaseOrder, PurchaseOrderDetail } from "@/types/inventory";
 import type { PaginatedData } from "@/types/common";
 import { unwrapPaginated } from "@/services/responseNormalize";
 
@@ -60,6 +60,36 @@ export async function fetchInventoryRecords(params?: {
 }): Promise<PaginatedData<InventoryStockRecord>> {
   const res = await inventoryApi.getInventoryRecords(params);
   return unwrapPaginated<InventoryStockRecord>(res.data);
+}
+
+export async function fetchReplenishmentAlerts(params?: Parameters<typeof inventoryApi.getReplenishmentAlerts>[0]): Promise<PaginatedData<InventoryReplenishmentAlert>> {
+  const res = await inventoryApi.getReplenishmentAlerts(params);
+  return unwrapPaginated<InventoryReplenishmentAlert>(res.data);
+}
+
+export async function generateReplenishmentAlerts() {
+  const res = await inventoryApi.generateReplenishmentAlerts();
+  return res.data;
+}
+
+export async function createPurchaseOrderFromAlert(alertId: string, data: Parameters<typeof inventoryApi.createPurchaseOrderFromAlert>[1]) {
+  const res = await inventoryApi.createPurchaseOrderFromAlert(alertId, data);
+  return res.data;
+}
+
+export async function fetchPurchaseOrders(params?: Parameters<typeof inventoryApi.getPurchaseOrders>[0]): Promise<PaginatedData<PurchaseOrder>> {
+  const res = await inventoryApi.getPurchaseOrders(params);
+  return unwrapPaginated<PurchaseOrder>(res.data);
+}
+
+export async function fetchPurchaseOrder(id: string): Promise<PurchaseOrderDetail> {
+  const res = await inventoryApi.getPurchaseOrder(id);
+  return res.data;
+}
+
+export async function receivePurchaseOrder(id: string, data?: Parameters<typeof inventoryApi.receivePurchaseOrder>[1]) {
+  const res = await inventoryApi.receivePurchaseOrder(id, data);
+  return res.data;
 }
 
 export async function fetchInventoryPackRules(params?: Parameters<typeof inventoryApi.getInventoryPackRules>[0]): Promise<PaginatedData<InventoryPackRule>> {

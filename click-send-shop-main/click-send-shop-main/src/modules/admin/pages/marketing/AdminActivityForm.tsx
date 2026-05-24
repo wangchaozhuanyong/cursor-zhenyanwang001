@@ -151,7 +151,7 @@ export default function AdminActivityForm() {
     });
     setStatusLabel("草稿");
     toast.success(tText("已载入复制活动内容，请重新设置活动时间后发布"));
-  }, [copySourceQuery.data]);
+  }, [copySourceQuery.data, tText]);
 
   const selectedCouponIds = useMemo(
     () => (Array.isArray((form.activity_config as { coupon_ids?: string[] })?.coupon_ids)

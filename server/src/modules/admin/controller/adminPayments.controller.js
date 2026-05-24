@@ -1,5 +1,5 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
-const dataChangeTracker = require('../../monitoring/service/dataChangeTracker.service');
+const dataChangeTracker = require('../service/adminDataChange.service');
 
 function getPaymentApi() {
   return /** @type {any} */ (require('../../payment')).api || {};

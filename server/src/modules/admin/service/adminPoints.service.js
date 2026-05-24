@@ -15,6 +15,18 @@ function requireUserApi(name) {
   return fn;
 }
 
+function getLoyaltyApi() {
+  return /** @type {any} */ (require('../../loyalty')).api || {};
+}
+
+function requireLoyaltyApi(name) {
+  const fn = getLoyaltyApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Loyalty module API missing method: ${name}`);
+  }
+  return fn;
+}
+
 function toBool(value) {
   return value === true || value === 1 || value === '1';
 }
@@ -204,8 +216,7 @@ async function updateProductRule(id, body, req) {
 }
 
 async function runPointsExpireJob(req) {
-  const { runPointsExpireTick } = require('../../loyalty/service/pointsExpire.service');
-  const result = await runPointsExpireTick();
+  const result = await requireLoyaltyApi('runPointsExpireTick')();
   await writeAuditLog({
     req,
     operatorId: req.user?.id,

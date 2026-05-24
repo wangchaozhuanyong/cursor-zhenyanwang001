@@ -21,6 +21,26 @@ exports.remove = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.pauseClaim = asyncRoute(async (req, res) => {
+  const r = await svc.pauseClaimCoupon(req.params.id, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.disableUse = asyncRoute(async (req, res) => {
+  const r = await svc.disableUseCoupon(req.params.id, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.archive = asyncRoute(async (req, res) => {
+  const r = await svc.archiveCoupon(req.params.id, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.invalidateUserCoupons = asyncRoute(async (req, res) => {
+  const r = await svc.invalidateUserCoupons(req.params.id, req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
 exports.listAllRecords = asyncRoute(async (req, res) => {
   const r = await svc.getAllCouponRecords(req.query);
   res.paginate(r.list, r.total, r.page, r.pageSize);

@@ -17,14 +17,25 @@ const fileFilter = (_req, file, cb) => {
   }
 };
 
-const upload = multer({
+const BATCH_MAX_FILES = 5;
+
+const uploadSingle = multer({
   storage: multer.memoryStorage(),
   fileFilter,
   limits: { fileSize: VIDEO_MAX_SIZE },
 });
 
-exports.uploadMiddleware = upload.single('file');
-exports.uploadMultiple = upload.array('files', 10);
+const uploadBatch = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (_req, file, cb) => {
+    if (isImageFile(file)) cb(null, true);
+    else cb(badRequest('批量上传仅支持图片文件'));
+  },
+  limits: { fileSize: IMAGE_MAX_SIZE, files: BATCH_MAX_FILES },
+});
+
+exports.uploadMiddleware = uploadSingle.single('file');
+exports.uploadMultiple = uploadBatch.array('files', BATCH_MAX_FILES);
 
 async function auditUpload(req, result, errorMessage) {
   await writeAuditLog({
@@ -61,18 +72,13 @@ exports.uploadFiles = async (req, res) => {
   if (!req.files || !req.files.length) return res.fail(400, '请选择要上传的文件');
   try {
     const mode = String(req.body?.mode || req.query?.mode || 'product').toLowerCase();
-    const queue = [...req.files];
     const result = [];
-    const workers = Array.from({ length: Math.min(3, queue.length) }).map(async () => {
-      while (queue.length > 0) {
-        const next = queue.shift();
-        if (!next) break;
-        // eslint-disable-next-line no-await-in-loop
-        const uploaded = await writeMediaFromFile(next, mode);
-        result.push(uploaded);
-      }
-    });
-    await Promise.all(workers);
+    for (const file of req.files) {
+      // Sequential processing keeps peak memory near one file buffer at a time.
+      // eslint-disable-next-line no-await-in-loop
+      const uploaded = await writeMediaFromFile(file, mode);
+      result.push(uploaded);
+    }
     await writeAuditLog({
       req,
       operatorId: req.user?.id,

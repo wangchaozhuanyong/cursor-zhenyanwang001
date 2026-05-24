@@ -1,10 +1,9 @@
 const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/coupon.repository');
+const lifecycle = require('./couponLifecycle.service');
 
 function normalizeCouponType(type) {
-  if (type === 'amount') return 'fixed';
-  if (type === 'percent') return 'percentage';
-  return type;
+  return lifecycle.normalizeCouponType(type);
 }
 
 function dateOnly(value) {
@@ -19,34 +18,36 @@ function normalizeCouponStatus(status, endDate) {
   return status;
 }
 
+function isClaimWindowOpen(coupon, now = new Date()) {
+  const publishStatus = String(coupon.publish_status || (coupon.status === 'available' ? 'active' : coupon.status || ''));
+  if (coupon.deleted_at || coupon.archived_at || coupon.invalidated_at || coupon.stop_claim_at) return false;
+  if (publishStatus !== 'active') return false;
+  if (!['available', 'active'].includes(String(coupon.status || 'available'))) return false;
+  const start = coupon.claim_start_at ? new Date(coupon.claim_start_at) : (coupon.start_date ? new Date(`${dateOnly(coupon.start_date)}T00:00:00`) : null);
+  const end = coupon.claim_end_at ? new Date(coupon.claim_end_at) : (coupon.end_date ? new Date(`${dateOnly(coupon.end_date)}T23:59:59`) : null);
+  if (start && start > now) return false;
+  if (end && end < now) return false;
+  return true;
+}
+
 function mapUserCouponRow(r) {
-  const categoryIds = typeof r.category_ids === 'string' && r.category_ids
-    ? r.category_ids.split(',').filter(Boolean)
-    : [];
-  const categoryNames = typeof r.category_names === 'string' && r.category_names
-    ? r.category_names.split(',').filter(Boolean)
-    : [];
+  const coupon = lifecycle.buildEffectiveCoupon(r);
+  const status = lifecycle.resolveUserCouponRuntimeStatus(r);
   return {
     id: r.id,
     claimed_at: r.claimed_at || '',
     used_at: r.used_at || undefined,
-    status: r.status,
-    coupon: {
-      id: r.coupon_id,
-      code: r.code,
-      title: r.title,
-      type: normalizeCouponType(r.type),
-      value: parseFloat(r.value),
-      min_amount: parseFloat(r.min_amount),
-      start_date: r.start_date,
-      end_date: r.end_date,
-      status: normalizeCouponStatus(r.coupon_status, r.end_date),
-      description: r.description || undefined,
-      scope_type: r.scope_type || 'all',
-      display_badge: r.display_badge || '',
-      category_ids: categoryIds,
-      category_names: categoryNames,
-    },
+    status,
+    valid_from: r.valid_from || undefined,
+    valid_until: r.valid_until || undefined,
+    issue_channel: r.issue_channel || undefined,
+    order_id: r.order_id || undefined,
+    order_no: r.order_no || undefined,
+    discount_amount: r.discount_amount == null ? undefined : Number(r.discount_amount),
+    invalid_reason: r.invalid_reason || undefined,
+    returned_at: r.returned_at || undefined,
+    return_reason: r.return_reason || undefined,
+    coupon: { ...coupon, status: normalizeCouponStatus(coupon.status, coupon.end_date) },
   };
 }
 
@@ -103,7 +104,7 @@ async function getAvailableCoupons(userId) {
 
 async function assertCouponClaimable(userId, coupon) {
   if (!coupon) return { error: { code: 404, message: '优惠券不存在或不在有效期内' } };
-  if (coupon.status !== 'available') {
+  if (!isClaimWindowOpen(coupon)) {
     return { error: { code: 400, message: '该优惠券暂不可领取' } };
   }
   if (coupon.auto_issue) {
@@ -125,7 +126,7 @@ async function assertCouponClaimable(userId, coupon) {
   }
   const totalQty = Number(coupon.total_quantity || 0);
   if (totalQty > 0) {
-    const totalClaims = await repo.countTotalClaimsForCoupon(coupon.id);
+    const totalClaims = Number(coupon.claimed_count ?? await repo.countTotalClaimsForCoupon(coupon.id));
     if (totalClaims >= totalQty) {
       return { error: { code: 409, message: '优惠券已领完' } };
     }
@@ -137,43 +138,79 @@ async function claimCoupon(userId, body) {
   const { code } = body;
   if (!code) return { error: { code: 400, message: '请提供优惠券码或ID' } };
 
-  const coupon = await repo.selectCouponByCodeOrId(code);
-  const claimErr = await assertCouponClaimable(userId, coupon);
-  if (claimErr) return claimErr;
-
-  const id = generateId();
-  await repo.insertUserCoupon(id, userId, coupon.id);
-
-  return {
-    data: {
+  const conn = await repo.getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    const coupon = await repo.selectCouponByCodeOrIdForUpdate(conn, code);
+    const claimErr = await assertCouponClaimable(userId, coupon);
+    if (claimErr) {
+      await conn.rollback();
+      return claimErr;
+    }
+    const perUserLimit = Math.max(1, Number(coupon.per_user_limit || 1));
+    const userClaims = await repo.countUserClaimsForCouponInConn(conn, userId, coupon.id);
+    if (userClaims >= perUserLimit) {
+      await conn.rollback();
+      return { error: { code: 409, message: '已达到每人领取上限' } };
+    }
+    const claimed = await repo.incrementClaimedCountIfAvailable(conn, coupon.id);
+    if (!claimed) {
+      await conn.rollback();
+      return { error: { code: 409, message: '优惠券已领完' } };
+    }
+    const id = generateId();
+    const now = new Date();
+    const snapshot = lifecycle.buildCouponSnapshot(coupon, now);
+    const validity = lifecycle.resolveUserCouponValidity(coupon, now);
+    const status = validity.validFrom && validity.validFrom > now ? 'pending' : 'available';
+    await repo.insertUserCouponWithMeta(conn, {
       id,
-      claimed_at: new Date().toISOString(),
-      status: 'available',
-      coupon: {
-        id: coupon.id,
-        code: coupon.code,
-        title: coupon.title,
-        type: normalizeCouponType(coupon.type),
-        value: parseFloat(coupon.value),
-        min_amount: parseFloat(coupon.min_amount),
-        start_date: coupon.start_date,
-        end_date: coupon.end_date,
-        status: normalizeCouponStatus(coupon.status, coupon.end_date),
-        description: coupon.description || undefined,
-        scope_type: coupon.scope_type || 'all',
-        display_badge: coupon.display_badge || '',
-        category_ids: typeof coupon.category_ids === 'string' && coupon.category_ids ? coupon.category_ids.split(',').filter(Boolean) : [],
-        category_names: typeof coupon.category_names === 'string' && coupon.category_names ? coupon.category_names.split(',').filter(Boolean) : [],
+      userId,
+      couponId: coupon.id,
+      snapshot,
+      status,
+      validFrom: lifecycle.mysqlDateTime(validity.validFrom),
+      validUntil: lifecycle.mysqlDateTime(validity.validUntil),
+      issueChannel: 'self_claim',
+    });
+    await lifecycle.insertCouponEvent(conn, {
+      couponId: coupon.id,
+      userCouponId: id,
+      userId,
+      eventType: 'claimed',
+      metadata: { validity },
+    });
+    await conn.commit();
+
+    return {
+      data: {
+        id,
+        claimed_at: now.toISOString(),
+        status,
+        valid_from: validity.validFrom ? validity.validFrom.toISOString() : undefined,
+        valid_until: validity.validUntil ? validity.validUntil.toISOString() : undefined,
+        issue_channel: 'self_claim',
+        coupon: lifecycle.buildEffectiveCoupon({ ...coupon, coupon_snapshot: snapshot, coupon_id: coupon.id }),
       },
-    },
-    message: '领取成功',
-  };
+      message: '领取成功',
+    };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
+async function expireUserCouponsNow() {
+  return lifecycle.expireUserCouponsNow(repo.getPool());
 }
 
 module.exports = {
   getUserCoupons,
   getAvailableCoupons,
   claimCoupon,
+  expireUserCouponsNow,
 };
 
 

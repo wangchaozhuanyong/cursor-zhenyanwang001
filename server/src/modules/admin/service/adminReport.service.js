@@ -4,7 +4,7 @@ const { labelReportColumn, labelReportCellValue } = require('../../../utils/repo
 const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { writeAuditLog } = require('../../../utils/auditLog');
-const siteCapabilitiesService = require('../../siteCapabilities/service/siteCapabilities.service');
+const siteCapabilitiesService = require('./adminSiteCapabilities.service');
 const { getReportDefinition } = require('../report/adminReportRegistry');
 
 function formatDate(date) {
@@ -1236,7 +1236,6 @@ module.exports = {
   deleteOperatingExpense,
   exportByType,
 };
-
 
 
 

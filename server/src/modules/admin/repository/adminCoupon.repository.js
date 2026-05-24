@@ -1,13 +1,17 @@
 const db = require('../../../config/db');
 
 async function countCoupons() {
-  const [[{ total }]] = await db.query('SELECT COUNT(*) AS total FROM coupons WHERE deleted_at IS NULL');
+  const [[{ total }]] = await db.query("SELECT COUNT(*) AS total FROM coupons WHERE deleted_at IS NULL AND archived_at IS NULL");
   return total;
 }
 
 async function selectCouponsPage(pageSize, offset) {
   const [rows] = await db.query(
     `SELECT c.*,
+            COALESCE(stats.claimed_count_real, 0) AS claimed_count_real,
+            COALESCE(stats.used_count_real, 0) AS used_count_real,
+            COALESCE(stats.expired_count_real, 0) AS expired_count_real,
+            COALESCE(stats.available_count_real, 0) AS available_user_coupon_count,
             (
               SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
               FROM coupon_categories cc
@@ -20,7 +24,17 @@ async function selectCouponsPage(pageSize, offset) {
               WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_names
      FROM coupons c
+     LEFT JOIN (
+       SELECT coupon_id,
+              COUNT(*) AS claimed_count_real,
+              SUM(CASE WHEN status = 'used' THEN 1 ELSE 0 END) AS used_count_real,
+              SUM(CASE WHEN status = 'expired' THEN 1 ELSE 0 END) AS expired_count_real,
+              SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END) AS available_count_real
+         FROM user_coupons
+        GROUP BY coupon_id
+     ) stats ON BINARY stats.coupon_id = BINARY c.id
      WHERE c.deleted_at IS NULL
+       AND c.archived_at IS NULL
      ORDER BY c.created_at DESC
      LIMIT ? OFFSET ?`,
     [pageSize, offset],
@@ -33,13 +47,17 @@ async function insertCoupon(params) {
     id, code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge,
     total_quantity, per_user_limit, new_user_only, member_only, auto_issue,
     usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity,
+    publish_status, claim_start_at, claim_end_at, use_start_at, use_end_at, validity_mode,
+    valid_days_after_claim, follow_activity_id, issue_mode,
   } = params;
   await db.query(
     `INSERT INTO coupons
       (id, code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge,
        total_quantity, per_user_limit, new_user_only, member_only, auto_issue,
-       usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity,
+       publish_status, claim_start_at, claim_end_at, use_start_at, use_end_at, validity_mode,
+       valid_days_after_claim, follow_activity_id, issue_mode)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id, code, title, type, value, min_amount, start_date, end_date, description, scope_type || 'all', display_badge || '',
       Number(total_quantity || 0), Number(per_user_limit || 1), new_user_only ? 1 : 0, member_only ? 1 : 0, auto_issue ? 1 : 0,
@@ -47,6 +65,15 @@ async function insertCoupon(params) {
       usable_product_ids ? JSON.stringify(usable_product_ids) : null,
       usable_category_ids ? JSON.stringify(usable_category_ids) : null,
       stackable_with_activity === false ? 0 : 1,
+      publish_status || 'active',
+      claim_start_at || null,
+      claim_end_at || null,
+      use_start_at || null,
+      use_end_at || null,
+      validity_mode || 'absolute',
+      valid_days_after_claim == null ? null : Number(valid_days_after_claim),
+      follow_activity_id || null,
+      issue_mode || (auto_issue ? 'auto' : 'manual'),
     ],
   );
 }
@@ -146,7 +173,7 @@ async function selectCouponRecordsPage(couponId, pageSize, offset) {
 
 async function selectCouponBaseById(couponId) {
   const [[row]] = await db.query(
-    `SELECT id, title, code, status, start_date, end_date, deleted_at, total_quantity, per_user_limit
+    `SELECT *
      FROM coupons
      WHERE BINARY id = BINARY ? LIMIT 1`,
     [couponId],
@@ -167,6 +194,18 @@ async function selectUserIdsByTagIds(tagIds) {
     tagIds,
   );
   return rows.map((r) => r.id);
+}
+
+async function invalidateUsableUserCouponsByCoupon(couponId, reason) {
+  const [result] = await db.query(
+    `UPDATE user_coupons
+        SET status = 'invalidated',
+            invalid_reason = ?
+      WHERE BINARY coupon_id = BINARY ?
+        AND status IN ('available','pending')`,
+    [reason, couponId],
+  );
+  return result;
 }
 
 async function batchIssueCouponToUsers(couponId, userIds, genId, options = {}) {
@@ -205,6 +244,7 @@ async function batchIssueCouponToUsers(couponId, userIds, genId, options = {}) {
 }
 
 module.exports = {
+  getPool: () => db,
   countCoupons,
   selectCouponsPage,
   insertCoupon,
@@ -220,8 +260,8 @@ module.exports = {
   selectCouponRecordsPage,
   selectCouponBaseById,
   selectUserIdsByTagIds,
+  invalidateUsableUserCouponsByCoupon,
   batchIssueCouponToUsers,
 };
-
 
 

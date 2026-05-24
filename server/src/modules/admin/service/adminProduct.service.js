@@ -141,6 +141,7 @@ function emitProductRiskEvents(row, variants = [], adminUserId = null) {
 
 const MAX_PRODUCT_EXPORT_IDS = 1000;
 const MAX_PRODUCT_IMPORT_ROWS = 2000;
+const DEFAULT_VARIANT_TITLE = '默认规格';
 
 function normalizeProductIdsInput(value) {
   const rawItems = Array.isArray(value) ? value : String(value || '').split(',');
@@ -186,16 +187,67 @@ function buildListWhere(query) {
   const stockFilter = String(stockStatus || '').trim();
   if (stockFilter === 'out') {
     where += ` AND (
-      p.stock <= 0
-      OR EXISTS (
-        SELECT 1 FROM product_variants v
-        WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 AND v.stock <= 0
+      (
+        EXISTS (
+          SELECT 1 FROM product_variants v
+          WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM product_variants v
+          WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 AND v.stock > 0
+        )
+      )
+      OR (
+        NOT EXISTS (
+          SELECT 1 FROM product_variants v
+          WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1
+        )
+        AND p.stock <= 0
       )
     )`;
   } else if (stockFilter === 'low') {
-    where += ' AND p.stock > 0 AND p.stock <= COALESCE(p.stock_warning_threshold, 5)';
+    where += ` AND (
+      (
+        EXISTS (
+          SELECT 1 FROM product_variants v
+          WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1
+            AND v.stock <= COALESCE(v.stock_warning_threshold, 5)
+        )
+        AND EXISTS (
+          SELECT 1 FROM product_variants v
+          WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 AND v.stock > 0
+        )
+      )
+      OR (
+        NOT EXISTS (
+          SELECT 1 FROM product_variants v
+          WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1
+        )
+        AND p.stock > 0
+        AND p.stock <= COALESCE(p.stock_warning_threshold, 5)
+      )
+    )`;
   } else if (stockFilter === 'normal') {
-    where += ' AND p.stock > COALESCE(p.stock_warning_threshold, 5)';
+    where += ` AND (
+      (
+        EXISTS (
+          SELECT 1 FROM product_variants v
+          WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM product_variants v
+          WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1
+            AND v.stock <= COALESCE(v.stock_warning_threshold, 5)
+        )
+      )
+      OR (
+        NOT EXISTS (
+          SELECT 1 FROM product_variants v
+          WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1
+        )
+        AND p.stock > COALESCE(p.stock_warning_threshold, 5)
+      )
+    )`;
   }
   const costFilter = String(costStatus || '').trim();
   if (costFilter === 'missing') {
@@ -216,10 +268,11 @@ function buildListWhere(query) {
 
 function formatVariantRow(row) {
   if (!row) return null;
+  const title = row.title || (row.is_default ? DEFAULT_VARIANT_TITLE : '');
   return {
     id: row.id,
     sku_code: row.sku_code,
-    title: row.title || '',
+    title,
     price: parseFloat(row.price),
     original_price: row.original_price == null ? null : parseFloat(row.original_price),
     cost_price: row.cost_price == null ? null : parseFloat(row.cost_price),
@@ -233,7 +286,7 @@ function formatVariantRow(row) {
     is_default: !!row.is_default,
     spec_value_ids: Array.isArray(row.spec_value_ids) ? row.spec_value_ids : [],
     spec_values: Array.isArray(row.spec_values) ? row.spec_values : [],
-    spec_text: row.spec_text || row.title || '',
+    spec_text: row.spec_text || title,
   };
 }
 
@@ -292,7 +345,7 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
     return [{
       id: genId(),
       sku_code: null,
-      title: '',
+      title: DEFAULT_VARIANT_TITLE,
       price,
       stock,
       sort_order: 0,
@@ -306,7 +359,7 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
     return {
       id: v.id && typeof v.id === 'string' ? v.id : genId(),
       sku_code: v.sku_code ?? null,
-      title: (v.title != null ? String(v.title) : '') || '',
+      title: (v.title != null ? String(v.title).trim() : '') || (v.is_default ? DEFAULT_VARIANT_TITLE : ''),
       price: Number.isFinite(vp) ? vp : price,
       original_price: v.original_price === '' || v.original_price == null ? null : Number(v.original_price),
       cost_price: v.cost_price === '' || v.cost_price == null ? null : Number(v.cost_price),

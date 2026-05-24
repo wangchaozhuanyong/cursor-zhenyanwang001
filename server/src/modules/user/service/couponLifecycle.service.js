@@ -1,0 +1,244 @@
+const { generateId } = require('../../../utils/helpers');
+
+function normalizeCouponType(type) {
+  if (type === 'amount') return 'fixed';
+  if (type === 'percent') return 'percentage';
+  return type || 'fixed';
+}
+
+function parseJsonArray(raw, fallback = []) {
+  if (!raw) return fallback;
+  if (Array.isArray(raw)) return raw.map((x) => String(x || '').trim()).filter(Boolean);
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map((x) => String(x || '').trim()).filter(Boolean);
+    } catch {
+      return raw.split(',').map((x) => x.trim()).filter(Boolean);
+    }
+  }
+  return fallback;
+}
+
+function parseSnapshot(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function dateOrNull(value) {
+  if (!value) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function mysqlDateTime(value) {
+  const d = dateOrNull(value);
+  if (!d) return null;
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function addDays(date, days) {
+  const d = new Date(date.getTime());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function buildCouponSnapshot(coupon, claimedAt = new Date()) {
+  return {
+    coupon_id: coupon.id,
+    code: coupon.code,
+    title: coupon.title,
+    type: normalizeCouponType(coupon.type),
+    value: Number(coupon.value || 0),
+    min_amount: Number(coupon.min_amount || 0),
+    scope_type: coupon.scope_type || 'all',
+    usable_scope_type: coupon.usable_scope_type || 'all',
+    usable_product_ids: parseJsonArray(coupon.usable_product_ids),
+    usable_category_ids: parseJsonArray(coupon.usable_category_ids),
+    category_ids: parseJsonArray(coupon.category_ids),
+    category_names: parseJsonArray(coupon.category_names),
+    stackable_with_activity: coupon.stackable_with_activity !== 0 && coupon.stackable_with_activity !== false,
+    new_user_only: !!coupon.new_user_only,
+    member_only: !!coupon.member_only,
+    validity_mode: coupon.validity_mode || 'absolute',
+    claim_start_at: coupon.claim_start_at || null,
+    claim_end_at: coupon.claim_end_at || null,
+    use_start_at: coupon.use_start_at || coupon.start_date || null,
+    use_end_at: coupon.use_end_at || coupon.end_date || null,
+    valid_days_after_claim: coupon.valid_days_after_claim == null ? null : Number(coupon.valid_days_after_claim),
+    follow_activity_id: coupon.follow_activity_id || null,
+    description: coupon.description || '',
+    display_badge: coupon.display_badge || '',
+    claimed_at: claimedAt.toISOString(),
+  };
+}
+
+function resolveUserCouponValidity(coupon, now = new Date()) {
+  if ((coupon.validity_mode || 'absolute') === 'after_claim') {
+    const days = Math.max(1, Number(coupon.valid_days_after_claim || 1));
+    return { validFrom: now, validUntil: addDays(now, days) };
+  }
+  return {
+    validFrom: dateOrNull(coupon.use_start_at) || dateOrNull(coupon.start_date) || now,
+    validUntil: dateOrNull(coupon.use_end_at) || dateOrNull(coupon.end_date) || null,
+  };
+}
+
+function buildEffectiveCoupon(row = {}) {
+  const snap = parseSnapshot(row.coupon_snapshot);
+  const source = snap || row;
+  return {
+    id: source.coupon_id || source.id || row.coupon_id,
+    code: source.code || row.code || '',
+    title: source.title || row.title || '',
+    type: normalizeCouponType(source.type || row.type),
+    value: Number(source.value ?? row.value ?? 0),
+    min_amount: Number(source.min_amount ?? row.min_amount ?? 0),
+    start_date: source.use_start_at || source.start_date || row.use_start_at || row.start_date || '',
+    end_date: source.use_end_at || source.end_date || row.use_end_at || row.end_date || '',
+    status: row.coupon_publish_status || row.coupon_status || row.publish_status || row.status || 'active',
+    description: source.description || row.description || '',
+    scope_type: source.scope_type || row.scope_type || 'all',
+    display_badge: source.display_badge || row.display_badge || '',
+    category_ids: Array.isArray(source.category_ids) ? source.category_ids : parseJsonArray(row.category_ids),
+    category_names: Array.isArray(source.category_names) ? source.category_names : parseJsonArray(row.category_names),
+    usable_scope_type: source.usable_scope_type || row.usable_scope_type || 'all',
+    usable_product_ids: Array.isArray(source.usable_product_ids) ? source.usable_product_ids : parseJsonArray(row.usable_product_ids),
+    usable_category_ids: Array.isArray(source.usable_category_ids) ? source.usable_category_ids : parseJsonArray(row.usable_category_ids),
+    stackable_with_activity: source.stackable_with_activity !== false && source.stackable_with_activity !== 0,
+  };
+}
+
+function resolveUserCouponRuntimeStatus(row, now = new Date()) {
+  const status = String(row.status || '');
+  if (['used', 'expired', 'invalidated', 'cancelled'].includes(status)) return status;
+  if (row.invalidated_at || row.stop_use_at) return 'invalidated';
+  const validFrom = dateOrNull(row.valid_from);
+  const validUntil = dateOrNull(row.valid_until);
+  if (validUntil && validUntil < now) return 'expired';
+  if (validFrom && validFrom > now) return 'pending';
+  return status || 'available';
+}
+
+async function insertCouponEvent(q, event) {
+  await q.query(
+    `INSERT INTO coupon_events
+       (id, coupon_id, user_coupon_id, user_id, event_type, order_id, order_no, admin_user_id, reason, metadata)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    [
+      event.id || generateId(),
+      event.couponId,
+      event.userCouponId || null,
+      event.userId || null,
+      event.eventType,
+      event.orderId || null,
+      event.orderNo || null,
+      event.adminUserId || null,
+      event.reason || null,
+      event.metadata ? JSON.stringify(event.metadata) : null,
+    ],
+  ).catch(() => {});
+}
+
+async function expireUserCouponsNow(q, options = {}) {
+  const [rows] = await q.query(
+    `SELECT id, coupon_id, user_id
+       FROM user_coupons
+      WHERE status IN ('available', 'pending')
+        AND valid_until IS NOT NULL
+        AND valid_until < NOW()
+      LIMIT ?`,
+    [Math.max(1, Math.min(1000, Number(options.limit || 500)))],
+  );
+  if (!rows.length) return { expired: 0 };
+  const ids = rows.map((r) => r.id);
+  await q.query(
+    `UPDATE user_coupons
+        SET status = 'expired',
+            invalid_reason = COALESCE(invalid_reason, '优惠券已过期')
+      WHERE id IN (${ids.map(() => '?').join(',')})`,
+    ids,
+  );
+  for (const row of rows) {
+    await insertCouponEvent(q, {
+      couponId: row.coupon_id,
+      userCouponId: row.id,
+      userId: row.user_id,
+      eventType: 'expired',
+      reason: '优惠券已过期',
+    });
+  }
+  return { expired: rows.length };
+}
+
+async function restoreCouponAfterOrderCancelled(q, userCouponId, options = {}) {
+  const [[row]] = await q.query(
+    `SELECT uc.*, c.publish_status AS coupon_publish_status, c.status AS coupon_status,
+            c.invalidated_at, c.stop_use_at, c.deleted_at
+       FROM user_coupons uc
+       LEFT JOIN coupons c ON BINARY c.id = BINARY uc.coupon_id
+      WHERE BINARY uc.id = BINARY ?
+      FOR UPDATE`,
+    [userCouponId],
+  );
+  if (!row) return { restored: false, status: null };
+  let nextStatus = 'available';
+  let reason = options.reason || '订单取消返还优惠券';
+  const nowStatus = resolveUserCouponRuntimeStatus({ ...row, status: 'available' });
+  if (nowStatus === 'expired') {
+    nextStatus = 'expired';
+    reason = '订单取消时优惠券已过期';
+  } else if (
+    row.invalidated_at
+    || row.stop_use_at
+    || row.deleted_at
+    || ['disabled', 'archived'].includes(String(row.coupon_publish_status || row.coupon_status || ''))
+  ) {
+    nextStatus = 'invalidated';
+    reason = '订单取消时优惠券已失效';
+  }
+  await q.query(
+    `UPDATE user_coupons
+        SET status = ?,
+            used_at = NULL,
+            returned_at = NOW(),
+            return_reason = ?,
+            invalid_reason = CASE WHEN ? IN ('expired','invalidated') THEN ? ELSE invalid_reason END,
+            order_id = NULL,
+            order_no = NULL,
+            discount_amount = NULL,
+            locked_at = NULL
+      WHERE BINARY id = BINARY ?`,
+    [nextStatus, options.reason || reason, nextStatus, reason, userCouponId],
+  );
+  await insertCouponEvent(q, {
+    couponId: row.coupon_id,
+    userCouponId,
+    userId: row.user_id,
+    eventType: nextStatus === 'available' ? 'returned' : nextStatus,
+    orderId: options.orderId || row.order_id,
+    orderNo: options.orderNo || row.order_no,
+    adminUserId: options.adminUserId || null,
+    reason,
+  });
+  return { restored: nextStatus === 'available', status: nextStatus };
+}
+
+module.exports = {
+  normalizeCouponType,
+  parseJsonArray,
+  parseSnapshot,
+  mysqlDateTime,
+  buildCouponSnapshot,
+  resolveUserCouponValidity,
+  buildEffectiveCoupon,
+  resolveUserCouponRuntimeStatus,
+  insertCouponEvent,
+  expireUserCouponsNow,
+  restoreCouponAfterOrderCancelled,
+};

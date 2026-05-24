@@ -29,7 +29,7 @@ function getMyinvoisApi() {
 
 function emitAdminEvent(event) {
   try {
-    void require('../../admin/service/adminEvent.service').emitEvent(event, {
+    void getAdminApi().emitEvent(event, {
       operatorType: 'system',
       source: event.source || 'stripe_webhook',
     });
@@ -186,14 +186,12 @@ async function handleStripeEvent(event) {
     console.error('[stripe webhook] syncStatsAfterOrderPaid failed:', e?.message || e);
   }
   try {
-    const orderPoints = require('../../order/service/orderPoints.service');
-    const orderRepo = require('../../order/repository/order.repository');
-    const conn = await orderRepo.getConnection();
+    const conn = await requireOrderApi('getOrderConnection')();
     try {
       await conn.beginTransaction();
-      const fullOrder = await orderRepo.selectOrderByIdForUpdate(conn, orderId);
+      const fullOrder = await requireOrderApi('selectOrderByIdForUpdate')(conn, orderId);
       if (fullOrder) {
-        await orderPoints.maybeGrantOrderEarnOnPaymentSuccess(conn, fullOrder, {
+        await requireOrderApi('maybeGrantOrderEarnOnPaymentSuccess')(conn, fullOrder, {
           trigger: 'stripe_payment_success',
         });
       }

@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2, RotateCcw, Loader2, Archive } from "lucide-react";
+import { Trash2, RotateCcw, Archive } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toast } from "sonner";
@@ -20,6 +20,10 @@ import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { formatRecycleBinItemFullText, formatRecycleBinItemName } from "@/utils/recycleBinDisplay";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -126,6 +130,37 @@ export default function AdminRecycleBin() {
     onError: (e) => toast.error(toastErrorMessage(e, "恢复失败")),
   });
 
+  const renderMobileCard = (item: RecycleBinItem) => (
+    <AdminTableMobileCard className="p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        {item.cover_image ? <img src={item.cover_image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : null}
+        <div className="min-w-0 flex-1 space-y-1">
+          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
+            {labelRecycleType(item.type, item.type_label)}
+          </span>
+          <AdminTableCell
+            value={formatRecycleBinItemName(item)}
+            fullText={formatRecycleBinItemFullText(item)}
+            maxWidth="100%"
+          />
+          <AdminTableMobileCardField label={tText("删除时间")}>
+            <span className="text-xs text-muted-foreground">{item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</span>
+          </AdminTableMobileCardField>
+          <PermissionGate permission="recycle_bin.manage">
+            <div className="flex gap-2 pt-2">
+              <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border border-[var(--theme-border)] py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
+                <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复</Tx>
+              </button>
+              <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}>
+                <Trash2 size={12} className="mr-1 inline" /><Tx>彻底删除</Tx>
+              </button>
+            </div>
+          </PermissionGate>
+        </div>
+      </div>
+    </AdminTableMobileCard>
+  );
+
   const confirmPermanentDelete = (item: RecycleBinItem) => {
     confirm({ title: tText("确认彻底删除"),
       description: (
@@ -160,126 +195,72 @@ export default function AdminRecycleBin() {
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
 
-      {!loading && items.length === 0 ? (
-        <div className="py-16 text-center">
-          <Trash2 size={40} className="mx-auto text-muted-foreground/30" />
-          <p className="mt-3 text-sm text-muted-foreground"><Tx>回收站为空</Tx></p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-3 md:hidden">
-            {loading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                  <div className="flex gap-3">
-                    <div className="skeleton-base skeleton-shimmer h-12 w-12 shrink-0 rounded-lg" />
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div className="skeleton-base skeleton-shimmer h-4 w-20 rounded-full" />
-                      <div className="skeleton-base skeleton-shimmer h-4 w-3/4 rounded" />
-                    </div>
-                  </div>
-                </div>
-              ))
-              : null}
-            {!loading && items.map((item) => (
-              <div key={`${item.type}-${item.id}`} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                <div className="flex items-start gap-3">
-                  {item.cover_image && <img src={item.cover_image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />}
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
-                        {labelRecycleType(item.type, item.type_label)}
-                      </span>
-                    </div>
-                    <AdminTableCell
-                      value={formatRecycleBinItemName(item)}
-                      fullText={formatRecycleBinItemFullText(item)}
-                      maxWidth="100%"
-                    />
-                    <p className="text-[11px] text-muted-foreground">删除时间: {item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</p>
-                    <PermissionGate permission="recycle_bin.manage">
-                      <div className="flex gap-2 pt-1">
-                        <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border border-[var(--theme-border)] py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
-                          <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复
-                        </Tx></button>
-                        <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}>
-                          <Trash2 size={12} className="mr-1 inline" /><Tx>彻底删除
-                        </Tx></button>
-                      </div>
-                    </PermissionGate>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
-          </div>
-
-          <div className="hidden md:block rounded-xl border border-border bg-card">
-            <AnimatedTable
-              embedded
-              loading={loading}
-              rows={items}
-              rowKey={(item) => `${item.type}-${item.id}`}
-              skeletonRows={8}
-              skeletonCols={4}
-              tableClassName="w-full min-w-[600px] text-sm"
-              theadClassName="border-b border-border bg-secondary/50"
-              thead={(
-                <tr>
-                  {["类型", "名称", "删除时间", "操作"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              )}
-              emptyIcon={emptyGuide.icon}
-              emptyTitle={emptyGuide.title}
-              emptyDescription={emptyGuide.description}
-              emptyAction={(
-                <AdminEmptyGuideActions
-                  guide={emptyGuide}
-                  showClearFilters={filtersActive}
-                  onClearFilters={clearFilters}
-                />
-              )}
-              renderRow={(item) => (
-                <>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
-                      {labelRecycleType(item.type, item.type_label)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {item.cover_image && <img src={item.cover_image} alt="" className="h-8 w-8 rounded object-cover" />}
-                      <AdminTableCell
-                        value={formatRecycleBinItemName(item)}
-                        fullText={formatRecycleBinItemFullText(item)}
-                        maxWidth="12.5rem"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</td>
-                  <td className="px-4 py-3">
-                    <PermissionGate permission="recycle_bin.manage">
-                      <div className="flex gap-1">
-                        <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title={tText("恢复")}>
-                          <RotateCcw size={14} />
-                        </button>
-                        <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`} title={tText("彻底删除")}>
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </PermissionGate>
-                  </td>
-                </>
-              )}
+      <div className="rounded-xl border border-border bg-card">
+        <AnimatedTable
+          embedded
+          loading={loading}
+          rows={items}
+          rowKey={(item) => `${item.type}-${item.id}`}
+          skeletonRows={8}
+          skeletonCols={4}
+          mobileCardFrom="md"
+          tableClassName="w-full min-w-[600px] text-sm"
+          theadClassName="border-b border-border bg-secondary/50"
+          thead={(
+            <tr>
+              {["类型", "名称", "删除时间", "操作"].map((h) => (
+                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          )}
+          emptyIcon={emptyGuide.icon}
+          emptyTitle={emptyGuide.title}
+          emptyDescription={emptyGuide.description}
+          emptyAction={(
+            <AdminEmptyGuideActions
+              guide={emptyGuide}
+              showClearFilters={filtersActive}
+              onClearFilters={clearFilters}
             />
-            {(loading || items.length > 0) && (
-              <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
-            )}
-          </div>
-        </>
-      )}
+          )}
+          renderMobileCard={renderMobileCard}
+          renderRow={(item) => (
+            <>
+              <td className="px-4 py-3">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
+                  {labelRecycleType(item.type, item.type_label)}
+                </span>
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  {item.cover_image && <img src={item.cover_image} alt="" className="h-8 w-8 rounded object-cover" />}
+                  <AdminTableCell
+                    value={formatRecycleBinItemName(item)}
+                    fullText={formatRecycleBinItemFullText(item)}
+                    maxWidth="12.5rem"
+                  />
+                </div>
+              </td>
+              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</td>
+              <td className="px-4 py-3">
+                <PermissionGate permission="recycle_bin.manage">
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title={tText("恢复")}>
+                      <RotateCcw size={14} />
+                    </button>
+                    <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`} title={tText("彻底删除")}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </PermissionGate>
+              </td>
+            </>
+          )}
+        />
+        {(loading || items.length > 0) && (
+          <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+        )}
+      </div>
     </div>
   );
 }

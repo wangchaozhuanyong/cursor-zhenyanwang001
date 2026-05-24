@@ -368,8 +368,8 @@ export default function AdminUsers() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+    <div className="min-w-0 space-y-4">
+      <div className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-3">
         {statCards.map((item) => (
           <div
             key={item.label}
@@ -394,14 +394,14 @@ export default function AdminUsers() {
             {advancedFiltersOpen ? tText("收起高级筛选") : tText("展开高级筛选")}
           </button>
           {advancedFiltersOpen ? (
-            <div className="mt-3 flex flex-col gap-3 border-t border-[var(--theme-border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 border-t border-[var(--theme-border)] pt-3 sm:grid-cols-2 lg:grid-cols-3">
               <select
                 value={selectedTagId}
                 onChange={(e) => {
                   setSelectedTagId(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
                 <option value=""><Tx>全部标签</Tx></option>
                 {tags.map((tag) => (
@@ -416,7 +416,7 @@ export default function AdminUsers() {
                   setWechatBoundFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
                 <option value=""><Tx>微信绑定（全部）</Tx></option>
                 <option value="1"><Tx>已绑定</Tx></option>
@@ -428,7 +428,7 @@ export default function AdminUsers() {
                   setPhoneBoundFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
                 <option value=""><Tx>手机号（全部）</Tx></option>
                 <option value="1"><Tx>已绑定</Tx></option>
@@ -441,7 +441,7 @@ export default function AdminUsers() {
                     setMemberLevelIdFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                  className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
                 >
                   <option value=""><Tx>会员等级（全部）</Tx></option>
                   {memberLevels.map((level) => (
@@ -458,7 +458,7 @@ export default function AdminUsers() {
                   setAccountStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
                 <option value=""><Tx>账号状态（全部）</Tx></option>
                 <option value="normal"><Tx>正常</Tx></option>
@@ -471,7 +471,7 @@ export default function AdminUsers() {
                   setOrderRestrictedFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
                 <option value=""><Tx>下单限制（全部）</Tx></option>
                 <option value="1"><Tx>已限制</Tx></option>
@@ -483,7 +483,7 @@ export default function AdminUsers() {
                   setCouponRestrictedFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
                 <option value=""><Tx>领券限制（全部）</Tx></option>
                 <option value="1"><Tx>已限制</Tx></option>
@@ -495,7 +495,7 @@ export default function AdminUsers() {
                   setCommentRestrictedFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
                 <option value=""><Tx>评论限制（全部）</Tx></option>
                 <option value="1"><Tx>已限制</Tx></option>
@@ -517,16 +517,16 @@ export default function AdminUsers() {
       </div>
 
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <PermissionGate permission="user.update">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <span className={`text-xs ${selectedUserIds.length ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                 {tText(`已选 ${selectedUserIds.length} 人`)}
               </span>
               <select
                 value={batchTagId}
                 onChange={(e) => setBatchTagId(e.target.value)}
-                className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm"
+                className="min-h-[40px] w-full min-w-0 rounded-lg bg-secondary px-3 py-2 text-sm sm:w-auto sm:max-w-xs"
               >
                 <option value=""><Tx>选择要批量打的标签</Tx></option>
                 {tags.map((tag) => (

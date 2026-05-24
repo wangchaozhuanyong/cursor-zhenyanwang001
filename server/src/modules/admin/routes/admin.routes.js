@@ -341,6 +341,12 @@ const inventoryFeature = requireSiteCapability('inventoryEnabled', '本站未启
 router.get('/inventory/summary', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.summary);
 router.get('/inventory/skus', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listSkus);
 router.get('/inventory/records', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listRecords);
+router.get('/inventory/replenishment-alerts', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listReplenishmentAlerts);
+router.post('/inventory/replenishment-alerts/generate', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.generateReplenishmentAlerts);
+router.post('/inventory/replenishment-alerts/:id/create-purchase-order', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.createPurchaseOrderFromAlert);
+router.get('/purchase-orders', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listPurchaseOrders);
+router.get('/purchase-orders/:id', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.getPurchaseOrder);
+router.post('/purchase-orders/:id/receive', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.receivePurchaseOrder);
 router.get('/inventory/pack-rules', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listPackRules);
 router.post('/inventory/pack-rules', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.createPackRule);
 router.patch('/inventory/pack-rules/:id', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.updatePackRule);
@@ -428,6 +434,10 @@ router.get('/coupons', adminAuth, couponFeature, requirePermission('coupon.view'
 router.post('/coupons', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.create);
 router.put('/coupons/:id', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.update);
 router.delete('/coupons/:id', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.remove);
+router.post('/coupons/:id/pause-claim', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.pauseClaim);
+router.post('/coupons/:id/disable-use', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.disableUse);
+router.post('/coupons/:id/archive', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.archive);
+router.post('/coupons/:id/invalidate-user-coupons', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.invalidateUserCoupons);
 router.post('/coupons/:id/issue-by-tag', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.issueByTag);
 router.get('/coupon-records', adminAuth, couponFeature, requirePermission('coupon.view'), couponCtrl.listAllRecords);
 router.get('/coupons/:couponId/records', adminAuth, couponFeature, requirePermission('coupon.view'), couponCtrl.listRecordsByCoupon);

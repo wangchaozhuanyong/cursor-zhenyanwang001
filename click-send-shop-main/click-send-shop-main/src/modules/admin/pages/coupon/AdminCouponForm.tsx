@@ -54,6 +54,13 @@ export default function AdminCouponForm() {
     min_amount: "",
     start_date: "",
     end_date: "",
+    publish_status: "active" as "draft" | "scheduled" | "active",
+    claim_start_at: "",
+    claim_end_at: "",
+    use_start_at: "",
+    use_end_at: "",
+    validity_mode: "absolute" as "absolute" | "after_claim" | "follow_activity",
+    valid_days_after_claim: "7",
     description: "",
     scope_type: "all" as "all" | "category",
     category_ids: [] as string[],
@@ -136,6 +143,13 @@ export default function AdminCouponForm() {
       min_amount: coupon.min_amount?.toString() || "",
       start_date: coupon.start_date?.slice(0, 10) || "",
       end_date: coupon.end_date?.slice(0, 10) || "",
+      publish_status: (coupon.publish_status === "draft" || coupon.publish_status === "scheduled" ? coupon.publish_status : "active"),
+      claim_start_at: coupon.claim_start_at?.slice(0, 10) || coupon.start_date?.slice(0, 10) || "",
+      claim_end_at: coupon.claim_end_at?.slice(0, 10) || coupon.end_date?.slice(0, 10) || "",
+      use_start_at: coupon.use_start_at?.slice(0, 10) || coupon.start_date?.slice(0, 10) || "",
+      use_end_at: coupon.use_end_at?.slice(0, 10) || coupon.end_date?.slice(0, 10) || "",
+      validity_mode: coupon.validity_mode || "absolute",
+      valid_days_after_claim: coupon.valid_days_after_claim?.toString() || "7",
       description: coupon.description || "",
       scope_type: coupon.scope_type || "all",
       category_ids: Array.isArray(coupon.category_ids) ? coupon.category_ids : [],
@@ -189,6 +203,13 @@ export default function AdminCouponForm() {
         min_amount: parseFloat(form.min_amount) || 0,
         start_date: form.start_date || new Date().toISOString().slice(0, 10),
         end_date: form.end_date || "2026-12-31",
+        publish_status: form.publish_status,
+        claim_start_at: form.claim_start_at ? `${form.claim_start_at} 00:00:00` : undefined,
+        claim_end_at: form.claim_end_at ? `${form.claim_end_at} 23:59:59` : undefined,
+        use_start_at: form.use_start_at ? `${form.use_start_at} 00:00:00` : undefined,
+        use_end_at: form.use_end_at ? `${form.use_end_at} 23:59:59` : undefined,
+        validity_mode: form.validity_mode,
+        valid_days_after_claim: form.validity_mode === "after_claim" ? Math.max(1, parseInt(form.valid_days_after_claim, 10) || 1) : undefined,
         description: form.description,
         scope_type: form.scope_type,
         category_ids: form.scope_type === "category" ? form.category_ids : [],
@@ -280,13 +301,51 @@ export default function AdminCouponForm() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>开始日期</Tx></label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>兼容开始日期</Tx></label>
                 <SegmentedDateInput id="coupon-start-date" value={form.start_date} onChange={(v) => setForm({ ...form, start_date: v })} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>结束日期</Tx></label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>兼容结束日期</Tx></label>
                 <SegmentedDateInput id="coupon-end-date" value={form.end_date} onChange={(v) => setForm({ ...form, end_date: v })} />
               </div>
+            </div>
+            <div className="rounded-xl border border-border p-3">
+              <p className="mb-3 text-sm font-semibold text-foreground"><Tx>领取与使用时间</Tx></p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>领取开始</Tx></label>
+                  <SegmentedDateInput id="coupon-claim-start" value={form.claim_start_at} onChange={(v) => setForm({ ...form, claim_start_at: v })} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>领取结束</Tx></label>
+                  <SegmentedDateInput id="coupon-claim-end" value={form.claim_end_at} onChange={(v) => setForm({ ...form, claim_end_at: v })} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>使用开始</Tx></label>
+                  <SegmentedDateInput id="coupon-use-start" value={form.use_start_at} onChange={(v) => setForm({ ...form, use_start_at: v })} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>使用结束</Tx></label>
+                  <SegmentedDateInput id="coupon-use-end" value={form.use_end_at} onChange={(v) => setForm({ ...form, use_end_at: v })} />
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>有效期模式</Tx></label>
+                  <select value={form.validity_mode} onChange={(e) => setForm({ ...form, validity_mode: e.target.value as "absolute" | "after_claim" | "follow_activity" })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none">
+                    <option value="absolute"><Tx>固定使用时间</Tx></option>
+                    <option value="after_claim"><Tx>领取后 N 天</Tx></option>
+                    <option value="follow_activity"><Tx>跟随活动有效期</Tx></option>
+                  </select>
+                </div>
+                {form.validity_mode === "after_claim" ? (
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>领取后有效天数</Tx></label>
+                    <input value={form.valid_days_after_claim} onChange={(e) => setForm({ ...form, valid_days_after_claim: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none" />
+                  </div>
+                ) : null}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground"><Tx>领取结束只停止新领取；已领取券是否失效取决于有效期模式和用户券快照。</Tx></p>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>适用范围（发券归属）</Tx></label>

@@ -1,5 +1,5 @@
 export type CouponType = "fixed" | "percentage" | "shipping";
-export type CouponStatus = "available" | "used" | "expired";
+export type CouponStatus = "pending" | "available" | "locked" | "used" | "expired" | "invalidated" | "cancelled";
 
 export interface Coupon {
   id: string;
@@ -25,6 +25,17 @@ export interface Coupon {
   usable_product_ids?: string[];
   usable_category_ids?: string[];
   stackable_with_activity?: boolean;
+  publish_status?: "draft" | "scheduled" | "active" | "paused" | "ended" | "disabled" | "archived";
+  claim_start_at?: string;
+  claim_end_at?: string;
+  use_start_at?: string;
+  use_end_at?: string;
+  validity_mode?: "absolute" | "after_claim" | "follow_activity";
+  valid_days_after_claim?: number | null;
+  claimed_count?: number;
+  used_count?: number;
+  remaining_quantity?: number | null;
+  usage_rate?: number;
 }
 
 export interface UserCoupon {
@@ -33,10 +44,19 @@ export interface UserCoupon {
   claimed_at: string;
   used_at?: string;
   status: CouponStatus;
+  valid_from?: string;
+  valid_until?: string;
+  issue_channel?: string;
+  order_id?: string;
+  order_no?: string;
+  discount_amount?: number;
+  invalid_reason?: string;
+  returned_at?: string;
+  return_reason?: string;
 }
 
 export interface CouponListParams {
-  status?: CouponStatus;
+  status?: CouponStatus | "all";
   page?: number;
   pageSize?: number;
 }
@@ -73,4 +93,13 @@ export interface CheckoutPickerCoupon {
   expire: string;
   /** 用于轮换配色与图标，由映射时序号决定 */
   variantIndex: number;
+  usable?: boolean;
+  reason?: string;
+  discountAmount?: number;
+}
+
+export interface CheckoutCouponsResult {
+  usable: Array<CheckoutPickerCoupon & { user_coupon_id?: string; discount_amount?: number }>;
+  unusable: Array<CheckoutPickerCoupon & { user_coupon_id?: string; reason: string }>;
+  best_coupon_id?: string | null;
 }

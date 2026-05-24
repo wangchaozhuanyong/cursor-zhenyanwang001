@@ -110,7 +110,8 @@ function resolveProductListOrderBy(sort) {
   return SORT_ORDER_SQL[key] || SORT_ORDER_SQL.created_desc;
 }
 
-function buildProductListQuery(where, params, { pageSize, offset, sort } = {}) {
+function buildProductListQuery(where, params, options = {}) {
+  const { pageSize, offset, sort } = options;
   const orderBy = resolveProductListOrderBy(sort);
   const baseSql = `${PRODUCT_LIST_SELECT} ${PRODUCT_LIST_FROM} ${where}`;
   if (pageSize != null && offset != null) {

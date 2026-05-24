@@ -2,7 +2,7 @@ const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/adminHomeOps.repository');
 const homeModuleSettings = require('../homeModuleSettings');
 const supportChannels = require('../homeNavSupportChannels');
-const siteCapabilitiesService = require('../../siteCapabilities/service/siteCapabilities.service');
+const siteCapabilitiesService = require('./adminSiteCapabilities.service');
 
 function trimString(value, max = 512) {
   return String(value ?? '').trim().slice(0, max);

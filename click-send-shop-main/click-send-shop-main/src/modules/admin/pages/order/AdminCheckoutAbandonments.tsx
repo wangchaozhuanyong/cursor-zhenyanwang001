@@ -3,6 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -204,6 +208,33 @@ export default function AdminCheckoutAbandonments() {
     return <span className="text-xs text-muted-foreground">{label}</span>;
   };
 
+
+  const renderMobileCard = (row: CheckoutAbandonment) => (
+    <AdminTableMobileCard>
+      <div className="flex items-center justify-between gap-3">
+        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{tText(STATUS_LABEL[row.status])}</span>
+        <span className="text-xs text-muted-foreground">{formatDateTime(row.updated_at)}</span>
+      </div>
+      <div className="mt-2">
+        <CheckoutAbandonmentIdCell row={row} onViewOrder={handleViewOrder} />
+      </div>
+      <div className="mt-3 flex items-start justify-between gap-3">
+        <div className="min-w-0 text-sm text-foreground">
+          <p>{row.contact_name || tText("未填写联系人")}</p>
+          <p className="text-xs text-muted-foreground">{row.contact_phone_masked || tText("未填写电话")}</p>
+        </div>
+        <p className="shrink-0 text-sm font-semibold text-[var(--theme-price)]">RM {row.total_amount.toFixed(2)}</p>
+      </div>
+      <div className="mt-2">
+        <AdminTableCell value={row.items_preview} fullText={itemsSummaryLocalized(row)} maxWidth="100%" muted />
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">{labelCheckoutPaymentMethod(row.payment_method)}</span>
+        {renderAction(row)}
+      </div>
+    </AdminTableMobileCard>
+  );
+
   return (
     <div className="space-y-4">
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow sm:p-4">
@@ -244,53 +275,7 @@ export default function AdminCheckoutAbandonments() {
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
 
-      <div className="space-y-3 md:hidden">
-        {loading
-          ? Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow sm:p-4">
-              <div className="space-y-2">
-                <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
-                <div className="skeleton-base skeleton-shimmer h-4 w-3/4 rounded" />
-                <div className="skeleton-base skeleton-shimmer h-3 w-1/2 rounded" />
-              </div>
-            </div>
-          ))
-          : null}
-        {!loading && rows.map((row) => (
-          <div key={row.group_key || row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow sm:p-4">
-            <div className="flex items-center justify-between gap-3">
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{tText(STATUS_LABEL[row.status])}</span>
-              <span className="text-xs text-muted-foreground">{formatDateTime(row.updated_at)}</span>
-            </div>
-            <div className="mt-2">
-              <CheckoutAbandonmentIdCell row={row} onViewOrder={handleViewOrder} />
-            </div>
-            <div className="mt-3 flex items-start justify-between gap-3">
-              <div className="min-w-0 text-sm text-foreground">
-                <p>{row.contact_name || tText("未填写联系人")}</p>
-                <p className="text-xs text-muted-foreground">{row.contact_phone_masked || tText("未填写电话")}</p>
-              </div>
-              <p className="shrink-0 text-sm font-semibold text-[var(--theme-price)]">RM {row.total_amount.toFixed(2)}</p>
-            </div>
-            <div className="mt-2">
-              <AdminTableCell
-                value={row.items_preview}
-                fullText={itemsSummaryLocalized(row)}
-                maxWidth="100%"
-                muted
-              />
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">{labelCheckoutPaymentMethod(row.payment_method)}</span>
-              {renderAction(row)}
-            </div>
-          </div>
-        ))}
-        {!loading && rows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无未完成结算</Tx></div>}
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
-      </div>
-
-      <div className="hidden md:block theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
+      <div className=" theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
         <AnimatedTable
           embedded
           loading={loading}
@@ -317,6 +302,8 @@ export default function AdminCheckoutAbandonments() {
               onClearFilters={clearFilters}
             />
           )}
+          mobileCardFrom="md"
+          renderMobileCard={renderMobileCard}
           renderRow={(row) => (
             <>
               <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{tText(STATUS_LABEL[row.status])}</span></td>

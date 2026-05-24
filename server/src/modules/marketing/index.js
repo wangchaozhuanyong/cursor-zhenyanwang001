@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const marketingRoutes = require('./routes/marketing.routes');
 const marketingService = require('./service/marketing.service');
+const newUserGiftService = require('./service/newUserGift.service');
 
 const router = Router();
 router.use('/marketing', marketingRoutes);
@@ -11,6 +12,7 @@ router.use('/marketing', marketingRoutes);
   getFullReductionNotices: marketingService.getFullReductionNotices,
   getCouponCenter: marketingService.getCouponCenter,
   getNewUserGift: marketingService.getNewUserGift,
+  issueNewUserGiftPack: newUserGiftService.issueNewUserGiftPack,
 };
 
 module.exports = router;

@@ -3,8 +3,6 @@ import type { RbacRoleRow } from "@/services/admin/rbacService";
 import { labelRbacRoleCode } from "@/utils/adminDisplayLabels";
 import SearchBar from "@/components/SearchBar";
 
-const PRIVILEGED_ROLE_CODES = new Set(["super_admin", "admin_manager"]);
-
 type AdminRolePickerProps = {
   roles: RbacRoleRow[];
   selectedRoleIds: number[];
@@ -16,13 +14,6 @@ type AdminRolePickerProps = {
   showSearch?: boolean;
   searchPlaceholder?: string;
 };
-
-export function getDefaultAdminRoleIds(roles: RbacRoleRow[], isSuperAdminViewer: boolean) {
-  const fallback = roles.find((role) => role.code === "customer_service")
-    || roles.find((role) => isSuperAdminViewer || !PRIVILEGED_ROLE_CODES.has(role.code))
-    || roles[0];
-  return fallback ? [fallback.id] : [];
-}
 
 export default function AdminRolePicker({
   roles,

@@ -29,6 +29,7 @@ router.use(guardByAction('order'));
 router.get('/', validate({ query: listOrdersQuerySchema }), ctrl.getOrders);
 router.get('/summary', ctrl.getOrderSummary);
 router.post('/checkout-abandonments', validate({ body: checkoutAbandonmentBodySchema }), ctrl.recordCheckoutAbandonment);
+router.post('/checkout/coupons', mallFeature, ctrl.checkoutCoupons);
 router.post('/preview', mallFeature, validate({ body: previewOrderBodySchema }), ctrl.previewOrder);
 router.post('/', mallFeature, validate({ body: createOrderBodySchema }), ctrl.createOrder);
 

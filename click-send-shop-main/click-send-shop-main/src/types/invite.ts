@@ -18,11 +18,19 @@ export interface InviteStats {
   totalOrderAmount: number;
 }
 
+export type ReferralSettlementTiming =
+  | "immediate"
+  | "order_paid"
+  | "payment_success"
+  | "order_shipped"
+  | "order_completed";
+
 export interface ReferralRule {
   id: string;
   level: number;
   name: string;
   rewardPercent: number;
+  settlementTiming?: ReferralSettlementTiming;
   enabled: boolean;
 }
 
@@ -39,5 +47,6 @@ export interface ReferralRuleEditRow {
   level: number;
   name: string;
   rewardPercent: number;
+  settlementTiming: ReferralSettlementTiming;
   enabled: boolean;
 }

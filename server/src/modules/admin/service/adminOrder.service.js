@@ -441,6 +441,10 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
           operatorId: adminUserId,
           trigger: 'admin_order_status_paid',
         });
+        await requireUserApi('maybeSettleOrderRewardsOnPayment')(conn, fullOrder, {
+          operatorId: adminUserId,
+          trigger: 'admin_order_status_paid',
+        });
         await requireUserApi('refreshUserMemberLevel')(conn, fullOrder.user_id);
         try {
           const salesItems = await repo.selectOrderItemPairs(conn, fullOrder.id);
@@ -498,6 +502,10 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
           operatorId: adminUserId,
           trigger: 'order_shipped',
           timing: 'order_shipped',
+        });
+        await requireUserApi('settleOrderRewards')(conn, fullOrder, {
+          operatorId: adminUserId,
+          trigger: 'order_shipped',
         });
       }
 

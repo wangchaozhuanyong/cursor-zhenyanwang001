@@ -8,7 +8,13 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
 import { fetchReferralRules, updateReferralRule } from "@/services/admin/inviteService";
 import { fetchRewardSettings, saveRewardSettings } from "@/services/admin/rewardSettingsService";
-import type { ReferralRule, ReferralRuleEditRow } from "@/types/invite";
+import type { ReferralRule, ReferralRuleEditRow, ReferralSettlementTiming } from "@/types/invite";
+
+const REFERRAL_SETTLEMENT_OPTIONS: { value: ReferralSettlementTiming; label: string }[] = [
+  { value: "order_paid", label: "付款成功后" },
+  { value: "order_shipped", label: "发货后" },
+  { value: "order_completed", label: "订单完成后" },
+];
 import type { RewardRecord, RewardStats, RewardStatus, RewardUsageSettings } from "@/types/reward";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -78,6 +84,7 @@ function normalizeReferralRules(data: ReferralRule[]): ReferralRuleEditRow[] {
     level: Number(r.level ?? idx + 1),
     name: String(r.name || `等级 ${idx + 1}`),
     rewardPercent: Number(r.rewardPercent ?? 0),
+    settlementTiming: (r.settlementTiming || "order_paid") as ReferralSettlementTiming,
     enabled: Boolean(r.enabled ?? true),
   }));
 }
@@ -140,7 +147,11 @@ export default function AdminRewardRecords() {
     setDisplaySettings(displayQuery.data);
   }, [displayQuery.data]);
 
-  const updateRuleField = (id: string, field: "rewardPercent" | "enabled", value: number | boolean) => {
+  const updateRuleField = (
+    id: string,
+    field: "rewardPercent" | "enabled" | "settlementTiming",
+    value: number | boolean | ReferralSettlementTiming,
+  ) => {
     setRules((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
   };
 
@@ -151,6 +162,7 @@ export default function AdminRewardRecords() {
         await updateReferralRule(rule.id, {
           name: rule.name,
           rewardPercent: rule.rewardPercent,
+          settlementTiming: rule.settlementTiming,
           enabled: rule.enabled,
         });
       }
@@ -278,10 +290,28 @@ export default function AdminRewardRecords() {
         ) : (
           <div className="space-y-3">
             {rules.map((rule) => (
-              <div key={rule.id} className="flex items-center justify-between rounded-lg border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] px-3 py-2.5">
-                <div>
+              <div key={rule.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] px-3 py-2.5">
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-[var(--theme-text-on-surface)]">{rule.name}</p>
                   <p className="text-[11px] text-theme-muted">第 {rule.level} 级返现</p>
+                  <PermissionGate permission="referral.manage">
+                    <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-theme-muted">
+                      <span><Tx>结算时机</Tx></span>
+                      <select
+                        className="rounded-md border border-[var(--theme-border)] bg-theme-surface px-1.5 py-0.5 text-[11px] text-[var(--theme-text-on-surface)]"
+                        value={rule.settlementTiming}
+                        onChange={(e) =>
+                          updateRuleField(rule.id, "settlementTiming", e.target.value as ReferralSettlementTiming)
+                        }
+                      >
+                        {REFERRAL_SETTLEMENT_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </PermissionGate>
                 </div>
                 <div className="flex items-center gap-2">
                   <PermissionGate permission="referral.manage">

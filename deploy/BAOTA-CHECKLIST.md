@@ -41,7 +41,7 @@ server {
 
 **推荐 B：`root` 指向 `public-frontend`（与仓库自带同步脚本一致）**
 
-- 生产（damatong.net）请用 `deploy/production-deploy.sh` 或 `scripts/upload-frontend-dist-ec2.ps1`，静态目录为 `/var/www/flashcast/dist` 与 `admin-dist`（见 `docs/PRODUCTION_DOMAINS.md`）。`deploy/deploy-wwwroot.sh` 默认不安装 Nginx（`INSTALL_NGINX=0`）；需要时单独执行 `deploy/nginx/install-damatong-nginx.sh`。
+- 生产（damatong.net）请用 `deploy/production-deploy.sh` 或 `scripts/upload-frontend-dist-ec2.ps1`，静态目录为 `/var/www/damatong/dist` 与 `admin-dist`（见 `docs/PRODUCTION_DOMAINS.md`）。`deploy/deploy-wwwroot.sh` 默认不安装 Nginx（`INSTALL_NGINX=0`）；需要时单独执行 `deploy/nginx/install-damatong-nginx.sh`。
 - 若 **`root` 是 `public-frontend`，但 build 只写在 `click-send-shop-main/.../dist`** 且从未同步 → **页面永远不会按预期更新** → 必须用 **`bash deploy.sh`**（带复制/rsync 逻辑），或改 Nginx `root` 指向前端 `dist`。
 
 ---

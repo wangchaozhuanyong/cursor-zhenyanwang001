@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import type { NotificationType } from "@/types/notification";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
+import { normalizeNotificationDisplay } from "@/utils/notificationDisplayLabels";
 import {
   THEME_BADGE_ACCENT,
   THEME_BADGE_DANGER,
@@ -126,6 +127,7 @@ export default function Notifications() {
             {notifications.map((n, i) => {
               const config = typeConfig[n.type] || fallbackConfig;
               const Icon = config.icon;
+              const display = normalizeNotificationDisplay(n.title, n.content);
               return (
                 <motion.div
                   key={n.id}
@@ -145,9 +147,9 @@ export default function Notifications() {
                       <Icon size={18} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-foreground">{n.title}</p>
+                      <p className="text-sm font-semibold text-foreground">{display.title}</p>
                       <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2">
-                        {n.content}
+                        {display.content}
                       </p>
                       <p className="mt-2 text-[11px] text-muted-foreground/60">{formatDateTime(n.created_at)}</p>
                     </div>
@@ -166,12 +168,12 @@ export default function Notifications() {
             className="w-full max-h-[82vh] overflow-y-auto rounded-t-2xl bg-card p-4 md:max-w-lg md:rounded-2xl"
           >
             <div className="mb-3 flex items-start justify-between gap-3">
-              <h3 className="text-base font-semibold text-foreground">{active.title}</h3>
+              <h3 className="text-base font-semibold text-foreground">{normalizeNotificationDisplay(active.title, active.content).title}</h3>
               <button type="button" className="rounded-lg p-1 text-muted-foreground hover:bg-secondary" onClick={() => setActiveId(null)}>
                 <X size={16} />
               </button>
             </div>
-            <div className="whitespace-pre-wrap break-words text-sm leading-6 text-foreground">{active.content}</div>
+            <div className="whitespace-pre-wrap break-words text-sm leading-6 text-foreground">{normalizeNotificationDisplay(active.title, active.content).content}</div>
           </div>
         </div>
       ) : null}

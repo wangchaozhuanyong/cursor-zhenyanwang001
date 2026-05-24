@@ -22,7 +22,7 @@ $AdminDistDir = Join-Path $FrontendDir "admin-dist"
 $RemoteDist = "$RemoteProjectRoot/click-send-shop-main/click-send-shop-main/dist"
 $RemoteAdminDist = "$RemoteProjectRoot/click-send-shop-main/click-send-shop-main/admin-dist"
 # 生产静态根（与 deploy/nginx/damatong.prod.conf 一致）
-$RemoteStaticRoot = "/var/www/flashcast"
+$RemoteStaticRoot = "/var/www/damatong"
 $RemotePublicDist = "$RemoteStaticRoot/dist"
 $RemotePublicAdminDist = "$RemoteStaticRoot/admin-dist"
 

@@ -22,23 +22,32 @@ bash deploy/nginx/install-damatong-nginx.sh
 
 | 内容 | 服务器路径 |
 |------|------------|
-| 商城 `dist` | `/var/www/flashcast/dist` |
-| 管理端 `admin-dist` | `/var/www/flashcast/admin-dist` |
+| 商城 `dist` | `/var/www/damatong/dist` |
+| 管理端 `admin-dist` | `/var/www/damatong/admin-dist` |
 
 ## 后端环境变量（`server/.env`）
 
 与 `server/.env.example`、`deploy/cloudflare-admin-security.md` 一致：
 
 ```env
+SITE_CODE=damatong
+REDIS_KEY_PREFIX=damatong
+BULLMQ_PREFIX=damatong:bull
 PUBLIC_APP_URL=https://damatong.net
 ADMIN_PUBLIC_URL=https://console.damatong.net
 ADMIN_ALLOWED_ORIGINS=https://console.damatong.net
 CORS_ORIGINS=https://damatong.net,https://www.damatong.net,https://console.damatong.net
+FRONTEND_DIST=/var/www/damatong/dist
+ADMIN_DIST=/var/www/damatong/admin-dist
+STORAGE_S3_BUCKET=damatong-prod-assets-<account-id>
+STORAGE_PUBLIC_BASE_URL=https://damatong-prod-assets-<account-id>.s3.ap-southeast-1.amazonaws.com
 ```
+
+从旧 `flashcast` 前缀/路径迁移见 `deploy/scripts/migrate-flashcast-to-damatong-prod.sh`。
 
 ## 部署脚本默认行为
 
-- `deploy/production-deploy.sh`、`scripts/upload-frontend-dist-ec2.ps1`：同步到 `/var/www/flashcast/dist` 与 `admin-dist`
+- `deploy/production-deploy.sh`、`scripts/upload-frontend-dist-ec2.ps1`：同步到 `/var/www/damatong/dist` 与 `admin-dist`
 - `deploy/deploy-wwwroot.sh`：默认 **不** 改写 Nginx（`INSTALL_NGINX=0`）；需要时设 `INSTALL_NGINX=1`
 
 ## Cloudflare

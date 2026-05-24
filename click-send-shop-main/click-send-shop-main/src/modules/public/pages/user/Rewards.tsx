@@ -221,7 +221,7 @@ export default function Rewards() {
         ) : records.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-8 text-center">
             <p className="text-sm text-muted-foreground">暂无返现记录</p>
-            <p className="mt-2 text-xs text-muted-foreground">邀请好友下单或购物使用返现余额后，会在这里显示明细。</p>
+            <p className="mt-2 text-xs text-muted-foreground">邀请好友付款成功或购物使用返现余额后，会在这里显示明细。</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {inviteEnabled ? (
                 <button type="button" onClick={() => navigate("/invite")} className={cn("rounded-full px-4 py-2 text-xs font-semibold", THEME_BTN_PRICE)}>

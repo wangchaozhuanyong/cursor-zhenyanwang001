@@ -37,6 +37,7 @@ router.use('/theme', require('./routes/theme.routes'));
   settleOrderPoints: pointsService.settleOrderPoints,
   reverseOrderPoints: pointsService.reverseOrderPoints,
   settleOrderRewards: rewardService.settleOrderRewards,
+  maybeSettleOrderRewardsOnPayment: rewardService.maybeSettleOrderRewardsOnPayment,
   reverseOrderRewards: rewardService.reverseOrderRewards,
   sumRewardTransactionsBalance: rewardService.sumRewardTransactionsBalance,
   insertRewardTransaction: rewardService.insertRewardTransaction,

@@ -1,12 +1,14 @@
 import { create } from "zustand";
 import type { PointsRecord } from "@/types/points";
 import * as pointsService from "@/services/pointsService";
+import { useUserStore } from "@/stores/useUserStore";
 
 interface PointsState {
   balance: number;
   records: PointsRecord[];
   loading: boolean;
   loadingMore: boolean;
+  loadMoreError: string | null;
   error: string | null;
   page: number;
   hasMore: boolean;
@@ -23,6 +25,7 @@ export const usePointsStore = create<PointsState>((set, get) => ({
   records: [],
   loading: false,
   loadingMore: false,
+  loadMoreError: null,
   error: null,
   page: 1,
   hasMore: true,
@@ -43,6 +46,7 @@ export const usePointsStore = create<PointsState>((set, get) => ({
         loading: false,
         hasMore: recordsData.list.length >= PAGE_SIZE,
       });
+      useUserStore.setState({ pointsBalance: balance });
     } catch (e) {
       set({
         error: e instanceof Error ? e.message : "加载积分数据失败",
@@ -54,7 +58,7 @@ export const usePointsStore = create<PointsState>((set, get) => ({
   loadMore: async () => {
     const { loadingMore, hasMore, page, records } = get();
     if (loadingMore || !hasMore) return;
-    set({ loadingMore: true });
+    set({ loadingMore: true, loadMoreError: null });
     try {
       const nextPage = page + 1;
       const data = await pointsService.fetchPointsRecords({ page: nextPage, pageSize: PAGE_SIZE });
@@ -64,8 +68,11 @@ export const usePointsStore = create<PointsState>((set, get) => ({
         hasMore: data.list.length >= PAGE_SIZE,
         loadingMore: false,
       });
-    } catch {
-      set({ loadingMore: false });
+    } catch (e) {
+      set({
+        loadingMore: false,
+        loadMoreError: e instanceof Error ? e.message : "加载更多失败",
+      });
     }
   },
 }));

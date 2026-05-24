@@ -1,5 +1,6 @@
 const repo = require('../repository/notificationTriggerSettings.repository');
 const { BusinessError } = require('../../../errors/BusinessError');
+const { isLegacyEnglishOrderShipCopy } = require('../../../utils/notificationDisplayNormalize');
 
 /** Default title/content templates used when trigger copy is not configured. */
 const TRIGGER_DEFAULT_COPY = {
@@ -72,12 +73,32 @@ const LEGACY_ENGLISH_COPY = {
 
 function isLegacyEnglishCopy(key, kind, value) {
   if (!value) return false;
+  if (key === 'order_ship' && isLegacyEnglishOrderShipCopy(kind, value)) return true;
   const cfg = LEGACY_ENGLISH_COPY[key];
   if (!cfg) return false;
   const pool = kind === 'title' ? cfg.title : cfg.content;
   if (!Array.isArray(pool) || pool.length === 0) return false;
   const normalized = String(value).trim().toLowerCase();
   return pool.some((item) => String(item).trim().toLowerCase() === normalized);
+}
+
+function sanitizeStoredTriggerRules(saved) {
+  let changed = false;
+  const next = { ...saved };
+  for (const [key, entry] of Object.entries(next)) {
+    if (!entry || typeof entry !== 'object') continue;
+    const copy = { ...entry };
+    if (isLegacyEnglishCopy(key, 'title', copy.title)) {
+      delete copy.title;
+      changed = true;
+    }
+    if (isLegacyEnglishCopy(key, 'content', copy.content)) {
+      delete copy.content;
+      changed = true;
+    }
+    next[key] = copy;
+  }
+  return { saved: next, changed };
 }
 
 const DEFAULT_NOTIFICATION_TRIGGERS = [
@@ -158,6 +179,12 @@ function normalizeRules(raw) {
 
 async function getNotificationTriggerSettings() {
   const raw = await repo.selectTriggerRulesRaw();
+  const saved = parseStoredMap(raw);
+  const { saved: sanitized, changed } = sanitizeStoredTriggerRules(saved);
+  if (changed) {
+    await repo.upsertTriggerRulesRaw(JSON.stringify(sanitized));
+    return normalizeRules(JSON.stringify(sanitized));
+  }
   return normalizeRules(raw);
 }
 

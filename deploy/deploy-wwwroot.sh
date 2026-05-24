@@ -6,8 +6,8 @@
 # 可选环境变量：
 #   PROJECT_DIR        默认 /var/www/click-send-shop
 #   FRONTEND_DIR       显式指定前端目录（相对 PROJECT_DIR），否则自动探测
-#   PUBLIC_FRONTEND    商城静态目录，默认 /var/www/flashcast/dist（damatong.net）
-#   ADMIN_PUBLIC_FRONTEND  管理端静态，默认 /var/www/flashcast/admin-dist（console.damatong.net）
+#   PUBLIC_FRONTEND    商城静态目录，默认 /var/www/damatong/dist（damatong.net）
+#   ADMIN_PUBLIC_FRONTEND  管理端静态，默认 /var/www/damatong/admin-dist（console.damatong.net）
 #   INSTALL_NGINX      设为 1 时安装 deploy/nginx/damatong.prod.conf（默认 0，避免覆盖生产）
 #   PM2_APP            pm2 进程名，默认 gc-api
 #   NPM_CI=1           若存在 package-lock.json 则用 npm ci 替代 npm install（根/前端/后端）
@@ -28,8 +28,8 @@ PROJECT_DIR="${PROJECT_DIR:-/var/www/click-send-shop}"
 PM2_APP="${PM2_APP:-gc-api}"
 LOG_FILE="$PROJECT_DIR/deploy.log"
 INSTALL_NGINX="${INSTALL_NGINX:-0}"
-PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/flashcast/dist}"
-ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/flashcast/admin-dist}"
+PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/damatong/dist}"
+ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/damatong/admin-dist}"
 
 cd "$PROJECT_DIR" || exit 1
 

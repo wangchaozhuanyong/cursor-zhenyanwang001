@@ -222,7 +222,7 @@ export const ADMIN_EMPTY_GUIDES = {
   rewardRecords: {
     icon: RotateCcw,
     title: "暂无返现记录",
-    description: "下级用户下单并满足返现规则后，记录会出现在此处。",
+    description: "下级用户付款成功并满足返现规则后，记录会出现在此处。",
     primaryLabel: "返现规则",
     primaryPath: "/admin/marketing/rewards",
   },

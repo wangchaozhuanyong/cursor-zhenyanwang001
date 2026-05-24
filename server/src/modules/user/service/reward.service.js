@@ -26,8 +26,16 @@ function calculateRewardPoints(orderAmount, pointsPercent, fixedPoints) {
   return Math.max(byPercent, fixed);
 }
 
+function buildSettlementRemark(timing, orderNo) {
+  const t = String(timing || 'order_paid').toLowerCase();
+  if (t === 'order_paid' || t === 'payment_success') return `订单支付返现 ${orderNo}`;
+  if (t === 'order_shipped') return `订单发货返现 ${orderNo}`;
+  if (t === 'immediate') return `邀请返现 ${orderNo}`;
+  return `订单完成返现 ${orderNo}`;
+}
+
 function shouldSettleByTiming(timing, order, trigger = '') {
-  const t = String(timing || 'order_completed').toLowerCase();
+  const t = String(timing || 'order_paid').toLowerCase();
   const trig = String(trigger || '').toLowerCase();
   const paid = (order?.payment_status || '').toLowerCase() === PAYMENT_STATUS.PAID;
   const completed = (order?.status || '').toLowerCase() === ORDER_STATUS.COMPLETED;
@@ -72,7 +80,7 @@ async function settleOrderRewards(conn, order, options = {}) {
     if (!rule) continue;
 
     const rewardType = String(rule.reward_type || 'cash').toLowerCase();
-    const settlementTiming = String(rule.settlement_timing || 'order_completed').toLowerCase();
+    const settlementTiming = String(rule.settlement_timing || 'order_paid').toLowerCase();
     if (!shouldSettleByTiming(settlementTiming, order, trigger)) continue;
 
     const cashAmount = rewardType === 'points' ? 0 : calculateRewardAmount(orderAmount, rule.reward_percent);
@@ -91,7 +99,7 @@ async function settleOrderRewards(conn, order, options = {}) {
       level: ancestor.level,
       status: REWARD_STATUS.APPROVED,
       sourceType: 'order_completion',
-      remark: `订单完成返现 ${order.order_no}`,
+      remark: buildSettlementRemark(settlementTiming, order.order_no),
       metadata: {
         buyerUserId: order.user_id,
         rewardType,
@@ -114,7 +122,7 @@ async function settleOrderRewards(conn, order, options = {}) {
         type: 'settle',
         amount: cashAmount,
         status: 'success',
-        reason: `订单完成返现 Level ${ancestor.level}`,
+        reason: `${buildSettlementRemark(settlementTiming, order.order_no)} Level ${ancestor.level}`,
         operatorId: options.operatorId,
         metadata: { buyerUserId: order.user_id, rate: rule.reward_percent, rewardType, rewardPoints: pointsAmount },
       });
@@ -140,6 +148,23 @@ async function settleOrderRewards(conn, order, options = {}) {
   }
 
   return { settled, skipped: settled === 0 };
+}
+
+/** 订单支付成功后尝试结算邀请返现（幂等，重复调用不会重复入账） */
+async function maybeSettleOrderRewardsOnPayment(conn, order, options = {}) {
+  if (!order?.id || !order.user_id) return { settled: 0, skipped: true };
+  const paidOrder = {
+    ...order,
+    status:
+      String(order.status || '').toLowerCase() === ORDER_STATUS.COMPLETED
+        ? ORDER_STATUS.COMPLETED
+        : ORDER_STATUS.PAID,
+    payment_status: PAYMENT_STATUS.PAID,
+  };
+  return settleOrderRewards(conn, paidOrder, {
+    ...options,
+    trigger: options.trigger || 'order_paid',
+  });
 }
 
 async function reverseOrderRewards(conn, order, reason, options = {}) {
@@ -304,6 +329,8 @@ async function insertRewardTransaction(conn, params) {
 
 module.exports = {
   settleOrderRewards,
+  maybeSettleOrderRewardsOnPayment,
+  shouldSettleByTiming,
   reverseOrderRewards,
   getRecords,
   getTransactions,

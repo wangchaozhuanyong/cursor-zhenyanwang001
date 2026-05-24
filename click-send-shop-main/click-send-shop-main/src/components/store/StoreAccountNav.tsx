@@ -2,6 +2,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { STORE_ACCOUNT_NAV_ITEMS } from "@/constants/storeAccountNav";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
+import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { isLoggedIn } from "@/utils/token";
 
 function isNavActive(pathname: string, path: string): boolean {
@@ -15,10 +17,16 @@ export default function StoreAccountNav({ className }: { className?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
   const capabilities = useSiteCapabilities();
+  const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
   const loggedIn = isLoggedIn();
 
   const items = STORE_ACCOUNT_NAV_ITEMS.filter((item) => {
-    if (item.capability === "points" && !capabilities.pointsEnabled) return false;
+    if (item.capability === "points") {
+      if (!capabilities.pointsEnabled) return false;
+      if (!loyaltyLoading && loyaltyConfig && !isLoyaltyFeatureEnabled("points", capabilities, loyaltyConfig)) {
+        return false;
+      }
+    }
     if (item.capability === "invite" && !capabilities.inviteEnabled) return false;
     return true;
   });

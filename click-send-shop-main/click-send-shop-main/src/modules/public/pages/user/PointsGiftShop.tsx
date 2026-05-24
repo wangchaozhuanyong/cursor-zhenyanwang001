@@ -1,39 +1,141 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Gift, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import PageHeader from "@/components/PageHeader";
-import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { fetchPointsGifts, redeemPointsGift, type PointsGiftCatalogItem } from "@/services/pointsService";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import * as orderService from "@/services/orderService";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import { giftRedeemBlockReason, giftRedeemCashHint } from "@/utils/pointsGiftRedeem";
+import { cn } from "@/lib/utils";
+import {
+  THEME_ACCENT_HERO_LABEL,
+  THEME_ACCENT_HERO_SHELL,
+  THEME_ACCENT_HERO_VALUE,
+} from "@/utils/themeVisuals";
+
+function GiftCard({
+  gift,
+  balance,
+  onlinePaymentEnabled,
+  redeeming,
+  onRedeem,
+}: {
+  gift: PointsGiftCatalogItem;
+  balance: number;
+  onlinePaymentEnabled: boolean;
+  redeeming: boolean;
+  onRedeem: (gift: PointsGiftCatalogItem) => void;
+}) {
+  const blockReason = giftRedeemBlockReason(gift, balance);
+  const cashHint = giftRedeemCashHint(gift.cash_amount, onlinePaymentEnabled);
+  const disabled = redeeming || Boolean(blockReason);
+
+  return (
+    <article className="flex gap-3 rounded-2xl border border-border bg-card p-4">
+      {gift.image ? (
+        <img src={gift.image} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
+      ) : (
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-secondary">
+          <Gift size={24} className="text-muted-foreground" aria-hidden />
+        </div>
+      )}
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
+        <div className="min-w-0 space-y-1">
+          <p className="break-words font-medium leading-snug text-foreground">{gift.title}</p>
+          <p className="text-sm font-semibold text-[var(--theme-price)]">{gift.required_points} 积分</p>
+          {gift.cash_amount > 0 ? (
+            <p className="text-xs text-muted-foreground">+ RM {gift.cash_amount}</p>
+          ) : null}
+          {gift.remaining_stock != null ? (
+            <p className="text-xs text-muted-foreground">剩余 {gift.remaining_stock}</p>
+          ) : null}
+          {gift.limit_per_user > 0 ? (
+            <p className="text-xs text-muted-foreground">每人限兑 {gift.limit_per_user} 件</p>
+          ) : null}
+          {cashHint ? <p className="text-xs leading-4 text-muted-foreground">{cashHint}</p> : null}
+        </div>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onRedeem(gift)}
+          className="self-start rounded-full btn-theme-price px-4 py-1.5 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {redeeming ? "兑换中…" : blockReason || "立即兑换"}
+        </button>
+      </div>
+    </article>
+  );
+}
 
 export default function PointsGiftShop() {
-  const goBack = useGoBack();
   const navigate = useNavigate();
-  const { pointsBalance, loadProfile, addresses, getDefaultAddress } = useUserStore();
+  const capabilities = useSiteCapabilities();
+  const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
+  const { pointsBalance, loadProfile, loadAddresses, addresses, getDefaultAddress, addressLoading } = useUserStore();
   const [gifts, setGifts] = useState<PointsGiftCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const { payPendingOrder } = usePayPendingOrder();
 
   useEffect(() => {
-    loadProfile().catch(() => {});
-    fetchPointsGifts()
-      .then(setGifts)
-      .catch((e) => toast.error(toastErrorMessage(e)))
-      .finally(() => setLoading(false));
-  }, [loadProfile]);
+    if (loyaltyLoading) return;
+    if (loyaltyConfig && !loyaltyConfig.points.displayEnabled) {
+      navigate("/profile", { replace: true });
+    }
+  }, [loyaltyConfig, loyaltyLoading, navigate]);
+
+  const reloadGifts = useCallback(async () => {
+    const list = await fetchPointsGifts();
+    setGifts(list);
+    return list;
+  }, []);
+
+  const bootstrap = useCallback(async () => {
+    setLoading(true);
+    setBootstrapReady(false);
+    try {
+      await Promise.all([
+        loadProfile().catch(() => {}),
+        loadAddresses().catch(() => {}),
+        reloadGifts(),
+      ]);
+    } catch (e) {
+      toast.error(toastErrorMessage(e));
+    } finally {
+      setLoading(false);
+      setBootstrapReady(true);
+    }
+  }, [loadAddresses, loadProfile, reloadGifts]);
+
+  useEffect(() => {
+    void bootstrap();
+  }, [bootstrap]);
 
   const handleRedeem = async (gift: PointsGiftCatalogItem) => {
+    const blockReason = giftRedeemBlockReason(gift, pointsBalance);
+    if (blockReason) {
+      toast.error(blockReason);
+      return;
+    }
+
+    if (!bootstrapReady || addressLoading) {
+      toast.message("正在加载收货地址，请稍候");
+      return;
+    }
+
     const addr = getDefaultAddress() || addresses[0];
     if (!addr) {
       toast.error("请先添加收货地址");
-      navigate("/settings");
+      navigate("/address", { state: { from: "/points/gifts" } });
       return;
     }
+
     setRedeemingId(gift.id);
     try {
       const res = await redeemPointsGift({
@@ -51,9 +153,11 @@ export default function PointsGiftShop() {
         },
       });
       toast.success(res.message || "兑换成功");
-      await loadProfile();
+      await Promise.all([loadProfile(), reloadGifts()]);
       if (!res.data?.order_id) return;
-      if (Number(res.data.cash_amount || 0) > 0 && res.data.payment_status === "pending") {
+
+      const cashDue = Number(res.data.cash_amount || 0);
+      if (cashDue > 0 && res.data.payment_status === "pending") {
         const order = await orderService.fetchOrderById(res.data.order_id);
         await payPendingOrder(order);
         navigate(`/orders/${res.data.order_id}`);
@@ -67,47 +171,48 @@ export default function PointsGiftShop() {
     }
   };
 
+  const onlinePaymentEnabled = loyaltyConfig?.checkout.onlinePaymentEnabled ?? capabilities.onlinePaymentEnabled;
+
   return (
-    <div className="min-h-screen bg-background pb-8">
-      <PageHeader title="积分兑换" onBack={goBack} />
-      <main className="mx-auto max-w-lg px-4 pt-4">
-        <p className="mb-4 text-sm text-muted-foreground">可用积分：{pointsBalance}</p>
-        {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-muted-foreground" /></div>
-        ) : gifts.length === 0 ? (
-          <p className="py-16 text-center text-sm text-muted-foreground">暂无可兑换礼品</p>
-        ) : (
-          <div className="space-y-3">
-            {gifts.map((gift) => (
-              <div key={gift.id} className="flex gap-3 rounded-2xl border border-border bg-card p-4">
-                {gift.image ? (
-                  <img src={gift.image} alt="" className="h-20 w-20 rounded-lg object-cover" />
-                ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-secondary"><Gift size={24} /></div>
-                )}
-                <div className="flex flex-1 flex-col justify-between">
-                  <div>
-                    <p className="font-medium text-foreground">{gift.title}</p>
-                    <p className="mt-1 text-sm text-[var(--theme-price)]">{gift.required_points} 积分</p>
-                    {gift.cash_amount > 0 ? <p className="text-xs text-muted-foreground">+ RM {gift.cash_amount}</p> : null}
-                    {gift.remaining_stock != null ? (
-                      <p className="text-xs text-muted-foreground">剩余 {gift.remaining_stock}</p>
-                    ) : null}
-                  </div>
-                  <button
-                    type="button"
-                    disabled={redeemingId === gift.id || pointsBalance < gift.required_points}
-                    onClick={() => handleRedeem(gift)}
-                    className="mt-2 self-start rounded-full btn-theme-price px-4 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
-                  >
-                    {redeemingId === gift.id ? "兑换中…" : "立即兑换"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+    <StoreAccountLayout title="积分兑换" onBack={() => navigate("/points")} mainClassName="sm:py-6 lg:py-6">
+      <div className="flex flex-col gap-6">
+        <section className={cn("rounded-2xl px-5 py-5 text-center sm:px-8", THEME_ACCENT_HERO_SHELL)}>
+          <p className={cn(THEME_ACCENT_HERO_LABEL, "normal-case tracking-normal")}>可用积分</p>
+          <p className={cn("store-stat-value mt-1 text-3xl sm:text-4xl", THEME_ACCENT_HERO_VALUE)}>{pointsBalance}</p>
+          <p className="mt-2 text-xs leading-5 text-[var(--theme-muted)]">
+            兑换将使用默认收货地址；纯积分礼品兑换后立即生效，含现金补差需完成支付。
+          </p>
+        </section>
+
+        <section className="min-w-0" aria-labelledby="points-gifts-heading">
+          <h2 id="points-gifts-heading" className="mb-3 text-sm font-semibold text-foreground">
+            可兑换礼品
+          </h2>
+
+          {loading ? (
+            <div className="flex justify-center rounded-xl border border-border bg-card py-16">
+              <Loader2 className="animate-spin text-muted-foreground" aria-label="加载中" />
+            </div>
+          ) : gifts.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card py-16 text-center text-sm text-muted-foreground">
+              暂无可兑换礼品
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {gifts.map((gift) => (
+                <GiftCard
+                  key={gift.id}
+                  gift={gift}
+                  balance={pointsBalance}
+                  onlinePaymentEnabled={onlinePaymentEnabled}
+                  redeeming={redeemingId === gift.id}
+                  onRedeem={(item) => void handleRedeem(item)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </StoreAccountLayout>
   );
 }

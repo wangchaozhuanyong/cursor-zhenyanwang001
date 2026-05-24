@@ -1,7 +1,7 @@
 # PWA 真机验收结果（2026-05-20）
 
 **生产域名**：`https://damatong.net`  
-**部署**：本地 `npm run build` → SCP → EC2 `/var/www/flashcast/dist`（`scripts/upload-frontend-dist-ec2.ps1`）  
+**部署**：本地 `npm run build` → SCP → EC2 `/var/www/damatong/dist`（`scripts/upload-frontend-dist-ec2.ps1`）  
 **构建产物**：`assets/index-CeLglg88.js`，`rel="manifest" href="/manifest.webmanifest"`
 
 ---

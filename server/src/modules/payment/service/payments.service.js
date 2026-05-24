@@ -98,6 +98,14 @@ async function grantPaymentSuccessPoints(conn, order, trigger) {
   }
 }
 
+async function grantReferralRewardsOnPayment(conn, order, trigger) {
+  try {
+    await requireUserApi('maybeSettleOrderRewardsOnPayment')(conn, order, { trigger });
+  } catch (err) {
+    console.error(`[payments] referral rewards on ${trigger} failed:`, err?.message || err);
+  }
+}
+
 function requireUserApi(name) {
   const fn = getUserApi()[name];
   if (typeof fn !== 'function') {
@@ -266,6 +274,7 @@ async function payWithRewardWallet(userId, orderId) {
     }
     await requireUserApi('syncStatsAfterOrderPaid')(userId, payableAmount, lockedOrder.id, conn);
     await grantPaymentSuccessPoints(conn, lockedOrder, 'reward_wallet_payment_success');
+    await grantReferralRewardsOnPayment(conn, lockedOrder, 'reward_wallet_payment_success');
     await payRepo.insertAnalyticsEvent(conn, {
       user_id: userId,
       dedupe_key: `payment_success:${lockedOrder.id}`,
@@ -598,6 +607,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
   }
   await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, toMoney(order.total_amount), order.id, conn);
   await grantPaymentSuccessPoints(conn, order, 'provider_payment_success');
+  await grantReferralRewardsOnPayment(conn, order, 'provider_payment_success');
   await payRepo.insertAnalyticsEvent(conn, {
     user_id: order.user_id,
     dedupe_key: `payment_success:${order.id}`,
@@ -868,6 +878,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     }
     await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, total, order.id, conn);
     await grantPaymentSuccessPoints(conn, order, 'admin_mark_payment_success');
+    await grantReferralRewardsOnPayment(conn, order, 'admin_mark_payment_success');
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
 
     const isGiftOrder = String(order.order_type || '') === 'points_gift';

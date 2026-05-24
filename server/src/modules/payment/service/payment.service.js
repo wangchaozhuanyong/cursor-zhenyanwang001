@@ -194,6 +194,9 @@ async function handleStripeEvent(event) {
         await requireOrderApi('maybeGrantOrderEarnOnPaymentSuccess')(conn, fullOrder, {
           trigger: 'stripe_payment_success',
         });
+        await requireUserApi('maybeSettleOrderRewardsOnPayment')(conn, fullOrder, {
+          trigger: 'stripe_payment_success',
+        });
       }
       await conn.commit();
     } catch (innerErr) {

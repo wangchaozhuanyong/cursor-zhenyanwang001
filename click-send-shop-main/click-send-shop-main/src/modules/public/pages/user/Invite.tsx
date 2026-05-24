@@ -110,7 +110,7 @@ export default function Invite() {
 
       ctx.fillStyle = themeMuted;
       ctx.font = "28px sans-serif";
-      ctx.fillText("好友下单即可获得现金返现", w / 2, 170);
+      ctx.fillText("好友付款成功即可获得现金返现", w / 2, 170);
 
       ctx.fillStyle = themePrice;
       ctx.fillRect(100, 220, w - 200, 170);
@@ -161,7 +161,7 @@ export default function Invite() {
             <div className="rounded-xl bg-[var(--theme-primary)]/15 p-2 text-[var(--theme-primary)]"><Gift size={22} /></div>
             <div>
               <h2 className="font-semibold text-[var(--theme-text-on-surface)]">邀请好友得奖励</h2>
-              <p className="text-xs text-[var(--theme-text-muted-on-surface)]">好友下单即可获得现金返现</p>
+              <p className="text-xs text-[var(--theme-text-muted-on-surface)]">好友付款成功即可获得现金返现</p>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -180,7 +180,7 @@ export default function Invite() {
           <h3 className="text-sm font-semibold text-[var(--theme-text)]">邀请海报预览</h3>
           <div className="mt-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-4 text-center">
             <p className="text-xl font-bold">邀请好友得奖励</p>
-            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">好友下单即可获得现金返现</p>
+            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">好友付款成功即可获得现金返现</p>
             <p className="mt-3 text-xs text-[var(--theme-text-muted)]">我的邀请码</p>
             <p className="text-xl font-black tracking-wide text-[var(--theme-price)] sm:text-[22px]">{inviteCode || "----"}</p>
             <motion.div

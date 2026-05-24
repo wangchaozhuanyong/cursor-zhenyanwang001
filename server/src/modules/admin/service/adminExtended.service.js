@@ -884,17 +884,28 @@ async function listReferralRules() {
     level: r.level,
     name: r.name,
     rewardPercent: parseFloat(r.reward_percent),
+    settlementTiming: String(r.settlement_timing || 'order_paid'),
     enabled: !!r.enabled,
   }));
 }
 
 async function updateReferralRule(id, body, adminUserId, req) {
-  const { name, rewardPercent, enabled } = body;
+  const { name, rewardPercent, enabled, settlementTiming, settlement_timing } = body;
+  const timingRaw = settlementTiming ?? settlement_timing;
   const setFragments = [];
   const values = [];
   if (name !== undefined) { setFragments.push('name = ?'); values.push(name); }
   if (rewardPercent !== undefined) { setFragments.push('reward_percent = ?'); values.push(rewardPercent); }
   if (enabled !== undefined) { setFragments.push('enabled = ?'); values.push(enabled ? 1 : 0); }
+  if (timingRaw !== undefined) {
+    const timing = String(timingRaw || '').toLowerCase();
+    const allowed = new Set(['immediate', 'order_paid', 'payment_success', 'order_shipped', 'order_completed']);
+    if (!allowed.has(timing)) {
+      return { error: { code: 400, message: '无效的返现结算时机' } };
+    }
+    setFragments.push('settlement_timing = ?');
+    values.push(timing);
+  }
   if (setFragments.length === 0) return { error: { code: 400, message: '没有需要更新的字段' } };
   await repo.updateReferralRuleByFields(setFragments, values, id);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'referral_rule.update', objectType: 'referral_rule', objectId: String(id), summary: `更新返现规则 ${name || id}`, after: body, result: 'success' });

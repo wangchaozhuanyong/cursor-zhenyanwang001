@@ -1,4 +1,14 @@
 const repo = require('../repository/notification.repository');
+const { normalizeLegacyNotificationDisplay } = require('../../../utils/notificationDisplayNormalize');
+
+function formatNotificationRow(row) {
+  const normalized = normalizeLegacyNotificationDisplay(row.title, row.content);
+  return {
+    ...row,
+    title: normalized.title,
+    content: normalized.content,
+  };
+}
 
 async function getNotifications(userId, query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -7,7 +17,7 @@ async function getNotifications(userId, query) {
   const total = await repo.countNotifications(userId, type, is_read);
   const offset = (page - 1) * pageSize;
   const rows = await repo.selectNotificationsPage(userId, type, is_read, pageSize, offset);
-  return { list: rows, total, page, pageSize };
+  return { list: rows.map(formatNotificationRow), total, page, pageSize };
 }
 
 async function markAsRead(userId, id) {

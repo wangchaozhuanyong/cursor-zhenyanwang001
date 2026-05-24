@@ -9,8 +9,8 @@
 
 ## 静态目录（EC2）
 
-- 商城：`/var/www/flashcast/dist`
-- 管理端：`/var/www/flashcast/admin-dist`
+- 商城：`/var/www/damatong/dist`
+- 管理端：`/var/www/damatong/admin-dist`
 - API：`127.0.0.1:3001`（PM2 `gc-api`）
 
 ## 服务器一次性切换

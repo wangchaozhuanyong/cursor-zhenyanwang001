@@ -4,8 +4,8 @@ set -euo pipefail
 ROOT_DIR="${1:-/var/www/click-send-shop}"
 FRONT_DIR="$ROOT_DIR/click-send-shop-main/click-send-shop-main"
 SERVER_DIR="$ROOT_DIR/server"
-PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/flashcast/dist}"
-ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/flashcast/admin-dist}"
+PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/damatong/dist}"
+ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/damatong/admin-dist}"
 export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 
 echo "[atomic-deploy] root: $ROOT_DIR"

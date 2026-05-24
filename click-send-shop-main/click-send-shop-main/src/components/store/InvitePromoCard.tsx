@@ -39,7 +39,7 @@ export default function InvitePromoCard({
         <div className="min-w-0 flex-1">
           <p className="text-base font-bold leading-snug text-[var(--theme-invite-promo-foreground)]">邀请好友得奖励</p>
           <p className={`mt-1 text-xs leading-relaxed ${THEME_INVITE_PROMO_MUTED}`}>
-            {loggedIn ? "好友下单即可获得现金返现" : "登录后邀请好友获得现金返现"}
+            {loggedIn ? "好友付款成功即可获得现金返现" : "登录后邀请好友获得现金返现"}
           </p>
           <p className={`mt-1.5 text-xs leading-snug ${THEME_INVITE_PROMO_MUTED}`}>
             {loggedIn

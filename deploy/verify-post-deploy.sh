@@ -64,13 +64,13 @@ ls -lah "$DIST_DIR" | head -n 10
 echo
 echo "==== 2.1 前端资源一致性检查 ===="
 node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$DIST_DIR"
-PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/flashcast/dist}"
-ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/flashcast/admin-dist}"
+PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/damatong/dist}"
+ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/damatong/admin-dist}"
 if [[ -d "$PUBLIC_FRONTEND" ]]; then
   echo "📁 PUBLIC_FRONTEND=$PUBLIC_FRONTEND"
   node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND"
 else
-  echo "ℹ️ 未发现 $PUBLIC_FRONTEND，跳过 Nginx 静态目录检查（生产应为 /var/www/flashcast/dist）"
+  echo "ℹ️ 未发现 $PUBLIC_FRONTEND，跳过 Nginx 静态目录检查（生产应为 /var/www/damatong/dist）"
 fi
 if [[ -f "$ADMIN_PUBLIC_FRONTEND/admin-index.html" ]]; then
   echo "[verify] ADMIN_PUBLIC_FRONTEND=$ADMIN_PUBLIC_FRONTEND"

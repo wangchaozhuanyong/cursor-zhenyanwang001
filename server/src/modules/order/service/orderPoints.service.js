@@ -1,4 +1,5 @@
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
+const orderRepo = require('../repository/order.repository');
 
 const SETTLE_TIMINGS = new Set(['payment_success', 'order_shipped', 'order_completed']);
 
@@ -84,7 +85,7 @@ async function grantOrderEarnPoints(conn, order, options = {}) {
   const loyaltyMeta = parseOrderLoyaltyMeta(order);
   const pointsBonusSnapshots = loyaltyMeta.points_bonus_snapshots || options.pointsBonusSnapshots || [];
 
-  return requireUserApi('changeUserPoints')(conn, {
+  const earn = await requireUserApi('changeUserPoints')(conn, {
     userId: order.user_id,
     amount,
     action: POINTS_ACTION.ORDER_EARN,
@@ -99,6 +100,23 @@ async function grantOrderEarnPoints(conn, order, options = {}) {
       points_bonus_snapshots: pointsBonusSnapshots,
     },
   });
+  const priorSuccessfulOrders = await orderRepo.countPriorSuccessfulNormalOrders(conn, order.user_id, order.id);
+  const firstOrder = priorSuccessfulOrders > 0
+    ? { skipped: true, reason: 'prior_successful_order_exists' }
+    : await requireUserApi('awardConfiguredPointsBonus')(conn, {
+      userId: order.user_id,
+      action: POINTS_ACTION.FIRST_ORDER,
+      description: '首单奖励',
+      sourceType: 'first_order',
+      relatedRecordId: `first_order:${order.user_id}`,
+      orderId: order.id,
+      orderNo: order.order_no,
+      metadata: {
+        trigger: options.trigger || options.timing || 'order_completed',
+        order_id: order.id,
+      },
+    });
+  return { ...earn, firstOrder };
 }
 
 async function reverseOrderEarnPoints(conn, order, options = {}) {

@@ -248,6 +248,55 @@ async function resolveSignInAward() {
   return { points, enabled, hasRule };
 }
 
+async function resolveConfiguredBonus(conn, action) {
+  let rule = null;
+  try {
+    rule = await repo.selectPointsRuleByAction(conn, action);
+  } catch {
+    rule = null;
+  }
+  if (!rule) return { points: 0, enabled: false, hasRule: false };
+  return {
+    points: toInt(rule.points),
+    enabled: !!rule.enabled,
+    hasRule: true,
+  };
+}
+
+async function awardConfiguredPointsBonus(conn, params) {
+  const {
+    userId,
+    action,
+    description,
+    sourceType,
+    relatedRecordId,
+    orderId,
+    orderNo,
+    operatorId,
+    metadata,
+  } = params;
+  const { points, enabled, hasRule } = await resolveConfiguredBonus(conn, action);
+  if (!hasRule) return { skipped: true, reason: 'rule_missing' };
+  if (!enabled) return { skipped: true, reason: 'rule_disabled' };
+  if (points < 1) return { skipped: true, reason: 'rule_points_invalid' };
+  return changeUserPoints(conn, {
+    userId,
+    amount: points,
+    action,
+    description,
+    sourceType,
+    relatedRecordId,
+    orderId,
+    orderNo,
+    operatorId,
+    metadata,
+  });
+}
+
+async function awardConfiguredPointsBonusForUser(params) {
+  return runInTransaction((conn) => awardConfiguredPointsBonus(conn, params));
+}
+
 async function getClientPointsConfig() {
   const { points, enabled, hasRule } = await resolveSignInAward();
   const pointsSettings = await getLoyaltyApi().selectPointsSettings();
@@ -324,6 +373,8 @@ module.exports = {
   settleOrderPoints,
   reverseOrderPoints,
   adjustUserPoints,
+  awardConfiguredPointsBonus,
+  awardConfiguredPointsBonusForUser,
   getRecords,
   getAdminRecords,
   getBalance,
@@ -331,5 +382,4 @@ module.exports = {
   getClientPointsConfig,
   signIn,
 };
-
 

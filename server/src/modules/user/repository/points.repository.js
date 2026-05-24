@@ -120,6 +120,17 @@ async function selectSignInRule() {
   return rule || null;
 }
 
+async function selectPointsRuleByAction(conn, action) {
+  const runner = conn || db;
+  const [[rule]] = await runner.query(
+    `SELECT points, enabled FROM points_rules
+     WHERE action = ?
+     LIMIT 1`,
+    [action],
+  );
+  return rule || null;
+}
+
 async function ensureAccount(conn, userId) {
   await conn.query(
     `INSERT IGNORE INTO points_accounts (user_id, balance, total_earned)
@@ -268,6 +279,7 @@ module.exports = {
   selectSuccessLedgerForUser,
   findSignInToday,
   selectSignInRule,
+  selectPointsRuleByAction,
   ensureAccount,
   selectAccountForUpdate,
   selectRecordByRelatedForUpdate,
@@ -278,6 +290,5 @@ module.exports = {
   insertLedgerRecord,
   addUserPoints,
 };
-
 
 

@@ -23,6 +23,7 @@ const repo = require('../repository/auth.repository');
 const wechatService = require('./wechat.service');
 const { formatUserResponse } = require('../../../utils/formatUserResponse');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
+const { POINTS_ACTION } = require('../../../constants/pointsActions');
 
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 
@@ -70,6 +71,21 @@ async function register(body) {
     if (userCount === 1) {
       await repo.setUserRole(id, 'admin');
     }
+  }
+
+  try {
+    const userApi = /** @type {any} */ (require('../../user')).api || {};
+    if (typeof userApi.awardConfiguredPointsBonusForUser === 'function') {
+      await userApi.awardConfiguredPointsBonusForUser({
+        userId: id,
+        action: POINTS_ACTION.REGISTER,
+        description: '注册奖励',
+        sourceType: 'register',
+        relatedRecordId: `register:${id}`,
+      });
+    }
+  } catch (e) {
+    console.warn(`[auth.register] register points issue skipped: ${e?.message || e}`);
   }
 
   try {

@@ -42,6 +42,8 @@ router.use('/theme', require('./routes/theme.routes'));
   sumRewardTransactionsBalance: rewardService.sumRewardTransactionsBalance,
   insertRewardTransaction: rewardService.insertRewardTransaction,
   adjustUserPoints: pointsService.adjustUserPoints,
+  awardConfiguredPointsBonus: pointsService.awardConfiguredPointsBonus,
+  awardConfiguredPointsBonusForUser: pointsService.awardConfiguredPointsBonusForUser,
   getAdminPointsRecords: pointsService.getAdminRecords,
   changeUserPoints: pointsService.changeUserPoints,
   changePoints: pointsService.changePoints,
@@ -76,6 +78,5 @@ router.use('/theme', require('./routes/theme.routes'));
 };
 
 module.exports = router;
-
 
 

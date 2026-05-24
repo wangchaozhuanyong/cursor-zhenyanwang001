@@ -1,4 +1,6 @@
 const POINTS_ACTION = Object.freeze({
+  REGISTER: 'register',
+  FIRST_ORDER: 'first_order',
   SIGN_IN: 'sign_in',
   ORDER_REDEEM: 'order_redeem',
   ORDER_REDEEM_REVERSE: 'order_redeem_reverse',

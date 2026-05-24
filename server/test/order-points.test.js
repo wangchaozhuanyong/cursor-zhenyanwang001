@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const userModule = require('../src/modules/user');
 const pointsRepo = require('../src/modules/user/repository/points.repository');
 const pointsService = require('../src/modules/user/service/points.service');
+const orderRepo = require('../src/modules/order/repository/order.repository');
 const orderPoints = require('../src/modules/order/service/orderPoints.service');
 
 const originalUserApi = { ...userModule.api };
@@ -10,14 +11,19 @@ const originalRepo = {
   selectRecordByRelatedForUpdate: pointsRepo.selectRecordByRelatedForUpdate,
   selectAccountForUpdate: pointsRepo.selectAccountForUpdate,
   selectPendingReverseRecordsForUpdate: pointsRepo.selectPendingReverseRecordsForUpdate,
+  selectPointsRuleByAction: pointsRepo.selectPointsRuleByAction,
   updatePendingReverseRecord: pointsRepo.updatePendingReverseRecord,
   updateAccountBalance: pointsRepo.updateAccountBalance,
   insertLedgerRecord: pointsRepo.insertLedgerRecord,
+};
+const originalOrderRepo = {
+  countPriorSuccessfulNormalOrders: orderRepo.countPriorSuccessfulNormalOrders,
 };
 
 function restore() {
   Object.assign(userModule.api, originalUserApi);
   Object.assign(pointsRepo, originalRepo);
+  Object.assign(orderRepo, originalOrderRepo);
 }
 
 test.afterEach(restore);
@@ -37,11 +43,52 @@ test('grantOrderEarnPoints always grants when order has earnable points', async 
     calls.push(payload);
     return { skipped: false };
   };
+  userModule.api.awardConfiguredPointsBonus = async () => ({ skipped: true, reason: 'rule_missing' });
+  orderRepo.countPriorSuccessfulNormalOrders = async () => 0;
 
   await orderPoints.grantOrderEarnPoints({}, baseOrder, { timing: 'payment_success', trigger: 'payment_success' });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].action, 'order_earn');
   assert.equal(calls[0].amount, 50);
+});
+
+test('grantOrderEarnPoints also tries first_order configured bonus once per user', async () => {
+  const earnCalls = [];
+  const bonusCalls = [];
+  userModule.api.changeUserPoints = async (_conn, payload) => {
+    earnCalls.push(payload);
+    return { skipped: false };
+  };
+  userModule.api.awardConfiguredPointsBonus = async (_conn, payload) => {
+    bonusCalls.push(payload);
+    return { skipped: false, amount: 200 };
+  };
+  orderRepo.countPriorSuccessfulNormalOrders = async () => 0;
+
+  const result = await orderPoints.grantOrderEarnPoints({}, baseOrder, { timing: 'order_completed' });
+
+  assert.equal(earnCalls.length, 1);
+  assert.equal(bonusCalls.length, 1);
+  assert.equal(bonusCalls[0].action, 'first_order');
+  assert.equal(bonusCalls[0].relatedRecordId, 'first_order:user-1');
+  assert.equal(bonusCalls[0].orderId, 'order-1');
+  assert.equal(result.firstOrder.amount, 200);
+});
+
+test('grantOrderEarnPoints skips first_order bonus for users with prior successful orders', async () => {
+  const bonusCalls = [];
+  userModule.api.changeUserPoints = async () => ({ skipped: false });
+  userModule.api.awardConfiguredPointsBonus = async (_conn, payload) => {
+    bonusCalls.push(payload);
+    return { skipped: false, amount: 200 };
+  };
+  orderRepo.countPriorSuccessfulNormalOrders = async () => 1;
+
+  const result = await orderPoints.grantOrderEarnPoints({}, baseOrder, { timing: 'order_completed' });
+
+  assert.equal(bonusCalls.length, 0);
+  assert.equal(result.firstOrder.skipped, true);
+  assert.equal(result.firstOrder.reason, 'prior_successful_order_exists');
 });
 
 test('maybeGrantOrderEarnPoints skips points_gift orders', async () => {
@@ -58,6 +105,8 @@ test('maybeGrantOrderEarnPoints respects configured settle_timing', async () => 
     calls.push(payload);
     return { skipped: false };
   };
+  userModule.api.awardConfiguredPointsBonus = async () => ({ skipped: true, reason: 'rule_missing' });
+  orderRepo.countPriorSuccessfulNormalOrders = async () => 0;
 
   const mismatch = await orderPoints.maybeGrantOrderEarnPoints({}, baseOrder, {
     timing: 'payment_success',
@@ -185,6 +234,58 @@ test('positive points first offset pending_reverse before entering balance', asy
   assert.equal(ledger[0].amount, 20);
   assert.equal(ledger[0].balanceBefore, 5);
   assert.equal(ledger[0].balanceAfter, 25);
+});
+
+test('awardConfiguredPointsBonus grants enabled register rule points', async () => {
+  const ledger = [];
+  const accountUpdates = [];
+  pointsRepo.selectPointsRuleByAction = async (_conn, action) => (
+    action === 'register' ? { points: 100, enabled: 1 } : null
+  );
+  pointsRepo.selectRecordByRelatedForUpdate = async () => null;
+  pointsRepo.selectAccountForUpdate = async () => ({ user_id: 'user-1', balance: 0 });
+  pointsRepo.selectPendingReverseRecordsForUpdate = async () => [];
+  pointsRepo.updateAccountBalance = async (_conn, userId, amount, balanceAfter) => accountUpdates.push({ userId, amount, balanceAfter });
+  pointsRepo.insertLedgerRecord = async (_conn, payload) => ledger.push(payload);
+
+  const result = await pointsService.awardConfiguredPointsBonus({}, {
+    userId: 'user-1',
+    action: 'register',
+    description: '注册奖励',
+    sourceType: 'register',
+    relatedRecordId: 'register:user-1',
+  });
+
+  assert.equal(result.amount, 100);
+  assert.deepEqual(accountUpdates, [{ userId: 'user-1', amount: 100, balanceAfter: 100 }]);
+  assert.equal(ledger[0].action, 'register');
+  assert.equal(ledger[0].amount, 100);
+});
+
+test('awardConfiguredPointsBonus skips disabled or missing rule', async () => {
+  pointsRepo.selectPointsRuleByAction = async (_conn, action) => (
+    action === 'first_order' ? { points: 200, enabled: 0 } : null
+  );
+
+  const disabled = await pointsService.awardConfiguredPointsBonus({}, {
+    userId: 'user-1',
+    action: 'first_order',
+    description: '首单奖励',
+    sourceType: 'first_order',
+    relatedRecordId: 'first_order:user-1',
+  });
+  const missing = await pointsService.awardConfiguredPointsBonus({}, {
+    userId: 'user-1',
+    action: 'register',
+    description: '注册奖励',
+    sourceType: 'register',
+    relatedRecordId: 'register:user-1',
+  });
+
+  assert.equal(disabled.skipped, true);
+  assert.equal(disabled.reason, 'rule_disabled');
+  assert.equal(missing.skipped, true);
+  assert.equal(missing.reason, 'rule_missing');
 });
 
 test('insufficient earned rollback creates pending_reverse instead of negative balance', async () => {

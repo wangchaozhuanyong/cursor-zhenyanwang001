@@ -936,6 +936,23 @@ async function selectOrderSummary(q, userId) {
   };
 }
 
+async function countPriorSuccessfulNormalOrders(q, userId, excludeOrderId) {
+  const [[row]] = await q.query(
+    `SELECT COUNT(*) AS total
+     FROM orders
+     WHERE user_id = ?
+       AND id <> ?
+       AND COALESCE(order_type, 'normal') <> 'points_gift'
+       AND buyer_deleted_at IS NULL
+       AND (
+         status IN ('paid', 'shipped', 'completed')
+         OR payment_status = 'paid'
+       )`,
+    [userId, excludeOrderId],
+  );
+  return Number(row?.total || 0);
+}
+
 async function selectOrderItemsByOrderIds(q, orderIds) {
   if (!orderIds.length) return [];
   const [rows] = await q.query(
@@ -1352,6 +1369,7 @@ module.exports = {
   countOrdersForUser,
   selectOrdersPage,
   selectOrderSummary,
+  countPriorSuccessfulNormalOrders,
   selectOrderItemsByOrderIds,
   selectOrderByIdAndUser,
   selectOrderByIdAndUserForUpdate,

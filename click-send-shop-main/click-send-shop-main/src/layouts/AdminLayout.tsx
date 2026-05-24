@@ -323,7 +323,13 @@ const navItemsRaw: NavItem[] = [
     children: [
       { icon: Settings, labelKey: "nav.siteSettings", path: "/admin/settings/site", permission: "settings.manage" },
       { icon: Settings, labelKey: "nav.featureSettings", path: "/admin/settings/features", permission: "settings.manage" },
-      { icon: Bell, labelKey: "nav.telegramNotifications", path: "/admin/settings/telegram", permission: "settings.manage" },
+      {
+        icon: Bell,
+        labelKey: "nav.telegramNotifications",
+        path: "/admin/settings/telegram",
+        permission: "settings.manage",
+        capability: "telegramOrderNotifyEnabled",
+      },
       { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage", capability: "shippingEnabled" },
       { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/audit-logs", permission: "audit.view" },
       { icon: Database, labelKey: "nav.dataRetention", path: "/admin/data-retention", permission: { anyOf: ["data_cleanup.view", "data_cleanup.manage", "data_cleanup.execute"] } },

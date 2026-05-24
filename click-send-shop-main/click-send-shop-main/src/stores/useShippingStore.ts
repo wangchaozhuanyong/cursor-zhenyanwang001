@@ -16,9 +16,9 @@ interface ShippingState {
   loadTemplates: () => Promise<void>;
   setTemplates: (templates: ShippingTemplate[]) => void;
   addTemplate: (template: Omit<ShippingTemplate, "id">) => void;
-  updateTemplate: (id: number, data: Partial<ShippingTemplate>) => void;
-  removeTemplate: (id: number) => void;
-  toggleTemplate: (id: number) => void;
+  updateTemplate: (id: string, data: Partial<ShippingTemplate>) => void;
+  removeTemplate: (id: string) => void;
+  toggleTemplate: (id: string) => void;
   setGlobalSettings: (settings: { globalFreeAbove: number; globalBaseFee: number }) => void;
 }
 
@@ -46,8 +46,11 @@ export const useShippingStore = create<ShippingState>()(
 
       setTemplates: (templates) => set({ templates }),
       addTemplate: (data) => {
-        const maxId = Math.max(0, ...get().templates.map((t) => t.id));
-        set({ templates: [...get().templates, { ...data, id: maxId + 1 }] });
+        const id =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `local-${Date.now()}`;
+        set({ templates: [...get().templates, { ...data, id }] });
       },
       updateTemplate: (id, data) =>
         set({ templates: get().templates.map((t) => (t.id === id ? { ...t, ...data } : t)) }),

@@ -36,7 +36,7 @@ export type UseCheckoutSubmissionParams = {
   selectedAddress: Address | null;
   note: string;
   selectedCoupon: CheckoutPickerCoupon | null;
-  selectedTemplate: { id: number; name: string } | null;
+  selectedTemplate: { id: string; name: string } | null;
   weightKg: number;
   paymentMethod: PaymentMethod;
   onlinePaymentEnabled: boolean;
@@ -130,7 +130,7 @@ export function useCheckoutSubmission({
       note,
       coupon_id: couponEnabled ? selectedCoupon?.id : undefined,
       coupon_title: couponEnabled ? selectedCoupon?.title ?? "" : "",
-      shipping_template_id: selectedTemplate?.id,
+      shipping_template_id: selectedTemplate?.id ? String(selectedTemplate.id) : undefined,
       shipping_name: selectedTemplate?.name ?? "",
       payment_method: resolveEffectivePaymentMethod(paymentMethod, onlinePaymentEnabled),
       estimated_weight_kg: weightKg,

@@ -56,6 +56,8 @@ type AdminVariantForm = {
   cost_price?: string;
   stock: string;
   stock_warning_threshold?: string;
+  stock_lower_limit?: string;
+  stock_upper_limit?: string;
   barcode?: string;
   image_url?: string;
   weight?: string;
@@ -126,6 +128,8 @@ export default function AdminProductForm() {
     sales_count: "",
     stock: "",
     stock_warning_threshold: "",
+    stock_lower_limit: "",
+    stock_upper_limit: "",
     category_id: "",
     sort_order: "",
     description: "",
@@ -188,6 +192,8 @@ export default function AdminProductForm() {
                   cost_price: v.cost_price != null ? String(v.cost_price) : "",
                   stock: String(v.stock ?? ""),
                   stock_warning_threshold: v.stock_warning_threshold != null ? String(v.stock_warning_threshold) : "",
+                  stock_lower_limit: v.stock_lower_limit != null ? String(v.stock_lower_limit) : "",
+                  stock_upper_limit: v.stock_upper_limit != null ? String(v.stock_upper_limit) : "",
                   barcode: v.barcode || "",
                   image_url: v.image_url || "",
                   weight: v.weight != null ? String(v.weight) : "",
@@ -208,6 +214,14 @@ export default function AdminProductForm() {
                         : (data.default_variant?.stock_warning_threshold != null
                           ? String(data.default_variant.stock_warning_threshold)
                           : ""),
+                    stock_lower_limit:
+                      data.stock_lower_limit != null
+                        ? String(data.stock_lower_limit)
+                        : (data.default_variant?.stock_lower_limit != null ? String(data.default_variant.stock_lower_limit) : ""),
+                    stock_upper_limit:
+                      data.stock_upper_limit != null
+                        ? String(data.stock_upper_limit)
+                        : (data.default_variant?.stock_upper_limit != null ? String(data.default_variant.stock_upper_limit) : ""),
                     sort_order: 0,
                     is_default: true,
                     enabled: true,
@@ -226,6 +240,14 @@ export default function AdminProductForm() {
                   : (data.default_variant?.stock_warning_threshold != null
                     ? String(data.default_variant.stock_warning_threshold)
                     : ""),
+              stock_lower_limit:
+                data.stock_lower_limit != null
+                  ? String(data.stock_lower_limit)
+                  : (data.default_variant?.stock_lower_limit != null ? String(data.default_variant.stock_lower_limit) : ""),
+              stock_upper_limit:
+                data.stock_upper_limit != null
+                  ? String(data.stock_upper_limit)
+                  : (data.default_variant?.stock_upper_limit != null ? String(data.default_variant.stock_upper_limit) : ""),
               category_id: data.category_id || "",
               sort_order: data.sort_order?.toString() || "",
               description: data.description || "",
@@ -417,6 +439,8 @@ export default function AdminProductForm() {
           stock: old?.stock || "0",
           stock_warning_threshold:
             old?.stock_warning_threshold || (index === 0 ? f.stock_warning_threshold || "5" : "5"),
+          stock_lower_limit: old?.stock_lower_limit || (index === 0 ? f.stock_lower_limit || "" : ""),
+          stock_upper_limit: old?.stock_upper_limit || (index === 0 ? f.stock_upper_limit || "" : ""),
           barcode: old?.barcode || "",
           image_url: old?.image_url || "",
           weight: old?.weight || "",
@@ -471,6 +495,8 @@ export default function AdminProductForm() {
         enabled: variant.enabled !== false,
         is_default: true,
         stock_warning_threshold: variant.stock_warning_threshold || f.stock_warning_threshold || "5",
+        stock_lower_limit: variant.stock_lower_limit || f.stock_lower_limit || "",
+        stock_upper_limit: variant.stock_upper_limit || f.stock_upper_limit || "",
       })),
     }));
   };
@@ -491,6 +517,8 @@ export default function AdminProductForm() {
       const mainStockWarningThreshold = form.stock_warning_threshold
         ? parseInt(form.stock_warning_threshold, 10) || 0
         : 5;
+      const mainStockLowerLimit = form.stock_lower_limit ? parseInt(form.stock_lower_limit, 10) || 0 : null;
+      const mainStockUpperLimit = form.stock_upper_limit ? parseInt(form.stock_upper_limit, 10) || 0 : null;
       const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
       const variantsPayload = form.variants.map((v, i) => ({
         id: v.id,
@@ -501,6 +529,8 @@ export default function AdminProductForm() {
         cost_price: v.cost_price ? parseFloat(v.cost_price) : null,
         stock: parseInt(v.stock, 10) || 0,
         stock_warning_threshold: v.stock_warning_threshold ? parseInt(v.stock_warning_threshold, 10) || 0 : 5,
+        stock_lower_limit: v.stock_lower_limit ? parseInt(v.stock_lower_limit, 10) || 0 : null,
+        stock_upper_limit: v.stock_upper_limit ? parseInt(v.stock_upper_limit, 10) || 0 : null,
         barcode: v.barcode?.trim() || null,
         image_url: v.image_url?.trim() || null,
         weight: v.weight ? parseFloat(v.weight) : null,
@@ -516,6 +546,8 @@ export default function AdminProductForm() {
           price: mainPrice,
           stock: mainStock,
           stock_warning_threshold: mainStockWarningThreshold,
+          stock_lower_limit: mainStockLowerLimit,
+          stock_upper_limit: mainStockUpperLimit,
         };
       }
       const complianceType = (form.compliance_type || "normal").trim();
@@ -523,6 +555,9 @@ export default function AdminProductForm() {
       const payload: AdminProductUpsertPayload = {
         name: form.name,
         price: mainPrice,
+        stock_warning_threshold: mainStockWarningThreshold,
+        stock_lower_limit: mainStockLowerLimit,
+        stock_upper_limit: mainStockUpperLimit,
         original_price:
           form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
         sales_count: Number.isFinite(scNum) ? scNum : 0,
@@ -850,6 +885,8 @@ export default function AdminProductForm() {
                         price: f.price || "0",
                         stock: f.stock || "0",
                         stock_warning_threshold: f.stock_warning_threshold || "5",
+                        stock_lower_limit: f.stock_lower_limit || "",
+                        stock_upper_limit: f.stock_upper_limit || "",
                         sort_order: f.variants.length,
                         is_default: false,
                       },
@@ -977,6 +1014,8 @@ export default function AdminProductForm() {
                     <th className={adminThClassName("w-10")}><Tx>默认</Tx></th>
                     <th className={adminThClassName()}><Tx>规格名</Tx></th>
                     <th className={adminThClassName()}>SKU</th>
+                    <th className={adminThClassName()}><Tx>库存下限</Tx></th>
+                    <th className={adminThClassName()}><Tx>库存上限</Tx></th>
                     <th className={adminThClassName()}><Tx>价格</Tx></th>
                     <th className={adminThClassName()}><Tx>原价</Tx></th>
                     <th className={adminThClassName()}><Tx>成本</Tx></th>
@@ -1033,6 +1072,40 @@ export default function AdminProductForm() {
                           }}
                           placeholder={tText("可选")}
                           className="w-full min-w-[80px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          type="number"
+                          min={0}
+                          value={v.is_default ? form.stock_lower_limit : v.stock_lower_limit || ""}
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            if (v.is_default) setForm((f) => ({ ...f, stock_lower_limit: t }));
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], stock_lower_limit: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          type="number"
+                          min={0}
+                          value={v.is_default ? form.stock_upper_limit : v.stock_upper_limit || ""}
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            if (v.is_default) setForm((f) => ({ ...f, stock_upper_limit: t }));
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], stock_upper_limit: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
                         />
                       </td>
                       <td className="py-2 pr-2">

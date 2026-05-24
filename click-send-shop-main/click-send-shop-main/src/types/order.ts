@@ -156,7 +156,7 @@ export interface SubmitOrderParams {
   note?: string;
   coupon_id?: string;
   coupon_title?: string;
-  shipping_template_id?: number;
+  shipping_template_id?: string;
   shipping_name?: string;
   payment_method?: string;
   /** 与前端运费估算一致：总重量 kg（按件数 × 默认单件重量） */

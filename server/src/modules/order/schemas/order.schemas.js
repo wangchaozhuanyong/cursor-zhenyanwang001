@@ -34,15 +34,15 @@ const createOrderBodySchema = z.object({
   contact_phone: z.string().trim().min(6, '联系人电话不正确').max(20),
   address: z.union([z.string().trim().max(512), addressObjectSchema]).optional(),
   note: z.string().trim().max(512).optional(),
-  coupon_id: idParam.optional(),
+  coupon_id: idParam.nullish(),
   coupon_title: z.string().trim().max(64).optional(),
-  shipping_template_id: idParam.optional(),
+  shipping_template_id: idParam.nullish(),
   shipping_name: z.string().trim().max(64).optional(),
   payment_method: z
     .enum(['online', 'reward_wallet', 'whatsapp', 'offline', 'manual', 'mock', 'cash', 'bank_transfer'])
     .optional(),
   estimated_weight_kg: z.coerce.number().nonnegative().optional(),
-  checkout_abandonment_id: idParam.optional(),
+  checkout_abandonment_id: idParam.nullish(),
   use_points: z.coerce.boolean().optional(),
   points_to_use: z.coerce.number().int().min(0).optional(),
   use_reward_cash: z.coerce.boolean().optional(),

@@ -179,7 +179,7 @@ export function useCheckoutPage() {
     note,
     selectedCoupon,
     selectedTemplate: shipping.selectedTemplate
-      ? { id: Number(shipping.selectedTemplate.id), name: shipping.selectedTemplate.name }
+      ? { id: String(shipping.selectedTemplate.id), name: shipping.selectedTemplate.name }
       : null,
     weightKg: shipping.weightKg,
     paymentMethod,

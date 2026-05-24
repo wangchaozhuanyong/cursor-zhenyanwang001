@@ -13,7 +13,7 @@ type UseCheckoutOrderPreviewParams = {
   phone: string;
   address: string;
   selectedCoupon: CheckoutPickerCoupon | null;
-  selectedTemplateId: number | null;
+  selectedTemplateId: string | null;
   selectedTemplateName?: string;
   weightKg: number;
   baseShippingFee: number;

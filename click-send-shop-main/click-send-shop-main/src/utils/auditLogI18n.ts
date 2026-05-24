@@ -6,6 +6,7 @@ import {
   RETURN_STATUS_META,
 } from "@/constants/statusDictionary";
 import { translateApiErrorMessage } from "@/utils/apiErrorMessage";
+import { DATA_CLEANUP_POLICY_LABELS } from "@/utils/dataRetentionLabels";
 import { formatSystemErrorMessage } from "@/utils/systemErrorMessage";
 
 type UnknownRecord = Record<string, unknown>;
@@ -43,6 +44,7 @@ const OBJECT_TYPE_ZH: Record<string, string> = {
   inventory: "库存",
   data_cleanup: "数据清理",
   admin_api: "管理端 API",
+  admin_trusted_device: "管理员可信设备",
   rbac: "权限",
   export_task: "导出任务",
   export: "导出",
@@ -146,9 +148,14 @@ const ACTION_ZH: Record<string, string> = {
   "review.batch_delete": "批量删除评价",
   "review.unfeature": "取消精选评价",
   "review.feature": "设为精选评价",
-  "admin.mfa.challenge": "管理员 MFA 验证挑战",
-  "admin.mfa.verify": "管理员 MFA 验证",
-  "admin.mfa.reverify": "管理员 MFA 重新验证",
+  "admin.mfa.challenge": "管理员多因素验证挑战",
+  "admin.mfa.verify": "管理员多因素验证",
+  "admin.mfa.reverify": "管理员多因素验证（再次确认）",
+  "admin.security.require_mfa": "要求管理员启用多因素验证",
+  "admin.security.disable_mfa_requirement": "关闭管理员多因素验证要求",
+  "admin.security.reset_mfa": "重置管理员多因素验证",
+  "admin.security.revoke_trusted_devices": "撤销管理员全部可信设备",
+  "admin.security.revoke_trusted_device": "撤销管理员单个可信设备",
   "data_cleanup.preview": "生成数据清理预览",
   "data_cleanup.run": "执行数据清理",
   "data_cleanup.run.cancel": "取消数据清理",
@@ -288,6 +295,13 @@ const TOKEN_ZH: Record<string, string> = {
   level: "等级",
   bin: "回收站",
   mfa: "多因素验证",
+  MFA: "多因素验证",
+  require: "要求",
+  requirement: "要求",
+  trusted: "可信",
+  devices: "设备",
+  device: "设备",
+  security: "安全",
   challenge: "挑战",
   verify: "验证",
   reverify: "重新验证",
@@ -508,11 +522,12 @@ function humanizeActionFallback(raw: string) {
   if (parts.length === 1) {
     return parts.map((p) => humanizeToken(p) || p).join("");
   }
-  const mod = MODULE_ZH[parts[0]] || OBJECT_TYPE_ZH[parts[0]] || parts[0];
+  const mod = MODULE_ZH[parts[0]] || OBJECT_TYPE_ZH[parts[0]] || humanizeToken(parts[0]) || parts[0];
   const rest = parts.slice(1).join("_");
   const restKey = rest.replace(/-/g, "_");
   const restParts = restKey.split("_").map((t) => humanizeToken(t) || t);
-  const restPhrase = restParts.join(restParts.every((p) => /^[\u4e00-\u9fff]+$/.test(p)) ? "" : " · ");
+  const allZh = restParts.every((p) => /^[\u4e00-\u9fff]+$/.test(p));
+  const restPhrase = restParts.join(allZh ? "" : " · ");
   if (restPhrase) return `${mod} · ${restPhrase}`;
   return raw;
 }
@@ -592,13 +607,44 @@ export function zhAuditSummary(summary?: string) {
     if (match) return format(match);
   }
 
+  const securityPatterns: Array<{ test: RegExp; format: (m: RegExpMatchArray) => string }> = [
+    {
+      test: /^(GET|POST|PUT|PATCH|DELETE)\s+(\S+)\s+(allowed|failed)$/i,
+      format: (m) => {
+        const method = zhHttpMethod(m[1]);
+        const pathLabel = zhAdminApiPath(m[2]);
+        const ok = m[3].toLowerCase() === "allowed";
+        return `${method}${pathLabel}（${ok ? "成功" : "失败"}）`;
+      },
+    },
+    { test: /^Admin API security block:\s*(.+)$/i, format: (m) => `管理端 API 安全拦截：${zhGatewayBlockReason(m[1])}` },
+    { test: /^要求管理员 MFA userId=(.+)$/i, format: (m) => `要求管理员启用多因素验证（账号 ${shortAuditId(m[1])}）` },
+    { test: /^关闭管理员 MFA userId=(.+)$/i, format: (m) => `关闭管理员多因素验证要求（账号 ${shortAuditId(m[1])}）` },
+    { test: /^重置管理员 MFA userId=(.+)$/i, format: (m) => `重置管理员多因素验证（账号 ${shortAuditId(m[1])}）` },
+    {
+      test: /^撤销管理员可信设备 userId=(.+?)(?:\s+deviceId=(.+))?$/i,
+      format: (m) =>
+        m[2]
+          ? `撤销管理员可信设备（账号 ${shortAuditId(m[1])}，设备 ${shortAuditId(m[2])}）`
+          : `撤销管理员全部可信设备（账号 ${shortAuditId(m[1])}）`,
+    },
+    { test: /^PUT \/rbac\/admin-users\/([^/]+)\s+allowed$/i, format: (m) => `更新管理员账号 ${shortAuditId(m[1])}（成功）` },
+    { test: /^PUT \/rbac\/admin-users\/([^/]+)\s+failed$/i, format: (m) => `更新管理员账号 ${shortAuditId(m[1])}（失败）` },
+  ];
+  for (const { test, format } of securityPatterns) {
+    const match = raw.match(test);
+    if (match) return format(match);
+  }
+
   const cleanupPatterns: Array<{ test: RegExp; format: (m: RegExpMatchArray) => string }> = [
     { test: /^执行数据清理 #(\d+):\s*(\w+)$/i, format: (m) => `执行数据清理 #${m[1]}：${zhAuditResult(m[2].toLowerCase())}` },
     { test: /^生成清理预览 #(\d+)$/i, format: (m) => `生成清理预览 #${m[1]}` },
     { test: /^请求取消数据清理 #(\d+)$/i, format: (m) => `请求取消数据清理 #${m[1]}` },
-    { test: /^更新清理策略 (.+)$/i, format: (m) => `更新清理策略 ${m[1]}` },
+    {
+      test: /^更新清理策略 (.+)$/i,
+      format: (m) => `更新清理策略 ${DATA_CLEANUP_POLICY_LABELS[m[1].trim()] || m[1]}`,
+    },
     { test: /^执行数据清理失败$/i, format: () => "执行数据清理失败" },
-    { test: /^Admin API security block:\s*(.+)$/i, format: (m) => `管理端 API 安全拦截：${m[1]}` },
   ];
   for (const { test, format } of cleanupPatterns) {
     const match = raw.match(test);
@@ -677,6 +723,65 @@ const REQUEST_PATH_ZH: Record<string, string> = {
   "/api/returns": "售后",
   "/api/upload/presign": "上传凭证",
 };
+
+/** 管理端 API 路径（adminSecurityAudit 写入的 req.path） */
+const ADMIN_API_PATH_RULES: Array<{ pattern: RegExp; label: string | ((m: RegExpMatchArray) => string) }> = [
+  { pattern: /^\/telegram\/settings\/?$/, label: "Telegram 通知配置" },
+  { pattern: /^\/settings\/shipping\/?$/, label: "运费设置" },
+  { pattern: /^\/settings\/?$/, label: "站点设置" },
+  { pattern: /^\/system\/theme\/?$/, label: "主题配置" },
+  { pattern: /^\/rbac\/admin-users\/([^/]+)$/, label: (m) => `管理员账号 ${shortAuditId(m[1])}` },
+  { pattern: /^\/rbac\/roles\/?$/, label: "角色列表" },
+  { pattern: /^\/rbac\/roles\/([^/]+)$/, label: (m) => `角色 ${shortAuditId(m[1])}` },
+  { pattern: /^\/payments\/channels\/?$/, label: "支付渠道" },
+  { pattern: /^\/payments\/orders\/([^/]+)\/refund/, label: (m) => `订单退款 ${shortAuditId(m[1])}` },
+  { pattern: /^\/payments\/orders\/([^/]+)\/mark-paid/, label: (m) => `标记订单已付 ${shortAuditId(m[1])}` },
+  { pattern: /^\/payments\/events\/([^/]+)\/replay/, label: (m) => `重放支付事件 ${shortAuditId(m[1])}` },
+  { pattern: /^\/inventory\//, label: "库存" },
+  { pattern: /^\/returns\/([^/]+)/, label: (m) => `售后单 ${shortAuditId(m[1])}` },
+  { pattern: /^\/recycle-bin\/([^/]+)\/permanent-delete/, label: (m) => `回收站彻底删除 ${shortAuditId(m[1])}` },
+  { pattern: /^\/exports/, label: "数据导出" },
+  { pattern: /^\/products\/([^/]+)/, label: (m) => `商品 ${shortAuditId(m[1])}` },
+  { pattern: /^\/users\/([^/]+)\/points/, label: (m) => `用户积分 ${shortAuditId(m[1])}` },
+  { pattern: /^\/users\/([^/]+)\/reset-password/, label: (m) => `重置用户密码 ${shortAuditId(m[1])}` },
+  { pattern: /^\/users\/([^/]+)\/account-status/, label: (m) => `用户账号状态 ${shortAuditId(m[1])}` },
+];
+
+const GATEWAY_BLOCK_REASON_ZH: Record<string, string> = {
+  admin_allowed_origins_not_configured: "未配置允许访问的后台来源",
+  admin_api_host_not_allowed: "请求域名不在白名单",
+  admin_api_origin_denied: "请求来源被拒绝",
+  admin_api_missing_origin: "缺少来源信息（Origin）",
+  admin_csrf_failed: "安全令牌（CSRF）校验失败",
+};
+
+function shortAuditId(id: string) {
+  const s = String(id || "").trim();
+  if (s.length <= 12) return s;
+  return `…${s.slice(-8)}`;
+}
+
+function zhAdminApiPath(path: string) {
+  const route = String(path || "").split("?")[0].trim();
+  if (!route) return "管理端接口";
+  for (const rule of ADMIN_API_PATH_RULES) {
+    const match = route.match(rule.pattern);
+    if (match) {
+      return typeof rule.label === "function" ? rule.label(match) : rule.label;
+    }
+  }
+  const segments = route.replace(/^\//, "").split("/").filter(Boolean);
+  if (!segments.length) return "管理端接口";
+  const head = MODULE_ZH[segments[0]] || TOKEN_ZH[segments[0]] || segments[0];
+  if (segments.length === 1) return head;
+  return `${head} · ${segments.slice(1).join(" / ")}`;
+}
+
+function zhGatewayBlockReason(reason: string) {
+  const key = String(reason || "").trim();
+  if (GATEWAY_BLOCK_REASON_ZH[key]) return GATEWAY_BLOCK_REASON_ZH[key];
+  return key.replace(/_/g, " ");
+}
 
 const HTTP_METHOD_ZH: Record<string, string> = {
   GET: "查询",

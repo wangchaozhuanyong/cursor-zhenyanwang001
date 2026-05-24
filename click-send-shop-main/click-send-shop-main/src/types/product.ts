@@ -43,6 +43,8 @@ export interface ProductVariant {
   cost_price?: number | null;
   stock: number;
   stock_warning_threshold?: number;
+  stock_lower_limit?: number | null;
+  stock_upper_limit?: number | null;
   barcode?: string | null;
   image_url?: string | null;
   weight?: number | null;
@@ -126,6 +128,8 @@ export interface Product {
   category_id: string;
   stock: number;
   stock_warning_threshold?: number;
+  stock_lower_limit?: number | null;
+  stock_upper_limit?: number | null;
   /** 0 草稿 · 1 上架 · 2 下架 */
   lifecycle_status?: ProductLifecycleStatus;
   status: ProductStatus;
@@ -266,6 +270,8 @@ export interface AdminProductVariantInput {
   cost_price?: number | null;
   stock: number;
   stock_warning_threshold?: number;
+  stock_lower_limit?: number | null;
+  stock_upper_limit?: number | null;
   barcode?: string | null;
   image_url?: string | null;
   weight?: number | null;

@@ -16,7 +16,7 @@ type UseCheckoutCouponSelectionParams = {
   name: string;
   phone: string;
   address: string;
-  selectedTemplateId: number | null;
+  selectedTemplateId: string | null;
   weightKg: number;
   paymentMethod: PaymentMethod;
   couponEnabled: boolean;

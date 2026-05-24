@@ -1,5 +1,6 @@
 export interface ShippingTemplate {
-  id: number;
+  /** 与库表 shipping_templates.id 一致（VARCHAR UUID） */
+  id: string;
   name: string;
   regions: string;
   baseFee: number;
@@ -16,7 +17,7 @@ export interface ShippingGlobalSettings {
 }
 
 export interface ShippingCalcResult {
-  templateId: number;
+  templateId: string;
   templateName: string;
   fee: number;
   isFree: boolean;

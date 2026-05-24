@@ -278,6 +278,8 @@ function formatVariantRow(row) {
     cost_price: row.cost_price == null ? null : parseFloat(row.cost_price),
     stock: row.stock,
     stock_warning_threshold: row.stock_warning_threshold ?? 5,
+    stock_lower_limit: row.stock_lower_limit == null ? null : Number(row.stock_lower_limit),
+    stock_upper_limit: row.stock_upper_limit == null ? null : Number(row.stock_upper_limit),
     barcode: row.barcode || '',
     image_url: row.image_url || '',
     weight: row.weight == null ? null : parseFloat(row.weight),
@@ -298,6 +300,12 @@ function buildProductSearchKeywordsFromPayload(payload, variants = [], tags = []
     variants.flatMap((v) => [v.title, v.sku_code]),
     tags.map((t) => t.name),
   );
+}
+
+function optionalNonnegativeInt(value) {
+  if (value === '' || value == null) return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 0 ? n : null;
 }
 
 async function tryPersistComplianceFields(productId, body) {
@@ -336,7 +344,7 @@ async function tryPersistComplianceFields(productId, body) {
   }
 }
 
-function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
+function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock, stockOptions = {}) {
   const mainP = Number(mainPrice);
   const price = Number.isFinite(mainP) ? mainP : 0;
   const mainS = Number(mainStock);
@@ -348,6 +356,11 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
       title: DEFAULT_VARIANT_TITLE,
       price,
       stock,
+      stock_warning_threshold: Number.isFinite(Number(stockOptions.stock_warning_threshold))
+        ? Number(stockOptions.stock_warning_threshold)
+        : 5,
+      stock_lower_limit: optionalNonnegativeInt(stockOptions.stock_lower_limit),
+      stock_upper_limit: optionalNonnegativeInt(stockOptions.stock_upper_limit),
       sort_order: 0,
       is_default: 1,
     }];
@@ -365,6 +378,8 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
       cost_price: v.cost_price === '' || v.cost_price == null ? null : Number(v.cost_price),
       stock: Number.isFinite(vs) ? vs : stock,
       stock_warning_threshold: Number.isFinite(Number(v.stock_warning_threshold)) ? Number(v.stock_warning_threshold) : 5,
+      stock_lower_limit: optionalNonnegativeInt(v.stock_lower_limit),
+      stock_upper_limit: optionalNonnegativeInt(v.stock_upper_limit),
       barcode: v.barcode || null,
       image_url: v.image_url || null,
       weight: v.weight === '' || v.weight == null ? null : Number(v.weight),
@@ -427,8 +442,8 @@ async function syncProductPriceStockFromDefaultVariant(productId) {
   if (!def) return;
   const totalStock = enabledRows.reduce((sum, r) => sum + Number(r.stock || 0), 0);
   await repo.updateProductDynamic(
-    ['price = ?', 'stock = ?'],
-    [def.price, totalStock],
+    ['price = ?', 'stock = ?', 'stock_warning_threshold = ?', 'stock_lower_limit = ?', 'stock_upper_limit = ?'],
+    [def.price, totalStock, def.stock_warning_threshold ?? 5, def.stock_lower_limit ?? null, def.stock_upper_limit ?? null],
     productId,
   );
 }
@@ -469,7 +484,7 @@ async function getProductById(id) {
 async function createProduct(body, adminUserId, req) {
   const {
     name, cover_image, video_url, images, price, original_price, sales_count,
-    category_id, stock, sort_order,
+    category_id, stock, stock_warning_threshold, stock_lower_limit, stock_upper_limit, sort_order,
     description, is_recommended, is_new, isNewArrival, is_hot,
     variants,
     tag_ids: tagIdsBody,
@@ -479,7 +494,11 @@ async function createProduct(body, adminUserId, req) {
   const statusStr = statusVarcharFromLifecycle(lcResolved);
 
   const id = generateId();
-  const variantRows = normalizeVariantPayloadForDb(variants, generateId, price, stock);
+  const variantRows = normalizeVariantPayloadForDb(variants, generateId, price, stock, {
+    stock_warning_threshold,
+    stock_lower_limit,
+    stock_upper_limit,
+  });
   try {
     await repo.insertProduct({
       id,
@@ -494,6 +513,11 @@ async function createProduct(body, adminUserId, req) {
       sales_count: Number.isFinite(Number(sales_count)) ? Number(sales_count) : 0,
       category_id: category_id || '',
       stock: stock || 0,
+      stock_warning_threshold: Number.isFinite(Number(stock_warning_threshold))
+        ? Number(stock_warning_threshold)
+        : (variantRows.find((v) => v.is_default)?.stock_warning_threshold ?? 5),
+      stock_lower_limit: optionalNonnegativeInt(stock_lower_limit) ?? (variantRows.find((v) => v.is_default)?.stock_lower_limit ?? null),
+      stock_upper_limit: optionalNonnegativeInt(stock_upper_limit) ?? (variantRows.find((v) => v.is_default)?.stock_upper_limit ?? null),
       status: statusStr,
       lifecycle_status: lcResolved,
       sort_order: sort_order || 0,
@@ -603,7 +627,7 @@ async function updateProduct(id, body, adminUserId, req) {
     const fields = [];
     const values = [];
     const allowedFields = ['name', 'cover_image', 'video_url', 'price', 'category_id',
-      'sort_order', 'description', 'sales_count'];
+      'sort_order', 'description', 'sales_count', 'stock_warning_threshold', 'stock_lower_limit', 'stock_upper_limit'];
     for (const f of allowedFields) {
       if (body[f] !== undefined) {
         fields.push(`${f} = ?`);
@@ -1405,6 +1429,3 @@ module.exports = {
   importProductsCsv,
   batchUpdateStatus,
 };
-
-
-

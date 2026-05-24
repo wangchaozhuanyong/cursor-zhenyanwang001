@@ -6,12 +6,20 @@ import * as settingsService from "@/services/admin/settingsService";
 import { DEFAULT_SITE_CAPABILITIES, type SiteCapabilities } from "@/types/siteCapabilities";
 import { refreshSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 
-const FEATURE_ITEMS: Array<{ key: keyof SiteCapabilities; label: string; desc: string }> = [
+type FeatureItem = {
+  key: keyof SiteCapabilities;
+  label: string;
+  desc: string;
+  /** 预留能力：仅超级管理员可修改，界面灰显提示 */
+  superAdminOnly?: boolean;
+};
+
+const FEATURE_ITEMS: FeatureItem[] = [
   { key: "mallEnabled", label: "商城模块", desc: "控制商品、购物车等商城入口展示。" },
-  { key: "serviceEnabled", label: "服务模块", desc: "控制服务型内容与入口展示。" },
   { key: "onlinePaymentEnabled", label: "在线支付", desc: "关闭后前端隐藏支付入口，后端拒绝创建在线支付。" },
   { key: "pointsEnabled", label: "积分", desc: "关闭后隐藏积分入口，后端拒绝积分相关接口。" },
   { key: "couponEnabled", label: "优惠券", desc: "关闭后隐藏优惠券入口，后端拒绝领券和优惠券管理接口。" },
@@ -20,21 +28,40 @@ const FEATURE_ITEMS: Array<{ key: keyof SiteCapabilities; label: string; desc: s
   { key: "shippingEnabled", label: "配送", desc: "关闭后隐藏配送设置，后端拒绝配送管理接口。" },
   { key: "memberLevelEnabled", label: "会员等级", desc: "关闭后隐藏会员等级入口，后端拒绝会员等级管理接口。" },
   { key: "customerServiceDownloadEnabled", label: "客服/APP 页", desc: "关闭后隐藏前台客服/APP 页与底部导航入口。" },
-  { key: "telegramOrderNotifyEnabled", label: "Telegram 订单通知", desc: "与「Telegram 通知」页的启用开关同步；关闭后不再发送付款成功提醒。" },
-  { key: "languageGateEnabled", label: "中文浏览器限制", desc: "开启后前台商城路由将拦截非中文浏览器；后台 /admin 不受限。仅前端拦截，API 仍可直连。" },
-  { key: "restrictedProductComplianceEnabled", label: "受限商品合规", desc: "控制受限商品合规提示和限制逻辑。" },
+  {
+    key: "telegramOrderNotifyEnabled",
+    label: "Telegram 订单通知",
+    desc: "与「Telegram 通知」页同步；关闭后不再发送付款成功提醒，并隐藏侧栏 Telegram 设置入口。",
+  },
+  {
+    key: "languageGateEnabled",
+    label: "中文浏览器限制",
+    desc: "开启后前台商城路由将拦截非中文浏览器；后台 /admin 不受限。仅前端拦截，API 仍可直连。",
+  },
   { key: "trafficAnalyticsEnabled", label: "流量分析", desc: "关闭后前端隐藏追踪加载，后端可减少埋点入口。" },
+  {
+    key: "serviceEnabled",
+    label: "服务模块（预留）",
+    desc: "预留开关：服务模块链路尚未完整接入，开启或关闭目前几乎不会影响站点行为。",
+    superAdminOnly: true,
+  },
+  {
+    key: "restrictedProductComplianceEnabled",
+    label: "受限商品合规（预留）",
+    desc: "预留开关：影响受监管商品的提示与限制逻辑；修改前请与业务/法务确认。",
+    superAdminOnly: true,
+  },
 ];
+
+const OPERATIONAL_ITEMS = FEATURE_ITEMS.filter((item) => !item.superAdminOnly);
+const RESERVED_ITEMS = FEATURE_ITEMS.filter((item) => item.superAdminOnly);
 
 export default function AdminFeatureSettings() {
   const { tText } = useAdminT();
   const queryClient = useQueryClient();
+  const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
   const [values, setValues] = useState<SiteCapabilities>(DEFAULT_SITE_CAPABILITIES);
   const [saving, setSaving] = useState(false);
-  const visibleFeatureItems = useMemo(
-    () => FEATURE_ITEMS.filter((item) => !["serviceEnabled", "restrictedProductComplianceEnabled"].includes(item.key)),
-    [],
-  );
 
   const capabilitiesQuery = useQuery({
     queryKey: adminQueryKeys.siteCapabilities(),
@@ -49,9 +76,9 @@ export default function AdminFeatureSettings() {
     setValues({ ...DEFAULT_SITE_CAPABILITIES, ...capabilitiesQuery.data });
   }, [capabilitiesQuery.data]);
 
-  const enabledCount = useMemo(
-    () => visibleFeatureItems.filter((item) => values[item.key]).length,
-    [values, visibleFeatureItems],
+  const enabledOperationalCount = useMemo(
+    () => OPERATIONAL_ITEMS.filter((item) => values[item.key]).length,
+    [values],
   );
 
   const save = async () => {
@@ -70,6 +97,43 @@ export default function AdminFeatureSettings() {
     }
   };
 
+  const renderItem = (item: FeatureItem) => {
+    const readOnly = Boolean(item.superAdminOnly && !isSuperAdmin);
+    return (
+      <div
+        key={item.key}
+        className={`flex items-center justify-between gap-4 rounded-xl border p-4 ${
+          item.superAdminOnly
+            ? "border-dashed border-amber-200/80 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20"
+            : "border-border"
+        } ${readOnly ? "opacity-75" : ""}`}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="font-medium text-foreground">{item.label}</div>
+            {item.superAdminOnly ? (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                预留 · 仅超级管理员
+              </span>
+            ) : null}
+            <AdminFieldHint text={item.desc} />
+          </div>
+          {readOnly ? (
+            <p className="mt-1 text-xs text-muted-foreground">当前为只读；如需调整请联系超级管理员。</p>
+          ) : null}
+        </div>
+        <input
+          type="checkbox"
+          className="h-5 w-5 shrink-0 accent-primary"
+          checked={values[item.key]}
+          onChange={(event) => setValues((prev) => ({ ...prev, [item.key]: event.target.checked }))}
+          disabled={loading || saving || readOnly}
+          aria-label={item.label}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4 p-4">
       <section className="rounded-2xl border border-border bg-card">
@@ -77,29 +141,32 @@ export default function AdminFeatureSettings() {
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-foreground"><Tx>站点功能能力</Tx></h2>
             <AdminFieldHint
-              text={`当前启用 ${enabledCount} / ${visibleFeatureItems.length} 项。保存后立即作用于前台入口与相关接口。`}
+              text={`常规开关已启用 ${enabledOperationalCount} / ${OPERATIONAL_ITEMS.length} 项。保存后立即作用于前台入口与相关接口。底部「预留」项仅超级管理员可修改。`}
             />
           </div>
-          <button type="button" onClick={save} disabled={saving || loading} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving || loading}
+            className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >
             {saving ? "保存中..." : "保存"}
           </button>
         </div>
-        <div className="grid gap-3 p-4 md:grid-cols-2">
-          {visibleFeatureItems.map((item) => (
-            <div key={item.key} className="flex items-center justify-between gap-4 rounded-xl border border-border p-4">
-              <div className="flex items-center gap-2">
-                <div className="font-medium text-foreground">{item.label}</div>
-                <AdminFieldHint text={item.desc} />
-              </div>
-              <input
-                type="checkbox"
-                className="h-5 w-5 accent-primary"
-                checked={values[item.key]}
-                onChange={(event) => setValues((prev) => ({ ...prev, [item.key]: event.target.checked }))}
-                disabled={loading || saving}
-              />
+
+        <div className="space-y-6 p-4">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>常规功能</Tx></h3>
+            <div className="grid gap-3 md:grid-cols-2">{OPERATIONAL_ITEMS.map(renderItem)}</div>
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-foreground"><Tx>预留能力</Tx></h3>
+              <AdminFieldHint text="以下开关已接入配置存储，但业务链路未完整验收；默认仅超级管理员可修改，避免误操作。" />
             </div>
-          ))}
+            <div className="grid gap-3 md:grid-cols-2">{RESERVED_ITEMS.map(renderItem)}</div>
+          </div>
         </div>
       </section>
     </div>

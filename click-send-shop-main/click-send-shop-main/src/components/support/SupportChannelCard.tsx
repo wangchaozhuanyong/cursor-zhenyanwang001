@@ -96,7 +96,7 @@ export default function SupportChannelCard({ channel }: Props) {
 
   return (
     <section className="rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 shadow-[var(--theme-shadow)]">
-      <div>
+      <div className="text-center">
         <h1 className="text-xl font-extrabold tracking-tight text-[var(--theme-text)]">{title}</h1>
         {description ? (
           <p className="mt-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{description}</p>

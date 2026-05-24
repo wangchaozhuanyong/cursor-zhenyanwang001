@@ -8,7 +8,7 @@ async function selectVariantsByProductIds(productIds) {
   const ph = uniq.map(() => '?').join(',');
   const [rows] = await db.query(
     `SELECT id, product_id, sku_code, title, price, original_price, stock, sort_order, is_default,
-            stock_warning_threshold, cost_price, barcode, image_url, weight, enabled
+            stock_warning_threshold, stock_lower_limit, stock_upper_limit, cost_price, barcode, image_url, weight, enabled
      FROM product_variants
      WHERE product_id IN (${ph}) AND deleted_at IS NULL
      ORDER BY product_id ASC, is_default DESC, sort_order ASC, created_at ASC`,
@@ -27,6 +27,7 @@ async function selectVariantsByProductId(productId, opts = {}) {
   const includeDeleted = !!opts.includeDeleted;
   const [rows] = await db.query(
     `SELECT id, product_id, sku_code, title, price, original_price, stock, sort_order, is_default, stock_warning_threshold,
+            stock_lower_limit, stock_upper_limit,
             reserved_stock, cost_price, barcode, image_url, weight, enabled, deleted_at, created_at, updated_at
      FROM product_variants
      WHERE product_id = ? ${includeDeleted ? '' : 'AND deleted_at IS NULL'}
@@ -265,6 +266,8 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
           `UPDATE product_variants
            SET sku_code = ?, title = ?, price = ?, original_price = ?, stock = ?, sort_order = ?, is_default = ?,
                stock_warning_threshold = COALESCE(?, stock_warning_threshold),
+               stock_lower_limit = ?,
+               stock_upper_limit = ?,
                barcode = COALESCE(?, barcode), cost_price = COALESCE(?, cost_price),
                image_url = ?, weight = ?, enabled = ?, deleted_at = NULL
            WHERE id = ? AND product_id = ?`,
@@ -277,6 +280,8 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
             r.sort_order ?? 0,
             r.is_default ? 1 : 0,
             r.stock_warning_threshold ?? null,
+            r.stock_lower_limit ?? null,
+            r.stock_upper_limit ?? null,
             r.barcode ?? null,
             r.cost_price ?? null,
             r.image_url || null,
@@ -290,8 +295,8 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
         await conn.query(
           `INSERT INTO product_variants
              (id, product_id, sku_code, title, price, original_price, stock, sort_order, is_default,
-              stock_warning_threshold, reserved_stock, barcode, cost_price, image_url, weight, enabled, deleted_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
+              stock_warning_threshold, stock_lower_limit, stock_upper_limit, reserved_stock, barcode, cost_price, image_url, weight, enabled, deleted_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
           [
             r.id,
             productId,
@@ -303,6 +308,8 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
             r.sort_order ?? 0,
             r.is_default ? 1 : 0,
             r.stock_warning_threshold ?? 5,
+            r.stock_lower_limit ?? null,
+            r.stock_upper_limit ?? null,
             r.reserved_stock ?? 0,
             r.barcode ?? null,
             r.cost_price ?? null,
@@ -333,7 +340,10 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
     await conn.query(
       `UPDATE products p
        SET p.stock = COALESCE((SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1),0),
-           p.price = COALESCE((SELECT v.price FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1), p.price)
+           p.price = COALESCE((SELECT v.price FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1), p.price),
+           p.stock_warning_threshold = COALESCE((SELECT v.stock_warning_threshold FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1), p.stock_warning_threshold),
+           p.stock_lower_limit = (SELECT v.stock_lower_limit FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1),
+           p.stock_upper_limit = (SELECT v.stock_upper_limit FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1)
        WHERE p.id = ?`,
       [productId],
     );
@@ -364,6 +374,4 @@ module.exports = {
   upsertProductSkuMatrix,
   updateDefaultVariantPriceStock,
 };
-
-
 

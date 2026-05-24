@@ -3,7 +3,7 @@ import { calcShippingFee, estimateCartWeightKg, DEFAULT_ITEM_WEIGHT_KG } from ".
 import type { ShippingTemplate } from "@/types/shipping";
 
 const tpl: ShippingTemplate = {
-  id: 1,
+  id: "tpl-test-1",
   name: "测试",
   regions: "",
   baseFee: 10,

@@ -9,11 +9,11 @@ export function createShippingTemplate(data: Omit<ShippingTemplate, "id">) {
   return post<ShippingTemplate>("/admin/shipping/templates", data);
 }
 
-export function updateShippingTemplate(id: number, data: Partial<ShippingTemplate>) {
+export function updateShippingTemplate(id: string, data: Partial<ShippingTemplate>) {
   return put<ShippingTemplate>(`/admin/shipping/templates/${id}`, data);
 }
 
-export function deleteShippingTemplate(id: number) {
+export function deleteShippingTemplate(id: string) {
   return del<void>(`/admin/shipping/templates/${id}`);
 }
 

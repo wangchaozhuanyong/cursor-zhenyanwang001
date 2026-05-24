@@ -40,6 +40,11 @@ const FEATURE_ITEMS: FeatureItem[] = [
   },
   { key: "trafficAnalyticsEnabled", label: "流量分析", desc: "关闭后前端隐藏追踪加载，后端可减少埋点入口。" },
   {
+    key: "downloadConfirmEnabled",
+    label: "下载二次确认",
+    desc: "开启后，前台与后台的导出、下载文件（含 CSV 导出、导出中心、二维码/海报下载等）均需确认后才会保存到本机。",
+  },
+  {
     key: "serviceEnabled",
     label: "服务模块（预留）",
     desc: "预留开关：服务模块链路尚未完整接入，开启或关闭目前几乎不会影响站点行为。",

@@ -13,6 +13,8 @@ export interface SiteCapabilities {
   languageGateEnabled: boolean;
   restrictedProductComplianceEnabled: boolean;
   trafficAnalyticsEnabled: boolean;
+  /** 开启后，导出/下载等操作需二次确认 */
+  downloadConfirmEnabled: boolean;
 }
 
 export const DEFAULT_SITE_CAPABILITIES: SiteCapabilities = {
@@ -30,6 +32,7 @@ export const DEFAULT_SITE_CAPABILITIES: SiteCapabilities = {
   languageGateEnabled: false,
   restrictedProductComplianceEnabled: true,
   trafficAnalyticsEnabled: true,
+  downloadConfirmEnabled: true,
 };
 
 export interface RuntimeConfig {

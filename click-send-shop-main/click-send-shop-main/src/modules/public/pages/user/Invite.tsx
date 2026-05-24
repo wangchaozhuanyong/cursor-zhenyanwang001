@@ -10,6 +10,8 @@ import { QRCodeCanvas } from "qrcode.react";
 import * as inviteService from "@/services/inviteService";
 import type { InviteStats, InviteRecord } from "@/types/invite";
 import { copyToClipboard } from "@/utils/clipboard";
+import { runGuardedDownload } from "@/utils/downloadConfirm";
+import { triggerBrowserFileDownload } from "@/utils/fileDownload";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
@@ -70,11 +72,11 @@ export default function Invite() {
   const downloadQR = useCallback(() => {
     const canvas = qrRef.current;
     if (!canvas) return;
-    const a = document.createElement("a");
-    a.href = canvas.toDataURL("image/png");
-    a.download = `invite-qr-${inviteCode}.png`;
-    a.click();
-    toast.success("二维码已下载", toastPresetQuickSuccess);
+    const fileName = `invite-qr-${inviteCode}.png`;
+    void runGuardedDownload(() => {
+      triggerBrowserFileDownload(canvas.toDataURL("image/png"), fileName);
+      toast.success("二维码已下载", toastPresetQuickSuccess);
+    }, { title: "确认下载", fileName });
   }, [inviteCode]);
 
   const downloadPoster = useCallback(() => {
@@ -136,11 +138,11 @@ export default function Invite() {
       ctx.font = "22px sans-serif";
       ctx.fillText(inviteLink, w / 2, 1140);
 
-      const a = document.createElement("a");
-      a.href = canvas.toDataURL("image/png");
-      a.download = `invite-poster-${inviteCode}.png`;
-      a.click();
-      toast.success("海报已下载", toastPresetQuickSuccess);
+      const fileName = `invite-poster-${inviteCode}.png`;
+      void runGuardedDownload(() => {
+        triggerBrowserFileDownload(canvas.toDataURL("image/png"), fileName);
+        toast.success("海报已下载", toastPresetQuickSuccess);
+      }, { title: "确认下载", fileName });
     } catch {
       toast.error("海报生成失败");
     }

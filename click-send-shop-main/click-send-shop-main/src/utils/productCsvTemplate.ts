@@ -1,3 +1,6 @@
+import { runGuardedDownload } from "@/utils/downloadConfirm";
+import { triggerBrowserBlobDownload } from "@/utils/fileDownload";
+
 /** 与后端 EXPORT_HEADERS_SKU / adminCsvLabels 中文表头一致（一行一 SKU） */
 export const PRODUCT_CSV_HEADER_LABELS = [
   "商品编号",
@@ -36,13 +39,14 @@ function csvEscape(value: string) {
 }
 
 /** 下载仅含表头的 UTF-8 BOM CSV 模板（ERP 一行一 SKU） */
-export function downloadProductCsvTemplate(filename = "products_import_template.csv") {
-  const line = PRODUCT_CSV_HEADER_LABELS.map(csvEscape).join(",");
-  const blob = new Blob([`\uFEFF${line}\r\n`], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+export async function downloadProductCsvTemplate(filename = "products_import_template.csv") {
+  await runGuardedDownload(async () => {
+    const line = PRODUCT_CSV_HEADER_LABELS.map(csvEscape).join(",");
+    const blob = new Blob([`\uFEFF${line}\r\n`], { type: "text/csv;charset=utf-8" });
+    await triggerBrowserBlobDownload(blob, filename);
+  }, {
+    title: "确认下载",
+    fileName: filename,
+    description: `即将下载导入模板「${filename}」，是否继续？`,
+  });
 }

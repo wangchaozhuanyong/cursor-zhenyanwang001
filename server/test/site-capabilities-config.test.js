@@ -15,6 +15,7 @@ describe('site capabilities config', () => {
     assert.equal(caps.languageGateEnabled, false);
     assert.equal(caps.mallEnabled, true);
     assert.equal(caps.telegramOrderNotifyEnabled, true);
+    assert.equal(caps.downloadConfirmEnabled, true);
     assert.deepEqual(Object.keys(caps).sort(), Object.keys(DEFAULT_SITE_CAPABILITIES).sort());
   });
 

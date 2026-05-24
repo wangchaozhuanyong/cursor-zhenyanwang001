@@ -55,6 +55,7 @@ import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
 import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
+import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 import {
   AdminOrderVoiceMenuItems,
@@ -746,6 +747,7 @@ function AdminLayoutContent() {
   }
 
   return (
+    <DownloadConfirmProvider>
     <AdminConfirmProvider>
     <AdminAccountSettingsProvider>
     <AdminOrderVoiceProvider>
@@ -1052,6 +1054,7 @@ function AdminLayoutContent() {
     </AdminOrderVoiceProvider>
     </AdminAccountSettingsProvider>
     </AdminConfirmProvider>
+    </DownloadConfirmProvider>
   );
 }
 

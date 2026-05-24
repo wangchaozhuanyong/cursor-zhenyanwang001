@@ -28,6 +28,7 @@ import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
 import { trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
@@ -155,6 +156,7 @@ export function StoreAppRoutes() {
   return (
     <ErrorBoundary resetKey={location.pathname}>
       <QueryClientProvider client={queryClient}>
+        <DownloadConfirmProvider>
         <TooltipProvider>
           <Sonner />
           <TopProgressBar />
@@ -229,6 +231,7 @@ export function StoreAppRoutes() {
           </Suspense>
           <CookieConsentBanner />
         </TooltipProvider>
+        </DownloadConfirmProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

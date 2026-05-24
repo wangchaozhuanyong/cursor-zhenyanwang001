@@ -61,6 +61,10 @@ export function getCachedRuntimeConfig() {
   return cachedRuntimeConfig;
 }
 
+export function getCachedSiteCapabilities(): SiteCapabilities {
+  return cachedCapabilities ?? DEFAULT_SITE_CAPABILITIES;
+}
+
 export function useSiteCapabilities(): SiteCapabilities {
   const [capabilities, setCapabilities] = useState<SiteCapabilities>(cachedCapabilities ?? DEFAULT_SITE_CAPABILITIES);
 

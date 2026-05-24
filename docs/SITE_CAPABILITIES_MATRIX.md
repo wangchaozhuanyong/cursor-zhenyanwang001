@@ -20,6 +20,7 @@
 | `telegramOrderNotifyEnabled` | true | 全部管理员 | 关闭时隐藏侧栏「Telegram 通知」；与 Telegram 设置页双向同步 | **不**拦截 Telegram 设置读写；付款成功等场景禁止实际发送 | 关闭后不再发送 Telegram 订单提醒 | 关闭后 `telegram.service` 发送逻辑应跳过；设置页仍可配置 Token |
 | `languageGateEnabled` | **false** | 全部管理员 | 开启后前台拦截非中文浏览器（`/admin` 除外） | 暂不拦截 API | 仅前端展示，不作为安全边界 | 非中文浏览器访问商城页应出现语言提示 |
 | `trafficAnalyticsEnabled` | true | 全部管理员 | 隐藏后台流量分析、前台停止埋点 | 拦截 `/analytics/events` 与 `/admin/reports/traffic` | 禁止采集新埋点 | 关闭后上述接口应返回 403 |
+| `downloadConfirmEnabled` | true | 全部管理员 | 导出/下载前弹出确认（后台 CSV、导出中心、商品模板、客服二维码、邀请海报等） | 无（纯前端体验） | 关闭后点击下载按钮立即保存文件 | 关闭后导出订单 CSV 应无确认框 |
 | `serviceEnabled` | true | **仅超级管理员**（灰显预留） | 预留，**前后端均未完整接入** | 无 | 开启/关闭几乎无效果 | 勿作为生产验收项 |
 | `restrictedProductComplianceEnabled` | true | **仅超级管理员**（灰显预留） | 受监管商品展示、下单提示、SEO 等 | 部分逻辑读取该开关 | 关闭后合规提示与限制减弱 | 仅超级管理员可改；改前需业务确认 |
 

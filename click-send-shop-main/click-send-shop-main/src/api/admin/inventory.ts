@@ -1,7 +1,7 @@
 import { del, get, patch, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, InventorySummary, PurchaseOrder, PurchaseOrderDetail } from "@/types/inventory";
-import { getAdminAccessToken } from "@/utils/token";
+import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 
 export function getInventorySummary() {
   return get<InventorySummary>("/admin/inventory/summary");
@@ -149,29 +149,13 @@ export function getInventoryConversion(id: string) {
   return get<InventoryConversionOrder>(`/admin/inventory/conversions/${id}`);
 }
 
-async function downloadCsv(url: string, filename: string) {
-  const token = getAdminAccessToken();
-  const res = await fetch((import.meta.env.VITE_API_BASE_URL ?? "/api") + url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("导出失败");
-  const text = await res.text();
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
 export function exportInventorySkusCsv(params?: Record<string, unknown>) {
   const qs = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== null && v !== "").map(([k, v]) => [k, String(v)])).toString();
-  return downloadCsv(`/admin/inventory/export${qs ? `?${qs}` : ""}`, `inventory_skus_${Date.now()}.csv`);
+  return downloadAdminCsv(`/admin/inventory/export${qs ? `?${qs}` : ""}`, `inventory_skus_${Date.now()}.csv`);
 }
 
 export function exportInventoryRecordsCsv(params?: Record<string, unknown>) {
   const qs = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== null && v !== "").map(([k, v]) => [k, String(v)])).toString();
-  return downloadCsv(`/admin/inventory/records/export${qs ? `?${qs}` : ""}`, `inventory_records_${Date.now()}.csv`);
+  return downloadAdminCsv(`/admin/inventory/records/export${qs ? `?${qs}` : ""}`, `inventory_records_${Date.now()}.csv`);
 }
 

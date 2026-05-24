@@ -333,7 +333,7 @@ export default function AdminProducts() {
             <Tx>导出筛选结果</Tx>
           </button>
           <PermissionGate permission="product.manage">
-            <button type="button" onClick={() => downloadProductCsvTemplate()} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary">
+            <button type="button" onClick={() => void downloadProductCsvTemplate()} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary">
               <FileDown size={14} />
               下载模板
             </button>

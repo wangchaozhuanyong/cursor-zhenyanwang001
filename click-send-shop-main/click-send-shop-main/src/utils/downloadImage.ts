@@ -1,3 +1,6 @@
+import { runGuardedDownload } from "@/utils/downloadConfirm";
+import { triggerBrowserBlobDownload, triggerBrowserFileDownload } from "@/utils/fileDownload";
+
 function sanitizeFilename(name: string): string {
   return name.replace(/[<>:"/\\|?*\s]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "image";
 }
@@ -15,20 +18,6 @@ function guessExtension(url: string, contentType?: string): string {
   return match?.[1]?.toLowerCase().replace("jpeg", "jpg") || "png";
 }
 
-function triggerBlobDownload(blob: Blob, filename: string): boolean {
-  if (typeof document === "undefined") return false;
-  const blobUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = blobUrl;
-  anchor.download = filename;
-  anchor.rel = "noopener";
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(blobUrl);
-  return true;
-}
-
 async function downloadViaFetch(url: string, filename: string): Promise<boolean> {
   const absolute = new URL(url, typeof window !== "undefined" ? window.location.href : url).href;
   const response = await fetch(absolute, { mode: "cors", credentials: "include" });
@@ -36,7 +25,8 @@ async function downloadViaFetch(url: string, filename: string): Promise<boolean>
   const blob = await response.blob();
   const ext = guessExtension(url, blob.type || response.headers.get("content-type") || undefined);
   const base = filename.replace(/\.[a-z0-9]+$/i, "");
-  return triggerBlobDownload(blob, `${base}.${ext}`);
+  await triggerBrowserBlobDownload(blob, `${base}.${ext}`);
+  return true;
 }
 
 async function downloadViaCanvas(url: string, filename: string): Promise<boolean> {
@@ -62,29 +52,17 @@ async function downloadViaCanvas(url: string, filename: string): Promise<boolean
   });
   if (!blob) return false;
   const base = filename.replace(/\.[a-z0-9]+$/i, "");
-  return triggerBlobDownload(blob, `${base}.png`);
+  await triggerBrowserBlobDownload(blob, `${base}.png`);
+  return true;
 }
 
 function downloadViaAnchor(url: string, filename: string): boolean {
   if (typeof document === "undefined") return false;
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.rel = "noopener";
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
+  triggerBrowserFileDownload(url, filename);
   return true;
 }
 
-/** Returns true when a file download was triggered; false when only a fallback open was used. */
-export async function downloadImage(url: string, filenameBase: string): Promise<boolean> {
-  const src = url.trim();
-  if (!src) return false;
-
-  const safeBase = sanitizeFilename(filenameBase);
-  const filename = `${safeBase}.${guessExtension(src)}`;
-
+async function performDownloadImage(src: string, filename: string): Promise<boolean> {
   try {
     return await downloadViaFetch(src, filename);
   } catch {
@@ -105,4 +83,23 @@ export async function downloadImage(url: string, filenameBase: string): Promise<
     }
     return false;
   }
+}
+
+/** Returns true when a file download was triggered; false when only a fallback open was used or user取消. */
+export async function downloadImage(url: string, filenameBase: string): Promise<boolean> {
+  const src = url.trim();
+  if (!src) return false;
+
+  const safeBase = sanitizeFilename(filenameBase);
+  const filename = `${safeBase}.${guessExtension(src)}`;
+
+  let result = false;
+  const started = await runGuardedDownload(async () => {
+    result = await performDownloadImage(src, filename);
+  }, {
+    title: "确认下载",
+    fileName: filename,
+  });
+  if (!started) return false;
+  return result;
 }

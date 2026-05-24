@@ -13,6 +13,7 @@ const DEFAULT_SITE_CAPABILITIES = Object.freeze({
   languageGateEnabled: false,
   restrictedProductComplianceEnabled: true,
   trafficAnalyticsEnabled: true,
+  downloadConfirmEnabled: true,
 });
 
 function parseBoolean(value, fallback) {

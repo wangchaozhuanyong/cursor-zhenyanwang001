@@ -13,6 +13,7 @@ const repo = require('../repository/adminOrder.repository');
 const adminEventBus = require('./adminEventBus.service');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../../constants/status');
+const { resolveOrderPayableAmount, resolveOrderPaidAmount } = require('../../../utils/orderAmountResolve');
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
 }
@@ -335,16 +336,22 @@ function attachItemsAndAmounts(order, items) {
   order.shipping_original_fee = parseFloat(order.shipping_original_fee ?? order.shipping_fee ?? 0);
   order.shipping_discount_amount = parseFloat(order.shipping_discount_amount || 0);
   order.total_discount_amount = parseFloat(order.total_discount_amount || 0);
-  order.payable_amount = parseFloat(order.payable_amount ?? order.total_amount ?? 0);
-  order.paid_amount = parseFloat(order.paid_amount || 0);
-  order.net_received_amount = parseFloat(order.net_received_amount || 0);
-  order.outstanding_amount = parseFloat(order.outstanding_amount || 0);
+  order.payable_amount = resolveOrderPayableAmount(order);
+  order.paid_amount = resolveOrderPaidAmount(order);
+  order.refund_amount = parseFloat(order.refund_amount || order.refunded_amount || 0);
+  const netStored = parseFloat(order.net_received_amount || 0);
+  const outstandingStored = parseFloat(order.outstanding_amount || 0);
+  order.net_received_amount = netStored > 0
+    ? netStored
+    : Math.max(0, order.paid_amount - order.refund_amount);
+  order.outstanding_amount = outstandingStored > 0
+    ? outstandingStored
+    : Math.max(0, order.payable_amount - order.paid_amount);
   order.goods_cost_amount = parseFloat(order.goods_cost_amount || 0);
   order.gross_profit_amount = parseFloat(order.gross_profit_amount || 0);
   order.shipping_cost_amount = parseFloat(order.shipping_cost_amount || 0);
   order.payment_fee_amount = parseFloat(order.payment_fee_amount || 0);
   order.net_profit_amount = parseFloat(order.net_profit_amount || 0);
-  order.refund_amount = parseFloat(order.refund_amount || order.refunded_amount || 0);
   return order;
 }
 

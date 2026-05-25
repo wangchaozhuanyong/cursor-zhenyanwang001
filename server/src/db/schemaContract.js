@@ -163,6 +163,48 @@ async function getPendingMigrations() {
 }
 
 /**
+ * 订单有效应付 SQL（兼容 payable/total 为 0 但 raw_amount 或快照有值的旧数据）
+ * @param {string} [alias='o']
+ * @param {Record<string, boolean>} schema
+ */
+function orderEffectivePayableSql(alias, schema) {
+  const p = alias ? `${alias}.` : '';
+  const parts = [];
+  if (schema.ordersPayableAmount) parts.push(`NULLIF(${p}payable_amount, 0)`);
+  parts.push(`NULLIF(${p}total_amount, 0)`);
+  if (schema.ordersAmountSnapshot) {
+    parts.push(
+      `NULLIF(CAST(JSON_UNQUOTE(JSON_EXTRACT(${p}amount_snapshot, '$.payable_amount')) AS DECIMAL(12,2)), 0)`,
+    );
+  }
+  if (schema.ordersRawAmount) parts.push(`NULLIF(${p}raw_amount, 0)`);
+  return `COALESCE(${parts.join(', ')}, 0)`;
+}
+
+/** 订单有效实付 SQL（与 order.repository 支付更新口径一致） */
+function orderEffectivePaidSql(alias, schema) {
+  const p = alias ? `${alias}.` : '';
+  const payable = orderEffectivePayableSql(alias, schema);
+  if (schema.ordersPaidAmount) {
+    return `COALESCE(
+      NULLIF(${p}paid_amount, 0),
+      CASE WHEN ${p}payment_status IN (${PAID_PAYMENT_SQL}) THEN (${payable}) ELSE 0 END,
+      0
+    )`;
+  }
+  return `CASE WHEN ${p}payment_status IN (${PAID_PAYMENT_SQL}) THEN (${payable}) ELSE 0 END`;
+}
+
+/** 活动优惠：优先 activity_discount_amount，否则回退 discount_amount */
+function orderEffectiveActivityDiscountSql(alias, schema) {
+  const p = alias ? `${alias}.` : '';
+  if (schema.ordersActivityDiscount) {
+    return `COALESCE(NULLIF(${p}activity_discount_amount, 0), COALESCE(${p}discount_amount, 0), 0)`;
+  }
+  return `COALESCE(${p}discount_amount, 0)`;
+}
+
+/**
  * 管理端统计 / 报表共用的营收 SQL 片段
  */
 async function getOrderRevenueExprs() {
@@ -289,6 +331,9 @@ module.exports = {
   getOrderRevenueExprs,
   getDashboardSchema,
   getReportExprs,
+  orderEffectivePayableSql,
+  orderEffectivePaidSql,
+  orderEffectiveActivityDiscountSql,
   orderPaidSum,
   getProfitDailySqlParts,
 };

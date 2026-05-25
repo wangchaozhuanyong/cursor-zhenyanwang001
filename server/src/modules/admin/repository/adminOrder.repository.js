@@ -9,7 +9,12 @@
 const db = require('../../../config/db');
 const { ORDER_STATUS } = require('../../../constants/status');
 const { generateId } = require('../../../utils/helpers');
-const { getOrderRevenueExprs } = require('../../../db/schemaContract');
+const {
+  getOrderRevenueExprs,
+  orderEffectivePayableSql,
+  orderEffectivePaidSql,
+  orderEffectiveActivityDiscountSql,
+} = require('../../../db/schemaContract');
 
 function getPool() {
   return db;
@@ -75,8 +80,8 @@ async function selectOrdersAdminPage(where, params, pageSize, offset) {
     schema.ordersShippingOriginalFee ? 'o.shipping_original_fee' : 'COALESCE(o.shipping_fee, 0) AS shipping_original_fee',
     schema.ordersShippingDiscount ? 'o.shipping_discount_amount' : '0 AS shipping_discount_amount',
     schema.ordersTotalDiscount ? 'o.total_discount_amount' : '(COALESCE(o.discount_amount, 0) + COALESCE(o.points_discount_amount, 0) + COALESCE(o.reward_cash_discount_amount, 0)) AS total_discount_amount',
-    schema.ordersPayableAmount ? 'o.payable_amount' : 'COALESCE(o.total_amount, 0) AS payable_amount',
-    schema.ordersPaidAmount ? 'o.paid_amount' : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN COALESCE(o.total_amount, 0) ELSE 0 END AS paid_amount",
+    `${orderEffectivePayableSql('o', schema)} AS payable_amount`,
+    `${orderEffectivePaidSql('o', schema)} AS paid_amount`,
     schema.ordersNetReceivedAmount ? 'o.net_received_amount' : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN GREATEST(0, COALESCE(o.total_amount, 0) - COALESCE(o.refunded_amount, 0)) ELSE 0 END AS net_received_amount",
     schema.ordersOutstandingAmount ? 'o.outstanding_amount' : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN 0 ELSE COALESCE(o.total_amount, 0) END AS outstanding_amount",
     schema.ordersAmountSnapshot ? 'o.amount_snapshot' : 'NULL AS amount_snapshot',
@@ -241,19 +246,11 @@ async function selectOrderOperationalSummary(where, params) {
 async function selectOrderFinancialSummary(where, params) {
   const { schema } = await getOrderRevenueExprs();
   const refundCol = schema.ordersRefundedAmount ? 'COALESCE(o.refunded_amount, 0)' : '0';
-  const payableCol = schema.ordersPayableAmount
-    ? 'CASE WHEN COALESCE(o.payable_amount, 0) > 0 THEN COALESCE(o.payable_amount, 0) ELSE COALESCE(o.total_amount, 0) END'
-    : 'COALESCE(o.total_amount, 0)';
-  const paidCol = schema.ordersPaidAmount
-    ? `CASE
-         WHEN COALESCE(o.paid_amount, 0) > 0 THEN COALESCE(o.paid_amount, 0)
-         WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN COALESCE(o.total_amount, 0)
-         ELSE 0
-       END`
-    : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN COALESCE(o.total_amount, 0) ELSE 0 END";
+  const payableCol = orderEffectivePayableSql('o', schema);
+  const paidCol = orderEffectivePaidSql('o', schema);
   const netReceivedCol = `GREATEST(0, (${paidCol}) - ${refundCol})`;
   const outstandingCol = `GREATEST(0, (${payableCol}) - (${paidCol}))`;
-  const activityDiscountCol = schema.ordersActivityDiscount ? 'COALESCE(o.activity_discount_amount, 0)' : 'COALESCE(o.discount_amount, 0)';
+  const activityDiscountCol = orderEffectiveActivityDiscountSql('o', schema);
   const couponDiscountCol = schema.ordersCouponDiscount ? 'COALESCE(o.coupon_discount_amount, 0)' : '0';
   const pointsDiscountCol = schema.ordersPointsDiscount ? 'COALESCE(o.points_discount_amount, 0)' : '0';
   const rewardCashDiscountCol = schema.ordersRewardCashDiscount ? 'COALESCE(o.reward_cash_discount_amount, 0)' : '0';

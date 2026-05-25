@@ -303,7 +303,7 @@ export default function AdminUserDetail() {
               <span className="text-muted-foreground"><Tx>优惠券统计：</Tx></span>
               <span className="ml-1 break-all">{JSON.stringify(user.related?.coupon_stats || {})}</span>
             </div>
-            <DataList title={tText("积分记录")} rows={user.related?.points_records} onAll={() => navigate(`/admin/points/records?userId=${user.id}`)} />
+            <DataList title={tText("积分记录")} rows={user.related?.points_records} onAll={() => navigate(`/admin/marketing/points?userId=${user.id}`)} />
           </div>
         )}
         {tab === "邀请/返现" && (

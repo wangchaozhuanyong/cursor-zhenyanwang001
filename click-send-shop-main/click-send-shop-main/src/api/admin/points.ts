@@ -13,10 +13,6 @@ export function getAdminPointsRecords(params?: PointsListParams) {
   return get<AdminPointsRecordsResponse>("/admin/points/records", params as unknown as Record<string, string>);
 }
 
-export function adjustUserPoints(userId: string, amount: number, description: string) {
-  return post<void>(`/admin/users/${userId}/points`, { points: amount, reason: description });
-}
-
 export type LoyaltyPointsSettings = Record<string, string | number | boolean | null | undefined>;
 export type ProductPointRule = {
   id?: string;

@@ -250,8 +250,8 @@ export default function AdminPointsRecords() {
 
       <section className="rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4 theme-shadow">
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]"><Tx>积分规则</Tx></h2>
-          <p className="text-xs text-theme-muted"><Tx>规则与明细同页管理，修改后点击保存立即生效。</Tx></p>
+          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]"><Tx>行为奖励规则</Tx></h2>
+          <p className="text-xs text-theme-muted"><Tx>签到、首单等行为触发的固定积分奖励；与「全局积分设置」中的消费积分规则不同。修改后点击保存立即生效。</Tx></p>
         </div>
         {rulesLoading ? (
           <div className="space-y-3">

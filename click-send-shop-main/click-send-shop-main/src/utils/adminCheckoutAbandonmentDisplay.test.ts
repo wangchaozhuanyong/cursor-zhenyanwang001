@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { CheckoutAbandonment } from "@/types/order";
 import {
   formatCheckoutAbandonmentDisplayLabel,
+  formatCheckoutAbandonmentNumber,
   formatMergedSnapshotsLabel,
   getCheckoutAbandonmentActionLabel,
+  getCheckoutAbandonmentRecordTypeLabel,
 } from "./adminCheckoutAbandonmentDisplay";
 
 const baseRow = {
@@ -47,8 +49,21 @@ describe("adminCheckoutAbandonmentDisplay", () => {
     ).toBe("仅记录");
   });
 
-  it("formats order and checkout display labels", () => {
-    expect(formatCheckoutAbandonmentDisplayLabel(baseRow)).toBe("#NO1001");
+  it("formats record type and number for split table columns", () => {
+    expect(getCheckoutAbandonmentRecordTypeLabel(baseRow)).toBe("订单");
+    expect(formatCheckoutAbandonmentNumber(baseRow)).toBe("#NO1001");
+    expect(getCheckoutAbandonmentRecordTypeLabel({ display_type: "checkout" })).toBe("快照");
+    expect(
+      formatCheckoutAbandonmentNumber({
+        display_type: "checkout",
+        display_id: "12345678",
+        order_no: "",
+      }),
+    ).toBe("#12345678");
+  });
+
+  it("formats combined display label for legacy callers", () => {
+    expect(formatCheckoutAbandonmentDisplayLabel(baseRow)).toBe("订单 #NO1001");
     expect(
       formatCheckoutAbandonmentDisplayLabel({
         ...baseRow,

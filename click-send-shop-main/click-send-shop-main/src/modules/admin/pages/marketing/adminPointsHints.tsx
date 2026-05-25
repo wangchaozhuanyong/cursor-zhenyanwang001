@@ -4,9 +4,9 @@ import { Tx } from "@/components/admin/AdminText";
 /** 积分管理各子标签说明 */
 export const POINTS_TAB_HINTS: Record<string, ReactNode> = {
   积分总览: <Tx>全站积分发放、使用、流水笔数与活跃用户数概览，数据来自实时统计。</Tx>,
-  积分规则: <Tx>控制前台是否显示积分、是否发放消费积分、积分计算方式与入账时机等全局规则。</Tx>,
+  全局积分设置: <Tx>控制前台是否显示积分、是否发放消费积分、积分计算方式与入账时机等全站规则（与下方「行为奖励规则」不同）。</Tx>,
   商品积分规则: <Tx>为指定商品/分类/标签设置特殊积分或倍率，优先级高于全局金额规则的例外配置。</Tx>,
-  积分抵扣: <Tx>设置 1 积分抵多少 RM、最低使用门槛、单笔抵扣上限等；需先在「积分规则」开启抵扣开关。</Tx>,
+  积分抵扣: <Tx>设置 1 积分抵多少 RM、最低使用门槛、单笔抵扣上限等；需先在「全局积分设置」开启抵扣开关。</Tx>,
   礼品兑换: <Tx>配置用户用积分（可加价）兑换的礼品商品、库存与每人限兑，并查看兑换记录。</Tx>,
   积分明细: <Tx>查询每笔积分变动流水（下单奖励、抵扣、管理员调整、退款回滚等），可筛选用户与类型。</Tx>,
   手动调整: <Tx>客服或运营对指定用户补发/扣减积分，须填写原因，会记入流水且通常不可撤销。</Tx>,
@@ -58,7 +58,7 @@ export const POINTS_PRODUCT_RULE_HINTS: Record<string, ReactNode> = {
   scope_id: <Tx>分类 ID、商品 ID 或标签 ID，多个场景请新建多条规则。</Tx>,
   earn_mode: (
     <Tx>
-      继承全局=走「积分规则」金额设置；不积分=该范围内不发消费积分；固定/百分比/倍率=覆盖全局的计算方式。
+      继承全局=走「全局积分设置」中的金额规则；不积分=该范围内不发消费积分；固定/百分比/倍率=覆盖全局的计算方式。
     </Tx>
   ),
   fixed_points: <Tx>每件或每单固定赠送的积分数（视积分模式而定）。</Tx>,
@@ -81,8 +81,16 @@ export const POINTS_ADVANCED_FIELD_HINTS: Record<string, ReactNode> = {
   allow_with_coupon: <Tx>结账同时使用优惠券与积分抵扣是否允许。</Tx>,
   allow_with_reward_cash: <Tx>积分抵扣与返现余额（钱包返现）是否可同时使用。</Tx>,
   allow_negative_points: <Tx>仅影响后台手动调账是否允许扣到负数；前台用户余额通常仍不可为负。</Tx>,
-  payment_points_mode: <Tx>限制哪些支付方式下可获得积分或使用积分抵扣。</Tx>,
-  allowed_payment_methods: <Tx>与上一项配合：include 为白名单，exclude 为黑名单；填 online、whatsapp 等内部编码。</Tx>,
+  payment_points_mode: (
+    <Tx>
+      全部不限制：忽略下方列表；全部禁用：任何支付均不可计分/抵扣；仅允许/排除列表：与下方编码配合生效。
+    </Tx>
+  ),
+  allowed_payment_methods: (
+    <Tx>
+      仅在「仅允许列表内」或「排除列表内」时生效；填 online、whatsapp 等内部编码，多个用英文逗号分隔。
+    </Tx>
+  ),
 };
 
 export const POINTS_ADJUST_FIELD_HINTS: Record<string, ReactNode> = {

@@ -26,72 +26,24 @@ import {
   THEME_OUTLINE_DANGER,
   THEME_TEXT_DANGER,
 } from "@/utils/themeVisuals";
-import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
-import AdminNativeTable from "@/components/admin/AdminNativeTable";
+import { adminTableClassName, adminTdClassName } from "@/utils/adminTableClasses";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { COMPLIANCE_TYPE_LABELS } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useAdminT } from "@/hooks/useAdminT";
+import {
+  cartesianSpecValues,
+  DEFAULT_VARIANT_TITLE,
+  MAX_SKU_MATRIX_SIZE,
+  specComboKey,
+  tempVariantId,
+} from "@/utils/productFormVariantUtils";
+import { resolveStockLimitsFromProduct } from "@/utils/inventoryStockFields";
+import type { AdminSpecGroup, AdminVariantForm } from "@/modules/admin/pages/product/productFormTypes";
+import ProductVariantMatrixTable from "@/modules/admin/pages/product/ProductVariantMatrixTable";
+import ProductSpecGroupsSection from "@/modules/admin/pages/product/ProductSpecGroupsSection";
 
-type AdminSpecValue = {
-  id?: string;
-  value: string;
-  image_url?: string;
-  sort_order: number;
-};
-
-type AdminSpecGroup = {
-  id?: string;
-  name: string;
-  sort_order: number;
-  values: AdminSpecValue[];
-};
-
-type AdminVariantForm = {
-  id?: string;
-  title: string;
-  sku_code: string;
-  price: string;
-  original_price?: string;
-  cost_price?: string;
-  stock: string;
-  stock_warning_threshold?: string;
-  stock_lower_limit?: string;
-  stock_upper_limit?: string;
-  barcode?: string;
-  image_url?: string;
-  weight?: string;
-  enabled?: boolean;
-  sort_order: number;
-  is_default: boolean;
-  spec_value_ids?: string[];
-};
-
-const MAX_SPEC_GROUPS = 3;
-const MAX_SPEC_VALUES_PER_GROUP = 20;
-const MAX_SKU_MATRIX_SIZE = 200;
-const DEFAULT_VARIANT_TITLE = "默认规格";
-
-const tempId = () => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-function cartesianSpecValues(groups: AdminSpecGroup[]) {
-  const usable = groups
-    .map((group) => ({
-      ...group,
-      values: group.values.filter((value) => value.value.trim()),
-    }))
-    .filter((group) => group.name.trim() && group.values.length > 0);
-  if (!usable.length) return [];
-  return usable.reduce<Array<Array<{ group: AdminSpecGroup; value: AdminSpecValue }>>>((acc, group) => {
-    const entries = group.values.map((value) => ({ group, value }));
-    if (!acc.length) return entries.map((entry) => [entry]);
-    return acc.flatMap((combo) => entries.map((entry) => [...combo, entry]));
-  }, []);
-}
-
-function specComboKey(ids: string[]) {
-  return ids.filter(Boolean).join("|");
-}
+const tempId = tempVariantId;
 
 export default function AdminProductForm() {
   const { tText } = useAdminT();
@@ -229,6 +181,7 @@ export default function AdminProductForm() {
                     enabled: true,
                   },
                 ];
+            const mainStockLimits = resolveStockLimitsFromProduct(data);
             setForm({
               name: data.name || "",
               price: data.price?.toString() || "",
@@ -237,20 +190,9 @@ export default function AdminProductForm() {
               cost_price: (vlist.find((variant) => variant.is_default)?.cost_price ?? "") || "",
               sales_count: data.sales_count != null ? String(data.sales_count) : "0",
               stock: data.stock?.toString() || "",
-              stock_warning_threshold:
-                data.stock_warning_threshold != null
-                  ? String(data.stock_warning_threshold)
-                  : (data.default_variant?.stock_warning_threshold != null
-                    ? String(data.default_variant.stock_warning_threshold)
-                    : ""),
-              stock_lower_limit:
-                data.stock_lower_limit != null
-                  ? String(data.stock_lower_limit)
-                  : (data.default_variant?.stock_lower_limit != null ? String(data.default_variant.stock_lower_limit) : ""),
-              stock_upper_limit:
-                data.stock_upper_limit != null
-                  ? String(data.stock_upper_limit)
-                  : (data.default_variant?.stock_upper_limit != null ? String(data.default_variant.stock_upper_limit) : ""),
+              stock_warning_threshold: mainStockLimits.warning,
+              stock_lower_limit: mainStockLimits.lower,
+              stock_upper_limit: mainStockLimits.upper,
               category_id: data.category_id || "",
               sort_order: data.sort_order?.toString() || "",
               description: data.description || "",
@@ -996,416 +938,22 @@ export default function AdminProductForm() {
                 </p>
               </div>
             ) : null}
-            <div className="space-y-3 rounded-lg border border-border bg-background/40 p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold text-foreground"><Tx>规格设置</Tx></p>
-                    <AdminFieldHint
-                      text={`最多 ${MAX_SPEC_GROUPS} 个规格组，每组最多 ${MAX_SPEC_VALUES_PER_GROUP} 个规格值。规格值会生成 SKU 组合。`}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {form.spec_groups.length === 0 ? (
-                    <button
-                      type="button"
-                      onClick={convertToMatrixMode}
-                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                    >
-                      启用多规格
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    disabled={form.spec_groups.length >= MAX_SPEC_GROUPS}
-                    onClick={() =>
-                      updateSpecGroups((groups) => [
-                        ...groups,
-                        { id: tempId(), name: `规格${groups.length + 1}`, sort_order: groups.length, values: [] },
-                      ])
-                    }
-                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-40"
-                  >
-                    添加规格组
-                  </button>
-                </div>
-              </div>
-              {form.spec_groups.map((group, groupIdx) => (
-                <div key={group.id || groupIdx} className="rounded-lg border border-border p-3">
-                  <div className="flex gap-2">
-                    <input
-                      value={group.name}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        updateSpecGroups((groups) => groups.map((g, i) => i === groupIdx ? { ...g, name: value } : g));
-                      }}
-                      placeholder={tText("如：颜色")}
-                      className="min-w-0 flex-1 rounded-md bg-secondary px-2 py-1.5 text-xs outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateSpecGroups((groups) => groups.filter((_, i) => i !== groupIdx))}
-                      className={THEME_TEXT_DANGER}
-                      title={tText("删除规格组")}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {group.values.map((value, valueIdx) => (
-                      <div key={value.id || valueIdx} className="flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-1">
-                        <input
-                          value={value.value}
-                          onChange={(e) => {
-                            const text = e.target.value;
-                            updateSpecGroups((groups) => groups.map((g, gi) => gi === groupIdx ? {
-                              ...g,
-                              values: g.values.map((v, vi) => vi === valueIdx ? { ...v, value: text } : v),
-                            } : g));
-                          }}
-                          placeholder={tText("规格值")}
-                          className="w-20 bg-transparent text-xs outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => updateSpecGroups((groups) => groups.map((g, gi) => gi === groupIdx ? {
-                            ...g,
-                            values: g.values.filter((_, vi) => vi !== valueIdx),
-                          } : g))}
-                          className={THEME_TEXT_DANGER}
-                          title={tText("删除规格值")}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      disabled={group.values.length >= MAX_SPEC_VALUES_PER_GROUP}
-                      onClick={() => updateSpecGroups((groups) => groups.map((g, gi) => gi === groupIdx ? {
-                        ...g,
-                        values: [...g.values, { id: tempId(), value: "", image_url: "", sort_order: g.values.length }],
-                      } : g))}
-                      className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:border-gold/50 disabled:opacity-40"
-                    >
-                      + 规格值
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ProductSpecGroupsSection
+              specGroups={form.spec_groups}
+              updateSpecGroups={updateSpecGroups}
+              convertToMatrixMode={convertToMatrixMode}
+              tempId={tempId}
+              tText={tText}
+            />
             {form.spec_groups.length > 0 || form.variants.length > 1 || showDefaultSkuAdvanced ? (
-            <AdminNativeTable tableClassName="min-w-[520px] text-xs">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className={adminThClassName("w-10")}><Tx>默认</Tx></th>
-                    <th className={adminThClassName()}><Tx>规格名</Tx></th>
-                    <th className={adminThClassName()}>SKU</th>
-                    <th className={adminThClassName()}><Tx>库存下限</Tx></th>
-                    <th className={adminThClassName()}><Tx>库存上限</Tx></th>
-                    <th className={adminThClassName()}><Tx>价格</Tx></th>
-                    <th className={adminThClassName()}><Tx>原价</Tx></th>
-                    <th className={adminThClassName()}><Tx>成本</Tx></th>
-                    <th className={adminThClassName()}><Tx>库存</Tx></th>
-                    <th className={adminThClassName()}><Tx>预警</Tx></th>
-                    <th className={adminThClassName()}><Tx>条码</Tx></th>
-                    <th className={adminThClassName()}><Tx>图片</Tx></th>
-                    <th className={adminThClassName()}><Tx>启用</Tx></th>
-                    <th className={adminThClassName("w-10")} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {form.variants.map((v, idx) => (
-                    <tr key={`${v.id || "n"}-${idx}`} className="border-b border-border/60">
-                      <td className="py-2 pr-2 align-middle">
-                        <input
-                          type="radio"
-                          name="default-variant"
-                          checked={v.is_default}
-                          onChange={() =>
-                            setForm((f) => {
-                              const nextDefault = f.variants[idx];
-                              return {
-                                ...f,
-                                price: nextDefault?.price || f.price,
-                                original_price: nextDefault?.original_price || "",
-                                cost_price: nextDefault?.cost_price || "",
-                                stock: nextDefault?.stock || f.stock,
-                                stock_warning_threshold: nextDefault?.stock_warning_threshold || f.stock_warning_threshold,
-                                stock_lower_limit: nextDefault?.stock_lower_limit || "",
-                                stock_upper_limit: nextDefault?.stock_upper_limit || "",
-                                variants: f.variants.map((row, j) => ({ ...row, is_default: j === idx })),
-                              };
-                            })
-                          }
-                          className="accent-gold"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          value={v.title}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], title: t || (nv[idx].is_default && f.spec_groups.length === 0 ? DEFAULT_VARIANT_TITLE : "") };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          placeholder={v.is_default && form.spec_groups.length === 0 ? DEFAULT_VARIANT_TITLE : tText("如：标准款")}
-                          className="w-full min-w-[96px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          value={v.sku_code}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], sku_code: t };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          placeholder={tText("可选")}
-                          className="w-full min-w-[80px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          type="number"
-                          min={0}
-                          value={v.is_default ? form.stock_lower_limit : v.stock_lower_limit || ""}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            if (v.is_default) setForm((f) => ({ ...f, stock_lower_limit: t }));
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], stock_lower_limit: t };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          type="number"
-                          min={0}
-                          value={v.is_default ? form.stock_upper_limit : v.stock_upper_limit || ""}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            if (v.is_default) setForm((f) => ({ ...f, stock_upper_limit: t }));
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], stock_upper_limit: t };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          type="number"
-                          value={v.is_default ? form.price : v.price}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            if (v.is_default) setForm((f) => ({ ...f, price: t }));
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], price: t };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          type="number"
-                          min={0}
-                          value={v.is_default ? form.original_price : v.original_price || ""}
-                          placeholder={tText("可选")}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            if (v.is_default) setForm((f) => ({ ...f, original_price: t }));
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], original_price: t };
-                              return { ...f, original_price: nv[idx].is_default ? t : f.original_price, variants: nv };
-                            });
-                          }}
-                          className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          type="number"
-                          value={v.cost_price || ""}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], cost_price: t };
-                              return { ...f, cost_price: nv[idx].is_default ? t : f.cost_price, variants: nv };
-                            });
-                          }}
-                          className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          type="number"
-                          min={0}
-                          value={v.is_default ? form.stock : v.stock}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            if (v.is_default) {
-                              setForm((f) => ({ ...f, stock: t }));
-                              return;
-                            }
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], stock: t };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          type="number"
-                          min={0}
-                          value={v.stock_warning_threshold || ""}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            if (v.is_default) setForm((f) => ({ ...f, stock_warning_threshold: t }));
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], stock_warning_threshold: t };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input
-                          value={v.barcode || ""}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], barcode: t };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          className="w-full min-w-[96px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <div className="min-w-[180px] space-y-1">
-                          <div className="flex items-center gap-2">
-                            {v.image_url ? (
-                              <img
-                                src={v.image_url}
-                                alt={`${v.title || "SKU"} 图片`}
-                                className="h-8 w-8 rounded border border-border object-cover"
-                              />
-                            ) : (
-                              <div className="h-8 w-8 rounded border border-dashed border-border bg-secondary" />
-                            )}
-                            <label
-                              className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] ${uploadingVariantImageIndex === idx ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-secondary"}`}
-                            >
-                              {uploadingVariantImageIndex === idx ? (
-                                <Loader2 size={12} className="animate-spin" />
-                              ) : (
-                                <Upload size={12} />
-                              )}
-                              {uploadingVariantImageIndex === idx ? "上传中" : "上传"}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                disabled={uploadingVariantImageIndex !== null}
-                                onChange={(e) => void handleVariantImageUpload(e, idx)}
-                              />
-                            </label>
-                            {!!v.image_url && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setForm((f) => {
-                                    const nv = [...f.variants];
-                                    nv[idx] = { ...nv[idx], image_url: "" };
-                                    return { ...f, variants: nv };
-                                  });
-                                }}
-                                className={`text-[11px] ${THEME_HOVER_TEXT_DANGER}`}
-                              >
-                                清除
-                              </button>
-                            )}
-                          </div>
-                          {uploadingVariantImageIndex === idx && variantUploadProgress !== null ? (
-                            <p className="text-[10px] text-muted-foreground">上传进度 {variantUploadProgress}%</p>
-                          ) : null}
-                          <input
-                            value={v.image_url || ""}
-                            onChange={(e) => {
-                              const t = e.target.value;
-                              setForm((f) => {
-                                const nv = [...f.variants];
-                                nv[idx] = { ...nv[idx], image_url: t };
-                                return { ...f, variants: nv };
-                              });
-                            }}
-                            placeholder="URL"
-                            className="w-full rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                          />
-                        </div>
-                      </td>
-                      <td className="py-2 pr-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={v.enabled !== false}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], enabled: checked };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          className="accent-gold"
-                        />
-                      </td>
-                      <td className="py-2 align-middle">
-                        <button
-                          type="button"
-                          disabled={form.variants.length <= 1}
-                          onClick={() => {
-                            setForm((f) => {
-                              if (f.variants.length <= 1) return f;
-                              const nv = f.variants.filter((_, j) => j !== idx);
-                              if (!nv.some((r) => r.is_default)) nv[0] = { ...nv[0], is_default: true };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          className={`${THEME_TEXT_DANGER} disabled:opacity-30`}
-                          title={tText("删除此行")}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-            </AdminNativeTable>
+              <ProductVariantMatrixTable
+                form={form}
+                setForm={setForm}
+                uploadingVariantImageIndex={uploadingVariantImageIndex}
+                variantUploadProgress={variantUploadProgress}
+                onVariantImageUpload={handleVariantImageUpload}
+                tText={tText}
+              />
             ) : null}
           </div>
 

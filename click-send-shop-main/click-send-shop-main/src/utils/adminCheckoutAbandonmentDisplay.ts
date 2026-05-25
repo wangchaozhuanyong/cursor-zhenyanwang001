@@ -1,10 +1,24 @@
 import type { CheckoutAbandonment } from "@/types/order";
 
-export function formatCheckoutAbandonmentDisplayLabel(row: Pick<CheckoutAbandonment, "display_type" | "display_id" | "order_no">): string {
+export function getCheckoutAbandonmentRecordTypeLabel(
+  row: Pick<CheckoutAbandonment, "display_type">,
+): string {
+  return row.display_type === "order" ? "订单" : "快照";
+}
+
+export function formatCheckoutAbandonmentNumber(
+  row: Pick<CheckoutAbandonment, "display_type" | "display_id" | "order_no">,
+): string {
   if (row.display_type === "order") {
     return `#${row.order_no || row.display_id}`;
   }
-  return `快照 #${row.display_id}`;
+  return `#${row.display_id}`;
+}
+
+/** @deprecated 合并展示用；表格已拆为「记录类型 + 编号」两列 */
+export function formatCheckoutAbandonmentDisplayLabel(row: Pick<CheckoutAbandonment, "display_type" | "display_id" | "order_no">): string {
+  const typeLabel = getCheckoutAbandonmentRecordTypeLabel(row);
+  return `${typeLabel} ${formatCheckoutAbandonmentNumber(row)}`;
 }
 
 export function getCheckoutAbandonmentActionLabel(row: Pick<CheckoutAbandonment, "action_type" | "order_id">): string {

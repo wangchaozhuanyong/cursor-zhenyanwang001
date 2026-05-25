@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
-import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import {
   AdminTableMobileCard,
@@ -16,7 +16,11 @@ import {
   hasActiveCheckoutAbandonmentFilters,
   removeCheckoutAbandonmentFilterChip,
 } from "@/utils/adminCheckoutAbandonmentFilters";
-import { getCheckoutAbandonmentActionLabel } from "@/utils/adminCheckoutAbandonmentDisplay";
+import {
+  formatCheckoutAbandonmentNumber,
+  getCheckoutAbandonmentActionLabel,
+  getCheckoutAbandonmentRecordTypeLabel,
+} from "@/utils/adminCheckoutAbandonmentDisplay";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -63,29 +67,25 @@ function MergedSnapshotsBadge({ snapshotCount }: { snapshotCount: number }) {
   );
 }
 
-function CheckoutAbandonmentIdCell({
+function CheckoutAbandonmentNumberCell({
   row,
   onViewOrder,
 }: {
   row: CheckoutAbandonment;
   onViewOrder: (orderId: string) => void;
 }) {
-  const { tText } = useAdminT();
-  const label =
-    row.display_type === "order"
-      ? `#${row.order_no || row.display_id}`
-      : `${tText("快照")} #${row.display_id}`;
+  const numberLabel = formatCheckoutAbandonmentNumber(row);
   const merged = <MergedSnapshotsBadge snapshotCount={row.snapshot_count} />;
 
   if (row.display_type === "order" && row.order_id) {
     return (
-      <div className="flex min-w-0 flex-wrap items-center gap-x-1">
+      <div className="flex min-w-0 max-w-[11rem] items-center gap-1.5 whitespace-nowrap">
         <button
           type="button"
           onClick={() => onViewOrder(row.order_id!)}
-          className="font-mono text-xs text-[var(--theme-price)] hover:underline"
+          className="truncate font-mono text-xs text-[var(--theme-price)] hover:underline"
         >
-          {label}
+          {numberLabel}
         </button>
         {merged}
       </div>
@@ -93,14 +93,25 @@ function CheckoutAbandonmentIdCell({
   }
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-1 font-mono text-xs text-foreground">
-      <span>{label}</span>
+    <div className="flex min-w-0 max-w-[11rem] items-center gap-1.5 whitespace-nowrap font-mono text-xs text-foreground">
+      <span className="truncate">{numberLabel}</span>
       {merged}
     </div>
   );
 }
 
-const TABLE_HEADERS = ["状态", "订单/结算编号", "联系人", "商品摘要", "金额", "支付方式", "结算时间", "操作"] as const;
+const TABLE_HEADERS = [
+  "状态",
+  "记录类型",
+  "编号",
+  "联系人",
+  "联系电话",
+  "商品摘要",
+  "金额",
+  "支付方式",
+  "结算时间",
+  "操作",
+] as const;
 
 export default function AdminCheckoutAbandonments() {
   const { tText } = useAdminT();
@@ -215,16 +226,25 @@ export default function AdminCheckoutAbandonments() {
         <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{tText(STATUS_LABEL[row.status])}</span>
         <span className="text-xs text-muted-foreground">{formatDateTime(row.updated_at)}</span>
       </div>
-      <div className="mt-2">
-        <CheckoutAbandonmentIdCell row={row} onViewOrder={handleViewOrder} />
+      <div className="mt-3 space-y-2">
+        <AdminTableMobileCardField label={tText("记录类型")}>
+          <span className="text-sm text-foreground">{tText(getCheckoutAbandonmentRecordTypeLabel(row))}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("编号")}>
+          <div className="flex justify-end">
+            <CheckoutAbandonmentNumberCell row={row} onViewOrder={handleViewOrder} />
+          </div>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("联系人")}>
+          <span className="text-sm text-foreground">{row.contact_name || tText("未填写联系人")}</span>
+        </AdminTableMobileCardField>
+        <AdminTableMobileCardField label={tText("联系电话")}>
+          <span className="font-mono text-xs text-muted-foreground">{row.contact_phone_masked || tText("未填写电话")}</span>
+        </AdminTableMobileCardField>
       </div>
-      <div className="mt-3 flex items-start justify-between gap-3">
-        <div className="min-w-0 text-sm text-foreground">
-          <p>{row.contact_name || tText("未填写联系人")}</p>
-          <p className="text-xs text-muted-foreground">{row.contact_phone_masked || tText("未填写电话")}</p>
-        </div>
-        <p className="shrink-0 text-sm font-semibold text-[var(--theme-price)]">RM {row.total_amount.toFixed(2)}</p>
-      </div>
+      <AdminTableMobileCardField label={tText("金额")} className="mt-3">
+        <span className="text-sm font-semibold text-[var(--theme-price)]">RM {row.total_amount.toFixed(2)}</span>
+      </AdminTableMobileCardField>
       <div className="mt-2">
         <AdminTableCell value={row.items_preview} fullText={itemsSummaryLocalized(row)} maxWidth="100%" muted />
       </div>
@@ -275,15 +295,15 @@ export default function AdminCheckoutAbandonments() {
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
 
-      <div className=" theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
+      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto">
         <AnimatedTable
           embedded
           loading={loading}
           rows={rows}
           rowKey={(row) => row.group_key || row.id}
           skeletonRows={8}
-          skeletonCols={8}
-          tableClassName="w-full text-sm"
+          skeletonCols={TABLE_HEADERS.length}
+          tableClassName="w-full min-w-[1080px] text-sm"
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
           thead={(
             <tr>
@@ -306,17 +326,29 @@ export default function AdminCheckoutAbandonments() {
           renderMobileCard={renderMobileCard}
           renderRow={(row) => (
             <>
-              <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{tText(STATUS_LABEL[row.status])}</span></td>
-              <td className="max-w-[12rem] px-4 py-3 align-middle">
-                <CheckoutAbandonmentIdCell row={row} onViewOrder={handleViewOrder} />
+              <td className="whitespace-nowrap px-4 py-3 align-middle">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{tText(STATUS_LABEL[row.status])}</span>
               </td>
-              <td className="max-w-[11rem] px-4 py-3 align-middle">
-                <AdminTableCellGroup
-                  maxWidth="10.5rem"
-                  lines={[
-                    { text: row.contact_name || "—" },
-                    { text: row.contact_phone_masked || "—", muted: true },
-                  ]}
+              <td className="whitespace-nowrap px-4 py-3 align-middle text-sm text-foreground">
+                {tText(getCheckoutAbandonmentRecordTypeLabel(row))}
+              </td>
+              <td className="whitespace-nowrap px-4 py-3 align-middle">
+                <CheckoutAbandonmentNumberCell row={row} onViewOrder={handleViewOrder} />
+              </td>
+              <td className="whitespace-nowrap px-4 py-3 align-middle">
+                <AdminTableCell
+                  value={row.contact_name || "—"}
+                  fullText={row.contact_name || undefined}
+                  maxWidth="8rem"
+                />
+              </td>
+              <td className="whitespace-nowrap px-4 py-3 align-middle">
+                <AdminTableCell
+                  value={row.contact_phone_masked || "—"}
+                  fullText={row.contact_phone_masked || undefined}
+                  maxWidth="9rem"
+                  mono
+                  muted
                 />
               </td>
               <td className="max-w-[14rem] px-4 py-3 align-middle">

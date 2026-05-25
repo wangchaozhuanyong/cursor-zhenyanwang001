@@ -29,6 +29,7 @@
     "i18n:admin": "python scripts/extract_admin_zh.py && python scripts/build_admin_zh_to_en.py",
     "i18n:admin:wrap": "node scripts/wrap_admin_tsx_i18n.mjs && node scripts/dedup-tx.mjs && node scripts/fix_module_level_ttext.mjs && node scripts/fix-broken-i18n-imports.mjs && npm run i18n:admin",
     "check:text": "npm run check:mojibake && npm run check:admin-i18n && npm run check:admin-labels && npm run check:routes && npm run check:china-browser",
+    "check:migrations": "node ../../server/scripts/check-migration-prefix-conflicts.js",
     "verify": "npm run typecheck && npm run check:text && npm run build",
     "prepare": "node scripts/install-git-hooks.mjs",
     "audit:overlap": "node scripts/audit-ui-overlap.mjs",

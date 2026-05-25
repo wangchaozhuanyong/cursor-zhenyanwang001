@@ -1,4 +1,5 @@
 import * as pointsApi from "@/api/admin/points";
+import * as userApi from "@/api/admin/user";
 import type { LoyaltyPointsSettings, PointsGiftItem, ProductPointRule } from "@/api/admin/points";
 import type { AdminPointsRecordsResponse, PointsListParams, PointsRule } from "@/types/points";
 import { unwrapList } from "@/services/responseNormalize";
@@ -20,8 +21,9 @@ export async function fetchAdminPointsRecords(
   return res.data;
 }
 
+/** 统一走 user API（PUT），与后台路由主入口一致 */
 export async function adjustUserPoints(userId: string, amount: number, description: string) {
-  await pointsApi.adjustUserPoints(userId, amount, description);
+  await userApi.adjustUserPoints(userId, amount, description);
 }
 
 export async function fetchPointsSettings(): Promise<LoyaltyPointsSettings> {

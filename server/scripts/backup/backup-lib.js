@@ -107,13 +107,36 @@ async function sha256File(filePath) {
 
 function runCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
+    const timeoutMs = Number(options.timeoutMs || process.env.BACKUP_COMMAND_TIMEOUT_MS || 30 * 60 * 1000);
     const child = spawn(command, args, { ...options, shell: process.platform === 'win32' });
     let stderr = '';
+    let settled = false;
+    let timer;
+    if (Number.isFinite(timeoutMs) && timeoutMs > 0) {
+      timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        child.kill('SIGTERM');
+        setTimeout(() => {
+          if (!child.killed) child.kill('SIGKILL');
+        }, 5000).unref?.();
+        reject(new Error(`${command} timed out after ${timeoutMs}ms: ${stderr.slice(-2000)}`));
+      }, timeoutMs);
+      timer.unref?.();
+    }
     child.stderr?.on('data', (chunk) => {
       stderr += chunk.toString();
     });
-    child.on('error', reject);
+    child.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      reject(error);
+    });
     child.on('close', (code) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
       if (code === 0) resolve();
       else reject(new Error(`${command} exited with ${code}: ${stderr.slice(-2000)}`));
     });

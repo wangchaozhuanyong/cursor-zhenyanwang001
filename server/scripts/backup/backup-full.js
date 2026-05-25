@@ -62,22 +62,26 @@ async function main() {
   const sqlPath = path.join(dir, `${dbName}-${stamp}.sql`);
   const gzPath = `${sqlPath}.gz`;
   const encPath = `${gzPath}.enc`;
+  const lockTables = process.env.MYSQLDUMP_LOCK_TABLES === '1';
+  const includeMasterData = process.env.BACKUP_INCLUDE_MASTER_DATA === '1';
   const dumpArgs = [
     ...dbEnvArgs(),
     '--single-transaction',
     '--quick',
+    lockTables ? '--lock-tables' : '--skip-lock-tables',
     '--routines',
     '--triggers',
     '--events',
     '--hex-blob',
     process.env.MYSQLDUMP_SET_GTID_PURGED || '--set-gtid-purged=AUTO',
-    '--master-data=2',
+    ...(includeMasterData ? ['--master-data=2'] : []),
     dbName,
   ];
 
   try {
     await runCommand(process.env.MYSQLDUMP_BIN || 'mysqldump', dumpArgs, {
       stdio: ['ignore', require('fs').openSync(sqlPath, 'w'), 'pipe'],
+      timeoutMs: Number(process.env.MYSQLDUMP_TIMEOUT_MS || process.env.BACKUP_COMMAND_TIMEOUT_MS || 20 * 60 * 1000),
     });
     await gzipFile(sqlPath, gzPath);
     await removeFileQuietly(sqlPath);

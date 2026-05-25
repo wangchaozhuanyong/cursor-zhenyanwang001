@@ -18,9 +18,30 @@ const { getDashboardSchema } = require('./adminDashboard.schema');
 const ORDER_KL_DATE = klDateSql('created_at');
 const USER_KL_DATE = klDateSql('users.created_at');
 const AE_KL_DATE = klDateSql('ae.created_at');
+const DASHBOARD_ANALYTICS_TIMEOUT_MS = Number(process.env.ADMIN_DASHBOARD_ANALYTICS_TIMEOUT_MS || 5000);
 
 function rangeBetween(fieldSql) {
   return `${fieldSql} BETWEEN ? AND ?`;
+}
+
+function rangeExclusive(fieldSql) {
+  return `${fieldSql} >= ? AND ${fieldSql} < ?`;
+}
+
+function utcRangeForKlDate(dateFrom, dateTo) {
+  const start = new Date(`${dateFrom}T00:00:00+08:00`);
+  const end = new Date(`${dateTo}T00:00:00+08:00`);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return {
+    start: start.toISOString().slice(0, 19).replace('T', ' '),
+    endExclusive: end.toISOString().slice(0, 19).replace('T', ' '),
+  };
+}
+
+function withMaxExecutionTime(sql, timeoutMs = DASHBOARD_ANALYTICS_TIMEOUT_MS) {
+  const ms = Number(timeoutMs);
+  if (!Number.isFinite(ms) || ms <= 0) return sql;
+  return sql.replace(/^\s*SELECT\b/i, `SELECT /*+ MAX_EXECUTION_TIME(${Math.trunc(ms)}) */`);
 }
 
 async function getSqlContext() {
@@ -241,13 +262,14 @@ async function selectAnalyticsMonitor(dateFrom, dateTo) {
   if (!schema.analyticsReady) return empty;
 
   try {
+    const range = utcRangeForKlDate(dateFrom, dateTo);
     const [rows] = await db.query(
-      `SELECT ae.event_type, COUNT(*) AS cnt
+      withMaxExecutionTime(`SELECT ae.event_type, COUNT(*) AS cnt
        FROM analytics_events ae
-       WHERE ${rangeBetween(AE_KL_DATE)}
+       WHERE ${rangeExclusive('ae.created_at')}
          AND ae.event_type IN (
-           'contact_whatsapp_click',
-           'support_qr_view',
+            'contact_whatsapp_click',
+            'support_qr_view',
            'support_channel_click',
            'pwa_download_page_view',
            'pwa_install_button_shown',
@@ -255,9 +277,9 @@ async function selectAnalyticsMonitor(dateFrom, dateTo) {
            'pwa_installed',
            'pwa_ios_guide_shown',
            'pwa_open_standalone'
-         )
-       GROUP BY ae.event_type`,
-      [dateFrom, dateTo],
+          )
+       GROUP BY ae.event_type`),
+      [range.start, range.endExclusive],
     );
 
     const map = Object.fromEntries((rows || []).map((r) => [r.event_type, Number(r.cnt || 0)]));
@@ -270,11 +292,11 @@ async function selectAnalyticsMonitor(dateFrom, dateTo) {
           ? `LOWER(ae.os) LIKE '%android%'`
           : `LOWER(ae.device) = 'mobile'`;
       const [androidRows] = await db.query(
-        `SELECT COUNT(*) AS cnt FROM analytics_events ae
-         WHERE ${rangeBetween(AE_KL_DATE)}
+        withMaxExecutionTime(`SELECT COUNT(*) AS cnt FROM analytics_events ae
+         WHERE ${rangeExclusive('ae.created_at')}
            AND ae.event_type = 'pwa_install_button_clicked'
-           AND ${androidFilter}`,
-        [dateFrom, dateTo],
+           AND ${androidFilter}`),
+        [range.start, range.endExclusive],
       );
       androidCount = Number(androidRows[0]?.cnt || 0);
     }
@@ -292,7 +314,12 @@ async function selectAnalyticsMonitor(dateFrom, dateTo) {
       pwa_download_page_view: map.pwa_download_page_view || 0,
     };
   } catch (e) {
-    if (e.code === 'ER_BAD_FIELD_ERROR' || e.code === 'ER_NO_SUCH_TABLE') {
+    if (
+      e.code === 'ER_BAD_FIELD_ERROR'
+      || e.code === 'ER_NO_SUCH_TABLE'
+      || e.code === 'ER_QUERY_TIMEOUT'
+      || /max_execution_time|timeout|interrupted/i.test(String(e.message || ''))
+    ) {
       console.warn('[dashboard] analytics monitor downgraded:', e.message);
       return empty;
     }

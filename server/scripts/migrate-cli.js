@@ -20,16 +20,23 @@ function runPreMigrationBackup() {
   if (cmd === 'status') return;
   if (process.env.BACKUP_BEFORE_MIGRATION !== '1') return;
   const script = path.join(__dirname, 'backup', 'backup-full.js');
+  const timeoutMs = Number(process.env.PRE_MIGRATION_BACKUP_TIMEOUT_MS || 10 * 60 * 1000);
   const result = spawnSync(process.execPath, [script], {
     cwd: path.join(__dirname, '..'),
     stdio: 'inherit',
+    timeout: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : undefined,
     env: {
       ...process.env,
       BACKUP_KIND: 'pre_migration',
       BACKUP_TRIGGER_SOURCE: 'migration',
       BACKUP_REASON: `before npm run migrate ${cmd}`,
+      BACKUP_INCLUDE_MASTER_DATA: process.env.BACKUP_INCLUDE_MASTER_DATA || '0',
+      MYSQLDUMP_LOCK_TABLES: process.env.MYSQLDUMP_LOCK_TABLES || '0',
     },
   });
+  if (result.error) {
+    throw result.error;
+  }
   if (result.status !== 0) {
     throw new Error('Pre-migration backup failed; migration aborted');
   }

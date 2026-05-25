@@ -144,8 +144,30 @@ async function isUsersLastLoginReady() {
   return usersLastLoginReady;
 }
 
+const REPORT_QUERY_TIMEOUT_MS = Number(process.env.ADMIN_REPORT_QUERY_TIMEOUT_MS || 8000);
+
 function rangeWhere(fieldSql) {
   return `(${fieldSql}) BETWEEN ? AND ?`;
+}
+
+function utcRangeForKlDate(dateFrom, dateTo) {
+  const start = new Date(`${dateFrom}T00:00:00+08:00`);
+  const end = new Date(`${dateTo}T00:00:00+08:00`);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return {
+    start: start.toISOString().slice(0, 19).replace('T', ' '),
+    endExclusive: end.toISOString().slice(0, 19).replace('T', ' '),
+  };
+}
+
+function rangeWhereExclusive(fieldSql) {
+  return `${fieldSql} >= ? AND ${fieldSql} < ?`;
+}
+
+function withMaxExecutionTime(sql, timeoutMs = REPORT_QUERY_TIMEOUT_MS) {
+  const ms = Number(timeoutMs);
+  if (!Number.isFinite(ms) || ms <= 0) return sql;
+  return sql.replace(/^\s*SELECT\b/i, `SELECT /*+ MAX_EXECUTION_TIME(${Math.trunc(ms)}) */`);
 }
 
 function buildProductScopeSql(filters = {}, { productAlias = 'p', categoryColumn = 'category_id' } = {}) {
@@ -207,12 +229,12 @@ function salesPeriodExpr(granularity = 'day', alias = 'o') {
 }
 
 async function queryOne(sql, params = []) {
-  const [[row]] = await db.query(sql, params);
+  const [[row]] = await db.query(withMaxExecutionTime(sql), params);
   return row || {};
 }
 
 async function queryList(sql, params = []) {
-  const [rows] = await db.query(sql, params);
+  const [rows] = await db.query(withMaxExecutionTime(sql), params);
   return rows || [];
 }
 
@@ -1066,11 +1088,12 @@ function pageTypeSql(alias = 'ae') {
 }
 
 function buildTrafficWhere(dateFrom, dateTo, filters = {}, alias = 'ae') {
+  const range = utcRangeForKlDate(dateFrom, dateTo);
   const where = [
-    `${rangeWhere(`DATE(DATE_ADD(${alias}.created_at, INTERVAL 8 HOUR))`)}`,
+    `${rangeWhereExclusive(`${alias}.created_at`)}`,
     `COALESCE(NULLIF(${alias}.path,''), ${alias}.page, '') NOT LIKE '/admin%'`,
   ];
-  const params = [dateFrom, dateTo];
+  const params = [range.start, range.endExclusive];
   if (filters.device) {
     where.push(`${alias}.device = ?`);
     params.push(filters.device);
@@ -1196,6 +1219,7 @@ async function selectTrafficFunnel(dateFrom, dateTo, filters = {}) {
 
 async function selectTrafficTopPages(dateFrom, dateTo, filters = {}) {
   const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
+  const range = utcRangeForKlDate(dateFrom, dateTo);
   return queryList(
     `SELECT
       COALESCE(NULLIF(path,''), page, '/') AS path,
@@ -1221,7 +1245,7 @@ async function selectTrafficTopPages(dateFrom, dateTo, filters = {}) {
      LEFT JOIN (
        SELECT session_id, SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS session_total_page_views
        FROM analytics_events
-       WHERE DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
+       WHERE ${rangeWhereExclusive('created_at')}
          AND session_id <> ''
        GROUP BY session_id
      ) session_stats ON session_stats.session_id = ae.session_id
@@ -1229,7 +1253,7 @@ async function selectTrafficTopPages(dateFrom, dateTo, filters = {}) {
      GROUP BY COALESCE(NULLIF(path,''), page, '/'), ${pageTypeSql('ae')}
      ORDER BY pv DESC
      LIMIT 100`,
-    [dateFrom, dateTo, ...params],
+    [range.start, range.endExclusive, ...params],
   );
 }
 

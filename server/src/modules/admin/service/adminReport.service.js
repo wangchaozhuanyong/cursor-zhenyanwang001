@@ -332,6 +332,12 @@ function canDowngradeReportError(error) {
   return code === 'ER_BAD_FIELD_ERROR'
     || code === 'ER_NO_SUCH_TABLE'
     || code === 'ER_PARSE_ERROR'
+    || code === 'ER_QUERY_TIMEOUT'
+    || code === 'PROTOCOL_SEQUENCE_TIMEOUT'
+    || code === 'PROTOCOL_CONNECTION_LOST'
+    || code === 'ECONNRESET'
+    || code === 'ETIMEDOUT'
+    || /max_execution_time|query execution was interrupted|timeout|connection lost/i.test(msg)
     || /unknown column|doesn't exist|no such table/i.test(msg);
 }
 
@@ -872,24 +878,18 @@ async function getTrafficAnalysis(query = {}) {
   let lastUpdatedRaw;
   const filters = normalizeTrafficFilters(query);
   try {
-    [summaryRaw, bounceRaw, trendRaw, funnelRaw, topPagesRaw, sourcesRaw, devicesRaw, lastUpdatedRaw] = await Promise.all([
-      repo.selectTrafficSummary(dateFrom, dateTo, filters),
-      repo.selectTrafficBounce(dateFrom, dateTo, filters),
-      repo.selectTrafficTrend(dateFrom, dateTo, filters),
-      repo.selectTrafficFunnel(dateFrom, dateTo, filters),
-      repo.selectTrafficTopPages(dateFrom, dateTo, filters),
-      repo.selectTrafficSources(dateFrom, dateTo, filters),
-      repo.selectTrafficDevices(dateFrom, dateTo, filters),
-      repo.selectTrafficLastUpdated(dateFrom, dateTo, filters),
-    ]);
+    summaryRaw = await repo.selectTrafficSummary(dateFrom, dateTo, filters);
+    bounceRaw = await repo.selectTrafficBounce(dateFrom, dateTo, filters);
+    trendRaw = await repo.selectTrafficTrend(dateFrom, dateTo, filters);
+    funnelRaw = await repo.selectTrafficFunnel(dateFrom, dateTo, filters);
+    topPagesRaw = await repo.selectTrafficTopPages(dateFrom, dateTo, filters);
+    sourcesRaw = await repo.selectTrafficSources(dateFrom, dateTo, filters);
+    devicesRaw = await repo.selectTrafficDevices(dateFrom, dateTo, filters);
+    lastUpdatedRaw = await repo.selectTrafficLastUpdated(dateFrom, dateTo, filters);
   } catch (error) {
-    const code = String(error?.code || '');
-    const msg = String(error?.message || '');
-    const canDowngrade = code === 'ER_BAD_FIELD_ERROR'
-      || code === 'ER_NO_SUCH_TABLE'
-      || code === 'ER_PARSE_ERROR'
-      || /unknown column|doesn't exist|no such table/i.test(msg);
-    if (canDowngrade) {
+    if (canDowngradeReportError(error)) {
+      const code = String(error?.code || '');
+      const msg = String(error?.message || '');
       console.warn(`[admin-report] traffic analysis downgraded: ${code || 'UNKNOWN'} ${msg}`);
       return emptyTrafficPayload(dateFrom, dateTo);
     }
@@ -1236,8 +1236,6 @@ module.exports = {
   deleteOperatingExpense,
   exportByType,
 };
-
-
 
 
 

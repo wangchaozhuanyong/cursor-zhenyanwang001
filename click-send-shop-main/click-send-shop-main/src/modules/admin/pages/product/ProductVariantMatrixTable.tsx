@@ -1,8 +1,8 @@
 import { Loader2, Trash2, Upload } from "lucide-react";
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
-import Tx from "@/components/Tx";
-import { THEME_HOVER_TEXT_DANGER, THEME_TEXT_DANGER } from "@/theme/colors";
+import { Tx } from "@/components/admin/AdminText";
+import { THEME_HOVER_TEXT_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminThClassName } from "@/utils/adminTableClasses";
 import { DEFAULT_VARIANT_TITLE } from "@/utils/productFormVariantUtils";
 import type { ProductVariantMatrixFormSlice } from "@/modules/admin/pages/product/productFormTypes";

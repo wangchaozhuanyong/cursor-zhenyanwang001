@@ -121,6 +121,7 @@ export default function AdminProductForm() {
   const [uploadingVariantImageIndex, setUploadingVariantImageIndex] = useState<number | null>(null);
   const [variantUploadProgress, setVariantUploadProgress] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [showDefaultSkuAdvanced, setShowDefaultSkuAdvanced] = useState(false);
   const [form, setForm] = useState({
     name: "",
     price: "",
@@ -542,6 +543,7 @@ export default function AdminProductForm() {
         is_default: v.is_default,
         spec_value_ids: v.spec_value_ids ?? [],
       }));
+      const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
       const defIdx = variantsPayload.findIndex((x) => x.is_default);
       if (defIdx >= 0) {
         variantsPayload[defIdx] = {
@@ -549,7 +551,7 @@ export default function AdminProductForm() {
           price: mainPrice,
           original_price: form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
           cost_price: form.cost_price === "" || !Number.isFinite(costNum) ? variantsPayload[defIdx].cost_price : costNum,
-          stock: mainStock,
+          stock: isSingleDefaultSku ? mainStock : variantsPayload[defIdx].stock,
           stock_warning_threshold: mainStockWarningThreshold,
           stock_lower_limit: mainStockLowerLimit,
           stock_upper_limit: mainStockUpperLimit,
@@ -630,6 +632,21 @@ export default function AdminProductForm() {
   };
 
   const categoryOptions = flattenCategories(categories);
+  const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
+  const enabledStockTotal = form.variants.reduce(
+    (sum, row) => sum + (row.enabled === false ? 0 : Number(row.stock || 0)),
+    0,
+  );
+
+  const updateDefaultVariantField = (field: keyof AdminVariantForm, value: string) => {
+    setForm((f) => {
+      const defaultIdx = f.variants.findIndex((variant) => variant.is_default);
+      if (defaultIdx < 0) return { ...f, [field]: value };
+      const variants = [...f.variants];
+      variants[defaultIdx] = { ...variants[defaultIdx], [field]: value };
+      return { ...f, [field]: value, variants };
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -821,7 +838,7 @@ export default function AdminProductForm() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>默认展示售价 (RM)</Tx></label>
-                <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input value={form.price} onChange={(e) => updateDefaultVariantField("price", e.target.value)} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>保存时与默认 SKU 售价保持一致；多规格商品以前台默认 SKU 作为展示价。</Tx>} />
                 </div>
@@ -838,14 +855,49 @@ export default function AdminProductForm() {
                   });
                 }} placeholder={tText("留空则不展示")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
                 <div className="mt-1 flex justify-end">
-                  <AdminFieldHint text={<Tx>仅当大于售价时，前台商品卡/详情页才会以删除线显示。</Tx>} />
+                  <AdminFieldHint
+                    text={
+                      <Tx>
+                        与下方 SKU「划线原价」为同一字段（默认 SKU 双向同步）。须大于售价时，前台才显示删除线；不是成本价。
+                      </Tx>
+                    }
+                  />
                 </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>默认 SKU 初始库存</Tx></label>
-                <input type="number" min={0} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input
+                  type="number"
+                  min={0}
+                  value={isSingleDefaultSku ? form.stock : String(enabledStockTotal)}
+                  onChange={(e) => updateDefaultVariantField("stock", e.target.value)}
+                  disabled={!isSingleDefaultSku}
+                  placeholder="0"
+                  className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-70"
+                />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</Tx>} />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>成本价 (RM)</Tx></label>
+                <input value={form.cost_price} onChange={(e) => updateDefaultVariantField("cost_price", e.target.value)} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <div className="mt-1 flex justify-end">
+                  <AdminFieldHint text={<Tx>成本价只用于后台毛利核算，保存时同步默认 SKU。</Tx>} />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>库存下限</Tx></label>
+                <input type="number" min={0} value={form.stock_lower_limit} onChange={(e) => updateDefaultVariantField("stock_lower_limit", e.target.value)} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <div className="mt-1 flex justify-end">
+                  <AdminFieldHint text={<Tx>下限用于触发补货提醒，保存时同步默认 SKU。</Tx>} />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>库存上限</Tx></label>
+                <input type="number" min={0} value={form.stock_upper_limit} onChange={(e) => updateDefaultVariantField("stock_upper_limit", e.target.value)} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <div className="mt-1 flex justify-end">
+                  <AdminFieldHint text={<Tx>上限是建议补到的目标库存，保存时同步默认 SKU。</Tx>} />
                 </div>
               </div>
               <div>
@@ -885,31 +937,33 @@ export default function AdminProductForm() {
               <h3 className="text-sm font-semibold text-foreground">
                 {form.spec_groups.length === 0 && form.variants.length === 1 ? <Tx>默认 SKU 设置</Tx> : <Tx>规格 / SKU</Tx>}
               </h3>
-              <button
-                type="button"
-                onClick={() =>
-                  setForm((f) => ({
-                    ...f,
-                    variants: [
-                      ...f.variants,
-                      {
-                        title: "",
-                        sku_code: "",
-                        price: f.price || "0",
-                        stock: f.stock || "0",
-                        stock_warning_threshold: f.stock_warning_threshold || "5",
-                        stock_lower_limit: f.stock_lower_limit || "",
-                        stock_upper_limit: f.stock_upper_limit || "",
-                        sort_order: f.variants.length,
-                        is_default: false,
-                      },
-                    ],
-                  }))
-                }
-                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
-              >
-                <Plus size={14} /><Tx> 添加 SKU 行
-              </Tx></button>
+              {!isSingleDefaultSku ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      variants: [
+                        ...f.variants,
+                        {
+                          title: "",
+                          sku_code: "",
+                          price: f.price || "0",
+                          stock: f.stock || "0",
+                          stock_warning_threshold: f.stock_warning_threshold || "5",
+                          stock_lower_limit: f.stock_lower_limit || "",
+                          stock_upper_limit: f.stock_upper_limit || "",
+                          sort_order: f.variants.length,
+                          is_default: false,
+                        },
+                      ],
+                    }))
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+                >
+                  <Plus size={14} /><Tx> 添加 SKU 行
+                </Tx></button>
+              ) : null}
             </div>
             <div className="flex justify-end">
               <AdminFieldHint
@@ -920,15 +974,35 @@ export default function AdminProductForm() {
               <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 text-xs leading-5 text-muted-foreground">
                 <p className="font-medium text-foreground"><Tx>当前商品未启用多规格，系统将使用“默认规格 / 默认 SKU”管理库存、成本、条码和预警。</Tx></p>
                 <p className="mt-1"><Tx>如果商品有颜色、尺码、口味等差异，可以转为矩阵规格，为每个规格组合单独维护 SKU。</Tx></p>
+                <button
+                  type="button"
+                  onClick={() => setShowDefaultSkuAdvanced((v) => !v)}
+                  className="mt-3 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground"
+                >
+                  {showDefaultSkuAdvanced ? tText("收起默认 SKU 高级设置") : tText("展开默认 SKU 高级设置")}
+                </button>
+              </div>
+            ) : null}
+            {form.spec_groups.length > 0 || form.variants.length > 1 ? (
+              <div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs leading-5 text-muted-foreground">
+                <p className="font-medium text-foreground"><Tx>多规格商品以 SKU 表格维护售价、划线原价与库存。</Tx></p>
+                <p className="mt-1 text-muted-foreground">
+                  <Tx>基本信息只显示默认 SKU 快照和商品总库存；修改默认 SKU 后会同步到这里。</Tx>
+                </p>
+                <p className="mt-1">
+                  {tText("默认展示售价")}：RM {form.price || "0"}；{" "}
+                  {tText("划线原价")}：{form.original_price ? `RM ${form.original_price}` : "-"}；{" "}
+                  {tText("商品总库存")}：{enabledStockTotal}
+                </p>
               </div>
             ) : null}
             <div className="space-y-3 rounded-lg border border-border bg-background/40 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold text-foreground"><Tx>规格矩阵</Tx></p>
+                    <p className="text-xs font-semibold text-foreground"><Tx>规格设置</Tx></p>
                     <AdminFieldHint
-                      text={`最多 ${MAX_SPEC_GROUPS} 组，每组 ${MAX_SPEC_VALUES_PER_GROUP} 个值，自动生成 SKU 组合。`}
+                      text={`最多 ${MAX_SPEC_GROUPS} 个规格组，每组最多 ${MAX_SPEC_VALUES_PER_GROUP} 个规格值。规格值会生成 SKU 组合。`}
                     />
                   </div>
                 </div>
@@ -1021,6 +1095,7 @@ export default function AdminProductForm() {
                 </div>
               ))}
             </div>
+            {form.spec_groups.length > 0 || form.variants.length > 1 || showDefaultSkuAdvanced ? (
             <AdminNativeTable tableClassName="min-w-[520px] text-xs">
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
@@ -1078,7 +1153,7 @@ export default function AdminProductForm() {
                               return { ...f, variants: nv };
                             });
                           }}
-                          placeholder={v.is_default && form.spec_groups.length === 0 ? DEFAULT_VARIANT_TITLE : tText("如：标准版")}
+                          placeholder={v.is_default && form.spec_groups.length === 0 ? DEFAULT_VARIANT_TITLE : tText("如：标准款")}
                           className="w-full min-w-[96px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
                         />
                       </td>
@@ -1150,9 +1225,12 @@ export default function AdminProductForm() {
                       <td className="py-2 pr-2">
                         <input
                           type="number"
-                          value={v.original_price || ""}
+                          min={0}
+                          value={v.is_default ? form.original_price : v.original_price || ""}
+                          placeholder={tText("可选")}
                           onChange={(e) => {
                             const t = e.target.value;
+                            if (v.is_default) setForm((f) => ({ ...f, original_price: t }));
                             setForm((f) => {
                               const nv = [...f.variants];
                               nv[idx] = { ...nv[idx], original_price: t };
@@ -1328,6 +1406,7 @@ export default function AdminProductForm() {
                   ))}
                 </tbody>
             </AdminNativeTable>
+            ) : null}
           </div>
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-3">

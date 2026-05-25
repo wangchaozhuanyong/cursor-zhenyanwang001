@@ -2,9 +2,8 @@ import Pagination from "@/components/admin/Pagination";
 import { Tx } from "@/components/admin/AdminText";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import { ADMIN_TABLE_ALIGN_LEFT_CLASS } from "@/utils/adminTableClasses";
-import { INVENTORY_PAGE_SIZE } from "@/modules/admin/pages/product/inventory/inventoryConstants";
+import { INVENTORY_PAGE_SIZE, INVENTORY_SKU_HEADS } from "@/modules/admin/pages/product/inventory/inventoryConstants";
 import {
-  INVENTORY_SKU_HEADS,
   INVENTORY_SKU_TABLE_CLASS,
   inventoryInlineText,
   inventorySkuTd,

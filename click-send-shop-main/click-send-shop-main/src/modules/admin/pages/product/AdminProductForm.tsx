@@ -485,7 +485,6 @@ export default function AdminProductForm() {
         is_default: v.is_default,
         spec_value_ids: v.spec_value_ids ?? [],
       }));
-      const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
       const defIdx = variantsPayload.findIndex((x) => x.is_default);
       if (defIdx >= 0) {
         variantsPayload[defIdx] = {

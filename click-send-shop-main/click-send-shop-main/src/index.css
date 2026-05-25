@@ -979,6 +979,31 @@ html[data-app-scope="admin"] .admin-tech-path {
     overflow-wrap: normal;
   }
 
+  /* 库存中心 SKU 表：强制单行，禁止单元格内叠行 */
+  [data-admin-shell] .admin-table-scope table.admin-inventory-sku-table tbody td {
+    height: 2.25rem;
+    max-height: 2.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-inventory-sku-table tbody td > * {
+    white-space: nowrap;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-inventory-sku-table tbody td .space-y-0\.5 {
+    display: flex;
+    flex-direction: row;
+    gap: 0.375rem;
+    align-items: center;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-inventory-sku-table tbody td .space-y-0\.5 > * {
+    display: inline;
+    white-space: nowrap;
+  }
+
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td:has(button),
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td:has(a),
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) th:has(button),

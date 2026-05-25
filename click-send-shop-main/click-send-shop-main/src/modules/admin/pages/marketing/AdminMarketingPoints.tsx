@@ -10,7 +10,17 @@ import {
 } from "@/components/admin/AdminTableMobileCard";
 import { ADMIN_TABLE_NOWRAP_CLASS, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import { Tx } from "@/components/admin/AdminText";
-import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminFieldHint, { AdminPageTitle, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
+import {
+  POINTS_ADJUST_FIELD_HINTS,
+  POINTS_ADVANCED_FIELD_HINTS,
+  POINTS_OVERVIEW_STAT_HINTS,
+  POINTS_PRODUCT_RULE_HINTS,
+  POINTS_REDEEM_FIELD_HINTS,
+  POINTS_RULE_FIELD_HINTS,
+  POINTS_SECTION_HINTS,
+  POINTS_TAB_HINTS,
+} from "@/modules/admin/pages/marketing/adminPointsHints";
 import AdminPointsRecords from "@/modules/admin/pages/user/AdminPointsRecords";
 import AdminPointsGifts from "@/modules/admin/pages/marketing/AdminPointsGifts";
 import {
@@ -29,9 +39,11 @@ import {
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAdminT } from "@/hooks/useAdminT";
+import { cn } from "@/lib/utils";
 
-const inputCls = "rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground";
-const labelCls = "text-xs font-medium text-muted-foreground";
+const inputCls =
+  "min-h-9 w-full min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground";
+const labelCls = "shrink-0 text-sm font-medium text-foreground";
 
 const defaultRule: ProductPointRule = {
   name: "",
@@ -48,8 +60,89 @@ const defaultRule: ProductPointRule = {
   enabled: 1,
 };
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return <label className="grid gap-1"><span className={labelCls}><Tx>{label}</Tx></span>{children}</label>;
+/** 下拉/数字：标签与控件同一行，避免 checkbox 列里大片空白 */
+function InlineField({
+  label,
+  hint,
+  children,
+  className,
+}: {
+  label: string;
+  hint?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <label
+      className={cn(
+        "grid min-w-0 items-center gap-x-3 gap-y-1 sm:grid-cols-[minmax(6.5rem,9.5rem)_minmax(0,1fr)]",
+        className,
+      )}
+    >
+      <span className={cn(labelCls, "flex items-center gap-1.5")}>
+        <Tx>{label}</Tx>
+        {hint ? <AdminFieldHint text={hint} /> : null}
+      </span>
+      <div className="min-w-0">{children}</div>
+    </label>
+  );
+}
+
+function ToggleRow({
+  label,
+  hint,
+  checked,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  hint?: ReactNode;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex min-h-10 cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-secondary/40 px-3 py-2",
+        disabled && "cursor-not-allowed opacity-50",
+      )}
+    >
+      <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-medium leading-snug text-foreground">
+        <Tx>{label}</Tx>
+        {hint ? <AdminFieldHint text={hint} /> : null}
+      </span>
+      <input
+        type="checkbox"
+        className="h-4 w-4 shrink-0 accent-primary"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </label>
+  );
+}
+
+function SettingsSection({
+  title,
+  sectionHint,
+  hint,
+  children,
+}: {
+  title: string;
+  sectionHint?: ReactNode;
+  hint?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <AdminSectionTitle title={<Tx>{title}</Tx>} hint={sectionHint ?? POINTS_SECTION_HINTS[title]} />
+        {hint ? <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{hint}</p> : null}
+      </div>
+      {children}
+    </section>
+  );
 }
 
 export default function AdminMarketingPoints() {
@@ -218,55 +311,156 @@ export default function AdminMarketingPoints() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {tabs.map((t) => <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 text-sm ${tab === t ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tText(t)}</button>)}
+        {tabs.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm",
+              tab === t ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground",
+            )}
+          >
+            {tText(t)}
+            {POINTS_TAB_HINTS[t] ? <AdminFieldHint text={POINTS_TAB_HINTS[t]} /> : null}
+          </button>
+        ))}
       </div>
 
       {tab === "积分总览" ? (
         <div className="grid gap-3 md:grid-cols-4">
           {[["累计发放积分", stats.totalEarned], ["累计使用/回滚积分", stats.totalDeducted], ["积分流水数", stats.totalRecords], ["积分活跃用户", stats.activeUsers]].map(([k, v]) => (
-            <div key={k} className="rounded-xl border border-border bg-card p-4"><p className="text-xs text-muted-foreground"><Tx>{String(k)}</Tx></p><p className="mt-2 text-2xl font-semibold text-foreground">{String(v)}</p></div>
+            <div key={k} className="rounded-xl border border-border bg-card p-4">
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Tx>{String(k)}</Tx>
+                {POINTS_OVERVIEW_STAT_HINTS[String(k)] ? (
+                  <AdminFieldHint text={POINTS_OVERVIEW_STAT_HINTS[String(k)]} />
+                ) : null}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{String(v)}</p>
+            </div>
           ))}
         </div>
       ) : null}
 
       {tab === "积分规则" ? (
-        <div className="grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-3">
-          <Field label={tText("用户端显示积分入口")}><input type="checkbox" checked={!!settings.display_enabled} onChange={(e) => setSetting("display_enabled", e.target.checked)} /></Field>
-          <Field label={tText("开启消费积分")}><input type="checkbox" checked={!!settings.earn_enabled} onChange={(e) => setSetting("earn_enabled", e.target.checked)} /></Field>
-          <Field label={tText("开启积分抵扣")}><input type="checkbox" checked={!!settings.redeem_enabled} onChange={(e) => setSetting("redeem_enabled", e.target.checked)} /></Field>
-          <Field label={tText("积分计算方式")}><select className={inputCls} value={String(settings.earn_mode || "amount_plus_product_rule")} onChange={(e) => setSetting("earn_mode", e.target.value)}><option value="amount"><Tx>按金额积分</Tx></option><option value="product_rule"><Tx>商品/分类规则积分</Tx></option><option value="amount_plus_product_rule"><Tx>金额规则 + 商品特殊规则</Tx></option></select></Field>
-          <Field label={tText("每多少 RM")}><input className={inputCls} type="number" step="0.01" value={String(settings.earn_currency_unit ?? 1)} onChange={(e) => setSetting("earn_currency_unit", e.target.value)} /></Field>
-          <Field label={tText("获得多少积分")}><input className={inputCls} type="number" value={String(settings.earn_points_unit ?? 1)} onChange={(e) => setSetting("earn_points_unit", e.target.value)} /></Field>
-          <Field label={tText("取整方式")}><select className={inputCls} value={String(settings.earn_rounding || "floor")} onChange={(e) => setSetting("earn_rounding", e.target.value)}><option value="floor"><Tx>向下取整</Tx></option><option value="round"><Tx>四舍五入</Tx></option><option value="ceil"><Tx>向上取整</Tx></option></select></Field>
-          <Field label={tText("优惠后金额积分")}><input type="checkbox" checked={!!settings.earn_after_discount} onChange={(e) => setSetting("earn_after_discount", e.target.checked)} /></Field>
-          <Field label={tText("积分抵扣后再计分")}><input type="checkbox" checked={!!settings.earn_after_points_redeem} onChange={(e) => setSetting("earn_after_points_redeem", e.target.checked)} /></Field>
-          <Field label={tText("发放时机")}>
-            <select className={inputCls} value={String(settings.settle_timing || "order_completed")} onChange={(e) => setSetting("settle_timing", e.target.value)}>
-              <option value="payment_success"><Tx>支付成功后</Tx></option>
-              <option value="order_shipped"><Tx>发货后</Tx></option>
-              <option value="order_completed"><Tx>订单完成后</Tx></option>
-            </select>
-          </Field>
-          <button type="button" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" /><Tx>保存积分规则</Tx></button>
+        <div className="space-y-6 rounded-xl border border-border bg-card p-4 sm:p-5">
+          <SettingsSection title={tText("功能开关")}>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <ToggleRow
+                label={tText("用户端显示积分入口")}
+                hint={POINTS_RULE_FIELD_HINTS.display_enabled}
+                checked={!!settings.display_enabled}
+                onChange={(v) => setSetting("display_enabled", v)}
+              />
+              <ToggleRow
+                label={tText("开启消费积分")}
+                hint={POINTS_RULE_FIELD_HINTS.earn_enabled}
+                checked={!!settings.earn_enabled}
+                onChange={(v) => setSetting("earn_enabled", v)}
+              />
+              <ToggleRow
+                label={tText("开启积分抵扣")}
+                hint={POINTS_RULE_FIELD_HINTS.redeem_enabled}
+                checked={!!settings.redeem_enabled}
+                onChange={(v) => setSetting("redeem_enabled", v)}
+              />
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            title={tText("消费积分规则")}
+            hint={<Tx>按金额与商品规则计算订单积分；关闭「开启消费积分」后前台不再发放消费积分。</Tx>}
+          >
+            <fieldset
+              disabled={!settings.earn_enabled}
+              className={cn("grid min-w-0 gap-3 border-0 p-0 lg:grid-cols-2", !settings.earn_enabled && "opacity-50")}
+            >
+              <InlineField label={tText("积分计算方式")} hint={POINTS_RULE_FIELD_HINTS.earn_mode}>
+                <select className={inputCls} value={String(settings.earn_mode || "amount_plus_product_rule")} onChange={(e) => setSetting("earn_mode", e.target.value)}>
+                  <option value="amount"><Tx>按金额积分</Tx></option>
+                  <option value="product_rule"><Tx>商品/分类规则积分</Tx></option>
+                  <option value="amount_plus_product_rule"><Tx>金额规则 + 商品特殊规则</Tx></option>
+                </select>
+              </InlineField>
+              <InlineField label={tText("发放时机")} hint={POINTS_RULE_FIELD_HINTS.settle_timing}>
+                <select className={inputCls} value={String(settings.settle_timing || "order_completed")} onChange={(e) => setSetting("settle_timing", e.target.value)}>
+                  <option value="payment_success"><Tx>支付成功后</Tx></option>
+                  <option value="order_shipped"><Tx>发货后</Tx></option>
+                  <option value="order_completed"><Tx>订单完成后</Tx></option>
+                </select>
+              </InlineField>
+              <InlineField label={tText("每多少 RM")} hint={POINTS_RULE_FIELD_HINTS.earn_currency_unit}>
+                <input className={inputCls} type="number" step="0.01" min={0} value={String(settings.earn_currency_unit ?? 1)} onChange={(e) => setSetting("earn_currency_unit", e.target.value)} />
+              </InlineField>
+              <InlineField label={tText("获得多少积分")} hint={POINTS_RULE_FIELD_HINTS.earn_points_unit}>
+                <input className={inputCls} type="number" min={0} value={String(settings.earn_points_unit ?? 1)} onChange={(e) => setSetting("earn_points_unit", e.target.value)} />
+              </InlineField>
+              <InlineField label={tText("取整方式")} hint={POINTS_RULE_FIELD_HINTS.earn_rounding}>
+                <select className={inputCls} value={String(settings.earn_rounding || "floor")} onChange={(e) => setSetting("earn_rounding", e.target.value)}>
+                  <option value="floor"><Tx>向下取整</Tx></option>
+                  <option value="round"><Tx>四舍五入</Tx></option>
+                  <option value="ceil"><Tx>向上取整</Tx></option>
+                </select>
+              </InlineField>
+            </fieldset>
+            <fieldset
+              disabled={!settings.earn_enabled}
+              className={cn("mt-3 grid gap-2 border-0 p-0 sm:grid-cols-2", !settings.earn_enabled && "opacity-50")}
+            >
+              <ToggleRow
+                label={tText("优惠后金额积分")}
+                hint={POINTS_RULE_FIELD_HINTS.earn_after_discount}
+                checked={!!settings.earn_after_discount}
+                onChange={(v) => setSetting("earn_after_discount", v)}
+              />
+              <ToggleRow
+                label={tText("积分抵扣后再计分")}
+                hint={POINTS_RULE_FIELD_HINTS.earn_after_points_redeem}
+                checked={!!settings.earn_after_points_redeem}
+                onChange={(v) => setSetting("earn_after_points_redeem", v)}
+              />
+            </fieldset>
+          </SettingsSection>
+
+          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={() => saveSettingsMutation.mutate()}
+              disabled={saveSettingsMutation.isPending}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
+            >
+              <Save className="h-4 w-4" />
+              <Tx>保存积分规则</Tx>
+            </button>
+          </div>
         </div>
       ) : null}
 
       {tab === "商品积分规则" ? (
         <div className="space-y-4">
-          <div className="grid gap-3 rounded-xl border border-border bg-card p-4 md:grid-cols-4">
-            <Field label={tText("规则名称")}><input className={inputCls} value={ruleForm.name} onChange={(e) => setRuleForm((s) => ({ ...s, name: e.target.value }))} /></Field>
-            <Field label={tText("适用范围")}><select className={inputCls} value={ruleForm.scope_type} onChange={(e) => setRuleForm((s) => ({ ...s, scope_type: e.target.value }))}><option value="all"><Tx>全部商品</Tx></option><option value="category"><Tx>指定分类</Tx></option><option value="product"><Tx>指定商品</Tx></option><option value="tag"><Tx>指定标签</Tx></option></select></Field>
-            <Field label={tText("范围 ID")}><input className={inputCls} value={String(ruleForm.scope_id || "")} onChange={(e) => setRuleForm((s) => ({ ...s, scope_id: e.target.value }))} /></Field>
-            <Field label={tText("积分模式")}><select className={inputCls} value={ruleForm.earn_mode} onChange={(e) => setRuleForm((s) => ({ ...s, earn_mode: e.target.value }))}><option value="inherit"><Tx>继承全局</Tx></option><option value="no_points"><Tx>不积分</Tx></option><option value="fixed_per_item"><Tx>每件固定积分</Tx></option><option value="fixed_per_order"><Tx>每单固定积分</Tx></option><option value="amount_percent"><Tx>实付金额百分比</Tx></option><option value="price_percent"><Tx>售价百分比</Tx></option><option value="multiplier"><Tx>全局规则倍率</Tx></option></select></Field>
-            <Field label={tText("固定积分")}><input className={inputCls} type="number" value={String(ruleForm.fixed_points || 0)} onChange={(e) => setRuleForm((s) => ({ ...s, fixed_points: Number(e.target.value) }))} /></Field>
-            <Field label={tText("百分比")}><input className={inputCls} type="number" value={String(ruleForm.points_percent || 0)} onChange={(e) => setRuleForm((s) => ({ ...s, points_percent: Number(e.target.value) }))} /></Field>
-            <Field label={tText("倍率百分比")}><input className={inputCls} type="number" value={String(ruleForm.multiplier_percent || 100)} onChange={(e) => setRuleForm((s) => ({ ...s, multiplier_percent: Number(e.target.value) }))} /></Field>
-            <Field label={tText("优先级")}><input className={inputCls} type="number" value={String(ruleForm.priority || 100)} onChange={(e) => setRuleForm((s) => ({ ...s, priority: Number(e.target.value) }))} /></Field>
-            <Field label={tText("允许获得积分")}><input type="checkbox" checked={!!ruleForm.earn_enabled} onChange={(e) => setRuleForm((s) => ({ ...s, earn_enabled: e.target.checked }))} /></Field>
-            <Field label={tText("允许积分抵扣")}><input type="checkbox" checked={!!ruleForm.redeem_enabled} onChange={(e) => setRuleForm((s) => ({ ...s, redeem_enabled: e.target.checked }))} /></Field>
-            <Field label={tText("最多抵扣比例")}><input className={inputCls} type="number" value={String(ruleForm.max_redeem_percent ?? "")} onChange={(e) => setRuleForm((s) => ({ ...s, max_redeem_percent: e.target.value === "" ? null : Number(e.target.value) }))} /></Field>
-            <Field label={tText("启用")}><input type="checkbox" checked={!!ruleForm.enabled} onChange={(e) => setRuleForm((s) => ({ ...s, enabled: e.target.checked }))} /></Field>
-            <button type="button" onClick={() => saveRuleMutation.mutate()} disabled={saveRuleMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-4"><Plus className="h-4 w-4" />{ruleForm.id ? "保存规则" : "新增规则"}</button>
+          <div className="space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+            <AdminSectionTitle
+              title={<Tx>新增 / 编辑商品积分规则</Tx>}
+              hint={POINTS_TAB_HINTS["商品积分规则"]}
+            />
+            <div className="grid gap-3 lg:grid-cols-2">
+              <InlineField label={tText("规则名称")} hint={POINTS_PRODUCT_RULE_HINTS.name}><input className={inputCls} value={ruleForm.name} onChange={(e) => setRuleForm((s) => ({ ...s, name: e.target.value }))} /></InlineField>
+              <InlineField label={tText("适用范围")} hint={POINTS_PRODUCT_RULE_HINTS.scope_type}><select className={inputCls} value={ruleForm.scope_type} onChange={(e) => setRuleForm((s) => ({ ...s, scope_type: e.target.value }))}><option value="all"><Tx>全部商品</Tx></option><option value="category"><Tx>指定分类</Tx></option><option value="product"><Tx>指定商品</Tx></option><option value="tag"><Tx>指定标签</Tx></option></select></InlineField>
+              <InlineField label={tText("范围 ID")} hint={POINTS_PRODUCT_RULE_HINTS.scope_id}><input className={inputCls} value={String(ruleForm.scope_id || "")} onChange={(e) => setRuleForm((s) => ({ ...s, scope_id: e.target.value }))} /></InlineField>
+              <InlineField label={tText("积分模式")} hint={POINTS_PRODUCT_RULE_HINTS.earn_mode}><select className={inputCls} value={ruleForm.earn_mode} onChange={(e) => setRuleForm((s) => ({ ...s, earn_mode: e.target.value }))}><option value="inherit"><Tx>继承全局</Tx></option><option value="no_points"><Tx>不积分</Tx></option><option value="fixed_per_item"><Tx>每件固定积分</Tx></option><option value="fixed_per_order"><Tx>每单固定积分</Tx></option><option value="amount_percent"><Tx>实付金额百分比</Tx></option><option value="price_percent"><Tx>售价百分比</Tx></option><option value="multiplier"><Tx>全局规则倍率</Tx></option></select></InlineField>
+              <InlineField label={tText("固定积分")} hint={POINTS_PRODUCT_RULE_HINTS.fixed_points}><input className={inputCls} type="number" value={String(ruleForm.fixed_points || 0)} onChange={(e) => setRuleForm((s) => ({ ...s, fixed_points: Number(e.target.value) }))} /></InlineField>
+              <InlineField label={tText("百分比")} hint={POINTS_PRODUCT_RULE_HINTS.points_percent}><input className={inputCls} type="number" value={String(ruleForm.points_percent || 0)} onChange={(e) => setRuleForm((s) => ({ ...s, points_percent: Number(e.target.value) }))} /></InlineField>
+              <InlineField label={tText("倍率百分比")} hint={POINTS_PRODUCT_RULE_HINTS.multiplier_percent}><input className={inputCls} type="number" value={String(ruleForm.multiplier_percent || 100)} onChange={(e) => setRuleForm((s) => ({ ...s, multiplier_percent: Number(e.target.value) }))} /></InlineField>
+              <InlineField label={tText("优先级")} hint={POINTS_PRODUCT_RULE_HINTS.priority}><input className={inputCls} type="number" value={String(ruleForm.priority || 100)} onChange={(e) => setRuleForm((s) => ({ ...s, priority: Number(e.target.value) }))} /></InlineField>
+              <InlineField label={tText("最多抵扣比例")} hint={POINTS_PRODUCT_RULE_HINTS.max_redeem_percent}><input className={inputCls} type="number" value={String(ruleForm.max_redeem_percent ?? "")} onChange={(e) => setRuleForm((s) => ({ ...s, max_redeem_percent: e.target.value === "" ? null : Number(e.target.value) }))} /></InlineField>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <ToggleRow label={tText("允许获得积分")} hint={POINTS_PRODUCT_RULE_HINTS.earn_enabled} checked={!!ruleForm.earn_enabled} onChange={(v) => setRuleForm((s) => ({ ...s, earn_enabled: v }))} />
+              <ToggleRow label={tText("允许积分抵扣")} hint={POINTS_PRODUCT_RULE_HINTS.redeem_enabled} checked={!!ruleForm.redeem_enabled} onChange={(v) => setRuleForm((s) => ({ ...s, redeem_enabled: v }))} />
+              <ToggleRow label={tText("启用")} hint={POINTS_PRODUCT_RULE_HINTS.enabled} checked={!!ruleForm.enabled} onChange={(v) => setRuleForm((s) => ({ ...s, enabled: v }))} />
+            </div>
+            <button type="button" onClick={() => saveRuleMutation.mutate()} disabled={saveRuleMutation.isPending} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"><Plus className="h-4 w-4" />{ruleForm.id ? "保存规则" : "新增规则"}</button>
           </div>
           <AnimatedTable
             embedded
@@ -311,16 +505,53 @@ export default function AdminMarketingPoints() {
       ) : null}
 
       {tab === "积分抵扣" ? (
-        <div className="grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-3">
-          <Field label={tText("1 积分等于 RM")}><input className={inputCls} type="number" step="0.0001" value={String(settings.point_value_myr ?? 0.01)} onChange={(e) => setSetting("point_value_myr", e.target.value)} /></Field>
-          <Field label={tText("多少积分抵扣 RM1")}><input className={inputCls} type="number" value={String(settings.points_per_currency ?? 100)} onChange={(e) => setSetting("points_per_currency", e.target.value)} /></Field>
-          <Field label={tText("最低使用积分")}><input className={inputCls} type="number" value={String(settings.min_redeem_points ?? 10)} onChange={(e) => setSetting("min_redeem_points", e.target.value)} /></Field>
-          <Field label={tText("使用积分步长")}><input className={inputCls} type="number" value={String(settings.redeem_step ?? 1)} onChange={(e) => setSetting("redeem_step", e.target.value)} /></Field>
-          <Field label={tText("单笔最多抵扣百分比")}><input className={inputCls} type="number" value={String(settings.max_redeem_percent ?? 30)} onChange={(e) => setSetting("max_redeem_percent", e.target.value)} /></Field>
-          <Field label={tText("单笔最多抵扣金额")}><input className={inputCls} type="number" value={String(settings.max_redeem_amount ?? 0)} onChange={(e) => setSetting("max_redeem_amount", e.target.value)} /></Field>
-          <Field label={tText("最低订单金额")}><input className={inputCls} type="number" value={String(settings.min_order_amount ?? 0)} onChange={(e) => setSetting("min_order_amount", e.target.value)} /></Field>
-          <Field label={tText("抵扣范围")}><select className={inputCls} value={String(settings.redeem_scope || "exclude_restricted")} onChange={(e) => setSetting("redeem_scope", e.target.value)}><option value="all"><Tx>全部商品</Tx></option><option value="product_rule"><Tx>按商品/分类规则</Tx></option><option value="exclude_restricted"><Tx>排除受监管商品</Tx></option></select></Field>
-          <button type="button" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" /><Tx>保存抵扣设置</Tx></button>
+        <div className="space-y-6 rounded-xl border border-border bg-card p-4 sm:p-5">
+          <SettingsSection
+            title={tText("抵扣比例与门槛")}
+            hint={<Tx>与「积分规则」页顶部的「开启积分抵扣」开关配合生效。</Tx>}
+          >
+            <fieldset disabled={!settings.redeem_enabled} className={cn("grid min-w-0 gap-3 border-0 p-0 lg:grid-cols-2", !settings.redeem_enabled && "opacity-50")}>
+              <InlineField label={tText("1 积分等于 RM")} hint={POINTS_REDEEM_FIELD_HINTS.point_value_myr}>
+                <input className={inputCls} type="number" step="0.0001" min={0} value={String(settings.point_value_myr ?? 0.01)} onChange={(e) => setSetting("point_value_myr", e.target.value)} />
+              </InlineField>
+              <InlineField label={tText("多少积分抵扣 RM1")} hint={POINTS_REDEEM_FIELD_HINTS.points_per_currency}>
+                <input className={inputCls} type="number" min={0} value={String(settings.points_per_currency ?? 100)} onChange={(e) => setSetting("points_per_currency", e.target.value)} />
+              </InlineField>
+              <InlineField label={tText("最低使用积分")} hint={POINTS_REDEEM_FIELD_HINTS.min_redeem_points}>
+                <input className={inputCls} type="number" min={0} value={String(settings.min_redeem_points ?? 10)} onChange={(e) => setSetting("min_redeem_points", e.target.value)} />
+              </InlineField>
+              <InlineField label={tText("使用积分步长")} hint={POINTS_REDEEM_FIELD_HINTS.redeem_step}>
+                <input className={inputCls} type="number" min={1} value={String(settings.redeem_step ?? 1)} onChange={(e) => setSetting("redeem_step", e.target.value)} />
+              </InlineField>
+              <InlineField label={tText("单笔最多抵扣百分比")} hint={POINTS_REDEEM_FIELD_HINTS.max_redeem_percent}>
+                <input className={inputCls} type="number" min={0} max={100} value={String(settings.max_redeem_percent ?? 30)} onChange={(e) => setSetting("max_redeem_percent", e.target.value)} />
+              </InlineField>
+              <InlineField label={tText("单笔最多抵扣金额")} hint={POINTS_REDEEM_FIELD_HINTS.max_redeem_amount}>
+                <input className={inputCls} type="number" min={0} value={String(settings.max_redeem_amount ?? 0)} onChange={(e) => setSetting("max_redeem_amount", e.target.value)} />
+              </InlineField>
+              <InlineField label={tText("最低订单金额")} hint={POINTS_REDEEM_FIELD_HINTS.min_order_amount}>
+                <input className={inputCls} type="number" min={0} value={String(settings.min_order_amount ?? 0)} onChange={(e) => setSetting("min_order_amount", e.target.value)} />
+              </InlineField>
+              <InlineField label={tText("抵扣范围")} hint={POINTS_REDEEM_FIELD_HINTS.redeem_scope}>
+                <select className={inputCls} value={String(settings.redeem_scope || "exclude_restricted")} onChange={(e) => setSetting("redeem_scope", e.target.value)}>
+                  <option value="all"><Tx>全部商品</Tx></option>
+                  <option value="product_rule"><Tx>按商品/分类规则</Tx></option>
+                  <option value="exclude_restricted"><Tx>排除受监管商品</Tx></option>
+                </select>
+              </InlineField>
+            </fieldset>
+          </SettingsSection>
+          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={() => saveSettingsMutation.mutate()}
+              disabled={saveSettingsMutation.isPending}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
+            >
+              <Save className="h-4 w-4" />
+              <Tx>保存抵扣设置</Tx>
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -329,45 +560,77 @@ export default function AdminMarketingPoints() {
       {tab === "积分明细" ? <AdminPointsRecords /> : null}
 
       {tab === "手动调整" ? (
-        <div className="grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-3">
-          <Field label={tText("用户 ID")}><input className={inputCls} value={adjustForm.userId} onChange={(e) => setAdjustForm((s) => ({ ...s, userId: e.target.value }))} /></Field>
-          <Field label={tText("调整积分")}><input className={inputCls} type="number" value={adjustForm.points} onChange={(e) => setAdjustForm((s) => ({ ...s, points: e.target.value }))} /></Field>
-          <Field label={tText("原因")}><input className={inputCls} value={adjustForm.reason} onChange={(e) => setAdjustForm((s) => ({ ...s, reason: e.target.value }))} /></Field>
-          <button type="button" onClick={() => adjustMutation.mutate()} disabled={adjustMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" /><Tx>提交调整</Tx></button>
+        <div className="space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+          <AdminSectionTitle title={<Tx>手动调整用户积分</Tx>} hint={POINTS_TAB_HINTS["手动调整"]} />
+          <div className="grid gap-3 lg:grid-cols-2">
+            <InlineField label={tText("用户 ID")} hint={POINTS_ADJUST_FIELD_HINTS.userId}><input className={inputCls} value={adjustForm.userId} onChange={(e) => setAdjustForm((s) => ({ ...s, userId: e.target.value }))} /></InlineField>
+            <InlineField label={tText("调整积分")} hint={POINTS_ADJUST_FIELD_HINTS.points}><input className={inputCls} type="number" value={adjustForm.points} onChange={(e) => setAdjustForm((s) => ({ ...s, points: e.target.value }))} /></InlineField>
+            <InlineField label={tText("原因")} hint={POINTS_ADJUST_FIELD_HINTS.reason} className="lg:col-span-2"><input className={inputCls} value={adjustForm.reason} onChange={(e) => setAdjustForm((s) => ({ ...s, reason: e.target.value }))} /></InlineField>
+          </div>
+          <button type="button" onClick={() => adjustMutation.mutate()} disabled={adjustMutation.isPending} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"><Save className="h-4 w-4" /><Tx>提交调整</Tx></button>
         </div>
       ) : null}
 
       {tab === "高级设置" ? (
-        <div className="grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-3">
-          <Field label={tText("启用积分过期")}><input type="checkbox" checked={!!settings.expire_enabled} onChange={(e) => setSetting("expire_enabled", e.target.checked)} /></Field>
-          <Field label={tText("积分有效天数")}><input className={inputCls} type="number" min={1} value={String(settings.expire_days ?? 365)} onChange={(e) => setSetting("expire_days", e.target.value)} /></Field>
-          <Field label={tText("优惠券订单不积分")}><input type="checkbox" checked={!!settings.coupon_no_points} onChange={(e) => setSetting("coupon_no_points", e.target.checked)} /></Field>
-          <Field label={tText("促销商品不积分")}><input type="checkbox" checked={!!settings.promotion_no_points} onChange={(e) => setSetting("promotion_no_points", e.target.checked)} /></Field>
-          <Field label={tText("营销活动商品不积分")}><input type="checkbox" checked={!!settings.marketing_activity_no_points} onChange={(e) => setSetting("marketing_activity_no_points", e.target.checked)} /></Field>
-          <Field label={tText("会员价商品不积分")}><input type="checkbox" checked={!!settings.member_price_no_points} onChange={(e) => setSetting("member_price_no_points", e.target.checked)} /></Field>
-          <Field label={tText("允许与优惠券叠加抵扣")}><input type="checkbox" checked={settings.allow_with_coupon !== false && settings.allow_with_coupon !== 0} onChange={(e) => setSetting("allow_with_coupon", e.target.checked)} /></Field>
-          <Field label={tText("允许与返现余额叠加")}><input type="checkbox" checked={settings.allow_with_reward_cash !== false && settings.allow_with_reward_cash !== 0} onChange={(e) => setSetting("allow_with_reward_cash", e.target.checked)} /></Field>
-          <Field label={tText("允许积分为负数（后台调账）")}><input type="checkbox" checked={!!settings.allow_negative_points} onChange={(e) => setSetting("allow_negative_points", e.target.checked)} /></Field>
-          <Field label={tText("支付方式积分限制")}>
-            <select className={inputCls} value={String(settings.payment_points_mode || "all")} onChange={(e) => setSetting("payment_points_mode", e.target.value)}>
-              <option value="all"><Tx>全部支付方式</Tx></option>
-              <option value="disabled"><Tx>全部禁用</Tx></option>
-              <option value="include"><Tx>仅允许列表内</Tx></option>
-              <option value="exclude"><Tx>排除列表内</Tx></option>
-            </select>
-          </Field>
-          <Field label={tText("支付方式列表（逗号分隔）")}>
-            <input
-              className={inputCls}
-              value={Array.isArray(settings.allowed_payment_methods) ? settings.allowed_payment_methods.join(",") : String(settings.allowed_payment_methods || "online,whatsapp")}
-              onChange={(e) => setSetting("allowed_payment_methods", e.target.value.split(",").map((x) => x.trim()).filter(Boolean))}
-            />
-          </Field>
-          <div className="md:col-span-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <AdminFieldHint text={<Tx>支付方式限制同时影响积分抵扣与消费积分；积分过期任务每日自动执行（KL 时区）。生日/节日多倍请用「活动管理 → 积分多倍活动」；礼品兑换见本页「礼品兑换」标签。</Tx>} />
+        <div className="space-y-6 rounded-xl border border-border bg-card p-4 sm:p-5">
+          <SettingsSection title={tText("积分过期")}>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <ToggleRow label={tText("启用积分过期")} hint={POINTS_ADVANCED_FIELD_HINTS.expire_enabled} checked={!!settings.expire_enabled} onChange={(v) => setSetting("expire_enabled", v)} />
+              <InlineField label={tText("积分有效天数")} hint={POINTS_ADVANCED_FIELD_HINTS.expire_days} className={!settings.expire_enabled ? "opacity-55" : undefined}>
+                <input className={inputCls} type="number" min={1} disabled={!settings.expire_enabled} value={String(settings.expire_days ?? 365)} onChange={(e) => setSetting("expire_days", e.target.value)} />
+              </InlineField>
+            </div>
+          </SettingsSection>
+          <SettingsSection title={tText("不计分场景")}>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <ToggleRow label={tText("优惠券订单不积分")} hint={POINTS_ADVANCED_FIELD_HINTS.coupon_no_points} checked={!!settings.coupon_no_points} onChange={(v) => setSetting("coupon_no_points", v)} />
+              <ToggleRow label={tText("促销商品不积分")} hint={POINTS_ADVANCED_FIELD_HINTS.promotion_no_points} checked={!!settings.promotion_no_points} onChange={(v) => setSetting("promotion_no_points", v)} />
+              <ToggleRow label={tText("营销活动商品不积分")} hint={POINTS_ADVANCED_FIELD_HINTS.marketing_activity_no_points} checked={!!settings.marketing_activity_no_points} onChange={(v) => setSetting("marketing_activity_no_points", v)} />
+              <ToggleRow label={tText("会员价商品不积分")} hint={POINTS_ADVANCED_FIELD_HINTS.member_price_no_points} checked={!!settings.member_price_no_points} onChange={(v) => setSetting("member_price_no_points", v)} />
+            </div>
+          </SettingsSection>
+          <SettingsSection title={tText("叠加与调账")}>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <ToggleRow label={tText("允许与优惠券叠加抵扣")} hint={POINTS_ADVANCED_FIELD_HINTS.allow_with_coupon} checked={settings.allow_with_coupon !== false && settings.allow_with_coupon !== 0} onChange={(v) => setSetting("allow_with_coupon", v)} />
+              <ToggleRow label={tText("允许与返现余额叠加")} hint={POINTS_ADVANCED_FIELD_HINTS.allow_with_reward_cash} checked={settings.allow_with_reward_cash !== false && settings.allow_with_reward_cash !== 0} onChange={(v) => setSetting("allow_with_reward_cash", v)} />
+              <ToggleRow label={tText("允许积分为负数（后台调账）")} hint={POINTS_ADVANCED_FIELD_HINTS.allow_negative_points} checked={!!settings.allow_negative_points} onChange={(v) => setSetting("allow_negative_points", v)} />
+            </div>
+          </SettingsSection>
+          <SettingsSection title={tText("支付方式限制")}>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <InlineField label={tText("支付方式积分限制")} hint={POINTS_ADVANCED_FIELD_HINTS.payment_points_mode}>
+                <select className={inputCls} value={String(settings.payment_points_mode || "all")} onChange={(e) => setSetting("payment_points_mode", e.target.value)}>
+                  <option value="all"><Tx>全部支付方式</Tx></option>
+                  <option value="disabled"><Tx>全部禁用</Tx></option>
+                  <option value="include"><Tx>仅允许列表内</Tx></option>
+                  <option value="exclude"><Tx>排除列表内</Tx></option>
+                </select>
+              </InlineField>
+              <InlineField label={tText("支付方式列表（逗号分隔）")} hint={POINTS_ADVANCED_FIELD_HINTS.allowed_payment_methods}>
+                <input
+                  className={inputCls}
+                  value={Array.isArray(settings.allowed_payment_methods) ? settings.allowed_payment_methods.join(",") : String(settings.allowed_payment_methods || "online,whatsapp")}
+                  onChange={(e) => setSetting("allowed_payment_methods", e.target.value.split(",").map((x) => x.trim()).filter(Boolean))}
+                />
+              </InlineField>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              <Tx>积分过期任务每日自动执行（KL 时区）。生日/节日多倍请用「活动管理 → 积分多倍活动」。</Tx>
+            </p>
+          </SettingsSection>
+          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+            <button type="button" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"><Save className="h-4 w-4" /><Tx>保存高级设置</Tx></button>
+            <button
+              type="button"
+              onClick={() => expireRunMutation.mutate()}
+              disabled={expireRunMutation.isPending || !settings.expire_enabled}
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm text-foreground"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <Tx>立即执行过期扣减</Tx>
+              <AdminFieldHint text={<Tx>手动触发一次过期扣减任务，用于测试或补跑；需已开启「启用积分过期」。</Tx>} />
+            </button>
           </div>
-          <button type="button" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"><Save className="h-4 w-4" /><Tx>保存高级设置</Tx></button>
-          <button type="button" onClick={() => expireRunMutation.mutate()} disabled={expireRunMutation.isPending || !settings.expire_enabled} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-foreground md:col-span-2"><RefreshCw className="h-4 w-4" /><Tx>立即执行过期扣减</Tx></button>
         </div>
       ) : null}
     </div>

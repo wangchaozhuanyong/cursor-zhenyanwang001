@@ -47,6 +47,8 @@ import {
 import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, PurchaseOrder, SmartReplenishmentPreviewResult } from "@/types/inventory";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { cn } from "@/lib/utils";
+import { adminTableClassName, ADMIN_TABLE_ALIGN_LEFT_CLASS } from "@/utils/adminTableClasses";
 import { THEME_BADGE_SUCCESS, THEME_BADGE_WARNING, THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -122,6 +124,53 @@ const PURCHASE_STATUS_LABEL: Record<string, string> = {
   cancelled: "已取消",
   overdue: "已延期",
 };
+
+const INVENTORY_SKU_TABLE_CLASS = adminTableClassName(
+  "admin-inventory-sku-table w-full min-w-[1480px] text-left text-sm",
+);
+
+const INVENTORY_SKU_HEADS = [
+  "图",
+  "商品",
+  "规格",
+  "SKU 编码",
+  "分类",
+  "可用库存",
+  "总库存",
+  "单位",
+  "预警值",
+  "状态",
+  "更新时间",
+  "操作",
+] as const;
+
+function inventorySkuTd(extra?: string) {
+  return cn(
+    "h-9 max-h-9 overflow-hidden whitespace-nowrap px-3 py-1 align-middle leading-none",
+    extra,
+  );
+}
+
+function inventoryInlineText(
+  text: string,
+  opts?: { maxWidth?: string; mono?: boolean; muted?: boolean; medium?: boolean },
+) {
+  const line = String(text ?? "").replace(/\s+/g, " ").trim() || "—";
+  return (
+    <span
+      className={cn(
+        "inline-block min-w-0 truncate align-middle leading-none",
+        opts?.medium ? "text-sm font-medium text-foreground" : "text-sm text-foreground",
+        opts?.mono && "font-mono text-xs",
+        opts?.muted && "text-muted-foreground",
+      )}
+      style={{ maxWidth: opts?.maxWidth ?? "10rem" }}
+      title={line}
+    >
+      {line}
+    </span>
+  );
+}
 
 function skuLabel(sku: InventorySku | null | undefined, tText: (zh: string) => string) {
   if (!sku) return "";
@@ -863,13 +912,22 @@ export default function AdminInventory({
 
         {tab === "skus" ? (
           <>
-            <AnimatedTable embedded loading={skusQuery.isLoading} rows={skus} rowKey={(sku) => sku.variant_id} skeletonRows={8} skeletonCols={11} tableClassName="w-full min-w-[1320px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={Package} emptyTitle={L("暂无 SKU 库存")} emptyDescription={L("创建商品规格后会显示库存。")} thead={(
+            <AnimatedTable embedded loading={skusQuery.isLoading} rows={skus} rowKey={(sku) => sku.variant_id} skeletonRows={8} skeletonCols={14} tableClassName={INVENTORY_SKU_TABLE_CLASS} theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={Package} emptyTitle={L("暂无 SKU 库存")} emptyDescription={L("创建商品规格后会显示库存。")} thead={(
               <tr>
-                <th className="w-10 px-4 py-3">
+                <th className="w-10 whitespace-nowrap px-3 py-2 text-left">
                   <input type="checkbox" checked={allSelectedOnPage} onChange={togglePageVariantSelection} aria-label={tText("全选当前页")} />
                 </th>
-                {["商品", "规格", "SKU 编码", "分类", "库存", "单位", "预警值", "状态", "更新时间", "操作"].map((head) => (
-                  <th key={head} className="whitespace-nowrap px-4 py-3 text-left">{L(head)}</th>
+                {INVENTORY_SKU_HEADS.map((head) => (
+                  <th
+                    key={head}
+                    className={cn(
+                      "whitespace-nowrap px-3 py-2 text-xs font-semibold",
+                      head === "操作" ? "text-right" : "text-left",
+                      head === "图" && "w-12",
+                    )}
+                  >
+                    {L(head)}
+                  </th>
                 ))}
               </tr>
             )}
@@ -877,41 +935,54 @@ export default function AdminInventory({
               renderRow={(sku) => {
                 const checked = selectedVariantIds.includes(sku.variant_id);
                 const unit = sku.unit_name || L("件");
-                const skuCodeLabel = sku.sku_code || L("未填写");
+                const productName = String(sku.product_name ?? "").replace(/\s+/g, " ").trim();
+                const specName = String(sku.variant_title || sku.spec_text || L("默认规格")).replace(/\s+/g, " ").trim();
+                const skuCode = String(sku.sku_code ?? "").trim();
+                const updatedLabel = sku.updated_at ? formatDateTime(sku.updated_at) : "—";
                 return (
                   <>
-                    <td className="whitespace-nowrap px-4 py-2 align-middle">
-                      <input type="checkbox" checked={checked} onChange={() => toggleVariantSelect(sku.variant_id)} aria-label={`选择 ${sku.product_name}`} />
+                    <td className={inventorySkuTd("w-10")}>
+                      <input type="checkbox" checked={checked} onChange={() => toggleVariantSelect(sku.variant_id)} aria-label={`选择 ${productName}`} />
                     </td>
-                    <td className="max-w-[12rem] whitespace-nowrap px-4 py-2 align-middle">
-                      <div className="flex items-center gap-2">
-                        {sku.cover_image ? <img src={sku.cover_image} alt="" className="h-8 w-8 shrink-0 rounded-md object-cover" /> : <div className="h-8 w-8 shrink-0 rounded-md bg-secondary" />}
-                        <AdminTableCell value={sku.product_name} fullText={sku.product_name} maxWidth="9.5rem" />
-                      </div>
+                    <td className={inventorySkuTd("w-12")}>
+                      {sku.cover_image ? (
+                        <img src={sku.cover_image} alt="" className="mx-auto block h-7 w-7 rounded object-cover" />
+                      ) : (
+                        <span className="mx-auto block h-7 w-7 rounded bg-secondary" aria-hidden />
+                      )}
                     </td>
-                    <td className="max-w-[8rem] whitespace-nowrap px-4 py-2 align-middle">
-                      <AdminTableCell value={sku.variant_title || sku.spec_text || L("默认规格")} maxWidth="7.5rem" />
+                    <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_LEFT_CLASS)}>
+                      {inventoryInlineText(productName, { maxWidth: "11rem", medium: true })}
                     </td>
-                    <td className="max-w-[9rem] whitespace-nowrap px-4 py-2 align-middle">
-                      <AdminTableCell value={skuCodeLabel} fullText={sku.sku_code ? `SKU：${sku.sku_code}` : L("SKU：未填写")} maxWidth="8.5rem" mono muted={!sku.sku_code} />
+                    <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_LEFT_CLASS)}>
+                      {inventoryInlineText(specName, { maxWidth: "8rem" })}
                     </td>
-                    <td className="max-w-[7rem] whitespace-nowrap px-4 py-2 align-middle text-muted-foreground">
-                      <AdminTableCell value={sku.category_name || L("未分类")} maxWidth="6.5rem" />
+                    <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_LEFT_CLASS)}>
+                      {inventoryInlineText(skuCode || L("未填写"), { maxWidth: "9rem", mono: true, muted: !skuCode })}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-2 align-middle">
-                      <span className={sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium"}>
+                    <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_LEFT_CLASS)}>
+                      {inventoryInlineText(sku.category_name || L("未分类"), { maxWidth: "7rem", muted: true })}
+                    </td>
+                    <td className={inventorySkuTd()}>
+                      <span className={cn("text-sm leading-none", sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium")}>
                         {sku.available_stock} {unit}
                       </span>
-                      <span className="ml-1 text-xs text-muted-foreground">({L("总")} {sku.stock} {unit})</span>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-2 align-middle">{unit}</td>
-                    <td className="whitespace-nowrap px-4 py-2 align-middle">
-                      <input type="number" min={0} defaultValue={sku.stock_warning_threshold} onBlur={(e) => { const threshold = Number(e.target.value); if (Number.isInteger(threshold) && threshold >= 0 && threshold !== sku.stock_warning_threshold) thresholdMutation.mutate({ sku, threshold }); }} className="w-20 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
+                    <td className={inventorySkuTd()}>
+                      <span className="text-sm leading-none text-muted-foreground">
+                        {sku.stock} {unit}
+                      </span>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-2 align-middle text-xs">{stockStatusText(sku, L)}</td>
-                    <td className="whitespace-nowrap px-4 py-2 align-middle text-xs text-muted-foreground">{sku.updated_at ? formatDateTime(sku.updated_at) : "-"}</td>
-                    <td className="whitespace-nowrap px-4 py-2 align-middle">
-                      <div className="flex flex-nowrap justify-end gap-2">
+                    <td className={inventorySkuTd()}>{inventoryInlineText(unit, { maxWidth: "3rem" })}</td>
+                    <td className={inventorySkuTd()}>
+                      <input type="number" min={0} defaultValue={sku.stock_warning_threshold} onBlur={(e) => { const threshold = Number(e.target.value); if (Number.isInteger(threshold) && threshold >= 0 && threshold !== sku.stock_warning_threshold) thresholdMutation.mutate({ sku, threshold }); }} className="w-16 rounded-lg bg-secondary px-2 py-1 text-xs leading-none" />
+                    </td>
+                    <td className={inventorySkuTd("text-xs")}>{inventoryInlineText(stockStatusText(sku, L), { maxWidth: "4rem" })}</td>
+                    <td className={inventorySkuTd("text-xs text-muted-foreground")}>
+                      {inventoryInlineText(updatedLabel, { maxWidth: "11rem", mono: true })}
+                    </td>
+                    <td className={inventorySkuTd()}>
+                      <div className="inline-flex flex-nowrap items-center justify-end gap-1.5">
                         <button type="button" onClick={() => setAdjusting({ sku, change_type: "in", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>入库</Tx></button>
                         <button type="button" onClick={() => setAdjusting({ sku, change_type: "out", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>出库</Tx></button>
                         <button type="button" onClick={() => setAdjusting({ sku, change_type: "adjust", quantity: String(sku.stock), reason: "", remark: "", source_no: "", cost_price: "" })} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></button>

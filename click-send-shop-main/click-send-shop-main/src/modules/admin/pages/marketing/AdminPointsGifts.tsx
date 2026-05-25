@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchProducts } from "@/services/admin/productService";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint, { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
+import { POINTS_GIFT_FIELD_HINTS, POINTS_TAB_HINTS } from "@/modules/admin/pages/marketing/adminPointsHints";
 import {
   createPointsGiftItem,
   fetchPointsGiftItems,
@@ -14,6 +17,7 @@ import {
 } from "@/services/admin/pointsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAdminT } from "@/hooks/useAdminT";
+import { cn } from "@/lib/utils";
 
 const inputCls = "rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground w-full";
 
@@ -28,6 +32,15 @@ const emptyForm: PointsGiftItem = {
   enabled: 1,
   sort_order: 0,
 };
+
+function GiftFieldLabel({ label, hint }: { label: string; hint?: ReactNode }) {
+  return (
+    <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+      <Tx>{label}</Tx>
+      {hint ? <AdminFieldHint text={hint} /> : null}
+    </span>
+  );
+}
 
 export default function AdminPointsGifts() {
   const { tText } = useAdminT();
@@ -91,10 +104,14 @@ export default function AdminPointsGifts() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <div className="space-y-4 rounded-xl border border-border bg-card p-4">
-        <h3 className="font-semibold text-foreground"><Tx>{editingId ? "编辑礼品" : "新增礼品兑换"}</Tx></h3>
-        <div className="grid gap-2">
-          <label className="text-xs text-muted-foreground"><Tx>关联商品</Tx>
+      <div className="space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+        <AdminSectionTitle
+          title={<Tx>{editingId ? "编辑礼品" : "新增礼品兑换"}</Tx>}
+          hint={POINTS_TAB_HINTS["礼品兑换"]}
+        />
+        <div className="grid gap-3">
+          <div>
+            <GiftFieldLabel label={tText("关联商品")} hint={POINTS_GIFT_FIELD_HINTS.product} />
             <input
               className={inputCls}
               placeholder={tText("搜索商品名称")}
@@ -102,7 +119,7 @@ export default function AdminPointsGifts() {
               onChange={(e) => setProductKeyword(e.target.value)}
             />
             <select
-              className={`${inputCls} mt-1`}
+              className={cn(inputCls, "mt-1")}
               value={form.product_id}
               onChange={(e) => {
                 const pid = e.target.value;
@@ -120,28 +137,42 @@ export default function AdminPointsGifts() {
                 <option key={p.id} value={p.id}>{p.name}（库存 {p.stock ?? 0}）</option>
               ))}
             </select>
-          </label>
-          <label className="text-xs text-muted-foreground"><Tx>规格 ID（可选）</Tx>
+          </div>
+          <label className="block">
+            <GiftFieldLabel label={tText("规格 ID（可选）")} hint={POINTS_GIFT_FIELD_HINTS.variant_id} />
             <input className={inputCls} value={form.variant_id || ""} onChange={(e) => setForm((p) => ({ ...p, variant_id: e.target.value || null }))} />
           </label>
-          <label className="text-xs text-muted-foreground"><Tx>展示标题</Tx>
+          <label className="block">
+            <GiftFieldLabel label={tText("展示标题")} hint={POINTS_GIFT_FIELD_HINTS.title} />
             <input className={inputCls} value={form.title || ""} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
           </label>
-          <label className="text-xs text-muted-foreground"><Tx>所需积分</Tx>
+          <label className="block">
+            <GiftFieldLabel label={tText("所需积分")} hint={POINTS_GIFT_FIELD_HINTS.required_points} />
             <input type="number" className={inputCls} value={form.required_points} onChange={(e) => setForm((p) => ({ ...p, required_points: Number(e.target.value) }))} />
           </label>
-          <label className="text-xs text-muted-foreground"><Tx>附加现金 (RM)</Tx>
+          <label className="block">
+            <GiftFieldLabel label={tText("附加现金 (RM)")} hint={POINTS_GIFT_FIELD_HINTS.cash_amount} />
             <input type="number" className={inputCls} value={form.cash_amount ?? 0} onChange={(e) => setForm((p) => ({ ...p, cash_amount: Number(e.target.value) }))} />
           </label>
-          <label className="text-xs text-muted-foreground"><Tx>兑换库存上限（0=不限）</Tx>
+          <label className="block">
+            <GiftFieldLabel label={tText("兑换库存上限（0=不限）")} hint={POINTS_GIFT_FIELD_HINTS.stock_limit} />
             <input type="number" className={inputCls} value={form.stock_limit ?? 0} onChange={(e) => setForm((p) => ({ ...p, stock_limit: Number(e.target.value) }))} />
           </label>
-          <label className="text-xs text-muted-foreground"><Tx>每人限兑（0=不限）</Tx>
+          <label className="block">
+            <GiftFieldLabel label={tText("每人限兑（0=不限）")} hint={POINTS_GIFT_FIELD_HINTS.limit_per_user} />
             <input type="number" className={inputCls} value={form.limit_per_user ?? 0} onChange={(e) => setForm((p) => ({ ...p, limit_per_user: Number(e.target.value) }))} />
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={!!form.enabled} onChange={(e) => setForm((p) => ({ ...p, enabled: e.target.checked ? 1 : 0 }))} />
-            <Tx>上架</Tx>
+          <label className="flex min-h-10 items-center justify-between gap-3 rounded-lg border border-border bg-secondary/40 px-3 py-2">
+            <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+              <Tx>上架</Tx>
+              <AdminFieldHint text={POINTS_GIFT_FIELD_HINTS.enabled} />
+            </span>
+            <input
+              type="checkbox"
+              className="h-4 w-4 shrink-0 accent-primary"
+              checked={!!form.enabled}
+              onChange={(e) => setForm((p) => ({ ...p, enabled: e.target.checked ? 1 : 0 }))}
+            />
           </label>
         </div>
         <div className="flex gap-2">
@@ -169,7 +200,7 @@ export default function AdminPointsGifts() {
 
       <div className="space-y-4">
         <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="mb-3 font-semibold"><Tx>礼品列表</Tx></h3>
+          <AdminSectionTitle title={<Tx>礼品列表</Tx>} hint={POINTS_GIFT_FIELD_HINTS.gift_list} />
           {items.length === 0 ? <p className="text-sm text-muted-foreground"><Tx>暂无礼品</Tx></p> : (
             <ul className="space-y-2">
               {items.map((item) => (
@@ -188,7 +219,7 @@ export default function AdminPointsGifts() {
           )}
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="mb-3 font-semibold"><Tx>最近兑换</Tx></h3>
+          <AdminSectionTitle title={<Tx>最近兑换</Tx>} hint={POINTS_GIFT_FIELD_HINTS.recent_redemptions} />
           {(redemptionsQuery.data || []).length === 0 ? <p className="text-sm text-muted-foreground"><Tx>暂无记录</Tx></p> : (
             <ul className="space-y-1 text-xs text-muted-foreground">
               {(redemptionsQuery.data || []).map((r) => (

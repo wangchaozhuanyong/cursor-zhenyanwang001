@@ -125,6 +125,7 @@ export default function AdminProductForm() {
     name: "",
     price: "",
     original_price: "",
+    cost_price: "",
     sales_count: "",
     stock: "",
     stock_warning_threshold: "",
@@ -232,6 +233,7 @@ export default function AdminProductForm() {
               price: data.price?.toString() || "",
               original_price:
                 data.original_price != null ? data.original_price.toString() : "",
+              cost_price: (vlist.find((variant) => variant.is_default)?.cost_price ?? "") || "",
               sales_count: data.sales_count != null ? String(data.sales_count) : "0",
               stock: data.stock?.toString() || "",
               stock_warning_threshold:
@@ -511,6 +513,7 @@ export default function AdminProductForm() {
     setSaving(true);
     try {
       const opNum = parseFloat(form.original_price);
+      const costNum = parseFloat(form.cost_price);
       const scNum = parseInt(form.sales_count, 10);
       const mainPrice = parseFloat(form.price) || 0;
       const mainStock = parseInt(form.stock, 10) || 0;
@@ -544,6 +547,8 @@ export default function AdminProductForm() {
         variantsPayload[defIdx] = {
           ...variantsPayload[defIdx],
           price: mainPrice,
+          original_price: form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
+          cost_price: form.cost_price === "" || !Number.isFinite(costNum) ? variantsPayload[defIdx].cost_price : costNum,
           stock: mainStock,
           stock_warning_threshold: mainStockWarningThreshold,
           stock_lower_limit: mainStockLowerLimit,
@@ -823,7 +828,15 @@ export default function AdminProductForm() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>划线原价 (RM)</Tx></label>
-                <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder={tText("留空则不展示")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input value={form.original_price} onChange={(e) => {
+                  const t = e.target.value;
+                  setForm((f) => {
+                    const defaultIdx = f.variants.findIndex((variant) => variant.is_default);
+                    const variants = [...f.variants];
+                    if (defaultIdx >= 0) variants[defaultIdx] = { ...variants[defaultIdx], original_price: t };
+                    return { ...f, original_price: t, variants };
+                  });
+                }} placeholder={tText("留空则不展示")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>仅当大于售价时，前台商品卡/详情页才会以删除线显示。</Tx>} />
                 </div>
@@ -1036,10 +1049,20 @@ export default function AdminProductForm() {
                           name="default-variant"
                           checked={v.is_default}
                           onChange={() =>
-                            setForm((f) => ({
-                              ...f,
-                              variants: f.variants.map((row, j) => ({ ...row, is_default: j === idx })),
-                            }))
+                            setForm((f) => {
+                              const nextDefault = f.variants[idx];
+                              return {
+                                ...f,
+                                price: nextDefault?.price || f.price,
+                                original_price: nextDefault?.original_price || "",
+                                cost_price: nextDefault?.cost_price || "",
+                                stock: nextDefault?.stock || f.stock,
+                                stock_warning_threshold: nextDefault?.stock_warning_threshold || f.stock_warning_threshold,
+                                stock_lower_limit: nextDefault?.stock_lower_limit || "",
+                                stock_upper_limit: nextDefault?.stock_upper_limit || "",
+                                variants: f.variants.map((row, j) => ({ ...row, is_default: j === idx })),
+                              };
+                            })
                           }
                           className="accent-gold"
                         />
@@ -1133,7 +1156,7 @@ export default function AdminProductForm() {
                             setForm((f) => {
                               const nv = [...f.variants];
                               nv[idx] = { ...nv[idx], original_price: t };
-                              return { ...f, variants: nv };
+                              return { ...f, original_price: nv[idx].is_default ? t : f.original_price, variants: nv };
                             });
                           }}
                           className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
@@ -1148,7 +1171,7 @@ export default function AdminProductForm() {
                             setForm((f) => {
                               const nv = [...f.variants];
                               nv[idx] = { ...nv[idx], cost_price: t };
-                              return { ...f, variants: nv };
+                              return { ...f, cost_price: nv[idx].is_default ? t : f.cost_price, variants: nv };
                             });
                           }}
                           className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"

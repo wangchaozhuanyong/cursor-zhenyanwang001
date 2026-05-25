@@ -442,8 +442,22 @@ async function syncProductPriceStockFromDefaultVariant(productId) {
   if (!def) return;
   const totalStock = enabledRows.reduce((sum, r) => sum + Number(r.stock || 0), 0);
   await repo.updateProductDynamic(
-    ['price = ?', 'stock = ?', 'stock_warning_threshold = ?', 'stock_lower_limit = ?', 'stock_upper_limit = ?'],
-    [def.price, totalStock, def.stock_warning_threshold ?? 5, def.stock_lower_limit ?? null, def.stock_upper_limit ?? null],
+    [
+      'price = ?',
+      'original_price = ?',
+      'stock = ?',
+      'stock_warning_threshold = ?',
+      'stock_lower_limit = ?',
+      'stock_upper_limit = ?',
+    ],
+    [
+      def.price,
+      def.original_price == null || def.original_price === '' ? null : Number(def.original_price),
+      totalStock,
+      def.stock_warning_threshold ?? def.stock_lower_limit ?? 5,
+      def.stock_lower_limit ?? null,
+      def.stock_upper_limit ?? null,
+    ],
     productId,
   );
 }

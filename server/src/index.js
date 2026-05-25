@@ -7,6 +7,7 @@ const app = require('./app');
 const { prepareDatabaseForRuntime } = require('./db/schemaStartup');
 const { startNotificationScheduler } = require('./modules/admin/service/adminNotification.service');
 const { startEscalationScheduler: startAdminEventEscalationScheduler } = require('./modules/admin/service/adminEvent.service');
+const { startDailyInventorySnapshotScheduler } = require('./modules/admin/service/adminReplenishment.service');
 const { startAutoConfirmReceiveScheduler } = require('./modules/order/service/orderAutoConfirm.service');
 const { startPaymentTimeoutScheduler } = require('./modules/order/service/orderPaymentTimeout.service');
 const { startOrderTimeoutEventScheduler } = require('./modules/order/service/orderEventTimeout.service');
@@ -84,6 +85,7 @@ bootPromise
     startDataRetentionScheduler();
     startPointsExpireScheduler();
     startCouponExpireScheduler();
+    startDailyInventorySnapshotScheduler();
     startNotificationScheduler();
     startAdminEventEscalationScheduler();
     startAutoConfirmReceiveScheduler();
@@ -139,5 +141,4 @@ bootPromise
     console.error(`${instanceLogPrefix('Startup')} precheck failed:`, err);
     process.exit(1);
   });
-
 

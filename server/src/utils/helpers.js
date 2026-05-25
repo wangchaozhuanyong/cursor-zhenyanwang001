@@ -48,7 +48,7 @@ function signToken(userId, refreshVersion = 0, options = {}) {
   const expiresIn = /** @type {import('jsonwebtoken').SignOptions['expiresIn']} */ (options.accessExpiresIn || process.env.JWT_EXPIRES_IN || '30m');
   const accessToken = jwt.sign({ userId, ...(options.accessPayload || {}) }, secret, { expiresIn });
   const refreshToken = jwt.sign(
-    { userId, type: 'refresh', rv: refreshVersion },
+    { userId, type: 'refresh', rv: refreshVersion, ...(options.refreshPayload || {}) },
     secret,
     { expiresIn: '30d' },
   );

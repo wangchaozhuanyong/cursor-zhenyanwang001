@@ -1,5 +1,6 @@
 const { BusinessError } = require('../../../errors/BusinessError');
 const { AuthError } = require('../../../errors');
+const crypto = require('crypto');
 const { comparePassword, signToken, verifyToken } = require('../../../utils/helpers');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const rbacService = require('./rbac.service');
@@ -196,11 +197,22 @@ async function login(body, req) {
       return mfaChallenge;
     }
 
-    const mfaVerifiedAt = await adminMfaService.resolveRecentMfaVerifiedAt(uid);
+    const mfaContext = await adminMfaService.resolveLoginMfaContext({
+      id: uid,
+      role: user.role,
+    }, req);
+    const adminSessionId = crypto.randomBytes(18).toString('base64url');
     const token = signToken(uid, rv, {
       accessExpiresIn: ADMIN_ACCESS_EXPIRES_IN,
       expiresInSeconds: ADMIN_ACCESS_EXPIRES_SECONDS,
-      accessPayload: mfaVerifiedAt ? { mfaVerifiedAt } : {},
+      accessPayload: {
+        adminSessionId,
+        ...(mfaContext.mfaVerifiedAt ? {
+          mfaVerifiedAt: mfaContext.mfaVerifiedAt,
+          mfaMethod: mfaContext.mfaMethod,
+        } : {}),
+      },
+      refreshPayload: { adminSessionId },
     });
     const access = await rbacService.getAccessContext(uid, user.role);
     try { await requireAuthApi('updateLastLogin')(uid); } catch { /* non-critical */ }
@@ -224,6 +236,9 @@ async function login(body, req) {
         permissions: access.permissions,
         isSuperAdmin: access.isSuperAdmin,
         roleCodes: access.roleCodes,
+        adminSessionId,
+        mfaVerifiedAt: mfaContext.mfaVerifiedAt,
+        mfaMethod: mfaContext.mfaMethod,
       },
       message: '登录成功',
     };
@@ -251,7 +266,7 @@ async function refresh(refreshToken) {
   if (!refreshToken) throw new BusinessError(401, '请先登录');
   let payload;
   try {
-    payload = /** @type {{ type?: string, userId?: string, rv?: number }} */ (verifyToken(refreshToken));
+    payload = /** @type {{ type?: string, userId?: string, rv?: number, adminSessionId?: string }} */ (verifyToken(refreshToken));
   } catch {
     throw new BusinessError(401, '登录已过期，请重新登录');
   }
@@ -270,18 +285,19 @@ async function refresh(refreshToken) {
     await requireAuthApi('refresh')(refreshToken);
     const rv = Number.isFinite(Number(payload.rv)) ? Number(payload.rv) + 1 : 1;
     await requireAuthApi('bumpRefreshTokenVersion')(payload.userId);
-    const mfaVerifiedAt = await adminMfaService.resolveRecentMfaVerifiedAt(payload.userId);
+    const adminSessionId = String(payload.adminSessionId || '') || crypto.randomBytes(18).toString('base64url');
     const token = signToken(payload.userId, rv, {
       accessExpiresIn: ADMIN_ACCESS_EXPIRES_IN,
       expiresInSeconds: ADMIN_ACCESS_EXPIRES_SECONDS,
-      accessPayload: mfaVerifiedAt ? { mfaVerifiedAt } : {},
+      accessPayload: { adminSessionId },
+      refreshPayload: { adminSessionId },
     });
     return {
       data: {
         accessToken: token.accessToken,
         refreshToken: token.refreshToken,
         expiresIn: token.expiresIn,
-        mfaVerifiedAt,
+        mfaVerifiedAt: 0,
       },
     };
   } catch (err) {

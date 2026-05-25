@@ -270,6 +270,7 @@ async function payWithRewardWallet(userId, orderId) {
       paymentChannel: 'reward_wallet',
       paymentTransactionNo: txNo,
       paymentMethod: 'reward_wallet',
+      paidAmount: payableAmount,
     });
     if (!paidUpdated) {
       throw new ValidationError('订单状态已变更，请刷新后重试');
@@ -595,6 +596,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     paymentMethod: isGiftCashOrder ? 'points_plus_cash' : 'online',
     paymentProvider: paymentOrder.provider,
     providerPaymentId: transactionNo,
+    paidAmount: Number(paymentOrder.amount || order.total_amount || 0),
   });
   if (!paidUpdated) {
     return { skipped: true, reason: 'already_paid' };
@@ -874,6 +876,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     paymentMethod: 'manual',
     paymentProvider: 'manual',
     providerPaymentId: txNo,
+    paidAmount: total,
   });
     if (!paidUpdated) {
       throw new ValidationError('订单状态已变更，请刷新后重试');

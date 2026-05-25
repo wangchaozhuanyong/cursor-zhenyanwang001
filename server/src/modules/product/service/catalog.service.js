@@ -248,16 +248,29 @@ function attachActivity(product, activity) {
 
 async function formatRowsWithTagsAndActivities(rows) {
   const ids = rows.map((r) => r.id);
-  const [tagMap, activityMap, defaultVariants] = await Promise.all([
+  const [tagMap, activityMap, defaultVariants, priceRanges] = await Promise.all([
     tagAssignmentRepo.selectTagsByProductIds(ids),
     activityRepo.selectActiveActivitiesByProductIds(ids).catch((e) => {
       console.warn(`[catalog] activity lookup failed: ${e?.message || e}`);
       return new Map();
     }),
     repo.selectDefaultVariantsByProductIds(ids),
+    repo.selectVariantPriceRangesByProductIds(ids),
   ]);
   const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariant(v)]));
-  return rows.map((r) => attachActivity({ ...formatProduct(r), tags: tagMap.get(r.id) || [], default_variant: defaultVariantMap.get(r.id) || null }, activityMap.get(r.id)));
+  const priceRangeMap = new Map(priceRanges.map((r) => [r.product_id, {
+    min_price: Number(r.min_price || 0),
+    max_price: Number(r.max_price || 0),
+    min_original_price: r.min_original_price == null ? null : Number(r.min_original_price),
+    max_original_price: r.max_original_price == null ? null : Number(r.max_original_price),
+    variant_count: Number(r.variant_count || 0),
+  }]));
+  return rows.map((r) => attachActivity({
+    ...formatProduct(r),
+    ...(priceRangeMap.get(r.id) || {}),
+    tags: tagMap.get(r.id) || [],
+    default_variant: defaultVariantMap.get(r.id) || null,
+  }, activityMap.get(r.id)));
 }
 
 function formatVariant(row) {
@@ -330,6 +343,10 @@ async function getProductById(id) {
   });
   return {
     ...item,
+    min_price: formattedVariants.length ? Math.min(...formattedVariants.map((v) => Number(v.price || 0))) : item.min_price,
+    max_price: formattedVariants.length ? Math.max(...formattedVariants.map((v) => Number(v.price || 0))) : item.max_price,
+    min_original_price: formattedVariants.map((v) => Number(v.original_price || 0)).filter((n) => n > 0).sort((a, b) => a - b)[0] ?? item.min_original_price ?? null,
+    max_original_price: formattedVariants.map((v) => Number(v.original_price || 0)).filter((n) => n > 0).sort((a, b) => b - a)[0] ?? item.max_original_price ?? null,
     spec_groups: specGroups,
     spec_values: specGroups.flatMap((g) => g.values || []),
     variants: formattedVariants,
@@ -456,6 +473,5 @@ module.exports = {
   trackHomeEngagement,
   clearCatalogCache,
 };
-
 
 

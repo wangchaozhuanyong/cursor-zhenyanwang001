@@ -29,6 +29,7 @@ export interface RbacAdminUserRow {
 
 export interface RbacTrustedDeviceRow {
   id: string;
+  label?: string;
   firstSeenAt: string;
   lastSeenAt: string;
   expiresAt: string;

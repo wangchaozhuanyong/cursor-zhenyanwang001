@@ -86,14 +86,14 @@ function buildSkuWhere(query) {
   }
   const stockStatus = String(query.stock_status || '').trim();
   if (stockStatus === 'low') {
-    where += ' AND v.stock > 0 AND v.stock <= COALESCE(v.stock_warning_threshold,5)';
+    where += ' AND (v.stock - COALESCE(v.reserved_stock,0)) > 0 AND (v.stock - COALESCE(v.reserved_stock,0)) <= COALESCE(v.stock_lower_limit, v.stock_warning_threshold,5)';
   } else if (stockStatus === 'out') {
-    where += ' AND v.stock <= 0';
+    where += ' AND (v.stock - COALESCE(v.reserved_stock,0)) <= 0';
   } else if (stockStatus === 'normal') {
-    where += ' AND v.stock > COALESCE(v.stock_warning_threshold,5)';
+    where += ' AND (v.stock - COALESCE(v.reserved_stock,0)) > COALESCE(v.stock_lower_limit, v.stock_warning_threshold,5)';
   }
   if (parseBool(query.lowStock)) {
-    where += ' AND v.stock <= COALESCE(v.stock_warning_threshold,5)';
+    where += ' AND (v.stock - COALESCE(v.reserved_stock,0)) <= COALESCE(v.stock_lower_limit, v.stock_warning_threshold,5)';
   }
   return { where, params };
 }
@@ -674,12 +674,23 @@ async function updateSkuWarningThreshold(variantId, body, adminUserId, req) {
   return { data: null, message: '预警阈值已更新' };
 }
 
-async function batchWarningThreshold(body) {
+async function batchWarningThreshold(body, adminUserId = null, req = null) {
   const ids = Array.isArray(body.variant_ids) ? body.variant_ids.filter(Boolean) : [];
   const threshold = Number(body.stock_warning_threshold);
   if (!ids.length) throw new BusinessError(400, 'variant_ids 不能为空');
   if (!Number.isInteger(threshold) || threshold < 0) throw new BusinessError(400, '预警阈值必须为非负整数');
   await repo.batchUpdateVariantWarningThreshold(ids, threshold);
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'inventory.warning_batch_update',
+    objectType: 'product_variant',
+    objectId: 'batch',
+    summary: `???? SKU ???? ${ids.length} ?`,
+    before: { variant_ids: ids },
+    after: { variant_ids: ids, stock_warning_threshold: threshold },
+    result: 'success',
+  });
   return { data: { updated: ids.length }, message: '批量预警值已更新' };
 }
 
@@ -922,25 +933,39 @@ async function convertByRule(type, body, adminUserId, req) {
     const childTotalQty = calculateChildTotal(inputParentQty, ruleParentQty, childQty);
     const parentBefore = Number(parentSku.stock || 0);
     const childBefore = Number(childSku.stock || 0);
+    const parentAvailable = Math.max(0, parentBefore - Number(parentSku.reserved_stock || 0));
+    const childAvailable = Math.max(0, childBefore - Number(childSku.reserved_stock || 0));
+    const parentCostBefore = parentSku.cost_price == null ? null : Number(parentSku.cost_price);
+    const childCostBefore = childSku.cost_price == null ? null : Number(childSku.cost_price);
     let parentAfter = parentBefore;
     let childAfter = childBefore;
     let parentDelta = 0;
     let childDelta = 0;
+    let parentCostAfter = parentCostBefore;
+    let childCostAfter = childCostBefore;
 
     if (type === 'unpack') {
-      if (parentBefore < inputParentQty) throw new BusinessError(400, `大包装库存不足，当前库存 ${parentBefore}`);
+      if (parentAvailable < inputParentQty) throw new BusinessError(400, `?????????????? ${parentAvailable}`);
       parentDelta = -inputParentQty;
       childDelta = childTotalQty;
+      if (parentCostBefore != null && childTotalQty > 0) {
+        childCostAfter = Math.round((parentCostBefore * inputParentQty / childTotalQty) * 100) / 100;
+      }
     } else {
-      if (childBefore < childTotalQty) throw new BusinessError(400, `小包装库存不足，当前库存 ${childBefore}`);
+      if (childAvailable < childTotalQty) throw new BusinessError(400, `?????????????? ${childAvailable}`);
       parentDelta = inputParentQty;
       childDelta = -childTotalQty;
+      if (childCostBefore != null) {
+        parentCostAfter = Math.round((childCostBefore * childTotalQty / inputParentQty) * 100) / 100;
+      }
     }
     parentAfter = parentBefore + parentDelta;
     childAfter = childBefore + childDelta;
 
     await repo.updateVariantStock(conn, parentSku.id, parentAfter);
     await repo.updateVariantStock(conn, childSku.id, childAfter);
+    if (parentCostAfter != null && parentCostAfter !== parentCostBefore) await repo.updateVariantCostPrice(conn, parentSku.id, parentCostAfter);
+    if (childCostAfter != null && childCostAfter !== childCostBefore) await repo.updateVariantCostPrice(conn, childSku.id, childCostAfter);
     const productIds = [...new Set([parentSku.product_id, childSku.product_id])];
     for (const productId of productIds) await repo.syncProductStockByProductId(conn, productId);
 
@@ -963,6 +988,11 @@ async function convertByRule(type, body, adminUserId, req) {
       parent_after_stock: parentAfter,
       child_before_stock: childBefore,
       child_after_stock: childAfter,
+      parent_cost_before: parentCostBefore,
+      parent_cost_after: parentCostAfter,
+      child_cost_before: childCostBefore,
+      child_cost_after: childCostAfter,
+      cost_allocation_method: type === 'unpack' ? 'parent_to_child' : 'child_to_parent',
       parent_product_name_snapshot: parentSku.product_name,
       parent_variant_name_snapshot: parentSku.title || '',
       parent_sku_code_snapshot: parentSku.sku_code || '',
@@ -1025,7 +1055,8 @@ async function convertByRule(type, body, adminUserId, req) {
       objectType: 'inventory_conversion_order',
       objectId: orderId,
       summary: `${type === 'unpack' ? '手动拆包' : '手动组装'} ${orderNo}`,
-      after: { order_no: orderNo, rule_id: ruleId, parent_qty: inputParentQty, child_total_qty: childTotalQty },
+      before: { parent_stock: parentBefore, parent_available_stock: parentAvailable, parent_cost_price: parentCostBefore, child_stock: childBefore, child_available_stock: childAvailable, child_cost_price: childCostBefore },
+      after: { order_no: orderNo, rule_id: ruleId, parent_qty: inputParentQty, child_total_qty: childTotalQty, parent_stock: parentAfter, parent_cost_price: parentCostAfter, child_stock: childAfter, child_cost_price: childCostAfter },
       result: 'success',
     });
     return { data: await repo.selectConversionOrderById(orderId), message: type === 'unpack' ? '拆包完成' : '组装完成' };
@@ -1080,7 +1111,6 @@ module.exports = {
   listConversions,
   getConversion,
 };
-
 
 
 

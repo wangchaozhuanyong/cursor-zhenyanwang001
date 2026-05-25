@@ -382,6 +382,7 @@ async function getAdminUserSecurity(userId, actor) {
       },
       trustedDevices: devices.map((device) => ({
         id: device.id,
+        label: device.device_label || '',
         firstSeenAt: device.first_seen_at,
         lastSeenAt: device.last_seen_at,
         expiresAt: device.expires_at,
@@ -528,7 +529,6 @@ module.exports = {
   revokeAdminTrustedDevice,
   ALL_ADMIN_PERMISSION_CODES,
 };
-
 
 
 

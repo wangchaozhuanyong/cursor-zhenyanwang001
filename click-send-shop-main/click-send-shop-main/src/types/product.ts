@@ -39,6 +39,11 @@ export interface ProductVariant {
   sku_code?: string | null;
   title: string;
   price: number;
+  min_price?: number | null;
+  max_price?: number | null;
+  min_original_price?: number | null;
+  max_original_price?: number | null;
+  variant_count?: number;
   original_price?: number | null;
   cost_price?: number | null;
   stock: number;

@@ -27,11 +27,41 @@ exports.verifyMfa = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.beginPasskeyRegistration = asyncRoute(async (req, res) => {
+  const r = await adminMfaService.beginPasskeyRegistration(req);
+  res.success(r.data, r.message);
+});
+
+exports.finishPasskeyRegistration = asyncRoute(async (req, res) => {
+  const r = await adminMfaService.finishPasskeyRegistration(req.body, req);
+  res.success(r.data, r.message);
+});
+
+exports.beginPasskeyLogin = asyncRoute(async (req, res) => {
+  const r = await adminMfaService.beginPasskeyLogin(req.body, req);
+  res.success(r.data, r.message);
+});
+
+exports.finishPasskeyLogin = asyncRoute(async (req, res) => {
+  const r = await adminMfaService.finishPasskeyLogin(req.body, req, res);
+  setAuthCookies(req, res, r.data.token, 'admin');
+  r.data.csrfToken = createCsrfToken(req, res);
+  res.success(r.data, r.message);
+});
+
+exports.beginPasskeyStepUp = asyncRoute(async (req, res) => {
+  const r = await adminMfaService.beginPasskeyStepUp(req.body, req);
+  res.success(r.data, r.message);
+});
+
+exports.finishPasskeyStepUp = asyncRoute(async (req, res) => {
+  const r = await adminMfaService.finishPasskeyStepUp(req.body, req, res);
+  r.data = /** @type {any} */ ({ ...(r.data || {}), csrfToken: createCsrfToken(req, res) });
+  res.success(r.data, r.message);
+});
+
 exports.reverifyMfa = asyncRoute(async (req, res) => {
-  const r = await adminMfaService.verifyReverify(req.body, req);
-  if (r.data?.token) {
-    setAuthCookies(req, res, r.data.token, 'admin');
-  }
+  const r = await adminMfaService.verifyReverify(req.body, req, res);
   r.data = /** @type {any} */ ({ ...(r.data || {}), csrfToken: createCsrfToken(req, res) });
   res.success(r.data, r.message);
 });
@@ -99,4 +129,3 @@ exports.getRbacMe = asyncRoute(async (req, res) => {
     mfaVerifiedAt: /** @type {any} */ (req.user).mfaVerifiedAt || 0,
   });
 });
-

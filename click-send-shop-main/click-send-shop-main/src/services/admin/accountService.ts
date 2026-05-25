@@ -1,6 +1,7 @@
 import * as accountApi from "@/api/admin/account";
 import { setAdminTokens, clearAdminTokens, isAdminLoggedIn } from "@/utils/token";
 import type { AdminLoginParams, AdminLoginResult, AdminUser } from "@/types/admin";
+import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { clearAdminQueryCache } from "@/lib/queryClient";
 import { clearAdminCsrfToken, setAdminCsrfToken } from "@/lib/adminCsrf";
@@ -30,6 +31,7 @@ function applyAdminLoginPayload(d: Record<string, unknown>, username: string): A
       mfaTicket: String(d.mfaTicket || ""),
       secret: d.secret ? String(d.secret) : undefined,
       otpAuthUrl: d.otpAuthUrl ? String(d.otpAuthUrl) : undefined,
+      methods: Array.isArray(d.methods) ? d.methods.map(String) : undefined,
     };
   }
   // Backend returns { token: { accessToken, refreshToken }, userId }
@@ -61,15 +63,49 @@ function applyAdminLoginPayload(d: Record<string, unknown>, username: string): A
 }
 
 export async function verifyAdminMfa(
-  params: { mfaTicket: string; code: string; username?: string },
+  params: { mfaTicket: string; code: string; username?: string; trustDevice?: boolean; trustDays?: 7 | 14 | 30 },
 ): Promise<AdminLoginResult> {
-  const res = await accountApi.verifyAdminMfa({ mfaTicket: params.mfaTicket, code: params.code });
+  const res = await accountApi.verifyAdminMfa({
+    mfaTicket: params.mfaTicket,
+    code: params.code,
+    trustDevice: params.trustDevice,
+    trustDays: params.trustDays,
+  });
   return applyAdminLoginPayload(res.data as unknown as Record<string, unknown>, params.username || "");
 }
 
-export async function reverifyAdminMfa(code: string, options?: { signal?: AbortSignal }): Promise<void> {
-  const res = await accountApi.reverifyAdminMfa({ code }, options);
+export async function reverifyAdminMfa(code: string, options?: { signal?: AbortSignal; actionClass?: string }): Promise<void> {
+  const res = await accountApi.reverifyAdminMfa({ code, actionClass: options?.actionClass }, options);
   setAdminCsrfToken(res.data?.csrfToken);
+}
+
+export async function verifyAdminPasskeyLogin(params: {
+  mfaTicket: string;
+  username?: string;
+  trustDevice?: boolean;
+  trustDays?: 7 | 14 | 30;
+}): Promise<AdminLoginResult> {
+  const optionsRes = await accountApi.beginAdminPasskeyLogin({ mfaTicket: params.mfaTicket });
+  const response = await startAuthentication({ optionsJSON: optionsRes.data });
+  const verifyRes = await accountApi.finishAdminPasskeyLogin({
+    response,
+    trustDevice: params.trustDevice,
+    trustDays: params.trustDays,
+  });
+  return applyAdminLoginPayload(verifyRes.data as unknown as Record<string, unknown>, params.username || "");
+}
+
+export async function reverifyAdminPasskey(options?: { signal?: AbortSignal; actionClass?: string }): Promise<void> {
+  const optionsRes = await accountApi.beginAdminPasskeyStepUp({ actionClass: options?.actionClass }, options);
+  const response = await startAuthentication({ optionsJSON: optionsRes.data });
+  const verifyRes = await accountApi.finishAdminPasskeyStepUp({ response }, options);
+  setAdminCsrfToken(verifyRes.data?.csrfToken);
+}
+
+export async function registerAdminPasskey(label?: string): Promise<void> {
+  const optionsRes = await accountApi.beginAdminPasskeyRegistration();
+  const response = await startRegistration({ optionsJSON: optionsRes.data });
+  await accountApi.finishAdminPasskeyRegistration({ response, label });
 }
 
 export async function fetchAdminProfile(): Promise<AdminUser> {

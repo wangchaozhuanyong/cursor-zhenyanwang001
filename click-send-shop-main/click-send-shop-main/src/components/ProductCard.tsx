@@ -141,20 +141,23 @@ function ProductCardInner({
 
   const isThemeCompact = !isListRow && cardVariant === "compact";
   const isHorizontal = isListRow || isThemeCompact;
-  const priceNum = Number(product.price || 0);
-  const originalPriceNum = Number(product.original_price || 0);
-  const showOriginal = Number.isFinite(originalPriceNum) && originalPriceNum > priceNum;
   const formatMoney = (v: number) => v.toFixed(2).replace(/\.00$/, "");
+  const minPrice = Number(product.min_price ?? product.price ?? 0);
+  const maxPrice = Number(product.max_price ?? product.price ?? 0);
+  const hasPriceRange = Number.isFinite(minPrice) && Number.isFinite(maxPrice) && maxPrice > minPrice;
+  const priceDisplay = hasPriceRange ? `${formatMoney(minPrice)}-${formatMoney(maxPrice)}` : formatMoney(Number(product.price || minPrice || 0));
+  const originalPriceNum = Number(product.max_original_price ?? product.original_price ?? 0);
+  const showOriginal = Number.isFinite(originalPriceNum) && originalPriceNum > (hasPriceRange ? maxPrice : Number(product.price || 0));
   const metaRow = (
     <div className={cn("w-full min-w-0", cardCenter && !isHorizontal ? "text-center" : "")}>
       {isHorizontal ? (
         <StorePriceAmount
-          amount={formatMoney(priceNum)}
+          amount={priceDisplay}
           amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
           currencyClassName="mr-0.5 text-[11px] font-bold leading-none sm:text-xs"
         />
       ) : (
-        <StorePriceAmount amount={formatMoney(priceNum)} />
+        <StorePriceAmount amount={priceDisplay} />
       )}
       <div className={cn("mt-1 flex min-w-0 items-center justify-between gap-2")}>
         {showOriginal ? (

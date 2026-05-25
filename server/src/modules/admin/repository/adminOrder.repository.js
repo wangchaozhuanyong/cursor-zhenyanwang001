@@ -66,10 +66,26 @@ async function selectOrderStatusSummary(where, params) {
 }
 
 async function selectOrdersAdminPage(where, params, pageSize, offset) {
+  const { schema } = await getOrderRevenueExprs();
+  const amountFields = [
+    schema.ordersGoodsOriginalAmount ? 'o.goods_original_amount' : 'COALESCE(o.raw_amount, 0) AS goods_original_amount',
+    schema.ordersGoodsSaleAmount ? 'o.goods_sale_amount' : 'COALESCE(o.raw_amount, 0) AS goods_sale_amount',
+    schema.ordersActivityDiscount ? 'o.activity_discount_amount' : '0 AS activity_discount_amount',
+    schema.ordersCouponDiscount ? 'o.coupon_discount_amount' : '0 AS coupon_discount_amount',
+    schema.ordersShippingOriginalFee ? 'o.shipping_original_fee' : 'COALESCE(o.shipping_fee, 0) AS shipping_original_fee',
+    schema.ordersShippingDiscount ? 'o.shipping_discount_amount' : '0 AS shipping_discount_amount',
+    schema.ordersTotalDiscount ? 'o.total_discount_amount' : '(COALESCE(o.discount_amount, 0) + COALESCE(o.points_discount_amount, 0) + COALESCE(o.reward_cash_discount_amount, 0)) AS total_discount_amount',
+    schema.ordersPayableAmount ? 'o.payable_amount' : 'COALESCE(o.total_amount, 0) AS payable_amount',
+    schema.ordersPaidAmount ? 'o.paid_amount' : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN COALESCE(o.total_amount, 0) ELSE 0 END AS paid_amount",
+    schema.ordersNetReceivedAmount ? 'o.net_received_amount' : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN GREATEST(0, COALESCE(o.total_amount, 0) - COALESCE(o.refunded_amount, 0)) ELSE 0 END AS net_received_amount",
+    schema.ordersOutstandingAmount ? 'o.outstanding_amount' : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN 0 ELSE COALESCE(o.total_amount, 0) END AS outstanding_amount",
+    schema.ordersAmountSnapshot ? 'o.amount_snapshot' : 'NULL AS amount_snapshot',
+  ].join(',\n       ');
   const [orders] = await db.query(
     `SELECT
        o.id, o.user_id, o.order_no, o.raw_amount, o.discount_amount, o.coupon_title,
        o.shipping_fee, o.shipping_name, o.tracking_no, o.carrier, o.total_amount,
+       ${amountFields},
        o.goods_cost_amount, o.gross_profit_amount, o.shipping_cost_amount, o.payment_fee_amount, o.net_profit_amount,
        o.total_points, o.status, o.payment_status, o.refund_status, o.refunded_amount,
        o.note, o.contact_name, o.contact_phone, o.shipping_phone, o.address,
@@ -222,6 +238,56 @@ async function selectOrderOperationalSummary(where, params) {
   return row || {};
 }
 
+async function selectOrderFinancialSummary(where, params) {
+  const { schema } = await getOrderRevenueExprs();
+  const refundCol = schema.ordersRefundedAmount ? 'COALESCE(o.refunded_amount, 0)' : '0';
+  const payableCol = schema.ordersPayableAmount
+    ? 'CASE WHEN COALESCE(o.payable_amount, 0) > 0 THEN COALESCE(o.payable_amount, 0) ELSE COALESCE(o.total_amount, 0) END'
+    : 'COALESCE(o.total_amount, 0)';
+  const paidCol = schema.ordersPaidAmount
+    ? `CASE
+         WHEN COALESCE(o.paid_amount, 0) > 0 THEN COALESCE(o.paid_amount, 0)
+         WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN COALESCE(o.total_amount, 0)
+         ELSE 0
+       END`
+    : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN COALESCE(o.total_amount, 0) ELSE 0 END";
+  const netReceivedCol = `GREATEST(0, (${paidCol}) - ${refundCol})`;
+  const outstandingCol = `GREATEST(0, (${payableCol}) - (${paidCol}))`;
+  const activityDiscountCol = schema.ordersActivityDiscount ? 'COALESCE(o.activity_discount_amount, 0)' : 'COALESCE(o.discount_amount, 0)';
+  const couponDiscountCol = schema.ordersCouponDiscount ? 'COALESCE(o.coupon_discount_amount, 0)' : '0';
+  const pointsDiscountCol = schema.ordersPointsDiscount ? 'COALESCE(o.points_discount_amount, 0)' : '0';
+  const rewardCashDiscountCol = schema.ordersRewardCashDiscount ? 'COALESCE(o.reward_cash_discount_amount, 0)' : '0';
+  const shippingDiscountCol = schema.ordersShippingDiscount ? 'COALESCE(o.shipping_discount_amount, 0)' : '0';
+  const shippingCostCol = schema.ordersShippingCost ? 'COALESCE(o.shipping_cost_amount, 0)' : '0';
+  const grossProfitCol = schema.ordersGrossProfit ? 'COALESCE(o.gross_profit_amount, 0)' : '0';
+  const netProfitCol = schema.ordersNetProfit ? 'COALESCE(o.net_profit_amount, 0)' : '0';
+  const [[row]] = await db.query(
+    `SELECT
+       COUNT(*) AS order_count,
+       COALESCE(SUM(${payableCol}), 0) AS payable_amount,
+       COALESCE(SUM(${paidCol}), 0) AS paid_amount,
+       COALESCE(SUM(${netReceivedCol}), 0) AS net_received_amount,
+       COALESCE(SUM(${outstandingCol}), 0) AS outstanding_amount,
+       COALESCE(SUM(${refundCol}), 0) AS refund_amount,
+       COALESCE(SUM(${activityDiscountCol}), 0) AS activity_discount_amount,
+       COALESCE(SUM(${couponDiscountCol}), 0) AS coupon_discount_amount,
+       COALESCE(SUM(${pointsDiscountCol}), 0) AS points_discount_amount,
+       COALESCE(SUM(${rewardCashDiscountCol}), 0) AS reward_cash_discount_amount,
+       COALESCE(SUM(${shippingDiscountCol}), 0) AS shipping_discount_amount,
+       COALESCE(SUM(COALESCE(o.shipping_fee, 0)), 0) AS shipping_income_amount,
+       COALESCE(SUM(${shippingCostCol}), 0) AS shipping_cost_amount,
+       COALESCE(SUM(${grossProfitCol}), 0) AS gross_profit_amount,
+       COALESCE(SUM(${netProfitCol}), 0) AS net_profit_amount,
+       COALESCE(SUM(${activityDiscountCol} + ${couponDiscountCol} + ${pointsDiscountCol} + ${rewardCashDiscountCol} + ${shippingDiscountCol}), 0) AS total_discount_amount,
+       COALESCE(SUM(COALESCE(o.discount_amount, 0)), 0) AS discount_amount
+     FROM orders o
+     LEFT JOIN users u ON u.id = o.user_id
+     ${where}`,
+    params,
+  );
+  return row || {};
+}
+
 /** 全站今日指标（不受列表筛选条件影响） */
 async function selectOrderGlobalTodaySummary() {
   const { schema } = await getOrderRevenueExprs();
@@ -345,7 +411,10 @@ async function updateOrderStatusPaymentAndPaidTime(q, orderId, status, paymentSt
     `UPDATE orders
      SET status = ?, payment_status = ?,
          payment_time = COALESCE(payment_time, NOW()),
-         paid_at = COALESCE(paid_at, NOW())
+         paid_at = COALESCE(paid_at, NOW()),
+         paid_amount = COALESCE(NULLIF(paid_amount, 0), NULLIF(payable_amount, 0), total_amount, 0),
+         net_received_amount = GREATEST(0, COALESCE(NULLIF(paid_amount, 0), NULLIF(payable_amount, 0), total_amount, 0) - COALESCE(refunded_amount, 0)),
+         outstanding_amount = 0
      WHERE id = ?`,
     [status, paymentStatus, orderId],
   );
@@ -531,6 +600,7 @@ module.exports = {
   countOrdersAdmin,
   selectOrderStatusSummary,
   selectOrderOperationalSummary,
+  selectOrderFinancialSummary,
   selectOrderGlobalTodaySummary,
   selectOrdersAdminPage,
   selectOrdersForExport,

@@ -14,7 +14,7 @@ const multer = require('multer');
 const adminAuth = require('../../../middleware/adminAuth');
 const requirePermission = adminAuth.requirePermission;
 const requireAnyPermission = adminAuth.requireAnyPermission;
-const requireRecentMfa = adminAuth.requireRecentMfa;
+const requireSensitiveAction = adminAuth.requireSensitiveAction;
 const { adminSecurityAudit } = require('../../../middleware/adminSecurityAudit');
 const { userQueryLimiter } = require('../../../middleware/rateLimiters');
 const { paginationCap } = require('../../../middleware/paginationCap');
@@ -59,7 +59,7 @@ const paySchemas = require('../../payment/payments.schemas');
 const productSchemas = require('../schemas/adminProduct.schemas');
 const adminOrderSchemas = require('../schemas/adminOrder.schemas');
 const adminUploadCtrl = require('../controller/adminUpload.controller');
-const { isHighRiskAdminOperation } = require('../adminHighRiskRoutes');
+const { getSensitiveActionClass } = require('../adminHighRiskRoutes');
 
 const uploadCsv = multer({
   storage: multer.memoryStorage(),
@@ -73,6 +73,12 @@ router.post('/auth/login', authCtrl.login);
 router.post('/auth/refresh', authCtrl.refresh);
 router.post('/auth/mfa/verify', authCtrl.verifyMfa);
 router.post('/auth/mfa/reverify', adminAuth, authCtrl.reverifyMfa);
+router.post('/auth/passkeys/login/options', authCtrl.beginPasskeyLogin);
+router.post('/auth/passkeys/login/verify', authCtrl.finishPasskeyLogin);
+router.post('/auth/passkeys/register/options', adminAuth, authCtrl.beginPasskeyRegistration);
+router.post('/auth/passkeys/register/verify', adminAuth, authCtrl.finishPasskeyRegistration);
+router.post('/auth/passkeys/step-up/options', adminAuth, authCtrl.beginPasskeyStepUp);
+router.post('/auth/passkeys/step-up/verify', adminAuth, authCtrl.finishPasskeyStepUp);
 router.get('/auth/csrf', authCtrl.csrf);
 router.post('/auth/logout', adminAuth, authCtrl.logout);
 router.get('/account/profile', adminAuth, authCtrl.getProfile);
@@ -89,10 +95,11 @@ router.use((req, res, next) => {
 
 router.use((req, res, next) => {
   if (/^\/auth\//.test(req.path)) return next();
-  if (!isHighRiskAdminOperation(req)) return next();
+  const actionClass = getSensitiveActionClass(req);
+  if (!actionClass) return next();
   return adminAuth(req, res, (err) => {
     if (err) return next(err);
-    return requireRecentMfa(req, res, next);
+    return requireSensitiveAction(actionClass)(req, res, next);
   });
 });
 
@@ -147,7 +154,6 @@ router.post(
   '/restore/jobs/:id/approve',
   adminAuth,
   requirePermission('backup.restore.approve'),
-  requireRecentMfa,
   backupCtrl.approveRestoreJob,
 );
 router.get('/restore/drills', adminAuth, requirePermission('backup.view'), backupCtrl.listDrillReports);
@@ -344,6 +350,9 @@ router.get('/inventory/records', adminAuth, inventoryFeature, requirePermission(
 router.get('/inventory/replenishment-alerts', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listReplenishmentAlerts);
 router.post('/inventory/replenishment-alerts/generate', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.generateReplenishmentAlerts);
 router.post('/inventory/replenishment-alerts/:id/create-purchase-order', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.createPurchaseOrderFromAlert);
+router.post('/inventory/replenishment-runs/preview', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.createSmartReplenishmentPreview);
+router.post('/inventory/replenishment-runs/:id/apply', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.applySmartReplenishmentRun);
+router.post('/inventory/daily-snapshots/generate', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.generateDailyInventorySnapshot);
 router.get('/purchase-orders', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listPurchaseOrders);
 router.get('/purchase-orders/:id', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.getPurchaseOrder);
 router.post('/purchase-orders/:id/receive', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.receivePurchaseOrder);
@@ -604,8 +613,3 @@ router.get('/audit-logs', adminAuth, requirePermission('audit.view'), logCtrl.li
 router.get('/security/alerts', adminAuth, requirePermission('audit.view'), logCtrl.listSecurityAlerts);
 
 module.exports = router;
-
-
-
-
-

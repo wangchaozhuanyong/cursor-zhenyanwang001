@@ -563,6 +563,16 @@ async function buildOrderPricing(userId, body, conn = null) {
     fullReductionDiscount,
     couponDiscount,
     discountAmount: totalGoodsDiscount,
+    activityDiscountAmount: flashSaleDiscount + fullReductionDiscount + memberLevelDiscount,
+    shippingOriginalFee: originalShippingFee,
+    shippingDiscountAmount: memberShippingDiscount,
+    totalDiscountAmount: flashSaleDiscount
+      + fullReductionDiscount
+      + memberLevelDiscount
+      + couponDiscount
+      + points_discount_amount
+      + reward_cash_discount_amount
+      + memberShippingDiscount,
     shippingFee,
     finalTotal,
     totalPoints: earned_points,

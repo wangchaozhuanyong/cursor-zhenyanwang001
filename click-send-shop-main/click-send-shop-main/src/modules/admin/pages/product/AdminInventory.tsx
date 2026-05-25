@@ -15,14 +15,17 @@ import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import {
   adjustInventorySkuStock,
+  applySmartReplenishmentRun,
   assembleInventoryRule,
   batchAdjustInventory,
   batchUpdateInventoryWarningThreshold,
+  createSmartReplenishmentPreview,
   createPurchaseOrderFromAlert,
   createInventoryPackRule,
   deleteInventoryPackRule,
   exportInventoryRecordsCsv,
   exportInventorySkusCsv,
+  generateDailyInventorySnapshot,
   fetchInventoryConversions,
   fetchInventoryPackRules,
   fetchInventoryRecords,
@@ -37,7 +40,7 @@ import {
   updateInventoryPackRule,
   updateInventorySkuWarningThreshold,
 } from "@/services/admin/inventoryService";
-import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, PurchaseOrder } from "@/types/inventory";
+import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, PurchaseOrder, SmartReplenishmentPreviewResult } from "@/types/inventory";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { THEME_BADGE_SUCCESS, THEME_BADGE_WARNING, THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
@@ -56,10 +59,12 @@ const EMPTY_BATCH_ADJUST: BatchAdjustForm = {
   cost_price: "",
 };
 
-type TabKey = "skus" | "alerts" | "purchaseOrders" | "records" | "rules" | "conversions";
+type TabKey = "skus" | "smart" | "alerts" | "purchaseOrders" | "records" | "rules" | "conversions";
 type AdjustForm = { sku: InventorySku; change_type: "in" | "out" | "adjust"; quantity: string; reason: string; remark: string; source_no: string; cost_price: string };
 type BatchAdjustForm = { change_type: "in" | "out" | "adjust"; quantity: string; reason: string; remark: string; source_no: string; cost_price: string };
 type BatchThresholdForm = { threshold: string };
+type SmartReplenishmentForm = { analysis_days: string; strategy: string; lead_time_days: string; safety_stock_days: string; target_cover_days: string; min_floor_stock: string; purchase_multiple: string };
+type SmartEditMap = Record<string, { lower: string; upper: string; qty: string }>;
 type RuleForm = Partial<InventoryPackRule> & { id?: string };
 type ConvertForm = { type: "unpack" | "assemble"; rule: InventoryPackRule; parent_qty: string; remark: string };
 type PurchaseFromAlertForm = { alert: InventoryReplenishmentAlert; ordered_qty: string; unit_cost: string; expected_arrival_date: string; remark: string };
@@ -160,7 +165,19 @@ export default function AdminInventory() {
   const [skuCache, setSkuCache] = useState<Record<string, InventorySku>>({});
   const [batchThreshold, setBatchThreshold] = useState<BatchThresholdForm | null>(null);
   const [batchAdjust, setBatchAdjust] = useState<BatchAdjustForm | null>(null);
+  const [smartForm, setSmartForm] = useState<SmartReplenishmentForm>({
+    analysis_days: "30",
+    strategy: "balanced",
+    lead_time_days: "7",
+    safety_stock_days: "3",
+    target_cover_days: "20",
+    min_floor_stock: "0",
+    purchase_multiple: "1",
+  });
+  const [smartPreview, setSmartPreview] = useState<SmartReplenishmentPreviewResult | null>(null);
+  const [smartEdits, setSmartEdits] = useState<SmartEditMap>({});
   const [ruleForm, setRuleForm] = useState<RuleForm | null>(null);
+  const [ruleSkuKeyword, setRuleSkuKeyword] = useState("");
   const [convertForm, setConvertForm] = useState<ConvertForm | null>(null);
   const [purchaseFromAlert, setPurchaseFromAlert] = useState<PurchaseFromAlertForm | null>(null);
   const [receivingOrder, setReceivingOrder] = useState<ReceivePurchaseOrderForm | null>(null);
@@ -187,6 +204,12 @@ export default function AdminInventory() {
   const recordsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "records", recordsParams], queryFn: () => fetchInventoryRecords(recordsParams), enabled: tab === "records", staleTime: 60_000, refetchInterval: 90_000 });
   const rulesQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "rules", rulesParams], queryFn: () => fetchInventoryPackRules(rulesParams), enabled: tab === "rules" || !!ruleForm || !!convertForm, staleTime: 60_000 });
   const conversionsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "conversions", conversionsParams], queryFn: () => fetchInventoryConversions(conversionsParams), enabled: tab === "conversions", staleTime: 60_000, refetchInterval: 90_000 });
+  const ruleSkuSearchQuery = useQuery({
+    queryKey: [...adminQueryKeys.inventoryRoot(), "rule-sku-search", ruleSkuKeyword.trim()],
+    queryFn: () => fetchInventorySkus({ page: 1, pageSize: 100, keyword: ruleSkuKeyword.trim() || undefined }),
+    enabled: !!ruleForm,
+    staleTime: 30_000,
+  });
 
   const invalidateInventory = async () => {
     await Promise.all([
@@ -317,6 +340,64 @@ export default function AdminInventory() {
     onError: (error) => toast.error(toastErrorMessage(error, L("生成补货预警失败"))),
   });
 
+  const smartPreviewMutation = useMutation({
+    mutationFn: async () => createSmartReplenishmentPreview({
+      variant_ids: selectedVariantIds.length > 0 ? selectedVariantIds : undefined,
+      analysis_days: Number(smartForm.analysis_days) || 30,
+      strategy: smartForm.strategy || "balanced",
+      lead_time_days: Number(smartForm.lead_time_days) || 7,
+      safety_stock_days: Number(smartForm.safety_stock_days) || 3,
+      target_cover_days: Number(smartForm.target_cover_days) || 20,
+      min_floor_stock: Number(smartForm.min_floor_stock) || 0,
+      purchase_multiple: Math.max(1, Number(smartForm.purchase_multiple) || 1),
+    }),
+    onSuccess: (result) => {
+      const edits: SmartEditMap = {};
+      for (const item of result.items || []) {
+        edits[item.id] = {
+          lower: String(item.suggested_lower_limit ?? 0),
+          upper: String(item.suggested_upper_limit ?? 0),
+          qty: String(item.suggested_replenishment_qty ?? 0),
+        };
+      }
+      setSmartPreview(result);
+      setSmartEdits(edits);
+      setTab("smart");
+      toast.success(`${L("智能补货预览已生成")} ${result.items?.length ?? 0} ${L("条")}`);
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("智能补货计算失败"))),
+  });
+
+  const smartApplyMutation = useMutation({
+    mutationFn: async () => {
+      if (!smartPreview) return;
+      return applySmartReplenishmentRun(smartPreview.id, {
+        items: smartPreview.items.map((item) => {
+          const edit = smartEdits[item.id];
+          return {
+            id: item.id,
+            suggested_lower_limit: Number(edit?.lower ?? item.suggested_lower_limit) || 0,
+            suggested_upper_limit: Number(edit?.upper ?? item.suggested_upper_limit) || 0,
+            suggested_replenishment_qty: Number(edit?.qty ?? item.suggested_replenishment_qty) || 0,
+          };
+        }),
+      });
+    },
+    onSuccess: async (result) => {
+      toast.success(`${L("已应用智能补货上下限")} ${result?.applied ?? 0} ${L("条")}`);
+      await invalidateInventory();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("应用智能补货结果失败"))),
+  });
+
+  const dailySnapshotMutation = useMutation({
+    mutationFn: () => generateDailyInventorySnapshot(),
+    onSuccess: (result) => {
+      toast.success(`${L("库存快照已生成")}：${result.snapshot_date}`);
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("生成库存快照失败"))),
+  });
+
   const createPoMutation = useMutation({
     mutationFn: async () => {
       if (!purchaseFromAlert) return;
@@ -402,6 +483,12 @@ export default function AdminInventory() {
     () => selectedVariantIds.slice(0, 5).map((id) => skuCache[id]).filter(Boolean) as InventorySku[],
     [selectedVariantIds, skuCache],
   );
+  const ruleSkuOptions = useMemo(() => {
+    const map = new Map<string, InventorySku>();
+    for (const sku of skus) map.set(sku.variant_id, sku);
+    for (const sku of ruleSkuSearchQuery.data?.list || []) map.set(sku.variant_id, sku);
+    return Array.from(map.values());
+  }, [ruleSkuSearchQuery.data?.list, skus]);
 
   const records = recordsQuery.data?.list || [];
   const alerts = alertsQuery.data?.list || [];
@@ -418,7 +505,7 @@ export default function AdminInventory() {
     return Math.max(0, qty);
   }, [adjusting]);
 
-  const renderSkuOptions = (selectedId?: string) => skus.map((sku) => <option key={`${selectedId || ""}-${sku.variant_id}`} value={sku.variant_id}>{skuLabel(sku, L)}</option>);
+  const renderSkuOptions = (selectedId?: string) => ruleSkuOptions.map((sku) => <option key={`${selectedId || ""}-${sku.variant_id}`} value={sku.variant_id}>{skuLabel(sku, L)}</option>);
 
   const renderSkuMobileCard = (sku: InventorySku) => {
     const checked = selectedVariantIds.includes(sku.variant_id);
@@ -603,6 +690,7 @@ export default function AdminInventory() {
           <div className="flex flex-wrap gap-2 border-b border-border p-3">
             {([
               ["skus", "SKU 库存"],
+              ["smart", "智能补货"],
               ["alerts", "补货预警"],
               ["purchaseOrders", "采购单"],
               ["records", "库存流水"],
@@ -623,6 +711,21 @@ export default function AdminInventory() {
                 {selectedCount > 0 ? (
                   <button type="button" onClick={() => setSelectedVariantIds([])} className="rounded-lg bg-secondary px-3 py-2.5 text-xs text-muted-foreground"><Tx>清空选择</Tx></button>
                 ) : null}
+              </>
+            ) : null}
+            {tab === "smart" ? (
+              <>
+                <select value={smartForm.analysis_days} onChange={(e) => setSmartForm((s) => ({ ...s, analysis_days: e.target.value }))} className="rounded-lg bg-secondary px-3 py-2.5 text-sm">
+                  {[7, 14, 30, 60, 90].map((day) => <option key={day} value={String(day)}>{L(`近 ${day} 天`)}</option>)}
+                </select>
+                <select value={smartForm.strategy} onChange={(e) => setSmartForm((s) => ({ ...s, strategy: e.target.value }))} className="rounded-lg bg-secondary px-3 py-2.5 text-sm">
+                  <option value="conservative"><Tx>保守</Tx></option>
+                  <option value="balanced"><Tx>平衡</Tx></option>
+                  <option value="aggressive"><Tx>激进</Tx></option>
+                </select>
+                <button type="button" onClick={() => smartPreviewMutation.mutate()} disabled={smartPreviewMutation.isPending} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                  {smartPreviewMutation.isPending ? L("计算中...") : selectedCount > 0 ? `${L("计算已选 SKU")} (${selectedCount})` : L("计算全部 SKU")}
+                </button>
               </>
             ) : null}
             {tab === "alerts" ? (
@@ -700,6 +803,129 @@ export default function AdminInventory() {
             />
             <Pagination total={skusQuery.data?.total || 0} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} />
           </>
+        ) : null}
+
+        {tab === "smart" ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground"><Tx>一键设置上下限</Tx></h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    <Tx>系统按可用库存、在途库存、销量快照和采购周期生成预览；预览结果可人工修正，确认后才会批量应用。</Tx>
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => smartPreviewMutation.mutate()} disabled={smartPreviewMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                    {smartPreviewMutation.isPending ? L("智能计算中...") : L("智能计算")}
+                  </button>
+                  <button type="button" onClick={() => dailySnapshotMutation.mutate()} disabled={dailySnapshotMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    {dailySnapshotMutation.isPending ? L("生成中...") : L("生成今日快照")}
+                  </button>
+                  <button type="button" onClick={() => smartApplyMutation.mutate()} disabled={!smartPreview || smartApplyMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    {smartApplyMutation.isPending ? L("应用中...") : L("批量应用")}
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-4 lg:grid-cols-7">
+                <label className="text-xs text-muted-foreground">
+                  <span className="mb-1 block"><Tx>计算周期</Tx></span>
+                  <select value={smartForm.analysis_days} onChange={(e) => setSmartForm((s) => ({ ...s, analysis_days: e.target.value }))} className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground">
+                    {[7, 14, 30, 60, 90].map((day) => <option key={day} value={String(day)}>{L(`近 ${day} 天`)}</option>)}
+                  </select>
+                </label>
+                <label className="text-xs text-muted-foreground">
+                  <span className="mb-1 block"><Tx>策略</Tx></span>
+                  <select value={smartForm.strategy} onChange={(e) => setSmartForm((s) => ({ ...s, strategy: e.target.value }))} className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground">
+                    <option value="conservative"><Tx>保守</Tx></option>
+                    <option value="balanced"><Tx>平衡</Tx></option>
+                    <option value="aggressive"><Tx>激进</Tx></option>
+                  </select>
+                </label>
+                {[
+                  ["lead_time_days", "到货周期"],
+                  ["safety_stock_days", "安全天数"],
+                  ["target_cover_days", "覆盖天数"],
+                  ["min_floor_stock", "保底库存"],
+                  ["purchase_multiple", "采购倍数"],
+                ].map(([key, label]) => (
+                  <label key={key} className="text-xs text-muted-foreground">
+                    <span className="mb-1 block">{L(label)}</span>
+                    <input
+                      type="number"
+                      min={key === "purchase_multiple" ? 1 : 0}
+                      value={smartForm[key as keyof SmartReplenishmentForm]}
+                      onChange={(e) => setSmartForm((s) => ({ ...s, [key]: e.target.value }))}
+                      className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground"
+                    />
+                  </label>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {selectedCount > 0 ? `${L("当前将计算已选 SKU")}：${selectedCount}` : L("未选择 SKU 时将按当前接口范围计算全部 SKU。")}
+              </p>
+            </div>
+
+            {smartPreview ? (
+              <div className="rounded-xl border border-border bg-card">
+                <div className="flex flex-col gap-2 border-b border-border p-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground"><Tx>智能补货预览</Tx></h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {L("批次")} {smartPreview.id} · {L("共")} {smartPreview.items.length} {L("条")}
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => smartApplyMutation.mutate()} disabled={smartApplyMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                    {smartApplyMutation.isPending ? L("应用中...") : L("确认批量应用")}
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1280px] text-left text-sm">
+                    <thead className="border-b border-border text-xs text-muted-foreground">
+                      <tr>
+                        {["SKU", "库存", "在途", "销量/天", "当前下限/上限", "建议下限", "建议上限", "建议补货", "置信度", "原因"].map((head) => (
+                          <th key={head} className="px-4 py-3 text-left">{L(head)}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {smartPreview.items.map((item) => {
+                        const sku = skuCache[item.variant_id];
+                        const edit = smartEdits[item.id] || { lower: String(item.suggested_lower_limit), upper: String(item.suggested_upper_limit), qty: String(item.suggested_replenishment_qty) };
+                        return (
+                          <tr key={item.id} className="border-b border-border/70">
+                            <td className="px-4 py-3">
+                              <p className="font-medium">{sku?.product_name || item.variant_id}</p>
+                              <p className="text-xs text-muted-foreground">{sku?.variant_title || sku?.spec_text || L("SKU")} / {sku?.sku_code || "-"}</p>
+                            </td>
+                            <td className="px-4 py-3">{item.available_stock} / {item.current_stock}</td>
+                            <td className="px-4 py-3">{item.in_transit_qty}</td>
+                            <td className="px-4 py-3">{item.sales_qty} / {Number(item.avg_daily_sales || 0).toFixed(2)}</td>
+                            <td className="px-4 py-3">{item.old_lower_limit ?? "-"} / {item.old_upper_limit ?? "-"}</td>
+                            <td className="px-4 py-3">
+                              <input type="number" min={0} value={edit.lower} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, lower: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input type="number" min={0} value={edit.upper} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, upper: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input type="number" min={0} value={edit.qty} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, qty: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
+                            </td>
+                            <td className="px-4 py-3">{item.confidence_score}%</td>
+                            <td className="max-w-[18rem] px-4 py-3 text-xs text-muted-foreground">{item.reason || "-"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
+                <Tx>暂无智能补货预览。请先点击“智能计算”，系统只会生成预览，不会直接修改库存上下限。</Tx>
+              </div>
+            )}
+          </div>
         ) : null}
 
         {tab === "alerts" ? (
@@ -968,6 +1194,18 @@ export default function AdminInventory() {
         >
           {ruleForm ? (
             <>
+              <label className="space-y-1 text-sm">
+                <span><Tx>远程搜索 SKU</Tx></span>
+                <input
+                  value={ruleSkuKeyword}
+                  onChange={(e) => setRuleSkuKeyword(e.target.value)}
+                  placeholder={tText("搜索商品名、SKU 编码、规格名或条码")}
+                  className="w-full rounded-lg bg-secondary px-3 py-2.5"
+                />
+                <span className="block text-xs text-muted-foreground">
+                  {ruleSkuSearchQuery.isFetching ? L("搜索中...") : L("下方选项会随搜索结果更新，不受当前库存分页限制。")}
+                </span>
+              </label>
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="space-y-1 text-sm"><span><Tx>大包装 SKU</Tx></span><select value={ruleForm.parent_variant_id || ""} onChange={(e) => setRuleForm({ ...ruleForm, parent_variant_id: e.target.value })} className="w-full rounded-lg bg-secondary px-3 py-2.5"><option value=""><Tx>请选择</Tx></option>{renderSkuOptions(ruleForm.parent_variant_id)}</select></label>
                 <label className="space-y-1 text-sm"><span><Tx>小包装 SKU</Tx></span><select value={ruleForm.child_variant_id || ""} onChange={(e) => setRuleForm({ ...ruleForm, child_variant_id: e.target.value })} className="w-full rounded-lg bg-secondary px-3 py-2.5"><option value=""><Tx>请选择</Tx></option>{renderSkuOptions(ruleForm.child_variant_id)}</select></label>

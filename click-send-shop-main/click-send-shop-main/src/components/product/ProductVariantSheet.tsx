@@ -46,6 +46,8 @@ export default function ProductVariantSheet({
   const hasMatrix = specGroups.length > 0;
   const selectedValueIds = new Set(selected?.spec_value_ids ?? []);
   const unitPrice = Number(selected?.price ?? product.price) || 0;
+  const originalPrice = Number(selected?.original_price ?? product.original_price ?? 0) || 0;
+  const showOriginalPrice = originalPrice > unitPrice;
   const lineTotal = unitPrice * Math.max(0, qty);
   const title = intent === "cart" ? "加入购物车" : "立即购买";
 
@@ -110,6 +112,21 @@ export default function ProductVariantSheet({
     });
   };
 
+  const isValueOutOfStock = (groupId: string, valueId: string) => {
+    const nextByGroup = new Map<string, string>();
+    for (const spec of selected?.spec_values ?? []) {
+      if (spec.group_id !== groupId) nextByGroup.set(spec.group_id, spec.value_id);
+    }
+    nextByGroup.set(groupId, valueId);
+    const picked = [...nextByGroup.values()];
+    const matched = variants.filter((variant) => {
+      if (variant.enabled === false) return false;
+      const ids = variant.spec_value_ids ?? [];
+      return picked.every((id) => ids.includes(id));
+    });
+    return matched.length > 0 && matched.every((variant) => Number(variant.stock || 0) <= 0);
+  };
+
   return (
     <BottomSheet
       open={open}
@@ -140,9 +157,12 @@ export default function ProductVariantSheet({
       <div className="space-y-4 pb-2">
         <div className="flex items-baseline justify-between gap-2">
           <p className="line-clamp-2 text-sm font-medium text-[var(--theme-text)]">{product.name}</p>
-          <p className="shrink-0 text-lg font-bold tabular-nums text-[var(--theme-price)]">
-            RM {formatMoney(unitPrice)}
-          </p>
+          <div className="shrink-0 text-right">
+            <p className="text-lg font-bold tabular-nums text-[var(--theme-price)]">RM {formatMoney(unitPrice)}</p>
+            {showOriginalPrice ? (
+              <p className="text-xs text-[var(--theme-text-muted)] line-through">RM {formatMoney(originalPrice)}</p>
+            ) : null}
+          </div>
         </div>
 
         {hasMatrix ? (
@@ -154,6 +174,7 @@ export default function ProductVariantSheet({
                   {(group.values ?? []).map((value) => {
                     const active = selectedValueIds.has(value.id);
                     const disabled = !isValueAvailable(group.id, value.id);
+                    const outOfStock = disabled && isValueOutOfStock(group.id, value.id);
                     return (
                       <button
                         key={value.id}
@@ -161,13 +182,18 @@ export default function ProductVariantSheet({
                         disabled={disabled}
                         onClick={() => selectSpecValue(group.id, value.id)}
                         className={cn(
-                          "min-h-10 rounded-full border px-4 py-2 text-sm disabled:opacity-35",
+                          "relative min-h-10 rounded-full border px-4 py-2 text-sm disabled:opacity-45",
                           active
                             ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_12%,transparent)] font-semibold"
                             : "border-[var(--theme-border)] bg-[var(--theme-bg)]",
                         )}
                       >
                         {value.value}
+                        {outOfStock ? (
+                          <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-white">
+                            缺货
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}
@@ -194,7 +220,7 @@ export default function ProductVariantSheet({
                     disabled={disabled}
                     onClick={() => onSelectVariant(variant.id)}
                     className={cn(
-                      "min-h-14 rounded-xl border px-3 py-2 text-left text-xs disabled:opacity-45",
+                      "relative min-h-14 rounded-xl border px-3 py-2 text-left text-xs disabled:opacity-45",
                       active
                         ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)]"
                         : "border-[var(--theme-border)] bg-[var(--theme-bg)]",
@@ -204,6 +230,11 @@ export default function ProductVariantSheet({
                       {variant.spec_text || variant.title || variant.sku_code || "默认"}
                     </span>
                     <span className="mt-1 block text-[var(--theme-text-muted)]">库存 {variant.stock}</span>
+                    {variant.stock <= 0 ? (
+                      <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-white">
+                        缺货
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
@@ -263,4 +294,3 @@ export default function ProductVariantSheet({
     </BottomSheet>
   );
 }
-

@@ -39,6 +39,10 @@ function readVolume() {
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1;
 }
 
+function audibleSpeechVolume(volume: number) {
+  return Math.min(1, Math.max(0.55, volume));
+}
+
 function readLastCheckedAt() {
   if (typeof window === "undefined") return undefined;
   const raw = window.localStorage.getItem(LAST_CHECKED_KEY);
@@ -291,7 +295,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
         utterance.lang = "zh-CN";
         utterance.rate = 1;
         utterance.pitch = 1;
-        utterance.volume = volumeRef.current;
+        utterance.volume = audibleSpeechVolume(volumeRef.current);
         const voice = pickChineseVoice();
         if (voice) utterance.voice = voice;
         utterance.onend = () => finish(true);
@@ -405,7 +409,6 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
 
   const verifyPlaybackForEnable = useCallback(async (): Promise<"speech" | "beep"> => {
     await ensureAudioUnlocked();
-    await playBeep(volumeRef.current);
     if (getSpeechSupport()) {
       try {
         await speakText("订单语音提醒已开启。", { interrupt: true, allowCanceled: false });
@@ -437,9 +440,9 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
     setTesting(true);
     try {
       await ensureAudioUnlocked();
-      await playBeep(volumeRef.current);
       try {
         await speakText(TEST_PLAY_SAMPLE, { interrupt: true, allowCanceled: false });
+        await playBeep(volumeRef.current);
         toast.success(tText("测试播放完成"));
       } catch {
         await playBeep(volumeRef.current);

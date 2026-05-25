@@ -137,6 +137,7 @@ function buildOrderLineItems(items, {
       image: p.cover_image,
       variantImage: variant?.image_url || '',
       price,
+      unitOriginalPrice: variant?.original_price == null ? null : Number(variant.original_price),
       unitCostPrice: Number(variant?.cost_price || 0),
       points: p.points,
       qty: item.qty,
@@ -247,6 +248,20 @@ async function resolveOrderPricing(conn, userId, body, {
     totalPoints,
     flashSaleDiscount,
     fullReductionDiscount,
+    activityDiscountAmount: Number(pricing.activityDiscountAmount ?? (
+      flashSaleDiscount + fullReductionDiscount + Number(loyalty.member_level_discount || 0)
+    )),
+    shippingOriginalFee: Number(pricing.shippingOriginalFee ?? shippingFee),
+    shippingDiscountAmount: Number(pricing.shippingDiscountAmount ?? Number(loyalty.member_free_shipping_discount || 0)),
+    totalDiscountAmount: Number(pricing.totalDiscountAmount ?? (
+      flashSaleDiscount
+      + fullReductionDiscount
+      + couponDiscountValue
+      + Number(loyalty.member_level_discount || 0)
+      + Number(loyalty.points_discount_amount || 0)
+      + Number(loyalty.reward_cash_discount_amount || 0)
+      + Number(loyalty.member_free_shipping_discount || 0)
+    )),
     couponDiscountValue,
     usedCouponUcId,
     usedCouponCouponId,
@@ -292,6 +307,12 @@ async function persistOrder(conn, {
     usedCouponTitle,
     couponDiscountValue,
     discountMeta,
+    flashSaleDiscount,
+    fullReductionDiscount,
+    activityDiscountAmount,
+    shippingOriginalFee,
+    shippingDiscountAmount,
+    totalDiscountAmount,
   } = pricingResult;
 
   const normalizedAddress = normalizeMalaysiaAddress(address, contact_name, contact_phone);
@@ -303,6 +324,28 @@ async function persistOrder(conn, {
     shippingFee,
   });
   const orderItemsWithProfit = profitSnapshot.items;
+  const goodsOriginalAmount = Number(rawAmount || 0) + Number(flashSaleDiscount || 0);
+  const goodsSaleAmount = Number(rawAmount || 0);
+  const payableAmount = Number(totalAmount || 0);
+  const amountSnapshot = {
+    goods_original_amount: goodsOriginalAmount,
+    goods_sale_amount: goodsSaleAmount,
+    goods_net_sales_amount: profitSnapshot.summary.goodsNetSalesAmount,
+    activity_discount_amount: Number(activityDiscountAmount || 0),
+    coupon_discount_amount: Number(couponDiscountValue || 0),
+    points_discount_amount: Number(loyalty.points_discount_amount || 0),
+    reward_cash_discount_amount: Number(loyalty.reward_cash_discount_amount || 0),
+    shipping_original_fee: Number(shippingOriginalFee || 0),
+    shipping_discount_amount: Number(shippingDiscountAmount || 0),
+    shipping_fee: Number(shippingFee || 0),
+    total_discount_amount: Number(totalDiscountAmount || 0),
+    payable_amount: payableAmount,
+    paid_amount: 0,
+    refunded_amount: 0,
+    net_received_amount: 0,
+    outstanding_amount: payableAmount,
+    calculation_version: 'order_amount_snapshot_v1',
+  };
 
   await repo.insertOrder(conn, {
     id: orderId,
@@ -310,6 +353,18 @@ async function persistOrder(conn, {
     orderNo,
     rawAmount,
     discountAmount,
+    goodsOriginalAmount,
+    goodsSaleAmount,
+    activityDiscountAmount,
+    couponDiscountAmount: couponDiscountValue,
+    shippingOriginalFee,
+    shippingDiscountAmount,
+    totalDiscountAmount,
+    payableAmount,
+    paidAmount: 0,
+    netReceivedAmount: 0,
+    outstandingAmount: payableAmount,
+    amountSnapshot,
     discountMeta,
     couponTitle: usedCouponTitle,
     shippingFee,

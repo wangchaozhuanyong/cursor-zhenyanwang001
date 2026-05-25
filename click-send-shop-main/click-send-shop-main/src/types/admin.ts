@@ -34,6 +34,7 @@ export interface AdminLoginResult {
   mfaTicket?: string;
   secret?: string;
   otpAuthUrl?: string;
+  methods?: string[];
 }
 
 export interface DashboardStats {

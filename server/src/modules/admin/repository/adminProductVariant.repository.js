@@ -341,7 +341,8 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
       `UPDATE products p
        SET p.stock = COALESCE((SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1),0),
            p.price = COALESCE((SELECT v.price FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1), p.price),
-           p.stock_warning_threshold = COALESCE((SELECT v.stock_warning_threshold FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1), p.stock_warning_threshold),
+           p.original_price = (SELECT v.original_price FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1),
+           p.stock_warning_threshold = COALESCE((SELECT COALESCE(v.stock_warning_threshold, v.stock_lower_limit, 5) FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1), p.stock_warning_threshold),
            p.stock_lower_limit = (SELECT v.stock_lower_limit FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1),
            p.stock_upper_limit = (SELECT v.stock_upper_limit FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 ORDER BY v.is_default DESC, v.sort_order ASC, v.created_at ASC LIMIT 1)
        WHERE p.id = ?`,
@@ -374,4 +375,3 @@ module.exports = {
   upsertProductSkuMatrix,
   updateDefaultVariantPriceStock,
 };
-

@@ -196,7 +196,13 @@ export default function ProductDetail() {
   const productForCart = selectedVariant
     ? { ...product, price: selectedVariant.price, stock: selectedVariant.stock }
     : product;
-  const displayPrice = selectedVariant?.price ?? product.price;
+  const minPrice = Number(product.min_price ?? product.price ?? 0);
+  const maxPrice = Number(product.max_price ?? product.price ?? 0);
+  const hasPriceRange = !selectedVariant && maxPrice > minPrice;
+  const displayPrice = selectedVariant?.price ?? (hasPriceRange ? `${minPrice.toFixed(2).replace(/\.00$/, "")}-${maxPrice.toFixed(2).replace(/\.00$/, "")}` : product.price);
+  const displayPriceForCompare = selectedVariant?.price ?? (hasPriceRange ? maxPrice : Number(product.price || 0));
+  const displayPriceAmount = Number(selectedVariant?.price ?? (hasPriceRange ? minPrice : product.price) ?? 0) || 0;
+  const displayOriginalPrice = selectedVariant?.original_price ?? (hasPriceRange ? product.max_original_price : product.original_price);
   const displayStock = selectedVariant?.stock ?? (hasMultipleVariants ? product.stock : defaultVariant?.stock ?? product.stock);
   const activityRemaining = activeActivity ? Math.max(0, activeActivity.remaining_stock ?? 0) : displayStock;
   const activityLimit = activeActivity?.limit_per_user && activeActivity.limit_per_user > 0
@@ -290,7 +296,7 @@ export default function ProductDetail() {
         product_id: product.id,
         variant_id: selectedVariant?.id ?? defaultVariant?.id,
         quantity: qty,
-        amount: Number(displayPrice || 0) * Number(qty || 0),
+        amount: displayPriceAmount * Number(qty || 0),
       });
       window.dispatchEvent(new CustomEvent("cart:badge-bump"));
       toast.success("已加入购物车", toastPresetQuickSuccess);
@@ -315,7 +321,7 @@ export default function ProductDetail() {
       product_id: product.id,
       variant_id: selectedVariant?.id ?? defaultVariant?.id,
       quantity: qty,
-      amount: Number(displayPrice || 0) * Number(qty || 0),
+      amount: displayPriceAmount * Number(qty || 0),
     });
     navigate("/checkout");
   };
@@ -349,7 +355,7 @@ export default function ProductDetail() {
     const url = window.location.href;
     const sharePayload = buildProductSharePayload(
       product.name,
-      Number(displayPrice) || 0,
+      displayPriceAmount,
       url,
       siteInfo.siteName,
     );
@@ -446,10 +452,10 @@ export default function ProductDetail() {
                       amountClassName="store-price-detail"
                       currencyClassName="mr-1 text-[13px] font-bold leading-none sm:text-sm"
                     />
-                    {typeof product.original_price === "number" &&
-                      product.original_price > Number(displayPrice) && (
+                    {typeof displayOriginalPrice === "number" &&
+                      displayOriginalPrice > Number(displayPriceForCompare) && (
                         <span className="store-body-small text-muted-foreground line-through">
-                          RM {product.original_price}
+                          RM {displayOriginalPrice}
                         </span>
                       )}
                   </div>

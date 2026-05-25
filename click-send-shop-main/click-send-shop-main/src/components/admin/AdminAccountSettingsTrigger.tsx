@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Lock, User } from "lucide-react";
+import { Fingerprint, Lock, User } from "lucide-react";
 import { useAdminT } from "@/hooks/useAdminT";
 import type { AdminAccountTab } from "@/components/admin/AdminAccountPanel";
 import { useAdminAccountSettings } from "@/modules/admin/context/AdminAccountSettingsContext";
@@ -14,9 +14,10 @@ type Props = {
   className?: string;
 };
 
-const TAB_META: Record<AdminAccountTab, { icon: LucideIcon; labelKey: "layout.accountSettings" | "layout.changePassword" }> = {
+const TAB_META: Record<AdminAccountTab, { icon: LucideIcon; labelKey?: "layout.accountSettings" | "layout.changePassword"; label?: string }> = {
   profile: { icon: User, labelKey: "layout.accountSettings" },
   password: { icon: Lock, labelKey: "layout.changePassword" },
+  security: { icon: Fingerprint, label: "安全验证" },
 };
 
 export default function AdminAccountSettingsTrigger({
@@ -29,7 +30,7 @@ export default function AdminAccountSettingsTrigger({
   const { openAccountSettings } = useAdminAccountSettings();
   const meta = TAB_META[tab];
   const Icon = meta.icon;
-  const label = t(meta.labelKey);
+  const label = meta.labelKey ? t(meta.labelKey) : meta.label || "";
 
   const handleClick = () => {
     onBeforeOpen?.();

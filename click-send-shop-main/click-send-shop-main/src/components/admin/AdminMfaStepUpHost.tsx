@@ -1,26 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { KeyRound } from "lucide-react";
+import { Fingerprint, KeyRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ApiError } from "@/types/common";
 import {
   cancelAdminMfaStepUp,
   completeAdminMfaStepUp,
+  getPendingAdminMfaActionClass,
   registerAdminMfaStepUpOpener,
 } from "@/lib/adminMfaStepUp";
-import { fetchAdminProfile, reverifyAdminMfa } from "@/services/admin/accountService";
+import { fetchAdminProfile, reverifyAdminMfa, reverifyAdminPasskey } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
 
 const MFA_REVERIFY_TIMEOUT_MS = 15_000;
 
 export default function AdminMfaStepUpHost() {
-  const { tText } = useAdminT();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [errorText, setErrorText] = useState("");
   const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -31,6 +30,7 @@ export default function AdminMfaStepUpHost() {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     setLoading(false);
+    setPasskeyLoading(false);
     setErrorText("");
   }, []);
 
@@ -61,10 +61,16 @@ export default function AdminMfaStepUpHost() {
     cancelAdminMfaStepUp();
   };
 
+  const finishSuccess = (message: string) => {
+    setOpen(false);
+    completeAdminMfaStepUp();
+    toast.success(message);
+  };
+
   const handleSubmit = async () => {
     const normalized = code.replace(/\D/g, "").slice(0, 6);
     if (normalized.length !== 6) {
-      const message = tText("请输入身份验证器中的 6 位验证码");
+      const message = "请输入身份验证器中的 6 位验证码";
       setErrorText(message);
       toast.error(message);
       return;
@@ -80,17 +86,18 @@ export default function AdminMfaStepUpHost() {
 
     const timeoutId = window.setTimeout(() => controller.abort(), MFA_REVERIFY_TIMEOUT_MS);
     try {
-      await reverifyAdminMfa(normalized, { signal: controller.signal });
+      await reverifyAdminMfa(normalized, {
+        signal: controller.signal,
+        actionClass: getPendingAdminMfaActionClass(),
+      });
       if (attemptRef.current !== attemptId) return;
-      setOpen(false);
-      completeAdminMfaStepUp();
-      toast.success(tText("身份验证已通过"));
+      finishSuccess("身份验证已通过");
     } catch (err) {
       if (attemptRef.current !== attemptId) return;
 
       const message = controller.signal.aborted
-        ? tText("验证请求超时，请重新发起该操作后再验证")
-        : toastErrorMessage(err, tText("验证失败"));
+        ? "验证请求超时，请重新发起该操作后再验证"
+        : toastErrorMessage(err, "验证失败");
       setErrorText(message);
       toast.error(message);
 
@@ -102,6 +109,39 @@ export default function AdminMfaStepUpHost() {
       window.clearTimeout(timeoutId);
       if (attemptRef.current === attemptId) {
         setLoading(false);
+        if (abortControllerRef.current === controller) abortControllerRef.current = null;
+      }
+    }
+  };
+
+  const handlePasskey = async () => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    const attemptId = attemptRef.current + 1;
+    attemptRef.current = attemptId;
+    abortControllerRef.current = controller;
+    setErrorText("");
+    setPasskeyLoading(true);
+
+    const timeoutId = window.setTimeout(() => controller.abort(), MFA_REVERIFY_TIMEOUT_MS);
+    try {
+      await reverifyAdminPasskey({
+        signal: controller.signal,
+        actionClass: getPendingAdminMfaActionClass(),
+      });
+      if (attemptRef.current !== attemptId) return;
+      finishSuccess("Passkey 验证已通过");
+    } catch (err) {
+      if (attemptRef.current !== attemptId) return;
+      const message = controller.signal.aborted
+        ? "Passkey 验证超时，请重新发起该操作后再验证"
+        : toastErrorMessage(err, "Passkey 验证失败");
+      setErrorText(message);
+      toast.error(message);
+    } finally {
+      window.clearTimeout(timeoutId);
+      if (attemptRef.current === attemptId) {
+        setPasskeyLoading(false);
         if (abortControllerRef.current === controller) abortControllerRef.current = null;
       }
     }
@@ -122,12 +162,26 @@ export default function AdminMfaStepUpHost() {
           </p>
         ) : (
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            该操作需要更高安全等级。请打开身份验证器（如 Google Authenticator），输入当前 6 位验证码后继续。
+            该操作需要更高安全等级。可使用 Passkey，或输入身份验证器中的 6 位验证码后继续。
           </p>
         )}
         {mfaEnabled !== false ? (
           <>
-            <label className="mt-4 block text-xs font-medium text-muted-foreground"><Tx>验证码</Tx></label>
+            <button
+              type="button"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background disabled:opacity-50"
+              disabled={loading || passkeyLoading}
+              onClick={() => void handlePasskey()}
+            >
+              <Fingerprint size={16} />
+              {passkeyLoading ? "正在验证 Passkey..." : "使用 Passkey 验证"}
+            </button>
+            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              <span>或</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <label className="block text-xs font-medium text-muted-foreground">验证码</label>
             <input
               type="text"
               inputMode="numeric"
@@ -139,11 +193,9 @@ export default function AdminMfaStepUpHost() {
               }}
               placeholder="000000"
               className="mt-1.5 w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-center font-mono text-lg tracking-widest text-foreground outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
-              onKeyDown={(e) => e.key === "Enter" && !loading && void handleSubmit()}
+              onKeyDown={(e) => e.key === "Enter" && !loading && !passkeyLoading && void handleSubmit()}
             />
-            {errorText ? (
-              <p className="mt-2 text-xs leading-5 text-destructive">{errorText}</p>
-            ) : null}
+            {errorText ? <p className="mt-2 text-xs leading-5 text-destructive">{errorText}</p> : null}
           </>
         ) : null}
         <div className="mt-5 flex flex-wrap justify-end gap-2">
@@ -169,7 +221,7 @@ export default function AdminMfaStepUpHost() {
             <button
               type="button"
               className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-              disabled={loading}
+              disabled={loading || passkeyLoading}
               onClick={() => void handleSubmit()}
             >
               {loading ? "验证中..." : "确认验证"}

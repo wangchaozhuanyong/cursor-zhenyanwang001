@@ -158,12 +158,16 @@ export interface InventoryReplenishmentAlert {
   current_stock: number;
   available_stock: number;
   warning_stock: number;
+  lower_limit?: number | null;
+  upper_limit?: number | null;
   suggested_qty: number;
   ordered_qty: number;
   received_qty: number;
   in_transit_qty: number;
   expected_available_stock: number;
   purchase_order_id?: string | null;
+  suggestion_type?: "purchase" | "unpack" | "assemble" | "clearance" | "watch" | string;
+  strategy_snapshot?: Record<string, unknown> | null;
   purchase_order_no?: string;
   purchase_order_status?: string;
   expected_arrival_date?: string | null;
@@ -173,6 +177,34 @@ export interface InventoryReplenishmentAlert {
   snoozed_until?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface SmartReplenishmentRunItem {
+  id: string;
+  run_id: string;
+  variant_id: string;
+  old_lower_limit?: number | null;
+  old_upper_limit?: number | null;
+  suggested_lower_limit: number;
+  suggested_upper_limit: number;
+  current_stock: number;
+  available_stock: number;
+  in_transit_qty: number;
+  sales_qty: number;
+  saleable_days: number;
+  avg_daily_sales: number;
+  suggested_replenishment_qty: number;
+  confidence_score: number;
+  reason?: string | null;
+  apply_status: "pending" | "applied" | "skipped" | string;
+  created_at?: string;
+}
+
+export interface SmartReplenishmentPreviewResult {
+  id: string;
+  status: string;
+  params: Record<string, unknown>;
+  items: SmartReplenishmentRunItem[];
 }
 
 export type PurchaseOrderStatus = "draft" | "ordered" | "in_transit" | "partial_received" | "received" | "cancelled" | "overdue";
@@ -220,4 +252,3 @@ export interface PurchaseOrderItem {
 export interface PurchaseOrderDetail extends PurchaseOrder {
   items: PurchaseOrderItem[];
 }
-

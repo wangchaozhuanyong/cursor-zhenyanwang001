@@ -67,8 +67,8 @@ async function selectSkusPage(where, params, sortSql, pageSize, offset) {
        v.reserved_stock,
        (v.stock - COALESCE(v.reserved_stock,0)) AS available_stock,
        v.stock_warning_threshold,
-       (v.stock <= COALESCE(v.stock_warning_threshold,5)) AS low_stock,
-       (v.stock <= 0) AS out_of_stock,
+       ((v.stock - COALESCE(v.reserved_stock,0)) <= COALESCE(v.stock_lower_limit, v.stock_warning_threshold,5)) AS low_stock,
+       ((v.stock - COALESCE(v.reserved_stock,0)) <= 0) AS out_of_stock,
        v.updated_at
      FROM product_variants v
      JOIN products p ON p.id = v.product_id
@@ -110,6 +110,8 @@ async function selectVariantDetailForUpdate(conn, variantId) {
        v.title,
        v.sku_code,
        v.stock,
+       COALESCE(v.reserved_stock, 0) AS reserved_stock,
+       v.cost_price,
        COALESCE(v.unit_name, '件') AS unit_name,
        v.enabled,
        v.deleted_at,
@@ -518,10 +520,11 @@ async function insertConversionOrder(conn, row) {
         parent_product_id, parent_variant_id, parent_qty,
         child_product_id, child_variant_id, rule_parent_qty, child_qty_per_parent, child_total_qty,
         parent_before_stock, parent_after_stock, child_before_stock, child_after_stock,
+        parent_cost_before, parent_cost_after, child_cost_before, child_cost_after, cost_allocation_method,
         parent_product_name_snapshot, parent_variant_name_snapshot, parent_sku_code_snapshot, parent_unit_name_snapshot,
         child_product_name_snapshot, child_variant_name_snapshot, child_sku_code_snapshot, child_unit_name_snapshot,
         source_type, source_order_id, source_order_no, operator_id, remark)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       row.id,
       row.order_no,
@@ -539,6 +542,11 @@ async function insertConversionOrder(conn, row) {
       row.parent_after_stock,
       row.child_before_stock,
       row.child_after_stock,
+      row.parent_cost_before ?? null,
+      row.parent_cost_after ?? null,
+      row.child_cost_before ?? null,
+      row.child_cost_after ?? null,
+      row.cost_allocation_method || null,
       row.parent_product_name_snapshot || '',
       row.parent_variant_name_snapshot || '',
       row.parent_sku_code_snapshot || '',

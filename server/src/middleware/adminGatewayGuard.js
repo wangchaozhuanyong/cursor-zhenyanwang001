@@ -6,6 +6,8 @@ const CSRF_EXEMPT_PATHS = new Set([
   '/api/admin/auth/login',
   '/api/admin/auth/refresh',
   '/api/admin/auth/mfa/verify',
+  '/api/admin/auth/passkeys/login/options',
+  '/api/admin/auth/passkeys/login/verify',
   '/api/admin/auth/csrf',
 ]);
 

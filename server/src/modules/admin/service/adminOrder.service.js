@@ -232,6 +232,29 @@ function normalizeOperationalSummary(row = {}) {
   return Object.fromEntries(numericKeys.map((key) => [key, Number(row[key] || 0)]));
 }
 
+function normalizeFinancialSummary(row = {}) {
+  const numericKeys = [
+    'order_count',
+    'payable_amount',
+    'paid_amount',
+    'net_received_amount',
+    'outstanding_amount',
+    'refund_amount',
+    'activity_discount_amount',
+    'coupon_discount_amount',
+    'points_discount_amount',
+    'reward_cash_discount_amount',
+    'shipping_discount_amount',
+    'shipping_income_amount',
+    'shipping_cost_amount',
+    'gross_profit_amount',
+    'net_profit_amount',
+    'total_discount_amount',
+    'discount_amount',
+  ];
+  return Object.fromEntries(numericKeys.map((key) => [key, Number(row[key] || 0)]));
+}
+
 function buildOrderBadges(order) {
   const badges = [];
   if (order.note) badges.push('买家备注');
@@ -305,6 +328,17 @@ function attachItemsAndAmounts(order, items) {
   order.raw_amount = parseFloat(order.raw_amount);
   order.shipping_fee = parseFloat(order.shipping_fee);
   order.discount_amount = parseFloat(order.discount_amount);
+  order.goods_original_amount = parseFloat(order.goods_original_amount ?? order.raw_amount ?? 0);
+  order.goods_sale_amount = parseFloat(order.goods_sale_amount ?? order.raw_amount ?? 0);
+  order.activity_discount_amount = parseFloat(order.activity_discount_amount || 0);
+  order.coupon_discount_amount = parseFloat(order.coupon_discount_amount || 0);
+  order.shipping_original_fee = parseFloat(order.shipping_original_fee ?? order.shipping_fee ?? 0);
+  order.shipping_discount_amount = parseFloat(order.shipping_discount_amount || 0);
+  order.total_discount_amount = parseFloat(order.total_discount_amount || 0);
+  order.payable_amount = parseFloat(order.payable_amount ?? order.total_amount ?? 0);
+  order.paid_amount = parseFloat(order.paid_amount || 0);
+  order.net_received_amount = parseFloat(order.net_received_amount || 0);
+  order.outstanding_amount = parseFloat(order.outstanding_amount || 0);
   order.goods_cost_amount = parseFloat(order.goods_cost_amount || 0);
   order.gross_profit_amount = parseFloat(order.gross_profit_amount || 0);
   order.shipping_cost_amount = parseFloat(order.shipping_cost_amount || 0);
@@ -320,10 +354,11 @@ async function listOrders(query) {
   const { where, params } = buildAdminOrderListWhere(query);
   const total = await repo.countOrdersAdmin(where, params);
   const offset = (page - 1) * pageSize;
-  const [orders, summaryRows, operationalSummary, globalToday] = await Promise.all([
+  const [orders, summaryRows, operationalSummary, financialSummary, globalToday] = await Promise.all([
     repo.selectOrdersAdminPage(where, params, pageSize, offset),
     repo.selectOrderStatusSummary(where, params),
     repo.selectOrderOperationalSummary(where, params),
+    repo.selectOrderFinancialSummary(where, params),
     repo.selectOrderGlobalTodaySummary(),
   ]);
 
@@ -352,6 +387,7 @@ async function listOrders(query) {
     summary: {
       ...normalizeOrderSummary(summaryRows),
       ...normalizeOperationalSummary(operationalSummary),
+      ...normalizeFinancialSummary(financialSummary),
       ...Object.fromEntries(
         [
           'today_order_count',
@@ -737,7 +773,11 @@ async function shipOrder(orderId, body, adminUserId, req) {
 }
 
 const ORDER_EXPORT_HEADERS = [
-  'id', 'order_no', 'user_id', 'status', 'payment_status', 'total_amount', 'raw_amount', 'discount_amount', 'shipping_fee',
+  'id', 'order_no', 'user_id', 'status', 'payment_status',
+  'payable_amount', 'paid_amount', 'net_received_amount', 'outstanding_amount',
+  'total_amount', 'raw_amount', 'goods_original_amount', 'goods_sale_amount', 'goods_net_sales_amount',
+  'activity_discount_amount', 'coupon_discount_amount', 'points_discount_amount', 'reward_cash_discount_amount',
+  'shipping_original_fee', 'shipping_discount_amount', 'total_discount_amount', 'shipping_fee',
   'tax_mode', 'tax_rate', 'tax_label', 'taxable_amount', 'tax_amount', 'tax_exclusive_amount',
   'total_points', 'user_nickname', 'user_phone_masked', 'contact_name', 'contact_phone_masked', 'shipping_phone_masked',
   'items_summary', 'items_count', 'sku_count', 'address', 'payment_method', 'payment_channel', 'payment_transaction_no',
@@ -754,8 +794,22 @@ async function exportOrdersCsv(query) {
     user_id: o.user_id,
     status: o.status,
     payment_status: o.payment_status || PAYMENT_STATUS.PENDING,
+    payable_amount: o.payable_amount || o.total_amount || 0,
+    paid_amount: o.paid_amount || (['paid', 'partially_refunded', 'refunded'].includes(o.payment_status || '') ? o.total_amount : 0),
+    net_received_amount: o.net_received_amount || Math.max(0, Number(o.paid_amount || 0) - Number(o.refund_amount || o.refunded_amount || 0)),
+    outstanding_amount: o.outstanding_amount || 0,
     total_amount: o.total_amount,
     raw_amount: o.raw_amount,
+    goods_original_amount: o.goods_original_amount || o.raw_amount || 0,
+    goods_sale_amount: o.goods_sale_amount || o.raw_amount || 0,
+    goods_net_sales_amount: o.goods_net_sales_amount || 0,
+    activity_discount_amount: o.activity_discount_amount || 0,
+    coupon_discount_amount: o.coupon_discount_amount || 0,
+    points_discount_amount: o.points_discount_amount || 0,
+    reward_cash_discount_amount: o.reward_cash_discount_amount || 0,
+    shipping_original_fee: o.shipping_original_fee || o.shipping_fee || 0,
+    shipping_discount_amount: o.shipping_discount_amount || 0,
+    total_discount_amount: o.total_discount_amount || 0,
     discount_amount: o.discount_amount,
     shipping_fee: o.shipping_fee,
     tax_mode: o.tax_mode ?? '',

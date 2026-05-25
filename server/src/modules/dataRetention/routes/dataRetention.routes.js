@@ -7,7 +7,9 @@ const requirePermission = adminAuth.requirePermission;
 const requireAnyPermission = adminAuth.requireAnyPermission;
 
 const canView = requireAnyPermission(['data_cleanup.view', 'data_cleanup.manage', 'data_cleanup.execute']);
-const requireRecentMfa = adminAuth.requireRecentMfa;
+const requireRecentMfa = typeof adminAuth.requireSensitiveAction === 'function'
+  ? adminAuth.requireSensitiveAction('bulk_delete')
+  : adminAuth.requireRecentMfa;
 
 router.use(adminAuth);
 

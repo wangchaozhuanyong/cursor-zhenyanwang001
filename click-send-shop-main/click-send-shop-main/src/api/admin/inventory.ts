@@ -1,6 +1,6 @@
 import { del, get, patch, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
-import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, InventorySummary, PurchaseOrder, PurchaseOrderDetail } from "@/types/inventory";
+import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, InventorySummary, PurchaseOrder, PurchaseOrderDetail, SmartReplenishmentPreviewResult } from "@/types/inventory";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 
 export function getInventorySummary() {
@@ -75,6 +75,30 @@ export function createPurchaseOrderFromAlert(
   data: { ordered_qty?: number; unit_cost?: number; expected_arrival_date?: string; remark?: string },
 ) {
   return post<{ id: string; order_no: string; item_id: string; ordered_qty: number }>(`/admin/inventory/replenishment-alerts/${alertId}/create-purchase-order`, data);
+}
+
+export function createSmartReplenishmentPreview(data: {
+  variant_ids?: string[];
+  analysis_days?: number;
+  strategy?: "conservative" | "balanced" | "aggressive" | string;
+  lead_time_days?: number;
+  safety_stock_days?: number;
+  target_cover_days?: number;
+  min_floor_stock?: number;
+  purchase_multiple?: number;
+}) {
+  return post<SmartReplenishmentPreviewResult>("/admin/inventory/replenishment-runs/preview", data);
+}
+
+export function applySmartReplenishmentRun(
+  id: string,
+  data: { items?: Array<{ id: string; suggested_lower_limit?: number; suggested_upper_limit?: number; suggested_replenishment_qty?: number }> } = {},
+) {
+  return post<{ id: string; applied: number }>(`/admin/inventory/replenishment-runs/${id}/apply`, data);
+}
+
+export function generateDailyInventorySnapshot(data: { snapshot_date?: string } = {}) {
+  return post<{ snapshot_date: string; affected_rows: number }>("/admin/inventory/daily-snapshots/generate", data);
 }
 
 export function getPurchaseOrders(params?: {
@@ -158,4 +182,3 @@ export function exportInventoryRecordsCsv(params?: Record<string, unknown>) {
   const qs = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== null && v !== "").map(([k, v]) => [k, String(v)])).toString();
   return downloadAdminCsv(`/admin/inventory/records/export${qs ? `?${qs}` : ""}`, `inventory_records_${Date.now()}.csv`);
 }
-

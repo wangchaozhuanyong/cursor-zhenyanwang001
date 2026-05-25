@@ -1,56 +1,35 @@
-/**
- * Unit tests: product/tag admin mutations must match high-risk MFA route rules.
- */
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
-const { isHighRiskAdminOperation } = require('../src/modules/admin/adminHighRiskRoutes');
+const { getSensitiveActionClass, isHighRiskAdminOperation } = require('../src/modules/admin/adminHighRiskRoutes');
 
 function req(method, path) {
   return { method, path };
 }
 
-describe('admin high-risk product routes', () => {
-  const productMutations = [
-    ['POST', '/products'],
-    ['POST', '/products/import'],
-    ['PUT', '/products/prod-1'],
-    ['PUT', '/products/prod-1/tags'],
-    ['PATCH', '/products/prod-1/status'],
-    ['DELETE', '/products/prod-1'],
-    ['POST', '/products/batch-status'],
-  ];
-
-  for (const [method, path] of productMutations) {
-    test(`${method} ${path} is high-risk`, () => {
-      assert.equal(isHighRiskAdminOperation(req(method, path)), true);
-    });
-  }
-
-  const tagMutations = [
-    ['POST', '/product-tags'],
-    ['PUT', '/product-tags/tag-1'],
-    ['DELETE', '/product-tags/tag-1'],
-  ];
-
-  for (const [method, path] of tagMutations) {
-    test(`${method} ${path} is high-risk`, () => {
-      assert.equal(isHighRiskAdminOperation(req(method, path)), true);
-    });
-  }
-
-  test('GET /products is not high-risk', () => {
-    assert.equal(isHighRiskAdminOperation(req('GET', '/products')), false);
+describe('admin sensitive action routes', () => {
+  test('ordinary product mutations are not step-up operations', () => {
+    assert.equal(isHighRiskAdminOperation(req('POST', '/products')), false);
+    assert.equal(isHighRiskAdminOperation(req('PUT', '/products/prod-1')), false);
+    assert.equal(isHighRiskAdminOperation(req('DELETE', '/products/prod-1')), false);
   });
 
-  test('GET /products/:id is not high-risk', () => {
-    assert.equal(isHighRiskAdminOperation(req('GET', '/products/prod-1')), false);
+  test('batch product mutation is classified', () => {
+    assert.equal(getSensitiveActionClass(req('POST', '/products/batch-status')), 'bulk_price');
   });
 
-  test('GET /product-tags is not high-risk', () => {
-    assert.equal(isHighRiskAdminOperation(req('GET', '/product-tags')), false);
+  test('customer exports are classified', () => {
+    assert.equal(getSensitiveActionClass(req('GET', '/users/export')), 'customer_export');
+    assert.equal(getSensitiveActionClass(req('GET', '/orders/export')), 'customer_export');
   });
 
-  test('PUT /recycle-bin/:id/restore is high-risk', () => {
-    assert.equal(isHighRiskAdminOperation(req('PUT', '/recycle-bin/item-1/restore')), true);
+  test('admin security and RBAC mutations are classified', () => {
+    assert.equal(getSensitiveActionClass(req('PUT', '/account/password')), 'account_security');
+    assert.equal(getSensitiveActionClass(req('PUT', '/rbac/users/u-1/roles')), 'rbac_admin');
+    assert.equal(getSensitiveActionClass(req('POST', '/rbac/admin-users/u-1/security/mfa-reset')), 'rbac_admin');
+  });
+
+  test('high-risk config and permanent delete are classified', () => {
+    assert.equal(getSensitiveActionClass(req('PUT', '/settings')), 'high_risk_config');
+    assert.equal(getSensitiveActionClass(req('POST', '/recycle-bin/item-1/permanent-delete')), 'bulk_delete');
   });
 });

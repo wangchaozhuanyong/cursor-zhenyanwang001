@@ -72,6 +72,21 @@ export async function generateReplenishmentAlerts() {
   return res.data;
 }
 
+export async function createSmartReplenishmentPreview(data: Parameters<typeof inventoryApi.createSmartReplenishmentPreview>[0]) {
+  const res = await inventoryApi.createSmartReplenishmentPreview(data);
+  return res.data;
+}
+
+export async function applySmartReplenishmentRun(id: string, data?: Parameters<typeof inventoryApi.applySmartReplenishmentRun>[1]) {
+  const res = await inventoryApi.applySmartReplenishmentRun(id, data);
+  return res.data;
+}
+
+export async function generateDailyInventorySnapshot(data?: Parameters<typeof inventoryApi.generateDailyInventorySnapshot>[0]) {
+  const res = await inventoryApi.generateDailyInventorySnapshot(data);
+  return res.data;
+}
+
 export async function createPurchaseOrderFromAlert(alertId: string, data: Parameters<typeof inventoryApi.createPurchaseOrderFromAlert>[1]) {
   const res = await inventoryApi.createPurchaseOrderFromAlert(alertId, data);
   return res.data;
@@ -128,4 +143,3 @@ export async function fetchInventoryConversions(params?: Parameters<typeof inven
 
 export const exportInventorySkusCsv = inventoryApi.exportInventorySkusCsv;
 export const exportInventoryRecordsCsv = inventoryApi.exportInventoryRecordsCsv;
-

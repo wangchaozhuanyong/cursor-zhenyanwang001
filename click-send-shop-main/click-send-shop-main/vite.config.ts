@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import legacy from "@vitejs/plugin-legacy";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
+import fs from "fs/promises";
 
 function resolveVendorChunkName(id: string): string | undefined {
   const normalizedId = id.replace(/\\/g, "/");
@@ -104,6 +105,33 @@ function replaceViteClientPlaceholders(): Plugin {
   };
 }
 
+function serveAdminSpaInDev(): Plugin {
+  return {
+    name: "serve-admin-spa-in-dev",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const url = req.url || "";
+        const accept = req.headers.accept || "";
+        if (req.method !== "GET" || !accept.includes("text/html") || !/^\/admin(?:\/|$)/.test(url)) {
+          next();
+          return;
+        }
+
+        try {
+          const file = path.resolve(__dirname, "admin-index.html");
+          const html = await server.transformIndexHtml(url, await fs.readFile(file, "utf8"));
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "text/html");
+          res.end(html);
+        } catch (error) {
+          next(error);
+        }
+      });
+    },
+  };
+}
+
 const thirdPartyLoginEnabled = process.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
 const legacyEnabled = process.env.VITE_LEGACY_BUILD !== "0";
 
@@ -137,6 +165,7 @@ return ({
   },
   plugins: [
     replaceViteClientPlaceholders(),
+    serveAdminSpaInDev(),
     react(),
     VitePWA({
       registerType: "autoUpdate",

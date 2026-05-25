@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
-import { User, Lock, Mail, Phone } from "lucide-react";
+import { Fingerprint, Lock, Mail, Phone, User } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { toast } from "sonner";
-import { fetchAdminProfile, updateAdminProfile, changeAdminPassword } from "@/services/admin/accountService";
-import { Tx } from "@/components/admin/AdminText";
+import {
+  changeAdminPassword,
+  fetchAdminProfile,
+  registerAdminPasskey,
+  updateAdminProfile,
+} from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { useAdminT } from "@/hooks/useAdminT";
 
-export type AdminAccountTab = "profile" | "password";
+export type AdminAccountTab = "profile" | "password" | "security";
 
 interface AdminAccountPanelProps {
   initialTab?: AdminAccountTab;
@@ -16,12 +19,12 @@ interface AdminAccountPanelProps {
 }
 
 export default function AdminAccountPanel({ initialTab = "profile", embedded = false }: AdminAccountPanelProps) {
-  const { tText } = useAdminT();
   const [activeTab, setActiveTab] = useState<AdminAccountTab>(initialTab);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({ name: "", email: "", phone: "" });
   const [pwd, setPwd] = useState({ old: "", new1: "", new2: "" });
+  const [passkeyLabel, setPasskeyLabel] = useState("");
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -37,7 +40,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
           phone: data?.phone ?? "",
         });
       })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载账号信息失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -49,7 +52,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
         email: profile.email,
         phone: profile.phone,
       });
-      toast.success(tText("个人信息已更新"));
+      toast.success("个人信息已更新");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
@@ -59,21 +62,21 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
 
   const handleChangePwd = async () => {
     if (!pwd.old || !pwd.new1 || !pwd.new2) {
-      toast.error(tText("请填写完整"));
+      toast.error("请填写完整");
       return;
     }
     if (pwd.new1 !== pwd.new2) {
-      toast.error(tText("两次密码不一致"));
+      toast.error("两次密码不一致");
       return;
     }
     if (pwd.new1.length < 6) {
-      toast.error(tText("密码至少6位"));
+      toast.error("密码至少 6 位");
       return;
     }
     setSaving(true);
     try {
       await changeAdminPassword(pwd.old, pwd.new1);
-      toast.success(tText("密码已修改"));
+      toast.success("密码已修改");
       setPwd({ old: "", new1: "", new2: "" });
     } catch (e) {
       toast.error(toastErrorMessage(e, "修改失败，请检查原密码"));
@@ -82,21 +85,31 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
     }
   };
 
+  const handleRegisterPasskey = async () => {
+    setSaving(true);
+    try {
+      await registerAdminPasskey(passkeyLabel.trim() || undefined);
+      toast.success("Passkey 已添加");
+      setPasskeyLabel("");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "Passkey 添加失败"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const tabs = [
-    { key: "profile" as const, label: tText("个人信息"), icon: User },
-    { key: "password" as const, label: tText("修改密码"), icon: Lock },
+    { key: "profile" as const, label: "个人信息", icon: User },
+    { key: "password" as const, label: "修改密码", icon: Lock },
+    { key: "security" as const, label: "安全验证", icon: Fingerprint },
   ];
 
   return (
     <div className="space-y-6">
       {!embedded ? (
         <div>
-          <h1 className="text-xl font-bold text-foreground">
-            <Tx>账号设置</Tx>
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            <Tx>管理您的账号信息</Tx>
-          </p>
+          <h1 className="text-xl font-bold text-foreground">账号设置</h1>
+          <p className="text-sm text-muted-foreground">管理您的账号信息与安全验证方式</p>
         </div>
       ) : null}
 
@@ -125,16 +138,12 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
             </div>
             <div>
               <h3 className="font-bold text-foreground">{profile.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                <Tx>管理员</Tx>
-              </p>
+              <p className="text-sm text-muted-foreground">管理员</p>
             </div>
           </div>
           <div className="space-y-3">
             <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">
-                <Tx>昵称</Tx>
-              </span>
+              <span className="text-xs font-medium text-muted-foreground">昵称</span>
               <div className="relative mt-1">
                 <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -145,9 +154,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
               </div>
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">
-                <Tx>邮箱</Tx>
-              </span>
+              <span className="text-xs font-medium text-muted-foreground">邮箱</span>
               <div className="relative mt-1">
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -158,9 +165,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
               </div>
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">
-                <Tx>手机</Tx>
-              </span>
+              <span className="text-xs font-medium text-muted-foreground">手机</span>
               <div className="relative mt-1">
                 <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -178,18 +183,16 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
             onClick={() => void handleSaveProfile()}
             className="w-full rounded-xl py-3 text-sm font-bold"
           >
-            <Tx>保存修改</Tx>
+            保存修改
           </LoadingButton>
         </div>
-      ) : (
+      ) : activeTab === "password" ? (
         <div className="max-w-lg space-y-4 rounded-2xl border border-border bg-card p-6">
-          <h3 className="font-bold text-foreground">
-            <Tx>修改密码</Tx>
-          </h3>
+          <h3 className="font-bold text-foreground">修改密码</h3>
           {[
-            { label: tText("当前密码"), key: "old" as const, placeholder: "请输入当前密码" },
-            { label: tText("新密码"), key: "new1" as const, placeholder: "请输入新密码（至少6位）" },
-            { label: tText("确认密码"), key: "new2" as const, placeholder: "请再次输入新密码" },
+            { label: "当前密码", key: "old" as const, placeholder: "请输入当前密码" },
+            { label: "新密码", key: "new1" as const, placeholder: "请输入新密码，至少 6 位" },
+            { label: "确认密码", key: "new2" as const, placeholder: "请再次输入新密码" },
           ].map((f) => (
             <label key={f.key} className="block">
               <span className="text-xs font-medium text-muted-foreground">{f.label}</span>
@@ -212,7 +215,37 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
             onClick={() => void handleChangePwd()}
             className="w-full rounded-xl py-3 text-sm font-bold"
           >
-            <Tx>确认修改</Tx>
+            确认修改
+          </LoadingButton>
+        </div>
+      ) : (
+        <div className="max-w-lg space-y-4 rounded-2xl border border-border bg-card p-6">
+          <div>
+            <h3 className="font-bold text-foreground">Passkey</h3>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              添加后可使用设备解锁、指纹或安全密钥完成后台登录 MFA 和敏感操作二次验证。
+            </p>
+          </div>
+          <label className="block">
+            <span className="text-xs font-medium text-muted-foreground">设备名称</span>
+            <div className="relative mt-1">
+              <Fingerprint size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={passkeyLabel}
+                onChange={(e) => setPasskeyLabel(e.target.value)}
+                placeholder="例如：办公室电脑"
+                className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+              />
+            </div>
+          </label>
+          <LoadingButton
+            variant="gold"
+            state={saving ? "loading" : "normal"}
+            loadingText="添加中..."
+            onClick={() => void handleRegisterPasskey()}
+            className="w-full rounded-xl py-3 text-sm font-bold"
+          >
+            添加 Passkey
           </LoadingButton>
         </div>
       )}

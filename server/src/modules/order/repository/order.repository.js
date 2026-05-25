@@ -413,6 +413,9 @@ async function insertOrder(q, params) {
     shippingFee, shippingName, totalAmount, totalPoints,
     note, contactName, contactPhone, address, paymentMethod,
     paymentStatus,
+    goodsOriginalAmount, goodsSaleAmount, activityDiscountAmount, couponDiscountAmount,
+    shippingOriginalFee, shippingDiscountAmount, totalDiscountAmount,
+    payableAmount, paidAmount, netReceivedAmount, outstandingAmount, amountSnapshot,
     taxMode, taxRate, taxLabel, taxableAmount, taxAmount, taxExclusiveAmount,
     addressLine1, addressLine2, addressCity, addressState, addressPostcode, addressCountry,
     pointsUsed, pointsDiscountAmount, rewardCashUsed, rewardCashDiscountAmount, loyaltyMeta,
@@ -421,7 +424,10 @@ async function insertOrder(q, params) {
   await q.query(
     `INSERT INTO orders
        (id, user_id, order_no, order_type, raw_amount, discount_amount, discount_meta, coupon_title,
-        shipping_fee, shipping_cost_amount, payment_fee_amount, shipping_name, total_amount,
+        goods_original_amount, goods_sale_amount, activity_discount_amount, coupon_discount_amount,
+        shipping_fee, shipping_original_fee, shipping_discount_amount, shipping_cost_amount, payment_fee_amount,
+        shipping_name, total_amount, payable_amount, paid_amount, net_received_amount, outstanding_amount,
+        total_discount_amount, amount_snapshot,
         goods_cost_amount, goods_net_sales_amount, gross_profit_amount, net_profit_amount,
         tax_mode, tax_rate, tax_label, taxable_amount, tax_amount, tax_exclusive_amount,
         points_used, points_discount_amount, reward_cash_used, reward_cash_discount_amount, loyalty_meta,
@@ -429,16 +435,28 @@ async function insertOrder(q, params) {
         note, contact_name, contact_phone, shipping_phone, address,
         address_line1, address_line2, address_city, address_state, address_postcode, address_country,
         payment_method)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id, userId, orderNo, orderType || 'normal', rawAmount, discountAmount,
       discountMeta ? JSON.stringify(discountMeta) : null,
       couponTitle || '',
+      Number(goodsOriginalAmount ?? rawAmount ?? 0),
+      Number(goodsSaleAmount ?? rawAmount ?? 0),
+      Number(activityDiscountAmount || 0),
+      Number(couponDiscountAmount || 0),
       shippingFee,
+      Number(shippingOriginalFee ?? shippingFee ?? 0),
+      Number(shippingDiscountAmount || 0),
       Number(shippingCostAmount || 0),
       Number(paymentFeeAmount || 0),
       shippingName || '',
       totalAmount,
+      Number(payableAmount ?? totalAmount ?? 0),
+      Number(paidAmount || 0),
+      Number(netReceivedAmount || 0),
+      Number(outstandingAmount ?? totalAmount ?? 0),
+      Number(totalDiscountAmount || 0),
+      amountSnapshot ? JSON.stringify(amountSnapshot) : null,
       Number(goodsCostAmount || 0),
       Number(goodsNetSalesAmount || 0),
       Number(grossProfitAmount || 0),
@@ -482,6 +500,7 @@ async function insertOrderItem(q, params) {
     productImage,
     variantImage,
     price,
+    unitOriginalPrice,
     points,
     earnedPoints,
     pointsRuleSnapshot,
@@ -502,12 +521,12 @@ async function insertOrderItem(q, params) {
     `INSERT INTO order_items
        (id, order_id, product_id, variant_id, sku_code, variant_name,
         spec_snapshot, product_name_snapshot, product_image_snapshot, variant_image_snapshot,
-        product_name, product_image, price, unit_cost_price, cost_amount, discount_allocated,
+        product_name, product_image, price, unit_original_price, unit_cost_price, cost_amount, discount_allocated,
         net_sales_amount, gross_profit_amount, cost_snapshot_source,
         points, earned_points, points_rule_snapshot,
         redeemable_amount, is_restricted_excluded, line_points_base_amount,
         qty, subtotal, activity_id, activity_title)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       orderId,
@@ -522,6 +541,7 @@ async function insertOrderItem(q, params) {
       productName,
       productImage,
       price,
+      unitOriginalPrice == null ? null : Number(unitOriginalPrice),
       Number(unitCostPrice || 0),
       Number(costAmount || 0),
       Number(discountAllocated || 0),
@@ -1025,7 +1045,10 @@ async function updateOrderGiftRedeemPaid(q, orderId) {
     `UPDATE orders
      SET status = ?, payment_status = ?, payment_time = COALESCE(payment_time, NOW()),
          payment_method = ?, payment_channel = 'points_gift', payment_provider = 'points_gift',
-         paid_at = COALESCE(paid_at, NOW())
+         paid_at = COALESCE(paid_at, NOW()),
+         paid_amount = COALESCE(payable_amount, total_amount, 0),
+         net_received_amount = GREATEST(0, COALESCE(payable_amount, total_amount, 0) - COALESCE(refunded_amount, 0)),
+         outstanding_amount = 0
      WHERE id = ?`,
     [ORDER_STATUS.PAID, PAYMENT_STATUS.PAID, 'points_gift', orderId],
   );
@@ -1151,12 +1174,20 @@ async function updateOrderPaid(q, orderId, params = {}) {
     paymentMethod,
     paymentProvider,
     providerPaymentId,
+    paidAmount,
   } = params;
+  const amountExpr = paidAmount !== undefined && paidAmount !== null
+    ? '?'
+    : 'COALESCE(NULLIF(payable_amount, 0), total_amount, 0)';
+  const amountParams = paidAmount !== undefined && paidAmount !== null ? [Number(paidAmount || 0)] : [];
   const [result] = await q.query(
     `UPDATE orders
        SET status = ?, payment_status = ?, payment_time = ?, payment_channel = ?,
            payment_transaction_no = ?, payment_method = ?,
-           payment_provider = ?, provider_payment_id = ?, paid_at = ?
+           payment_provider = ?, provider_payment_id = ?, paid_at = ?,
+           paid_amount = ${amountExpr},
+           net_received_amount = GREATEST(0, ${amountExpr} - COALESCE(refunded_amount, 0)),
+           outstanding_amount = GREATEST(0, COALESCE(NULLIF(payable_amount, 0), total_amount, 0) - ${amountExpr})
      WHERE id = ?
        AND status = ?
        AND (payment_status IS NULL OR payment_status = ?)`,
@@ -1170,6 +1201,9 @@ async function updateOrderPaid(q, orderId, params = {}) {
       paymentProvider || paymentChannel || 'stripe',
       providerPaymentId || paymentTransactionNo || '',
       paymentTime || new Date(),
+      ...amountParams,
+      ...amountParams,
+      ...amountParams,
       orderId,
       ORDER_STATUS.PENDING,
       PAYMENT_STATUS.PENDING,
@@ -1183,9 +1217,11 @@ async function updateOrderRefundState(q, orderId, params = {}) {
   if (refundedAmount !== undefined && refundedAmount !== null) {
     await q.query(
       `UPDATE orders
-       SET payment_status = ?, status = ?, refund_status = ?, refunded_amount = ?
+       SET payment_status = ?, status = ?, refund_status = ?, refunded_amount = ?,
+           net_received_amount = GREATEST(0, COALESCE(paid_amount, 0) - ?),
+           outstanding_amount = GREATEST(0, COALESCE(NULLIF(payable_amount, 0), total_amount, 0) - COALESCE(paid_amount, 0))
        WHERE id = ?`,
-      [paymentStatus, orderStatus, refundStatus, refundedAmount, orderId],
+      [paymentStatus, orderStatus, refundStatus, refundedAmount, refundedAmount, orderId],
     );
     return;
   }

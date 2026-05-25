@@ -1,4 +1,5 @@
 const db = require('../../../config/db');
+const { PAID_PAYMENT_STATUS_LIST } = require('../../../constants/status');
 
 const OPEN_ALERT_STATUSES = ['pending', 'suggested', 'ordered', 'in_transit', 'partial_received', 'overdue', 'snoozed'];
 const IN_TRANSIT_PO_STATUSES = ['ordered', 'in_transit', 'partial_received'];
@@ -18,14 +19,28 @@ async function selectReplenishmentCandidates() {
        v.stock AS current_stock,
        COALESCE(v.reserved_stock, 0) AS reserved_stock,
        GREATEST(v.stock - COALESCE(v.reserved_stock, 0), 0) AS available_stock,
-       COALESCE(v.stock_warning_threshold, 5) AS warning_stock,
+       COALESCE(v.stock_lower_limit, v.stock_warning_threshold, 5) AS warning_stock,
+       COALESCE(v.stock_lower_limit, v.stock_warning_threshold, 5) AS lower_limit,
+       v.stock_upper_limit AS upper_limit,
        COALESCE(poagg.ordered_qty, 0) AS ordered_qty,
        COALESCE(poagg.received_qty, 0) AS received_qty,
        COALESCE(poagg.in_transit_qty, 0) AS in_transit_qty,
        poagg.purchase_order_id,
-       poagg.expected_arrival_date
+       poagg.expected_arrival_date,
+       pr.id AS unpack_rule_id,
+       pr.parent_variant_id AS unpack_parent_variant_id,
+       pr.child_qty AS unpack_child_qty,
+       pr.parent_qty AS unpack_parent_qty,
+       GREATEST(COALESCE(pv.stock, 0) - COALESCE(pv.reserved_stock, 0), 0) AS unpack_parent_available_stock
      FROM product_variants v
      JOIN products p ON p.id = v.product_id
+     LEFT JOIN inventory_pack_rules pr ON pr.child_variant_id = v.id
+       AND pr.deleted_at IS NULL
+       AND pr.enabled = 1
+       AND pr.manual_unpack_enabled = 1
+     LEFT JOIN product_variants pv ON pv.id = pr.parent_variant_id
+       AND pv.deleted_at IS NULL
+       AND pv.enabled = 1
      LEFT JOIN (
        SELECT
          poi.variant_id,
@@ -42,7 +57,9 @@ async function selectReplenishmentCandidates() {
      WHERE p.deleted_at IS NULL
        AND v.deleted_at IS NULL
        AND v.enabled = 1
-       AND GREATEST(v.stock - COALESCE(v.reserved_stock, 0), 0) <= COALESCE(v.stock_warning_threshold, 5)`,
+       AND (
+         GREATEST(v.stock - COALESCE(v.reserved_stock, 0), 0) + COALESCE(poagg.in_transit_qty, 0)
+       ) <= COALESCE(v.stock_lower_limit, v.stock_warning_threshold, 5)`,
     IN_TRANSIT_PO_STATUSES,
   );
   return rows;
@@ -85,8 +102,9 @@ async function insertAlert(conn, row) {
   await conn.query(
     `INSERT INTO inventory_replenishment_alerts
       (id, variant_id, alert_status, current_stock, available_stock, warning_stock, suggested_qty,
-       ordered_qty, received_qty, in_transit_qty, purchase_order_id, expected_arrival_date, last_alert_at, reason, remark)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?)`,
+       ordered_qty, received_qty, in_transit_qty, purchase_order_id, expected_arrival_date, last_alert_at, reason, remark,
+       lower_limit, upper_limit, suggestion_type, strategy_snapshot)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?,?,?,?)`,
     [
       row.id,
       row.variant_id,
@@ -102,6 +120,10 @@ async function insertAlert(conn, row) {
       row.expected_arrival_date || null,
       row.reason || null,
       row.remark || null,
+      row.lower_limit ?? null,
+      row.upper_limit ?? null,
+      row.suggestion_type || 'purchase',
+      row.strategy_snapshot ? JSON.stringify(row.strategy_snapshot) : null,
     ],
   );
 }
@@ -121,7 +143,11 @@ async function updateAlert(conn, id, row) {
          expected_arrival_date = ?,
          last_alert_at = NOW(),
          reason = ?,
-         remark = ?
+         remark = ?,
+         lower_limit = ?,
+         upper_limit = ?,
+         suggestion_type = ?,
+         strategy_snapshot = ?
      WHERE id = ?`,
     [
       row.alert_status,
@@ -136,6 +162,10 @@ async function updateAlert(conn, id, row) {
       row.expected_arrival_date || null,
       row.reason || null,
       row.remark || null,
+      row.lower_limit ?? null,
+      row.upper_limit ?? null,
+      row.suggestion_type || 'purchase',
+      row.strategy_snapshot ? JSON.stringify(row.strategy_snapshot) : null,
       id,
     ],
   );
@@ -324,14 +354,28 @@ async function selectVariantReplenishmentSnapshot(conn, variantId) {
        v.stock AS current_stock,
        COALESCE(v.reserved_stock, 0) AS reserved_stock,
        GREATEST(v.stock - COALESCE(v.reserved_stock, 0), 0) AS available_stock,
-       COALESCE(v.stock_warning_threshold, 5) AS warning_stock,
+       COALESCE(v.stock_lower_limit, v.stock_warning_threshold, 5) AS warning_stock,
+       COALESCE(v.stock_lower_limit, v.stock_warning_threshold, 5) AS lower_limit,
+       v.stock_upper_limit AS upper_limit,
        COALESCE(poagg.ordered_qty, 0) AS ordered_qty,
        COALESCE(poagg.received_qty, 0) AS received_qty,
        COALESCE(poagg.in_transit_qty, 0) AS in_transit_qty,
        poagg.purchase_order_id,
-       poagg.expected_arrival_date
+       poagg.expected_arrival_date,
+       pr.id AS unpack_rule_id,
+       pr.parent_variant_id AS unpack_parent_variant_id,
+       pr.child_qty AS unpack_child_qty,
+       pr.parent_qty AS unpack_parent_qty,
+       GREATEST(COALESCE(pv.stock, 0) - COALESCE(pv.reserved_stock, 0), 0) AS unpack_parent_available_stock
      FROM product_variants v
      JOIN products p ON p.id = v.product_id
+     LEFT JOIN inventory_pack_rules pr ON pr.child_variant_id = v.id
+       AND pr.deleted_at IS NULL
+       AND pr.enabled = 1
+       AND pr.manual_unpack_enabled = 1
+     LEFT JOIN product_variants pv ON pv.id = pr.parent_variant_id
+       AND pv.deleted_at IS NULL
+       AND pv.enabled = 1
      LEFT JOIN (
        SELECT
          poi.variant_id,
@@ -391,6 +435,192 @@ async function selectAlertsPage(where, params, pageSize, offset) {
   return rows;
 }
 
+async function selectSmartLimitCandidates(conn, variantIds = []) {
+  const q = conn || db;
+  const ids = [...new Set((variantIds || []).filter(Boolean))];
+  const whereIds = ids.length ? `AND v.id IN (${ids.map(() => '?').join(',')})` : '';
+  const [rows] = await q.query(
+    `SELECT
+       v.id AS variant_id,
+       v.product_id,
+       p.name AS product_name,
+       v.title AS variant_title,
+       v.sku_code,
+       v.stock AS current_stock,
+       COALESCE(v.reserved_stock, 0) AS reserved_stock,
+       GREATEST(v.stock - COALESCE(v.reserved_stock, 0), 0) AS available_stock,
+       v.stock_lower_limit,
+       v.stock_upper_limit,
+       COALESCE(poagg.in_transit_qty, 0) AS in_transit_qty
+     FROM product_variants v
+     JOIN products p ON p.id = v.product_id
+     LEFT JOIN (
+       SELECT poi.variant_id, SUM(GREATEST(poi.ordered_qty - poi.received_qty, 0)) AS in_transit_qty
+       FROM purchase_order_items poi
+       JOIN purchase_orders po ON po.id = poi.purchase_order_id
+       WHERE po.status IN (${placeholders(IN_TRANSIT_PO_STATUSES)})
+       GROUP BY poi.variant_id
+     ) poagg ON poagg.variant_id = v.id
+     WHERE p.deleted_at IS NULL
+       AND v.deleted_at IS NULL
+       AND v.enabled = 1
+       ${whereIds}
+     ORDER BY p.name ASC, v.sort_order ASC`,
+    [...IN_TRANSIT_PO_STATUSES, ...ids],
+  );
+  return rows;
+}
+
+async function selectDailySnapshotStats(conn, variantIds, analysisDays) {
+  const q = conn || db;
+  const ids = [...new Set((variantIds || []).filter(Boolean))];
+  if (!ids.length) return new Map();
+  const [rows] = await q.query(
+    `SELECT
+       variant_id,
+       COUNT(*) AS snapshot_days,
+       SUM(sales_qty) AS sales_qty,
+       SUM(CASE WHEN is_stockout = 1 THEN 1 ELSE 0 END) AS stockout_days
+     FROM inventory_daily_snapshots
+     WHERE variant_id IN (${ids.map(() => '?').join(',')})
+       AND snapshot_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+     GROUP BY variant_id`,
+    [...ids, analysisDays],
+  );
+  return new Map(rows.map((row) => [row.variant_id, row]));
+}
+
+async function insertReplenishmentRun(conn, row) {
+  await conn.query(
+    `INSERT INTO inventory_replenishment_runs
+       (id, scope_type, scope_snapshot, analysis_days, strategy, status, created_by)
+     VALUES (?,?,?,?,?,?,?)`,
+    [
+      row.id,
+      row.scope_type,
+      row.scope_snapshot ? JSON.stringify(row.scope_snapshot) : null,
+      row.analysis_days,
+      row.strategy,
+      row.status || 'preview',
+      row.created_by || null,
+    ],
+  );
+}
+
+async function insertReplenishmentRunItem(conn, row) {
+  await conn.query(
+    `INSERT INTO inventory_replenishment_run_items
+       (id, run_id, variant_id, old_lower_limit, old_upper_limit, suggested_lower_limit, suggested_upper_limit,
+        current_stock, available_stock, in_transit_qty, sales_qty, saleable_days, avg_daily_sales,
+        suggested_replenishment_qty, confidence_score, reason, apply_status)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      row.id,
+      row.run_id,
+      row.variant_id,
+      row.old_lower_limit ?? null,
+      row.old_upper_limit ?? null,
+      row.suggested_lower_limit,
+      row.suggested_upper_limit,
+      row.current_stock,
+      row.available_stock,
+      row.in_transit_qty,
+      row.sales_qty,
+      row.saleable_days,
+      row.avg_daily_sales,
+      row.suggested_replenishment_qty,
+      row.confidence_score,
+      row.reason || null,
+      row.apply_status || 'pending',
+    ],
+  );
+}
+
+async function selectRunItemsForUpdate(conn, runId, itemIds = []) {
+  const ids = [...new Set((itemIds || []).filter(Boolean))];
+  const whereIds = ids.length ? `AND i.id IN (${ids.map(() => '?').join(',')})` : '';
+  const [rows] = await conn.query(
+    `SELECT i.*, v.stock_lower_limit, v.stock_upper_limit
+     FROM inventory_replenishment_run_items i
+     JOIN product_variants v ON v.id = i.variant_id
+     WHERE i.run_id = ? ${whereIds}
+     FOR UPDATE`,
+    [runId, ...ids],
+  );
+  return rows;
+}
+
+async function updateVariantLimits(conn, variantId, lowerLimit, upperLimit) {
+  await conn.query(
+    `UPDATE product_variants
+     SET stock_lower_limit = ?, stock_upper_limit = ?, stock_warning_threshold = ?
+     WHERE id = ? AND deleted_at IS NULL`,
+    [lowerLimit, upperLimit, lowerLimit, variantId],
+  );
+}
+
+async function markRunItemApplied(conn, id, lowerLimit, upperLimit, replenishmentQty) {
+  await conn.query(
+    `UPDATE inventory_replenishment_run_items
+     SET suggested_lower_limit = ?, suggested_upper_limit = ?, suggested_replenishment_qty = ?, apply_status = 'applied'
+     WHERE id = ?`,
+    [lowerLimit, upperLimit, replenishmentQty, id],
+  );
+}
+
+async function updateRunStatus(conn, runId, status) {
+  await conn.query('UPDATE inventory_replenishment_runs SET status = ? WHERE id = ?', [status, runId]);
+}
+
+async function upsertDailyInventorySnapshots(conn, snapshotDate) {
+  const q = conn || db;
+  const paidStatuses = [...PAID_PAYMENT_STATUS_LIST];
+  const [result] = await q.query(
+    `INSERT INTO inventory_daily_snapshots
+       (snapshot_date, product_id, variant_id, stock, reserved_stock, available_stock, in_transit_qty, sales_qty, is_stockout)
+     SELECT
+       ? AS snapshot_date,
+       v.product_id,
+       v.id AS variant_id,
+       COALESCE(v.stock, 0) AS stock,
+       COALESCE(v.reserved_stock, 0) AS reserved_stock,
+       GREATEST(COALESCE(v.stock, 0) - COALESCE(v.reserved_stock, 0), 0) AS available_stock,
+       COALESCE(poagg.in_transit_qty, 0) AS in_transit_qty,
+       COALESCE(sales.sales_qty, 0) AS sales_qty,
+       CASE WHEN GREATEST(COALESCE(v.stock, 0) - COALESCE(v.reserved_stock, 0), 0) <= 0 THEN 1 ELSE 0 END AS is_stockout
+     FROM product_variants v
+     JOIN products p ON p.id = v.product_id
+     LEFT JOIN (
+       SELECT poi.variant_id, SUM(GREATEST(poi.ordered_qty - poi.received_qty, 0)) AS in_transit_qty
+       FROM purchase_order_items poi
+       JOIN purchase_orders po ON po.id = poi.purchase_order_id
+       WHERE po.status IN (${placeholders(IN_TRANSIT_PO_STATUSES)})
+       GROUP BY poi.variant_id
+     ) poagg ON poagg.variant_id = v.id
+     LEFT JOIN (
+       SELECT oi.variant_id, SUM(COALESCE(oi.qty, 0)) AS sales_qty
+       FROM order_items oi
+       JOIN orders o ON o.id = oi.order_id
+       WHERE oi.variant_id IS NOT NULL
+         AND o.payment_status IN (${placeholders(paidStatuses)})
+         AND DATE(COALESCE(o.paid_at, o.payment_time, o.created_at)) = ?
+       GROUP BY oi.variant_id
+     ) sales ON sales.variant_id = v.id
+     WHERE p.deleted_at IS NULL
+       AND v.deleted_at IS NULL
+       AND v.enabled = 1
+     ON DUPLICATE KEY UPDATE
+       stock = VALUES(stock),
+       reserved_stock = VALUES(reserved_stock),
+       available_stock = VALUES(available_stock),
+       in_transit_qty = VALUES(in_transit_qty),
+       sales_qty = VALUES(sales_qty),
+       is_stockout = VALUES(is_stockout)`,
+    [snapshotDate, ...IN_TRANSIT_PO_STATUSES, ...paidStatuses, snapshotDate],
+  );
+  return result;
+}
+
 function getConnection() {
   return db.getConnection();
 }
@@ -417,4 +647,13 @@ module.exports = {
   selectVariantReplenishmentSnapshot,
   countAlerts,
   selectAlertsPage,
+  selectSmartLimitCandidates,
+  selectDailySnapshotStats,
+  insertReplenishmentRun,
+  insertReplenishmentRunItem,
+  selectRunItemsForUpdate,
+  updateVariantLimits,
+  markRunItemApplied,
+  updateRunStatus,
+  upsertDailyInventorySnapshots,
 };

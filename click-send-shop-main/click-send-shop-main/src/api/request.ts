@@ -11,7 +11,11 @@ import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { notifyAuthExpired } from "@/lib/authSessionBridge";
 import { startGlobalLoadingDeferred, stopGlobalLoading } from "@/lib/loadingProgress";
 import { clearAdminCsrfToken, getAdminCsrfToken, setAdminCsrfToken } from "@/lib/adminCsrf";
-import { isAdminMfaRequiredResponse, requestAdminMfaStepUp } from "@/lib/adminMfaStepUp";
+import {
+  getAdminMfaActionClassFromResponse,
+  isAdminMfaRequiredResponse,
+  requestAdminMfaStepUp,
+} from "@/lib/adminMfaStepUp";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -168,6 +172,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   const isAdminAuthLogin = endpoint.startsWith("/admin/auth/login");
   const isAdminAuthRefresh = endpoint.startsWith("/admin/auth/refresh");
   const isAdminMfaEndpoint = endpoint.startsWith("/admin/auth/mfa/");
+  const isAdminPasskeyEndpoint = endpoint.startsWith("/admin/auth/passkeys/");
+  const isAdminPasskeyLoginEndpoint = endpoint.startsWith("/admin/auth/passkeys/login/");
   const isAdminCsrfEndpoint = endpoint.startsWith("/admin/auth/csrf");
   const isAccountCancel = endpoint.startsWith("/user/account/cancel");
   const token = isAdminEndpoint ? getAdminAccessToken() : getAccessToken();
@@ -176,6 +182,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     && ADMIN_CSRF_METHODS.has(method)
     && !isAdminAuthLogin
     && !isAdminAuthRefresh
+    && !isAdminPasskeyLoginEndpoint
     && !isAdminCsrfEndpoint;
   const csrfToken = needsAdminCsrf ? await getAdminCsrfToken() : "";
 
@@ -220,7 +227,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     }
   }
 
-  if (res.status === 401 && retry && isAdminEndpoint && !isAdminAuthLogin && !isAdminAuthRefresh && !isAdminMfaEndpoint) {
+  if (res.status === 401 && retry && isAdminEndpoint && !isAdminAuthLogin && !isAdminAuthRefresh && !isAdminMfaEndpoint && !isAdminPasskeyEndpoint) {
     if (!adminRefreshing) {
       adminRefreshing = tryRefreshAdminSession().finally(() => { adminRefreshing = null; });
     }
@@ -250,9 +257,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       && mfaRequired
       && typeof window !== "undefined"
       && !isAdminMfaEndpoint
+      && !isAdminPasskeyEndpoint
     ) {
       try {
-        await requestAdminMfaStepUp();
+        await requestAdminMfaStepUp(getAdminMfaActionClassFromResponse(body));
         return request<T>(endpoint, options, false);
       } catch {
         throw new ApiError(403, extractResponseMessage(body, res.status), {

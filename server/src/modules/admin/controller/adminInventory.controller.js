@@ -53,7 +53,7 @@ exports.updateSkuWarningThreshold = asyncRoute(async (req, res) => {
 });
 
 exports.batchWarningThreshold = asyncRoute(async (req, res) => {
-  const r = await svc.batchWarningThreshold(req.body || {});
+  const r = await svc.batchWarningThreshold(req.body || {}, req.user?.id, req);
   res.success(r.data, r.message);
 });
 
@@ -104,6 +104,26 @@ exports.createPurchaseOrderFromAlert = asyncRoute(async (req, res) => {
     afterData: r,
   });
   res.success(r, '采购单已创建');
+});
+
+exports.createSmartReplenishmentPreview = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.createSmartReplenishmentPreview(req.body || {}, req.user?.id, req);
+  res.success(r);
+});
+
+exports.applySmartReplenishmentRun = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.applySmartReplenishmentRun(req.params.id, req.body || {}, req.user?.id, req);
+  res.success(r);
+});
+
+exports.createPurchaseOrderFromSmartRun = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.createPurchaseOrderFromSmartRun(req.params.id, req.body || {}, req.user?.id, req);
+  res.success(r);
+});
+
+exports.generateDailyInventorySnapshot = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.generateDailyInventorySnapshot(req.body || {}, req.user?.id, req);
+  res.success(r);
 });
 
 exports.listPurchaseOrders = asyncRoute(async (req, res) => {
@@ -182,4 +202,3 @@ exports.getConversion = asyncRoute(async (req, res) => {
   const r = await svc.getConversion(req.params.id);
   res.success(r.data);
 });
-

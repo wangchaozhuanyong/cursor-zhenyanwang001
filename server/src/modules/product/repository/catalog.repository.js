@@ -86,6 +86,27 @@ async function selectDefaultVariantsByProductIds(productIds) {
   });
 }
 
+async function selectVariantPriceRangesByProductIds(productIds) {
+  const ids = [...new Set((productIds || []).filter(Boolean))];
+  if (!ids.length) return [];
+  const [rows] = await db.query(
+    `SELECT
+       product_id,
+       MIN(price) AS min_price,
+       MAX(price) AS max_price,
+       MIN(NULLIF(original_price, 0)) AS min_original_price,
+       MAX(NULLIF(original_price, 0)) AS max_original_price,
+       COUNT(*) AS variant_count
+     FROM product_variants
+     WHERE product_id IN (${ids.map(() => '?').join(',')})
+       AND deleted_at IS NULL
+       AND enabled = 1
+     GROUP BY product_id`,
+    ids,
+  );
+  return rows;
+}
+
 async function selectProductById(id) {
   const [[row]] = await db.query(
     `SELECT * FROM products WHERE id = ? AND ${ACTIVE_PRODUCT_WHERE}`,
@@ -281,6 +302,7 @@ module.exports = {
   countActiveProducts,
   selectActiveProductsPage,
   selectDefaultVariantsByProductIds,
+  selectVariantPriceRangesByProductIds,
   selectProductById,
   selectProductVariants,
   selectProductSpecGroups,
@@ -295,6 +317,5 @@ module.exports = {
   selectRelatedByCategory,
   insertHomeEngagementEvent,
 };
-
 
 

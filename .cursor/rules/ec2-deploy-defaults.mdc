@@ -11,7 +11,10 @@ alwaysApply: true
 - **SSH 私钥路径**：`E:\yamaxunmishi\aws-key.pem`（密钥目录为 `E:\yamaxunmishi`，文件名 `aws-key.pem`）
 - **SSH 登录用户**：`ubuntu`（本机密钥对该实例校验通过；若为 Amazon Linux 可改 `ec2-user`）
 - **服务器项目根**（默认）：`/var/www/click-send-shop`
+- **生产 Git remote**（已配置）：`git@github.com:wangchaozhuanyong/cursor-zhenyanwang001.git`（EC2 使用 `~/.ssh/id_ed25519_github_deploy`，勿改回 HTTPS）
 
 协助用户部署时：优先使用上述默认值；若用户说明已更换 IP、路径或系统镜像，再更新本规则与脚本中的默认值。
+
+若 `git fetch` 再失败，在 EC2 执行：`ssh -T git@github.com` 应看到仓库名；`deploy/ensure-github-ssh-remote.sh` 会在 `production-deploy` 中自动把 HTTPS origin 切回 SSH。
 
 **不要**在对话中要求用户重复提供上述 IP 与密钥路径，除非用户声明已变更。

@@ -138,6 +138,7 @@ bash "$PROJECT_DIR/deploy/preflight.sh" | tee -a "$LOG_FILE"
 LOCAL_COMMIT=""
 if [[ "$SKIP_GIT" != "1" ]]; then
   echo "📜 拉取最新代码（分支 $GIT_BRANCH）..." | tee -a "$LOG_FILE"
+  bash "$PROJECT_DIR/deploy/ensure-github-ssh-remote.sh" | tee -a "$LOG_FILE"
   git -C "$PROJECT_DIR" fetch origin "$GIT_BRANCH"
   git -C "$PROJECT_DIR" reset --hard "origin/$GIT_BRANCH"
 

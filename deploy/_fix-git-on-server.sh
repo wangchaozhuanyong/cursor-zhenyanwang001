@@ -7,7 +7,7 @@ cd "$PROJECT"
 [[ -f server/.env ]] && echo "OK: server/.env present (gitignored, safe)"
 
 mv .git ".git.broken.${TS}"
-git clone --depth 1 https://github.com/wangchaozhuanyong/cursor-zhenyanwang001.git "/tmp/cs-git-${TS}"
+git clone --depth 1 git@github.com:wangchaozhuanyong/cursor-zhenyanwang001.git "/tmp/cs-git-${TS}"
 mv "/tmp/cs-git-${TS}/.git" .
 rm -rf "/tmp/cs-git-${TS}"
 git reset --hard origin/main

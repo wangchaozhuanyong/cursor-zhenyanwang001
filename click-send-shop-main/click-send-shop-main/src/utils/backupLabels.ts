@@ -1,4 +1,3 @@
-/** 备份文件类型 */
 export const BACKUP_FILE_KIND_LABELS: Record<string, string> = {
   mysql_full: "数据库全量备份",
   mysql_binlog: "数据库增量日志",
@@ -7,7 +6,6 @@ export const BACKUP_FILE_KIND_LABELS: Record<string, string> = {
   report: "报表数据备份",
 };
 
-/** 备份任务类型 */
 export const BACKUP_JOB_TYPE_LABELS: Record<string, string> = {
   full: "全量备份",
   long_term_full: "长期全量备份",
@@ -20,7 +18,6 @@ export const BACKUP_JOB_TYPE_LABELS: Record<string, string> = {
   restore_drill: "恢复演练",
 };
 
-/** 通用任务/作业状态 */
 export const BACKUP_STATUS_LABELS: Record<string, string> = {
   success: "成功",
   running: "运行中",
@@ -29,7 +26,7 @@ export const BACKUP_STATUS_LABELS: Record<string, string> = {
   cancelled: "已取消",
   open: "待处理",
   acknowledged: "已确认",
-  resolved: "已解决",
+  resolved: "已完成",
   validated: "已校验",
   temp_restored: "已恢复到临时库",
   awaiting_approval: "待审批",
@@ -38,14 +35,12 @@ export const BACKUP_STATUS_LABELS: Record<string, string> = {
   switched: "已切换",
 };
 
-/** 存储提供方 */
 export const BACKUP_STORAGE_PROVIDER_LABELS: Record<string, string> = {
   s3: "云端对象存储",
   local: "本地存储",
   minio: "对象存储",
 };
 
-/** 恢复类型 */
 export const RESTORE_TYPE_LABELS: Record<string, string> = {
   site: "整站恢复",
   point_in_time: "指定时间点恢复",
@@ -55,19 +50,17 @@ export const RESTORE_TYPE_LABELS: Record<string, string> = {
   pre_deploy_rollback: "部署前版本回滚",
 };
 
-/** 告警类型 */
 export const BACKUP_ALERT_TYPE_LABELS: Record<string, string> = {
-  full_failed: "全量备份失败",
-  binlog_upload_failed: "增量日志上传失败",
+  full_failed: "数据库全量备份失败",
+  binlog_upload_failed: "数据库增量日志上传失败",
   s3_upload_failed: "云端上传失败",
   verify_failed: "备份校验失败",
   stale_backup: "备份过期",
-  restore_drill_failed: "恢复演练失败",
+  restore_drill_failed: "自动恢复演练失败",
   disk_low: "磁盘空间不足",
-  restore_failed: "恢复失败",
+  restore_failed: "恢复到临时库失败",
 };
 
-/** 已知英文告警标题 → 中文 */
 const BACKUP_ALERT_TITLE_ZH: Record<string, string> = {
   "MySQL binlog upload failed": "数据库增量日志上传失败",
   "MySQL full backup failed": "数据库全量备份失败",
@@ -76,18 +69,19 @@ const BACKUP_ALERT_TITLE_ZH: Record<string, string> = {
   "Restore to temporary database failed": "恢复到临时库失败",
 };
 
-/** 已知英文告警摘要片段 → 中文（部分匹配） */
 const BACKUP_ALERT_MESSAGE_PATTERNS: Array<[RegExp, string]> = [
+  [/MYSQL_BINLOG_DIR is required/i, "未配置 MySQL 增量日志目录，请在环境变量中设置 MYSQL_BINLOG_DIR。"],
   [/binlog.*upload.*fail/i, "增量日志上传到云端失败，请检查对象存储与网络配置。"],
-  [/S3|s3/i, "对象存储上传异常，请检查存储桶权限与密钥。"],
+  [/S3|s3|bucket/i, "对象存储上传异常，请检查存储桶权限与密钥。"],
   [/ECONNREFUSED|ENOTFOUND/i, "无法连接数据库或存储服务，请检查网络与服务状态。"],
   [/EACCES.*permission denied.*(?:scandir|readdir|read|access).*mysql/i, "无权限访问 MySQL 数据目录，请检查运行账号对数据库目录的读取权限。"],
   [/EACCES.*permission denied/i, "文件或目录权限不足，请检查服务运行账号权限。"],
   [/ENOSPC.*no space left/i, "磁盘空间已满，无法继续写入备份文件，请尽快清理磁盘。"],
+  [/low disk space/i, "磁盘可用空间低于备份安全阈值，请清理磁盘或调整备份目录。"],
   [/ENOENT.*no such file or directory/i, "找不到指定文件或目录，请检查路径配置是否正确。"],
   [/ETIMEDOUT|ECONNRESET/i, "网络连接超时或被重置，请检查网络与服务状态。"],
   [/EPERM.*operation not permitted/i, "操作被拒绝，请检查系统权限与安全策略。"],
-  [/MYSQL_BINLOG_DIR is required/i, "未配置 MySQL 增量日志目录，请在环境变量中设置 MYSQL_BINLOG_DIR。"],
+  [/No successful full backup|No full backup/i, "没有可用的成功全量备份，无法执行恢复演练。"],
 ];
 
 export function formatBackupFileKind(kind?: string | null): string {
@@ -114,7 +108,6 @@ export function formatBackupStorageProvider(provider?: string | null): string {
   return BACKUP_STORAGE_PROVIDER_LABELS[key] || "外部存储";
 }
 
-/** 界面展示用：不直接显示冗长的 S3 路径 */
 export function formatBackupStorageLocation(file: {
   storage_provider?: string | null;
   bucket?: string | null;
@@ -129,11 +122,8 @@ export function formatBackupStorageLocation(file: {
     return { label: provider, title: key || undefined };
   }
 
-  const shortBucket = bucket.length > 24 ? `${bucket.slice(0, 10)}…${bucket.slice(-8)}` : bucket;
-  return {
-    label: `${provider}（${shortBucket}）`,
-    title: fullPath || undefined,
-  };
+  const shortBucket = bucket.length > 24 ? `${bucket.slice(0, 10)}...${bucket.slice(-8)}` : bucket;
+  return { label: `${provider}：${shortBucket}`, title: fullPath || undefined };
 }
 
 export function formatRestoreType(type?: string | null): string {
@@ -166,7 +156,7 @@ export function formatBackupAlertMessage(message?: string | null, alertType?: st
   const fromType = formatBackupAlertType(alertType);
   if (fromType && !raw) return `请检查${fromType}相关配置与日志。`;
   if (!raw) return "请查看服务器备份日志获取详情。";
-  return "备份任务出现异常，请联系技术人员查看日志。";
+  return "备份任务出现异常，请查看服务器日志。";
 }
 
 export function formatRestoreTempDatabase(name?: string | null): string {
@@ -178,14 +168,8 @@ export function formatRestoreTempDatabase(name?: string | null): string {
 
 export function backupStatusTone(status?: string | null): string {
   const key = String(status || "").trim();
-  if (key === "success" || key === "validated" || key === "resolved" || key === "merged" || key === "switched") {
-    return "text-emerald-700";
-  }
-  if (key === "running" || key === "queued" || key === "temp_restored" || key === "awaiting_approval" || key === "approved") {
-    return "text-blue-700";
-  }
-  if (key === "failed" || key === "open" || key === "cancelled") {
-    return "text-red-700";
-  }
+  if (["success", "validated", "resolved", "merged", "switched"].includes(key)) return "text-emerald-700";
+  if (["running", "queued", "temp_restored", "awaiting_approval", "approved"].includes(key)) return "text-blue-700";
+  if (["failed", "open", "cancelled"].includes(key)) return "text-red-700";
   return "text-muted-foreground";
 }

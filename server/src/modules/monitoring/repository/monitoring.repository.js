@@ -134,7 +134,13 @@ async function upsertAnomaly(anomaly) {
        evidence = VALUES(evidence),
        seen_count = seen_count + 1,
        last_seen_at = NOW(),
-       status = IF(status IN ('resolved','ignored','repaired'), status, 'open')`,
+       resolved_at = IF(status IN ('ignored','repair_pending'), resolved_at, NULL),
+       resolved_by = IF(status IN ('ignored','repair_pending'), resolved_by, NULL),
+       status = CASE
+         WHEN status = 'ignored' THEN 'ignored'
+         WHEN status = 'repair_pending' THEN 'repair_pending'
+         ELSE 'open'
+       END`,
     [
       anomaly.ruleCode,
       anomaly.module,

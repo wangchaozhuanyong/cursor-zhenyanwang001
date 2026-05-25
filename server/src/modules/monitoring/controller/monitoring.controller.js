@@ -2,6 +2,7 @@ const { asyncRoute } = require('../../../middleware/asyncRoute');
 const queryService = require('../service/monitoringQuery.service');
 const engine = require('../service/consistencyEngine.service');
 const repairTaskService = require('../service/repairTask.service');
+const autoFixService = require('../service/autoFix.service');
 const cronMatcher = require('../service/cronMatcher.service');
 const { reloadRulesCache } = require('../service/monitoringScheduler.service');
 
@@ -79,6 +80,9 @@ exports.updateRule = asyncRoute(async (req, res) => {
     if (!cronMatcher.isValidExpression(patch.schedule_cron)) {
       return res.fail(400, 'schedule_cron 格式无效，需为 5 段标准 cron（分 时 日 月 周）');
     }
+  }
+  if (patch.auto_fix_enabled && !autoFixService.isRuleAutoFixAllowed(req.params.code)) {
+    return res.fail(400, '该规则涉及资金、积分、文件或人工判断场景，不允许开启自动修复');
   }
   const rule = await queryService.updateRule(req.params.code, patch);
   if (!rule) return res.fail(404, '监控规则不存在');

@@ -617,6 +617,10 @@ export function zhAuditSummary(summary?: string) {
         return `${method}${pathLabel}（${ok ? "成功" : "失败"}）`;
       },
     },
+    {
+      test: /^(GET|POST|PUT|PATCH|DELETE)\s+(\S+)\s+已执行$/i,
+      format: (m) => `${zhHttpMethod(m[1])}${zhAdminApiPath(m[2])}（已执行）`,
+    },
     { test: /^Admin API security block:\s*(.+)$/i, format: (m) => `管理端 API 安全拦截：${zhGatewayBlockReason(m[1])}` },
     { test: /^要求管理员 MFA userId=(.+)$/i, format: (m) => `要求管理员启用多因素验证（账号 ${shortAuditId(m[1])}）` },
     { test: /^关闭管理员 MFA userId=(.+)$/i, format: (m) => `关闭管理员多因素验证要求（账号 ${shortAuditId(m[1])}）` },
@@ -728,11 +732,22 @@ const REQUEST_PATH_ZH: Record<string, string> = {
 const ADMIN_API_PATH_RULES: Array<{ pattern: RegExp; label: string | ((m: RegExpMatchArray) => string) }> = [
   { pattern: /^\/telegram\/settings\/?$/, label: "Telegram 通知配置" },
   { pattern: /^\/settings\/shipping\/?$/, label: "运费设置" },
+  { pattern: /^\/settings\/assets\/faviconUrl\/?$/, label: "网站图标（Favicon）" },
+  { pattern: /^\/settings\/assets\/logoUrl\/?$/, label: "站点 Logo" },
   { pattern: /^\/settings\/?$/, label: "站点设置" },
   { pattern: /^\/system\/theme\/?$/, label: "主题配置" },
+  {
+    pattern: /^\/rbac\/admin-users\/([^/]+)\/security\/mfa-required\/?$/,
+    label: (m) => `管理员账号 ${shortAuditId(m[1])} · 多因素验证`,
+  },
+  {
+    pattern: /^\/rbac\/admin-users\/([^/]+)\/reset-password\/?$/,
+    label: (m) => `管理员账号 ${shortAuditId(m[1])} · 登录密码`,
+  },
   { pattern: /^\/rbac\/admin-users\/([^/]+)$/, label: (m) => `管理员账号 ${shortAuditId(m[1])}` },
   { pattern: /^\/rbac\/roles\/?$/, label: "角色列表" },
   { pattern: /^\/rbac\/roles\/([^/]+)$/, label: (m) => `角色 ${shortAuditId(m[1])}` },
+  { pattern: /^\/payments\/channels\/([^/]+)$/, label: (m) => `支付渠道「${zhPaymentChannelId(m[1])}」` },
   { pattern: /^\/payments\/channels\/?$/, label: "支付渠道" },
   { pattern: /^\/payments\/orders\/([^/]+)\/refund/, label: (m) => `订单退款 ${shortAuditId(m[1])}` },
   { pattern: /^\/payments\/orders\/([^/]+)\/mark-paid/, label: (m) => `标记订单已付 ${shortAuditId(m[1])}` },
@@ -755,6 +770,19 @@ const GATEWAY_BLOCK_REASON_ZH: Record<string, string> = {
   admin_csrf_failed: "安全令牌（CSRF）校验失败",
 };
 
+const PAYMENT_CHANNEL_ID_ZH: Record<string, string> = {
+  ch_manual_bank: "手动银行转账",
+  ch_stripe_checkout: "Stripe 在线支付",
+  ch_reward_wallet: "返现余额支付",
+};
+
+function zhPaymentChannelId(id: string) {
+  const key = String(id || "").trim();
+  if (PAYMENT_CHANNEL_ID_ZH[key]) return PAYMENT_CHANNEL_ID_ZH[key];
+  if (key.startsWith("ch_")) return key.slice(3).replace(/_/g, " ");
+  return key;
+}
+
 function shortAuditId(id: string) {
   const s = String(id || "").trim();
   if (s.length <= 12) return s;
@@ -772,9 +800,16 @@ function zhAdminApiPath(path: string) {
   }
   const segments = route.replace(/^\//, "").split("/").filter(Boolean);
   if (!segments.length) return "管理端接口";
-  const head = MODULE_ZH[segments[0]] || TOKEN_ZH[segments[0]] || segments[0];
-  if (segments.length === 1) return head;
-  return `${head} · ${segments.slice(1).join(" / ")}`;
+  const parts = segments.map((seg) => {
+    if (/^[0-9a-f-]{8}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{12}$/i.test(seg)) {
+      return shortAuditId(seg);
+    }
+    if (PAYMENT_CHANNEL_ID_ZH[seg]) return PAYMENT_CHANNEL_ID_ZH[seg];
+    const tokenKey = seg.replace(/-/g, "_");
+    return TOKEN_ZH[tokenKey] || MODULE_ZH[seg] || MODULE_ZH[tokenKey] || seg;
+  });
+  if (parts.length === 1) return parts[0];
+  return parts.join(" / ");
 }
 
 function zhGatewayBlockReason(reason: string) {

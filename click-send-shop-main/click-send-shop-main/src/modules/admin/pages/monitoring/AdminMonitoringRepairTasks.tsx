@@ -15,6 +15,24 @@ import {
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 
 const statuses = ["", "pending", "approved", "executed", "failed", "cancelled"];
+const executableRepairTypes = new Set([
+  "sync_product_stock_from_variants",
+  "clear_cache_key",
+  "recalculate_user_statistics",
+]);
+
+function canExecuteTask(task: MonitoringRepairTask) {
+  return ["pending", "approved"].includes(task.repair_status)
+    && executableRepairTypes.has(task.repair_type);
+}
+
+function executeButtonLabel(task: MonitoringRepairTask, executing: boolean) {
+  if (executing) return "执行中...";
+  if (task.repair_status === "executed") return "已执行";
+  if (!executableRepairTypes.has(task.repair_type)) return "需人工处理";
+  if (!["pending", "approved"].includes(task.repair_status)) return "不可执行";
+  return "执行";
+}
 
 export default function AdminMonitoringRepairTasks() {
   const { tText } = useAdminT();
@@ -113,10 +131,11 @@ export default function AdminMonitoringRepairTasks() {
                   <button
                     type="button"
                     className="rounded bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
-                    disabled={task.repair_status === "executed" || executingId === task.id}
+                    disabled={!canExecuteTask(task) || executingId === task.id}
                     onClick={() => void handleExecute(task.id)}
+                    title={!canExecuteTask(task) ? "此类任务需要人工确认处理，不能自动执行" : undefined}
                   >
-                    {executingId === task.id ? "执行中..." : "执行"}
+                    {executeButtonLabel(task, executingId === task.id)}
                   </button>
                 </td>
               </tr>

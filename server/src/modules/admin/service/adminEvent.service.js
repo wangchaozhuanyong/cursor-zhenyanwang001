@@ -67,6 +67,7 @@ function parseJson(value) {
 
 function mapRecord(row) {
   if (!row) return null;
+  const payload = parseJson(row.payload);
   return {
     id: row.id,
     eventType: row.event_type,
@@ -79,7 +80,8 @@ function mapRecord(row) {
     entityId: row.entity_id,
     fingerprint: row.fingerprint,
     activeDedupeKey: row.active_dedupe_key,
-    payload: parseJson(row.payload),
+    payload,
+    diagnosis: buildEventDiagnosis(row, payload),
     impactAmount: row.impact_amount == null ? null : Number(row.impact_amount),
     source: row.source || '',
     seenCount: Number(row.seen_count || 0),
@@ -101,6 +103,97 @@ function mapRecord(row) {
     autoResolveEnabled: Boolean(row.auto_resolve_enabled),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function extractOrderNo(message = '', payload = {}) {
+  return payload?.orderNo || String(message || '').match(/#?\d{6,}/)?.[0] || '';
+}
+
+function buildEventDiagnosis(row, payload = {}) {
+  const eventType = String(row?.event_type || '');
+  const category = String(row?.category || '');
+  const status = String(row?.status || '');
+  const active = ACTIVE_STATUSES.has(status);
+  const message = String(row?.message || '');
+  const reason = String(payload?.reason || '').trim();
+
+  if (eventType.startsWith('backup.') || category === 'backup') {
+    const reasonMap = {
+      disk_space: {
+        summary: active ? '备份仍需确认：曾因磁盘空间不足失败。' : '备份告警已关闭：磁盘空间问题已处理或被忽略。',
+        nextAction: '到“备份与恢复”页面重新执行全量备份、增量日志同步和恢复演练；三项成功后再点“完成”。',
+      },
+      permission: {
+        summary: active ? '备份仍需确认：运行账号无法读取 MySQL 数据目录或 binlog 目录。' : '备份权限告警已关闭。',
+        nextAction: '在服务器上用实际运行账号执行 node scripts/backup/check-backup-prereqs.js，确认 MYSQL_BINLOG_DIR 可读。',
+      },
+      object_storage: {
+        summary: active ? '备份仍需确认：对象存储上传失败。' : '对象存储告警已关闭。',
+        nextAction: '检查 BACKUP_S3_BUCKET、访问密钥、桶权限和网络；重新跑备份任务验证上传成功。',
+      },
+      missing_full_backup: {
+        summary: active ? '备份仍需确认：没有可用全量备份，恢复演练无法开始。' : '缺少全量备份告警已关闭。',
+        nextAction: '先执行一次全量备份，成功后再执行恢复演练。',
+      },
+    };
+    const fallback = /space|ENOSPC|disk/i.test(message)
+      ? 'disk_space'
+      : /EACCES|permission|denied|read.*dir|MYSQL_BINLOG_DIR/i.test(message)
+        ? 'permission'
+        : /S3|bucket|upload|storage/i.test(message)
+          ? 'object_storage'
+          : /no.*full.*backup/i.test(message)
+            ? 'missing_full_backup'
+            : 'generic';
+    const picked = reasonMap[reason] || reasonMap[fallback] || {
+      summary: active ? '备份任务仍需人工确认，系统无法自动判断根因是否已恢复。' : '备份告警已关闭。',
+      nextAction: '查看“备份与恢复”的最近任务日志，重新跑一次备份或恢复演练确认。',
+    };
+    return {
+      state: active ? 'needs_check' : 'closed',
+      summary: picked.summary,
+      nextAction: picked.nextAction,
+      linkUrl: '/admin/backups',
+      linkText: '查看备份与恢复',
+      closeHint: '只有在最近一次备份/同步/演练成功后，才建议点“完成”。',
+    };
+  }
+
+  if (eventType === 'order.paid_unhandled_timeout' || eventType === 'order.ship_timeout') {
+    const orderNo = extractOrderNo(message, payload);
+    return {
+      state: active ? 'still_active' : 'closed',
+      summary: active
+        ? '订单仍在待处理状态，不能只点“已读”。'
+        : '订单超时事件已关闭。',
+      nextAction: eventType === 'order.ship_timeout'
+        ? '进入订单详情确认是否需要发货、退款或标记完成；订单状态恢复后系统会自动关闭告警。'
+        : '确认收款后的订单是否已进入发货/处理流程；处理完成后系统会自动关闭告警。',
+      linkUrl: orderNo ? `/admin/orders?keyword=${encodeURIComponent(orderNo)}` : '/admin/orders',
+      linkText: orderNo ? `查看订单 ${orderNo}` : '查看订单',
+      closeHint: '订单状态没有变化前，不建议手动点“完成”。',
+    };
+  }
+
+  if (category === 'security' || eventType.startsWith('security.')) {
+    return {
+      state: active ? 'review_required' : 'closed',
+      summary: active ? '这类通常是高风险操作记录，不一定是故障。' : '安全事件已关闭。',
+      nextAction: '确认操作是否本人或授权人员执行。确认无误点“完成”；不认识该操作就点“处理中”并检查账号、权限和审计日志。',
+      linkUrl: '/admin/audit-logs',
+      linkText: '查看审计日志',
+      closeHint: '确认来源无异常后可以关闭；异常操作不要忽略。',
+    };
+  }
+
+  return {
+    state: active ? 'needs_check' : 'closed',
+    summary: active ? '事件仍处于待处理状态，需要确认业务对象是否已恢复。' : '事件已关闭。',
+    nextAction: '查看事件详情和关联业务数据，处理根因后再点“完成”。',
+    linkUrl: '',
+    linkText: '',
+    closeHint: '如果只是通知类事件，确认无异常后可关闭。',
   };
 }
 

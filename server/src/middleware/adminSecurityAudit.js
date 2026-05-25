@@ -1,4 +1,5 @@
 const { writeAuditLog } = require('../utils/auditLog');
+const { formatAdminSecurityEventMessage } = require('../utils/adminSecurityEventMessage');
 
 const SECURITY_EVENT_TITLES = {
   'security.rbac_change': '权限配置变更',
@@ -82,7 +83,7 @@ function adminSecurityAudit(req, res, next) {
           eventType: meta.actionType,
           category: 'security',
           title: SECURITY_EVENT_TITLES[meta.actionType],
-          message: `${req.method} ${req.path} 已执行`,
+          message: formatAdminSecurityEventMessage(req.method, req.path),
           entityType: meta.objectType,
           entityId: meta.objectId || req.path,
           fingerprint: {

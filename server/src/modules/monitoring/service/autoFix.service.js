@@ -7,8 +7,19 @@ const AUTOMATED_REPAIR_TYPES = new Set([
   'recalculate_user_statistics',
 ]);
 
+const AUTOMATED_RULES = new Set([
+  'PRODUCT_STOCK_MISMATCH',
+  'CACHE_STALE_AFTER_ADMIN_UPDATE',
+  'USER_STATS_MISMATCH',
+]);
+
+function isRuleAutoFixAllowed(ruleCode) {
+  return AUTOMATED_RULES.has(ruleCode);
+}
+
 function isAutoFixCandidate(dbRule, anomaly) {
   if (!dbRule?.auto_fix_enabled) return false;
+  if (!isRuleAutoFixAllowed(anomaly.rule_code || dbRule.code)) return false;
   if (repairTaskService.FINANCIAL_RULES.has(anomaly.rule_code || dbRule.code)) return false;
   if (['resolved', 'ignored', 'repaired', 'repair_pending'].includes(anomaly.status)) return false;
 
@@ -54,6 +65,8 @@ async function processRuleAutoFix(dbRule, savedAnomalies = [], options = {}) {
 
 module.exports = {
   AUTOMATED_REPAIR_TYPES,
+  AUTOMATED_RULES,
+  isRuleAutoFixAllowed,
   isAutoFixCandidate,
   processRuleAutoFix,
 };

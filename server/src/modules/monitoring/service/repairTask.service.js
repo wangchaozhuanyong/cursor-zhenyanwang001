@@ -1,5 +1,6 @@
 const repo = require('../repository/monitoring.repository');
 const engine = require('./consistencyEngine.service');
+const { NotFoundError, ValidationError } = require('../../../errors');
 
 const FINANCIAL_RULES = new Set([
   'PAYMENT_SUCCESS_ORDER_UNPAID',
@@ -8,9 +9,15 @@ const FINANCIAL_RULES = new Set([
   'POINTS_BALANCE_MISMATCH',
 ]);
 
+const EXECUTABLE_REPAIR_TYPES = new Set([
+  'sync_product_stock_from_variants',
+  'clear_cache_key',
+  'recalculate_user_statistics',
+]);
+
 async function createRepairTask(anomalyId, operatorId, remark = '') {
   const anomaly = await repo.findAnomalyById(anomalyId);
-  if (!anomaly) throw new Error('异常不存在');
+  if (!anomaly) throw new NotFoundError('异常不存在');
   const suggestion = anomaly.evidence?.repairSuggestion || {
     repairType: FINANCIAL_RULES.has(anomaly.rule_code) ? 'manual_review_only' : 'manual_review',
     description: FINANCIAL_RULES.has(anomaly.rule_code)
@@ -29,11 +36,18 @@ async function createRepairTask(anomalyId, operatorId, remark = '') {
 
 async function executeRepairTask(taskId, operatorId) {
   const task = await repo.findRepairTaskById(taskId);
-  if (!task) throw new Error('修复任务不存在');
+  if (!task) throw new NotFoundError('修复任务不存在');
   if (task.repair_status === 'executed') return task;
+  if (!['pending', 'approved'].includes(task.repair_status)) {
+    throw new ValidationError('当前修复任务状态不允许执行');
+  }
   if (FINANCIAL_RULES.has(task.rule_code)) {
     await repo.updateRepairTask(taskId, { repair_status: 'failed', remark: '资金/支付/退款/积分异常禁止自动执行修复' });
-    throw new Error('资金、支付、退款或积分异常禁止自动执行修复');
+    throw new ValidationError('资金、支付、退款或积分异常禁止自动执行修复，请人工确认后处理');
+  }
+  if (!EXECUTABLE_REPAIR_TYPES.has(task.repair_type)) {
+    await repo.updateRepairTask(taskId, { repair_status: 'failed', remark: '当前修复类型未开放自动执行' });
+    throw new ValidationError('当前修复类型未开放自动执行，请人工确认后处理');
   }
 
   const anomaly = await repo.findAnomalyById(task.anomaly_id);
@@ -49,7 +63,7 @@ async function executeRepairTask(taskId, operatorId) {
     afterSnapshot = { recalculated: real };
   } else {
     await repo.updateRepairTask(taskId, { repair_status: 'failed', remark: '当前修复类型未开放自动执行' });
-    throw new Error('当前修复类型未开放自动执行');
+    throw new ValidationError('当前修复类型未开放自动执行，请人工确认后处理');
   }
 
   await repo.updateRepairTask(taskId, {
@@ -69,4 +83,5 @@ module.exports = {
   createRepairTask,
   executeRepairTask,
   FINANCIAL_RULES,
+  EXECUTABLE_REPAIR_TYPES,
 };

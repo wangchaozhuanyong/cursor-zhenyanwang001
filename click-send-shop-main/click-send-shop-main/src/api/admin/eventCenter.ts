@@ -18,6 +18,14 @@ export type AdminEventRecord = {
   fingerprint: string;
   activeDedupeKey?: string | null;
   payload?: unknown;
+  diagnosis?: {
+    state: "still_active" | "needs_check" | "review_required" | "closed" | string;
+    summary: string;
+    nextAction: string;
+    linkUrl?: string;
+    linkText?: string;
+    closeHint?: string;
+  };
   impactAmount?: number | null;
   source: string;
   seenCount: number;

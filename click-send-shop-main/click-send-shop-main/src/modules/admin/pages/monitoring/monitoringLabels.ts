@@ -61,6 +61,29 @@ export const MONITORING_REPAIR_STATUS_LABELS: Record<string, string> = {
   cancelled: "已取消",
 };
 
+/** 修复任务 repair_type → 中文（与 monitoring/rules 中 repairSuggestion 一致） */
+export const MONITORING_REPAIR_TYPE_LABELS: Record<string, string> = {
+  sync_product_stock_from_variants: "按 SKU 汇总同步商品库存",
+  clear_cache_key: "清理指定缓存键",
+  recalculate_user_statistics: "重算用户统计数据",
+  manual_review: "人工复核",
+  manual_review_only: "仅人工复核（禁止自动执行）",
+  manual_inventory_review: "人工核对库存",
+  manual_cancelled_order_stock_review: "人工核对取消订单库存",
+  manual_refund_review: "人工核对退款",
+  manual_payment_amount_review: "人工核对支付金额",
+  manual_replay_payment_success: "人工重放支付成功流程",
+  manual_points_adjustment_review: "人工核对积分调整",
+  manual_file_reupload: "重新上传或替换文件",
+};
+
+const REPAIR_SUGGESTION_FIELD_LABELS: Record<string, string> = {
+  targetStock: "目标库存",
+  cacheKey: "缓存键",
+  repairType: "修复类型",
+  description: "说明",
+};
+
 export const MONITORING_RUN_TYPE_LABELS: Record<string, string> = {
   manual: "手动执行",
   scheduled: "定时任务",
@@ -215,6 +238,74 @@ export function formatMonitoringStatusLabel(value?: string | null): string {
     || MONITORING_REPAIR_STATUS_LABELS[value]
     || value
   );
+}
+
+export function formatMonitoringRepairTypeLabel(repairType?: string | null): string {
+  if (!repairType) return "-";
+  const key = repairType.trim();
+  return MONITORING_REPAIR_TYPE_LABELS[key] || key.replace(/_/g, " ");
+}
+
+function parseRepairSuggestionObject(suggestion: unknown): Record<string, unknown> | null {
+  if (!suggestion) return null;
+  if (typeof suggestion === "object" && !Array.isArray(suggestion)) {
+    return suggestion as Record<string, unknown>;
+  }
+  if (typeof suggestion === "string" && suggestion.trim()) {
+    try {
+      const parsed = JSON.parse(suggestion);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      return { description: suggestion };
+    }
+  }
+  return null;
+}
+
+/** 表格「修复建议」列主文案（中文说明） */
+export function formatRepairSuggestionSummary(
+  suggestion: unknown,
+  repairType?: string | null,
+): string {
+  const obj = parseRepairSuggestionObject(suggestion);
+  const typeFromObj =
+    obj && typeof obj.repairType === "string" ? String(obj.repairType) : repairType;
+  const typeLabel = formatMonitoringRepairTypeLabel(typeFromObj);
+
+  if (!obj) return typeLabel;
+
+  const desc =
+    typeof obj.description === "string" ? obj.description.trim() : "";
+  if (desc) return desc;
+
+  return typeLabel;
+}
+
+/** 悬停/复制用完整说明（中文键名 + 不输出原始 JSON code） */
+export function formatRepairSuggestionDetail(
+  suggestion: unknown,
+  repairType?: string | null,
+): string {
+  const obj = parseRepairSuggestionObject(suggestion);
+  if (!obj) return formatMonitoringRepairTypeLabel(repairType);
+
+  const lines: string[] = [];
+  const typeCode =
+    typeof obj.repairType === "string" ? obj.repairType : repairType;
+  if (typeCode) {
+    lines.push(`修复类型：${formatMonitoringRepairTypeLabel(typeCode)}`);
+  }
+  if (typeof obj.description === "string" && obj.description.trim()) {
+    lines.push(`说明：${obj.description.trim()}`);
+  }
+  for (const [key, label] of Object.entries(REPAIR_SUGGESTION_FIELD_LABELS)) {
+    if (key === "repairType" || key === "description") continue;
+    if (obj[key] == null || obj[key] === "") continue;
+    lines.push(`${label}：${String(obj[key])}`);
+  }
+  return lines.length ? lines.join("\n") : formatMonitoringRepairTypeLabel(repairType);
 }
 
 export function formatMonitoringRunTypeLabel(value?: string | null): string {

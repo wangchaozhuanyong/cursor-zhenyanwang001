@@ -3,6 +3,7 @@ const { BusinessError } = require('../../../errors/BusinessError');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const repo = require('../repository/adminReplenishment.repository');
 const inventoryRepo = require('../repository/adminInventory.repository');
+const inventorySvc = require('./adminInventory.service');
 
 const DEFAULT_VARIANT_TITLE = '默认规格';
 const PAGE_SIZE_MAX = 200;
@@ -179,6 +180,85 @@ function strategyParams(body = {}) {
   };
 }
 
+function profileParams(profile, fallback) {
+  if (!profile || Number(profile.auto_limit_enabled) === 0) return fallback;
+  return strategyParams({
+    strategy: profile.strategy || fallback.strategy,
+    analysis_days: profile.analysis_days || fallback.analysis_days,
+    lead_time_days: profile.lead_time_days ?? fallback.lead_time_days,
+    safety_stock_days: profile.safety_stock_days ?? fallback.safety_stock_days,
+    target_cover_days: profile.target_cover_days ?? fallback.target_cover_days,
+    min_floor_stock: profile.min_floor_stock ?? fallback.min_floor_stock,
+    purchase_multiple: profile.purchase_multiple ?? fallback.purchase_multiple,
+  });
+}
+
+function computeSmartReplenishmentSuggestion(candidate, stats, itemParams) {
+  const snapshotDays = toInt(stats.snapshot_days);
+  const salesQty = toInt(stats.sales_qty);
+  const stockoutDays = toInt(stats.stockout_days);
+  const effectiveDays = Math.max(1, snapshotDays - stockoutDays);
+  const avgDailySales = snapshotDays > 0 ? salesQty / effectiveDays : 0;
+  const historyIncomplete = snapshotDays < Math.min(itemParams.analysis_days, 7);
+  const sampleInsufficient = salesQty < 3 || avgDailySales <= 0;
+  const unpackChildQty = Math.max(0, toInt(candidate.unpack_child_qty));
+  const unpackParentQty = Math.max(1, toInt(candidate.unpack_parent_qty, 1));
+  const unpackEquivalentStock = unpackChildQty > 0
+    ? Math.floor(Math.max(0, toInt(candidate.unpack_parent_available_stock)) * unpackChildQty / unpackParentQty)
+    : 0;
+  const suggestedLower = sampleInsufficient
+    ? Number(candidate.stock_lower_limit || itemParams.min_floor_stock || 0)
+    : Math.max(itemParams.min_floor_stock, Math.ceil(avgDailySales * (itemParams.lead_time_days + itemParams.safety_stock_days)));
+  const suggestedUpper = sampleInsufficient
+    ? Number(candidate.stock_upper_limit || Math.max(suggestedLower, itemParams.min_floor_stock))
+    : Math.max(suggestedLower, Math.ceil(avgDailySales * (itemParams.lead_time_days + itemParams.safety_stock_days + itemParams.target_cover_days)));
+  const suggestedQty = sampleInsufficient
+    ? 0
+    : roundUpToMultiple(Math.max(0, suggestedUpper - toInt(candidate.available_stock) - toInt(candidate.in_transit_qty)), itemParams.purchase_multiple);
+  const canUnpackInstead = Boolean(candidate.unpack_rule_id)
+    && toInt(candidate.available_stock) + toInt(candidate.in_transit_qty) <= suggestedLower
+    && toInt(candidate.available_stock) + toInt(candidate.in_transit_qty) + unpackEquivalentStock >= suggestedLower;
+  const suggestedUnpackParentQty = canUnpackInstead && unpackChildQty > 0
+    ? Math.max(1, Math.ceil(Math.max(0, suggestedLower - toInt(candidate.available_stock) - toInt(candidate.in_transit_qty)) / unpackChildQty))
+    : 0;
+  const suggestionType = canUnpackInstead ? 'unpack' : sampleInsufficient ? 'watch' : 'purchase';
+  return {
+    snapshotDays,
+    salesQty,
+    stockoutDays,
+    effectiveDays,
+    avgDailySales,
+    historyIncomplete,
+    sampleInsufficient,
+    suggestedLower,
+    suggestedUpper,
+    suggestedQty: canUnpackInstead ? 0 : suggestedQty,
+    suggestionType,
+    confidence: historyIncomplete ? 30 : sampleInsufficient ? 40 : Math.min(95, Math.round((snapshotDays / itemParams.analysis_days) * 80 + 15)),
+    suggestionPayload: canUnpackInstead
+      ? {
+        unpack_rule_id: candidate.unpack_rule_id,
+        parent_variant_id: candidate.unpack_parent_variant_id,
+        parent_available_stock: toInt(candidate.unpack_parent_available_stock),
+        parent_qty: unpackParentQty,
+        child_qty: unpackChildQty,
+        equivalent_stock: unpackEquivalentStock,
+        suggested_unpack_parent_qty: suggestedUnpackParentQty,
+      }
+      : {
+        purchase_multiple: itemParams.purchase_multiple,
+        target_stock: suggestedUpper,
+      },
+    reason: canUnpackInstead
+      ? `Suggest unpack ${suggestedUnpackParentQty} parent package before purchasing`
+      : historyIncomplete
+        ? '历史数据不完整，仅供观察'
+        : sampleInsufficient
+          ? '新品或低销量样本不足，仅建议观察'
+          : `按 ${itemParams.analysis_days} 天销量和 ${effectiveDays} 个有效销售日计算`,
+  };
+}
+
 async function createSmartReplenishmentPreview(body = {}, adminUserId = null, req = null) {
   const params = strategyParams(body);
   const variantIds = Array.isArray(body.variant_ids) ? body.variant_ids.filter(Boolean) : [];
@@ -187,7 +267,17 @@ async function createSmartReplenishmentPreview(body = {}, adminUserId = null, re
   try {
     await conn.beginTransaction();
     const candidates = await repo.selectSmartLimitCandidates(conn, variantIds);
-    const statsMap = await repo.selectDailySnapshotStats(conn, candidates.map((c) => c.variant_id), params.analysis_days);
+    const candidateIds = candidates.map((c) => c.variant_id);
+    const profileMap = await repo.selectReplenishmentProfilesByVariantIds(conn, candidateIds);
+    const paramsByVariant = new Map(candidates.map((candidate) => [
+      candidate.variant_id,
+      profileParams(profileMap.get(candidate.variant_id), params),
+    ]));
+    const analysisDays = [...new Set([...paramsByVariant.values()].map((p) => p.analysis_days))];
+    const statsByDays = new Map();
+    for (const days of analysisDays) {
+      statsByDays.set(days, await repo.selectDailySnapshotStats(conn, candidateIds, days));
+    }
     await repo.insertReplenishmentRun(conn, {
       id: runId,
       scope_type: variantIds.length ? 'variant_ids' : 'all',
@@ -200,29 +290,21 @@ async function createSmartReplenishmentPreview(body = {}, adminUserId = null, re
 
     const items = [];
     for (const candidate of candidates) {
-      const stats = statsMap.get(candidate.variant_id) || {};
-      const snapshotDays = toInt(stats.snapshot_days);
-      const salesQty = toInt(stats.sales_qty);
-      const stockoutDays = toInt(stats.stockout_days);
-      const effectiveDays = Math.max(1, snapshotDays - stockoutDays);
-      const avgDailySales = snapshotDays > 0 ? salesQty / effectiveDays : 0;
-      const historyIncomplete = snapshotDays < Math.min(params.analysis_days, 7);
-      const sampleInsufficient = salesQty < 3 || avgDailySales <= 0;
-      const suggestedLower = sampleInsufficient
-        ? Number(candidate.stock_lower_limit || params.min_floor_stock || 0)
-        : Math.max(params.min_floor_stock, Math.ceil(avgDailySales * (params.lead_time_days + params.safety_stock_days)));
-      const suggestedUpper = sampleInsufficient
-        ? Number(candidate.stock_upper_limit || Math.max(suggestedLower, params.min_floor_stock))
-        : Math.max(suggestedLower, Math.ceil(avgDailySales * (params.lead_time_days + params.safety_stock_days + params.target_cover_days)));
-      const suggestedQty = sampleInsufficient
-        ? 0
-        : roundUpToMultiple(Math.max(0, suggestedUpper - toInt(candidate.available_stock) - toInt(candidate.in_transit_qty)), params.purchase_multiple);
-      const reason = historyIncomplete
-        ? '历史数据不完整，仅供观察'
-        : sampleInsufficient
-          ? '新品或低销量样本不足，仅建议观察'
-          : `按 ${params.analysis_days} 天销量和 ${effectiveDays} 个有效销售日计算`;
-      const confidence = historyIncomplete ? 30 : sampleInsufficient ? 40 : Math.min(95, Math.round((snapshotDays / params.analysis_days) * 80 + 15));
+      const itemParams = paramsByVariant.get(candidate.variant_id) || params;
+      const stats = statsByDays.get(itemParams.analysis_days)?.get(candidate.variant_id) || {};
+      const suggestion = computeSmartReplenishmentSuggestion(candidate, stats, itemParams);
+      const {
+        effectiveDays,
+        avgDailySales,
+        suggestedLower,
+        suggestedUpper,
+        salesQty,
+        suggestedQty: finalSuggestedQty,
+        suggestionType,
+        suggestionPayload,
+        reason,
+        confidence,
+      } = suggestion;
       const item = {
         id: generateId(),
         run_id: runId,
@@ -240,8 +322,10 @@ async function createSmartReplenishmentPreview(body = {}, adminUserId = null, re
         sales_qty: salesQty,
         saleable_days: effectiveDays,
         avg_daily_sales: Number(avgDailySales.toFixed(4)),
-        suggested_replenishment_qty: suggestedQty,
+        suggested_replenishment_qty: finalSuggestedQty,
         confidence_score: confidence,
+        suggestion_type: suggestionType,
+        suggestion_payload: suggestionPayload,
         reason,
         apply_status: 'pending',
       };
@@ -266,6 +350,61 @@ async function createSmartReplenishmentPreview(body = {}, adminUserId = null, re
   } finally {
     conn.release();
   }
+}
+
+async function saveReplenishmentProfiles(body = {}, adminUserId = null, req = null) {
+  const variantIds = Array.isArray(body.variant_ids) ? [...new Set(body.variant_ids.filter(Boolean))] : [];
+  if (!variantIds.length) throw new BusinessError(400, 'variant_ids required');
+  const params = strategyParams(body);
+  const conn = await repo.getConnection();
+  try {
+    await conn.beginTransaction();
+    const beforeMap = await repo.selectReplenishmentProfilesByVariantIds(conn, variantIds);
+    const rows = variantIds.map((variantId) => ({
+      id: beforeMap.get(variantId)?.id || generateId(),
+      variant_id: variantId,
+      auto_limit_enabled: body.auto_limit_enabled !== false,
+      analysis_days: params.analysis_days,
+      lead_time_days: params.lead_time_days,
+      safety_stock_days: params.safety_stock_days,
+      target_cover_days: params.target_cover_days,
+      min_floor_stock: params.min_floor_stock,
+      purchase_multiple: params.purchase_multiple,
+      exclude_promotion_sales: !!body.exclude_promotion_sales,
+      exclude_stockout_days: body.exclude_stockout_days !== false,
+      strategy: params.strategy,
+      updated_by: adminUserId,
+    }));
+    await repo.upsertReplenishmentProfiles(conn, rows);
+    await conn.commit();
+    await writeAuditLog({
+      req,
+      operatorId: adminUserId,
+      actionType: 'inventory.replenishment_profile.batch_upsert',
+      objectType: 'inventory_replenishment_profile',
+      objectId: 'batch',
+      summary: `Save replenishment profiles ${rows.length}`,
+      before: { variant_ids: variantIds, items: [...beforeMap.values()] },
+      after: { variant_ids: variantIds, items: rows },
+      result: 'success',
+    });
+    return { updated: rows.length };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
+async function listReplenishmentProfiles(query = {}) {
+  const variantIds = String(query.variant_ids || query.variant_id || '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (!variantIds.length) return [];
+  const map = await repo.selectReplenishmentProfilesByVariantIds(null, variantIds);
+  return variantIds.map((variantId) => map.get(variantId)).filter(Boolean);
 }
 
 async function applySmartReplenishmentRun(runId, body = {}, adminUserId = null, req = null) {
@@ -319,6 +458,7 @@ async function createPurchaseOrderFromSmartRun(runId, body = {}, adminUserId = n
     await conn.beginTransaction();
     const rows = await repo.selectRunItemsForUpdate(conn, runId, [...overrides.keys()]);
     const purchaseRows = rows
+      .filter((row) => String(row.suggestion_type || 'purchase') === 'purchase')
       .map((row) => {
         const override = overrides.get(String(row.id)) || {};
         return {
@@ -358,7 +498,7 @@ async function createPurchaseOrderFromSmartRun(runId, body = {}, adminUserId = n
         ordered_qty: row.suggested_replenishment_qty,
         unit_cost: row.unit_cost,
       });
-      await repo.markRunItemApplied(
+      await repo.markRunItemOrdered(
         conn,
         row.id,
         toInt(row.suggested_lower_limit),
@@ -390,6 +530,79 @@ async function createPurchaseOrderFromSmartRun(runId, body = {}, adminUserId = n
   } finally {
     conn.release();
   }
+}
+
+function parseJsonMaybe(value) {
+  if (!value) return null;
+  if (typeof value === 'object') return value;
+  try { return JSON.parse(value); } catch (_) { return null; }
+}
+
+async function executeUnpackForSmartRun(runId, body = {}, adminUserId = null, req = null) {
+  const itemIds = Array.isArray(body.item_ids)
+    ? body.item_ids.filter(Boolean).map(String)
+    : [];
+  const conn = await repo.getConnection();
+  let rows = [];
+  try {
+    await conn.beginTransaction();
+    rows = await repo.selectRunItemsForUpdate(conn, runId, itemIds);
+    rows = rows.filter((row) => String(row.suggestion_type || '') === 'unpack' && !['unpacked', 'applied'].includes(String(row.apply_status || '')));
+    if (!rows.length) throw new BusinessError(400, '没有可执行的拆包建议');
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+
+  const executed = [];
+  for (const row of rows) {
+    const payload = parseJsonMaybe(row.suggestion_payload) || {};
+    const ruleId = String(payload.unpack_rule_id || '').trim();
+    const parentQty = Math.max(0, toInt(payload.suggested_unpack_parent_qty));
+    if (!ruleId || parentQty <= 0) {
+      throw new BusinessError(400, '拆包建议缺少规则或数量');
+    }
+    const result = await inventorySvc.unpack({
+      rule_id: ruleId,
+      parent_qty: parentQty,
+      remark: body.remark || `智能补货批次 ${runId}`,
+    }, adminUserId, req);
+    const markConn = await repo.getConnection();
+    try {
+      await markConn.beginTransaction();
+      await repo.markRunItemStatus(markConn, row.id, 'unpacked', `已执行拆包 ${result.data?.order_no || ''}`.trim());
+      await markConn.commit();
+    } catch (err) {
+      await markConn.rollback();
+      throw err;
+    } finally {
+      markConn.release();
+    }
+    executed.push({
+      item_id: row.id,
+      variant_id: row.variant_id,
+      rule_id: ruleId,
+      parent_qty: parentQty,
+      conversion_order_id: result.data?.id || null,
+      conversion_order_no: result.data?.order_no || '',
+    });
+  }
+
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'inventory.smart_replenishment.execute_unpack',
+    objectType: 'inventory_replenishment_run',
+    objectId: runId,
+    summary: `智能补货批次执行拆包 ${executed.length} 项`,
+    before: { item_ids: itemIds },
+    after: { executed },
+    result: 'success',
+  });
+  return { id: runId, executed: executed.length, items: executed };
 }
 
 function normalizeSnapshotDate(value) {
@@ -429,9 +642,18 @@ async function generateDailyInventorySnapshot(body = {}, adminUserId = null, req
 async function runScheduledDailyInventorySnapshot() {
   const snapshotDate = businessDateString();
   if (lastScheduledSnapshotDate === snapshotDate) return { skipped: true, snapshot_date: snapshotDate };
-  const result = await generateDailyInventorySnapshot({ snapshot_date: snapshotDate }, null, null);
-  lastScheduledSnapshotDate = snapshotDate;
-  return result;
+  const lockName = `inventory_daily_snapshot:${snapshotDate}`;
+  const lockConn = await repo.getConnection();
+  try {
+    const [[lockRow]] = await lockConn.query('SELECT GET_LOCK(?, 0) AS locked', [lockName]);
+    if (Number(lockRow?.locked || 0) !== 1) return { skipped: true, snapshot_date: snapshotDate, reason: 'locked' };
+    const result = await generateDailyInventorySnapshot({ snapshot_date: snapshotDate }, null, null);
+    lastScheduledSnapshotDate = snapshotDate;
+    return result;
+  } finally {
+    await lockConn.query('SELECT RELEASE_LOCK(?)', [lockName]).catch(() => {});
+    lockConn.release();
+  }
 }
 
 function startDailyInventorySnapshotScheduler() {
@@ -744,9 +966,17 @@ module.exports = {
   getPurchaseOrder,
   receivePurchaseOrder,
   createSmartReplenishmentPreview,
+  listReplenishmentProfiles,
+  saveReplenishmentProfiles,
   applySmartReplenishmentRun,
   createPurchaseOrderFromSmartRun,
+  executeUnpackForSmartRun,
   generateDailyInventorySnapshot,
   runScheduledDailyInventorySnapshot,
   startDailyInventorySnapshotScheduler,
+  _internal: {
+    computeSmartReplenishmentSuggestion,
+    roundUpToMultiple,
+    strategyParams,
+  },
 };

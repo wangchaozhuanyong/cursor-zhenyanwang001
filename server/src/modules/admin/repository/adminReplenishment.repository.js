@@ -451,7 +451,12 @@ async function selectSmartLimitCandidates(conn, variantIds = []) {
        GREATEST(v.stock - COALESCE(v.reserved_stock, 0), 0) AS available_stock,
        v.stock_lower_limit,
        v.stock_upper_limit,
-       COALESCE(poagg.in_transit_qty, 0) AS in_transit_qty
+       COALESCE(poagg.in_transit_qty, 0) AS in_transit_qty,
+       pr.id AS unpack_rule_id,
+       pr.parent_variant_id AS unpack_parent_variant_id,
+       pr.child_qty AS unpack_child_qty,
+       pr.parent_qty AS unpack_parent_qty,
+       GREATEST(COALESCE(pv.stock, 0) - COALESCE(pv.reserved_stock, 0), 0) AS unpack_parent_available_stock
      FROM product_variants v
      JOIN products p ON p.id = v.product_id
      LEFT JOIN (
@@ -461,6 +466,15 @@ async function selectSmartLimitCandidates(conn, variantIds = []) {
        WHERE po.status IN (${placeholders(IN_TRANSIT_PO_STATUSES)})
        GROUP BY poi.variant_id
      ) poagg ON poagg.variant_id = v.id
+     LEFT JOIN inventory_pack_rules pr
+       ON pr.child_variant_id = v.id
+      AND pr.deleted_at IS NULL
+      AND pr.enabled = 1
+      AND pr.manual_unpack_enabled = 1
+     LEFT JOIN product_variants pv
+       ON pv.id = pr.parent_variant_id
+      AND pv.deleted_at IS NULL
+      AND pv.enabled = 1
      WHERE p.deleted_at IS NULL
        AND v.deleted_at IS NULL
        AND v.enabled = 1
@@ -490,6 +504,65 @@ async function selectDailySnapshotStats(conn, variantIds, analysisDays) {
   return new Map(rows.map((row) => [row.variant_id, row]));
 }
 
+async function selectReplenishmentProfilesByVariantIds(conn, variantIds) {
+  const ids = [...new Set((variantIds || []).filter(Boolean))];
+  if (!ids.length) return new Map();
+  const q = conn || db;
+  const [rows] = await q.query(
+    `SELECT *
+     FROM inventory_replenishment_profiles
+     WHERE variant_id IN (${placeholders(ids)})`,
+    ids,
+  );
+  return new Map(rows.map((row) => [row.variant_id, row]));
+}
+
+async function upsertReplenishmentProfiles(conn, rows) {
+  if (!rows.length) return { affectedRows: 0 };
+  const values = [];
+  const params = [];
+  for (const row of rows) {
+    values.push('(?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    params.push(
+      row.id,
+      row.variant_id,
+      row.auto_limit_enabled ? 1 : 0,
+      row.analysis_days,
+      row.lead_time_days,
+      row.safety_stock_days,
+      row.target_cover_days,
+      row.min_floor_stock,
+      row.purchase_multiple,
+      row.exclude_promotion_sales ? 1 : 0,
+      row.exclude_stockout_days ? 1 : 0,
+      row.strategy,
+      row.updated_by || null,
+    );
+  }
+  const [result] = await conn.query(
+    `INSERT INTO inventory_replenishment_profiles
+       (id, variant_id, auto_limit_enabled, analysis_days, lead_time_days, safety_stock_days,
+        target_cover_days, min_floor_stock, purchase_multiple, exclude_promotion_sales,
+        exclude_stockout_days, strategy, updated_by)
+     VALUES ${values.join(',')}
+     ON DUPLICATE KEY UPDATE
+       auto_limit_enabled = VALUES(auto_limit_enabled),
+       analysis_days = VALUES(analysis_days),
+       lead_time_days = VALUES(lead_time_days),
+       safety_stock_days = VALUES(safety_stock_days),
+       target_cover_days = VALUES(target_cover_days),
+       min_floor_stock = VALUES(min_floor_stock),
+       purchase_multiple = VALUES(purchase_multiple),
+       exclude_promotion_sales = VALUES(exclude_promotion_sales),
+       exclude_stockout_days = VALUES(exclude_stockout_days),
+       strategy = VALUES(strategy),
+       updated_by = VALUES(updated_by),
+       updated_at = CURRENT_TIMESTAMP`,
+    params,
+  );
+  return result;
+}
+
 async function insertReplenishmentRun(conn, row) {
   await conn.query(
     `INSERT INTO inventory_replenishment_runs
@@ -512,8 +585,8 @@ async function insertReplenishmentRunItem(conn, row) {
     `INSERT INTO inventory_replenishment_run_items
        (id, run_id, variant_id, old_lower_limit, old_upper_limit, suggested_lower_limit, suggested_upper_limit,
         current_stock, available_stock, in_transit_qty, sales_qty, saleable_days, avg_daily_sales,
-        suggested_replenishment_qty, confidence_score, reason, apply_status)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        suggested_replenishment_qty, confidence_score, suggestion_type, suggestion_payload, reason, apply_status)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       row.id,
       row.run_id,
@@ -530,6 +603,8 @@ async function insertReplenishmentRunItem(conn, row) {
       row.avg_daily_sales,
       row.suggested_replenishment_qty,
       row.confidence_score,
+      row.suggestion_type || 'purchase',
+      row.suggestion_payload ? JSON.stringify(row.suggestion_payload) : null,
       row.reason || null,
       row.apply_status || 'pending',
     ],
@@ -568,6 +643,24 @@ async function markRunItemApplied(conn, id, lowerLimit, upperLimit, replenishmen
   );
 }
 
+async function markRunItemOrdered(conn, id, lowerLimit, upperLimit, replenishmentQty) {
+  await conn.query(
+    `UPDATE inventory_replenishment_run_items
+     SET suggested_lower_limit = ?, suggested_upper_limit = ?, suggested_replenishment_qty = ?, apply_status = 'ordered'
+     WHERE id = ?`,
+    [lowerLimit, upperLimit, replenishmentQty, id],
+  );
+}
+
+async function markRunItemStatus(conn, id, status, reason = null) {
+  await conn.query(
+    `UPDATE inventory_replenishment_run_items
+     SET apply_status = ?, reason = COALESCE(?, reason)
+     WHERE id = ?`,
+    [status, reason, id],
+  );
+}
+
 async function updateRunStatus(conn, runId, status) {
   await conn.query('UPDATE inventory_replenishment_runs SET status = ? WHERE id = ?', [status, runId]);
 }
@@ -575,6 +668,10 @@ async function updateRunStatus(conn, runId, status) {
 async function upsertDailyInventorySnapshots(conn, snapshotDate) {
   const q = conn || db;
   const paidStatuses = [...PAID_PAYMENT_STATUS_LIST];
+  const startAt = `${snapshotDate} 00:00:00`;
+  const nextDay = new Date(`${snapshotDate}T00:00:00.000Z`);
+  nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+  const endAt = `${nextDay.toISOString().slice(0, 10)} 00:00:00`;
   const [result] = await q.query(
     `INSERT INTO inventory_daily_snapshots
        (snapshot_date, product_id, variant_id, stock, reserved_stock, available_stock, in_transit_qty, sales_qty, is_stockout)
@@ -603,7 +700,8 @@ async function upsertDailyInventorySnapshots(conn, snapshotDate) {
        JOIN orders o ON o.id = oi.order_id
        WHERE oi.variant_id IS NOT NULL
          AND o.payment_status IN (${placeholders(paidStatuses)})
-         AND DATE(COALESCE(o.paid_at, o.payment_time, o.created_at)) = ?
+         AND COALESCE(o.paid_at, o.payment_time, o.created_at) >= ?
+         AND COALESCE(o.paid_at, o.payment_time, o.created_at) < ?
        GROUP BY oi.variant_id
      ) sales ON sales.variant_id = v.id
      WHERE p.deleted_at IS NULL
@@ -616,7 +714,7 @@ async function upsertDailyInventorySnapshots(conn, snapshotDate) {
        in_transit_qty = VALUES(in_transit_qty),
        sales_qty = VALUES(sales_qty),
        is_stockout = VALUES(is_stockout)`,
-    [snapshotDate, ...IN_TRANSIT_PO_STATUSES, ...paidStatuses, snapshotDate],
+    [snapshotDate, ...IN_TRANSIT_PO_STATUSES, ...paidStatuses, startAt, endAt],
   );
   return result;
 }
@@ -649,11 +747,15 @@ module.exports = {
   selectAlertsPage,
   selectSmartLimitCandidates,
   selectDailySnapshotStats,
+  selectReplenishmentProfilesByVariantIds,
+  upsertReplenishmentProfiles,
   insertReplenishmentRun,
   insertReplenishmentRunItem,
   selectRunItemsForUpdate,
   updateVariantLimits,
   markRunItemApplied,
+  markRunItemOrdered,
+  markRunItemStatus,
   updateRunStatus,
   upsertDailyInventorySnapshots,
 };

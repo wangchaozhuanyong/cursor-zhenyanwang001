@@ -70,10 +70,13 @@ module.exports = {
         avg_daily_sales DECIMAL(10,4) NOT NULL DEFAULT 0,
         suggested_replenishment_qty INT NOT NULL DEFAULT 0,
         confidence_score INT NOT NULL DEFAULT 0,
+        suggestion_type VARCHAR(32) NOT NULL DEFAULT 'purchase',
+        suggestion_payload JSON NULL,
         reason VARCHAR(255) NULL,
         apply_status VARCHAR(32) NOT NULL DEFAULT 'pending',
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         KEY idx_replenishment_run_items_run (run_id, apply_status),
+        KEY idx_replenishment_run_items_suggestion_type (suggestion_type),
         KEY idx_replenishment_run_items_variant (variant_id),
         CONSTRAINT fk_replenishment_run_item_run FOREIGN KEY (run_id) REFERENCES inventory_replenishment_runs(id),
         CONSTRAINT fk_replenishment_run_item_variant FOREIGN KEY (variant_id) REFERENCES product_variants(id)

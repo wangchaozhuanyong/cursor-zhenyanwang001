@@ -351,7 +351,11 @@ router.get('/inventory/replenishment-alerts', adminAuth, inventoryFeature, requi
 router.post('/inventory/replenishment-alerts/generate', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.generateReplenishmentAlerts);
 router.post('/inventory/replenishment-alerts/:id/create-purchase-order', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.createPurchaseOrderFromAlert);
 router.post('/inventory/replenishment-runs/preview', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.createSmartReplenishmentPreview);
+router.get('/inventory/replenishment-profiles', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listReplenishmentProfiles);
+router.post('/inventory/replenishment-profiles/batch', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.saveReplenishmentProfiles);
 router.post('/inventory/replenishment-runs/:id/apply', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.applySmartReplenishmentRun);
+router.post('/inventory/replenishment-runs/:id/create-purchase-order', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.createPurchaseOrderFromSmartRun);
+router.post('/inventory/replenishment-runs/:id/execute-unpack', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.executeUnpackForSmartRun);
 router.post('/inventory/daily-snapshots/generate', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.generateDailyInventorySnapshot);
 router.get('/purchase-orders', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listPurchaseOrders);
 router.get('/purchase-orders/:id', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.getPurchaseOrder);

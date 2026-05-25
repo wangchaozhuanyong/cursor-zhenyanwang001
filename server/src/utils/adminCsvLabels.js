@@ -6,7 +6,7 @@ const { REPORT_COLUMN_LABELS, labelReportColumn } = require('./reportColumnLabel
 const EXTRA_CSV_LABELS = {
   name: '商品名称',
   price: '售价',
-  original_price: '原价',
+  original_price: '划线原价',
   sales_count: '销量',
   stock: '库存',
   unit_name: '库存单位',

@@ -276,11 +276,15 @@ function formatPackRule(row) {
     parent_sku_code: row.parent_sku_code || '',
     parent_unit_name: row.parent_unit_name || '件',
     parent_stock: Number(row.parent_stock || 0),
+    parent_reserved_stock: Number(row.parent_reserved_stock || 0),
+    parent_available_stock: Number(row.parent_available_stock || 0),
     child_product_name: row.child_product_name || '',
     child_variant_name: row.child_variant_name || '',
     child_sku_code: row.child_sku_code || '',
     child_unit_name: row.child_unit_name || '件',
     child_stock: Number(row.child_stock || 0),
+    child_reserved_stock: Number(row.child_reserved_stock || 0),
+    child_available_stock: Number(row.child_available_stock || 0),
     updated_by_name: row.updated_by_name || '',
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -484,13 +488,15 @@ async function adjustSkuStock(variantId, body, adminUserId, req) {
     if (!sku) throw new BusinessError(404, 'SKU 不存在');
 
     const beforeStock = Number(sku.stock || 0);
+    const beforeReservedStock = Number(sku.reserved_stock || 0);
+    const beforeAvailableStock = Math.max(0, beforeStock - beforeReservedStock);
     let afterStock = beforeStock;
     let delta = 0;
     if (changeType === 'in') {
       delta = qty;
       afterStock = beforeStock + qty;
     } else if (changeType === 'out') {
-      if (qty > beforeStock) throw new BusinessError(400, `库存不足，当前库存 ${beforeStock}`);
+      if (qty > beforeAvailableStock) throw new BusinessError(400, `可用库存不足，当前可用库存 ${beforeAvailableStock}`);
       delta = -qty;
       afterStock = beforeStock - qty;
     } else {
@@ -679,7 +685,9 @@ async function batchWarningThreshold(body, adminUserId = null, req = null) {
   const threshold = Number(body.stock_warning_threshold);
   if (!ids.length) throw new BusinessError(400, 'variant_ids 不能为空');
   if (!Number.isInteger(threshold) || threshold < 0) throw new BusinessError(400, '预警阈值必须为非负整数');
+  const beforeRows = await repo.selectVariantLimitSnapshots(ids);
   await repo.batchUpdateVariantWarningThreshold(ids, threshold);
+  const afterRows = beforeRows.map((row) => ({ ...row, stock_warning_threshold: threshold }));
   await writeAuditLog({
     req,
     operatorId: adminUserId,
@@ -687,8 +695,8 @@ async function batchWarningThreshold(body, adminUserId = null, req = null) {
     objectType: 'product_variant',
     objectId: 'batch',
     summary: `???? SKU ???? ${ids.length} ?`,
-    before: { variant_ids: ids },
-    after: { variant_ids: ids, stock_warning_threshold: threshold },
+    before: { variant_ids: ids, items: beforeRows },
+    after: { variant_ids: ids, items: afterRows },
     result: 'success',
   });
   return { data: { updated: ids.length }, message: '批量预警值已更新' };
@@ -1111,8 +1119,6 @@ module.exports = {
   listConversions,
   getConversion,
 };
-
-
 
 
 

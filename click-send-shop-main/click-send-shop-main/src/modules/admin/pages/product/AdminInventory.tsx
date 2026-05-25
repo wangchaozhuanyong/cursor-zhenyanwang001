@@ -21,10 +21,13 @@ import {
   batchUpdateInventoryWarningThreshold,
   createSmartReplenishmentPreview,
   createPurchaseOrderFromAlert,
+  createPurchaseOrderFromSmartRun,
   createInventoryPackRule,
   deleteInventoryPackRule,
+  executeUnpackForSmartRun,
   exportInventoryRecordsCsv,
   exportInventorySkusCsv,
+  fetchReplenishmentProfiles,
   generateDailyInventorySnapshot,
   fetchInventoryConversions,
   fetchInventoryPackRules,
@@ -36,6 +39,7 @@ import {
   fetchReplenishmentAlerts,
   generateReplenishmentAlerts,
   receivePurchaseOrder,
+  saveReplenishmentProfiles,
   unpackInventoryRule,
   updateInventoryPackRule,
   updateInventorySkuWarningThreshold,
@@ -60,6 +64,7 @@ const EMPTY_BATCH_ADJUST: BatchAdjustForm = {
 };
 
 type TabKey = "skus" | "smart" | "alerts" | "purchaseOrders" | "records" | "rules" | "conversions";
+type SmartViewKey = "overview" | "limits" | "suggestions" | "purchase" | "rules";
 type AdjustForm = { sku: InventorySku; change_type: "in" | "out" | "adjust"; quantity: string; reason: string; remark: string; source_no: string; cost_price: string };
 type BatchAdjustForm = { change_type: "in" | "out" | "adjust"; quantity: string; reason: string; remark: string; source_no: string; cost_price: string };
 type BatchThresholdForm = { threshold: string };
@@ -132,22 +137,32 @@ function stockStatusText(sku: InventorySku, tText: (zh: string) => string) {
 function validateAdjustQuantity(
   changeType: "in" | "out" | "adjust",
   qty: number,
-  stock: number,
+  availableStock: number,
   tText: (zh: string) => string,
 ) {
   if (!Number.isInteger(qty)) throw new Error(tText("数量必须为整数"));
   if (changeType === "adjust" && qty < 0) throw new Error(tText("盘点后的库存必须大于等于 0"));
   if (changeType !== "adjust" && qty <= 0) throw new Error(tText("数量必须大于 0"));
-  if (changeType === "out" && qty > stock) throw new Error(tText("出库数量不能超过当前库存"));
+  if (changeType === "out" && qty > availableStock) throw new Error(tText("出库数量不能超过当前可用库存"));
 }
 
-export default function AdminInventory() {
+type AdminInventoryProps = {
+  initialTab?: TabKey;
+  pageTitle?: string;
+  pageHint?: string;
+};
+
+export default function AdminInventory({
+  initialTab = "skus",
+  pageTitle,
+  pageHint,
+}: AdminInventoryProps = {}) {
   const { tText } = useAdminT();
   const L = tText;
   const changeLabel = (key: string) => L(CHANGE_LABEL[key as InventoryChangeType] ?? key);
   const conversionLabel = (key: string) => L(CONVERSION_LABEL[key] ?? key);
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<TabKey>("skus");
+  const [tab, setTab] = useState<TabKey>(initialTab);
   const [page, setPage] = useState(1);
   const [alertsPage, setAlertsPage] = useState(1);
   const [purchaseOrdersPage, setPurchaseOrdersPage] = useState(1);
@@ -176,6 +191,7 @@ export default function AdminInventory() {
   });
   const [smartPreview, setSmartPreview] = useState<SmartReplenishmentPreviewResult | null>(null);
   const [smartEdits, setSmartEdits] = useState<SmartEditMap>({});
+  const [smartView, setSmartView] = useState<SmartViewKey>("overview");
   const [ruleForm, setRuleForm] = useState<RuleForm | null>(null);
   const [ruleSkuKeyword, setRuleSkuKeyword] = useState("");
   const [convertForm, setConvertForm] = useState<ConvertForm | null>(null);
@@ -222,7 +238,7 @@ export default function AdminInventory() {
     mutationFn: async () => {
       if (!adjusting) return;
       const qty = Number(adjusting.quantity);
-      validateAdjustQuantity(adjusting.change_type, qty, adjusting.sku.stock, L);
+      validateAdjustQuantity(adjusting.change_type, qty, adjusting.sku.available_stock ?? adjusting.sku.stock, L);
       await adjustInventorySkuStock(adjusting.sku.variant_id, {
         change_type: adjusting.change_type,
         quantity: qty,
@@ -269,7 +285,7 @@ export default function AdminInventory() {
       const items = selectedVariantIds.map((variantId) => {
         const sku = skuCache[variantId];
         if (!sku) throw new Error(L("部分 SKU 数据未加载，请刷新后重试"));
-        validateAdjustQuantity(batchAdjust.change_type, qty, sku.stock, L);
+        validateAdjustQuantity(batchAdjust.change_type, qty, sku.available_stock ?? sku.stock, L);
         return {
           variant_id: variantId,
           change_type: batchAdjust.change_type,
@@ -363,6 +379,7 @@ export default function AdminInventory() {
       setSmartPreview(result);
       setSmartEdits(edits);
       setTab("smart");
+      setSmartView("suggestions");
       toast.success(`${L("智能补货预览已生成")} ${result.items?.length ?? 0} ${L("条")}`);
     },
     onError: (error) => toast.error(toastErrorMessage(error, L("智能补货计算失败"))),
@@ -390,6 +407,87 @@ export default function AdminInventory() {
     onError: (error) => toast.error(toastErrorMessage(error, L("应用智能补货结果失败"))),
   });
 
+  const smartCreatePoMutation = useMutation({
+    mutationFn: async () => {
+      if (!smartPreview) return;
+      return createPurchaseOrderFromSmartRun(smartPreview.id, {
+        items: smartPreview.items.map((item) => {
+          const edit = smartEdits[item.id];
+          return {
+            id: item.id,
+            suggested_replenishment_qty: Number(edit?.qty ?? item.suggested_replenishment_qty) || 0,
+          };
+        }),
+        remark: `智能补货批次 ${smartPreview.id}`,
+      });
+    },
+    onSuccess: async (result) => {
+      toast.success(`${L("采购单已生成")}：${result?.order_no || ""}`);
+      await invalidateInventory();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("生成采购单失败"))),
+  });
+
+  const smartUnpackMutation = useMutation({
+    mutationFn: async (itemIds?: string[]) => {
+      if (!smartPreview) return;
+      return executeUnpackForSmartRun(smartPreview.id, {
+        item_ids: itemIds,
+        remark: `智能补货批次 ${smartPreview.id}`,
+      });
+    },
+    onSuccess: async (result) => {
+      toast.success(`${L("拆包完成")} ${result?.executed ?? 0} ${L("项")}`);
+      await invalidateInventory();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("执行拆包失败"))),
+  });
+
+  const smartProfileMutation = useMutation({
+    mutationFn: async () => {
+      if (selectedVariantIds.length === 0) throw new Error(L("请先选择 SKU"));
+      return saveReplenishmentProfiles({
+        variant_ids: selectedVariantIds,
+        auto_limit_enabled: true,
+        analysis_days: Number(smartForm.analysis_days) || 30,
+        strategy: smartForm.strategy || "balanced",
+        lead_time_days: Number(smartForm.lead_time_days) || 7,
+        safety_stock_days: Number(smartForm.safety_stock_days) || 3,
+        target_cover_days: Number(smartForm.target_cover_days) || 20,
+        min_floor_stock: Number(smartForm.min_floor_stock) || 0,
+        purchase_multiple: Math.max(1, Number(smartForm.purchase_multiple) || 1),
+        exclude_stockout_days: true,
+      });
+    },
+    onSuccess: (result) => {
+      toast.success(`${L("补货规则已保存")} ${result?.updated ?? selectedVariantIds.length} ${L("个 SKU")}`);
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("保存补货规则失败"))),
+  });
+
+  const smartProfileLoadMutation = useMutation({
+    mutationFn: async () => {
+      if (selectedVariantIds.length !== 1) throw new Error(L("请只选择一个 SKU"));
+      const list = await fetchReplenishmentProfiles({ variant_id: selectedVariantIds[0] });
+      const profile = list[0];
+      if (!profile) throw new Error(L("当前 SKU 暂无专属补货规则"));
+      return profile;
+    },
+    onSuccess: (profile) => {
+      setSmartForm((prev) => ({
+        ...prev,
+        analysis_days: String(profile.analysis_days ?? prev.analysis_days),
+        strategy: profile.strategy || prev.strategy,
+        lead_time_days: String(profile.lead_time_days ?? prev.lead_time_days),
+        safety_stock_days: String(profile.safety_stock_days ?? prev.safety_stock_days),
+        target_cover_days: String(profile.target_cover_days ?? prev.target_cover_days),
+        min_floor_stock: String(profile.min_floor_stock ?? prev.min_floor_stock),
+        purchase_multiple: String(profile.purchase_multiple ?? prev.purchase_multiple),
+      }));
+      toast.success(L("补货规则已加载"));
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, L("加载补货规则失败"))),
+  });
   const dailySnapshotMutation = useMutation({
     mutationFn: () => generateDailyInventorySnapshot(),
     onSuccess: (result) => {
@@ -453,6 +551,17 @@ export default function AdminInventory() {
   const pageVariantIds = useMemo(() => skus.map((sku) => sku.variant_id), [skus]);
   const allSelectedOnPage = pageVariantIds.length > 0 && pageVariantIds.every((id) => selectedVariantIds.includes(id));
   const selectedCount = selectedVariantIds.length;
+  const smartPurchaseableCount = smartPreview?.items.filter((item) => {
+    const edit = smartEdits[item.id];
+    const qty = Number(edit?.qty ?? item.suggested_replenishment_qty) || 0;
+    return (item.suggestion_type || "purchase") === "purchase" && qty > 0;
+  }).length ?? 0;
+  const smartWatchCount = smartPreview?.items.filter((item) => item.suggestion_type === "watch").length ?? 0;
+  const smartUnpackCount = smartPreview?.items.filter((item) => item.suggestion_type === "unpack").length ?? 0;
+  const smartIncompleteHistoryCount = smartPreview?.items.filter((item) => /历史数据不完整|snapshot|快照/i.test(item.reason || "")).length ?? 0;
+  const smartUnpackableItemIds = smartPreview?.items
+    .filter((item) => item.suggestion_type === "unpack" && !["unpacked", "applied"].includes(String(item.apply_status || "")))
+    .map((item) => item.id) ?? [];
 
   useEffect(() => {
     if (!skus.length) return;
@@ -629,7 +738,7 @@ export default function AdminInventory() {
           <span className="text-xs">{row.parent_qty} {row.parent_unit_name} = {row.child_qty} {row.child_unit_name}</span>
         </AdminTableMobileCardField>
         <AdminTableMobileCardField label={L("当前库存")}>
-          <span className="text-xs">{L("大包")} {row.parent_stock} / {L("小包")} {row.child_stock}</span>
+          <span className="text-xs">{L("大包可用")} {row.parent_available_stock ?? row.parent_stock} / {L("小包可用")} {row.child_available_stock ?? row.child_stock}</span>
         </AdminTableMobileCardField>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
@@ -667,7 +776,7 @@ export default function AdminInventory() {
     <PermissionGate permission="inventory.manage">
       <div className="space-y-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <AdminPageTitle title={tText("库存中心")} hint={L("按 SKU 管理库存、流水、组装拆包规则和转换单据。")} />
+          <AdminPageTitle title={pageTitle || tText("库存中心")} hint={pageHint || L("按 SKU 管理库存、流水、组装拆包规则和转换单据。")} />
           <div className="flex gap-2">
             <button onClick={() => void exportInventorySkusCsv({ keyword, stock_status: stockStatus })} className="flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm"><Download size={15} /><Tx>导出库存</Tx></button>
             <button onClick={() => void invalidateInventory()} className="flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm"><RefreshCcw size={15} /><Tx>刷新</Tx></button>
@@ -807,6 +916,58 @@ export default function AdminInventory() {
 
         {tab === "smart" ? (
           <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-card p-3">
+              <div className="flex flex-wrap gap-2">
+                {([
+                  ["overview", "智能补货总览"],
+                  ["limits", "一键设置上下限"],
+                  ["suggestions", "补货建议"],
+                  ["purchase", "采购计划"],
+                  ["rules", "补货规则设置"],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSmartView(key)}
+                    className={`rounded-lg px-3 py-2 text-sm font-semibold ${smartView === key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                  >
+                    {L(label)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {smartView === "overview" ? (
+              <>
+                <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+                  {[
+                    { t: "缺货 SKU", v: summary?.out_of_stock_skus ?? 0 },
+                    { t: "低于下限 SKU", v: summary?.low_stock_skus ?? 0 },
+                    { t: "建议采购 SKU", v: smartPurchaseableCount },
+                    { t: "建议拆包 SKU", v: smartUnpackCount },
+                    { t: "观察 SKU", v: smartWatchCount },
+                    { t: "历史数据不完整", v: smartIncompleteHistoryCount },
+                  ].map((item) => (
+                    <div key={item.t} className="rounded-xl border border-border bg-card p-3">
+                      <p className="text-xs text-muted-foreground">{L(item.t)}</p>
+                      <p className="mt-1 text-xl font-bold text-foreground">{item.v}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <h3 className="text-sm font-semibold text-foreground">{L("智能补货闭环")}</h3>
+                  <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                    {L("当前版本按可用库存、在途库存、销量快照、库存上下限生成预览；低销量和新品只给观察建议；小包装缺货时会先判断大包装可拆库存，再决定拆包或采购。")}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setSmartView("limits")} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{L("去计算上下限")}</button>
+                    <button type="button" onClick={() => setSmartView("suggestions")} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold">{L("查看补货建议")}</button>
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            {smartView === "limits" ? (
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                 <div>
@@ -824,6 +985,12 @@ export default function AdminInventory() {
                   </button>
                   <button type="button" onClick={() => smartApplyMutation.mutate()} disabled={!smartPreview || smartApplyMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
                     {smartApplyMutation.isPending ? L("应用中...") : L("批量应用")}
+                  </button>
+                  <button type="button" onClick={() => smartCreatePoMutation.mutate()} disabled={!smartPreview || smartPurchaseableCount <= 0 || smartCreatePoMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    {smartCreatePoMutation.isPending ? L("生成中...") : L("生成采购单")}
+                  </button>
+                  <button type="button" onClick={() => smartUnpackMutation.mutate(smartUnpackableItemIds)} disabled={!smartPreview || smartUnpackableItemIds.length <= 0 || smartUnpackMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    {smartUnpackMutation.isPending ? L("拆包中...") : L("批量执行拆包")}
                   </button>
                 </div>
               </div>
@@ -865,8 +1032,26 @@ export default function AdminInventory() {
                 {selectedCount > 0 ? `${L("当前将计算已选 SKU")}：${selectedCount}` : L("未选择 SKU 时将按当前接口范围计算全部 SKU。")}
               </p>
             </div>
+            ) : null}
 
-            {smartPreview ? (
+            {smartView === "purchase" ? (
+              <div className="rounded-xl border border-border bg-card p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">{L("采购计划")}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {L("只会把建议动作为采购、且建议数量大于 0 的 SKU 生成采购单。拆包和观察建议不会进入采购单。")}
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => smartCreatePoMutation.mutate()} disabled={!smartPreview || smartPurchaseableCount <= 0 || smartCreatePoMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+                    {smartCreatePoMutation.isPending ? L("生成中...") : `${L("生成采购单")} (${smartPurchaseableCount})`}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {smartView === "suggestions" || smartView === "purchase" ? (
+              smartPreview ? (
               <div className="rounded-xl border border-border bg-card">
                 <div className="flex flex-col gap-2 border-b border-border p-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
@@ -878,12 +1063,18 @@ export default function AdminInventory() {
                   <button type="button" onClick={() => smartApplyMutation.mutate()} disabled={smartApplyMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
                     {smartApplyMutation.isPending ? L("应用中...") : L("确认批量应用")}
                   </button>
+                  <button type="button" onClick={() => smartCreatePoMutation.mutate()} disabled={smartPurchaseableCount <= 0 || smartCreatePoMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    {smartCreatePoMutation.isPending ? L("生成中...") : L("生成采购单")}
+                  </button>
+                  <button type="button" onClick={() => smartUnpackMutation.mutate(smartUnpackableItemIds)} disabled={smartUnpackableItemIds.length <= 0 || smartUnpackMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    {smartUnpackMutation.isPending ? L("拆包中...") : L("批量执行拆包")}
+                  </button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[1280px] text-left text-sm">
                     <thead className="border-b border-border text-xs text-muted-foreground">
                       <tr>
-                        {["SKU", "库存", "在途", "销量/天", "当前下限/上限", "建议下限", "建议上限", "建议补货", "置信度", "原因"].map((head) => (
+                        {["SKU", "库存", "在途", "销量/天", "当前下限/上限", "建议下限", "建议上限", "建议补货", "建议动作", "置信度", "原因"].map((head) => (
                           <th key={head} className="px-4 py-3 text-left">{L(head)}</th>
                         ))}
                       </tr>
@@ -911,6 +1102,23 @@ export default function AdminInventory() {
                             <td className="px-4 py-3">
                               <input type="number" min={0} value={edit.qty} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, qty: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
                             </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
+                                  {item.suggestion_type === "unpack" ? L("拆包") : item.suggestion_type === "watch" ? L("观察") : L("采购")}
+                                </span>
+                                {item.suggestion_type === "unpack" ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => smartUnpackMutation.mutate([item.id])}
+                                    disabled={smartUnpackMutation.isPending || item.apply_status === "unpacked"}
+                                    className="rounded-lg border border-border px-2 py-1 text-xs disabled:opacity-50"
+                                  >
+                                    {item.apply_status === "unpacked" ? <Tx>已拆包</Tx> : <Tx>执行拆包</Tx>}
+                                  </button>
+                                ) : null}
+                              </div>
+                            </td>
                             <td className="px-4 py-3">{item.confidence_score}%</td>
                             <td className="max-w-[18rem] px-4 py-3 text-xs text-muted-foreground">{item.reason || "-"}</td>
                           </tr>
@@ -920,11 +1128,53 @@ export default function AdminInventory() {
                   </table>
                 </div>
               </div>
-            ) : (
+              ) : (
               <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
                 <Tx>暂无智能补货预览。请先点击“智能计算”，系统只会生成预览，不会直接修改库存上下限。</Tx>
               </div>
-            )}
+              )
+            ) : null}
+
+            {smartView === "rules" ? (
+              <div className="rounded-xl border border-border bg-card p-4">
+                <h3 className="text-sm font-semibold text-foreground">{L("补货规则设置")}</h3>
+                <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                  {L("当前批次规则从这里录入后用于本次预览：采购到货周期、安全库存天数、目标覆盖天数、保底库存、采购倍数和策略。后续可继续扩展为按 SKU 保存专属 profile。")}
+                </p>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  {[
+                    ["lead_time_days", "采购到货周期"],
+                    ["safety_stock_days", "安全库存天数"],
+                    ["target_cover_days", "目标覆盖天数"],
+                    ["min_floor_stock", "最低保底库存"],
+                    ["purchase_multiple", "采购倍数"],
+                  ].map(([key, label]) => (
+                    <label key={key} className="text-xs text-muted-foreground">
+                      <span className="mb-1 block">{L(label)}</span>
+                      <input
+                        type="number"
+                        min={key === "purchase_multiple" ? 1 : 0}
+                        value={smartForm[key as keyof SmartReplenishmentForm]}
+                        onChange={(e) => setSmartForm((s) => ({ ...s, [key]: e.target.value }))}
+                        className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground"
+                      />
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setSmartView("limits")} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{L("?????????")}</button>
+                  <button type="button" onClick={() => smartProfileLoadMutation.mutate()} disabled={selectedCount !== 1 || smartProfileLoadMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    {smartProfileLoadMutation.isPending ? L("???...") : L("???? SKU ??")}
+                  </button>
+                  <button type="button" onClick={() => smartProfileMutation.mutate()} disabled={selectedCount <= 0 || smartProfileMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    {smartProfileMutation.isPending ? L("???...") : `${L("????? SKU")} (${selectedCount})`}
+                  </button>
+                  <button type="button" onClick={() => dailySnapshotMutation.mutate()} disabled={dailySnapshotMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                    {dailySnapshotMutation.isPending ? L("???...") : L("??????")}
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -993,7 +1243,7 @@ export default function AdminInventory() {
           <>
             <AnimatedTable embedded loading={rulesQuery.isLoading} rows={rules} rowKey={(row) => row.id} skeletonRows={8} skeletonCols={8} tableClassName="w-full min-w-[1260px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={SplitSquareHorizontal} emptyTitle={L("暂无组装拆包规则")} emptyDescription={L("新增规则后可手动拆包、组装，也可支持订单自动拆包。")} thead={<tr>{["大包装 SKU", "小包装 SKU", "换算", "当前库存", "自动拆包", "启用", "备注", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
               renderMobileCard={renderRuleMobileCard}
-              renderRow={(row: InventoryPackRule) => <><td className="px-4 py-3"><p>{row.parent_product_name}</p><p className="text-xs text-muted-foreground">{row.parent_variant_name || L("默认规格")} / {row.parent_sku_code || "-"}</p></td><td className="px-4 py-3"><p>{row.child_product_name}</p><p className="text-xs text-muted-foreground">{row.child_variant_name || L("默认规格")} / {row.child_sku_code || "-"}</p></td><td className="px-4 py-3">{row.parent_qty} {row.parent_unit_name} = {row.child_qty} {row.child_unit_name}</td><td className="px-4 py-3 text-xs text-muted-foreground">{L("大包")} {row.parent_stock} / {L("小包")} {row.child_stock}</td><td className="px-4 py-3">{row.auto_unpack_enabled ? L("已开启") : L("关闭")}</td><td className="px-4 py-3">{row.enabled ? L("启用") : L("停用")}</td><td className="px-4 py-3 text-muted-foreground">{row.remark || "-"}</td><td className="px-4 py-3"><div className="flex justify-end gap-2"><button onClick={() => setConvertForm({ type: "unpack", rule: row, parent_qty: "1", remark: "" })} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即拆包</Tx></button><button onClick={() => setConvertForm({ type: "assemble", rule: row, parent_qty: "1", remark: "" })} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即组装</Tx></button><button onClick={() => setRuleForm(row)} className="rounded-lg bg-secondary px-3 py-1.5 text-xs"><Tx>编辑</Tx></button><button onClick={() => deleteRuleMutation.mutate(row.id)} className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600"><Tx>删除</Tx></button></div></td></>}
+              renderRow={(row: InventoryPackRule) => <><td className="px-4 py-3"><p>{row.parent_product_name}</p><p className="text-xs text-muted-foreground">{row.parent_variant_name || L("默认规格")} / {row.parent_sku_code || "-"}</p></td><td className="px-4 py-3"><p>{row.child_product_name}</p><p className="text-xs text-muted-foreground">{row.child_variant_name || L("默认规格")} / {row.child_sku_code || "-"}</p></td><td className="px-4 py-3">{row.parent_qty} {row.parent_unit_name} = {row.child_qty} {row.child_unit_name}</td><td className="px-4 py-3 text-xs text-muted-foreground">{L("大包可用")} {row.parent_available_stock ?? row.parent_stock} / {L("小包可用")} {row.child_available_stock ?? row.child_stock}</td><td className="px-4 py-3">{row.auto_unpack_enabled ? L("已开启") : L("关闭")}</td><td className="px-4 py-3">{row.enabled ? L("启用") : L("停用")}</td><td className="px-4 py-3 text-muted-foreground">{row.remark || "-"}</td><td className="px-4 py-3"><div className="flex justify-end gap-2"><button onClick={() => setConvertForm({ type: "unpack", rule: row, parent_qty: "1", remark: "" })} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即拆包</Tx></button><button onClick={() => setConvertForm({ type: "assemble", rule: row, parent_qty: "1", remark: "" })} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即组装</Tx></button><button onClick={() => setRuleForm(row)} className="rounded-lg bg-secondary px-3 py-1.5 text-xs"><Tx>编辑</Tx></button><button onClick={() => deleteRuleMutation.mutate(row.id)} className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600"><Tx>删除</Tx></button></div></td></>}
             />
             <Pagination total={rulesQuery.data?.total || 0} page={rulesPage} pageSize={PAGE_SIZE} onPageChange={setRulesPage} onPageSizeChange={() => undefined} />
           </>

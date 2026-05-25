@@ -175,6 +175,18 @@ async function batchUpdateVariantWarningThreshold(ids, threshold) {
   return result.affectedRows || 0;
 }
 
+async function selectVariantLimitSnapshots(ids) {
+  const uniqueIds = [...new Set((ids || []).filter(Boolean))];
+  if (!uniqueIds.length) return [];
+  const [rows] = await db.query(
+    `SELECT id, product_id, title, sku_code, stock_warning_threshold, stock_lower_limit, stock_upper_limit
+     FROM product_variants
+     WHERE id IN (${uniqueIds.map(() => '?').join(',')})`,
+    uniqueIds,
+  );
+  return rows;
+}
+
 async function selectProductVariants(productId) {
   const [rows] = await db.query(
     `SELECT id, title, sku_code, stock, is_default
@@ -339,11 +351,15 @@ async function selectPackRulesPage(where, params, pageSize, offset) {
        pv.sku_code AS parent_sku_code,
        COALESCE(pv.unit_name, '件') AS parent_unit_name,
        pv.stock AS parent_stock,
+       COALESCE(pv.reserved_stock, 0) AS parent_reserved_stock,
+       GREATEST(COALESCE(pv.stock, 0) - COALESCE(pv.reserved_stock, 0), 0) AS parent_available_stock,
        cp.name AS child_product_name,
        cv.title AS child_variant_name,
        cv.sku_code AS child_sku_code,
        COALESCE(cv.unit_name, '件') AS child_unit_name,
        cv.stock AS child_stock,
+       COALESCE(cv.reserved_stock, 0) AS child_reserved_stock,
+       GREATEST(COALESCE(cv.stock, 0) - COALESCE(cv.reserved_stock, 0), 0) AS child_available_stock,
        u.nickname AS updated_by_name
      FROM inventory_pack_rules r
      JOIN product_variants pv ON pv.id = r.parent_variant_id
@@ -376,11 +392,15 @@ async function selectPackRuleById(id) {
        pv.sku_code AS parent_sku_code,
        COALESCE(pv.unit_name, '件') AS parent_unit_name,
        pv.stock AS parent_stock,
+       COALESCE(pv.reserved_stock, 0) AS parent_reserved_stock,
+       GREATEST(COALESCE(pv.stock, 0) - COALESCE(pv.reserved_stock, 0), 0) AS parent_available_stock,
        cp.name AS child_product_name,
        cv.title AS child_variant_name,
        cv.sku_code AS child_sku_code,
        COALESCE(cv.unit_name, '件') AS child_unit_name,
-       cv.stock AS child_stock
+       cv.stock AS child_stock,
+       COALESCE(cv.reserved_stock, 0) AS child_reserved_stock,
+       GREATEST(COALESCE(cv.stock, 0) - COALESCE(cv.reserved_stock, 0), 0) AS child_available_stock
      FROM inventory_pack_rules r
      JOIN product_variants pv ON pv.id = r.parent_variant_id
      JOIN products pp ON pp.id = r.parent_product_id
@@ -610,6 +630,7 @@ module.exports = {
   updateVariantCostPrice,
   updateVariantWarningThreshold,
   batchUpdateVariantWarningThreshold,
+  selectVariantLimitSnapshots,
   selectProductVariants,
   selectProductById,
   insertStockRecord,

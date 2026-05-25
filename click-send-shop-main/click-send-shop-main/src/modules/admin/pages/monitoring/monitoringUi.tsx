@@ -61,7 +61,7 @@ export function formatTime(value?: string | null) {
 
 export function JsonBlock({ data }: { data: unknown }) {
   return (
-    <pre className="max-h-80 overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
+    <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
       {JSON.stringify(data ?? null, null, 2)}
     </pre>
   );

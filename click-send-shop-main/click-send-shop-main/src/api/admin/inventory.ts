@@ -1,6 +1,6 @@
 import { del, get, patch, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
-import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, InventorySummary, PurchaseOrder, PurchaseOrderDetail, SmartReplenishmentPreviewResult } from "@/types/inventory";
+import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventoryReplenishmentProfile, InventorySku, InventoryStockRecord, InventorySummary, PurchaseOrder, PurchaseOrderDetail, SmartReplenishmentPreviewResult } from "@/types/inventory";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 
 export function getInventorySummary() {
@@ -90,11 +90,45 @@ export function createSmartReplenishmentPreview(data: {
   return post<SmartReplenishmentPreviewResult>("/admin/inventory/replenishment-runs/preview", data);
 }
 
+export function getReplenishmentProfiles(params: { variant_ids?: string; variant_id?: string }) {
+  return get<InventoryReplenishmentProfile[]>("/admin/inventory/replenishment-profiles", params);
+}
+
+export function saveReplenishmentProfiles(data: {
+  variant_ids: string[];
+  auto_limit_enabled?: boolean;
+  analysis_days?: number;
+  strategy?: "conservative" | "balanced" | "aggressive" | string;
+  lead_time_days?: number;
+  safety_stock_days?: number;
+  target_cover_days?: number;
+  min_floor_stock?: number;
+  purchase_multiple?: number;
+  exclude_promotion_sales?: boolean;
+  exclude_stockout_days?: boolean;
+}) {
+  return post<{ updated: number }>("/admin/inventory/replenishment-profiles/batch", data);
+}
+
 export function applySmartReplenishmentRun(
   id: string,
   data: { items?: Array<{ id: string; suggested_lower_limit?: number; suggested_upper_limit?: number; suggested_replenishment_qty?: number }> } = {},
 ) {
   return post<{ id: string; applied: number }>(`/admin/inventory/replenishment-runs/${id}/apply`, data);
+}
+
+export function createPurchaseOrderFromSmartRun(
+  id: string,
+  data: { items?: Array<{ id: string; suggested_replenishment_qty?: number; unit_cost?: number }>; expected_arrival_date?: string; remark?: string } = {},
+) {
+  return post<{ id: string; order_no: string; item_count: number }>(`/admin/inventory/replenishment-runs/${id}/create-purchase-order`, data);
+}
+
+export function executeUnpackForSmartRun(
+  id: string,
+  data: { item_ids?: string[]; remark?: string } = {},
+) {
+  return post<{ id: string; executed: number; items: Array<{ item_id: string; conversion_order_id?: string | null; conversion_order_no?: string }> }>(`/admin/inventory/replenishment-runs/${id}/execute-unpack`, data);
 }
 
 export function generateDailyInventorySnapshot(data: { snapshot_date?: string } = {}) {

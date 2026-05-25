@@ -111,6 +111,16 @@ exports.createSmartReplenishmentPreview = asyncRoute(async (req, res) => {
   res.success(r);
 });
 
+exports.listReplenishmentProfiles = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.listReplenishmentProfiles(req.query || {});
+  res.success(r);
+});
+
+exports.saveReplenishmentProfiles = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.saveReplenishmentProfiles(req.body || {}, req.user?.id, req);
+  res.success(r);
+});
+
 exports.applySmartReplenishmentRun = asyncRoute(async (req, res) => {
   const r = await replenishmentSvc.applySmartReplenishmentRun(req.params.id, req.body || {}, req.user?.id, req);
   res.success(r);
@@ -118,6 +128,11 @@ exports.applySmartReplenishmentRun = asyncRoute(async (req, res) => {
 
 exports.createPurchaseOrderFromSmartRun = asyncRoute(async (req, res) => {
   const r = await replenishmentSvc.createPurchaseOrderFromSmartRun(req.params.id, req.body || {}, req.user?.id, req);
+  res.success(r);
+});
+
+exports.executeUnpackForSmartRun = asyncRoute(async (req, res) => {
+  const r = await replenishmentSvc.executeUnpackForSmartRun(req.params.id, req.body || {}, req.user?.id, req);
   res.success(r);
 });
 

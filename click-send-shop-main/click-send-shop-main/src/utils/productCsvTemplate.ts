@@ -23,7 +23,7 @@ export const PRODUCT_CSV_HEADER_LABELS = [
   "SKU编码",
   "规格名称",
   "售价",
-  "原价",
+  "划线原价",
   "库存",
   "成本价",
   "条码",

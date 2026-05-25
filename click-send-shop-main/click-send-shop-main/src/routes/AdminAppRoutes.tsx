@@ -184,6 +184,7 @@ export function AdminAppRoutes() {
                   <Route path="products/:id" element={<AdminProductForm />} />
                   <Route path="categories" element={<AdminCategories />} />
                   <Route path="inventory" element={<CapabilityRoute enabled={capabilities.inventoryEnabled}><AdminInventory /></CapabilityRoute>} />
+                  <Route path="replenishment" element={<CapabilityRoute enabled={capabilities.inventoryEnabled}><AdminInventory initialTab="smart" pageTitle="智能补货" pageHint="按 SKU 销量、可用库存、在途库存和上下限生成补货建议。" /></CapabilityRoute>} />
                   <Route path="tags" element={<AdminProductTags />} />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="orders/unfinished" element={<AdminCheckoutAbandonments />} />

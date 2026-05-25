@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { executeRepairTask, getRepairTasks, type MonitoringRepairTask } from "@/services/admin/monitoringService";
 import MonitoringSubnav from "./MonitoringSubnav";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
-import { Badge, formatTime, JsonBlock } from "./monitoringUi";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import { Badge, formatTime } from "./monitoringUi";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
+  ADMIN_TABLE_WRAP_CLASS,
   adminTdClassName,
   adminThClassName,
 } from "@/utils/adminTableClasses";
@@ -94,8 +96,16 @@ export default function AdminMonitoringRepairTasks() {
               <tr key={task.id} className="border-t align-top">
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Badge value={task.repair_status} /></td>
                 <td className={adminTdClassName("font-medium text-slate-900")}>{task.anomaly_title || task.anomaly_id}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{task.repair_type}</td>
-                <td className={adminTdClassName("max-w-md")}><JsonBlock data={task.suggestion} /></td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                  {ml.repairType(task.repair_type)}
+                </td>
+                <td className={adminTdClassName(`${ADMIN_TABLE_WRAP_CLASS} max-w-[18rem] align-top`)}>
+                  <AdminTableCell
+                    value={ml.repairSuggestion(task.suggestion, task.repair_type)}
+                    fullText={ml.repairSuggestionDetail(task.suggestion, task.repair_type)}
+                    maxWidth="17rem"
+                  />
+                </td>
                 <td className={adminTdClassName()}>{task.operator_label || task.operator_id || "-"}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(task.created_at)}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(task.executed_at)}</td>

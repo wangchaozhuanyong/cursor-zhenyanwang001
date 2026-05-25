@@ -11,6 +11,7 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p.startsWith("/admin/tags"), rule: { kind: "one", permission: "tag.manage" } },
   { test: (p) => p.startsWith("/admin/products"), rule: { kind: "one", permission: "product.view" } },
   { test: (p) => p.startsWith("/admin/inventory"), rule: { kind: "one", permission: "inventory.manage" } },
+  { test: (p) => p.startsWith("/admin/replenishment"), rule: { kind: "one", permission: "inventory.manage" } },
   { test: (p) => p.startsWith("/admin/orders"), rule: { kind: "one", permission: "order.view" } },
   { test: (p) => p.startsWith("/admin/payments"), rule: { kind: "one", permission: "payment.manage" } },
   { test: (p) => p.startsWith("/admin/returns"), rule: { kind: "one", permission: "return.view" } },

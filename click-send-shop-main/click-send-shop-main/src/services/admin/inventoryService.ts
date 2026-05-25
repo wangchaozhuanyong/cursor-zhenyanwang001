@@ -77,8 +77,28 @@ export async function createSmartReplenishmentPreview(data: Parameters<typeof in
   return res.data;
 }
 
+export async function fetchReplenishmentProfiles(params: Parameters<typeof inventoryApi.getReplenishmentProfiles>[0]) {
+  const res = await inventoryApi.getReplenishmentProfiles(params);
+  return res.data;
+}
+
+export async function saveReplenishmentProfiles(data: Parameters<typeof inventoryApi.saveReplenishmentProfiles>[0]) {
+  const res = await inventoryApi.saveReplenishmentProfiles(data);
+  return res.data;
+}
+
 export async function applySmartReplenishmentRun(id: string, data?: Parameters<typeof inventoryApi.applySmartReplenishmentRun>[1]) {
   const res = await inventoryApi.applySmartReplenishmentRun(id, data);
+  return res.data;
+}
+
+export async function createPurchaseOrderFromSmartRun(id: string, data?: Parameters<typeof inventoryApi.createPurchaseOrderFromSmartRun>[1]) {
+  const res = await inventoryApi.createPurchaseOrderFromSmartRun(id, data);
+  return res.data;
+}
+
+export async function executeUnpackForSmartRun(id: string, data?: Parameters<typeof inventoryApi.executeUnpackForSmartRun>[1]) {
+  const res = await inventoryApi.executeUnpackForSmartRun(id, data);
   return res.data;
 }
 

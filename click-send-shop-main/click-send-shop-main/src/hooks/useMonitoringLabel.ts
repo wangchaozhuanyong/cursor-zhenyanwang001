@@ -8,9 +8,12 @@ import {
   formatMonitoringRootCause,
   formatMonitoringRuleDescription,
   formatMonitoringRuleLabel,
+  formatMonitoringRepairTypeLabel,
   formatMonitoringRunTypeLabel,
   formatMonitoringSeverityLabel,
   formatMonitoringStatusLabel,
+  formatRepairSuggestionDetail,
+  formatRepairSuggestionSummary,
 } from "@/modules/admin/pages/monitoring/monitoringLabels";
 
 /** Localize monitoring label helpers when admin locale is English. */
@@ -34,6 +37,11 @@ export function useMonitoringLabel() {
       severity: (value?: string | null) => L(formatMonitoringSeverityLabel(value)),
       status: (value?: string | null) => L(formatMonitoringStatusLabel(value)),
       runType: (value?: string | null) => L(formatMonitoringRunTypeLabel(value)),
+      repairType: (value?: string | null) => L(formatMonitoringRepairTypeLabel(value)),
+      repairSuggestion: (suggestion: unknown, repairType?: string | null) =>
+        L(formatRepairSuggestionSummary(suggestion, repairType)),
+      repairSuggestionDetail: (suggestion: unknown, repairType?: string | null) =>
+        L(formatRepairSuggestionDetail(suggestion, repairType)),
       cron: (cron?: string | null) => L(formatCronScheduleLabel(cron)),
     }),
     [L],

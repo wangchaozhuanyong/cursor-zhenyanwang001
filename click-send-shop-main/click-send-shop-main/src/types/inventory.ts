@@ -64,11 +64,15 @@ export interface InventoryPackRule {
   parent_sku_code: string;
   parent_unit_name: string;
   parent_stock: number;
+  parent_reserved_stock?: number;
+  parent_available_stock?: number;
   child_product_name: string;
   child_variant_name: string;
   child_sku_code: string;
   child_unit_name: string;
   child_stock: number;
+  child_reserved_stock?: number;
+  child_available_stock?: number;
   updated_by_name?: string;
   created_at?: string;
   updated_at?: string;
@@ -195,8 +199,10 @@ export interface SmartReplenishmentRunItem {
   avg_daily_sales: number;
   suggested_replenishment_qty: number;
   confidence_score: number;
+  suggestion_type?: "purchase" | "unpack" | "assemble" | "clearance" | "watch" | string;
+  suggestion_payload?: Record<string, unknown> | null;
   reason?: string | null;
-  apply_status: "pending" | "applied" | "skipped" | string;
+  apply_status: "pending" | "applied" | "ordered" | "unpacked" | "skipped" | string;
   created_at?: string;
 }
 
@@ -205,6 +211,23 @@ export interface SmartReplenishmentPreviewResult {
   status: string;
   params: Record<string, unknown>;
   items: SmartReplenishmentRunItem[];
+}
+
+export interface InventoryReplenishmentProfile {
+  id: string;
+  variant_id: string;
+  auto_limit_enabled: boolean | number;
+  analysis_days: number;
+  lead_time_days: number;
+  safety_stock_days: number;
+  target_cover_days: number;
+  min_floor_stock: number;
+  purchase_multiple: number;
+  exclude_promotion_sales?: boolean | number;
+  exclude_stockout_days?: boolean | number;
+  strategy: string;
+  updated_by?: string | null;
+  updated_at?: string;
 }
 
 export type PurchaseOrderStatus = "draft" | "ordered" | "in_transit" | "partial_received" | "received" | "cancelled" | "overdue";

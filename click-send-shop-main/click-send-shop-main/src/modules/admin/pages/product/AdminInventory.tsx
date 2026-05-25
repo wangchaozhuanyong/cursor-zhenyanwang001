@@ -4,7 +4,7 @@ import { Download, History, Loader2, Package, Plus, RefreshCcw, Search, SplitSqu
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
-import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import {
   AdminTableMobileCard,
   AdminTableMobileCardField,
@@ -863,44 +863,55 @@ export default function AdminInventory({
 
         {tab === "skus" ? (
           <>
-            <AnimatedTable embedded loading={skusQuery.isLoading} rows={skus} rowKey={(sku) => sku.variant_id} skeletonRows={8} skeletonCols={10} tableClassName="w-full min-w-[1260px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={Package} emptyTitle={L("暂无 SKU 库存")} emptyDescription={L("创建商品规格后会显示库存。")} thead={(
+            <AnimatedTable embedded loading={skusQuery.isLoading} rows={skus} rowKey={(sku) => sku.variant_id} skeletonRows={8} skeletonCols={11} tableClassName="w-full min-w-[1320px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={Package} emptyTitle={L("暂无 SKU 库存")} emptyDescription={L("创建商品规格后会显示库存。")} thead={(
               <tr>
                 <th className="w-10 px-4 py-3">
                   <input type="checkbox" checked={allSelectedOnPage} onChange={togglePageVariantSelection} aria-label={tText("全选当前页")} />
                 </th>
-                {["商品", "规格/SKU", "分类", "库存", "单位", "预警值", "状态", "更新时间", "操作"].map((head) => (
-                  <th key={head} className="px-4 py-3 text-left">{L(head)}</th>
+                {["商品", "规格", "SKU 编码", "分类", "库存", "单位", "预警值", "状态", "更新时间", "操作"].map((head) => (
+                  <th key={head} className="whitespace-nowrap px-4 py-3 text-left">{L(head)}</th>
                 ))}
               </tr>
             )}
               renderMobileCard={renderSkuMobileCard}
               renderRow={(sku) => {
                 const checked = selectedVariantIds.includes(sku.variant_id);
+                const unit = sku.unit_name || L("件");
+                const skuCodeLabel = sku.sku_code || L("未填写");
                 return (
                   <>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-2 align-middle">
                       <input type="checkbox" checked={checked} onChange={() => toggleVariantSelect(sku.variant_id)} aria-label={`选择 ${sku.product_name}`} />
                     </td>
-                    <td className="max-w-[14rem] px-4 py-3 align-middle">
-                      <div className="flex items-center gap-3">
-                        {sku.cover_image ? <img src={sku.cover_image} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" /> : <div className="h-10 w-10 shrink-0 rounded-lg bg-secondary" />}
-                        <AdminTableCellGroup maxWidth="10rem" lines={[{ text: sku.product_name }, { text: sku.sku_code ? `SKU：${sku.sku_code}` : L("SKU：未填写"), muted: true }]} tooltipLines={[sku.product_name, sku.sku_code ? `SKU：${sku.sku_code}` : L("SKU：未填写")]} />
+                    <td className="max-w-[12rem] whitespace-nowrap px-4 py-2 align-middle">
+                      <div className="flex items-center gap-2">
+                        {sku.cover_image ? <img src={sku.cover_image} alt="" className="h-8 w-8 shrink-0 rounded-md object-cover" /> : <div className="h-8 w-8 shrink-0 rounded-md bg-secondary" />}
+                        <AdminTableCell value={sku.product_name} fullText={sku.product_name} maxWidth="9.5rem" />
                       </div>
                     </td>
-                    <td className="px-4 py-3"><p>{sku.variant_title || sku.spec_text || L("默认规格")}</p><p className="text-xs text-muted-foreground">{sku.sku_code || "-"}</p></td>
-                    <td className="px-4 py-3 text-muted-foreground">{sku.category_name || L("未分类")}</td>
-                    <td className="px-4 py-3">
-                      <span className={sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium"}>{sku.available_stock} {sku.unit_name || L("件")}</span>
-                      <span className="ml-1 text-xs text-muted-foreground">({L("总")} {sku.stock} {sku.unit_name || L("件")})</span>
+                    <td className="max-w-[8rem] whitespace-nowrap px-4 py-2 align-middle">
+                      <AdminTableCell value={sku.variant_title || sku.spec_text || L("默认规格")} maxWidth="7.5rem" />
                     </td>
-                    <td className="px-4 py-3">{sku.unit_name || L("件")}</td>
-                    <td className="px-4 py-3">
+                    <td className="max-w-[9rem] whitespace-nowrap px-4 py-2 align-middle">
+                      <AdminTableCell value={skuCodeLabel} fullText={sku.sku_code ? `SKU：${sku.sku_code}` : L("SKU：未填写")} maxWidth="8.5rem" mono muted={!sku.sku_code} />
+                    </td>
+                    <td className="max-w-[7rem] whitespace-nowrap px-4 py-2 align-middle text-muted-foreground">
+                      <AdminTableCell value={sku.category_name || L("未分类")} maxWidth="6.5rem" />
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2 align-middle">
+                      <span className={sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium"}>
+                        {sku.available_stock} {unit}
+                      </span>
+                      <span className="ml-1 text-xs text-muted-foreground">({L("总")} {sku.stock} {unit})</span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2 align-middle">{unit}</td>
+                    <td className="whitespace-nowrap px-4 py-2 align-middle">
                       <input type="number" min={0} defaultValue={sku.stock_warning_threshold} onBlur={(e) => { const threshold = Number(e.target.value); if (Number.isInteger(threshold) && threshold >= 0 && threshold !== sku.stock_warning_threshold) thresholdMutation.mutate({ sku, threshold }); }} className="w-20 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
                     </td>
-                    <td className="px-4 py-3 text-xs">{stockStatusText(sku, L)}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{sku.updated_at ? formatDateTime(sku.updated_at) : "-"}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
+                    <td className="whitespace-nowrap px-4 py-2 align-middle text-xs">{stockStatusText(sku, L)}</td>
+                    <td className="whitespace-nowrap px-4 py-2 align-middle text-xs text-muted-foreground">{sku.updated_at ? formatDateTime(sku.updated_at) : "-"}</td>
+                    <td className="whitespace-nowrap px-4 py-2 align-middle">
+                      <div className="flex flex-nowrap justify-end gap-2">
                         <button type="button" onClick={() => setAdjusting({ sku, change_type: "in", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>入库</Tx></button>
                         <button type="button" onClick={() => setAdjusting({ sku, change_type: "out", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>出库</Tx></button>
                         <button type="button" onClick={() => setAdjusting({ sku, change_type: "adjust", quantity: String(sku.stock), reason: "", remark: "", source_no: "", cost_price: "" })} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></button>

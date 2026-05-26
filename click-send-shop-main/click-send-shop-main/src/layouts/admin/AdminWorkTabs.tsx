@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Pin, X } from "lucide-react";
+import { Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminTabPathKey } from "@/config/adminWorkTab";
 import { useAdminWorkTabsStore, type AdminWorkTab } from "@/stores/useAdminWorkTabsStore";
@@ -15,6 +15,11 @@ type TabMenuState = {
   x: number;
   y: number;
 };
+
+const TAB_MENU_WIDTH = 160;
+const TAB_MENU_ESTIMATED_HEIGHT = 176;
+const TAB_MENU_GAP = 6;
+const TAB_MENU_VIEWPORT_PADDING = 8;
 
 export default function AdminWorkTabs() {
   const { tText } = useAdminT();
@@ -102,10 +107,21 @@ export default function AdminWorkTabs() {
     [activeTabId, can, canAny, closeTab, confirmDiscardTabs, navigate, setTabDirty],
   );
 
-  const openContextMenu = (tab: AdminWorkTab, e: React.MouseEvent) => {
+  const openContextMenu = (tab: AdminWorkTab, e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setMenu({ tabId: tab.id, x: e.clientX, y: e.clientY });
+    const rect = e.currentTarget.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const maxLeft = Math.max(TAB_MENU_VIEWPORT_PADDING, viewportWidth - TAB_MENU_WIDTH - TAB_MENU_VIEWPORT_PADDING);
+    const maxTop = Math.max(TAB_MENU_VIEWPORT_PADDING, viewportHeight - TAB_MENU_ESTIMATED_HEIGHT - TAB_MENU_VIEWPORT_PADDING);
+    const preferredTop = rect.bottom + TAB_MENU_GAP;
+    const fallbackTop = rect.top - TAB_MENU_ESTIMATED_HEIGHT - TAB_MENU_GAP;
+    const top = preferredTop + TAB_MENU_ESTIMATED_HEIGHT <= viewportHeight - TAB_MENU_VIEWPORT_PADDING
+      ? preferredTop
+      : Math.max(TAB_MENU_VIEWPORT_PADDING, fallbackTop);
+    const left = Math.min(Math.max(TAB_MENU_VIEWPORT_PADDING, rect.left), maxLeft);
+    setMenu({ tabId: tab.id, x: left, y: Math.min(top, maxTop) });
   };
 
   const menuTab = menu ? tabs.find((t) => t.id === menu.tabId) : null;
@@ -122,7 +138,7 @@ export default function AdminWorkTabs() {
     <>
       <div
         ref={scrollRef}
-        className="admin-work-tabs flex h-[var(--admin-chrome-tabs-h)] shrink-0 items-stretch gap-0.5 overflow-x-auto border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/90 px-1 scrollbar-thin"
+        className="admin-work-tabs flex h-[var(--admin-chrome-tabs-h)] shrink-0 items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/90 px-1.5"
         role="tablist"
         aria-label={tText("已打开页面")}
       >
@@ -134,36 +150,23 @@ export default function AdminWorkTabs() {
               data-tab-id={tab.id}
               role="tab"
               aria-selected={active}
+              onContextMenu={(e) => openContextMenu(tab, e)}
               className={cn(
-                "group relative flex max-w-[11rem] shrink-0 items-center gap-1 rounded-t-md border border-b-0 px-2.5 py-1 text-xs transition-colors",
+                "group relative flex max-w-[11rem] shrink-0 items-center rounded-full border px-3 py-1.5 text-xs transition-all",
                 active
-                  ? "z-[1] border-[var(--theme-border)] bg-[var(--theme-bg)] font-medium text-foreground"
-                  : "border-transparent bg-transparent text-muted-foreground hover:bg-[var(--theme-bg)]/60 hover:text-foreground",
+                  ? "z-[1] border-[var(--theme-price)] btn-theme-price font-semibold shadow-sm"
+                  : "border-transparent bg-transparent text-muted-foreground hover:border-[color-mix(in_srgb,var(--theme-price)_28%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-price)_8%,var(--theme-surface))] hover:text-foreground",
               )}
             >
               <button
                 type="button"
                 className="flex min-w-0 flex-1 items-center gap-1 truncate text-left"
                 onClick={() => activateTab(tab)}
-                onContextMenu={(e) => openContextMenu(tab, e)}
-                onAuxClick={(e) => {
-                  if (e.button === 1) handleClose(tab, e);
-                }}
                 title={tab.title}
               >
                 {tab.pinned ? <Pin size={11} className="shrink-0 opacity-70" /> : null}
                 <span className="truncate">{tab.title}</span>
               </button>
-              {!tab.pinned ? (
-                <button
-                  type="button"
-                  aria-label={tText("关闭标签")}
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-70 hover:bg-secondary hover:opacity-100"
-                  onClick={(e) => handleClose(tab, e)}
-                >
-                  <X size={12} />
-                </button>
-              ) : null}
             </div>
           );
         })}
@@ -171,7 +174,7 @@ export default function AdminWorkTabs() {
 
       {menu && menuTab ? (
         <div
-          className="fixed z-[60] min-w-[10rem] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] py-1 text-sm shadow-lg"
+          className="fixed z-[60] w-40 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] py-1 text-sm shadow-lg"
           style={{ left: menu.x, top: menu.y }}
           onClick={(e) => e.stopPropagation()}
         >

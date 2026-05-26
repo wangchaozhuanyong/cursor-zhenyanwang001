@@ -901,11 +901,12 @@ html[data-app-scope="admin"] .admin-tech-path {
   }
 
   [data-admin-shell] .admin-work-tabs {
-    scrollbar-width: thin;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   [data-admin-shell] .admin-work-tabs::-webkit-scrollbar {
-    height: 4px;
+    display: none;
   }
   @media (min-width: 1024px) {
     .admin-mobile-main {

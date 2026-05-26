@@ -301,17 +301,19 @@ export default function AdminReportGenericPage({
         <div className="space-y-2">
           {filterPrefix}
           {filterProfile !== "none" ? (
-          <ReportFilterBar
-            filterProfile={filterProfile}
-            enabledFilters={enabledFilters}
-            supportsGranularity={supportsGranularity}
-            categoryOptions={categoryOptions}
-          />
-          <AdminFilterSummaryBar
-            chips={filterChips}
-            onClearAll={handleClearFilters}
-            onRemove={handleRemoveFilterChip}
-          />
+            <>
+              <ReportFilterBar
+                filterProfile={filterProfile}
+                enabledFilters={enabledFilters}
+                supportsGranularity={supportsGranularity}
+                categoryOptions={categoryOptions}
+              />
+              <AdminFilterSummaryBar
+                chips={filterChips}
+                onClearAll={handleClearFilters}
+                onRemove={handleRemoveFilterChip}
+              />
+            </>
           ) : null}
         </div>
       ) : null}

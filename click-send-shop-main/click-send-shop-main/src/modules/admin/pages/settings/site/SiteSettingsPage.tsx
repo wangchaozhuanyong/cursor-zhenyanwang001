@@ -14,7 +14,6 @@ import type { SiteSettings } from "@/types/admin";
 import type { SiteSettingsSectionId } from "@/types/admin";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminSiteSettingsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
-import { Tx } from "@/components/admin/AdminText";
 import { EMPTY_SITE_SETTINGS } from "./siteSettingsDefaults";
 import {
   getSectionById,

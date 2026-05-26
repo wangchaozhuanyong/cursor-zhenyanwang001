@@ -514,7 +514,7 @@ export default function AdminAccounts() {
           onChanged={() => void invalidateAccounts()}
         />
       ) : null}
-    </div>
+    </AdminPageShell>
   );
 }
 
@@ -701,7 +701,6 @@ function AdminSecurityDialog({
           </div>
         )}
     </AdminResponsiveSheet>
-    </AdminPageShell>
   );
 }
 

@@ -674,8 +674,9 @@ async function upsertDailyInventorySnapshots(conn, snapshotDate) {
   const endAt = `${nextDay.toISOString().slice(0, 10)} 00:00:00`;
   const [result] = await q.query(
     `INSERT INTO inventory_daily_snapshots
-       (snapshot_date, product_id, variant_id, stock, reserved_stock, available_stock, in_transit_qty, sales_qty, is_stockout)
+       (id, snapshot_date, product_id, variant_id, stock, reserved_stock, available_stock, in_transit_qty, sales_qty, is_stockout)
      SELECT
+       UUID() AS id,
        ? AS snapshot_date,
        v.product_id,
        v.id AS variant_id,

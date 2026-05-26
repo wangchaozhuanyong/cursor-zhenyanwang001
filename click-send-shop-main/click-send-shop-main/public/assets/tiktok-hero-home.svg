@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="°ã;zô">
+  <defs>
+    <linearGradient id="room" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171005"/>
+      <stop offset="0.55" stop-color="#070605"/>
+      <stop offset="1" stop-color="#251706"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="72%" cy="18%" r="46%">
+      <stop offset="0" stop-color="#ffd98a" stop-opacity="0.58"/>
+      <stop offset="0.38" stop-color="#c58a35" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="window" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4d27e" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#3a2408" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#room)"/>
+  <rect width="1600" height="900" fill="url(#lamp)"/>
+  <path d="M0 700 C170 650 372 664 540 710 C746 766 934 772 1140 708 C1320 652 1460 650 1600 682 L1600 900 L0 900Z" fill="#0b0804"/>
+  <rect x="930" y="148" width="420" height="330" rx="26" fill="#090806" stroke="#d6a855" stroke-opacity="0.35" stroke-width="3"/>
+  <rect x="960" y="178" width="360" height="270" rx="18" fill="url(#window)" opacity="0.62"/>
+  <path d="M978 420 C1090 348 1196 324 1312 274" stroke="#f2c76d" stroke-opacity="0.28" stroke-width="4" fill="none"/>
+  <rect x="250" y="520" width="620" height="155" rx="42" fill="#171109" stroke="#d8ae62" stroke-opacity="0.22" stroke-width="3"/>
+  <rect x="192" y="640" width="742" height="90" rx="36" fill="#0e0b07"/>
+  <rect x="310" y="456" width="170" height="105" rx="26" fill="#2b1c0a"/>
+  <rect x="534" y="450" width="185" height="112" rx="28" fill="#3a260d"/>
+  <circle cx="1138" cy="565" r="92" fill="#11100c" stroke="#c99847" stroke-opacity="0.36" stroke-width="4"/>
+  <circle cx="1138" cy="565" r="54" fill="#231708"/>
+  <rect x="1032" y="654" width="212" height="30" rx="15" fill="#d0a15a" opacity="0.36"/>
+  <rect x="270" y="740" width="1010" height="24" rx="12" fill="#c99847" opacity="0.22"/>
+  <g opacity="0.38" stroke="#f6d482" stroke-width="2">
+    <path d="M110 210 H520"/>
+    <path d="M130 260 H430"/>
+    <path d="M95 310 H580"/>
+  </g>
+  <path d="M0 0 H1600 V900 H0Z" fill="#000" opacity="0.2"/>
+</svg>

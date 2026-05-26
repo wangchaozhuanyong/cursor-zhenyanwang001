@@ -20,6 +20,7 @@ import {
   DEFAULT_APPLE_TOUCH_ICON,
   DEFAULT_FAVICON_ICO,
   DEFAULT_FAVICON_PNG,
+  DEFAULT_FAVICON_SVG,
 } from "@/constants/siteBrand";
 import { LegacyCouponRedirect } from "@/routes/adminLegacyRedirects";
 import { renderAdminReportRoutes } from "@/routes/adminReportRoutes";
@@ -50,7 +51,8 @@ function SiteIdentitySync() {
           { rel: "apple-touch-icon", href: custom, type: faviconType },
         ]
       : [
-          { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "192x192" },
+          { rel: "icon", href: DEFAULT_FAVICON_SVG, type: "image/svg+xml" },
+          { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "32x32" },
           { rel: "shortcut icon", href: DEFAULT_FAVICON_ICO },
           { rel: "apple-touch-icon", href: DEFAULT_APPLE_TOUCH_ICON },
         ];

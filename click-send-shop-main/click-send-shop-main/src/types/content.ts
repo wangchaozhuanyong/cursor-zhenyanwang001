@@ -10,7 +10,7 @@ export interface ContentPage {
 }
 
 /**
- * 站点公开信息（来源：site_settings 表，无需登录可读）
+ * 站点公开信息（来源：site_settings 表，公开可读）
  * 与 server/src/modules/content/content.service.js 中的 PUBLIC_SITE_KEYS 严格对齐。
  * 所有字段均为可选 — 后台未配置时由前端兜底渲染。
  */

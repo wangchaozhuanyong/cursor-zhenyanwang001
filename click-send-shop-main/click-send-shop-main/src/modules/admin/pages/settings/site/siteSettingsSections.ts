@@ -61,7 +61,7 @@ export const SITE_SETTINGS_SECTIONS: SiteSettingsSectionDef[] = [
         key: "faviconUrl",
         label: "浏览器图标（Favicon）",
         type: "image",
-        hint: "推荐白底或浅色底方形图 192×192；用于浏览器标签，勿用透明图（深色标签栏会看不清）",
+        hint: "推荐透明 PNG/SVG 或带圆角安全区图标，192×192 及以上；请与网站 Logo 分开上传，避免整张白底方块",
       },
     ],
   },

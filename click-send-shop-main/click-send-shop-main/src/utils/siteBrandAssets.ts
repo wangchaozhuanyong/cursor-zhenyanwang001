@@ -9,9 +9,12 @@ export function resolveSiteLogoUrl(siteInfo: Pick<SiteInfo, "logoUrl" | "favicon
   return cleanAssetUrl(siteInfo.logoUrl);
 }
 
-/** 浏览器标签图标：仅使用 Favicon（建议白底方形图，与 Logo 分开上传） */
+/** 浏览器标签图标：仅使用 Favicon（建议透明背景或带圆角安全区，与 Logo 分开上传） */
 export function resolveSiteFaviconUrl(siteInfo: Pick<SiteInfo, "logoUrl" | "faviconUrl">): string {
-  return cleanAssetUrl(siteInfo.faviconUrl);
+  const faviconUrl = cleanAssetUrl(siteInfo.faviconUrl);
+  const logoUrl = cleanAssetUrl(siteInfo.logoUrl);
+  if (!faviconUrl || faviconUrl === logoUrl) return "";
+  return faviconUrl;
 }
 
 /** 根据 URL 推断 favicon 的 MIME，供 document link[type] 使用 */

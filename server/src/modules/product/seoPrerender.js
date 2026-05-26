@@ -121,6 +121,21 @@ function renderHtmlWithSeo(baseHtml, payload = {}) {
   return html;
 }
 
+function renderTikTokEntryHtml(baseHtml) {
+  let html = baseHtml;
+  html = /<title>[\s\S]*?<\/title>/i.test(html)
+    ? html.replace(/<title>[\s\S]*?<\/title>/i, '<title>大马通</title>')
+    : html.replace('</head>', '  <title>大马通</title>\n</head>');
+  html = html
+    .replace(/<meta\s+name=["']description["'][^>]*>\s*/gi, '')
+    .replace(/<meta\s+name=["']author["'][^>]*>\s*/gi, '')
+    .replace(/<meta\s+name=["']keywords["'][^>]*>\s*/gi, '')
+    .replace(/<meta\s+name=["']twitter:[^"']+["'][^>]*>\s*/gi, '')
+    .replace(/<meta\s+property=["']og:[^"']+["'][^>]*>\s*/gi, '')
+    .replace(/<link\s+rel=["']canonical["'][^>]*>\s*/gi, '');
+  return upsertMeta(html, 'name', 'robots', 'noindex,nofollow');
+}
+
 async function getSiteInfoSafe() {
   try {
     return await contentService.getPublicSiteInfo();
@@ -166,6 +181,17 @@ async function registerSeoPrerender(app, { frontendDist }) {
       return res.sendFile(indexPath);
     }
   };
+
+  app.get('/tiktok', (req, res) => {
+    try {
+      const baseHtml = fs.readFileSync(indexPath, 'utf8');
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      return res.type('html').send(renderTikTokEntryHtml(baseHtml));
+    } catch {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      return res.sendFile(indexPath);
+    }
+  });
 
   app.get('/', (req, res) => render(req, res, async (baseUrl, siteInfo) => buildHomePayload(baseUrl, siteInfo)));
   app.get('/new-arrivals', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({

@@ -25,6 +25,7 @@ const { ensureDefaultLegalContentPages } = require('./modules/admin/service/admi
 const { getInstanceInfo, instanceLogPrefix } = require('./config/instance');
 
 const PORT = process.env.PORT || 3000;
+const FINAL_TEST_MODE = process.env.FINAL_TEST_MODE === '1';
 /** 默认启动时自动迁移；仅当 RUN_MIGRATIONS_ON_BOOT=0 时关闭（避免代码已更新而库结构落后导致管理端 500） */
 const RUN_MIGRATIONS_ON_BOOT = process.env.RUN_MIGRATIONS_ON_BOOT !== '0';
 
@@ -82,17 +83,21 @@ bootPromise
     await ensureDefaultLegalContentPages();
     console.log(`${instanceLogPrefix('CMS')} ensured default legal content pages`);
 
-    startDataRetentionScheduler();
-    startPointsExpireScheduler();
-    startCouponExpireScheduler();
-    startDailyInventorySnapshotScheduler();
-    startNotificationScheduler();
-    startAdminEventEscalationScheduler();
-    startAutoConfirmReceiveScheduler();
-    startPaymentTimeoutScheduler();
-    startOrderTimeoutEventScheduler();
-    startMyInvoisRetryScheduler();
-    if (process.env.MONITORING_SCHEDULER_DISABLED !== '1') {
+    if (FINAL_TEST_MODE) {
+      console.log(`${instanceLogPrefix('Schedulers')} FINAL_TEST_MODE=1, background schedulers disabled`);
+    } else {
+      startDataRetentionScheduler();
+      startPointsExpireScheduler();
+      startCouponExpireScheduler();
+      startDailyInventorySnapshotScheduler();
+      startNotificationScheduler();
+      startAdminEventEscalationScheduler();
+      startAutoConfirmReceiveScheduler();
+      startPaymentTimeoutScheduler();
+      startOrderTimeoutEventScheduler();
+      startMyInvoisRetryScheduler();
+    }
+    if (process.env.MONITORING_SCHEDULER_DISABLED !== '1' && !FINAL_TEST_MODE) {
       const redisConfigured = Boolean(getRedisUrl() || process.env.REDIS_ENABLED === '1');
       if (!redisConfigured) {
         const allowInline = process.env.MONITORING_INLINE_SCHEDULER === '1'
@@ -141,4 +146,3 @@ bootPromise
     console.error(`${instanceLogPrefix('Startup')} precheck failed:`, err);
     process.exit(1);
   });
-

@@ -22,6 +22,8 @@ export default function AdminKeepAliveOutlet() {
   useEffect(() => {
     setCache((prev) => {
       const allowed = new Set(tabIds);
+      // 路由切换时工作标签由父级稍后同步；当前页面必须先保留，避免点击菜单后只改 URL 不换内容。
+      allowed.add(activeKey);
       let changed = false;
       const next: Record<string, ReactNode> = {};
       for (const key of Object.keys(prev)) {
@@ -33,9 +35,10 @@ export default function AdminKeepAliveOutlet() {
       }
       return changed ? next : prev;
     });
-  }, [tabIds]);
+  }, [activeKey, tabIds]);
 
-  const keys = Object.keys(cache);
+  const visibleCache = outlet && !cache[activeKey] ? { ...cache, [activeKey]: outlet } : cache;
+  const keys = Object.keys(visibleCache);
   if (keys.length === 0) {
     return outlet ?? null;
   }
@@ -44,7 +47,7 @@ export default function AdminKeepAliveOutlet() {
     <>
       {keys.map((key) => (
         <div key={key} className={key === activeKey ? "min-w-0" : "hidden"} aria-hidden={key !== activeKey}>
-          {cache[key]}
+          {visibleCache[key]}
         </div>
       ))}
     </>

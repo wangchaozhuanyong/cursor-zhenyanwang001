@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as eventService from "@/services/admin/eventCenterService";
 import type { AdminEventRecord } from "@/services/admin/eventCenterService";
-import { formatAdminEventSubtitle, formatAdminEventTitle } from "@/utils/adminEventLabels";
+import { formatAdminEventSubtitle, formatAdminEventTitle, labelAdminEventSeverity } from "@/utils/adminEventLabels";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 
@@ -218,10 +218,10 @@ export default function AdminEventBell() {
                   {item.category === "security" ? <Shield size={15} className="mt-0.5 shrink-0 text-red-600" /> : <AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-600" />}
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1">
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${severityClass(item.severity)}`}>{item.severity}</span>
+                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${severityClass(item.severity)}`}>{tText(labelAdminEventSeverity(item.severity))}</span>
                       <span className="truncate text-xs font-medium text-foreground">{tText(formatAdminEventTitle(item.title, item.eventType, item.category))}</span>
                     </span>
-                    <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{tText(formatAdminEventSubtitle(item.message, item.eventType, item.category))}</span>
+                    <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{tText(formatAdminEventSubtitle(item.message, item.eventType, item.category, item.title))}</span>
                   </span>
                 </button>
                 <div className="mt-1 flex flex-wrap gap-1 pl-7">

@@ -12,6 +12,7 @@ import {
   formatAdminEventSubtitle,
   formatAdminEventTitle,
   labelAdminEventCategory,
+  labelAdminEventSeverity,
   labelAdminEventStatus,
 } from "@/utils/adminEventLabels";
 import { formatDateTime } from "@/utils/formatDateTime";
@@ -28,6 +29,8 @@ const tabs = [
 
 const EVENT_VIEW_PERMISSIONS = ["event.view", "event.manage"];
 const EVENT_MANAGE_PERMISSIONS = ["event.manage"];
+
+const TERMINAL_EVENT_STATUSES = new Set(["ignored", "resolved", "auto_resolved", "expired"]);
 
 function severityClass(severity: string) {
   if (severity === "P0") return "bg-red-600 text-white";
@@ -169,7 +172,7 @@ export default function AdminEventCenter() {
 
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <div className="min-w-[1120px]">
-          <div className={adminDataGridClassName("grid grid-cols-[80px_90px_minmax(220px,1fr)_minmax(280px,1.1fr)_150px_90px_minmax(220px,auto)] gap-3 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground")}>
+          <div className={adminDataGridClassName("grid grid-cols-[76px_84px_minmax(200px,1fr)_minmax(260px,1.1fr)_148px_minmax(96px,auto)_minmax(240px,auto)] gap-x-3 gap-y-2 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground")}>
             <span><Tx>级别</Tx></span>
             <span><Tx>分类</Tx></span>
             <span><Tx>事件</Tx></span>
@@ -182,15 +185,21 @@ export default function AdminEventCenter() {
             const occurredAt = formatEventOccurredAt(item);
             const diagnosis = item.diagnosis;
             return (
-              <div key={item.id} className={adminDataGridClassName("grid grid-cols-[80px_90px_minmax(220px,1fr)_minmax(280px,1.1fr)_150px_90px_minmax(220px,auto)] gap-3 border-b border-border px-4 py-3 text-sm last:border-b-0")}>
-                <div><span className={`rounded px-2 py-1 text-xs font-bold ${severityClass(item.severity)}`}>{item.severity}</span></div>
+              <div key={item.id} className={adminDataGridClassName("grid grid-cols-[76px_84px_minmax(200px,1fr)_minmax(260px,1.1fr)_148px_minmax(96px,auto)_minmax(240px,auto)] gap-x-3 gap-y-2 border-b border-border px-4 py-3 text-sm last:border-b-0")}>
+                <div className="flex items-start">
+                  <span className={`whitespace-nowrap rounded px-2 py-1 text-xs font-bold ${severityClass(item.severity)}`}>
+                    {tText(labelAdminEventSeverity(item.severity))}
+                  </span>
+                </div>
                 <div className="flex items-center justify-center gap-1 text-muted-foreground">
                   {item.category === "security" ? <Shield size={14} className="text-red-600" /> : <AlertTriangle size={14} className="text-amber-600" />}
                   {tText(labelAdminEventCategory(item.category))}
                 </div>
                 <div className="min-w-0 text-center">
                   <div className="truncate font-medium text-foreground">{tText(formatAdminEventTitle(item.title, item.eventType, item.category))}</div>
-                  <div className="mt-1 truncate text-xs text-muted-foreground">{tText(formatAdminEventSubtitle(item.message, item.eventType, item.category))}</div>
+                  <div className="mt-1 truncate text-xs text-muted-foreground">
+                    {tText(formatAdminEventSubtitle(item.message, item.eventType, item.category, item.title))}
+                  </div>
                   {item.seenCount > 1 ? <div className="mt-1 text-[11px] text-muted-foreground">{tText(`重复出现 ${item.seenCount} 次`)}</div> : null}
                 </div>
                 <div className={`rounded-lg border px-3 py-2 text-left text-xs leading-5 ${diagnosisClass(diagnosis?.state)}`}>
@@ -209,16 +218,20 @@ export default function AdminEventCenter() {
                   ) : null}
                 </div>
                 <div className="whitespace-nowrap text-xs text-muted-foreground" title={occurredAt}>{occurredAt}</div>
-                <div className="text-muted-foreground">{tText(labelAdminEventStatus(item.status))}</div>
-                <div className="inline-flex flex-nowrap items-center justify-center gap-1">
+                <div className="whitespace-nowrap text-xs font-medium text-foreground">{tText(labelAdminEventStatus(item.status))}</div>
+                <div className="flex flex-wrap items-center justify-end gap-1">
                   <PermissionGate anyOf={EVENT_VIEW_PERMISSIONS}>
-                    <button type="button" className="shrink-0 rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1 inline" /><Tx>已读</Tx></button>
+                    <button type="button" className="inline-flex shrink-0 items-center rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1" /><Tx>已读</Tx></button>
                   </PermissionGate>
                   <PermissionGate anyOf={EVENT_MANAGE_PERMISSIONS}>
-                    <button type="button" className="shrink-0 rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}><Tx>确认</Tx></button>
-                    <button type="button" className="shrink-0 rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}><Tx>处理中</Tx></button>
-                    <button type="button" className="shrink-0 rounded px-2 py-1 text-xs text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={13} className="mr-1 inline" /><Tx>完成</Tx></button>
-                    <button type="button" className="shrink-0 rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={13} className="mr-1 inline" /><Tx>忽略</Tx></button>
+                    {!TERMINAL_EVENT_STATUSES.has(item.status) ? (
+                      <>
+                        <button type="button" className="shrink-0 rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}><Tx>确认</Tx></button>
+                        <button type="button" className="shrink-0 rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}><Tx>处理中</Tx></button>
+                        <button type="button" className="shrink-0 rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={13} className="mr-1 inline" /><Tx>忽略</Tx></button>
+                      </>
+                    ) : null}
+                    <button type="button" className="inline-flex shrink-0 items-center rounded border border-border px-2 py-1 text-xs text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={13} className="mr-1" /><Tx>完成</Tx></button>
                   </PermissionGate>
                 </div>
               </div>

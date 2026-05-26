@@ -74,6 +74,18 @@ export const ADMIN_EVENT_TYPE_LABELS: Record<string, string> = {
   "security.permanent_delete": "永久删除操作",
   "security.payment_config_change": "支付配置变更",
   "security.site_settings_change": "站点设置变更",
+  "security.payment_manual_change": "支付状态手动变更",
+  "security.payment_event_replay": "支付事件重放",
+  "security.refund_operation": "退款操作",
+  "security.notification_config_change": "通知配置变更",
+  "security.theme_change": "主题配置变更",
+  "security.inventory_change": "库存变更",
+  "security.return_operation": "售后操作",
+  "security.export_operation": "数据导出操作",
+  "security.product_change": "商品变更",
+  "security.user_points_change": "用户积分调整",
+  "security.user_password_reset": "用户密码重置",
+  "security.user_status_change": "用户账号状态变更",
   "system.database_unavailable": "数据库不可用",
   "system.redis_unavailable": "Redis 不可用",
   "system.queue_failed": "队列任务失败",
@@ -121,6 +133,59 @@ function translateTechnicalMessage(raw: string): string | null {
   return null;
 }
 
+const SECURITY_PAYMENT_CHANNEL_ZH: Record<string, string> = {
+  ch_manual_bank: "手动银行转账",
+  ch_stripe_checkout: "Stripe 在线支付",
+  ch_reward_wallet: "返现余额支付",
+};
+
+function zhSecurityPaymentChannel(id: string): string {
+  const key = id.trim();
+  if (SECURITY_PAYMENT_CHANNEL_ZH[key]) return SECURITY_PAYMENT_CHANNEL_ZH[key];
+  if (key.startsWith("ch_")) return key.slice(3).replace(/_/g, " ");
+  return key;
+}
+
+/** 历史数据把渠道名、资源名写在 title 时的副标题 */
+function formatSecurityEventDetail(detail: string, eventType?: string | null): string {
+  const d = detail.trim();
+  if (!d) return "";
+  if (/^支付渠道「/.test(d)) return `变更对象：${d}`;
+  if (/^…[0-9a-f]{6,}$/i.test(d)) return `变更对象：管理员账号 ${d}`;
+  if (/^ch_[a-z0-9_]+$/i.test(d)) return `变更对象：支付渠道「${zhSecurityPaymentChannel(d)}」`;
+  if (/Stripe/i.test(d) && eventType?.includes("payment")) return `变更对象：支付渠道「${d}」`;
+  if (/^Favicon$/i.test(d) || /\bFavicon\b/i.test(d)) return "变更对象：网站图标";
+  if (/^Logo$/i.test(d)) return "变更对象：站点 Logo 图片";
+  if (/admin[-_]users/i.test(d)) return "变更对象：管理员账号";
+  if (/[\u4e00-\u9fff]/.test(d)) return `变更说明：${d}`;
+  return `变更对象：${d}`;
+}
+
+/** 安全事件库里误把接口详情（渠道名、Favicon 等）写成 title 时的识别 */
+function isSecurityDetailTitle(raw: string, eventType?: string | null): boolean {
+  if (!raw) return false;
+  if (/^(GET|POST|PUT|PATCH|DELETE)\s+\S+/i.test(raw)) return true;
+  if (/^支付渠道「/.test(raw)) return true;
+  if (/^…[0-9a-f]{6,}$/i.test(raw)) return true;
+  if (/^(Favicon|Logo|Stripe|admin-users|ch_[a-z0-9_]+)$/i.test(raw)) return true;
+  if (/（Favicon|Logo）/i.test(raw) || /\bFavicon\b/i.test(raw)) return true;
+  if (/Stripe/i.test(raw) && eventType?.includes("payment")) return true;
+  if (/admin[-_]users/i.test(raw)) return true;
+  return false;
+}
+
+export const ADMIN_EVENT_SEVERITY_LABELS: Record<string, string> = {
+  P0: "紧急 P0",
+  P1: "高 P1",
+  P2: "中 P2",
+  P3: "低 P3",
+};
+
+export function labelAdminEventSeverity(severity: string | null | undefined): string {
+  if (!severity) return "-";
+  return ADMIN_EVENT_SEVERITY_LABELS[severity] ?? severity;
+}
+
 export function labelAdminEventStatus(status: string | null | undefined): string {
   if (!status) return "-";
   return ADMIN_EVENT_STATUS_LABELS[status] ?? status;
@@ -143,28 +208,46 @@ export function formatAdminEventTitle(
   category?: string | null | undefined,
 ): string {
   const raw = title?.trim();
-  if (raw && /[\u4e00-\u9fff]/.test(raw)) return raw;
+  const typeLabel = eventType && ADMIN_EVENT_TYPE_LABELS[eventType] ? ADMIN_EVENT_TYPE_LABELS[eventType] : null;
+
+  if (category === "security" && typeLabel) return typeLabel;
+
   if (isBackupEvent(eventType, category)) {
     const fromBackup = formatBackupAlertTitle(raw, backupAlertTypeFromEventType(eventType));
     if (fromBackup) return fromBackup;
   }
-  if (eventType && ADMIN_EVENT_TYPE_LABELS[eventType]) return ADMIN_EVENT_TYPE_LABELS[eventType];
-  return raw || labelAdminEventType(eventType);
+
+  if (typeLabel && (!raw || isSecurityDetailTitle(raw, eventType))) return typeLabel;
+
+  if (raw && /[\u4e00-\u9fff]/.test(raw) && !isSecurityDetailTitle(raw, eventType)) return raw;
+
+  return typeLabel || raw || labelAdminEventType(eventType);
 }
 
 export function formatAdminEventSubtitle(
   message: string | null | undefined,
   eventType: string | null | undefined,
   category?: string | null | undefined,
+  title?: string | null | undefined,
 ): string {
   const trimmed = message?.trim();
+  const titleRaw = title?.trim();
   if (isBackupEvent(eventType, category)) {
     return formatBackupAlertMessage(trimmed, backupAlertTypeFromEventType(eventType));
   }
+  if (category === "security") {
+    const detailSource = trimmed || (titleRaw && isSecurityDetailTitle(titleRaw, eventType) ? titleRaw : "");
+    if (detailSource) {
+      const fromAudit = zhAuditSummary(detailSource);
+      if (fromAudit && fromAudit !== "-") return fromAudit;
+      const fromDetail = formatSecurityEventDetail(detailSource, eventType);
+      if (fromDetail) return fromDetail;
+    }
+  }
   if (trimmed) {
-    if (category === "security" || /^(GET|POST|PUT|PATCH|DELETE)\s+\S+/i.test(trimmed)) {
+    if (/^(GET|POST|PUT|PATCH|DELETE)\s+\S+/i.test(trimmed)) {
       const fromAudit = zhAuditSummary(trimmed);
-      if (fromAudit && fromAudit !== "-" && fromAudit !== trimmed) return fromAudit;
+      if (fromAudit && fromAudit !== "-") return fromAudit;
     }
     const translated = translateTechnicalMessage(trimmed);
     if (translated) return translated;

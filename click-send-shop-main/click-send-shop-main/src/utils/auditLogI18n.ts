@@ -224,6 +224,8 @@ const MODULE_ZH: Record<string, string> = {
   recycle_bin: "回收站",
   member_level: "会员等级",
   rbac: "权限",
+  "admin-users": "管理员账号",
+  admin_users: "管理员账号",
   security: "安全",
   data_cleanup: "数据清理",
   backup: "备份",

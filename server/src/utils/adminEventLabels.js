@@ -86,6 +86,18 @@ const ADMIN_EVENT_TYPE_LABELS = {
   'security.permanent_delete': '永久删除操作',
   'security.payment_config_change': '支付配置变更',
   'security.site_settings_change': '站点设置变更',
+  'security.payment_manual_change': '支付状态手动变更',
+  'security.payment_event_replay': '支付事件重放',
+  'security.refund_operation': '退款操作',
+  'security.notification_config_change': '通知配置变更',
+  'security.theme_change': '主题配置变更',
+  'security.inventory_change': '库存变更',
+  'security.return_operation': '售后操作',
+  'security.export_operation': '数据导出操作',
+  'security.product_change': '商品变更',
+  'security.user_points_change': '用户积分调整',
+  'security.user_password_reset': '用户密码重置',
+  'security.user_status_change': '用户账号状态变更',
 
   'system.database_unavailable': '数据库不可用',
   'system.redis_unavailable': 'Redis 不可用',
@@ -138,6 +150,58 @@ function translateTechnicalMessage(raw) {
   return null;
 }
 
+const SECURITY_PAYMENT_CHANNEL_ZH = {
+  ch_manual_bank: '手动银行转账',
+  ch_stripe_checkout: 'Stripe 在线支付',
+  ch_reward_wallet: '返现余额支付',
+};
+
+function zhSecurityPaymentChannel(id) {
+  const key = String(id || '').trim();
+  if (SECURITY_PAYMENT_CHANNEL_ZH[key]) return SECURITY_PAYMENT_CHANNEL_ZH[key];
+  if (key.startsWith('ch_')) return key.slice(3).replace(/_/g, ' ');
+  return key;
+}
+
+function isSecurityDetailTitle(raw, eventType) {
+  if (!raw) return false;
+  if (/^(GET|POST|PUT|PATCH|DELETE)\s+\S+/i.test(raw)) return true;
+  if (/^支付渠道「/.test(raw)) return true;
+  if (/^…[0-9a-f]{6,}$/i.test(raw)) return true;
+  if (/^(Favicon|Logo|Stripe|admin-users|ch_[a-z0-9_]+)$/i.test(raw)) return true;
+  if (/（Favicon|Logo）/i.test(raw) || /\bFavicon\b/i.test(raw)) return true;
+  if (/Stripe/i.test(raw) && eventType?.includes('payment')) return true;
+  if (/admin[-_]users/i.test(raw)) return true;
+  return false;
+}
+
+function formatSecurityEventDetail(detail, eventType) {
+  const d = String(detail || '').trim();
+  if (!d) return '';
+  if (/^支付渠道「/.test(d)) return `变更对象：${d}`;
+  if (/^…[0-9a-f]{6,}$/i.test(d)) return `变更对象：管理员账号 ${d}`;
+  if (/^ch_[a-z0-9_]+$/i.test(d)) return `变更对象：支付渠道「${zhSecurityPaymentChannel(d)}」`;
+  if (/Stripe/i.test(d) && eventType?.includes('payment')) return `变更对象：支付渠道「${d}」`;
+  if (/^Favicon$/i.test(d) || /\bFavicon\b/i.test(d)) return '变更对象：网站图标';
+  if (/^Logo$/i.test(d)) return '变更对象：站点 Logo 图片';
+  if (/admin[-_]users/i.test(d)) return '变更对象：管理员账号';
+  if (/[\u4e00-\u9fff]/.test(d)) return `变更说明：${d}`;
+  return `变更对象：${d}`;
+}
+
+const { formatAdminSecurityEventMessage } = require('./adminSecurityEventMessage');
+
+function zhAuditSummaryLite(summary) {
+  const s = String(summary || '').trim();
+  if (!s) return '-';
+  const m = s.match(/^(GET|POST|PUT|PATCH|DELETE)\s+(\S+)\s+(allowed|failed)$/i);
+  if (m) {
+    const suffix = String(m[3]).toLowerCase() === 'failed' ? '失败' : '已执行';
+    return formatAdminSecurityEventMessage(m[1], m[2], suffix);
+  }
+  return s;
+}
+
 function labelAdminEventStatus(status) {
   if (!status) return '—';
   return ADMIN_EVENT_STATUS_LABELS[status] ?? status;
@@ -161,20 +225,33 @@ function labelAdminEventEscalationTarget(target) {
 
 function formatAdminEventTitle(title, eventType, category) {
   const raw = title?.trim();
-  if (raw && /[\u4e00-\u9fff]/.test(raw)) return raw;
-  if (eventType && ADMIN_EVENT_TYPE_LABELS[eventType]) {
-    return ADMIN_EVENT_TYPE_LABELS[eventType];
-  }
-  if (raw) return raw;
-  return labelAdminEventType(eventType);
+  const typeLabel = eventType && ADMIN_EVENT_TYPE_LABELS[eventType] ? ADMIN_EVENT_TYPE_LABELS[eventType] : null;
+  if (category === 'security' && typeLabel) return typeLabel;
+  if (typeLabel && (!raw || isSecurityDetailTitle(raw, eventType))) return typeLabel;
+  if (raw && /[\u4e00-\u9fff]/.test(raw) && !isSecurityDetailTitle(raw, eventType)) return raw;
+  return typeLabel || raw || labelAdminEventType(eventType);
 }
 
-function formatAdminEventSubtitle(message, eventType, category) {
+function formatAdminEventSubtitle(message, eventType, category, title) {
   const trimmed = message?.trim();
+  const titleRaw = title?.trim();
+  if (category === 'security') {
+    const detailSource = trimmed || (titleRaw && isSecurityDetailTitle(titleRaw, eventType) ? titleRaw : '');
+    if (detailSource) {
+      const fromAudit = zhAuditSummaryLite(detailSource);
+      if (fromAudit && fromAudit !== '-') return fromAudit;
+      const fromDetail = formatSecurityEventDetail(detailSource, eventType);
+      if (fromDetail) return fromDetail;
+    }
+  }
   if (trimmed) {
+    if (/^(GET|POST|PUT|PATCH|DELETE)\s+\S+/i.test(trimmed)) {
+      const fromAudit = zhAuditSummaryLite(trimmed);
+      if (fromAudit && fromAudit !== '-') return fromAudit;
+    }
     const translated = translateTechnicalMessage(trimmed);
     if (translated) return translated;
-    if (/[\u4e00-\u9fff]/.test(trimmed)) return trimmed;
+    if (/[\u4e00-\u9fff]/.test(trimmed) && !/^(GET|POST|PUT|PATCH|DELETE)\s+\//i.test(trimmed)) return trimmed;
     if (/^[A-Z_]+:/.test(trimmed) || /\b(failed|error|denied|timeout)\b/i.test(trimmed)) {
       return '系统出现异常，请联系技术人员查看服务器日志。';
     }
@@ -223,7 +300,7 @@ function formatAdminEventEntityRef(event) {
 function formatTelegramEscalationText(event) {
   const targetCode = event.escalation_target || (event.severity === 'P0' ? 'boss' : 'admin_manager');
   const title = formatAdminEventTitle(event.title, event.event_type, event.category);
-  const message = formatAdminEventSubtitle(event.message, event.event_type, event.category);
+  const message = formatAdminEventSubtitle(event.message, event.event_type, event.category, event.title);
   const entityLine = formatAdminEventEntityRef(event);
 
   return [
@@ -240,7 +317,7 @@ function formatTelegramEscalationText(event) {
 /** 后台事件新建告警（P0/P1 即时推送） */
 function formatTelegramEventAlertText(event) {
   const title = formatAdminEventTitle(event.title, event.event_type, event.category);
-  const message = formatAdminEventSubtitle(event.message, event.event_type, event.category);
+  const message = formatAdminEventSubtitle(event.message, event.event_type, event.category, event.title);
   const entityLine = formatAdminEventEntityRef(event);
 
   return [

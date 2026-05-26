@@ -43,6 +43,22 @@ test('formatTelegramEventAlertText 新事件告警文案', () => {
   assert.doesNotMatch(text, /通知对象/);
 });
 
+test('formatTelegramEventAlertText 安全事件使用类型中文标题', () => {
+  const text = formatTelegramEventAlertText({
+    severity: 'P1',
+    title: 'Stripe 在线支付',
+    status: 'ignored',
+    event_type: 'security.payment_config_change',
+    category: 'security',
+    message: 'PUT /payments/channels/ch_stripe_checkout allowed',
+    created_at: new Date('2026-05-24T14:04:30.000Z'),
+  });
+  assert.match(text, /支付配置变更/);
+  assert.match(text, /更新支付渠道/);
+  assert.doesNotMatch(text, /\bFavicon\b/);
+  assert.doesNotMatch(text, /admin-users/);
+});
+
 test('formatTelegramEscalationText P0 默认通知负责人', () => {
   const text = formatTelegramEscalationText({
     severity: 'P0',

@@ -7,6 +7,18 @@ const SECURITY_EVENT_TITLES = {
   'security.site_settings_change': '站点设置变更',
   'security.data_export': '后台数据导出',
   'security.permanent_delete': '永久删除操作',
+  'security.payment_manual_change': '支付状态手动变更',
+  'security.payment_event_replay': '支付事件重放',
+  'security.refund_operation': '退款操作',
+  'security.notification_config_change': '通知配置变更',
+  'security.theme_change': '主题配置变更',
+  'security.inventory_change': '库存变更',
+  'security.return_operation': '售后操作',
+  'security.export_operation': '数据导出操作',
+  'security.product_change': '商品变更',
+  'security.user_points_change': '用户积分调整',
+  'security.user_password_reset': '用户密码重置',
+  'security.user_status_change': '用户账号状态变更',
 };
 
 const EXPORT_ROUTES = [
@@ -76,13 +88,15 @@ function adminSecurityAudit(req, res, next) {
       result: success ? 'success' : 'failure',
       errorMessage: success ? '' : `HTTP ${res.statusCode}`,
     });
-    if (success && SECURITY_EVENT_TITLES[meta.actionType]) {
+    if (success) {
+      const eventTitle = SECURITY_EVENT_TITLES[meta.actionType];
+      if (!eventTitle) return;
       try {
         const adminEventService = require('../modules/admin/service/adminEvent.service');
         void adminEventService.emitEvent({
           eventType: meta.actionType,
           category: 'security',
-          title: SECURITY_EVENT_TITLES[meta.actionType],
+          title: eventTitle,
           message: formatAdminSecurityEventMessage(req.method, req.path),
           entityType: meta.objectType,
           entityId: meta.objectId || req.path,

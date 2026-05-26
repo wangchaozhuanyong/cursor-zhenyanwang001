@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { Tx } from "@/components/admin/AdminText";
@@ -14,8 +14,13 @@ import type {
   ReceivePurchaseOrderForm,
   RuleForm,
 } from "@/modules/admin/pages/product/inventory/inventoryTypes";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 type MutationLike = Pick<UseMutationResult<unknown, Error, void, unknown>, "isPending" | "mutateAsync">;
+
+function stringifyForm(value: unknown) {
+  return JSON.stringify(value);
+}
 
 export type InventoryFormSheetsProps = {
   L: (zh: string) => string;
@@ -88,6 +93,198 @@ export default function InventoryFormSheets({
   saveRuleMutation,
   conversionMutation,
 }: InventoryFormSheetsProps) {
+  const purchaseBaselineRef = useRef<string | null>(null);
+  const receivingBaselineRef = useRef<string | null>(null);
+  const batchThresholdBaselineRef = useRef<string | null>(null);
+  const batchAdjustBaselineRef = useRef<string | null>(null);
+  const adjustingBaselineRef = useRef<string | null>(null);
+  const ruleBaselineRef = useRef<string | null>(null);
+  const convertBaselineRef = useRef<string | null>(null);
+
+  const purchaseSerialized = useMemo(
+    () => (
+      purchaseFromAlert
+        ? stringifyForm({
+            ordered_qty: purchaseFromAlert.ordered_qty,
+            unit_cost: purchaseFromAlert.unit_cost,
+            expected_arrival_date: purchaseFromAlert.expected_arrival_date,
+            remark: purchaseFromAlert.remark,
+          })
+        : null
+    ),
+    [purchaseFromAlert],
+  );
+
+  const receivingSerialized = useMemo(() => {
+    if (!receivingOrder || !receivingOrderDetailQuery.data) return null;
+    return stringifyForm({
+      actual_arrival_date: receivingOrder.actual_arrival_date,
+      remark: receivingOrder.remark,
+      items: (receivingOrderDetailQuery.data.items || []).map((item) => {
+        const formItem = receivingOrder.items[item.id] || {
+          received_qty: String(item.remaining_qty),
+          unit_cost: item.unit_cost == null ? "" : String(item.unit_cost),
+        };
+        return {
+          id: item.id,
+          received_qty: formItem.received_qty,
+          unit_cost: formItem.unit_cost,
+        };
+      }),
+    });
+  }, [receivingOrder, receivingOrderDetailQuery.data]);
+
+  const batchThresholdSerialized = useMemo(
+    () => (batchThreshold ? stringifyForm({ threshold: batchThreshold.threshold }) : null),
+    [batchThreshold],
+  );
+
+  const batchAdjustSerialized = useMemo(
+    () => (
+      batchAdjust
+        ? stringifyForm({
+            change_type: batchAdjust.change_type,
+            quantity: batchAdjust.quantity,
+            reason: batchAdjust.reason,
+            remark: batchAdjust.remark,
+            source_no: batchAdjust.source_no,
+            cost_price: batchAdjust.cost_price,
+          })
+        : null
+    ),
+    [batchAdjust],
+  );
+
+  const adjustingSerialized = useMemo(
+    () => (
+      adjusting
+        ? stringifyForm({
+            change_type: adjusting.change_type,
+            quantity: adjusting.quantity,
+            reason: adjusting.reason,
+            remark: adjusting.remark,
+            source_no: adjusting.source_no,
+            cost_price: adjusting.cost_price,
+          })
+        : null
+    ),
+    [adjusting],
+  );
+
+  const ruleSerialized = useMemo(
+    () => (
+      ruleForm
+        ? stringifyForm({
+            id: ruleForm.id ?? null,
+            parent_variant_id: ruleForm.parent_variant_id || "",
+            child_variant_id: ruleForm.child_variant_id || "",
+            parent_qty: ruleForm.parent_qty ?? 1,
+            child_qty: ruleForm.child_qty ?? 0,
+            enabled: ruleForm.enabled !== false,
+            auto_unpack_enabled: !!ruleForm.auto_unpack_enabled,
+            manual_unpack_enabled: ruleForm.manual_unpack_enabled !== false,
+            manual_assemble_enabled: ruleForm.manual_assemble_enabled !== false,
+            remark: ruleForm.remark || "",
+          })
+        : null
+    ),
+    [ruleForm],
+  );
+
+  const convertSerialized = useMemo(
+    () => (
+      convertForm
+        ? stringifyForm({
+            type: convertForm.type,
+            parent_qty: convertForm.parent_qty,
+            remark: convertForm.remark,
+          })
+        : null
+    ),
+    [convertForm],
+  );
+
+  useEffect(() => {
+    if (!purchaseFromAlert) {
+      purchaseBaselineRef.current = null;
+      return;
+    }
+    if (purchaseBaselineRef.current === null && purchaseSerialized !== null) {
+      purchaseBaselineRef.current = purchaseSerialized;
+    }
+  }, [purchaseFromAlert, purchaseSerialized]);
+
+  useEffect(() => {
+    if (!receivingOrder) {
+      receivingBaselineRef.current = null;
+      return;
+    }
+    if (receivingBaselineRef.current === null && receivingSerialized !== null) {
+      receivingBaselineRef.current = receivingSerialized;
+    }
+  }, [receivingOrder, receivingSerialized]);
+
+  useEffect(() => {
+    if (!batchThreshold) {
+      batchThresholdBaselineRef.current = null;
+      return;
+    }
+    if (batchThresholdBaselineRef.current === null && batchThresholdSerialized !== null) {
+      batchThresholdBaselineRef.current = batchThresholdSerialized;
+    }
+  }, [batchThreshold, batchThresholdSerialized]);
+
+  useEffect(() => {
+    if (!batchAdjust) {
+      batchAdjustBaselineRef.current = null;
+      return;
+    }
+    if (batchAdjustBaselineRef.current === null && batchAdjustSerialized !== null) {
+      batchAdjustBaselineRef.current = batchAdjustSerialized;
+    }
+  }, [batchAdjust, batchAdjustSerialized]);
+
+  useEffect(() => {
+    if (!adjusting) {
+      adjustingBaselineRef.current = null;
+      return;
+    }
+    if (adjustingBaselineRef.current === null && adjustingSerialized !== null) {
+      adjustingBaselineRef.current = adjustingSerialized;
+    }
+  }, [adjusting, adjustingSerialized]);
+
+  useEffect(() => {
+    if (!ruleForm) {
+      ruleBaselineRef.current = null;
+      return;
+    }
+    if (ruleBaselineRef.current === null && ruleSerialized !== null) {
+      ruleBaselineRef.current = ruleSerialized;
+    }
+  }, [ruleForm, ruleSerialized]);
+
+  useEffect(() => {
+    if (!convertForm) {
+      convertBaselineRef.current = null;
+      return;
+    }
+    if (convertBaselineRef.current === null && convertSerialized !== null) {
+      convertBaselineRef.current = convertSerialized;
+    }
+  }, [convertForm, convertSerialized]);
+
+  const anyDirty = Boolean(
+    (purchaseSerialized && purchaseBaselineRef.current !== null && purchaseSerialized !== purchaseBaselineRef.current)
+      || (receivingSerialized && receivingBaselineRef.current !== null && receivingSerialized !== receivingBaselineRef.current)
+      || (batchThresholdSerialized && batchThresholdBaselineRef.current !== null && batchThresholdSerialized !== batchThresholdBaselineRef.current)
+      || (batchAdjustSerialized && batchAdjustBaselineRef.current !== null && batchAdjustSerialized !== batchAdjustBaselineRef.current)
+      || (adjustingSerialized && adjustingBaselineRef.current !== null && adjustingSerialized !== adjustingBaselineRef.current)
+      || (ruleSerialized && ruleBaselineRef.current !== null && ruleSerialized !== ruleBaselineRef.current)
+      || (convertSerialized && convertBaselineRef.current !== null && convertSerialized !== convertBaselineRef.current),
+  );
+  useAdminTabDirty(anyDirty);
+
   return (
     <>
       <AdminFormSheet

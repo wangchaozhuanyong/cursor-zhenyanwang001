@@ -9,6 +9,7 @@ import {
 import MonitoringSubnav from "./MonitoringSubnav";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 import {
@@ -51,9 +52,10 @@ export default function AdminMonitoringRules() {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold text-slate-900 sm:text-2xl"><Tx>监控规则</Tx></h1>
-      <MonitoringSubnav />
+    <AdminPageShell
+      hint={<Tx>启用/停用规则、调整严重等级与 Cron，并可手动触发一次检测。</Tx>}
+      filters={<MonitoringSubnav />}
+    >
       {error ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
       {loading ? <div className="text-sm text-slate-500"><Tx>加载中...</Tx></div> : null}
       <AdminNativeTable>
@@ -144,6 +146,6 @@ export default function AdminMonitoringRules() {
       <p className="mt-3 text-xs text-slate-500">
         说明：执行频率已转换为中文便于阅读；如需修改调度，可在「执行频率」下方填写 Cron（分 时 日 月 周）。
       </p>
-    </div>
+    </AdminPageShell>
   );
 }

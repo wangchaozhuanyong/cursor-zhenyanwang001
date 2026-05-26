@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, RotateCcw, Search } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import Pagination from "@/components/admin/Pagination";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import {
@@ -20,6 +21,7 @@ import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "待审核",
@@ -65,6 +67,7 @@ export default function AdminReturns() {
   const [reviewMode, setReviewMode] = useState<ReviewMode | null>(null);
   const [refundAmount, setRefundAmount] = useState("");
   const [adminRemark, setAdminRemark] = useState("");
+  const [reviewBaseline, setReviewBaseline] = useState<{ refundAmount: string; adminRemark: string } | null>(null);
 
   const params = useMemo(() => ({
     page,
@@ -108,9 +111,7 @@ export default function AdminReturns() {
     },
     onSuccess: async () => {
       toast.success(tText("售后申请已通过，订单与仪表盘会自动刷新"));
-      setReviewMode(null);
-      setAdminRemark("");
-      setRefundAmount("");
+      closeReviewPanel();
       await invalidateReturns();
     },
     onError: (error) => toast.error(toastErrorMessage(error, tText("审核通过失败"))),
@@ -120,8 +121,7 @@ export default function AdminReturns() {
     mutationFn: async (detail: ReturnDetail) => returnService.rejectReturn(detail.id, adminRemark.trim() || tText("售后申请未通过")),
     onSuccess: async () => {
       toast.success(tText("售后申请已拒绝"));
-      setReviewMode(null);
-      setAdminRemark("");
+      closeReviewPanel();
       await invalidateReturns();
     },
     onError: (error) => toast.error(toastErrorMessage(error, tText("拒绝售后失败"))),
@@ -130,12 +130,27 @@ export default function AdminReturns() {
   const rows = returnsQuery.data?.list || [];
   const total = returnsQuery.data?.total || 0;
   const detail = detailQuery.data;
+  const reviewDirty = Boolean(
+    reviewMode
+      && reviewBaseline
+      && (refundAmount !== reviewBaseline.refundAmount || adminRemark !== reviewBaseline.adminRemark),
+  );
+  useAdminTabDirty(reviewDirty);
+
+  const closeReviewPanel = () => {
+    setReviewMode(null);
+    setRefundAmount("");
+    setAdminRemark("");
+    setReviewBaseline(null);
+  };
 
   const openReview = (mode: ReviewMode, row: ReturnRequest) => {
     setSelectedId(row.id);
     setReviewMode(mode);
-    setRefundAmount(String(row.refund_amount || ""));
+    const nextRefundAmount = String(row.refund_amount || "");
+    setRefundAmount(nextRefundAmount);
     setAdminRemark("");
+    setReviewBaseline({ refundAmount: nextRefundAmount, adminRemark: "" });
   };
 
   const renderMobileCard = (row: ReturnRequest) => (
@@ -163,19 +178,16 @@ export default function AdminReturns() {
 
   return (
     <PermissionGate permission="order.return.manage">
-      <div className="p-4 md:p-6">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-foreground"><Tx>售后管理</Tx></h1>
-            <p className="mt-1 text-sm text-muted-foreground"><Tx>售后列表由 Query 缓存管理，审核后刷新订单、售后和仪表盘。</Tx></p>
-          </div>
-          <button type="button" onClick={() => void returnsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
-            <RefreshCw size={16} className={returnsQuery.isFetching ? "animate-spin" : ""} />
-            <Tx>刷新</Tx>
-          </button>
-        </div>
-
-        <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_1fr_auto]">
+      <AdminPageShell
+          hint={<Tx>售后列表由 Query 缓存管理，审核后刷新订单、售后和仪表盘。</Tx>}
+          toolbar={(
+            <button type="button" onClick={() => void returnsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
+              <RefreshCw size={16} className={returnsQuery.isFetching ? "animate-spin" : ""} />
+              <Tx>刷新</Tx>
+            </button>
+          )}
+          filters={(
+        <div className="grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_1fr_auto]">
           <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
             <option value=""><Tx>全部状态</Tx></option>
             {statusOptionsLocalized.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
@@ -186,7 +198,8 @@ export default function AdminReturns() {
           </div>
           <button type="button" onClick={() => { setStatus(""); setKeyword(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空筛选</Tx></button>
         </div>
-
+          )}
+        >
         <AnimatedTable
           loading={returnsQuery.isLoading}
           rows={rows}
@@ -237,7 +250,7 @@ export default function AdminReturns() {
           onOpenChange={(open) => {
             if (!open) {
               setSelectedId(null);
-              setReviewMode(null);
+              closeReviewPanel();
             }
           }}
           title={tText("售后详情")}
@@ -288,7 +301,7 @@ export default function AdminReturns() {
                         <textarea value={adminRemark} onChange={(e) => setAdminRemark(e.target.value)} rows={4} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
                       </label>
                       <div className="mt-4 flex justify-end gap-2">
-                        <button type="button" onClick={() => setReviewMode(null)} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
+                        <button type="button" onClick={closeReviewPanel} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
                         <button
                           type="button"
                           onClick={() => reviewMode === 'approve' ? approveMutation.mutate(detail) : rejectMutation.mutate(detail)}
@@ -303,7 +316,7 @@ export default function AdminReturns() {
                 </div>
               ) : null}
         </AdminResponsiveSheet>
-      </div>
+      </AdminPageShell>
     </PermissionGate>
   );
 }

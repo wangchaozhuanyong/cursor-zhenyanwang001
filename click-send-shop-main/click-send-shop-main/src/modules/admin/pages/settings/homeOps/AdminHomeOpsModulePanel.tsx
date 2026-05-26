@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -26,12 +26,21 @@ const CATEGORY_LABELS: Record<string, string> = {
   guest: "未登录首页",
 };
 
-export default function AdminHomeOpsModulePanel() {
+type Props = {
+  onDirtyChange?: (dirty: boolean) => void;
+};
+
+function serializeModuleDraft(value: HomeModuleSettings) {
+  return JSON.stringify({ modules: value.modules });
+}
+
+export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<HomeModuleSettings>(DEFAULT_HOME_MODULE_SETTINGS);
   const [saving, setSaving] = useState(false);
+  const [baseline, setBaseline] = useState(() => serializeModuleDraft(DEFAULT_HOME_MODULE_SETTINGS));
 
   const settingsQuery = useQuery({
     queryKey: adminQueryKeys.homeOpsSettings(),
@@ -43,8 +52,20 @@ export default function AdminHomeOpsModulePanel() {
 
   useEffect(() => {
     if (!settingsQuery.data) return;
-    setSettings(mergeHomeModuleSettings(settingsQuery.data));
+    const merged = mergeHomeModuleSettings(settingsQuery.data);
+    setSettings(merged);
+    setBaseline(serializeModuleDraft(merged));
   }, [settingsQuery.data]);
+
+  const dirty = useMemo(
+    () => !loading && serializeModuleDraft(settings) !== baseline,
+    [baseline, loading, settings],
+  );
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
 
   const setModule = (key: HomeModuleKey, enabled: boolean) => {
     setSettings((prev) => ({
@@ -57,7 +78,9 @@ export default function AdminHomeOpsModulePanel() {
     setSaving(true);
     try {
       const saved = await homeOpsService.updateHomeOpsSettings({ modules: settings.modules });
-      setSettings(mergeHomeModuleSettings(saved));
+      const merged = mergeHomeModuleSettings(saved);
+      setSettings(merged);
+      setBaseline(serializeModuleDraft(merged));
       invalidateHomeModuleSettingsCache();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsSettings() });
       toast.success(tText("模块开关已保存，前台刷新后生效"));

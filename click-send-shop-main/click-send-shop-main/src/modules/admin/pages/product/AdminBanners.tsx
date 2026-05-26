@@ -7,7 +7,8 @@ import * as bannerService from "@/services/admin/bannerService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
-import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
@@ -24,8 +25,10 @@ import type { Banner } from "@/types/banner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { invalidateHomeBannersCache } from "@/hooks/useHomeBanners";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 const BANNER_RATIO_LABEL = `${BANNER_ASPECT_RATIO.toFixed(2)}:1`;
+const EMPTY_FORM = { title: "", link: "", image: "" };
 
 export default function AdminBanners() {
   const { tText } = useAdminT();
@@ -37,7 +40,7 @@ export default function AdminBanners() {
   const [savingOrder, setSavingOrder] = useState(false);
   const [saving, setSaving] = useState(false);
   const [strictRatioCheck, setStrictRatioCheck] = useState(false);
-  const [form, setForm] = useState({ title: "", link: "", image: "" });
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const bannersQuery = useQuery({
     queryKey: adminQueryKeys.banners(),
@@ -47,6 +50,12 @@ export default function AdminBanners() {
 
   const banners = bannersQuery.data ?? [];
   const loading = bannersQuery.isLoading && !bannersQuery.data;
+  const editingBanner = editingId ? banners.find((b) => b.id === editingId) ?? null : null;
+  const formBaseline = editingBanner
+    ? { title: editingBanner.title || "", link: editingBanner.link || "", image: editingBanner.image || "" }
+    : EMPTY_FORM;
+  const formDirty = showForm && JSON.stringify(form) !== JSON.stringify(formBaseline);
+  useAdminTabDirty(formDirty);
 
   const invalidateBanners = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.banners() });
 
@@ -84,6 +93,13 @@ export default function AdminBanners() {
     setShowForm(true);
   };
 
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setStrictRatioCheck(false);
+    setForm(EMPTY_FORM);
+  };
+
   const handleSave = async () => {
     if (!form.image) {
       toast.error(tText("请上传图片"));
@@ -93,9 +109,7 @@ export default function AdminBanners() {
     try {
       if (editingId) {
         await bannerService.updateBanner(editingId, { title: form.title, link: form.link, image: form.image });
-        setShowForm(false);
-        setEditingId(null);
-        setForm({ title: "", link: "", image: "" });
+        closeForm();
         toast.success(tText("Banner 已更新"));
       } else {
         await bannerService.createBanner({
@@ -105,8 +119,7 @@ export default function AdminBanners() {
           sort_order: banners.length + 1,
           enabled: true,
         });
-        setShowForm(false);
-        setForm({ title: "", link: "", image: "" });
+        closeForm();
         toast.success(tText("Banner 已添加"));
       }
       await invalidateBannerPublicCaches();
@@ -166,24 +179,24 @@ export default function AdminBanners() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <AdminPageTitle title={<Tx>Banner 管理</Tx>} hint={<Tx>{`管理首页顶部 Banner（${BANNER_RATIO_LABEL}）`}</Tx>} />
+    <AdminPageShell
+      hint={<Tx>{`管理首页顶部 Banner（${BANNER_RATIO_LABEL}）`}</Tx>}
+      toolbar={(
         <PermissionGate permission="banner.manage">
           <button
             onClick={() => {
               setEditingId(null);
-              setForm({ title: "", link: "", image: "" });
+              setForm(EMPTY_FORM);
               setStrictRatioCheck(false);
               setShowForm(true);
             }}
             className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground"
           >
-            <Plus size={16} /><Tx> 添加 Banner
-          </Tx></button>
+            <Plus size={16} /><Tx>添加 Banner</Tx>
+          </button>
         </PermissionGate>
-      </div>
-
+      )}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gold/25 bg-gold/[0.06] px-4 py-2.5 text-sm dark:bg-gold/10">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-foreground"><Tx>轮播图上传规范</Tx></span>
@@ -277,7 +290,13 @@ export default function AdminBanners() {
 
       <AdminResponsiveSheet
         open={showForm}
-        onOpenChange={setShowForm}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeForm();
+            return;
+          }
+          setShowForm(true);
+        }}
         title={editingId ? "编辑 Banner" : "添加 Banner"}
         size="sm"
       >
@@ -355,6 +374,6 @@ export default function AdminBanners() {
             </PermissionGate>
         </div>
       </AdminResponsiveSheet>
-    </div>
+    </AdminPageShell>
   );
 }

@@ -31,10 +31,24 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 import { formatAccountStatusLabel } from "@/utils/adminUserFilters";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "邀请/返现", "售后记录", "评论记录", "操作日志"] as const;
 
 type TabType = (typeof tabs)[number];
+
+function buildUserEditForm(user: UserProfile | null): UserEditForm {
+  if (!user) return {};
+  return {
+    nickname: user.nickname,
+    phone: user.phone,
+    wechat: user.wechat,
+    whatsapp: user.whatsapp,
+    avatar: user.avatar,
+    birthday: user.birthday ? String(user.birthday).slice(0, 10) : "",
+    birthday_locked: !!user.birthday_locked,
+  };
+}
 
 export default function AdminUserDetail() {
   const { tText } = useAdminT();
@@ -87,6 +101,9 @@ export default function AdminUserDetail() {
   const loading = detailQuery.isLoading && !detailQuery.data;
   const loadError = detailQuery.isError ? toastErrorMessage(detailQuery.error, tText("加载用户详情失败")) : null;
   const restrictedLabel = (on: boolean) => (on ? tText("已限制") : tText("未限制"));
+  const editBaseline = buildUserEditForm(user);
+  const editDirty = editOpen && JSON.stringify(editForm) !== JSON.stringify(editBaseline);
+  useAdminTabDirty(editDirty);
 
   const invalidateUserDetail = () =>
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(id) });
@@ -229,7 +246,7 @@ export default function AdminUserDetail() {
       <section className="rounded-xl border border-border bg-card p-4">
         <h3 className="mb-3 text-sm font-semibold"><Tx>快捷操作</Tx></h3>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <PermissionGate permission="user.update"><ActionBtn label={tText("编辑资料")} onClick={() => { setEditOpen(true); setEditForm({ nickname: user.nickname, phone: user.phone, wechat: user.wechat, whatsapp: user.whatsapp, avatar: user.avatar, birthday: user.birthday ? String(user.birthday).slice(0, 10) : "", birthday_locked: !!user.birthday_locked }); }} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={tText("编辑资料")} onClick={() => { setEditOpen(true); setEditForm(buildUserEditForm(user)); }} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("重置密码")} onClick={doResetPassword} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("禁用登录")} disabled={(statusOverview?.account_status || user.account_status) === "disabled"} onClick={() => void doStatus("disabled")} danger /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("恢复账号")} disabled={(statusOverview?.account_status || user.account_status) === "normal"} onClick={() => void doStatus("normal")} /></PermissionGate>
@@ -340,7 +357,12 @@ export default function AdminUserDetail() {
 
       <AdminFormSheet
         open={editOpen}
-        onOpenChange={setEditOpen}
+        onOpenChange={(open) => {
+          setEditOpen(open);
+          if (!open) {
+            setEditForm({});
+          }
+        }}
         title={tText("编辑资料")}
         submitText={tText("保存")}
         onSubmit={saveProfile}

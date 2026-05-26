@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Address } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
-import { ResponsiveSheet } from "@/modules/micro-interactions";
+import { AppModal } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -35,7 +35,8 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
   );
 
   return (
-    <ResponsiveSheet
+    <AppModal
+      tier="form"
       open={open}
       onClose={onClose}
       title="选择收货地址"
@@ -87,6 +88,6 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
           })}
         </ul>
       )}
-    </ResponsiveSheet>
+    </AppModal>
   );
 }

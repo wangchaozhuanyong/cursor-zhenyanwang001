@@ -18,6 +18,7 @@ import {
 import { formatDateTime } from "@/utils/formatDateTime";
 import type { AdminEventRecord } from "@/services/admin/eventCenterService";
 import { adminDataGridClassName } from "@/utils/adminTableClasses";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 
 const tabs = [
   { key: "all", label: "全部" },
@@ -113,27 +114,21 @@ export default function AdminEventCenter() {
   const categoryTotal = useMemo(() => categoryOptions.reduce((sum, item) => sum + item.count, 0), [categoryOptions]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground"><Tx>后台事件中心</Tx></h1>
-          <p className="text-sm text-muted-foreground">
-            <Tx>每条事件都会显示诊断和下一步。已读只表示你看过，完成才表示问题已处理。</Tx>
-          </p>
-        </div>
+    <AdminPageShell
+      hint={(
+        <>
+          <p><Tx>每条事件都会显示诊断和下一步。已读只表示你看过，完成才表示问题已处理。</Tx></p>
+          <p className="mt-2 font-medium text-foreground"><Tx>处理规则</Tx></p>
+          <p className="mt-1"><Tx>备份 P0 必须重新验证备份/增量/恢复演练；订单 P1 必须先处理订单；安全 P1 是高风险操作确认，确认本人操作后再完成。</Tx></p>
+        </>
+      )}
+      toolbar={(
         <button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
           <RefreshCw size={16} className={eventsQuery.isFetching ? "animate-spin" : ""} />
           <Tx>刷新</Tx>
         </button>
-      </div>
-
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <div className="font-semibold"><Tx>处理规则</Tx></div>
-        <div className="mt-1">
-          <Tx>备份 P0 必须重新验证备份/增量/恢复演练；订单 P1 必须先处理订单；安全 P1 是高风险操作确认，确认本人操作后再完成。</Tx>
-        </div>
-      </div>
-
+      )}
+    >
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         {metricItems.map(([label, value]) => (
           <div key={label} className="rounded-lg border border-border bg-card px-3 py-2">
@@ -241,6 +236,6 @@ export default function AdminEventCenter() {
           )}
         </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

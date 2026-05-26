@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
-import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Grid3X3, LayoutGrid, Sparkles, ToggleLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminHomeOpsDisplayPanel from "./homeOps/AdminHomeOpsDisplayPanel";
@@ -8,6 +9,8 @@ import AdminHomeOpsModulePanel from "./homeOps/AdminHomeOpsModulePanel";
 import AdminHomeOpsNewArrivalPanel from "./homeOps/AdminHomeOpsNewArrivalPanel";
 import AdminHomeNavEditor from "./homeOps/AdminHomeNavEditor";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 type HomeOpsTab = "modules" | "display" | "nav" | "newArrival";
 
@@ -20,16 +23,27 @@ const HOME_OPS_TABS: { id: HomeOpsTab; label: string; icon: React.ElementType; d
 
 export default function AdminHomeOps() {
   const { tText } = useAdminT();
+  const { confirm } = useAdminConfirm();
   const [activeTab, setActiveTab] = useState<HomeOpsTab>("modules");
+  const [panelDirty, setPanelDirty] = useState(false);
+  useAdminTabDirty(panelDirty);
+
+  const requestTabChange = (nextTab: HomeOpsTab) => {
+    if (nextTab === activeTab) return;
+    if (panelDirty) {
+      confirm({
+        title: tText("未保存的修改"),
+        description: tText("当前分区还有未保存内容，切换后将丢失这些修改。"),
+        confirmText: tText("继续切换"),
+        onConfirm: () => setActiveTab(nextTab),
+      });
+      return;
+    }
+    setActiveTab(nextTab);
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <AdminPageTitle
-          title={<Tx>首页运营</Tx>}
-          hint={<Tx>统一管理模块开关、展示设置、金刚区导航和新品主推设置。</Tx>}
-        />
-      </div>
+    <AdminPageShell hint={<Tx>统一管理模块开关、展示设置、金刚区导航和新品主推设置。</Tx>}>
       <div className="space-y-4">
         <nav
           className="flex flex-wrap gap-2 border-b border-border pb-3"
@@ -43,7 +57,7 @@ export default function AdminHomeOps() {
                 key={tab.id}
                 type="button"
                 aria-current={active ? "page" : undefined}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => requestTabChange(tab.id)}
                 className={cn(
                   "inline-flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
                   active
@@ -59,12 +73,12 @@ export default function AdminHomeOps() {
           })}
         </nav>
         <div className="min-w-0">
-          {activeTab === "modules" ? <AdminHomeOpsModulePanel /> : null}
-          {activeTab === "display" ? <AdminHomeOpsDisplayPanel /> : null}
-          {activeTab === "newArrival" ? <AdminHomeOpsNewArrivalPanel /> : null}
-          {activeTab === "nav" ? <AdminHomeNavEditor /> : null}
+          {activeTab === "modules" ? <AdminHomeOpsModulePanel onDirtyChange={setPanelDirty} /> : null}
+          {activeTab === "display" ? <AdminHomeOpsDisplayPanel onDirtyChange={setPanelDirty} /> : null}
+          {activeTab === "newArrival" ? <AdminHomeOpsNewArrivalPanel onDirtyChange={setPanelDirty} /> : null}
+          {activeTab === "nav" ? <AdminHomeNavEditor onDirtyChange={setPanelDirty} /> : null}
         </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

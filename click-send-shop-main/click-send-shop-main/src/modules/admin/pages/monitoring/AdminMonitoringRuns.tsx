@@ -6,6 +6,7 @@ import { Badge, formatTime } from "./monitoringUi";
 import { MONITORING_RUN_STATUS_LABELS } from "./monitoringLabels";
 import { formatSystemErrorMessage } from "@/utils/systemErrorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
@@ -45,21 +46,26 @@ export default function AdminMonitoringRuns() {
   }, [load]);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold text-slate-900 sm:text-2xl"><Tx>运行记录</Tx></h1>
-      <MonitoringSubnav />
+    <AdminPageShell
+      hint={<Tx>查看规则与手动触发的每次检测运行结果。</Tx>}
+      filters={(
+        <>
+          <MonitoringSubnav />
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <select
+              className="w-full rounded border px-3 py-2.5 text-sm sm:w-auto"
+              value={status}
+              onChange={(e) => { setPage(1); setStatus(e.target.value); }}
+            >
+              {["", "running", "success", "failed", "cancelled"].map((s) => (
+                <option key={s} value={s}>{s ? ml.status(s) || s : tText("全部状态")}</option>
+              ))}
+            </select>
+          </div>
+        </>
+      )}
+    >
       {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
-      <div className="rounded-xl border border-slate-200 bg-white p-3">
-        <select
-          className="w-full rounded border px-3 py-2.5 text-sm sm:w-auto"
-          value={status}
-          onChange={(e) => { setPage(1); setStatus(e.target.value); }}
-        >
-          {["", "running", "success", "failed", "cancelled"].map((s) => (
-            <option key={s} value={s}>{s ? ml.status(s) || s : tText("全部状态")}</option>
-          ))}
-        </select>
-      </div>
       <AdminNativeTable>
           <thead className="bg-slate-50 text-slate-500">
             <tr>
@@ -107,6 +113,6 @@ export default function AdminMonitoringRuns() {
           <button type="button" className="rounded border px-3 py-1 disabled:opacity-40" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></button>
         </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

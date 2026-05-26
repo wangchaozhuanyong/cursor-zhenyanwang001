@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronRight, ShieldCheck } from "lucide-react";
 import PaymentMethodPicker, { type PaymentMethod } from "@/components/PaymentMethodPicker";
 import type { PublicPaymentChannel } from "@/services/paymentService";
-import { ResponsiveSheet, useMediaSheetMode } from "@/modules/micro-interactions";
+import { AppModal, usePreferBottomSheet } from "@/modules/micro-interactions";
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   online: "在线支付",
@@ -37,7 +37,7 @@ export function CheckoutPaymentMethod({
   showOnline,
   showCustomerService,
 }: CheckoutPaymentMethodProps) {
-  const isMobileSheet = useMediaSheetMode();
+  const isMobileSheet = usePreferBottomSheet("standard");
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const picker = (
@@ -84,9 +84,9 @@ export function CheckoutPaymentMethod({
             </div>
             <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
           </button>
-          <ResponsiveSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="选择支付方式" height="auto">
+          <AppModal tier="standard" open={sheetOpen} onClose={() => setSheetOpen(false)} title="选择支付方式" height="auto">
             <div className="pb-2">{picker}</div>
-          </ResponsiveSheet>
+          </AppModal>
         </>
       ) : (
         picker

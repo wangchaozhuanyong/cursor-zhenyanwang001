@@ -9,6 +9,7 @@ export default function PendingReviews() {
   const [items, setItems] = useState<PendingReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [orderItemId, setOrderItemId] = useState("");
+  const selectedItem = items.find((it) => it.order_item_id === orderItemId);
 
   const grouped = useMemo(() => {
     const map = new Map<string, PendingReviewItem[]>();
@@ -70,6 +71,8 @@ export default function PendingReviews() {
         open={!!orderItemId}
         onClose={() => setOrderItemId("")}
         orderItemId={orderItemId}
+        product={selectedItem ? { name: selectedItem.product_name, cover_image: selectedItem.product_image } : undefined}
+        variantName={selectedItem?.variant_name || selectedItem?.sku_code || undefined}
         onSuccess={() => {
           void load();
         }}

@@ -17,7 +17,7 @@ import type { PaymentReconciliationRow } from "@/types/adminPayment";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   labelChannelCode,
@@ -105,15 +105,10 @@ export default function AdminPaymentReconciliations() {
 
   return (
     <PermissionGate permission="payment.manage">
-      <div className="p-4 md:p-6">
-        <div className="mb-2">
-          <AdminPageTitle
-            title={<Tx>支付管理</Tx>}
-            hint={<Tx>按日 / 渠道汇总实收与差异（手续费来自渠道 JSON 配置）</Tx>}
-          />
-        </div>
-        <PaymentAdminSubnav />
-
+      <AdminPageShell
+        hint={<Tx>按日 / 渠道汇总实收与差异（手续费来自渠道 JSON 配置）</Tx>}
+        filters={<PaymentAdminSubnav />}
+      >
         <div className="theme-rounded mb-6 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <h2 className="mb-3 text-sm font-semibold text-foreground"><Tx>新建对账草稿</Tx></h2>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
@@ -226,7 +221,7 @@ export default function AdminPaymentReconciliations() {
             </>
           )}
         />
-      </div>
+      </AdminPageShell>
     </PermissionGate>
   );
 }

@@ -8,12 +8,15 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { ShippingTemplate } from "@/types/shipping";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+
+const EMPTY_FORM = { name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 };
 
 export default function AdminShipping() {
   const { tText } = useAdminT();
@@ -21,7 +24,7 @@ export default function AdminShipping() {
   const { confirm } = useAdminConfirm();
   const [editing, setEditing] = useState<ShippingTemplate | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
   const templatesQuery = useQuery({
@@ -32,8 +35,19 @@ export default function AdminShipping() {
 
   const templates = templatesQuery.data ?? [];
   const loading = templatesQuery.isLoading && !templatesQuery.data;
+  const formBaseline = editing
+    ? { name: editing.name, regions: editing.regions, baseFee: editing.baseFee, freeAbove: editing.freeAbove, extraPerKg: editing.extraPerKg }
+    : EMPTY_FORM;
+  const formDirty = showForm && JSON.stringify(form) !== JSON.stringify(formBaseline);
+  useAdminTabDirty(formDirty);
 
   const invalidateShipping = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.shippingRoot() });
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditing(null);
+    setForm(EMPTY_FORM);
+  };
 
   const handleSave = async () => {
     if (!form.name || !form.regions) { toast.error(tText("请填写完整信息")); return; }
@@ -55,9 +69,7 @@ export default function AdminShipping() {
         });
         toast.success(makeDefault ? tText("运费模板已创建并设为默认生效") : tText("运费模板已创建，可在列表中设为默认生效"));
       }
-      setShowForm(false);
-      setEditing(null);
-      setForm({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 });
+      closeForm();
       await invalidateShipping();
     } catch (e) {
       toast.error(toastErrorMessage(e, tText("保存失败")));
@@ -95,26 +107,21 @@ export default function AdminShipping() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <AdminPageTitle
-            title={<Tx>运费规则设置</Tx>}
-            hint={(
-              <>
-                <p><Tx>配置配送区域和运费模板</Tx></p>
-                <p className="mt-1"><Tx>同一时间仅允许一个「默认生效」模板；设为默认后，结账与运费计算将使用该规则，其他模板自动停用。</Tx></p>
-              </>
-            )}
-          />
-        </div>
+    <AdminPageShell
+      hint={(
+        <>
+          <p><Tx>配置配送区域和运费模板</Tx></p>
+          <p className="mt-1"><Tx>同一时间仅允许一个「默认生效」模板；设为默认后，结账与运费计算将使用该规则，其他模板自动停用。</Tx></p>
+        </>
+      )}
+      toolbar={(
         <PermissionGate permission="shipping.manage">
-          <button onClick={() => { setEditing(null); setForm({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 }); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">
-            <Plus size={16} /><Tx> 新建模板
-          </Tx></button>
+          <button onClick={() => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">
+            <Plus size={16} /><Tx>新建模板</Tx>
+          </button>
         </PermissionGate>
-      </div>
-
+      )}
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
@@ -199,7 +206,13 @@ export default function AdminShipping() {
 
       <AdminResponsiveSheet
         open={showForm}
-        onOpenChange={setShowForm}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeForm();
+            return;
+          }
+          setShowForm(true);
+        }}
         title={editing ? tText("编辑运费模板") : tText("新建运费模板")}
         size="sm"
       >
@@ -225,6 +238,6 @@ export default function AdminShipping() {
           </PermissionGate>
         </div>
       </AdminResponsiveSheet>
-    </div>
+    </AdminPageShell>
   );
 }

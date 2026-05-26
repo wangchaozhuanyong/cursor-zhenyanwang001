@@ -13,6 +13,7 @@ import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import UserTagManageDialog from "@/modules/admin/components/user/UserTagManageDialog";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminUsers } from "@/modules/admin/pages/user/useAdminUsers";
 import { UserStatusBadges, UserTagBadges } from "@/modules/admin/pages/user/userListDisplay";
 import type { UserProfile } from "@/types/user";
@@ -127,7 +128,23 @@ export default function AdminUsers() {
   };
 
   return (
-    <div className="min-w-0 space-y-4">
+    <AdminPageShell
+      className="min-w-0"
+      hint={<Tx>管理注册用户、标签与风控限制，支持高级筛选与导出。</Tx>}
+      toolbar={(
+        <PermissionGate permission="user.update">
+          <button
+            type="button"
+            onClick={() => setTagDialogOpen(true)}
+            className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-3 py-2 text-sm font-medium hover:bg-secondary"
+          >
+            <Plus size={16} />
+            <Tx>添加标签</Tx>
+          </button>
+        </PermissionGate>
+      )}
+      filters={(
+        <>
       <div className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-3">
         {statCards.map((item) => (
           <div
@@ -274,7 +291,9 @@ export default function AdminUsers() {
         </div>
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
       </div>
-
+        </>
+      )}
+    >
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow">
         <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <PermissionGate permission="user.update">
@@ -306,16 +325,6 @@ export default function AdminUsers() {
           </PermissionGate>
 
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-xl lg:justify-end">
-            <PermissionGate permission="user.update">
-              <button
-                type="button"
-                onClick={() => setTagDialogOpen(true)}
-                className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-3 py-2 text-sm font-medium hover:bg-secondary"
-              >
-                <Plus size={16} />
-                <Tx>添加标签</Tx>
-              </button>
-            </PermissionGate>
             <div className="min-w-0 flex-1 basis-[12rem]">
               <SearchBar
                 placeholder={tText("搜索昵称 / 手机号 / 微信 / 邀请码")}
@@ -438,6 +447,6 @@ export default function AdminUsers() {
           </>
         )}
       />
-    </div>
+    </AdminPageShell>
   );
 }

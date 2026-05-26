@@ -1,7 +1,7 @@
 import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { Product, ProductVariant } from "@/types/product";
-import { BottomSheet, SquishButton } from "@/modules/micro-interactions";
+import { AppModal, SquishButton } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 
 type PurchaseIntent = "cart" | "buy";
@@ -128,7 +128,8 @@ export default function ProductVariantSheet({
   };
 
   return (
-    <BottomSheet
+    <AppModal
+      tier="immersive"
       open={open}
       onClose={onClose}
       title={title}
@@ -291,6 +292,6 @@ export default function ProductVariantSheet({
           </div>
         </div>
       </div>
-    </BottomSheet>
+    </AppModal>
   );
 }

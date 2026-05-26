@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -28,12 +28,21 @@ const empty: NewArrivalForm = {
   newArrivalOnlyInStock: "1",
 };
 
-export default function AdminHomeOpsNewArrivalPanel() {
+type Props = {
+  onDirtyChange?: (dirty: boolean) => void;
+};
+
+function serializeNewArrivalForm(value: NewArrivalForm) {
+  return JSON.stringify(value);
+}
+
+export default function AdminHomeOpsNewArrivalPanel({ onDirtyChange }: Props) {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<NewArrivalForm>(empty);
   const [saving, setSaving] = useState(false);
+  const [baseline, setBaseline] = useState(() => serializeNewArrivalForm(empty));
 
   const settingsQuery = useQuery({
     queryKey: adminQueryKeys.siteSettings(),
@@ -46,14 +55,26 @@ export default function AdminHomeOpsNewArrivalPanel() {
   useEffect(() => {
     if (!settingsQuery.data) return;
     const data = settingsQuery.data;
-    setForm({
+    const nextForm = {
       newArrivalSectionTitle: data?.newArrivalSectionTitle ?? "",
       newArrivalSectionSubtitle: data?.newArrivalSectionSubtitle ?? "",
       newArrivalDisplayCount: data?.newArrivalDisplayCount ?? "8",
       newArrivalShowPrice: data?.newArrivalShowPrice ?? "1",
       newArrivalOnlyInStock: data?.newArrivalOnlyInStock ?? "1",
-    });
+    };
+    setForm(nextForm);
+    setBaseline(serializeNewArrivalForm(nextForm));
   }, [settingsQuery.data]);
+
+  const dirty = useMemo(
+    () => !loading && serializeNewArrivalForm(form) !== baseline,
+    [baseline, form, loading],
+  );
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
 
   const save = async () => {
     const count = parseInt(form.newArrivalDisplayCount.trim(), 10);
@@ -63,10 +84,15 @@ export default function AdminHomeOpsNewArrivalPanel() {
     }
     setSaving(true);
     try {
-      await updateSiteSettings({
+      const nextForm = {
         ...form,
         newArrivalDisplayCount: String(count),
+      };
+      await updateSiteSettings({
+        ...nextForm,
       });
+      setForm(nextForm);
+      setBaseline(serializeNewArrivalForm(nextForm));
       await refreshSiteInfo();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
       toast.success(tText("新品配置已保存"));

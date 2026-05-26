@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, FileSpreadsheet } from "lucide-react";
+import { Download, Loader2, RefreshCw, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import {
   AdminTableMobileCard,
@@ -11,7 +11,7 @@ import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideAction
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
-import AdminFieldHint from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { toast } from "sonner";
 import {
@@ -143,19 +143,14 @@ export default function AdminExportCenter() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground"><FileSpreadsheet size={20} /><Tx>导出中心</Tx></h2>
-            <AdminFieldHint text={<Tx>支持按报表类型与日期范围创建导出任务</Tx>} />
-          </div>
-        </div>
+    <AdminPageShell
+      hint={<Tx>支持按报表类型与日期范围创建导出任务</Tx>}
+      toolbar={(
         <button type="button" onClick={() => void tasksQuery.refetch()} className="touch-manipulation rounded-xl border border-border p-2.5 text-muted-foreground hover:bg-secondary" title={tText("刷新")}>
           <RefreshCw size={16} />
         </button>
-      </div>
-
+      )}
+    >
       <PermissionGate permission="report.export">
         <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center">
           <span className="text-sm font-medium text-foreground"><Tx>创建导出:</Tx></span>
@@ -222,6 +217,6 @@ export default function AdminExportCenter() {
           </>
         )}
       />
-    </div>
+    </AdminPageShell>
   );
 }

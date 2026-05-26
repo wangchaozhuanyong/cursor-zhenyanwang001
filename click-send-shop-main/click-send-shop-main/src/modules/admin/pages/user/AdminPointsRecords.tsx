@@ -15,7 +15,7 @@ import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import {
   AdminTableMobileCard,
@@ -84,7 +84,7 @@ function normalizePointsRules(data: PointsRule[]): PointsRuleEditRow[] {
   }));
 }
 
-export default function AdminPointsRecords() {
+export default function AdminPointsRecords({ embedded = false }: { embedded?: boolean }) {
   const { tText } = useAdminT();
   const { pointsAction: labelPointsAction, text: L } = useAdminDisplayLabel();
   const actionOptionsLocalized = useLocalizedOptions(actionOptions);
@@ -217,25 +217,8 @@ export default function AdminPointsRecords() {
     );
   };
 
-  return (
-    <div className="space-y-5">
-      <div>
-        <AdminPageTitle
-          title={<Tx>积分明细</Tx>}
-          hint={(
-            <>
-              <p><Tx>
-                查看积分发放、扣减、订单退款回滚和管理员调整流水。列表与统计均来自数据库实时查询，无内置演示数据。
-              </Tx></p>
-              <p className="mt-1"><Tx>
-                若需清空联调/演示环境产生的流水，请在备份后使用 server 目录 WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js（会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。
-              </Tx></p>
-            </>
-          )}
-          hintContentClassName="max-w-md"
-        />
-      </div>
-
+  const body = (
+    <>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map((card) => (
           <div key={card.label} className="theme-shadow rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4">
@@ -395,6 +378,27 @@ export default function AdminPointsRecords() {
           );
         }}
       />
-    </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-5">{body}</div>;
+  }
+
+  return (
+    <AdminPageShell
+      hint={(
+        <>
+          <p><Tx>
+            查看积分发放、扣减、订单退款回滚和管理员调整流水。列表与统计均来自数据库实时查询，无内置演示数据。
+          </Tx></p>
+          <p className="mt-1"><Tx>
+            若需清空联调/演示环境产生的流水，请在备份后使用 server 目录 WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js（会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。
+          </Tx></p>
+        </>
+      )}
+    >
+      {body}
+    </AdminPageShell>
   );
 }

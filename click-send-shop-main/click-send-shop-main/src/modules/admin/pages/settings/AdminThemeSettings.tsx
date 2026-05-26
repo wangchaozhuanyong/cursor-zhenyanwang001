@@ -19,6 +19,8 @@ import { canDeleteThemeSkin, normalizeThemeConfig, normalizeThemeSkinsPayload } 
 import { applyAutoColorAction, type AutoColorAction } from "@/utils/themeStudioAuto";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { useAdminT } from "@/hooks/useAdminT";
 
 function applyThemePayload(
@@ -55,6 +57,7 @@ export default function AdminThemeSettings() {
   const [selectedSkinId, setSelectedSkinId] = useState(DEFAULT_SKIN_ID);
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(normalizeThemeConfig(THEME_PRESETS[0]?.config));
   const [dirty, setDirty] = useState(false);
+  useAdminTabDirty(dirty);
   const [pendingSkinId, setPendingSkinId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [skinSearch, setSkinSearch] = useState("");
@@ -304,6 +307,7 @@ export default function AdminThemeSettings() {
   };
 
   return (
+    <AdminPageShell hint={<Tx>统一管理前台、移动端和管理后台的视觉风格；保存草稿或保存并应用后才会写入站点配置。</Tx>}>
     <div className="w-full bg-muted/20 p-2 pb-12 sm:p-4">
       {loading ? (
         <AdminThemeStudioSkeleton />
@@ -418,6 +422,7 @@ export default function AdminThemeSettings() {
         </>
       )}
     </div>
+    </AdminPageShell>
   );
 }
 

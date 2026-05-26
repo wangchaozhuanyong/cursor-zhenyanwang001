@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -13,12 +13,25 @@ import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/Admin
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 
-export default function AdminHomeOpsDisplayPanel() {
+type Props = {
+  onDirtyChange?: (dirty: boolean) => void;
+};
+
+function serializeDisplayDraft(value: HomeModuleSettings) {
+  return JSON.stringify({
+    hotBatchSize: value.hotBatchSize,
+    recBatchSize: value.recBatchSize,
+    guestRecommendMax: value.guestRecommendMax,
+  });
+}
+
+export default function AdminHomeOpsDisplayPanel({ onDirtyChange }: Props) {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<HomeModuleSettings>(DEFAULT_HOME_MODULE_SETTINGS);
   const [saving, setSaving] = useState(false);
+  const [baseline, setBaseline] = useState(() => serializeDisplayDraft(DEFAULT_HOME_MODULE_SETTINGS));
 
   const settingsQuery = useQuery({
     queryKey: adminQueryKeys.homeOpsSettings(),
@@ -30,8 +43,20 @@ export default function AdminHomeOpsDisplayPanel() {
 
   useEffect(() => {
     if (!settingsQuery.data) return;
-    setSettings(mergeHomeModuleSettings(settingsQuery.data));
+    const merged = mergeHomeModuleSettings(settingsQuery.data);
+    setSettings(merged);
+    setBaseline(serializeDisplayDraft(merged));
   }, [settingsQuery.data]);
+
+  const dirty = useMemo(
+    () => !loading && serializeDisplayDraft(settings) !== baseline,
+    [baseline, loading, settings],
+  );
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
 
   const save = async () => {
     setSaving(true);
@@ -41,7 +66,9 @@ export default function AdminHomeOpsDisplayPanel() {
         recBatchSize: settings.recBatchSize,
         guestRecommendMax: settings.guestRecommendMax,
       });
-      setSettings(mergeHomeModuleSettings(saved));
+      const merged = mergeHomeModuleSettings(saved);
+      setSettings(merged);
+      setBaseline(serializeDisplayDraft(merged));
       invalidateHomeModuleSettingsCache();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsSettings() });
       toast.success(tText("展示规则已保存"));

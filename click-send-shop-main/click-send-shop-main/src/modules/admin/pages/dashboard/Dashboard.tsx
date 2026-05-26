@@ -16,6 +16,7 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useAdminT, useAdminTOptional } from "@/hooks/useAdminT";
 import { formatTimezoneLabel } from "@/utils/formatTimezoneLabel";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 
 const RANGE_OPTIONS: { value: DashboardRangePreset; label: string }[] = [
   { value: "today", label: "今天" },
@@ -150,13 +151,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <header className="flex min-w-0 items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <h1 className="shrink-0 text-lg font-bold text-foreground sm:text-xl"><Tx>经营仪表盘</Tx></h1>
-        {rangeMeta ? (
-          <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">{rangeMeta}</span>
-        ) : null}
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+    <AdminPageShell
+      hint={rangeMeta ? <span>{rangeMeta}</span> : undefined}
+      toolbar={(
+        <div className="flex max-w-full items-center gap-1.5 overflow-x-auto sm:gap-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {RANGE_OPTIONS.map((opt) => (
             <button
               key={opt.value}
@@ -177,10 +175,11 @@ export default function Dashboard() {
             onClick={() => void dashboardQuery.refetch()}
             className="shrink-0 rounded-full border border-[var(--theme-border)] px-3 py-1.5 text-xs font-semibold whitespace-nowrap"
           >
-            刷新
+            <Tx>刷新</Tx>
           </button>
         </div>
-      </header>
+      )}
+    >
 
       <DashboardCustomRangePanel
         open={customRangeOpen}
@@ -294,6 +293,6 @@ export default function Dashboard() {
           ) : <p className="py-4 text-center text-sm text-muted-foreground"><Tx>暂无订单</Tx></p>}
         </section>
       ) : null}
-    </div>
+    </AdminPageShell>
   );
 }

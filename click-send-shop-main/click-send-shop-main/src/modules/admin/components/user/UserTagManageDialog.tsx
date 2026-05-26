@@ -5,6 +5,7 @@ import { productTagBadgeClass } from "@/utils/productTagBadge";
 import type { UserTag } from "@/types/user";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 const TAG_COLORS = ["红色", "绿色", "蓝色", "金色"] as const;
 
@@ -32,6 +33,8 @@ export default function UserTagManageDialog({
   const { tText } = useAdminT();
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>("金色");
+  const dirty = open && (name.trim() !== "" || color !== "金色");
+  useAdminTabDirty(dirty);
 
   useEffect(() => {
     if (!open) {

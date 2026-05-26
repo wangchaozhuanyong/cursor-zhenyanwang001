@@ -14,7 +14,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatAdminDateRange } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import {
   AdminTableMobileCard,
@@ -138,23 +138,18 @@ export default function AdminCoupons() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <AdminPageTitle
-            title={<Tx>活动管理 / 优惠券管理</Tx>}
-            hint={<Tx>管理优惠券、发放与有效期。</Tx>}
-          />
-        </div>
-        <div className="flex gap-2">
+    <AdminPageShell
+      hint={<Tx>管理优惠券、发放与有效期。</Tx>}
+      toolbar={(
+        <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => navigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></button>
           <PermissionGate permission="coupon.manage">
             <button type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={16} /><Tx>新建优惠券</Tx></button>
           </PermissionGate>
         </div>
-      </div>
-
-      <SearchBar placeholder={tText("搜索标题/编码")} value={search} onChange={setSearch} />
+      )}
+      filters={<SearchBar placeholder={tText("搜索标题/编码")} value={search} onChange={setSearch} />}
+    >
 
       <AnimatedTable
         loading={loading}
@@ -239,6 +234,6 @@ export default function AdminCoupons() {
           issueMutation.mutate({ couponId: issueCouponId, tagIds: [issueTagId] });
         }}
       />
-    </div>
+    </AdminPageShell>
   );
 }

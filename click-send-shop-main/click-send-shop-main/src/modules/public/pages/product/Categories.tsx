@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import { useSmartBars } from "@/hooks/useSmartBars";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -205,6 +206,25 @@ export default function Categories() {
   const showFullSkeleton = loading && products.length === 0;
   const showSoftRefreshing = listRefreshing && products.length > 0;
 
+  const chromeHidden = useSmartBars({ hideAfter: 60, showOnUp: 12 });
+  const [pageScrollable, setPageScrollable] = useState(false);
+
+  useEffect(() => {
+    const measure = () => {
+      setPageScrollable(document.documentElement.scrollHeight > window.innerHeight + 100);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(document.documentElement);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [products.length, loading, categories.length, subCategories.length, activeFilterCount, debouncedQuery]);
+
+  const chromeCollapsed = chromeHidden && pageScrollable;
+
   const filterDrawer = (
     <ProductFilterDrawer
       activeFilterCount={activeFilterCount}
@@ -255,34 +275,48 @@ export default function Categories() {
           />
         }
         bottomSlot={
-          <div className="space-y-2">
-            <div className="md:hidden">
-              <CategoryKingkongRow
-                items={rootKingkongItems}
-                scrollKey={scrollTabKey}
-                loading={loading && categories.length === 0}
-                className="-mx-1 rounded-none border-x-0"
-              />
-            </div>
-
-            {subCategories.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5 md:hidden">
-                {subCategories.map((child) => (
-                  <CategoryTabButton
-                    key={child.id}
-                    active={activeCat === child.id}
-                    onClick={() => handleSelectChild(child.id)}
-                    layoutId="category-sub-tab"
-                    activeClassName="bg-[var(--theme-price)]"
-                    activeTextClass="text-[var(--theme-price-foreground)]"
-                    className="px-3"
-                  >
-                    {child.name}
-                  </CategoryTabButton>
-                ))}
+          <div className="md:hidden">
+            <div
+              className={cn(
+                "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+                chromeCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
+              )}
+              aria-hidden={chromeCollapsed}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <div className="space-y-2 pb-2">
+                  <CategoryKingkongRow
+                    items={rootKingkongItems}
+                    scrollKey={scrollTabKey}
+                    loading={loading && categories.length === 0}
+                    className="-mx-1 rounded-none border-x-0"
+                  />
+                  {subCategories.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {subCategories.map((child) => (
+                        <CategoryTabButton
+                          key={child.id}
+                          active={activeCat === child.id}
+                          onClick={() => handleSelectChild(child.id)}
+                          layoutId="category-sub-tab"
+                          activeClassName="bg-[var(--theme-price)]"
+                          activeTextClass="text-[var(--theme-price-foreground)]"
+                          className="px-3"
+                        >
+                          {child.name}
+                        </CategoryTabButton>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            ) : null}
-            <div className="flex items-center gap-2 md:hidden">
+            </div>
+            <div
+              className={cn(
+                "flex items-center gap-2 border-t border-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] pt-2",
+                chromeCollapsed ? "pb-2" : "pb-2.5",
+              )}
+            >
               <div className="min-w-0 flex-1">
                 <ProductSortBar value={sort} onChange={setSort} />
               </div>

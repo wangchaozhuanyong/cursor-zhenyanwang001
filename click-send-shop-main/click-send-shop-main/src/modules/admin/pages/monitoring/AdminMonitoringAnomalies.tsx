@@ -5,6 +5,7 @@ import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import MonitoringAnomalyRowActions from "./MonitoringAnomalyRowActions";
 import { Badge, formatTime, severityClass } from "./monitoringUi";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 import {
@@ -48,25 +49,30 @@ export default function AdminMonitoringAnomalies() {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold text-slate-900"><Tx>数据异常</Tx></h1>
-      <MonitoringSubnav />
-      <div className="mb-4 flex flex-wrap gap-2 rounded border border-slate-200 bg-white p-3">
-        <select className="rounded border px-3 py-2 text-sm" value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }}>
-          {statuses.map((s) => (
-            <option key={s} value={s}>{s ? tText(MONITORING_ANOMALY_STATUS_LABELS[s] || s) : tText("全部状态")}</option>
-          ))}
-        </select>
-        <select className="rounded border px-3 py-2 text-sm" value={severity} onChange={(e) => { setPage(1); setSeverity(e.target.value); }}>
-          {severities.map((s) => (
-            <option key={s} value={s}>
-              {s ? ml.severity(s) || s : tText("全部等级")}
-            </option>
-          ))}
-        </select>
-        <input className="min-w-56 rounded border px-3 py-2 text-sm" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={tText("关键词 / 对象 / 原因")} />
-        <button className="rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white" onClick={() => { setPage(1); load(); }}><Tx>筛选</Tx></button>
-      </div>
+    <AdminPageShell
+      hint={<Tx>按状态、等级与关键词筛选数据一致性异常，可进入详情处理。</Tx>}
+      filters={(
+        <>
+          <MonitoringSubnav />
+          <div className="flex flex-wrap gap-2 rounded border border-slate-200 bg-white p-3">
+            <select className="rounded border px-3 py-2 text-sm" value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }}>
+              {statuses.map((s) => (
+                <option key={s} value={s}>{s ? tText(MONITORING_ANOMALY_STATUS_LABELS[s] || s) : tText("全部状态")}</option>
+              ))}
+            </select>
+            <select className="rounded border px-3 py-2 text-sm" value={severity} onChange={(e) => { setPage(1); setSeverity(e.target.value); }}>
+              {severities.map((s) => (
+                <option key={s} value={s}>
+                  {s ? ml.severity(s) || s : tText("全部等级")}
+                </option>
+              ))}
+            </select>
+            <input className="min-w-56 rounded border px-3 py-2 text-sm" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={tText("关键词 / 对象 / 原因")} />
+            <button className="rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white" onClick={() => { setPage(1); load(); }}><Tx>筛选</Tx></button>
+          </div>
+        </>
+      )}
+    >
       <AdminNativeTable>
           <thead className="bg-slate-50 text-slate-500">
             <tr>
@@ -118,6 +124,6 @@ export default function AdminMonitoringAnomalies() {
           <button className="rounded border px-3 py-1 disabled:opacity-40" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></button>
         </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

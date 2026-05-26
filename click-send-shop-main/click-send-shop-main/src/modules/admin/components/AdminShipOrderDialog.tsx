@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 type Props = {
   open: boolean;
@@ -16,6 +17,12 @@ export default function AdminShipOrderDialog({ open, orderNo, onOpenChange, onCo
   const [carrier, setCarrier] = useState("");
   const [shippingCostAmount, setShippingCostAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const dirty = open && (
+    trackingNo.trim() !== ""
+    || carrier.trim() !== ""
+    || shippingCostAmount.trim() !== ""
+  );
+  useAdminTabDirty(dirty);
 
   useEffect(() => {
     if (!open) {

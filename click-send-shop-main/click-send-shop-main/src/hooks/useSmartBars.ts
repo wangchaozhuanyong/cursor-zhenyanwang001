@@ -3,11 +3,14 @@ import { useEffect, useRef, useState } from "react";
 type UseSmartBarsOptions = {
   hideAfter?: number;
   showOnUp?: number;
+  /** 距顶部小于该值时强制展开（默认 8px） */
+  topRevealThreshold?: number;
 };
 
 export function useSmartBars({
   hideAfter = 50,
   showOnUp = 10,
+  topRevealThreshold = 8,
 }: UseSmartBarsOptions = {}) {
   const [hidden, setHidden] = useState(false);
   const lastYRef = useRef(0);
@@ -26,6 +29,15 @@ export function useSmartBars({
         const currentY = window.scrollY || 0;
         const delta = currentY - lastYRef.current;
         const absDelta = Math.abs(delta);
+
+        if (currentY <= topRevealThreshold) {
+          setHidden(false);
+          downAccumulatedRef.current = 0;
+          upAccumulatedRef.current = 0;
+          lastYRef.current = currentY;
+          tickingRef.current = false;
+          return;
+        }
 
         if (absDelta < 1) {
           tickingRef.current = false;
@@ -57,7 +69,7 @@ export function useSmartBars({
 
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [hideAfter, showOnUp]);
+  }, [hideAfter, showOnUp, topRevealThreshold]);
 
   return hidden;
 }

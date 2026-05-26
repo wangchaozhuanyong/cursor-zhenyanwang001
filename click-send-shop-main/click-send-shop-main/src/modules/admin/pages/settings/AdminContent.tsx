@@ -15,7 +15,7 @@ import {
 } from "@/constants/helpCenterConfig";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -23,6 +23,7 @@ import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 interface ContentItem {
   id: string;
@@ -40,6 +41,14 @@ const DEFAULT_POLICY_PATHS = {
   privacyPolicyPath: "/content/privacy-policy",
 };
 
+const EMPTY_CREATE_FORM = {
+  title: "",
+  slug: "",
+  content: "",
+  publish_status: "published" as "published" | "draft",
+  sort_order: "",
+};
+
 export default function AdminContent() {
   const { tText } = useAdminT();
   const queryClient = useQueryClient();
@@ -48,17 +57,12 @@ export default function AdminContent() {
   const [showForm, setShowForm] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [form, setForm] = useState({ title: "", content: "" });
-  const [createForm, setCreateForm] = useState({
-    title: "",
-    slug: "",
-    content: "",
-    publish_status: "published" as "published" | "draft",
-    sort_order: "",
-  });
+  const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
   const [saving, setSaving] = useState(false);
   const [helpForm, setHelpForm] = useState<HelpCenterConfig>(buildDefaultHelpCenterConfig());
   const [helpSaving, setHelpSaving] = useState(false);
   const [helpJson, setHelpJson] = useState("");
+  const [helpBaseline, setHelpBaseline] = useState<{ form: string; json: string } | null>(null);
   const [collapsedCategoryIds, setCollapsedCategoryIds] = useState<Record<string, boolean>>({});
   const [dragCatId, setDragCatId] = useState<string>("");
   const [dragFaqId, setDragFaqId] = useState<string>("");
@@ -75,6 +79,15 @@ export default function AdminContent() {
 
   const items = useMemo(() => contentQuery.data?.pages ?? [], [contentQuery.data?.pages]);
   const loading = contentQuery.isLoading && !contentQuery.data;
+  const helpFormSerialized = useMemo(() => JSON.stringify(helpForm), [helpForm]);
+  const helpDirty = Boolean(
+    helpBaseline && (helpFormSerialized !== helpBaseline.form || helpJson !== helpBaseline.json),
+  );
+  const editDirty = Boolean(
+    editing && (form.title !== editing.title || form.content !== editing.content),
+  );
+  const createDirty = JSON.stringify(createForm) !== JSON.stringify(EMPTY_CREATE_FORM);
+  useAdminTabDirty(helpDirty || editDirty || createDirty);
 
   const invalidateContent = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.contentHub() });
 
@@ -86,8 +99,10 @@ export default function AdminContent() {
       privacyPolicyPath: settings.privacyPolicyPath?.trim() || DEFAULT_POLICY_PATHS.privacyPolicyPath,
     });
     const parsed = parseHelpConfig(settings.helpCenterConfig);
+    const prettyJson = JSON.stringify(parsed, null, 2);
     setHelpForm(parsed);
-    setHelpJson(JSON.stringify(parsed, null, 2));
+    setHelpJson(prettyJson);
+    setHelpBaseline({ form: JSON.stringify(parsed), json: prettyJson });
   }, [contentQuery.data]);
 
   const handleSave = async () => {
@@ -113,11 +128,14 @@ export default function AdminContent() {
     setHelpSaving(true);
     try {
       const normalized = normalizeHelpCenterConfig(helpForm);
-      const payload = JSON.stringify(normalized);
+      const normalizedSerialized = JSON.stringify(normalized);
+      const prettyJson = JSON.stringify(normalized, null, 2);
+      const payload = normalizedSerialized;
       await updateSiteSettings({ helpCenterConfig: payload });
       await refreshSiteInfo();
       setHelpForm(normalized);
-      setHelpJson(JSON.stringify(normalized, null, 2));
+      setHelpJson(prettyJson);
+      setHelpBaseline({ form: normalizedSerialized, json: prettyJson });
       toast.success(tText("帮助中心配置已保存"));
       await invalidateContent();
     } catch (e) {
@@ -155,7 +173,7 @@ export default function AdminContent() {
         sort_order: createForm.sort_order ? Number(createForm.sort_order) : undefined,
       });
       setShowCreateForm(false);
-      setCreateForm({ title: "", slug: "", content: "", publish_status: "published", sort_order: "" });
+      setCreateForm(EMPTY_CREATE_FORM);
       toast.success(tText("内容页已创建"));
       await invalidateContent();
     } catch (e) {
@@ -210,29 +228,24 @@ export default function AdminContent() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <AdminPageTitle
-          title={<Tx>内容管理</Tx>}
-          hint={
-            <Tx>
-              登录页协议、政策内容页、关于我们、常见问题在此维护；保存后前台即时生效。
-            </Tx>
-          }
-        />
-        <div className="mt-3">
-          <PermissionGate permission="content.manage">
-            <button
-              type="button"
-              onClick={() => setShowCreateForm(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"
-            >
-              <Plus size={14} /> 新增内容页
-            </button>
-          </PermissionGate>
-        </div>
-      </div>
-
+    <AdminPageShell
+      hint={
+        <Tx>
+          登录页协议、政策内容页、关于我们、常见问题在此维护；保存后前台即时生效。
+        </Tx>
+      }
+      toolbar={(
+        <PermissionGate permission="content.manage">
+          <button
+            type="button"
+            onClick={() => setShowCreateForm(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"
+          >
+            <Plus size={14} /> 新增内容页
+          </button>
+        </PermissionGate>
+      )}
+    >
       {loading ? (
         <AdminContentPageSkeleton />
       ) : (
@@ -550,7 +563,7 @@ export default function AdminContent() {
           </PermissionGate>
         </div>
       </AdminResponsiveSheet>
-    </div>
+    </AdminPageShell>
   );
 }
 

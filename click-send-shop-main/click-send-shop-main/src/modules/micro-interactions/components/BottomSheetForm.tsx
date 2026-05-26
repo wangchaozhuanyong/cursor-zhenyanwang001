@@ -1,6 +1,6 @@
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { ResponsiveSheet } from "./ResponsiveSheet";
+import { AppModal } from "./AppModal";
 import { LoadingButton } from "./LoadingButton";
 import { FormFieldShake } from "./FormFieldShake";
 import type { BottomSheetHeight } from "./BottomSheet";
@@ -28,7 +28,7 @@ export function BottomSheetForm({
   loading: loadingProp,
   error,
   onSubmit,
-  height = "auto",
+  height = "70vh",
 }: BottomSheetFormProps) {
   const [busy, setBusy] = useState(false);
   const loading = loadingProp ?? busy;
@@ -64,7 +64,8 @@ export function BottomSheetForm({
   );
 
   return (
-    <ResponsiveSheet
+    <AppModal
+      tier="form"
       open={open}
       onClose={onClose}
       title={title}
@@ -83,6 +84,6 @@ export function BottomSheetForm({
           {children}
         </form>
       </FormFieldShake>
-    </ResponsiveSheet>
+    </AppModal>
   );
 }

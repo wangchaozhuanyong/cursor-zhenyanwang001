@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Grid3X3 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,7 +19,24 @@ import HomeNavSortableList from "./HomeNavSortableList";
 import { useHomeNavReorder } from "./useHomeNavReorder";
 import { useAdminT } from "@/hooks/useAdminT";
 
-export default function AdminHomeNavEditor() {
+type Props = {
+  onDirtyChange?: (dirty: boolean) => void;
+};
+
+function serializeNavForm(value: NavForm) {
+  return JSON.stringify({
+    icon_url: value.icon_url || "",
+    title: value.title || "",
+    link_url: value.link_url || "",
+    target_type: value.target_type || "url",
+    target_category_id: value.target_category_id ?? null,
+    target_support_channel_id: value.target_support_channel_id ?? null,
+    sort_order: Number(value.sort_order || 1),
+    enabled: value.enabled !== false,
+  });
+}
+
+export default function AdminHomeNavEditor({ onDirtyChange }: Props) {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
@@ -64,6 +81,46 @@ export default function AdminHomeNavEditor() {
   const supportChannelNameMap = new Map(
     supportChannels.map((c) => [c.id, `${c.name}${c.account ? ` · ${c.account}` : ""}`]),
   );
+
+  useEffect(() => {
+    if (editingNavId) return;
+    const pristineCreateForm =
+      navForm.icon_url === ""
+      && navForm.title === ""
+      && navForm.link_url === ""
+      && navForm.target_type === "url"
+      && navForm.target_category_id == null
+      && navForm.target_support_channel_id == null
+      && navForm.enabled === true;
+    if (!pristineCreateForm || navForm.sort_order === nextSortOrder) return;
+    setNavForm((prev) => ({ ...prev, sort_order: nextSortOrder }));
+  }, [editingNavId, navForm, nextSortOrder]);
+
+  const navBaseline = useMemo<NavForm>(() => {
+    if (!editingNavId) {
+      return { ...emptyNavForm, sort_order: nextSortOrder };
+    }
+    const editingItem = navItems.find((item) => item.id === editingNavId);
+    if (!editingItem) {
+      return { ...emptyNavForm, sort_order: nextSortOrder };
+    }
+    return {
+      icon_url: editingItem.icon_url,
+      title: editingItem.title,
+      link_url: editingItem.link_url,
+      target_type: editingItem.target_type || "url",
+      target_category_id: editingItem.target_category_id ?? null,
+      target_support_channel_id: editingItem.target_support_channel_id ?? null,
+      sort_order: editingItem.sort_order,
+      enabled: editingItem.enabled,
+    };
+  }, [editingNavId, navItems, nextSortOrder]);
+  const dirty = serializeNavForm(navForm) !== serializeNavForm(navBaseline);
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
 
   const resetForm = () => {
     setEditingNavId(null);

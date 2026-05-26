@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LoadingButton } from "./LoadingButton";
-import { ResponsiveSheet } from "./ResponsiveSheet";
+import { AppModal } from "./AppModal";
 
 export type BottomSheetConfirmProps = {
   open: boolean;
@@ -68,7 +68,8 @@ export function BottomSheetConfirm({
   );
 
   return (
-    <ResponsiveSheet
+    <AppModal
+      tier="light"
       open={open}
       onClose={onClose}
       title={title}
@@ -76,8 +77,9 @@ export function BottomSheetConfirm({
       footer={footer}
       height="auto"
       stickyFooter
+      showHandle={false}
     >
       <div className="min-h-2" aria-hidden />
-    </ResponsiveSheet>
+    </AppModal>
   );
 }

@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Eye, Loader2, RefreshCw, Save, Send } from "lucide-react";
+import { Eye, Loader2, RefreshCw, Save, Send } from "lucide-react";
 import { toast } from "sonner";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import {
   fetchTelegramLogs,
@@ -38,6 +39,7 @@ import {
   labelTelegramLogSendStatus,
   telegramLogSendStatusClass,
 } from "@/utils/telegramLogLabels";
+import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]";
@@ -56,6 +58,7 @@ export default function AdminTelegramSettings() {
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [formHydrated, setFormHydrated] = useState(false);
 
   const loadPreview = useCallback(async (draft: TelegramNotifyConfig) => {
     setPreviewing(true);
@@ -89,6 +92,8 @@ export default function AdminTelegramSettings() {
   });
 
   const loading = telegramQuery.isLoading && !telegramQuery.data;
+  const dirtyDraft = useMemo(() => ({ form, botTokenInput }), [form, botTokenInput]);
+  const { markClean } = useAdminFormDirty(dirtyDraft, formHydrated && !loading);
 
   useEffect(() => {
     if (!telegramQuery.data?.settings) return;
@@ -100,6 +105,7 @@ export default function AdminTelegramSettings() {
     setBotTokenInput("");
     setLogs(telegramQuery.data.logs);
     void loadPreview(settingsToForm(s));
+    setFormHydrated(true);
   }, [telegramQuery.data, loadPreview]);
 
   const reload = () => void telegramQuery.refetch();
@@ -114,13 +120,16 @@ export default function AdminTelegramSettings() {
       const payload = normalizeTelegramNotifyConfig(form);
       payload.botToken = botTokenInput.trim() || TELEGRAM_BOT_TOKEN_UNCHANGED;
       const saved = await saveTelegramSettings(payload);
-      setForm(settingsToForm(saved));
+      const nextForm = settingsToForm(saved);
+      const nextDraft = { form: nextForm, botTokenInput: "" };
+      setForm(nextForm);
       setBotTokenMasked(saved.botTokenMasked || "");
       setBotTokenConfigured(!!saved.botTokenConfigured);
       setConfigSource(saved.configSource === "env" ? "env" : "database");
       setBotTokenInput("");
+      markClean(nextDraft);
       await refreshSiteCapabilities();
-      await loadPreview(settingsToForm(saved));
+      await loadPreview(nextForm);
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.telegramSettings() });
       toast.success(tText("Telegram 设置已保存"));
     } catch (error) {
@@ -149,25 +158,16 @@ export default function AdminTelegramSettings() {
 
   return (
     <PermissionGate permission="settings.manage">
-      <div className="space-y-5 p-4 md:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="flex items-center gap-2 text-xl font-bold text-foreground">
-                <Bell size={20} />
-                Telegram 通知设置
-              </h1>
-              <AdminFieldHint
-                text="配置 Bot 后，可分别开启「订单付款通知」与「后台事件监控通知」。Bot Token 与 Chat ID 可在本页保存。"
-                size="md"
-              />
-            </div>
-            {configSource === "env" && (
-              <p className="mt-1 text-xs text-amber-700">
-                当前部分配置来自环境变量；保存后将写入数据库并优先生效。
-              </p>
-            )}
-          </div>
+      <AdminPageShell
+        hint={(
+          <>
+            <p><Tx>配置 Bot 后，可分别开启「订单付款通知」与「后台事件监控通知」。Bot Token 与 Chat ID 可在本页保存。</Tx></p>
+            {configSource === "env" ? (
+              <p className="mt-1 text-amber-700"><Tx>当前部分配置来自环境变量；保存后将写入数据库并优先生效。</Tx></p>
+            ) : null}
+          </>
+        )}
+        toolbar={(
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -176,7 +176,7 @@ export default function AdminTelegramSettings() {
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
             >
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-              刷新
+              <Tx>刷新</Tx>
             </button>
             <button
               type="button"
@@ -185,7 +185,7 @@ export default function AdminTelegramSettings() {
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
             >
               {previewing ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} />}
-              刷新预览
+              <Tx>刷新预览</Tx>
             </button>
             <button
               type="button"
@@ -194,7 +194,7 @@ export default function AdminTelegramSettings() {
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60"
             >
               {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-              保存设置
+              <Tx>保存设置</Tx>
             </button>
             <button
               type="button"
@@ -203,10 +203,11 @@ export default function AdminTelegramSettings() {
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--theme-primary)] bg-card px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary)] disabled:opacity-60"
             >
               {testing ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-              测试发送
+              <Tx>测试发送</Tx>
             </button>
           </div>
-        </div>
+        )}
+      >
 
         {loading ? (
           <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
@@ -454,7 +455,7 @@ export default function AdminTelegramSettings() {
             </section>
           </>
         )}
-      </div>
+      </AdminPageShell>
     </PermissionGate>
   );
 }

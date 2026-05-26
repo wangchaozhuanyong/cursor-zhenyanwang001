@@ -9,7 +9,8 @@ import {
 } from "@/components/admin/AdminTableMobileCard";
 import { ADMIN_TABLE_NOWRAP_CLASS, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import { Tx } from "@/components/admin/AdminText";
-import AdminFieldHint, { AdminPageTitle, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
+import AdminFieldHint, { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import {
   adminFormInputCls,
   AdminInlineField,
@@ -213,17 +214,12 @@ export default function AdminMarketingPoints() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <AdminPageTitle
-            title={<Tx>活动管理 / 积分管理</Tx>}
-            hint={<Tx>订单积分、商品规则、抵扣比例和积分流水统一在这里维护。</Tx>}
-          />
-        </div>
+    <AdminPageShell
+      hint={<Tx>订单积分、商品规则、抵扣比例和积分流水统一在这里维护。</Tx>}
+      toolbar={(
         <button type="button" onClick={() => void invalidatePoints()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground" disabled={loading}><RefreshCw className="h-4 w-4" /><Tx>刷新</Tx></button>
-      </div>
-
+      )}
+      filters={(
       <div className="flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
@@ -240,7 +236,8 @@ export default function AdminMarketingPoints() {
           </button>
         ))}
       </div>
-
+      )}
+    >
       {tab === "积分总览" ? <PointsOverviewTab stats={stats} /> : null}
 
       {tab === "全局积分设置" ? (
@@ -332,7 +329,7 @@ export default function AdminMarketingPoints() {
 
       {tab === "礼品兑换" ? <AdminPointsGifts /> : null}
 
-      {tab === "积分明细" ? <AdminPointsRecords /> : null}
+      {tab === "积分明细" ? <AdminPointsRecords embedded /> : null}
 
       {tab === "手动调整" ? (
         <PointsManualAdjustTab
@@ -355,6 +352,6 @@ export default function AdminMarketingPoints() {
           tText={tText}
         />
       ) : null}
-    </div>
+    </AdminPageShell>
   );
 }

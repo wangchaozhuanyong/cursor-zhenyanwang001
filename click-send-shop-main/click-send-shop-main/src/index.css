@@ -11,6 +11,10 @@
     --store-card-x: 12px;
     --store-card-y: 12px;
     --admin-mobile-page-x: 8px;
+    --admin-chrome-toolbar-h: 2.5rem;
+    --admin-chrome-tabs-h: 2.25rem;
+    --admin-chrome-mobile-nav-h: 3.5rem;
+    --admin-chrome-sticky-h: calc(var(--admin-chrome-toolbar-h) + var(--admin-chrome-tabs-h));
     --admin-mobile-card-x: 12px;
     --admin-table-cell-px: clamp(0.5rem, 1.25vw, 1rem);
     --admin-table-cell-py: 0.625rem;
@@ -211,7 +215,7 @@
     touch-action: manipulation;
   }
   .header-safe-top {
-    padding-top: max(env(safe-area-inset-top, 0px), 6px);
+    padding-top: env(safe-area-inset-top, 0px);
   }
   .store-page {
     background: var(--theme-bg);
@@ -886,10 +890,26 @@ html[data-app-scope="admin"] .admin-tech-path {
   .admin-mobile-main {
     min-width: 0;
     overflow-x: hidden;
+    max-height: calc(
+      100dvh - var(--admin-chrome-sticky-h) - var(--admin-chrome-mobile-nav-h) - env(safe-area-inset-top, 0px)
+    );
     padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  [data-admin-shell] .admin-chrome {
+    flex-shrink: 0;
+  }
+
+  [data-admin-shell] .admin-work-tabs {
+    scrollbar-width: thin;
+  }
+
+  [data-admin-shell] .admin-work-tabs::-webkit-scrollbar {
+    height: 4px;
   }
   @media (min-width: 1024px) {
     .admin-mobile-main {
+      max-height: calc(100dvh - var(--admin-chrome-sticky-h) - env(safe-area-inset-top, 0px));
       padding-bottom: 0;
     }
   }

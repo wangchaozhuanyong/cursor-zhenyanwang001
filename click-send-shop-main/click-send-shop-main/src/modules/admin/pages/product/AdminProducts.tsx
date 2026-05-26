@@ -25,6 +25,7 @@ import type { Product, ProductListParams, ProductStatus } from "@/types/product"
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { THEME_BADGE_DANGER, THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_BADGE_WARNING } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminTableSortHeader from "@/components/admin/AdminTableSortHeader";
 import { useAdminT } from "@/hooks/useAdminT";
 import {
@@ -300,34 +301,10 @@ export default function AdminProducts() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SearchBar
-          placeholder={tText("搜索商品名称 / 分类")}
-          value={search}
-          onChange={(value) => {
-            setSearch(value);
-            setPage(1);
-          }}
-        />
+    <AdminPageShell
+      hint={<Tx>管理商品上下架、库存与成本，支持导入导出与批量操作。</Tx>}
+      toolbar={(
         <div className="flex flex-wrap items-center gap-2">
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as "" | ProductStatus); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
-            <option value=""><Tx>全部状态</Tx></option>
-            <option value="active"><Tx>上架</Tx></option>
-            <option value="draft"><Tx>草稿</Tx></option>
-            <option value="inactive"><Tx>下架</Tx></option>
-          </select>
-          <select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value as StockFilter); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
-            <option value=""><Tx>全部库存</Tx></option>
-            <option value="normal"><Tx>库存正常</Tx></option>
-            <option value="low"><Tx>库存预警</Tx></option>
-            <option value="out"><Tx>缺货</Tx></option>
-          </select>
-          <select value={costFilter} onChange={(e) => { setCostFilter(e.target.value as CostFilter); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
-            <option value=""><Tx>全部成本</Tx></option>
-            <option value="normal"><Tx>成本正常</Tx></option>
-            <option value="missing"><Tx>缺成本</Tx></option>
-          </select>
           <button type="button" onClick={handleExportFiltered} disabled={exportingScope !== null} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary disabled:opacity-60">
             {exportingScope === "filtered" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
             <Tx>导出筛选结果</Tx>
@@ -335,18 +312,52 @@ export default function AdminProducts() {
           <PermissionGate permission="product.manage">
             <button type="button" onClick={() => void downloadProductCsvTemplate()} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary">
               <FileDown size={14} />
-              下载模板
+              <Tx>下载模板</Tx>
             </button>
             <button type="button" onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary">
               <Upload size={14} />
-              批量导入
+              <Tx>批量导入</Tx>
             </button>
           </PermissionGate>
-          <button className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary" onClick={() => navigate("/admin/products/new")}><Tx>新增商品</Tx></button>
+          <button type="button" className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary" onClick={() => navigate("/admin/products/new")}><Tx>新增商品</Tx></button>
+          <button type="button" onClick={() => void productsQuery.refetch()} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary"><Tx>刷新</Tx></button>
         </div>
-      </div>
-
-      <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
+      )}
+      filters={(
+        <div className="space-y-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <SearchBar
+              placeholder={tText("搜索商品名称 / 分类")}
+              value={search}
+              onChange={(value) => {
+                setSearch(value);
+                setPage(1);
+              }}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as "" | ProductStatus); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
+                <option value=""><Tx>全部状态</Tx></option>
+                <option value="active"><Tx>上架</Tx></option>
+                <option value="draft"><Tx>草稿</Tx></option>
+                <option value="inactive"><Tx>下架</Tx></option>
+              </select>
+              <select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value as StockFilter); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
+                <option value=""><Tx>全部库存</Tx></option>
+                <option value="normal"><Tx>库存正常</Tx></option>
+                <option value="low"><Tx>库存预警</Tx></option>
+                <option value="out"><Tx>缺货</Tx></option>
+              </select>
+              <select value={costFilter} onChange={(e) => { setCostFilter(e.target.value as CostFilter); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
+                <option value=""><Tx>全部成本</Tx></option>
+                <option value="normal"><Tx>成本正常</Tx></option>
+                <option value="missing"><Tx>缺成本</Tx></option>
+              </select>
+            </div>
+          </div>
+          <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
+        </div>
+      )}
+    >
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">{tText("已选")} {selected.length} {tText("件")}</span>
@@ -366,7 +377,6 @@ export default function AdminProducts() {
         ) : null}
         <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{tText("批量上架")} ({selected.length})</button>
         <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{tText("批量下架")} ({selected.length})</button>
-        <button type="button" onClick={() => void productsQuery.refetch()} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary"><Tx>刷新</Tx></button>
       </div>
 
       <AdminCsvImportDialog
@@ -525,6 +535,6 @@ export default function AdminProducts() {
           );
         }}
       />
-    </div>
+    </AdminPageShell>
   );
 }

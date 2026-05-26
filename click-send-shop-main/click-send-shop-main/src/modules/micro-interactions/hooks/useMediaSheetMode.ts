@@ -1,20 +1,9 @@
-import { useEffect, useState } from "react";
+import { usePreferBottomSheet } from "../modal/usePreferBottomSheet";
 
-const MQ = "(max-width: 767px)";
-
-/** 与 Tailwind md 断点对齐：移动端用 Bottom Sheet，桌面用居中 Dialog */
+/**
+ * 是否以 Bottom Sheet 呈现（移动 + 平板为 true，电脑为 false）。
+ * @deprecated 新代码请用 `usePreferBottomSheet(tier)` 或 `useAppBreakpoint()`。
+ */
 export function useMediaSheetMode(): boolean {
-  const [mobile, setMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia(MQ).matches : true,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia(MQ);
-    const onChange = () => setMobile(mq.matches);
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  return mobile;
+  return usePreferBottomSheet("standard");
 }

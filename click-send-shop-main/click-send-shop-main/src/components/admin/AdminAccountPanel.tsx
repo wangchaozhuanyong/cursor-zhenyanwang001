@@ -10,6 +10,8 @@ import {
   updateAdminProfile,
 } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import { Tx } from "@/components/admin/AdminText";
 
 export type AdminAccountTab = "profile" | "password" | "security";
 
@@ -104,15 +106,8 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
     { key: "security" as const, label: "安全验证", icon: Fingerprint },
   ];
 
-  return (
-    <div className="space-y-6">
-      {!embedded ? (
-        <div>
-          <h1 className="text-xl font-bold text-foreground">账号设置</h1>
-          <p className="text-sm text-muted-foreground">管理您的账号信息与安全验证方式</p>
-        </div>
-      ) : null}
-
+  const panelBody = (
+    <>
       <div className="flex gap-1 rounded-2xl bg-secondary p-1">
         {tabs.map((t) => (
           <button
@@ -249,6 +244,16 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
           </LoadingButton>
         </div>
       )}
-    </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-6">{panelBody}</div>;
+  }
+
+  return (
+    <AdminPageShell hint={<Tx>管理您的账号信息、密码与 Passkey 安全验证。</Tx>}>
+      {panelBody}
+    </AdminPageShell>
   );
 }

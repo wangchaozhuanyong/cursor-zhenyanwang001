@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Shield, ChevronRight } from "lucide-react";
+import { Search, ChevronRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -25,6 +25,7 @@ import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import type { AuditLogRow } from "@/services/admin/logService";
 import AuditLogDetailPanel from "@/components/admin/AuditLogDetailPanel";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import {
   applyAdminTextTranslation,
   getAuditActionTypeFilterOptions,
@@ -36,7 +37,6 @@ import {
   zhOperatorRole,
 } from "@/utils/auditLogI18n";
 import { Tx } from "@/components/admin/AdminText";
-import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { THEME_BADGE_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys, type AuditLogListParams } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -231,24 +231,14 @@ export default function AdminLogs() {
 
   if (!canAudit) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold text-foreground"><Tx>审计日志</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>你无权查看审计日志。</Tx></p>
-        </div>
-      </div>
+      <p className="text-sm text-muted-foreground"><Tx>你无权查看审计日志。</Tx></p>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <h1 className="flex items-center gap-2 text-xl font-bold text-foreground">
-          <Shield size={16} className="shrink-0 text-[var(--theme-price)]" /><Tx>审计日志</Tx>
-        </h1>
-        <AdminFieldHint text={<Tx>管理端操作审计（含失败记录与前后快照）</Tx>} size="md" />
-      </div>
-
+    <AdminPageShell
+      hint={<Tx>管理端操作审计（含失败记录与前后快照）</Tx>}
+      filters={(
       <div className="space-y-2">
         <div className="min-w-0">
           <label className="mb-1 block text-xs text-muted-foreground"><Tx>关键词</Tx></label>
@@ -354,8 +344,9 @@ export default function AdminLogs() {
           </div>
         </details>
       </div>
-
-      <div className=" theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-hidden">
+      )}
+    >
+      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-hidden">
         <AnimatedTable
           embedded
           loading={auditLoading}
@@ -451,6 +442,6 @@ export default function AdminLogs() {
       >
         {detail ? <AuditLogDetailPanel detail={detail} embedded onClose={() => setDetail(null)} /> : null}
       </AdminResponsiveSheet>
-    </div>
+    </AdminPageShell>
   );
 }

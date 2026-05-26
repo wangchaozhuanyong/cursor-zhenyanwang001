@@ -28,6 +28,11 @@ export function hasPendingReview(order: Order): boolean {
   return order.status === "completed" && order.items.some((i) => i.can_review);
 }
 
+/** 已完成 / 已取消订单可「再买一单」 */
+export function canRepurchaseOrder(order: Order): boolean {
+  return order.status === ORDER_STATUS.COMPLETED || order.status === ORDER_STATUS.CANCELLED;
+}
+
 export function getBuyerOrderStatusText(order: Order): string {
   if (order.order_type === "points_gift") {
     if (order.status === "pending") return "积分兑换待付款";

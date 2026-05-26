@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useEffect, useId, useMemo, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useModalLayer } from "../modal/ModalLayerProvider";
 import { prefersReducedMotion } from "../motionConfig";
 import { useMotionConfig } from "../hooks/useMotionConfig";
 
@@ -56,17 +57,18 @@ export function BottomSheet({
   const descId = useId();
   const { enabled: motionEnabled } = useMotionConfig();
   const reduced = prefersReducedMotion() || !motionEnabled;
+  const { overlayZ, contentZ, isTop } = useModalLayer(open);
 
   useBodyScrollLock(open);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !isTop) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, isTop, onClose]);
 
   const overlayTransition: Transition = reduced
     ? { duration: 0.12 }
@@ -84,7 +86,8 @@ export function BottomSheet({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-[90]"
+          className="fixed inset-0"
+          style={{ zIndex: overlayZ }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -107,12 +110,13 @@ export function BottomSheet({
             aria-labelledby={title ? titleId : undefined}
             aria-describedby={description ? descId : undefined}
             className={cn(
-              "absolute inset-x-0 bottom-0 z-[91] flex flex-col overflow-hidden rounded-t-[22px] border border-b-0 border-[var(--theme-border)]",
+              "absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-[22px] border border-b-0 border-[var(--theme-border)]",
               HEIGHT_CLASS[height],
               desktopMaxWidthClass,
               className,
             )}
             style={{
+              zIndex: contentZ,
               background: "var(--theme-surface)",
               color: "var(--theme-text)",
               boxShadow: "var(--theme-shadow-hover)",

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminLabelWithHint, AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import {
   Check,
   ChevronDown,
@@ -39,6 +40,7 @@ import {
   THEME_HOVER_TEXT_DANGER,
   THEME_TEXT_SUCCESS_SOFT,
 } from "@/utils/themeVisuals";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 type CategoryForm = {
   name: string;
@@ -62,6 +64,17 @@ const EMPTY_FORM: CategoryForm = {
   sort_order: 0,
   is_visible: true,
 };
+
+function serializeCategoryForm(value: CategoryForm) {
+  return JSON.stringify({
+    name: value.name,
+    icon: value.icon,
+    icon_url: value.icon_url,
+    parent_id: value.parent_id,
+    sort_order: Number(value.sort_order || 0),
+    is_visible: value.is_visible !== false,
+  });
+}
 
 function flattenTree(nodes: Category[], expanded: Set<string>, level = 0): FlatCategory[] {
   return nodes.flatMap((node) => {
@@ -161,6 +174,25 @@ export default function AdminCategories() {
   const allRows = useMemo(() => flattenAll(categories), [categories]);
   const parentOptions = useMemo(() => allRows.filter((x) => x.level < 2), [allRows]);
   const categoryNameById = useMemo(() => new Map(allRows.map((row) => [row.id, row.name])), [allRows]);
+  const editingCategory = useMemo(
+    () => (editingId ? allRows.find((row) => row.id === editingId) ?? null : null),
+    [allRows, editingId],
+  );
+  const editBaseline = useMemo<CategoryForm>(() => (
+    editingCategory
+      ? {
+          name: editingCategory.name,
+          icon: editingCategory.icon || "",
+          icon_url: editingCategory.icon_url || "",
+          parent_id: editingCategory.parent_id || "",
+          sort_order: editingCategory.sort_order || 0,
+          is_visible: editingCategory.is_visible !== false,
+        }
+      : EMPTY_FORM
+  ), [editingCategory]);
+  const createDirty = showForm && serializeCategoryForm(formData) !== serializeCategoryForm(EMPTY_FORM);
+  const editDirty = !!editingId && serializeCategoryForm(editData) !== serializeCategoryForm(editBaseline);
+  useAdminTabDirty(createDirty || editDirty);
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -169,6 +201,16 @@ export default function AdminCategories() {
       else next.add(id);
       return next;
     });
+  };
+
+  const closeCreateForm = () => {
+    setShowForm(false);
+    setFormData(EMPTY_FORM);
+  };
+
+  const closeEditForm = () => {
+    setEditingId(null);
+    setEditData(EMPTY_FORM);
   };
 
   const uploadIcon = async (file: File, target: "create" | "edit") => {
@@ -207,8 +249,7 @@ export default function AdminCategories() {
         sort_order: formData.sort_order,
         is_visible: formData.is_visible,
       });
-      setShowForm(false);
-      setFormData(EMPTY_FORM);
+      closeCreateForm();
       toast.success(tText("分类已添加"));
       await invalidateCategories();
     } catch (e) {
@@ -245,7 +286,7 @@ export default function AdminCategories() {
         sort_order: editData.sort_order,
         is_visible: editData.is_visible,
       });
-      setEditingId(null);
+      closeEditForm();
       toast.success(tText("分类已更新"));
       await invalidateCategories();
     } catch (e) {
@@ -270,6 +311,9 @@ export default function AdminCategories() {
     try {
       await categoryService.deleteCategory(deleteTarget.id);
       toast.success(tText("分类已删除"));
+      if (editingId === deleteTarget.id) {
+        closeEditForm();
+      }
       setDeleteTarget(null);
       await invalidateCategories();
     } catch (e) {
@@ -327,25 +371,19 @@ export default function AdminCategories() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <AdminPageTitle
-            title={<Tx>分类管理</Tx>}
-            hint={<Tx>支持最多 3 级分类；有子分类或已关联商品的分类禁止删除。</Tx>}
-            className="text-lg [&_h1]:text-lg [&_h1]:font-semibold"
-          />
-        </div>
+    <AdminPageShell
+      hint={<Tx>支持最多 3 级分类；有子分类或已关联商品的分类禁止删除。</Tx>}
+      toolbar={(
         <PermissionGate permission="category.manage">
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => (showForm ? closeCreateForm() : setShowForm(true))}
             className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
-            <Plus size={16} /><Tx> 新增分类
-          </Tx></button>
+            <Plus size={16} /><Tx> 新增分类</Tx>
+          </button>
         </PermissionGate>
-      </div>
-
+      )}
+    >
       {showForm && (
         <div className="rounded-xl border border-gold/30 bg-card p-3 sm:p-4">
           <div className="grid gap-3 lg:grid-cols-[1fr_120px_1fr_180px_90px_120px_auto] lg:items-end">
@@ -420,7 +458,7 @@ export default function AdminCategories() {
                   添加
                 </Tx></LoadingButton>
               </PermissionGate>
-              <button onClick={() => setShowForm(false)} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground"><Tx>
+              <button onClick={closeCreateForm} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground"><Tx>
                 取消
               </Tx></button>
             </div>
@@ -546,7 +584,7 @@ export default function AdminCategories() {
                         <Check size={14} />
                       </button>
                     </PermissionGate>
-                    <button onClick={() => setEditingId(null)} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    <button onClick={closeEditForm} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
                       <X size={14} />
                     </button>
                   </>
@@ -580,6 +618,6 @@ export default function AdminCategories() {
         confirmText="删除"
         onConfirm={confirmDeleteCategory}
       />
-    </div>
+    </AdminPageShell>
   );
 }

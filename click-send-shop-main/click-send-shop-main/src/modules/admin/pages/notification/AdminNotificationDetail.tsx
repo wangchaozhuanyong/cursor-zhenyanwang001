@@ -10,6 +10,7 @@ import { useAsyncResource } from "@/hooks/useAsyncResource";
 import { adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 
 const NOTIFICATION_STATUS_LABELS: Record<string, string> = {
@@ -118,25 +119,26 @@ export default function AdminNotificationDetail() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button className="rounded-lg border px-2 py-1 text-xs" onClick={() => navigate("/admin/notifications")}> <ArrowLeft size={14} /> </button>
-          <h1 className="text-xl font-bold"><Tx>通知详情</Tx></h1>
-        </div>
-        <button
-          type="button"
-          className="rounded-lg border px-3 py-1.5 text-xs"
-          onClick={() =>
-            notificationService
-              .exportNotificationRecipientsCsv(id, readFilter)
-              .catch((e) => toast.error(toastErrorMessage(e, tText("导出失败"))))
-          }
-        >
-          <Tx>导出接收用户 CSV</Tx>
-        </button>
-      </div>
-
+    <AdminPageShell
+      toolbar={(
+        <>
+          <button type="button" className="rounded-lg border px-2 py-1 text-xs" onClick={() => navigate("/admin/notifications")} aria-label={tText("返回通知列表")}>
+            <ArrowLeft size={14} />
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border px-3 py-1.5 text-xs"
+            onClick={() =>
+              notificationService
+                .exportNotificationRecipientsCsv(id, readFilter)
+                .catch((e) => toast.error(toastErrorMessage(e, tText("导出失败"))))
+            }
+          >
+            <Tx>导出接收用户 CSV</Tx>
+          </button>
+        </>
+      )}
+    >
       <div className="rounded-2xl border border-border bg-card p-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <div><div className="text-xs text-muted-foreground"><Tx>标题</Tx></div><div>{data.title}</div></div>
         <div><div className="text-xs text-muted-foreground"><Tx>类型</Tx></div><div>{labelNotificationType(data.type)}</div></div>
@@ -234,6 +236,6 @@ export default function AdminNotificationDetail() {
             </tbody>
         </AdminNativeTable>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

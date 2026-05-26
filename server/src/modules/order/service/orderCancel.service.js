@@ -2,7 +2,6 @@ const { generateId } = require('../../../utils/helpers');
 const { NotFoundError, ValidationError } = require('../../../errors');
 const { canUserCancel } = require('../orderStateMachine');
 const repo = require('../repository/order.repository');
-const userModule = require('../../user');
 const checkoutAbandonmentRepo = require('../repository/checkoutAbandonment.repository');
 const orderPoints = require('./orderPoints.service');
 
@@ -11,7 +10,7 @@ function getLoyaltyApi() {
 }
 
 function getUserApi() {
-  return /** @type {any} */ (userModule).api || {};
+  return /** @type {any} */ (require('../../user')).api || {};
 }
 
 function requireApiMethod(api, name) {

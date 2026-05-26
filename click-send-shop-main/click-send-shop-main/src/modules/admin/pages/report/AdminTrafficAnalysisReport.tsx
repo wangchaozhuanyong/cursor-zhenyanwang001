@@ -12,6 +12,7 @@ import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 
 type Summary = {
@@ -294,12 +295,14 @@ export default function AdminTrafficAnalysisReport() {
   };
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-[var(--theme-text)]"><Tx>流量分析</Tx></h1>
-          <p className="mt-1 text-xs text-[var(--theme-text-muted)]">最后更新：{payload?.last_updated_at ? new Date(payload.last_updated_at).toLocaleString("zh-CN") : "-"}</p>
-        </div>
+    <AdminPageShell
+      hint={(
+        <Tx>
+          最后更新：
+          {payload?.last_updated_at ? new Date(payload.last_updated_at).toLocaleString("zh-CN") : "-"}
+        </Tx>
+      )}
+      toolbar={(
         <button
           type="button"
           onClick={handleExport}
@@ -307,17 +310,17 @@ export default function AdminTrafficAnalysisReport() {
           className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Download size={16} />
-          {exporting ? "导出中..." : "导出 CSV"}
+          {exporting ? tText("导出中...") : tText("导出 CSV")}
         </button>
-      </div>
-
-      {payload?.analytics_downgraded ? (
-        <div className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2.5 text-sm text-[var(--theme-text)]">
-          {(payload.warnings || []).join("；") || "流量分析数据已降级展示，请检查埋点表和字段是否完整。"}
-        </div>
-      ) : null}
-
-      <div className="theme-rounded grid gap-3 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow sm:grid-cols-2 lg:grid-cols-6">
+      )}
+      filters={(
+        <>
+          {payload?.analytics_downgraded ? (
+            <div className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2.5 text-sm text-[var(--theme-text)]">
+              {(payload.warnings || []).join("；") || tText("流量分析数据已降级展示，请检查埋点表和字段是否完整。")}
+            </div>
+          ) : null}
+          <div className="theme-rounded grid gap-3 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow sm:grid-cols-2 lg:grid-cols-6">
         <FilterSelect label={tText("时间范围")} value={String(filters.range_preset || "last_7_days")} onChange={(value) => setFilters((prev) => ({ ...prev, range_preset: value }))} options={[
           { value: "today", label: tText("今日") },
           { value: "last_7_days", label: tText("最近 7 天") },
@@ -355,8 +358,10 @@ export default function AdminTrafficAnalysisReport() {
           { value: "search", label: tText("搜索页") },
           { value: "other", label: tText("其他页面") },
         ]} />
-      </div>
-
+          </div>
+        </>
+      )}
+    >
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon;
@@ -472,6 +477,6 @@ export default function AdminTrafficAnalysisReport() {
           </div>
         ) : null}
       </AdminResponsiveSheet>
-    </div>
+    </AdminPageShell>
   );
 }

@@ -26,6 +26,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { RbacAdminUserRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import AdminRolePicker from "@/components/admin/AdminRolePicker";
 import { getDefaultAdminRoleIds } from "@/components/admin/adminRolePickerUtils";
@@ -43,6 +44,7 @@ import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsive
 import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 const ROLE_BADGE: Record<string, { cls: string; text: string }> = {
   super_admin: { cls: THEME_BADGE_DANGER, text: "超级管理员" },
@@ -61,6 +63,7 @@ const HELP_COMMANDS = [
   },
 ];
 const PRIVILEGED_ROLE_CODES = new Set(["super_admin", "admin_manager"]);
+const EMPTY_CREATE_FORM = { phone: "", password: "", nickname: "", roleIds: [] as number[] };
 
 function hasPrivilegedRole(user: RbacAdminUserRow) {
   return user.role === "super_admin" || (user.roleCodes || []).some((code) => PRIVILEGED_ROLE_CODES.has(code));
@@ -78,7 +81,7 @@ export default function AdminAccounts() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showOpsHelp, setShowOpsHelp] = useState(false);
-  const [createForm, setCreateForm] = useState({ phone: "", password: "", nickname: "", roleIds: [] as number[] });
+  const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
   const [resetTarget, setResetTarget] = useState<RbacAdminUserRow | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [securityTarget, setSecurityTarget] = useState<RbacAdminUserRow | null>(null);
@@ -98,6 +101,22 @@ export default function AdminAccounts() {
   const admins = adminsQuery.data ?? [];
   const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
   const loading = adminsQuery.isLoading && !adminsQuery.data;
+  const defaultCreateRoleIds = useMemo(
+    () => getDefaultAdminRoleIds(roles, isSuperAdminViewer).slice().sort((a, b) => a - b),
+    [isSuperAdminViewer, roles],
+  );
+  const createRoleIdsSorted = useMemo(
+    () => [...createForm.roleIds].sort((a, b) => a - b),
+    [createForm.roleIds],
+  );
+  const createDirty = showCreate && (
+    createForm.phone.trim().length > 0
+      || createForm.password.length > 0
+      || createForm.nickname.trim().length > 0
+      || JSON.stringify(createRoleIdsSorted) !== JSON.stringify(defaultCreateRoleIds)
+  );
+  const resetDirty = Boolean(resetTarget && newPassword.length > 0);
+  useAdminTabDirty(createDirty || resetDirty);
 
   useEffect(() => {
     if (!showCreate || createForm.roleIds.length || !roles.length) return;
@@ -168,7 +187,7 @@ export default function AdminAccounts() {
       });
       toast.success(tText("管理员已创建"));
       setShowCreate(false);
-      setCreateForm({ phone: "", password: "", nickname: "", roleIds: [] });
+      setCreateForm(EMPTY_CREATE_FORM);
       void invalidateAccounts();
     } catch (err) {
       toast.error(toastErrorMessage(err, tText("创建失败")));
@@ -261,22 +280,22 @@ export default function AdminAccounts() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1">
+    <AdminPageShell
+      hint={<Tx>管理后台登录账号、角色分配、MFA 与密码安全；超级管理员可通过页面说明中的命令行恢复权限。</Tx>}
+      toolbar={(
+        <PermissionGate permission="role.manage">
+          <button type="button" onClick={() => setShowCreate(true)} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient active:opacity-90">
+            <Plus size={16} /><Tx>创建管理员</Tx>
+          </button>
+        </PermissionGate>
+      )}
+      filters={(
+        <>
+          <div className="space-y-2">
             <SearchBar placeholder={tText("搜索管理员手机号/昵称...")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+            <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
           </div>
-          <PermissionGate permission="role.manage">
-            <button type="button" onClick={() => setShowCreate(true)} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient active:opacity-90">
-              <Plus size={16} /><Tx>创建管理员</Tx>
-            </button>
-          </PermissionGate>
-        </div>
-        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
-      </div>
-
-      <div className={`theme-rounded border px-4 py-3 text-xs text-foreground/90 ${THEME_ALERT_ERROR_SOFT}`}>
+          <div className={`theme-rounded border px-4 py-3 text-xs text-foreground/90 ${THEME_ALERT_ERROR_SOFT}`}>
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-medium text-foreground"><Tx>超级管理员帮助</Tx></p>
           <AdminFieldHint
@@ -318,8 +337,10 @@ export default function AdminAccounts() {
             ))}
           </div>
         ) : null}
-      </div>
-
+          </div>
+        </>
+      )}
+    >
       <AnimatedTable
         loading={loading}
         rows={paginatedData}
@@ -437,7 +458,12 @@ export default function AdminAccounts() {
 
       <AdminFormSheet
         open={showCreate}
-        onOpenChange={setShowCreate}
+        onOpenChange={(open) => {
+          setShowCreate(open);
+          if (!open) {
+            setCreateForm(EMPTY_CREATE_FORM);
+          }
+        }}
         title={<span className="flex items-center gap-2"><UserCog size={18} /><Tx>创建管理员</Tx></span>}
         submitText={tText("创建")}
         submitDisabled={!createForm.phone || !isStrongAdminPassword(createForm.password) || createForm.roleIds.length === 0}
@@ -675,6 +701,7 @@ function AdminSecurityDialog({
           </div>
         )}
     </AdminResponsiveSheet>
+    </AdminPageShell>
   );
 }
 

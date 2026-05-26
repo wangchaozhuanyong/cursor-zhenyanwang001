@@ -20,6 +20,7 @@ import { flattenCategories } from "@/utils/categoryTree";
 import type { Product } from "@/types/product";
 import type { CouponUpsertPayload } from "@/types/coupon";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 
 const couponTypes = [
   { value: "fixed", label: "满减券" },
@@ -115,6 +116,8 @@ export default function AdminCouponForm() {
   const productLoading = productsQuery.isLoading && !productsQuery.data;
 
   const loading = isNew ? false : couponQuery.isLoading && !couponQuery.data;
+  const [formHydrated, setFormHydrated] = useState(isNew);
+  const { markClean } = useAdminFormDirty(form, formHydrated && !loading);
   const claimedCount = Number(couponQuery.data?.claimed_count || 0);
   const coreRulesLocked = isEdit && claimedCount > 0;
 
@@ -166,6 +169,7 @@ export default function AdminCouponForm() {
       usable_category_ids: Array.isArray(coupon.usable_category_ids) ? coupon.usable_category_ids : [],
       stackable_with_activity: coupon.stackable_with_activity !== false,
     });
+    setFormHydrated(true);
   }, [couponQuery.data]);
 
   const handleSave = async () => {
@@ -235,6 +239,7 @@ export default function AdminCouponForm() {
       }
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() });
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() });
+      markClean();
       navigate("/admin/marketing/coupons");
     } catch (e) {
       toast.error(toastErrorMessage(e, tText("保存失败，请重试")));

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Shield, Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import * as rbacService from "@/services/admin/rbacService";
@@ -12,6 +12,7 @@ import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons
 import { LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminPermissionPicker from "@/components/admin/AdminPermissionPicker";
 import AdminRolePicker from "@/components/admin/AdminRolePicker";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
@@ -19,9 +20,11 @@ import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsive
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 type Tab = "assign" | "manage";
 const PRIVILEGED_ROLE_CODES = new Set(["super_admin", "admin_manager"]);
+const EMPTY_ROLE_FORM = { code: "", name: "", description: "" };
 
 function hasPrivilegedRole(user?: RbacAdminUserRow | null) {
   if (!user) return false;
@@ -89,6 +92,34 @@ export default function AdminRoles() {
     setChecked(next);
   }, [userRolesQuery.data]);
 
+  const assignedRoleIdsSorted = useMemo(
+    () => [...assignedRoleIds].sort((a, b) => a - b),
+    [assignedRoleIds],
+  );
+  const serverRoleIdsSorted = useMemo(
+    () => [...(userRolesQuery.data?.roleIds ?? [])].sort((a, b) => a - b),
+    [userRolesQuery.data],
+  );
+  const rolePermIdsSorted = useMemo(
+    () => Object.entries(rolePerms).filter(([, v]) => v).map(([k]) => Number(k)).sort((a, b) => a - b),
+    [rolePerms],
+  );
+  const assignDirty = Boolean(
+    selectedUserId
+      && userRolesQuery.data
+      && JSON.stringify(assignedRoleIdsSorted) !== JSON.stringify(serverRoleIdsSorted),
+  );
+  const roleDirty = editRole
+    ? roleForm.code !== editRole.code
+      || roleForm.name !== editRole.name
+      || roleForm.description !== (editRole.description || "")
+      || JSON.stringify(rolePermIdsSorted) !== JSON.stringify([...editRole.permissionIds].sort((a, b) => a - b))
+    : roleForm.code !== EMPTY_ROLE_FORM.code
+      || roleForm.name !== EMPTY_ROLE_FORM.name
+      || roleForm.description !== EMPTY_ROLE_FORM.description
+      || rolePermIdsSorted.length > 0;
+  useAdminTabDirty(assignDirty || roleDirty);
+
   const handleSave = async () => {
     if (!selectedUserId) return;
     if (selectedTargetLocked) {
@@ -99,6 +130,7 @@ export default function AdminRoles() {
     setSaving(true);
     try {
       await rbacService.saveUserRoles(selectedUserId, roleIds);
+      queryClient.setQueryData(adminQueryKeys.rbacUserRoles(selectedUserId), { roleIds });
       toast.success(tText("已保存"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.rbacUserRoles(selectedUserId) });
     } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); }
@@ -108,7 +140,7 @@ export default function AdminRoles() {
   const openRoleCreate = () => {
     if (!isSuperAdminViewer) { toast.error(tText("仅超级管理员可创建角色")); return; }
     setEditRole(null);
-    setRoleForm({ code: "", name: "", description: "" });
+    setRoleForm(EMPTY_ROLE_FORM);
     setRolePerms({});
     setShowRoleModal(true);
   };
@@ -136,6 +168,9 @@ export default function AdminRoles() {
         toast.success(tText("角色已创建"));
       }
       setShowRoleModal(false);
+      setEditRole(null);
+      setRoleForm(EMPTY_ROLE_FORM);
+      setRolePerms({});
       void invalidateRbac();
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
     finally { setSaving(false); }
@@ -152,17 +187,16 @@ export default function AdminRoles() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center gap-2">
-        <Shield className="h-6 w-6 text-[var(--theme-price)]" />
-        <h1 className="font-display text-xl font-bold text-foreground"><Tx>角色权限</Tx></h1>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <button onClick={() => setTab("assign")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "assign" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>用户角色分配</Tx></button>
-        {isSuperAdminViewer && <button onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>角色管理</Tx></button>}
-      </div>
-
+    <AdminPageShell
+      className="mx-auto max-w-3xl"
+      hint={<Tx>为管理员分配 RBAC 角色；超级管理员可维护角色与权限点。</Tx>}
+      filters={(
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setTab("assign")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "assign" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>用户角色分配</Tx></button>
+          {isSuperAdminViewer && <button onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>角色管理</Tx></button>}
+        </div>
+      )}
+    >
       {loading ? (
         <AdminTabsPanelSkeleton />
       ) : (
@@ -297,6 +331,6 @@ export default function AdminRoles() {
             </Tx>            </LoadingButton>
         </div>
       </AdminResponsiveSheet>
-    </div>
+    </AdminPageShell>
   );
 }

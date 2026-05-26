@@ -2,6 +2,7 @@ import { Star, ThumbsUp, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ProductReviewsViewModel } from "@/hooks/useProductReviews";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
+import { AppModal } from "@/modules/micro-interactions";
 
 interface ProductReviewsProps {
   vm: ProductReviewsViewModel;
@@ -27,6 +28,8 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
     setSelectedOrderItemId,
     reload,
   } = vm;
+
+  const selectedPendingItem = eligibility.pending_items.find((item) => item.order_item_id === selectedOrderItemId);
 
   return (
     <div className="border-t border-border px-4 py-8 md:px-0 md:py-10">
@@ -68,31 +71,44 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
         ))}
       </div>
 
-      {showSelector && (
-        <div className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowSelector(false)}>
-          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-background p-4" onClick={(e) => e.stopPropagation()}>
-            <p className="mb-3 text-sm font-semibold">选择要评价的订单商品</p>
-            <div className="space-y-2">
-              {eligibility.pending_items.map((item) => (
-                <button
-                  key={item.order_item_id}
-                  className="w-full rounded-xl border p-3 text-left"
-                  onClick={() => {
-                    setSelectedOrderItemId(item.order_item_id);
-                    setShowSelector(false);
-                    setShowComposer(true);
-                  }}
-                >
-                  <p className="text-sm">{item.product_name}</p>
-                  <p className="text-xs text-muted-foreground">{item.variant_name || item.sku_code || "默认规格"} / 订单 {item.order_no}</p>
-                </button>
-              ))}
-            </div>
-          </div>
+      <AppModal
+        tier="standard"
+        open={showSelector}
+        onClose={() => setShowSelector(false)}
+        title="选择要评价的商品"
+        height="auto"
+      >
+        <div className="space-y-2 pb-2">
+          {eligibility.pending_items.map((item) => (
+            <button
+              key={item.order_item_id}
+              type="button"
+              className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-left transition hover:bg-[var(--theme-bg)]"
+              onClick={() => {
+                setSelectedOrderItemId(item.order_item_id);
+                setShowSelector(false);
+                setShowComposer(true);
+              }}
+            >
+              <p className="text-sm font-medium text-[var(--theme-text)]">{item.product_name}</p>
+              <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
+                {item.variant_name || item.sku_code || "默认规格"} · 订单 {item.order_no}
+              </p>
+            </button>
+          ))}
         </div>
-      )}
+      </AppModal>
 
-      <ReviewComposerSheet open={showComposer} onClose={() => setShowComposer(false)} orderItemId={selectedOrderItemId} onSuccess={() => { void reload(); }} />
+      <ReviewComposerSheet
+        open={showComposer}
+        onClose={() => setShowComposer(false)}
+        orderItemId={selectedOrderItemId}
+        product={selectedPendingItem ? { name: selectedPendingItem.product_name } : undefined}
+        variantName={selectedPendingItem?.variant_name || selectedPendingItem?.sku_code || undefined}
+        onSuccess={() => {
+          void reload();
+        }}
+      />
     </div>
   );
 }

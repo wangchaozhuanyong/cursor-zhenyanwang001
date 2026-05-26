@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AnimatedPage } from "@/modules/micro-interactions";
-import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { AdminOutletFallback } from "@/components/AppRouteFallback";
 import {
   LayoutDashboard,
@@ -20,7 +20,9 @@ import {
 } from "lucide-react";
 import AdminAccountSettingsTrigger from "@/components/admin/AdminAccountSettingsTrigger";
 import { AdminAccountSettingsProvider } from "@/modules/admin/context/AdminAccountSettingsContext";
-import { getHiddenAdminHeaderTitle, resolveAdminHeaderTitle } from "@/config/adminNavTitle";
+import { resolveAdminTabTitle } from "@/config/adminNavTitle";
+import { syncAdminWorkTabFromLocation } from "@/stores/useAdminWorkTabsStore";
+import AdminWorkTabs from "@/layouts/admin/AdminWorkTabs";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { useAdminT } from "@/hooks/useAdminT";
 import type { AdminLocale } from "@/i18n/admin";
@@ -28,6 +30,8 @@ import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
 import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
+import { AdminDirtyGuardProvider } from "@/modules/admin/context/AdminDirtyGuardContext";
+import AdminKeepAliveOutlet from "@/layouts/admin/AdminKeepAliveOutlet";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
 import {
   AdminOrderVoiceMenuItems,
@@ -65,6 +69,7 @@ function AdminLayoutContent() {
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [skinPickerOpen, setSkinPickerOpen] = useState(false);
   const [topSearch, setTopSearch] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [securityAlerts, setSecurityAlerts] = useState<SecurityAlertSummary | null>(null);
   const [securityAlertsOpen, setSecurityAlertsOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
@@ -173,11 +178,10 @@ function AdminLayoutContent() {
     navigate("/admin/login");
   }, [navigate]);
 
-  const headerTitle = useMemo(() => {
-    const hidden = getHiddenAdminHeaderTitle(location.pathname, t);
-    if (hidden) return hidden;
-    return resolveAdminHeaderTitle(navItems, location.pathname, t("layout.title"));
-  }, [navItems, location.pathname, t]);
+  useEffect(() => {
+    const title = resolveAdminTabTitle(navItems, location.pathname, t("layout.title"), t);
+    syncAdminWorkTabFromLocation(location.pathname, location.search, title);
+  }, [navItems, location.pathname, location.search, t]);
 
   const tab = mobileBottomTab(location.pathname);
 
@@ -191,6 +195,7 @@ function AdminLayoutContent() {
   return (
     <DownloadConfirmProvider>
     <AdminConfirmProvider>
+    <AdminDirtyGuardProvider>
     <AdminAccountSettingsProvider>
     <AdminOrderVoiceProvider>
     <div data-admin-shell className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
@@ -239,22 +244,28 @@ function AdminLayoutContent() {
         ) : null}
       </AnimatePresence>
 
-      <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col overflow-x-hidden">
-        <header className="safe-area-pt sticky top-0 z-30 flex flex-col border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
-          <div className="flex min-h-[48px] items-center gap-2 px-[var(--admin-mobile-page-x)] py-2 sm:px-4 lg:px-6">
+      <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="admin-chrome safe-area-pt sticky top-0 z-30 flex shrink-0 flex-col border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
+          <div className="admin-chrome-toolbar flex h-[var(--admin-chrome-toolbar-h)] min-h-[var(--admin-chrome-toolbar-h)] items-center gap-2 px-[var(--admin-mobile-page-x)] sm:px-4 lg:px-6">
             <button
               type="button"
               aria-label={t("layout.openMenu")}
-              className="touch-manipulation flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-foreground hover:bg-secondary lg:hidden"
+              className="touch-manipulation flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground hover:bg-secondary lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
-              <Menu size={22} />
+              <Menu size={20} />
             </button>
-            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground sm:text-base">
-              {headerTitle}
-            </h2>
-            <div className="flex shrink-0 flex-nowrap items-center gap-1 sm:gap-2">
-            <div className="hidden items-center gap-2 rounded-xl bg-secondary px-3 py-2 md:flex">
+            <div className="min-w-0 flex-1" aria-hidden />
+            <div className="flex shrink-0 flex-nowrap items-center gap-1 sm:gap-1.5">
+            <button
+              type="button"
+              aria-label={t("layout.searchMenu")}
+              className="touch-manipulation flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary md:hidden"
+              onClick={() => setMobileSearchOpen((v) => !v)}
+            >
+              <Search size={18} />
+            </button>
+            <div className="hidden items-center gap-2 rounded-lg bg-secondary px-3 py-1.5 md:flex">
               <Search size={16} className="shrink-0 text-muted-foreground" />
               <input
                 placeholder={t("layout.searchMenu")}
@@ -355,7 +366,7 @@ function AdminLayoutContent() {
               <button
                 type="button"
                 aria-label={t("layout.account")}
-                className="touch-manipulation flex h-11 min-w-[44px] items-center gap-1 rounded-xl px-1 hover:bg-secondary"
+                className="touch-manipulation flex h-9 min-w-[40px] items-center gap-1 rounded-lg px-1 hover:bg-secondary"
                 onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
               >
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--theme-primary)] text-xs font-bold text-[var(--theme-primary-foreground)]">A</div>
@@ -420,24 +431,33 @@ function AdminLayoutContent() {
             </div>
           </div>
 
-          <div className="border-t border-border px-3 py-2 md:hidden">
-            <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
-              <Search size={16} className="shrink-0 text-muted-foreground" />
-              <input
-                placeholder={t("layout.searchMenu")}
-                value={topSearch}
-                onChange={(e) => setTopSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleTopSearch()}
-                className="min-h-[40px] flex-1 bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
-              />
+          {mobileSearchOpen ? (
+            <div className="border-t border-[var(--theme-border)] px-3 py-2 md:hidden">
+              <div className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
+                <Search size={16} className="shrink-0 text-muted-foreground" />
+                <input
+                  placeholder={t("layout.searchMenu")}
+                  value={topSearch}
+                  onChange={(e) => setTopSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleTopSearch();
+                      setMobileSearchOpen(false);
+                    }
+                  }}
+                  className="min-h-[36px] flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                />
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          <AdminWorkTabs />
         </header>
 
-        <main className="admin-mobile-main admin-table-scope flex-1 p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
+        <main className="admin-mobile-main admin-table-scope min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
           <Suspense fallback={<AdminOutletFallback />}>
             <AnimatedPage>
-              <Outlet />
+              <AdminKeepAliveOutlet />
             </AnimatedPage>
           </Suspense>
         </main>
@@ -495,6 +515,7 @@ function AdminLayoutContent() {
     </div>
     </AdminOrderVoiceProvider>
     </AdminAccountSettingsProvider>
+    </AdminDirtyGuardProvider>
     </AdminConfirmProvider>
     </DownloadConfirmProvider>
   );

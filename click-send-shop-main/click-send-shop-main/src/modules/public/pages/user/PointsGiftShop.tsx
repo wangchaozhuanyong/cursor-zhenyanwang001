@@ -10,6 +10,8 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import * as orderService from "@/services/orderService";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import { BottomSheetConfirm } from "@/modules/micro-interactions";
+import { formatAddressForDisplay } from "@/services/addressService";
 import { giftRedeemBlockReason, giftRedeemCashHint } from "@/utils/pointsGiftRedeem";
 import { cn } from "@/lib/utils";
 import {
@@ -81,6 +83,7 @@ export default function PointsGiftShop() {
   const [loading, setLoading] = useState(true);
   const [bootstrapReady, setBootstrapReady] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [redeemConfirmGift, setRedeemConfirmGift] = useState<PointsGiftCatalogItem | null>(null);
   const { payPendingOrder } = usePayPendingOrder();
 
   useEffect(() => {
@@ -117,18 +120,26 @@ export default function PointsGiftShop() {
     void bootstrap();
   }, [bootstrap]);
 
-  const handleRedeem = async (gift: PointsGiftCatalogItem) => {
+  const requestRedeem = (gift: PointsGiftCatalogItem) => {
     const blockReason = giftRedeemBlockReason(gift, pointsBalance);
     if (blockReason) {
       toast.error(blockReason);
       return;
     }
-
     if (!bootstrapReady || addressLoading) {
       toast.message("正在加载收货地址，请稍候");
       return;
     }
+    const addr = getDefaultAddress() || addresses[0];
+    if (!addr) {
+      toast.error("请先添加收货地址");
+      navigate("/address", { state: { from: "/points/gifts" } });
+      return;
+    }
+    setRedeemConfirmGift(gift);
+  };
 
+  const handleRedeem = async (gift: PointsGiftCatalogItem) => {
     const addr = getDefaultAddress() || addresses[0];
     if (!addr) {
       toast.error("请先添加收货地址");
@@ -206,13 +217,47 @@ export default function PointsGiftShop() {
                   balance={pointsBalance}
                   onlinePaymentEnabled={onlinePaymentEnabled}
                   redeeming={redeemingId === gift.id}
-                  onRedeem={(item) => void handleRedeem(item)}
+                  onRedeem={requestRedeem}
                 />
               ))}
             </div>
           )}
         </section>
       </div>
+
+      <BottomSheetConfirm
+        open={Boolean(redeemConfirmGift)}
+        onClose={() => setRedeemConfirmGift(null)}
+        title="确认兑换"
+        description={
+          redeemConfirmGift ? (
+            <span className="block space-y-2 text-left text-sm text-[var(--theme-text-muted)]">
+              <span className="block">
+                礼品：<strong className="text-[var(--theme-text)]">{redeemConfirmGift.title}</strong>
+              </span>
+              <span className="block">
+                消耗积分：<strong className="text-[var(--theme-price)]">{redeemConfirmGift.required_points}</strong>
+                {redeemConfirmGift.cash_amount > 0 ? (
+                  <>，另需支付 RM {redeemConfirmGift.cash_amount}</>
+                ) : null}
+              </span>
+              <span className="block">
+                收货地址：
+                {formatAddressForDisplay(getDefaultAddress() || addresses[0]!)}
+              </span>
+            </span>
+          ) : null
+        }
+        confirmText="确认兑换"
+        cancelText="取消"
+        loading={Boolean(redeemConfirmGift && redeemingId === redeemConfirmGift.id)}
+        onConfirm={async () => {
+          if (!redeemConfirmGift) return;
+          const gift = redeemConfirmGift;
+          setRedeemConfirmGift(null);
+          await handleRedeem(gift);
+        }}
+      />
     </StoreAccountLayout>
   );
 }

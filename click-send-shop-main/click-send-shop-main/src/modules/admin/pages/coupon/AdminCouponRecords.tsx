@@ -1,6 +1,5 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useMemo, useState } from "react";
-import { ClipboardList } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -14,6 +13,8 @@ import {
   AdminTableMobileCardField,
 } from "@/components/admin/AdminTableMobileCard";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import { Tx } from "@/components/admin/AdminText";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -23,7 +24,6 @@ import {
   hasActiveCouponRecordFilters,
   removeCouponRecordFilterChip,
 } from "@/utils/adminCouponRecordFilters";
-import { Tx } from "@/components/admin/AdminText";
 import { formatUserDisplay } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { THEME_BADGE_SUCCESS } from "@/utils/themeVisuals";
@@ -120,26 +120,24 @@ export default function AdminCouponRecords() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <ClipboardList className="h-5 w-5 text-[var(--theme-price)]" />
-        <h1 className="text-xl font-bold"><Tx>领券记录</Tx></h1>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <SearchBar placeholder={tText("搜索用户/优惠券")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="rounded-lg bg-secondary px-3 py-2 text-sm"
-        >
-          <option value=""><Tx>全部状态</Tx></option>
-          <option value="available"><Tx>未使用</Tx></option>
-          <option value="used"><Tx>已使用</Tx></option>
-          <option value="expired"><Tx>已过期</Tx></option>
-        </select>
-      </div>
-
+    <AdminPageShell
+      hint={<Tx>查看用户领券与使用状态，支持按用户、优惠券与状态筛选。</Tx>}
+      filters={(
+        <div className="flex flex-wrap gap-2">
+          <SearchBar placeholder={tText("搜索用户/优惠券")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="rounded-lg bg-secondary px-3 py-2 text-sm"
+          >
+            <option value=""><Tx>全部状态</Tx></option>
+            <option value="available"><Tx>未使用</Tx></option>
+            <option value="used"><Tx>已使用</Tx></option>
+            <option value="expired"><Tx>已过期</Tx></option>
+          </select>
+        </div>
+      )}
+    >
       <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
 
       <AnimatedTable
@@ -190,6 +188,6 @@ export default function AdminCouponRecords() {
           </>
         )}
       />
-    </div>
+    </AdminPageShell>
   );
 }

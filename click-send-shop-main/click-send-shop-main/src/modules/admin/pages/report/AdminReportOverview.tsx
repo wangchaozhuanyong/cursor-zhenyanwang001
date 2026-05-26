@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { REPORT_PAGES } from "@/config/reportPageConfig";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
 import ReportKpiGrid from "@/components/admin/report/ReportKpiGrid";
 import ReportAlertBanners from "@/components/admin/report/ReportAlertBanners";
@@ -98,24 +99,22 @@ export default function AdminReportOverview() {
   }, [overviewQuery.isError, overviewQuery.error]);
 
   return (
-    <div className="space-y-5">
-      <ReportPageHeader
-        title={OVERVIEW_CONFIG.title}
-        description={OVERVIEW_CONFIG.description}
-      />
-
-      <div className="space-y-2">
-        <ReportFilterBar
-          filterProfile={OVERVIEW_CONFIG.filterProfile}
-          enabledFilters={enabledFilters}
-        />
-        <AdminFilterSummaryBar
-          chips={filterChips}
-          onClearAll={handleClearFilters}
-          onRemove={handleRemoveFilterChip}
-        />
-      </div>
-
+    <AdminPageShell
+      hint={OVERVIEW_CONFIG.description}
+      filters={(
+        <div className="space-y-2">
+          <ReportFilterBar
+            filterProfile={OVERVIEW_CONFIG.filterProfile}
+            enabledFilters={enabledFilters}
+          />
+          <AdminFilterSummaryBar
+            chips={filterChips}
+            onClearAll={handleClearFilters}
+            onRemove={handleRemoveFilterChip}
+          />
+        </div>
+      )}
+    >
       <ReportAlertBanners alerts={alerts} />
 
       <section className="space-y-3">
@@ -185,6 +184,6 @@ export default function AdminReportOverview() {
           <span className="font-medium text-[var(--theme-text)]"><Tx>数据口径：</Tx></span>{OVERVIEW_CONFIG.dataScopeNote}
         </section>
       ) : null}
-    </div>
+    </AdminPageShell>
   );
 }

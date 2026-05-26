@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -11,7 +11,9 @@ import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactio
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_BORDER_DANGER_SOFT, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 type Draft = Omit<MemberLevel, "id" | "created_at" | "updated_at"> & {
   id?: string;
@@ -32,6 +34,7 @@ const emptyDraft: Draft = {
   enabled: true,
   is_default: false,
 };
+const EMPTY_DRAFT_SERIALIZED = JSON.stringify(emptyDraft);
 
 function toPayload(draft: Draft): MemberLevelPayload {
   return {
@@ -65,6 +68,7 @@ export default function AdminMemberLevels() {
   const { confirm } = useAdminConfirm();
   const [levels, setLevels] = useState<MemberLevel[]>([]);
   const [newLevel, setNewLevel] = useState<Draft>(emptyDraft);
+  const [levelsBaseline, setLevelsBaseline] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MemberLevel | null>(null);
 
@@ -75,7 +79,9 @@ export default function AdminMemberLevels() {
   });
 
   useEffect(() => {
-    if (levelsQuery.data) setLevels(levelsQuery.data);
+    if (!levelsQuery.data) return;
+    setLevels(levelsQuery.data);
+    setLevelsBaseline(JSON.stringify(levelsQuery.data));
   }, [levelsQuery.data]);
 
   const invalidateLevels = async () => {
@@ -102,11 +108,20 @@ export default function AdminMemberLevels() {
   };
 
   const loading = levelsQuery.isLoading && !levelsQuery.data;
+  const levelsDirty = useMemo(
+    () => levelsBaseline !== null && JSON.stringify(levels) !== levelsBaseline,
+    [levels, levelsBaseline],
+  );
+  const newLevelDirty = useMemo(
+    () => JSON.stringify(newLevel) !== EMPTY_DRAFT_SERIALIZED,
+    [newLevel],
+  );
+  useAdminTabDirty(levelsDirty || newLevelDirty);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold"><Tx>会员等级配置</Tx></h2>
+    <AdminPageShell
+      hint={<Tx>配置会员等级门槛、折扣与积分倍率；重算会按消费与订单数自动匹配等级。</Tx>}
+      toolbar={(
         <div className="flex flex-wrap gap-2">
           <LoadingButton
             type="button"
@@ -134,8 +149,8 @@ export default function AdminMemberLevels() {
             <Tx>强制重算全部</Tx>
           </LoadingButton>
         </div>
-      </div>
-
+      )}
+    >
       <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
         <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>新增等级</Tx></h3>
         <div className="grid gap-2 md:grid-cols-4">
@@ -252,6 +267,6 @@ export default function AdminMemberLevels() {
           }
         }}
       />
-    </div>
+    </AdminPageShell>
   );
 }

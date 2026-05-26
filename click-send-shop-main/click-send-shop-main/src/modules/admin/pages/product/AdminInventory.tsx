@@ -4,7 +4,7 @@ import {
   AdminTableMobileCard,
   AdminTableMobileCardField,
 } from "@/components/admin/AdminTableMobileCard";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import InventoryFormSheets from "@/modules/admin/pages/product/inventory/InventoryFormSheets";
 import {
   exportInventoryRecordsCsv,
@@ -310,15 +310,15 @@ export default function AdminInventory({
 
   return (
     <PermissionGate permission="inventory.manage">
-      <div className="space-y-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <AdminPageTitle title={pageTitle || tText("库存中心")} hint={pageHint || L("按 SKU 管理库存、流水、组装拆包规则和转换单据。")} />
+      <AdminPageShell
+        hint={pageHint || L("按 SKU 管理库存、流水、组装拆包规则和转换单据。")}
+        toolbar={(
           <div className="flex gap-2">
             <button onClick={() => void exportInventorySkusCsv({ keyword, stock_status: stockStatus })} className="flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm"><Download size={15} /><Tx>导出库存</Tx></button>
             <button onClick={() => void invalidateInventory()} className="flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm"><RefreshCcw size={15} /><Tx>刷新</Tx></button>
           </div>
-        </div>
-
+        )}
+      >
         <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {[
             { t: "全部 SKU", v: summary?.total_skus ?? 0 },
@@ -546,7 +546,7 @@ export default function AdminInventory({
           saveRuleMutation={saveRuleMutation}
           conversionMutation={conversionMutation}
         />
-      </div>
+      </AdminPageShell>
     </PermissionGate>
   );
 }

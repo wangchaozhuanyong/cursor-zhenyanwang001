@@ -88,17 +88,26 @@ export function getHiddenAdminHeaderTitle(
   return null;
 }
 
-/** 顶栏标题：一级 / 二级（或隐藏页三级），与侧栏命名一致 */
-export function resolveAdminHeaderTitle(
+/** 工作标签短标题：取面包屑最后一段，避免顶栏与页面重复占高 */
+export function resolveAdminTabTitle(
   navItems: AdminNavTitleItem[],
   pathname: string,
   fallback: string,
+  t: (key: string) => string,
 ): string {
+  const hidden = getHiddenAdminHeaderTitle(pathname, t);
+  if (hidden) {
+    const parts = hidden.split(" / ").map((p) => p.trim()).filter(Boolean);
+    return parts[parts.length - 1] || hidden;
+  }
   for (const item of navItems) {
     if (item.children?.length) {
       for (const child of item.children) {
         const childTitle = resolveChildTitle(pathname, item, child);
-        if (childTitle) return childTitle;
+        if (childTitle) {
+          const parts = childTitle.split(" / ").map((p) => p.trim()).filter(Boolean);
+          return parts[parts.length - 1] || child.label;
+        }
       }
     }
     if (pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path))) {

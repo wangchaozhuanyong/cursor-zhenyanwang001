@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarClock, Copy, Eye, PlusCircle, Trash2 } from "lucide-react";
+import { Copy, Eye, PlusCircle, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatAdminDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 import {
   DISPLAY_POSITION_LABELS,
@@ -169,34 +170,32 @@ export default function AdminActivities() {
   );
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-bold"><CalendarClock className="h-5 w-5 text-[var(--theme-price)]" /><Tx>活动管理 / 营销活动</Tx></h1>
-          <p className="text-xs text-muted-foreground"><Tx>活动列表与运营动作入口。</Tx></p>
-        </div>
+    <AdminPageShell
+      hint={<Tx>活动列表与运营动作入口。</Tx>}
+      toolbar={(
         <PermissionGate permission="activity.manage">
           <button type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><PlusCircle className="mr-1 inline h-4 w-4" /><Tx>新建活动</Tx></button>
         </PermissionGate>
-      </div>
-
-      <div className="flex flex-wrap gap-2">{quickButtons.map((button) => <button key={button.label} onClick={() => navigate(button.to)} className="rounded-lg border border-border px-3 py-1.5 text-sm">{button.label}</button>)}</div>
-
-      <div className="flex flex-wrap gap-2">{tabsLocalized.map((tab) => <button key={String(tab.value)} type="button" onClick={() => { setStatus(tab.value); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === tab.value ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tab.label}</button>)}</div>
-
-      <div className="space-y-2">
-        <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
-          <SearchBar placeholder={tText("搜索活动名称")} value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} />
-          <select value={type} onChange={(e) => { setType(e.target.value as ActivityType | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm"><option value=""><Tx>全部类型</Tx></option><option value="flash_sale"><Tx>限时秒杀</Tx></option><option value="full_reduction"><Tx>满减活动</Tx></option></select>
-          <button type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>查询</Tx></button>
-        </div>
-        <AdminFilterSummaryBar
-          chips={filterChips}
-          onClearAll={clearActivityFilters}
-          onRemove={handleRemoveFilterChip}
-        />
-      </div>
-
+      )}
+      filters={(
+        <>
+          <div className="flex flex-wrap gap-2">{quickButtons.map((button) => <button key={button.label} onClick={() => navigate(button.to)} className="rounded-lg border border-border px-3 py-1.5 text-sm">{button.label}</button>)}</div>
+          <div className="flex flex-wrap gap-2">{tabsLocalized.map((tab) => <button key={String(tab.value)} type="button" onClick={() => { setStatus(tab.value); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === tab.value ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tab.label}</button>)}</div>
+          <div className="space-y-2">
+            <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
+              <SearchBar placeholder={tText("搜索活动名称")} value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} />
+              <select value={type} onChange={(e) => { setType(e.target.value as ActivityType | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm"><option value=""><Tx>全部类型</Tx></option><option value="flash_sale"><Tx>限时秒杀</Tx></option><option value="full_reduction"><Tx>满减活动</Tx></option></select>
+              <button type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>查询</Tx></button>
+            </div>
+            <AdminFilterSummaryBar
+              chips={filterChips}
+              onClearAll={clearActivityFilters}
+              onRemove={handleRemoveFilterChip}
+            />
+          </div>
+        </>
+      )}
+    >
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <AnimatedTable
           loading={loading}
@@ -298,6 +297,6 @@ export default function AdminActivities() {
           deleteMutation.mutate(deleteId);
         }}
       />
-    </div>
+    </AdminPageShell>
   );
 }

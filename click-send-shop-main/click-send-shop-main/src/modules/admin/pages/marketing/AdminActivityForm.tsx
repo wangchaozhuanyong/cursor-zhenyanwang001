@@ -10,6 +10,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import ActivityProductPicker from "@/components/admin/ActivityProductPicker";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { DISPLAY_POSITIONS, DISPLAY_POSITION_LABELS, WIP_ACTIVITY_TYPES, type DisplayPosition } from "@/constants/marketingDisplayPositions";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { fetchCoupons } from "@/services/admin/couponService";
@@ -17,6 +18,7 @@ import type { Coupon } from "@/types/coupon";
 import { adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 
 const STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
 
@@ -91,6 +93,11 @@ export default function AdminActivityForm() {
   const couponOptions = couponsQuery.data ?? [];
   const couponsLoading = couponsQuery.isLoading && !couponsQuery.data;
 
+  const activityLoading = (isEdit && activityQuery.isLoading && !activityQuery.data)
+    || (!!copyFromId && copySourceQuery.isLoading && !copySourceQuery.data);
+  const [formHydrated, setFormHydrated] = useState(!isEdit && !copyFromId);
+  const { markClean } = useAdminFormDirty(form, formHydrated && !activityLoading);
+
   useEffect(() => {
     if (!activityQuery.data) return;
     const d = activityQuery.data;
@@ -121,6 +128,7 @@ export default function AdminActivityForm() {
       })),
     });
     setStatusLabel(d.status_label || "草稿");
+    setFormHydrated(true);
   }, [activityQuery.data]);
 
   useEffect(() => {
@@ -151,6 +159,7 @@ export default function AdminActivityForm() {
     });
     setStatusLabel("草稿");
     toast.success(tText("已载入复制活动内容，请重新设置活动时间后发布"));
+    setFormHydrated(true);
   }, [copySourceQuery.data, tText]);
 
   const selectedCouponIds = useMemo(
@@ -222,6 +231,7 @@ export default function AdminActivityForm() {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
       ]);
       toast.success(targetStatus === "draft" ? tText("草稿已保存") : tText("活动已发布"));
+      markClean();
       navigate("/admin/marketing/activities");
     } catch (e) {
       toast.error(toastErrorMessage(e, tText("保存失败")));
@@ -258,15 +268,12 @@ export default function AdminActivityForm() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground"><Tx>返回</Tx></button>
-          <h1 className="text-xl font-bold text-foreground">{tText("活动管理")} / {isEdit ? tText("编辑活动") : tText("新建活动")}</h1>
-          <p className="text-xs text-muted-foreground">{tText("状态")}：{tText(statusLabel)}</p>
-        </div>
-      </div>
-
+    <AdminPageShell
+      hint={<Tx>状态：{tText(statusLabel)}</Tx>}
+      toolbar={(
+        <button type="button" onClick={() => navigate(-1)} className="text-sm text-muted-foreground"><Tx>返回</Tx></button>
+      )}
+      filters={(
       <div className="-mx-1 overflow-x-auto pb-1 lg:hidden">
         <div className="flex w-max gap-2 px-1">
           {STEPS.map((s, i) => (
@@ -283,7 +290,8 @@ export default function AdminActivityForm() {
           ))}
         </div>
       </div>
-
+      )}
+    >
       <div className="grid gap-4 lg:grid-cols-[220px_1fr_340px]">
         <div className="hidden rounded-xl border border-border bg-card p-3 lg:block">
           {STEPS.map((s, i) => (
@@ -577,6 +585,6 @@ export default function AdminActivityForm() {
         existingIds={form.items.map((x) => x.product_id)}
         onConfirm={(rows) => setForm((p) => ({ ...p, items: [...p.items, ...rows] }))}
       />
-    </div>
+    </AdminPageShell>
   );
 }

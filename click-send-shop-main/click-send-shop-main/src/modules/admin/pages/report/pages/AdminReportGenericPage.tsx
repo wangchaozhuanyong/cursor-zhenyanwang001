@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import type { ReportPageConfig } from "@/config/reportPageConfig";
 import { fetchCategories } from "@/services/admin/categoryService";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
 import ReportKpiGrid from "@/components/admin/report/ReportKpiGrid";
 import ReportAlertBanners from "@/components/admin/report/ReportAlertBanners";
@@ -53,6 +54,8 @@ type Props = {
   summaryPriorityKeys?: string[];
   /** 覆盖 config.summaryMaxCards；0 表示不截断 */
   summaryMaxCards?: number;
+  /** 插在筛选条之前的附加控件（如利润报表日/月切换） */
+  filterPrefix?: ReactNode;
 };
 
 export default function AdminReportGenericPage({
@@ -60,6 +63,7 @@ export default function AdminReportGenericPage({
   fetcher,
   summaryPriorityKeys: summaryPriorityKeysProp,
   summaryMaxCards: summaryMaxCardsProp,
+  filterPrefix,
 }: Props) {
   const { tText } = useAdminT();
   const { column: labelReportColumn, cell: labelReportCell } = useAdminReportLabel();
@@ -282,16 +286,21 @@ export default function AdminReportGenericPage({
   };
 
   return (
-    <div className="space-y-5">
-      <ReportPageHeader
-        title={title}
-        description={description}
-        exporting={exporting}
-        onExport={exportType ? handleExport : undefined}
-      />
-
-      {filterProfile !== "none" ? (
+    <AdminPageShell
+      hint={tText(description)}
+      toolbar={(
+        <ReportPageHeader
+          compact
+          title={title}
+          description={description}
+          exporting={exporting}
+          onExport={exportType ? handleExport : undefined}
+        />
+      )}
+      filters={filterProfile !== "none" || filterPrefix ? (
         <div className="space-y-2">
+          {filterPrefix}
+          {filterProfile !== "none" ? (
           <ReportFilterBar
             filterProfile={filterProfile}
             enabledFilters={enabledFilters}
@@ -303,9 +312,10 @@ export default function AdminReportGenericPage({
             onClearAll={handleClearFilters}
             onRemove={handleRemoveFilterChip}
           />
+          ) : null}
         </div>
       ) : null}
-
+    >
       <ReportAlertBanners alerts={alerts} />
 
       <section className="space-y-3">
@@ -422,6 +432,6 @@ export default function AdminReportGenericPage({
           )}
         </div>
       </AdminResponsiveSheet>
-    </div>
+    </AdminPageShell>
   );
 }

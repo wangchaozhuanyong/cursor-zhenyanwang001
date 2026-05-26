@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 import { formatCouponExpireText } from "@/utils/couponDisplay";
-import { ResponsiveSheet, useMediaSheetMode } from "@/modules/micro-interactions";
+import { AppModal, usePreferBottomSheet } from "@/modules/micro-interactions";
 
 interface CouponPickerProps {
   totalAmount: number;
@@ -109,7 +109,7 @@ function CouponListBody(props: {
 
 export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCouponId, onSelect, coupons, loading, embedded = false }: CouponPickerProps) {
   const [open, setOpen] = useState(false);
-  const isMobileSheet = useMediaSheetMode();
+  const isMobileSheet = usePreferBottomSheet("standard");
   const selected = coupons.find((c) => c.id === selectedCouponId) ?? null;
   const { getDiscountAmount, isUsable, getAmountParts, getMinSpendText } = useCouponHelpers(totalAmount, shippingFee);
   const usableCount = coupons.filter(isUsable).length;
@@ -157,9 +157,9 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
       </button>
 
       {isMobileSheet ? (
-        <ResponsiveSheet open={open} onClose={close} title="选择优惠券" height="90vh">
+        <AppModal tier="standard" open={open} onClose={close} title="选择优惠券" height="90vh">
           <CouponListBody {...listProps} />
-        </ResponsiveSheet>
+        </AppModal>
       ) : (
         <AnimatePresence>
           {open && (

@@ -25,10 +25,12 @@ import {
   removeReviewFilterChip,
 } from "@/utils/adminReviewFilters";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import {
   THEME_BADGE_DANGER,
   THEME_BADGE_MUTED,
@@ -115,6 +117,15 @@ export default function AdminReviews() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [complaintTarget, setComplaintTarget] = useState<AdminReview | null>(null);
   const [complaintForm, setComplaintForm] = useState<{ status: ComplaintStatus; note: string }>({ status: "pending", note: "" });
+  const replyDirty = Boolean(replyTarget && replyText !== (replyTarget.admin_reply || ""));
+  const complaintDirty = Boolean(
+    complaintTarget
+      && (
+        complaintForm.status !== ((complaintTarget.complaint_status as ComplaintStatus) || "pending")
+        || complaintForm.note !== (complaintTarget.complaint_note || "")
+      ),
+  );
+  useAdminTabDirty(replyDirty || complaintDirty);
 
   const queryParams = useMemo(() => {
     const params: ReviewListParams = { page, pageSize, sortBy: "created_at", sortOrder: "DESC" };
@@ -179,6 +190,7 @@ export default function AdminReviews() {
       await reviewService.updateComplaint(complaintTarget.id, complaintForm.status, complaintForm.note.trim() || undefined);
       toast.success(tText("差评处理已更新"));
       setComplaintTarget(null);
+      setComplaintForm({ status: "pending", note: "" });
       void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); }
   };
@@ -395,11 +407,13 @@ export default function AdminReviews() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <SearchBar placeholder={tText("搜索评论内容 / 用户名 / 商品名...")} value={keyword} onChange={(v) => { setKeyword(v); setPage(1); }} />
-        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearReviewFilters} onRemove={handleRemoveFilterChip} />
-        <details className="group rounded-xl border border-border bg-card px-3 py-2">
+    <AdminPageShell
+      hint={<Tx>审核、回复与隐藏商品评论，支持差评跟进与批量操作。</Tx>}
+      filters={(
+        <div className="space-y-2">
+          <SearchBar placeholder={tText("搜索评论内容 / 用户名 / 商品名...")} value={keyword} onChange={(v) => { setKeyword(v); setPage(1); }} />
+          <AdminFilterSummaryBar chips={filterChips} onClearAll={clearReviewFilters} onRemove={handleRemoveFilterChip} />
+          <details className="group rounded-xl border border-border bg-card px-3 py-2">
           <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none">
             <span className="text-muted-foreground group-open:hidden"><Tx>展开高级筛选</Tx></span>
             <span className="hidden group-open:inline"><Tx>收起高级筛选</Tx></span>
@@ -415,9 +429,10 @@ export default function AdminReviews() {
               {COMPLAINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
-        </details>
-      </div>
-
+          </details>
+        </div>
+      )}
+    >
       {/* Batch actions */}
       {selected.length > 0 && status !== "deleted" && (
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/5 px-3 py-3">
@@ -568,7 +583,10 @@ export default function AdminReviews() {
       <AdminFormSheet
         open={Boolean(complaintTarget)}
         onOpenChange={(next) => {
-          if (!next) setComplaintTarget(null);
+          if (!next) {
+            setComplaintTarget(null);
+            setComplaintForm({ status: "pending", note: "" });
+          }
         }}
         title={<Tx>差评处理</Tx>}
         submitText="保存"
@@ -596,7 +614,10 @@ export default function AdminReviews() {
       <AdminFormSheet
         open={Boolean(replyTarget)}
         onOpenChange={(next) => {
-          if (!next) setReplyTarget(null);
+          if (!next) {
+            setReplyTarget(null);
+            setReplyText("");
+          }
         }}
         title={<Tx>官方回复</Tx>}
         submitText="提交回复"
@@ -620,6 +641,6 @@ export default function AdminReviews() {
           className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
         />
       </AdminFormSheet>
-    </div>
+    </AdminPageShell>
   );
 }

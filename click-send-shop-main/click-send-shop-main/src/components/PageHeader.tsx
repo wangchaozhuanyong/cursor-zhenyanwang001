@@ -12,20 +12,20 @@ export default function PageHeader({ title, onBack, backFallback, rightSlot }: P
   const goBack = useGoBack(backFallback);
 
   return (
-    <header className="header-safe-top sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-2">
-        <div className="flex items-center gap-3">
+    <header className="header-safe-top sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur-md">
+      <div className="mx-auto flex h-11 max-w-lg items-center justify-between gap-2 px-[var(--store-page-x)] sm:px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <button
             type="button"
             onClick={onBack ?? goBack}
             aria-label="返回"
-            className="touch-target flex items-center justify-center rounded-full hover:bg-secondary"
+            className="relative flex h-9 shrink-0 items-center justify-center rounded-full p-0 hover:bg-secondary active:scale-95 before:absolute before:-inset-2 before:content-['']"
           >
-            <ArrowLeft size={20} className="text-foreground" />
+            <ArrowLeft size={20} strokeWidth={2.25} className="text-foreground" />
           </button>
-          <h1 className="store-page-title text-foreground">{title}</h1>
+          <h1 className="store-page-title min-w-0 truncate text-foreground">{title}</h1>
         </div>
-        {rightSlot && <div>{rightSlot}</div>}
+        {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
       </div>
     </header>
   );

@@ -28,6 +28,9 @@ import {
   validateAll,
 } from "./siteSettingsValidation";
 import SiteSettingsLayout from "./SiteSettingsLayout";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import SiteSettingsHeader from "./SiteSettingsHeader";
 import SiteSettingsSaveBar from "./SiteSettingsSaveBar";
 import SiteSettingsHelpPanel, { SiteSettingsHelpPanelMobile } from "./SiteSettingsHelpPanel";
@@ -91,6 +94,7 @@ export default function SiteSettingsPage() {
   }, [settings, saved]);
 
   const anyDirty = useMemo(() => Object.values(dirtyMap).some(Boolean), [dirtyMap]);
+  useAdminTabDirty(anyDirty);
 
   useEffect(() => {
     if (!anyDirty) return;
@@ -299,30 +303,32 @@ export default function SiteSettingsPage() {
   }
 
   return (
-    <SiteSettingsLayout
-      activeSectionId={activeSectionId}
-      dirtyMap={dirtyMap}
-      onSectionChange={requestSectionChange}
-      header={
-        <SiteSettingsHeader
-          sectionTitle={tText(activeSection.title)}
-          saving={saving}
-          dirty={activeDirty}
-          {...saveHandlers}
-        />
-      }
-      saveBar={
-        <SiteSettingsSaveBar
-          saving={saving}
-          dirty={activeDirty}
-          anyDirty={anyDirty}
-          {...saveHandlers}
-        />
-      }
-      helpPanel={<SiteSettingsHelpPanel {...helpProps} />}
-    >
-      <SiteSettingsHelpPanelMobile {...helpProps} />
-      {renderSectionForm()}
-    </SiteSettingsLayout>
+    <AdminPageShell hint={<Tx>配置站点基础信息、品牌资产、SEO、税费与政策页路径等；请按左侧分组保存，避免跨分组误改。</Tx>}>
+      <SiteSettingsLayout
+        activeSectionId={activeSectionId}
+        dirtyMap={dirtyMap}
+        onSectionChange={requestSectionChange}
+        header={
+          <SiteSettingsHeader
+            sectionTitle={tText(activeSection.title)}
+            saving={saving}
+            dirty={activeDirty}
+            {...saveHandlers}
+          />
+        }
+        saveBar={
+          <SiteSettingsSaveBar
+            saving={saving}
+            dirty={activeDirty}
+            anyDirty={anyDirty}
+            {...saveHandlers}
+          />
+        }
+        helpPanel={<SiteSettingsHelpPanel {...helpProps} />}
+      >
+        <SiteSettingsHelpPanelMobile {...helpProps} />
+        {renderSectionForm()}
+      </SiteSettingsLayout>
+    </AdminPageShell>
   );
 }

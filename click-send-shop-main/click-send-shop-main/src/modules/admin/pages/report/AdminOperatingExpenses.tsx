@@ -22,6 +22,7 @@ import {
 } from "@/utils/adminTableClasses";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
 import { Tx } from "@/components/admin/AdminText";
@@ -169,16 +170,21 @@ export default function AdminOperatingExpenses() {
   }
 
   return (
-    <div className="space-y-4">
-      <ReportPageHeader
-        title={config.title}
-        description={config.description}
-        exporting={exporting}
-        onExport={handleExport}
-      />
-
-      <div className="rounded-xl border border-border bg-card p-4">
-        <h2 className="text-base font-semibold text-foreground"><Tx>经营支出录入</Tx></h2>
+    <AdminPageShell
+      hint={<Tx>{config.description}</Tx>}
+      toolbar={config.exportType ? (
+        <ReportPageHeader
+          compact
+          title={config.title}
+          description={config.description}
+          exporting={exporting}
+          onExport={handleExport}
+        />
+      ) : undefined}
+      filters={(
+        <>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h3 className="text-base font-semibold text-foreground"><Tx>经营支出录入</Tx></h3>
         <p className="mt-1 text-xs text-muted-foreground"><Tx>用于利润日报中的经营支出汇总（广告、包材、人工、房租等）。</Tx></p>
         <div className="mt-4 grid gap-3 md:grid-cols-5">
           <SegmentedDateInput label={tText("支出日期")} value={form.expense_date} onChange={(v) => setForm((s) => ({ ...s, expense_date: v }))} />
@@ -210,10 +216,9 @@ export default function AdminOperatingExpenses() {
             <button onClick={resetForm} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>取消编辑</Tx></button>
           ) : null}
         </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-4">
-        <div className="flex flex-wrap items-end gap-3">
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex flex-wrap items-end gap-3">
           <SegmentedDateInput label={tText("开始日期")} value={dateFrom} onChange={setDateFrom} />
           <SegmentedDateInput label={tText("结束日期")} value={dateTo} onChange={setDateTo} />
           <div>
@@ -223,10 +228,14 @@ export default function AdminOperatingExpenses() {
               {CATEGORY_OPTIONS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}
             </select>
           </div>
-          <div className="ml-auto text-sm text-muted-foreground"><Tx>合计：</Tx><span className="font-semibold text-foreground">RM {totalAmount.toFixed(2)}</span></div>
-        </div>
-
-        <AdminNativeTable className="mt-4" tableClassName="min-w-[860px] text-left text-sm">
+              <div className="ml-auto text-sm text-muted-foreground"><Tx>合计：</Tx><span className="font-semibold text-foreground">RM {totalAmount.toFixed(2)}</span></div>
+            </div>
+          </div>
+        </>
+      )}
+    >
+      <div className="rounded-xl border border-border bg-card p-4">
+        <AdminNativeTable tableClassName="min-w-[860px] text-left text-sm">
             <thead className="border-b border-border text-xs text-muted-foreground">
               <tr>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>日期</Tx></th>
@@ -278,6 +287,6 @@ export default function AdminOperatingExpenses() {
       <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
         <span className="font-medium text-[var(--theme-text)]"><Tx>数据口径：</Tx></span>{config.dataScopeNote}
       </section>
-    </div>
+    </AdminPageShell>
   );
 }

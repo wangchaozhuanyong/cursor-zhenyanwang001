@@ -1,7 +1,7 @@
 import { useState } from "react";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { useMediaSheetMode } from "@/modules/micro-interactions";
+import { usePreferBottomSheet } from "@/modules/micro-interactions";
 import { useUserStore } from "@/stores/useUserStore";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { CheckoutAddressCard } from "./components/CheckoutAddressCard";
@@ -31,7 +31,7 @@ export default function Checkout() {
     payTimeout.enabled && checkout.paymentMethod === "online"
       ? `在线支付订单需在 ${payTimeout.minutes} 分钟内完成付款，超时将自动取消并释放库存。`
       : null;
-  const isMobileSheet = useMediaSheetMode();
+  const isMobileSheet = usePreferBottomSheet("standard");
   const addresses = useUserStore((s) => s.addresses);
   const [addressSheetOpen, setAddressSheetOpen] = useState(false);
 

@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
-import { X, Star } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Star } from "lucide-react";
 import { toast } from "sonner";
+import { AppModal, LoadingButton } from "@/modules/micro-interactions";
 import * as reviewService from "@/services/reviewService";
 
 interface ReviewComposerSheetProps {
@@ -26,7 +27,13 @@ export default function ReviewComposerSheet({
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (open) return;
+    setRating(5);
+    setContent("");
+    setImages([]);
+    setSubmitting(false);
+  }, [open]);
 
   const uploadImages = async (files: File[]) => {
     if (!files.length) return;
@@ -50,9 +57,6 @@ export default function ReviewComposerSheet({
       toast.success("评价提交成功");
       onClose();
       onSuccess?.();
-      setContent("");
-      setImages([]);
-      setRating(5);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "提交失败");
     } finally {
@@ -60,24 +64,39 @@ export default function ReviewComposerSheet({
     }
   };
 
+  const footer = (
+    <LoadingButton
+      type="button"
+      state={submitting ? "loading" : "normal"}
+      className="min-h-12 w-full rounded-full !bg-[var(--theme-primary)] !text-[var(--theme-primary-foreground)] text-sm font-semibold"
+      onClick={() => void submit()}
+      loadingText="提交评价"
+    >
+      提交评价
+    </LoadingButton>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose}>
-      <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-background p-4" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold">写评价</p>
-            <p className="text-xs text-muted-foreground">
-              {product?.name || "商品"}
-              {variantName ? ` / ${variantName}` : ""}
-            </p>
-          </div>
-          <button type="button" onClick={onClose} className="rounded p-1">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="mb-3 flex gap-1">
+    <AppModal
+      tier="form"
+      open={open}
+      onClose={onClose}
+      title="写评价"
+      description={
+        <>
+          {product?.name || "商品"}
+          {variantName ? ` / ${variantName}` : ""}
+        </>
+      }
+      height="auto"
+      stickyFooter
+      footer={footer}
+      showCloseButton
+    >
+      <div className="space-y-4 pb-2">
+        <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((s) => (
-            <button key={s} type="button" onClick={() => setRating(s)}>
+            <button key={s} type="button" onClick={() => setRating(s)} aria-label={`${s} 星`}>
               <Star
                 size={22}
                 className={s <= rating ? "fill-[var(--theme-price)] text-[var(--theme-price)]" : "text-muted-foreground"}
@@ -90,10 +109,14 @@ export default function ReviewComposerSheet({
           onChange={(e) => setContent(e.target.value)}
           placeholder="分享你的体验..."
           rows={4}
-          className="w-full rounded-xl border p-3 text-sm"
+          className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-3 text-sm text-[var(--theme-text)] outline-none ring-[var(--theme-primary)] focus:ring-2"
         />
-        <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={() => inputRef.current?.click()} className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="text-xs text-[var(--theme-text-muted)]"
+          >
             上传图片 ({images.length}/5)
           </button>
           <input
@@ -107,17 +130,15 @@ export default function ReviewComposerSheet({
               e.currentTarget.value = "";
             }}
           />
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => void submit()}
-            className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs text-[var(--theme-primary-foreground)]"
-          >
-            {submitting ? "提交中..." : "提交评价"}
-          </button>
         </div>
+        {images.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {images.map((url) => (
+              <img key={url} src={url} alt="" className="h-14 w-14 rounded-lg object-cover" />
+            ))}
+          </div>
+        ) : null}
       </div>
-    </div>
+    </AppModal>
   );
 }
-

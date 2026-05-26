@@ -1,11 +1,12 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2, RotateCcw, Archive } from "lucide-react";
+import { Trash2, RotateCcw } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toast } from "sonner";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import {
   loadRecycleBin,
   permanentlyDeleteRecycleBinItem,
@@ -181,20 +182,17 @@ export default function AdminRecycleBin() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Archive size={20} className="text-muted-foreground" />
-            <h2 className="text-lg font-bold text-foreground"><Tx>回收站</Tx></h2>
-          </div>
+    <AdminPageShell
+      hint={<Tx>已软删除的数据可恢复或彻底删除。</Tx>}
+      filters={(
+        <div className="space-y-2">
           <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
             {typeFilterOptions.map((o) => <option key={o.value || "__all"} value={o.value}>{o.label}</option>)}
           </select>
+          <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
         </div>
-        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
-      </div>
-
+      )}
+    >
       <div className="rounded-xl border border-border bg-card">
         <AnimatedTable
           embedded
@@ -261,6 +259,6 @@ export default function AdminRecycleBin() {
           <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
         )}
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

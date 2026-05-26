@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Database, FileSearch, History, Info, Play, RefreshCw, Save, Shield, SlidersHorizontal, XCircle } from "lucide-react";
-import AdminFieldHint, { AdminPageTitle, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
+import AdminFieldHint, { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { toast } from "sonner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import {
@@ -316,10 +317,7 @@ export default function AdminDataRetention() {
 
   if (!canView) {
     return (
-      <div className="space-y-3">
-        <h1 className="text-xl font-bold text-foreground"><Tx>数据保存与清理中心</Tx></h1>
-        <p className="text-sm text-muted-foreground"><Tx>你无权查看该页面。</Tx></p>
-      </div>
+      <p className="text-sm text-muted-foreground"><Tx>你无权查看该页面。</Tx></p>
     );
   }
 
@@ -350,14 +348,14 @@ export default function AdminDataRetention() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <AdminPageTitle title={<Tx>数据保存与清理中心</Tx>} hint={tText(DATA_RETENTION_PAGE_HINT)} />
-          <p className="mt-1 text-sm text-muted-foreground">
-            <Tx>按规则删除过期记录；订单与付款等核心数据受保护。点击各处的「?」可查看通俗说明。</Tx>
-          </p>
-        </div>
+    <AdminPageShell
+      hint={(
+        <>
+          <p>{tText(DATA_RETENTION_PAGE_HINT)}</p>
+          <p className="mt-1"><Tx>按规则删除过期记录；订单与付款等核心数据受保护。点击各处的「?」可查看通俗说明。</Tx></p>
+        </>
+      )}
+      toolbar={(
         <button
           type="button"
           onClick={() => void invalidateAll()}
@@ -365,8 +363,8 @@ export default function AdminDataRetention() {
         >
           <RefreshCw size={15} /> <Tx>刷新</Tx>
         </button>
-      </div>
-
+      )}
+      filters={(
       <div className="flex flex-wrap gap-2 border-b border-border">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -394,7 +392,8 @@ export default function AdminDataRetention() {
           );
         })}
       </div>
-
+      )}
+    >
       {activeTab === "overview" ? (
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-4">
@@ -775,6 +774,6 @@ export default function AdminDataRetention() {
           </section>
         </div>
       ) : null}
-    </div>
+    </AdminPageShell>
   );
 }

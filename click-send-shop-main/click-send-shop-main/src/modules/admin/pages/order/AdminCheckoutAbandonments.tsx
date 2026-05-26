@@ -28,7 +28,7 @@ import * as orderService from "@/services/admin/orderService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { CheckoutAbandonment, CheckoutAbandonmentStatus } from "@/types/order";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { THEME_BADGE_ACCENT, THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_BADGE_WARNING } from "@/utils/themeVisuals";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
@@ -256,26 +256,19 @@ export default function AdminCheckoutAbandonments() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow sm:p-4">
-        <AdminPageTitle
-          title={<Tx>未完成结算</Tx>}
-          className="text-lg"
-          hint={(
-            <>
-              <p><Tx>仅做站内记录和后台查看，不触发邮件、短信或自动外呼。</Tx></p>
-              <p className="mt-1"><Tx>
-                同一用户、同一次停留在结算页的过程，只会维护一条「进行中」快照：内容随填写与勾选变化而更新；下单成功后该条变为「已下单未支付」，其余误入的「仅进入结算」空壳会自动关闭。
-              </Tx></p>
-              <p className="mt-1 text-muted-foreground"><Tx>
-                同一订单的多个结算快照已自动合并展示，不影响原始记录。
-              </Tx></p>
-            </>
-          )}
-          hintContentClassName="max-w-md"
-        />
-      </div>
-
+    <AdminPageShell
+      hint={(
+        <>
+          <p><Tx>仅做站内记录和后台查看，不触发邮件、短信或自动外呼。</Tx></p>
+          <p className="mt-1"><Tx>
+            同一用户、同一次停留在结算页的过程，只会维护一条「进行中」快照：内容随填写与勾选变化而更新；下单成功后该条变为「已下单未支付」，其余误入的「仅进入结算」空壳会自动关闭。
+          </Tx></p>
+          <p className="mt-1 text-muted-foreground"><Tx>
+            同一订单的多个结算快照已自动合并展示，不影响原始记录。
+          </Tx></p>
+        </>
+      )}
+      filters={(
       <div className="space-y-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1">
@@ -294,7 +287,8 @@ export default function AdminCheckoutAbandonments() {
         </div>
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
-
+      )}
+    >
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto">
         <AnimatedTable
           embedded
@@ -369,7 +363,6 @@ export default function AdminCheckoutAbandonments() {
           <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
         )}
       </div>
-
-    </div>
+    </AdminPageShell>
   );
 }

@@ -42,34 +42,33 @@ export default function AdminProfitDailyReport() {
     [period],
   );
 
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-[var(--theme-text-muted)]"><Tx>统计粒度</Tx></span>
-        <div className="inline-flex rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-0.5">
-          {(
-            [
-              { id: "daily" as const, label: tText("按日") },
-              { id: "monthly" as const, label: tText("按月") },
-            ] as const
-          ).map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setPeriod(item.id)}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                period === item.id
-                  ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-                  : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+  const periodToggle = (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs text-[var(--theme-text-muted)]"><Tx>统计粒度</Tx></span>
+      <div className="inline-flex rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-0.5">
+        {(
+          [
+            { id: "daily" as const, label: tText("按日") },
+            { id: "monthly" as const, label: tText("按月") },
+          ] as const
+        ).map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setPeriod(item.id)}
+            className={cn(
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              period === item.id
+                ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
+                : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]",
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
-      <AdminReportGenericPage config={config} fetcher={fetcher} />
     </div>
   );
+
+  return <AdminReportGenericPage config={config} fetcher={fetcher} filterPrefix={periodToggle} />;
 }

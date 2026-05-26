@@ -24,9 +24,8 @@ export default function SiteSettingsHeader({
   const { tText } = useAdminT();
   return (
     <div className="flex flex-col gap-4 border-b border-border pb-4 lg:flex-row lg:items-start lg:justify-between">
-      <div className="min-w-0">
-        <h1 className="text-xl font-bold text-foreground"><Tx>站点设置</Tx></h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <div className="min-w-0 text-sm text-muted-foreground">
+        <p>
           <Tx>当前分组：</Tx>
           <span className="font-medium text-foreground">{tText(sectionTitle)}</span>
           {dirty ? <span className="ml-2 text-theme-price">●</span> : null}

@@ -3,12 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Tx } from "@/components/admin/AdminText";
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { uploadSingle } from "@/services/uploadService";
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import {
   CHANNEL_TYPES,
   DEFAULT_PLATFORMS,
@@ -71,6 +72,7 @@ export default function AdminSupportDownload() {
   const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SupportDownloadConfig>(DEFAULT_SUPPORT_DOWNLOAD_CONFIG);
+  const [formHydrated, setFormHydrated] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingId, setUploadingId] = useState("");
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -82,10 +84,12 @@ export default function AdminSupportDownload() {
   });
 
   const loading = settingsQuery.isLoading && !settingsQuery.data;
+  const { markClean } = useAdminFormDirty(form, formHydrated && !loading);
 
   useEffect(() => {
     if (!settingsQuery.data) return;
     setForm(parseSupportDownloadConfig(settingsQuery.data.supportDownloadConfig));
+    setFormHydrated(true);
   }, [settingsQuery.data]);
 
   const channels = useMemo(() => [...form.support.channels].sort((a, b) => a.sortOrder - b.sortOrder), [form.support.channels]);
@@ -163,6 +167,7 @@ export default function AdminSupportDownload() {
       });
       await updateSiteSettings({ supportDownloadConfig: JSON.stringify(normalized) });
       setForm(normalized);
+      markClean(normalized);
       await refreshSiteInfo();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsNav() });
@@ -185,18 +190,15 @@ export default function AdminSupportDownload() {
 
   return (
     <PermissionGate permission="settings.manage">
-      <div className="space-y-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <AdminPageTitle
-            title={tText("客服与安装")}
-            hint="全站唯一 IM 客服配置：客服中心页、底部/顶栏客服、商品与订单「联系客服」、帮助中心联系区、页脚社交渠道、首页金刚区客服导航均读取本页。"
-          />
+      <AdminPageShell
+        hint="全站唯一 IM 客服配置：客服中心页、底部/顶栏客服、商品与订单「联系客服」、帮助中心联系区、页脚社交渠道、首页金刚区客服导航均读取本页。"
+        toolbar={(
           <button type="button" onClick={save} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
             保存配置
           </button>
-        </div>
-
+        )}
+      >
         <p className="rounded-xl border border-dashed border-border bg-secondary/40 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
           电话、邮箱、公司地址请在「站点设置 → 联系方式」维护；FAQ 请在「页面装修 → 内容管理 → 帮助中心」维护。部署后请执行数据库迁移 115，将旧 IM 字段一次性并入本配置。
         </p>
@@ -283,7 +285,7 @@ export default function AdminSupportDownload() {
             ))}
           </div>
         </section>
-      </div>
+      </AdminPageShell>
     </PermissionGate>
   );
 }

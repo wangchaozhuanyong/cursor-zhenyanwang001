@@ -10,9 +10,10 @@ import type { PaymentChannelRow } from "@/types/adminPayment";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 
 function parseConfig(row: PaymentChannelRow): Record<string, unknown> {
   const c = row.config_json;
@@ -27,10 +28,21 @@ function parseConfig(row: PaymentChannelRow): Record<string, unknown> {
   return c as Record<string, unknown>;
 }
 
+function normalizeConfigDraft(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "{}";
+  try {
+    return JSON.stringify(JSON.parse(trimmed));
+  } catch {
+    return `__invalid__:${trimmed}`;
+  }
+}
+
 export default function AdminPaymentChannels() {
   const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const [configDraft, setConfigDraft] = useState<Record<string, string>>({});
+  const [draftsHydrated, setDraftsHydrated] = useState(false);
 
   const channelsQuery = useQuery({
     queryKey: adminQueryKeys.paymentChannels(),
@@ -40,22 +52,36 @@ export default function AdminPaymentChannels() {
 
   const rows = useMemo(() => channelsQuery.data ?? [], [channelsQuery.data]);
   const loading = channelsQuery.isLoading && !channelsQuery.data;
+  const normalizedDraft = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(configDraft).map(([id, raw]) => [id, normalizeConfigDraft(raw)]),
+      ),
+    [configDraft],
+  );
+  const { markClean } = useAdminFormDirty(normalizedDraft, draftsHydrated && !loading);
 
   useEffect(() => {
-    if (!rows.length) return;
+    if (!channelsQuery.data) return;
     const draft: Record<string, string> = {};
-    for (const r of rows) {
+    for (const r of channelsQuery.data) {
       draft[r.id] = JSON.stringify(parseConfig(r), null, 2);
     }
     setConfigDraft(draft);
-  }, [rows]);
+    setDraftsHydrated(true);
+  }, [channelsQuery.data]);
 
   const invalidateChannels = () =>
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.paymentChannels() });
 
   const saveMutation = useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Parameters<typeof paymentAdmin.updateAdminPaymentChannel>[1] }) =>
-      paymentAdmin.updateAdminPaymentChannel(id, patch),
+    mutationFn: ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: Parameters<typeof paymentAdmin.updateAdminPaymentChannel>[1];
+    }) => paymentAdmin.updateAdminPaymentChannel(id, patch),
     onSuccess: async () => {
       toast.success(tText("已保存"));
       await invalidateChannels();
@@ -64,7 +90,7 @@ export default function AdminPaymentChannels() {
   });
 
   const saveRow = async (id: string, patch: Parameters<typeof paymentAdmin.updateAdminPaymentChannel>[1]) => {
-    saveMutation.mutate({ id, patch });
+    await saveMutation.mutateAsync({ id, patch });
   };
 
   const saveConfigJson = async (row: PaymentChannelRow) => {
@@ -79,19 +105,15 @@ export default function AdminPaymentChannels() {
       }
     }
     await saveRow(row.id, { config_json: parsed });
+    markClean();
   };
 
   return (
     <PermissionGate permission="payment.manage">
-      <div className="p-4 md:p-6">
-        <div className="mb-2">
-          <AdminPageTitle
-            title={<Tx>支付管理</Tx>}
-            hint={<Tx>渠道启停、排序与扩展配置（手续费率等可在下方表单填写）</Tx>}
-          />
-        </div>
-        <PaymentAdminSubnav />
-
+      <AdminPageShell
+        hint={<Tx>渠道启停、排序与扩展配置（手续费率等可在下方表单填写）</Tx>}
+        filters={<PaymentAdminSubnav />}
+      >
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
               <div
@@ -170,7 +192,7 @@ export default function AdminPaymentChannels() {
             )}
           </div>
         )}
-      </div>
+      </AdminPageShell>
     </PermissionGate>
   );
 }

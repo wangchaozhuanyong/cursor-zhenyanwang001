@@ -14,7 +14,7 @@ import ProductDetailStickyHeader from "@/components/product/ProductDetailStickyH
 import { STORE_DETAIL_STICKY_TOP_CLASS } from "@/constants/storeLayout";
 import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid";
 import ProductTagList from "@/components/ProductTagList";
-import { BottomSheet, FavoriteMotionButton, useMediaSheetMode } from "@/modules/micro-interactions";
+import { AppModal, FavoriteMotionButton } from "@/modules/micro-interactions";
 import ProductVariantSheet from "@/components/product/ProductVariantSheet";
 import TrustInfo from "@/components/TrustInfo";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +38,7 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { buildProductJsonLd } from "@/utils/structuredData";
 import RegulatedProductNotice from "@/components/compliance/RegulatedProductNotice";
-import RestrictedAgeConfirm from "@/components/compliance/RestrictedAgeConfirm";
+import RestrictedAgeConfirmModal from "@/components/compliance/RestrictedAgeConfirmModal";
 import {
   getRestrictedProductMinimumAge,
   requiresRestrictedPurchaseConfirmation,
@@ -62,7 +62,8 @@ export default function ProductDetail() {
   const [shareSheetOpen, setShareSheetOpen] = useState(false);
   const [shareText, setShareText] = useState("");
   const [purchaseAgeOk, setPurchaseAgeOk] = useState(true);
-  const isMobileSheet = useMediaSheetMode();
+  const [ageConfirmOpen, setAgeConfirmOpen] = useState(false);
+  const [pendingPurchaseIntent, setPendingPurchaseIntent] = useState<"cart" | "buy" | null>(null);
   const trackedProductIdRef = useRef<string | null>(null);
   const headerSentinelRef = useRef<HTMLDivElement>(null);
 
@@ -260,14 +261,7 @@ export default function ProductDetail() {
   const purchaseAgeBlocked = Boolean(product && !purchaseAgeOk);
   const purchaseMinimumAge = product ? getRestrictedProductMinimumAge(product, siteInfo) : 18;
 
-  const guardRestrictedPurchase = () => {
-    if (!purchaseAgeBlocked) return true;
-    toast.error(`该商品仅限年满 ${purchaseMinimumAge} 岁用户购买或咨询`);
-    return false;
-  };
-
-  const openPurchaseSheet = (intent: "cart" | "buy") => {
-    if (!guardRestrictedPurchase()) return;
+  const openPurchaseSheetCore = (intent: "cart" | "buy") => {
     if (soldOut) {
       toast.error("库存不足");
       return;
@@ -275,6 +269,23 @@ export default function ProductDetail() {
     if (availableVariants.length === 1) setSelectedVariantId(availableVariants[0].id);
     setPurchaseIntent(intent);
     setVariantSheetOpen(true);
+  };
+
+  const openPurchaseSheet = (intent: "cart" | "buy") => {
+    if (purchaseAgeBlocked) {
+      setPendingPurchaseIntent(intent);
+      setAgeConfirmOpen(true);
+      return;
+    }
+    openPurchaseSheetCore(intent);
+  };
+
+  const handleAgeConfirmed = () => {
+    setPurchaseAgeOk(true);
+    setAgeConfirmOpen(false);
+    const intent = pendingPurchaseIntent;
+    setPendingPurchaseIntent(null);
+    if (intent) openPurchaseSheetCore(intent);
   };
 
   const commitAddToCart = async () => {
@@ -374,18 +385,8 @@ export default function ProductDetail() {
       }
     }
 
-    if (isMobileSheet) {
-      setShareText(sharePayload.text);
-      setShareSheetOpen(true);
-      return;
-    }
-
-    const copied = await copyToClipboard(sharePayload.text);
-    if (copied) {
-      toast.success("商品信息已复制，可粘贴分享给好友", toastPresetQuickSuccess);
-    } else {
-      toast.error("复制失败，请手动复制链接");
-    }
+    setShareText(sharePayload.text);
+    setShareSheetOpen(true);
   };
 
   return (
@@ -485,10 +486,9 @@ export default function ProductDetail() {
               ) : null}
               {showRegulatedNotice ? <RegulatedProductNotice {...regulatedNoticeProps} /> : null}
               {purchaseAgeBlocked ? (
-                <RestrictedAgeConfirm
-                  requiredAge={purchaseMinimumAge}
-                  onConfirmed={() => setPurchaseAgeOk(true)}
-                />
+                <p className="mt-3 rounded-lg border border-amber-300/40 bg-amber-50/80 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-100">
+                  该商品需年满 {purchaseMinimumAge} 岁方可购买，请点击下方「需年龄确认」完成验证。
+                </p>
               ) : null}
               <ProductTagList tags={product.tags} max={6} size="md" className="mt-3" />
               </div>
@@ -575,12 +575,24 @@ export default function ProductDetail() {
         }}
       />
 
-      <BottomSheet
+      <RestrictedAgeConfirmModal
+        open={ageConfirmOpen}
+        requiredAge={purchaseMinimumAge}
+        onClose={() => {
+          setAgeConfirmOpen(false);
+          setPendingPurchaseIntent(null);
+        }}
+        onConfirmed={handleAgeConfirmed}
+      />
+
+      <AppModal
+        tier="light"
         open={shareSheetOpen}
         onClose={() => setShareSheetOpen(false)}
         title="分享商品"
         height="auto"
         stickyFooter
+        showHandle={false}
         footer={
           <button
             type="button"
@@ -598,7 +610,7 @@ export default function ProductDetail() {
         }
       >
         <p className="whitespace-pre-wrap text-sm text-[var(--theme-text-muted)]">{shareText}</p>
-      </BottomSheet>
+      </AppModal>
     </div>
   );
 }
@@ -621,7 +633,7 @@ function DetailPurchaseBar({
   onAddToCart: () => void;
   onBuyNow: () => void;
 }) {
-  const disabled = soldOut || purchaseBlocked;
+  const disabled = soldOut;
   return (
     <div className="flex items-stretch gap-3">
       <div className="flex shrink-0 items-center gap-4 pr-1">
@@ -665,7 +677,7 @@ function DetailPurchaseBar({
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
         >
-          {soldOut ? "已售罄" : purchaseBlocked ? "需年龄确认" : "立即购买"}
+          {soldOut ? "已售罄" : purchaseBlocked ? "确认年龄并购买" : "立即购买"}
         </button>
       </div>
     </div>

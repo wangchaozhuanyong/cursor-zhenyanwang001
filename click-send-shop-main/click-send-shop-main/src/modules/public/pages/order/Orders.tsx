@@ -9,13 +9,20 @@ import type { ProductVariant } from "@/types/product";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useCartStore } from "@/stores/useCartStore";
 import * as orderService from "@/services/orderService";
-import { canApplyAfterSale, canUserCancelOrder, getBuyerOrderStatusText, hasPendingReview, isPendingPayment, matchOrderTab, orderInAfterSaleTab } from "@/utils/orderBuyerStatus";
+import { canApplyAfterSale, canRepurchaseOrder, canUserCancelOrder, getBuyerOrderStatusText, hasPendingReview, isPendingPayment, matchOrderTab, orderInAfterSaleTab } from "@/utils/orderBuyerStatus";
 import { isGiftOrder } from "@/utils/orderPaymentLabels";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
-import { safeOpenExternal } from "@/utils/safeOpen";
+import { LogisticsInfoModal } from "@/components/order/LogisticsInfoModal";
 import { SUPPORT_PAGE_PATH } from "@/utils/supportDownloadConfig";
-import { BottomSheetConfirm, ResponsiveSheet } from "@/modules/micro-interactions";
+import {
+  getOrderLogisticsSnapshot,
+  openOrderLogisticsExternal,
+  resolveOrderLogisticsView,
+  type OrderLogisticsSnapshot,
+} from "@/utils/orderLogistics";
+import { AppModal, BottomSheetConfirm } from "@/modules/micro-interactions";
+import ReturnApplySheet from "./ReturnApplySheet";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
   { key: "all", label: "全部" },
@@ -71,14 +78,24 @@ function buildVariantFromOrderItem(item: Order["items"][number]): ProductVariant
   if (!item.variant_id) return null;
   const matched = item.product.variants?.find((v) => v.id === item.variant_id || v.sku_code === item.sku_code);
   if (matched) return matched;
+  const fallbackStock = Number(item.product.stock);
   return {
     id: item.variant_id,
     sku_code: item.sku_code ?? null,
     title: item.variant_name || item.sku_code || "默认规格",
     price: Number(item.unit_price ?? item.product.price ?? 0),
-    stock: Number(item.product.stock ?? 999999),
+    stock: Number.isFinite(fallbackStock) && fallbackStock > 0 ? fallbackStock : 999999,
     sort_order: 0,
     is_default: false,
+  };
+}
+
+function buildRepurchaseProduct(item: Order["items"][number]) {
+  const stock = Number(item.product.stock);
+  return {
+    ...item.product,
+    // 历史订单商品快照通常不携带实时库存，交给购物车接口做最终校验。
+    stock: Number.isFinite(stock) && stock > 0 ? stock : 999999,
   };
 }
 
@@ -114,28 +131,20 @@ export default function Orders() {
   const [actingId, setActingId] = useState("");
   const [moreOrder, setMoreOrder] = useState<Order | null>(null);
   const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<Order | null>(null);
+  const [cancelConfirmOrder, setCancelConfirmOrder] = useState<Order | null>(null);
+  const [confirmReceiveOrder, setConfirmReceiveOrder] = useState<Order | null>(null);
+  const [returnApplyOrderId, setReturnApplyOrderId] = useState<string | null>(null);
+  const [logisticsInfo, setLogisticsInfo] = useState<OrderLogisticsSnapshot | null>(null);
+  const [repurchaseConfirmOrder, setRepurchaseConfirmOrder] = useState<Order | null>(null);
 
-  const handleViewLogistics = async (order: Order) => {
-    if (order.logistics_provider?.tracking_url) {
-      safeOpenExternal(order.logistics_provider.tracking_url);
+  const viewLogistics = (order: Order) => {
+    const mode = resolveOrderLogisticsView(order);
+    if (mode === "external") {
+      openOrderLogisticsExternal(order);
       return;
     }
-    const carrier = order.logistics_provider?.carrier || order.carrier || "";
-    const trackingNo = order.logistics_provider?.tracking_no || order.tracking_no || "";
-    if (carrier || trackingNo) {
-      const text = [carrier ? `物流公司：${carrier}` : "", trackingNo ? `单号：${trackingNo}` : ""]
-        .filter(Boolean)
-        .join("，");
-      if (trackingNo) {
-        try {
-          await navigator.clipboard.writeText(trackingNo);
-          toast.success(`${text}（单号已复制）`);
-          return;
-        } catch {
-          // ignore clipboard error and fallback to normal hint
-        }
-      }
-      toast.info(text);
+    if (mode === "modal") {
+      setLogisticsInfo(getOrderLogisticsSnapshot(order));
       return;
     }
     toast.info("暂无物流信息");
@@ -176,7 +185,7 @@ export default function Orders() {
       clearBuyNow();
       setSelectAll(false);
       for (const item of order.items) {
-        await addToCart(item.product, item.qty, buildVariantFromOrderItem(item));
+        await addToCart(buildRepurchaseProduct(item), item.qty, buildVariantFromOrderItem(item));
       }
       toast.success("已为你重新加入购物车");
       navigate("/checkout", {
@@ -314,8 +323,7 @@ export default function Orders() {
                         disabled={actingId === order.id}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setActingId(order.id);
-                          cancelOrder(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId(""));
+                          setCancelConfirmOrder(order);
                         }}
                       >
                         取消订单
@@ -342,23 +350,66 @@ export default function Orders() {
                     {order.status === "shipped" ? (
                       <>
                         {canApplyAfterSale(order) ? (
-                          <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/returns?apply=${order.id}`); }}>申请售后</button>
+                          <button
+                            className={actionBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReturnApplyOrderId(order.id);
+                            }}
+                          >
+                            申请售后
+                          </button>
                         ) : null}
-                        <button className={primaryActionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); confirmReceive(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>确认收货</button>
+                        <button
+                          className={primaryActionBtn}
+                          disabled={actingId === order.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmReceiveOrder(order);
+                          }}
+                        >
+                          确认收货
+                        </button>
                       </>
                     ) : null}
 
                     {order.status === "completed" ? (
                       <>
                         {canApplyAfterSale(order) ? (
-                          <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/returns?apply=${order.id}`); }}>申请售后</button>
+                          <button
+                            className={actionBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReturnApplyOrderId(order.id);
+                            }}
+                          >
+                            申请售后
+                          </button>
                         ) : null}
-                        <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                        {canRepurchaseOrder(order) ? (
+                          <button
+                            className={primaryActionBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRepurchaseConfirmOrder(order);
+                            }}
+                          >
+                            再买一单
+                          </button>
+                        ) : null}
                       </>
                     ) : null}
 
-                    {order.status === "cancelled" ? (
-                      <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                    {canRepurchaseOrder(order) && order.status === "cancelled" ? (
+                      <button
+                        className={primaryActionBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRepurchaseConfirmOrder(order);
+                        }}
+                      >
+                        再买一单
+                      </button>
                     ) : null}
 
                     {orderInAfterSaleTab(order) ? (
@@ -370,7 +421,8 @@ export default function Orders() {
             );
           })}
         </div>
-        <ResponsiveSheet
+        <AppModal
+          tier="standard"
           open={Boolean(moreOrder)}
           onClose={() => setMoreOrder(null)}
           title="更多操作"
@@ -392,17 +444,44 @@ export default function Orders() {
                   <span className="text-xs font-normal text-[var(--theme-text-muted)]">去订单详情评价</span>
                 </button>
               ) : null}
+              {canApplyAfterSale(moreOrder) && (moreOrder.status === "shipped" || moreOrder.status === "completed") ? (
+                <button
+                  type="button"
+                  className={moreActionBtn}
+                  onClick={() => {
+                    const target = moreOrder;
+                    setMoreOrder(null);
+                    setReturnApplyOrderId(target.id);
+                  }}
+                >
+                  <span>申请售后</span>
+                </button>
+              ) : null}
               {canViewLogistics(moreOrder) ? (
                 <button
                   type="button"
                   className={moreActionBtn}
                   onClick={() => {
-                    const order = moreOrder;
+                    const target = moreOrder;
                     setMoreOrder(null);
-                    void handleViewLogistics(order);
+                    viewLogistics(target);
                   }}
                 >
                   <span>查看物流</span>
+                </button>
+              ) : null}
+              {canRepurchaseOrder(moreOrder) ? (
+                <button
+                  type="button"
+                  className={moreActionBtn}
+                  onClick={() => {
+                    const target = moreOrder;
+                    setMoreOrder(null);
+                    setRepurchaseConfirmOrder(target);
+                  }}
+                >
+                  <span>再买一单</span>
+                  <span className="text-xs font-normal text-[var(--theme-text-muted)]">重新加入购物车并结算</span>
                 </button>
               ) : null}
               {canBuyerDeleteOrder(moreOrder) ? (
@@ -420,7 +499,9 @@ export default function Orders() {
               ) : null}
               {!(
                 (capabilities.reviewEnabled && hasPendingReview(moreOrder))
+                || (canApplyAfterSale(moreOrder) && (moreOrder.status === "shipped" || moreOrder.status === "completed"))
                 || canViewLogistics(moreOrder)
+                || canRepurchaseOrder(moreOrder)
                 || canBuyerDeleteOrder(moreOrder)
               ) ? (
                 <p className="rounded-2xl bg-[var(--theme-bg)] px-4 py-5 text-center text-sm text-[var(--theme-text-muted)]">
@@ -429,7 +510,7 @@ export default function Orders() {
               ) : null}
             </div>
           ) : null}
-        </ResponsiveSheet>
+        </AppModal>
         <BottomSheetConfirm
           open={Boolean(deleteConfirmOrder)}
           onClose={() => setDeleteConfirmOrder(null)}
@@ -442,6 +523,91 @@ export default function Orders() {
           onConfirm={async () => {
             if (!deleteConfirmOrder) return;
             await handleDeleteOrder(deleteConfirmOrder);
+          }}
+        />
+
+        <BottomSheetConfirm
+          open={Boolean(cancelConfirmOrder)}
+          onClose={() => setCancelConfirmOrder(null)}
+          title="取消订单"
+          description="取消后订单将关闭，如需购买请重新下单。"
+          confirmText="确认取消"
+          cancelText="再想想"
+          danger
+          loading={Boolean(cancelConfirmOrder && actingId === cancelConfirmOrder.id)}
+          onConfirm={async () => {
+            if (!cancelConfirmOrder) return;
+            setActingId(cancelConfirmOrder.id);
+            try {
+              await cancelOrder(cancelConfirmOrder.id);
+              await loadOrders({ page: 1, tab });
+              toast.success("订单已取消");
+              setCancelConfirmOrder(null);
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "取消失败");
+            } finally {
+              setActingId("");
+            }
+          }}
+        />
+
+        <BottomSheetConfirm
+          open={Boolean(confirmReceiveOrder)}
+          onClose={() => setConfirmReceiveOrder(null)}
+          title="确认收货"
+          description="请确认已收到商品且无误。确认后将无法撤销。"
+          confirmText="确认收货"
+          cancelText="取消"
+          loading={Boolean(confirmReceiveOrder && actingId === confirmReceiveOrder.id)}
+          onConfirm={async () => {
+            if (!confirmReceiveOrder) return;
+            setActingId(confirmReceiveOrder.id);
+            try {
+              await confirmReceive(confirmReceiveOrder.id);
+              await loadOrders({ page: 1, tab });
+              toast.success("已确认收货");
+              setConfirmReceiveOrder(null);
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "确认收货失败");
+            } finally {
+              setActingId("");
+            }
+          }}
+        />
+
+        <ReturnApplySheet
+          orderId={returnApplyOrderId}
+          open={Boolean(returnApplyOrderId)}
+          onClose={() => setReturnApplyOrderId(null)}
+          onSuccess={() => {
+            void loadOrders({ page: 1, tab });
+          }}
+        />
+
+        <LogisticsInfoModal
+          open={logisticsInfo !== null}
+          onClose={() => setLogisticsInfo(null)}
+          carrier={logisticsInfo?.carrier}
+          trackingNo={logisticsInfo?.trackingNo}
+        />
+
+        <BottomSheetConfirm
+          open={Boolean(repurchaseConfirmOrder)}
+          onClose={() => setRepurchaseConfirmOrder(null)}
+          title="再买一单"
+          description="将把该订单商品加入购物车并前往结算页，是否继续？"
+          confirmText="前往结算"
+          cancelText="取消"
+          loading={Boolean(repurchaseConfirmOrder && actingId === repurchaseConfirmOrder.id)}
+          onConfirm={async () => {
+            if (!repurchaseConfirmOrder) return;
+            setActingId(repurchaseConfirmOrder.id);
+            try {
+              await repurchaseOrder(repurchaseConfirmOrder);
+              setRepurchaseConfirmOrder(null);
+            } finally {
+              setActingId("");
+            }
           }}
         />
     </StoreAccountLayout>

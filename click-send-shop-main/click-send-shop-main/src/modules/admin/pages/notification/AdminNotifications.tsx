@@ -18,6 +18,8 @@ import type { NotificationPayload } from "@/services/admin/notificationService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import {
   getTriggerTemplateDisplay,
@@ -269,19 +271,16 @@ export default function AdminNotifications() {
 
   return (
     <PermissionGate anyOf={NOTIFICATION_PAGE_PERMISSIONS}>
-      <div className="p-4 md:p-6">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-foreground"><Tx>通知中心</Tx></h1>
-            <p className="mt-1 text-sm text-muted-foreground"><Tx>通知列表和触发设置已接入 Query，发送、保存或删除后自动刷新。</Tx></p>
-          </div>
+      <AdminPageShell
+        hint={<Tx>通知列表和触发设置已接入 Query，发送、保存或删除后自动刷新。</Tx>}
+        toolbar={(
           <button type="button" onClick={() => void notificationsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
             <RefreshCw size={16} className={notificationsQuery.isFetching ? "animate-spin" : ""} />
-            刷新
+            <Tx>刷新</Tx>
           </button>
-        </div>
-
-        <div className="mb-4 flex flex-wrap gap-2 border-b border-[var(--theme-border)] pb-3">
+        )}
+        filters={(
+        <div className="flex flex-wrap gap-2 border-b border-[var(--theme-border)] pb-3">
           <button type="button" onClick={() => setTab("list")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "list" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
             通知列表
           </button>
@@ -296,7 +295,8 @@ export default function AdminNotifications() {
             </button>
           </PermissionGate>
         </div>
-
+        )}
+      >
         {tab === "list" ? (
           <>
             <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_180px_1fr_auto]">
@@ -470,7 +470,7 @@ export default function AdminNotifications() {
           </div>
           </PermissionGate>
         ) : null}
-      </div>
+      </AdminPageShell>
     </PermissionGate>
   );
 }

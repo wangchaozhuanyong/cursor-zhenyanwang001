@@ -17,6 +17,7 @@ import { useAdminReportLabel } from "@/hooks/useAdminReportLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { getReportColumnMaxWidthStyle, reportTableThClassName } from "@/utils/adminTableColumnPolicy";
 import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { exportReportCsv, fetchInventoryAnalysisReport } from "@/services/admin/reportService";
 import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
 import { Tx } from "@/components/admin/AdminText";
@@ -159,15 +160,19 @@ export default function AdminInventoryAnalysisReport() {
   };
 
   return (
-    <div className="space-y-4">
-      <ReportPageHeader
-        title={config.title}
-        description={config.description}
-        exporting={exporting}
-        onExport={handleExport}
-      />
-
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
+    <AdminPageShell
+      hint={<Tx>{config.description}</Tx>}
+      toolbar={config.exportType ? (
+        <ReportPageHeader
+          compact
+          title={config.title}
+          description={config.description}
+          exporting={exporting}
+          onExport={handleExport}
+        />
+      ) : undefined}
+      filters={(
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           排序字段
           <select
@@ -193,8 +198,9 @@ export default function AdminInventoryAnalysisReport() {
             <option value="desc"><Tx>降序</Tx></option>
           </select>
         </label>
-      </div>
-
+        </div>
+      )}
+    >
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         {loading
           ? Array.from({ length: 7 }).map((_, i) => (
@@ -261,6 +267,6 @@ export default function AdminInventoryAnalysisReport() {
       <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
         <span className="font-medium text-[var(--theme-text)]"><Tx>数据口径：</Tx></span>{config.dataScopeNote}
       </section>
-    </div>
+    </AdminPageShell>
   );
 }

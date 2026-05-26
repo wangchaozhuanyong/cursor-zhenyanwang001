@@ -29,6 +29,7 @@ import {
 } from "@/hooks/useAdminStatusLabels";
 import { THEME_OUTLINE_DANGER, THEME_OUTLINE_PRIMARY, THEME_OUTLINE_SUCCESS } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import {
   afterSaleLabel,
@@ -380,7 +381,11 @@ export default function AdminOrders() {
   };
 
   return (
-    <div className="min-w-0 space-y-4">
+    <AdminPageShell
+      className="min-w-0"
+      hint={<Tx>查看与处理订单，支持状态筛选、批量导出及发货操作。</Tx>}
+      filters={(
+        <>
       <div className="grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-7">
         {stats.map((stat) => {
           const active = statusFilter === stat.status && !!stat.status;
@@ -480,7 +485,9 @@ export default function AdminOrders() {
           ) : null}
         </div>
       </div>
-
+        </>
+      )}
+    >
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">{tText(`已选 ${selectedOrderIds.length} 单`)}</span>
         <button
@@ -555,6 +562,6 @@ export default function AdminOrders() {
           }
         }}
       />
-    </div>
+    </AdminPageShell>
   );
 }

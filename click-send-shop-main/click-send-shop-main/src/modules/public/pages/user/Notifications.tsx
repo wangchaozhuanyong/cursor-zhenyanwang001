@@ -12,7 +12,6 @@ import {
   Truck,
   RotateCcw,
   ShieldCheck,
-  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
@@ -31,6 +30,7 @@ import {
   THEME_BADGE_WARNING,
 } from "@/utils/themeVisuals";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import { AppModal } from "@/modules/micro-interactions";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   order: { icon: Package, color: THEME_BADGE_PRIMARY },
@@ -161,22 +161,20 @@ export default function Notifications() {
         </div>
       </StoreAccountLayout>
 
-      {active ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/45 md:items-center md:justify-center" onClick={() => setActiveId(null)}>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-h-[82vh] overflow-y-auto rounded-t-2xl bg-card p-4 md:max-w-lg md:rounded-2xl"
-          >
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <h3 className="text-base font-semibold text-foreground">{normalizeNotificationDisplay(active.title, active.content).title}</h3>
-              <button type="button" className="rounded-lg p-1 text-muted-foreground hover:bg-secondary" onClick={() => setActiveId(null)}>
-                <X size={16} />
-              </button>
-            </div>
-            <div className="whitespace-pre-wrap break-words text-sm leading-6 text-foreground">{normalizeNotificationDisplay(active.title, active.content).content}</div>
+      <AppModal
+        tier="standard"
+        open={Boolean(active)}
+        onClose={() => setActiveId(null)}
+        title={active ? normalizeNotificationDisplay(active.title, active.content).title : ""}
+        height="70vh"
+        showCloseButton
+      >
+        {active ? (
+          <div className="whitespace-pre-wrap break-words pb-2 text-sm leading-6 text-[var(--theme-text)]">
+            {normalizeNotificationDisplay(active.title, active.content).content}
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </AppModal>
     </div>
   );
 }

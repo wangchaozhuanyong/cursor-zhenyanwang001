@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 import { useShippingStore, calcShippingFee } from "@/stores/useShippingStore";
 import type { ShippingTemplate } from "@/stores/useShippingStore";
-import { ResponsiveSheet, useMediaSheetMode } from "@/modules/micro-interactions";
+import { AppModal, usePreferBottomSheet } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 
 interface ShippingPickerProps {
@@ -120,7 +120,7 @@ export default function ShippingPicker({
 }: ShippingPickerProps) {
   const [expanded, setExpanded] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const isMobileSheet = useMediaSheetMode();
+  const isMobileSheet = usePreferBottomSheet("standard");
   const { templates } = useShippingStore();
   const enabledTemplates = templates.filter((t) => t.enabled);
 
@@ -168,9 +168,9 @@ export default function ShippingPicker({
           ) : null}
         </button>
         {enabledTemplates.length > 1 ? (
-          <ResponsiveSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="选择配送方式" height="auto">
+          <AppModal tier="standard" open={sheetOpen} onClose={() => setSheetOpen(false)} title="选择配送方式" height="auto">
             {optionList}
-          </ResponsiveSheet>
+          </AppModal>
         ) : null}
       </div>
     );

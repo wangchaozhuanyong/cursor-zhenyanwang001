@@ -9,7 +9,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { LoadingButton } from "@/modules/micro-interactions";
 import type { ProductTag } from "@/types/product";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { THEME_HOVER_BG_DANGER, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -95,15 +95,9 @@ export default function AdminProductTags() {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <AdminPageTitle
-            title={<Tx>标签管理</Tx>}
-            hint={<Tx>创建后，在「商品管理 → 新增/编辑商品」中勾选即可关联；前台列表与详情页会展示。</Tx>}
-            className="text-lg [&_h1]:text-lg [&_h1]:font-semibold"
-          />
-        </div>
+    <AdminPageShell
+      hint={<Tx>创建后，在「商品管理 → 新增/编辑商品」中勾选即可关联；前台列表与详情页会展示。</Tx>}
+      toolbar={(
         <PermissionGate permission="tag.manage">
           <button
             onClick={() => {
@@ -116,11 +110,11 @@ export default function AdminProductTags() {
             }}
             className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
-            <Plus size={16} /><Tx> 新增标签
-          </Tx></button>
+            <Plus size={16} /><Tx>新增标签</Tx>
+          </button>
         </PermissionGate>
-      </div>
-
+      )}
+    >
       {showForm && (
         <div className="rounded-xl border border-gold/30 bg-card p-3 sm:p-4">
           <div className="flex flex-wrap items-end gap-3">
@@ -208,6 +202,6 @@ export default function AdminProductTags() {
           </div>
         ))}
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

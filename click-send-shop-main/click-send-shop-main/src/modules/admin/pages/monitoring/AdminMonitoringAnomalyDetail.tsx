@@ -11,6 +11,7 @@ import {
 import MonitoringSubnav from "./MonitoringSubnav";
 import { Badge, formatTime, JsonBlock, severityClass } from "./monitoringUi";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 
@@ -58,12 +59,14 @@ export default function AdminMonitoringAnomalyDetail() {
   const terminal = anomaly?.status === "resolved" || anomaly?.status === "ignored";
 
   return (
-    <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold text-slate-900"><Tx>异常详情</Tx></h1>
-      <MonitoringSubnav />
-      <div className="mb-4">
-        <Link className="text-sm text-blue-600 hover:underline" to="/admin/monitoring/anomalies"><Tx>← 返回异常列表</Tx></Link>
-      </div>
+    <AdminPageShell
+      filters={(
+        <>
+          <MonitoringSubnav />
+          <Link className="text-sm text-blue-600 hover:underline" to="/admin/monitoring/anomalies"><Tx>← 返回异常列表</Tx></Link>
+        </>
+      )}
+    >
       {error ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
       {actionError ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div> : null}
       {loading ? <div className="text-sm text-slate-500"><Tx>加载中...</Tx></div> : null}
@@ -151,6 +154,6 @@ export default function AdminMonitoringAnomalyDetail() {
           </section>
         </div>
       ) : null}
-    </div>
+    </AdminPageShell>
   );
 }

@@ -8,6 +8,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
@@ -111,12 +112,9 @@ export default function AdminBackupCenter() {
   const latestFile = useMemo(() => filesQuery.data?.list?.[0], [filesQuery.data]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground"><Tx>备份与恢复</Tx></h1>
-          <p className="mt-1 text-sm text-muted-foreground"><Tx>管理系统全量/增量备份、恢复任务与演练记录。</Tx></p>
-        </div>
+    <AdminPageShell
+      hint={<Tx>管理系统全量/增量备份、恢复任务与演练记录。</Tx>}
+      toolbar={(
         <PermissionGate permission="backup.create">
           <button
             type="button"
@@ -128,8 +126,8 @@ export default function AdminBackupCenter() {
             <Tx>手动创建备份</Tx>
           </button>
         </PermissionGate>
-      </div>
-
+      )}
+    >
       <div className="grid gap-3 md:grid-cols-4">
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground"><DatabaseBackup size={15} /><Tx>最近全量备份</Tx></div>
@@ -292,6 +290,6 @@ export default function AdminBackupCenter() {
           </div>
         </section>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

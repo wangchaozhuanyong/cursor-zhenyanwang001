@@ -2,7 +2,7 @@ import { cloneElement, isValidElement, useState, type ReactElement, type ReactNo
 import { Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { ResponsiveSheet } from "@/modules/micro-interactions";
+import { AppModal } from "@/modules/micro-interactions";
 
 export default function SkinPickerDialog({
   trigger,
@@ -50,7 +50,8 @@ export default function SkinPickerDialog({
     <>
       {triggerNode}
 
-      <ResponsiveSheet
+      <AppModal
+        tier="standard"
         open={open}
         onClose={() => setOpen(false)}
         title={
@@ -109,7 +110,7 @@ export default function SkinPickerDialog({
             })
           )}
         </div>
-      </ResponsiveSheet>
+      </AppModal>
     </>
   );
 }

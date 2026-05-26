@@ -14,6 +14,7 @@ import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { queryClient } from "@/lib/queryClient";
+import { ModalLayerProvider } from "@/modules/micro-interactions";
 import { guessFaviconMime, resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import {
   DEFAULT_APPLE_TOUCH_ICON,
@@ -161,6 +162,7 @@ export function AdminAppRoutes() {
   return (
     <ErrorBoundary resetKey={location.pathname}>
       <QueryClientProvider client={queryClient}>
+        <ModalLayerProvider>
         <TooltipProvider>
           <AdminI18nProvider>
             <AdminMfaStepUpHost />
@@ -251,6 +253,7 @@ export function AdminAppRoutes() {
             </Suspense>
           </AdminI18nProvider>
         </TooltipProvider>
+        </ModalLayerProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

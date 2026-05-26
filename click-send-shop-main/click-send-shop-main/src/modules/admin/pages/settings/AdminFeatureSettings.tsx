@@ -8,7 +8,9 @@ import { refreshSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 
 type FeatureItem = {
   key: keyof SiteCapabilities;
@@ -66,6 +68,7 @@ export default function AdminFeatureSettings() {
   const queryClient = useQueryClient();
   const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
   const [values, setValues] = useState<SiteCapabilities>(DEFAULT_SITE_CAPABILITIES);
+  const [formHydrated, setFormHydrated] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const capabilitiesQuery = useQuery({
@@ -75,10 +78,12 @@ export default function AdminFeatureSettings() {
   });
 
   const loading = capabilitiesQuery.isLoading && !capabilitiesQuery.data;
+  const { markClean } = useAdminFormDirty(values, formHydrated && !loading);
 
   useEffect(() => {
     if (!capabilitiesQuery.data) return;
     setValues({ ...DEFAULT_SITE_CAPABILITIES, ...capabilitiesQuery.data });
+    setFormHydrated(true);
   }, [capabilitiesQuery.data]);
 
   const enabledOperationalCount = useMemo(
@@ -90,7 +95,9 @@ export default function AdminFeatureSettings() {
     setSaving(true);
     try {
       const next = await settingsService.updateSiteCapabilities(values);
-      setValues({ ...DEFAULT_SITE_CAPABILITIES, ...(next ?? {}) });
+      const nextValues = { ...DEFAULT_SITE_CAPABILITIES, ...(next ?? {}) };
+      setValues(nextValues);
+      markClean(nextValues);
       await refreshSiteCapabilities();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteCapabilities() });
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.telegramSettings() });
@@ -140,25 +147,24 @@ export default function AdminFeatureSettings() {
   };
 
   return (
-    <div className="space-y-4 p-4">
+    <AdminPageShell
+      hint={(
+        <Tx>
+          {`常规开关已启用 ${enabledOperationalCount} / ${OPERATIONAL_ITEMS.length} 项。保存后立即作用于前台入口与相关接口；底部「预留」项仅超级管理员可修改。`}
+        </Tx>
+      )}
+      toolbar={(
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || loading}
+          className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {saving ? tText("保存中...") : tText("保存")}
+        </button>
+      )}
+    >
       <section className="rounded-2xl border border-border bg-card">
-        <div className="flex items-center justify-between gap-3 border-b border-border p-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-foreground"><Tx>站点功能能力</Tx></h2>
-            <AdminFieldHint
-              text={`常规开关已启用 ${enabledOperationalCount} / ${OPERATIONAL_ITEMS.length} 项。保存后立即作用于前台入口与相关接口。底部「预留」项仅超级管理员可修改。`}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving || loading}
-            className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-          >
-            {saving ? "保存中..." : "保存"}
-          </button>
-        </div>
-
         <div className="space-y-6 p-4">
           <div>
             <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>常规功能</Tx></h3>
@@ -174,6 +180,6 @@ export default function AdminFeatureSettings() {
           </div>
         </div>
       </section>
-    </div>
+    </AdminPageShell>
   );
 }

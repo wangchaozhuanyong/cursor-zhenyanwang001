@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ResponsiveSheet, type BottomSheetHeight } from "@/modules/micro-interactions";
+import { AppModal, type AppModalTier, type BottomSheetHeight } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 
 const SIZE_CLASS = {
@@ -23,9 +23,11 @@ export type AdminResponsiveSheetProps = {
   stickyFooter?: boolean;
   showCloseButton?: boolean;
   closeOnOverlay?: boolean;
+  /** 弹层档位，表单场景建议 form */
+  tier?: AppModalTier;
 };
 
-/** 管理端弹层：移动端 Bottom Sheet，桌面端居中 Dialog（与 C 端 ResponsiveSheet 一致） */
+/** 管理端弹层：移动/平板 Bottom Sheet，桌面居中 Dialog（全局 AppModal） */
 export function AdminResponsiveSheet({
   open,
   onOpenChange,
@@ -38,9 +40,11 @@ export function AdminResponsiveSheet({
   stickyFooter,
   showCloseButton = true,
   closeOnOverlay = true,
+  tier = "standard",
 }: AdminResponsiveSheetProps) {
   return (
-    <ResponsiveSheet
+    <AppModal
+      tier={tier}
       open={open}
       onClose={() => onOpenChange(false)}
       title={title}
@@ -56,6 +60,6 @@ export function AdminResponsiveSheet({
       )}
     >
       {children}
-    </ResponsiveSheet>
+    </AppModal>
   );
 }

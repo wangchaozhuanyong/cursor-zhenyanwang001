@@ -78,12 +78,14 @@ export function AdminFormSheet({
 
   return (
     <AdminResponsiveSheet
+      tier="form"
       open={open}
       onOpenChange={onOpenChange}
       title={title}
       description={description}
       footer={footer}
       size={size}
+      height="70vh"
       stickyFooter
     >
       <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>

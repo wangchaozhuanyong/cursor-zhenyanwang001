@@ -31,6 +31,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { COMPLIANCE_TYPE_LABELS } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import {
   cartesianSpecValues,
   DEFAULT_VARIANT_TITLE,
@@ -130,6 +131,8 @@ export default function AdminProductForm() {
   });
 
   const loading = !isNew && productQuery.isLoading && !productQuery.data;
+  const [formHydrated, setFormHydrated] = useState(isNew);
+  const { markClean } = useAdminFormDirty(form, formHydrated && !loading);
 
   useEffect(() => {
     const data = productQuery.data;
@@ -227,6 +230,7 @@ export default function AdminProductForm() {
                 : [],
               variants: vlist,
             });
+            setFormHydrated(true);
   }, [productQuery.data]);
 
   useEffect(() => {
@@ -549,6 +553,7 @@ export default function AdminProductForm() {
         toast.success(tText("商品更新成功"));
       }
       await invalidateProductCaches();
+      markClean();
       navigate("/admin/products");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请重试"));

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Filter } from "lucide-react";
-import { ResponsiveSheet } from "@/modules/micro-interactions";
+import { AppModal } from "@/modules/micro-interactions";
 
 interface ProductFilterDrawerProps {
   activeFilterCount: number;
@@ -51,7 +51,8 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
         ) : null}
       </button>
 
-      <ResponsiveSheet
+      <AppModal
+        tier="standard"
         open={open}
         onClose={() => setOpen(false)}
         title="筛选商品"
@@ -60,7 +61,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
         footer={footer}
       >
         <div className="space-y-4 pb-2">{children}</div>
-      </ResponsiveSheet>
+      </AppModal>
     </>
   );
 }

@@ -22,7 +22,7 @@ import { formatUserDisplay } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import {
   AdminTableMobileCard,
@@ -89,7 +89,7 @@ function normalizeReferralRules(data: ReferralRule[]): ReferralRuleEditRow[] {
   }));
 }
 
-export default function AdminRewardRecords() {
+export default function AdminRewardRecords({ embedded = false }: { embedded?: boolean }) {
   const { tText } = useAdminT();
   const { rewardStatus: labelRewardStatus, text: L } = useAdminDisplayLabel();
   const statusOptionsLocalized = useLocalizedOptions(statusOptions);
@@ -247,15 +247,8 @@ export default function AdminRewardRecords() {
     );
   };
 
-  return (
-    <div className="space-y-5">
-      <div>
-        <AdminPageTitle
-          title={<Tx>返现记录</Tx>}
-          hint={<Tx>查看邀请返现入账、冲正和结算状态，用于查账和争议处理</Tx>}
-        />
-      </div>
-
+  const body = (
+    <>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map((card) => (
           <div key={card.label} className="theme-shadow rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4">
@@ -486,6 +479,18 @@ export default function AdminRewardRecords() {
           );
         }}
       />
-    </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-5">{body}</div>;
+  }
+
+  return (
+    <AdminPageShell
+      hint={<Tx>查看邀请返现入账、冲正和结算状态，用于查账和争议处理</Tx>}
+    >
+      {body}
+    </AdminPageShell>
   );
 }

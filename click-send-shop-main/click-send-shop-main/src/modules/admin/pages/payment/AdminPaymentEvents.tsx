@@ -17,6 +17,7 @@ import type { PaymentEventAdminRow } from "@/types/adminPayment";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 
 const VERIFY_LABELS: Record<string, string> = { pending: "待验签", success: "验签通过", failed: "验签失败", manual: "人工确认" };
@@ -122,29 +123,28 @@ export default function AdminPaymentEvents() {
 
   return (
     <PermissionGate permission="payment.view">
-      <div className="p-4 md:p-6">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-foreground"><Tx>支付回调 / 事件</Tx></h1>
-            <p className="mt-1 text-sm text-muted-foreground"><Tx>回调事件使用低频轮询兜底，SSE 到达时会精准刷新。</Tx></p>
-          </div>
+      <AdminPageShell
+        hint={<Tx>回调事件使用低频轮询兜底，SSE 到达时会精准刷新。</Tx>}
+        toolbar={(
           <button type="button" onClick={() => void eventsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
             <RefreshCw size={16} className={eventsQuery.isFetching ? "animate-spin" : ""} />
             <Tx>刷新</Tx>
           </button>
-        </div>
-
-        <PaymentAdminSubnav />
-
-        <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[220px_1fr_auto]">
-          <select value={provider} onChange={(e) => { setProvider(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            <option value=""><Tx>全部网关</Tx></option>
-            {providerOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
-          </select>
-          <input value={orderId} onChange={(e) => { setOrderId(e.target.value); setPage(1); }} placeholder={tText("按订单 ID / 支付单 ID 筛选")} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          <button type="button" onClick={() => { setProvider(""); setOrderId(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空筛选</Tx></button>
-        </div>
-
+        )}
+        filters={(
+          <>
+            <PaymentAdminSubnav />
+            <div className="grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[220px_1fr_auto]">
+              <select value={provider} onChange={(e) => { setProvider(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                <option value=""><Tx>全部网关</Tx></option>
+                {providerOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+              </select>
+              <input value={orderId} onChange={(e) => { setOrderId(e.target.value); setPage(1); }} placeholder={tText("按订单 ID / 支付单 ID 筛选")} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+              <button type="button" onClick={() => { setProvider(""); setOrderId(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空筛选</Tx></button>
+            </div>
+          </>
+        )}
+      >
         <AnimatedTable
           loading={eventsQuery.isLoading}
           rows={rows}
@@ -190,7 +190,7 @@ export default function AdminPaymentEvents() {
             </>
           )}
         />
-      </div>
+      </AdminPageShell>
     </PermissionGate>
   );
 }

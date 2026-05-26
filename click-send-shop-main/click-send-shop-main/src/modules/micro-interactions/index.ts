@@ -1,10 +1,21 @@
 export { ProgressiveImage } from "./components/ProgressiveImage";
 export { SquishButton, type SquishButtonVariant } from "./components/SquishButton";
 export { BottomSheet, type BottomSheetHeight, type BottomSheetProps } from "./components/BottomSheet";
-export { ResponsiveSheet } from "./components/ResponsiveSheet";
+export { ResponsiveSheet, type ResponsiveSheetProps } from "./components/ResponsiveSheet";
+export { AppModal, type AppModalProps } from "./components/AppModal";
+export { ModalDialog } from "./components/ModalDialog";
 export { BottomSheetConfirm } from "./components/BottomSheetConfirm";
 export { BottomSheetForm } from "./components/BottomSheetForm";
 export { useMediaSheetMode } from "./hooks/useMediaSheetMode";
+export { useAppBreakpoint } from "./modal/useAppBreakpoint";
+export { usePreferBottomSheet } from "./modal/usePreferBottomSheet";
+export { ModalLayerProvider } from "./modal/ModalLayerProvider";
+export {
+  MODAL_BREAKPOINTS,
+  type AppBreakpoint,
+  type AppModalTier,
+  type ModalPresentation,
+} from "./modal/modalBreakpoints";
 export { AnimatedPage } from "./components/AnimatedPage";
 export { AnimatedSection } from "./components/AnimatedSection";
 export { LoadingButton, type LoadingButtonState } from "./components/LoadingButton";

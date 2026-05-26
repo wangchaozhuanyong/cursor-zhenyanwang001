@@ -7,7 +7,7 @@ import * as couponService from "@/services/admin/couponService";
 import { fetchAdminPointsRecords } from "@/services/admin/pointsService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { Tx } from "@/components/admin/AdminText";
-import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
 import type { MarketingActivity } from "@/types/activity";
 import type { PointsRecord } from "@/types/points";
@@ -81,14 +81,7 @@ export default function AdminMarketingDashboard() {
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <AdminPageTitle
-          title={<Tx>活动管理 / 活动总览</Tx>}
-          hint={<Tx>营销活动、优惠券、积分与返现的一体化运营视图。</Tx>}
-        />
-      </div>
-
+    <AdminPageShell hint={<Tx>营销活动、优惠券、积分与返现的一体化运营视图。</Tx>}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <div key={card.t} className="rounded-xl border border-border bg-card p-4">
@@ -110,6 +103,6 @@ export default function AdminMarketingDashboard() {
           <button type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><PlusCircle className="mr-2 inline h-4 w-4" /><Tx>新建活动</Tx></button>
         </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

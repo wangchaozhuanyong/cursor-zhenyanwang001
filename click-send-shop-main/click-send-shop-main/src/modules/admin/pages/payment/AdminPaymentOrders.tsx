@@ -29,7 +29,9 @@ import {
 } from "@/utils/adminTableClasses";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "pending", label: "待支付" },
@@ -82,6 +84,8 @@ export default function AdminPaymentOrders() {
   const [keyword, setKeyword] = useState("");
   const [markingRow, setMarkingRow] = useState<PaymentOrderAdminRow | null>(null);
   const [markReason, setMarkReason] = useState("");
+  const markDirty = Boolean(markingRow && markReason.trim().length > 0);
+  useAdminTabDirty(markDirty);
 
   const params = useMemo(() => {
     const next: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
@@ -271,12 +275,9 @@ export default function AdminPaymentOrders() {
 
   return (
     <PermissionGate permission="payment.view">
-      <div className="p-4 md:p-6">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-foreground"><Tx>支付流水</Tx></h1>
-            <p className="mt-1 text-sm text-muted-foreground"><Tx>使用 Query 缓存和 SSE 自动刷新，人工补记后会同步订单与仪表盘。</Tx></p>
-          </div>
+      <AdminPageShell
+        hint={<Tx>使用 Query 缓存和 SSE 自动刷新，人工补记后会同步订单与仪表盘。</Tx>}
+        toolbar={(
           <button
             type="button"
             onClick={() => void ordersQuery.refetch()}
@@ -285,11 +286,11 @@ export default function AdminPaymentOrders() {
             <RefreshCw size={16} className={ordersQuery.isFetching ? "animate-spin" : ""} />
             <Tx>刷新</Tx>
           </button>
-        </div>
-
-        <PaymentAdminSubnav />
-
-        <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_1fr_auto]">
+        )}
+        filters={(
+          <>
+            <PaymentAdminSubnav />
+            <div className="grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_1fr_auto]">
           <select
             value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
@@ -316,8 +317,10 @@ export default function AdminPaymentOrders() {
           >
             <Tx>清空筛选</Tx>
           </button>
-        </div>
-
+            </div>
+          </>
+        )}
+      >
         <AnimatedTable
           loading={ordersQuery.isLoading}
           rows={rows}
@@ -374,7 +377,7 @@ export default function AdminPaymentOrders() {
             placeholder={tText("例如：已核对银行入账流水")}
           />
         </AdminFormSheet>
-      </div>
+      </AdminPageShell>
     </PermissionGate>
   );
 }

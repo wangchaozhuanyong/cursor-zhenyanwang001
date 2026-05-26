@@ -5,6 +5,7 @@ import MonitoringSubnav from "./MonitoringSubnav";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { Badge, formatTime, severityClass } from "./monitoringUi";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 import {
@@ -37,9 +38,10 @@ export default function AdminMonitoringOverview() {
   );
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold text-slate-900 sm:text-2xl"><Tx>数据一致性监控中心</Tx></h1>
-      <MonitoringSubnav />
+    <AdminPageShell
+      hint={<Tx>汇总今日检测、异常与高危项，并可跳转规则、运行记录与修复任务。</Tx>}
+      filters={<MonitoringSubnav />}
+    >
       {loading ? <div className="text-sm text-slate-500"><Tx>加载中...</Tx></div> : (
         <div className="space-y-5">
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -110,6 +112,6 @@ export default function AdminMonitoringOverview() {
           </section>
         </div>
       )}
-    </div>
+    </AdminPageShell>
   );
 }

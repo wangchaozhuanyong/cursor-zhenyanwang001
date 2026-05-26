@@ -29,6 +29,7 @@ import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
+import { ModalLayerProvider } from "@/modules/micro-interactions";
 import { trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
@@ -183,6 +184,7 @@ function MainStoreRoutes() {
   return (
     <ErrorBoundary resetKey={location.pathname}>
       <QueryClientProvider client={queryClient}>
+        <ModalLayerProvider>
         <DownloadConfirmProvider>
         <TooltipProvider>
           <Sonner />
@@ -259,6 +261,7 @@ function MainStoreRoutes() {
           <CookieConsentBanner />
         </TooltipProvider>
         </DownloadConfirmProvider>
+        </ModalLayerProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

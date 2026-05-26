@@ -8,6 +8,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchInviteRecords } from "@/services/admin/inviteService";
 import type { InviteRecord, InviteRecordsSummary } from "@/types/invite";
 import { Tx } from "@/components/admin/AdminText";
+import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import {
   AdminTableMobileCard,
@@ -102,12 +103,15 @@ export default function AdminInvites() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <SearchBar placeholder={tText("搜索邀请人 / 被邀请人 / 邀请码...")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
-        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
-      </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+    <AdminPageShell
+      hint={<Tx>查看邀请注册记录与邀请关系，可跳转用户详情。</Tx>}
+      filters={(
+        <>
+          <div className="space-y-2">
+            <SearchBar placeholder={tText("搜索邀请人 / 被邀请人 / 邀请码...")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+            <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
+          </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {[
           { label: tText("总邀请记录"), value: String(summary.totalRecords || total || 0) },
           { label: tText("邀请人数"), value: String(summary.inviterUsers || 0) },
@@ -118,7 +122,10 @@ export default function AdminInvites() {
             <p className="text-[10px] text-muted-foreground">{stat.label}</p>
           </div>
         ))}
-      </div>
+          </div>
+        </>
+      )}
+    >
       <AnimatedTable
         loading={loading}
         rows={invites}
@@ -163,6 +170,6 @@ export default function AdminInvites() {
             </>
           )}
         />
-    </div>
+    </AdminPageShell>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { Tx } from "@/components/admin/AdminText";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import type { InventorySku, PurchaseOrderDetail } from "@/types/inventory";
 import type { PaginatedData } from "@/types/common";
 import { skuLabel } from "@/modules/admin/pages/product/inventory/inventoryDisplayUtils";
@@ -307,7 +308,7 @@ export default function InventoryFormSheets({
             </div>
             <input type="number" min={1} value={purchaseFromAlert.ordered_qty} onChange={(e) => setPurchaseFromAlert({ ...purchaseFromAlert, ordered_qty: e.target.value })} placeholder={tText("采购数量")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
             <input type="number" min={0} value={purchaseFromAlert.unit_cost} onChange={(e) => setPurchaseFromAlert({ ...purchaseFromAlert, unit_cost: e.target.value })} placeholder={tText("采购单价（可选）")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-            <input type="date" value={purchaseFromAlert.expected_arrival_date} onChange={(e) => setPurchaseFromAlert({ ...purchaseFromAlert, expected_arrival_date: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            <SegmentedDateInput value={purchaseFromAlert.expected_arrival_date} onChange={(expected_arrival_date) => setPurchaseFromAlert({ ...purchaseFromAlert, expected_arrival_date })} controlClassName="px-4 py-3" />
             <textarea value={purchaseFromAlert.remark} onChange={(e) => setPurchaseFromAlert({ ...purchaseFromAlert, remark: e.target.value })} placeholder={tText("采购备注（可选）")} className="min-h-20 w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
           </div>
         ) : null}
@@ -383,7 +384,7 @@ export default function InventoryFormSheets({
                 })}
               </div>
             )}
-            <input type="date" value={receivingOrder.actual_arrival_date} onChange={(e) => setReceivingOrder({ ...receivingOrder, actual_arrival_date: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            <SegmentedDateInput value={receivingOrder.actual_arrival_date} onChange={(actual_arrival_date) => setReceivingOrder({ ...receivingOrder, actual_arrival_date })} controlClassName="px-4 py-3" />
             <textarea value={receivingOrder.remark} onChange={(e) => setReceivingOrder({ ...receivingOrder, remark: e.target.value })} placeholder={tText("入库备注（可选）")} className="min-h-20 w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
           </div>
         ) : null}

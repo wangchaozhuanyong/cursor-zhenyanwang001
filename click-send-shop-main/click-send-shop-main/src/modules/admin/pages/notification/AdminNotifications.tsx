@@ -18,6 +18,7 @@ import type { NotificationPayload } from "@/services/admin/notificationService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
+import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import {
@@ -394,7 +395,7 @@ export default function AdminNotifications() {
               </label>
               <div className="space-y-4">
                 <label className="block text-xs font-medium text-muted-foreground">定时发送时间
-                  <input type="datetime-local" value={form.scheduled_at} onChange={(e) => setForm((prev) => ({ ...prev, scheduled_at: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                  <SegmentedDateTimeInput value={form.scheduled_at} onChange={(scheduled_at) => setForm((prev) => ({ ...prev, scheduled_at }))} className="mt-1 w-full" controlClassName="bg-background" />
                 </label>
                 <label className="block text-xs font-medium text-muted-foreground">跳转链接
                   <input value={form.link_url} onChange={(e) => setForm((prev) => ({ ...prev, link_url: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={tText("/orders 或完整 URL")} />

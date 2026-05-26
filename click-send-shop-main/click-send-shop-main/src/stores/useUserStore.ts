@@ -15,6 +15,8 @@ interface UserState {
   phone: string;
   wechat: string;
   whatsapp: string;
+  birthday: string | null;
+  birthdayLocked: boolean;
   inviteCode: string;
   parentInviteCode: string;
   pointsBalance: number;
@@ -55,6 +57,8 @@ export const useUserStore = create<UserState>()(
       phone: "",
       wechat: "",
       whatsapp: "",
+      birthday: null,
+      birthdayLocked: false,
       inviteCode: "",
       parentInviteCode: "",
       pointsBalance: 0,
@@ -80,6 +84,8 @@ export const useUserStore = create<UserState>()(
             phone: profile.phone || "",
             wechat: profile.wechat || "",
             whatsapp: profile.whatsapp || "",
+            birthday: profile.birthday || null,
+            birthdayLocked: !!(profile.birthdayLocked || profile.birthday_locked),
             inviteCode: profile.inviteCode || "",
             parentInviteCode: profile.parentInviteCode || "",
             pointsBalance: profile.pointsBalance ?? 0,
@@ -117,6 +123,8 @@ export const useUserStore = create<UserState>()(
           phone: "",
           wechat: "",
           whatsapp: "",
+          birthday: null,
+          birthdayLocked: false,
           inviteCode: "",
           parentInviteCode: "",
           pointsBalance: 0,
@@ -196,6 +204,8 @@ export const useUserStore = create<UserState>()(
         phone: s.phone,
         wechat: s.wechat,
         whatsapp: s.whatsapp,
+        birthday: s.birthday,
+        birthdayLocked: s.birthdayLocked,
         inviteCode: s.inviteCode,
         parentInviteCode: s.parentInviteCode,
         pointsBalance: s.pointsBalance,

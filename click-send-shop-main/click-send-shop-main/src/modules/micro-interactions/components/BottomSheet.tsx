@@ -13,7 +13,7 @@ export type BottomSheetHeight = "auto" | "50vh" | "70vh" | "90vh" | "full";
 export type BottomSheetProps = {
   open: boolean;
   onClose: () => void;
-  children: ReactNode;
+  children?: ReactNode;
   title?: ReactNode;
   description?: ReactNode;
   footer?: ReactNode;
@@ -182,14 +182,16 @@ export function BottomSheet({
                 </motion.div>
               )}
 
-              <motion.div
-                className={cn(
-                  "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2",
-                  !stickyFooter && "pb-[max(12px,env(safe-area-inset-bottom))]",
-                )}
-              >
-                {children}
-              </motion.div>
+              {children ? (
+                <motion.div
+                  className={cn(
+                    "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2",
+                    !stickyFooter && "pb-[max(12px,env(safe-area-inset-bottom))]",
+                  )}
+                >
+                  {children}
+                </motion.div>
+              ) : null}
 
               {footer ? (
                 <motion.div

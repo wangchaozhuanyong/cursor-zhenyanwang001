@@ -32,6 +32,7 @@ export function BottomSheetConfirm({
   const loading = loadingProp ?? busy;
 
   const handleConfirm = async () => {
+    if (loading) return;
     setBusy(true);
     try {
       await onConfirm();
@@ -39,6 +40,9 @@ export function BottomSheetConfirm({
     } finally {
       setBusy(false);
     }
+  };
+  const handleClose = () => {
+    if (!loading) onClose();
   };
 
   const footer = (
@@ -71,15 +75,14 @@ export function BottomSheetConfirm({
     <AppModal
       tier="light"
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title={title}
       description={description}
       footer={footer}
       height="auto"
       stickyFooter
       showHandle={false}
-    >
-      <div className="min-h-2" aria-hidden />
-    </AppModal>
+      closeOnOverlay={!loading}
+    />
   );
 }

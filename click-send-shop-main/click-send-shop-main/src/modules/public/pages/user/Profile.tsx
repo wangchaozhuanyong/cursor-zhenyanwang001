@@ -88,11 +88,29 @@ function SectionTitle({ title, rightLabel, onRightClick }: { title: string; righ
   );
 }
 
+function getProfileCompletionText({
+  avatar,
+  birthday,
+  wechat,
+  whatsapp,
+}: {
+  avatar: string;
+  birthday?: string | null;
+  wechat: string;
+  whatsapp: string;
+}) {
+  if (!avatar.trim()) return "上传头像，让会员资料更完整";
+  if (!wechat.trim() && !whatsapp.trim()) return "完善联系方式，售后沟通更方便";
+  if (!birthday) return "填写生日，解锁生日专属权益";
+  return "资料已完善，会员权益持续升级";
+}
+
 function ProfileHeroCard({
   logoSrc,
   avatar,
   userName,
   memberLevelName,
+  profileHint,
   pointsBalance,
   unreadCount,
   onMessageClick,
@@ -104,6 +122,7 @@ function ProfileHeroCard({
   avatar?: string;
   userName: string;
   memberLevelName: string;
+  profileHint: string;
   pointsBalance: number;
   unreadCount: number;
   onMessageClick: () => void;
@@ -112,7 +131,7 @@ function ProfileHeroCard({
   onAvatarClick: () => void;
 }) {
   return (
-    <section className={`relative overflow-hidden rounded-2xl px-[var(--store-card-x)] py-4 shadow-[var(--theme-shadow)] ${THEME_MEMBER_CARD_SHELL}`}>
+    <section className={`relative overflow-hidden rounded-2xl px-[var(--store-card-x)] py-3 shadow-[var(--theme-shadow)] ${THEME_MEMBER_CARD_SHELL}`}>
       <div
         className="pointer-events-none absolute inset-0"
         style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 10%, var(--theme-surface)) 0%, color-mix(in srgb, var(--theme-primary) 4%, var(--theme-surface)) 52%, var(--theme-surface) 100%)" }}
@@ -121,10 +140,10 @@ function ProfileHeroCard({
         className="pointer-events-none absolute inset-y-0 right-0 w-24 opacity-70"
         style={{ background: "var(--theme-member-card-sheen)" }}
       />
-      <div className="relative flex min-h-[72px] items-start gap-3.5">
-        <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
+      <div className="relative flex min-h-[60px] items-start gap-3.5">
+        <button type="button" onClick={onAvatarClick} className="relative -mt-0.5 shrink-0" aria-label="更换头像">
           <span
-            className="flex h-[60px] w-[60px] items-center justify-center rounded-full border bg-[var(--theme-surface)] p-1 shadow-sm"
+            className="flex h-14 w-14 items-center justify-center rounded-full border bg-[var(--theme-surface)] p-[3px] shadow-sm"
             style={{ borderColor: "var(--theme-member-card-avatar-ring)" }}
           >
             {avatar || logoSrc ? (
@@ -135,11 +154,11 @@ function ProfileHeroCard({
               </span>
             )}
           </span>
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm">
+          <span className="absolute -bottom-px -right-px flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm">
             <Camera size={11} />
           </span>
         </button>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex min-w-0 items-center gap-2">
             <p className="max-w-full truncate text-lg font-bold leading-tight text-[var(--theme-text)]">{userName}</p>
             <span
@@ -152,9 +171,9 @@ function ProfileHeroCard({
               {memberLevelName}
             </span>
           </div>
-          <p className={`mt-1.5 line-clamp-1 text-xs leading-5 ${THEME_MEMBER_CARD_MUTED}`}>完善资料，享受更多会员权益</p>
+          <p className={`mt-1 line-clamp-1 text-xs leading-5 ${THEME_MEMBER_CARD_MUTED}`}>{profileHint}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 pt-0.5">
           <NotificationIconButton unreadCount={unreadCount} onClick={onMessageClick} />
           <button
             type="button"
@@ -192,7 +211,7 @@ export default function Profile() {
   const siteName = siteInfo.siteName || "官方商城";
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const authStore = useAuthStore();
-  const { nickname, avatar, pointsBalance, inviteCode, memberLevel, wechatLogin, loadProfile } = useUserStore();
+  const { nickname, avatar, birthday, pointsBalance, inviteCode, memberLevel, wechat, whatsapp, wechatLogin, loadProfile } = useUserStore();
   const { orders, loadOrders } = useOrderStore();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
@@ -274,6 +293,7 @@ export default function Profile() {
   const userName = nickname?.trim() || "会员用户";
   const memberLevelName = memberLevel?.name?.trim() || "普通会员";
   const code = inviteCode?.trim() || "暂无";
+  const profileHint = getProfileCompletionText({ avatar, birthday, wechat, whatsapp });
   const couponCount = useMemo(() => coupons.filter((c) => !c.used_at).length, [coupons]);
 
   const orderPending = useMemo(() => orders.filter((o) => o.status === "pending" && o.payment_status !== "paid").length, [orders]);
@@ -326,7 +346,7 @@ export default function Profile() {
 
   return (
     <div className="store-page store-page-shell store-bottom-safe text-[var(--theme-text)]">
-      <main className="mx-auto w-full max-w-screen-xl space-y-3 px-[var(--store-page-x)] pt-3 sm:max-w-lg sm:space-y-4 sm:px-4 sm:pt-4 lg:grid lg:max-w-none lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0 lg:px-8 lg:pb-12 lg:pt-6">
+      <main className="mx-auto w-full max-w-screen-xl space-y-3 px-[var(--store-page-x)] pt-2 sm:max-w-lg sm:space-y-4 sm:px-4 sm:pt-3 lg:grid lg:max-w-none lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0 lg:px-8 lg:pb-12 lg:pt-4">
         <aside className="hidden lg:block">
           <StoreAccountNav className="sticky top-[calc(var(--store-desktop-header-height,4rem)+1.5rem)]" />
         </aside>
@@ -356,6 +376,7 @@ export default function Profile() {
                 avatar={avatar}
                 userName={userName}
                 memberLevelName={memberLevelName}
+                profileHint={profileHint}
                 pointsBalance={pointsBalance}
                 unreadCount={unreadCount}
                 onMessageClick={() => navigate("/notifications", { state: { from: "/profile" } })}

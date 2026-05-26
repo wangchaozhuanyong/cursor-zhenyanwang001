@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
@@ -120,6 +120,7 @@ export default function Orders() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams);
+  const tabButtonRefs = useRef<Map<OrderTab, HTMLButtonElement>>(new Map());
   const capabilities = useSiteCapabilities();
   const { paying, payPendingOrder } = usePayPendingOrder();
   const tabs = useMemo(() => TABS.filter((t) => t.key !== "pending_review" || capabilities.reviewEnabled), [capabilities.reviewEnabled]);
@@ -169,6 +170,11 @@ export default function Orders() {
     [orders, tab],
   );
   const currentSummary = summary || summaryFromOrders(orders);
+
+  useEffect(() => {
+    const activeButton = tabButtonRefs.current.get(tab);
+    activeButton?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [tab, tabs.length]);
 
   const switchTab = (next: OrderTab) => {
     setSearchParams(next === "all" ? {} : { tab: next }, { replace: true });
@@ -227,17 +233,36 @@ export default function Orders() {
 
   return (
     <StoreAccountLayout title="我的订单" onBack={() => navigate("/profile", { replace: true })} mainClassName="sm:p-0 lg:py-6">
-        <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background px-[var(--store-page-x)] py-2 sm:-mx-4 sm:px-4 lg:top-[calc(var(--store-desktop-header-height,4rem)+0.5rem)] lg:mx-0 lg:rounded-xl lg:border lg:bg-[var(--theme-surface)] lg:px-4">
-          <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background py-2 sm:-mx-4 lg:top-[calc(var(--store-desktop-header-height,4rem)+0.5rem)] lg:mx-0 lg:rounded-xl lg:border lg:bg-[var(--theme-surface)]">
+          <div className="relative overflow-hidden">
+            <div
+              className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-[var(--store-page-x)] pb-1 [-webkit-overflow-scrolling:touch] sm:px-4"
+              role="tablist"
+              aria-label="订单状态"
+            >
             {tabs.map((t) => {
               const active = t.key === tab;
               const count = tabCount(currentSummary, t.key);
               return (
-                <button key={t.key} className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`} onClick={() => switchTab(t.key)}>
+                <button
+                  key={t.key}
+                  ref={(el) => {
+                    if (el) tabButtonRefs.current.set(t.key, el);
+                    else tabButtonRefs.current.delete(t.key);
+                  }}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={`snap-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition-colors ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
+                  onClick={() => switchTab(t.key)}
+                >
                   {t.label}{count && count > 0 ? ` ${count}` : ""}
                 </button>
               );
             })}
+            </div>
+            <span className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-background to-transparent lg:from-[var(--theme-surface)]" aria-hidden />
+            <span className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-background to-transparent lg:from-[var(--theme-surface)]" aria-hidden />
           </div>
         </div>
 

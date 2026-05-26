@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Calendar } from "lucide-react";
-import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import {
   SEGMENT_DAY_LEN,
   SEGMENT_MONTH_LEN,
@@ -42,7 +41,10 @@ export type SegmentedDateInputProps = {
   onChange: (isoDate: string) => void;
   /** 外层容器，默认 `w-full` */
   className?: string;
+  /** 输入框外观类，默认沿用后台表单样式 */
+  controlClassName?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   id?: string;
 };
 
@@ -54,10 +56,12 @@ export default function SegmentedDateInput({
   value,
   onChange,
   className = "w-full",
+  controlClassName = "",
   disabled = false,
+  readOnly = false,
   id,
 }: SegmentedDateInputProps) {
-  const { tText } = useAdminT();
+  const { tText } = useAdminTOptional();
   const parsed = parseDateValue(value);
   const [y, setY] = useState(parsed.y);
   const [m, setM] = useState(parsed.m);
@@ -76,6 +80,7 @@ export default function SegmentedDateInput({
   }, [value]);
 
   const tryEmit = (ny: string, nm: string, nd: string) => {
+    if (readOnly || disabled) return;
     if (!ny && !nm && !nd) {
       onChange("");
       return;
@@ -108,6 +113,7 @@ export default function SegmentedDateInput({
   };
 
   const setYearFromInput = (raw: string) => {
+    if (readOnly || disabled) return;
     const v = applyYearSegmentInput(raw, mRef);
     setY(v);
     tryEmit(v, m, d);
@@ -116,7 +122,7 @@ export default function SegmentedDateInput({
   return (
     <div className={`relative ${className}`}>
       <div
-        className="flex min-h-[44px] w-full items-center gap-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground"
+        className={`flex min-h-[44px] w-full items-center gap-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground ${controlClassName}`}
         onBlur={handleBlurContainer}
       >
         <input
@@ -127,6 +133,7 @@ export default function SegmentedDateInput({
           autoComplete="off"
           placeholder={tText("年")}
           disabled={disabled}
+          readOnly={readOnly}
           maxLength={SEGMENT_YEAR_LEN}
           size={SEGMENT_YEAR_LEN}
           value={y}
@@ -149,6 +156,7 @@ export default function SegmentedDateInput({
           autoComplete="off"
           placeholder={tText("月")}
           disabled={disabled}
+          readOnly={readOnly}
           maxLength={SEGMENT_MONTH_LEN}
           value={m}
           aria-label={tText("月（2 位）")}
@@ -184,6 +192,7 @@ export default function SegmentedDateInput({
           autoComplete="off"
           placeholder={tText("日")}
           disabled={disabled}
+          readOnly={readOnly}
           maxLength={SEGMENT_DAY_LEN}
           value={d}
           aria-label={tText("日（2 位）")}
@@ -203,7 +212,7 @@ export default function SegmentedDateInput({
         />
         <button
           type="button"
-          disabled={disabled}
+          disabled={disabled || readOnly}
           title={tText("打开日历")}
           className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-background/80 hover:text-foreground disabled:opacity-40"
           onMouseDown={(e) => e.preventDefault()}
@@ -223,7 +232,7 @@ export default function SegmentedDateInput({
         className="pointer-events-none absolute h-0 w-0 opacity-0"
         tabIndex={-1}
         value={normalizeYmd(y, m, d) || ""}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         onChange={(e) => {
           const v = e.target.value;
           if (!v) return;

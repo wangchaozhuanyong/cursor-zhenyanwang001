@@ -9,11 +9,13 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import { toastErrorMessage } from "@/utils/errorMessage";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
 import * as authService from "@/services/authService";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import SettingsSecuritySection from "@/modules/public/pages/user/SettingsSecuritySection";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
@@ -21,7 +23,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const goBack = useGoBack();
-  const { nickname, phone, avatar, wechat, whatsapp, profileSaving, setNickname, setPhone, setWechat, setWhatsapp, saveProfile, loadProfile } = useUserStore();
+  const { nickname, phone, avatar, wechat, whatsapp, profileSaving, setNickname, setPhone, setWechat, setWhatsapp, setAvatar, saveProfile, loadProfile } = useUserStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [wechatBinding, setWechatBinding] = useState<{ bound: boolean; nickname?: string | null; avatarUrl?: string | null; boundAt?: string }>({ bound: false });
   const [wechatLoginEnabled, setWechatLoginEnabled] = useState(false);
@@ -92,14 +94,17 @@ export default function Settings() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const previousAvatar = avatar;
+    let uploaded = false;
     try {
       const data = await uploadService.uploadSingle(file, { mode: "thumb" });
-      useUserStore.setState({ avatar: data.url });
+      uploaded = true;
+      setAvatar(data.url);
       await useUserStore.getState().saveProfile();
-      const storage = uploadService.getUploadStorageStatus(data.url);
-      toast.success(`头像已保存：${storage.host}${storage.isS3 ? "（云存储）" : ""}`, toastPresetQuickSuccess);
+      toast.success("头像上传成功", toastPresetQuickSuccess);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "头像上传失败，请检查图片格式/大小后重试");
+      if (uploaded) setAvatar(previousAvatar);
+      toast.error(toastErrorMessage(error, uploaded ? "头像保存失败，请稍后重试" : "头像上传失败，请检查图片格式/大小后重试"));
     } finally {
       e.target.value = "";
     }
@@ -219,12 +224,11 @@ export default function Settings() {
             ))}
             <label className="block">
               <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">生日</span>
-              <input
-                type="date"
+              <SegmentedDateInput
                 value={birthday}
                 readOnly={birthdayLocked || !!birthday}
-                onChange={(e) => setBirthday(e.target.value)}
-                className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm outline-none ring-1 ring-[var(--theme-border)] focus:ring-2 focus:ring-[var(--theme-primary)] disabled:opacity-70"
+                onChange={setBirthday}
+                controlClassName="h-11 rounded-xl border-0 bg-[var(--theme-bg)] px-4 text-[var(--theme-text)] ring-1 ring-[var(--theme-border)] focus-within:ring-2 focus-within:ring-[var(--theme-primary)]"
               />
               {birthdayLocked ? (
                 <p className="mt-1 text-[11px] text-[var(--theme-muted)]">生日已锁定，如需修改请联系客服</p>

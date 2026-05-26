@@ -88,6 +88,8 @@ function mapProfileFromResponse(data: unknown): UserProfile {
     phone: (d.phone ?? "") as string,
     wechat: (d.wechat ?? "") as string,
     whatsapp: (d.whatsapp ?? "") as string,
+    birthday: (d.birthday ?? null) as string | null,
+    birthdayLocked: Boolean(d.birthdayLocked ?? d.birthday_locked ?? false),
     wechatLogin: (() => {
       const raw = (d.wechat_login ?? d.wechatLogin) as unknown as Record<string, unknown> | undefined;
       if (!raw || typeof raw !== "object") return { bound: false };

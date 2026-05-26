@@ -10,6 +10,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import ActivityProductPicker from "@/components/admin/ActivityProductPicker";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
+import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { DISPLAY_POSITIONS, DISPLAY_POSITION_LABELS, WIP_ACTIVITY_TYPES, type DisplayPosition } from "@/constants/marketingDisplayPositions";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
@@ -355,8 +356,8 @@ export default function AdminActivityForm() {
               <label className="block text-sm"><Tx>副标题</Tx><input value={form.subtitle || ""} onChange={(e) => setForm((p) => ({ ...p, subtitle: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
               <label className="block text-sm"><Tx>活动说明</Tx><textarea rows={3} value={form.description || ""} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
               <div className="grid gap-2 md:grid-cols-2">
-                <label className="text-sm"><Tx>开始时间</Tx><input type="datetime-local" value={form.start_at ? form.start_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, start_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-                <label className="text-sm"><Tx>结束时间</Tx><input type="datetime-local" value={form.end_at ? form.end_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, end_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+                <label className="text-sm"><Tx>开始时间</Tx><SegmentedDateTimeInput value={form.start_at ? form.start_at.slice(0, 16) : ""} onChange={(start_at) => setForm((p) => ({ ...p, start_at }))} className="mt-1 w-full" /></label>
+                <label className="text-sm"><Tx>结束时间</Tx><SegmentedDateTimeInput value={form.end_at ? form.end_at.slice(0, 16) : ""} onChange={(end_at) => setForm((p) => ({ ...p, end_at }))} className="mt-1 w-full" /></label>
               </div>
             </>
           )}

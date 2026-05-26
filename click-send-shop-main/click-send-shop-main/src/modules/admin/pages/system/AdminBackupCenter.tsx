@@ -8,6 +8,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
+import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import {
@@ -212,7 +213,7 @@ export default function AdminBackupCenter() {
             </label>
             <label className="block text-sm">
               <span className="text-muted-foreground"><Tx>指定时间点</Tx></span>
-              <input type="datetime-local" value={targetTime} onChange={(e) => setTargetTime(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2" />
+              <SegmentedDateTimeInput value={targetTime} onChange={setTargetTime} className="mt-1 w-full" controlClassName="bg-background" />
             </label>
             <label className="block text-sm">
               <span className="text-muted-foreground"><Tx>表名</Tx></span>

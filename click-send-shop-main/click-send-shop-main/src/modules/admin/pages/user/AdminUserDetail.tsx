@@ -29,6 +29,7 @@ import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import type { MemberLevel, UserEditForm, UserProfile, UserStatusOverview, UserTag } from "@/types/user";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { Tx } from "@/components/admin/AdminText";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import { useAdminT } from "@/hooks/useAdminT";
 import { formatAccountStatusLabel } from "@/utils/adminUserFilters";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
@@ -380,11 +381,11 @@ export default function AdminUserDetail() {
           ))}
           <label className="text-xs text-muted-foreground sm:col-span-2">
             <Tx>生日 (YYYY-MM-DD)</Tx>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            <SegmentedDateInput
+              className="mt-1 w-full"
+              controlClassName="bg-background"
               value={editForm.birthday || ""}
-              onChange={(e) => setEditForm((s) => ({ ...s, birthday: e.target.value }))}
+              onChange={(birthday) => setEditForm((s) => ({ ...s, birthday }))}
             />
           </label>
           <label className="flex items-center gap-2 text-sm sm:col-span-2">

@@ -252,7 +252,9 @@ async function updateProfile(userId, body) {
 
   if (fragments.length === 0 && birthday === undefined) throw new ValidationError('没有需要更新的字段');
 
-  await repo.updateUserProfile(userId, fragments, values);
+  if (fragments.length > 0) {
+    await repo.updateUserProfile(userId, fragments, values);
+  }
 
   const user = await repo.selectProfileFields(userId);
   return { data: formatUserResponse(user, 'user'), message: '资料已更新' };

@@ -125,7 +125,7 @@ function SheetDialogBody({
   description?: ReactNode;
   footer?: ReactNode;
   stickyFooter?: boolean;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <>
@@ -135,14 +135,16 @@ function SheetDialogBody({
           {description ? <ModalDialogDescription>{description}</ModalDialogDescription> : null}
         </ModalDialogHeader>
       ) : null}
-      <div
-        className={cn(
-          "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4",
-          !stickyFooter && "pb-5",
-        )}
-      >
-        {children}
-      </div>
+      {children ? (
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4",
+            !stickyFooter && "pb-5",
+          )}
+        >
+          {children}
+        </div>
+      ) : null}
       {footer ? (
         <div className="shrink-0 border-t border-[var(--theme-border)] px-5 py-4">{footer}</div>
       ) : null}

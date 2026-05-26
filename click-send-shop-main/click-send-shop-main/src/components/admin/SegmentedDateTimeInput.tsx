@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarClock } from "lucide-react";
-import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import {
   SEGMENT_DAY_LEN,
   SEGMENT_HOUR_LEN,
@@ -79,7 +78,9 @@ export type SegmentedDateTimeInputProps = {
   value: string;
   onChange: (isoDatetimeLocal: string) => void;
   className?: string;
+  controlClassName?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   id?: string;
 };
 
@@ -91,10 +92,12 @@ export default function SegmentedDateTimeInput({
   value,
   onChange,
   className = "w-full",
+  controlClassName = "",
   disabled = false,
+  readOnly = false,
   id,
 }: SegmentedDateTimeInputProps) {
-  const { tText } = useAdminT();
+  const { tText } = useAdminTOptional();
   const parsed = parseDateTimeLocal(value);
   const [y, setY] = useState(parsed.y);
   const [m, setM] = useState(parsed.m);
@@ -119,6 +122,7 @@ export default function SegmentedDateTimeInput({
   }, [value]);
 
   const tryEmit = (ny: string, nm: string, nd: string, nh: string, nmi: string) => {
+    if (readOnly || disabled) return;
     if (!ny && !nm && !nd && !nh && !nmi) {
       onChange("");
       return;
@@ -173,6 +177,7 @@ export default function SegmentedDateTimeInput({
   })();
 
   const setYearFromInput = (raw: string) => {
+    if (readOnly || disabled) return;
     const v = applyYearSegmentInput(raw, mRef);
     setY(v);
     tryEmit(v, m, d, h, mi);
@@ -181,7 +186,7 @@ export default function SegmentedDateTimeInput({
   return (
     <div className={`relative ${className}`}>
       <div
-        className="flex min-h-[44px] w-full flex-wrap items-center gap-x-1 gap-y-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground"
+        className={`flex min-h-[44px] w-full flex-wrap items-center gap-x-1 gap-y-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground ${controlClassName}`}
         onBlur={handleBlurContainer}
       >
         <input
@@ -192,16 +197,14 @@ export default function SegmentedDateTimeInput({
           autoComplete="off"
           placeholder={tText("年")}
           disabled={disabled}
+          readOnly={readOnly}
           maxLength={4}
           value={y}
           aria-label={tText("年（4 位）")}
           className="w-[4.25ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
-          onChange={(e) => {
-            const v = segmentDigits(e.target.value, 4);
-            setY(v);
-            if (v.length === 4) mRef.current?.focus();
-            tryEmit(v, m, d, h, mi);
-          }}
+          onChange={(e) => setYearFromInput(e.target.value)}
+          onInput={(e) => setYearFromInput(e.currentTarget.value)}
+          onPaste={(e) => handleYearSegmentPaste(e, mRef, setYearFromInput)}
           onKeyDown={(e) => {
             if (e.key === "ArrowRight" && y.length === 4) mRef.current?.focus();
           }}
@@ -216,6 +219,7 @@ export default function SegmentedDateTimeInput({
           autoComplete="off"
           placeholder={tText("月")}
           disabled={disabled}
+          readOnly={readOnly}
           maxLength={2}
           value={m}
           aria-label={tText("月（2 位）")}
@@ -251,6 +255,7 @@ export default function SegmentedDateTimeInput({
           autoComplete="off"
           placeholder={tText("日")}
           disabled={disabled}
+          readOnly={readOnly}
           maxLength={2}
           value={d}
           aria-label={tText("日（2 位）")}
@@ -288,6 +293,7 @@ export default function SegmentedDateTimeInput({
           autoComplete="off"
           placeholder={tText("时")}
           disabled={disabled}
+          readOnly={readOnly}
           maxLength={2}
           value={h}
           aria-label={tText("时（0–23，2 位）")}
@@ -317,6 +323,7 @@ export default function SegmentedDateTimeInput({
           autoComplete="off"
           placeholder={tText("分")}
           disabled={disabled}
+          readOnly={readOnly}
           maxLength={2}
           value={mi}
           aria-label={tText("分（0–59，2 位）")}
@@ -337,7 +344,7 @@ export default function SegmentedDateTimeInput({
 
         <button
           type="button"
-          disabled={disabled}
+          disabled={disabled || readOnly}
           title={tText("打开日期与时间")}
           className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-background/80 hover:text-foreground disabled:opacity-40"
           onMouseDown={(e) => e.preventDefault()}
@@ -357,7 +364,7 @@ export default function SegmentedDateTimeInput({
         className="pointer-events-none absolute h-0 w-0 opacity-0"
         tabIndex={-1}
         value={hiddenPickerDisplay}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         onChange={(e) => {
           const v = e.target.value;
           if (!v) return;

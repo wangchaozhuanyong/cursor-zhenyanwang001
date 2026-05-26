@@ -110,18 +110,21 @@ export default function AdminWorkTabs() {
   const openContextMenu = (tab: AdminWorkTab, e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const maxLeft = Math.max(TAB_MENU_VIEWPORT_PADDING, viewportWidth - TAB_MENU_WIDTH - TAB_MENU_VIEWPORT_PADDING);
     const maxTop = Math.max(TAB_MENU_VIEWPORT_PADDING, viewportHeight - TAB_MENU_ESTIMATED_HEIGHT - TAB_MENU_VIEWPORT_PADDING);
-    const preferredTop = rect.bottom + TAB_MENU_GAP;
-    const fallbackTop = rect.top - TAB_MENU_ESTIMATED_HEIGHT - TAB_MENU_GAP;
+    const preferredLeft = e.clientX + TAB_MENU_GAP;
+    const fallbackLeft = e.clientX - TAB_MENU_WIDTH - TAB_MENU_GAP;
+    const preferredTop = e.clientY + TAB_MENU_GAP;
+    const fallbackTop = e.clientY - TAB_MENU_ESTIMATED_HEIGHT - TAB_MENU_GAP;
+    const left = preferredLeft + TAB_MENU_WIDTH <= viewportWidth - TAB_MENU_VIEWPORT_PADDING
+      ? preferredLeft
+      : Math.max(TAB_MENU_VIEWPORT_PADDING, fallbackLeft);
     const top = preferredTop + TAB_MENU_ESTIMATED_HEIGHT <= viewportHeight - TAB_MENU_VIEWPORT_PADDING
       ? preferredTop
       : Math.max(TAB_MENU_VIEWPORT_PADDING, fallbackTop);
-    const left = Math.min(Math.max(TAB_MENU_VIEWPORT_PADDING, rect.left), maxLeft);
-    setMenu({ tabId: tab.id, x: left, y: Math.min(top, maxTop) });
+    setMenu({ tabId: tab.id, x: Math.min(left, maxLeft), y: Math.min(top, maxTop) });
   };
 
   const menuTab = menu ? tabs.find((t) => t.id === menu.tabId) : null;

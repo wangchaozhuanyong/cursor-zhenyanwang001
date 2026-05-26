@@ -3,6 +3,22 @@ import { isAdminLoggedIn } from "@/utils/token";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+const SEARCH_ATTRIBUTION_KEY = "analytics_search_attribution";
+const SEARCH_ATTRIBUTION_TTL_MS = 30 * 60 * 1000;
+const SEARCH_ATTRIBUTABLE_EVENTS = new Set([
+  "product_click",
+  "product_view",
+  "add_to_cart",
+  "checkout_start",
+  "order_submit",
+  "payment_success",
+]);
+
+let trafficAnalyticsEnabled = true;
+
+export function setTrafficAnalyticsEnabled(enabled: boolean) {
+  trafficAnalyticsEnabled = enabled;
+}
 
 export function getSessionId() {
   const key = "analytics_session_id";
@@ -83,22 +99,55 @@ function getReferrerDomain(referrer: string) {
 }
 
 function inferTrafficSource(referrer: string, utm: ReturnType<typeof getUtmParams>) {
-  if (utm.utm_source || utm.utm_medium || utm.utm_campaign) return "campaign";
   const domain = getReferrerDomain(referrer);
+  const medium = String(utm.utm_medium || "").toLowerCase();
+  if (/(cpc|ppc|paid|ads?|sem)/i.test(medium)) return "paid";
+  if (utm.utm_source || utm.utm_medium || utm.utm_campaign) return "campaign";
   if (!domain) return "direct";
+  if (/(google|bing|yahoo|duckduckgo|baidu|yandex)\./i.test(domain)) return "organic";
+  if (/(facebook|instagram|tiktok|twitter|x\.com|whatsapp|youtube|linkedin|pinterest)\./i.test(domain)) return "social";
   return "referral";
 }
 
+export function setSearchAttribution(keyword: string) {
+  const normalized = keyword.trim().slice(0, 100);
+  if (!normalized) return;
+  window.sessionStorage.setItem(SEARCH_ATTRIBUTION_KEY, JSON.stringify({
+    keyword: normalized,
+    touchedAt: Date.now(),
+  }));
+}
+
+export function getSearchAttributionKeyword() {
+  try {
+    const raw = window.sessionStorage.getItem(SEARCH_ATTRIBUTION_KEY);
+    if (!raw) return "";
+    const parsed = JSON.parse(raw) as { keyword?: string; touchedAt?: number };
+    if (!parsed.keyword || !parsed.touchedAt || Date.now() - parsed.touchedAt > SEARCH_ATTRIBUTION_TTL_MS) {
+      window.sessionStorage.removeItem(SEARCH_ATTRIBUTION_KEY);
+      return "";
+    }
+    return String(parsed.keyword).trim().slice(0, 100);
+  } catch {
+    return "";
+  }
+}
+
 function enrichPayload(payload: AnalyticsEventPayload): AnalyticsEventPayload | null {
+  if (!trafficAnalyticsEnabled) return null;
   const path = payload.path || payload.page || window.location.pathname;
   if (isAdminTraffic(path)) return null;
   const referrer = payload.referrer ?? document.referrer ?? "";
   const utm = getUtmParams();
+  const attributionKeyword = !payload.keyword && SEARCH_ATTRIBUTABLE_EVENTS.has(payload.event_type)
+    ? getSearchAttributionKeyword()
+    : "";
   return {
     ...payload,
     ...utm,
     page: payload.page || path,
     path,
+    keyword: payload.keyword || attributionKeyword || undefined,
     url: payload.url || window.location.href,
     title: payload.title || document.title,
     referrer,

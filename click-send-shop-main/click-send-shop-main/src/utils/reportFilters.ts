@@ -10,7 +10,10 @@ export type ReportFilterKey =
   | "couponId"
   | "orderStatus"
   | "paymentStatus"
-  | "paymentMethod";
+  | "paymentMethod"
+  | "keyword"
+  | "noResultOnly"
+  | "sortBy";
 
 const FILTER_KEYS_BY_PROFILE: Record<ReportFilterProfile, ReportFilterKey[]> = {
   none: [],
@@ -33,6 +36,9 @@ const URL_KEY_BY_FILTER: Record<ReportFilterKey, string[]> = {
   orderStatus: ["order_status"],
   paymentStatus: ["payment_status"],
   paymentMethod: ["payment_method"],
+  keyword: ["keyword"],
+  noResultOnly: ["no_result_only"],
+  sortBy: ["sort_by", "sort_order"],
 };
 
 export function getEnabledFilters(

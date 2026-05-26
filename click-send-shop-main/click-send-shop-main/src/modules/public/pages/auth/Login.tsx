@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Eye, EyeOff, Phone, Lock, User, KeyRound } from "lucide-react";
+import { Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -24,7 +24,12 @@ import { readCachedAuthFeatures, writeCachedAuthFeatures } from "@/utils/authFea
 import { STORE_AUTH_MAIN_CLASS, STORE_AUTH_SHELL_CLASS } from "@/constants/storeLayout";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
-import { authErrorMessage, validatePhoneForCountry, validateStrongPassword } from "@/utils/authValidation";
+import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
+import {
+  authErrorMessage,
+  validatePhoneForCountry,
+  validateStrongPassword,
+} from "@/utils/authValidation";
 import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { useSupportRuntime } from "@/hooks/useSupportRuntime";
 
@@ -33,10 +38,6 @@ const REMEMBER_KEY = "login_remembered_phone";
 const INPUT_CLASS =
   "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
 const REMEMBER_COUNTRY_CODE_KEY = "login_remembered_country_code";
-const COUNTRY_CODE_OPTIONS = [
-  { value: "+60", label: "🇲🇾 +60" },
-  { value: "+86", label: "🇨🇳 +86" },
-];
 type AuthMode = "login" | "register";
 type CredentialMode = "password" | "otp";
 
@@ -395,7 +396,7 @@ export default function Login() {
 
   return (
     <div className={STORE_AUTH_SHELL_CLASS}>
-      <header className="relative z-20 flex shrink-0 items-center gap-3 border-b border-border/40 bg-background px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] lg:hidden">
+      <header className="relative z-20 flex shrink-0 items-center gap-3 border-b border-border/40 bg-background px-[var(--store-page-x)] pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] lg:hidden">
         {logoSrc ? (
           <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
         ) : null}
@@ -527,46 +528,23 @@ export default function Login() {
             </div>
           )}
 
-          <div className="grid grid-cols-[minmax(6.5rem,7rem)_1fr] gap-2 sm:grid-cols-[112px_1fr]">
-            <select
-              value={countryCode}
-              onChange={(e) => {
-                setCountryCode(e.target.value);
-                if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
-              }}
-              aria-label="国家或地区代码"
-              className="min-w-0 rounded-2xl border border-border bg-card px-2.5 py-3.5 text-base text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 sm:px-3"
-            >
-              {COUNTRY_CODE_OPTIONS.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-            <div className="relative">
-              <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                id="auth-phone"
-                name={mode === "login" ? "username" : "tel"}
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete={mode === "login" ? "username" : "tel"}
-                autoCorrect="off"
-                autoCapitalize="none"
-                spellCheck={false}
-                enterKeyHint="next"
-                placeholder="手机号"
-                value={phone}
-                onChange={(e) => {
-                  setPhone(e.target.value.replace(/\D/g, ""));
-                  if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
-                }}
-                className={cn(INPUT_CLASS, "pl-12 pr-4")}
-              />
-            </div>
-          </div>
-          {fieldErrors.phone ? <p className="text-xs text-destructive">{fieldErrors.phone}</p> : null}
+          <CountryPhoneInput
+            countryCode={countryCode}
+            onCountryCodeChange={(value) => {
+              setCountryCode(value);
+              if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
+            }}
+            phone={phone}
+            onPhoneChange={(value) => {
+              setPhone(value);
+              if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
+            }}
+            errorText={fieldErrors.phone}
+            phoneInputId="auth-phone"
+            phoneInputName={mode === "login" ? "username" : "tel"}
+            phoneAutoComplete={mode === "login" ? "username" : "tel"}
+            enterKeyHint="next"
+          />
 
           <div className="space-y-3.5">
             {(mode === "register" || (mode === "login" && effectiveCredentialMode === "password")) ? (

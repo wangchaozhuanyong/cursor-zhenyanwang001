@@ -1,5 +1,14 @@
 export type SupportedCountryCode = "+60" | "+86";
 
+export const COUNTRY_CODE_OPTIONS: Array<{ value: SupportedCountryCode; label: string }> = [
+  { value: "+60", label: "🇲🇾 +60" },
+  { value: "+86", label: "🇨🇳 +86" },
+];
+
+function toDigits(value: string): string {
+  return String(value || "").replace(/\D+/g, "");
+}
+
 export function normalizeCountryCode(countryCode: string): SupportedCountryCode | "" {
   const digits = String(countryCode || "").replace(/\D+/g, "");
   if (digits === "60") return "+60";
@@ -9,7 +18,7 @@ export function normalizeCountryCode(countryCode: string): SupportedCountryCode 
 
 export function normalizePhoneDigits(phone: string, countryCode: string): string {
   const cc = normalizeCountryCode(countryCode);
-  let digits = String(phone || "").replace(/\D+/g, "");
+  let digits = toDigits(phone);
   if (!digits) return "";
 
   if (cc === "+60") {
@@ -21,6 +30,41 @@ export function normalizePhoneDigits(phone: string, countryCode: string): string
     digits = digits.replace(/^0+/, "");
   }
   return digits;
+}
+
+export function buildIntlPhone(phone: string, countryCode: string): string {
+  const cc = normalizeCountryCode(countryCode);
+  const digits = toDigits(phone);
+  if (!cc || !digits) return "";
+  const normalizedDigits = normalizePhoneDigits(phone, cc);
+  return normalizedDigits ? `${cc}${normalizedDigits}` : "";
+}
+
+export function inferCountryCodeFromPhone(phone: string): SupportedCountryCode | "" {
+  const digits = toDigits(phone);
+  if (!digits) return "";
+  if (/^1[3-9]\d{9}$/.test(digits)) return "+86";
+  if (digits.startsWith("86") && digits.length >= 12) return "+86";
+  if (digits.startsWith("60") && digits.length >= 10) return "+60";
+  const local = digits.replace(/^0+/, "") || digits;
+  if (/^1\d{8,9}$/.test(local)) return "+60";
+  return "";
+}
+
+export function splitPhoneForInput(
+  phone: string,
+  fallbackCountryCode: SupportedCountryCode = "+60",
+): { countryCode: SupportedCountryCode; phone: string } {
+  const rawDigits = toDigits(phone);
+  if (!rawDigits) {
+    return { countryCode: fallbackCountryCode, phone: "" };
+  }
+  const countryCode = inferCountryCodeFromPhone(phone) || fallbackCountryCode;
+  const normalizedDigits = normalizePhoneDigits(phone, countryCode);
+  return {
+    countryCode,
+    phone: countryCode === "+60" && normalizedDigits ? `0${normalizedDigits}` : normalizedDigits,
+  };
 }
 
 export function validatePhoneForCountry(phone: string, countryCode: string): string | null {

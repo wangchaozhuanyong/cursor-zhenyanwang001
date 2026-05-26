@@ -1,5 +1,5 @@
 /**
- * 支付域数据访�? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
+ * 支付域数据访�? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
  */
 const db = require('../../../config/db');
 
@@ -306,6 +306,16 @@ async function selectLatestPendingPaymentOrderId(q, { orderId, provider, channel
 
 async function insertAnalyticsEvent(q, row) {
   const dedupeKey = String(row.dedupe_key || '').trim();
+  let keyword = String(row.keyword || '').trim();
+  if (!keyword && row.event_type === 'payment_success' && row.order_id) {
+    const [[submitEvent]] = await q.query(
+      `SELECT keyword FROM analytics_events
+       WHERE order_id = ? AND event_type = 'order_submit' AND keyword <> ''
+       ORDER BY created_at DESC LIMIT 1`,
+      [row.order_id],
+    );
+    keyword = String(submitEvent?.keyword || '').trim();
+  }
   await q.query(
     `INSERT INTO analytics_events
       (user_id, anonymous_id, session_id, dedupe_key, event_type, module, page, product_id, variant_id, category_id, activity_id, coupon_id, keyword, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
@@ -324,7 +334,7 @@ async function insertAnalyticsEvent(q, row) {
       row.category_id || null,
       row.activity_id || null,
       row.coupon_id || null,
-      row.keyword || '',
+      keyword,
       row.order_id || null,
       row.amount ?? null,
       row.quantity ?? null,

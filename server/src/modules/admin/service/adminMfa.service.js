@@ -13,7 +13,7 @@ const {
 } = require('@simplewebauthn/server');
 
 const MFA_CHALLENGE_TTL_MS = 5 * 60 * 1000;
-const SENSITIVE_ACTION_TOKEN_TTL_MS = Number(process.env.ADMIN_SENSITIVE_ACTION_TOKEN_MINUTES || 15) * 60 * 1000;
+const SENSITIVE_ACTION_TOKEN_TTL_MS = Number(process.env.ADMIN_SENSITIVE_ACTION_TOKEN_MINUTES || 60) * 60 * 1000;
 const ADMIN_ACCESS_EXPIRES_IN = process.env.ADMIN_JWT_EXPIRES_IN || '15m';
 const ADMIN_ACCESS_EXPIRES_SECONDS = Number(process.env.ADMIN_JWT_EXPIRES_SECONDS || 15 * 60);
 const TRUSTED_DEVICE_ALLOWED_DAYS = new Set([7, 14, 30]);

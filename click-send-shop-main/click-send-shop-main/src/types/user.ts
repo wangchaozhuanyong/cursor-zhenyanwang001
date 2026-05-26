@@ -87,7 +87,9 @@ export interface UpdateProfileParams {
   nickname?: string;
   avatar?: string;
   phone?: string;
+  countryCode?: string;
   wechat?: string;
   whatsapp?: string;
+  whatsappCountryCode?: string;
   birthday?: string | null;
 }

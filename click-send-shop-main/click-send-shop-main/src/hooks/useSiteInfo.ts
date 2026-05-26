@@ -57,9 +57,6 @@ function sanitizeSiteInfo(data: SiteInfo): SiteInfo {
       next[key] = fallbackValue as SiteInfo[typeof key];
     }
   }
-  if (typeof next.faviconUrl === "string" && next.faviconUrl.trim().startsWith("data:")) {
-    next.faviconUrl = "";
-  }
   return next;
 }
 

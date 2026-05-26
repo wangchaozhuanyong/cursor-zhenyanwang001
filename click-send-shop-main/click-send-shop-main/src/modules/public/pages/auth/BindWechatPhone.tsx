@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KeyRound, Phone } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import * as authService from "@/services/authService";
@@ -8,14 +8,11 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
+import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
+import { validatePhoneForCountry } from "@/utils/authValidation";
 
 const INPUT_CLASS =
   "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
-
-const COUNTRY_CODE_OPTIONS = [
-  { value: "+60", label: "🇲🇾 +60" },
-  { value: "+86", label: "🇨🇳 +86" },
-];
 
 export default function BindWechatPhone() {
   useDocumentTitle("绑定手机号");
@@ -52,8 +49,9 @@ export default function BindWechatPhone() {
   };
 
   const handleSendOtp = async () => {
-    if (!phone.trim()) {
-      failValidation("请填写手机号");
+    const phoneError = validatePhoneForCountry(phone, countryCode);
+    if (phoneError) {
+      failValidation(phoneError);
       return;
     }
     if (otpCooldown > 0 || otpSending) return;
@@ -74,8 +72,9 @@ export default function BindWechatPhone() {
 
   const handleSubmit = async () => {
     if (!pendingToken) return;
-    if (!phone.trim()) {
-      failValidation("请填写手机号");
+    const phoneError = validatePhoneForCountry(phone, countryCode);
+    if (phoneError) {
+      failValidation(phoneError);
       return;
     }
     if (!otpCode.trim() || !/^\d{6}$/.test(otpCode.trim())) {
@@ -106,31 +105,13 @@ export default function BindWechatPhone() {
         </p>
 
         <FormFieldShake shake={shakeKey} className="mt-8 space-y-3.5">
-          <div className="grid grid-cols-[112px_1fr] gap-2">
-            <select
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-              className="rounded-2xl border border-border bg-card px-3 py-3.5 text-base text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
-            >
-              {COUNTRY_CODE_OPTIONS.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-            <div className="relative">
-              <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="手机号"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/[^\d\s\-()]/g, ""))}
-                className={cn(INPUT_CLASS, "pl-12 pr-4")}
-              />
-            </div>
-          </div>
+          <CountryPhoneInput
+            countryCode={countryCode}
+            onCountryCodeChange={setCountryCode}
+            phone={phone}
+            onPhoneChange={setPhone}
+            phoneAutoComplete="tel"
+          />
 
           <div className="relative">
             <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />

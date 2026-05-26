@@ -180,6 +180,8 @@ export interface SubmitOrderParams {
   points_to_use?: number;
   use_reward_cash?: boolean;
   reward_cash_amount?: number;
+  /** 搜索归因关键词，用于搜索分析统计下单和销售转化 */
+  search_keyword?: string;
 }
 
 export interface OrderListParams {

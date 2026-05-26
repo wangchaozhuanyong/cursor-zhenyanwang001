@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { copyToClipboard } from "@/utils/clipboard";
 import { trackPurchase } from "@/utils/tracking";
+import { getSearchAttributionKeyword } from "@/services/analyticsService";
 import {
   paymentInstructionToastMessage,
   sanitizeClientInstructions,
@@ -139,6 +140,7 @@ export function useCheckoutSubmission({
       points_to_use: pointsEnabled && usePoints ? pointsToUse : 0,
       use_reward_cash: useRewardCash,
       reward_cash_amount: useRewardCash ? rewardCashAmount : 0,
+      search_keyword: getSearchAttributionKeyword() || undefined,
     };
   }, [
     items,

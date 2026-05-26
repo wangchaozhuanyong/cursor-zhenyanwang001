@@ -536,6 +536,7 @@ async function persistOrder(conn, {
     event_type: 'order_submit',
     module: 'order',
     page: '/checkout',
+    keyword: String(body?.search_keyword || '').trim().slice(0, 100),
     order_id: orderId,
     amount: totalAmount,
     quantity: orderItems.reduce((sum, it) => sum + Number(it.qty || 0), 0),

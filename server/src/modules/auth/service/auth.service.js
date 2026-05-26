@@ -203,7 +203,16 @@ function normalizeBirthdayInput(value) {
 }
 
 async function updateProfile(userId, body) {
-  const { nickname, avatar, phone, countryCode, wechat, whatsapp, birthday } = body;
+  const {
+    nickname,
+    avatar,
+    phone,
+    countryCode,
+    wechat,
+    whatsapp,
+    whatsappCountryCode,
+    birthday,
+  } = body;
   const fragments = [];
   const values = [];
 
@@ -231,8 +240,14 @@ async function updateProfile(userId, body) {
     values.push(wechat);
   }
   if (whatsapp !== undefined) {
+    const normalizedWhatsapp = String(whatsapp || '').trim()
+      ? normalizeIntlPhone(whatsapp, whatsappCountryCode)
+      : '';
+    if (String(whatsapp || '').trim() && !normalizedWhatsapp) {
+      throw new ValidationError('WhatsApp 号码格式不正确');
+    }
     fragments.push('whatsapp = ?');
-    values.push(whatsapp);
+    values.push(normalizedWhatsapp);
   }
   if (birthday !== undefined) {
     const normalizedBirthday = normalizeBirthdayInput(birthday);

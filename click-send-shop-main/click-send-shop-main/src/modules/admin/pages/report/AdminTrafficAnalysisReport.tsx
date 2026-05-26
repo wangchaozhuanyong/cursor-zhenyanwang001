@@ -12,6 +12,7 @@ import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { Tx } from "@/components/admin/AdminText";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 
@@ -192,6 +193,27 @@ function FilterSelect({
   );
 }
 
+function FilterDate({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-xs text-[var(--theme-text-muted)]">
+      {label}
+      <SegmentedDateInput
+        value={value}
+        onChange={onChange}
+        controlClassName="min-h-9 bg-[var(--theme-surface)] px-3 py-1 text-[var(--theme-text)]"
+      />
+    </label>
+  );
+}
+
 function DataTable({
   title,
   rows,
@@ -320,12 +342,22 @@ export default function AdminTrafficAnalysisReport() {
               {(payload.warnings || []).join("；") || tText("流量分析数据已降级展示，请检查埋点表和字段是否完整。")}
             </div>
           ) : null}
-          <div className="theme-rounded grid gap-3 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow sm:grid-cols-2 lg:grid-cols-6">
-        <FilterSelect label={tText("时间范围")} value={String(filters.range_preset || "last_7_days")} onChange={(value) => setFilters((prev) => ({ ...prev, range_preset: value }))} options={[
+          <div className="theme-rounded grid gap-3 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+        <FilterSelect label={tText("时间范围")} value={String(filters.range_preset || "last_7_days")} onChange={(value) => setFilters((prev) => ({
+          ...prev,
+          range_preset: value,
+          ...(value === "custom" ? {} : { date_from: undefined, date_to: undefined }),
+        }))} options={[
           { value: "today", label: tText("今日") },
+          { value: "yesterday", label: tText("昨日") },
           { value: "last_7_days", label: tText("最近 7 天") },
           { value: "last_30_days", label: tText("最近 30 天") },
+          { value: "this_month", label: tText("本月") },
+          { value: "last_month", label: tText("上月") },
+          { value: "custom", label: tText("自定义") },
         ]} />
+        <FilterDate label={tText("开始日期")} value={String(filters.date_from || "")} onChange={(value) => setFilters((prev) => ({ ...prev, date_from: value, range_preset: "custom" }))} />
+        <FilterDate label={tText("结束日期")} value={String(filters.date_to || "")} onChange={(value) => setFilters((prev) => ({ ...prev, date_to: value, range_preset: "custom" }))} />
         <FilterSelect label={tText("粒度")} value={String(filters.granularity || "day")} onChange={(value) => setFilters((prev) => ({ ...prev, granularity: value as ReportQuery["granularity"] }))} options={[
           { value: "day", label: tText("按日") },
           { value: "week", label: tText("按周") },
@@ -346,6 +378,9 @@ export default function AdminTrafficAnalysisReport() {
           { value: "", label: tText("全部渠道") },
           { value: "direct", label: tText("直接访问") },
           { value: "campaign", label: tText("广告活动") },
+          { value: "organic", label: tText("自然搜索") },
+          { value: "social", label: tText("社交媒体") },
+          { value: "paid", label: tText("付费投放") },
           { value: "referral", label: tText("外部引荐") },
         ]} />
         <FilterSelect label={tText("页面类型")} value={String(filters.page_type || "")} onChange={(value) => setFilters((prev) => ({ ...prev, page_type: value }))} options={[

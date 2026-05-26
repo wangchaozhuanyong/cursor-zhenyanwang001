@@ -56,6 +56,9 @@ const CHIP_KEYS_BY_FILTER: Record<ReportFilterKey, string[]> = {
   orderStatus: ["order_status"],
   paymentStatus: ["payment_status"],
   paymentMethod: ["payment_method"],
+  keyword: ["keyword"],
+  noResultOnly: ["no_result_only"],
+  sortBy: ["sort_by", "sort_order"],
 };
 
 function enabledUrlKeys(enabled: ReportFilterKey[]): Set<string> {
@@ -133,6 +136,16 @@ export function buildReportFilterChips(
     const v = params.get("payment_method") || "";
     chips.push({ key: "payment_method", label: `方式：${PAYMENT_METHOD_LABELS[v] || v}` });
   }
+  if (allowed.has("keyword") && params.get("keyword")) {
+    chips.push({ key: "keyword", label: `关键词：${params.get("keyword")}` });
+  }
+  if (allowed.has("no_result_only") && params.get("no_result_only") === "1") {
+    chips.push({ key: "no_result_only", label: "只看无结果词" });
+  }
+  if (allowed.has("sort_by") && params.get("sort_by")) {
+    const order = params.get("sort_order") === "asc" ? "升序" : "降序";
+    chips.push({ key: "sort_by", label: `排序：${params.get("sort_by")} ${order}` });
+  }
   return chips;
 }
 
@@ -154,6 +167,10 @@ export function removeReportFilterChip(
     order_status: null,
     payment_status: null,
     payment_method: null,
+    keyword: null,
+    no_result_only: null,
+    sort_by: null,
+    sort_order: null,
   };
   const fallback = defaults[key];
   if (fallback === null || fallback === undefined) next.delete(key);

@@ -853,7 +853,12 @@ async function getSearchAnalysis(query) {
     };
   }
   const analyticsReady = await repo.isAnalyticsEventsReady();
-  const list = await repo.selectSimpleSearchAnalysis(dateFrom, dateTo);
+  const list = await repo.selectSimpleSearchAnalysis(dateFrom, dateTo, {
+    keyword: String(query.keyword || '').trim(),
+    no_result_only: String(query.no_result_only || '') === '1',
+    sort_by: String(query.sort_by || '').trim(),
+    sort_order: String(query.sort_order || '').trim(),
+  });
   return {
     summary: { 关键词数: list.length },
     list,

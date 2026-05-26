@@ -43,6 +43,30 @@ function withCountryPhoneValidation(schema) {
   });
 }
 
+function withWhatsappPhoneValidation(schema) {
+  return schema.superRefine((value, ctx) => {
+    if (value.whatsapp === undefined) return;
+    const whatsapp = String(value.whatsapp || '').trim();
+    if (!whatsapp) return;
+    if (!value.whatsappCountryCode) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '请选择 WhatsApp 的国家或地区代码',
+        path: ['whatsappCountryCode'],
+      });
+      return;
+    }
+    const message = validatePhoneForCountry(whatsapp, value.whatsappCountryCode);
+    if (message) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message,
+        path: ['whatsapp'],
+      });
+    }
+  });
+}
+
 const registerBodySchema = withCountryPhoneValidation(z.object({
   countryCode: countryCodeSchema,
   phone: phoneSchema,
@@ -69,7 +93,7 @@ const refreshBodySchema = z.object({
   refreshToken: z.string().min(1, 'refreshToken 不能为空').optional(),
 });
 
-const updateProfileBodySchema = withCountryPhoneValidation(
+const updateProfileBodySchema = withWhatsappPhoneValidation(withCountryPhoneValidation(
   z
     .object({
       nickname: z.string().trim().max(32, '昵称不能超过 32 个字').optional(),
@@ -78,6 +102,7 @@ const updateProfileBodySchema = withCountryPhoneValidation(
       countryCode: countryCodeSchema.optional(),
       wechat: z.string().trim().max(64, '微信号过长').optional(),
       whatsapp: z.string().trim().max(64, 'WhatsApp 过长').optional(),
+      whatsappCountryCode: countryCodeSchema.optional(),
       birthday: z.union([
         z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '生日格式应为 YYYY-MM-DD'),
         z.literal(''),
@@ -94,7 +119,7 @@ const updateProfileBodySchema = withCountryPhoneValidation(
         || v.birthday !== undefined,
       { message: '没有需要更新的字段', path: [] },
     ),
-);
+));
 
 const changePasswordBodySchema = z.object({
   oldPassword: z.string({ message: '请输入旧密码' }).min(1, '请输入旧密码'),

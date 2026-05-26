@@ -6,7 +6,7 @@ function cleanAssetUrl(value: unknown): string {
 
 /** 站点头部/个人中心等：仅使用 Logo（可透明 PNG/WebP） */
 export function resolveSiteLogoUrl(siteInfo: Pick<SiteInfo, "logoUrl" | "faviconUrl">): string {
-  return cleanAssetUrl(siteInfo.logoUrl);
+  return cleanAssetUrl(siteInfo.logoUrl) || cleanAssetUrl(siteInfo.faviconUrl);
 }
 
 /** 浏览器标签图标：仅使用 Favicon（建议透明背景或带圆角安全区，与 Logo 分开上传） */

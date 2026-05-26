@@ -35,7 +35,10 @@ export type ReportFilterKey =
   | "couponId"
   | "orderStatus"
   | "paymentStatus"
-  | "paymentMethod";
+  | "paymentMethod"
+  | "keyword"
+  | "noResultOnly"
+  | "sortBy";
 
 export type ReportKpiProfile =
   | "profit"
@@ -203,7 +206,7 @@ export const REPORT_REGISTRY: ReportRegistryItem[] = [
     endpoint: "/admin/reports/overview",
     permission: "report.view",
     filterProfile: "date",
-    filters: ["dateRange"],
+    filters: ["dateRange", "keyword", "noResultOnly", "sortBy"],
     kpiProfile: "overview",
     kpiPriorityKeys: REPORT_KPI_PRIORITIES.overview,
     warningKeys: ["missing_cost_order_count", "missing_cost_item_count"],

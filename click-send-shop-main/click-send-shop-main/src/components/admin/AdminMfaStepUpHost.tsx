@@ -67,6 +67,13 @@ export default function AdminMfaStepUpHost() {
     toast.success(message);
   };
 
+  const failAndCancel = (message: string) => {
+    setErrorText(message);
+    toast.error(message);
+    setOpen(false);
+    cancelAdminMfaStepUp();
+  };
+
   const handleSubmit = async () => {
     const normalized = code.replace(/\D/g, "").slice(0, 6);
     if (normalized.length !== 6) {
@@ -136,8 +143,7 @@ export default function AdminMfaStepUpHost() {
       const message = controller.signal.aborted
         ? "Passkey 验证超时，请重新发起该操作后再验证"
         : toastErrorMessage(err, "Passkey 验证失败");
-      setErrorText(message);
-      toast.error(message);
+      failAndCancel(message);
     } finally {
       window.clearTimeout(timeoutId);
       if (attemptRef.current === attemptId) {

@@ -9,7 +9,11 @@ export function getSearchSuggestions(keyword: string, limit = 8) {
   return get<SearchSuggestion[]>("/search/suggest", { keyword, limit });
 }
 
-export function trackSearchKeyword(keyword: string, result_count?: number) {
-  return post<null>("/search/track", { keyword, result_count });
+export function trackSearchKeyword(
+  keyword: string,
+  result_count?: number,
+  attribution?: { session_id?: string; anonymous_id?: string },
+) {
+  return post<null>("/search/track", { keyword, result_count, ...attribution });
 }
 

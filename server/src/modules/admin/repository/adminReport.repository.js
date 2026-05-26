@@ -996,8 +996,31 @@ async function selectSimpleInventoryAnalysis() {
   return selectInventoryAnalysis();
 }
 
-async function selectSimpleSearchAnalysis(dateFrom, dateTo) {
+function searchAnalysisOrderBy(sortBy, sortOrder, analyticsReady) {
+  const direction = String(sortOrder || '').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+  const sortable = new Set([
+    'search_count',
+    'no_result_count',
+    'last_searched_at',
+    ...(analyticsReady ? ['product_click_count', 'order_count', 'sales_amount'] : []),
+  ]);
+  const key = sortable.has(sortBy) ? sortBy : 'search_count';
+  return `ORDER BY ${key} ${direction}, st.keyword ASC`;
+}
+
+async function selectSimpleSearchAnalysis(dateFrom, dateTo, filters = {}) {
   if (!(await isSearchTermsReady())) return [];
+  const keyword = String(filters.keyword || '').trim();
+  const termWhere = [];
+  const termParams = [dateFrom, dateTo];
+  if (keyword) {
+    termWhere.push('st.keyword LIKE ?');
+    termParams.push(`%${keyword}%`);
+  }
+  if (filters.no_result_only) {
+    termWhere.push('st.no_result_count > 0');
+  }
+  const outerWhere = termWhere.length ? `WHERE ${termWhere.join(' AND ')}` : '';
 
   const baseTermsSql = `
      FROM (
@@ -1010,7 +1033,8 @@ async function selectSimpleSearchAnalysis(dateFrom, dateTo) {
        GROUP BY keyword
      ) st`;
 
-  if (!(await isAnalyticsEventsReady())) {
+  const analyticsReady = await isAnalyticsEventsReady();
+  if (!analyticsReady) {
     return queryList(
       `SELECT
         st.keyword,
@@ -1018,9 +1042,10 @@ async function selectSimpleSearchAnalysis(dateFrom, dateTo) {
         st.no_result_count,
         st.last_searched_at
        ${baseTermsSql}
-       ORDER BY st.search_count DESC
+       ${outerWhere}
+       ${searchAnalysisOrderBy(filters.sort_by, filters.sort_order, false)}
        LIMIT 200`,
-      [dateFrom, dateTo],
+      termParams,
     );
   }
 
@@ -1046,9 +1071,10 @@ async function selectSimpleSearchAnalysis(dateFrom, dateTo) {
        WHERE DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
        GROUP BY keyword
      ) ae ON ae.keyword COLLATE utf8mb4_unicode_ci = st.keyword
-     ORDER BY st.search_count DESC
+     ${outerWhere}
+     ${searchAnalysisOrderBy(filters.sort_by, filters.sort_order, true)}
      LIMIT 200`,
-    [dateFrom, dateTo, dateFrom, dateTo],
+    [dateFrom, dateTo, dateFrom, dateTo, ...termParams.slice(2)],
   );
 }
 

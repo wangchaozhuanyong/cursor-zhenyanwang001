@@ -1,5 +1,5 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import WeChatIcon from "@/components/icons/WeChatIcon";
@@ -16,6 +16,13 @@ import * as authService from "@/services/authService";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import SettingsSecuritySection from "@/modules/public/pages/user/SettingsSecuritySection";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
+import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
+import {
+  buildIntlPhone,
+  splitPhoneForInput,
+  validatePhoneForCountry,
+  type SupportedCountryCode,
+} from "@/utils/authValidation";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
@@ -23,13 +30,23 @@ export default function Settings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const goBack = useGoBack();
-  const { nickname, phone, avatar, wechat, whatsapp, profileSaving, setNickname, setPhone, setWechat, setWhatsapp, setAvatar, saveProfile, loadProfile } = useUserStore();
+  const { nickname, phone, avatar, wechat, whatsapp, profileSaving, setNickname, setWechat, setAvatar, loadProfile } = useUserStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [wechatBinding, setWechatBinding] = useState<{ bound: boolean; nickname?: string | null; avatarUrl?: string | null; boundAt?: string }>({ bound: false });
   const [wechatLoginEnabled, setWechatLoginEnabled] = useState(false);
   const [wechatActionLoading, setWechatActionLoading] = useState(false);
   const [birthday, setBirthday] = useState("");
   const [birthdayLocked, setBirthdayLocked] = useState(false);
+  const [whatsappCountryCode, setWhatsappCountryCode] = useState<SupportedCountryCode>("+60");
+  const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ whatsapp?: string }>({});
+  const accountPhone = useMemo(() => splitPhoneForInput(phone), [phone]);
+
+  useEffect(() => {
+    const parsed = splitPhoneForInput(whatsapp);
+    setWhatsappCountryCode(parsed.countryCode);
+    setWhatsappPhone(parsed.phone);
+  }, [whatsapp]);
 
   const loadWechatBinding = async () => {
     try {
@@ -119,11 +136,24 @@ export default function Settings() {
   }, []);
 
   const handleSave = async () => {
+    const whatsappError = whatsappPhone
+      ? validatePhoneForCountry(whatsappPhone, whatsappCountryCode)
+      : null;
+    if (whatsappError) {
+      setFieldErrors({ whatsapp: whatsappError });
+      toast.error(whatsappError);
+      return;
+    }
     try {
-      await saveProfile();
-      if (birthday && !birthdayLocked) {
-        await userService.updateProfile({ birthday });
-      }
+      const normalizedWhatsapp = whatsappPhone ? buildIntlPhone(whatsappPhone, whatsappCountryCode) : "";
+      await userService.updateProfile({
+        nickname,
+        avatar,
+        wechat,
+        whatsapp: normalizedWhatsapp,
+        ...(normalizedWhatsapp ? { whatsappCountryCode } : {}),
+        ...(birthday && !birthdayLocked ? { birthday } : {}),
+      });
       await loadProfile();
       toast.success("资料已保存", toastPresetQuickSuccess);
     } catch (e) {
@@ -206,22 +236,50 @@ export default function Settings() {
 
         <section className={CARD}>
           <div className="space-y-4">
-            {[
-              { label: "昵称", value: nickname, onChange: setNickname },
-              { label: "手机号", value: phone, onChange: setPhone, readOnly: true },
-              { label: "联系微信号", value: wechat, onChange: setWechat },
-              { label: "WhatsApp", value: whatsapp, onChange: setWhatsapp },
-            ].map((field) => (
-              <label key={field.label} className="block">
-                <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">{field.label}</span>
-                <input
-                  value={field.value}
-                  readOnly={"readOnly" in field && field.readOnly}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm outline-none ring-1 ring-[var(--theme-border)] focus:ring-2 focus:ring-[var(--theme-primary)] disabled:opacity-70"
-                />
-              </label>
-            ))}
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">昵称</span>
+              <input
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm outline-none ring-1 ring-[var(--theme-border)] focus:ring-2 focus:ring-[var(--theme-primary)] disabled:opacity-70"
+              />
+            </label>
+            <div>
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">手机号</span>
+              <CountryPhoneInput
+                countryCode={accountPhone.countryCode}
+                onCountryCodeChange={() => {}}
+                phone={accountPhone.phone}
+                onPhoneChange={() => {}}
+                readOnly
+              />
+              <p className="mt-1 text-[11px] text-[var(--theme-muted)]">手机号用于登录，如需修改请联系客服</p>
+            </div>
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">联系微信号</span>
+              <input
+                value={wechat}
+                onChange={(e) => setWechat(e.target.value)}
+                className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm outline-none ring-1 ring-[var(--theme-border)] focus:ring-2 focus:ring-[var(--theme-primary)] disabled:opacity-70"
+              />
+            </label>
+            <div>
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">WhatsApp</span>
+              <CountryPhoneInput
+                countryCode={whatsappCountryCode}
+                onCountryCodeChange={(value) => {
+                  setWhatsappCountryCode(value);
+                  if (fieldErrors.whatsapp) setFieldErrors((prev) => ({ ...prev, whatsapp: undefined }));
+                }}
+                phone={whatsappPhone}
+                onPhoneChange={(value) => {
+                  setWhatsappPhone(value);
+                  if (fieldErrors.whatsapp) setFieldErrors((prev) => ({ ...prev, whatsapp: undefined }));
+                }}
+                errorText={fieldErrors.whatsapp}
+                phonePlaceholder="WhatsApp 号码"
+              />
+            </div>
             <label className="block">
               <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">生日</span>
               <SegmentedDateInput

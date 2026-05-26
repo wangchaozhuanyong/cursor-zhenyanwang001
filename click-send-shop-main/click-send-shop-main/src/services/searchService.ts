@@ -1,5 +1,6 @@
 import * as searchApi from "@/api/modules/search";
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
+import { getAnonymousId, getSessionId } from "@/services/analyticsService";
 
 export async function fetchHotSearchTerms(limit = 10): Promise<HotSearchTerm[]> {
   const res = await searchApi.getHotSearchTerms(limit);
@@ -12,5 +13,8 @@ export async function fetchSearchSuggestions(keyword: string, limit = 8): Promis
 }
 
 export async function trackSearchKeyword(keyword: string, resultCount?: number): Promise<void> {
-  await searchApi.trackSearchKeyword(keyword, resultCount);
+  await searchApi.trackSearchKeyword(keyword, resultCount, {
+    session_id: getSessionId(),
+    anonymous_id: getAnonymousId(),
+  });
 }

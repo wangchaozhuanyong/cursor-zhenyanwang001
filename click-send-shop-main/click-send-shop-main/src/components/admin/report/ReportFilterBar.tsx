@@ -65,6 +65,10 @@ export default function ReportFilterBar({
   const orderStatus = searchParams.get("order_status") || "";
   const paymentStatus = searchParams.get("payment_status") || "";
   const paymentMethod = searchParams.get("payment_method") || "";
+  const keyword = searchParams.get("keyword") || "";
+  const noResultOnly = searchParams.get("no_result_only") === "1";
+  const sortBy = searchParams.get("sort_by") || "search_count";
+  const sortOrder = searchParams.get("sort_order") || "desc";
 
   const isCustom = rangePreset === "custom";
 
@@ -217,6 +221,43 @@ export default function ReportFilterBar({
             <option value="wallet"><Tx>电子钱包</Tx></option>
             <option value="cod"><Tx>货到付款</Tx></option>
           </select>
+        ) : null}
+
+        {isFilterEnabled(enabledFilters, "keyword") ? (
+          <input
+            value={keyword}
+            onChange={(e) => update({ keyword: e.target.value })}
+            placeholder={tText("搜索关键词")}
+            className={`${selectClass} min-w-[12rem]`}
+          />
+        ) : null}
+
+        {isFilterEnabled(enabledFilters, "noResultOnly") ? (
+          <label className="inline-flex min-h-[36px] items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2.5 py-1.5 text-sm">
+            <input
+              type="checkbox"
+              checked={noResultOnly}
+              onChange={(e) => update({ no_result_only: e.target.checked ? "1" : "" })}
+            />
+            <Tx>只看无结果词</Tx>
+          </label>
+        ) : null}
+
+        {isFilterEnabled(enabledFilters, "sortBy") ? (
+          <>
+            <select value={sortBy} onChange={(e) => update({ sort_by: e.target.value })} className={selectClass}>
+              <option value="search_count"><Tx>按搜索次数</Tx></option>
+              <option value="no_result_count"><Tx>按无结果次数</Tx></option>
+              <option value="product_click_count"><Tx>按点击次数</Tx></option>
+              <option value="order_count"><Tx>按订单数</Tx></option>
+              <option value="sales_amount"><Tx>按销售额</Tx></option>
+              <option value="last_searched_at"><Tx>按最后搜索时间</Tx></option>
+            </select>
+            <select value={sortOrder} onChange={(e) => update({ sort_order: e.target.value })} className={selectClass}>
+              <option value="desc"><Tx>降序</Tx></option>
+              <option value="asc"><Tx>升序</Tx></option>
+            </select>
+          </>
         ) : null}
       </div>
     </div>

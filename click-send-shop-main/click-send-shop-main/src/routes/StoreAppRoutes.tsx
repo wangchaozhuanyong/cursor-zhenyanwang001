@@ -31,7 +31,7 @@ import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
 import { ModalLayerProvider } from "@/modules/micro-interactions";
-import { trackEvent } from "@/services/analyticsService";
+import { setTrafficAnalyticsEnabled, trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
 import { guessFaviconMime, resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
@@ -89,13 +89,23 @@ function ReferralInviteSync() {
 }
 
 function PwaStandaloneAnalytics() {
+  const capabilities = useSiteCapabilities();
   useEffect(() => {
+    if (!capabilities.trafficAnalyticsEnabled) return;
     if (!isStandaloneApp()) return;
     const key = "pwa_open_standalone_tracked";
     if (window.sessionStorage.getItem(key) === "1") return;
     window.sessionStorage.setItem(key, "1");
     void trackEvent({ event_type: "pwa_open_standalone", module: "pwa", page: window.location.pathname });
-  }, []);
+  }, [capabilities.trafficAnalyticsEnabled]);
+  return null;
+}
+
+function AnalyticsCapabilitySync() {
+  const capabilities = useSiteCapabilities();
+  useEffect(() => {
+    setTrafficAnalyticsEnabled(Boolean(capabilities.trafficAnalyticsEnabled));
+  }, [capabilities.trafficAnalyticsEnabled]);
   return null;
 }
 
@@ -195,10 +205,11 @@ function MainStoreRoutes() {
           <AuthSessionSync />
           <SiteIdentitySync />
           <ReferralInviteSync />
+          <AnalyticsCapabilitySync />
           <PwaStandaloneAnalytics />
           <AppScopeSync />
           <TrackingManager />
-          <RouteAnalyticsTracker />
+          {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
           <RouteSeoGuard />
           {/* <PwaUpdateToast /> */}
           <ChinaBrowserCompatNotice />

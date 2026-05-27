@@ -29,7 +29,7 @@ const IMPLEMENTED_RESTORE_TYPES = new Set(['site', 'point_in_time']);
 
 function assertRestorePayload({ restoreType, targetTimeRaw, targetTime, targetTable, targetEntityId }) {
   if (!IMPLEMENTED_RESTORE_TYPES.has(restoreType)) {
-    throw new BusinessError(400, '该恢复类型尚未实现，当前仅支持整站恢复与指定时间点恢复');
+    throw new BusinessError(400, '该恢复类型尚未实现，当前仅支持数据库恢复与指定时间点恢复');
   }
   if (targetTimeRaw && !targetTime) {
     throw new BusinessError(400, '指定时间点格式不正确');
@@ -56,6 +56,10 @@ function runDetachedScript(scriptRelativePath, args = [], env = {}) {
     env: { ...process.env, ...env },
   });
   child.unref();
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function classifyBackupAlertReason(message = '') {
@@ -94,7 +98,7 @@ async function emitBackupAlert(alert) {
 }
 
 async function getOverview() {
-  const [{ full, binlog, latestRecoverable, counts }, recentJobs, alerts, drills] = await Promise.all([
+  const [{ full, binlog, config, uploads, latestRecoverable, counts }, recentJobs, alerts, drills] = await Promise.all([
     repo.getOverviewRows(),
     repo.getRecentJobs(8),
     repo.listAlerts({ limit: 8, status: 'open' }),
@@ -104,11 +108,22 @@ async function getOverview() {
   const latestBinlogAt = binlog?.last_event_at || binlog?.uploaded_at || null;
   const binlogDelayMs = latestBinlogAt ? Date.now() - new Date(latestBinlogAt).getTime() : null;
   const binlogHealthy = binlogDelayMs != null && binlogDelayMs <= 5 * 60 * 1000;
+  const missingBackupItems = [];
+  if (!full) missingBackupItems.push({ kind: 'mysql_full', label: '数据库全量备份', severity: 'P0' });
+  if (!binlog) missingBackupItems.push({ kind: 'mysql_binlog', label: '数据库增量日志', severity: 'P0' });
+  if (!uploads) missingBackupItems.push({ kind: 'uploads', label: '上传文件备份', severity: 'P1' });
+  if (!config) missingBackupItems.push({ kind: 'config', label: '系统配置备份', severity: 'P1' });
+  if (!drills?.length || drills[0].status !== 'success') {
+    missingBackupItems.push({ kind: 'restore_drill', label: '最近一次恢复演练成功记录', severity: 'P1' });
+  }
   return {
     latestFullBackupAt: full?.created_at || null,
     latestFullBackup: full || null,
+    latestConfigBackup: config || null,
+    latestUploadsBackup: uploads || null,
     latestIncrementalBackupAt: latestBinlogAt,
     latestRecoverableAt: latestRecoverable.latest_recoverable_at || latestBinlogAt || full?.recoverable_at || null,
+    recoverableExplanation: '当前可恢复到时间由最近一次数据库全量备份时间与已同步增量 binlog 覆盖时间共同决定',
     binlogHealthy,
     binlogDelaySeconds: binlogDelayMs == null ? null : Math.max(0, Math.round(binlogDelayMs / 1000)),
     openAlertCount: Number(counts.open_alerts || 0),
@@ -116,6 +131,8 @@ async function getOverview() {
     recentJobs,
     recentAlerts: alerts,
     recentDrills: drills,
+    latestRestoreDrill: drills?.[0] || null,
+    missingBackupItems,
     safeguards: {
       pitrEnabled: Boolean(binlog),
       s3Required: true,
@@ -161,6 +178,112 @@ async function createFullBackup({ req, userId, reason = 'manual' }) {
   });
   runDetachedScript('scripts/backup/backup-full.js', ['--job-id', id], { BACKUP_JOB_ID: id });
   return { id, status: 'queued' };
+}
+
+async function createTypedBackup({ req, userId, jobType, script, actionType, reason }) {
+  const id = generateId();
+  await repo.insertBackupJob({
+    id,
+    jobType,
+    status: 'queued',
+    triggerSource: 'manual',
+    triggeredBy: userId,
+    reason,
+    metadata: { requestedFrom: 'admin_backup_center' },
+  });
+  await writeAuditLog({
+    req,
+    operatorId: userId,
+    actionType,
+    objectType: 'backup_job',
+    objectId: id,
+    summary: `${jobType} backup requested`,
+    result: 'success',
+    after: { reason },
+  });
+  runDetachedScript(script, ['--job-id', id], { BACKUP_JOB_ID: id });
+  return { id, status: 'queued' };
+}
+
+async function createConfigBackup({ req, userId, reason = 'manual' }) {
+  return createTypedBackup({
+    req,
+    userId,
+    jobType: 'config',
+    script: 'scripts/backup/backup-config.js',
+    actionType: 'backup.config.create',
+    reason,
+  });
+}
+
+async function createUploadsBackup({ req, userId, reason = 'manual' }) {
+  return createTypedBackup({
+    req,
+    userId,
+    jobType: 'uploads',
+    script: 'scripts/backup/backup-uploads.js',
+    actionType: 'backup.uploads.create',
+    reason,
+  });
+}
+
+async function createPreCleanupBackupAndWait(options = {}) {
+  const {
+    req,
+    userId,
+    reason = 'pre_cleanup',
+    previewRunId = null,
+    policyKeys = [],
+  } = options;
+  const id = generateId();
+  await repo.insertBackupJob({
+    id,
+    jobType: 'pre_cleanup',
+    status: 'queued',
+    triggerSource: 'cleanup',
+    triggeredBy: userId,
+    reason,
+    metadata: { requestedFrom: 'data_cleanup', previewRunId, policyKeys },
+  });
+  await writeAuditLog({
+    req,
+    operatorId: userId,
+    actionType: 'backup.pre_cleanup.create',
+    objectType: 'backup_job',
+    objectId: id,
+    summary: 'pre-cleanup backup requested',
+    result: 'success',
+    after: { previewRunId, policyKeys },
+  });
+
+  runDetachedScript('scripts/backup/backup-full.js', ['--job-id', id, '--kind', 'pre_cleanup'], {
+    BACKUP_JOB_ID: id,
+    BACKUP_KIND: 'pre_cleanup',
+    BACKUP_TRIGGER_SOURCE: 'cleanup',
+    BACKUP_REASON: reason,
+  });
+
+  const timeoutMs = Number(process.env.PRE_CLEANUP_BACKUP_TIMEOUT_MS || 30 * 60 * 1000);
+  const intervalMs = Math.max(1000, Number(process.env.PRE_CLEANUP_BACKUP_POLL_MS || 5000));
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const job = await repo.findBackupJob(id);
+    if (job && ['success', 'failed', 'cancelled'].includes(job.status)) {
+      if (job.status === 'success') return job;
+      const error = new Error(job.error_message || `清理前备份失败: ${job.status}`);
+      /** @type {any} */ (error).backupJobId = id;
+      throw error;
+    }
+    await sleep(intervalMs);
+  }
+  await repo.updateBackupJob(id, {
+    status: 'failed',
+    finishedAt: new Date(),
+    errorMessage: '清理前备份等待超时',
+  }).catch(() => {});
+  const error = new Error('清理前备份等待超时');
+  /** @type {any} */ (error).backupJobId = id;
+  throw error;
 }
 
 async function createRestoreJob({ req, userId, body }) {
@@ -269,7 +392,11 @@ async function switchRestoreJobToProduction({ req, userId, restoreJobId }) {
   runDetachedScript(
     'scripts/backup/restore-switch-production.js',
     ['--restore-job-id', restoreJobId],
-    { RESTORE_JOB_ID: restoreJobId },
+    {
+      RESTORE_JOB_ID: restoreJobId,
+      RESTORE_OPERATOR_ID: userId,
+      RESTORE_OPERATOR_IP: req.ip || '',
+    },
   );
 
   await writeAuditLog({
@@ -280,7 +407,13 @@ async function switchRestoreJobToProduction({ req, userId, restoreJobId }) {
     objectId: restoreJobId,
     summary: 'production database switch requested',
     result: 'success',
-    after: { tempDbName: existing.temp_db_name, restoreType: existing.restore_type },
+    after: {
+      tempDbName: existing.temp_db_name,
+      restoreType: existing.restore_type,
+      operatorIp: req.ip,
+      restoreSource: existing.source_backup_file_id,
+      targetDatabase: process.env.DB_NAME || 'click_send_shop',
+    },
   });
 
   return {
@@ -311,6 +444,9 @@ module.exports = {
   getOverview,
   listBackupFiles,
   createFullBackup,
+  createConfigBackup,
+  createUploadsBackup,
+  createPreCleanupBackupAndWait,
   createRestoreJob,
   approveRestoreJob,
   switchRestoreJobToProduction,

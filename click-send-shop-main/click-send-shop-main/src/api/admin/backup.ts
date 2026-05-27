@@ -26,6 +26,9 @@ export type BackupFile = {
   recoverable_at?: string | null;
   retention_tier: string;
   verified_at?: string | null;
+  verification_status?: string | null;
+  verification_report?: unknown;
+  manifest_json?: unknown;
   created_at: string;
   job_type?: string;
   job_status?: string;
@@ -76,11 +79,16 @@ export type BackupOverview = {
   recentJobs: BackupJob[];
   recentAlerts: BackupAlert[];
   recentDrills: RestoreDrillReport[];
+  latestRestoreDrill?: RestoreDrillReport | null;
+  latestConfigBackup?: BackupFile | null;
+  latestUploadsBackup?: BackupFile | null;
+  recoverableExplanation?: string;
+  missingBackupItems?: Array<{ kind: string; label: string; severity: string }>;
   safeguards: Record<string, boolean>;
 };
 
 export type RestoreJobPayload = {
-  restoreType: "site" | "point_in_time" | "table" | "order" | "user" | "pre_deploy_rollback";
+  restoreType: "site" | "point_in_time";
   sourceBackupFileId?: string;
   targetTime?: string;
   targetTable?: string;
@@ -97,6 +105,14 @@ export function getBackupFiles(params?: { page?: number; pageSize?: number; kind
 
 export function createFullBackup(reason = "manual") {
   return post<{ id: string; status: string }>("/admin/backups/full", { reason });
+}
+
+export function createConfigBackup(reason = "manual") {
+  return post<{ id: string; status: string }>("/admin/backups/config", { reason });
+}
+
+export function createUploadsBackup(reason = "manual") {
+  return post<{ id: string; status: string }>("/admin/backups/uploads", { reason });
 }
 
 export function getBackupAlerts(params?: { limit?: number; status?: string }) {

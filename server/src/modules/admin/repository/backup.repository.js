@@ -24,6 +24,15 @@ function mapRestoreJob(row) {
   };
 }
 
+function mapBackupFile(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    manifest_json: parseJson(row.manifest_json),
+    verification_report: parseJson(row.verification_report),
+  };
+}
+
 function mapDrill(row) {
   if (!row) return null;
   return {
@@ -71,13 +80,19 @@ async function updateBackupJob(id, fields = {}) {
   await db.query(`UPDATE backup_jobs SET ${sets.join(', ')} WHERE id = ?`, values);
 }
 
+async function findBackupJob(id) {
+  const [[row]] = await db.query(`SELECT * FROM backup_jobs WHERE id = ? LIMIT 1`, [id]);
+  return mapJob(row);
+}
+
 async function insertBackupFile(file) {
   await db.query(
     `INSERT INTO backup_files
       (id, backup_job_id, file_kind, storage_provider, bucket, storage_key, local_path, size_bytes,
        sha256, encrypted, encryption_key_id, compression, binlog_file, binlog_position, gtid_set,
-       recoverable_at, retention_tier, object_lock_until, verified_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       recoverable_at, retention_tier, object_lock_until, verified_at, verification_status,
+       verification_report, manifest_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       file.id,
       file.backupJobId,
@@ -98,8 +113,30 @@ async function insertBackupFile(file) {
       file.retentionTier || 'short',
       file.objectLockUntil || null,
       file.verifiedAt || null,
+      file.verificationStatus || (file.verifiedAt ? 'passed' : 'pending'),
+      file.verificationReport ? JSON.stringify(file.verificationReport) : null,
+      file.manifestJson ? JSON.stringify(file.manifestJson) : null,
     ],
   );
+}
+
+async function updateBackupFile(id, fields = {}) {
+  const sets = [];
+  const values = [];
+  const map = {
+    verifiedAt: 'verified_at',
+    verificationStatus: 'verification_status',
+    verificationReport: 'verification_report',
+    manifestJson: 'manifest_json',
+  };
+  for (const [key, col] of Object.entries(map)) {
+    if (fields[key] === undefined) continue;
+    sets.push(`${col} = ?`);
+    values.push(['verificationReport', 'manifestJson'].includes(key) ? JSON.stringify(fields[key]) : fields[key]);
+  }
+  if (!sets.length) return;
+  values.push(id);
+  await db.query(`UPDATE backup_files SET ${sets.join(', ')} WHERE id = ?`, values);
 }
 
 async function insertBinlogFile(file) {
@@ -157,7 +194,7 @@ async function listBackupFiles({ page, pageSize, kind, status }) {
       LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
-  return { list: rows, total: Number(countRow?.total || 0) };
+  return { list: rows.map(mapBackupFile), total: Number(countRow?.total || 0) };
 }
 
 async function listRestoreJobs({ page, pageSize }) {
@@ -226,7 +263,7 @@ async function findBackupFile(id) {
       LIMIT 1`,
     [id],
   );
-  return row || null;
+  return mapBackupFile(row);
 }
 
 async function findLatestFullBackupBefore(targetTime) {
@@ -268,6 +305,19 @@ async function listBinlogsForReplay(startAt, stopAt) {
   return rows;
 }
 
+async function getLatestBackupFileByKind(kind) {
+  const [[row]] = await db.query(
+    `SELECT f.*, j.status AS job_status, j.job_type
+       FROM backup_files f
+       JOIN backup_jobs j ON j.id = f.backup_job_id
+      WHERE f.file_kind = ? AND j.status = 'success'
+      ORDER BY f.created_at DESC
+      LIMIT 1`,
+    [kind],
+  );
+  return mapBackupFile(row);
+}
+
 async function updateRestoreJob(id, fields = {}) {
   const sets = [];
   const values = [];
@@ -279,6 +329,10 @@ async function updateRestoreJob(id, fields = {}) {
     errorMessage: 'error_message',
     startedAt: 'started_at',
     finishedAt: 'finished_at',
+    operatorIp: 'operator_ip',
+    restoreSource: 'restore_source',
+    targetDatabase: 'target_database',
+    rollbackBackupJobId: 'rollback_backup_job_id',
   };
   for (const [key, col] of Object.entries(map)) {
     if (fields[key] === undefined) continue;
@@ -368,6 +422,22 @@ async function getOverviewRows() {
   const [[binlog]] = await db.query(
     `SELECT * FROM binlog_files WHERE upload_status = 'success' ORDER BY uploaded_at DESC LIMIT 1`,
   );
+  const [[config]] = await db.query(
+    `SELECT f.*, j.job_type, j.status AS job_status
+       FROM backup_files f
+       JOIN backup_jobs j ON j.id = f.backup_job_id
+      WHERE f.file_kind = 'config' AND j.status = 'success'
+      ORDER BY f.created_at DESC
+      LIMIT 1`,
+  );
+  const [[uploads]] = await db.query(
+    `SELECT f.*, j.job_type, j.status AS job_status
+       FROM backup_files f
+       JOIN backup_jobs j ON j.id = f.backup_job_id
+      WHERE f.file_kind = 'uploads' AND j.status = 'success'
+      ORDER BY f.created_at DESC
+      LIMIT 1`,
+  );
   const [[latestRecoverable]] = await db.query(
     `SELECT MAX(recoverable_at) AS latest_recoverable_at FROM backup_files WHERE recoverable_at IS NOT NULL`,
   );
@@ -381,7 +451,14 @@ async function getOverviewRows() {
          SELECT status FROM backup_jobs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
        ) x`,
   );
-  return { full: full || null, binlog: binlog || null, latestRecoverable: latestRecoverable || {}, counts: counts || {} };
+  return {
+    full: mapBackupFile(full),
+    binlog: binlog || null,
+    config: mapBackupFile(config),
+    uploads: mapBackupFile(uploads),
+    latestRecoverable: latestRecoverable || {},
+    counts: counts || {},
+  };
 }
 
 async function getRecentJobs(limit = 8) {
@@ -392,7 +469,9 @@ async function getRecentJobs(limit = 8) {
 module.exports = {
   insertBackupJob,
   updateBackupJob,
+  findBackupJob,
   insertBackupFile,
+  updateBackupFile,
   insertBinlogFile,
   listBackupFiles,
   listRestoreJobs,
@@ -403,6 +482,7 @@ module.exports = {
   findBackupFile,
   findLatestFullBackupBefore,
   listBinlogsForReplay,
+  getLatestBackupFileByKind,
   updateRestoreJob,
   insertRestoreDrillReport,
   listDrillReports,

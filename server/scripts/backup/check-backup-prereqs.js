@@ -3,6 +3,10 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
+const mysql = require('mysql2/promise');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const repo = require('../../src/modules/admin/repository/backup.repository');
+const { runCommand } = require('./backup-lib');
 const {
   defaultMinFreeBytes,
   getAvailableBytes,
@@ -47,6 +51,88 @@ async function canWriteDir(dir) {
   await fsp.unlink(probe);
 }
 
+async function checkBinary(errors, label, command) {
+  try {
+    await runCommand(command, ['--version'], { stdio: ['ignore', 'ignore', 'pipe'], timeoutMs: 10_000 });
+    ok(`${label} exists`, command);
+  } catch (error) {
+    fail(errors, `${label} is not available`, `${command} (${error.message})`);
+  }
+}
+
+async function checkDbConnection(errors) {
+  try {
+    const conn = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT || 3306),
+      user: process.env.DB_USER || 'click_send_app',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'click_send_shop',
+    });
+    await conn.query('SELECT 1');
+    await conn.end();
+    ok('Database connection is healthy');
+  } catch (error) {
+    fail(errors, 'Database connection failed', error.message);
+  }
+}
+
+async function checkBackupS3Writable(errors) {
+  const bucket = process.env.BACKUP_S3_BUCKET;
+  if (!bucket) {
+    fail(errors, 'BACKUP_S3_BUCKET is not configured');
+    return;
+  }
+  const client = new S3Client({
+    region: process.env.BACKUP_S3_REGION || process.env.AWS_REGION || 'ap-southeast-1',
+    endpoint: process.env.BACKUP_S3_ENDPOINT || undefined,
+    forcePathStyle: process.env.BACKUP_S3_FORCE_PATH_STYLE === '1',
+  });
+  const key = `${process.env.BACKUP_S3_PREFIX || 'shop-backups'}/healthchecks/backup-check-${process.pid}-${Date.now()}.txt`;
+  try {
+    await client.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: 'ok' }));
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key })).catch(() => {});
+    ok('BACKUP_S3_BUCKET is writable', bucket);
+  } catch (error) {
+    fail(errors, 'BACKUP_S3_BUCKET is not writable', `${bucket} (${error.message})`);
+  }
+}
+
+async function checkSystemdTimer(errors, name) {
+  if (process.platform === 'win32') {
+    warn(`${name} systemd timer check skipped`, 'not a Linux runtime');
+    return;
+  }
+  try {
+    await runCommand('systemctl', ['is-enabled', name], { stdio: ['ignore', 'ignore', 'pipe'], timeoutMs: 10_000 });
+    ok('systemd timer is enabled', name);
+  } catch (error) {
+    fail(errors, 'systemd timer is not enabled', `${name} (${error.message})`);
+  }
+}
+
+async function checkRecentBackupAndDrill(errors) {
+  try {
+    const latestFull = await repo.getLatestBackupFileByKind('mysql_full');
+    if (!latestFull) {
+      fail(errors, 'No recent successful full backup');
+    } else {
+      ok('Latest successful full backup found', latestFull.created_at || latestFull.recoverable_at || latestFull.id);
+    }
+    const drills = await repo.listDrillReports({ limit: 1 });
+    const latestDrill = drills[0];
+    if (!latestDrill) {
+      fail(errors, 'No restore drill report found');
+    } else if (latestDrill.status !== 'success') {
+      fail(errors, 'Latest restore drill is not successful', latestDrill.error_message || latestDrill.status);
+    } else {
+      ok('Latest restore drill succeeded', latestDrill.created_at);
+    }
+  } catch (error) {
+    warn('Cannot inspect recent backup/drill metadata', error.message);
+  }
+}
+
 async function detectBinlogFiles(binlogDir) {
   const configured = String(process.env.MYSQL_BINLOG_FILES || '')
     .split(',')
@@ -78,6 +164,11 @@ async function main() {
   console.log('Backup prerequisite check');
   console.log(`DB_HOST=${process.env.DB_HOST || 'localhost'}`);
   console.log(`DB_USER=${process.env.DB_USER || 'click_send_app'}`);
+
+  await checkBinary(errors, 'mysqldump', process.env.MYSQLDUMP_BIN || 'mysqldump');
+  await checkBinary(errors, 'mysql', process.env.MYSQL_BIN || 'mysql');
+  await checkBinary(errors, 'mysqlbinlog', process.env.MYSQLBINLOG_BIN || 'mysqlbinlog');
+  await checkDbConnection(errors);
 
   const binlogDir = process.env.MYSQL_BINLOG_DIR;
   if (!binlogDir) {
@@ -122,6 +213,11 @@ async function main() {
   } else {
     ok('BACKUP_ENCRYPTION_KEY is configured');
   }
+
+  await checkBackupS3Writable(errors);
+  await checkSystemdTimer(errors, process.env.BACKUP_FULL_TIMER || 'click-send-backup-full.timer');
+  await checkSystemdTimer(errors, process.env.BACKUP_DRILL_TIMER || 'click-send-restore-drill.timer');
+  await checkRecentBackupAndDrill(errors);
 
   if (errors.length) {
     console.error(`Backup prerequisite check failed with ${errors.length} issue(s).`);

@@ -12,6 +12,7 @@ export const BACKUP_JOB_TYPE_LABELS: Record<string, string> = {
   pre_deploy: "部署前备份",
   pre_migration: "迁移前备份",
   pre_cleanup: "清理前备份",
+  pre_restore_switch: "恢复切换前备份",
   config: "配置备份",
   uploads: "文件备份",
   binlog_sync: "增量日志同步",
@@ -42,12 +43,16 @@ export const BACKUP_STORAGE_PROVIDER_LABELS: Record<string, string> = {
 };
 
 export const RESTORE_TYPE_LABELS: Record<string, string> = {
-  site: "整站恢复",
+  site: "数据库恢复",
   point_in_time: "指定时间点恢复",
-  table: "单表恢复",
-  order: "单订单恢复",
-  user: "单用户恢复",
-  pre_deploy_rollback: "部署前版本回滚",
+};
+
+export const BACKUP_VERIFICATION_STATUS_LABELS: Record<string, string> = {
+  pending: "待校验",
+  running: "校验中",
+  passed: "校验通过",
+  failed: "校验失败",
+  skipped: "未校验",
 };
 
 export const BACKUP_ALERT_TYPE_LABELS: Record<string, string> = {
@@ -100,6 +105,12 @@ export function formatBackupStatus(status?: string | null): string {
   const key = String(status || "").trim();
   if (!key) return "-";
   return BACKUP_STATUS_LABELS[key] || "未知状态";
+}
+
+export function formatBackupVerificationStatus(status?: string | null, verifiedAt?: string | null): string {
+  const key = String(status || "").trim();
+  if (key) return BACKUP_VERIFICATION_STATUS_LABELS[key] || "未知校验状态";
+  return verifiedAt ? "校验通过" : "待校验";
 }
 
 export function formatBackupStorageProvider(provider?: string | null): string {
@@ -168,7 +179,7 @@ export function formatRestoreTempDatabase(name?: string | null): string {
 
 export function backupStatusTone(status?: string | null): string {
   const key = String(status || "").trim();
-  if (["success", "validated", "resolved", "merged", "switched"].includes(key)) return "text-emerald-700";
+  if (["success", "validated", "resolved", "merged", "switched", "passed"].includes(key)) return "text-emerald-700";
   if (["running", "queued", "temp_restored", "awaiting_approval", "approved"].includes(key)) return "text-blue-700";
   if (["failed", "open", "cancelled"].includes(key)) return "text-red-700";
   return "text-muted-foreground";

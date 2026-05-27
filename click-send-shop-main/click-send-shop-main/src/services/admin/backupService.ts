@@ -25,6 +25,16 @@ export async function requestFullBackup(reason?: string) {
   return res.data;
 }
 
+export async function requestConfigBackup(reason?: string) {
+  const res = await api.createConfigBackup(reason);
+  return res.data;
+}
+
+export async function requestUploadsBackup(reason?: string) {
+  const res = await api.createUploadsBackup(reason);
+  return res.data;
+}
+
 export async function fetchRestoreJobs(params?: Parameters<typeof api.getRestoreJobs>[0]) {
   const res = await api.getRestoreJobs(params);
   return res.data;

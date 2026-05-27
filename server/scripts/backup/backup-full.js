@@ -1,4 +1,5 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+const fs = require('fs');
 const path = require('path');
 const { generateId } = require('../../src/utils/helpers');
 const repo = require('../../src/modules/admin/repository/backup.repository');
@@ -19,6 +20,27 @@ const {
   assertMinFreeBytes,
   defaultMinFreeBytes,
 } = require('./backup-lib');
+
+function parseFullBackupPitrMetadata(sqlText) {
+  const changeMaster = sqlText.match(/CHANGE\s+MASTER\s+TO\s+MASTER_LOG_FILE='([^']+)'\s*,\s*MASTER_LOG_POS=(\d+)/i);
+  const gtidMatch = sqlText.match(/SET\s+@@GLOBAL\.GTID_PURGED='([^']+)'/i);
+  return {
+    binlogFile: changeMaster?.[1] || null,
+    binlogPosition: changeMaster?.[2] ? Number(changeMaster[2]) : null,
+    gtidSet: gtidMatch?.[1] || null,
+  };
+}
+
+function readFilePrefix(filePath, maxBytes = 1024 * 1024) {
+  const fd = fs.openSync(filePath, 'r');
+  try {
+    const buffer = Buffer.alloc(maxBytes);
+    const bytesRead = fs.readSync(fd, buffer, 0, maxBytes, 0);
+    return buffer.subarray(0, bytesRead).toString('utf8');
+  } finally {
+    fs.closeSync(fd);
+  }
+}
 
 async function safeRepo(label, fn) {
   try {
@@ -42,6 +64,7 @@ async function main() {
       pre_deploy: 'pre_deploy',
       pre_migration: 'pre_migration',
       pre_cleanup: 'pre_cleanup',
+      pre_restore_switch: 'pre_restore_switch',
     };
     await safeRepo('insert job', () => repo.insertBackupJob({
       id: jobId,
@@ -63,7 +86,7 @@ async function main() {
   const gzPath = `${sqlPath}.gz`;
   const encPath = `${gzPath}.enc`;
   const lockTables = process.env.MYSQLDUMP_LOCK_TABLES === '1';
-  const includeMasterData = process.env.BACKUP_INCLUDE_MASTER_DATA === '1';
+  const includeMasterData = process.env.BACKUP_INCLUDE_MASTER_DATA !== '0';
   const dumpArgs = [
     ...dbEnvArgs(),
     '--single-transaction',
@@ -80,9 +103,10 @@ async function main() {
 
   try {
     await runCommand(process.env.MYSQLDUMP_BIN || 'mysqldump', dumpArgs, {
-      stdio: ['ignore', require('fs').openSync(sqlPath, 'w'), 'pipe'],
+      stdio: ['ignore', fs.openSync(sqlPath, 'w'), 'pipe'],
       timeoutMs: Number(process.env.MYSQLDUMP_TIMEOUT_MS || process.env.BACKUP_COMMAND_TIMEOUT_MS || 20 * 60 * 1000),
     });
+    const pitrMetadata = parseFullBackupPitrMetadata(readFilePrefix(sqlPath));
     await gzipFile(sqlPath, gzPath);
     await removeFileQuietly(sqlPath);
     await encryptFile(gzPath, encPath);
@@ -112,14 +136,20 @@ async function main() {
       encrypted: true,
       encryptionKeyId: process.env.BACKUP_ENCRYPTION_KEY_ID || 'default',
       compression: 'gzip',
+      binlogFile: pitrMetadata.binlogFile,
+      binlogPosition: pitrMetadata.binlogPosition,
+      gtidSet: pitrMetadata.gtidSet,
       recoverableAt: new Date(),
       retentionTier: backupKind === 'long' ? 'long' : 'short',
-      verifiedAt: new Date(),
+      verificationStatus: 'pending',
+      verificationReport: {
+        reason: '备份文件已生成，等待独立校验流程完成后写入 verified_at',
+      },
     }));
     await safeRepo('mark success', () => repo.updateBackupJob(jobId, {
       status: 'success',
       finishedAt: new Date(),
-      metadata: { storageKey, sizeBytes, sha256 },
+      metadata: { storageKey, sizeBytes, sha256, ...pitrMetadata },
     }));
   } catch (err) {
     await safeRepo('mark failed', () => repo.updateBackupJob(jobId, {

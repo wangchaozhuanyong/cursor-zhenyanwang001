@@ -1,8 +1,10 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+const path = require('path');
 const mysql = require('mysql2/promise');
+const { generateId } = require('../../src/utils/helpers');
 const repo = require('../../src/modules/admin/repository/backup.repository');
 const backupService = require('../../src/modules/admin/service/backup.service');
-const { parseArgs, dbAdminArgs, runCommand } = require('./backup-lib');
+const { parseArgs, dbAdminArgs, runCommand, serverRoot } = require('./backup-lib');
 
 function assertTempDbName(name) {
   if (!/^restore_tmp_[a-zA-Z0-9_]{8,64}$/.test(String(name || ''))) {
@@ -42,6 +44,81 @@ async function dropDatabase(dbName) {
   await withAdminConnection(async (conn) => {
     await conn.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
   });
+}
+
+function isMaintenanceModeEnabled() {
+  return process.env.MAINTENANCE_MODE === '1'
+    || process.env.RESTORE_MAINTENANCE_MODE === '1'
+    || process.env.SITE_MAINTENANCE_MODE === '1';
+}
+
+async function tableExists(conn, tableName) {
+  const [[row]] = await conn.query(
+    `SELECT COUNT(*) AS total FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+    [tableName],
+  );
+  return Number(row?.total || 0) > 0;
+}
+
+async function assertNoRecentWrites(prodDbName) {
+  const quietSeconds = Math.max(30, Number(process.env.RESTORE_SWITCH_QUIET_SECONDS || 300) || 300);
+  const checks = [];
+  const conn = await mysql.createConnection(mysqlAdminOptions(prodDbName));
+  try {
+    if (await tableExists(conn, 'orders')) {
+      const [[row]] = await conn.query(
+        `SELECT COUNT(*) AS total FROM orders WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND) OR updated_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)`,
+        [quietSeconds, quietSeconds],
+      );
+      checks.push({ name: 'orders_recent_writes', count: Number(row?.total || 0) });
+    }
+    if (await tableExists(conn, 'payment_orders')) {
+      const [[row]] = await conn.query(
+        `SELECT COUNT(*) AS total FROM payment_orders WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND) OR updated_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)`,
+        [quietSeconds, quietSeconds],
+      );
+      checks.push({ name: 'payment_orders_recent_writes', count: Number(row?.total || 0) });
+    }
+    if (await tableExists(conn, 'payment_events')) {
+      const [[row]] = await conn.query(
+        `SELECT COUNT(*) AS total FROM payment_events WHERE processing_result IN ('pending','processing') OR created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)`,
+        [quietSeconds],
+      );
+      checks.push({ name: 'payment_events_pending_or_recent', count: Number(row?.total || 0) });
+    }
+  } finally {
+    await conn.end();
+  }
+  const blockers = checks.filter((item) => item.count > 0);
+  if (blockers.length) {
+    throw new Error(`生产切换拒绝：仍检测到后台任务/支付回调/订单写入风险 ${JSON.stringify(blockers)}`);
+  }
+  return { quietSeconds, checks };
+}
+
+async function createPreRestoreSwitchBackup(restoreJobId) {
+  const backupJobId = generateId();
+  await repo.insertBackupJob({
+    id: backupJobId,
+    jobType: 'pre_restore_switch',
+    status: 'queued',
+    triggerSource: 'system',
+    reason: `pre restore switch backup for ${restoreJobId}`,
+    metadata: { restoreJobId },
+  });
+  await runCommand(process.execPath, [
+    path.join(serverRoot, 'scripts/backup/backup-full.js'),
+    '--job-id',
+    backupJobId,
+    '--kind',
+    'pre_restore_switch',
+  ], {
+    cwd: serverRoot,
+    stdio: ['ignore', 'ignore', 'pipe'],
+    env: { ...process.env, BACKUP_JOB_ID: backupJobId, BACKUP_KIND: 'pre_restore_switch' },
+    timeoutMs: Number(process.env.RESTORE_PRE_SWITCH_BACKUP_TIMEOUT_MS || 60 * 60 * 1000),
+  });
+  return backupJobId;
 }
 
 async function replaceProductionFromTemp(tempDbName, prodDbName) {
@@ -100,6 +177,9 @@ async function main() {
   if (process.env.RESTORE_SWITCH_ENABLED !== '1') {
     throw new Error('未启用生产切换，请在环境变量中设置 RESTORE_SWITCH_ENABLED=1');
   }
+  if (!isMaintenanceModeEnabled()) {
+    throw new Error('生产切换拒绝：必须先开启维护模式（MAINTENANCE_MODE=1 或 RESTORE_MAINTENANCE_MODE=1）');
+  }
 
   const args = parseArgs();
   const restoreJobId = args.restoreJobId || process.env.RESTORE_JOB_ID;
@@ -123,6 +203,34 @@ async function main() {
   if (!(await databaseExists(tempDbName))) {
     throw new Error(`临时库不存在：${tempDbName}`);
   }
+  const quietReport = await assertNoRecentWrites(prodDbName);
+  const rollbackBackupJobId = await createPreRestoreSwitchBackup(restoreJobId);
+  await repo.updateRestoreJob(restoreJobId, {
+    operatorIp: process.env.RESTORE_OPERATOR_IP || null,
+    rollbackBackupJobId,
+    restoreSource: job.source_backup_file_id || '',
+    targetDatabase: prodDbName,
+    diffSummary: {
+      ...(job.diff_summary || {}),
+      preSwitch: {
+        rollbackBackupJobId,
+        quietReport,
+        checkedAt: new Date().toISOString(),
+      },
+    },
+  });
+  if (process.env.RESTORE_SWITCH_ALLOW_DIRECT_IMPORT !== '1') {
+    const message = `生产切换已完成前置保护备份 ${rollbackBackupJobId}，但拒绝直接覆盖生产库；请配置受控切换策略或显式设置 RESTORE_SWITCH_ALLOW_DIRECT_IMPORT=1`;
+    await repo.updateRestoreJob(restoreJobId, { errorMessage: message }).catch(() => {});
+    await backupService.emitBackupAlert({
+      alertType: 'restore_failed',
+      severity: 'P1',
+      title: '生产库切换被安全策略拦截',
+      message,
+      relatedJobId: restoreJobId,
+    }).catch(() => {});
+    throw new Error(message);
+  }
 
   const locked = await repo.claimRestoreJobForSwitch(restoreJobId);
   if (!locked) {
@@ -143,6 +251,8 @@ async function main() {
       diffSummary: {
         productionDb: prodDbName,
         tempDbName,
+        rollbackBackupJobId,
+        rollbackCommand: `RESTORE_JOB_ID=${restoreJobId} BACKUP_FILE_ID=<${rollbackBackupJobId} 对应文件> npm run restore:temp`,
         switchedAt: finishedAt.toISOString(),
         durationSeconds: Math.max(1, Math.round((finishedAt.getTime() - startedAt.getTime()) / 1000)),
       },

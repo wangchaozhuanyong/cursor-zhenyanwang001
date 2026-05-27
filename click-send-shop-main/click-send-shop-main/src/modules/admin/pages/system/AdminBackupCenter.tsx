@@ -26,6 +26,7 @@ import {
   formatBackupFileKind,
   formatBackupStatus,
   formatBackupStorageLocation,
+  formatBackupVerificationStatus,
   formatRestoreTempDatabase,
   formatRestoreType,
 } from "@/utils/backupLabels";
@@ -103,6 +104,24 @@ export default function AdminBackupCenter() {
     onError: (err: Error) => toast.error(err.message || tText("创建备份失败")),
   });
 
+  const configBackupMutation = useMutation({
+    mutationFn: () => backupService.requestConfigBackup("备份中心手动触发"),
+    onSuccess: async () => {
+      toast.success(tText("已创建配置备份任务"));
+      await invalidate();
+    },
+    onError: (err: Error) => toast.error(err.message || tText("创建配置备份失败")),
+  });
+
+  const uploadsBackupMutation = useMutation({
+    mutationFn: () => backupService.requestUploadsBackup("备份中心手动触发"),
+    onSuccess: async () => {
+      toast.success(tText("已创建上传文件备份任务"));
+      await invalidate();
+    },
+    onError: (err: Error) => toast.error(err.message || tText("创建上传文件备份失败")),
+  });
+
   const restoreMutation = useMutation({
     mutationFn: (payload: backupService.RestoreJobPayload) => backupService.requestRestoreJob(payload),
     onSuccess: async () => {
@@ -173,7 +192,7 @@ export default function AdminBackupCenter() {
       title: tText("确认恢复任务"),
       description: (
         <div className="space-y-1 text-sm">
-          <div>{tText("确认后可将临时库数据切换至生产库，生产切换为不可逆操作。")}</div>
+          <div>{tText("确认后可进入生产切换审批阶段；切换前必须开启维护模式并完成切换前备份。")}</div>
           <div>{tText("临时库")}：{formatRestoreTempDatabase(job.temp_db_name)}</div>
           {job.target_time ? <div>{tText("目标时间")}：{fmt(job.target_time)}</div> : null}
         </div>
@@ -189,7 +208,7 @@ export default function AdminBackupCenter() {
       title: tText("执行生产切换"),
       description: (
         <div className="space-y-1 text-sm">
-          <div>{tText("将把临时库数据覆盖写入生产数据库，请确保已停止写入流量并完成最终确认。")}</div>
+          <div>{tText("系统会先检查维护模式、近期订单/支付写入，并强制创建切换前全量备份；未满足安全条件会拒绝切换。")}</div>
           <div>{tText("临时库")}：{formatRestoreTempDatabase(job.temp_db_name)}</div>
         </div>
       ),
@@ -227,7 +246,7 @@ export default function AdminBackupCenter() {
           <div>
             <p className="text-xs font-semibold text-amber-900 dark:text-amber-100"><Tx>高风险操作 · 仅超级管理员</Tx></p>
             <p className="mt-0.5 text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-200/80">
-              <Tx>确认恢复或执行生产切换将写入生产库，操作前请确认已停止业务写入且临时库校验已通过。</Tx>
+              <Tx>确认恢复或执行生产切换前，请确认维护模式已开启、业务写入已停止，且临时库校验已通过。</Tx>
             </p>
           </div>
         </div>
@@ -281,18 +300,38 @@ export default function AdminBackupCenter() {
 
   return (
     <AdminPageShell
-      hint={<Tx>管理系统全量/增量备份、恢复任务与演练记录。</Tx>}
+      hint={<Tx>管理数据库备份、上传文件备份、配置备份和恢复演练，形成生产灾备闭环。</Tx>}
       toolbar={(
         <PermissionGate permission="backup.create">
-          <button
-            type="button"
-            onClick={() => fullBackupMutation.mutate()}
-            disabled={fullBackupMutation.isPending}
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-md bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-          >
-            <DatabaseBackup size={16} />
-            <Tx>手动创建备份</Tx>
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => fullBackupMutation.mutate()}
+              disabled={fullBackupMutation.isPending}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-md bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
+              <DatabaseBackup size={16} />
+              <Tx>数据库备份</Tx>
+            </button>
+            <button
+              type="button"
+              onClick={() => uploadsBackupMutation.mutate()}
+              disabled={uploadsBackupMutation.isPending}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary disabled:opacity-60"
+            >
+              <DatabaseBackup size={16} />
+              <Tx>文件备份</Tx>
+            </button>
+            <button
+              type="button"
+              onClick={() => configBackupMutation.mutate()}
+              disabled={configBackupMutation.isPending}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary disabled:opacity-60"
+            >
+              <DatabaseBackup size={16} />
+              <Tx>配置备份</Tx>
+            </button>
+          </div>
         </PermissionGate>
       )}
     >
@@ -308,6 +347,9 @@ export default function AdminBackupCenter() {
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground"><RotateCcw size={15} /><Tx>当前可恢复到</Tx></div>
           <div className="mt-2 text-base font-semibold">{fmt(overview?.latestRecoverableAt)}</div>
+          <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            <Tx>由全量备份时间和增量日志覆盖时间共同决定</Tx>
+          </div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground"><ShieldCheck size={15} /><Tx>增量日志状态</Tx></div>
@@ -329,9 +371,25 @@ export default function AdminBackupCenter() {
         </div>
       </div>
 
+      {(overview?.missingBackupItems || []).length ? (
+        <section className="rounded-lg border border-amber-300/80 bg-amber-50/60 p-4 text-sm text-amber-950 dark:border-amber-800/50 dark:bg-amber-950/25 dark:text-amber-100">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle size={16} />
+            <Tx>缺失备份项风险提示</Tx>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(overview?.missingBackupItems || []).map((item) => (
+              <span key={item.kind} className="rounded-full border border-amber-300 bg-white/70 px-2.5 py-1 text-xs dark:border-amber-700 dark:bg-amber-950/40">
+                {tText(item.label)}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <div className="grid gap-5 xl:grid-cols-[1.3fr_0.9fr]">
         <section className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3 font-semibold"><Tx>备份文件列表</Tx></div>
+          <div className="border-b border-border px-4 py-3 font-semibold"><Tx>数据库备份、文件备份与配置备份</Tx></div>
           <AdminNativeTable stickyFirstColumn={false}>
               <thead className="bg-secondary/50 text-muted-foreground">
                 <tr>
@@ -356,14 +414,10 @@ export default function AdminBackupCenter() {
                       <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{bytes(file.size_bytes)}</td>
                       <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{fmt(file.recoverable_at)}</td>
                       <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>
-                        {file.verified_at ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-700">
-                            <CheckCircle2 size={16} />
-                            <Tx>已校验</Tx>
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground"><Tx>待校验</Tx></span>
-                        )}
+                        <span className={`inline-flex items-center gap-1 ${file.verification_status === "passed" || file.verified_at ? "text-emerald-700" : file.verification_status === "failed" ? "text-red-700" : "text-muted-foreground"}`}>
+                          {file.verification_status === "passed" || file.verified_at ? <CheckCircle2 size={16} /> : null}
+                          {tText(formatBackupVerificationStatus(file.verification_status, file.verified_at))}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -426,7 +480,7 @@ export default function AdminBackupCenter() {
               <label className="block text-sm">
                 <span className="text-muted-foreground"><Tx>恢复类型</Tx></span>
                 <select value={restoreType} onChange={(e) => setRestoreType(e.target.value as typeof restoreType)} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
-                  <option value="site"><Tx>整站恢复</Tx></option>
+                  <option value="site"><Tx>数据库恢复</Tx></option>
                   <option value="point_in_time"><Tx>指定时间点恢复</Tx></option>
                 </select>
               </label>
@@ -497,7 +551,14 @@ export default function AdminBackupCenter() {
         </section>
 
         <section className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3 font-semibold"><Tx>恢复演练记录</Tx></div>
+          <div className="border-b border-border px-4 py-3">
+            <div className="font-semibold"><Tx>恢复演练记录</Tx></div>
+            {overview?.latestRestoreDrill ? (
+              <div className="mt-1 text-xs text-muted-foreground">
+                <Tx>最近一次恢复演练结果</Tx>：{tText(formatBackupStatus(overview.latestRestoreDrill.status))}
+              </div>
+            ) : null}
+          </div>
           <div className="divide-y divide-border">
             {(drillsQuery.data || []).map((drill) => (
               <div key={drill.id} className="px-4 py-3 text-sm">

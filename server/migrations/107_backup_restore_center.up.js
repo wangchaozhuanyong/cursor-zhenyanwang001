@@ -10,7 +10,7 @@ module.exports = {
     await query(`
       CREATE TABLE IF NOT EXISTS backup_jobs (
         id VARCHAR(36) NOT NULL PRIMARY KEY,
-        job_type ENUM('full','long_term_full','pre_deploy','pre_migration','pre_cleanup','config','uploads','binlog_sync','restore_drill') NOT NULL,
+        job_type ENUM('full','long_term_full','pre_deploy','pre_migration','pre_cleanup','pre_restore_switch','config','uploads','binlog_sync','restore_drill') NOT NULL,
         status ENUM('queued','running','success','failed','cancelled') NOT NULL DEFAULT 'queued',
         trigger_source ENUM('schedule','manual','deploy','migration','cleanup','system') NOT NULL DEFAULT 'system',
         triggered_by VARCHAR(36) DEFAULT NULL,

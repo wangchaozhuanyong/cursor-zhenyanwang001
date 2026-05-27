@@ -75,5 +75,6 @@ exports.batchAcknowledge = asyncRoute(async (_req, res) => notImplemented(res, '
 exports.batchIgnore = asyncRoute(async (_req, res) => notImplemented(res, 'batchIgnore'));
 exports.batchResolve = asyncRoute(async (_req, res) => notImplemented(res, 'batchResolve'));
 exports.batchAssign = asyncRoute(async (_req, res) => notImplemented(res, 'batchAssign'));
+exports.assign = asyncRoute(async (_req, res) => notImplemented(res, 'assign'));
 exports.detail = asyncRoute(async (_req, res) => notImplemented(res, 'detail'));
 exports.actions = asyncRoute(async (_req, res) => notImplemented(res, 'actions'));

@@ -116,11 +116,14 @@ async function getOrderById(userId, orderId) {
   if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItems(orderDb, order.id);
   const [returnSummary] = await returnRepo.selectReturnSummaryByOrderIds(userId, [order.id]);
+  const shortageAdjustmentCount = await repo.countOrderShortageAdjustments(orderDb, order.id);
   let data = formatOrder(
     order,
     attachOrderItemReviewFlags(order, items.map(formatOrderItem)),
     returnSummary,
   );
+  data.has_shortage_adjustment = shortageAdjustmentCount > 0;
+  data.shortage_notice = shortageAdjustmentCount > 0 ? '部分商品因缺货已移除' : '';
   await requireLogisticsApi('attachTracking')(data);
   data = await enrichOrderWithPaymentDeadline(data);
   data = await enrichOrderWithAutoConfirmReceiveDeadline(data);

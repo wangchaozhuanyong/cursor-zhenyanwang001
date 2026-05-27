@@ -1,6 +1,13 @@
 import * as orderApi from "@/api/admin/order";
 import type { AdminOrderVoiceEvent, AdminOrderVoiceEventsResponse } from "@/api/admin/order";
-import type { AdminOrderSummary, CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
+import type {
+  AdminOrderSummary,
+  CheckoutAbandonment,
+  CheckoutAbandonmentStatus,
+  Order,
+  OrderListParams,
+  ShortageAdjustmentRequest,
+} from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 import { unwrapPaginated } from "@/services/responseNormalize";
@@ -42,6 +49,16 @@ export async function shipOrder(
 
 export async function refreshOrderLogistics(id: string) {
   const res = await orderApi.refreshOrderLogistics(id);
+  return res.data;
+}
+
+export async function previewShortageAdjustment(id: string, payload: ShortageAdjustmentRequest) {
+  const res = await orderApi.previewShortageAdjustment(id, payload);
+  return res.data;
+}
+
+export async function applyShortageAdjustment(id: string, payload: ShortageAdjustmentRequest) {
+  const res = await orderApi.applyShortageAdjustment(id, payload);
   return res.data;
 }
 

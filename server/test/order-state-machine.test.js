@@ -54,6 +54,10 @@ describe('orderStateMachine', () => {
     assert.equal(canShip({ status: 'paid', payment_status: 'paid' }), true);
   });
 
+  test('canShip: paid + partially_refunded', () => {
+    assert.equal(canShip({ status: 'paid', payment_status: 'partially_refunded' }), true);
+  });
+
   test('canShip: paid + pending forbidden', () => {
     assert.equal(canShip({ status: 'paid', payment_status: 'pending' }), false);
   });

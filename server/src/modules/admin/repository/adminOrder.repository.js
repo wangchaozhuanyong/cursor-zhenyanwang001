@@ -38,10 +38,14 @@ async function selectOrderItemsWithProduct(q, orderId) {
        oi.*,
        COALESCE(NULLIF(oi.product_name, ''), p.name) AS name,
        COALESCE(NULLIF(oi.product_image, ''), p.cover_image) AS cover_image,
-       oi.price AS unit_price
+       oi.price AS unit_price,
+       COALESCE(v.stock, 0) AS current_stock
      FROM order_items oi
      LEFT JOIN products p ON oi.product_id = p.id
-     WHERE oi.order_id = ?`,
+     LEFT JOIN product_variants v ON v.id = oi.variant_id
+     WHERE oi.order_id = ?
+       AND COALESCE(oi.line_status, 'active') = 'active'
+       AND COALESCE(oi.qty, 0) > 0`,
     [orderId],
   );
   return items;
@@ -129,13 +133,14 @@ async function selectOrdersAdminPage(where, params, pageSize, offset) {
          SUM(qty) AS items_count,
          COUNT(DISTINCT COALESCE(NULLIF(variant_id, ''), product_id)) AS sku_count,
          GROUP_CONCAT(
-           CONCAT(COALESCE(NULLIF(product_name, ''), NULLIF(product_name_snapshot, ''), '商品'), ' ×', qty)
+          CONCAT(COALESCE(NULLIF(product_name, ''), NULLIF(product_name_snapshot, ''), '商品'), ' ×', qty)
            ORDER BY id
            SEPARATOR '；'
          ) AS items_summary,
          SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) AS missing_cost_item_count,
          CASE WHEN SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) > 0 THEN 'missing' ELSE 'normal' END AS cost_snapshot_source
-       FROM order_items
+      FROM order_items
+      WHERE COALESCE(line_status, 'active') = 'active' AND COALESCE(qty, 0) > 0
        GROUP BY order_id
      ) item_stats ON item_stats.order_id = o.id
      LEFT JOIN (
@@ -180,7 +185,8 @@ async function selectOrdersForExport(where, params) {
            SEPARATOR '；'
          ) AS items_summary,
          SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) AS missing_cost_item_count
-       FROM order_items
+      FROM order_items
+      WHERE COALESCE(line_status, 'active') = 'active' AND COALESCE(qty, 0) > 0
        GROUP BY order_id
      ) item_stats ON item_stats.order_id = o.id
      LEFT JOIN (
@@ -339,6 +345,246 @@ async function selectAdminOrderForUpdate(q, orderId) {
   return row || null;
 }
 
+async function selectOrderItemsForAdjustment(q, orderId) {
+  const [rows] = await q.query(
+    `SELECT
+       oi.*,
+       COALESCE(NULLIF(oi.product_name, ''), NULLIF(oi.product_name_snapshot, ''), p.name, '') AS name,
+       COALESCE(NULLIF(oi.product_image, ''), NULLIF(oi.product_image_snapshot, ''), p.cover_image, '') AS cover_image,
+       oi.price AS unit_price,
+       COALESCE(v.stock, 0) AS current_stock,
+       v.enabled AS variant_enabled
+     FROM order_items oi
+     LEFT JOIN products p ON p.id = oi.product_id
+     LEFT JOIN product_variants v ON v.id = oi.variant_id
+     WHERE oi.order_id = ?
+     ORDER BY oi.id
+     FOR UPDATE`,
+    [orderId],
+  );
+  return rows || [];
+}
+
+async function selectOrderAdjustments(q, orderId) {
+  const [rows] = await q.query(
+    `SELECT *
+     FROM order_adjustments
+     WHERE order_id = ?
+     ORDER BY created_at DESC, id DESC`,
+    [orderId],
+  );
+  return rows || [];
+}
+
+async function selectOrderAdjustmentItemsByOrder(q, orderId) {
+  const [rows] = await q.query(
+    `SELECT ai.*
+     FROM order_adjustment_items ai
+     JOIN order_adjustments a ON a.id = ai.adjustment_id
+     WHERE ai.order_id = ?
+     ORDER BY a.created_at DESC, ai.id ASC`,
+    [orderId],
+  );
+  return rows || [];
+}
+
+async function insertOrderAdjustment(q, row) {
+  await q.query(
+    `INSERT INTO order_adjustments
+       (id, order_id, order_no, adjustment_no, adjustment_type, reason,
+        customer_confirmed, customer_confirm_method, customer_confirm_note,
+        before_amount, after_amount, refund_amount, stock_handling, status, operator_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      row.id,
+      row.order_id,
+      row.order_no || '',
+      row.adjustment_no,
+      row.adjustment_type || 'stock_shortage',
+      row.reason || '',
+      row.customer_confirmed ? 1 : 0,
+      row.customer_confirm_method || '',
+      row.customer_confirm_note || '',
+      row.before_amount ? JSON.stringify(row.before_amount) : null,
+      row.after_amount ? JSON.stringify(row.after_amount) : null,
+      row.refund_amount || 0,
+      row.stock_handling || 'no_restore',
+      row.status || 'applied',
+      row.operator_id || null,
+    ],
+  );
+}
+
+async function insertOrderAdjustmentItem(q, row) {
+  await q.query(
+    `INSERT INTO order_adjustment_items
+       (id, adjustment_id, order_id, order_item_id, product_id, variant_id, sku_code,
+        product_name_snapshot, variant_name_snapshot, before_qty, after_qty, removed_qty,
+        unit_price, line_refund_amount, shortage_reason)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      row.id,
+      row.adjustment_id,
+      row.order_id,
+      row.order_item_id,
+      row.product_id,
+      row.variant_id || null,
+      row.sku_code || '',
+      row.product_name_snapshot || '',
+      row.variant_name_snapshot || '',
+      row.before_qty,
+      row.after_qty,
+      row.removed_qty,
+      row.unit_price,
+      row.line_refund_amount,
+      row.shortage_reason || '',
+    ],
+  );
+}
+
+async function updateOrderItemAfterShortage(q, orderItemId, row) {
+  await q.query(
+    `UPDATE order_items
+     SET qty = ?,
+         line_status = ?,
+         original_qty = COALESCE(original_qty, ?),
+         subtotal = ?,
+         discount_allocated = ?,
+         cost_amount = ?,
+         net_sales_amount = ?,
+         gross_profit_amount = ?,
+         adjusted_at = NOW(),
+         adjusted_by = ?,
+         adjusted_reason = ?
+     WHERE id = ?`,
+    [
+      row.qty,
+      row.line_status,
+      row.original_qty,
+      row.subtotal,
+      row.discount_allocated,
+      row.cost_amount,
+      row.net_sales_amount,
+      row.gross_profit_amount,
+      row.adjusted_by || null,
+      row.adjusted_reason || '',
+      orderItemId,
+    ],
+  );
+}
+
+async function updateOrderAmountsAfterShortage(q, orderId, row) {
+  await q.query(
+    `UPDATE orders
+     SET raw_amount = ?,
+         goods_sale_amount = ?,
+         goods_net_sales_amount = ?,
+         goods_cost_amount = ?,
+         gross_profit_amount = ?,
+         discount_amount = ?,
+         total_discount_amount = ?,
+         total_amount = ?,
+         payable_amount = ?,
+         refunded_amount = ?,
+         net_received_amount = ?,
+         outstanding_amount = ?,
+         net_profit_amount = ?,
+         payment_status = ?,
+         refund_status = ?,
+         amount_snapshot = ?
+     WHERE id = ?`,
+    [
+      row.raw_amount,
+      row.goods_sale_amount,
+      row.goods_net_sales_amount,
+      row.goods_cost_amount,
+      row.gross_profit_amount,
+      row.discount_amount,
+      row.total_discount_amount,
+      row.total_amount,
+      row.payable_amount,
+      row.refunded_amount,
+      row.net_received_amount,
+      row.outstanding_amount,
+      row.net_profit_amount,
+      row.payment_status,
+      row.refund_status || '',
+      row.amount_snapshot ? JSON.stringify(row.amount_snapshot) : null,
+      orderId,
+    ],
+  );
+}
+
+async function insertPaymentEvent(q, row) {
+  await q.query(
+    `INSERT INTO payment_events
+      (id, payment_order_id, order_id, provider, provider_event_id, event_type,
+       verify_status, processing_result, payload_json, error_message)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    [
+      row.id,
+      row.payment_order_id || null,
+      row.order_id || null,
+      row.provider || 'manual',
+      row.provider_event_id || null,
+      row.event_type,
+      row.verify_status || 'success',
+      row.processing_result || 'success',
+      row.payload_json ? JSON.stringify(row.payload_json) : null,
+      row.error_message || '',
+    ],
+  );
+}
+
+async function correctVariantStockToZero(q, variantId, meta = {}) {
+  const [[row]] = await q.query(
+    `SELECT v.id, v.product_id, v.stock, v.title, v.sku_code, p.name AS product_name
+     FROM product_variants v
+     JOIN products p ON p.id = v.product_id
+     WHERE v.id = ?
+     FOR UPDATE`,
+    [variantId],
+  );
+  if (!row) return null;
+  const beforeStock = Number(row.stock || 0);
+  if (beforeStock === 0) return { product_id: row.product_id, before_stock: 0, after_stock: 0 };
+  await q.query('UPDATE product_variants SET stock = 0 WHERE id = ?', [variantId]);
+  await q.query(
+    `UPDATE products p
+     SET p.stock = COALESCE((SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1), 0)
+     WHERE p.id = ?`,
+    [row.product_id],
+  );
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id,
+        product_name_snapshot, variant_name_snapshot, sku_code_snapshot, order_no_snapshot, source_no, remark, created_by_type)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      row.product_id,
+      variantId,
+      'adjust',
+      -beforeStock,
+      beforeStock,
+      0,
+      meta.reason || '订单缺货处理校正库存为 0',
+      meta.refType || 'order_shortage',
+      meta.refId || '',
+      meta.operatorId || null,
+      row.product_name || '',
+      row.title || '',
+      row.sku_code || '',
+      meta.orderNo || '',
+      '',
+      meta.remark || '',
+      'admin',
+    ],
+  );
+  return { product_id: row.product_id, before_stock: beforeStock, after_stock: 0 };
+}
+
 async function updateOrderShipped(orderId, trackingNo, carrier) {
   await db.query(
     `UPDATE orders
@@ -378,10 +624,14 @@ async function selectOrderItemsBatch(orderIds) {
        oi.*,
        COALESCE(NULLIF(oi.product_name, ''), p.name) AS name,
        COALESCE(NULLIF(oi.product_image, ''), p.cover_image) AS cover_image,
-       oi.price AS unit_price
+       oi.price AS unit_price,
+       COALESCE(v.stock, 0) AS current_stock
      FROM order_items oi
      LEFT JOIN products p ON oi.product_id = p.id
-     WHERE oi.order_id IN (${placeholders})`,
+     LEFT JOIN product_variants v ON v.id = oi.variant_id
+     WHERE oi.order_id IN (${placeholders})
+       AND COALESCE(oi.line_status, 'active') = 'active'
+       AND COALESCE(oi.qty, 0) > 0`,
     orderIds,
   );
   return items;
@@ -604,6 +854,15 @@ module.exports = {
   selectOrderById,
   selectOrderStateById,
   selectAdminOrderForUpdate,
+  selectOrderItemsForAdjustment,
+  selectOrderAdjustments,
+  selectOrderAdjustmentItemsByOrder,
+  insertOrderAdjustment,
+  insertOrderAdjustmentItem,
+  updateOrderItemAfterShortage,
+  updateOrderAmountsAfterShortage,
+  insertPaymentEvent,
+  correctVariantStockToZero,
   updateOrderShipped,
   updateOrderShippedTx,
   touchOrderShippedAtIfNull,

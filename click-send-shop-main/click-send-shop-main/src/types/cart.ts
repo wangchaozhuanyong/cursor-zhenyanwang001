@@ -10,6 +10,9 @@ export interface CartItem {
   unit_price?: number;
   subtotal?: number;
   qty: number;
+  line_status?: string;
+  original_qty?: number | null;
+  adjusted_reason?: string;
   review_id?: string | null;
   review_status?: string | null;
   is_reviewed?: boolean;

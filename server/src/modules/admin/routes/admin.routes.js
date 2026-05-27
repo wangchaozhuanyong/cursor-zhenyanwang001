@@ -30,6 +30,7 @@ const orderEventCtrl = require('../controller/adminOrderEvent.controller');
 const adminEventCtrl = require('../controller/adminEvent.controller');
 const checkoutAbandonmentCtrl = require('../controller/adminCheckoutAbandonment.controller');
 const userCtrl = require('../controller/adminUser.controller');
+const userSecurityCtrl = require('../controller/adminUserSecurity.controller');
 const categoryCtrl = require('../controller/adminCategory.controller');
 const couponCtrl = require('../controller/adminCoupon.controller');
 const returnCtrl = require('../controller/adminReturn.controller');
@@ -133,6 +134,16 @@ router.get('/event-center/events', adminAuth, requireAnyPermission(['event.view'
 router.get('/event-center/summary', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.summary);
 router.get('/event-center/boss-metrics', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.bossMetrics);
 router.get('/event-center/rules', adminAuth, requireAnyPermission(['event.rule.manage', 'event.manage']), adminEventCtrl.rules);
+router.patch('/event-center/rules/:eventType', adminAuth, requirePermission('event.rule.manage'), adminEventCtrl.updateRule);
+router.get('/event-center/events/export', adminAuth, requirePermission('event.manage'), adminEventCtrl.exportEvents);
+router.post('/event-center/events/batch/read', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.batchRead);
+router.post('/event-center/events/batch/acknowledge', adminAuth, requirePermission('event.manage'), adminEventCtrl.batchAcknowledge);
+router.post('/event-center/events/batch/ignore', adminAuth, requirePermission('event.manage'), adminEventCtrl.batchIgnore);
+router.post('/event-center/events/batch/resolve', adminAuth, requirePermission('event.manage'), adminEventCtrl.batchResolve);
+router.post('/event-center/events/batch/complete', adminAuth, requirePermission('event.manage'), adminEventCtrl.batchResolve);
+router.post('/event-center/events/batch/assign', adminAuth, requirePermission('event.manage'), adminEventCtrl.batchAssign);
+router.get('/event-center/events/:id', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.detail);
+router.get('/event-center/events/:id/actions', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.actions);
 router.put('/event-center/events/:id/read', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.markRead);
 router.put('/event-center/events/:id/hide', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.hide);
 router.put('/event-center/events/:id/sound-played', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.markSoundPlayed);
@@ -141,12 +152,29 @@ router.put('/event-center/events/:id/acknowledge', adminAuth, requirePermission(
 router.put('/event-center/events/:id/in-progress', adminAuth, requirePermission('event.manage'), adminEventCtrl.startProgress);
 router.put('/event-center/events/:id/resolve', adminAuth, requirePermission('event.manage'), adminEventCtrl.resolve);
 router.put('/event-center/events/:id/ignore', adminAuth, requirePermission('event.manage'), adminEventCtrl.ignore);
+router.put('/event-center/events/:id/assign', adminAuth, requirePermission('event.manage'), adminEventCtrl.assign);
 router.get('/dashboard/stats', adminAuth, requirePermission('dashboard.view'), dashboardCtrl.getStats);
+
+/* ---- Client user security ---- */
+router.get('/user-security/overview', adminAuth, requireAnyPermission(['user.view', 'event.view', 'event.manage']), userSecurityCtrl.overview);
+router.get('/user-security/login-attempts', adminAuth, requireAnyPermission(['user.view', 'event.view', 'event.manage']), userSecurityCtrl.loginAttempts);
+router.get('/user-security/events', adminAuth, requireAnyPermission(['user.view', 'event.view', 'event.manage']), userSecurityCtrl.events);
+router.get('/user-security/risk-ips', adminAuth, requireAnyPermission(['user.view', 'event.view', 'event.manage']), userSecurityCtrl.riskIps);
+router.post('/user-security/risk-ips/block', adminAuth, requirePermission('event.manage'), userSecurityCtrl.blockIp);
+router.post('/user-security/risk-ips/unblock', adminAuth, requirePermission('event.manage'), userSecurityCtrl.unblockIp);
+router.get('/user-security/risk-devices', adminAuth, requireAnyPermission(['user.view', 'event.view', 'event.manage']), userSecurityCtrl.riskDevices);
+router.post('/user-security/risk-devices/block', adminAuth, requirePermission('event.manage'), userSecurityCtrl.blockDevice);
+router.post('/user-security/risk-devices/unblock', adminAuth, requirePermission('event.manage'), userSecurityCtrl.unblockDevice);
+router.get('/user-security/users/:id/sessions', adminAuth, requireAnyPermission(['user.view', 'event.view', 'event.manage']), userSecurityCtrl.userSessions);
+router.post('/user-security/users/:id/revoke-sessions', adminAuth, requirePermission('event.manage'), userSecurityCtrl.revokeUserSessions);
+router.post('/user-security/users/:id/unprotect', adminAuth, requirePermission('event.manage'), userSecurityCtrl.unprotectUser);
 
 /* ---- Data safety / Backup & Restore ---- */
 router.get('/backups/overview', adminAuth, requirePermission('backup.view'), backupCtrl.overview);
 router.get('/backups/files', adminAuth, requirePermission('backup.view'), backupCtrl.listFiles);
 router.post('/backups/full', adminAuth, requirePermission('backup.create'), backupCtrl.createFullBackup);
+router.post('/backups/config', adminAuth, requirePermission('backup.create'), backupCtrl.createConfigBackup);
+router.post('/backups/uploads', adminAuth, requirePermission('backup.create'), backupCtrl.createUploadsBackup);
 router.get('/backups/alerts', adminAuth, requirePermission('backup.view'), backupCtrl.listAlerts);
 router.get('/restore/jobs', adminAuth, requireAnyPermission(['backup.view', 'backup.restore.request']), backupCtrl.listRestoreJobs);
 router.post('/restore/jobs', adminAuth, requirePermission('backup.restore.request'), backupCtrl.createRestoreJob);
@@ -319,6 +347,26 @@ router.get('/checkout-abandonments', adminAuth, requirePermission('order.view'),
 router.get('/orders', adminAuth, requirePermission('order.view'), orderCtrl.list);
 router.get('/orders/pending-shipments', adminAuth, requirePermission('order.ship'), orderCtrl.listPendingShipments);
 router.get('/orders/:id', adminAuth, requirePermission('order.view'), orderCtrl.getById);
+router.post(
+  '/orders/:id/shortage-adjustment/preview',
+  adminAuth,
+  requirePermission('order.update'),
+  validate({
+    params: adminOrderSchemas.adminOrderIdParamsSchema,
+    body: adminOrderSchemas.adminShortageAdjustmentBodySchema,
+  }),
+  orderCtrl.previewShortageAdjustment,
+);
+router.post(
+  '/orders/:id/shortage-adjustment/apply',
+  adminAuth,
+  requirePermission('order.update'),
+  validate({
+    params: adminOrderSchemas.adminOrderIdParamsSchema,
+    body: adminOrderSchemas.adminShortageAdjustmentBodySchema,
+  }),
+  orderCtrl.applyShortageAdjustment,
+);
 router.put(
   '/orders/:id/status',
   adminAuth,

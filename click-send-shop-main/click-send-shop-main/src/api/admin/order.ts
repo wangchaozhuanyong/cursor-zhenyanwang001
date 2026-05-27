@@ -1,5 +1,12 @@
 import { get, post, put } from "@/api/request";
-import type { CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
+import type {
+  CheckoutAbandonment,
+  CheckoutAbandonmentStatus,
+  Order,
+  OrderListParams,
+  ShortageAdjustmentPreview,
+  ShortageAdjustmentRequest,
+} from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 
 export type AdminOrderVoiceEventType = "order_created" | "payment_success";
@@ -45,6 +52,17 @@ export function shipOrder(
 
 export function refreshOrderLogistics(id: string) {
   return post<Pick<Order, "logistics_provider" | "logistics_timeline">>(`/admin/orders/${id}/logistics/refresh`);
+}
+
+export function previewShortageAdjustment(id: string, payload: ShortageAdjustmentRequest) {
+  return post<ShortageAdjustmentPreview>(`/admin/orders/${id}/shortage-adjustment/preview`, payload);
+}
+
+export function applyShortageAdjustment(id: string, payload: ShortageAdjustmentRequest) {
+  return post<{ adjustment_id: string; order_id: string; refund_amount: number }>(
+    `/admin/orders/${id}/shortage-adjustment/apply`,
+    payload,
+  );
 }
 
 export function getRecentOrderEvents(since?: string) {

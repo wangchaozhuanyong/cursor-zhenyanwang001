@@ -11,6 +11,7 @@ const { maskPhone } = require('../../../utils/privacyMask');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const repo = require('../repository/adminOrder.repository');
 const adminEventBus = require('./adminEventBus.service');
+const adminEventService = require('./adminEvent.service');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../../constants/status');
 const { resolveOrderPayableAmount, resolveOrderPaidAmount } = require('../../../utils/orderAmountResolve');
@@ -63,6 +64,21 @@ function requireOrderApi(name) {
   return fn;
 }
 
+function money(value) {
+  const n = Number(value || 0);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+}
+
+function parseJson(value, fallback = null) {
+  if (!value) return fallback;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
 function normalizeOrderIdsInput(value) {
   const rawItems = Array.isArray(value) ? value : String(value || '').split(',');
   const orderIds = rawItems
@@ -70,6 +86,14 @@ function normalizeOrderIdsInput(value) {
     .map((item) => item.trim())
     .filter(Boolean);
   return Array.from(new Set(orderIds));
+}
+
+function resolveOrderRealtimeType(status, prevPayment, nextPayment) {
+  if (nextPayment === PAYMENT_STATUS.PAID && prevPayment !== PAYMENT_STATUS.PAID) return 'order.paid';
+  if (status === ORDER_STATUS.CANCELLED) return 'order.cancelled';
+  if (status === ORDER_STATUS.COMPLETED) return 'order.completed';
+  if (status === ORDER_STATUS.REFUNDED) return 'order.refunded';
+  return 'order.adjusted';
 }
 
 function buildAdminOrderListWhere(query) {
@@ -423,8 +447,479 @@ async function getOrderById(orderId) {
     }),
   );
   const data = formatOrder(order, items);
+  const adjustments = await repo.selectOrderAdjustments(repo.getPool(), order.id);
+  const adjustmentItems = await repo.selectOrderAdjustmentItemsByOrder(repo.getPool(), order.id);
+  const itemsByAdjustmentId = {};
+  for (const item of adjustmentItems) {
+    if (!itemsByAdjustmentId[item.adjustment_id]) itemsByAdjustmentId[item.adjustment_id] = [];
+    itemsByAdjustmentId[item.adjustment_id].push({
+      ...item,
+      before_qty: Number(item.before_qty || 0),
+      after_qty: Number(item.after_qty || 0),
+      removed_qty: Number(item.removed_qty || 0),
+      unit_price: Number(item.unit_price || 0),
+      line_refund_amount: Number(item.line_refund_amount || 0),
+    });
+  }
+  data.adjustments = adjustments.map((row) => ({
+    ...row,
+    customer_confirmed: !!row.customer_confirmed,
+    before_amount: parseJson(row.before_amount, {}),
+    after_amount: parseJson(row.after_amount, {}),
+    refund_amount: Number(row.refund_amount || 0),
+    items: itemsByAdjustmentId[row.id] || [],
+  }));
+  data.has_shortage_adjustment = data.adjustments.some((row) => row.adjustment_type === 'stock_shortage');
+  data.shortage_notice = data.has_shortage_adjustment ? '部分商品因缺货已移除' : '';
   await requireLogisticsApi('attachTracking')(data);
   return { data };
+}
+
+function buildAmountSnapshot(order) {
+  return {
+    raw_amount: money(order.raw_amount),
+    goods_sale_amount: money(order.goods_sale_amount ?? order.raw_amount),
+    goods_net_sales_amount: money(order.goods_net_sales_amount),
+    goods_cost_amount: money(order.goods_cost_amount),
+    gross_profit_amount: money(order.gross_profit_amount),
+    shipping_fee: money(order.shipping_fee),
+    total_amount: money(order.total_amount),
+    payable_amount: money(order.payable_amount ?? order.total_amount),
+    paid_amount: money(order.paid_amount),
+    refunded_amount: money(order.refunded_amount),
+    net_received_amount: money(order.net_received_amount),
+    outstanding_amount: money(order.outstanding_amount),
+    net_profit_amount: money(order.net_profit_amount),
+    payment_status: order.payment_status || PAYMENT_STATUS.PENDING,
+    refund_status: order.refund_status || '',
+  };
+}
+
+function assertShortageOrderAdjustable(order) {
+  if (!order) throw new NotFoundError('订单不存在');
+  if ([ORDER_STATUS.SHIPPED, ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELLED, ORDER_STATUS.REFUNDED].includes(order.status)) {
+    throw new ValidationError('当前订单状态不允许修改商品');
+  }
+  if (order.shipped_at) throw new ValidationError('订单已发货，不允许修改商品');
+  const paymentStatus = order.payment_status || PAYMENT_STATUS.PENDING;
+  const pendingAllowed = order.status === ORDER_STATUS.PENDING && paymentStatus === PAYMENT_STATUS.PENDING;
+  const paidAllowed = order.status === ORDER_STATUS.PAID
+    && [PAYMENT_STATUS.PAID, PAYMENT_STATUS.PARTIALLY_REFUNDED].includes(paymentStatus);
+  if (!pendingAllowed && !paidAllowed) {
+    throw new ValidationError('仅允许未付款订单、已付款未发货订单或部分退款未发货订单进行缺货处理');
+  }
+}
+
+function normalizeAdjustmentPayload(body = {}, requireConfirmed = false) {
+  const items = Array.isArray(body.items) ? body.items : [];
+  if (!items.length) throw new ValidationError('请至少选择一个缺货商品');
+  const seen = new Set();
+  const normalizedItems = items.map((item) => {
+    const orderItemId = String(item.order_item_id || '').trim();
+    if (!orderItemId) throw new ValidationError('order_item_id 不能为空');
+    if (seen.has(orderItemId)) throw new ValidationError('同一个订单商品不能重复调整');
+    seen.add(orderItemId);
+    const afterQty = Number(item.after_qty);
+    if (!Number.isInteger(afterQty) || afterQty < 0) throw new ValidationError('处理后数量必须是非负整数');
+    return {
+      order_item_id: orderItemId,
+      after_qty: afterQty,
+      shortage_reason: String(item.shortage_reason || '').trim().slice(0, 255),
+      correct_stock_zero: item.correct_stock_zero === true,
+    };
+  });
+  const reason = String(body.reason || '').trim();
+  if (!reason) throw new ValidationError('调整原因不能为空');
+  const customerConfirmed = body.customer_confirmed === true;
+  if (requireConfirmed && !customerConfirmed) throw new ValidationError('正式调整前必须确认已与客户沟通');
+  const stockHandling = String(body.stock_handling || 'no_restore').trim() || 'no_restore';
+  if (!['no_restore', 'correct_zero'].includes(stockHandling)) {
+    throw new ValidationError('stock_handling 仅支持 no_restore 或 correct_zero');
+  }
+  return {
+    reason,
+    customer_confirmed: customerConfirmed,
+    customer_confirm_method: String(body.customer_confirm_method || '').trim().slice(0, 64),
+    customer_confirm_note: String(body.customer_confirm_note || '').trim().slice(0, 500),
+    stock_handling: stockHandling,
+    items: normalizedItems,
+  };
+}
+
+function buildShortageAdjustmentPreview(order, orderItems, payload) {
+  assertShortageOrderAdjustable(order);
+  const activeItems = orderItems.filter((item) =>
+    (item.line_status || 'active') === 'active' && Number(item.qty || 0) > 0);
+  const itemById = new Map(activeItems.map((item) => [String(item.id), item]));
+  const requestById = new Map(payload.items.map((item) => [item.order_item_id, item]));
+  let afterTotalQty = 0;
+  let refundDelta = 0;
+  let rawAmount = 0;
+  let goodsNetSalesAmount = 0;
+  let goodsCostAmount = 0;
+  let grossProfitAmount = 0;
+  let goodsDiscountAmount = 0;
+  const previewItems = [];
+  const afterLines = [];
+
+  for (const requestItem of payload.items) {
+    const item = itemById.get(requestItem.order_item_id);
+    if (!item) throw new ValidationError(`订单商品不存在或已被调整：${requestItem.order_item_id}`);
+    const beforeQty = Number(item.qty || 0);
+    if (requestItem.after_qty >= beforeQty) throw new ValidationError('缺货处理只允许删除或减少商品数量');
+  }
+
+  for (const item of activeItems) {
+    const requestItem = requestById.get(String(item.id));
+    const beforeQty = Number(item.qty || 0);
+    const afterQty = requestItem ? requestItem.after_qty : beforeQty;
+    const ratio = beforeQty > 0 ? afterQty / beforeQty : 0;
+    const unitPrice = money(item.price ?? item.unit_price);
+    const beforeSubtotal = money(item.subtotal != null ? item.subtotal : unitPrice * beforeQty);
+    const beforeCost = money(item.cost_amount);
+    const beforeNetSales = money(item.net_sales_amount || beforeSubtotal);
+    const beforeDiscount = money(item.discount_allocated || Math.max(0, beforeSubtotal - beforeNetSales));
+    const beforeGrossProfit = money(item.gross_profit_amount || (beforeNetSales - beforeCost));
+    const afterSubtotal = money(unitPrice * afterQty);
+    const afterDiscount = money(beforeDiscount * ratio);
+    const afterCost = money(beforeCost * ratio);
+    const afterNetSales = money(Math.max(0, afterSubtotal - afterDiscount));
+    const afterGrossProfit = money(beforeGrossProfit * ratio);
+    const lineRefundAmount = money(Math.max(0, beforeNetSales - afterNetSales));
+    afterTotalQty += afterQty;
+    refundDelta = money(refundDelta + lineRefundAmount);
+    rawAmount = money(rawAmount + afterSubtotal);
+    goodsNetSalesAmount = money(goodsNetSalesAmount + afterNetSales);
+    goodsCostAmount = money(goodsCostAmount + afterCost);
+    grossProfitAmount = money(grossProfitAmount + afterGrossProfit);
+    goodsDiscountAmount = money(goodsDiscountAmount + afterDiscount);
+    afterLines.push({
+      id: item.id,
+      qty: afterQty,
+      line_status: afterQty === 0 ? 'shortage_removed' : 'active',
+      original_qty: item.original_qty || beforeQty,
+      subtotal: afterSubtotal,
+      discount_allocated: afterDiscount,
+      cost_amount: afterCost,
+      net_sales_amount: afterNetSales,
+      gross_profit_amount: afterGrossProfit,
+    });
+    if (requestItem) {
+      previewItems.push({
+        order_item_id: item.id,
+        product_id: item.product_id,
+        variant_id: item.variant_id || '',
+        sku_code: item.sku_code || '',
+        product_name_snapshot: item.name || item.product_name_snapshot || item.product_name || '',
+        variant_name_snapshot: item.variant_name || '',
+        before_qty: beforeQty,
+        after_qty: afterQty,
+        removed_qty: beforeQty - afterQty,
+        unit_price: unitPrice,
+        before_subtotal: beforeSubtotal,
+        after_subtotal: afterSubtotal,
+        line_refund_amount: lineRefundAmount,
+        shortage_reason: requestItem.shortage_reason,
+        current_stock: Number(item.current_stock || 0),
+        correct_stock_zero: requestItem.correct_stock_zero || payload.stock_handling === 'correct_zero',
+      });
+    }
+  }
+
+  if (afterTotalQty <= 0) {
+    throw new ValidationError('不允许把订单所有商品都删除，请走整单取消或全额退款流程');
+  }
+
+  const beforeAmount = buildAmountSnapshot(order);
+  const payableBefore = money(order.payable_amount ?? order.total_amount);
+  const totalBefore = money(order.total_amount);
+  const totalAmount = money(Math.max(0, totalBefore - refundDelta));
+  const payableAmount = money(Math.max(0, payableBefore - refundDelta));
+  const paidAmount = money(order.paid_amount || 0);
+  const prevRefunded = money(order.refunded_amount || 0);
+  const paymentStatus = order.payment_status || PAYMENT_STATUS.PENDING;
+  let refundAmount = 0;
+  let refundedAmount = prevRefunded;
+  let netReceivedAmount = money(order.net_received_amount || 0);
+  let outstandingAmount = money(Math.max(0, payableAmount - paidAmount));
+  let nextPaymentStatus = paymentStatus;
+  let refundStatus = order.refund_status || '';
+
+  if (paymentStatus === PAYMENT_STATUS.PENDING) {
+    outstandingAmount = payableAmount;
+    netReceivedAmount = 0;
+  } else {
+    refundAmount = refundDelta;
+    const refundable = money(Math.max(0, paidAmount - prevRefunded));
+    if (refundAmount > refundable + 0.01) {
+      throw new ValidationError('退款金额不能超过可退金额');
+    }
+    refundedAmount = money(prevRefunded + refundAmount);
+    netReceivedAmount = money(Math.max(0, paidAmount - refundedAmount));
+    outstandingAmount = 0;
+    nextPaymentStatus = refundAmount > 0 ? PAYMENT_STATUS.PARTIALLY_REFUNDED : paymentStatus;
+    refundStatus = refundAmount > 0 ? 'partially_refunded' : refundStatus;
+  }
+
+  const shippingFee = money(order.shipping_fee);
+  const shippingDiscountAmount = money(order.shipping_discount_amount);
+  const totalDiscountAmount = money(goodsDiscountAmount + shippingDiscountAmount);
+  const shippingCostAmount = money(order.shipping_cost_amount);
+  const paymentFeeAmount = money(order.payment_fee_amount);
+  const netProfitAmount = money(grossProfitAmount + shippingFee - shippingCostAmount - paymentFeeAmount);
+  const afterAmount = {
+    ...beforeAmount,
+    raw_amount: rawAmount,
+    goods_sale_amount: rawAmount,
+    goods_net_sales_amount: goodsNetSalesAmount,
+    goods_cost_amount: goodsCostAmount,
+    gross_profit_amount: grossProfitAmount,
+    discount_amount: goodsDiscountAmount,
+    total_discount_amount: totalDiscountAmount,
+    total_amount: totalAmount,
+    payable_amount: payableAmount,
+    refunded_amount: refundedAmount,
+    net_received_amount: netReceivedAmount,
+    outstanding_amount: outstandingAmount,
+    net_profit_amount: netProfitAmount,
+    payment_status: nextPaymentStatus,
+    refund_status: refundStatus,
+    calculation_version: 'order_shortage_adjustment_v1',
+  };
+
+  return {
+    order_id: order.id,
+    order_no: order.order_no,
+    before_amount: beforeAmount,
+    after_amount: afterAmount,
+    refund_amount: refundAmount,
+    refundable_amount: money(Math.max(0, paidAmount - prevRefunded)),
+    stock_handling: payload.stock_handling,
+    items: previewItems,
+    after_lines: afterLines,
+    notice: refundAmount > 0
+      ? `订单已调整，缺货商品退款金额为 RM ${refundAmount.toFixed(2)}，剩余商品继续发货。`
+      : '订单已调整，请按最新金额付款。',
+  };
+}
+
+async function previewShortageAdjustment(orderId, body) {
+  const payload = normalizeAdjustmentPayload(body, false);
+  const [order, items] = await Promise.all([
+    repo.selectOrderById(null, orderId),
+    repo.selectOrderItemsForAdjustment(repo.getPool(), orderId),
+  ]);
+  const preview = buildShortageAdjustmentPreview(order, items, payload);
+  return { data: preview };
+}
+
+async function applyShortageAdjustment(orderId, body, adminUserId, req) {
+  const payload = normalizeAdjustmentPayload(body, true);
+  let beforeSnap = null;
+  let afterSnap = null;
+  let adjustmentId = null;
+  let orderNo = '';
+  let refundAmount = 0;
+  let userId = '';
+  const conn = await repo.getConnection();
+  try {
+    await conn.beginTransaction();
+    const order = await repo.selectAdminOrderForUpdate(conn, orderId);
+    const items = await repo.selectOrderItemsForAdjustment(conn, orderId);
+    const preview = buildShortageAdjustmentPreview(order, items, payload);
+    beforeSnap = preview.before_amount;
+    afterSnap = preview.after_amount;
+    refundAmount = preview.refund_amount;
+    orderNo = order.order_no;
+    userId = order.user_id;
+    adjustmentId = generateId();
+    const adjustmentNo = `ADJ${Date.now()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+
+    await repo.insertOrderAdjustment(conn, {
+      id: adjustmentId,
+      order_id: order.id,
+      order_no: order.order_no,
+      adjustment_no: adjustmentNo,
+      reason: payload.reason,
+      customer_confirmed: payload.customer_confirmed,
+      customer_confirm_method: payload.customer_confirm_method,
+      customer_confirm_note: payload.customer_confirm_note,
+      before_amount: preview.before_amount,
+      after_amount: preview.after_amount,
+      refund_amount: refundAmount,
+      stock_handling: payload.stock_handling,
+      status: 'applied',
+      operator_id: adminUserId,
+    });
+
+    for (const item of preview.items) {
+      await repo.insertOrderAdjustmentItem(conn, {
+        id: generateId(),
+        adjustment_id: adjustmentId,
+        order_id: order.id,
+        order_item_id: item.order_item_id,
+        product_id: item.product_id,
+        variant_id: item.variant_id,
+        sku_code: item.sku_code,
+        product_name_snapshot: item.product_name_snapshot,
+        variant_name_snapshot: item.variant_name_snapshot,
+        before_qty: item.before_qty,
+        after_qty: item.after_qty,
+        removed_qty: item.removed_qty,
+        unit_price: item.unit_price,
+        line_refund_amount: item.line_refund_amount,
+        shortage_reason: item.shortage_reason,
+      });
+    }
+
+    const lineById = new Map(preview.after_lines.map((line) => [String(line.id), line]));
+    for (const [lineId, line] of lineById) {
+      await repo.updateOrderItemAfterShortage(conn, lineId, {
+        ...line,
+        adjusted_by: adminUserId,
+        adjusted_reason: payload.reason,
+      });
+    }
+
+    await repo.updateOrderAmountsAfterShortage(conn, order.id, {
+      raw_amount: preview.after_amount.raw_amount,
+      goods_sale_amount: preview.after_amount.goods_sale_amount,
+      goods_net_sales_amount: preview.after_amount.goods_net_sales_amount,
+      goods_cost_amount: preview.after_amount.goods_cost_amount,
+      gross_profit_amount: preview.after_amount.gross_profit_amount,
+      discount_amount: preview.after_amount.discount_amount,
+      total_discount_amount: preview.after_amount.total_discount_amount,
+      total_amount: preview.after_amount.total_amount,
+      payable_amount: preview.after_amount.payable_amount,
+      refunded_amount: preview.after_amount.refunded_amount,
+      net_received_amount: preview.after_amount.net_received_amount,
+      outstanding_amount: preview.after_amount.outstanding_amount,
+      net_profit_amount: preview.after_amount.net_profit_amount,
+      payment_status: preview.after_amount.payment_status,
+      refund_status: preview.after_amount.refund_status,
+      amount_snapshot: preview.after_amount,
+    });
+
+    if (refundAmount > 0) {
+      await repo.insertPaymentEvent(conn, {
+        id: generateId(),
+        order_id: order.id,
+        provider: 'manual',
+        provider_event_id: `shortage:${adjustmentId}`,
+        event_type: 'manual_refund_shortage',
+        payload_json: {
+          adjustment_id: adjustmentId,
+          adjustment_no: adjustmentNo,
+          order_no: order.order_no,
+          refund_amount: refundAmount,
+          reason: payload.reason,
+        },
+      });
+    }
+
+    await repo.insertOrderNotification(conn, {
+      id: generateId(),
+      userId: order.user_id,
+      title: refundAmount > 0 ? '订单已调整并安排部分退款' : '订单已调整',
+      content: refundAmount > 0
+        ? `订单 ${order.order_no} 已调整，缺货商品退款金额为 RM ${refundAmount.toFixed(2)}，剩余商品继续发货。`
+        : `订单 ${order.order_no} 已调整，请按最新金额付款。`,
+    });
+
+    for (const item of preview.items) {
+      if ((item.correct_stock_zero || payload.stock_handling === 'correct_zero') && item.variant_id) {
+        await repo.correctVariantStockToZero(conn, item.variant_id, {
+          refId: order.id,
+          orderNo: order.order_no,
+          operatorId: adminUserId,
+          reason: `订单 ${order.order_no} 缺货处理校正 SKU 库存为 0`,
+          remark: item.shortage_reason,
+        });
+      }
+    }
+
+    await conn.commit();
+
+    await writeAuditLog({
+      req,
+      operatorId: adminUserId,
+      actionType: 'order.shortage_adjustment',
+      objectType: 'order',
+      objectId: order.id,
+      summary: `订单缺货调整 ${order.order_no}`,
+      before: beforeSnap,
+      after: { ...afterSnap, adjustment_id: adjustmentId, refund_amount: refundAmount },
+      result: 'success',
+    });
+    adminEventBus.publishAdminEvent({
+      type: 'order.shortage_adjusted',
+      objectId: order.id,
+      summary: `订单 ${order.order_no} 已完成缺货调整`,
+      eventType: 'order.shortage_adjusted',
+      category: 'order',
+      severity: 'P2',
+      status: 'open',
+    });
+    try {
+      await adminEventService.emitEvent({
+        eventType: 'order.stock_shortage',
+        category: 'stock',
+        severity: 'P1',
+        status: 'open',
+        title: '库存异常 / 订单缺货',
+        message: `订单 ${order.order_no} 发生缺货，系统库存与仓库实际库存不一致，请盘点相关 SKU。`,
+        entityType: 'order',
+        entityId: order.id,
+        fingerprint: { eventType: 'order.stock_shortage', entityType: 'order', entityId: order.id, adjustmentId },
+        payload: {
+          orderNo: order.order_no,
+          adjustmentId,
+          items: preview.items.map((item) => ({
+            skuCode: item.sku_code,
+            productName: item.product_name_snapshot,
+            beforeQty: item.before_qty,
+            afterQty: item.after_qty,
+            removedQty: item.removed_qty,
+          })),
+        },
+        impactAmount: refundAmount,
+        source: 'order_shortage_adjustment',
+      }, { operatorId: adminUserId, operatorType: 'admin', source: 'order_shortage_adjustment' });
+    } catch (e) {
+      console.error('[adminOrder] emit shortage event failed:', e?.message || e);
+    }
+
+    if (refundAmount > 0) {
+      try {
+        await requireMyinvoisApi('enqueueRefundCreditNoteIfEnabled')(
+          { orderId: order.id, refundAmount },
+          'order_shortage_adjustment',
+        );
+      } catch (e) {
+        console.error('[MyInvois] enqueue credit note after shortage adjustment failed:', e?.message || e);
+      }
+    }
+    return { data: { adjustment_id: adjustmentId, order_id: orderId, refund_amount: refundAmount, user_id: userId }, message: '订单缺货调整已生成' };
+  } catch (err) {
+    try {
+      await conn.rollback();
+    } catch { /* ignore */ }
+    await writeAuditLog({
+      req,
+      operatorId: adminUserId,
+      actionType: 'order.shortage_adjustment',
+      objectType: 'order',
+      objectId: orderId,
+      summary: orderNo ? `订单缺货调整失败 ${orderNo}` : '订单缺货调整失败',
+      before: beforeSnap || undefined,
+      after: afterSnap || undefined,
+      result: 'failure',
+      errorMessage: err.message || String(err),
+    });
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 /**
@@ -644,7 +1139,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       result: 'success',
     });
     adminEventBus.publishAdminEvent({
-      type: 'order.updated',
+      type: resolveOrderRealtimeType(status, prevPay, newPayment),
       objectId: orderId,
       summary: `订单状态 ${beforeSnap.status} -> ${status}`,
     });
@@ -695,7 +1190,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
     if (!requireOrderApi('canShip')(order)) {
         throw new BusinessError(
           400,
-          `当前履约/支付状态无法发货（需履约“已付款”且支付“已支付”），当前：履约=${order.status} 支付=${order.payment_status || PAYMENT_STATUS.PENDING}`,
+          `当前履约/支付状态无法发货（需履约“已付款”且支付“已支付/部分退款”），当前：履约=${order.status} 支付=${order.payment_status || PAYMENT_STATUS.PENDING}`,
         );
     }
 
@@ -954,6 +1449,8 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
 module.exports = {
   listOrders,
   getOrderById,
+  previewShortageAdjustment,
+  applyShortageAdjustment,
   updateOrderStatus,
   shipOrder,
   exportOrdersCsv,

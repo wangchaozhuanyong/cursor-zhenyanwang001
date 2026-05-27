@@ -4,6 +4,7 @@ const {
   adminUpdateOrderStatusBodySchema,
   adminShipOrderBodySchema,
   adminBatchShipBodySchema,
+  adminShortageAdjustmentBodySchema,
 } = require('../src/modules/admin/schemas/adminOrder.schemas');
 
 describe('admin order schemas', () => {
@@ -40,5 +41,25 @@ describe('admin order schemas', () => {
       tracking_map: { 'order-1': 'TN001' },
     });
     assert.equal(result.success, true);
+  });
+
+  it('accepts shortage adjustment payload', () => {
+    const result = adminShortageAdjustmentBodySchema.safeParse({
+      reason: '仓库实际无货，已与客户沟通确认',
+      customer_confirmed: true,
+      customer_confirm_method: 'whatsapp',
+      customer_confirm_note: '客户同意删除缺货商品并继续发货',
+      stock_handling: 'no_restore',
+      items: [{ order_item_id: 'item-1', after_qty: 0, shortage_reason: '仓库实际无货' }],
+    });
+    assert.equal(result.success, true);
+  });
+
+  it('rejects shortage adjustment without items', () => {
+    const result = adminShortageAdjustmentBodySchema.safeParse({
+      reason: '仓库实际无货',
+      items: [],
+    });
+    assert.equal(result.success, false);
   });
 });

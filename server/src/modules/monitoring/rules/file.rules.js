@@ -26,6 +26,15 @@ function extractPaths(value) {
   return out;
 }
 
+function extractHtmlImagePaths(value) {
+  const text = String(value || '');
+  const out = [];
+  for (const match of text.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) {
+    out.push(match[1]);
+  }
+  return out;
+}
+
 async function storagePathExists(urlPath) {
   if (!urlPath || /^https?:\/\//i.test(urlPath) || urlPath.startsWith('data:')) return true;
   if (isS3StorageEnabled()) {
@@ -63,25 +72,60 @@ async function objectPathExists(urlPath) {
 
 async function fileObjectMissing() {
   const rows = [];
-  const { products, variants, banners } = await repo.selectFileReferenceRows();
-  for (const product of products) {
-    const paths = [...extractPaths(product.cover_image), ...extractPaths(product.images)];
+  let checkedCount = 0;
+  const refs = await repo.selectFileReferenceRows();
+  async function checkRef(entityType, entityId, title, paths, extra = {}) {
     for (const filePath of paths) {
-      if (!(await objectPathExists(filePath))) rows.push({ entityType: 'product', entityId: product.id, title: product.name, filePath });
+      checkedCount += 1;
+      if (!(await objectPathExists(filePath))) rows.push({ entityType, entityId, title, filePath, ...extra });
     }
   }
-  for (const variant of variants) {
-    for (const filePath of extractPaths(variant.image_url)) {
-      if (!(await objectPathExists(filePath))) rows.push({ entityType: 'product_variant', entityId: variant.id, title: variant.title, filePath, productId: variant.product_id });
-    }
+  for (const product of refs.products || []) {
+    await checkRef('product', product.id, product.name, [...extractPaths(product.cover_image), ...extractPaths(product.images)]);
   }
-  for (const banner of banners) {
-    for (const filePath of extractPaths(banner.image)) {
-      if (!(await objectPathExists(filePath))) rows.push({ entityType: 'banner', entityId: banner.id, title: banner.title, filePath });
-    }
+  for (const variant of refs.variants || []) {
+    await checkRef('product_variant', variant.id, variant.title, extractPaths(variant.image_url), { productId: variant.product_id });
+  }
+  for (const banner of refs.banners || []) {
+    await checkRef('banner', banner.id, banner.title, extractPaths(banner.image));
+  }
+  for (const user of refs.users || []) {
+    await checkRef('user', user.id, user.nickname || user.phone || user.id, extractPaths(user.avatar));
+  }
+  for (const category of refs.categories || []) {
+    await checkRef('category', category.id, category.name || category.id, extractPaths(category.icon_url));
+  }
+  for (const setting of refs.siteSettings || []) {
+    if (!['logoUrl', 'faviconUrl', 'ogImage'].includes(String(setting.setting_key || ''))) continue;
+    await checkRef('site_setting', setting.setting_key, setting.setting_key, extractPaths(setting.value));
+  }
+  for (const item of refs.homeNav || []) {
+    await checkRef('home_nav', item.id, item.title || item.id, extractPaths(item.icon_url));
+  }
+  for (const activity of refs.marketingActivities || []) {
+    await checkRef('marketing_activity', activity.id, activity.title || activity.id, extractPaths(activity.cover_image));
+  }
+  for (const gift of refs.pointsGifts || []) {
+    await checkRef('points_gift', gift.id, gift.name || gift.id, extractPaths(gift.image));
+  }
+  for (const page of refs.contentPages || []) {
+    await checkRef('content_page', page.id, page.title || page.id, [...extractPaths(page.content), ...extractHtmlImagePaths(page.content)]);
+  }
+  for (const item of refs.orderItems || []) {
+    await checkRef('order_item', item.id, item.order_id || item.id, [...extractPaths(item.product_image_snapshot), ...extractPaths(item.variant_image_snapshot)]);
+  }
+  for (const task of refs.exportTasks || []) {
+    await checkRef('export_task', task.id, task.id, extractPaths(task.file_path));
+  }
+  for (const notification of refs.notifications || []) {
+    await checkRef('notification', notification.id, notification.title || notification.id, [
+      ...extractPaths(notification.image_url),
+      ...extractPaths(notification.attachment_url),
+      ...extractPaths(notification.attachments),
+    ]);
   }
   return {
-    checkedCount: rows.length,
+    checkedCount,
     anomalies: rows.map((row) => ({
       ruleCode: 'FILE_OBJECT_MISSING',
       module: 'file',

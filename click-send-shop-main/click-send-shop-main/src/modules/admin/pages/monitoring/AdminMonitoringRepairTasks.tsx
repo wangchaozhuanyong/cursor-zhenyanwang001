@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { executeRepairTask, getRepairTasks, type MonitoringRepairTask } from "@/services/admin/monitoringService";
+import { approveRepairTask, cancelRepairTask, executeRepairTask, getRepairTasks, rejectRepairTask, type MonitoringRepairTask } from "@/services/admin/monitoringService";
 import MonitoringSubnav from "./MonitoringSubnav";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
@@ -23,7 +23,8 @@ const executableRepairTypes = new Set([
 ]);
 
 function canExecuteTask(task: MonitoringRepairTask) {
-  return ["pending", "approved"].includes(task.repair_status)
+  return task.repair_status === "approved"
+    && task.approval_status === "approved"
     && executableRepairTypes.has(task.repair_type);
 }
 
@@ -31,7 +32,8 @@ function executeButtonLabel(task: MonitoringRepairTask, executing: boolean) {
   if (executing) return "执行中...";
   if (task.repair_status === "executed") return "已执行";
   if (!executableRepairTypes.has(task.repair_type)) return "需人工处理";
-  if (!["pending", "approved"].includes(task.repair_status)) return "不可执行";
+  if (task.approval_status !== "approved") return "待审批";
+  if (task.repair_status !== "approved") return "不可执行";
   return "执行";
 }
 
@@ -80,6 +82,19 @@ export default function AdminMonitoringRepairTasks() {
     }
   }
 
+  async function handleApproval(taskId: number, action: "approve" | "reject" | "cancel") {
+    setActionError(null);
+    const remark = window.prompt(action === "approve" ? "请输入审批备注" : "请输入处理原因") || "";
+    try {
+      if (action === "approve") await approveRepairTask(taskId, remark);
+      if (action === "reject") await rejectRepairTask(taskId, remark);
+      if (action === "cancel") await cancelRepairTask(taskId, remark);
+      await load();
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "修复任务审批操作失败");
+    }
+  }
+
   return (
     <AdminPageShell
       hint={<Tx>由异常或规则生成的修复任务，支持部分类型一键执行。</Tx>}
@@ -106,6 +121,7 @@ export default function AdminMonitoringRepairTasks() {
           <thead className="bg-slate-50 text-slate-500">
             <tr>
               <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>状态</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>审批</Tx></th>
               <th className={adminThClassName(undefined, "left")}><Tx>异常标题</Tx></th>
               <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>修复类型</Tx></th>
               <th className={adminThClassName(undefined, "left")}><Tx>修复建议</Tx></th>
@@ -119,6 +135,10 @@ export default function AdminMonitoringRepairTasks() {
             {list.map((task) => (
               <tr key={task.id} className="border-t align-top">
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={task.repair_status} /></td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>
+                  <div><Badge value={task.approval_status || "pending"} /></div>
+                  <div className="mt-1 text-[11px] text-slate-500">{task.approval_source || "-"}</div>
+                </td>
                 <td className={adminTdClassName("font-medium text-slate-900", "left")}>{task.anomaly_title || tText("未命名异常")}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>
                   {ml.repairType(task.repair_type)}
@@ -134,6 +154,12 @@ export default function AdminMonitoringRepairTasks() {
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatTime(task.created_at)}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatTime(task.executed_at)}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
+                  {task.approval_status === "pending" && task.repair_status === "pending" ? (
+                    <div className="mb-1 flex justify-end gap-1">
+                      <button type="button" className="rounded border px-2 py-1 text-xs" onClick={() => void handleApproval(task.id, "approve")}><Tx>批准</Tx></button>
+                      <button type="button" className="rounded border px-2 py-1 text-xs" onClick={() => void handleApproval(task.id, "reject")}><Tx>驳回</Tx></button>
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     className="rounded bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
@@ -143,12 +169,15 @@ export default function AdminMonitoringRepairTasks() {
                   >
                     {executeButtonLabel(task, executingId === task.id)}
                   </button>
+                  {["pending", "approved"].includes(task.repair_status) ? (
+                    <button type="button" className="ml-1 rounded border px-2 py-1.5 text-xs" onClick={() => void handleApproval(task.id, "cancel")}><Tx>取消</Tx></button>
+                  ) : null}
                 </td>
               </tr>
             ))}
             {!list.length && (
               <tr>
-                <td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={8}>
+                <td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={9}>
                   {loading ? "加载中..." : "暂无修复任务"}
                 </td>
               </tr>

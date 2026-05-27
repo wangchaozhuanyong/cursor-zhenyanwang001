@@ -20,6 +20,9 @@ router.post('/anomalies/:id/resolve', canManage, controller.resolveAnomaly);
 router.post('/anomalies/:id/create-repair-task', canManage, controller.createRepairTask);
 
 router.get('/repair-tasks', canView, controller.listRepairTasks);
+router.post('/repair-tasks/:id/approve', requirePermission('monitoring.repair'), controller.approveRepairTask);
+router.post('/repair-tasks/:id/reject', requirePermission('monitoring.repair'), controller.rejectRepairTask);
+router.post('/repair-tasks/:id/cancel', requirePermission('monitoring.repair'), controller.cancelRepairTask);
 router.post('/repair-tasks/:id/execute', requirePermission('monitoring.repair'), controller.executeRepairTask);
 
 router.get('/rules', canView, controller.listRules);

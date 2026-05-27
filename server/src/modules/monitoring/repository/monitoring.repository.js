@@ -34,6 +34,8 @@ function mapRepairTask(row) {
     before_snapshot: parseJson(row.before_snapshot),
     after_snapshot: parseJson(row.after_snapshot),
     suggestion: parseJson(row.suggestion),
+    execution_log: parseJson(row.execution_log),
+    rollback_suggestion: parseJson(row.rollback_suggestion),
   };
 }
 
@@ -78,7 +80,24 @@ async function finishRun(id, { status, checkedCount, anomalyCount, errorMessage 
 }
 
 async function listRules() {
-  const [rows] = await db.query(`SELECT * FROM data_consistency_rules ORDER BY module, id`);
+  const [rows] = await db.query(
+    `SELECT r.*,
+            lr.last_run_at,
+            COALESCE(la.recent_anomaly_count, 0) AS recent_anomaly_count
+       FROM data_consistency_rules r
+       LEFT JOIN (
+         SELECT rule_code, MAX(started_at) AS last_run_at
+           FROM data_consistency_runs
+          GROUP BY rule_code
+       ) lr ON lr.rule_code = r.code
+       LEFT JOIN (
+         SELECT rule_code, COUNT(*) AS recent_anomaly_count
+           FROM data_consistency_anomalies
+          WHERE last_seen_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+          GROUP BY rule_code
+       ) la ON la.rule_code = r.code
+      ORDER BY r.module, r.id`,
+  );
   return rows;
 }
 
@@ -195,8 +214,15 @@ function buildAnomalyWhere(query = {}) {
   add(' AND severity = ?', query.severity);
   add(' AND module = ?', query.module);
   add(' AND rule_code = ?', query.ruleCode);
+  add(' AND assignee_id = ?', query.assigneeId);
   add(' AND entity_type = ?', query.entityType);
   add(' AND entity_id = ?', query.entityId);
+  if (query.highRiskOnly === '1' || query.highRiskOnly === true) {
+    where += ` AND severity IN ('P0','P1')`;
+  }
+  if (query.autoFixableOnly === '1' || query.autoFixableOnly === true) {
+    where += ` AND JSON_EXTRACT(evidence, '$.autoFixable') = true`;
+  }
   if (query.keyword) {
     where += ' AND (title LIKE ? OR entity_id LIKE ? OR root_cause_message LIKE ?)';
     const kw = `%${query.keyword}%`;
@@ -247,6 +273,34 @@ async function getOverview() {
   const [runRows] = await db.query(
     `SELECT * FROM data_consistency_runs ORDER BY started_at DESC LIMIT 10`,
   );
+  const [[scheduled]] = await db.query(
+    `SELECT MAX(started_at) AS lastScheduledRunAt FROM data_consistency_runs WHERE run_type LIKE 'scheduled%'`,
+  );
+  const [[sla]] = await db.query(
+    `SELECT COUNT(*) AS count
+       FROM data_consistency_anomalies
+      WHERE severity IN ('P0','P1')
+        AND status IN ('open','investigating','repair_pending')
+        AND first_seen_at <= DATE_SUB(NOW(), INTERVAL 30 MINUTE)`,
+  );
+  let queueBacklog = 0;
+  try {
+    const { getQueue } = require('../../../queues');
+    const counts = await getQueue('consistency-scan').getJobCounts('waiting', 'delayed');
+    queueBacklog = Number(counts.waiting || 0) + Number(counts.delayed || 0);
+  } catch {}
+  let redisStatus = 'unknown';
+  try {
+    const { pingRedis } = require('../../../config/redis');
+    redisStatus = (await pingRedis()).ok ? 'healthy' : 'unhealthy';
+  } catch {
+    redisStatus = 'unhealthy';
+  }
+  let backupStatus = 'unknown';
+  if (await tableExists('backup_jobs')) {
+    const [[backup]] = await db.query(`SELECT status FROM backup_jobs ORDER BY created_at DESC LIMIT 1`);
+    backupStatus = backup?.status || 'unknown';
+  }
   return {
     todayRunCount: Number(today?.runCount || 0),
     todayAnomalyCount: Number(today?.anomalyCount || 0),
@@ -256,6 +310,17 @@ async function getOverview() {
     moduleCounts: moduleRows.map((r) => ({ module: r.module, count: Number(r.count || 0) })),
     recentHighRisk: highRows.map(mapAnomaly),
     recentRuns: runRows,
+    lastScheduledRunAt: scheduled?.lastScheduledRunAt || null,
+    redisStatus,
+    queueBacklog,
+    backupStatus,
+    highRiskSlaBreachedCount: Number(sla?.count || 0),
+    systemHealth: {
+      redisStatus,
+      queueBacklog,
+      backupStatus,
+      lastScheduledRunAt: scheduled?.lastScheduledRunAt || null,
+    },
   };
 }
 
@@ -278,8 +343,8 @@ async function listRuns(query = {}) {
 async function createRepairTask({ anomalyId, repairType, suggestion, operatorId, remark, beforeSnapshot }) {
   const [result] = await db.query(
     `INSERT INTO data_repair_tasks
-      (anomaly_id, repair_type, repair_status, before_snapshot, suggestion, operator_id, remark)
-     VALUES (?, ?, 'pending', ?, ?, ?, ?)`,
+      (anomaly_id, repair_type, repair_status, approval_status, before_snapshot, suggestion, operator_id, remark)
+     VALUES (?, ?, 'pending', 'pending', ?, ?, ?, ?)`,
     [anomalyId, repairType, toJson(beforeSnapshot), toJson(suggestion), operatorId || null, remark || null],
   );
   await markAnomalyStatus(anomalyId, 'repair_pending', operatorId);
@@ -323,7 +388,7 @@ async function updateRepairTask(id, fields) {
   const sets = [];
   const params = [];
   for (const [k, v] of Object.entries(fields || {})) {
-    if (['after_snapshot', 'before_snapshot', 'suggestion'].includes(k)) {
+    if (['after_snapshot', 'before_snapshot', 'suggestion', 'execution_log', 'rollback_suggestion'].includes(k)) {
       sets.push(`${k} = ?`);
       params.push(toJson(v));
     } else {
@@ -335,6 +400,52 @@ async function updateRepairTask(id, fields) {
   sets.push('updated_at = NOW()');
   params.push(id);
   await db.query(`UPDATE data_repair_tasks SET ${sets.join(', ')} WHERE id = ?`, params);
+  return findRepairTaskById(id);
+}
+
+async function approveRepairTask(id, { operatorId, source = 'manual', remark = '' } = {}) {
+  await db.query(
+    `UPDATE data_repair_tasks
+       SET approval_status = 'approved',
+           repair_status = IF(repair_status = 'pending', 'approved', repair_status),
+           approved_by = ?,
+           approved_at = NOW(),
+           approval_source = ?,
+           approval_remark = ?,
+           updated_at = NOW()
+     WHERE id = ? AND approval_status = 'pending'`,
+    [operatorId || null, source || 'manual', remark || null, id],
+  );
+  return findRepairTaskById(id);
+}
+
+async function rejectRepairTask(id, { operatorId, remark = '' } = {}) {
+  await db.query(
+    `UPDATE data_repair_tasks
+       SET approval_status = 'rejected',
+           repair_status = 'cancelled',
+           approved_by = ?,
+           approved_at = NOW(),
+           approval_source = 'manual',
+           approval_remark = ?,
+           updated_at = NOW()
+     WHERE id = ? AND repair_status IN ('pending','approved')`,
+    [operatorId || null, remark || null, id],
+  );
+  return findRepairTaskById(id);
+}
+
+async function cancelRepairTask(id, { operatorId, remark = '' } = {}) {
+  await db.query(
+    `UPDATE data_repair_tasks
+       SET approval_status = IF(approval_status = 'approved', 'cancelled_after_approval', 'cancelled'),
+           repair_status = 'cancelled',
+           operator_id = COALESCE(?, operator_id),
+           approval_remark = ?,
+           updated_at = NOW()
+     WHERE id = ? AND repair_status IN ('pending','approved')`,
+    [operatorId || null, remark || null, id],
+  );
   return findRepairTaskById(id);
 }
 
@@ -486,12 +597,48 @@ async function selectStaleCacheRecords() {
 }
 
 async function selectFileReferenceRows() {
-  const [products] = await db.query(`SELECT id, name, cover_image, images FROM products`);
+  async function selectExisting(table, columns, where = '1=1') {
+    if (!(await tableExists(table))) return [];
+    const existing = [];
+    for (const column of columns) {
+      if (column.includes(' AS ') || await columnExists(table, column)) existing.push(column);
+    }
+    if (!existing.includes('id') && await columnExists(table, 'id')) existing.unshift('id');
+    if (!existing.length) return [];
+    const [rows] = await db.query(`SELECT ${existing.join(', ')} FROM ${table} WHERE ${where}`);
+    return rows;
+  }
+
+  const products = await selectExisting('products', ['id', 'name', 'cover_image', 'images']);
   const variants = await tableExists('product_variants')
     ? (await db.query(`SELECT id, product_id, title, image_url FROM product_variants WHERE image_url IS NOT NULL AND image_url <> ''`))[0]
     : [];
-  const [banners] = await db.query(`SELECT id, title, image FROM banners WHERE image IS NOT NULL AND image <> ''`);
-  return { products, variants, banners };
+  const banners = await selectExisting('banners', ['id', 'title', 'image']);
+  const users = await selectExisting('users', ['id', 'nickname', 'phone', 'avatar']);
+  const categories = await selectExisting('categories', ['id', 'name', 'icon_url']);
+  const siteSettings = await selectExisting('site_settings', ['id', '`key` AS setting_key', 'value']);
+  const homeNav = await selectExisting('home_nav', ['id', 'title', 'icon_url']);
+  const marketingActivities = await selectExisting('marketing_activities', ['id', 'title', 'cover_image']);
+  const pointsGifts = await selectExisting('points_gifts', ['id', 'name', 'image']);
+  const contentPages = await selectExisting('content_pages', ['id', 'title', 'content']);
+  const orderItems = await selectExisting('order_items', ['id', 'order_id', 'product_image_snapshot', 'variant_image_snapshot']);
+  const exportTasks = await selectExisting('export_tasks', ['id', 'file_path']);
+  const notifications = await selectExisting('notifications', ['id', 'title', 'image_url', 'attachment_url', 'attachments']);
+  return {
+    products,
+    variants,
+    banners,
+    users,
+    categories,
+    siteSettings,
+    homeNav,
+    marketingActivities,
+    pointsGifts,
+    contentPages,
+    orderItems,
+    exportTasks,
+    notifications,
+  };
 }
 
 async function selectUserStatsMismatches() {
@@ -604,6 +751,9 @@ module.exports = {
   findRepairTaskById,
   listRepairTasks,
   updateRepairTask,
+  approveRepairTask,
+  rejectRepairTask,
+  cancelRepairTask,
   listDataChangeEvents,
   trackChange,
   selectProductStockMismatches,

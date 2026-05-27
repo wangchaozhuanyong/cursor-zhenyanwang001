@@ -13,6 +13,8 @@ export type MonitoringRule = {
   enabled: number | boolean;
   schedule_cron?: string | null;
   auto_fix_enabled: number | boolean;
+  last_run_at?: string | null;
+  recent_anomaly_count?: number;
   created_at?: string;
   updated_at?: string;
 };
@@ -62,12 +64,19 @@ export type MonitoringRepairTask = {
   entity_id?: string;
   repair_type: string;
   repair_status: "pending" | "approved" | "executed" | "failed" | "cancelled";
+  approval_status?: "pending" | "approved" | "rejected" | "cancelled" | "cancelled_after_approval";
   before_snapshot?: unknown;
   after_snapshot?: unknown;
   suggestion?: Record<string, unknown> | null;
   operator_id?: string | null;
   operator_label?: string | null;
   remark?: string | null;
+  approval_remark?: string | null;
+  approval_source?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  execution_log?: unknown;
+  rollback_suggestion?: unknown;
   executed_at?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -82,6 +91,12 @@ export type MonitoringOverview = {
   moduleCounts: Array<{ module: string; count: number }>;
   recentHighRisk: MonitoringAnomaly[];
   recentRuns: MonitoringRun[];
+  systemHealth?: Record<string, unknown>;
+  lastScheduledRunAt?: string | null;
+  redisStatus?: string;
+  queueBacklog?: number;
+  backupStatus?: string;
+  highRiskSlaBreachedCount?: number;
 };
 
 export type MonitoringListParams = {
@@ -91,6 +106,9 @@ export type MonitoringListParams = {
   severity?: string;
   module?: string;
   ruleCode?: string;
+  assigneeId?: string;
+  highRiskOnly?: "1" | boolean;
+  autoFixableOnly?: "1" | boolean;
   entityType?: string;
   entityId?: string;
   keyword?: string;
@@ -147,6 +165,18 @@ export function getRepairTasks(params?: { page?: number; pageSize?: number; stat
 
 export function executeRepairTask(id: string | number) {
   return post<MonitoringRepairTask>(`/admin/monitoring/repair-tasks/${id}/execute`);
+}
+
+export function approveRepairTask(id: string | number, remark?: string) {
+  return post<MonitoringRepairTask>(`/admin/monitoring/repair-tasks/${id}/approve`, { remark });
+}
+
+export function rejectRepairTask(id: string | number, remark?: string) {
+  return post<MonitoringRepairTask>(`/admin/monitoring/repair-tasks/${id}/reject`, { remark });
+}
+
+export function cancelRepairTask(id: string | number, remark?: string) {
+  return post<MonitoringRepairTask>(`/admin/monitoring/repair-tasks/${id}/cancel`, { remark });
 }
 
 export function getMonitoringRules() {

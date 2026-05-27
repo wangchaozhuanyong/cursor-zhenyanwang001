@@ -8,13 +8,15 @@ async function notifyHighRisk(anomaly) {
   const entityId = anomaly.entity_id || anomaly.entityId;
   const rootCause = anomaly.root_cause_message || anomaly.rootCauseMessage || '待分析';
   const ruleCode = anomaly.rule_code || anomaly.ruleCode;
+  const moduleName = anomaly.module || anomaly.moduleName || 'consistency';
+  const category = moduleName === 'system' || moduleName === 'backup' ? moduleName : 'consistency';
 
   const emitEvent = getAdminApi().emitEvent;
   if (typeof emitEvent !== 'function') return;
 
   await emitEvent({
     eventType: ruleCode || (anomaly.severity === 'P0' ? 'consistency.anomaly_p0' : 'consistency.anomaly_p1'),
-    category: 'consistency',
+    category,
     severity: anomaly.severity,
     title: anomaly.title || '数据一致性异常',
     message: `${entityType} ${entityId} 触发 ${ruleCode}。可能原因：${rootCause}。请进入数据一致性监控中心查看详情。`,

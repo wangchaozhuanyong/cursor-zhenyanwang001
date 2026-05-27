@@ -67,6 +67,9 @@ export default function AdminMonitoringRules() {
               <th className={adminThClassName(undefined, "center")}><Tx>启用</Tx></th>
               <th className={adminThClassName(undefined, "center")}><Tx>自动修复</Tx></th>
               <th className={adminThClassName(undefined, "left")}><Tx>执行频率</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>最近运行</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>最近异常</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>后台事件</Tx></th>
               <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>操作</Tx></th>
             </tr>
           </thead>
@@ -122,6 +125,9 @@ export default function AdminMonitoringRules() {
                       onBlur={(e) => void update(rule, { schedule_cron: e.target.value })}
                     />
                   </td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{rule.last_run_at ? new Date(rule.last_run_at).toLocaleString() : "-"}</td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>{rule.recent_anomaly_count ?? 0}</td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>{["P0", "P1"].includes(rule.severity) ? "会产生" : "低风险不自动产生"}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                     <button
                       type="button"
@@ -136,7 +142,7 @@ export default function AdminMonitoringRules() {
             })}
             {!loading && !rules.length ? (
               <tr>
-                <td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={7}>
+                <td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={10}>
                   暂无监控规则
                 </td>
               </tr>

@@ -33,6 +33,11 @@ export default function AdminMonitoringOverview() {
       [tText("当前待处理异常"), data?.openAnomalyCount ?? 0],
       [tText("P0/P1 高危异常"), data?.highRiskCount ?? 0],
       [tText("已修复异常"), data?.fixedCount ?? 0],
+      [tText("Redis 状态"), data?.redisStatus ?? "-"],
+      [tText("队列积压"), data?.queueBacklog ?? 0],
+      [tText("备份状态"), data?.backupStatus ?? "-"],
+      [tText("P0/P1 SLA 超时"), data?.highRiskSlaBreachedCount ?? 0],
+      [tText("最近调度"), data?.lastScheduledRunAt ? formatTime(data.lastScheduledRunAt) : "-"],
     ],
     [tText, data],
   );

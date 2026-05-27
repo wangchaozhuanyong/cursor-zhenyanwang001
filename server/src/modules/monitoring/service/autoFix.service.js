@@ -48,17 +48,24 @@ async function processRuleAutoFix(dbRule, savedAnomalies = [], options = {}) {
       options.operatorId || null,
       options.remark || '规则启用自动修复，系统自动创建修复任务',
     );
+    const approvedTask = await repairTaskService.approveRepairTask(
+      task.id,
+      null,
+      '低风险自动修复规则由系统自动批准',
+      { source: 'system_auto_low_risk' },
+    );
     const { enqueueRepairTask } = require('./monitoringScheduler.service');
-    await enqueueRepairTask(task.id, {
+    await enqueueRepairTask(approvedTask.id, {
       operatorId: options.operatorId || null,
       runType: 'auto_fix',
     });
     await repo.recordRuleEvent(dbRule.code, 'anomaly.auto_fix_enqueued', {
       anomalyId: anomaly.id,
-      repairTaskId: task.id,
-      repairType: task.repair_type,
+      repairTaskId: approvedTask.id,
+      repairType: approvedTask.repair_type,
+      approvalSource: approvedTask.approval_source,
     });
-    createdTasks.push(task);
+    createdTasks.push(approvedTask);
   }
   return createdTasks;
 }

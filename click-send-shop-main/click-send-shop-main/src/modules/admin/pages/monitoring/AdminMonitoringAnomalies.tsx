@@ -26,18 +26,34 @@ export default function AdminMonitoringAnomalies() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [severity, setSeverity] = useState("");
+  const [moduleName, setModuleName] = useState("");
+  const [ruleCode, setRuleCode] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
+  const [highRiskOnly, setHighRiskOnly] = useState(false);
+  const [autoFixableOnly, setAutoFixableOnly] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
-    getMonitoringAnomalies({ page, pageSize: 20, status, severity, keyword })
+    getMonitoringAnomalies({
+      page,
+      pageSize: 20,
+      status,
+      severity,
+      module: moduleName,
+      ruleCode,
+      assigneeId,
+      highRiskOnly: highRiskOnly ? "1" : undefined,
+      autoFixableOnly: autoFixableOnly ? "1" : undefined,
+      keyword,
+    })
       .then((res) => {
         setList(res.data.list);
         setTotal(res.data.total);
       })
       .finally(() => setLoading(false));
-  }, [keyword, page, severity, status]);
+  }, [assigneeId, autoFixableOnly, highRiskOnly, keyword, moduleName, page, ruleCode, severity, status]);
 
   useEffect(() => {
     load();
@@ -68,6 +84,11 @@ export default function AdminMonitoringAnomalies() {
               ))}
             </select>
             <input className="min-w-56 rounded border px-3 py-2 text-sm" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={tText("关键词 / 对象 / 原因")} />
+            <input className="w-32 rounded border px-3 py-2 text-sm" value={moduleName} onChange={(e) => { setPage(1); setModuleName(e.target.value); }} placeholder={tText("模块")} />
+            <input className="w-44 rounded border px-3 py-2 text-sm" value={ruleCode} onChange={(e) => { setPage(1); setRuleCode(e.target.value); }} placeholder={tText("规则编码")} />
+            <input className="w-40 rounded border px-3 py-2 text-sm" value={assigneeId} onChange={(e) => { setPage(1); setAssigneeId(e.target.value); }} placeholder={tText("负责人 ID")} />
+            <label className="inline-flex items-center gap-1 rounded border px-3 py-2 text-sm"><input type="checkbox" checked={highRiskOnly} onChange={(e) => { setPage(1); setHighRiskOnly(e.target.checked); }} /><Tx>只看 P0/P1</Tx></label>
+            <label className="inline-flex items-center gap-1 rounded border px-3 py-2 text-sm"><input type="checkbox" checked={autoFixableOnly} onChange={(e) => { setPage(1); setAutoFixableOnly(e.target.checked); }} /><Tx>只看可自动修复</Tx></label>
             <button className="rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white" onClick={() => { setPage(1); load(); }}><Tx>筛选</Tx></button>
           </div>
         </>

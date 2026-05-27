@@ -113,11 +113,20 @@ const helmetCspDefaults = helmet.contentSecurityPolicy.getDefaultDirectives();
 const storageAllowedOrigins = getStorageAllowedOrigins();
 const cspDirectives = {
   ...helmetCspDefaults,
-  'img-src': [...helmetCspDefaults['img-src'], 'blob:', ...storageAllowedOrigins],
+  'img-src': [
+    ...helmetCspDefaults['img-src'],
+    'blob:',
+    // Meta Pixel 可能通过 image beacon 方式上报
+    'https://www.facebook.com',
+    ...storageAllowedOrigins,
+  ],
   'script-src': [
     ...helmetCspDefaults['script-src'],
     'https://static.cloudflareinsights.com',
     'https://js.stripe.com',
+    // 站点统计/广告追踪（按需加载脚本）
+    'https://www.googletagmanager.com',
+    'https://connect.facebook.net',
     ...viteInlineScriptHashes,
   ],
   'connect-src': [
@@ -125,6 +134,12 @@ const cspDirectives = {
     'https://cloudflareinsights.com',
     'https://static.cloudflareinsights.com',
     'https://api.stripe.com',
+    // GA4 上报
+    'https://www.google-analytics.com',
+    'https://region1.google-analytics.com',
+    'https://analytics.google.com',
+    // Meta Pixel 上报（部分浏览器走 fetch）
+    'https://www.facebook.com',
   ],
   'frame-src': ["'self'", 'https://js.stripe.com', 'https://hooks.stripe.com'],
 };

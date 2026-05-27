@@ -134,14 +134,18 @@ async function tryRefreshToken(): Promise<string> {
 
 export async function tryRefreshAdminSession(): Promise<void> {
   const loadingToken = startGlobalLoadingDeferred();
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 12_000);
   let res: Response;
   try {
     res = await fetch(`${BASE_URL}/admin/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
+      signal: controller.signal,
     });
   } finally {
+    window.clearTimeout(timeout);
     stopGlobalLoading(loadingToken);
   }
 

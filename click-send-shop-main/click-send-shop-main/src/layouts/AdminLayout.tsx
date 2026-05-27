@@ -82,6 +82,7 @@ function AdminLayoutContent() {
   const can = useAdminPermissionStore((s) => s.can);
   const canAny = useAdminPermissionStore((s) => s.canAny);
   const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
+  const permHydrated = useAdminPermissionStore((s) => s.hydrated);
   const capabilities = useSiteCapabilities();
   useAdminEvents(true);
   const canViewSecurityAlerts = isSuperAdmin || can("audit.view");
@@ -98,11 +99,12 @@ function AdminLayoutContent() {
 
   useEffect(() => {
     if (!isAdminAuthenticated()) return;
+    if (!permHydrated) return;
     const path = location.pathname;
     if (!canAccessAdminPath(path, can, canAny)) {
       navigate(getFirstAllowedAdminPath(can), { replace: true });
     }
-  }, [location.pathname, can, canAny, navigate]);
+  }, [location.pathname, can, canAny, navigate, permHydrated]);
 
   // 头像菜单 / 安全告警弹层改由 AnchoredMenu 统一关闭逻辑处理（click/contextmenu/ESC/scroll/resize）
 

@@ -16,6 +16,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { queryClient } from "@/lib/queryClient";
 import { ModalLayerProvider } from "@/modules/micro-interactions";
 import { guessFaviconMime, resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
+import AdminSessionSync from "@/components/admin/AdminSessionSync";
 import {
   DEFAULT_APPLE_TOUCH_ICON,
   DEFAULT_FAVICON_ICO,
@@ -173,6 +174,7 @@ export function AdminAppRoutes() {
         <ModalLayerProvider>
         <TooltipProvider>
           <AdminI18nProvider>
+            <AdminSessionSync />
             <AdminMfaStepUpHost />
             <Sonner
               offset={{ top: "calc(max(0.75rem, env(safe-area-inset-top)) + 3.25rem)" }}

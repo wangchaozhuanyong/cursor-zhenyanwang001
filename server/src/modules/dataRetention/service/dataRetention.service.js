@@ -3,6 +3,7 @@ const { BusinessError } = require('../../../errors');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const repo = require('../repository/dataRetention.repository');
 const exportCleanup = require('./exportCleanup.service');
+const uploadCleanup = require('./uploadCleanup.service');
 const {
   MAX_BATCH_SIZE,
   MIN_BATCH_SIZE,
@@ -223,22 +224,41 @@ async function previewDbPolicy(policy, runId) {
 }
 
 async function previewFilePolicy(policy, runId) {
-  const files = exportCleanup.listExpiredExportFiles(policy.retentionDays);
+  if (!policy.enabled) {
+    const stepId = await repo.insertStep({
+      runId,
+      policyKey: policy.policyKey,
+      tableName: policy.tableName,
+      status: 'skipped',
+      cutoffAt: policy.cutoffAt,
+      matchedCount: 0,
+      deletedCount: 0,
+      batchSize: policy.batchSize,
+      batchCount: 0,
+      sampleIds: [],
+      errorMessage: 'POLICY_DISABLED',
+    });
+    await repo.updateStep(stepId, { finished_at: true });
+    return { matched: 0, deleted: 0, failed: 0, status: 'skipped' };
+  }
+  const files = policy.policyKey === 'export_files'
+    ? exportCleanup.listExpiredExportFiles(policy.retentionDays)
+    : await uploadCleanup.previewPolicy(policy, runId);
   const stepId = await repo.insertStep({
     runId,
     policyKey: policy.policyKey,
     tableName: policy.tableName,
-    status: policy.enabled ? 'success' : 'skipped',
+    status: 'success',
     cutoffAt: policy.cutoffAt,
-    matchedCount: policy.enabled ? files.length : 0,
+    matchedCount: files.length,
     deletedCount: 0,
     batchSize: policy.batchSize,
     batchCount: 0,
-    sampleIds: policy.enabled ? files.slice(0, 10).map((file) => file.fileName) : [],
-    errorMessage: policy.enabled ? null : 'POLICY_DISABLED',
+    sampleIds: files.slice(0, 10).map((file) => file.fileName || file.publicUrl || file.objectKey || file.localPath),
+    errorMessage: null,
   });
   await repo.updateStep(stepId, { finished_at: true });
-  return { matched: policy.enabled ? files.length : 0, deleted: 0, failed: 0, status: policy.enabled ? 'success' : 'skipped' };
+  return { matched: files.length, deleted: 0, failed: 0, status: 'success' };
 }
 
 async function createPreview(body = {}, req = null, options = {}) {
@@ -387,23 +407,36 @@ async function executeFilePolicy(policy, runId) {
     await repo.updateStep(stepId, { status: 'skipped', error_message: 'POLICY_DISABLED', finished_at: true });
     return { matched: 0, deleted: 0, failed: 0, cancelled: false };
   }
-  const files = exportCleanup.listExpiredExportFiles(policy.retentionDays);
-  const result = await exportCleanup.deleteExpiredExportFiles(
-    policy.retentionDays,
-    policy.batchSize,
-    () => repo.isRunCancelRequested(runId),
-  );
-  const cancelled = await repo.isRunCancelRequested(runId);
+  let files = [];
+  let result;
+  if (policy.policyKey === 'export_files') {
+    files = exportCleanup.listExpiredExportFiles(policy.retentionDays);
+    result = await exportCleanup.deleteExpiredExportFiles(
+      policy.retentionDays,
+      policy.batchSize,
+      () => repo.isRunCancelRequested(runId),
+    );
+  } else {
+    result = await uploadCleanup.executePolicy(
+      policy,
+      runId,
+      policy.row?.preview_run_id || policy.previewRunId,
+      () => repo.isRunCancelRequested(runId),
+    );
+    files = (result.sampleIds || []).map((id) => ({ fileName: id }));
+  }
+  const cancelled = result.cancelled || await repo.isRunCancelRequested(runId);
   await repo.updateStep(stepId, {
-    status: cancelled ? 'cancelled' : 'success',
+    status: cancelled ? 'cancelled' : (result.failed ? 'partial_failed' : 'success'),
     matched_count: result.matched,
     deleted_count: result.deleted,
     batch_size: policy.batchSize,
     batch_count: result.batchCount,
     sample_ids: files.slice(0, 10).map((file) => file.fileName),
+    error_message: result.errors?.length ? result.errors.join('; ').slice(0, 2000) : undefined,
     finished_at: true,
   });
-  return { matched: result.matched, deleted: result.deleted, failed: 0, cancelled };
+  return { matched: result.matched, deleted: result.deleted, failed: result.failed || 0, cancelled };
 }
 
 async function executeRun(body = {}, req = null, options = {}) {
@@ -435,6 +468,33 @@ async function executeRun(body = {}, req = null, options = {}) {
       requestSnapshot: { previewRunId: preview.id, policyKeys },
     });
 
+    const needsBackup = options.skipPreCleanupBackup !== true;
+    let backupJob = null;
+    if (needsBackup) {
+      try {
+        const adminApi = /** @type {any} */ (require('../../admin')).api || {};
+        if (typeof adminApi.createPreCleanupBackupAndWait !== 'function') {
+          throw new BusinessError(503, '清理前备份服务不可用，已阻止删除');
+        }
+        backupJob = await adminApi.createPreCleanupBackupAndWait({
+          req,
+          userId: options.operatorId === undefined ? req?.user?.id || null : options.operatorId,
+          reason: `data_cleanup_run:${runId}`,
+          previewRunId: preview.id,
+          policyKeys,
+        });
+        await repo.updateRun(runId, { backup_job_id: backupJob.id });
+      } catch (error) {
+        await repo.updateRun(runId, {
+          backup_job_id: /** @type {any} */ (error)?.backupJobId || null,
+          status: 'failed',
+          error_message: `清理前备份失败，已阻止删除：${error?.message || String(error)}`,
+          finished_at: true,
+        });
+        throw error;
+      }
+    }
+
     let totalMatched = 0;
     let totalDeleted = 0;
     let totalFailed = 0;
@@ -444,6 +504,7 @@ async function executeRun(body = {}, req = null, options = {}) {
     for (const policy of policies) {
       if (cancelled) break;
       try {
+        policy.previewRunId = preview.id;
         const result = policy.deleteMode === 'file_delete'
           ? await executeFilePolicy(policy, runId)
           : await executeDbPolicy(policy, runId);
@@ -488,7 +549,7 @@ async function executeRun(body = {}, req = null, options = {}) {
     await auditCleanup(req, 'data_cleanup.run', status === 'success' ? 'success' : 'failure', `执行数据清理 #${runId}: ${status}`, {
       operatorId: options.operatorId,
       objectId: runId,
-      after: { previewRunId: preview.id, policyKeys, status, totalMatched, totalDeleted, totalFailed },
+      after: { previewRunId: preview.id, policyKeys, status, totalMatched, totalDeleted, totalFailed, backupJobId: backupJob?.id || null },
       errorMessage: errorMessage || '',
     });
     return repo.getRunWithSteps(runId);
@@ -539,6 +600,7 @@ async function getOverview() {
   const policies = await listPolicies();
   const recentRuns = await repo.listRuns({ page: 1, pageSize: 5, excludeRunType: 'preview' });
   const runningRun = await repo.findRunningRun();
+  const latestPreCleanupBackup = await repo.getLatestPreCleanupBackup().catch(() => null);
   return {
     policyCount: policies.length,
     enabledPolicyCount: policies.filter((policy) => policy.enabled).length,
@@ -556,6 +618,7 @@ async function getOverview() {
     previewTtlMinutes: Math.round(PREVIEW_TTL_MS / 60000),
     recentRuns: recentRuns.list,
     runningRun,
+    latestPreCleanupBackup,
   };
 }
 

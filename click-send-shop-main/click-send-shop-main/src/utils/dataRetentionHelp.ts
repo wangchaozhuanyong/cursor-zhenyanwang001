@@ -10,6 +10,8 @@ export const DATA_RETENTION_TAB_HINTS: Record<string, string> = {
     "每条规则对应一类后台数据。可改「保留多少天」和是否启用；改完后要点「保存」。",
   preview:
     "先勾选要清理的项目，点「生成预览」看会删多少条，确认无误后再点「执行清理」。不能跳过预览。",
+  files:
+    "扫描上传目录和对象存储，找出临时 raw 对象或无业务引用的孤儿文件。文件删除必须先预览。",
   runs: "每次预览和正式清理都会留记录，方便事后核对删了什么。",
   risk: "说明系统如何防止误删订单、付款等重要数据。",
 };
@@ -53,6 +55,8 @@ export const DATA_RETENTION_CATEGORY_HINTS: Record<string, string> = {
   analytics: "网站访问、首页点击等统计分析用的原始记录。",
   notification: "发给用户的站内通知、后台通知批次及发送记录。",
   export: "报表导出产生的任务记录和服务器上的导出文件。",
+  backup: "备份、恢复、演练和 binlog 相关的历史元数据。不会按路径直接删除备份对象。",
+  file: "本地 uploads 和 S3 uploads 中的临时对象、孤儿图片或视频。",
   monitoring: "后台事件、数据一致性检查、修复任务等运维类记录。",
   system: "其他系统维护类数据。",
 };
@@ -109,6 +113,40 @@ export const DATA_CLEANUP_POLICY_HELP: Record<string, string> = {
     "一致性检查发现的异常，在已标记为已解决/已忽略/已修复后的历史记录。",
   data_repair_tasks:
     "后台「数据修复」功能执行过的任务历史。",
+  data_cleanup_runs_preview:
+    "本页面生成的预览记录，超过 90 天后可清理。",
+  data_cleanup_runs_history:
+    "正式清理的历史运行记录。运行中的任务不会清理。",
+  data_cleanup_run_steps_history:
+    "每次清理的步骤明细，会跟随很久以前的运行记录清理。",
+  data_cleanup_file_candidates_history:
+    "文件清理预览留下的候选对象记录，过期后可清理。",
+  backup_alerts_resolved:
+    "备份中心里已解决的告警，打开或未处理告警不会删。",
+  backup_jobs_history:
+    "很久以前已结束的备份任务元数据，不负责删除实际备份对象。",
+  restore_jobs_history:
+    "很久以前已结束的恢复任务元数据。",
+  restore_drill_reports_history:
+    "恢复演练产生的报告历史。",
+  binlog_files_history:
+    "很久以前的 binlog 文件索引元数据，近期恢复索引会保留。",
+  search_terms_inactive:
+    "一年未搜索且次数很低的搜索关键词。",
+  coupon_events_history:
+    "优惠券领取、使用、作废等事件流水，默认保留两年。",
+  cache_meta_expired:
+    "长期未更新且已落后于数据库变更的缓存元数据。",
+  admin_event_actions_history:
+    "已解决或已清理后台事件对应的操作历史。",
+  admin_event_user_states_history:
+    "已解决或已清理后台事件对应的管理员阅读/隐藏状态。",
+  raw_upload_objects:
+    "S3 uploads/raw/ 下超过 24 小时仍未完成的临时上传对象。",
+  orphan_upload_files_preview:
+    "只扫描并列出疑似无引用的上传文件，不直接删除。",
+  orphan_upload_files_run:
+    "删除已预览确认的孤儿上传文件，会校验路径前缀避免误删。",
 };
 
 export function getDataCleanupPolicyHelp(policyKey: string, fallbackDescription?: string): string {

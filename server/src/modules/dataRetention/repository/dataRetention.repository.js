@@ -22,6 +22,9 @@ function mapRun(row) {
     ...row,
     id: Number(row.id),
     preview_run_id: row.preview_run_id == null ? null : Number(row.preview_run_id),
+    backup_job_id: row.backup_job_id || null,
+    backup_status: row.backup_status || null,
+    backup_error_message: row.backup_error_message || null,
     policy_keys: parseJson(row.policy_keys) || [],
     request_snapshot: parseJson(row.request_snapshot),
     cancel_requested: Boolean(row.cancel_requested),
@@ -165,13 +168,14 @@ async function deleteIds(tableName, idColumn, ids) {
 async function createRun(payload) {
   const [result] = await db.query(
     `INSERT INTO data_cleanup_runs
-      (run_type, status, triggered_by, preview_run_id, policy_keys, request_snapshot, started_at)
-     VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+      (run_type, status, triggered_by, preview_run_id, backup_job_id, policy_keys, request_snapshot, started_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
     [
       payload.runType || 'manual',
       payload.status || 'running',
       payload.triggeredBy || null,
       payload.previewRunId || null,
+      payload.backupJobId || null,
       toJson(payload.policyKeys || []),
       toJson(payload.requestSnapshot || null),
     ],
@@ -189,6 +193,7 @@ async function updateRun(id, fields) {
     'total_failed',
     'error_message',
     'cancel_requested',
+    'backup_job_id',
   ];
   for (const key of scalar) {
     if (fields[key] === undefined) continue;
@@ -273,7 +278,13 @@ async function updateStep(id, fields) {
 }
 
 async function getRunById(id) {
-  const [[row]] = await db.query(`SELECT * FROM data_cleanup_runs WHERE id = ?`, [id]);
+  const [[row]] = await db.query(
+    `SELECT r.*, b.status AS backup_status, b.error_message AS backup_error_message
+       FROM data_cleanup_runs r
+       LEFT JOIN backup_jobs b ON b.id = r.backup_job_id
+      WHERE r.id = ?`,
+    [id],
+  );
   return mapRun(row);
 }
 
@@ -311,7 +322,11 @@ async function listRuns(query = {}) {
   }
   const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM data_cleanup_runs ${where}`, params);
   const [rows] = await db.query(
-    `SELECT * FROM data_cleanup_runs ${where} ORDER BY started_at DESC LIMIT ? OFFSET ?`,
+    `SELECT r.*, b.status AS backup_status, b.error_message AS backup_error_message
+       FROM data_cleanup_runs r
+       LEFT JOIN backup_jobs b ON b.id = r.backup_job_id
+      ${where.replace(/\bstatus\b/g, 'r.status').replace(/\brun_type\b/g, 'r.run_type').replace(/\bpolicy_keys\b/g, 'r.policy_keys')}
+      ORDER BY r.started_at DESC LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
   return {
@@ -325,11 +340,123 @@ async function listRuns(query = {}) {
 
 async function findRunningRun() {
   const [[row]] = await db.query(
-    `SELECT * FROM data_cleanup_runs
-      WHERE status = 'running' AND run_type IN ('manual','scheduled')
-      ORDER BY started_at DESC LIMIT 1`,
+    `SELECT r.*, b.status AS backup_status, b.error_message AS backup_error_message
+       FROM data_cleanup_runs r
+       LEFT JOIN backup_jobs b ON b.id = r.backup_job_id
+      WHERE r.status = 'running' AND r.run_type IN ('manual','scheduled')
+      ORDER BY r.started_at DESC LIMIT 1`,
   );
   return mapRun(row);
+}
+
+async function getLatestPreCleanupBackup() {
+  const [[row]] = await db.query(
+    `SELECT * FROM backup_jobs
+      WHERE job_type = 'pre_cleanup'
+      ORDER BY created_at DESC
+      LIMIT 1`,
+  );
+  return row || null;
+}
+
+async function columnExists(tableName, columnName) {
+  const [[row]] = await db.query(
+    `SELECT COUNT(*) AS c
+       FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = ?
+        AND COLUMN_NAME = ?`,
+    [tableName, columnName],
+  );
+  return Number(row?.c || 0) > 0;
+}
+
+async function listUploadReferenceValues(sources) {
+  const values = [];
+  for (const source of sources || []) {
+    if (!(await tableExists(source.table)) || !(await columnExists(source.table, source.column))) continue;
+    const [rows] = await db.query(
+      `SELECT ${quoteIdentifier(source.column)} AS value
+         FROM ${quoteIdentifier(source.table)}
+        WHERE ${quoteIdentifier(source.column)} IS NOT NULL
+          AND ${quoteIdentifier(source.column)} <> ''
+          AND ${quoteIdentifier(source.column)} LIKE '%uploads%'`,
+    );
+    for (const row of rows) values.push(row.value);
+  }
+  return values;
+}
+
+async function clearFileCandidates(previewRunId, policyKey) {
+  await db.query(
+    `DELETE FROM data_cleanup_file_candidates
+      WHERE preview_run_id = ? AND policy_key = ?`,
+    [previewRunId, policyKey],
+  );
+}
+
+async function insertFileCandidates(candidates) {
+  for (const item of candidates || []) {
+    await db.query(
+      `INSERT INTO data_cleanup_file_candidates
+        (preview_run_id, policy_key, storage_provider, object_key, local_path, public_url,
+         size_bytes, last_modified_at, status, error_message)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         public_url = VALUES(public_url),
+         size_bytes = VALUES(size_bytes),
+         last_modified_at = VALUES(last_modified_at),
+         status = VALUES(status),
+         error_message = VALUES(error_message)`,
+      [
+        item.previewRunId,
+        item.policyKey,
+        item.storageProvider,
+        item.objectKey || '',
+        item.localPath || '',
+        item.publicUrl || '',
+        item.sizeBytes || 0,
+        item.lastModifiedAt || null,
+        item.status || 'candidate',
+        item.errorMessage || null,
+      ],
+    );
+  }
+}
+
+async function listFileCandidates(previewRunId, policyKey, statuses = ['candidate']) {
+  const safeStatuses = Array.isArray(statuses) && statuses.length ? statuses : ['candidate'];
+  const placeholders = safeStatuses.map(() => '?').join(', ');
+  const [rows] = await db.query(
+    `SELECT * FROM data_cleanup_file_candidates
+      WHERE preview_run_id = ?
+        AND policy_key = ?
+        AND status IN (${placeholders})
+      ORDER BY COALESCE(last_modified_at, created_at), id`,
+    [previewRunId, policyKey, ...safeStatuses],
+  );
+  return rows.map((row) => ({
+    ...row,
+    id: Number(row.id),
+    preview_run_id: Number(row.preview_run_id),
+    size_bytes: Number(row.size_bytes || 0),
+  }));
+}
+
+async function updateFileCandidate(id, fields = {}) {
+  const sets = [];
+  const params = [];
+  if (fields.status !== undefined) {
+    sets.push('status = ?');
+    params.push(fields.status);
+  }
+  if (fields.errorMessage !== undefined) {
+    sets.push('error_message = ?');
+    params.push(fields.errorMessage || null);
+  }
+  if (!sets.length) return;
+  params.push(id);
+  await db.query(`UPDATE data_cleanup_file_candidates SET ${sets.join(', ')} WHERE id = ?`, params);
 }
 
 async function requestCancel(id) {
@@ -400,4 +527,11 @@ module.exports = {
   isRunCancelRequested,
   tryAcquireLock,
   releaseLock,
+  getLatestPreCleanupBackup,
+  columnExists,
+  listUploadReferenceValues,
+  clearFileCandidates,
+  insertFileCandidates,
+  listFileCandidates,
+  updateFileCandidate,
 };

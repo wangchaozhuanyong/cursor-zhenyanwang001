@@ -51,6 +51,9 @@ export type DataCleanupRun = {
   status: DataCleanupRunStatus;
   triggered_by?: string | null;
   preview_run_id?: number | null;
+  backup_job_id?: string | null;
+  backup_status?: string | null;
+  backup_error_message?: string | null;
   preview_consumed_at?: string | null;
   policy_keys: string[];
   total_matched: number;
@@ -73,6 +76,15 @@ export type DataCleanupOverview = {
   previewTtlMinutes: number;
   recentRuns: DataCleanupRun[];
   runningRun?: DataCleanupRun | null;
+  latestPreCleanupBackup?: {
+    id: string;
+    status: string;
+    reason?: string;
+    error_message?: string;
+    created_at?: string;
+    started_at?: string | null;
+    finished_at?: string | null;
+  } | null;
 };
 
 export type DataCleanupPreviewPayload = {

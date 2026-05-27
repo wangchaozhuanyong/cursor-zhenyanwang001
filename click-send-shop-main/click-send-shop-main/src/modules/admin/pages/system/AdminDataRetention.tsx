@@ -49,12 +49,13 @@ import {
   adminThClassName,
 } from "@/utils/adminTableClasses";
 
-type TabKey = "overview" | "policies" | "preview" | "runs" | "risk";
+type TabKey = "overview" | "policies" | "preview" | "files" | "runs" | "risk";
 
 const tabs: Array<{ key: TabKey; label: string; icon: typeof Database }> = [
   { key: "overview", label: "数据总览", icon: Database },
   { key: "policies", label: "保留策略设置", icon: SlidersHorizontal },
   { key: "preview", label: "清理预览", icon: FileSearch },
+  { key: "files", label: "文件清理", icon: FileSearch },
   { key: "runs", label: "执行记录", icon: History },
   { key: "risk", label: "风险说明", icon: Shield },
 ];
@@ -210,8 +211,10 @@ export default function AdminDataRetention() {
     });
   }, [canExecute, canManage]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [fileSelectedKeys, setFileSelectedKeys] = useState<string[]>([]);
   const [selectionReady, setSelectionReady] = useState(false);
   const [previewRun, setPreviewRun] = useState<DataCleanupRun | null>(null);
+  const [filePreviewRun, setFilePreviewRun] = useState<DataCleanupRun | null>(null);
   const [runPage, setRunPage] = useState(1);
   const [runPageSize, setRunPageSize] = useState(20);
   const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
@@ -248,6 +251,8 @@ export default function AdminDataRetention() {
     [policies, tText],
   );
   const groupedPolicies = useMemo(() => groupPolicies(policies), [policies]);
+  const dataPolicies = useMemo(() => policies.filter((policy) => policy.category !== "file"), [policies]);
+  const filePolicies = useMemo(() => policies.filter((policy) => policy.category === "file"), [policies]);
   const selectedPolicies = useMemo(
     () => policies.filter((policy) => selectedKeys.includes(policy.key)),
     [policies, selectedKeys],
@@ -256,10 +261,15 @@ export default function AdminDataRetention() {
     () => Boolean(previewRun && samePolicyKeys(selectedKeys, previewRun.policy_keys)),
     [previewRun, selectedKeys],
   );
+  const filePreviewKeysMatch = useMemo(
+    () => Boolean(filePreviewRun && samePolicyKeys(fileSelectedKeys, filePreviewRun.policy_keys)),
+    [filePreviewRun, fileSelectedKeys],
+  );
 
   useEffect(() => {
     if (selectionReady || !policies.length) return;
-    setSelectedKeys(policies.filter((policy) => policy.enabled).map((policy) => policy.key));
+    setSelectedKeys(policies.filter((policy) => policy.enabled && policy.category !== "file").map((policy) => policy.key));
+    setFileSelectedKeys(policies.filter((policy) => policy.enabled && policy.category === "file").map((policy) => policy.key));
     setSelectionReady(true);
   }, [policies, selectionReady]);
 
@@ -329,6 +339,32 @@ export default function AdminDataRetention() {
     onError: (error) => toast.error(toastErrorMessage(error, "执行清理失败")),
   });
 
+  const filePreviewMutation = useMutation({
+    mutationFn: () => previewDataCleanup(fileSelectedKeys),
+    onSuccess: async (run) => {
+      setFilePreviewRun(run);
+      setActiveTab("files");
+      toast.success(tText("文件清理预览已生成"));
+      await invalidateAll();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "生成文件清理预览失败")),
+  });
+
+  const fileExecuteMutation = useMutation({
+    mutationFn: () => {
+      if (!filePreviewRun) throw new Error("请先生成文件清理预览");
+      return executeDataCleanup(filePreviewRun.id, filePreviewRun.policy_keys);
+    },
+    onSuccess: async (run) => {
+      setFilePreviewRun(null);
+      setSelectedRunId(run.id);
+      setActiveTab("runs");
+      toast.success(`文件清理完成，删除 ${run.total_deleted} 个对象`);
+      await invalidateAll();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "执行文件清理失败")),
+  });
+
   const cancelMutation = useMutation({
     mutationFn: requestCancelDataCleanupRun,
     onSuccess: async () => {
@@ -357,6 +393,11 @@ export default function AdminDataRetention() {
     setSelectedKeys((prev) => prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]);
   };
 
+  const toggleFilePolicySelection = (key: string) => {
+    setFilePreviewRun(null);
+    setFileSelectedKeys((prev) => prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]);
+  };
+
   const confirmExecute = () => {
     if (!previewRun) {
       toast.error(tText("请先生成清理预览"));
@@ -371,6 +412,23 @@ export default function AdminDataRetention() {
       confirmText: "执行清理",
       danger: true,
       onConfirm: () => executeMutation.mutateAsync(),
+    });
+  };
+
+  const confirmFileExecute = () => {
+    if (!filePreviewRun) {
+      toast.error(tText("请先生成文件清理预览"));
+      return;
+    }
+    if (!filePreviewKeysMatch) {
+      toast.error(tText("当前文件策略与预览不一致，请重新生成预览"));
+      return;
+    }
+    confirm({ title: tText("确认执行文件清理"),
+      description: `本次文件预览命中 ${filePreviewRun.total_matched} 个对象。正式执行前会自动创建清理前备份，预览过期或备份失败都不会删除文件。`,
+      confirmText: "执行文件清理",
+      danger: true,
+      onConfirm: () => fileExecuteMutation.mutateAsync(),
     });
   };
 
@@ -474,6 +532,30 @@ export default function AdminDataRetention() {
           </div>
           <section className="rounded-lg border border-border bg-card p-4">
             <div className="mb-3 flex items-center gap-2 font-semibold text-foreground">
+              <Shield size={16} />
+              <Tx>备份联动</Tx>
+            </div>
+            <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-muted-foreground"><Tx>最近一次清理前备份</Tx></span>
+                {overview?.latestPreCleanupBackup ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="font-medium text-foreground">#{overview.latestPreCleanupBackup.id}</span>
+                    <StatusBadge status={overview.latestPreCleanupBackup.status} tText={tText} />
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground"><Tx>暂无记录</Tx></span>
+                )}
+              </div>
+              {overview?.latestPreCleanupBackup?.error_message ? (
+                <div className="mt-2 rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">
+                  {formatSystemErrorMessage(overview.latestPreCleanupBackup.error_message)}
+                </div>
+              ) : null}
+            </div>
+          </section>
+          <section className="rounded-lg border border-border bg-card p-4">
+            <div className="mb-3 flex items-center gap-2 font-semibold text-foreground">
               <History size={16} />
               <Tx>最近执行</Tx>
             </div>
@@ -497,6 +579,16 @@ export default function AdminDataRetention() {
                 <div className="text-sm text-muted-foreground">
                   <Tx>命中</Tx> {runDetailQuery.data.total_matched} / <Tx>删除</Tx> {runDetailQuery.data.total_deleted}
                 </div>
+                {runDetailQuery.data.backup_job_id ? (
+                  <div className="rounded-lg border border-border bg-secondary/40 p-2 text-xs text-muted-foreground">
+                    <Tx>清理前备份</Tx> #{runDetailQuery.data.backup_job_id}
+                    {" · "}
+                    <StatusBadge status={runDetailQuery.data.backup_status || undefined} tText={tText} />
+                    {runDetailQuery.data.backup_error_message ? (
+                      <span className="ml-2 text-rose-700">{formatSystemErrorMessage(runDetailQuery.data.backup_error_message)}</span>
+                    ) : null}
+                  </div>
+                ) : null}
                 <RunSteps steps={runDetailQuery.data.steps} policyTitleByKey={policyTitleByKey} tText={tText} />
               </div>
             ) : (
@@ -680,14 +772,15 @@ export default function AdminDataRetention() {
                   <Tx>勾选每条策略旁的 ? 可查看会删什么、有什么限制。</Tx>
                   <AdminFieldHint text={tText(DATA_RETENTION_FIELD_HINTS.testEnvNote)} />
                 </p>
+                <p className="mt-1 text-xs text-amber-700"><Tx>正式执行前会自动创建清理前备份；备份失败时不会执行删除。</Tx></p>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => { setSelectedKeys(policies.filter((p) => p.enabled).map((p) => p.key)); setPreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>选择启用项</Tx></button>
+                <button type="button" onClick={() => { setSelectedKeys(dataPolicies.filter((p) => p.enabled).map((p) => p.key)); setPreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>选择启用项</Tx></button>
                 <button type="button" onClick={() => { setSelectedKeys([]); setPreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空</Tx></button>
               </div>
             </div>
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {policies.map((policy) => (
+              {dataPolicies.map((policy) => (
                 <label key={policy.key} className="flex min-h-[48px] items-start gap-2 rounded-lg border border-border p-3 text-sm hover:bg-secondary/50">
                   <input type="checkbox" checked={selectedKeys.includes(policy.key)} onChange={() => togglePolicySelection(policy.key)} className="mt-1 h-4 w-4" />
                   <span className="min-w-0 flex-1">
@@ -738,6 +831,83 @@ export default function AdminDataRetention() {
                 </div>
               </div>
               <RunSteps steps={previewRun.steps} policyTitleByKey={policyTitleByKey} tText={tText} />
+            </section>
+          ) : null}
+        </div>
+      ) : null}
+
+      {activeTab === "files" ? (
+        <div className="space-y-4">
+          <section className="rounded-lg border border-border bg-card p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <AdminSectionTitle
+                  title={<Tx>文件清理预览</Tx>}
+                  hint="先扫描本地 uploads 与 S3 uploads，确认孤儿文件或 raw 临时对象后才能执行删除。"
+                />
+                <p className="mt-1 text-sm text-muted-foreground">
+                  <Tx>文件清理会校验上传目录前缀，只删除预览中确认的候选对象；正式执行前同样会自动创建清理前备份。</Tx>
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => { setFileSelectedKeys(filePolicies.filter((p) => p.enabled).map((p) => p.key)); setFilePreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>选择启用项</Tx></button>
+                <button type="button" onClick={() => { setFileSelectedKeys(filePolicies.map((p) => p.key)); setFilePreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>选择全部文件策略</Tx></button>
+                <button type="button" onClick={() => { setFileSelectedKeys([]); setFilePreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空</Tx></button>
+              </div>
+            </div>
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {filePolicies.map((policy) => (
+                <label key={policy.key} className="flex min-h-[48px] items-start gap-2 rounded-lg border border-border p-3 text-sm hover:bg-secondary/50">
+                  <input type="checkbox" checked={fileSelectedKeys.includes(policy.key)} onChange={() => toggleFilePolicySelection(policy.key)} className="mt-1 h-4 w-4" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1 font-medium text-foreground">
+                      {tText(formatDataCleanupPolicyTitle(policy))}
+                      <AdminFieldHint
+                        text={tText(getDataCleanupPolicyHelp(policy.key, policy.description))}
+                        contentClassName="max-w-xs"
+                      />
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {tText("保留")} {policy.retention_days} {tText("天")}
+                      {policy.enabled ? "" : ` · ${tText("默认不参与定时清理")}`}
+                    </span>
+                  </span>
+                </label>
+              ))}
+              {!filePolicies.length ? <div className="text-sm text-muted-foreground"><Tx>暂无文件清理策略</Tx></div> : null}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={!canExecute || !fileSelectedKeys.length || filePreviewMutation.isPending}
+                onClick={() => filePreviewMutation.mutate()}
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                <FileSearch size={16} /> 生成文件预览
+              </button>
+              <button
+                type="button"
+                disabled={!canExecute || !filePreviewRun || !filePreviewKeysMatch || fileExecuteMutation.isPending}
+                onClick={confirmFileExecute}
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                <Play size={16} /> 执行文件清理
+              </button>
+              {!filePreviewKeysMatch && filePreviewRun ? (
+                <span className="text-sm text-amber-700"><Tx>文件策略选择已变更，请重新生成预览</Tx></span>
+              ) : null}
+              <span className="text-sm text-muted-foreground">已选择 {fileSelectedKeys.length} 项</span>
+            </div>
+          </section>
+          {filePreviewRun ? (
+            <section className="rounded-lg border border-border bg-card p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="font-semibold text-foreground">文件预览 #{filePreviewRun.id}</div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  命中 {filePreviewRun.total_matched} 个对象 <StatusBadge status={filePreviewRun.status} tText={tText} />
+                </div>
+              </div>
+              <RunSteps steps={filePreviewRun.steps} policyTitleByKey={policyTitleByKey} tText={tText} />
             </section>
           ) : null}
         </div>
@@ -813,6 +983,16 @@ export default function AdminDataRetention() {
                   </div>
                 </div>
                 {runDetailQuery.data.error_message ? <div className="rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">{formatSystemErrorMessage(runDetailQuery.data.error_message)}</div> : null}
+                {runDetailQuery.data.backup_job_id ? (
+                  <div className="rounded border border-border bg-secondary/40 p-2 text-xs text-muted-foreground">
+                    <Tx>清理前备份</Tx> #{runDetailQuery.data.backup_job_id}
+                    {" · "}
+                    <StatusBadge status={runDetailQuery.data.backup_status || undefined} tText={tText} />
+                    {runDetailQuery.data.backup_error_message ? (
+                      <span className="ml-2 text-rose-700">{formatSystemErrorMessage(runDetailQuery.data.backup_error_message)}</span>
+                    ) : null}
+                  </div>
+                ) : null}
                 <RunSteps steps={runDetailQuery.data.steps} policyTitleByKey={policyTitleByKey} tText={tText} />
               </div>
             ) : (
@@ -829,8 +1009,9 @@ export default function AdminDataRetention() {
             <div className="grid gap-3 md:grid-cols-2">
               {[
                 ["禁止自定义 SQL", "后台仅允许修改保留天数、启用状态、批处理大小，不可编写或执行任意删除语句。"],
-                ["必须先预览", "执行清理须关联最近一次生成、且尚未用于正式删除的预览任务编号，不可跳过预览。"],
-                ["保护核心交易表", "订单、支付、发票、库存流水、积分流水、返现流水默认禁止硬删除。"],
+                ["必须先预览", "执行清理须关联最近一次生成、且尚未用于正式删除的预览任务编号，不可跳过预览。文件清理也必须先预览候选对象。"],
+                ["清理前备份", "正式执行前会自动创建 pre_cleanup 备份；备份失败、超时或取消时不会删除任何数据。"],
+                ["保护核心交易表", "订单、支付、发票、库存流水、积分流水、返现流水只能归档或冷存储，默认禁止硬删除。"],
                 ["批量删除", "每批限制在 500～2000 条，降低锁表风险。"],
                 ["执行锁", "同一时间只能有一个清理任务持有全局锁。"],
                 ["审计留痕", "预览、执行、取消及策略变更均会写入审计日志，便于追溯。"],

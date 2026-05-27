@@ -32,6 +32,13 @@ function beforeColumn(column, extraSql = '', extraParams = []) {
   });
 }
 
+function rawWhere(sql, params = []) {
+  return ({ cutoffAt }) => ({
+    sql,
+    params: params.map((param) => (param === '$cutoffAt' ? cutoffAt : param)),
+  });
+}
+
 function isProtectedTable(tableName) {
   const value = String(tableName || '').toLowerCase();
   return PROTECTED_TABLE_RULES.some((rule) => {
@@ -307,6 +314,216 @@ const DEFAULT_POLICY_DEFINITIONS = [
     retentionDays: 365,
     description: '清理历史数据修复任务。',
     where: beforeColumn('created_at'),
+  },
+  {
+    key: 'data_cleanup_runs_preview',
+    title: '清理预览记录',
+    category: 'system',
+    tableName: 'data_cleanup_runs',
+    dateColumn: 'started_at',
+    retentionDays: 90,
+    description: '清理 90 天前的数据清理预览记录。',
+    where: rawWhere("run_type = 'preview' AND started_at < ?", ['$cutoffAt']),
+  },
+  {
+    key: 'data_cleanup_run_steps_history',
+    title: '清理步骤历史',
+    category: 'system',
+    tableName: 'data_cleanup_run_steps',
+    dateColumn: 'started_at',
+    retentionDays: 365,
+    description: '跟随旧的非运行清理任务清理步骤记录。',
+    where: rawWhere(
+      `started_at < ? AND (
+        run_id NOT IN (SELECT id FROM data_cleanup_runs)
+        OR run_id IN (
+          SELECT id FROM data_cleanup_runs
+          WHERE status <> 'running' AND started_at < ?
+        )
+      )`,
+      ['$cutoffAt', '$cutoffAt'],
+    ),
+  },
+  {
+    key: 'data_cleanup_file_candidates_history',
+    title: '文件清理候选历史',
+    category: 'system',
+    tableName: 'data_cleanup_file_candidates',
+    dateColumn: 'created_at',
+    retentionDays: 365,
+    description: '清理旧的文件清理预览候选记录。',
+    where: rawWhere(
+      `created_at < ? AND (
+        preview_run_id NOT IN (SELECT id FROM data_cleanup_runs)
+        OR preview_run_id IN (
+          SELECT id FROM data_cleanup_runs
+          WHERE status <> 'running' AND started_at < ?
+        )
+      )`,
+      ['$cutoffAt', '$cutoffAt'],
+    ),
+  },
+  {
+    key: 'data_cleanup_runs_history',
+    title: '清理执行历史',
+    category: 'system',
+    tableName: 'data_cleanup_runs',
+    dateColumn: 'started_at',
+    retentionDays: 365,
+    description: '清理 365 天前非运行状态的数据清理执行记录。',
+    where: rawWhere("run_type <> 'preview' AND status <> 'running' AND started_at < ?", ['$cutoffAt']),
+  },
+  {
+    key: 'backup_alerts_resolved',
+    title: '已解决备份告警',
+    category: 'backup',
+    tableName: 'backup_alerts',
+    dateColumn: 'resolved_at',
+    retentionDays: 365,
+    description: '清理 365 天前已解决的备份告警。',
+    where: rawWhere("status = 'resolved' AND COALESCE(resolved_at, created_at) < ?", ['$cutoffAt']),
+  },
+  {
+    key: 'backup_jobs_history',
+    title: '备份任务历史',
+    category: 'backup',
+    tableName: 'backup_jobs',
+    dateColumn: 'finished_at',
+    retentionDays: 1095,
+    description: '清理 3 年前已结束的备份任务元数据；不按文件路径删除备份对象。',
+    where: rawWhere("status IN ('success','failed','cancelled') AND COALESCE(finished_at, created_at) < ?", ['$cutoffAt']),
+  },
+  {
+    key: 'restore_jobs_history',
+    title: '恢复任务历史',
+    category: 'backup',
+    tableName: 'restore_jobs',
+    dateColumn: 'finished_at',
+    retentionDays: 1095,
+    description: '清理 3 年前已结束的恢复任务元数据。',
+    where: rawWhere("status IN ('merged','switched','failed','cancelled') AND COALESCE(finished_at, created_at) < ?", ['$cutoffAt']),
+  },
+  {
+    key: 'restore_drill_reports_history',
+    title: '恢复演练报告历史',
+    category: 'backup',
+    tableName: 'restore_drill_reports',
+    dateColumn: 'created_at',
+    retentionDays: 365,
+    description: '清理 365 天前的恢复演练报告。',
+    where: rawWhere('COALESCE(finished_at, created_at) < ?', ['$cutoffAt']),
+  },
+  {
+    key: 'binlog_files_history',
+    title: 'Binlog 文件元数据历史',
+    category: 'backup',
+    tableName: 'binlog_files',
+    dateColumn: 'uploaded_at',
+    retentionDays: 1095,
+    description: '清理 3 年前的 binlog 文件元数据，保留近期时间点恢复索引。',
+    where: beforeColumn('uploaded_at'),
+  },
+  {
+    key: 'search_terms_inactive',
+    title: '低频搜索词',
+    category: 'analytics',
+    tableName: 'search_terms',
+    dateColumn: 'last_searched_at',
+    retentionDays: 365,
+    description: '清理 365 天未搜索且搜索次数较低的关键词。',
+    where: rawWhere('search_count <= 2 AND COALESCE(last_searched_at, updated_at, created_at) < ?', ['$cutoffAt']),
+  },
+  {
+    key: 'coupon_events_history',
+    title: '优惠券事件流水',
+    category: 'commerce',
+    tableName: 'coupon_events',
+    dateColumn: 'created_at',
+    retentionDays: 730,
+    description: '清理 730 天前的优惠券事件流水。',
+    where: beforeColumn('created_at'),
+  },
+  {
+    key: 'cache_meta_expired',
+    title: '失效缓存元数据',
+    category: 'monitoring',
+    tableName: 'cache_meta',
+    dateColumn: 'updated_at',
+    retentionDays: 90,
+    description: '清理长期未更新且已不再有效的缓存元数据。',
+    where: rawWhere('db_updated_at IS NOT NULL AND cache_updated_at < db_updated_at AND updated_at < ?', ['$cutoffAt']),
+  },
+  {
+    key: 'admin_event_actions_history',
+    title: '后台事件操作历史',
+    category: 'monitoring',
+    tableName: 'admin_event_actions',
+    dateColumn: 'created_at',
+    retentionDays: 365,
+    description: '清理已解决或已清理后台事件关联的操作历史。',
+    where: rawWhere(
+      `created_at < ? AND (
+        event_id NOT IN (SELECT id FROM admin_event_records)
+        OR event_id IN (
+          SELECT id FROM admin_event_records
+          WHERE status IN ('resolved','ignored','auto_resolved','expired')
+            AND COALESCE(resolved_at, expired_at, updated_at, created_at) < ?
+        )
+      )`,
+      ['$cutoffAt', '$cutoffAt'],
+    ),
+  },
+  {
+    key: 'admin_event_user_states_history',
+    title: '后台事件用户状态历史',
+    category: 'monitoring',
+    tableName: 'admin_event_user_states',
+    dateColumn: 'updated_at',
+    retentionDays: 365,
+    description: '清理已解决或已清理后台事件关联的用户阅读状态。',
+    where: rawWhere(
+      `updated_at < ? AND (
+        event_id NOT IN (SELECT id FROM admin_event_records)
+        OR event_id IN (
+          SELECT id FROM admin_event_records
+          WHERE status IN ('resolved','ignored','auto_resolved','expired')
+            AND COALESCE(resolved_at, expired_at, updated_at, created_at) < ?
+        )
+      )`,
+      ['$cutoffAt', '$cutoffAt'],
+    ),
+  },
+  {
+    key: 'raw_upload_objects',
+    title: 'S3 原始临时上传对象',
+    category: 'file',
+    tableName: 's3:uploads/raw',
+    dateColumn: 'last_modified',
+    deleteMode: 'file_delete',
+    retentionDays: 1,
+    description: '清理 S3 uploads/raw/ 下超过 24 小时未完成的临时对象。',
+  },
+  {
+    key: 'orphan_upload_files_preview',
+    title: '孤儿上传文件预览',
+    category: 'file',
+    tableName: 'uploads',
+    dateColumn: 'last_modified',
+    deleteMode: 'file_delete',
+    retentionDays: 30,
+    enabled: false,
+    description: '扫描本地和 S3 上传目录，预览超过 30 天未被业务引用的文件。',
+  },
+  {
+    key: 'orphan_upload_files_run',
+    title: '孤儿上传文件执行',
+    category: 'file',
+    tableName: 'uploads',
+    dateColumn: 'last_modified',
+    deleteMode: 'file_delete',
+    retentionDays: 30,
+    enabled: false,
+    description: '只删除已预览确认且仍未过期的孤儿上传文件。',
   },
 ].map((policy) => ({
   batchSize: DEFAULT_BATCH_SIZE,

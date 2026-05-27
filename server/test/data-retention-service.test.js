@@ -36,11 +36,15 @@ function loadServiceWithMocks(options = {}) {
   const repoPath = require.resolve('../src/modules/dataRetention/repository/dataRetention.repository');
   const auditPath = require.resolve('../src/utils/auditLog');
   const exportPath = require.resolve('../src/modules/dataRetention/service/exportCleanup.service');
+  const backupPath = require.resolve('../src/modules/admin/service/backup.service');
+  const adminPath = require.resolve('../src/modules/admin');
 
   delete require.cache[servicePath];
   delete require.cache[repoPath];
   delete require.cache[auditPath];
   delete require.cache[exportPath];
+  delete require.cache[backupPath];
+  delete require.cache[adminPath];
 
   const policies = new Map();
   const runs = new Map();
@@ -133,6 +137,7 @@ function loadServiceWithMocks(options = {}) {
         status: payload.status || 'running',
         triggered_by: payload.triggeredBy || null,
         preview_run_id: payload.previewRunId || null,
+        backup_job_id: payload.backupJobId || null,
         preview_consumed_at: null,
         policy_keys: payload.policyKeys || [],
         total_matched: 0,
@@ -208,6 +213,9 @@ function loadServiceWithMocks(options = {}) {
     async releaseLock() {
       locked = false;
     },
+    async getLatestPreCleanupBackup() {
+      return null;
+    },
   };
 
   require.cache[repoPath] = { id: repoPath, filename: repoPath, loaded: true, exports: repo };
@@ -224,6 +232,31 @@ function loadServiceWithMocks(options = {}) {
     exports: {
       listExpiredExportFiles: () => [],
       deleteExpiredExportFiles: async () => ({ matched: 0, deleted: 0, batchCount: 0 }),
+    },
+  };
+  require.cache[backupPath] = {
+    id: backupPath,
+    filename: backupPath,
+    loaded: true,
+    exports: {
+      createPreCleanupBackupAndWait: async () => {
+        if (options.backupFails) {
+          const error = new Error('BACKUP_FAILED');
+          error.backupJobId = 'backup-failed-1';
+          throw error;
+        }
+        return { id: 'backup-ok-1', status: 'success' };
+      },
+    },
+  };
+  require.cache[adminPath] = {
+    id: adminPath,
+    filename: adminPath,
+    loaded: true,
+    exports: {
+      api: {
+        createPreCleanupBackupAndWait: require.cache[backupPath].exports.createPreCleanupBackupAndWait,
+      },
     },
   };
 
@@ -251,7 +284,19 @@ describe('data retention cleanup service', () => {
     const run = await service.executeRun({ preview_run_id: preview.id, policy_keys: ['otp_send_logs'] }, makeReq());
 
     assert.equal(run.total_deleted, 2);
+    assert.equal(run.backup_job_id, 'backup-ok-1');
     assert.deepEqual(tables.otp_send_logs.map((row) => row.id), ['new-1']);
+  });
+
+  test('execute is blocked when pre-cleanup backup fails', async () => {
+    const { service, tables } = loadServiceWithMocks({ backupFails: true });
+    const preview = await service.createPreview({ policy_keys: ['otp_send_logs'] }, makeReq());
+
+    await assert.rejects(
+      () => service.executeRun({ preview_run_id: preview.id, policy_keys: ['otp_send_logs'] }, makeReq()),
+      /BACKUP_FAILED/,
+    );
+    assert.deepEqual(tables.otp_send_logs.map((row) => row.id), ['old-1', 'old-2', 'new-1']);
   });
 
   test('locked policy cannot lower retention days', async () => {

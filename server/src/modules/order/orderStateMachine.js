@@ -79,8 +79,12 @@ function canUserCancel(order) {
  * @param {{ status: string; payment_status?: string }} order
  */
 function canShip(order) {
+  const shippablePaymentStatuses = [
+    PAYMENT_STATUS.PAID,
+    PAYMENT_STATUS.PARTIALLY_REFUNDED,
+  ].map(String);
   return order.status === ORDER_STATUS.PAID
-    && (order.payment_status || PAYMENT_STATUS.PENDING) === PAYMENT_STATUS.PAID;
+    && shippablePaymentStatuses.includes(order.payment_status || PAYMENT_STATUS.PENDING);
 }
 
 module.exports = {

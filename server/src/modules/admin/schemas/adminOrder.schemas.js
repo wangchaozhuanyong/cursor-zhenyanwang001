@@ -31,9 +31,26 @@ const adminBatchShipBodySchema = z.object({
   tracking_map: z.record(z.string(), z.string().trim().min(1)).optional(),
 });
 
+const shortageAdjustmentItemSchema = z.object({
+  order_item_id: idParam,
+  after_qty: z.coerce.number().int().min(0),
+  shortage_reason: z.string().trim().max(255).optional(),
+  correct_stock_zero: z.boolean().optional(),
+});
+
+const adminShortageAdjustmentBodySchema = z.object({
+  reason: z.string().trim().min(1, '调整原因不能为空').max(500),
+  customer_confirmed: z.boolean().optional().default(false),
+  customer_confirm_method: z.string().trim().max(64).optional().default(''),
+  customer_confirm_note: z.string().trim().max(500).optional().default(''),
+  stock_handling: z.enum(['no_restore', 'correct_zero']).optional().default('no_restore'),
+  items: z.array(shortageAdjustmentItemSchema).min(1, '请至少选择一个缺货商品'),
+});
+
 module.exports = {
   adminOrderIdParamsSchema,
   adminUpdateOrderStatusBodySchema,
   adminShipOrderBodySchema,
   adminBatchShipBodySchema,
+  adminShortageAdjustmentBodySchema,
 };

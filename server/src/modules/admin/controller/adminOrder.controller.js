@@ -27,6 +27,25 @@ exports.getById = asyncRoute(async (req, res) => {
   res.success(r.data);
 });
 
+exports.previewShortageAdjustment = asyncRoute(async (req, res) => {
+  const r = await svc.previewShortageAdjustment(req.params.id, req.body);
+  res.success(r.data);
+});
+
+exports.applyShortageAdjustment = asyncRoute(async (req, res) => {
+  const before = await svc.getOrderById(req.params.id).then((r) => r.data).catch(() => null);
+  const r = await svc.applyShortageAdjustment(req.params.id, req.body, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'order',
+    entityType: 'order',
+    entityId: req.params.id,
+    action: 'shortage_adjustment',
+    beforeData: before,
+    afterData: r.data,
+  });
+  res.success(r.data, r.message);
+});
+
 exports.updateStatus = asyncRoute(async (req, res) => {
   const before = await svc.getOrderById(req.params.id).then((r) => r.data).catch(() => null);
   const r = await svc.updateOrderStatus(req.params.id, req.body, req.user?.id, req);

@@ -979,7 +979,9 @@ async function selectOrderItemsByOrderIds(q, orderIds) {
     `SELECT oi.*, pr.id AS review_id, pr.status AS review_status
      FROM order_items oi
      LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
-     WHERE oi.order_id IN (${orderIds.map(() => '?').join(',')})`,
+     WHERE oi.order_id IN (${orderIds.map(() => '?').join(',')})
+       AND COALESCE(oi.line_status, 'active') = 'active'
+       AND COALESCE(oi.qty, 0) > 0`,
     orderIds,
   );
   return rows;
@@ -1030,10 +1032,22 @@ async function selectOrderItems(q, orderId) {
     `SELECT oi.*, pr.id AS review_id, pr.status AS review_status
      FROM order_items oi
      LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
-     WHERE oi.order_id = ?`,
+     WHERE oi.order_id = ?
+       AND COALESCE(oi.line_status, 'active') = 'active'
+       AND COALESCE(oi.qty, 0) > 0`,
     [orderId],
   );
   return rows;
+}
+
+async function countOrderShortageAdjustments(q, orderId) {
+  const [[row]] = await q.query(
+    `SELECT COUNT(*) AS total
+     FROM order_adjustments
+     WHERE order_id = ? AND adjustment_type = 'stock_shortage' AND status = 'applied'`,
+    [orderId],
+  );
+  return Number(row?.total || 0);
 }
 
 async function updateOrderStatus(q, orderId, status) {
@@ -1413,6 +1427,7 @@ module.exports = {
   selectOrderByIdForUpdate,
   selectOrderByIdOrOrderNoForUpdate,
   selectOrderItems,
+  countOrderShortageAdjustments,
   updateOrderStatus,
   updateOrderGiftRedeemPaid,
   updateOrderCancelled,

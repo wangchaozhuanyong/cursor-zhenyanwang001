@@ -211,5 +211,9 @@ module.exports = {
   createStripeCheckoutSession,
   confirmReceive,
   completeShippedOrder,
-  cancelPendingOrderInTransaction: (...args) => orderCancel.cancelPendingOrderInTransaction(...args),
+  cancelPendingOrderInTransaction: function cancelPendingOrderInTransaction() {
+    // 兼容 checkJs：避免将 any[] 直接 spread 到非 rest 形参函数上导致类型报错
+    // eslint-disable-next-line prefer-rest-params
+    return orderCancel.cancelPendingOrderInTransaction.apply(null, arguments);
+  },
 };

@@ -145,7 +145,7 @@ function parsePayload(payload) {
 function translateTechnicalMessage(raw) {
   if (/[\u4e00-\u9fff]/.test(raw)) return raw;
   for (const [pattern, zh] of SYSTEM_ERROR_MESSAGE_PATTERNS) {
-    if (pattern.test(raw)) return zh;
+    if (pattern instanceof RegExp && pattern.test(raw)) return zh;
   }
   return null;
 }

@@ -553,6 +553,7 @@ async function verifyPasskeyAuthenticationResponse({ response, expectedPurpose, 
   const credentialId = String(response?.id || '');
   const credentialRow = await repo.selectWebAuthnCredentialByHash(hashValue(credentialId));
   if (!credentialRow) throw new BusinessError(404, 'Passkey not found');
+  /** @type {any} */
   let challengeRow = null;
   const verification = await verifyAuthenticationResponse({
     response,
@@ -567,6 +568,9 @@ async function verifyPasskeyAuthenticationResponse({ response, expectedPurpose, 
   });
   if (!verification.verified || !verification.authenticationInfo) {
     throw new BusinessError(400, 'Passkey verification failed');
+  }
+  if (!challengeRow || !challengeRow.userId) {
+    throw new BusinessError(400, 'Passkey challenge missing');
   }
   if (String(credentialRow.user_id) !== String(challengeRow.userId)) {
     throw new BusinessError(403, 'Passkey does not belong to this account');

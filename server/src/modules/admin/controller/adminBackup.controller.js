@@ -1,5 +1,5 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
-const service = require('../service/backup.service');
+const service = /** @type {any} */ (require('../service/backup.service'));
 
 exports.overview = asyncRoute(async (_req, res) => {
   res.success(await service.getOverview());

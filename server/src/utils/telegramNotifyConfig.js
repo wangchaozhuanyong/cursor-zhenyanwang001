@@ -29,6 +29,9 @@ const PARSE_MODES = new Set(['HTML', 'Markdown', 'MarkdownV2']);
 /**
  * @typedef {object} TelegramNotifyConfigInput
  * @property {boolean|string|number=} enabled
+ * @property {boolean|string|number=} orderNotifyEnabled
+ * @property {boolean|string|number=} eventNotifyEnabled
+ * @property {boolean|string|number=} eventNotifyImmediate
  * @property {string=} botToken
  * @property {string=} adminChatId
  * @property {string=} parseMode

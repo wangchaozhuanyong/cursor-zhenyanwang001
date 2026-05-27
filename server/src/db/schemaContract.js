@@ -164,10 +164,10 @@ async function getPendingMigrations() {
 
 /**
  * 订单有效应付 SQL（兼容 payable/total 为 0 但 raw_amount 或快照有值的旧数据）
- * @param {string} [alias='o']
+ * @param {string} alias
  * @param {Record<string, boolean>} schema
  */
-function orderEffectivePayableSql(alias, schema) {
+function orderEffectivePayableSql(alias = 'o', schema) {
   const p = alias ? `${alias}.` : '';
   const parts = [];
   if (schema.ordersPayableAmount) parts.push(`NULLIF(${p}payable_amount, 0)`);

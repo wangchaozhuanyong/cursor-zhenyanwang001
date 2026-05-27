@@ -190,6 +190,10 @@ async function countEvents(query, adminUserId) {
   return Number(total || 0);
 }
 
+/**
+ * @param {string|number} adminUserId
+ * @param {Record<string, any>} [query]
+ */
 async function selectCategoryCounts(adminUserId, query = {}) {
   const listQuery = { ...query };
   delete listQuery.category;

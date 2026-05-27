@@ -174,22 +174,32 @@ export default function Settings() {
   return (
     <StoreAccountLayout title="账户设置" onBack={goBack} className="store-page text-[var(--theme-text)]" mainClassName="space-y-3 pb-24 sm:py-4 lg:pb-12">
         <section className={CARD}>
-          <div className="flex flex-col items-center py-2">
-            <div className="relative">
-              {avatar ? (
-                <div className="h-20 w-20 overflow-hidden rounded-full ring-1 ring-[var(--theme-border)]">
-                  <img src={avatar} alt="头像" className="h-full w-full object-cover" />
-                </div>
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--theme-primary)] text-2xl font-bold text-[var(--theme-primary-foreground)]">
-                  {nickname.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <button onClick={() => fileInputRef.current?.click()} className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
-                <Camera size={13} />
-              </button>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+          <div className="flex flex-col items-center gap-3 py-2">
+            <div className="w-full text-center">
+              <p className="text-xs font-medium text-[var(--theme-muted)]">头像</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-[var(--theme-muted)]">上传清晰头像，方便客服与售后沟通</p>
             </div>
+            {avatar ? (
+              <div className="h-20 w-20 overflow-hidden rounded-full ring-1 ring-[var(--theme-border)]">
+                <img src={avatar} alt="头像" className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--theme-primary)] text-2xl font-bold text-[var(--theme-primary-foreground)]">
+                {(nickname || "会员").trim().slice(0, 1).toUpperCase()}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={profileSaving}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 text-sm font-semibold text-[var(--theme-text)] transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="更换头像"
+            >
+              <Camera size={16} />
+              {profileSaving ? "保存中..." : "更换头像"}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
           </div>
         </section>
 

@@ -131,8 +131,8 @@ async function saveAdminSettings(body, adminUserId, req) {
 async function syncOrderNotifyEnabled(enabled) {
   const enabledFlag = enabled === true || enabled === 'true' || enabled === 1 || enabled === '1';
   const raw = await getAdminApi().selectSiteSettingValue(SETTING_KEY);
-  const stored = parseStoredConfig(raw) || {};
-  const envMerged = mergeTelegramNotifyConfig(readEnvTelegramConfig(), Object.keys(stored).length ? stored : null);
+  const stored = /** @type {any} */ (parseStoredConfig(raw) || {});
+  const envMerged = /** @type {any} */ (mergeTelegramNotifyConfig(readEnvTelegramConfig(), Object.keys(stored).length ? stored : null));
   const next = normalizeTelegramNotifyConfig({
     enabled: enabledFlag,
     orderNotifyEnabled: enabledFlag,
@@ -260,9 +260,17 @@ async function sendMessage(chatId, text, options = {}) {
   }
 }
 
-async function writeLog({
-  orderId, eventType, status, messageContent = '', providerMessageId = '', errorMessage = '', targetId,
-}) {
+/** @param {any} args */
+async function writeLog(args = {}) {
+  const {
+    orderId,
+    eventType,
+    status,
+    messageContent = '',
+    providerMessageId = '',
+    errorMessage = '',
+    targetId,
+  } = args || {};
   const config = await loadConfig();
   await repo.insertNotificationLog({
     targetId: targetId || config.adminChatId,

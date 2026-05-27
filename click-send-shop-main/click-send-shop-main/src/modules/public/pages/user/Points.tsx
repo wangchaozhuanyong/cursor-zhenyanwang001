@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
 import { usePointsStore } from "@/stores/usePointsStore";
 import { fetchPointsConfig, signIn } from "@/services/pointsService";
-import type { PointsClientConfig } from "@/api/modules/points";
+import type { PointsClientConfig } from "@/services/pointsService";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";

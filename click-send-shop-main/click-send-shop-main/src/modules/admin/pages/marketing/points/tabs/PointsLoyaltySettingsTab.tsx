@@ -10,7 +10,7 @@ import {
   POINTS_RULE_FIELD_HINTS,
   POINTS_SECTION_HINTS,
 } from "@/modules/admin/pages/marketing/adminPointsHints";
-import type { LoyaltyPointsSettings } from "@/api/admin/points";
+import type { LoyaltyPointsSettings } from "@/services/admin/pointsService";
 import { cn } from "@/lib/utils";
 
 type Props = {

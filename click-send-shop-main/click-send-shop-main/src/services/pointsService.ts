@@ -45,4 +45,4 @@ export async function redeemPointsGift(body: {
   };
 }
 
-export type { PointsGiftCatalogItem };
+export type { PointsClientConfig, PointsGiftCatalogItem };

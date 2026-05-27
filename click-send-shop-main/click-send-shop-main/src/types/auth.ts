@@ -2,6 +2,9 @@ export interface LoginParams {
   phone: string;
   countryCode?: string;
   password: string;
+  challengeToken?: string;
+  deviceId?: string;
+  timezone?: string;
 }
 
 export interface RegisterParams {
@@ -10,6 +13,8 @@ export interface RegisterParams {
   password: string;
   nickname?: string;
   inviteCode?: string;
+  deviceId?: string;
+  timezone?: string;
 }
 
 export interface AuthToken {

@@ -24,6 +24,7 @@ const wechatService = require('./wechat.service');
 const { formatUserResponse } = require('../../../utils/formatUserResponse');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
+const clientSecurity = require('../../security/service/clientSecurity.service');
 
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 
@@ -31,10 +32,13 @@ function hashResetToken(token) {
   return crypto.createHash('sha256').update(String(token)).digest('hex');
 }
 
-async function register(body) {
+async function register(body, options = {}) {
   const { phone, countryCode, password, nickname, inviteCode } = body;
   const normalizedPhone = normalizeIntlPhone(phone, countryCode);
   if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
+  clientSecurity.validatePasswordPolicy(password, { phone: normalizedPhone, username: nickname });
+  const securityContext = options.securityContext || null;
+  const registerRisk = securityContext ? await clientSecurity.enforceRegisterRisk(securityContext) : null;
 
   const existing = await repo.findUserIdByPhones(buildPhoneLookupCandidates(phone, countryCode));
   if (existing) throw new ConflictError('该手机号已注册，请直接登录');
@@ -73,7 +77,7 @@ async function register(body) {
     }
   }
 
-  try {
+  if (!registerRisk?.restricted) try {
     const userApi = /** @type {any} */ (require('../../user')).api || {};
     if (typeof userApi.awardConfiguredPointsBonusForUser === 'function') {
       await userApi.awardConfiguredPointsBonusForUser({
@@ -88,7 +92,7 @@ async function register(body) {
     console.warn(`[auth.register] register points issue skipped: ${e?.message || e}`);
   }
 
-  try {
+  if (!registerRisk?.restricted) try {
     const marketingApi = /** @type {any} */ (require('../../marketing')).api || {};
     if (typeof marketingApi.issueNewUserGiftPack === 'function') {
       await marketingApi.issueNewUserGiftPack(id);
@@ -97,18 +101,49 @@ async function register(body) {
     console.warn(`[auth.register] new user gift issue skipped: ${e?.message || e}`);
   }
 
-  const token = signToken(id, 0);
+  if (registerRisk?.restricted) {
+    try {
+      const adminApi = /** @type {any} */ (require('../../admin')).api || {};
+      if (typeof adminApi.persistUserRestrictions === 'function') {
+        await adminApi.persistUserRestrictions(id, {
+          order_restricted: 1,
+          coupon_restricted: 1,
+          comment_restricted: 0,
+        });
+      }
+    } catch (e) {
+      console.warn(`[auth.register] risk restriction skipped: ${e?.message || e}`);
+    }
+  }
+
+  const token = securityContext
+    ? await clientSecurity.registerDeviceAndSession({ userId: id, context: securityContext })
+    : signToken(id, 0);
   return { data: { token, userId: id }, message: '注册成功' };
 }
 
-async function login(body) {
+async function login(body, options = {}) {
   const phone = body.phone || body.username;
   const countryCode = body.countryCode;
   const { password } = body;
+  const securityContext = options.securityContext || null;
+  const loginIdentifier = clientSecurity.normalizeIdentifier(normalizeIntlPhone(phone, countryCode) || phone);
+  let riskScore = 0;
+
+  if (securityContext) {
+    await clientSecurity.consumeLoginChallenge(body.challengeToken || body.challenge_token);
+    const risk = await clientSecurity.evaluateLoginRequest({ loginIdentifier, context: securityContext });
+    riskScore = risk.riskScore;
+  }
 
   const lookupPhones = buildPhoneLookupCandidates(phone, countryCode);
   const matchedUsers = await repo.findUsersByPhones(lookupPhones);
-  if (!matchedUsers.length) throw new AuthError('手机号或密码不正确');
+  if (!matchedUsers.length) {
+    if (securityContext) {
+      await clientSecurity.recordLoginFailure({ loginIdentifier, userId: null, context: securityContext, riskScore });
+    }
+    throw new AuthError(clientSecurity.LOGIN_ERROR);
+  }
 
   function coerceHash(hash) {
     let h = hash;
@@ -130,11 +165,32 @@ async function login(body) {
     }
   } catch (err) {
     console.error('[auth.login] bcrypt compare error', err);
-    throw new AuthError('手机号或密码不正确');
+    if (securityContext) {
+      await clientSecurity.recordLoginFailure({ loginIdentifier, userId: null, context: securityContext, riskScore }).catch(() => {});
+    }
+    throw new AuthError(clientSecurity.LOGIN_ERROR);
   }
-  if (!user) throw new AuthError('手机号或密码不正确');
+  if (!user) {
+    if (securityContext) {
+      await clientSecurity.recordLoginFailure({
+        loginIdentifier,
+        userId: matchedUsers[0]?.id,
+        context: securityContext,
+        riskScore,
+      });
+    }
+    throw new AuthError(clientSecurity.LOGIN_ERROR);
+  }
 
-  return issueLoginForUserId(user.id, { loginMethod: 'phone_password' });
+  if (securityContext) {
+    await clientSecurity.recordLoginSuccess({ loginIdentifier, userId: user.id, context: securityContext, riskScore });
+  }
+  return issueLoginForUserId(user.id, {
+    loginMethod: 'phone_password',
+    ip: securityContext?.ip,
+    userAgent: securityContext?.userAgent,
+    securityContext,
+  });
 }
 
 function buildLoginResult(userRow) {
@@ -179,7 +235,14 @@ async function issueLoginForUserId(userId, options = {}) {
     });
   }
 
-  return buildLoginResult(row);
+  const result = buildLoginResult(row);
+  if (options.securityContext) {
+    result.data.token = await clientSecurity.registerDeviceAndSession({
+      userId,
+      context: options.securityContext,
+    });
+  }
+  return result;
 }
 
 async function getProfile(userId) {
@@ -304,9 +367,19 @@ async function changePassword(userId, body) {
 
   const match = await comparePassword(oldPassword, stored);
   if (!match) throw new ValidationError('旧密码不正确');
+  clientSecurity.validatePasswordPolicy(newPassword, { phone: row.phone });
 
   const hash = await hashPassword(newPassword);
   await repo.updatePasswordHash(userId, hash);
+  await clientSecurity.revokeOtherSessions(userId, body.currentSessionId || null, body.securityContext || null, 'password_changed').catch(() => {});
+  await clientSecurity.emitSecurityEvent({
+    userId,
+    eventType: 'password_changed',
+    severity: 'warning',
+    title: '账号密码已修改',
+    description: '用户修改了登录密码。',
+    context: body.securityContext || {},
+  }).catch(() => {});
   return { data: null, message: '密码已更新' };
 }
 
@@ -353,14 +426,25 @@ async function resetPassword(body) {
   if (row.used_at) throw new ValidationError('重置令牌已使用，请重新申请');
   if (new Date(row.expires_at).getTime() <= Date.now()) throw new ValidationError('重置令牌已过期，请重新申请');
 
+  clientSecurity.validatePasswordPolicy(newPassword);
   const hash = await hashPassword(newPassword);
   await repo.updatePasswordHash(row.user_id, hash);
   await repo.markPasswordResetTokenUsed(row.id);
   await repo.incrementRefreshTokenVersion(row.user_id);
+  await clientSecurity.revokeAllSessions(row.user_id, {}, 'password_reset').catch(() => {});
   return { data: null, message: '密码已重置' };
 }
 
-async function refresh(refreshToken) {
+async function refresh(refreshToken, options = {}) {
+  if (options.securityContext) {
+    const rotated = await clientSecurity.rotateRefreshToken(refreshToken, options.securityContext);
+    const user = await repo.selectRefreshVersion(rotated.userId);
+    if (!user) throw new AuthError('登录状态无效，请重新登录');
+    if (user.account_status === 'disabled' || user.account_status === 'blacklisted') {
+      throw new AuthError('账号已被限制使用，请联系客服');
+    }
+    return { data: { accessToken: rotated.token.accessToken, refreshToken: rotated.token.refreshToken } };
+  }
   if (!refreshToken) throw new ValidationError('登录状态无效，请重新登录');
 
   let payload;
@@ -387,11 +471,20 @@ async function refresh(refreshToken) {
   return { data: { accessToken: newToken.accessToken } };
 }
 
-async function logout(userId) {
-  if (userId) {
+async function logout(userId, options = {}) {
+  if (userId && options.refreshToken) {
+    const revoked = await clientSecurity.revokeCurrentSession(options.refreshToken, userId, 'logout').catch(() => false);
+    if (!revoked) await repo.incrementRefreshTokenVersion(userId);
+  } else if (userId) {
     await repo.incrementRefreshTokenVersion(userId);
   }
   return { data: null, message: '已退出登录' };
+}
+
+async function logoutAll(userId, options = {}) {
+  await clientSecurity.revokeAllSessions(userId, options.securityContext || {}, 'logout_all');
+  await repo.incrementRefreshTokenVersion(userId);
+  return { data: null, message: '已退出所有设备' };
 }
 
 /** 渚涘叾浠栧煙锛堝 admin锛夊湪璁よ瘉娴佺▼涓煡璇㈢敤鎴凤紝涓嶇粡杩?HTTP */
@@ -442,6 +535,7 @@ module.exports = {
   resetPassword,
   refresh,
   logout,
+  logoutAll,
   findUserByPhone,
   findUserByPhones,
   findUsersByPhones,

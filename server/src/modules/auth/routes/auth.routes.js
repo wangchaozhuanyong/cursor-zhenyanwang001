@@ -36,12 +36,14 @@ router.post('/wechat/bind-phone', validate({ body: wechatBindPhoneBodySchema }),
 router.post('/wechat/otp/send', validate({ body: wechatOtpSendBodySchema }), ctrl.wechatOtpSend);
 
 router.post('/register', validate({ body: registerBodySchema }), ctrl.register);
+router.post('/login-challenge', ctrl.loginChallenge);
 router.post('/login', validate({ body: loginBodySchema }), ctrl.login);
 router.get('/features', ctrl.features);
 router.post('/password-reset/request', validate({ body: requestPasswordResetBodySchema }), ctrl.requestPasswordReset);
 router.post('/password-reset/confirm', validate({ body: resetPasswordBodySchema }), ctrl.resetPassword);
 router.post('/refresh', validate({ body: refreshBodySchema }), ctrl.refresh);
 router.post('/logout', auth, ctrl.logout);
+router.post('/logout-all', auth, ctrl.logoutAll);
 
 router.post('/oauth/exchange', validate({ body: oauthExchangeBodySchema }), ctrl.oauthExchange);
 router.post('/otp/send', validate({ body: otpSendBodySchema }), ctrl.otpSend);

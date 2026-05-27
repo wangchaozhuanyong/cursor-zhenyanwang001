@@ -16,6 +16,7 @@ module.exports = {
   changePassword: authService.changePassword,
   updateLastLogin: authService.updateLastLogin,
   refresh: authService.refresh,
+  logoutAll: authService.logoutAll,
   getUserIdAndRole: authService.getUserIdAndRole,
   findPhoneDuplicateForUser: authService.findPhoneDuplicateForUser,
   findPhoneDuplicateByPhonesForUser: authService.findPhoneDuplicateByPhonesForUser,

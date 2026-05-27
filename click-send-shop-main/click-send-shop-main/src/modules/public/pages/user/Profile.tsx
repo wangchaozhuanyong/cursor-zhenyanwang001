@@ -500,38 +500,58 @@ export default function Profile() {
 
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
           <SectionTitle title="我的服务" />
-          <div className="grid grid-cols-4 gap-x-2 gap-y-2.5">
+          <div className="grid auto-rows-fr grid-cols-4 gap-2">
             {[
               { key: "address", label: "收货地址", icon: MapPin, path: "/address", auth: true },
               { key: "support", label: "客服中心", icon: Headphones, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
               { key: "history", label: "浏览记录", icon: Clock3, path: "/history", auth: false },
               { key: "feedback", label: "意见反馈", icon: MessageSquare, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
               { key: "notifications", label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
+              // 明确不在“我的服务”展示语言设置入口，避免与站点语言门禁/账户设置发生语义冲突。
               { key: "about", label: "关于我们", icon: Info, path: "/about", auth: false },
               { key: "settings", label: "账户设置", icon: Settings, path: "/settings", auth: true },
-            ].filter((item) => (
-              item.key !== "notifications" || loggedIn
-            )).map((item) => (
-              <button key={item.key} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`relative min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
-                {item.badgeText ? (
-                  <span className="absolute right-3 top-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] leading-none text-[var(--theme-danger-foreground)]">
-                    {item.badgeText}
+            ]
+              .filter((item) => (item.key !== "notifications" || loggedIn))
+              .filter((item) => item.key !== "language")
+              .map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => gateNavigate(navigate, item.path, item.auth)}
+                  className={cn(
+                    "relative flex min-h-[76px] flex-col items-center justify-center rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)]",
+                    MENU_TAP,
+                  )}
+                >
+                  {item.badgeText ? (
+                    <span className="absolute right-2.5 top-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] leading-none text-[var(--theme-danger-foreground)]">
+                      {item.badgeText}
+                    </span>
+                  ) : null}
+                  <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
+                    <item.icon size={16} strokeWidth={2} />
                   </span>
-                ) : null}
-                <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
-                  <item.icon size={16} strokeWidth={2} />
-                </span>
-                <p className="mt-1 text-[11px] leading-4">{item.label}</p>
-              </button>
-            ))}
-            <SkinPickerDialog trigger={(
-              <button type="button" aria-label="主题设置" data-testid="profile-theme-settings" className={`relative min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
-                <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
-                  <Palette size={16} strokeWidth={2} />
-                </span>
-                <p className="mt-1 text-[11px] leading-4">主题设置</p>
-              </button>
-            )} />
+                  <p className="mt-1 w-full truncate px-1 text-[11px] leading-4">{item.label}</p>
+                </button>
+              ))}
+            <SkinPickerDialog
+              trigger={(
+                <button
+                  type="button"
+                  aria-label="主题设置"
+                  data-testid="profile-theme-settings"
+                  className={cn(
+                    "relative flex min-h-[76px] flex-col items-center justify-center rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)]",
+                    MENU_TAP,
+                  )}
+                >
+                  <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
+                    <Palette size={16} strokeWidth={2} />
+                  </span>
+                  <p className="mt-1 w-full truncate px-1 text-[11px] leading-4">主题设置</p>
+                </button>
+              )}
+            />
           </div>
         </section>
 

@@ -16,6 +16,7 @@ import {
   isAdminMfaRequiredResponse,
   requestAdminMfaStepUp,
 } from "@/lib/adminMfaStepUp";
+import { getClientDeviceId, getClientTimezone } from "@/utils/clientDevice";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const ADMIN_SENSITIVE_ACTION_HEADER = "X-Admin-Sensitive-Action-Token";
@@ -44,7 +45,7 @@ function translateApiMessage(message: string): string {
   if (/invalid phone/i.test(message)) return "手机号格式不正确";
   if (/invalid invite/i.test(message)) return "邀请码不存在或不可用";
   if (/password/i.test(message) && /uppercase|lowercase|digit|number|least/i.test(message)) {
-    return "密码至少 8 位，并包含大写字母、小写字母和数字";
+    return "密码至少 8 位，且不能为纯数字或常见弱密码";
   }
   return message;
 }
@@ -114,7 +115,8 @@ async function tryRefreshToken(): Promise<string> {
   try {
     res = await fetch(`${BASE_URL}/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Device-Id": getClientDeviceId(), "X-Timezone": getClientTimezone() },
+      body: JSON.stringify({ deviceId: getClientDeviceId(), timezone: getClientTimezone() }),
       credentials: "include",
     });
   } finally {
@@ -189,6 +191,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
+    "X-Device-Id": getClientDeviceId(),
+    "X-Timezone": getClientTimezone(),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
     ...options.headers,

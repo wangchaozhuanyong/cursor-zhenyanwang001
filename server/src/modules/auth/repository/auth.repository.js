@@ -186,7 +186,7 @@ async function updateUserProfile(userId, setFragments, values) {
 }
 
 async function selectPasswordHash(userId) {
-  const [[row]] = await db.query('SELECT password_hash FROM users WHERE id = ? AND deleted_at IS NULL', [userId]);
+  const [[row]] = await db.query('SELECT password_hash, phone, nickname FROM users WHERE id = ? AND deleted_at IS NULL', [userId]);
   return row || null;
 }
 

@@ -10,16 +10,26 @@ import type {
   WechatBindPhoneParams,
 } from "@/types/auth";
 import type { UserProfile } from "@/types/user";
+import { getClientDeviceId, getClientTimezone } from "@/utils/clientDevice";
+
+function devicePayload() {
+  return { deviceId: getClientDeviceId(), timezone: getClientTimezone() };
+}
 
 export async function login(params: LoginParams): Promise<LoginResult> {
-  const res = await authApi.login(params);
+  const challenge = await authApi.createLoginChallenge();
+  const res = await authApi.login({
+    ...params,
+    ...devicePayload(),
+    challengeToken: challenge.data.challengeToken,
+  });
   const { accessToken, refreshToken } = res.data.token;
   setTokens(accessToken, refreshToken);
   return res.data;
 }
 
 export async function register(params: RegisterParams): Promise<LoginResult> {
-  const res = await authApi.register(params);
+  const res = await authApi.register({ ...params, ...devicePayload() });
   const { accessToken, refreshToken } = res.data.token;
   setTokens(accessToken, refreshToken);
   return res.data;
@@ -31,6 +41,23 @@ export async function logout(): Promise<void> {
   } finally {
     clearTokens();
   }
+}
+
+export async function logoutAll(): Promise<void> {
+  try {
+    await authApi.logoutAll();
+  } finally {
+    clearTokens();
+  }
+}
+
+export async function listSecuritySessions() {
+  const res = await authApi.listSecuritySessions();
+  return res.data.list;
+}
+
+export async function revokeSecuritySession(id: string) {
+  await authApi.revokeSecuritySession(id);
 }
 
 export async function requestPasswordReset(params: { phone: string; countryCode?: string }) {
@@ -132,7 +159,8 @@ export async function restoreSessionFromCookie(): Promise<boolean> {
   try {
     const refreshRes = await fetch(`${baseUrl}/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Device-Id": getClientDeviceId(), "X-Timezone": getClientTimezone() },
+      body: JSON.stringify(devicePayload()),
       credentials: "include",
     });
     if (!refreshRes.ok) {

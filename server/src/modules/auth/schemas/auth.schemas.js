@@ -21,12 +21,27 @@ const loginPasswordSchema = z
   .min(1, '请填写密码')
   .max(64, '密码不能超过 64 位');
 
+const deviceIdSchema = z
+  .string({ message: '设备标识不能为空' })
+  .trim()
+  .min(8, '设备标识无效')
+  .max(128, '设备标识无效');
+
+const challengeTokenSchema = z
+  .string({ message: '登录请求已过期，请刷新后重试' })
+  .trim()
+  .min(16, '登录请求已过期，请刷新后重试')
+  .max(128, '登录请求已过期，请刷新后重试');
+
+const timezoneSchema = z.string().trim().max(64, '时区标识过长').optional();
+
 const strongPasswordSchema = z
   .string({ message: '请填写密码' })
-  .min(8, '密码至少 8 位，并包含大写字母、小写字母和数字')
+  .min(8, '密码至少 8 位')
   .max(64, '密码不能超过 64 位')
-  .refine((v) => /[a-z]/.test(v) && /[A-Z]/.test(v) && /\d/.test(v), {
-    message: '密码必须包含大写字母、小写字母和数字',
+  .refine((v) => !/^\d+$/.test(v), { message: '密码不能为纯数字' })
+  .refine((v) => !['12345678', 'password', 'password123', 'qwerty123', 'admin123'].includes(v.toLowerCase()), {
+    message: '密码过于简单，请更换',
   });
 
 function withCountryPhoneValidation(schema) {
@@ -73,6 +88,8 @@ const registerBodySchema = withCountryPhoneValidation(z.object({
   password: strongPasswordSchema,
   nickname: z.string().trim().max(32, '昵称不能超过 32 个字').optional(),
   inviteCode: z.string().trim().max(32, '邀请码不能超过 32 位').optional(),
+  deviceId: deviceIdSchema,
+  timezone: timezoneSchema,
 }));
 
 const loginBodySchema = withCountryPhoneValidation(
@@ -82,6 +99,9 @@ const loginBodySchema = withCountryPhoneValidation(
       countryCode: countryCodeSchema.optional(),
       username: z.string().trim().min(1, '请填写手机号').max(20, '手机号长度不正确').optional(),
       password: loginPasswordSchema,
+      challengeToken: challengeTokenSchema,
+      deviceId: deviceIdSchema,
+      timezone: timezoneSchema,
     })
     .refine((v) => Boolean(v.phone || v.username), {
       message: '请填写手机号',
@@ -91,6 +111,8 @@ const loginBodySchema = withCountryPhoneValidation(
 
 const refreshBodySchema = z.object({
   refreshToken: z.string().min(1, 'refreshToken 不能为空').optional(),
+  deviceId: deviceIdSchema,
+  timezone: timezoneSchema,
 });
 
 const updateProfileBodySchema = withWhatsappPhoneValidation(withCountryPhoneValidation(

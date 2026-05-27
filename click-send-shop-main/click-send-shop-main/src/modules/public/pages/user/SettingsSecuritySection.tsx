@@ -144,7 +144,7 @@ export default function SettingsSecuritySection() {
     e.preventDefault();
     if (panelBusy) return;
     if (!oldPwd || !newPwd) return toast.error("请输入旧密码和新密码");
-    if (newPwd.length < 6) return toast.error("新密码至少 6 位");
+    if (newPwd.length < 8) return toast.error("新密码至少 8 位");
     if (newPwd !== confirmPwd) return toast.error("两次输入密码不一致");
 
     setPanelBusy(true);
@@ -209,7 +209,7 @@ export default function SettingsSecuritySection() {
               autoComplete="new-password"
               value={newPwd}
               onChange={(e) => setNewPwd(e.target.value)}
-              placeholder="新密码（至少 6 位）"
+              placeholder="新密码（至少 8 位）"
               disabled={panelBusy}
               className={`${INPUT} focus:ring-[var(--theme-primary)]`}
             />

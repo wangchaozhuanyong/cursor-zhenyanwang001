@@ -10,15 +10,28 @@ const {
   clearAuthCookies,
   getRefreshTokenFromRequest,
 } = require('../../../utils/authCookies');
+const clientSecurity = require('../../security/service/clientSecurity.service');
 
 exports.register = asyncRoute(async (req, res) => {
-  const result = await authApiService.register(req.body);
+  const result = await authApiService.register(req.body, {
+    securityContext: clientSecurity.buildContext(req, req.body),
+  });
   setAuthCookies(req, res, result.data.token);
   res.success(result.data, result.message);
 });
 
+exports.loginChallenge = asyncRoute(async (req, res) => {
+  const challenge = await clientSecurity.createLoginChallenge();
+  res.success({
+    challengeToken: challenge.token,
+    expiresInSeconds: challenge.expiresInSeconds,
+  });
+});
+
 exports.login = asyncRoute(async (req, res) => {
-  const result = await authApiService.login(req.body);
+  const result = await authApiService.login(req.body, {
+    securityContext: clientSecurity.buildContext(req, req.body),
+  });
   setAuthCookies(req, res, result.data.token);
   res.success(result.data, result.message);
 });
@@ -41,7 +54,12 @@ exports.updateProfile = asyncRoute(async (req, res) => {
 });
 
 exports.changePassword = asyncRoute(async (req, res) => {
-  const result = await authService.changePassword(req.user.id, req.body);
+  const currentSessionId = await clientSecurity.getSessionIdForRefreshToken(getRefreshTokenFromRequest(req), req.user.id);
+  const result = await authService.changePassword(req.user.id, {
+    ...req.body,
+    currentSessionId,
+    securityContext: clientSecurity.buildContext(req, req.body),
+  });
   res.success(result.data, result.message);
 });
 
@@ -57,18 +75,31 @@ exports.resetPassword = asyncRoute(async (req, res) => {
 
 exports.refresh = asyncRoute(async (req, res) => {
   const refreshToken = req.body.refreshToken || getRefreshTokenFromRequest(req);
-  const result = await authService.refresh(refreshToken);
+  const result = await authService.refresh(refreshToken, {
+    securityContext: clientSecurity.buildContext(req, req.body),
+  });
   if (result.data?.accessToken) {
     setAuthCookies(req, res, {
       accessToken: result.data.accessToken,
-      refreshToken,
+      refreshToken: result.data.refreshToken || refreshToken,
     });
   }
   res.success(result.data);
 });
 
 exports.logout = asyncRoute(async (req, res) => {
-  const result = await authService.logout(req.user?.id);
+  const result = await authService.logout(req.user?.id, {
+    refreshToken: getRefreshTokenFromRequest(req),
+    securityContext: clientSecurity.buildContext(req, req.body),
+  });
+  clearAuthCookies(req, res);
+  res.success(result.data, result.message);
+});
+
+exports.logoutAll = asyncRoute(async (req, res) => {
+  const result = await authService.logoutAll(req.user?.id, {
+    securityContext: clientSecurity.buildContext(req, req.body),
+  });
   clearAuthCookies(req, res);
   res.success(result.data, result.message);
 });

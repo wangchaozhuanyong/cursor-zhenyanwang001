@@ -1,4 +1,4 @@
-import { post, get } from "@/api/request";
+import { post, get, del } from "@/api/request";
 import type {
   LoginParams,
   RegisterParams,
@@ -15,6 +15,10 @@ export function login(params: LoginParams) {
   return post<LoginResult>("/auth/login", params);
 }
 
+export function createLoginChallenge() {
+  return post<{ challengeToken: string; expiresInSeconds: number }>("/auth/login-challenge");
+}
+
 export function register(params: RegisterParams) {
   return post<LoginResult>("/auth/register", params);
 }
@@ -24,7 +28,29 @@ export function logout() {
 }
 
 export function refreshToken(token: string) {
-  return post<{ accessToken: string }>("/auth/refresh", { refreshToken: token });
+  return post<{ accessToken: string; refreshToken?: string }>("/auth/refresh", { refreshToken: token });
+}
+
+export function logoutAll() {
+  return post<void>("/auth/logout-all");
+}
+
+export function listSecuritySessions() {
+  return get<{ list: Array<{
+    id: string;
+    deviceId: string;
+    deviceName: string;
+    ip: string;
+    userAgent: string;
+    trusted: boolean;
+    lastSeenAt: string;
+    expiresAt: string;
+    revokedAt?: string | null;
+  }> }>("/user/security/sessions");
+}
+
+export function revokeSecuritySession(id: string) {
+  return del<void>(`/user/security/sessions/${id}`);
 }
 
 export function requestPasswordReset(params: { phone: string; countryCode?: string }) {

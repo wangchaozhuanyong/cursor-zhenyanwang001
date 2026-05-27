@@ -83,10 +83,11 @@ export function validatePhoneForCountry(phone: string, countryCode: string): str
 
 export function validateStrongPassword(password: string): string | null {
   if (!password) return "请填写密码";
-  if (password.length < 8) return "密码至少 8 位，并包含大写字母、小写字母和数字";
+  if (password.length < 8) return "密码至少 8 位";
   if (password.length > 64) return "密码不能超过 64 位";
-  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
-    return "密码必须包含大写字母、小写字母和数字";
+  if (/^\d+$/.test(password)) return "密码不能为纯数字";
+  if (["12345678", "password", "password123", "qwerty123", "admin123"].includes(password.toLowerCase())) {
+    return "密码过于简单，请更换";
   }
   return null;
 }
@@ -128,7 +129,7 @@ export function authErrorMessage(error: unknown, fallback: string): string {
   }
   if (/invalid input/i.test(message)) return AUTH_ERROR_MAP["Invalid input"];
   if (/password/i.test(message) && /uppercase|lowercase|digit|number|least/i.test(message)) {
-    return "密码至少 8 位，并包含大写字母、小写字母和数字";
+    return "密码至少 8 位，且不能为纯数字或常见弱密码";
   }
   if (/network|fetch/i.test(message)) return AUTH_ERROR_MAP.NetworkError;
   return message;

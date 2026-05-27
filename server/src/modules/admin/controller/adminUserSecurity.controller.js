@@ -1,32 +1,4 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
-
-/**
- * 注意：该 controller 作为兼容层，用于避免路由引用缺失导致服务启动失败。
- *
- * 当前仓库 `admin.routes.js` 已经挂载了 `/user-security/*` 路由，
- * 但历史版本中 controller 文件可能缺失。这里先提供“最小可运行”实现：
- * - 保证线上服务能启动、健康检查通过
- * - 对外返回 501，提示功能暂未启用（后续可再接入真实 service / repository）
- */
-
-function notImplemented(res, action) {
-  return res.fail?.(`用户安全能力暂未启用：${action}`, 501) ?? res.status(501).json({ message: `用户安全能力暂未启用：${action}` });
-}
-
-exports.overview = asyncRoute(async (_req, res) => notImplemented(res, 'overview'));
-exports.loginAttempts = asyncRoute(async (_req, res) => notImplemented(res, 'loginAttempts'));
-exports.events = asyncRoute(async (_req, res) => notImplemented(res, 'events'));
-exports.riskIps = asyncRoute(async (_req, res) => notImplemented(res, 'riskIps'));
-exports.blockIp = asyncRoute(async (_req, res) => notImplemented(res, 'blockIp'));
-exports.unblockIp = asyncRoute(async (_req, res) => notImplemented(res, 'unblockIp'));
-exports.riskDevices = asyncRoute(async (_req, res) => notImplemented(res, 'riskDevices'));
-exports.blockDevice = asyncRoute(async (_req, res) => notImplemented(res, 'blockDevice'));
-exports.unblockDevice = asyncRoute(async (_req, res) => notImplemented(res, 'unblockDevice'));
-exports.userSessions = asyncRoute(async (_req, res) => notImplemented(res, 'userSessions'));
-exports.revokeUserSessions = asyncRoute(async (_req, res) => notImplemented(res, 'revokeUserSessions'));
-exports.unprotectUser = asyncRoute(async (_req, res) => notImplemented(res, 'unprotectUser'));
-
-const { asyncRoute } = require('../../../middleware/asyncRoute');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const repo = require('../../security/repository/clientSecurity.repository');
 const clientSecurity = require('../../security/service/clientSecurity.service');

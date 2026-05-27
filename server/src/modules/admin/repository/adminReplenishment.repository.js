@@ -724,10 +724,21 @@ function getConnection() {
   return db.getConnection();
 }
 
+async function acquireNamedLock(conn, lockName, timeoutSeconds = 0) {
+  const [rows] = await conn.query('SELECT GET_LOCK(?, ?) AS locked', [lockName, timeoutSeconds]);
+  return Number(rows?.[0]?.locked || 0) === 1;
+}
+
+async function releaseNamedLock(conn, lockName) {
+  await conn.query('SELECT RELEASE_LOCK(?)', [lockName]);
+}
+
 module.exports = {
   OPEN_ALERT_STATUSES,
   IN_TRANSIT_PO_STATUSES,
   getConnection,
+  acquireNamedLock,
+  releaseNamedLock,
   selectReplenishmentCandidates,
   selectOpenAlertByVariantId,
   selectAlertByIdForUpdate,

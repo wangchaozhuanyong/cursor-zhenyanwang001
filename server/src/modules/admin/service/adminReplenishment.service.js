@@ -645,13 +645,13 @@ async function runScheduledDailyInventorySnapshot() {
   const lockName = `inventory_daily_snapshot:${snapshotDate}`;
   const lockConn = await repo.getConnection();
   try {
-    const [[lockRow]] = await lockConn.query('SELECT GET_LOCK(?, 0) AS locked', [lockName]);
-    if (Number(lockRow?.locked || 0) !== 1) return { skipped: true, snapshot_date: snapshotDate, reason: 'locked' };
+    const locked = await repo.acquireNamedLock(lockConn, lockName, 0);
+    if (!locked) return { skipped: true, snapshot_date: snapshotDate, reason: 'locked' };
     const result = await generateDailyInventorySnapshot({ snapshot_date: snapshotDate }, null, null);
     lastScheduledSnapshotDate = snapshotDate;
     return result;
   } finally {
-    await lockConn.query('SELECT RELEASE_LOCK(?)', [lockName]).catch(() => {});
+    await repo.releaseNamedLock(lockConn, lockName).catch(() => {});
     lockConn.release();
   }
 }

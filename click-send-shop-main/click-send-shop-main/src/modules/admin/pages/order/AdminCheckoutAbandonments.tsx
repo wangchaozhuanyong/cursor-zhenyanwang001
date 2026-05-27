@@ -38,6 +38,15 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import type { AdminFilterChip } from "@/components/admin/AdminFilterSummaryBar";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const CHECKOUT_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "center", "left", "left", "left", "left", "left", "right", "left", "left", "right",
+];
 
 const STATUS_OPTIONS: Array<{ value: "" | CheckoutAbandonmentStatus; label: string }> = [
   { value: "", label: CHECKOUT_ABANDONMENT_DEFAULT_STATUS_LABEL },
@@ -303,12 +312,9 @@ export default function AdminCheckoutAbandonments() {
           skeletonCols={TABLE_HEADERS.length}
           tableClassName="w-full min-w-[1080px] text-sm"
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
-          thead={(
-            <tr>
-              {TABLE_HEADERS.map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{tText(h)}</th>
-              ))}
-            </tr>
+          thead={adminTableTheadRow(
+            TABLE_HEADERS.map((h) => tText(h)),
+            CHECKOUT_COLUMN_ALIGNS,
           )}
           emptyIcon={emptyGuide.icon}
           emptyTitle={emptyGuide.title}
@@ -324,23 +330,23 @@ export default function AdminCheckoutAbandonments() {
           renderMobileCard={renderMobileCard}
           renderRow={(row) => (
             <>
-              <td className="whitespace-nowrap px-4 py-3 align-middle">
+              <td className={adminTableCellClass("center", "whitespace-nowrap")}>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{tText(STATUS_LABEL[row.status])}</span>
               </td>
-              <td className="whitespace-nowrap px-4 py-3 align-middle text-sm text-foreground">
+              <td className={adminTableCellClass("left", "whitespace-nowrap text-sm text-foreground")}>
                 {tText(getCheckoutAbandonmentRecordTypeLabel(row))}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "whitespace-nowrap")}>
                 <CheckoutAbandonmentNumberCell row={row} onViewOrder={handleViewOrder} />
               </td>
-              <td className="whitespace-nowrap px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "whitespace-nowrap")}>
                 <AdminTableCell
                   value={row.contact_name || "—"}
                   fullText={row.contact_name || undefined}
                   maxWidth="8rem"
                 />
               </td>
-              <td className="whitespace-nowrap px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "whitespace-nowrap")}>
                 <AdminTableCell
                   value={row.contact_phone_masked || "—"}
                   fullText={row.contact_phone_masked || undefined}
@@ -349,17 +355,17 @@ export default function AdminCheckoutAbandonments() {
                   muted
                 />
               </td>
-              <td className="max-w-[14rem] px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "max-w-[14rem]")}>
                 <AdminTableCell
                   value={row.items_preview}
                   fullText={itemsSummaryLocalized(row)}
                   maxWidth="13rem"
                 />
               </td>
-              <td className="whitespace-nowrap px-4 py-3 font-semibold text-foreground">RM {row.total_amount.toFixed(2)}</td>
-              <td className="px-4 py-3 text-foreground">{labelCheckoutPaymentMethod(row.payment_method)}</td>
-              <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">{formatDateTime(row.updated_at)}</td>
-              <td className="px-4 py-3">{renderAction(row)}</td>
+              <td className={adminTableCellClass("right", "whitespace-nowrap font-semibold text-foreground")}>RM {row.total_amount.toFixed(2)}</td>
+              <td className={adminTableCellClass("left", "text-foreground")}>{labelCheckoutPaymentMethod(row.payment_method)}</td>
+              <td className={adminTableCellClass("left", "whitespace-nowrap text-xs text-muted-foreground")}>{formatDateTime(row.updated_at)}</td>
+              <td className={adminTableCellClass("right")}>{renderAction(row)}</td>
             </>
           )}
         />

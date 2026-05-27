@@ -25,6 +25,15 @@ import {
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const INVITE_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "left", "left", "left", "right",
+];
 
 export default function AdminInvites() {
   const { tText } = useAdminT();
@@ -136,13 +145,7 @@ export default function AdminInvites() {
         className="overflow-x-auto rounded-xl border border-border bg-card"
           tableClassName="w-full min-w-[720px] text-sm"
           theadClassName="border-b border-border bg-secondary/50"
-          thead={(
-            <tr>
-              {tableHeaders.map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
-              ))}
-            </tr>
-          )}
+          thead={adminTableTheadRow(tableHeaders, INVITE_COLUMN_ALIGNS)}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(v) => { setPageSize(v); setPage(1); }} />}
           emptyIcon={emptyGuide.icon}
           emptyTitle={emptyGuide.title}
@@ -157,12 +160,12 @@ export default function AdminInvites() {
         renderMobileCard={renderMobileCard}
         renderRow={(inv) => (
             <>
-              <td className="px-4 py-3 text-foreground">{inv.nickname || "-"}</td>
-              <td className="px-4 py-3 text-foreground">{inv.phone || "-"}</td>
-              <td className="px-4 py-3 text-foreground">{inv.inviter_nickname || "-"}</td>
-              <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{inv.parent_invite_code || "-"}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">{inv.created_at ? formatDateTime(inv.created_at) : "-"}</td>
-              <td className="px-4 py-3">
+              <td className={adminTableCellClass("left", "text-foreground")}>{inv.nickname || "-"}</td>
+              <td className={adminTableCellClass("left", "text-foreground")}>{inv.phone || "-"}</td>
+              <td className={adminTableCellClass("left", "text-foreground")}>{inv.inviter_nickname || "-"}</td>
+              <td className={adminTableCellClass("left", "font-mono text-xs text-muted-foreground")}>{inv.parent_invite_code || "-"}</td>
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{inv.created_at ? formatDateTime(inv.created_at) : "-"}</td>
+              <td className={adminTableCellClass("right")}>
                 <PermissionGate permission="user.view" fallback={<span className="text-xs text-muted-foreground">-</span>}>
                   <button type="button" onClick={() => navigate(`/admin/users/${inv.id}`)} className="text-xs text-theme-price hover:underline"><Tx>查看用户</Tx></button>
                 </PermissionGate>

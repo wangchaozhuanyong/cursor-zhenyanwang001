@@ -45,6 +45,15 @@ import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/Adm
 import { useAdminT } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const ACCOUNT_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "center", "left", "left", "right",
+];
 
 const ROLE_BADGE: Record<string, { cls: string; text: string }> = {
   super_admin: { cls: THEME_BADGE_DANGER, text: "超级管理员" },
@@ -350,20 +359,7 @@ export default function AdminAccounts() {
         className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
         tableClassName="w-full min-w-[920px] text-sm"
         theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
-        thead={(
-          <tr>
-            {tableHeaders.map((h, i) => (
-              <th
-                key={h}
-                className={`px-4 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap ${
-                  i === tableHeaders.length - 1 ? "min-w-[9.5rem] text-right" : "text-left"
-                }`}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        )}
+        thead={adminTableTheadRow(tableHeaders, ACCOUNT_COLUMN_ALIGNS)}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
         emptyIcon={emptyGuide.icon}
         emptyTitle={emptyGuide.title}
@@ -394,9 +390,9 @@ export default function AdminAccounts() {
           const targetLocked = !isSuperAdminViewer && hasPrivilegedRole(a);
           return (
             <>
-              <td className="px-4 py-3 font-medium text-foreground">{a.nickname || "-"}</td>
-              <td className="px-4 py-3 text-foreground">{a.phone}</td>
-              <td className="px-4 py-3">
+              <td className={adminTableCellClass("left", "font-medium text-foreground")}>{a.nickname || "-"}</td>
+              <td className={adminTableCellClass("left", "text-foreground")}>{a.phone}</td>
+              <td className={adminTableCellClass("center")}>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{tText(badge.text)}</span>
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${a.mfa?.enabled ? THEME_BADGE_PRIMARY : a.mfa?.required ? "bg-amber-100 text-amber-700" : THEME_BADGE_MUTED}`}>
@@ -411,9 +407,9 @@ export default function AdminAccounts() {
                   ) : null}
                 </div>
               </td>
-              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.created_at ? formatDateTime(a.created_at) : "-"}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? formatDateTime(a.last_login_at) : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
-              <td className="px-4 py-3 text-right whitespace-nowrap">
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{a.created_at ? formatDateTime(a.created_at) : "-"}</td>
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{a.last_login_at ? formatDateTime(a.last_login_at) : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
+              <td className={adminTableCellClass("right", "whitespace-nowrap")}>
                 <div className="inline-flex flex-nowrap items-center justify-end gap-1">
                   <PermissionGate permission="role.manage">
                     {!targetLocked && a.role !== "super_admin" && (

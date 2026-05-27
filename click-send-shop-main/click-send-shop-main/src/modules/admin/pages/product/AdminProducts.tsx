@@ -426,61 +426,72 @@ export default function AdminProducts() {
             <th className="px-4 py-3 w-10"><input type="checkbox" checked={allSelectedOnPage} onChange={togglePageSelection} aria-label={tText("全选当前页")} /></th>
             <AdminTableSortHeader
               label={tText("商品")}
+              align="left"
               direction={getProductSortDirection(sort, "name")}
               onSort={() => handleColumnSort("name")}
             />
             <AdminTableSortHeader
               label={tText("分类")}
+              align="left"
               direction={getProductSortDirection(sort, "category")}
               onSort={() => handleColumnSort("category")}
             />
             <AdminTableSortHeader
               label="SKU"
+              align="right"
               direction={getProductSortDirection(sort, "sku")}
               onSort={() => handleColumnSort("sku")}
             />
             <AdminTableSortHeader
               label={tText("售价")}
+              align="right"
               direction={getProductSortDirection(sort, "price")}
               onSort={() => handleColumnSort("price")}
             />
             <AdminTableSortHeader
               label={tText("成本")}
+              align="right"
               direction={getProductSortDirection(sort, "cost")}
               onSort={() => handleColumnSort("cost")}
             />
             <AdminTableSortHeader
               label={tText("毛利率")}
+              align="right"
               direction={getProductSortDirection(sort, "margin")}
               onSort={() => handleColumnSort("margin")}
             />
             <AdminTableSortHeader
               label={tText("库存")}
+              align="right"
               direction={getProductSortDirection(sort, "stock")}
               onSort={() => handleColumnSort("stock")}
             />
             <AdminTableSortHeader
               label={tText("近7天销量")}
+              align="right"
               direction={getProductSortDirection(sort, "sales_7d")}
               onSort={() => handleColumnSort("sales_7d")}
             />
             <AdminTableSortHeader
               label={tText("近30天销量")}
+              align="right"
               direction={getProductSortDirection(sort, "sales_30d")}
               onSort={() => handleColumnSort("sales_30d")}
             />
             <AdminTableSortHeader
               label={tText("近30天销售额")}
+              align="right"
               direction={getProductSortDirection(sort, "sales_amount_30d")}
               onSort={() => handleColumnSort("sales_amount_30d")}
             />
             <AdminTableSortHeader
               label={tText("近30天毛利")}
+              align="right"
               direction={getProductSortDirection(sort, "gross_profit_30d")}
               onSort={() => handleColumnSort("gross_profit_30d")}
             />
-            <AdminTableSortHeader label={tText("状态")} sortable={false} />
-            <AdminTableSortHeader label={tText("操作")} sortable={false} className="text-right" />
+            <AdminTableSortHeader label={tText("状态")} sortable={false} align="center" />
+            <AdminTableSortHeader label={tText("操作")} sortable={false} align="right" />
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} />}
@@ -497,7 +508,7 @@ export default function AdminProducts() {
           return (
             <>
               <td className="w-10"><input type="checkbox" checked={checked} onChange={() => toggleSelect(product.id)} aria-label={`选择${product.name}`} /></td>
-              <td className={adminTdClassName("max-w-[14rem]")}>
+              <td className={adminTdClassName("max-w-[14rem]", "left")}>
                 <div className="flex items-center gap-3">
                   {product.cover_image ? <SafeImage src={product.cover_image} alt={product.name} className="h-11 w-11 shrink-0 rounded-lg border border-border object-cover" /> : <div className="h-11 w-11 shrink-0 rounded-lg border border-border bg-secondary" />}
                   <div className="min-w-0">
@@ -505,7 +516,7 @@ export default function AdminProducts() {
                   </div>
                 </div>
               </td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>
                 <AdminTableCell
                   value={product.category_name || "-"}
                   fullText={product.category_name || "-"}
@@ -513,31 +524,31 @@ export default function AdminProducts() {
                   muted
                 />
               </td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(product.enabled_sku_count || product.sku_count || 0)}</td>
-              <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-semibold`)}>{skuPrice(product)}</td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{Number(product.enabled_sku_count || product.sku_count || 0)}</td>
+              <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-semibold`, "right")}>{skuPrice(product)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                 <div className="inline-flex max-w-full flex-nowrap items-center gap-1.5">
                   <span className="font-medium text-foreground">{product.min_cost_price ? money(product.min_cost_price) : "-"}</span>
                   {missingCost ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺成本</Tx></span> : null}
                 </div>
               </td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${marginClass}`}>{percent(margin)}</span>
               </td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
-                <div className="inline-flex max-w-full flex-nowrap items-center gap-1.5">
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
+                <div className="inline-flex max-w-full flex-nowrap items-center justify-end gap-1.5">
                   <span className="font-medium text-foreground">{Number(product.stock || 0)}</span>
                   {outOfStock ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺货</Tx></span> : stockWarning ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>库存预警</Tx></span> : null}
                 </div>
               </td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(product.sales_qty_7d || 0)}</td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(product.sales_qty_30d || 0)}</td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{money(product.sales_amount_30d)}</td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{money(product.gross_profit_30d)}</td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{Number(product.sales_qty_7d || 0)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{Number(product.sales_qty_30d || 0)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{money(product.sales_amount_30d)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{money(product.gross_profit_30d)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>
                 <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span>
               </td>
-              <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-right`)}>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                 <button type="button" onClick={() => navigate(`/admin/products/${product.id}`)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></button>
               </td>
             </>

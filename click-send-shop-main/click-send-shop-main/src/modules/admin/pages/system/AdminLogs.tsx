@@ -42,6 +42,16 @@ import { adminQueryKeys, type AuditLogListParams } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
+import {
+  adminTableHeadCellClass,
+  adminTdClassName,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const AUDIT_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "left", "left", "left", "center", "center",
+];
+const AUDIT_HEADERS = ["时间", "操作人", "动作", "对象", "摘要", "结果"] as const;
 
 export default function AdminLogs() {
   const { tText } = useAdminT();
@@ -367,13 +377,12 @@ export default function AdminLogs() {
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
           thead={(
             <tr>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap"><Tx>时间</Tx></th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>操作人</Tx></th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>动作</Tx></th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>对象</Tx></th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>摘要</Tx></th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>结果</Tx></th>
-              <th className="px-3 py-3 w-10" />
+              {AUDIT_HEADERS.map((label, index) => (
+                <th key={label} className={adminTableHeadCellClass(AUDIT_COLUMN_ALIGNS[index], "px-3 py-3 font-medium")}>
+                  <Tx>{label}</Tx>
+                </th>
+              ))}
+              <th className={adminTableHeadCellClass("center", "px-3 py-3 w-10 font-medium")} />
             </tr>
           )}
           emptyIcon={emptyGuide.icon}
@@ -390,10 +399,10 @@ export default function AdminLogs() {
           renderMobileCard={renderMobileCard}
           renderRow={(row) => (
             <>
-              <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
+              <td className={adminTdClassName("px-3 py-2 text-xs text-muted-foreground whitespace-nowrap", "left")}>
                 {row.created_at ? formatDateTime(row.created_at) : "—"}
               </td>
-              <td className="max-w-[9rem] px-3 py-2 align-middle">
+              <td className={adminTdClassName("max-w-[9rem] px-3 py-2", "left")}>
                 <AdminTableCellGroup
                   maxWidth="8.5rem"
                   lines={[
@@ -402,26 +411,26 @@ export default function AdminLogs() {
                   ]}
                 />
               </td>
-              <td className="px-3 py-2 text-xs font-semibold text-foreground">{labelize(zhActionType(row.action_type))}</td>
-              <td className="px-3 py-2 text-xs">
+              <td className={adminTdClassName("px-3 py-2 text-xs font-semibold text-foreground", "left")}>{labelize(zhActionType(row.action_type))}</td>
+              <td className={adminTdClassName("px-3 py-2 text-xs", "left")}>
                 <span className="text-muted-foreground">{labelize(zhObjectType(row.object_type))}</span>
                 {row.object_id ? (
                   <div className="text-[10px] text-muted-foreground" title={row.object_id}><Tx>已关联</Tx></div>
                 ) : null}
               </td>
-              <td className="max-w-[12rem] px-3 py-2 align-middle">
+              <td className={adminTdClassName("max-w-[12rem] px-3 py-2", "left")}>
                 <AdminTableCell
                   value={localizedAuditSummary(row.summary, tText)}
                   fullText={localizedAuditSummary(row.summary, tText)}
                   maxWidth="11rem"
                 />
               </td>
-              <td className="px-3 py-2">
+              <td className={adminTdClassName("px-3 py-2", "center")}>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : THEME_BADGE_DANGER}`}>
                   {labelize(zhAuditResult(row.result))}
                 </span>
               </td>
-              <td className="px-3 py-2">
+              <td className={adminTdClassName("px-3 py-2", "center")}>
                 <button type="button" onClick={() => setDetail(row)} className="text-[var(--theme-price)] hover:underline">
                   <ChevronRight size={16} />
                 </button>

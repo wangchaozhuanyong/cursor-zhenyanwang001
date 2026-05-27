@@ -15,7 +15,11 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { useAdminReportLabel } from "@/hooks/useAdminReportLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
-import { getReportColumnMaxWidthStyle, reportTableThClassName } from "@/utils/adminTableColumnPolicy";
+import { getReportColumnMaxWidthStyle } from "@/utils/adminTableColumnPolicy";
+import {
+  reportTableBodyCellClass,
+  reportTableHeadCellClass,
+} from "@/utils/reportTableColumns";
 import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { exportReportCsv, fetchInventoryAnalysisReport } from "@/services/admin/reportService";
@@ -229,7 +233,7 @@ export default function AdminInventoryAnalysisReport() {
         thead={(
           <tr>
             {TABLE_COLUMNS.map((key) => (
-              <th key={key} className={reportTableThClassName(key)} style={getReportColumnMaxWidthStyle(key)}>
+              <th key={key} className={reportTableHeadCellClass(false, key)} style={getReportColumnMaxWidthStyle(key)}>
                 {labelReportColumn(key)}
               </th>
             ))}
@@ -246,7 +250,7 @@ export default function AdminInventoryAnalysisReport() {
                 const status = String(row.stock_status || "normal");
                 const label = formatCell(key, status);
                 return (
-                  <td key={key} className="px-3 py-2.5 align-middle">
+                  <td key={key} className={reportTableBodyCellClass(false, key)}>
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_BADGE_CLASS[status] || STATUS_BADGE_CLASS.normal}`}>
                       {label}
                     </span>
@@ -255,7 +259,7 @@ export default function AdminInventoryAnalysisReport() {
               }
               const display = formatCell(key, row[key]);
               return (
-                <td key={key} className="px-3 py-2.5 align-middle text-foreground">
+                <td key={key} className={reportTableBodyCellClass(false, key)}>
                   <AdminTableCell value={display} columnKey={key} fullText={display === "-" ? "" : display} />
                 </td>
               );

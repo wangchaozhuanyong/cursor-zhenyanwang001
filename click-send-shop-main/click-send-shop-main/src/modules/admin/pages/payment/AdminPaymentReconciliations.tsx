@@ -29,6 +29,16 @@ import {
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
+import {
+  adminTableHeadCellClass,
+  adminTdClassName,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const RECONCILIATION_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "left", "right", "right", "right", "center",
+];
+const RECONCILIATION_HEADERS = ["日期", "支付网关", "支付渠道", "笔数", "成功金额", "差异", "状态"] as const;
 
 export default function AdminPaymentReconciliations() {
   const { tText } = useAdminT();
@@ -194,13 +204,11 @@ export default function AdminPaymentReconciliations() {
           theadClassName="bg-secondary/50 text-xs text-muted-foreground"
           thead={(
             <tr>
-              <th className="px-3 py-2"><Tx>日期</Tx></th>
-              <th className="px-3 py-2"><Tx>支付网关</Tx></th>
-              <th className="px-3 py-2"><Tx>支付渠道</Tx></th>
-              <th className="px-3 py-2"><Tx>笔数</Tx></th>
-              <th className="px-3 py-2"><Tx>成功金额</Tx></th>
-              <th className="px-3 py-2"><Tx>差异</Tx></th>
-              <th className="px-3 py-2"><Tx>状态</Tx></th>
+              {RECONCILIATION_HEADERS.map((label, index) => (
+                <th key={label} className={adminTableHeadCellClass(RECONCILIATION_COLUMN_ALIGNS[index], "px-3 py-2")}>
+                  <Tx>{label}</Tx>
+                </th>
+              ))}
             </tr>
           )}
           footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
@@ -211,13 +219,13 @@ export default function AdminPaymentReconciliations() {
           renderMobileCard={renderMobileCard}
           renderRow={(r) => (
             <>
-              <td className="px-3 py-2">{r.reconcile_date}</td>
-              <td className="px-3 py-2">{tText(labelProvider(r.provider))}</td>
-              <td className="px-3 py-2">{r.channel_code ? tText(labelChannelCode(r.channel_code)) : "—"}</td>
-              <td className="px-3 py-2">{r.order_count}</td>
-              <td className="px-3 py-2">RM {Number(r.success_amount).toFixed(2)}</td>
-              <td className="px-3 py-2">RM {Number(r.diff_amount).toFixed(2)}</td>
-              <td className="px-3 py-2">{tText(labelReconciliationStatus(r.status))}</td>
+              <td className={adminTdClassName("px-3 py-2", "left")}>{r.reconcile_date}</td>
+              <td className={adminTdClassName("px-3 py-2", "left")}>{tText(labelProvider(r.provider))}</td>
+              <td className={adminTdClassName("px-3 py-2", "left")}>{r.channel_code ? tText(labelChannelCode(r.channel_code)) : "—"}</td>
+              <td className={adminTdClassName("px-3 py-2", "right")}>{r.order_count}</td>
+              <td className={adminTdClassName("px-3 py-2", "right")}>RM {Number(r.success_amount).toFixed(2)}</td>
+              <td className={adminTdClassName("px-3 py-2", "right")}>RM {Number(r.diff_amount).toFixed(2)}</td>
+              <td className={adminTdClassName("px-3 py-2", "center")}>{tText(labelReconciliationStatus(r.status))}</td>
             </>
           )}
         />

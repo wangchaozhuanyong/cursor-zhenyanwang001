@@ -61,13 +61,13 @@ export default function AdminMonitoringRules() {
       <AdminNativeTable>
           <thead className="bg-slate-50 text-slate-500">
             <tr>
-              <th className={adminThClassName()}><Tx>规则</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>模块</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>严重等级</Tx></th>
-              <th className={adminThClassName()}><Tx>启用</Tx></th>
-              <th className={adminThClassName()}><Tx>自动修复</Tx></th>
-              <th className={adminThClassName()}><Tx>执行频率</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>操作</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>规则</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>模块</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>严重等级</Tx></th>
+              <th className={adminThClassName(undefined, "center")}><Tx>启用</Tx></th>
+              <th className={adminThClassName(undefined, "center")}><Tx>自动修复</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>执行频率</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>操作</Tx></th>
             </tr>
           </thead>
           <tbody>
@@ -78,12 +78,12 @@ export default function AdminMonitoringRules() {
 
               return (
                 <tr key={rule.code} className="border-t align-top">
-                  <td className={adminTdClassName()}>
+                  <td className={adminTdClassName(undefined, "left")}>
                     <div className="font-medium text-slate-900">{ruleTitle}</div>
                     <div className="mt-1 text-xs leading-relaxed text-slate-600">{ruleDesc}</div>
                   </td>
-                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-900`)}>{ml.module(rule.module)}</td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-900`, "left")}>{ml.module(rule.module)}</td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>
                     <select
                       className="min-w-[6.5rem] rounded border px-2 py-1 text-sm"
                       value={rule.severity}
@@ -96,7 +96,7 @@ export default function AdminMonitoringRules() {
                       ))}
                     </select>
                   </td>
-                  <td className={adminTdClassName()}>
+                  <td className={adminTdClassName(undefined, "center")}>
                     <input
                       type="checkbox"
                       checked={Boolean(rule.enabled)}
@@ -104,7 +104,7 @@ export default function AdminMonitoringRules() {
                       aria-label={`${ruleTitle} 启用`}
                     />
                   </td>
-                  <td className={adminTdClassName()}>
+                  <td className={adminTdClassName(undefined, "center")}>
                     <input
                       type="checkbox"
                       checked={Boolean(rule.auto_fix_enabled)}
@@ -112,7 +112,7 @@ export default function AdminMonitoringRules() {
                       aria-label={`${ruleTitle} 自动修复`}
                     />
                   </td>
-                  <td className={adminTdClassName()}>
+                  <td className={adminTdClassName(undefined, "left")}>
                     <div className="text-sm font-medium text-slate-800">{scheduleLabel}</div>
                     <input
                       className="mt-1.5 min-w-[8rem] rounded border px-2 py-1 text-xs text-slate-600"
@@ -122,7 +122,7 @@ export default function AdminMonitoringRules() {
                       onBlur={(e) => void update(rule, { schedule_cron: e.target.value })}
                     />
                   </td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                     <button
                       type="button"
                       className="rounded bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white"

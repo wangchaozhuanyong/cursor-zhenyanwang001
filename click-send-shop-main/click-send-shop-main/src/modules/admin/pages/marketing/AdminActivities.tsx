@@ -20,6 +20,15 @@ import {
 } from "@/constants/marketingDisplayPositions";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const ACTIVITY_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "center", "left", "right", "left", "left", "right",
+];
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import {
   AdminTableMobileCard,
@@ -207,17 +216,10 @@ export default function AdminActivities() {
           className="overflow-x-auto"
           tableClassName="w-full min-w-[1120px] text-sm"
           theadClassName="text-xs text-muted-foreground"
-          thead={(
-            <tr>
-              <th className="px-4 py-3 text-left"><Tx>活动名称</Tx></th>
-              <th className="px-4 py-3 text-left"><Tx>活动类型</Tx></th>
-              <th className="px-4 py-3 text-left"><Tx>活动状态</Tx></th>
-              <th className="px-4 py-3 text-left"><Tx>活动时间</Tx></th>
-              <th className="px-4 py-3 text-left"><Tx>商品/库存/销量</Tx></th>
-              <th className="px-4 py-3 text-left"><Tx>参与数据</Tx></th>
-              <th className="px-4 py-3 text-left"><Tx>展示位置</Tx></th>
-              <th className="px-4 py-3 text-left"><Tx>操作</Tx></th>
-            </tr>
+          thead={adminTableTheadRow(
+            ["活动名称", "活动类型", "活动状态", "活动时间", "商品/库存/销量", "参与数据", "展示位置", "操作"],
+            ACTIVITY_COLUMN_ALIGNS,
+            (label) => <Tx>{label}</Tx>,
           )}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
           emptyIcon={activitiesEmptyGuide.icon}
@@ -233,7 +235,7 @@ export default function AdminActivities() {
           renderMobileCard={renderMobileCard}
           renderRow={(activity) => (
             <>
-              <td className="max-w-[14rem] px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "max-w-[14rem]")}>
                 <AdminTableCellGroup
                   maxWidth="13rem"
                   lines={[
@@ -243,20 +245,20 @@ export default function AdminActivities() {
                   tooltipLines={[activity.title, activity.description || "-"]}
                 />
               </td>
-              <td className="px-4 py-3">{labelActivityType(activity.type)}</td>
-              <td className="px-4 py-3 text-xs">{activity.status_label ? tText(activity.status_label) : "-"}</td>
-              <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground">
+              <td className={adminTableCellClass("left")}>{labelActivityType(activity.type)}</td>
+              <td className={adminTableCellClass("center", "text-xs")}>{activity.status_label ? tText(activity.status_label) : "-"}</td>
+              <td className={adminTableCellClass("left", "whitespace-nowrap text-xs text-muted-foreground")}>
                 {formatAdminDateTime(activity.start_at)}
                 <br />
                 {formatAdminDateTime(activity.end_at)}
               </td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">
+              <td className={adminTableCellClass("right", "text-xs text-muted-foreground")}>
                 {tText("商品")} {activity.product_count || 0}
                 <br />
                 {tText("库存")} {activity.activity_stock_total || 0} / {tText("已售")} {activity.sold_count_total || 0}
               </td>
-              <td className="px-4 py-3 text-xs text-muted-foreground"><Tx>点击“查看数据”进入活动分析</Tx></td>
-              <td className="max-w-[12rem] px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}><Tx>点击“查看数据”进入活动分析</Tx></td>
+              <td className={adminTableCellClass("left", "max-w-[12rem]")}>
                 <AdminTableCell
                   value={labelDisplayPositionsLocalized(activity.display_positions)}
                   fullText={labelDisplayPositionsLocalized(activity.display_positions)}
@@ -264,8 +266,8 @@ export default function AdminActivities() {
                   muted
                 />
               </td>
-              <td className="px-4 py-3">
-                <div className="flex flex-wrap gap-2 text-xs">
+              <td className={adminTableCellClass("right")}>
+                <div className="flex flex-wrap justify-end gap-2 text-xs">
                   <button type="button" onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)} className="rounded border border-border px-2 py-1"><Tx>编辑</Tx></button>
                   <button type="button" onClick={() => navigate(`/admin/marketing/activities/new?copy_from=${activity.id}`)} className="rounded border border-border px-2 py-1"><Copy className="mr-1 inline h-3 w-3" /><Tx>复制</Tx></button>
                   <button type="button" onClick={() => openPreview(activity)} className="rounded border border-border px-2 py-1"><Eye className="mr-1 inline h-3 w-3" /><Tx>预览</Tx></button>

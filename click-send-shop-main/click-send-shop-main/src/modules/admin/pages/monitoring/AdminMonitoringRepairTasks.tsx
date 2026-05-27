@@ -105,35 +105,35 @@ export default function AdminMonitoringRepairTasks() {
       <AdminNativeTable>
           <thead className="bg-slate-50 text-slate-500">
             <tr>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>状态</Tx></th>
-              <th className={adminThClassName()}><Tx>异常标题</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>修复类型</Tx></th>
-              <th className={adminThClassName()}><Tx>修复建议</Tx></th>
-              <th className={adminThClassName()}><Tx>操作人</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>创建时间</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>执行时间</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>操作</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>状态</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>异常标题</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>修复类型</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>修复建议</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>操作人</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>创建时间</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>执行时间</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>操作</Tx></th>
             </tr>
           </thead>
           <tbody>
             {list.map((task) => (
               <tr key={task.id} className="border-t align-top">
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Badge value={task.repair_status} /></td>
-                <td className={adminTdClassName("font-medium text-slate-900")}>{task.anomaly_title || tText("未命名异常")}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={task.repair_status} /></td>
+                <td className={adminTdClassName("font-medium text-slate-900", "left")}>{task.anomaly_title || tText("未命名异常")}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>
                   {ml.repairType(task.repair_type)}
                 </td>
-                <td className={adminTdClassName(`${ADMIN_TABLE_WRAP_CLASS} max-w-[18rem] align-top`)}>
+                <td className={adminTdClassName(`${ADMIN_TABLE_WRAP_CLASS} max-w-[18rem] align-top`, "left")}>
                   <AdminTableCell
                     value={ml.repairSuggestion(task.suggestion, task.repair_type)}
                     fullText={ml.repairSuggestionDetail(task.suggestion, task.repair_type)}
                     maxWidth="17rem"
                   />
                 </td>
-                <td className={adminTdClassName()}>{task.operator_label || (task.operator_id ? tText("管理员") : "-")}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(task.created_at)}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(task.executed_at)}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                <td className={adminTdClassName(undefined, "left")}>{task.operator_label || (task.operator_id ? tText("管理员") : "-")}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatTime(task.created_at)}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatTime(task.executed_at)}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                   <button
                     type="button"
                     className="rounded bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"

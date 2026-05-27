@@ -24,6 +24,24 @@ import type { UserProfile } from "@/types/user";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
+import {
+  adminTableAlignClass,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const USER_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left",
+  "left",
+  "center",
+  "left",
+  "left",
+  "left",
+  "left",
+  "right",
+  "left",
+  "right",
+];
+
 export default function AdminUsers() {
   const navigate = useNavigate();
   const {
@@ -540,15 +558,18 @@ export default function AdminUsers() {
         emptyAction={<AdminEmptyGuideActions guide={usersEmptyGuide} showClearFilters={filtersActive} onClearFilters={clearFilters} />}
         thead={
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">
+            <th className={`px-4 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap ${adminTableAlignClass("center")}`}>
               <input
                 type="checkbox"
                 checked={allUsersOnPageSelected}
                 onChange={(e) => toggleAllUsersOnPage(e.target.checked)}
               />
             </th>
-            {tableHeaders.map((head) => (
-              <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">
+            {tableHeaders.map((head, index) => (
+              <th
+                key={head}
+                className={`px-4 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap ${adminTableAlignClass(USER_COLUMN_ALIGNS[index] ?? "left")}`}
+              >
                 {head}
               </th>
             ))}
@@ -558,35 +579,35 @@ export default function AdminUsers() {
         renderMobileCard={renderMobileCard}
         renderRow={(user) => (
           <>
-            <td className="px-4 py-3">
+            <td className={`px-4 py-3 ${adminTableAlignClass("center")}`}>
               <input
                 type="checkbox"
                 checked={isUserSelected(user.id)}
                 onChange={(e) => toggleUserSelection(user.id, e.target.checked)}
               />
             </td>
-            <td className="max-w-[11rem] px-4 py-3 align-middle">
+            <td className={`max-w-[11rem] px-4 py-3 align-middle ${adminTableAlignClass("left")}`}>
               <AdminTableCell
                 value={user.nickname || user.phone || user.id}
                 fullText={[user.nickname, user.phone, user.id].filter(Boolean).join("\n")}
                 maxWidth="10.5rem"
               />
             </td>
-            <td className="px-4 py-3 text-foreground whitespace-nowrap">{user.phone || "-"}</td>
-            <td className="px-4 py-3">
+            <td className={`px-4 py-3 text-foreground whitespace-nowrap ${adminTableAlignClass("left")}`}>{user.phone || "-"}</td>
+            <td className={`px-4 py-3 ${adminTableAlignClass("center")}`}>
               <UserStatusBadges user={user} />
             </td>
-            <td className="px-4 py-3 whitespace-nowrap">{user.member_level_name || user.memberLevel?.name || tText("普通会员")}</td>
-            <td className="px-4 py-3">
+            <td className={`px-4 py-3 whitespace-nowrap ${adminTableAlignClass("left")}`}>{user.member_level_name || user.memberLevel?.name || tText("普通会员")}</td>
+            <td className={`px-4 py-3 ${adminTableAlignClass("left")}`}>
               <UserTagBadges tags={user.tags} />
             </td>
-            <td className="px-4 py-3 font-mono text-xs text-foreground">{user.invite_code || user.inviteCode || "-"}</td>
-            <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{user.parent_invite_code || user.parentInviteCode || "-"}</td>
-            <td className="px-4 py-3 text-foreground">{user.points_balance ?? user.pointsBalance ?? 0}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+            <td className={`px-4 py-3 font-mono text-xs text-foreground ${adminTableAlignClass("left")}`}>{user.invite_code || user.inviteCode || "-"}</td>
+            <td className={`px-4 py-3 font-mono text-xs text-muted-foreground ${adminTableAlignClass("left")}`}>{user.parent_invite_code || user.parentInviteCode || "-"}</td>
+            <td className={`px-4 py-3 tabular-nums text-foreground ${adminTableAlignClass("right")}`}>{user.points_balance ?? user.pointsBalance ?? 0}</td>
+            <td className={`px-4 py-3 text-xs text-muted-foreground whitespace-nowrap ${adminTableAlignClass("left")}`}>
               {user.created_at ? formatDateTime(user.created_at) : "-"}
             </td>
-            <td className="px-4 py-3">
+            <td className={`px-4 py-3 ${adminTableAlignClass("right")}`}>
               <button type="button" onClick={() => navigate(`/admin/users/${user.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">
                 <Tx>详情</Tx>
               </button>

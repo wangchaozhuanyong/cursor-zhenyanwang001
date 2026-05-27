@@ -239,13 +239,13 @@ export default function AdminOperatingExpenses() {
         <AdminNativeTable tableClassName="min-w-[860px] text-left text-sm">
             <thead className="border-b border-border text-xs text-muted-foreground">
               <tr>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>日期</Tx></th>
-                <th className={adminThClassName()}><Tx>分类</Tx></th>
-                <th className={adminThClassName()}><Tx>标题</Tx></th>
-                <th className={adminThClassName()}><Tx>备注</Tx></th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>金额</Tx></th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>创建时间</Tx></th>
-                <th className={adminThClassName("text-right")}><Tx>操作</Tx></th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>日期</Tx></th>
+                <th className={adminThClassName(undefined, "left")}><Tx>分类</Tx></th>
+                <th className={adminThClassName(undefined, "left")}><Tx>标题</Tx></th>
+                <th className={adminThClassName(undefined, "left")}><Tx>备注</Tx></th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>金额</Tx></th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>创建时间</Tx></th>
+                <th className={adminThClassName(undefined, "right")}><Tx>操作</Tx></th>
               </tr>
             </thead>
             <tbody>
@@ -262,13 +262,13 @@ export default function AdminOperatingExpenses() {
               ) : (
                 list.map((row) => (
                   <tr key={row.id} className="border-b border-border/70 last:border-b-0">
-                    <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{row.expense_date}</td>
-                    <td className={adminTdClassName()}>{CATEGORY_OPTIONS.find((x) => x.value === row.category)?.label || row.category}</td>
-                    <td className={adminTdClassName()}>{row.title}</td>
-                    <td className={adminTdClassName()}>{row.remark || "-"}</td>
-                    <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-medium`)}>RM {Number(row.amount || 0).toFixed(2)}</td>
-                    <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatDateTime(row.created_at)}</td>
-                    <td className={adminTdClassName("text-right")}>
+                    <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{row.expense_date}</td>
+                    <td className={adminTdClassName(undefined, "left")}>{CATEGORY_OPTIONS.find((x) => x.value === row.category)?.label || row.category}</td>
+                    <td className={adminTdClassName(undefined, "left")}>{row.title}</td>
+                    <td className={adminTdClassName(undefined, "left")}>{row.remark || "-"}</td>
+                    <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-medium`, "right")}>RM {Number(row.amount || 0).toFixed(2)}</td>
+                    <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatDateTime(row.created_at)}</td>
+                    <td className={adminTdClassName(undefined, "right")}>
                       <div className="inline-flex gap-1">
                         <button onClick={() => startEdit(row)} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
                           <Pencil size={14} />

@@ -31,6 +31,7 @@ import {
   adminTableClassName,
   adminTdClassName,
   adminThClassName,
+  type AdminTableAlign,
 } from "@/utils/adminTableClasses";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { Tx } from "@/components/admin/AdminText";
@@ -47,16 +48,21 @@ const STATUS_FILTER_OPTIONS = [
   { value: "partially_refunded", label: "部分退款" },
 ] as const;
 
-const TABLE_HEADERS = [
-  { key: "order", label: "订单", className: "min-w-[9.5rem]" },
-  { key: "user", label: "用户", className: "min-w-[8.5rem]" },
-  { key: "amount", label: "金额", className: "min-w-[6.5rem]" },
-  { key: "channel", label: "渠道", className: "min-w-[7.5rem]" },
-  { key: "status", label: "状态", className: "min-w-[5.5rem]" },
-  { key: "txn", label: "交易号", className: "min-w-[7rem]" },
-  { key: "time", label: "支付时间", className: "min-w-[10.5rem]" },
-  { key: "action", label: "操作", className: "min-w-[5.5rem]" },
-] as const;
+const TABLE_HEADERS: ReadonlyArray<{
+  key: string;
+  label: string;
+  className: string;
+  align: AdminTableAlign;
+}> = [
+  { key: "order", label: "订单", className: "min-w-[9.5rem]", align: "left" },
+  { key: "user", label: "用户", className: "min-w-[8.5rem]", align: "left" },
+  { key: "amount", label: "金额", className: "min-w-[6.5rem]", align: "right" },
+  { key: "channel", label: "渠道", className: "min-w-[7.5rem]", align: "left" },
+  { key: "status", label: "状态", className: "min-w-[5.5rem]", align: "center" },
+  { key: "txn", label: "交易号", className: "min-w-[7rem]", align: "left" },
+  { key: "time", label: "支付时间", className: "min-w-[10.5rem]", align: "left" },
+  { key: "action", label: "操作", className: "min-w-[5.5rem]", align: "right" },
+];
 
 function money(value: unknown, currency = "MYR") {
   const amount = Number(value || 0);
@@ -196,7 +202,7 @@ export default function AdminPaymentOrders() {
 
     return (
       <>
-        <td className={adminTdClassName("max-w-[10rem] px-4 py-2.5")}>
+        <td className={adminTdClassName("max-w-[10rem] px-4 py-2.5", "left")}>
           <AdminTableCellGroup
             maxWidth="9.5rem"
             lines={[
@@ -210,7 +216,7 @@ export default function AdminPaymentOrders() {
             ]}
           />
         </td>
-        <td className={adminTdClassName("max-w-[9rem] px-4 py-2.5")}>
+        <td className={adminTdClassName("max-w-[9rem] px-4 py-2.5", "left")}>
           <AdminTableCellGroup
             maxWidth="8.5rem"
             lines={[
@@ -221,20 +227,20 @@ export default function AdminPaymentOrders() {
             ]}
           />
         </td>
-        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5 font-semibold`)}>
+        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5 font-semibold`, "right")}>
           <AdminTableCell value={money(row.amount, row.currency)} fullText={money(row.amount, row.currency)} maxWidth="7rem" />
         </td>
-        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5`)}>
+        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5`, "left")}>
           <AdminTableCell
             value={channelLabel}
             fullText={labelChannelCode(row.channel_code)}
             maxWidth="7.5rem"
           />
         </td>
-        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5`)}>
+        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5`, "center")}>
           <PaymentStatusBadge status={row.status} />
         </td>
-        <td className={adminTdClassName("max-w-[8rem] px-4 py-2.5")}>
+        <td className={adminTdClassName("max-w-[8rem] px-4 py-2.5", "left")}>
           <AdminTableCell
             value={txnDisplay}
             fullText={txnNo}
@@ -242,10 +248,10 @@ export default function AdminPaymentOrders() {
             maxWidth="7.5rem"
           />
         </td>
-        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5 text-xs text-muted-foreground`)}>
+        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5 text-xs text-muted-foreground`, "left")}>
           <AdminTableCell value={paidAt} fullText={paidAt} maxWidth="10rem" muted />
         </td>
-        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5`)}>
+        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5`, "right")}>
           <div className="flex flex-col gap-1.5">
             {row.order_id ? (
               <button
@@ -328,7 +334,7 @@ export default function AdminPaymentOrders() {
               {tableHeaders.map((head) => (
                 <th
                   key={head.key}
-                  className={adminThClassName(`${head.className} px-4 py-3 whitespace-nowrap`)}
+                  className={adminThClassName(`${head.className} px-4 py-3 whitespace-nowrap`, head.align)}
                 >
                   {head.label}
                 </th>

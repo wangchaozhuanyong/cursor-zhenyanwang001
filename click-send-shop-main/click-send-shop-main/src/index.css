@@ -950,50 +950,68 @@ html[data-app-scope="admin"] .admin-tech-path {
   [data-admin-shell] .admin-table-scope table.admin-data-table td {
     padding: var(--admin-table-cell-py) var(--admin-table-cell-px) !important;
     vertical-align: middle;
-    text-align: center;
+    text-align: left;
   }
 
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) th,
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td {
     padding: var(--admin-table-cell-py) var(--admin-table-cell-px) !important;
     vertical-align: middle;
+    text-align: left;
   }
 
   [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-left,
-  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-left {
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-left,
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.text-left,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.text-left {
     text-align: left !important;
   }
 
   [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-right,
-  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right {
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right,
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.text-right,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.text-right {
     text-align: right !important;
   }
 
-  [data-admin-shell] .admin-table-scope table.admin-data-table th .inline-flex,
-  [data-admin-shell] .admin-table-scope table.admin-data-table td .inline-flex,
-  [data-admin-shell] .admin-table-scope table.admin-data-table th button.inline-flex,
-  [data-admin-shell] .admin-table-scope table.admin-data-table td > .flex.justify-end {
-    justify-content: center;
-  }
-
-  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-left > .flex,
-  [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-left .inline-flex {
-    justify-content: flex-start;
-  }
-
-  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right > .flex,
-  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right .inline-flex {
-    justify-content: flex-end;
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-center,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-center,
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.text-center,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.text-center {
+    text-align: center !important;
   }
 
   [data-admin-shell] .admin-table-scope table.admin-data-table td > div.min-w-0 {
+    margin-inline: 0;
+    text-align: inherit;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-center > div.min-w-0 {
     margin-inline: auto;
     text-align: center;
   }
 
-  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-left > div.min-w-0 {
-    margin-inline: 0;
-    text-align: left;
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right > div.min-w-0 {
+    margin-inline: 0 0 0 auto;
+    text-align: right;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-left .inline-flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-left .inline-flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-left > .flex {
+    justify-content: flex-start;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-right .inline-flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right .inline-flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right > .flex {
+    justify-content: flex-end;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-center .inline-flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-center .inline-flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-center > .flex {
+    justify-content: center;
   }
 
   [data-admin-shell] .admin-table-scope table.admin-data-table thead th {
@@ -1153,15 +1171,15 @@ html[data-app-scope="admin"] .admin-tech-path {
     margin-top: 0;
   }
 
-  /** div 网格数据表：表头与单元格列内居中 */
+  /** div 网格数据表：默认左对齐，按列类覆盖 */
   [data-admin-shell] .admin-data-grid {
     align-items: center;
   }
 
   [data-admin-shell] .admin-data-grid > * {
     min-width: 0;
-    text-align: center;
-    justify-self: center;
+    text-align: left;
+    justify-self: stretch;
   }
 
   [data-admin-shell] .admin-data-grid > .admin-table-align-left {
@@ -1174,21 +1192,23 @@ html[data-app-scope="admin"] .admin-tech-path {
     justify-self: end;
   }
 
-  [data-admin-shell] .admin-data-grid > .flex:not(.admin-table-align-left) {
-    justify-content: center;
+  [data-admin-shell] .admin-data-grid > .admin-table-align-center {
+    text-align: center;
+    justify-self: center;
   }
 
   [data-admin-shell] .admin-data-grid > .admin-table-align-left.flex {
     justify-content: flex-start;
   }
 
-  [data-admin-shell] .admin-data-grid > .inline-flex {
-    justify-content: center;
-  }
-
-  [data-admin-shell] .admin-data-grid > .admin-table-align-right.inline-flex,
+  [data-admin-shell] .admin-data-grid > .admin-table-align-right.flex,
   [data-admin-shell] .admin-data-grid > .admin-table-align-right .inline-flex {
     justify-content: flex-end;
+  }
+
+  [data-admin-shell] .admin-data-grid > .admin-table-align-center.flex,
+  [data-admin-shell] .admin-data-grid > .admin-table-align-center .inline-flex {
+    justify-content: center;
   }
 }
 

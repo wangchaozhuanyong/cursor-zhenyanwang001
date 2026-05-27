@@ -23,6 +23,15 @@ import {
 import type { ExportTask } from "@/services/admin/exportCenterService";
 import { EXPORT_TASK_STATUS, EXPORT_TASK_STATUS_META } from "@/constants/statusDictionary";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const EXPORT_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "center", "right", "left", "left", "right",
+];
 import { toastErrorMessage } from "@/utils/errorMessage";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import { THEME_TEXT_DANGER, THEME_TEXT_SUCCESS, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
@@ -188,12 +197,9 @@ export default function AdminExportCenter() {
         className="overflow-x-auto rounded-xl border border-border bg-card"
         tableClassName="w-full min-w-[760px] text-sm"
         theadClassName="border-b border-border bg-secondary/50"
-        thead={(
-          <tr>
-            {"文件名,类型,状态,大小,创建时间,完成时间,操作".split(",").map((h) => (
-              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
-            ))}
-          </tr>
+        thead={adminTableTheadRow(
+          ["文件名", "类型", "状态", "大小", "创建时间", "完成时间", "操作"],
+          EXPORT_COLUMN_ALIGNS,
         )}
         emptyIcon={exportTasksEmptyGuide.icon}
         emptyTitle={exportTasksEmptyGuide.title}
@@ -202,13 +208,13 @@ export default function AdminExportCenter() {
         renderMobileCard={renderMobileCard}
         renderRow={(t) => (
           <>
-            <td className="px-4 py-3 text-foreground">{t.file_name}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{exportTypes.find((x) => x.value === t.type)?.label || labelExportType(t.type)}</td>
-            <td className="px-4 py-3"><div className="flex items-center gap-1 text-xs">{STATUS_ICON[t.status]} {exportStatusText[t.status] || tText("未知")}</div></td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{formatBytes(t.file_size)}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.created_at ? formatDateTime(t.created_at) : "-"}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.finished_at ? formatDateTime(t.finished_at) : "-"}</td>
-            <td className="px-4 py-3">
+            <td className={adminTableCellClass("left", "text-foreground")}>{t.file_name}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{exportTypes.find((x) => x.value === t.type)?.label || labelExportType(t.type)}</td>
+            <td className={adminTableCellClass("center")}><div className="flex items-center justify-center gap-1 text-xs">{STATUS_ICON[t.status]} {exportStatusText[t.status] || tText("未知")}</div></td>
+            <td className={adminTableCellClass("right", "text-xs text-muted-foreground")}>{formatBytes(t.file_size)}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{t.created_at ? formatDateTime(t.created_at) : "-"}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{t.finished_at ? formatDateTime(t.finished_at) : "-"}</td>
+            <td className={adminTableCellClass("right")}>
               {t.status === EXPORT_TASK_STATUS.SUCCESS ? (
                 <button type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-theme-price hover:bg-secondary" title={tText("下载")}>
                   <Download size={14} />

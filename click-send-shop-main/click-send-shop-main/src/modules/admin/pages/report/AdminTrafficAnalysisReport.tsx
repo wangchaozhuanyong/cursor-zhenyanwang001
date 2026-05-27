@@ -8,6 +8,7 @@ import type { ReportQuery } from "@/services/admin/reportService";
 import { exportTrafficAnalysisCsv, fetchTrafficAnalysisReport } from "@/services/admin/reportService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
+import { getReportColumnAlign } from "@/utils/adminTableColumnPolicy";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
@@ -235,7 +236,7 @@ function DataTable({
           <thead className="border-b border-[var(--theme-border)] text-[var(--theme-text-muted)]">
             <tr>
               {columns.map((column) => (
-                <th key={column.key} className={adminThClassName()}>{column.label}</th>
+                <th key={column.key} className={adminThClassName(undefined, getReportColumnAlign(column.key))}>{column.label}</th>
               ))}
             </tr>
           </thead>
@@ -254,7 +255,7 @@ function DataTable({
                 onClick={() => onSelect(title, row)}
               >
                 {columns.map((column) => (
-                  <td key={column.key} className={adminTdClassName("text-[var(--theme-text)]")}>{labelValue(column.key, row[column.key])}</td>
+                  <td key={column.key} className={adminTdClassName("text-[var(--theme-text)]", getReportColumnAlign(column.key))}>{labelValue(column.key, row[column.key])}</td>
                 ))}
               </tr>
             ))}

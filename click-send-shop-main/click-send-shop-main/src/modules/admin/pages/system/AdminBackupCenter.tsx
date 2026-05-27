@@ -335,12 +335,12 @@ export default function AdminBackupCenter() {
           <AdminNativeTable stickyFirstColumn={false}>
               <thead className="bg-secondary/50 text-muted-foreground">
                 <tr>
-                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>类型</Tx></th>
-                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>状态</Tx></th>
-                  <th className={adminThClassName()}><Tx>存储位置</Tx></th>
-                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>大小</Tx></th>
-                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>可恢复时间</Tx></th>
-                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>校验</Tx></th>
+                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>类型</Tx></th>
+                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>状态</Tx></th>
+                  <th className={adminThClassName(undefined, "left")}><Tx>存储位置</Tx></th>
+                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>大小</Tx></th>
+                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>可恢复时间</Tx></th>
+                  <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>校验</Tx></th>
                 </tr>
               </thead>
               <tbody>
@@ -348,14 +348,14 @@ export default function AdminBackupCenter() {
                   const storage = formatBackupStorageLocation(file);
                   return (
                     <tr key={file.id} className="border-t border-border">
-                      <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-medium text-foreground`)}>{tText(formatBackupFileKind(file.file_kind))}</td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><StatusBadge value={file.job_status} tText={tText} /></td>
-                      <td className={adminTdClassName("max-w-[220px] truncate text-muted-foreground")} title={storage.title}>
+                      <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-medium text-foreground`, "left")}>{tText(formatBackupFileKind(file.file_kind))}</td>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><StatusBadge value={file.job_status} tText={tText} /></td>
+                      <td className={adminTdClassName("max-w-[220px] truncate text-muted-foreground", "left")} title={storage.title}>
                         {tText(storage.label)}
                       </td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{bytes(file.size_bytes)}</td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{fmt(file.recoverable_at)}</td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{bytes(file.size_bytes)}</td>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{fmt(file.recoverable_at)}</td>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>
                         {file.verified_at ? (
                           <span className="inline-flex items-center gap-1 text-emerald-700">
                             <CheckCircle2 size={16} />

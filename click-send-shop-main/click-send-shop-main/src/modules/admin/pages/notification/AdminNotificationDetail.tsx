@@ -174,19 +174,19 @@ export default function AdminNotificationDetail() {
         <AdminNativeTable stickyFirstColumn={false}>
             <thead className="bg-secondary/60">
               <tr>
-                <th className={adminThClassName()}><Tx>用户</Tx></th>
-                <th className={adminThClassName()}><Tx>手机</Tx></th>
-                <th className={adminThClassName()}>WhatsApp</th>
-                <th className={adminThClassName()}><Tx>状态</Tx></th>
+                <th className={adminThClassName(undefined, "left")}><Tx>用户</Tx></th>
+                <th className={adminThClassName(undefined, "left")}><Tx>手机</Tx></th>
+                <th className={adminThClassName(undefined, "left")}>WhatsApp</th>
+                <th className={adminThClassName(undefined, "center")}><Tx>状态</Tx></th>
               </tr>
             </thead>
             <tbody>
               {data.recipients.list.map((r) => (
                 <tr key={r.id} className="border-t border-border">
-                  <td className={adminTdClassName()}>{r.nickname || r.phone || r.whatsapp || tText("未命名用户")}</td>
-                  <td className={adminTdClassName()}>{r.phone || "-"}</td>
-                  <td className={adminTdClassName()}>{r.whatsapp || "-"}</td>
-                  <td className={adminTdClassName()}>{r.is_read ? tText("已读") : tText("未读")}</td>
+                  <td className={adminTdClassName(undefined, "left")}>{r.nickname || r.phone || r.whatsapp || tText("未命名用户")}</td>
+                  <td className={adminTdClassName(undefined, "left")}>{r.phone || "-"}</td>
+                  <td className={adminTdClassName(undefined, "left")}>{r.whatsapp || "-"}</td>
+                  <td className={adminTdClassName(undefined, "center")}>{r.is_read ? tText("已读") : tText("未读")}</td>
                 </tr>
               ))}
             </tbody>
@@ -225,19 +225,19 @@ export default function AdminNotificationDetail() {
         <AdminNativeTable stickyFirstColumn={false}>
             <thead className="bg-secondary/60">
               <tr>
-                <th className={adminThClassName()}><Tx>时间</Tx></th>
-                <th className={adminThClassName()}><Tx>操作人</Tx></th>
-                <th className={adminThClassName()}><Tx>动作</Tx></th>
-                <th className={adminThClassName()}><Tx>摘要</Tx></th>
+                <th className={adminThClassName(undefined, "left")}><Tx>时间</Tx></th>
+                <th className={adminThClassName(undefined, "left")}><Tx>操作人</Tx></th>
+                <th className={adminThClassName(undefined, "left")}><Tx>动作</Tx></th>
+                <th className={adminThClassName(undefined, "left")}><Tx>摘要</Tx></th>
               </tr>
             </thead>
             <tbody>
               {data.logs.map((l) => (
                 <tr key={l.id} className="border-t border-border">
-                  <td className={adminTdClassName()}>{formatDateTime(l.created_at)}</td>
-                  <td className={adminTdClassName()}>{l.operator_name || "-"}</td>
-                  <td className={adminTdClassName()}>{labelAuditAction(l.action_type)}</td>
-                  <td className={adminTdClassName()}>{l.summary || "-"}</td>
+                  <td className={adminTdClassName(undefined, "left")}>{formatDateTime(l.created_at)}</td>
+                  <td className={adminTdClassName(undefined, "left")}>{l.operator_name || "-"}</td>
+                  <td className={adminTdClassName(undefined, "left")}>{labelAuditAction(l.action_type)}</td>
+                  <td className={adminTdClassName(undefined, "left")}>{l.summary || "-"}</td>
                 </tr>
               ))}
             </tbody>

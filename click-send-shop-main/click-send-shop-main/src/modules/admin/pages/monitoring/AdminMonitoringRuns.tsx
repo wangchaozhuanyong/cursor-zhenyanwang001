@@ -69,29 +69,29 @@ export default function AdminMonitoringRuns() {
       <AdminNativeTable>
           <thead className="bg-slate-50 text-slate-500">
             <tr>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>运行类型</Tx></th>
-              <th className={adminThClassName()}><Tx>规则</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>状态</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>检查数量</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>异常数量</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>开始时间</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>结束时间</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>耗时</Tx></th>
-              <th className={adminThClassName()}><Tx>错误信息</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>运行类型</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>规则</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>状态</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>检查数量</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>异常数量</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>开始时间</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>结束时间</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>耗时</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>错误信息</Tx></th>
             </tr>
           </thead>
           <tbody>
             {runs.map((run) => (
               <tr key={run.id} className="border-t">
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{ml.runType(run.run_type)}</td>
-                <td className={adminTdClassName("text-slate-900")}>{run.rule_code ? ml.rule(run.rule_code) : "-"}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Badge value={run.status} /></td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{run.checked_count}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{run.anomaly_count}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(run.started_at)}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(run.finished_at)}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{run.duration_ms ? `${Math.round(run.duration_ms)} ms` : "-"}</td>
-                <td className={adminTdClassName("text-red-600")} title={run.error_message || ""}>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{ml.runType(run.run_type)}</td>
+                <td className={adminTdClassName("text-slate-900", "left")}>{run.rule_code ? ml.rule(run.rule_code) : "-"}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={run.status} /></td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{run.checked_count}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{run.anomaly_count}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatTime(run.started_at)}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatTime(run.finished_at)}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{run.duration_ms ? `${Math.round(run.duration_ms)} ms` : "-"}</td>
+                <td className={adminTdClassName("text-red-600", "left")} title={run.error_message || ""}>
                   {formatSystemErrorMessage(run.error_message)}
                 </td>
               </tr>

@@ -16,6 +16,18 @@ import type {
   PurchaseOrder,
 } from "@/types/inventory";
 import { formatDateTime } from "@/utils/formatDateTime";
+import {
+  adminTableCellClass,
+  adminTableHeadCellClass,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+import {
+  INVENTORY_ALERT_COLUMN_ALIGNS,
+  INVENTORY_CONVERSION_COLUMN_ALIGNS,
+  INVENTORY_PURCHASE_COLUMN_ALIGNS,
+  INVENTORY_RECORD_COLUMN_ALIGNS,
+  INVENTORY_RULE_COLUMN_ALIGNS,
+} from "@/utils/inventoryTableAlign";
 import { THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
 import { History, Package, SplitSquareHorizontal } from "lucide-react";
 import type { ReactNode } from "react";
@@ -27,6 +39,18 @@ type ListTabBase = {
   onPageChange: (page: number) => void;
   L: (zh: string) => string;
 };
+
+function inventoryTheadRow(labels: string[], aligns: AdminTableAlign[], L: (zh: string) => string) {
+  return (
+    <tr>
+      {labels.map((head, index) => (
+        <th key={head} className={adminTableHeadCellClass(aligns[index] ?? "left")}>
+          {L(head)}
+        </th>
+      ))}
+    </tr>
+  );
+}
 
 export function InventoryAlertsTab({
   alerts,
@@ -56,19 +80,23 @@ export function InventoryAlertsTab({
         emptyIcon={Package}
         emptyTitle={L("暂无补货预警")}
         emptyDescription={L("点击扫描生成预警，系统会按 SKU 库存和在途数量生成补货事项。")}
-        thead={<tr>{["商品", "SKU", "状态", "可用/预警", "在途", "预计可用", "建议补货", "预计到货", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+        thead={inventoryTheadRow(
+          ["商品", "SKU", "状态", "可用/预警", "在途", "预计可用", "建议补货", "预计到货", "操作"],
+          INVENTORY_ALERT_COLUMN_ALIGNS,
+          L,
+        )}
         renderMobileCard={renderMobileCard}
         renderRow={(row) => (
           <>
-            <td className="px-4 py-3"><AdminTableCell value={row.product_name} maxWidth="12rem" /></td>
-            <td className="px-4 py-3"><p>{row.variant_title || L("默认规格")}</p><p className="text-xs text-muted-foreground">{row.sku_code || "-"}</p></td>
-            <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2 py-1 text-xs">{L(ALERT_STATUS_LABEL[row.alert_status] || row.alert_status)}</span></td>
-            <td className="px-4 py-3">{row.available_stock} / {row.warning_stock}</td>
-            <td className="px-4 py-3">{row.in_transit_qty} {row.unit_name || L("件")}</td>
-            <td className="px-4 py-3">{row.expected_available_stock}</td>
-            <td className="px-4 py-3 font-semibold">{row.suggested_qty}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{row.expected_arrival_date || "-"}</td>
-            <td className="px-4 py-3">
+            <td className={adminTableCellClass("left")}><AdminTableCell value={row.product_name} maxWidth="12rem" /></td>
+            <td className={adminTableCellClass("left")}><p>{row.variant_title || L("默认规格")}</p><p className="text-xs text-muted-foreground">{row.sku_code || "-"}</p></td>
+            <td className={adminTableCellClass("center")}><span className="rounded-full bg-secondary px-2 py-1 text-xs">{L(ALERT_STATUS_LABEL[row.alert_status] || row.alert_status)}</span></td>
+            <td className={adminTableCellClass("right")}>{row.available_stock} / {row.warning_stock}</td>
+            <td className={adminTableCellClass("right")}>{row.in_transit_qty} {row.unit_name || L("件")}</td>
+            <td className={adminTableCellClass("right")}>{row.expected_available_stock}</td>
+            <td className={adminTableCellClass("right", "font-semibold")}>{row.suggested_qty}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{row.expected_arrival_date || "-"}</td>
+            <td className={adminTableCellClass("right")}>
               {row.alert_status !== "resolved" ? (
                 <button
                   type="button"
@@ -121,18 +149,22 @@ export function InventoryPurchaseOrdersTab({
         emptyIcon={Package}
         emptyTitle={L("暂无采购单")}
         emptyDescription={L("从补货预警生成采购单后，会在这里跟进入库状态。")}
-        thead={<tr>{["采购单", "状态", "明细数", "数量", "在途", "预计到货", "金额", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+        thead={inventoryTheadRow(
+          ["采购单", "状态", "明细数", "数量", "在途", "预计到货", "金额", "操作"],
+          INVENTORY_PURCHASE_COLUMN_ALIGNS,
+          L,
+        )}
         renderMobileCard={renderMobileCard}
         renderRow={(row) => (
           <>
-            <td className="px-4 py-3 font-medium">{row.order_no}</td>
-            <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2 py-1 text-xs">{L(PURCHASE_STATUS_LABEL[row.status] || row.status)}</span></td>
-            <td className="px-4 py-3">{row.item_count}</td>
-            <td className="px-4 py-3">{row.received_qty} / {row.ordered_qty}</td>
-            <td className="px-4 py-3">{row.in_transit_qty}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{row.expected_arrival_date || "-"}</td>
-            <td className="px-4 py-3">RM {Number(row.total_amount || 0).toFixed(2)}</td>
-            <td className="px-4 py-3">
+            <td className={adminTableCellClass("left", "font-medium")}>{row.order_no}</td>
+            <td className={adminTableCellClass("center")}><span className="rounded-full bg-secondary px-2 py-1 text-xs">{L(PURCHASE_STATUS_LABEL[row.status] || row.status)}</span></td>
+            <td className={adminTableCellClass("right")}>{row.item_count}</td>
+            <td className={adminTableCellClass("right")}>{row.received_qty} / {row.ordered_qty}</td>
+            <td className={adminTableCellClass("right")}>{row.in_transit_qty}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{row.expected_arrival_date || "-"}</td>
+            <td className={adminTableCellClass("right")}>RM {Number(row.total_amount || 0).toFixed(2)}</td>
+            <td className={adminTableCellClass("right")}>
               {!["received", "cancelled"].includes(row.status) ? (
                 <button type="button" onClick={() => onReceive(row)} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>确认到货入库</Tx></button>
               ) : <span className="text-xs text-muted-foreground">-</span>}
@@ -173,19 +205,23 @@ export function InventoryRecordsTab({
         emptyIcon={History}
         emptyTitle={L("暂无库存流水")}
         emptyDescription={L("库存调整、订单扣减、拆包组装会写入流水。")}
-        thead={<tr>{["时间", "商品", "规格/SKU", "类型", "变化", "变更前后", "原因", "单据", "操作人"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+        thead={inventoryTheadRow(
+          ["时间", "商品", "规格/SKU", "类型", "变化", "变更前后", "原因", "单据", "操作人"],
+          INVENTORY_RECORD_COLUMN_ALIGNS,
+          L,
+        )}
         renderMobileCard={renderMobileCard}
         renderRow={(row) => (
           <>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(row.created_at)}</td>
-            <td className="max-w-[10rem] px-4 py-3 align-middle"><AdminTableCell value={row.product_name} maxWidth="9.5rem" /></td>
-            <td className="max-w-[9rem] px-4 py-3 align-middle"><AdminTableCell value={`${row.variant_name || "-"} / ${row.sku_code || "-"}`} fullText={`${L("规格")}：${row.variant_name || "-"}\nSKU：${row.sku_code || "-"}`} maxWidth="8.5rem" muted /></td>
-            <td className="px-4 py-3 text-xs">{changeLabel(row.change_type)}</td>
-            <td className={`px-4 py-3 font-semibold ${row.quantity_delta >= 0 ? THEME_TEXT_SUCCESS_SOFT : THEME_TEXT_DANGER}`}>{row.quantity_delta > 0 ? "+" : ""}{row.quantity_delta}</td>
-            <td className="px-4 py-3 text-muted-foreground">{row.before_stock} → {row.after_stock}</td>
-            <td className="max-w-[11rem] px-4 py-3 align-middle"><AdminTableCell value={row.reason || row.remark || "-"} fullText={[row.reason, row.remark].filter(Boolean).join("\n") || "-"} maxWidth="10.5rem" muted /></td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{row.order_no || row.source_no || "-"}</td>
-            <td className="px-4 py-3 text-muted-foreground">{row.operator_name || L("系统")}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{formatDateTime(row.created_at)}</td>
+            <td className={adminTableCellClass("left", "max-w-[10rem]")}><AdminTableCell value={row.product_name} maxWidth="9.5rem" /></td>
+            <td className={adminTableCellClass("left", "max-w-[9rem]")}><AdminTableCell value={`${row.variant_name || "-"} / ${row.sku_code || "-"}`} fullText={`${L("规格")}：${row.variant_name || "-"}\nSKU：${row.sku_code || "-"}`} maxWidth="8.5rem" muted /></td>
+            <td className={adminTableCellClass("left", "text-xs")}>{changeLabel(row.change_type)}</td>
+            <td className={adminTableCellClass("right", `font-semibold ${row.quantity_delta >= 0 ? THEME_TEXT_SUCCESS_SOFT : THEME_TEXT_DANGER}`)}>{row.quantity_delta > 0 ? "+" : ""}{row.quantity_delta}</td>
+            <td className={adminTableCellClass("right", "text-muted-foreground")}>{row.before_stock} → {row.after_stock}</td>
+            <td className={adminTableCellClass("left", "max-w-[11rem]")}><AdminTableCell value={row.reason || row.remark || "-"} fullText={[row.reason, row.remark].filter(Boolean).join("\n") || "-"} maxWidth="10.5rem" muted /></td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{row.order_no || row.source_no || "-"}</td>
+            <td className={adminTableCellClass("left", "text-muted-foreground")}>{row.operator_name || L("系统")}</td>
           </>
         )}
       />
@@ -226,18 +262,22 @@ export function InventoryRulesTab({
         emptyIcon={SplitSquareHorizontal}
         emptyTitle={L("暂无组装拆包规则")}
         emptyDescription={L("新增规则后可手动拆包、组装，也可支持订单自动拆包。")}
-        thead={<tr>{["大包装 SKU", "小包装 SKU", "换算", "当前库存", "自动拆包", "启用", "备注", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+        thead={inventoryTheadRow(
+          ["大包装 SKU", "小包装 SKU", "换算", "当前库存", "自动拆包", "启用", "备注", "操作"],
+          INVENTORY_RULE_COLUMN_ALIGNS,
+          L,
+        )}
         renderMobileCard={renderMobileCard}
         renderRow={(row) => (
           <>
-            <td className="px-4 py-3"><p>{row.parent_product_name}</p><p className="text-xs text-muted-foreground">{row.parent_variant_name || L("默认规格")} / {row.parent_sku_code || "-"}</p></td>
-            <td className="px-4 py-3"><p>{row.child_product_name}</p><p className="text-xs text-muted-foreground">{row.child_variant_name || L("默认规格")} / {row.child_sku_code || "-"}</p></td>
-            <td className="px-4 py-3">{row.parent_qty} {row.parent_unit_name} = {row.child_qty} {row.child_unit_name}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{L("大包可用")} {row.parent_available_stock ?? row.parent_stock} / {L("小包可用")} {row.child_available_stock ?? row.child_stock}</td>
-            <td className="px-4 py-3">{row.auto_unpack_enabled ? L("已开启") : L("关闭")}</td>
-            <td className="px-4 py-3">{row.enabled ? L("启用") : L("停用")}</td>
-            <td className="px-4 py-3 text-muted-foreground">{row.remark || "-"}</td>
-            <td className="px-4 py-3">
+            <td className={adminTableCellClass("left")}><p>{row.parent_product_name}</p><p className="text-xs text-muted-foreground">{row.parent_variant_name || L("默认规格")} / {row.parent_sku_code || "-"}</p></td>
+            <td className={adminTableCellClass("left")}><p>{row.child_product_name}</p><p className="text-xs text-muted-foreground">{row.child_variant_name || L("默认规格")} / {row.child_sku_code || "-"}</p></td>
+            <td className={adminTableCellClass("right")}>{row.parent_qty} {row.parent_unit_name} = {row.child_qty} {row.child_unit_name}</td>
+            <td className={adminTableCellClass("right", "text-xs text-muted-foreground")}>{L("大包可用")} {row.parent_available_stock ?? row.parent_stock} / {L("小包可用")} {row.child_available_stock ?? row.child_stock}</td>
+            <td className={adminTableCellClass("center")}>{row.auto_unpack_enabled ? L("已开启") : L("关闭")}</td>
+            <td className={adminTableCellClass("center")}>{row.enabled ? L("启用") : L("停用")}</td>
+            <td className={adminTableCellClass("left", "text-muted-foreground")}>{row.remark || "-"}</td>
+            <td className={adminTableCellClass("right")}>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => onConvert("unpack", row)} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即拆包</Tx></button>
                 <button type="button" onClick={() => onConvert("assemble", row)} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即组装</Tx></button>
@@ -281,19 +321,23 @@ export function InventoryConversionsTab({
         emptyIcon={History}
         emptyTitle={L("暂无组装拆包单据")}
         emptyDescription={L("手动拆包、手动组装和自动拆包都会生成单据。")}
-        thead={<tr>{["单据号", "类型", "大包装", "小包装", "数量", "大包装库存", "小包装库存", "来源订单", "时间"].map((head) => <th key={head} className="px-4 py-3 text-left">{L(head)}</th>)}</tr>}
+        thead={inventoryTheadRow(
+          ["单据号", "类型", "大包装", "小包装", "数量", "大包装库存", "小包装库存", "来源订单", "时间"],
+          INVENTORY_CONVERSION_COLUMN_ALIGNS,
+          L,
+        )}
         renderMobileCard={renderMobileCard}
         renderRow={(row) => (
           <>
-            <td className="px-4 py-3 font-medium">{row.order_no}</td>
-            <td className="px-4 py-3">{conversionLabel(row.type)}</td>
-            <td className="px-4 py-3"><p>{row.parent_product_name_snapshot}</p><p className="text-xs text-muted-foreground">{row.parent_variant_name_snapshot || L("默认规格")} / {row.parent_sku_code_snapshot || "-"}</p></td>
-            <td className="px-4 py-3"><p>{row.child_product_name_snapshot}</p><p className="text-xs text-muted-foreground">{row.child_variant_name_snapshot || L("默认规格")} / {row.child_sku_code_snapshot || "-"}</p></td>
-            <td className="px-4 py-3">{row.parent_qty} {row.parent_unit_name_snapshot} → {row.child_total_qty} {row.child_unit_name_snapshot}</td>
-            <td className="px-4 py-3">{row.parent_before_stock} → {row.parent_after_stock}</td>
-            <td className="px-4 py-3">{row.child_before_stock} → {row.child_after_stock}</td>
-            <td className="px-4 py-3 text-muted-foreground">{row.source_order_no || "-"}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(row.created_at)}</td>
+            <td className={adminTableCellClass("left", "font-medium")}>{row.order_no}</td>
+            <td className={adminTableCellClass("left")}>{conversionLabel(row.type)}</td>
+            <td className={adminTableCellClass("left")}><p>{row.parent_product_name_snapshot}</p><p className="text-xs text-muted-foreground">{row.parent_variant_name_snapshot || L("默认规格")} / {row.parent_sku_code_snapshot || "-"}</p></td>
+            <td className={adminTableCellClass("left")}><p>{row.child_product_name_snapshot}</p><p className="text-xs text-muted-foreground">{row.child_variant_name_snapshot || L("默认规格")} / {row.child_sku_code_snapshot || "-"}</p></td>
+            <td className={adminTableCellClass("right")}>{row.parent_qty} {row.parent_unit_name_snapshot} → {row.child_total_qty} {row.child_unit_name_snapshot}</td>
+            <td className={adminTableCellClass("right")}>{row.parent_before_stock} → {row.parent_after_stock}</td>
+            <td className={adminTableCellClass("right")}>{row.child_before_stock} → {row.child_after_stock}</td>
+            <td className={adminTableCellClass("left", "text-muted-foreground")}>{row.source_order_no || "-"}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{formatDateTime(row.created_at)}</td>
           </>
         )}
       />

@@ -28,44 +28,44 @@ export default function ProductVariantMatrixTable<T extends ProductVariantMatrix
     <AdminNativeTable tableClassName="min-w-[520px] text-xs">
       <thead>
         <tr className="border-b border-border text-left text-muted-foreground">
-          <th className={adminThClassName("w-10")}>
+          <th className={adminThClassName("w-10", "center")}>
             <Tx>默认</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "left")}>
             <Tx>规格名</Tx>
           </th>
-          <th className={adminThClassName()}>SKU</th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "left")}>SKU</th>
+          <th className={adminThClassName(undefined, "right")}>
             <Tx>库存下限</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "right")}>
             <Tx>库存上限</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "right")}>
             <Tx>价格</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "right")}>
             <Tx>原价</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "right")}>
             <Tx>成本</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "right")}>
             <Tx>库存</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "right")}>
             <Tx>预警</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "left")}>
             <Tx>条码</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "center")}>
             <Tx>图片</Tx>
           </th>
-          <th className={adminThClassName()}>
+          <th className={adminThClassName(undefined, "center")}>
             <Tx>启用</Tx>
           </th>
-          <th className={adminThClassName("w-10")} />
+          <th className={adminThClassName("w-10", "right")} />
         </tr>
       </thead>
       <tbody>

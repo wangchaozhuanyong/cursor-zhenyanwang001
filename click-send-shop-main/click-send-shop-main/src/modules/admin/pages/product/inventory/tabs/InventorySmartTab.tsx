@@ -3,6 +3,19 @@ import type { SmartViewKey } from "@/modules/admin/pages/product/inventory/inven
 import type { SmartReplenishmentForm, SmartEditMap } from "@/modules/admin/pages/product/inventory/inventoryTypes";
 import type { InventorySku, InventorySummary, SmartReplenishmentPreviewResult } from "@/types/inventory";
 import type { Dispatch, SetStateAction } from "react";
+import {
+  adminTableCellClass,
+  adminTableClassName,
+  adminTableHeadCellClass,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const SMART_TABLE_HEADERS = [
+  "SKU", "库存", "在途", "销量/天", "当前下限/上限", "建议下限", "建议上限", "建议补货", "建议动作", "置信度", "原因",
+] as const;
+const SMART_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "right", "right", "right", "right", "right", "right", "right", "center", "right", "left",
+];
 
 export type InventorySmartTabProps = {
   L: (zh: string) => string;
@@ -212,11 +225,11 @@ export default function InventorySmartTab({
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1280px] text-left text-sm">
+            <table className={adminTableClassName("w-full min-w-[1280px] text-sm")}>
               <thead className="border-b border-border text-xs text-muted-foreground">
                 <tr>
-                  {["SKU", "库存", "在途", "销量/天", "当前下限/上限", "建议下限", "建议上限", "建议补货", "建议动作", "置信度", "原因"].map((head) => (
-                    <th key={head} className="px-4 py-3 text-left">{L(head)}</th>
+                  {SMART_TABLE_HEADERS.map((head, index) => (
+                    <th key={head} className={adminTableHeadCellClass(SMART_COLUMN_ALIGNS[index])}>{L(head)}</th>
                   ))}
                 </tr>
               </thead>
@@ -226,24 +239,24 @@ export default function InventorySmartTab({
                   const edit = smartEdits[item.id] || { lower: String(item.suggested_lower_limit), upper: String(item.suggested_upper_limit), qty: String(item.suggested_replenishment_qty) };
                   return (
                     <tr key={item.id} className="border-b border-border/70">
-                      <td className="px-4 py-3">
+                      <td className={adminTableCellClass("left")}>
                         <p className="font-medium">{sku?.product_name || item.variant_id}</p>
                         <p className="text-xs text-muted-foreground">{sku?.variant_title || sku?.spec_text || L("SKU")} / {sku?.sku_code || "-"}</p>
                       </td>
-                      <td className="px-4 py-3">{item.available_stock} / {item.current_stock}</td>
-                      <td className="px-4 py-3">{item.in_transit_qty}</td>
-                      <td className="px-4 py-3">{item.sales_qty} / {Number(item.avg_daily_sales || 0).toFixed(2)}</td>
-                      <td className="px-4 py-3">{item.old_lower_limit ?? "-"} / {item.old_upper_limit ?? "-"}</td>
-                      <td className="px-4 py-3">
-                        <input type="number" min={0} value={edit.lower} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, lower: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
+                      <td className={adminTableCellClass("right")}>{item.available_stock} / {item.current_stock}</td>
+                      <td className={adminTableCellClass("right")}>{item.in_transit_qty}</td>
+                      <td className={adminTableCellClass("right")}>{item.sales_qty} / {Number(item.avg_daily_sales || 0).toFixed(2)}</td>
+                      <td className={adminTableCellClass("right")}>{item.old_lower_limit ?? "-"} / {item.old_upper_limit ?? "-"}</td>
+                      <td className={adminTableCellClass("right")}>
+                        <input type="number" min={0} value={edit.lower} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, lower: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs text-right" />
                       </td>
-                      <td className="px-4 py-3">
-                        <input type="number" min={0} value={edit.upper} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, upper: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
+                      <td className={adminTableCellClass("right")}>
+                        <input type="number" min={0} value={edit.upper} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, upper: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs text-right" />
                       </td>
-                      <td className="px-4 py-3">
-                        <input type="number" min={0} value={edit.qty} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, qty: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
+                      <td className={adminTableCellClass("right")}>
+                        <input type="number" min={0} value={edit.qty} onChange={(e) => setSmartEdits((prev) => ({ ...prev, [item.id]: { ...edit, qty: e.target.value } }))} className="w-24 rounded-lg bg-secondary px-2 py-1.5 text-xs text-right" />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={adminTableCellClass("center")}>
                         <div className="flex items-center gap-2">
                           <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
                             {item.suggestion_type === "unpack" ? L("拆包") : item.suggestion_type === "watch" ? L("观察") : L("采购")}
@@ -260,8 +273,8 @@ export default function InventorySmartTab({
                           ) : null}
                         </div>
                       </td>
-                      <td className="px-4 py-3">{item.confidence_score}%</td>
-                      <td className="max-w-[18rem] px-4 py-3 text-xs text-muted-foreground">{item.reason || "-"}</td>
+                      <td className={adminTableCellClass("right")}>{item.confidence_score}%</td>
+                      <td className={adminTableCellClass("left", "max-w-[18rem] text-xs text-muted-foreground")}>{item.reason || "-"}</td>
                     </tr>
                   );
                 })}

@@ -34,6 +34,15 @@ import {
   THEME_BADGE_SUCCESS,
   THEME_OUTLINE_DANGER,
 } from "@/utils/themeVisuals";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const COUPON_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "center", "left", "right", "right", "left", "center", "right",
+];
 
 const typeLabels: Record<string, { label: string; color: string }> = {
   fixed: { label: "满减券", color: THEME_BADGE_DANGER },
@@ -161,17 +170,10 @@ export default function AdminCoupons() {
         tableClassName="min-w-[960px]"
         className="overflow-hidden border-border bg-card"
         theadClassName="bg-secondary/40 text-left text-xs text-muted-foreground"
-        thead={(
-          <tr>
-            <th className="px-4 py-3"><Tx>标题</Tx></th>
-            <th className="px-4 py-3"><Tx>类型</Tx></th>
-            <th className="px-4 py-3"><Tx>编码</Tx></th>
-            <th className="px-4 py-3"><Tx>面额</Tx></th>
-            <th className="px-4 py-3"><Tx>门槛</Tx></th>
-            <th className="px-4 py-3"><Tx>有效期</Tx></th>
-            <th className="px-4 py-3"><Tx>状态</Tx></th>
-            <th className="px-4 py-3"><Tx>操作</Tx></th>
-          </tr>
+        thead={adminTableTheadRow(
+          ["标题", "类型", "编码", "面额", "门槛", "有效期", "状态", "操作"],
+          COUPON_COLUMN_ALIGNS,
+          (label) => <Tx>{label}</Tx>,
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
         emptyIcon={couponsEmptyGuide.icon}
@@ -181,16 +183,16 @@ export default function AdminCoupons() {
         renderMobileCard={renderMobileCard}
         renderRow={(coupon) => (
           <>
-            <td className="max-w-[12rem] px-4 py-3 align-middle">
+            <td className={adminTableCellClass("left", "max-w-[12rem]")}>
               <AdminTableCell value={coupon.title} fullText={coupon.title} maxWidth="11rem" />
             </td>
-            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${typeLabels[coupon.type]?.color || "bg-secondary text-foreground"}`}>{typeLabels[coupon.type]?.label ? L(typeLabels[coupon.type].label) : labelCouponType(coupon.type)}</span></td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{coupon.code}</td>
-            <td className="px-4 py-3">{coupon.value}</td>
-            <td className="px-4 py-3">{coupon.min_amount}</td>
-            <td className="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground">{formatAdminDateRange(coupon.start_date, coupon.end_date)}</td>
-            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[coupon.status]?.color || "bg-secondary text-foreground"}`}>{statusLabels[coupon.status]?.label ? L(statusLabels[coupon.status].label) : labelCouponStatus(coupon.status)}</span></td>
-            <td className="px-4 py-3">
+            <td className={adminTableCellClass("center")}><span className={`rounded-full px-2 py-0.5 text-xs ${typeLabels[coupon.type]?.color || "bg-secondary text-foreground"}`}>{typeLabels[coupon.type]?.label ? L(typeLabels[coupon.type].label) : labelCouponType(coupon.type)}</span></td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{coupon.code}</td>
+            <td className={adminTableCellClass("right")}>{coupon.value}</td>
+            <td className={adminTableCellClass("right")}>{coupon.min_amount}</td>
+            <td className={adminTableCellClass("left", "text-xs whitespace-nowrap text-muted-foreground")}>{formatAdminDateRange(coupon.start_date, coupon.end_date)}</td>
+            <td className={adminTableCellClass("center")}><span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[coupon.status]?.color || "bg-secondary text-foreground"}`}>{statusLabels[coupon.status]?.label ? L(statusLabels[coupon.status].label) : labelCouponStatus(coupon.status)}</span></td>
+            <td className={adminTableCellClass("right")}>
               <div className="flex gap-2">
                 <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title={tText("编辑")}><Pencil size={13} /></button>
                 <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setIssueCouponId(coupon.id)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title={tText("按标签发券")}><Tx>发券</Tx></button></PermissionGate>

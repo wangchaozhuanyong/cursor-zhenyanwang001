@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, Pin, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Pin } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ADMIN_WORK_TABS_MAX, adminTabPathKey } from "@/config/adminWorkTab";
@@ -215,7 +215,7 @@ export default function AdminWorkTabs() {
                 aria-selected={active}
                 onContextMenu={(e) => openContextMenu(tab, e)}
                 className={cn(
-                  "group relative flex max-w-[12rem] shrink-0 items-center rounded-full border py-1.5 pl-3 pr-1.5 text-xs transition-all",
+                  "group relative flex max-w-[12rem] shrink-0 items-center rounded-full border px-3 py-1.5 text-xs transition-all",
                   active
                     ? "z-[1] border-[var(--theme-price)] btn-theme-price font-semibold shadow-sm"
                     : "border-transparent bg-transparent text-muted-foreground hover:border-[color-mix(in_srgb,var(--theme-price)_28%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-price)_8%,var(--theme-surface))] hover:text-foreground",
@@ -230,21 +230,6 @@ export default function AdminWorkTabs() {
                   {tab.pinned ? <Pin size={11} className="shrink-0 opacity-70" /> : null}
                   <span className="truncate">{tab.title}</span>
                 </button>
-                {!tab.pinned ? (
-                  <button
-                    type="button"
-                    aria-label={tText(`关闭 ${tab.title}`)}
-                    className={cn(
-                      "ml-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full opacity-70 transition-opacity hover:bg-black/10 hover:opacity-100",
-                      active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                    )}
-                    onClick={(e) => {
-                      void handleClose(tab, e);
-                    }}
-                  >
-                    <X size={12} />
-                  </button>
-                ) : null}
               </div>
             );
           })}

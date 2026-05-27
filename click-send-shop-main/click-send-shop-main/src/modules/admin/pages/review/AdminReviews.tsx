@@ -49,6 +49,18 @@ import {
   THEME_BORDER_DANGER_SOFT,
   THEME_HOVER_BG_DANGER,
 } from "@/utils/themeVisuals";
+import {
+  adminTableCellClass,
+  adminTableHeadCellClass,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const REVIEW_TABLE_HEADERS = [
+  "用户", "星级", "评论内容", "商品", "状态", "官方回复", "时间", "操作",
+] as const;
+const REVIEW_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "center", "left", "left", "center", "left", "left", "right",
+];
 
 const STATUS_OPTIONS = [
   { value: "", label: "全部状态" },
@@ -613,11 +625,11 @@ export default function AdminReviews() {
           theadClassName="border-b border-border bg-secondary/50"
           thead={(
             <tr>
-              <th className="px-3 py-3 text-left">
+              <th className={adminTableHeadCellClass("center", "px-3 py-3")}>
                 <input type="checkbox" checked={allReviewsOnPageSelected} onChange={toggleAll} className="accent-gold" />
               </th>
-              {["用户", "星级", "评论内容", "商品", "状态", "官方回复", "时间", "操作"].map((h) => (
-                <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+              {REVIEW_TABLE_HEADERS.map((h, index) => (
+                <th key={h} className={adminTableHeadCellClass(REVIEW_COLUMN_ALIGNS[index], "px-3 py-3")}>{h}</th>
               ))}
             </tr>
           )}
@@ -637,8 +649,8 @@ export default function AdminReviews() {
             const badge = STATUS_BADGE[r.status] || STATUS_BADGE.normal;
             return (
               <>
-                <td className="px-3 py-3"><input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-gold" /></td>
-                <td className="px-3 py-3">
+                <td className={adminTableCellClass("center", "px-3 py-3")}><input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-gold" /></td>
+                <td className={adminTableCellClass("left", "px-3 py-3")}>
                   <div className="flex items-center gap-2">
                     {r.avatar ? (
                       <img src={r.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
@@ -648,8 +660,8 @@ export default function AdminReviews() {
                     <span className="text-xs text-foreground">{r.nickname || "匿名"}</span>
                   </div>
                 </td>
-                <td className="px-3 py-3"><StarRating rating={r.rating} /></td>
-                <td className="max-w-[12rem] px-3 py-3 align-middle">
+                <td className={adminTableCellClass("center", "px-3 py-3")}><StarRating rating={r.rating} /></td>
+                <td className={adminTableCellClass("left", "max-w-[12rem] px-3 py-3")}>
                   <button type="button" onClick={() => openDetail(r.id)} className="block w-full min-w-0 text-left">
                     <AdminTableCell value={r.content} fullText={r.content} maxWidth="11rem" />
                   </button>
@@ -661,19 +673,19 @@ export default function AdminReviews() {
                     </div>
                   )}
                 </td>
-                <td className="px-3 py-3">
+                <td className={adminTableCellClass("left", "px-3 py-3")}>
                   <div className="flex items-center gap-1.5">
                     {r.product_cover && <img src={r.product_cover} alt="" className="h-7 w-7 rounded object-cover" />}
                     <AdminTableCell value={r.product_name || "—"} fullText={r.product_name || ""} maxWidth="6.5rem" />
                   </div>
                 </td>
-                <td className="px-3 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
-                <td className="max-w-[9rem] px-3 py-3 align-middle">
+                <td className={adminTableCellClass("center", "px-3 py-3")}><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
+                <td className={adminTableCellClass("left", "max-w-[9rem] px-3 py-3")}>
                   <AdminTableCell value={r.admin_reply || "—"} fullText={r.admin_reply || ""} maxWidth="8.5rem" muted />
                 </td>
-                <td className="px-3 py-3 text-[11px] text-muted-foreground whitespace-nowrap">{r.created_at ? formatDateTime(r.created_at) : "—"}</td>
-                <td className="px-3 py-3">
-                  <div className="flex gap-1">
+                <td className={adminTableCellClass("left", "px-3 py-3 text-[11px] text-muted-foreground whitespace-nowrap")}>{r.created_at ? formatDateTime(r.created_at) : "—"}</td>
+                <td className={adminTableCellClass("right", "px-3 py-3")}>
+                  <div className="flex justify-end gap-1">
                     <button type="button" onClick={() => openDetail(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={tText("详情")}><Info size={14} /></button>
                     {r.status === "pending" && (
                       <PermissionGate anyOf={REVIEW_MODERATE}>

@@ -76,33 +76,33 @@ export default function AdminMonitoringAnomalies() {
       <AdminNativeTable>
           <thead className="bg-slate-50 text-slate-500">
             <tr>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>等级</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>模块</Tx></th>
-              <th className={adminThClassName()}><Tx>异常标题</Tx></th>
-              <th className={adminThClassName()}><Tx>关联对象</Tx></th>
-              <th className={adminThClassName()}><Tx>可能原因</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>首次发现</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>最近发现</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>状态</Tx></th>
-              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>操作</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>等级</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>模块</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>异常标题</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>关联对象</Tx></th>
+              <th className={adminThClassName(undefined, "left")}><Tx>可能原因</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>首次发现</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>最近发现</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>状态</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>操作</Tx></th>
             </tr>
           </thead>
           <tbody>
             {list.map((item) => (
               <tr key={item.id} className="border-t align-middle">
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Badge value={item.severity} tone={severityClass[item.severity]} /></td>
-                <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-900`)}>{ml.module(item.module)}</td>
-                <td className={adminTdClassName("font-medium text-slate-900")}>{item.title}</td>
-                <td className={adminTdClassName("text-slate-600")} title={`${item.entity_type}:${item.entity_id}`}>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={item.severity} tone={severityClass[item.severity]} /></td>
+                <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-900`, "left")}>{ml.module(item.module)}</td>
+                <td className={adminTdClassName("font-medium text-slate-900", "left")}>{item.title}</td>
+                <td className={adminTdClassName("text-slate-600", "left")} title={`${item.entity_type}:${item.entity_id}`}>
                   {ml.entityRef(item.entity_type, item.entity_id)}
                 </td>
-                <td className={adminTdClassName("text-slate-600")}>
+                <td className={adminTdClassName("text-slate-600", "left")}>
                   {ml.rootCause(item.root_cause_message, item.root_cause_code)}
                 </td>
-                <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-600`)}>{formatTime(item.first_seen_at)}</td>
-                <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-600`)}>{formatTime(item.last_seen_at)}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Badge value={item.status} /></td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-600`, "left")}>{formatTime(item.first_seen_at)}</td>
+                <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-600`, "left")}>{formatTime(item.last_seen_at)}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={item.status} /></td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                   <MonitoringAnomalyRowActions item={item} onAction={action} />
                 </td>
               </tr>

@@ -20,6 +20,13 @@ import { RECYCLE_TYPE_FILTER_OPTIONS } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { formatRecycleBinItemFullText, formatRecycleBinItemName } from "@/utils/recycleBinDisplay";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const RECYCLE_COLUMN_ALIGNS: AdminTableAlign[] = ["center", "left", "left", "right"];
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import {
@@ -205,13 +212,7 @@ export default function AdminRecycleBin() {
           mobileCardFrom="md"
           tableClassName="w-full min-w-[600px] text-sm"
           theadClassName="border-b border-border bg-secondary/50"
-          thead={(
-            <tr>
-              {["类型", "名称", "删除时间", "操作"].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          )}
+          thead={adminTableTheadRow(["类型", "名称", "删除时间", "操作"], RECYCLE_COLUMN_ALIGNS)}
           emptyIcon={emptyGuide.icon}
           emptyTitle={emptyGuide.title}
           emptyDescription={emptyGuide.description}
@@ -225,12 +226,12 @@ export default function AdminRecycleBin() {
           renderMobileCard={renderMobileCard}
           renderRow={(item) => (
             <>
-              <td className="px-4 py-3">
+              <td className={adminTableCellClass("center")}>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
                   {labelRecycleType(item.type, item.type_label)}
                 </span>
               </td>
-              <td className="px-4 py-3">
+              <td className={adminTableCellClass("left")}>
                 <div className="flex items-center gap-2">
                   {item.cover_image && <img src={item.cover_image} alt="" className="h-8 w-8 rounded object-cover" />}
                   <AdminTableCell
@@ -240,8 +241,8 @@ export default function AdminRecycleBin() {
                   />
                 </div>
               </td>
-              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</td>
-              <td className="px-4 py-3">
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</td>
+              <td className={adminTableCellClass("right")}>
                 <PermissionGate permission="recycle_bin.manage">
                   <div className="flex gap-1">
                     <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title={tText("恢复")}>

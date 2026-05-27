@@ -49,6 +49,15 @@ import {
 } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const REWARD_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "right", "right", "right", "right", "center", "left", "left",
+];
 
 const statusOptions: Array<{ value: "" | RewardStatus; label: string }> = [
   { value: "", label: "全部状态" },
@@ -425,12 +434,9 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
         className="theme-shadow overflow-x-auto rounded-xl border border-[var(--theme-border)] bg-theme-surface"
         tableClassName="w-full min-w-[940px] text-sm"
         theadClassName="border-b border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]"
-        thead={(
-          <tr>
-            {["用户", "订单号", "层级", "订单金额", "比例", "返现金额", "状态", "备注", "时间"].map((h) => (
-              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-theme-muted">{h}</th>
-            ))}
-          </tr>
+        thead={adminTableTheadRow(
+          ["用户", "订单号", "层级", "订单金额", "比例", "返现金额", "状态", "备注", "时间"],
+          REWARD_COLUMN_ALIGNS,
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
         emptyIcon={emptyGuide.icon}
@@ -453,23 +459,23 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
           };
           return (
             <>
-              <td className="px-4 py-3" title={record.user_id || undefined}>
+              <td className={adminTableCellClass("left")} title={record.user_id || undefined}>
                 <p className="text-[var(--theme-text-on-surface)]">
                   {formatUserDisplay(record.user_nickname, record.user_phone)}
                 </p>
               </td>
-              <td className="px-4 py-3 font-mono text-xs text-[var(--theme-text-on-surface)]">{record.order_no || "—"}</td>
-              <td className="px-4 py-3 text-theme-muted">{record.level || 1}</td>
-              <td className="px-4 py-3 text-theme-muted">RM {money(record.order_amount)}</td>
-              <td className="px-4 py-3 text-theme-muted">{money(record.rate)}%</td>
-              <td className="px-4 py-3 font-semibold text-[var(--theme-price)]">RM {money(record.amount)}</td>
-              <td className="px-4 py-3">
+              <td className={adminTableCellClass("left", "font-mono text-xs text-[var(--theme-text-on-surface)]")}>{record.order_no || "—"}</td>
+              <td className={adminTableCellClass("right", "text-theme-muted")}>{record.level || 1}</td>
+              <td className={adminTableCellClass("right", "text-theme-muted")}>RM {money(record.order_amount)}</td>
+              <td className={adminTableCellClass("right", "text-theme-muted")}>{money(record.rate)}%</td>
+              <td className={adminTableCellClass("right", "font-semibold text-[var(--theme-price)]")}>RM {money(record.amount)}</td>
+              <td className={adminTableCellClass("center")}>
                 <span className={`rounded-full px-2 py-1 text-xs ${label.className}`}>{label.label}</span>
               </td>
-              <td className="max-w-[14rem] px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "max-w-[14rem]")}>
                 <AdminTableCell value={record.remark || "—"} fullText={record.remark || ""} maxWidth="13rem" muted />
               </td>
-              <td className="px-4 py-3 text-xs text-theme-muted">
+              <td className={adminTableCellClass("left", "text-xs text-theme-muted")}>
                 {record.created_at ? formatDateTime(record.created_at) : "—"}
               </td>
             </>

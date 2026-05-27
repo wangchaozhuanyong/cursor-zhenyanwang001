@@ -353,7 +353,7 @@ export default function AdminReportGenericPage({
                   return (
                     <th
                       key={k}
-                      className={reportTableHeadCellClass(sticky)}
+                      className={reportTableHeadCellClass(sticky, k)}
                       style={{
                         ...getReportColumnMaxWidthStyle(k),
                         ...getReportStickyCellStyle(k, columns, stickyKeys),
@@ -384,7 +384,7 @@ export default function AdminReportGenericPage({
                   return (
                     <td
                       key={k}
-                      className={reportTableBodyCellClass(sticky)}
+                      className={reportTableBodyCellClass(sticky, k)}
                       style={{
                         ...getReportColumnMaxWidthStyle(k),
                         ...getReportStickyCellStyle(k, columns, stickyKeys),

@@ -26,6 +26,15 @@ import {
 } from "@/utils/adminCouponRecordFilters";
 import { formatUserDisplay } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const COUPON_RECORD_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "left", "center", "left", "left",
+];
 import { THEME_BADGE_SUCCESS } from "@/utils/themeVisuals";
 import { useAdminT } from "@/hooks/useAdminT";
 
@@ -149,15 +158,10 @@ export default function AdminCouponRecords() {
         tableClassName="min-w-[900px]"
         className="overflow-hidden border-border bg-card"
         theadClassName="bg-secondary/40 text-left text-xs text-muted-foreground"
-        thead={(
-          <tr>
-            <th className="px-4 py-3"><Tx>用户</Tx></th>
-            <th className="px-4 py-3"><Tx>手机号</Tx></th>
-            <th className="px-4 py-3"><Tx>优惠券</Tx></th>
-            <th className="px-4 py-3"><Tx>状态</Tx></th>
-            <th className="px-4 py-3"><Tx>领取时间</Tx></th>
-            <th className="px-4 py-3"><Tx>使用时间</Tx></th>
-          </tr>
+        thead={adminTableTheadRow(
+          ["用户", "手机号", "优惠券", "状态", "领取时间", "使用时间"],
+          COUPON_RECORD_COLUMN_ALIGNS,
+          (label) => <Tx>{label}</Tx>,
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
         emptyIcon={emptyGuide.icon}
@@ -173,18 +177,18 @@ export default function AdminCouponRecords() {
         renderMobileCard={renderMobileCard}
         renderRow={(record) => (
           <>
-            <td className="px-4 py-3">{formatUserDisplay(record.nickname, record.phone)}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{formatPhone(record.phone)}</td>
-            <td className="max-w-[12rem] px-4 py-3 align-middle">
+            <td className={adminTableCellClass("left")}>{formatUserDisplay(record.nickname, record.phone)}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{formatPhone(record.phone)}</td>
+            <td className={adminTableCellClass("left", "max-w-[12rem]")}>
               <AdminTableCell value={record.coupon_title || "—"} fullText={record.coupon_title || ""} maxWidth="11rem" />
             </td>
-            <td className="px-4 py-3">
+            <td className={adminTableCellClass("center")}>
               <span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[record.status]?.color || "bg-secondary text-foreground"}`}>
                 {statusLabels[record.status]?.label ? L(statusLabels[record.status].label) : labelCouponRecordStatus(record.status)}
               </span>
             </td>
-            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(record.claimed_at)}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{record.used_at ? formatDateTime(record.used_at) : "—"}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(record.claimed_at)}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{record.used_at ? formatDateTime(record.used_at) : "—"}</td>
           </>
         )}
       />

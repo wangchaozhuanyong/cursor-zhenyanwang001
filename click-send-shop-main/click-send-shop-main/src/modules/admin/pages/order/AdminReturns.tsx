@@ -28,6 +28,15 @@ import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "left", "left", "right", "center", "left", "right",
+];
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "待审核",
@@ -220,18 +229,18 @@ export default function AdminReturns() {
           className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
           tableClassName="min-w-[1040px] w-full text-sm"
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
-          thead={<tr>{TABLE_HEADERS.map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{tText(head)}</th>)}</tr>}
+          thead={adminTableTheadRow(TABLE_HEADERS.map((h) => tText(h)), COLUMN_ALIGNS)}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
           renderMobileCard={renderMobileCard}
           renderRow={(row) => (
             <>
-              <td className="px-4 py-3 font-mono text-xs text-foreground">{row.id}</td>
-              <td className="px-4 py-3">
+              <td className={adminTableCellClass("left", "font-mono text-xs text-foreground")}>{row.id}</td>
+              <td className={adminTableCellClass("left")}>
                 <div className="font-medium text-foreground">{row.order_no}</div>
                 <div className="text-[11px] text-muted-foreground">{row.sku_code || row.product_id || '-'}</div>
               </td>
-              <td className="px-4 py-3 text-sm">{labelReturnType(row.type)}</td>
-              <td className="max-w-[14rem] px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "text-sm")}>{labelReturnType(row.type)}</td>
+              <td className={adminTableCellClass("left", "max-w-[14rem]")}>
                 <AdminTableCell
                   value={row.reason || row.description || '-'}
                   fullText={[row.reason, row.description].filter(Boolean).join('\n') || '-'}
@@ -239,11 +248,11 @@ export default function AdminReturns() {
                   muted
                 />
               </td>
-              <td className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">{money(row.refund_amount)}</td>
-              <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{labelStatus(row.status)}</span></td>
-              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(row.created_at)}</td>
-              <td className="px-4 py-3">
-                <div className="flex flex-wrap gap-2">
+              <td className={adminTableCellClass("right", "font-semibold text-foreground whitespace-nowrap")}>{money(row.refund_amount)}</td>
+              <td className={adminTableCellClass("center")}><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{labelStatus(row.status)}</span></td>
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(row.created_at)}</td>
+              <td className={adminTableCellClass("right")}>
+                <div className="flex flex-wrap justify-end gap-2">
                   <button type="button" onClick={() => setSelectedId(row.id)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"><Tx>详情</Tx></button>
                   {canHandleReturn ? (
                     <>

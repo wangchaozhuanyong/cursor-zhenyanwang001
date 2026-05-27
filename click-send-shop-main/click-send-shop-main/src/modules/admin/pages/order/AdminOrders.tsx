@@ -43,6 +43,25 @@ import {
   money,
 } from "@/modules/admin/pages/order/orderListDisplayUtils";
 import { useAdminOrders } from "@/modules/admin/pages/order/useAdminOrders";
+import {
+  adminTableAlignClass,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const ORDER_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left",
+  "left",
+  "left",
+  "left",
+  "right",
+  "right",
+  "right",
+  "right",
+  "center",
+  "center",
+  "center",
+  "right",
+];
 
 export default function AdminOrders() {
   const navigate = useNavigate();
@@ -221,7 +240,7 @@ export default function AdminOrders() {
 
     return (
       <>
-        <td className="w-10 px-4 py-2.5 align-middle">
+        <td className={`w-10 px-4 py-2.5 align-middle ${adminTableAlignClass("center")}`}>
           <input
             type="checkbox"
             checked={checked}
@@ -230,7 +249,7 @@ export default function AdminOrders() {
             aria-label={tText(`选择订单 ${o.order_no}`)}
           />
         </td>
-        <td className="max-w-[10rem] whitespace-nowrap px-4 py-2.5 align-middle">
+        <td className={`max-w-[10rem] whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("left")}`}>
           <button
             type="button"
             onClick={() => navigate(`/admin/orders/${o.id}`)}
@@ -240,10 +259,10 @@ export default function AdminOrders() {
             {o.order_no}
           </button>
         </td>
-        <td className="max-w-[9rem] whitespace-nowrap px-4 py-2.5 align-middle text-xs text-muted-foreground">
+        <td className={`max-w-[9rem] whitespace-nowrap px-4 py-2.5 align-middle text-xs text-muted-foreground ${adminTableAlignClass("left")}`}>
           <AdminTableCell value={formatDateTime(o.created_at)} columnKey="created_at" maxWidth="8.5rem" />
         </td>
-        <td className="max-w-[10rem] whitespace-nowrap px-4 py-2.5 align-middle">
+        <td className={`max-w-[10rem] whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("left")}`}>
           <AdminTableCell
             value={`${o.user_nickname || o.contact_name || tText("未命名用户")} / ${phone}`}
             fullText={[
@@ -255,47 +274,47 @@ export default function AdminOrders() {
             maxWidth="9.5rem"
           />
         </td>
-        <td className="max-w-[13rem] whitespace-nowrap px-4 py-2.5 align-middle">
+        <td className={`max-w-[13rem] whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("left")}`}>
           <div className="flex min-w-0 items-center gap-2">
             <Package size={15} className="shrink-0 text-muted-foreground" />
             <AdminTableCell value={itemsSummary} fullText={`${itemsSummary}\n${itemQty} 件，${o.sku_count || o.items?.length || 0} 个 SKU`} maxWidth="11rem" />
           </div>
         </td>
-        <td className="whitespace-nowrap px-4 py-2.5 align-middle font-semibold text-foreground" title={amountTooltip.join("\n")}>
+        <td className={`whitespace-nowrap px-4 py-2.5 align-middle font-semibold tabular-nums text-foreground ${adminTableAlignClass("right")}`} title={amountTooltip.join("\n")}>
           RM {money(payableAmount)}
         </td>
-        <td className="whitespace-nowrap px-4 py-2.5 align-middle font-semibold text-[var(--theme-price)]" title={amountTooltip.join("\n")}>
+        <td className={`whitespace-nowrap px-4 py-2.5 align-middle font-semibold tabular-nums text-[var(--theme-price)] ${adminTableAlignClass("right")}`} title={amountTooltip.join("\n")}>
           RM {money(paidAmount)}
         </td>
-        <td className="whitespace-nowrap px-4 py-2.5 align-middle text-muted-foreground" title={amountTooltip.join("\n")}>
+        <td className={`whitespace-nowrap px-4 py-2.5 align-middle tabular-nums text-muted-foreground ${adminTableAlignClass("right")}`} title={amountTooltip.join("\n")}>
           RM {money(discount)}
         </td>
-        <td className="whitespace-nowrap px-4 py-2.5 align-middle text-muted-foreground" title={tText(`原始运费 RM ${money(o.shipping_original_fee ?? shippingIncome + shippingDiscount)}\n实收运费 RM ${money(shippingIncome)}\n运费减免 RM ${money(shippingDiscount)}\n物流成本 RM ${money(o.shipping_cost_amount || 0)}`)}>
+        <td className={`whitespace-nowrap px-4 py-2.5 align-middle tabular-nums text-muted-foreground ${adminTableAlignClass("right")}`} title={tText(`原始运费 RM ${money(o.shipping_original_fee ?? shippingIncome + shippingDiscount)}\n实收运费 RM ${money(shippingIncome)}\n运费减免 RM ${money(shippingDiscount)}\n物流成本 RM ${money(o.shipping_cost_amount || 0)}`)}>
           {tText(`收${money(shippingIncome)}/减${money(shippingDiscount)}`)}
         </td>
-        <td className="max-w-[9rem] whitespace-nowrap px-4 py-2.5 align-middle">
+        <td className={`max-w-[9rem] whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("center")}`}>
           <AdminTableCell
             value={<PaymentStatusBadge status={o.payment_status || PAYMENT_STATUS.PENDING} />}
             fullText={`${o.payment_method || "-"}${o.payment_channel ? ` / ${o.payment_channel}` : ""}\n${formatDateTime(o.paid_at || o.payment_time || "") || tText("未支付")}`}
             maxWidth="8.5rem"
           />
         </td>
-        <td className="max-w-[9rem] whitespace-nowrap px-4 py-2.5 align-middle" title={[
+        <td className={`max-w-[9rem] whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("center")}`} title={[
           tText(`配送：${o.shipping_name || o.carrier || "-"}`),
           shippedWithoutTracking ? tText("已发货但未填写物流单号") : tText(`单号：${o.tracking_no || "无"}`),
           tText(`发货时间：${formatDateTime(o.shipped_at || "") || "未发货"}`),
         ].join("\n")}>
           <OrderStatusBadge status={o.status} />
         </td>
-        <td className="max-w-[7rem] whitespace-nowrap px-4 py-2.5 align-middle">
+        <td className={`max-w-[7rem] whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("center")}`}>
           <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${afterSale.className}`} title={[
             afterSale.text,
             tText(`售后单数：${o.return_request_count || 0}`),
             Number(o.refund_amount || 0) > 0 ? tText(`退款 RM ${money(o.refund_amount)}`) : "",
           ].filter(Boolean).join("\n")}>{afterSale.text}</span>
         </td>
-        <td className="whitespace-nowrap px-4 py-2.5 align-middle">
-          <div className="flex items-center gap-2">
+        <td className={`whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("right")}`}>
+          <div className="flex items-center justify-end gap-2">
             {renderActions(o)}
             <button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="rounded-md border border-[var(--theme-border)] px-2 py-1 text-[11px] hover:bg-[var(--theme-bg)]"><Tx>详情</Tx></button>
             <button
@@ -527,7 +546,7 @@ export default function AdminOrders() {
         theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
         thead={(
           <tr>
-            <th className="w-10 px-4 py-3">
+            <th className={`w-10 px-4 py-3 ${adminTableAlignClass("center")}`}>
               <input
                 type="checkbox"
                 checked={allSelectedOnPage}
@@ -538,8 +557,13 @@ export default function AdminOrders() {
                 aria-label={tText("全选当前页订单")}
               />
             </th>
-            {tableHeaders.map((h) => (
-              <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
+            {tableHeaders.map((h, index) => (
+              <th
+                key={h}
+                className={`whitespace-nowrap px-4 py-3 text-xs font-semibold text-muted-foreground ${adminTableAlignClass(ORDER_COLUMN_ALIGNS[index] ?? "left")}`}
+              >
+                {h}
+              </th>
             ))}
           </tr>
         )}

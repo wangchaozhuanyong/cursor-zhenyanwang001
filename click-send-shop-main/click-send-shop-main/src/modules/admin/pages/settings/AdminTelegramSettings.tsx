@@ -427,29 +427,29 @@ export default function AdminTelegramSettings() {
               <AdminNativeTable tableClassName="min-w-[760px] text-left text-sm">
                   <thead className="border-b border-border text-xs text-muted-foreground">
                     <tr>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>时间</Tx></th>
-                      <th className={adminThClassName()}><Tx>事件</Tx></th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>订单</Tx></th>
-                      <th className={adminThClassName()}><Tx>状态</Tx></th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>消息编号</Tx></th>
-                      <th className={adminThClassName()}><Tx>错误</Tx></th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>时间</Tx></th>
+                      <th className={adminThClassName(undefined, "left")}><Tx>事件</Tx></th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>订单</Tx></th>
+                      <th className={adminThClassName(undefined, "center")}><Tx>状态</Tx></th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>消息编号</Tx></th>
+                      <th className={adminThClassName(undefined, "left")}><Tx>错误</Tx></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {logs.map((log) => (
                       <tr key={log.id}>
-                        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-xs text-muted-foreground`)}>{formatDateTime(log.created_at)}</td>
-                        <td className={adminTdClassName()}>{labelTelegramLogEventType(log.event_type)}</td>
-                        <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{log.order_id || "-"}</td>
-                        <td className={adminTdClassName()}>
+                        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-xs text-muted-foreground`, "left")}>{formatDateTime(log.created_at)}</td>
+                        <td className={adminTdClassName(undefined, "left")}>{labelTelegramLogEventType(log.event_type)}</td>
+                        <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{log.order_id || "-"}</td>
+                        <td className={adminTdClassName(undefined, "center")}>
                           <span
                             className={`rounded-full px-2 py-1 text-xs font-semibold ${telegramLogSendStatusClass(log.send_status)}`}
                           >
                             {labelTelegramLogSendStatus(log.send_status)}
                           </span>
                         </td>
-                        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-xs`)}>{log.provider_message_id || "-"}</td>
-                        <td className={adminTdClassName("max-w-[18rem]")}>
+                        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-xs`, "left")}>{log.provider_message_id || "-"}</td>
+                        <td className={adminTdClassName("max-w-[18rem]", "left")}>
                           <AdminTableCell
                             value={labelTelegramLogErrorMessage(log.error_message)}
                             fullText={labelTelegramLogErrorMessage(log.error_message)}

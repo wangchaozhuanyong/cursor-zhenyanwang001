@@ -1,3 +1,6 @@
+import { cn } from "@/lib/utils";
+import { getReportColumnAlign, getReportColumnAlignClass } from "@/utils/adminTableColumnPolicy";
+
 const STICKY_COLUMN_ORDER = [
   "date",
   "month",
@@ -111,14 +114,22 @@ export function getReportStickyCellStyle(columnKey: string, columns: string[], s
   };
 }
 
-export function reportTableBodyCellClass(sticky: boolean) {
-  return sticky
-    ? "max-w-0 px-3 py-2.5 align-middle bg-[var(--theme-surface)]"
-    : "max-w-0 px-3 py-2.5 align-middle";
+export function reportTableBodyCellClass(sticky: boolean, columnKey: string) {
+  const align = getReportColumnAlign(columnKey);
+  return cn(
+    "max-w-0 px-3 py-2.5 align-middle",
+    getReportColumnAlignClass(columnKey),
+    align === "right" && "tabular-nums",
+    sticky && "bg-[var(--theme-surface)]",
+  );
 }
 
-export function reportTableHeadCellClass(sticky: boolean) {
-  return sticky
-    ? "px-3 py-2.5 text-center text-xs font-semibold text-muted-foreground bg-[var(--theme-surface)]"
-    : "px-3 py-2.5 text-center text-xs font-semibold text-muted-foreground";
+export function reportTableHeadCellClass(sticky: boolean, columnKey: string) {
+  const align = getReportColumnAlign(columnKey);
+  return cn(
+    "px-3 py-2.5 text-xs font-semibold text-muted-foreground",
+    getReportColumnAlignClass(columnKey),
+    align === "right" && "tabular-nums",
+    sticky && "bg-[var(--theme-surface)]",
+  );
 }

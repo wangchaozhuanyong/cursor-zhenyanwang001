@@ -142,31 +142,31 @@ function RunSteps({
     <AdminNativeTable className="rounded-lg border border-border" stickyFirstColumn={false}>
         <thead className="bg-secondary/50 text-xs text-muted-foreground">
           <tr>
-            <th className={adminThClassName()}><Tx>策略</Tx></th>
-            <th className={adminThClassName()}><Tx>清理对象</Tx></th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>状态</Tx></th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+            <th className={adminThClassName(undefined, "left")}><Tx>策略</Tx></th>
+            <th className={adminThClassName(undefined, "left")}><Tx>清理对象</Tx></th>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>状态</Tx></th>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
               <HintLabel label="命中" hint={DATA_RETENTION_FIELD_HINTS.matched} tText={tText} />
             </th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
               <HintLabel label="删除" hint={DATA_RETENTION_FIELD_HINTS.deleted} tText={tText} />
             </th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
               <HintLabel label="批次" hint={DATA_RETENTION_FIELD_HINTS.batchCount} tText={tText} />
             </th>
-            <th className={adminThClassName()}><Tx>原因</Tx></th>
+            <th className={adminThClassName(undefined, "left")}><Tx>原因</Tx></th>
           </tr>
         </thead>
         <tbody>
           {steps.map((step) => (
             <tr key={step.id} className="border-t border-border">
-              <td className={adminTdClassName("font-medium text-foreground")}>{tText(formatDataCleanupPolicyKey(step.policy_key, policyTitleByKey))}</td>
-              <td className={adminTdClassName("text-muted-foreground")}>{tText(formatDataCleanupTableName(step.table_name, step.policy_key))}</td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><StatusBadge status={step.status} tText={tText} /></td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{step.matched_count}</td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{step.deleted_count}</td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{step.batch_count}</td>
-              <td className={adminTdClassName("max-w-[280px] truncate text-xs text-muted-foreground")} title={step.error_message || ""}>
+              <td className={adminTdClassName("font-medium text-foreground", "left")}>{tText(formatDataCleanupPolicyKey(step.policy_key, policyTitleByKey))}</td>
+              <td className={adminTdClassName("text-muted-foreground", "left")}>{tText(formatDataCleanupTableName(step.table_name, step.policy_key))}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><StatusBadge status={step.status} tText={tText} /></td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{step.matched_count}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{step.deleted_count}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{step.batch_count}</td>
+              <td className={adminTdClassName("max-w-[280px] truncate text-xs text-muted-foreground", "left")} title={step.error_message || ""}>
                 {formatSystemErrorMessage(step.error_message)}
               </td>
             </tr>
@@ -574,21 +574,21 @@ export default function AdminDataRetention() {
               <AdminNativeTable stickyFirstColumn={false}>
                   <thead className="bg-secondary/50 text-xs text-muted-foreground">
                     <tr>
-                      <th className={adminThClassName()}><Tx>策略</Tx></th>
-                      <th className={adminThClassName()}><Tx>清理对象</Tx></th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                      <th className={adminThClassName(undefined, "left")}><Tx>策略</Tx></th>
+                      <th className={adminThClassName(undefined, "left")}><Tx>清理对象</Tx></th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                         <HintLabel label="保留天数" hint={DATA_RETENTION_FIELD_HINTS.retentionDays} tText={tText} />
                       </th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                         <HintLabel label="批大小" hint={DATA_RETENTION_FIELD_HINTS.batchSize} tText={tText} />
                       </th>
-                      <th className={adminThClassName()}>
+                      <th className={adminThClassName(undefined, "center")}>
                         <HintLabel label="启用" hint={DATA_RETENTION_FIELD_HINTS.enabled} tText={tText} />
                       </th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>
                         <HintLabel label="保护" hint={DATA_RETENTION_FIELD_HINTS.protected} tText={tText} />
                       </th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>操作</Tx></th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>操作</Tx></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -599,7 +599,7 @@ export default function AdminDataRetention() {
                       const enabledValue = Boolean(draft.enabled ?? policy.enabled);
                       return (
                         <tr key={policy.key} className="border-t border-border align-top">
-                          <td className="px-3 py-3">
+                          <td className={adminTdClassName("px-3 py-3", "left")}>
                             <div className="flex items-center gap-1.5 font-medium text-foreground">
                               {tText(formatDataCleanupPolicyTitle(policy))}
                               <AdminFieldHint
@@ -608,8 +608,8 @@ export default function AdminDataRetention() {
                               />
                             </div>
                           </td>
-                          <td className="px-3 py-3 text-muted-foreground">{tText(formatDataCleanupTableName(policy.table_name, policy.key))}</td>
-                          <td className="px-3 py-3">
+                          <td className={adminTdClassName("px-3 py-3 text-muted-foreground", "left")}>{tText(formatDataCleanupTableName(policy.table_name, policy.key))}</td>
+                          <td className={adminTdClassName("px-3 py-3", "right")}>
                             <input
                               type="number"
                               min={policy.locked ? policy.retention_days : 1}
@@ -617,10 +617,10 @@ export default function AdminDataRetention() {
                               value={retentionValue}
                               disabled={!canManage}
                               onChange={(event) => setDraft(policy.key, { retention_days: Number(event.target.value) })}
-                              className="w-28 rounded-lg border border-border bg-background px-2 py-2 text-sm"
+                              className="ml-auto block w-28 rounded-lg border border-border bg-background px-2 py-2 text-right text-sm"
                             />
                           </td>
-                          <td className="px-3 py-3">
+                          <td className={adminTdClassName("px-3 py-3", "right")}>
                             <input
                               type="number"
                               min={500}
@@ -628,10 +628,10 @@ export default function AdminDataRetention() {
                               value={batchValue}
                               disabled={!canManage}
                               onChange={(event) => setDraft(policy.key, { batch_size: Number(event.target.value) })}
-                              className="w-28 rounded-lg border border-border bg-background px-2 py-2 text-sm"
+                              className="ml-auto block w-28 rounded-lg border border-border bg-background px-2 py-2 text-right text-sm"
                             />
                           </td>
-                          <td className="px-3 py-3">
+                          <td className={adminTdClassName("px-3 py-3", "center")}>
                             <input
                               type="checkbox"
                               checked={enabledValue}
@@ -640,14 +640,14 @@ export default function AdminDataRetention() {
                               className="h-4 w-4"
                             />
                           </td>
-                          <td className="px-3 py-3">
+                          <td className={adminTdClassName("px-3 py-3", "center")}>
                             {policy.locked || policy.protected ? (
                               <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
                                 <Shield size={12} /> {policy.locked ? "锁定" : "保护"}
                               </span>
                             ) : <span className="text-xs text-muted-foreground">-</span>}
                           </td>
-                          <td className="px-3 py-3">
+                          <td className={adminTdClassName("px-3 py-3", "right")}>
                             <button
                               type="button"
                               disabled={!canManage || savePolicyMutation.isPending}
@@ -750,30 +750,30 @@ export default function AdminDataRetention() {
             <AdminNativeTable stickyFirstColumn={false}>
                 <thead className="bg-secondary/50 text-xs text-muted-foreground">
                   <tr>
-                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>编号</Tx></th>
-                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>类型</Tx></th>
-                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>状态</Tx></th>
-                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>编号</Tx></th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>类型</Tx></th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>状态</Tx></th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                       <HintLabel label="命中" hint={DATA_RETENTION_FIELD_HINTS.matched} tText={tText} />
                     </th>
-                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                       <HintLabel label="删除" hint={DATA_RETENTION_FIELD_HINTS.deleted} tText={tText} />
                     </th>
-                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>开始时间</Tx></th>
-                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>操作</Tx></th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>开始时间</Tx></th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Tx>操作</Tx></th>
                   </tr>
                 </thead>
                 <tbody>
                   {runs.map((run) => (
                     <tr key={run.id} className="border-t border-border">
-                      <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-medium text-foreground`)}>#{run.id}</td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{tText(formatDataCleanupRunType(run.run_type))}</td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><StatusBadge status={run.status} tText={tText} /></td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{run.total_matched}</td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{run.total_deleted}</td>
-                      <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`)}>{run.started_at ? formatDateTime(run.started_at) : "-"}</td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
-                        <div className="flex gap-1">
+                      <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-medium text-foreground`, "left")}>#{run.id}</td>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{tText(formatDataCleanupRunType(run.run_type))}</td>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><StatusBadge status={run.status} tText={tText} /></td>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{run.total_matched}</td>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{run.total_deleted}</td>
+                      <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{run.started_at ? formatDateTime(run.started_at) : "-"}</td>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
+                        <div className="flex justify-end gap-1">
                           <button type="button" onClick={() => setSelectedRunId(run.id)} className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-secondary"><Tx>查看</Tx></button>
                           {run.status === "running" ? (
                             <button type="button" disabled={!canExecute} onClick={() => cancelMutation.mutate(run.id)} className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50 disabled:opacity-50"><Tx>取消</Tx></button>

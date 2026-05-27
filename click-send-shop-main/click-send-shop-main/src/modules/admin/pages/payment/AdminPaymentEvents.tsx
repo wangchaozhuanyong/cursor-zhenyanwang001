@@ -24,6 +24,15 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
+import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "left", "center", "center", "left", "left", "right",
+];
 
 const VERIFY_LABELS: Record<string, string> = { pending: "待验签", success: "验签通过", failed: "验签失败", manual: "人工确认" };
 const RESULT_LABELS: Record<string, string> = { pending: "待处理", success: "处理成功", failed: "处理失败", rejected: "已拒绝", logged: "已记录", refunded: "已退款", partially_refunded: "部分退款" };
@@ -169,12 +178,12 @@ export default function AdminPaymentEvents() {
           className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
           tableClassName="min-w-[1040px] w-full text-sm"
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
-          thead={<tr>{tableHeaders.map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
+          thead={adminTableTheadRow(tableHeaders, COLUMN_ALIGNS)}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
           renderMobileCard={renderMobileCard}
           renderRow={(row) => (
             <>
-              <td className="max-w-[11rem] px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "max-w-[11rem]")}>
                 <AdminTableCellGroup
                   maxWidth="10.5rem"
                   lines={[
@@ -183,11 +192,11 @@ export default function AdminPaymentEvents() {
                   ]}
                 />
               </td>
-              <td className="px-4 py-3 text-sm text-foreground">{localizedMapLabel(PROVIDER_LABELS, row.provider, tText)}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">{relatedBusinessLabel(row, tText)}</td>
-              <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(VERIFY_LABELS, row.verify_status, tText)}</span></td>
-              <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(RESULT_LABELS, row.processing_result, tText)}</span></td>
-              <td className="max-w-[15rem] px-4 py-3 align-middle">
+              <td className={adminTableCellClass("left", "text-sm text-foreground")}>{localizedMapLabel(PROVIDER_LABELS, row.provider, tText)}</td>
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{relatedBusinessLabel(row, tText)}</td>
+              <td className={adminTableCellClass("center")}><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(VERIFY_LABELS, row.verify_status, tText)}</span></td>
+              <td className={adminTableCellClass("center")}><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(RESULT_LABELS, row.processing_result, tText)}</span></td>
+              <td className={adminTableCellClass("left", "max-w-[15rem]")}>
                 <AdminTableCell
                   value={row.error_message || '-'}
                   fullText={row.error_message || ''}
@@ -195,8 +204,8 @@ export default function AdminPaymentEvents() {
                   className="text-red-500"
                 />
               </td>
-              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(row.created_at)}</td>
-              <td className="px-4 py-3">
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(row.created_at)}</td>
+              <td className={adminTableCellClass("right")}>
                 <button type="button" onClick={() => replayMutation.mutate(row)} disabled={replayMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60"><Tx>重新处理</Tx></button>
               </td>
             </>

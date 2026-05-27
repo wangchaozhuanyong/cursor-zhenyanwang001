@@ -7,7 +7,25 @@ import {
   AdminTableMobileCard,
   AdminTableMobileCardField,
 } from "@/components/admin/AdminTableMobileCard";
-import { ADMIN_TABLE_NOWRAP_CLASS, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
+import {
+  ADMIN_TABLE_NOWRAP_CLASS,
+  adminTdClassName,
+  adminThClassName,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const RULE_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left",
+  "left",
+  "left",
+  "right",
+  "right",
+  "right",
+  "center",
+  "right",
+  "center",
+  "right",
+];
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -316,8 +334,8 @@ export default function AdminMarketingPoints() {
             theadClassName="bg-secondary text-muted-foreground"
             thead={(
               <tr>
-                {["名称", "范围", "模式", "固定", "百分比", "倍率", "可抵扣", "优先级", "状态", "操作"].map((h) => (
-                  <th key={h} className={adminThClassName(h === "操作" ? "text-right" : undefined)}><Tx>{h}</Tx></th>
+                {["名称", "范围", "模式", "固定", "百分比", "倍率", "可抵扣", "优先级", "状态", "操作"].map((h, index) => (
+                  <th key={h} className={adminThClassName(undefined, RULE_COLUMN_ALIGNS[index])}><Tx>{h}</Tx></th>
                 ))}
               </tr>
             )}
@@ -327,16 +345,16 @@ export default function AdminMarketingPoints() {
             renderMobileCard={renderRuleMobileCard}
             renderRow={(r) => (
               <>
-                <td className={adminTdClassName()}>{r.name}</td>
-                <td className={adminTdClassName()}>{r.scope_type}:{r.scope_id || "all"}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.earn_mode}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.fixed_points || 0}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.points_percent || 0}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.multiplier_percent || 100}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.redeem_enabled ? "是" : "否"}</td>
-                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.priority}</td>
-                <td className={adminTdClassName()}>{r.enabled ? "启用" : "停用"}</td>
-                <td className={adminTdClassName("text-right")}>
+                <td className={adminTdClassName(undefined, "left")}>{r.name}</td>
+                <td className={adminTdClassName(undefined, "left")}>{r.scope_type}:{r.scope_id || "all"}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{r.earn_mode}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{r.fixed_points || 0}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{r.points_percent || 0}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{r.multiplier_percent || 100}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>{r.redeem_enabled ? "是" : "否"}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{r.priority}</td>
+                <td className={adminTdClassName(undefined, "center")}>{r.enabled ? "启用" : "停用"}</td>
+                <td className={adminTdClassName(undefined, "right")}>
                   <button type="button" onClick={() => editRule(r)} className="mr-2 text-theme-price"><Tx>编辑</Tx></button>
                   <button type="button" onClick={() => r.id && deleteRuleMutation.mutate(r.id)} className="inline-flex items-center text-destructive"><Trash2 className="h-4 w-4" /></button>
                 </td>

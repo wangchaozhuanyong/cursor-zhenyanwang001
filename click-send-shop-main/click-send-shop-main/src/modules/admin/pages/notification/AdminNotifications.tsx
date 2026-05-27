@@ -27,6 +27,15 @@ import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import {
+  adminTableCellClass,
+  adminTableTheadRow,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
+
+const NOTIFICATION_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "left", "left", "left", "center", "right", "left", "right",
+];
+import {
   getTriggerTemplateDisplay,
   hasCustomTriggerTemplate,
   normalizeTriggerRuleForSave,
@@ -337,14 +346,17 @@ export default function AdminNotifications() {
               className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
               tableClassName="min-w-[1040px] w-full text-sm"
               theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
-              thead={<tr>{['标题', '类型', '受众', '发送状态', '触达 / 已读', '时间', '操作'].map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
+              thead={adminTableTheadRow(
+                ["标题", "类型", "受众", "发送状态", "触达 / 已读", "时间", "操作"],
+                NOTIFICATION_COLUMN_ALIGNS,
+              )}
               footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
               renderMobileCard={renderMobileCard}
               renderRow={(row) => {
                 const rowAction = getRowAction(row);
                 return (
                 <>
-                  <td className="max-w-[18rem] px-4 py-3 align-middle">
+                  <td className={adminTableCellClass("left", "max-w-[18rem]")}>
                     <AdminTableCellGroup
                       maxWidth="17rem"
                       lines={[
@@ -354,12 +366,12 @@ export default function AdminNotifications() {
                       tooltipLines={[row.title, row.content || "—"]}
                     />
                   </td>
-                  <td className="px-4 py-3 text-sm">{label(TYPE_LABELS, row.type)}</td>
-                  <td className="px-4 py-3 text-sm">{label(AUDIENCE_LABELS, row.audience_type)}</td>
-                  <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{label(STATUS_LABELS, row.send_status || row.workflow_status)}</span></td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{row.recipient_count || 0} / {row.read_count || 0}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(row.sent_at || row.scheduled_at || row.created_at)}</td>
-                  <td className="px-4 py-3">
+                  <td className={adminTableCellClass("left", "text-sm")}>{label(TYPE_LABELS, row.type)}</td>
+                  <td className={adminTableCellClass("left", "text-sm")}>{label(AUDIENCE_LABELS, row.audience_type)}</td>
+                  <td className={adminTableCellClass("center")}><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{label(STATUS_LABELS, row.send_status || row.workflow_status)}</span></td>
+                  <td className={adminTableCellClass("right", "text-sm text-muted-foreground")}>{row.recipient_count || 0} / {row.read_count || 0}</td>
+                  <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(row.sent_at || row.scheduled_at || row.created_at)}</td>
+                  <td className={adminTableCellClass("right")}>
                     <div className="flex flex-wrap gap-2">
                       <button type="button" onClick={() => navigate(`/admin/notifications/${row.id}`)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
                         详情

@@ -150,6 +150,91 @@ export interface Order {
   return_request_count?: number;
   /** 进行中售后单数量 */
   active_return_count?: number;
+  has_shortage_adjustment?: boolean;
+  shortage_notice?: string;
+  adjustments?: OrderAdjustment[];
+}
+
+export interface OrderAdjustmentItem {
+  id: string;
+  adjustment_id: string;
+  order_id: string;
+  order_item_id: string;
+  product_id: string;
+  variant_id?: string | null;
+  sku_code?: string;
+  product_name_snapshot: string;
+  variant_name_snapshot?: string;
+  before_qty: number;
+  after_qty: number;
+  removed_qty: number;
+  unit_price: number;
+  line_refund_amount: number;
+  shortage_reason?: string;
+  created_at?: string;
+}
+
+export interface OrderAdjustment {
+  id: string;
+  order_id: string;
+  order_no: string;
+  adjustment_no: string;
+  adjustment_type: string;
+  reason: string;
+  customer_confirmed: boolean;
+  customer_confirm_method?: string;
+  customer_confirm_note?: string;
+  before_amount?: Record<string, unknown>;
+  after_amount?: Record<string, unknown>;
+  refund_amount: number;
+  stock_handling: string;
+  status: string;
+  operator_id?: string | null;
+  created_at: string;
+  items: OrderAdjustmentItem[];
+}
+
+export interface ShortageAdjustmentRequestItem {
+  order_item_id: string;
+  after_qty: number;
+  shortage_reason?: string;
+  correct_stock_zero?: boolean;
+}
+
+export interface ShortageAdjustmentRequest {
+  reason: string;
+  customer_confirmed: boolean;
+  customer_confirm_method?: string;
+  customer_confirm_note?: string;
+  stock_handling?: "no_restore" | "correct_zero";
+  items: ShortageAdjustmentRequestItem[];
+}
+
+export interface ShortageAdjustmentPreviewItem extends ShortageAdjustmentRequestItem {
+  product_id: string;
+  variant_id?: string;
+  sku_code?: string;
+  product_name_snapshot: string;
+  variant_name_snapshot?: string;
+  before_qty: number;
+  removed_qty: number;
+  unit_price: number;
+  before_subtotal: number;
+  after_subtotal: number;
+  line_refund_amount: number;
+  current_stock: number;
+}
+
+export interface ShortageAdjustmentPreview {
+  order_id: string;
+  order_no: string;
+  before_amount: Record<string, number | string>;
+  after_amount: Record<string, number | string>;
+  refund_amount: number;
+  refundable_amount: number;
+  stock_handling: string;
+  items: ShortageAdjustmentPreviewItem[];
+  notice: string;
 }
 
 export interface SubmitOrderParams {

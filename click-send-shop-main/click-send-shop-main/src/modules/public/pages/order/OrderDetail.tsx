@@ -430,6 +430,11 @@ export default function OrderDetail() {
               <OrderAutoConfirmCountdown order={order} />
             </div>
           ) : null}
+          {order.has_shortage_adjustment || order.shortage_notice ? (
+            <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              {order.shortage_notice || "部分商品因缺货已移除"}
+            </p>
+          ) : null}
           <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px]">
             {steps.map((s, i) => (
               <div key={s}>

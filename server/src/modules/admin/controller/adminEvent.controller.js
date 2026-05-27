@@ -61,3 +61,19 @@ exports.resolve = asyncRoute(async (req, res) => {
 exports.ignore = asyncRoute(async (req, res) => {
   res.success(await service.ignore(req.params.id, req.user.id, req.body || {}));
 });
+
+function notImplemented(res, action) {
+  if (typeof res.fail === 'function') return res.fail(`事件中心能力暂未启用：${action}`, 501);
+  return res.status(501).json({ message: `事件中心能力暂未启用：${action}` });
+}
+
+// 兼容：部分分支/环境路由已引用但 controller 可能尚未实现的接口
+exports.updateRule = asyncRoute(async (_req, res) => notImplemented(res, 'updateRule'));
+exports.exportEvents = asyncRoute(async (_req, res) => notImplemented(res, 'exportEvents'));
+exports.batchRead = asyncRoute(async (_req, res) => notImplemented(res, 'batchRead'));
+exports.batchAcknowledge = asyncRoute(async (_req, res) => notImplemented(res, 'batchAcknowledge'));
+exports.batchIgnore = asyncRoute(async (_req, res) => notImplemented(res, 'batchIgnore'));
+exports.batchResolve = asyncRoute(async (_req, res) => notImplemented(res, 'batchResolve'));
+exports.batchAssign = asyncRoute(async (_req, res) => notImplemented(res, 'batchAssign'));
+exports.detail = asyncRoute(async (_req, res) => notImplemented(res, 'detail'));
+exports.actions = asyncRoute(async (_req, res) => notImplemented(res, 'actions'));

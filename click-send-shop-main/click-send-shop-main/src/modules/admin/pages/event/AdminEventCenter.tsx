@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Eye, ExternalLink, RefreshCw, Shield, XCircle } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import * as eventService from "@/services/admin/eventCenterService";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -63,14 +64,17 @@ export default function AdminEventCenter() {
   const eventsQuery = useQuery({
     queryKey: adminQueryKeys.eventCenterEvents(params),
     queryFn: () => eventService.fetchAdminEvents(params),
+    ...adminRealtimeQueryOptions.operation,
   });
   const metricsQuery = useQuery({
     queryKey: adminQueryKeys.eventCenterBossMetrics(),
     queryFn: eventService.fetchAdminEventBossMetrics,
+    ...adminRealtimeQueryOptions.operation,
   });
   const summaryQuery = useQuery({
     queryKey: adminQueryKeys.eventCenterSummary({ tab }),
     queryFn: () => eventService.fetchAdminEventSummary({ tab }),
+    ...adminRealtimeQueryOptions.operation,
   });
 
   const refresh = () => {
@@ -242,6 +246,7 @@ export default function AdminEventCenter() {
                 <div className="whitespace-nowrap text-xs font-medium text-foreground">{tText(labelAdminEventStatus(item.status))}</div>
                 <div className="flex flex-wrap items-center justify-end gap-1">
                   <PermissionGate anyOf={EVENT_VIEW_PERMISSIONS}>
+                    <button type="button" className="inline-flex shrink-0 items-center rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => navigate(`/admin/event-center/events/${encodeURIComponent(item.id)}`)}><ExternalLink size={13} className="mr-1" /><Tx>详情</Tx></button>
                     <button type="button" className="inline-flex shrink-0 items-center rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1" /><Tx>已读</Tx></button>
                   </PermissionGate>
                   <PermissionGate anyOf={EVENT_MANAGE_PERMISSIONS}>

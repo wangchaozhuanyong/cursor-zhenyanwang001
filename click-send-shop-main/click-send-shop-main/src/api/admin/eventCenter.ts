@@ -1,4 +1,4 @@
-import { get, put } from "@/api/request";
+import { get, patch, post, put } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 
 export type AdminEventStatus = "open" | "acknowledged" | "in_progress" | "resolved" | "auto_resolved" | "ignored" | "expired";
@@ -36,6 +36,11 @@ export type AdminEventRecord = {
   resolvedAt?: string | null;
   expiredAt?: string | null;
   escalatedAt?: string | null;
+  assigneeId?: string | null;
+  assigneeLabel?: string | null;
+  dueAt?: string | null;
+  priority?: string | null;
+  closedReason?: string | null;
   readAt?: string | null;
   hiddenAt?: string | null;
   soundPlayedAt?: string | null;
@@ -47,6 +52,20 @@ export type AdminEventRecord = {
   autoResolveEnabled: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AdminEventAction = {
+  id: number;
+  eventId: string;
+  actionType: string;
+  fromStatus?: string | null;
+  toStatus?: string | null;
+  operatorId?: string | null;
+  operatorType: string;
+  operatorLabel?: string | null;
+  remark?: string | null;
+  metadata?: unknown;
+  createdAt: string;
 };
 
 export type AdminEventListParams = {
@@ -105,6 +124,13 @@ export type AdminEventRule = {
   config?: unknown;
 };
 
+export type AdminEventDetail = {
+  event: AdminEventRecord;
+  actions: AdminEventAction[];
+};
+
+export type AdminEventRulePatch = Partial<Pick<AdminEventRule, "enabled" | "severity" | "popup_enabled" | "sound_enabled" | "escalation_minutes" | "escalation_target" | "auto_resolve_enabled">>;
+
 export function getAdminEvents(params?: AdminEventListParams) {
   return get<PaginatedData<AdminEventRecord>>("/admin/event-center/events", params as unknown as Record<string, string>);
 }
@@ -119,6 +145,18 @@ export function getAdminEventBossMetrics() {
 
 export function getAdminEventRules() {
   return get<AdminEventRule[]>("/admin/event-center/rules");
+}
+
+export function getAdminEventDetail(id: string) {
+  return get<AdminEventDetail>(`/admin/event-center/events/${id}`);
+}
+
+export function getAdminEventActions(id: string) {
+  return get<AdminEventAction[]>(`/admin/event-center/events/${id}/actions`);
+}
+
+export function updateAdminEventRule(eventType: string, data: AdminEventRulePatch) {
+  return patch<AdminEventRule>(`/admin/event-center/rules/${encodeURIComponent(eventType)}`, data);
 }
 
 export function markAdminEventRead(id: string) {
@@ -151,4 +189,32 @@ export function resolveAdminEvent(id: string, remark?: string) {
 
 export function ignoreAdminEvent(id: string, remark?: string) {
   return put<{ event: AdminEventRecord }>(`/admin/event-center/events/${id}/ignore`, { remark });
+}
+
+export function assignAdminEvent(id: string, data: { assigneeId?: string | null; dueAt?: string | null; priority?: string | null; remark?: string }) {
+  return put<{ event: AdminEventRecord }>(`/admin/event-center/events/${id}/assign`, data);
+}
+
+export function batchReadAdminEvents(ids: string[]) {
+  return post<Record<string, unknown>>("/admin/event-center/events/batch/read", { ids });
+}
+
+export function batchAcknowledgeAdminEvents(ids: string[], remark?: string) {
+  return post<Record<string, unknown>>("/admin/event-center/events/batch/acknowledge", { ids, remark });
+}
+
+export function batchIgnoreAdminEvents(ids: string[], remark?: string) {
+  return post<Record<string, unknown>>("/admin/event-center/events/batch/ignore", { ids, remark });
+}
+
+export function batchResolveAdminEvents(ids: string[], remark?: string) {
+  return post<Record<string, unknown>>("/admin/event-center/events/batch/resolve", { ids, remark });
+}
+
+export function batchAssignAdminEvents(ids: string[], data: { assigneeId?: string | null; dueAt?: string | null; priority?: string | null; remark?: string }) {
+  return post<Record<string, unknown>>("/admin/event-center/events/batch/assign", { ids, ...data });
+}
+
+export function exportAdminEvents(params?: AdminEventListParams) {
+  return get<{ exportedAt: string; list: AdminEventRecord[] }>("/admin/event-center/events/export", params as unknown as Record<string, string>);
 }

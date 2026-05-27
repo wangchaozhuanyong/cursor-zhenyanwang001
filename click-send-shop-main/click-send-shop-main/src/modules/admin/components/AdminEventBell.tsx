@@ -214,7 +214,7 @@ export default function AdminEventBell() {
                   className="flex w-full gap-2 rounded-lg p-1 text-left hover:bg-secondary"
                   onClick={() => {
                     setOpen(false);
-                    navigate(`/admin/event-center?eventId=${encodeURIComponent(item.id)}`);
+                    navigate(`/admin/event-center/events/${encodeURIComponent(item.id)}`);
                   }}
                 >
                   {item.category === "security" ? <Shield size={15} className="mt-0.5 shrink-0 text-red-600" /> : <AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-600" />}

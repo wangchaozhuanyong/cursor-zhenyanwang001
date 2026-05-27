@@ -130,7 +130,7 @@ describe('admin event service', () => {
     assert.equal(records.size, 1);
     assert.equal([...records.values()][0].seen_count, 2);
 
-    await service.resolve(first.event.id, 'admin-1');
+    await service.resolve(first.event.id, 'admin-1', { remark: '已核对测试事件', validationPassed: true });
     const third = await service.emitEvent(input);
     assert.equal(third.inserted, true);
     assert.equal(records.size, 2);

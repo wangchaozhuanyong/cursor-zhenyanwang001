@@ -181,6 +181,8 @@ const ACTION_ZH: Record<string, string> = {
   "security.user_status_change": "用户状态变更",
   "security.data_export": "数据导出",
   "backup.full.create": "创建全量备份",
+  "backup.config.create": "创建配置备份",
+  "backup.uploads.create": "创建上传文件备份",
   "backup.restore.request": "申请备份恢复",
   "backup.restore.approve": "批准备份恢复",
   "backup.restore.switch": "执行备份生产切换",

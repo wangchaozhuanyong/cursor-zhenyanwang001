@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const repo = require('../repository/adminEvent.repository');
 const eventBus = require('./adminEventBus.service');
 const telegramModule = require('../../telegram');
+const { ValidationError } = require('../../../errors');
 
 const VALID_STATUSES = new Set(['open', 'acknowledged', 'in_progress', 'resolved', 'auto_resolved', 'ignored', 'expired']);
 const ACTIVE_STATUSES = new Set(['open', 'acknowledged', 'in_progress']);
@@ -92,6 +93,11 @@ function mapRecord(row) {
     resolvedAt: row.resolved_at,
     expiredAt: row.expired_at,
     escalatedAt: row.escalated_at,
+    assigneeId: row.assignee_id || null,
+    assigneeLabel: row.assignee_label || null,
+    dueAt: row.due_at || null,
+    priority: row.priority || 'normal',
+    closedReason: row.closed_reason || null,
     readAt: row.read_at || null,
     hiddenAt: row.hidden_at || null,
     soundPlayedAt: row.sound_played_at || null,
@@ -103,6 +109,23 @@ function mapRecord(row) {
     autoResolveEnabled: Boolean(row.auto_resolve_enabled),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapAction(row) {
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    eventId: row.event_id,
+    actionType: row.action_type,
+    fromStatus: row.from_status,
+    toStatus: row.to_status,
+    operatorId: row.operator_id,
+    operatorType: row.operator_type,
+    operatorLabel: row.operator_label || row.operator_id || row.operator_type,
+    remark: row.remark,
+    metadata: parseJson(row.metadata),
+    createdAt: row.created_at,
   };
 }
 
@@ -298,6 +321,20 @@ async function listEvents(query = {}, adminUserId) {
   return { list: list.map(mapRecord), total, page, pageSize };
 }
 
+async function getEventDetail(eventId) {
+  const record = await repo.findRecordById(eventId);
+  if (!record) throw new Error('事件不存在');
+  const actions = await repo.listActions(eventId);
+  return { event: mapRecord(record), actions: actions.map(mapAction) };
+}
+
+async function listEventActions(eventId) {
+  const record = await repo.findRecordById(eventId);
+  if (!record) throw new Error('事件不存在');
+  const actions = await repo.listActions(eventId);
+  return actions.map(mapAction);
+}
+
 async function getSummary(adminUserId, query = {}) {
   const [base, categoryCounts, tabCounts] = await Promise.all([
     repo.selectSummary(adminUserId),
@@ -333,14 +370,56 @@ async function markUserState(eventId, adminUserId, state) {
   return { ok: true };
 }
 
+function requiresCloseValidation(record) {
+  const eventType = String(record.event_type || '');
+  const category = String(record.category || '');
+  if (['payment', 'refund', 'backup', 'consistency'].includes(category)) return true;
+  if (/POINTS|points|loyalty|payment|refund|backup|consistency/i.test(eventType)) return true;
+  return false;
+}
+
+async function assertCanClose(record, nextStatus, operatorId, body = {}) {
+  if (!['resolved', 'ignored'].includes(nextStatus)) return;
+  const remark = String(body.remark || '').trim();
+  const operatorType = body.operatorType || 'admin';
+  if (['P0', 'P1'].includes(record.severity) && !remark) {
+    throw new ValidationError('P0/P1 事件完成或忽略必须填写备注');
+  }
+  if (operatorType === 'system' || body.auto) return;
+
+  const payload = parseJson(record.payload) || {};
+  if (record.category === 'consistency') {
+    if (!payload.anomalyId && !body.validationPassed && !body.rescanPassed) {
+      throw new ValidationError('数据一致性事件必须先复查正常后才能完成');
+    }
+    if (payload.anomalyId && !body.rescanPassed && !body.validationPassed) {
+      const monitoringApi = /** @type {any} */ (require('../../monitoring')).api || {};
+      if (typeof monitoringApi.rescanAnomaly !== 'function') {
+        throw new ValidationError('数据一致性复查服务不可用，不能完成事件');
+      }
+      const result = await monitoringApi.rescanAnomaly(payload.anomalyId, { operatorId, force: true });
+      if (!['resolved', 'repaired'].includes(String(result?.status || ''))) {
+        throw new ValidationError('数据一致性复查仍异常，不能完成事件');
+      }
+    }
+  }
+
+  if (nextStatus === 'resolved' && requiresCloseValidation(record) && !body.validationPassed && !body.rescanPassed) {
+    throw new ValidationError('支付、退款、积分、备份或数据一致性事件必须校验恢复后才能完成');
+  }
+}
+
 async function changeStatus(eventId, nextStatus, operatorId, body = {}) {
   if (!VALID_STATUSES.has(nextStatus)) throw new Error('Unsupported event status');
   const record = await repo.findRecordById(eventId);
   if (!record) throw new Error('事件不存在');
   const fromStatus = record.status;
   if (fromStatus === nextStatus) return { event: mapRecord(record), unchanged: true };
+  await assertCanClose(record, nextStatus, operatorId, body);
 
-  await repo.updateRecordStatus(eventId, nextStatus, operatorId);
+  await repo.updateRecordStatus(eventId, nextStatus, operatorId, {
+    closedReason: body.closedReason || body.remark || null,
+  });
   await repo.insertAction({
     eventId,
     actionType: STATUS_ACTIONS[nextStatus] || 'status_changed',
@@ -354,6 +433,28 @@ async function changeStatus(eventId, nextStatus, operatorId, body = {}) {
 
   const updated = await repo.findRecordById(eventId);
   publishChange('admin.event.status_changed', updated);
+  return { event: mapRecord(updated) };
+}
+
+async function assignEvent(eventId, operatorId, body = {}) {
+  const record = await repo.findRecordById(eventId);
+  if (!record) throw new Error('事件不存在');
+  const updated = await repo.assignRecord(eventId, body.assigneeId || null, body.dueAt || null, body.priority || null, operatorId);
+  await repo.insertAction({
+    eventId,
+    actionType: 'assigned',
+    fromStatus: record.status,
+    toStatus: record.status,
+    operatorId,
+    operatorType: 'admin',
+    remark: body.remark || null,
+    metadata: {
+      assigneeId: body.assigneeId || null,
+      dueAt: body.dueAt || null,
+      priority: body.priority || null,
+    },
+  });
+  publishChange('admin.event.assigned', updated);
   return { event: mapRecord(updated) };
 }
 
@@ -389,6 +490,100 @@ async function autoResolveByFingerprint(fingerprintOrInput, options = {}) {
 
 async function listRules() {
   return repo.listRules();
+}
+
+async function updateRule(eventType, operatorId, patch = {}) {
+  const before = await repo.findRuleByType(eventType);
+  if (!before) throw new Error('事件规则不存在');
+  const normalized = {};
+  for (const key of ['enabled', 'severity', 'popup_enabled', 'sound_enabled', 'escalation_minutes', 'escalation_target', 'auto_resolve_enabled']) {
+    if (patch[key] !== undefined) normalized[key] = patch[key];
+  }
+  const updated = await repo.updateRule(eventType, normalized);
+  const emitted = await emitEvent({
+    eventType: 'security.site_settings_change',
+    category: 'security',
+    severity: ['P0', 'P1'].includes(updated.severity) ? updated.severity : 'P2',
+    title: `后台事件规则已修改：${eventType}`,
+    message: Object.keys(normalized).join(', '),
+    entityType: 'admin_event_rule',
+    entityId: eventType,
+    fingerprint: {
+      eventType: 'admin_event_rule.updated',
+      entityType: 'admin_event_rule',
+      entityId: eventType,
+      at: Date.now(),
+    },
+    payload: { before, after: updated, patch: normalized },
+    source: 'admin_event_rule_manage',
+  }, { operatorId, operatorType: 'admin' });
+  if (emitted?.event?.id) {
+    await repo.insertAction({
+      eventId: emitted.event.id,
+      actionType: 'rule_updated',
+      operatorId,
+      operatorType: 'admin',
+      remark: '修改后台事件规则',
+      metadata: { eventType, patch: normalized },
+    });
+  }
+  return updated;
+}
+
+async function batchAction(action, body = {}, operatorId) {
+  const ids = Array.isArray(body.ids) ? body.ids.map(String).filter(Boolean) : [];
+  if (!ids.length) throw new ValidationError('请选择要处理的事件');
+  const records = await repo.listRecordsByIds(ids);
+  const recordMap = new Map(records.map((item) => [String(item.id), item]));
+  const results = [];
+
+  if (['resolve', 'ignore'].includes(action) && records.some((item) => ['P0', 'P1'].includes(item.severity)) && !String(body.remark || '').trim()) {
+    throw new ValidationError('P0/P1 事件批量完成或忽略必须填写备注');
+  }
+
+  for (const id of ids) {
+    const record = recordMap.get(id);
+    if (!record) {
+      results.push({ id, ok: false, error: '事件不存在' });
+      continue;
+    }
+    try {
+      if (action === 'read') {
+        await markUserState(id, operatorId, 'read');
+        results.push({ id, ok: true });
+      } else if (action === 'acknowledge') {
+        const data = await acknowledge(id, operatorId, body);
+        results.push({ id, ok: true, event: data.event });
+      } else if (action === 'ignore') {
+        const data = await ignore(id, operatorId, body);
+        results.push({ id, ok: true, event: data.event });
+      } else if (action === 'resolve') {
+        const data = await resolve(id, operatorId, body);
+        results.push({ id, ok: true, event: data.event });
+      } else if (action === 'assign') {
+        const data = await assignEvent(id, operatorId, body);
+        results.push({ id, ok: true, event: data.event });
+      } else {
+        throw new ValidationError('不支持的批量操作');
+      }
+    } catch (error) {
+      results.push({ id, ok: false, error: error?.message || String(error) });
+    }
+  }
+  return {
+    total: ids.length,
+    success: results.filter((item) => item.ok).length,
+    failed: results.filter((item) => !item.ok).length,
+    results,
+  };
+}
+
+async function exportEvents(query = {}, adminUserId) {
+  const { list } = await listEvents({ ...query, page: 1, pageSize: 100 }, adminUserId);
+  return {
+    exportedAt: new Date().toISOString(),
+    list,
+  };
 }
 
 async function sendTelegramEscalation(event) {
@@ -466,6 +661,8 @@ module.exports = {
   VALID_STATUSES,
   emitEvent,
   listEvents,
+  getEventDetail,
+  listEventActions,
   getSummary,
   getBossMetrics,
   markUserState,
@@ -474,8 +671,12 @@ module.exports = {
   startProgress,
   resolve,
   ignore,
+  assignEvent,
   autoResolveByFingerprint,
   listRules,
+  updateRule,
+  batchAction,
+  exportEvents,
   scanEscalations,
   startEscalationScheduler,
 };

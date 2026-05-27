@@ -8,6 +8,9 @@ export type {
   AdminEventListParams,
   AdminEventRecord,
   AdminEventRule,
+  AdminEventRulePatch,
+  AdminEventAction,
+  AdminEventDetail,
   AdminEventSeverity,
   AdminEventStatus,
   AdminEventSummary,
@@ -30,6 +33,21 @@ export async function fetchAdminEventBossMetrics() {
 
 export async function fetchAdminEventRules() {
   const res = await eventApi.getAdminEventRules();
+  return res.data;
+}
+
+export async function fetchAdminEventDetail(id: string): Promise<eventApi.AdminEventDetail> {
+  const res = await eventApi.getAdminEventDetail(id);
+  return res.data;
+}
+
+export async function fetchAdminEventActions(id: string): Promise<eventApi.AdminEventAction[]> {
+  const res = await eventApi.getAdminEventActions(id);
+  return res.data;
+}
+
+export async function updateAdminEventRule(eventType: string, data: eventApi.AdminEventRulePatch) {
+  const res = await eventApi.updateAdminEventRule(eventType, data);
   return res.data;
 }
 
@@ -70,5 +88,40 @@ export async function resolveAdminEvent(id: string, remark?: string) {
 
 export async function ignoreAdminEvent(id: string, remark?: string) {
   const res = await eventApi.ignoreAdminEvent(id, remark);
+  return res.data;
+}
+
+export async function assignAdminEvent(id: string, data: { assigneeId?: string | null; dueAt?: string | null; priority?: string | null; remark?: string }) {
+  const res = await eventApi.assignAdminEvent(id, data);
+  return res.data;
+}
+
+export async function batchReadAdminEvents(ids: string[]) {
+  const res = await eventApi.batchReadAdminEvents(ids);
+  return res.data;
+}
+
+export async function batchAcknowledgeAdminEvents(ids: string[], remark?: string) {
+  const res = await eventApi.batchAcknowledgeAdminEvents(ids, remark);
+  return res.data;
+}
+
+export async function batchIgnoreAdminEvents(ids: string[], remark?: string) {
+  const res = await eventApi.batchIgnoreAdminEvents(ids, remark);
+  return res.data;
+}
+
+export async function batchResolveAdminEvents(ids: string[], remark?: string) {
+  const res = await eventApi.batchResolveAdminEvents(ids, remark);
+  return res.data;
+}
+
+export async function batchAssignAdminEvents(ids: string[], data: { assigneeId?: string | null; dueAt?: string | null; priority?: string | null; remark?: string }) {
+  const res = await eventApi.batchAssignAdminEvents(ids, data);
+  return res.data;
+}
+
+export async function exportAdminEvents(params?: eventApi.AdminEventListParams) {
+  const res = await eventApi.exportAdminEvents(params);
   return res.data;
 }

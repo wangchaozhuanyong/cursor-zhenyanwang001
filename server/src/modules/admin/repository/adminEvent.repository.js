@@ -29,6 +29,18 @@ function buildListWhere(query, adminUserId) {
     where.push('r.category = ?');
     params.push(query.category);
   }
+  if (query.eventId) {
+    where.push('r.id = ?');
+    params.push(String(query.eventId));
+  }
+  if (query.assigneeId) {
+    where.push('r.assignee_id = ?');
+    params.push(String(query.assigneeId));
+  }
+  if (query.mine === '1' || query.mine === true) {
+    where.push('r.assignee_id = ?');
+    params.push(String(adminUserId));
+  }
   if (query.severity) {
     where.push('r.severity = ?');
     params.push(query.severity);
@@ -91,8 +103,26 @@ async function findRecordByActiveDedupeKey(activeDedupeKey) {
 }
 
 async function findRecordById(eventId) {
-  const [[row]] = await db.query('SELECT * FROM admin_event_records WHERE id = ? LIMIT 1', [eventId]);
+  const [[row]] = await db.query(
+    `SELECT r.*, COALESCE(NULLIF(u.nickname, ''), u.phone, u.id) AS assignee_label
+     FROM admin_event_records r
+     LEFT JOIN users u ON u.id = r.assignee_id AND u.deleted_at IS NULL
+     WHERE r.id = ? LIMIT 1`,
+    [eventId],
+  );
   return row || null;
+}
+
+async function listActions(eventId) {
+  const [rows] = await db.query(
+    `SELECT a.*, COALESCE(NULLIF(u.nickname, ''), u.phone, a.operator_id) AS operator_label
+     FROM admin_event_actions a
+     LEFT JOIN users u ON u.id = a.operator_id AND u.deleted_at IS NULL
+     WHERE a.event_id = ?
+     ORDER BY a.created_at ASC, a.id ASC`,
+    [eventId],
+  );
+  return rows;
 }
 
 async function insertAction(payload) {
@@ -113,7 +143,7 @@ async function insertAction(payload) {
   );
 }
 
-async function updateRecordStatus(eventId, status, operatorId) {
+async function updateRecordStatus(eventId, status, operatorId, options = {}) {
   const activeDedupeKeySql = ACTIVE_STATUSES.includes(status) ? 'active_dedupe_key' : 'NULL';
   await db.query(
     `UPDATE admin_event_records
@@ -123,10 +153,24 @@ async function updateRecordStatus(eventId, status, operatorId) {
          in_progress_at = IF(? = 'in_progress' AND in_progress_at IS NULL, NOW(), in_progress_at),
          resolved_at = IF(? IN ('resolved', 'auto_resolved', 'ignored') AND resolved_at IS NULL, NOW(), resolved_at),
          expired_at = IF(? = 'expired' AND expired_at IS NULL, NOW(), expired_at),
+         closed_reason = IF(? IN ('resolved', 'auto_resolved', 'ignored', 'expired'), ?, closed_reason),
          updated_by = ?
      WHERE id = ?`,
-    [status, status, status, status, status, operatorId || null, eventId],
+    [status, status, status, status, status, status, options.closedReason || null, operatorId || null, eventId],
   );
+}
+
+async function assignRecord(eventId, assigneeId, dueAt, priority, operatorId) {
+  await db.query(
+    `UPDATE admin_event_records
+       SET assignee_id = ?,
+           due_at = ?,
+           priority = COALESCE(?, priority),
+           updated_by = ?
+     WHERE id = ?`,
+    [assigneeId || null, dueAt || null, priority || null, operatorId || null, eventId],
+  );
+  return findRecordById(eventId);
 }
 
 async function touchEscalated(eventId) {
@@ -286,6 +330,28 @@ async function listRules() {
   return rows;
 }
 
+async function updateRule(eventType, patch) {
+  const allowed = ['enabled', 'severity', 'popup_enabled', 'sound_enabled', 'escalation_minutes', 'escalation_target', 'auto_resolve_enabled'];
+  const sets = [];
+  const values = [];
+  for (const key of allowed) {
+    if (patch[key] === undefined) continue;
+    sets.push(`${key} = ?`);
+    values.push(patch[key]);
+  }
+  if (!sets.length) return findRuleByType(eventType);
+  values.push(eventType);
+  await db.query(`UPDATE admin_event_rules SET ${sets.join(', ')} WHERE event_type = ?`, values);
+  return findRuleByType(eventType);
+}
+
+async function listRecordsByIds(ids = []) {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const [rows] = await db.query(`SELECT * FROM admin_event_records WHERE id IN (${placeholders})`, ids);
+  return rows;
+}
+
 async function listEscalationCandidates(limit = 50) {
   const [rows] = await db.query(
     `SELECT
@@ -329,8 +395,10 @@ module.exports = {
   insertRecord,
   findRecordByActiveDedupeKey,
   findRecordById,
+  listActions,
   insertAction,
   updateRecordStatus,
+  assignRecord,
   touchEscalated,
   upsertUserState,
   listEvents,
@@ -340,6 +408,8 @@ module.exports = {
   selectTabCounts,
   selectBossMetrics,
   listRules,
+  updateRule,
+  listRecordsByIds,
   listEscalationCandidates,
   listActiveRecordsByTypes,
 };

@@ -1,4 +1,5 @@
-const clients = new Set();
+const clients = new Map();
+let nextClientSeq = 0;
 
 function sendFrame(res, eventName, payload) {
   res.write(`event: ${eventName}\n`);
@@ -6,9 +7,17 @@ function sendFrame(res, eventName, payload) {
 }
 
 function addClient(res) {
-  clients.add(res);
-  sendFrame(res, 'connected', { at: new Date().toISOString() });
-  return () => clients.delete(res);
+  const clientId = `admin-sse-${Date.now()}-${++nextClientSeq}`;
+  const now = new Date().toISOString();
+  const client = {
+    clientId,
+    res,
+    connectedAt: now,
+    lastHeartbeatAt: now,
+  };
+  clients.set(clientId, client);
+  sendFrame(res, 'connected', { clientId, connectedAt: now, at: now });
+  return () => clients.delete(clientId);
 }
 
 function publishAdminEvent(event) {
@@ -22,21 +31,26 @@ function publishAdminEvent(event) {
     category: event?.category ? String(event.category) : '',
     at: new Date().toISOString(),
   };
-  for (const res of Array.from(clients)) {
+  let sent = 0;
+  for (const client of Array.from(clients.values())) {
     try {
-      sendFrame(res, 'admin-event', payload);
+      sendFrame(client.res, 'admin-event', payload);
+      sent += 1;
     } catch {
-      clients.delete(res);
+      clients.delete(client.clientId);
     }
   }
+  return sent;
 }
 
 function heartbeat() {
-  for (const res of Array.from(clients)) {
+  for (const client of Array.from(clients.values())) {
     try {
-      sendFrame(res, 'heartbeat', { at: new Date().toISOString() });
+      const at = new Date().toISOString();
+      sendFrame(client.res, 'heartbeat', { clientId: client.clientId, at });
+      client.lastHeartbeatAt = at;
     } catch {
-      clients.delete(res);
+      clients.delete(client.clientId);
     }
   }
 }

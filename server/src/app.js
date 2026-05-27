@@ -147,13 +147,24 @@ if (!useHttpsSite) {
   cspDirectives['upgrade-insecure-requests'] = null;
 }
 
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-    contentSecurityPolicy: { directives: cspDirectives },
-    ...(!useHttpsSite ? { strictTransportSecurity: false } : {}),
-  }),
-);
+const helmetBaseOptions = {
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  ...(!useHttpsSite ? { strictTransportSecurity: false } : {}),
+};
+const helmetWithCsp = helmet({
+  ...helmetBaseOptions,
+  contentSecurityPolicy: { directives: cspDirectives },
+});
+const helmetNoCsp = helmet({
+  ...helmetBaseOptions,
+  // /tiktok 由后端返回 HTML（用于 noindex），但 CSP 会拦截 Vite module/legacy 探测导致白屏；
+  // 只对该入口关闭 CSP，避免影响其他页面与 API 的安全策略。
+  contentSecurityPolicy: false,
+});
+app.use((req, res, next) => {
+  if (req.path === '/tiktok' || req.path === '/tiktok/') return helmetNoCsp(req, res, next);
+  return helmetWithCsp(req, res, next);
+});
 
 const isProduction = process.env.NODE_ENV === 'production';
 

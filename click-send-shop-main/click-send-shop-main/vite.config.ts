@@ -350,7 +350,7 @@ return ({
         enabled: false,
       },
     }),
-    ...(legacyEnabled
+    ...(legacyEnabled && !isAdminBuild
       ? [
           legacy({
             targets: [...CHINA_BROWSER_TARGETS],
@@ -364,6 +364,8 @@ return ({
   ],
   build: {
     outDir: isAdminBuild ? "admin-dist" : "dist",
+    // 后台只运行在现代浏览器中；提高 target 可消除依赖中的 BigInt 兼容告警
+    target: isAdminBuild ? "es2020" : undefined,
     sourcemap: false,
     cssTarget: ["chrome64", "safari12"],
     chunkSizeWarningLimit: 900,

@@ -33,6 +33,7 @@ import {
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import {
   labelTelegramLogErrorMessage,
   labelTelegramLogEventType,
@@ -46,6 +47,7 @@ const inputClass =
 
 export default function AdminTelegramSettings() {
   const { tText } = useAdminT();
+  const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
   const queryClient = useQueryClient();
   const [form, setForm] = useState<TelegramNotifyConfig>(normalizeTelegramNotifyConfig({}));
   const [botTokenMasked, setBotTokenMasked] = useState("");
@@ -161,7 +163,7 @@ export default function AdminTelegramSettings() {
       <AdminPageShell
         hint={(
           <>
-            <p><Tx>配置 Bot 后，可分别开启「订单付款通知」与「后台事件监控通知」。Bot Token 与 Chat ID 可在本页保存。</Tx></p>
+            <p><Tx>配置 Bot 后，可分别开启「订单付款通知」与「后台事件监控通知」。Bot Token 与接收会话编号可在本页保存。</Tx></p>
             {configSource === "env" ? (
               <p className="mt-1 text-amber-700"><Tx>当前部分配置来自环境变量；保存后将写入数据库并优先生效。</Tx></p>
             ) : null}
@@ -217,100 +219,114 @@ export default function AdminTelegramSettings() {
         ) : (
           <>
             <section className="rounded-xl border border-border bg-card p-4 md:p-5">
-              <h2 className="mb-4 font-semibold text-foreground"><Tx>连接配置</Tx></h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Bot Token
-                    <AdminFieldHint text="在 @BotFather 创建机器人后获取。留空表示不修改已保存的 Token。" className="ml-1" />
-                  </label>
-                  <input
-                    className={inputClass}
-                    type="password"
-                    autoComplete="off"
-                    placeholder={botTokenConfigured ? `已配置 ${botTokenMasked}，输入新 Token 可覆盖` : "请输入 Bot Token"}
-                    value={botTokenInput}
-                    onChange={(e) => setBotTokenInput(e.target.value)}
-                  />
-                </div>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="font-semibold text-foreground"><Tx>连接配置</Tx></h2>
+                {!isSuperAdmin ? (
+                  <span className="rounded-full border border-border bg-secondary px-2.5 py-1 text-xs text-muted-foreground">
+                    <Tx>仅超级管理员可修改</Tx>
+                  </span>
+                ) : null}
+              </div>
+              {isSuperAdmin ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-foreground">
+                      Bot Token
+                      <AdminFieldHint text="在 @BotFather 创建机器人后获取。留空表示不修改已保存的 Token。" className="ml-1" />
+                    </label>
+                    <input
+                      className={inputClass}
+                      type="password"
+                      autoComplete="off"
+                      placeholder={botTokenConfigured ? `已配置 ${botTokenMasked}，输入新 Token 可覆盖` : "请输入 Bot Token"}
+                      value={botTokenInput}
+                      onChange={(e) => setBotTokenInput(e.target.value)}
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    管理员 Chat ID
-                    <AdminFieldHint text="接收通知的群/频道/用户 ID，通常为负数（群）。" className="ml-1" />
-                  </label>
-                  <input
-                    className={inputClass}
-                    value={form.adminChatId}
-                    onChange={(e) => patchForm({ adminChatId: e.target.value })}
-                    placeholder="-1001234567890"
-                  />
-                </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-foreground">
+                      接收会话编号
+                      <AdminFieldHint text="用于接收通知的群、频道或个人会话编号；群组通常为负数。" className="ml-1" />
+                    </label>
+                    <input
+                      className={inputClass}
+                      value={form.adminChatId}
+                      onChange={(e) => patchForm({ adminChatId: e.target.value })}
+                      placeholder="-1001234567890"
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    <Tx>解析模式</Tx>
-                    <AdminFieldHint
-                      text="付款成功订单通知模板按 HTML 渲染并发送；请保持 HTML。测试消息为纯文本。"
-                      className="ml-1"
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-foreground">
+                      <Tx>解析模式</Tx>
+                      <AdminFieldHint
+                        text="付款成功订单通知模板按 HTML 渲染并发送；请保持 HTML。测试消息为纯文本。"
+                        className="ml-1"
+                      />
+                    </label>
+                    <select
+                      className={inputClass}
+                      value={form.parseMode}
+                      onChange={(e) => patchForm({ parseMode: e.target.value as TelegramNotifyConfig["parseMode"] })}
+                    >
+                      <option value="HTML">HTML（推荐，订单通知）</option>
+                      <option value="Markdown">Markdown（预留）</option>
+                      <option value="MarkdownV2">MarkdownV2（预留）</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-foreground"><Tx>后台链接域名</Tx></label>
+                    <input
+                      className={inputClass}
+                      value={form.adminFrontendUrl}
+                      onChange={(e) => patchForm({ adminFrontendUrl: e.target.value })}
+                      placeholder="https://console.damatong.net"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      <Tx>用于消息末尾「后台查看」链接。请填写管理后台实际访问域名（若与商城主站分离，勿填商城首页域名，否则会 404）。</Tx>
+                    </p>
+                  </div>
+
+                  <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4">
+                    <div>
+                      <div className="font-medium text-foreground"><Tx>包含商品明细</Tx></div>
+                      <p className="text-xs text-muted-foreground"><Tx>关闭后仅发送订单摘要，不含逐行商品。</Tx></p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-[var(--theme-primary)]"
+                      checked={form.includeOrderItems}
+                      onChange={(e) => patchForm({ includeOrderItems: e.target.checked })}
                     />
                   </label>
-                  <select
-                    className={inputClass}
-                    value={form.parseMode}
-                    onChange={(e) => patchForm({ parseMode: e.target.value as TelegramNotifyConfig["parseMode"] })}
-                  >
-                    <option value="HTML">HTML（推荐，订单通知）</option>
-                    <option value="Markdown">Markdown（预留）</option>
-                    <option value="MarkdownV2">MarkdownV2（预留）</option>
-                  </select>
-                </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground"><Tx>后台链接域名</Tx></label>
-                  <input
-                    className={inputClass}
-                    value={form.adminFrontendUrl}
-                    onChange={(e) => patchForm({ adminFrontendUrl: e.target.value })}
-                    placeholder="https://console.damatong.net"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    <Tx>用于消息末尾「后台查看」链接。请填写管理后台实际访问域名（若与商城主站分离，勿填商城首页域名，否则会 404）。</Tx>
-                  </p>
-                </div>
-
-                <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4">
-                  <div>
-                    <div className="font-medium text-foreground"><Tx>包含商品明细</Tx></div>
-                    <p className="text-xs text-muted-foreground"><Tx>关闭后仅发送订单摘要，不含逐行商品。</Tx></p>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-foreground"><Tx>单条消息长度上限</Tx></label>
+                    <input
+                      className={inputClass}
+                      type="number"
+                      min={500}
+                      max={4096}
+                      value={form.maxMessageLength}
+                      onChange={(e) => patchForm({ maxMessageLength: Number(e.target.value) || 3900 })}
+                    />
+                    <p className="text-xs text-muted-foreground"><Tx>超出时自动拆分为多条 Telegram 消息（500–4096）。</Tx></p>
                   </div>
-                  <input
-                    type="checkbox"
-                    className="h-5 w-5 accent-[var(--theme-primary)]"
-                    checked={form.includeOrderItems}
-                    onChange={(e) => patchForm({ includeOrderItems: e.target.checked })}
-                  />
-                </label>
-
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground"><Tx>单条消息长度上限</Tx></label>
-                  <input
-                    className={inputClass}
-                    type="number"
-                    min={500}
-                    max={4096}
-                    value={form.maxMessageLength}
-                    onChange={(e) => patchForm({ maxMessageLength: Number(e.target.value) || 3900 })}
-                  />
-                  <p className="text-xs text-muted-foreground"><Tx>超出时自动拆分为多条 Telegram 消息（500–4096）。</Tx></p>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-border bg-secondary/20 p-4 text-sm text-muted-foreground">
+                  <p><Tx>连接参数由超级管理员统一维护。</Tx></p>
+                  <p className="mt-1"><Tx>如需修改 Bot Token、接收会话编号或消息连接参数，请联系超级管理员处理。</Tx></p>
+                </div>
+              )}
             </section>
 
             <section className="rounded-xl border border-border bg-card p-4 md:p-5">
               <h2 className="mb-2 font-semibold text-foreground"><Tx>通知类型</Tx></h2>
               <p className="mb-4 text-xs text-muted-foreground">
-                共用上方 Bot Token 与 Chat ID。可按需单独开启订单通知或后台事件监控通知。
+                共用上方 Bot Token 与接收会话编号。可按需单独开启订单通知或后台事件监控通知。
               </p>
               <div className="grid gap-4">
                 <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4">
@@ -415,7 +431,7 @@ export default function AdminTelegramSettings() {
                       <th className={adminThClassName()}><Tx>事件</Tx></th>
                       <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>订单</Tx></th>
                       <th className={adminThClassName()}><Tx>状态</Tx></th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>Telegram ID</th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>消息编号</Tx></th>
                       <th className={adminThClassName()}><Tx>错误</Tx></th>
                     </tr>
                   </thead>

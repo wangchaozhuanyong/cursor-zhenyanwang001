@@ -31,6 +31,10 @@ exports.approveRestoreJob = asyncRoute(async (req, res) => {
   res.success(await service.approveRestoreJob({ req, userId: req.user.id, restoreJobId: req.params.id }));
 });
 
+exports.switchRestoreJob = asyncRoute(async (req, res) => {
+  res.success(await service.switchRestoreJobToProduction({ req, userId: req.user.id, restoreJobId: req.params.id }));
+});
+
 exports.listDrillReports = asyncRoute(async (req, res) => {
   res.success(await service.listDrillReports(req.query));
 });

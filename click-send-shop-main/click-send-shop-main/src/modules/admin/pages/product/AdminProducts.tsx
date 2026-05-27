@@ -17,8 +17,11 @@ import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideAction
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminMfaStepUpPending } from "@/hooks/useAdminMfaStepUpPending";
+import { AdminFilterButton, AdminFilterSelect } from "@/components/admin/AdminFilterControls";
 import AdminCsvImportDialog from "@/components/admin/AdminCsvImportDialog";
 import PermissionGate from "@/components/admin/PermissionGate";
+import SafeImage from "@/components/admin/SafeImage";
 import { batchUpdateProductStatus, exportProductsCsv, fetchProducts, importProductsCsv } from "@/services/admin/productService";
 import { downloadProductCsvTemplate } from "@/utils/productCsvTemplate";
 import type { Product, ProductListParams, ProductStatus } from "@/types/product";
@@ -109,11 +112,14 @@ export default function AdminProducts() {
     sort,
   }), [costFilter, page, search, sort, statusFilter, stockFilter]);
 
+  const mfaStepUpPending = useAdminMfaStepUpPending();
+
   const productsQuery = useQuery({
     queryKey: adminQueryKeys.products(queryParams),
     queryFn: () => fetchProducts(queryParams),
     staleTime: 60_000,
-    refetchInterval: 90_000,
+    refetchOnMount: true,
+    refetchInterval: mfaStepUpPending ? false : 90_000,
   });
 
   const batchStatusMutation = useMutation({
@@ -256,7 +262,7 @@ export default function AdminProducts() {
             className="mt-1"
           />
           {product.cover_image ? (
-            <img src={product.cover_image} alt={product.name} className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover" />
+            <SafeImage src={product.cover_image} alt={product.name} className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover" />
           ) : (
             <div className="h-12 w-12 shrink-0 rounded-lg border border-border bg-secondary" />
           )}
@@ -301,26 +307,29 @@ export default function AdminProducts() {
   };
 
   return (
-    <AdminPageShell
-      hint={<Tx>管理商品上下架、库存与成本，支持导入导出与批量操作。</Tx>}
-      toolbar={(
+    <PermissionGate permission="product.view">
+      <AdminPageShell
+        hint={<Tx>管理商品上下架、库存与成本，支持导入导出与批量操作。</Tx>}
+        toolbar={(
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={handleExportFiltered} disabled={exportingScope !== null} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary disabled:opacity-60">
+          <AdminFilterButton onClick={handleExportFiltered} disabled={exportingScope !== null} variant="card" className="gap-1 font-medium disabled:opacity-60">
             {exportingScope === "filtered" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
             <Tx>导出筛选结果</Tx>
-          </button>
+          </AdminFilterButton>
           <PermissionGate permission="product.manage">
-            <button type="button" onClick={() => void downloadProductCsvTemplate()} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary">
+            <AdminFilterButton onClick={() => void downloadProductCsvTemplate()} variant="card" className="gap-1 font-medium">
               <FileDown size={14} />
               <Tx>下载模板</Tx>
-            </button>
-            <button type="button" onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary">
+            </AdminFilterButton>
+            <AdminFilterButton onClick={() => setImportOpen(true)} variant="card" className="gap-1 font-medium">
               <Upload size={14} />
               <Tx>批量导入</Tx>
-            </button>
+            </AdminFilterButton>
           </PermissionGate>
-          <button type="button" className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary" onClick={() => navigate("/admin/products/new")}><Tx>新增商品</Tx></button>
-          <button type="button" onClick={() => void productsQuery.refetch()} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary"><Tx>刷新</Tx></button>
+          <PermissionGate permission="product.manage">
+            <AdminFilterButton className="px-4 font-semibold" variant="card" onClick={() => navigate("/admin/products/new")}><Tx>新增商品</Tx></AdminFilterButton>
+          </PermissionGate>
+          <AdminFilterButton onClick={() => void productsQuery.refetch()} variant="card" className="font-medium"><Tx>刷新</Tx></AdminFilterButton>
         </div>
       )}
       filters={(
@@ -335,29 +344,29 @@ export default function AdminProducts() {
               }}
             />
             <div className="flex flex-wrap items-center gap-2">
-              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as "" | ProductStatus); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
+              <AdminFilterSelect value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as "" | ProductStatus); setPage(1); }} variant="card">
                 <option value=""><Tx>全部状态</Tx></option>
                 <option value="active"><Tx>上架</Tx></option>
                 <option value="draft"><Tx>草稿</Tx></option>
                 <option value="inactive"><Tx>下架</Tx></option>
-              </select>
-              <select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value as StockFilter); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
+              </AdminFilterSelect>
+              <AdminFilterSelect value={stockFilter} onChange={(e) => { setStockFilter(e.target.value as StockFilter); setPage(1); }} variant="card">
                 <option value=""><Tx>全部库存</Tx></option>
                 <option value="normal"><Tx>库存正常</Tx></option>
                 <option value="low"><Tx>库存预警</Tx></option>
                 <option value="out"><Tx>缺货</Tx></option>
-              </select>
-              <select value={costFilter} onChange={(e) => { setCostFilter(e.target.value as CostFilter); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
+              </AdminFilterSelect>
+              <AdminFilterSelect value={costFilter} onChange={(e) => { setCostFilter(e.target.value as CostFilter); setPage(1); }} variant="card">
                 <option value=""><Tx>全部成本</Tx></option>
                 <option value="normal"><Tx>成本正常</Tx></option>
                 <option value="missing"><Tx>缺成本</Tx></option>
-              </select>
+              </AdminFilterSelect>
             </div>
           </div>
           <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
         </div>
       )}
-    >
+      >
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">{tText("已选")} {selected.length} {tText("件")}</span>
@@ -490,7 +499,7 @@ export default function AdminProducts() {
               <td className="w-10"><input type="checkbox" checked={checked} onChange={() => toggleSelect(product.id)} aria-label={`选择${product.name}`} /></td>
               <td className={adminTdClassName("max-w-[14rem]")}>
                 <div className="flex items-center gap-3">
-                  {product.cover_image ? <img src={product.cover_image} alt={product.name} className="h-11 w-11 shrink-0 rounded-lg border border-border object-cover" /> : <div className="h-11 w-11 shrink-0 rounded-lg border border-border bg-secondary" />}
+                  {product.cover_image ? <SafeImage src={product.cover_image} alt={product.name} className="h-11 w-11 shrink-0 rounded-lg border border-border object-cover" /> : <div className="h-11 w-11 shrink-0 rounded-lg border border-border bg-secondary" />}
                   <div className="min-w-0">
                     <AdminTableCell value={product.name} fullText={product.name} maxWidth="13.5rem" />
                   </div>
@@ -535,6 +544,7 @@ export default function AdminProducts() {
           );
         }}
       />
-    </AdminPageShell>
+      </AdminPageShell>
+    </PermissionGate>
   );
 }

@@ -115,9 +115,9 @@ export function permanentDeleteReview(id: string) {
 }
 
 export function batchHideReviews(ids: string[]) {
-  return post<void>("/admin/reviews/batch-hide", { ids });
+  return post<{ affected: number }>("/admin/reviews/batch-hide", { ids });
 }
 
 export function batchDeleteReviews(ids: string[]) {
-  return post<void>("/admin/reviews/batch-delete", { ids });
+  return post<{ affected: number }>("/admin/reviews/batch-delete", { ids });
 }

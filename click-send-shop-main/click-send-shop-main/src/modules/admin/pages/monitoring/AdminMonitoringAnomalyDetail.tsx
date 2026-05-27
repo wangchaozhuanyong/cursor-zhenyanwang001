@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   createRepairTask,
@@ -13,6 +13,7 @@ import { Badge, formatTime, JsonBlock, severityClass } from "./monitoringUi";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 
 export default function AdminMonitoringAnomalyDetail() {
@@ -57,6 +58,12 @@ export default function AdminMonitoringAnomalyDetail() {
 
   const anomaly = data?.anomaly;
   const terminal = anomaly?.status === "resolved" || anomaly?.status === "ignored";
+
+  const tabTitle = useMemo(() => {
+    if (!anomaly?.title?.trim()) return null;
+    return tText(`异常：${anomaly.title.trim()}`);
+  }, [anomaly?.title, tText]);
+  useAdminTabTitle(tabTitle, !loading && Boolean(anomaly?.title));
 
   return (
     <AdminPageShell

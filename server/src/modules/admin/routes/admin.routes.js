@@ -148,13 +148,19 @@ router.get('/backups/overview', adminAuth, requirePermission('backup.view'), bac
 router.get('/backups/files', adminAuth, requirePermission('backup.view'), backupCtrl.listFiles);
 router.post('/backups/full', adminAuth, requirePermission('backup.create'), backupCtrl.createFullBackup);
 router.get('/backups/alerts', adminAuth, requirePermission('backup.view'), backupCtrl.listAlerts);
-router.get('/restore/jobs', adminAuth, requirePermission('backup.restore.request'), backupCtrl.listRestoreJobs);
+router.get('/restore/jobs', adminAuth, requireAnyPermission(['backup.view', 'backup.restore.request']), backupCtrl.listRestoreJobs);
 router.post('/restore/jobs', adminAuth, requirePermission('backup.restore.request'), backupCtrl.createRestoreJob);
 router.post(
   '/restore/jobs/:id/approve',
   adminAuth,
   requirePermission('backup.restore.approve'),
   backupCtrl.approveRestoreJob,
+);
+router.post(
+  '/restore/jobs/:id/switch',
+  adminAuth,
+  requirePermission('backup.restore.approve'),
+  backupCtrl.switchRestoreJob,
 );
 router.get('/restore/drills', adminAuth, requirePermission('backup.view'), backupCtrl.listDrillReports);
 
@@ -405,7 +411,7 @@ router.delete('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.
 
 /* ---- Member Levels ---- */
 const memberLevelFeature = requireSiteCapability('memberLevelEnabled', '本站未启用会员等级功能');
-router.get('/member-levels', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.list);
+router.get('/member-levels', adminAuth, memberLevelFeature, requireAnyPermission(['user.view', 'member_level.manage']), memberLevelCtrl.list);
 router.post('/member-levels', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.create);
 router.put('/member-levels/:id', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.update);
 router.delete('/member-levels/:id', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.remove);
@@ -537,7 +543,6 @@ router.post('/points/gift-items', adminAuth, pointsFeature, requirePermission('p
 router.put('/points/gift-items/:id', adminAuth, pointsFeature, requirePermission('points.manage'), pointsGiftCtrl.updateGiftItem);
 router.delete('/points/gift-items/:id', adminAuth, pointsFeature, requirePermission('points.manage'), pointsGiftCtrl.deleteGiftItem);
 router.get('/points/gift-redemptions', adminAuth, pointsFeature, requirePermission('points.manage'), pointsGiftCtrl.listRedemptions);
-router.post('/users/:userId/points', adminAuth, pointsFeature, requirePermission('user.points'), userCtrl.adjustPoints);
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);
 router.get('/settings/features', adminAuth, requirePermission('settings.manage'), settingsCtrl.getFeatures);

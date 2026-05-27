@@ -94,7 +94,7 @@ exports.getStatusOverview = asyncRoute(async (req, res) => {
 });
 
 exports.updateSubordinate = asyncRoute(async (req, res) => {
-  const r = await svc.updateSubordinate(req.params.id, req.body);
+  const r = await svc.updateSubordinate(req.params.id, req.body, req.user?.id, req);
   res.success(r.data, r.message);
 });
 

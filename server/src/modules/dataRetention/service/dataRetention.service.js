@@ -537,7 +537,7 @@ async function getRun(id) {
 async function getOverview() {
   await ensureDefaultPolicies();
   const policies = await listPolicies();
-  const recentRuns = await repo.listRuns({ page: 1, pageSize: 5 });
+  const recentRuns = await repo.listRuns({ page: 1, pageSize: 5, excludeRunType: 'preview' });
   const runningRun = await repo.findRunningRun();
   return {
     policyCount: policies.length,

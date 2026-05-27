@@ -115,6 +115,10 @@ export function approveRestoreJob(id: string) {
   return post<RestoreJob>(`/admin/restore/jobs/${id}/approve`);
 }
 
+export function switchRestoreJob(id: string) {
+  return post<{ id: string; status: string; message?: string }>(`/admin/restore/jobs/${id}/switch`);
+}
+
 export function getRestoreDrills(params?: { limit?: number }) {
   return get<RestoreDrillReport[]>("/admin/restore/drills", params);
 }

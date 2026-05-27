@@ -5,6 +5,7 @@ import type { AdminFilterChip } from "@/components/admin/AdminFilterSummaryBar";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
@@ -18,8 +19,22 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 
 const PAGE_SIZE = 20;
 
+const USER_SORT_OPTIONS = [
+  { value: "", label: "注册时间（默认）" },
+  { value: "total_spent", label: "累计消费" },
+  { value: "valid_order_count", label: "有效订单数" },
+  { value: "last_purchase_at", label: "最近购买" },
+  { value: "refund_rate", label: "退款率" },
+] as const;
+
+function trimOrUndef(value: string) {
+  const trimmed = value.trim();
+  return trimmed || undefined;
+}
+
 export function useAdminUsers() {
   const { tText } = useAdminT();
+  const capabilities = useSiteCapabilities();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -32,6 +47,18 @@ export function useAdminUsers() {
   const [orderRestrictedFilter, setOrderRestrictedFilter] = useState("");
   const [couponRestrictedFilter, setCouponRestrictedFilter] = useState("");
   const [commentRestrictedFilter, setCommentRestrictedFilter] = useState("");
+  const [dateFromFilter, setDateFromFilter] = useState("");
+  const [dateToFilter, setDateToFilter] = useState("");
+  const [totalSpentMinFilter, setTotalSpentMinFilter] = useState("");
+  const [totalSpentMaxFilter, setTotalSpentMaxFilter] = useState("");
+  const [orderCountMinFilter, setOrderCountMinFilter] = useState("");
+  const [orderCountMaxFilter, setOrderCountMaxFilter] = useState("");
+  const [pointsMinFilter, setPointsMinFilter] = useState("");
+  const [pointsMaxFilter, setPointsMaxFilter] = useState("");
+  const [refundRateMinFilter, setRefundRateMinFilter] = useState("");
+  const [refundRateMaxFilter, setRefundRateMaxFilter] = useState("");
+  const [sortByFilter, setSortByFilter] = useState("");
+  const [sortDirFilter, setSortDirFilter] = useState("desc");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [batchTagId, setBatchTagId] = useState("");
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
@@ -52,18 +79,42 @@ export function useAdminUsers() {
       orderRestricted: orderRestrictedFilter || undefined,
       couponRestricted: couponRestrictedFilter || undefined,
       commentRestricted: commentRestrictedFilter || undefined,
+      dateFrom: trimOrUndef(dateFromFilter),
+      dateTo: trimOrUndef(dateToFilter),
+      totalSpentMin: trimOrUndef(totalSpentMinFilter),
+      totalSpentMax: trimOrUndef(totalSpentMaxFilter),
+      orderCountMin: trimOrUndef(orderCountMinFilter),
+      orderCountMax: trimOrUndef(orderCountMaxFilter),
+      pointsMin: trimOrUndef(pointsMinFilter),
+      pointsMax: trimOrUndef(pointsMaxFilter),
+      refundRateMin: trimOrUndef(refundRateMinFilter),
+      refundRateMax: trimOrUndef(refundRateMaxFilter),
+      sortBy: sortByFilter || undefined,
+      sortDir: sortByFilter ? (sortDirFilter || "desc") : undefined,
     }),
     [
       accountStatusFilter,
       commentRestrictedFilter,
       couponRestrictedFilter,
+      dateFromFilter,
+      dateToFilter,
       memberLevelIdFilter,
+      orderCountMaxFilter,
+      orderCountMinFilter,
       orderRestrictedFilter,
       page,
       pageSize,
       phoneBoundFilter,
+      pointsMaxFilter,
+      pointsMinFilter,
+      refundRateMaxFilter,
+      refundRateMinFilter,
       search,
       selectedTagId,
+      sortByFilter,
+      sortDirFilter,
+      totalSpentMaxFilter,
+      totalSpentMinFilter,
       wechatBoundFilter,
     ],
   );
@@ -83,6 +134,7 @@ export function useAdminUsers() {
     queryKey: [...adminQueryKeys.usersRoot(), "member-levels"],
     queryFn: userService.fetchMemberLevels,
     staleTime: 60_000,
+    enabled: capabilities.memberLevelEnabled,
   });
 
   const invalidateUsers = async () => {
@@ -129,7 +181,20 @@ export function useAdminUsers() {
   const total = usersQuery.data?.total || 0;
   const summary = usersQuery.data?.summary || {};
   const tags = tagsQuery.data || [];
-  const memberLevels = memberLevelsQuery.data || [];
+  const memberLevelsFromApi = memberLevelsQuery.data || [];
+  const memberLevelsFromUsers = useMemo(() => {
+    const map = new Map<string, MemberLevel>();
+    for (const user of users) {
+      const levelId = user.member_level_id;
+      const levelName = user.member_level_name;
+      if (!levelId || !levelName) continue;
+      if (!map.has(levelId)) {
+        map.set(levelId, { id: levelId, name: levelName });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+  }, [users]);
+  const memberLevels = memberLevelsFromApi.length > 0 ? memberLevelsFromApi : memberLevelsFromUsers;
 
   const selectedTagName = tags.find((tag) => tag.id === selectedTagId)?.name;
   const selectedMemberLevelName = memberLevels.find((level: MemberLevel) => level.id === memberLevelIdFilter)?.name;
@@ -142,7 +207,18 @@ export function useAdminUsers() {
       || accountStatusFilter
       || orderRestrictedFilter
       || couponRestrictedFilter
-      || commentRestrictedFilter,
+      || commentRestrictedFilter
+      || dateFromFilter.trim()
+      || dateToFilter.trim()
+      || totalSpentMinFilter.trim()
+      || totalSpentMaxFilter.trim()
+      || orderCountMinFilter.trim()
+      || orderCountMaxFilter.trim()
+      || pointsMinFilter.trim()
+      || pointsMaxFilter.trim()
+      || refundRateMinFilter.trim()
+      || refundRateMaxFilter.trim()
+      || sortByFilter,
   );
 
   const filterChips = useMemo(() => {
@@ -166,18 +242,44 @@ export function useAdminUsers() {
     if (coupon) chips.push({ key: "couponRestricted", label: coupon });
     const comment = restrictionLabel(tText, tText("评论"), commentRestrictedFilter);
     if (comment) chips.push({ key: "commentRestricted", label: comment });
+    if (dateFromFilter.trim()) chips.push({ key: "dateFrom", label: tText(`注册起：${dateFromFilter.trim()}`) });
+    if (dateToFilter.trim()) chips.push({ key: "dateTo", label: tText(`注册止：${dateToFilter.trim()}`) });
+    if (totalSpentMinFilter.trim()) chips.push({ key: "totalSpentMin", label: tText(`消费≥${totalSpentMinFilter.trim()}`) });
+    if (totalSpentMaxFilter.trim()) chips.push({ key: "totalSpentMax", label: tText(`消费≤${totalSpentMaxFilter.trim()}`) });
+    if (orderCountMinFilter.trim()) chips.push({ key: "orderCountMin", label: tText(`订单≥${orderCountMinFilter.trim()}`) });
+    if (orderCountMaxFilter.trim()) chips.push({ key: "orderCountMax", label: tText(`订单≤${orderCountMaxFilter.trim()}`) });
+    if (pointsMinFilter.trim()) chips.push({ key: "pointsMin", label: tText(`积分≥${pointsMinFilter.trim()}`) });
+    if (pointsMaxFilter.trim()) chips.push({ key: "pointsMax", label: tText(`积分≤${pointsMaxFilter.trim()}`) });
+    if (refundRateMinFilter.trim()) chips.push({ key: "refundRateMin", label: tText(`退款率≥${refundRateMinFilter.trim()}`) });
+    if (refundRateMaxFilter.trim()) chips.push({ key: "refundRateMax", label: tText(`退款率≤${refundRateMaxFilter.trim()}`) });
+    if (sortByFilter) {
+      const sortLabel = USER_SORT_OPTIONS.find((o) => o.value === sortByFilter)?.label || sortByFilter;
+      chips.push({ key: "sortBy", label: tText(`排序：${sortLabel}${sortDirFilter === "asc" ? " ↑" : " ↓"}`) });
+    }
     return chips;
   }, [
     accountStatusFilter,
     commentRestrictedFilter,
     couponRestrictedFilter,
+    dateFromFilter,
+    dateToFilter,
     memberLevelIdFilter,
+    orderCountMaxFilter,
+    orderCountMinFilter,
     orderRestrictedFilter,
     phoneBoundFilter,
+    pointsMaxFilter,
+    pointsMinFilter,
+    refundRateMaxFilter,
+    refundRateMinFilter,
     search,
     selectedMemberLevelName,
     selectedTagId,
     selectedTagName,
+    sortByFilter,
+    sortDirFilter,
+    totalSpentMaxFilter,
+    totalSpentMinFilter,
     wechatBoundFilter,
     tText,
   ]);
@@ -201,6 +303,18 @@ export function useAdminUsers() {
     setOrderRestrictedFilter("");
     setCouponRestrictedFilter("");
     setCommentRestrictedFilter("");
+    setDateFromFilter("");
+    setDateToFilter("");
+    setTotalSpentMinFilter("");
+    setTotalSpentMaxFilter("");
+    setOrderCountMinFilter("");
+    setOrderCountMaxFilter("");
+    setPointsMinFilter("");
+    setPointsMaxFilter("");
+    setRefundRateMinFilter("");
+    setRefundRateMaxFilter("");
+    setSortByFilter("");
+    setSortDirFilter("desc");
     setPage(1);
   };
 
@@ -214,6 +328,20 @@ export function useAdminUsers() {
     if (key === "orderRestricted") setOrderRestrictedFilter("");
     if (key === "couponRestricted") setCouponRestrictedFilter("");
     if (key === "commentRestricted") setCommentRestrictedFilter("");
+    if (key === "dateFrom") setDateFromFilter("");
+    if (key === "dateTo") setDateToFilter("");
+    if (key === "totalSpentMin") setTotalSpentMinFilter("");
+    if (key === "totalSpentMax") setTotalSpentMaxFilter("");
+    if (key === "orderCountMin") setOrderCountMinFilter("");
+    if (key === "orderCountMax") setOrderCountMaxFilter("");
+    if (key === "pointsMin") setPointsMinFilter("");
+    if (key === "pointsMax") setPointsMaxFilter("");
+    if (key === "refundRateMin") setRefundRateMinFilter("");
+    if (key === "refundRateMax") setRefundRateMaxFilter("");
+    if (key === "sortBy") {
+      setSortByFilter("");
+      setSortDirFilter("desc");
+    }
     setPage(1);
   };
 
@@ -254,13 +382,21 @@ export function useAdminUsers() {
   const isUserSelected = (userId: string) => selectedUserIds.includes(userId);
 
   const toggleUserSelection = (userId: string, checked: boolean) => {
-    setSelectedUserIds((prev) => (checked ? [...prev, userId] : prev.filter((id) => id !== userId)));
+    setSelectedUserIds((prev) => {
+      if (!checked) return prev.filter((id) => id !== userId);
+      return prev.includes(userId) ? prev : [...prev, userId];
+    });
   };
 
-  const allUsersOnPageSelected = users.length > 0 && selectedUserIds.length === users.length;
+  const allUsersOnPageSelected = users.length > 0 && users.every((user) => selectedUserIds.includes(user.id));
 
   const toggleAllUsersOnPage = (checked: boolean) => {
-    setSelectedUserIds(checked ? users.map((user) => user.id) : []);
+    const pageUserIds = users.map((user) => user.id);
+    setSelectedUserIds((prev) => (
+      checked
+        ? [...new Set([...prev, ...pageUserIds])]
+        : prev.filter((id) => !pageUserIds.includes(id))
+    ));
   };
 
   const applyBatchTag = () => batchTagMutation.mutate();
@@ -289,6 +425,31 @@ export function useAdminUsers() {
     setCouponRestrictedFilter,
     commentRestrictedFilter,
     setCommentRestrictedFilter,
+    dateFromFilter,
+    setDateFromFilter,
+    dateToFilter,
+    setDateToFilter,
+    totalSpentMinFilter,
+    setTotalSpentMinFilter,
+    totalSpentMaxFilter,
+    setTotalSpentMaxFilter,
+    orderCountMinFilter,
+    setOrderCountMinFilter,
+    orderCountMaxFilter,
+    setOrderCountMaxFilter,
+    pointsMinFilter,
+    setPointsMinFilter,
+    pointsMaxFilter,
+    setPointsMaxFilter,
+    refundRateMinFilter,
+    setRefundRateMinFilter,
+    refundRateMaxFilter,
+    setRefundRateMaxFilter,
+    sortByFilter,
+    setSortByFilter,
+    sortDirFilter,
+    setSortDirFilter,
+    userSortOptions: USER_SORT_OPTIONS,
     selectedUserIds,
     setSelectedUserIds,
     batchTagId,

@@ -62,8 +62,14 @@ export function CheckoutPaymentMethod({
 
   return (
     <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[15px] font-semibold text-foreground">2. 支付方式</h3>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">2</span>
+          <div>
+            <h3 className="text-[15px] font-semibold text-foreground">支付方式</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">选择适合你的付款方式</p>
+          </div>
+        </div>
         <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
           <ShieldCheck size={12} className="text-[var(--theme-success)]" /> 安全支付
         </span>

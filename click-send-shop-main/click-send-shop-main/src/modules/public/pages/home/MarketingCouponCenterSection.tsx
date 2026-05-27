@@ -69,7 +69,7 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
                   void (async () => {
                     try {
                       setClaimingId(c.id);
-                      await claimCoupon(c.code);
+                      await claimCoupon(c.code || c.id);
                       toast.success("领取成功", toastPresetQuickSuccess);
                     } catch (e) {
                       toast.error(e instanceof Error ? e.message : "领取失败");

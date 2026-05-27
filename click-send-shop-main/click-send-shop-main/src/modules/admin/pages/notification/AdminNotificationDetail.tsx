@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { ArrowLeft } from "lucide-react";
@@ -12,6 +12,7 @@ import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 
 const NOTIFICATION_STATUS_LABELS: Record<string, string> = {
   draft: "草稿",
@@ -82,10 +83,16 @@ export default function AdminNotificationDetail() {
     },
   );
 
+  const tabTitle = useMemo(() => {
+    if (!data?.title?.trim()) return null;
+    return tText(`通知：${data.title.trim()}`);
+  }, [data?.title, tText]);
+  useAdminTabTitle(tabTitle, !loading && Boolean(data?.title));
+
   if (!id) {
     return (
       <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
-        <Tx>缺少通知批次 ID</Tx>
+        <Tx>缺少通知信息</Tx>
       </div>
     );
   }
@@ -100,8 +107,8 @@ export default function AdminNotificationDetail() {
         <p className="text-sm text-[var(--theme-danger)]">{error}</p>
         <p className="text-xs text-muted-foreground">
           {error.includes("不存在")
-            ? tText("该通知可能已被删除，或链接中的批次 ID 无效。")
-            : tText("请稍后重试；若持续出现，请将追踪 ID 提供给技术人员。")}
+            ? tText("该通知可能已被删除，或当前链接已失效。")
+            : tText("请稍后重试；若持续出现，请联系技术人员并说明操作时间。")}
         </p>
         <button
           type="button"
@@ -176,7 +183,7 @@ export default function AdminNotificationDetail() {
             <tbody>
               {data.recipients.list.map((r) => (
                 <tr key={r.id} className="border-t border-border">
-                  <td className={adminTdClassName()}>{r.nickname || r.user_id}</td>
+                  <td className={adminTdClassName()}>{r.nickname || r.phone || r.whatsapp || tText("未命名用户")}</td>
                   <td className={adminTdClassName()}>{r.phone || "-"}</td>
                   <td className={adminTdClassName()}>{r.whatsapp || "-"}</td>
                   <td className={adminTdClassName()}>{r.is_read ? tText("已读") : tText("未读")}</td>

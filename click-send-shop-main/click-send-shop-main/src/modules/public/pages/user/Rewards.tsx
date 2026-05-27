@@ -35,7 +35,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
   { key: "all", label: "全部" },
   { key: "income", label: "入账" },
   { key: "spend", label: "消费抵扣" },
-  { key: "reverse", label: "冲正/退回" },
+  { key: "reverse", label: "明细" },
 ];
 
 function money(value: unknown) {

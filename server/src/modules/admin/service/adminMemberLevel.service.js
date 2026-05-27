@@ -6,6 +6,8 @@ const adminUserService = require('./adminUser.service');
 
 const pool = repo.getPool();
 
+let recalcAllRunning = false;
+
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
 }
@@ -140,23 +142,64 @@ async function recalcUserLevel(req, userId, options = {}) {
 }
 
 async function recalcAllUserLevels(req, options = {}) {
-  const fn = requireUserApi('refreshUserMemberLevel');
-  const users = await repo.selectAllUserIds(pool);
-  const force = !!options.force;
-  let changed = 0;
-  let skippedLocked = 0;
-  for (const user of users) {
-    if (user.manualLocked && !force) {
-      skippedLocked += 1;
-      continue;
-    }
-    const r = await fn(pool, user.id, { force });
-    if (r?.changed) changed += 1;
-    if (r?.skippedReason === 'manual_locked') skippedLocked += 1;
+  if (recalcAllRunning) {
+    return { error: { code: 409, message: '全量重算任务正在进行中，请稍后再试' } };
   }
-  const payload = { total: users.length, changed, skippedLocked, force };
-  await writeAuditLog({ req, operatorId: req.user?.id, actionType: 'member_level.recalc_all', objectType: 'member_level', objectId: 'all', summary: '全量重算会员等级', after: payload, result: 'success' });
-  return { data: payload, message: '全量重算完成' };
+  recalcAllRunning = true;
+  const force = !!options.force;
+  const reqSnapshot = req;
+
+  setImmediate(async () => {
+    try {
+      const fn = requireUserApi('refreshUserMemberLevel');
+      const users = await repo.selectAllUserIds(pool);
+      let changed = 0;
+      let skippedLocked = 0;
+      for (const user of users) {
+        if (user.manualLocked && !force) {
+          skippedLocked += 1;
+          continue;
+        }
+        const r = await fn(pool, user.id, { force });
+        if (r?.changed) changed += 1;
+        if (r?.skippedReason === 'manual_locked') skippedLocked += 1;
+      }
+      const payload = { total: users.length, changed, skippedLocked, force, async: true };
+      await writeAuditLog({
+        req: reqSnapshot,
+        operatorId: reqSnapshot.user?.id,
+        actionType: 'member_level.recalc_all',
+        objectType: 'member_level',
+        objectId: 'all',
+        summary: '全量重算会员等级（后台完成）',
+        after: payload,
+        result: 'success',
+      });
+    } catch (err) {
+      console.error('[member-level-recalc-all]', err);
+      try {
+        await writeAuditLog({
+          req: reqSnapshot,
+          operatorId: reqSnapshot.user?.id,
+          actionType: 'member_level.recalc_all',
+          objectType: 'member_level',
+          objectId: 'all',
+          summary: '全量重算会员等级失败',
+          after: { error: err.message || String(err), force },
+          result: 'failure',
+        });
+      } catch (logErr) {
+        console.error('[member-level-recalc-all] audit log failed:', logErr);
+      }
+    } finally {
+      recalcAllRunning = false;
+    }
+  });
+
+  return {
+    data: { accepted: true, async: true, force },
+    message: '全量重算已在后台启动，完成后可在操作日志查看结果',
+  };
 }
 
 async function assignUserLevel(req, userId, levelId, reason) {

@@ -1,6 +1,7 @@
 const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/coupon.repository');
 const lifecycle = require('./couponLifecycle.service');
+const memberLevelService = require('./memberLevel.service');
 
 function normalizeCouponType(type) {
   return lifecycle.normalizeCouponType(type);
@@ -16,6 +17,12 @@ function normalizeCouponStatus(status, endDate) {
   const today = new Date().toISOString().slice(0, 10);
   if (status === 'available' && dateOnly(endDate) && dateOnly(endDate) < today) return 'expired';
   return status;
+}
+
+function hasCouponMemberPrivilege(memberContext) {
+  const level = memberContext?.level;
+  if (!level?.id) return false;
+  return level.is_default !== true;
 }
 
 function isClaimWindowOpen(coupon, now = new Date()) {
@@ -96,9 +103,18 @@ async function getAvailableCoupons(userId) {
   const coupons = await repo.selectAvailableCoupons();
   const claimed = await repo.selectUserCouponClaimCounts(userId);
   const claimedCountMap = new Map(claimed.map((r) => [String(r.coupon_id), Number(r.cnt || 0)]));
+  const needsOrderCount = coupons.some((c) => !!c.new_user_only);
+  const needsMemberLevel = coupons.some((c) => !!c.member_only);
+  const [orderCount, memberContext] = await Promise.all([
+    needsOrderCount ? repo.selectUserOrderCount(userId) : Promise.resolve(0),
+    needsMemberLevel ? memberLevelService.getUserMemberLevel(userId) : Promise.resolve({ level: null }),
+  ]);
+  const hasMemberLevel = hasCouponMemberPrivilege(memberContext);
   return coupons
     .filter((c) => Number(claimedCountMap.get(String(c.id)) || 0) < Math.max(1, Number(c.per_user_limit || 1)))
     .filter((c) => !c.auto_issue)
+    .filter((c) => !c.new_user_only || orderCount <= 0)
+    .filter((c) => !c.member_only || hasMemberLevel)
     .map(mapCouponEntity);
 }
 
@@ -117,7 +133,10 @@ async function assertCouponClaimable(userId, coupon) {
     }
   }
   if (coupon.member_only) {
-    return { error: { code: 403, message: '该优惠券仅限会员领取' } };
+    const memberContext = await memberLevelService.getUserMemberLevel(userId);
+    if (!hasCouponMemberPrivilege(memberContext)) {
+      return { error: { code: 403, message: '该优惠券仅限会员领取' } };
+    }
   }
   const perUserLimit = Math.max(1, Number(coupon.per_user_limit || 1));
   const userClaims = await repo.countUserClaimsForCoupon(userId, coupon.id);

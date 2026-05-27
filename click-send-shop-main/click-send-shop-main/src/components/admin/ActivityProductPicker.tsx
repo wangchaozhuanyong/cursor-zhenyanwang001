@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { X } from "lucide-react";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import type { ActivityProductItem } from "@/types/activity";
 import type { ActivityProductOption } from "@/api/admin/activity";
 import * as activityService from "@/services/admin/activityService";
@@ -135,13 +136,13 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
     >
       <div className="grid min-h-0 gap-3 lg:grid-cols-[1fr_280px]">
         <div className="min-h-0 overflow-hidden rounded-lg border border-border">
-          <div className="flex items-center gap-2 border-b border-border p-3">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
+          <div className="border-b border-border p-3">
+            <AdminSearchInput
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onChange={setKeyword}
               placeholder="搜索商品名称"
-              className="min-h-[40px] w-full rounded-lg bg-secondary px-3 py-2 text-sm"
+              iconSize={16}
+              className="min-h-[40px] border-0 bg-secondary"
             />
           </div>
           <div className="max-h-[50vh] lg:max-h-[60vh] overflow-auto p-3">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, type KeyboardEvent } from "react";
 import { Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import LoginBannerCarousel from "@/components/LoginBannerCarousel";
 import { LoginAgreementFooter } from "@/components/auth/LoginAgreementFooter";
+import { LoginPasswordResetSheet } from "@/components/auth/LoginPasswordResetSheet";
 import { ApiError } from "@/types/common";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -95,7 +96,7 @@ export default function Login() {
   const smsOtpLoginEnabled = authFeatures?.smsOtpLoginEnabled === true;
   const effectiveCredentialMode: CredentialMode =
     authFeaturesReady && smsOtpLoginEnabled ? credentialMode : "password";
-  const { formCompact, layoutCompact } = useFormFieldFocus();
+  const { formCompact } = useFormFieldFocus();
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<{ phone?: string; password?: string; otp?: string; nickname?: string }>({});
@@ -107,6 +108,23 @@ export default function Login() {
     }
     toast.error(message);
   };
+
+  const focusNextAuthField = useCallback(() => {
+    if (mode === "login" && effectiveCredentialMode === "otp") {
+      document.getElementById("auth-otp")?.focus();
+      return;
+    }
+    document.getElementById("auth-password")?.focus();
+  }, [mode, effectiveCredentialMode]);
+
+  const handlePhoneKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      focusNextAuthField();
+    },
+    [focusNextAuthField],
+  );
 
   useEffect(() => {
     const saved = localStorage.getItem(REMEMBER_KEY);
@@ -349,7 +367,7 @@ export default function Login() {
   const handleRequestReset = async () => {
     const phoneError = validatePhoneForCountry(phone, countryCode);
     if (phoneError) {
-      failValidation(phoneError);
+      toast.error(phoneError);
       return;
     }
     setResetLoading(true);
@@ -370,12 +388,12 @@ export default function Login() {
 
   const handleConfirmReset = async () => {
     if (!resetToken.trim()) {
-      failValidation("请输入重置口令");
+      toast.error("请输入重置令牌");
       return;
     }
     const passwordError = validateStrongPassword(newPassword);
     if (passwordError) {
-      failValidation(passwordError);
+      toast.error(passwordError);
       return;
     }
     setResetLoading(true);
@@ -383,15 +401,19 @@ export default function Login() {
       await authService.resetPassword({ token: resetToken.trim(), newPassword });
       toast.success("密码已重置，请使用新密码登录", toastPresetQuickSuccess);
       setPassword(newPassword);
-      setShowReset(false);
-      setResetToken("");
-      setNewPassword("");
-      setDevResetToken("");
+      closeResetSheet();
     } catch (e) {
       toast.error(authErrorMessage(e, "重置失败"));
     } finally {
       setResetLoading(false);
     }
+  };
+
+  const closeResetSheet = () => {
+    setShowReset(false);
+    setResetToken("");
+    setNewPassword("");
+    setDevResetToken("");
   };
 
   return (
@@ -418,11 +440,7 @@ export default function Login() {
         </div>
         {banners.length > 0 ? (
           <section
-            className={cn(
-              "mb-4 overflow-hidden lg:hidden [transition:none]",
-              layoutCompact && "pointer-events-none !mb-0 max-h-0 opacity-0",
-            )}
-            aria-hidden={layoutCompact}
+            className="mb-4 overflow-hidden lg:hidden [transition:none]"
           >
             <LoginBannerCarousel banners={banners} paused={formCompact} />
           </section>
@@ -455,6 +473,13 @@ export default function Login() {
             ))}
           </div>
         </section>
+
+        {mode === "login" && !authFeaturesReady ? (
+          <section
+            className="mb-4 h-[42px] animate-pulse rounded-2xl bg-secondary"
+            aria-hidden="true"
+          />
+        ) : null}
 
         {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
           <section className="mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录方式">
@@ -505,7 +530,9 @@ export default function Login() {
                   className={cn(INPUT_CLASS, "pl-12 pr-4")}
                 />
               </div>
-              {fieldErrors.nickname ? <p className="text-xs text-destructive">{fieldErrors.nickname}</p> : null}
+              <p className={cn("min-h-[1.125rem] text-xs leading-snug", fieldErrors.nickname ? "text-destructive" : "invisible")}>
+                {fieldErrors.nickname || "\u00a0"}
+              </p>
             </div>
           )}
           {mode === "register" && (
@@ -541,9 +568,10 @@ export default function Login() {
             }}
             errorText={fieldErrors.phone}
             phoneInputId="auth-phone"
-            phoneInputName={mode === "login" ? "username" : "tel"}
-            phoneAutoComplete={mode === "login" ? "username" : "tel"}
+            phoneInputName="tel"
+            phoneAutoComplete="tel"
             enterKeyHint="next"
+            onPhoneKeyDown={handlePhoneKeyDown}
           />
 
           <div className="space-y-3.5">
@@ -575,17 +603,21 @@ export default function Login() {
                 </button>
               </div>
             ) : null}
-            {fieldErrors.password ? <p className="text-xs text-destructive">{fieldErrors.password}</p> : null}
+            <p className={cn("min-h-[1.125rem] text-xs leading-snug", fieldErrors.password ? "text-destructive" : "invisible")}>
+              {fieldErrors.password || "\u00a0"}
+            </p>
 
             {mode === "login" && effectiveCredentialMode === "otp" ? (
               <div className="space-y-2">
                 <div className="relative">
                   <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
+                    id="auth-otp"
                     type="text"
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     placeholder="6 位验证码"
+                    enterKeyHint="go"
                     value={otpCode}
                     maxLength={6}
                     onChange={(e) => {
@@ -595,7 +627,9 @@ export default function Login() {
                     className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest")}
                   />
                 </div>
-                {fieldErrors.otp ? <p className="text-xs text-destructive">{fieldErrors.otp}</p> : null}
+                <p className={cn("min-h-[1.125rem] text-xs leading-snug", fieldErrors.otp ? "text-destructive" : "invisible")}>
+                  {fieldErrors.otp || "\u00a0"}
+                </p>
                 <button
                   type="button"
                   onClick={handleSendOtp}
@@ -647,77 +681,26 @@ export default function Login() {
           </form>
         </FormFieldShake>
 
-        {mode === "login" && showReset && (
-          <FormFieldShake shake={shakeKey} className="mt-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">重置密码</h3>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  先用当前手机号申请重置令牌，再输入令牌和新密码完成重置。线上环境请根据客服发送的令牌操作。
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowReset(false)}
-                className="text-xs font-medium text-muted-foreground active:opacity-70"
-              >
-                关闭
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleRequestReset}
-              disabled={resetLoading}
-              className="w-full rounded-xl border border-gold/30 bg-gold/10 py-2.5 text-xs font-semibold text-theme-price disabled:opacity-60"
-            >
-              {resetLoading ? "处理中..." : "发送重置令牌"}
-            </button>
-
-            {devResetToken && (
-              <p className="mt-2 break-all rounded-xl bg-secondary p-2 text-[11px] leading-relaxed text-muted-foreground">
-                开发环境令牌：{devResetToken}
-              </p>
-            )}
-
-            <div className="mt-3 space-y-2">
-              <input
-                type="text"
-                placeholder="输入重置令牌"
-                value={resetToken}
-                onChange={(e) => setResetToken(e.target.value)}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
-              />
-              <input
-                type="password"
-                placeholder="新密码（至少 6 位）"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
-              />
-              <button
-                type="button"
-                onClick={handleConfirmReset}
-                disabled={resetLoading}
-                className="w-full rounded-xl btn-theme-price py-2.5 text-xs font-bold text-primary-foreground disabled:opacity-60"
-              >
-                确认重置密码
-              </button>
-            </div>
-
-            <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-              没收到令牌？请联系客服：{supportContact}
-            </p>
-          </FormFieldShake>
-        )}
-
       </main>
+
+      <LoginPasswordResetSheet
+        open={mode === "login" && showReset}
+        onClose={closeResetSheet}
+        supportContact={supportContact}
+        resetToken={resetToken}
+        onResetTokenChange={setResetToken}
+        newPassword={newPassword}
+        onNewPasswordChange={setNewPassword}
+        devResetToken={devResetToken}
+        resetLoading={resetLoading}
+        onRequestReset={handleRequestReset}
+        onConfirmReset={handleConfirmReset}
+      />
 
       <LoginAgreementFooter
         mode={mode}
         termsPath={siteInfo.termsPath}
         privacyPath={siteInfo.privacyPolicyPath}
-        hiddenOnKeyboard={layoutCompact}
       />
     </div>
   );

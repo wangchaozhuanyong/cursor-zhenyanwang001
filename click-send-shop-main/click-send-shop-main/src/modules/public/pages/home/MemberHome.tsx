@@ -226,7 +226,7 @@ export default function MemberHome() {
                       void (async () => {
                         try {
                           setClaimingCouponId(c.id);
-                          await claimCoupon(display.code);
+                          await claimCoupon(display.code || c.coupon?.id || c.id);
                           toast.success("领取成功！已添加到我的优惠券", toastPresetQuickSuccess);
                         } catch (e) {
                           toast.error(e instanceof Error ? e.message : "领取失败");

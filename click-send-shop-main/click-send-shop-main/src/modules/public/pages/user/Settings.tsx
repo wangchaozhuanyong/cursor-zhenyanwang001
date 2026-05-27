@@ -26,6 +26,19 @@ import {
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
+function normalizeBirthdayValue(value: string | null | undefined) {
+  return value ? String(value).slice(0, 10) : "";
+}
+
+function resolveBirthdayLockedState(profile: {
+  birthday?: string | null;
+  birthdayLocked?: boolean | number;
+  birthday_locked?: boolean | number;
+}) {
+  const normalizedBirthday = normalizeBirthdayValue(profile.birthday);
+  return Boolean(normalizedBirthday) && Boolean(profile.birthdayLocked ?? profile.birthday_locked ?? false);
+}
+
 export default function Settings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -36,6 +49,7 @@ export default function Settings() {
   const [wechatLoginEnabled, setWechatLoginEnabled] = useState(false);
   const [wechatActionLoading, setWechatActionLoading] = useState(false);
   const [birthday, setBirthday] = useState("");
+  const [savedBirthday, setSavedBirthday] = useState("");
   const [birthdayLocked, setBirthdayLocked] = useState(false);
   const [whatsappCountryCode, setWhatsappCountryCode] = useState<SupportedCountryCode>("+60");
   const [whatsappPhone, setWhatsappPhone] = useState("");
@@ -129,9 +143,10 @@ export default function Settings() {
 
   useEffect(() => {
     authService.getProfile().then((p) => {
-      const b = p.birthday || "";
-      setBirthday(b ? String(b).slice(0, 10) : "");
-      setBirthdayLocked(!!(p.birthdayLocked || p.birthday_locked));
+      const normalizedBirthday = normalizeBirthdayValue(p.birthday);
+      setBirthday(normalizedBirthday);
+      setSavedBirthday(normalizedBirthday);
+      setBirthdayLocked(resolveBirthdayLockedState(p));
     }).catch(() => {});
   }, []);
 
@@ -146,20 +161,27 @@ export default function Settings() {
     }
     try {
       const normalizedWhatsapp = whatsappPhone ? buildIntlPhone(whatsappPhone, whatsappCountryCode) : "";
-      await userService.updateProfile({
+      const birthdayCanSubmit = Boolean(birthday && !savedBirthday && !birthdayLocked);
+      const updatedProfile = await userService.updateProfile({
         nickname,
         avatar,
         wechat,
         whatsapp: normalizedWhatsapp,
         ...(normalizedWhatsapp ? { whatsappCountryCode } : {}),
-        ...(birthday && !birthdayLocked ? { birthday } : {}),
+        ...(birthdayCanSubmit ? { birthday } : {}),
       });
+      const normalizedBirthday = normalizeBirthdayValue(updatedProfile.birthday);
+      setBirthday(normalizedBirthday);
+      setSavedBirthday(normalizedBirthday);
+      setBirthdayLocked(resolveBirthdayLockedState(updatedProfile));
       await loadProfile();
       toast.success("资料已保存", toastPresetQuickSuccess);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "保存失败，请重试");
     }
   };
+
+  const birthdayReadOnly = Boolean(savedBirthday);
 
   return (
     <StoreAccountLayout title="账户设置" onBack={goBack} className="store-page text-[var(--theme-text)]" mainClassName="space-y-3 pb-24 sm:py-4 lg:pb-12">
@@ -284,12 +306,12 @@ export default function Settings() {
               <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">生日</span>
               <SegmentedDateInput
                 value={birthday}
-                readOnly={birthdayLocked || !!birthday}
+                readOnly={birthdayReadOnly}
                 onChange={setBirthday}
                 controlClassName="h-11 rounded-xl border-0 bg-[var(--theme-bg)] px-4 text-[var(--theme-text)] ring-1 ring-[var(--theme-border)] focus-within:ring-2 focus-within:ring-[var(--theme-primary)]"
               />
-              {birthdayLocked ? (
-                <p className="mt-1 text-[11px] text-[var(--theme-muted)]">生日已锁定，如需修改请联系客服</p>
+              {birthdayReadOnly ? (
+                <p className="mt-1 text-[11px] text-[var(--theme-muted)]">生日已保存，如需修改请联系客服</p>
               ) : birthday ? (
                 <p className="mt-1 text-[11px] text-[var(--theme-muted)]">生日保存后不可自行修改</p>
               ) : null}

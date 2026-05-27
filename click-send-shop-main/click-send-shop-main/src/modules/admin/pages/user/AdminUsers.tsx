@@ -1,6 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { Download, Plus, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
+import {
+  AdminFilterButton,
+  AdminFilterSelect,
+} from "@/components/admin/AdminFilterControls";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
@@ -19,7 +23,7 @@ import { UserStatusBadges, UserTagBadges } from "@/modules/admin/pages/user/user
 import type { UserProfile } from "@/types/user";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
-
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 export default function AdminUsers() {
   const navigate = useNavigate();
   const {
@@ -46,6 +50,31 @@ export default function AdminUsers() {
     setCouponRestrictedFilter,
     commentRestrictedFilter,
     setCommentRestrictedFilter,
+    dateFromFilter,
+    setDateFromFilter,
+    dateToFilter,
+    setDateToFilter,
+    totalSpentMinFilter,
+    setTotalSpentMinFilter,
+    totalSpentMaxFilter,
+    setTotalSpentMaxFilter,
+    orderCountMinFilter,
+    setOrderCountMinFilter,
+    orderCountMaxFilter,
+    setOrderCountMaxFilter,
+    pointsMinFilter,
+    setPointsMinFilter,
+    pointsMaxFilter,
+    setPointsMaxFilter,
+    refundRateMinFilter,
+    setRefundRateMinFilter,
+    refundRateMaxFilter,
+    setRefundRateMaxFilter,
+    sortByFilter,
+    setSortByFilter,
+    sortDirFilter,
+    setSortDirFilter,
+    userSortOptions,
     selectedUserIds,
     batchTagId,
     setBatchTagId,
@@ -128,21 +157,22 @@ export default function AdminUsers() {
   };
 
   return (
-    <AdminPageShell
-      className="min-w-0"
-      hint={<Tx>管理注册用户、标签与风控限制，支持高级筛选与导出。</Tx>}
-      toolbar={(
-        <PermissionGate permission="user.update">
-          <button
-            type="button"
-            onClick={() => setTagDialogOpen(true)}
-            className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-3 py-2 text-sm font-medium hover:bg-secondary"
-          >
-            <Plus size={16} />
-            <Tx>添加标签</Tx>
-          </button>
-        </PermissionGate>
-      )}
+    <PermissionGate permission="user.view">
+      <AdminPageShell
+        className="min-w-0"
+        hint={<Tx>管理注册用户、标签与风控限制，支持高级筛选与导出。</Tx>}
+        toolbar={(
+          <PermissionGate permission="user.update">
+            <button
+              type="button"
+              onClick={() => setTagDialogOpen(true)}
+              className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-3 py-2 text-sm font-medium hover:bg-secondary"
+            >
+              <Plus size={16} />
+              <Tx>添加标签</Tx>
+            </button>
+          </PermissionGate>
+        )}
       filters={(
         <>
       <div className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-3">
@@ -171,13 +201,14 @@ export default function AdminUsers() {
           </button>
           {advancedFiltersOpen ? (
             <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 border-t border-[var(--theme-border)] pt-3 sm:grid-cols-2 lg:grid-cols-3">
-              <select
+              <AdminFilterSelect
                 value={selectedTagId}
                 onChange={(e) => {
                   setSelectedTagId(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                variant="theme"
+                className="w-full min-w-0"
               >
                 <option value=""><Tx>全部标签</Tx></option>
                 {tags.map((tag) => (
@@ -185,39 +216,42 @@ export default function AdminUsers() {
                     {tag.name}
                   </option>
                 ))}
-              </select>
-              <select
+              </AdminFilterSelect>
+              <AdminFilterSelect
                 value={wechatBoundFilter}
                 onChange={(e) => {
                   setWechatBoundFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                variant="theme"
+                className="w-full min-w-0"
               >
                 <option value=""><Tx>微信绑定（全部）</Tx></option>
                 <option value="1"><Tx>已绑定</Tx></option>
                 <option value="0"><Tx>未绑定</Tx></option>
-              </select>
-              <select
+              </AdminFilterSelect>
+              <AdminFilterSelect
                 value={phoneBoundFilter}
                 onChange={(e) => {
                   setPhoneBoundFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                variant="theme"
+                className="w-full min-w-0"
               >
                 <option value=""><Tx>手机号（全部）</Tx></option>
                 <option value="1"><Tx>已绑定</Tx></option>
                 <option value="0"><Tx>未绑定</Tx></option>
-              </select>
+              </AdminFilterSelect>
               {memberLevels.length > 0 ? (
-                <select
+                <AdminFilterSelect
                   value={memberLevelIdFilter}
                   onChange={(e) => {
                     setMemberLevelIdFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                  variant="theme"
+                  className="w-full min-w-0"
                 >
                   <option value=""><Tx>会员等级（全部）</Tx></option>
                   {memberLevels.map((level) => (
@@ -226,65 +260,178 @@ export default function AdminUsers() {
                       {level.enabled === false ? tText("（已禁用）") : ""}
                     </option>
                   ))}
-                </select>
+                </AdminFilterSelect>
               ) : null}
-              <select
+              <AdminFilterSelect
                 value={accountStatusFilter}
                 onChange={(e) => {
                   setAccountStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                variant="theme"
+                className="w-full min-w-0"
               >
                 <option value=""><Tx>账号状态（全部）</Tx></option>
                 <option value="normal"><Tx>正常</Tx></option>
                 <option value="disabled"><Tx>禁用登录</Tx></option>
                 <option value="blacklisted"><Tx>黑名单</Tx></option>
-              </select>
-              <select
+              </AdminFilterSelect>
+              <AdminFilterSelect
                 value={orderRestrictedFilter}
                 onChange={(e) => {
                   setOrderRestrictedFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                variant="theme"
+                className="w-full min-w-0"
               >
                 <option value=""><Tx>下单限制（全部）</Tx></option>
                 <option value="1"><Tx>已限制</Tx></option>
                 <option value="0"><Tx>未限制</Tx></option>
-              </select>
-              <select
+              </AdminFilterSelect>
+              <AdminFilterSelect
                 value={couponRestrictedFilter}
                 onChange={(e) => {
                   setCouponRestrictedFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                variant="theme"
+                className="w-full min-w-0"
               >
                 <option value=""><Tx>领券限制（全部）</Tx></option>
                 <option value="1"><Tx>已限制</Tx></option>
                 <option value="0"><Tx>未限制</Tx></option>
-              </select>
-              <select
+              </AdminFilterSelect>
+              <AdminFilterSelect
                 value={commentRestrictedFilter}
                 onChange={(e) => {
                   setCommentRestrictedFilter(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] w-full min-w-0 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                variant="theme"
+                className="w-full min-w-0"
               >
                 <option value=""><Tx>评论限制（全部）</Tx></option>
                 <option value="1"><Tx>已限制</Tx></option>
                 <option value="0"><Tx>未限制</Tx></option>
-              </select>
+              </AdminFilterSelect>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground"><Tx>注册开始</Tx></p>
+                <SegmentedDateInput
+                  value={dateFromFilter}
+                  onChange={(v) => { setDateFromFilter(v); setPage(1); }}
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground"><Tx>注册结束</Tx></p>
+                <SegmentedDateInput
+                  value={dateToFilter}
+                  onChange={(v) => { setDateToFilter(v); setPage(1); }}
+                />
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={totalSpentMinFilter}
+                onChange={(e) => { setTotalSpentMinFilter(e.target.value); setPage(1); }}
+                placeholder={tText("累计消费 ≥")}
+                className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={totalSpentMaxFilter}
+                onChange={(e) => { setTotalSpentMaxFilter(e.target.value); setPage(1); }}
+                placeholder={tText("累计消费 ≤")}
+                className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={orderCountMinFilter}
+                onChange={(e) => { setOrderCountMinFilter(e.target.value); setPage(1); }}
+                placeholder={tText("有效订单 ≥")}
+                className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={orderCountMaxFilter}
+                onChange={(e) => { setOrderCountMaxFilter(e.target.value); setPage(1); }}
+                placeholder={tText("有效订单 ≤")}
+                className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={pointsMinFilter}
+                onChange={(e) => { setPointsMinFilter(e.target.value); setPage(1); }}
+                placeholder={tText("积分 ≥")}
+                className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={pointsMaxFilter}
+                onChange={(e) => { setPointsMaxFilter(e.target.value); setPage(1); }}
+                placeholder={tText("积分 ≤")}
+                className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                value={refundRateMinFilter}
+                onChange={(e) => { setRefundRateMinFilter(e.target.value); setPage(1); }}
+                placeholder={tText("退款率 ≥ (0~1)")}
+                className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                value={refundRateMaxFilter}
+                onChange={(e) => { setRefundRateMaxFilter(e.target.value); setPage(1); }}
+                placeholder={tText("退款率 ≤ (0~1)")}
+                className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              />
+              <AdminFilterSelect
+                value={sortByFilter}
+                onChange={(e) => { setSortByFilter(e.target.value); setPage(1); }}
+                variant="theme"
+                className="w-full min-w-0"
+              >
+                {userSortOptions.map((option) => (
+                  <option key={option.value || "default"} value={option.value}>{tText(option.label)}</option>
+                ))}
+              </AdminFilterSelect>
+              {sortByFilter ? (
+                <AdminFilterSelect
+                  value={sortDirFilter}
+                  onChange={(e) => { setSortDirFilter(e.target.value); setPage(1); }}
+                  variant="theme"
+                  className="w-full min-w-0"
+                >
+                  <option value="desc"><Tx>降序</Tx></option>
+                  <option value="asc"><Tx>升序</Tx></option>
+                </AdminFilterSelect>
+              ) : null}
               <PermissionGate permission="user.view">
-                <button
-                  type="button"
+                <AdminFilterButton
                   onClick={handleExportCsv}
-                  className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm"
+                  variant="theme"
+                  className="shrink-0 gap-1.5"
                 >
                   <Download size={16} /> <Tx>导出</Tx>
-                </button>
+                </AdminFilterButton>
               </PermissionGate>
             </div>
           ) : null}
@@ -447,6 +594,7 @@ export default function AdminUsers() {
           </>
         )}
       />
-    </AdminPageShell>
+      </AdminPageShell>
+    </PermissionGate>
   );
 }

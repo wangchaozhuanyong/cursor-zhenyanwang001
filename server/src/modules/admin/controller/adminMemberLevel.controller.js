@@ -28,6 +28,7 @@ exports.recalcUserLevel = asyncRoute(async (req, res) => {
 
 exports.recalcAllUserLevels = asyncRoute(async (req, res) => {
   const r = await svc.recalcAllUserLevels(req, { force: req.body?.force === true || req.body?.force === 1 });
+  if (r.error) return res.fail(r.error.code, r.error.message);
   res.success(r.data, r.message);
 });
 

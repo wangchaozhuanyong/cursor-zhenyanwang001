@@ -60,6 +60,7 @@ export default function AdminCoupons() {
     queryKey: adminQueryKeys.coupons(),
     queryFn: () => couponService.fetchCoupons(),
     staleTime: 60_000,
+    refetchOnMount: true,
   });
 
   const tagsQuery = useQuery({

@@ -26,6 +26,7 @@ export const DATA_CLEANUP_POLICY_LABELS: Record<string, string> = {
   pending_wechat_login: "微信登录临时记录",
   auth_login_tickets: "登录票据",
   admin_trusted_devices: "管理员可信设备",
+  admin_sensitive_action_tokens: "敏感操作令牌",
   cart_items: "购物车明细",
   checkout_abandonments: "未完成结账快照",
   browsing_history: "浏览历史",
@@ -41,6 +42,7 @@ export const DATA_CLEANUP_POLICY_LABELS: Record<string, string> = {
   admin_event_records_resolved: "已解决后台事件",
   data_consistency_runs: "一致性检测运行记录",
   data_consistency_rule_events: "一致性规则事件",
+  data_change_events: "数据变更事件",
   data_consistency_anomalies_resolved: "已解决一致性异常",
   data_repair_tasks: "数据修复任务",
 };
@@ -53,6 +55,7 @@ export const DATA_CLEANUP_TABLE_LABELS: Record<string, string> = {
   pending_wechat_login: "微信登录临时记录",
   auth_login_tickets: "登录票据",
   admin_trusted_devices: "管理员可信设备",
+  admin_sensitive_action_tokens: "敏感操作令牌",
   cart_items: "购物车明细",
   checkout_abandonments: "未完成结账快照",
   browsing_history: "浏览历史",
@@ -68,6 +71,7 @@ export const DATA_CLEANUP_TABLE_LABELS: Record<string, string> = {
   admin_event_records: "后台事件记录",
   data_consistency_runs: "一致性检测运行记录",
   data_consistency_rule_events: "一致性规则事件",
+  data_change_events: "数据变更事件",
   data_consistency_anomalies: "一致性异常记录",
   data_repair_tasks: "数据修复任务",
 };

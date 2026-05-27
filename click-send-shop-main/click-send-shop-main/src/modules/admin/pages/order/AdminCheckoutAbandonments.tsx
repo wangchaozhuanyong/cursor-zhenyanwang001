@@ -23,6 +23,10 @@ import {
 } from "@/utils/adminCheckoutAbandonmentDisplay";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
+import {
+  AdminFilterButton,
+  AdminFilterSelect,
+} from "@/components/admin/AdminFilterControls";
 import Pagination from "@/components/admin/Pagination";
 import * as orderService from "@/services/admin/orderService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -274,16 +278,16 @@ export default function AdminCheckoutAbandonments() {
           <div className="min-w-0 flex-1">
             <SearchBar placeholder={tText("搜索订单号 / 联系人 / 手机号 / 商品名...")} value={keyword} onChange={setKeyword} />
           </div>
-          <select
+          <AdminFilterSelect
             value={status}
             onChange={(e) => handleStatusChange(e.target.value as "" | CheckoutAbandonmentStatus)}
-            className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-sm text-foreground outline-none"
+            variant="theme"
           >
             {statusOptionsLocalized.map((option) => <option key={option.value || "pending"} value={option.value}>{option.label}</option>)}
-          </select>
-          <button type="button" onClick={handleSearch} className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2.5 text-sm text-foreground hover:opacity-90"><Tx>
+          </AdminFilterSelect>
+          <AdminFilterButton onClick={handleSearch} variant="themeBg"><Tx>
             搜索
-          </Tx></button>
+          </Tx></AdminFilterButton>
         </div>
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>

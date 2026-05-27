@@ -21,7 +21,7 @@ import {
 import AdminAccountSettingsTrigger from "@/components/admin/AdminAccountSettingsTrigger";
 import { AdminAccountSettingsProvider } from "@/modules/admin/context/AdminAccountSettingsContext";
 import { resolveAdminTabTitle } from "@/config/adminNavTitle";
-import { syncAdminWorkTabFromLocation } from "@/stores/useAdminWorkTabsStore";
+import { syncAdminWorkTabFromLocation, useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
 import AdminWorkTabs from "@/layouts/admin/AdminWorkTabs";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -39,6 +39,7 @@ import {
   AdminOrderVoiceToolbar,
 } from "@/modules/admin/components/AdminOrderVoiceNotifier";
 import AdminEventBell from "@/modules/admin/components/AdminEventBell";
+import { isAdminMfaStepUpPending } from "@/lib/adminMfaStepUp";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
 import { getSecurityAlerts, type SecurityAlertSummary } from "@/api/admin/audit";
@@ -125,6 +126,7 @@ function AdminLayoutContent() {
 
     let alive = true;
     const load = async () => {
+      if (isAdminMfaStepUpPending()) return;
       try {
         const data = await getSecurityAlerts({ limit: 5, sinceHours: 24 });
         if (alive) setSecurityAlerts(data);
@@ -179,9 +181,17 @@ function AdminLayoutContent() {
   }, [navigate]);
 
   useEffect(() => {
-    const title = resolveAdminTabTitle(navItems, location.pathname, t("layout.title"), t);
-    syncAdminWorkTabFromLocation(location.pathname, location.search, title);
-  }, [navItems, location.pathname, location.search, t]);
+    const title = resolveAdminTabTitle(navItems, location.pathname, t("layout.title"), t, location.search);
+    const result = syncAdminWorkTabFromLocation(location.pathname, location.search, title);
+    if (result?.ok === false) {
+      const { tabs, activeTabId } = useAdminWorkTabsStore.getState();
+      const activeTab = tabs.find((tab) => tab.id === activeTabId);
+      const currentPath = `${location.pathname}${location.search}`;
+      if (activeTab && activeTab.path !== currentPath) {
+        navigate(activeTab.path, { replace: true });
+      }
+    }
+  }, [navItems, location.pathname, location.search, navigate, t]);
 
   const tab = mobileBottomTab(location.pathname);
 

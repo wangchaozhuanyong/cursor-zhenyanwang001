@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Loader2, RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
+import { AdminFilterSelect } from "@/components/admin/AdminFilterControls";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
@@ -406,15 +407,11 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
               onChange={(v) => { setKeyword(v); setPage(1); }}
             />
           </div>
-          <select
-            value={status}
-            onChange={(e) => { setStatus(e.target.value as "" | RewardStatus); setPage(1); }}
-            className="min-h-[44px] rounded-xl border border-[var(--theme-border)] bg-theme-surface px-3 text-sm text-[var(--theme-text-on-surface)] outline-none"
-          >
+          <AdminFilterSelect value={status} onChange={(e) => { setStatus(e.target.value as "" | RewardStatus); setPage(1); }} variant="theme">
             {statusOptionsLocalized.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </select>
+          </AdminFilterSelect>
         </div>
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>

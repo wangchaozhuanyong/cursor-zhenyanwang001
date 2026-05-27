@@ -9,7 +9,6 @@ import {
   Gift,
   Headphones,
   Info,
-  Languages,
   LogOut,
   MapPin,
   MessageSquare,
@@ -508,7 +507,6 @@ export default function Profile() {
               { key: "history", label: "浏览记录", icon: Clock3, path: "/history", auth: false },
               { key: "feedback", label: "意见反馈", icon: MessageSquare, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
               { key: "notifications", label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
-              { key: "language", label: "语言设置", icon: Languages, path: "/settings", auth: true },
               { key: "about", label: "关于我们", icon: Info, path: "/about", auth: false },
               { key: "settings", label: "账户设置", icon: Settings, path: "/settings", auth: true },
             ].filter((item) => (

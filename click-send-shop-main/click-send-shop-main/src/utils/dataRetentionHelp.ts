@@ -35,6 +35,10 @@ export const DATA_RETENTION_FIELD_HINTS = {
     "订单、付款、发票、库存流水、积分等永远不允许在本功能里整表删除，防止误操作。",
   previewWorkflow:
     "流程：勾选策略 → 生成预览（看命中条数）→ 确认后执行清理。预览结果约 30 分钟内有效，且只能用一次。",
+  previewTtlMinutes:
+    "预览结果的有效时间，超时后须重新生成预览才能执行。",
+  runningCleanup:
+    "当前有清理任务正在后台运行，可在此查看进度或请求取消。",
   selectEnabled:
     "快速勾选所有「已启用」的策略，适合按默认配置做一次全面预览。",
   testEnvNote:
@@ -67,6 +71,8 @@ export const DATA_CLEANUP_POLICY_HELP: Record<string, string> = {
     "社交登录一次性票据，登录完成后不再需要。",
   admin_trusted_devices:
     "管理员勾选「信任此设备」的记录。只删已过期或已撤销的设备，不影响当前正常登录。",
+  admin_sensitive_action_tokens:
+    "管理员执行删除、导出等敏感操作时的二次验证令牌。过期或撤销后可删，不影响当前会话。",
   cart_items:
     "购物车里长期没更新的商品行。不是订单，删了只是清空「僵尸购物车」。",
   checkout_abandonments:
@@ -97,6 +103,8 @@ export const DATA_CLEANUP_POLICY_HELP: Record<string, string> = {
     "系统自动检查订单/库存等是否对得上时，每次检查的运行记录。",
   data_consistency_rule_events:
     "数据一致性检查过程中产生的明细事件。",
+  data_change_events:
+    "数据一致性监控为追踪实体变更而记录的流水事件，不影响业务主数据。",
   data_consistency_anomalies_resolved:
     "一致性检查发现的异常，在已标记为已解决/已忽略/已修复后的历史记录。",
   data_repair_tasks:

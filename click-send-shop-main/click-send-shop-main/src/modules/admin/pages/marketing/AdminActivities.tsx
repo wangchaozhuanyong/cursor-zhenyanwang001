@@ -89,6 +89,7 @@ export default function AdminActivities() {
     queryFn: () => activityService.fetchActivities(queryParams),
     placeholderData: (previous) => previous,
     staleTime: 60_000,
+    refetchOnMount: true,
   });
 
   const activities = activitiesQuery.data?.list ?? [];

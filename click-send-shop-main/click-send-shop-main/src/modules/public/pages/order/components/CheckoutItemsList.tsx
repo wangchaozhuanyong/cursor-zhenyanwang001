@@ -8,10 +8,16 @@ interface CheckoutItemsListProps {
 export function CheckoutItemsList({ items }: CheckoutItemsListProps) {
   return (
     <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-      <h3 className="mb-3 text-[15px] font-semibold text-foreground">5. 确认商品</h3>
+      <div className="mb-3 flex items-center gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">6</span>
+        <div>
+          <h3 className="text-[15px] font-semibold text-foreground">确认商品</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">请核对商品、规格和数量后再提交订单</p>
+        </div>
+      </div>
       {items.map((item) => (
         <div key={`${item.product.id}:${item.variant_id || ""}`} className="flex items-center gap-3 border-b border-[var(--theme-border)] py-3 last:border-0">
-          <img src={item.product.cover_image} alt={item.product.name} className="h-14 w-14 rounded-lg object-cover" />
+          <img src={item.product.cover_image} alt={item.product.name} className="h-16 w-16 rounded-2xl object-cover" />
           <div className="flex-1 min-w-0">
             <p className="store-card-title truncate text-foreground">{item.product.name}</p>
             {item.variant_name && (

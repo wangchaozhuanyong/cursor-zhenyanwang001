@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import { POINTS_GIFT_FIELD_HINTS, POINTS_TAB_HINTS } from "@/modules/admin/pages/marketing/adminPointsHints";
 import {
   createPointsGiftItem,
@@ -18,6 +19,7 @@ import {
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAdminT } from "@/hooks/useAdminT";
 import { cn } from "@/lib/utils";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 
 const inputCls = "rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground w-full";
 
@@ -44,6 +46,7 @@ function GiftFieldLabel({ label, hint }: { label: string; hint?: ReactNode }) {
 
 export default function AdminPointsGifts() {
   const { tText } = useAdminT();
+  const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
   const queryClient = useQueryClient();
   const [form, setForm] = useState<PointsGiftItem>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -109,14 +112,21 @@ export default function AdminPointsGifts() {
           title={<Tx>{editingId ? "编辑礼品" : "新增礼品兑换"}</Tx>}
           hint={POINTS_TAB_HINTS["礼品兑换"]}
         />
+        {!isSuperAdmin ? (
+          <div className="rounded-lg border border-dashed border-border bg-secondary/20 p-3 text-sm text-muted-foreground">
+            <p><Tx>当前展示的是员工常用配置。</Tx></p>
+            <p className="mt-1"><Tx>规格编号等精确绑定字段仅超级管理员可修改，普通礼品兑换配置不受影响。</Tx></p>
+          </div>
+        ) : null}
         <div className="grid gap-3">
           <div>
             <GiftFieldLabel label={tText("关联商品")} hint={POINTS_GIFT_FIELD_HINTS.product} />
-            <input
+            <AdminSearchInput
               className={inputCls}
               placeholder={tText("搜索商品名称")}
               value={productKeyword}
-              onChange={(e) => setProductKeyword(e.target.value)}
+              onChange={setProductKeyword}
+              showIcon={false}
             />
             <select
               className={cn(inputCls, "mt-1")}
@@ -138,10 +148,6 @@ export default function AdminPointsGifts() {
               ))}
             </select>
           </div>
-          <label className="block">
-            <GiftFieldLabel label={tText("规格 ID（可选）")} hint={POINTS_GIFT_FIELD_HINTS.variant_id} />
-            <input className={inputCls} value={form.variant_id || ""} onChange={(e) => setForm((p) => ({ ...p, variant_id: e.target.value || null }))} />
-          </label>
           <label className="block">
             <GiftFieldLabel label={tText("展示标题")} hint={POINTS_GIFT_FIELD_HINTS.title} />
             <input className={inputCls} value={form.title || ""} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
@@ -175,6 +181,18 @@ export default function AdminPointsGifts() {
             />
           </label>
         </div>
+        {isSuperAdmin ? (
+          <div className="rounded-lg border border-border bg-secondary/20 p-4">
+            <div className="mb-3">
+              <p className="text-sm font-medium text-foreground"><Tx>管理员高级设置</Tx></p>
+              <p className="mt-1 text-xs text-muted-foreground"><Tx>多规格礼品可在这里精确绑定 SKU / 规格编号。</Tx></p>
+            </div>
+            <label className="block">
+              <GiftFieldLabel label={tText("规格编号（可选）")} hint={POINTS_GIFT_FIELD_HINTS.variant_id} />
+              <input className={inputCls} value={form.variant_id || ""} onChange={(e) => setForm((p) => ({ ...p, variant_id: e.target.value || null }))} />
+            </label>
+          </div>
+        ) : null}
         <div className="flex gap-2">
           <button
             type="button"

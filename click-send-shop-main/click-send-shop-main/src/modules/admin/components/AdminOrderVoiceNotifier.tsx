@@ -11,6 +11,7 @@ import {
 import { Play, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { isAdminMfaStepUpPending } from "@/lib/adminMfaStepUp";
 import * as orderService from "@/services/admin/orderService";
 import {
   getAdminOrderVoiceSettings,
@@ -355,7 +356,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
   }, [playQueue]);
 
   const pollEvents = useCallback(async () => {
-    if (!enabledRef.current || pollingRef.current) return;
+    if (!enabledRef.current || pollingRef.current || isAdminMfaStepUpPending()) return;
     pollingRef.current = true;
     try {
       const since = readLastCheckedAt();

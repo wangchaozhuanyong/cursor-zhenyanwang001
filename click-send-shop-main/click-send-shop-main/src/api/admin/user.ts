@@ -22,6 +22,8 @@ export interface AdminUserQuery extends PaginationParams {
   orderRestricted?: string;
   couponRestricted?: string;
   commentRestricted?: string;
+  sortBy?: string;
+  sortDir?: string;
 }
 
 export function getUsers(params?: AdminUserQuery) {

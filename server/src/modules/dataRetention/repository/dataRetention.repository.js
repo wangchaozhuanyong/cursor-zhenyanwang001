@@ -301,6 +301,10 @@ async function listRuns(query = {}) {
     where += ' AND run_type = ?';
     params.push(query.runType);
   }
+  if (query.excludeRunType) {
+    where += ' AND run_type <> ?';
+    params.push(query.excludeRunType);
+  }
   if (query.policyKey) {
     where += ' AND JSON_CONTAINS(policy_keys, JSON_QUOTE(?))';
     params.push(query.policyKey);

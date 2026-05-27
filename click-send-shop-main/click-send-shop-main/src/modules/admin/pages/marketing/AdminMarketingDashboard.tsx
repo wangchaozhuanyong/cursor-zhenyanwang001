@@ -8,6 +8,7 @@ import { fetchAdminPointsRecords } from "@/services/admin/pointsService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
 import type { MarketingActivity } from "@/types/activity";
 import type { PointsRecord } from "@/types/points";
@@ -94,13 +95,27 @@ export default function AdminMarketingDashboard() {
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold"><Tx>快捷入口</Tx></h2>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          <button type="button" onClick={() => navigate("/admin/marketing/activities/new?type=flash_sale")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><CalendarClock className="mr-2 inline h-4 w-4" /><Tx>新建秒杀活动</Tx></button>
-          <button type="button" onClick={() => navigate("/admin/marketing/activities/new?type=full_reduction")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><BarChart3 className="mr-2 inline h-4 w-4" /><Tx>新建满减活动</Tx></button>
-          <button type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Ticket className="mr-2 inline h-4 w-4" /><Tx>新建优惠券</Tx></button>
-          <button type="button" onClick={() => navigate("/admin/marketing/points")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Star className="mr-2 inline h-4 w-4" /><Tx>积分管理</Tx></button>
-          <button type="button" onClick={() => navigate("/admin/marketing/rewards")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Gift className="mr-2 inline h-4 w-4" /><Tx>返现管理</Tx></button>
-          <button type="button" onClick={() => navigate("/admin/marketing/invites")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Link2 className="mr-2 inline h-4 w-4" /><Tx>邀请奖励</Tx></button>
-          <button type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><PlusCircle className="mr-2 inline h-4 w-4" /><Tx>新建活动</Tx></button>
+          <PermissionGate permission="activity.manage">
+            <button type="button" onClick={() => navigate("/admin/marketing/activities/new?type=flash_sale")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><CalendarClock className="mr-2 inline h-4 w-4" /><Tx>新建秒杀活动</Tx></button>
+          </PermissionGate>
+          <PermissionGate permission="activity.manage">
+            <button type="button" onClick={() => navigate("/admin/marketing/activities/new?type=full_reduction")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><BarChart3 className="mr-2 inline h-4 w-4" /><Tx>新建满减活动</Tx></button>
+          </PermissionGate>
+          <PermissionGate permission="coupon.manage">
+            <button type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Ticket className="mr-2 inline h-4 w-4" /><Tx>新建优惠券</Tx></button>
+          </PermissionGate>
+          <PermissionGate permission="points.manage">
+            <button type="button" onClick={() => navigate("/admin/marketing/points")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Star className="mr-2 inline h-4 w-4" /><Tx>积分管理</Tx></button>
+          </PermissionGate>
+          <PermissionGate permission="referral.manage">
+            <button type="button" onClick={() => navigate("/admin/marketing/rewards")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Gift className="mr-2 inline h-4 w-4" /><Tx>返现管理</Tx></button>
+          </PermissionGate>
+          <PermissionGate permission="invite.view">
+            <button type="button" onClick={() => navigate("/admin/marketing/invites")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Link2 className="mr-2 inline h-4 w-4" /><Tx>邀请奖励</Tx></button>
+          </PermissionGate>
+          <PermissionGate permission="activity.manage">
+            <button type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><PlusCircle className="mr-2 inline h-4 w-4" /><Tx>新建活动</Tx></button>
+          </PermissionGate>
         </div>
       </div>
     </AdminPageShell>

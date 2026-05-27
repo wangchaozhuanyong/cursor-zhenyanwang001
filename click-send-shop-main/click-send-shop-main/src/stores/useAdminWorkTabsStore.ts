@@ -16,10 +16,17 @@ export type AdminWorkTab = {
   lastAccessAt: number;
 };
 
+export type AdminWorkTabUpsertResult =
+  | { ok: true; path: string; activeId: string }
+  | { ok: false; path: string; activeId: string; reason: "limit"; max: number };
+
 type AdminWorkTabsState = {
   tabs: AdminWorkTab[];
   activeTabId: string | null;
-  upsertTab: (pathname: string, search: string, title: string) => void;
+  lastLimitNoticeAt: number | null;
+  consumeLimitNotice: () => void;
+  upsertTab: (pathname: string, search: string, title: string) => AdminWorkTabUpsertResult;
+  updateTabTitle: (pathname: string, search: string, title: string) => void;
   setActiveTab: (id: string) => void;
   closeTab: (id: string) => string | null;
   closeOtherTabs: (id: string) => void;
@@ -27,38 +34,47 @@ type AdminWorkTabsState = {
   togglePinTab: (id: string) => void;
 };
 
-function trimTabs(tabs: AdminWorkTab[], activeId: string | null): AdminWorkTab[] {
-  let next = [...tabs];
-  while (next.length > ADMIN_WORK_TABS_MAX) {
-    const candidates = next
-      .filter((t) => !t.pinned && t.id !== activeId)
-      .sort((a, b) => a.lastAccessAt - b.lastAccessAt);
-    if (candidates.length === 0) break;
-    next = next.filter((t) => t.id !== candidates[0].id);
-  }
-  return next;
-}
-
 export const useAdminWorkTabsStore = create<AdminWorkTabsState>()(
   persist(
     (set, get) => ({
       tabs: [],
       activeTabId: null,
+      lastLimitNoticeAt: null,
+
+      consumeLimitNotice: () => set({ lastLimitNoticeAt: null }),
 
       upsertTab: (pathname, search, title) => {
         const fullPath = normalizeAdminTabPath(pathname, search);
         const id = adminTabPathKey(fullPath);
         const now = Date.now();
+        const state = get();
+        const existing = state.tabs.find((t) => t.id === id);
+        if (!existing && state.tabs.length >= ADMIN_WORK_TABS_MAX) {
+          set({ lastLimitNoticeAt: now });
+          return { ok: false, path: fullPath, activeId: state.activeTabId ?? id, reason: "limit", max: ADMIN_WORK_TABS_MAX };
+        }
+
+        const nextTab: AdminWorkTab = existing
+          ? { ...existing, path: fullPath, title: title.trim() || existing.title, lastAccessAt: now }
+          : { id, path: fullPath, title: title.trim() || fullPath, pinned: false, lastAccessAt: now };
+        set((current) => ({
+          tabs: existing ? current.tabs.map((t) => (t.id === id ? nextTab : t)) : [...current.tabs, nextTab],
+          activeTabId: id,
+        }));
+        return { ok: true, path: fullPath, activeId: id };
+      },
+
+      updateTabTitle: (pathname, search, title) => {
+        const fullPath = normalizeAdminTabPath(pathname, search);
+        const id = adminTabPathKey(fullPath);
+        const trimmed = title.trim();
+        if (!trimmed) return;
         set((state) => {
-          const existing = state.tabs.find((t) => t.id === id);
-          const nextTab: AdminWorkTab = existing
-            ? { ...existing, path: fullPath, title: title.trim() || existing.title, lastAccessAt: now }
-            : { id, path: fullPath, title: title.trim() || fullPath, pinned: false, lastAccessAt: now };
-          const tabs = trimTabs(
-            existing ? state.tabs.map((t) => (t.id === id ? nextTab : t)) : [...state.tabs, nextTab],
-            id,
-          );
-          return { tabs, activeTabId: id };
+          const tab = state.tabs.find((t) => t.id === id);
+          if (!tab || tab.title === trimmed) return state;
+          return {
+            tabs: state.tabs.map((t) => (t.id === id ? { ...t, title: trimmed } : t)),
+          };
         });
       },
 
@@ -131,9 +147,7 @@ export function syncAdminWorkTabFromLocation(
   pathname: string,
   search: string,
   title: string,
-): { path: string; activeId: string | null } | null {
+): AdminWorkTabUpsertResult | null {
   if (!shouldTrackAdminWorkTab(pathname)) return null;
-  const path = normalizeAdminTabPath(pathname, search);
-  useAdminWorkTabsStore.getState().upsertTab(pathname, search, title);
-  return { path, activeId: adminTabPathKey(path) };
+  return useAdminWorkTabsStore.getState().upsertTab(pathname, search, title);
 }

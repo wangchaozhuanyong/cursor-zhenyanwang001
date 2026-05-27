@@ -1,9 +1,14 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, RotateCcw, Search } from "lucide-react";
+import { RefreshCw, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import {
+  AdminFilterButton,
+  AdminFilterSelect,
+} from "@/components/admin/AdminFilterControls";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import Pagination from "@/components/admin/Pagination";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import {
@@ -22,6 +27,7 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "待审核",
@@ -49,6 +55,7 @@ const TABLE_HEADERS = ["申请", "订单", "类型", "原因", "退款金额", "
 
 export default function AdminReturns() {
   const { tText } = useAdminT();
+  const canHandleReturn = useAdminPermissionStore((s) => s.can("return.handle"));
   const { returnType: labelReturnType } = useAdminDisplayLabel();
   const statusOptionsLocalized = useLocalizedOptions(
     Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
@@ -170,14 +177,18 @@ export default function AdminReturns() {
       </div>
       <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
         <button type="button" onClick={() => setSelectedId(row.id)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>详情</Tx></button>
-        <button type="button" onClick={() => openReview("approve", row)} className="touch-manipulation rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>通过</Tx></button>
-        <button type="button" onClick={() => openReview("reject", row)} className="touch-manipulation rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>拒绝</Tx></button>
+        {canHandleReturn ? (
+          <>
+            <button type="button" onClick={() => openReview("approve", row)} className="touch-manipulation rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>通过</Tx></button>
+            <button type="button" onClick={() => openReview("reject", row)} className="touch-manipulation rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>拒绝</Tx></button>
+          </>
+        ) : null}
       </div>
     </AdminTableMobileCard>
   );
 
   return (
-    <PermissionGate permission="order.return.manage">
+    <PermissionGate anyOf={["return.view", "return.handle"]}>
       <AdminPageShell
           hint={<Tx>售后列表由 Query 缓存管理，审核后刷新订单、售后和仪表盘。</Tx>}
           toolbar={(
@@ -188,15 +199,12 @@ export default function AdminReturns() {
           )}
           filters={(
         <div className="grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_1fr_auto]">
-          <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          <AdminFilterSelect value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
             <option value=""><Tx>全部状态</Tx></option>
             {statusOptionsLocalized.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); }} placeholder={tText("搜索订单号、原因、商品或用户信息")} className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm" />
-          </div>
-          <button type="button" onClick={() => { setStatus(""); setKeyword(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空筛选</Tx></button>
+          </AdminFilterSelect>
+          <AdminSearchInput value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} placeholder={tText("搜索订单号、原因、商品或用户信息")} />
+          <AdminFilterButton onClick={() => { setStatus(""); setKeyword(""); setPage(1); }}><Tx>清空筛选</Tx></AdminFilterButton>
         </div>
           )}
         >
@@ -237,8 +245,12 @@ export default function AdminReturns() {
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => setSelectedId(row.id)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"><Tx>详情</Tx></button>
-                  <button type="button" onClick={() => openReview('approve', row)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"><Tx>通过</Tx></button>
-                  <button type="button" onClick={() => openReview('reject', row)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"><Tx>拒绝</Tx></button>
+                  {canHandleReturn ? (
+                    <>
+                      <button type="button" onClick={() => openReview('approve', row)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"><Tx>通过</Tx></button>
+                      <button type="button" onClick={() => openReview('reject', row)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"><Tx>拒绝</Tx></button>
+                    </>
+                  ) : null}
                 </div>
               </td>
             </>

@@ -10,7 +10,7 @@ interface CouponState {
   loading: boolean;
   error: string | null;
   loadCoupons: () => Promise<void>;
-  claimCoupon: (code: string) => Promise<void>;
+  claimCoupon: (code: string) => Promise<UserCoupon>;
   clearError: () => void;
 }
 
@@ -57,8 +57,23 @@ export const useCouponStore = create<CouponState>((set, get) => ({
 
   claimCoupon: async (code) => {
     try {
-      await couponService.claimCoupon(code);
-      await get().loadCoupons();
+      const claimed = await couponService.claimCoupon(code);
+      set((state) => ({
+        coupons: [
+          claimed,
+          ...state.coupons.filter((item) => {
+            if (item.id === claimed.id) return false;
+            return !(item.claimed_at === "" && item.coupon?.id === claimed.coupon?.id);
+          }),
+        ],
+        error: null,
+      }));
+      try {
+        await get().loadCoupons();
+      } catch {
+        // 领取已成功，列表刷新失败不应让用户误以为领取失败
+      }
+      return claimed;
     } catch (err) {
       set({
         error: err instanceof Error ? err.message : "领取优惠券失败",

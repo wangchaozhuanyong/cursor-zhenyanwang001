@@ -15,6 +15,7 @@ import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { adminConfirmDelete } from "@/modules/admin/context/AdminConfirmContext";
 import { formatDateTime } from "@/utils/formatDateTime";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
+import { AdminFilterSelect } from "@/components/admin/AdminFilterControls";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
   adminTdClassName,
@@ -223,10 +224,10 @@ export default function AdminOperatingExpenses() {
           <SegmentedDateInput label={tText("结束日期")} value={dateTo} onChange={setDateTo} />
           <div>
             <label className="mb-1 block text-xs text-muted-foreground"><Tx>分类筛选</Tx></label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            <AdminFilterSelect value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value=""><Tx>全部</Tx></option>
               {CATEGORY_OPTIONS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}
-            </select>
+            </AdminFilterSelect>
           </div>
               <div className="ml-auto text-sm text-muted-foreground"><Tx>合计：</Tx><span className="font-semibold text-foreground">RM {totalAmount.toFixed(2)}</span></div>
             </div>

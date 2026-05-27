@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, RefreshCw, Search } from "lucide-react";
+import { CreditCard, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
@@ -12,6 +12,11 @@ import {
 } from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
+import {
+  AdminFilterButton,
+  AdminFilterSelect,
+} from "@/components/admin/AdminFilterControls";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { PaymentOrderAdminRow } from "@/types/adminPayment";
@@ -127,7 +132,7 @@ export default function AdminPaymentOrders() {
   const total = ordersQuery.data?.total || 0;
 
   const renderMobileCard = (row: PaymentOrderAdminRow) => {
-    const orderNo = row.order_no || shortId(row.order_id, 8);
+    const orderNo = row.order_no || tText("未生成订单号");
     const channelLabel = resolveChannelLabel(row.channel_code, tText);
     const txnRaw = row.payment_transaction_no?.trim() || "";
     const txnNo = txnRaw || "—";
@@ -138,7 +143,6 @@ export default function AdminPaymentOrders() {
         <div className="mb-2 flex items-start justify-between gap-2">
           <div>
             <p className="font-mono text-sm font-semibold">{orderNo}</p>
-            <p className="font-mono text-[11px] text-muted-foreground">{tText("支付单")} {shortId(row.id)}</p>
           </div>
           <PaymentStatusBadge status={row.status} />
         </div>
@@ -148,9 +152,7 @@ export default function AdminPaymentOrders() {
         </div>
         <div className="space-y-2">
           <AdminTableMobileCardField label={tText("用户")}>
-            <span className="text-xs text-muted-foreground">
-              {row.buyer_phone || tText("未留手机号")} · {shortId(row.user_id)}
-            </span>
+            <span className="text-xs text-muted-foreground">{row.buyer_phone || tText("未留手机号")}</span>
           </AdminTableMobileCardField>
           {txnRaw ? (
             <AdminTableMobileCardField label={tText("交易号")}>
@@ -185,7 +187,7 @@ export default function AdminPaymentOrders() {
   };
 
   const renderRow = (row: PaymentOrderAdminRow) => {
-    const orderNo = row.order_no || shortId(row.order_id, 8);
+    const orderNo = row.order_no || tText("未生成订单号");
     const channelLabel = resolveChannelLabel(row.channel_code, tText);
     const txnRaw = row.payment_transaction_no?.trim() || "";
     const txnNo = txnRaw || "—";
@@ -202,12 +204,9 @@ export default function AdminPaymentOrders() {
                 text: row.order_id ? `${tText("订单")} ${orderNo}` : orderNo,
                 mono: true,
               },
-              { text: `${tText("支付单")} ${shortId(row.id)}`, muted: true, mono: true },
             ]}
             tooltipLines={[
               `${tText("订单号")}：${row.order_no || "—"}`,
-              `${tText("订单 ID")}：${row.order_id}`,
-              `${tText("支付单 ID")}：${row.id}`,
             ]}
           />
         </td>
@@ -216,11 +215,9 @@ export default function AdminPaymentOrders() {
             maxWidth="8.5rem"
             lines={[
               { text: row.buyer_phone || tText("未留手机号"), mono: Boolean(row.buyer_phone) },
-              { text: `${tText("用户")} ${shortId(row.user_id)}`, muted: true, mono: true },
             ]}
             tooltipLines={[
               row.buyer_phone ? `${tText("手机号")}：${row.buyer_phone}` : tText("未留手机号"),
-              `${tText("用户 ID")}：${row.user_id || "—"}`,
             ]}
           />
         </td>
@@ -274,7 +271,7 @@ export default function AdminPaymentOrders() {
   };
 
   return (
-    <PermissionGate permission="payment.view">
+    <PermissionGate permission="payment.manage">
       <AdminPageShell
         hint={<Tx>使用 Query 缓存和 SSE 自动刷新，人工补记后会同步订单与仪表盘。</Tx>}
         toolbar={(
@@ -291,32 +288,25 @@ export default function AdminPaymentOrders() {
           <>
             <PaymentAdminSubnav />
             <div className="grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_1fr_auto]">
-          <select
+          <AdminFilterSelect
             value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
           >
             <option value=""><Tx>全部状态</Tx></option>
             {statusFilterOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </select>
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={keyword}
-              onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
-              placeholder={tText("搜索订单号、交易号或手机号")}
-              className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm"
-            />
-          </div>
-          <button
-            type="button"
+          </AdminFilterSelect>
+          <AdminSearchInput
+            value={keyword}
+            onChange={(value) => { setKeyword(value); setPage(1); }}
+            placeholder={tText("搜索订单号、交易号或手机号")}
+          />
+          <AdminFilterButton
             onClick={() => { setStatus(""); setKeyword(""); setPage(1); }}
-            className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"
           >
             <Tx>清空筛选</Tx>
-          </button>
+          </AdminFilterButton>
             </div>
           </>
         )}
@@ -361,7 +351,7 @@ export default function AdminPaymentOrders() {
           title={tText("人工确认收款")}
           description={
             markingRow
-              ? tText(`订单 ${markingRow.order_no || shortId(markingRow.order_id, 8)} 将被标记为已支付，请填写操作原因，方便审计追踪。`)
+              ? tText(`订单 ${markingRow.order_no || tText("未生成订单号")} 将被标记为已支付，请填写操作原因，方便审计追踪。`)
               : undefined
           }
           submitText={tText("确认收款")}

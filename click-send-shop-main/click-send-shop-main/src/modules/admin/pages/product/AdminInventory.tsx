@@ -1,5 +1,10 @@
-import { Download, Plus, RefreshCcw, Search } from "lucide-react";
+import { Download, Plus, RefreshCcw } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
+import {
+  AdminFilterButton,
+  AdminFilterSelect,
+} from "@/components/admin/AdminFilterControls";
 import {
   AdminTableMobileCard,
   AdminTableMobileCardField,
@@ -344,15 +349,18 @@ export default function AdminInventory({
             ] as const).map(([key, label]) => <button key={key} onClick={() => setTab(key)} className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{L(label)}</button>)}
           </div>
           <div className="flex flex-wrap items-center gap-2 border-b border-border p-4">
-            <div className="relative min-w-[260px] max-w-sm flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); setAlertsPage(1); setPurchaseOrdersPage(1); setRecordsPage(1); setRulesPage(1); setConversionsPage(1); }} placeholder={tText("搜索商品、SKU、单据号...")} className="w-full rounded-lg bg-secondary py-2.5 pl-9 pr-4 text-sm" />
-            </div>
+            <AdminSearchInput
+              value={keyword}
+              onChange={(value) => { setKeyword(value); setPage(1); setAlertsPage(1); setPurchaseOrdersPage(1); setRecordsPage(1); setRulesPage(1); setConversionsPage(1); }}
+              placeholder={tText("搜索商品、SKU、单据号...")}
+              containerClassName="min-w-[260px] max-w-sm flex-1"
+              className="border-0 bg-secondary pr-3.5"
+            />
             {tab === "skus" ? (
               <>
-                <select value={stockStatus} onChange={(e) => { setStockStatus(e.target.value as typeof stockStatus); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value=""><Tx>全部库存状态</Tx></option><option value="normal"><Tx>正常</Tx></option><option value="low"><Tx>低库存</Tx></option><option value="out"><Tx>缺货</Tx></option></select>
-                <button type="button" disabled={selectedCount === 0} onClick={() => setBatchThreshold({ threshold: "10" })} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm disabled:opacity-50">{L("批量预警值")} ({selectedCount})</button>
-                <button type="button" disabled={selectedCount === 0} onClick={() => setBatchAdjust({ ...EMPTY_BATCH_ADJUST })} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm disabled:opacity-50">{L("批量库存调整")} ({selectedCount})</button>
+                <AdminFilterSelect value={stockStatus} onChange={(e) => { setStockStatus(e.target.value as typeof stockStatus); setPage(1); }} variant="card" className="border-0 bg-secondary"><option value=""><Tx>全部库存状态</Tx></option><option value="normal"><Tx>正常</Tx></option><option value="low"><Tx>低库存</Tx></option><option value="out"><Tx>缺货</Tx></option></AdminFilterSelect>
+                <AdminFilterButton disabled={selectedCount === 0} onClick={() => setBatchThreshold({ threshold: "10" })} variant="card" className="disabled:opacity-50">{L("批量预警值")} ({selectedCount})</AdminFilterButton>
+                <AdminFilterButton disabled={selectedCount === 0} onClick={() => setBatchAdjust({ ...EMPTY_BATCH_ADJUST })} variant="card" className="disabled:opacity-50">{L("批量库存调整")} ({selectedCount})</AdminFilterButton>
                 {selectedCount > 0 ? (
                   <button type="button" onClick={() => setSelectedVariantIds([])} className="rounded-lg bg-secondary px-3 py-2.5 text-xs text-muted-foreground"><Tx>清空选择</Tx></button>
                 ) : null}

@@ -36,7 +36,7 @@ export default function CountryPhoneInput({
   errorText,
   phoneInputId,
   phoneInputName,
-  phonePlaceholder = "手机号",
+  phonePlaceholder,
   phoneAutoComplete = "tel",
   readOnly = false,
   disabled = false,
@@ -46,6 +46,10 @@ export default function CountryPhoneInput({
   phoneClassName,
   selectAriaLabel = "国家或地区代码",
 }: CountryPhoneInputProps) {
+  const resolvedPhonePlaceholder =
+    phonePlaceholder ?? (countryCode === "+60" ? "手机号，例如 0123456789" : "手机号，例如 13800138000");
+  const phoneMaxLength = 11;
+
   return (
     <div className={cn("space-y-2", className)}>
       <div className="grid grid-cols-[minmax(6.5rem,7rem)_1fr] gap-2 sm:grid-cols-[112px_1fr]">
@@ -67,16 +71,17 @@ export default function CountryPhoneInput({
           <input
             id={phoneInputId}
             name={phoneInputName}
-            type="text"
-            inputMode="numeric"
+            type="tel"
+            inputMode="tel"
             pattern="[0-9]*"
             autoComplete={phoneAutoComplete}
             autoCorrect="off"
             autoCapitalize="none"
             spellCheck={false}
             enterKeyHint={enterKeyHint}
-            placeholder={phonePlaceholder}
+            placeholder={resolvedPhonePlaceholder}
             value={phone}
+            maxLength={phoneMaxLength}
             readOnly={readOnly}
             disabled={disabled}
             onKeyDown={onPhoneKeyDown}
@@ -90,7 +95,9 @@ export default function CountryPhoneInput({
           />
         </div>
       </div>
-      {errorText ? <p className="text-xs text-destructive">{errorText}</p> : null}
+      <p className={cn("min-h-[1.125rem] text-xs leading-snug", errorText ? "text-destructive" : "invisible")}>
+        {errorText || "\u00a0"}
+      </p>
     </div>
   );
 }

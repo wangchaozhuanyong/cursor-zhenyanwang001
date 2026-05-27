@@ -54,8 +54,8 @@ export const POINTS_REDEEM_FIELD_HINTS: Record<string, ReactNode> = {
 
 export const POINTS_PRODUCT_RULE_HINTS: Record<string, ReactNode> = {
   name: <Tx>后台识别用名称，用户端不展示。</Tx>,
-  scope_type: <Tx>规则作用范围：全部、指定分类、商品或标签；选「全部」时范围 ID 可留空。</Tx>,
-  scope_id: <Tx>分类 ID、商品 ID 或标签 ID，多个场景请新建多条规则。</Tx>,
+  scope_type: <Tx>规则作用范围：全部、指定分类、商品或标签；选「全部」时适用对象编号可留空。</Tx>,
+  scope_id: <Tx>填写分类编号、商品编号或标签编号；如果有多个场景，建议拆成多条规则。</Tx>,
   earn_mode: (
     <Tx>
       继承全局=走「全局积分设置」中的金额规则；不积分=该范围内不发消费积分；固定/百分比/倍率=覆盖全局的计算方式。
@@ -94,14 +94,14 @@ export const POINTS_ADVANCED_FIELD_HINTS: Record<string, ReactNode> = {
 };
 
 export const POINTS_ADJUST_FIELD_HINTS: Record<string, ReactNode> = {
-  userId: <Tx>用户中心或订单中的用户 ID（UUID），填错会导致调整到他人账户。</Tx>,
+  userId: <Tx>请从用户详情页点击「复制用户ID」后粘贴到这里；这是系统唯一编号，填错会调整到他人账户。</Tx>,
   points: <Tx>正数为增加、负数为扣减；不可为 0；大额调整建议先与财务确认。</Tx>,
   reason: <Tx>必填，会显示在积分流水中，便于审计与客服追溯。</Tx>,
 };
 
 export const POINTS_GIFT_FIELD_HINTS: Record<string, ReactNode> = {
   product: <Tx>兑换成功后发放/关联的实物或服务商品；先搜索再选择，会自动带出标题与图片。</Tx>,
-  variant_id: <Tx>多规格商品时填写 SKU/规格 ID；单规格可留空。</Tx>,
+  variant_id: <Tx>多规格商品时填写 SKU/规格编号；单规格商品可留空。</Tx>,
   title: <Tx>礼品专区展示名称，可不同于商品原名。</Tx>,
   required_points: <Tx>用户兑换需扣除的积分数。</Tx>,
   cash_amount: <Tx>除积分外需支付的 RM，0 表示纯积分兑换。</Tx>,

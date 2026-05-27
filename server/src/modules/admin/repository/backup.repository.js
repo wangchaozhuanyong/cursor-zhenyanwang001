@@ -192,11 +192,21 @@ async function insertRestoreJob(job) {
   );
 }
 
+async function claimRestoreJobForSwitch(id) {
+  const [res] = await db.query(
+    `UPDATE restore_jobs
+        SET status = 'merged', error_message = '', started_at = COALESCE(started_at, NOW())
+      WHERE id = ? AND status = 'approved'`,
+    [id],
+  );
+  return res.affectedRows || 0;
+}
+
 async function approveRestoreJob(id, adminUserId) {
   const [res] = await db.query(
     `UPDATE restore_jobs
         SET status = 'approved', approved_by = ?, mfa_verified_at = NOW()
-      WHERE id = ? AND status IN ('temp_restored','validated','awaiting_approval','queued')`,
+      WHERE id = ? AND status IN ('temp_restored','validated','awaiting_approval')`,
     [adminUserId, id],
   );
   return res.affectedRows || 0;
@@ -208,7 +218,14 @@ async function findRestoreJob(id) {
 }
 
 async function findBackupFile(id) {
-  const [[row]] = await db.query(`SELECT * FROM backup_files WHERE id = ? LIMIT 1`, [id]);
+  const [[row]] = await db.query(
+    `SELECT f.*, j.status AS job_status, j.job_type
+       FROM backup_files f
+       JOIN backup_jobs j ON j.id = f.backup_job_id
+      WHERE f.id = ?
+      LIMIT 1`,
+    [id],
+  );
   return row || null;
 }
 
@@ -297,7 +314,12 @@ async function insertRestoreDrillReport(report) {
 
 async function listDrillReports({ limit }) {
   const [rows] = await db.query(
-    `SELECT * FROM restore_drill_reports ORDER BY created_at DESC LIMIT ?`,
+    `SELECT r.*
+       FROM restore_drill_reports r
+       JOIN restore_jobs j ON j.id = r.restore_job_id
+      WHERE JSON_UNQUOTE(JSON_EXTRACT(j.validation_result, '$.drill')) = 'true'
+      ORDER BY r.created_at DESC
+      LIMIT ?`,
     [limit],
   );
   return rows.map(mapDrill);
@@ -376,6 +398,7 @@ module.exports = {
   listRestoreJobs,
   insertRestoreJob,
   approveRestoreJob,
+  claimRestoreJobForSwitch,
   findRestoreJob,
   findBackupFile,
   findLatestFullBackupBefore,

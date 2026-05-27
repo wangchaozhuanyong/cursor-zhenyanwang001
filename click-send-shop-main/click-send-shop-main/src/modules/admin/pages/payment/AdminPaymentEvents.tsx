@@ -10,6 +10,11 @@ import {
   AdminTableMobileCardField,
 } from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
+import {
+  AdminFilterButton,
+  AdminFilterInput,
+  AdminFilterSelect,
+} from "@/components/admin/AdminFilterControls";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -34,12 +39,19 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   "refund.manual_recorded": "人工退款记录",
 };
 
-const TABLE_HEADERS = ["事件", "网关", "支付单", "验签", "处理结果", "错误信息", "创建时间", "操作"] as const;
+const TABLE_HEADERS = ["事件", "网关", "关联状态", "验签", "处理结果", "错误信息", "创建时间", "操作"] as const;
 
 function localizedMapLabel(map: Record<string, string>, value: string, tText: (zh: string) => string) {
   const zh = map[value];
   if (zh) return tText(zh);
   return value || "-";
+}
+
+function relatedBusinessLabel(row: PaymentEventAdminRow, tText: (zh: string) => string) {
+  if (row.order_id && row.payment_order_id) return tText("已关联订单与支付");
+  if (row.order_id) return tText("已关联订单");
+  if (row.payment_order_id) return tText("已关联支付");
+  return tText("未关联业务单据");
 }
 
 export default function AdminPaymentEvents() {
@@ -103,8 +115,8 @@ export default function AdminPaymentEvents() {
         <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(RESULT_LABELS, row.processing_result, tText)}</span>
       </div>
       <div className="space-y-2">
-        <AdminTableMobileCardField label={tText("支付单")}>
-          <span className="font-mono text-xs text-muted-foreground">{row.payment_order_id || row.order_id || "-"}</span>
+        <AdminTableMobileCardField label={tText("关联状态")}>
+          <span className="text-xs text-muted-foreground">{relatedBusinessLabel(row, tText)}</span>
         </AdminTableMobileCardField>
         {row.error_message ? (
           <AdminTableMobileCardField label={tText("错误信息")}>
@@ -122,7 +134,7 @@ export default function AdminPaymentEvents() {
   );
 
   return (
-    <PermissionGate permission="payment.view">
+    <PermissionGate permission="payment.manage">
       <AdminPageShell
         hint={<Tx>回调事件使用低频轮询兜底，SSE 到达时会精准刷新。</Tx>}
         toolbar={(
@@ -135,12 +147,12 @@ export default function AdminPaymentEvents() {
           <>
             <PaymentAdminSubnav />
             <div className="grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[220px_1fr_auto]">
-              <select value={provider} onChange={(e) => { setProvider(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+              <AdminFilterSelect value={provider} onChange={(e) => { setProvider(e.target.value); setPage(1); }}>
                 <option value=""><Tx>全部网关</Tx></option>
                 {providerOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
-              </select>
-              <input value={orderId} onChange={(e) => { setOrderId(e.target.value); setPage(1); }} placeholder={tText("按订单 ID / 支付单 ID 筛选")} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-              <button type="button" onClick={() => { setProvider(""); setOrderId(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空筛选</Tx></button>
+              </AdminFilterSelect>
+              <AdminFilterInput value={orderId} onChange={(e) => { setOrderId(e.target.value); setPage(1); }} placeholder={tText("按关联单据编号筛选")} />
+              <AdminFilterButton onClick={() => { setProvider(""); setOrderId(""); setPage(1); }}><Tx>清空筛选</Tx></AdminFilterButton>
             </div>
           </>
         )}
@@ -172,7 +184,7 @@ export default function AdminPaymentEvents() {
                 />
               </td>
               <td className="px-4 py-3 text-sm text-foreground">{localizedMapLabel(PROVIDER_LABELS, row.provider, tText)}</td>
-              <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{row.payment_order_id || row.order_id || '-'}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{relatedBusinessLabel(row, tText)}</td>
               <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(VERIFY_LABELS, row.verify_status, tText)}</span></td>
               <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(RESULT_LABELS, row.processing_result, tText)}</span></td>
               <td className="max-w-[15rem] px-4 py-3 align-middle">

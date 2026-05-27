@@ -5,6 +5,11 @@ export type ReviewFilterState = {
   status: string;
   rating: number;
   complaintStatus: string;
+  userId: string;
+  productId: string;
+  dateFrom: string;
+  dateTo: string;
+  verifiedOnly: string;
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -28,7 +33,12 @@ export function hasActiveReviewFilters(state: ReviewFilterState): boolean {
     state.keyword.trim()
     || state.status
     || state.rating > 0
-    || state.complaintStatus,
+    || state.complaintStatus
+    || state.userId.trim()
+    || state.productId.trim()
+    || state.dateFrom.trim()
+    || state.dateTo.trim()
+    || state.verifiedOnly,
   );
 }
 
@@ -40,6 +50,11 @@ export function buildReviewFilterChips(state: ReviewFilterState): AdminFilterChi
   if (state.complaintStatus) {
     chips.push({ key: "complaint", label: `差评：${COMPLAINT_LABELS[state.complaintStatus] || state.complaintStatus}` });
   }
+  if (state.userId.trim()) chips.push({ key: "userId", label: `用户ID：${state.userId.trim()}` });
+  if (state.productId.trim()) chips.push({ key: "productId", label: `商品ID：${state.productId.trim()}` });
+  if (state.dateFrom.trim()) chips.push({ key: "dateFrom", label: `开始：${state.dateFrom.trim()}` });
+  if (state.dateTo.trim()) chips.push({ key: "dateTo", label: `结束：${state.dateTo.trim()}` });
+  if (state.verifiedOnly === "1") chips.push({ key: "verifiedOnly", label: "仅已购评价" });
   return chips;
 }
 
@@ -53,6 +68,16 @@ export function removeReviewFilterChip(key: string): Partial<ReviewFilterState> 
       return { rating: 0 };
     case "complaint":
       return { complaintStatus: "" };
+    case "userId":
+      return { userId: "" };
+    case "productId":
+      return { productId: "" };
+    case "dateFrom":
+      return { dateFrom: "" };
+    case "dateTo":
+      return { dateTo: "" };
+    case "verifiedOnly":
+      return { verifiedOnly: "" };
     default:
       return {};
   }

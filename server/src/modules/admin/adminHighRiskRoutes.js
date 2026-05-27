@@ -42,8 +42,10 @@ const RULES = [
   { method: 'PUT', pattern: /^\/referral-rules\/[^/]+$/, actionClass: 'high_risk_config' },
   { method: 'PUT', pattern: /^\/rewards\/settings$/, actionClass: 'high_risk_config' },
   { method: 'PUT', pattern: /^\/notifications\/trigger-settings$/, actionClass: 'high_risk_config' },
-  { method: '*', pattern: /^\/backups\//, actionClass: 'high_risk_config' },
-  { method: '*', pattern: /^\/restore\//, actionClass: 'high_risk_config' },
+  { method: 'POST', pattern: /^\/backups\/full$/, actionClass: 'high_risk_config' },
+  { method: 'POST', pattern: /^\/restore\/jobs$/, actionClass: 'high_risk_config' },
+  { method: 'POST', pattern: /^\/restore\/jobs\/[^/]+\/approve$/, actionClass: 'high_risk_config' },
+  { method: 'POST', pattern: /^\/restore\/jobs\/[^/]+\/switch$/, actionClass: 'high_risk_config' },
 ];
 
 function getSensitiveActionClass(req) {

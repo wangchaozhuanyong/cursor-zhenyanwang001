@@ -46,8 +46,14 @@ export function CheckoutAddressCard({
 
   return (
     <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-[15px] font-semibold text-foreground">1. 收货信息</h3>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">1</span>
+          <div>
+            <h3 className="text-[15px] font-semibold text-foreground">收货信息</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">用于配送员联系和确认送达地址</p>
+          </div>
+        </div>
         {!isMobileSheet ? (
           <button
             type="button"

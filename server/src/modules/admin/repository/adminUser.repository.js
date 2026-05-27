@@ -204,6 +204,7 @@ async function selectUsersForExport(where, params) {
             COALESCE(ur.comment_restricted, 0) AS comment_restricted,
             ml.name AS member_level_name
      FROM users u
+     LEFT JOIN user_statistics us ON us.user_id = u.id
      LEFT JOIN user_restrictions ur ON ur.user_id = u.id
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
      ${aliasedWhere}
@@ -229,7 +230,7 @@ async function selectTagsForUserIds(userIds) {
     acc[row.user_id].push({
       id: row.id,
       name: row.name,
-      color: row.color || '閲戣壊',
+      color: row.color || '金色',
       description: row.description || '',
       sort_order: row.sort_order ?? 0,
     });
@@ -262,6 +263,9 @@ async function selectUserSummaryById(userId) {
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp,
             u.birthday, u.birthday_locked, u.birthday_updated_at, u.created_at,
             u.role, u.account_status,
+            u.member_level_manual_locked,
+            u.member_level_manual_reason,
+            u.member_level_manual_at,
             COALESCE(ur.order_restricted, 0) AS order_restricted,
             COALESCE(ur.coupon_restricted, 0) AS coupon_restricted,
             COALESCE(ur.comment_restricted, 0) AS comment_restricted,

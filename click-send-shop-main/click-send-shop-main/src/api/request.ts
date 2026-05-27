@@ -18,6 +18,7 @@ import {
 } from "@/lib/adminMfaStepUp";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const ADMIN_SENSITIVE_ACTION_HEADER = "X-Admin-Sensitive-Action-Token";
 
 type LoadingMode = "global" | "silent";
 export type RequestOptions = RequestInit & {
@@ -48,9 +49,7 @@ function translateApiMessage(message: string): string {
   return message;
 }
 
-function extractResponseMessage(body: Record<string, unknown>, status: number): string {
-  const gateway = gatewayErrorMessage(status);
-  if (gateway) return gateway;
+export function extractResponseMessage(body: Record<string, unknown>, status: number): string {
   const candidates = [
     body.message,
     body.error,
@@ -59,7 +58,9 @@ function extractResponseMessage(body: Record<string, unknown>, status: number): 
     (body.data as Record<string, unknown> | undefined)?.error,
   ];
   const message = candidates.find((v) => typeof v === "string" && v.trim());
-  return typeof message === "string" ? translateApiMessage(message) : `请求失败（${status}）`;
+  if (typeof message === "string") return translateApiMessage(message);
+  const gateway = gatewayErrorMessage(status);
+  return gateway || `请求失败（${status}）`;
 }
 
 export function toQueryString(params?: Record<string, unknown>): string {
@@ -260,8 +261,12 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       && !isAdminPasskeyEndpoint
     ) {
       try {
-        await requestAdminMfaStepUp(getAdminMfaActionClassFromResponse(body));
-        return request<T>(endpoint, options, false);
+        const stepUp = await requestAdminMfaStepUp(getAdminMfaActionClassFromResponse(body));
+        const retryHeaders: HeadersInit = {
+          ...headers,
+          ...(stepUp.sensitiveActionToken ? { [ADMIN_SENSITIVE_ACTION_HEADER]: stepUp.sensitiveActionToken } : {}),
+        };
+        return request<T>(endpoint, { ...options, headers: retryHeaders }, false);
       } catch {
         throw new ApiError(403, extractResponseMessage(body, res.status), {
           ...body,

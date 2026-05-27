@@ -63,9 +63,11 @@ export async function permanentDeleteReview(id: string) {
 }
 
 export async function batchHide(ids: string[]) {
-  await reviewApi.batchHideReviews(ids);
+  const res = await reviewApi.batchHideReviews(ids);
+  return Number((res.data as any)?.affected || 0);
 }
 
 export async function batchDelete(ids: string[]) {
-  await reviewApi.batchDeleteReviews(ids);
+  const res = await reviewApi.batchDeleteReviews(ids);
+  return Number((res.data as any)?.affected || 0);
 }

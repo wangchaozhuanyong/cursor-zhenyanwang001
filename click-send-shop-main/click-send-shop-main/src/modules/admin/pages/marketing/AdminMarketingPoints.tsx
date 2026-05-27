@@ -43,6 +43,8 @@ import {
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAdminT } from "@/hooks/useAdminT";
+import { cn } from "@/lib/utils";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 const inputCls = adminFormInputCls;
 
 const defaultRule: ProductPointRule = {
@@ -62,10 +64,15 @@ const defaultRule: ProductPointRule = {
 
 export default function AdminMarketingPoints() {
   const { tText } = useAdminT();
+  const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
   const queryClient = useQueryClient();
   const tabs = useMemo(
     () => ["积分总览", "全局积分设置", "商品积分规则", "积分抵扣", "礼品兑换", "积分明细", "手动调整", "高级设置"] as const,
     [],
+  );
+  const visibleTabs = useMemo(
+    () => tabs.filter((item) => isSuperAdmin || item !== "高级设置"),
+    [isSuperAdmin, tabs],
   );
   const [tab, setTab] = useState(tabs[0]);
   const [settings, setSettings] = useState<LoyaltyPointsSettings>({});
@@ -102,6 +109,12 @@ export default function AdminMarketingPoints() {
       toast.error(toastErrorMessage(overviewQuery.error, tText("加载积分管理数据失败")));
     }
   }, [overviewQuery.isError, overviewQuery.error, tText]);
+
+  useEffect(() => {
+    if (!visibleTabs.includes(tab)) {
+      setTab(visibleTabs[0]);
+    }
+  }, [tab, visibleTabs]);
 
   const invalidatePoints = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.pointsRoot() });
 
@@ -168,7 +181,7 @@ export default function AdminMarketingPoints() {
     mutationFn: () => {
       const amount = Number(adjustForm.points);
       if (!adjustForm.userId || !Number.isFinite(amount) || amount === 0 || !adjustForm.reason.trim()) {
-        throw new Error(tText("请填写用户 ID、调整积分和原因"));
+        throw new Error(tText("请填写用户编号、调整积分和原因"));
       }
       return adjustUserPoints(adjustForm.userId, amount, adjustForm.reason);
     },
@@ -221,7 +234,7 @@ export default function AdminMarketingPoints() {
       )}
       filters={(
       <div className="flex flex-wrap gap-2">
-        {tabs.map((t) => (
+        {visibleTabs.map((t) => (
           <button
             key={t}
             type="button"
@@ -257,17 +270,33 @@ export default function AdminMarketingPoints() {
               title={<Tx>新增 / 编辑商品积分规则</Tx>}
               hint={POINTS_TAB_HINTS["商品积分规则"]}
             />
+            {!isSuperAdmin ? (
+              <div className="rounded-lg border border-dashed border-border bg-secondary/20 p-3 text-sm text-muted-foreground">
+                <p><Tx>当前页已按员工常用配置展示。</Tx></p>
+                <p className="mt-1"><Tx>指定分类/商品/标签编号、优先级和单独抵扣上限仅对超级管理员开放。</Tx></p>
+              </div>
+            ) : null}
             <div className="grid gap-3 lg:grid-cols-2">
               <AdminInlineField label={tText("规则名称")} hint={POINTS_PRODUCT_RULE_HINTS.name}><input className={inputCls} value={ruleForm.name} onChange={(e) => setRuleForm((s) => ({ ...s, name: e.target.value }))} /></AdminInlineField>
-              <AdminInlineField label={tText("适用范围")} hint={POINTS_PRODUCT_RULE_HINTS.scope_type}><select className={inputCls} value={ruleForm.scope_type} onChange={(e) => setRuleForm((s) => ({ ...s, scope_type: e.target.value }))}><option value="all"><Tx>全部商品</Tx></option><option value="category"><Tx>指定分类</Tx></option><option value="product"><Tx>指定商品</Tx></option><option value="tag"><Tx>指定标签</Tx></option></select></AdminInlineField>
-              <AdminInlineField label={tText("范围 ID")} hint={POINTS_PRODUCT_RULE_HINTS.scope_id}><input className={inputCls} value={String(ruleForm.scope_id || "")} onChange={(e) => setRuleForm((s) => ({ ...s, scope_id: e.target.value }))} /></AdminInlineField>
+              <AdminInlineField label={tText("适用范围")} hint={POINTS_PRODUCT_RULE_HINTS.scope_type}><select className={inputCls} value={ruleForm.scope_type} onChange={(e) => setRuleForm((s) => ({ ...s, scope_type: e.target.value }))}><option value="all"><Tx>全部商品</Tx></option><option value="category" disabled={!isSuperAdmin}><Tx>指定分类</Tx></option><option value="product" disabled={!isSuperAdmin}><Tx>指定商品</Tx></option><option value="tag" disabled={!isSuperAdmin}><Tx>指定标签</Tx></option></select></AdminInlineField>
               <AdminInlineField label={tText("积分模式")} hint={POINTS_PRODUCT_RULE_HINTS.earn_mode}><select className={inputCls} value={ruleForm.earn_mode} onChange={(e) => setRuleForm((s) => ({ ...s, earn_mode: e.target.value }))}><option value="inherit"><Tx>继承全局</Tx></option><option value="no_points"><Tx>不积分</Tx></option><option value="fixed_per_item"><Tx>每件固定积分</Tx></option><option value="fixed_per_order"><Tx>每单固定积分</Tx></option><option value="amount_percent"><Tx>实付金额百分比</Tx></option><option value="price_percent"><Tx>售价百分比</Tx></option><option value="multiplier"><Tx>全局规则倍率</Tx></option></select></AdminInlineField>
               <AdminInlineField label={tText("固定积分")} hint={POINTS_PRODUCT_RULE_HINTS.fixed_points}><input className={inputCls} type="number" value={String(ruleForm.fixed_points || 0)} onChange={(e) => setRuleForm((s) => ({ ...s, fixed_points: Number(e.target.value) }))} /></AdminInlineField>
               <AdminInlineField label={tText("百分比")} hint={POINTS_PRODUCT_RULE_HINTS.points_percent}><input className={inputCls} type="number" value={String(ruleForm.points_percent || 0)} onChange={(e) => setRuleForm((s) => ({ ...s, points_percent: Number(e.target.value) }))} /></AdminInlineField>
               <AdminInlineField label={tText("倍率百分比")} hint={POINTS_PRODUCT_RULE_HINTS.multiplier_percent}><input className={inputCls} type="number" value={String(ruleForm.multiplier_percent || 100)} onChange={(e) => setRuleForm((s) => ({ ...s, multiplier_percent: Number(e.target.value) }))} /></AdminInlineField>
-              <AdminInlineField label={tText("优先级")} hint={POINTS_PRODUCT_RULE_HINTS.priority}><input className={inputCls} type="number" value={String(ruleForm.priority || 100)} onChange={(e) => setRuleForm((s) => ({ ...s, priority: Number(e.target.value) }))} /></AdminInlineField>
-              <AdminInlineField label={tText("最多抵扣比例")} hint={POINTS_PRODUCT_RULE_HINTS.max_redeem_percent}><input className={inputCls} type="number" value={String(ruleForm.max_redeem_percent ?? "")} onChange={(e) => setRuleForm((s) => ({ ...s, max_redeem_percent: e.target.value === "" ? null : Number(e.target.value) }))} /></AdminInlineField>
             </div>
+            {isSuperAdmin ? (
+              <div className="rounded-lg border border-border bg-secondary/20 p-4">
+                <div className="mb-3">
+                  <p className="text-sm font-medium text-foreground"><Tx>管理员高级设置</Tx></p>
+                  <p className="mt-1 text-xs text-muted-foreground"><Tx>用于精确绑定分类/商品/标签编号，并控制命中优先级与局部抵扣上限。</Tx></p>
+                </div>
+                <div className="grid gap-3 lg:grid-cols-3">
+                  <AdminInlineField label={tText("适用对象编号")} hint={POINTS_PRODUCT_RULE_HINTS.scope_id}><input className={inputCls} value={String(ruleForm.scope_id || "")} onChange={(e) => setRuleForm((s) => ({ ...s, scope_id: e.target.value }))} /></AdminInlineField>
+                  <AdminInlineField label={tText("优先级")} hint={POINTS_PRODUCT_RULE_HINTS.priority}><input className={inputCls} type="number" value={String(ruleForm.priority || 100)} onChange={(e) => setRuleForm((s) => ({ ...s, priority: Number(e.target.value) }))} /></AdminInlineField>
+                  <AdminInlineField label={tText("最多抵扣比例")} hint={POINTS_PRODUCT_RULE_HINTS.max_redeem_percent}><input className={inputCls} type="number" value={String(ruleForm.max_redeem_percent ?? "")} onChange={(e) => setRuleForm((s) => ({ ...s, max_redeem_percent: e.target.value === "" ? null : Number(e.target.value) }))} /></AdminInlineField>
+                </div>
+              </div>
+            ) : null}
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <AdminToggleRow label={tText("允许获得积分")} hint={POINTS_PRODUCT_RULE_HINTS.earn_enabled} checked={!!ruleForm.earn_enabled} onChange={(v) => setRuleForm((s) => ({ ...s, earn_enabled: v }))} />
               <AdminToggleRow label={tText("允许积分抵扣")} hint={POINTS_PRODUCT_RULE_HINTS.redeem_enabled} checked={!!ruleForm.redeem_enabled} onChange={(v) => setRuleForm((s) => ({ ...s, redeem_enabled: v }))} />

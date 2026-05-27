@@ -1,5 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star, Eye, EyeOff, Trash2, RotateCcw, MessageSquare, AlertTriangle, Sparkles, Check, XCircle, Info } from "lucide-react";
 import AdminReviewDetailDialog from "@/modules/admin/pages/review/AdminReviewDetailDialog";
@@ -17,6 +18,7 @@ import { AnimatedTable } from "@/modules/micro-interactions";
 import { AdminTableMobileCard } from "@/components/admin/AdminTableMobileCard";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { AdminFilterSelect } from "@/components/admin/AdminFilterControls";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
@@ -26,6 +28,7 @@ import {
 } from "@/utils/adminReviewFilters";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
@@ -103,9 +106,15 @@ export default function AdminReviews() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
+  const [userId, setUserId] = useState(searchParams.get("userId") || "");
+  const [productId, setProductId] = useState(searchParams.get("productId") || "");
+  const [dateFrom, setDateFrom] = useState(searchParams.get("dateFrom") || "");
+  const [dateTo, setDateTo] = useState(searchParams.get("dateTo") || "");
+  const [verifiedOnly, setVerifiedOnly] = useState(searchParams.get("verifiedOnly") || "");
   const [status, setStatus] = useState("");
   const [complaintStatus, setComplaintStatus] = useState("");
   const [rating, setRating] = useState(0);
@@ -136,8 +145,13 @@ export default function AdminReviews() {
     }
     if (rating) params.rating = rating;
     if (complaintStatus) params.complaintStatus = complaintStatus;
+    if (userId.trim()) params.userId = userId.trim();
+    if (productId.trim()) params.productId = productId.trim();
+    if (dateFrom.trim()) params.dateFrom = dateFrom.trim();
+    if (dateTo.trim()) params.dateTo = dateTo.trim();
+    if (verifiedOnly === "1") params.verifiedOnly = "true";
     return params;
-  }, [page, pageSize, keyword, status, rating, complaintStatus]);
+  }, [page, pageSize, keyword, status, rating, complaintStatus, userId, productId, dateFrom, dateTo, verifiedOnly]);
 
   const listQuery = useQuery({
     queryKey: adminQueryKeys.reviews(queryParams),
@@ -195,19 +209,56 @@ export default function AdminReviews() {
     } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); }
   };
 
-  const filterState = useMemo(() => ({ keyword, status, rating, complaintStatus }), [keyword, status, rating, complaintStatus]);
+  const filterState = useMemo(
+    () => ({ keyword, status, rating, complaintStatus, userId, productId, dateFrom, dateTo, verifiedOnly }),
+    [keyword, status, rating, complaintStatus, userId, productId, dateFrom, dateTo, verifiedOnly],
+  );
   const filterChips = useMemo(() => buildReviewFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveReviewFilters(filterState);
   const reviewsEmptyGuide = useLocalizedAdminEmptyGuide(
     filtersActive ? ADMIN_EMPTY_GUIDES.reviewsFiltered : ADMIN_EMPTY_GUIDES.reviews,
   );
 
+  const syncReviewSearchParams = (patch: Partial<{
+    userId: string;
+    productId: string;
+    dateFrom: string;
+    dateTo: string;
+    verifiedOnly: string;
+  }>) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      const entries: Array<[string, string]> = [
+        ["userId", patch.userId ?? userId],
+        ["productId", patch.productId ?? productId],
+        ["dateFrom", patch.dateFrom ?? dateFrom],
+        ["dateTo", patch.dateTo ?? dateTo],
+        ["verifiedOnly", patch.verifiedOnly ?? verifiedOnly],
+      ];
+      for (const [key, value] of entries) {
+        if (value.trim()) next.set(key, value.trim());
+        else next.delete(key);
+      }
+      return next;
+    }, { replace: true });
+  };
+
   const clearReviewFilters = () => {
     setKeyword("");
+    setUserId("");
+    setProductId("");
+    setDateFrom("");
+    setDateTo("");
+    setVerifiedOnly("");
     setStatus("");
     setRating(0);
     setComplaintStatus("");
     setPage(1);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      ["userId", "productId", "dateFrom", "dateTo", "verifiedOnly"].forEach((key) => next.delete(key));
+      return next;
+    }, { replace: true });
   };
 
   const handleRemoveFilterChip = (key: string) => {
@@ -216,6 +267,26 @@ export default function AdminReviews() {
     if ("status" in patch) setStatus(patch.status ?? "");
     if ("rating" in patch) setRating(patch.rating ?? 0);
     if ("complaintStatus" in patch) setComplaintStatus(patch.complaintStatus ?? "");
+    if ("userId" in patch) {
+      setUserId(patch.userId ?? "");
+      syncReviewSearchParams({ userId: patch.userId ?? "" });
+    }
+    if ("productId" in patch) {
+      setProductId(patch.productId ?? "");
+      syncReviewSearchParams({ productId: patch.productId ?? "" });
+    }
+    if ("dateFrom" in patch) {
+      setDateFrom(patch.dateFrom ?? "");
+      syncReviewSearchParams({ dateFrom: patch.dateFrom ?? "" });
+    }
+    if ("dateTo" in patch) {
+      setDateTo(patch.dateTo ?? "");
+      syncReviewSearchParams({ dateTo: patch.dateTo ?? "" });
+    }
+    if ("verifiedOnly" in patch) {
+      setVerifiedOnly(patch.verifiedOnly ?? "");
+      syncReviewSearchParams({ verifiedOnly: patch.verifiedOnly ?? "" });
+    }
     setPage(1);
   };
 
@@ -279,8 +350,8 @@ export default function AdminReviews() {
 
   const handleBatchHide = async () => {
     try {
-      await reviewService.batchHide(selected);
-      toast.success(`已隐藏 ${selected.length} 条评论`);
+      const affected = await reviewService.batchHide(selected);
+      toast.success(tText(`已隐藏 ${affected}/${selected.length} 条评论`));
       setSelected([]);
       void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
@@ -288,8 +359,8 @@ export default function AdminReviews() {
 
   const handleBatchDelete = async () => {
     try {
-      await reviewService.batchDelete(selected);
-      toast.success(`已删除 ${selected.length} 条评论`);
+      const affected = await reviewService.batchDelete(selected);
+      toast.success(tText(`已删除 ${affected}/${selected.length} 条评论`));
       setSelected([]);
       void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
@@ -299,9 +370,15 @@ export default function AdminReviews() {
     setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
+  const allReviewsOnPageSelected = reviews.length > 0 && reviews.every((r) => selected.includes(r.id));
+
   const toggleAll = () => {
-    if (selected.length === reviews.length) setSelected([]);
-    else setSelected(reviews.map((r) => r.id));
+    const pageReviewIds = reviews.map((r) => r.id);
+    setSelected((prev) => (
+      allReviewsOnPageSelected
+        ? prev.filter((id) => !pageReviewIds.includes(id))
+        : [...new Set([...prev, ...pageReviewIds])]
+    ));
   };
 
   const renderMobileCard = (r: AdminReview) => {
@@ -350,6 +427,20 @@ export default function AdminReviews() {
                               <XCircle size={12} className="mr-1 inline" /><Tx>拒绝</Tx>
                             </button>
                           </PermissionGate>
+                        )}
+                        {r.status === "rejected" && (
+                          <>
+                            <PermissionGate anyOf={REVIEW_REPLY}>
+                              <button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                                <MessageSquare size={12} className="mr-1 inline" /><Tx>回复</Tx>
+                              </button>
+                            </PermissionGate>
+                            <PermissionGate anyOf={REVIEW_DELETE}>
+                              <button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
+                                <Trash2 size={12} className="mr-1 inline" /><Tx>删除</Tx>
+                              </button>
+                            </PermissionGate>
+                          </>
                         )}
                         {r.status !== "deleted" && r.status !== "pending" && r.status !== "rejected" && (
                           <>
@@ -419,15 +510,74 @@ export default function AdminReviews() {
             <span className="hidden group-open:inline"><Tx>收起高级筛选</Tx></span>
           </summary>
           <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+            <AdminFilterSelect value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} variant="card">
               {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            <select value={rating} onChange={(e) => { setRating(Number(e.target.value)); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+            </AdminFilterSelect>
+            <AdminFilterSelect value={rating} onChange={(e) => { setRating(Number(e.target.value)); setPage(1); }} variant="card">
               {RATING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            <select value={complaintStatus} onChange={(e) => { setComplaintStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+            </AdminFilterSelect>
+            <AdminFilterSelect value={complaintStatus} onChange={(e) => { setComplaintStatus(e.target.value); setPage(1); }} variant="card">
               {COMPLAINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </AdminFilterSelect>
+            <input
+              type="text"
+              value={userId}
+              onChange={(e) => {
+                const next = e.target.value;
+                setUserId(next);
+                setPage(1);
+                syncReviewSearchParams({ userId: next });
+              }}
+              placeholder={tText("用户ID")}
+              className="min-w-[12rem] rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              value={productId}
+              onChange={(e) => {
+                const next = e.target.value;
+                setProductId(next);
+                setPage(1);
+                syncReviewSearchParams({ productId: next });
+              }}
+              placeholder={tText("商品ID")}
+              className="min-w-[12rem] rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground"><Tx>评价开始</Tx></p>
+              <SegmentedDateInput
+                value={dateFrom}
+                onChange={(v) => {
+                  setDateFrom(v);
+                  setPage(1);
+                  syncReviewSearchParams({ dateFrom: v });
+                }}
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground"><Tx>评价结束</Tx></p>
+              <SegmentedDateInput
+                value={dateTo}
+                onChange={(v) => {
+                  setDateTo(v);
+                  setPage(1);
+                  syncReviewSearchParams({ dateTo: v });
+                }}
+              />
+            </div>
+            <AdminFilterSelect
+              value={verifiedOnly}
+              onChange={(e) => {
+                const next = e.target.value;
+                setVerifiedOnly(next);
+                setPage(1);
+                syncReviewSearchParams({ verifiedOnly: next });
+              }}
+              variant="card"
+            >
+              <option value=""><Tx>购买验证（全部）</Tx></option>
+              <option value="1"><Tx>仅已购评价</Tx></option>
+            </AdminFilterSelect>
           </div>
           </details>
         </div>
@@ -464,7 +614,7 @@ export default function AdminReviews() {
           thead={(
             <tr>
               <th className="px-3 py-3 text-left">
-                <input type="checkbox" checked={selected.length === reviews.length && reviews.length > 0} onChange={toggleAll} className="accent-gold" />
+                <input type="checkbox" checked={allReviewsOnPageSelected} onChange={toggleAll} className="accent-gold" />
               </th>
               {["用户", "星级", "评论内容", "商品", "状态", "官方回复", "时间", "操作"].map((h) => (
                 <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
@@ -530,6 +680,12 @@ export default function AdminReviews() {
                         <button type="button" onClick={() => handleApprove(r.id)} className={`touch-manipulation rounded-lg p-1.5 ${THEME_OUTLINE_SUCCESS}`} title={tText("通过")}><Check size={14} /></button>
                         <button type="button" onClick={() => handleReject(r.id)} className={`touch-manipulation rounded-lg p-1.5 ${THEME_OUTLINE_WARNING}`} title={tText("拒绝")}><XCircle size={14} /></button>
                       </PermissionGate>
+                    )}
+                    {r.status === "rejected" && (
+                      <>
+                        <PermissionGate anyOf={REVIEW_REPLY}><button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground"><MessageSquare size={14} /></button></PermissionGate>
+                        <PermissionGate anyOf={REVIEW_DELETE}><button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER}`}><Trash2 size={14} /></button></PermissionGate>
+                      </>
                     )}
                     {r.status !== "deleted" && r.status !== "pending" && r.status !== "rejected" && (
                       <>

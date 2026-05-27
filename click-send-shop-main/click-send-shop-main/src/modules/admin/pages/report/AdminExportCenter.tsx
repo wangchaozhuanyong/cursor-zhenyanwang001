@@ -7,6 +7,7 @@ import {
   AdminTableMobileCard,
   AdminTableMobileCardField,
 } from "@/components/admin/AdminTableMobileCard";
+import { AdminFilterSelect } from "@/components/admin/AdminFilterControls";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -154,9 +155,9 @@ export default function AdminExportCenter() {
       <PermissionGate permission="report.export">
         <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center">
           <span className="text-sm font-medium text-foreground"><Tx>创建导出:</Tx></span>
-          <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none">
+          <AdminFilterSelect value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
             {exportTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+          </AdminFilterSelect>
           <SegmentedDateInput value={dateFrom} onChange={setDateFrom} className="min-w-[12rem]" />
           <SegmentedDateInput value={dateTo} onChange={setDateTo} className="min-w-[12rem]" />
           <LoadingButton

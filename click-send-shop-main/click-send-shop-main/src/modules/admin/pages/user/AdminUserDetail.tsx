@@ -1,6 +1,6 @@
-import { ArrowLeft, ShieldAlert, UserRound } from "lucide-react";
+import { ArrowLeft, Copy, ShieldAlert, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -16,6 +16,8 @@ import {
   assignUserMemberLevel,
   unlockUserMemberLevel,
   fetchMemberLevels,
+  unbindUserWechat,
+  toggleSubordinate,
 } from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
@@ -33,6 +35,7 @@ import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import { useAdminT } from "@/hooks/useAdminT";
 import { formatAccountStatusLabel } from "@/utils/adminUserFilters";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 
 const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "邀请/返现", "售后记录", "评论记录", "操作日志"] as const;
 
@@ -105,6 +108,15 @@ export default function AdminUserDetail() {
   const editBaseline = buildUserEditForm(user);
   const editDirty = editOpen && JSON.stringify(editForm) !== JSON.stringify(editBaseline);
   useAdminTabDirty(editDirty);
+
+  const tabTitle = useMemo(() => {
+    if (!user) return null;
+    const name = user.nickname?.trim() || user.phone?.trim();
+    if (name) return tText(`用户：${name}`);
+    if (id) return tText(`用户 #${id}`);
+    return null;
+  }, [id, user, tText]);
+  useAdminTabTitle(tabTitle, !loading && Boolean(user));
 
   const invalidateUserDetail = () =>
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(id) });
@@ -199,6 +211,63 @@ export default function AdminUserDetail() {
   const userTagIds = new Set((user.tags || []).map((t) => t.id));
   const accountStatusRaw = statusOverview?.account_status || user.account_status || "normal";
   const accountStatusLabel = tText(formatAccountStatusLabel(accountStatusRaw));
+  const memberLevelLabel = user.member_level_name || user.memberLevel?.name || tText("未设置");
+  const pointsBalanceLabel = String(user.points_balance ?? user.pointsBalance ?? 0);
+  const inviteCodeLabel = user.invite_code || user.inviteCode || "-";
+  const couponStats = normalizeCouponStats(user.related?.coupon_stats);
+
+  const copyUserId = async () => {
+    if (!user.id) return;
+    try {
+      await navigator.clipboard.writeText(user.id);
+      toast.success(tText("用户ID已复制"));
+    } catch {
+      toast.error(tText("复制失败"));
+    }
+  };
+
+  const wechatAuthBound = Boolean(user.wechat_auth?.bound);
+  const subordinateEnabled = Boolean(user.subordinate_enabled ?? user.subordinateEnabled);
+
+  const doToggleSubordinate = () => {
+    if (!id) return;
+    const nextEnabled = !subordinateEnabled;
+    confirm({
+      title: nextEnabled ? tText("开启下级功能") : tText("关闭下级功能"),
+      description: nextEnabled
+        ? tText("开启后该用户可发展下级并参与相关返现规则。")
+        : tText("关闭后该用户将无法继续发展下级。"),
+      confirmText: nextEnabled ? tText("开启") : tText("关闭"),
+      onConfirm: async () => {
+        try {
+          await toggleSubordinate(id, nextEnabled);
+          await invalidateUserDetail();
+          toast.success(nextEnabled ? tText("已开启下级功能") : tText("已关闭下级功能"));
+        } catch (e) {
+          toast.error(toastErrorMessage(e, tText("操作失败")));
+        }
+      },
+    });
+  };
+
+  const doUnbindWechat = () => {
+    if (!id || !wechatAuthBound) return;
+    confirm({
+      title: tText("确认解绑微信"),
+      description: tText("解绑后用户将无法使用微信登录，请确保用户已有手机号或密码登录方式。"),
+      confirmText: tText("解绑"),
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await unbindUserWechat(id);
+          await invalidateUserDetail();
+          toast.success(tText("微信已解绑"));
+        } catch (e) {
+          toast.error(toastErrorMessage(e, tText("解绑失败")));
+        }
+      },
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -217,18 +286,29 @@ export default function AdminUserDetail() {
               <span className="truncate">{user.nickname || tText("未命名用户")}</span>
             </div>
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-              <InfoItem label={tText("用户ID")} value={user.id || "-"} />
               <InfoItem label={tText("手机号")} value={user.phone || "-"} />
               <InfoItem label={tText("微信")} value={user.wechat || "-"} />
               <InfoItem label="WhatsApp" value={user.whatsapp || "-"} />
-              <InfoItem label={tText("账号状态")} value={accountStatusLabel} />
-              <InfoItem label={tText("邀请码")} value={user.invite_code || "-"} />
+              <InfoItem label={tText("会员等级")} value={memberLevelLabel} />
+              <InfoItem label={tText("积分余额")} value={pointsBalanceLabel} />
+              <InfoItem label={tText("邀请码")} value={inviteCodeLabel} />
+              <InfoItem label={tText("下级功能")} value={subordinateEnabled ? tText("已开启") : tText("未开启")} />
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 text-xs text-foreground">
-            <span><Tx>操作提示</Tx></span>
-            <AdminFieldHint text={tText("建议优先在「基础资料」核对状态，再处理限制类操作")} />
+          <div className="flex flex-col items-start gap-2 lg:items-end">
+            <button
+              type="button"
+              onClick={() => void copyUserId()}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground hover:bg-secondary"
+            >
+              <Copy size={12} />
+              <Tx>复制用户ID</Tx>
+            </button>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 text-xs text-foreground">
+              <span><Tx>操作提示</Tx></span>
+              <AdminFieldHint text={tText("建议优先核对手机号、会员等级、积分余额与账号状态，再处理限制类操作")} />
+            </div>
           </div>
         </div>
         <div className="mt-3 grid gap-2 text-xs sm:grid-cols-4">
@@ -249,6 +329,15 @@ export default function AdminUserDetail() {
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <PermissionGate permission="user.update"><ActionBtn label={tText("编辑资料")} onClick={() => { setEditOpen(true); setEditForm(buildUserEditForm(user)); }} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("重置密码")} onClick={doResetPassword} /></PermissionGate>
+          {wechatAuthBound ? (
+            <PermissionGate permission="user.update"><ActionBtn label={tText("解绑微信")} onClick={doUnbindWechat} danger /></PermissionGate>
+          ) : null}
+          <PermissionGate permission="user.update">
+            <ActionBtn
+              label={subordinateEnabled ? tText("关闭下级功能") : tText("开启下级功能")}
+              onClick={doToggleSubordinate}
+            />
+          </PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("禁用登录")} disabled={(statusOverview?.account_status || user.account_status) === "disabled"} onClick={() => void doStatus("disabled")} danger /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("恢复账号")} disabled={(statusOverview?.account_status || user.account_status) === "normal"} onClick={() => void doStatus("normal")} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("加入黑名单")} disabled={(statusOverview?.account_status || user.account_status) === "blacklisted"} onClick={() => void doStatus("blacklisted")} danger /></PermissionGate>
@@ -297,7 +386,6 @@ export default function AdminUserDetail() {
                     setReasonPrompt({ kind: "memberLevel", levelId });
                   }}
                 >
-                  <option value=""><Tx>未设置</Tx></option>
                   {levels.filter((lv) => lv.enabled !== false).map((lv) => <option key={lv.id} value={lv.id}>{lv.name}</option>)}
                 </select>
               ) : (
@@ -317,9 +405,10 @@ export default function AdminUserDetail() {
         {tab === "地址信息" && <DataList title={tText("地址列表")} rows={user.related?.addresses} />}
         {tab === "积分/优惠券" && (
           <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
-              <span className="text-muted-foreground"><Tx>优惠券统计：</Tx></span>
-              <span className="ml-1 break-all">{JSON.stringify(user.related?.coupon_stats || {})}</span>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <InfoCard title={tText("优惠券总数")} value={String(couponStats.total)} />
+              <InfoCard title={tText("已使用优惠券")} value={String(couponStats.used)} />
+              <InfoCard title={tText("未使用优惠券")} value={String(Math.max(couponStats.total - couponStats.used, 0))} />
             </div>
             <DataList title={tText("积分记录")} rows={user.related?.points_records} onAll={() => navigate(`/admin/marketing/points?userId=${user.id}`)} />
           </div>
@@ -331,7 +420,7 @@ export default function AdminUserDetail() {
           </div>
         )}
         {tab === "售后记录" && <DataList title={tText("售后记录")} rows={user.related?.after_sales} onAll={() => navigate(`/admin/returns?userId=${user.id}`)} />}
-        {tab === "评论记录" && <DataList title={tText("评论记录")} rows={user.related?.review_records} onAll={() => navigate(`/admin/reviews?keyword=${user.id}`)} />}
+        {tab === "评论记录" && <DataList title={tText("评论记录")} rows={user.related?.review_records} onAll={() => navigate(`/admin/reviews?userId=${user.id}`)} />}
         {tab === "操作日志" && <DataList title={tText("操作日志")} rows={user.operation_logs} onAll={() => navigate(`/admin/audit-logs?objectType=user&objectId=${user.id}`)} />}
       </section>
 
@@ -507,8 +596,17 @@ function DataList({ title, rows, onAll }: { title: string; rows?: Record<string,
 
 function toReadableText(row: Record<string, unknown>) {
   if (!row || typeof row !== "object") return String(row ?? "-");
-  const priority = ["order_no", "title", "status", "amount", "created_at", "updated_at", "remark", "reason", "name", "id"];
-  const keys = [...priority.filter((k) => k in row), ...Object.keys(row).filter((k) => !priority.includes(k))].slice(0, 8);
+  const priority = ["order_no", "title", "status", "amount", "created_at", "updated_at", "remark", "reason", "name", "nickname", "phone"];
+  const hiddenKeys = new Set(["id", "user_id", "operator_id", "object_id", "payment_order_id", "order_id"]);
+  const keys = [
+    ...priority.filter((k) => k in row),
+    ...Object.keys(row).filter((k) => !priority.includes(k) && !hiddenKeys.has(k) && !k.endsWith("_id")),
+  ].slice(0, 8);
+  if (keys.length === 0) {
+    const fallbackKeys = Object.keys(row).filter((k) => !hiddenKeys.has(k)).slice(0, 3);
+    if (fallbackKeys.length === 0) return "-";
+    return fallbackKeys.map((k) => `${k}: ${formatCell(row[k])}`).join(" | ");
+  }
   return keys.map((k) => `${k}: ${formatCell(row[k])}`).join(" | ");
 }
 
@@ -516,4 +614,15 @@ function formatCell(v: unknown) {
   if (v == null || v === "") return "-";
   if (typeof v === "object") return JSON.stringify(v);
   return String(v);
+}
+
+function normalizeCouponStats(stats: unknown) {
+  if (!stats || typeof stats !== "object") {
+    return { total: 0, used: 0 };
+  }
+  const source = stats as { total?: unknown; used?: unknown };
+  return {
+    total: Number(source.total || 0),
+    used: Number(source.used || 0),
+  };
 }

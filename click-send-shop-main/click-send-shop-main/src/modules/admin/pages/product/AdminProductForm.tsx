@@ -1,6 +1,6 @@
 import { ArrowLeft, Upload, ImagePlus, Loader2, Trash2, Plus, Video } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fetchProductById, createProduct, updateProduct, deleteProduct, fetchProductTags } from "@/services/admin/productService";
@@ -32,6 +32,7 @@ import { COMPLIANCE_TYPE_LABELS } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
+import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import {
   cartesianSpecValues,
   DEFAULT_VARIANT_TITLE,
@@ -133,6 +134,14 @@ export default function AdminProductForm() {
   const loading = !isNew && productQuery.isLoading && !productQuery.data;
   const [formHydrated, setFormHydrated] = useState(isNew);
   const { markClean } = useAdminFormDirty(form, formHydrated && !loading);
+
+  const tabTitle = useMemo(() => {
+    if (isNew) return null;
+    if (form.name.trim()) return tText(`编辑商品：${form.name.trim()}`);
+    if (id) return tText(`编辑商品 #${id}`);
+    return null;
+  }, [form.name, id, isNew, tText]);
+  useAdminTabTitle(tabTitle, formHydrated && !loading && Boolean(tabTitle));
 
   useEffect(() => {
     const data = productQuery.data;

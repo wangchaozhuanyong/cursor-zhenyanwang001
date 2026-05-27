@@ -102,6 +102,7 @@ export default function AdminEventCenter() {
   ] as const;
 
   const rows = eventsQuery.data?.list || [];
+  const summary = summaryQuery.data;
   const categoryCounts = summaryQuery.data?.categoryCounts || {};
   const categoryOptions = useMemo(() => {
     const keys = new Set([...Object.keys(ADMIN_EVENT_CATEGORY_LABELS), ...Object.keys(categoryCounts)]);
@@ -112,6 +113,14 @@ export default function AdminEventCenter() {
     }));
   }, [categoryCounts]);
   const categoryTotal = useMemo(() => categoryOptions.reduce((sum, item) => sum + item.count, 0), [categoryOptions]);
+  const summaryItems = useMemo(() => ([
+    { label: tText("未读"), value: summary?.unreadCount || 0, valueClassName: "text-foreground" },
+    { label: tText("未处理"), value: summary?.unresolvedCount || 0, valueClassName: "text-foreground" },
+    { label: "P0", value: summary?.p0Count || 0, valueClassName: "text-red-600" },
+    { label: tText("安全"), value: summary?.securityCount || 0, valueClassName: "text-amber-600" },
+    { label: tText("已恢复"), value: summary?.recoveredCount || 0, valueClassName: "text-emerald-600" },
+  ]), [summary, tText]);
+  const activeTabCount = summary?.tabCounts?.[tab] ?? 0;
 
   return (
     <AdminPageShell
@@ -122,13 +131,57 @@ export default function AdminEventCenter() {
           <p className="mt-1"><Tx>备份 P0 必须重新验证备份/增量/恢复演练；订单 P1 必须先处理订单；安全 P1 是高风险操作确认，确认本人操作后再完成。</Tx></p>
         </>
       )}
-      toolbar={(
-        <button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
-          <RefreshCw size={16} className={eventsQuery.isFetching ? "animate-spin" : ""} />
-          <Tx>刷新</Tx>
-        </button>
-      )}
     >
+      <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-stretch xl:justify-between">
+            <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
+              {summaryItems.map((item) => (
+                <div key={item.label} className="rounded-lg border border-border bg-background px-3 py-2">
+                  <div className="text-[11px] text-muted-foreground">{item.label}</div>
+                  <div className={`mt-1 text-lg font-semibold ${item.valueClassName}`}>{item.value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex shrink-0 items-start xl:items-center">
+              <button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
+                <RefreshCw size={16} className={eventsQuery.isFetching || summaryQuery.isFetching || metricsQuery.isFetching ? "animate-spin" : ""} />
+                <Tx>刷新全部数据</Tx>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+            {tabs.map((item) => {
+              const tabCount = summary?.tabCounts?.[item.key] ?? 0;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`rounded-lg px-3 py-2 text-sm ${tab === item.key ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-secondary"}`}
+                  onClick={() => setTab(item.key)}
+                >
+                  {tText(`${item.label} (${tabCount})`)}
+                </button>
+              );
+            })}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+                <option value="">{tText(`全部分类 (${categoryTotal})`)}</option>
+                {categoryOptions.map(({ key, label, count }) => (
+                  <option key={key} value={key}>
+                    {tText(`${label} (${count})`)}
+                  </option>
+                ))}
+              </select>
+              <div className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+                {tText(`当前视图 ${activeTabCount} 条 / 当前页 ${rows.length} 条`)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         {metricItems.map(([label, value]) => (
           <div key={label} className="rounded-lg border border-border bg-card px-3 py-2">
@@ -136,33 +189,6 @@ export default function AdminEventCenter() {
             <div className="text-xs text-muted-foreground">{tText(label)}</div>
           </div>
         ))}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        {tabs.map((item) => {
-          const tabCount = summaryQuery.data?.tabCounts?.[item.key] ?? 0;
-          return (
-            <button
-              key={item.key}
-              type="button"
-              className={`rounded-lg px-3 py-2 text-sm ${tab === item.key ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-secondary"}`}
-              onClick={() => setTab(item.key)}
-            >
-              {tText(`${item.label} (${tabCount})`)}
-            </button>
-          );
-        })}
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
-          <option value="">{tText(`全部分类 (${categoryTotal})`)}</option>
-          {categoryOptions.map(({ key, label, count }) => (
-            <option key={key} value={key}>
-              {tText(`${label} (${count})`)}
-            </option>
-          ))}
-        </select>
-        <div className="ml-auto text-sm text-muted-foreground">
-          {tText(`未读 ${summaryQuery.data?.unreadCount || 0} / 未处理 ${summaryQuery.data?.unresolvedCount || 0} / P0 ${summaryQuery.data?.p0Count || 0}`)}
-        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border bg-card">

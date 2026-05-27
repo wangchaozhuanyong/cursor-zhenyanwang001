@@ -121,7 +121,7 @@ export default function Coupons() {
   const handleClaim = async (coupon: DisplayCoupon) => {
     setClaimingId(coupon.id);
     try {
-      await claimCoupon(coupon.code);
+      await claimCoupon(coupon.code || coupon.id);
       toast.success("领取成功！已添加到我的优惠券", toastPresetQuickSuccess);
       setPageView("mine");
       setTab("mine");

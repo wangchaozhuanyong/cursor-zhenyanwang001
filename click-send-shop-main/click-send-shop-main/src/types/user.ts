@@ -30,6 +30,12 @@ export interface UserProfile {
   birthday_locked?: boolean | number;
   birthdayLocked?: boolean;
   wechatLogin?: WechatLoginBinding;
+  wechat_auth?: {
+    bound: boolean;
+    nickname?: string | null;
+    avatar_url?: string | null;
+    bound_at?: string | null;
+  };
   inviteCode: string;
   parentInviteCode: string;
   pointsBalance: number;
@@ -40,6 +46,7 @@ export interface UserProfile {
   invite_code?: string;
   parent_invite_code?: string;
   points_balance?: number;
+  subordinate_enabled?: boolean | number;
   member_level_id?: string;
   member_level_name?: string;
   member_level_description?: string;

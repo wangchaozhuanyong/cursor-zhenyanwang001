@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+const VIEWPORT_SYNC_DELAY_MS = 320;
+
 /** 会唤起软键盘的控件（不含 select / checkbox 等） */
 function isKeyboardTriggerField(el: Element | null): boolean {
   if (el instanceof HTMLTextAreaElement) return true;
@@ -68,13 +70,11 @@ export function useFormFieldFocus(enabled = true) {
       viewportDebounceRef.current = setTimeout(() => {
         viewportDebounceRef.current = null;
         const active = document.activeElement;
-        if (isKeyboardTriggerField(active) && coarsePointer.current) {
+        if (isKeyboardTriggerField(active)) {
           setTextFieldFocused(true);
-          applyKeyboardOpen(true);
-          return;
         }
         syncKeyboardOpen();
-      }, 220);
+      }, VIEWPORT_SYNC_DELAY_MS);
     };
 
     const setTextFocusedTrue = () => {
@@ -104,12 +104,11 @@ export function useFormFieldFocus(enabled = true) {
     };
 
     const onViewportResize = () => {
-      if (isKeyboardTriggerField(document.activeElement) && coarsePointer.current) {
+      scheduleViewportSync();
+      if (isKeyboardTriggerField(document.activeElement)) {
         setTextFieldFocused(true);
-        applyKeyboardOpen(true);
         return;
       }
-      scheduleViewportSync();
       const kb = readKeyboardLikelyOpen(keyboardOpenRef.current);
       if (isKeyboardTriggerField(document.activeElement) || kb) {
         setTextFieldFocused(true);

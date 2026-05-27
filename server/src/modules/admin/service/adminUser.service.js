@@ -275,11 +275,22 @@ async function updateUser(userId, body, adminUserId, req) {
   return { data: null, message: '更新成功' };
 }
 
-async function updateSubordinate(userId, body) {
+async function updateSubordinate(userId, body, adminUserId, req) {
   await assertTargetIsNormalUser(userId);
   const subordinateEnabled = body.subordinateEnabled ?? body.enabled;
-  await repo.updateSubordinateEnabled(userId, !!subordinateEnabled);
-  return { data: null, message: '更新成功' };
+  const enabled = !!subordinateEnabled;
+  await repo.updateSubordinateEnabled(userId, enabled);
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'user.subordinate_toggle',
+    objectType: 'user',
+    objectId: userId,
+    summary: `${enabled ? '开启' : '关闭'}用户下级功能 ${userId}`,
+    after: { subordinate_enabled: enabled },
+    result: 'success',
+  });
+  return { data: { subordinate_enabled: enabled }, message: '更新成功' };
 }
 
 async function adjustUserPoints(userId, body, adminUserId, req) {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import { Tx } from "@/components/admin/AdminText";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import type { InventorySku, PurchaseOrderDetail } from "@/types/inventory";
@@ -475,11 +476,12 @@ export default function InventoryFormSheets({
           <>
             <label className="space-y-1 text-sm">
               <span><Tx>远程搜索 SKU</Tx></span>
-              <input
+              <AdminSearchInput
                 value={ruleSkuKeyword}
-                onChange={(e) => setRuleSkuKeyword(e.target.value)}
+                onChange={setRuleSkuKeyword}
                 placeholder={tText("搜索商品名、SKU 编码、规格名或条码")}
-                className="w-full rounded-lg bg-secondary px-3 py-2.5"
+                showIcon={false}
+                className="border-0 bg-secondary"
               />
               <span className="block text-xs text-muted-foreground">
                 {ruleSkuSearchQuery.isFetching ? L("搜索中...") : L("下方选项会随搜索结果更新，不受当前库存分页限制。")}

@@ -57,9 +57,11 @@ export default function AdminPageShell({
   toolbar,
   filters,
 }: AdminPageShellProps) {
+  const useCompactHeader = !showTitle && Boolean(hint) && Boolean(toolbar);
+
   return (
     <div className={cn("space-y-4", className)}>
-      {(showTitle && title) || toolbar ? (
+      {(showTitle && title) || (toolbar && !useCompactHeader) ? (
         <div className="flex flex-wrap items-start justify-between gap-3">
           {showTitle && title ? (
             <AdminPageTitle title={title} hint={hint} hintContentClassName={hintContentClassName} className="text-lg" />
@@ -67,7 +69,13 @@ export default function AdminPageShell({
           {toolbar ? <div className="flex flex-wrap items-center gap-2">{toolbar}</div> : null}
         </div>
       ) : null}
-      {!showTitle && hint ? (
+      {useCompactHeader ? (
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <AdminPageHintCollapse hint={hint} className="min-w-0 flex-1" />
+          <div className="flex shrink-0 flex-wrap items-center gap-2">{toolbar}</div>
+        </div>
+      ) : null}
+      {!showTitle && hint && !useCompactHeader ? (
         <AdminPageHintCollapse hint={hint} />
       ) : null}
       {filters}

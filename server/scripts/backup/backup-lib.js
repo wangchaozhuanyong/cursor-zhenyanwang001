@@ -105,10 +105,17 @@ async function sha256File(filePath) {
   });
 }
 
+function shouldSpawnWithShell(command) {
+  if (process.platform !== 'win32') return false;
+  const text = String(command || '');
+  // 带盘符/路径的可执行文件在 Windows 上应直接 spawn，避免 shell 拆路径
+  return !(text.includes('\\') || text.includes('/'));
+}
+
 function runCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
     const timeoutMs = Number(options.timeoutMs || process.env.BACKUP_COMMAND_TIMEOUT_MS || 30 * 60 * 1000);
-    const child = spawn(command, args, { ...options, shell: process.platform === 'win32' });
+    const child = spawn(command, args, { ...options, shell: shouldSpawnWithShell(command) });
     let stderr = '';
     let settled = false;
     let timer;

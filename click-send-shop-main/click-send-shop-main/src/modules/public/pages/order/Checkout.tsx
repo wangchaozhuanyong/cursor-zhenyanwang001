@@ -82,8 +82,8 @@ export default function Checkout() {
         rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
       />
 
-      <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] md:px-6 md:py-6">
-        <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
+      <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] md:px-6 md:py-8">
+        <div className="md:grid md:grid-cols-[minmax(0,1fr)_400px] md:items-start md:gap-8 lg:gap-10">
           <div className="space-y-4">
             <MarketingPositionNotices position="checkout_notice" />
             <CheckoutAddressCard
@@ -163,7 +163,10 @@ export default function Checkout() {
 
           <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
             <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-              <h3 className="store-section-title mb-4 text-foreground">订单摘要</h3>
+              <div className="mb-4 rounded-2xl bg-[var(--theme-bg)] px-4 py-3">
+                <p className="text-xs font-medium text-muted-foreground">确认订单</p>
+                <h3 className="mt-1 text-lg font-extrabold text-foreground">订单摘要</h3>
+              </div>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}

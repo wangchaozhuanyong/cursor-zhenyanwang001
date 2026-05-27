@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, RefreshCw, Search, Send } from "lucide-react";
+import { Bell, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
@@ -11,6 +11,11 @@ import {
   AdminTableMobileCardField,
 } from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
+import {
+  AdminFilterButton,
+  AdminFilterSelect,
+} from "@/components/admin/AdminFilterControls";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import * as notificationService from "@/services/admin/notificationService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { Notification } from "@/types/notification";
@@ -171,7 +176,7 @@ export default function AdminNotifications() {
         throw new Error("请填写标题和正文");
       }
       if ((payload.audience_type === "single" || payload.audience_type === "specific") && !form.identifiers.trim()) {
-        throw new Error("请填写接收用户 ID / 手机号");
+        throw new Error("请填写接收用户（编号或手机号）");
       }
       return mode === "send" ? notificationService.sendNotification(payload) : notificationService.saveNotificationDraft(payload);
     },
@@ -219,6 +224,14 @@ export default function AdminNotifications() {
   const rows = notificationsQuery.data?.list || [];
   const total = notificationsQuery.data?.total || 0;
   const rules = rulesDraft || rulesQuery.data || [];
+
+  const handleRefresh = () => {
+    if (tab === "settings") {
+      void rulesQuery.refetch();
+      return;
+    }
+    void notificationsQuery.refetch();
+  };
 
   const updateRule = (key: string, patch: Partial<notificationService.NotificationTriggerRule>) => {
     setRulesDraft((current) => (current || rules).map((rule) => rule.key === key ? { ...rule, ...patch } : rule));
@@ -273,46 +286,43 @@ export default function AdminNotifications() {
     <PermissionGate anyOf={NOTIFICATION_PAGE_PERMISSIONS}>
       <AdminPageShell
         hint={<Tx>通知列表和触发设置已接入 Query，发送、保存或删除后自动刷新。</Tx>}
-        toolbar={(
-          <button type="button" onClick={() => void notificationsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
-            <RefreshCw size={16} className={notificationsQuery.isFetching ? "animate-spin" : ""} />
-            <Tx>刷新</Tx>
-          </button>
-        )}
         filters={(
-        <div className="flex flex-wrap gap-2 border-b border-[var(--theme-border)] pb-3">
-          <button type="button" onClick={() => setTab("list")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "list" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
-            通知列表
-          </button>
-          <PermissionGate anyOf={NOTIFICATION_COMPOSE_PERMISSIONS}>
-            <button type="button" onClick={() => setTab("manual")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "manual" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
-              手动发送
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--theme-border)] pb-3">
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setTab("list")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "list" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
+                通知列表
+              </button>
+              <PermissionGate anyOf={NOTIFICATION_COMPOSE_PERMISSIONS}>
+                <button type="button" onClick={() => setTab("manual")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "manual" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
+                  手动发送
+                </button>
+              </PermissionGate>
+              <PermissionGate anyOf={NOTIFICATION_TRIGGER_PERMISSIONS}>
+                <button type="button" onClick={() => setTab("settings")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "settings" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
+                  触发设置
+                </button>
+              </PermissionGate>
+            </div>
+            <button type="button" onClick={handleRefresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
+              <RefreshCw size={16} className={(tab === "settings" ? rulesQuery.isFetching : notificationsQuery.isFetching) ? "animate-spin" : ""} />
+              <Tx>刷新</Tx>
             </button>
-          </PermissionGate>
-          <PermissionGate anyOf={NOTIFICATION_TRIGGER_PERMISSIONS}>
-            <button type="button" onClick={() => setTab("settings")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "settings" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
-              触发设置
-            </button>
-          </PermissionGate>
-        </div>
+          </div>
         )}
       >
         {tab === "list" ? (
           <>
             <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_180px_1fr_auto]">
-              <select value={type} onChange={(e) => { setType(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+              <AdminFilterSelect value={type} onChange={(e) => { setType(e.target.value); setPage(1); }}>
                 <option value=""><Tx>全部类型</Tx></option>
                 {Object.entries(TYPE_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-              </select>
-              <select value={sendStatus} onChange={(e) => { setSendStatus(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+              </AdminFilterSelect>
+              <AdminFilterSelect value={sendStatus} onChange={(e) => { setSendStatus(e.target.value); setPage(1); }}>
                 <option value=""><Tx>全部状态</Tx></option>
                 {Object.entries(STATUS_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-              </select>
-              <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); }} placeholder={tText("搜索标题或正文")} className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm" />
-              </div>
-              <button type="button" onClick={() => { setType(""); setSendStatus(""); setKeyword(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空筛选</Tx></button>
+              </AdminFilterSelect>
+              <AdminSearchInput value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} placeholder={tText("搜索标题或正文")} />
+              <AdminFilterButton onClick={() => { setType(""); setSendStatus(""); setKeyword(""); setPage(1); }}><Tx>清空筛选</Tx></AdminFilterButton>
             </div>
 
             <AnimatedTable
@@ -390,7 +400,7 @@ export default function AdminNotifications() {
               <label className="md:col-span-2 text-xs font-medium text-muted-foreground">正文
                 <textarea value={form.content} onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))} rows={5} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               </label>
-              <label className="text-xs font-medium text-muted-foreground">用户 ID / 手机号（单个或多个）
+              <label className="text-xs font-medium text-muted-foreground">接收用户（编号 / 手机号）
                 <textarea value={form.identifiers} onChange={(e) => setForm((prev) => ({ ...prev, identifiers: e.target.value }))} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={tText("单个用户或指定用户时填写，多个用换行/逗号分隔")} />
               </label>
               <div className="space-y-4">

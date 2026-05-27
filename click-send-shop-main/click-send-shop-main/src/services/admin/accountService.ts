@@ -1,6 +1,7 @@
 import * as accountApi from "@/api/admin/account";
 import { setAdminTokens, clearAdminTokens, isAdminLoggedIn } from "@/utils/token";
 import type { AdminLoginParams, AdminLoginResult, AdminUser } from "@/types/admin";
+import type { AdminMfaStepUpResult } from "@/lib/adminMfaStepUp";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { clearAdminQueryCache } from "@/lib/queryClient";
@@ -74,9 +75,10 @@ export async function verifyAdminMfa(
   return applyAdminLoginPayload(res.data as unknown as Record<string, unknown>, params.username || "");
 }
 
-export async function reverifyAdminMfa(code: string, options?: { signal?: AbortSignal; actionClass?: string }): Promise<void> {
+export async function reverifyAdminMfa(code: string, options?: { signal?: AbortSignal; actionClass?: string }): Promise<AdminMfaStepUpResult> {
   const res = await accountApi.reverifyAdminMfa({ code, actionClass: options?.actionClass }, options);
   setAdminCsrfToken(res.data?.csrfToken);
+  return res.data || {};
 }
 
 export async function verifyAdminPasskeyLogin(params: {
@@ -95,11 +97,12 @@ export async function verifyAdminPasskeyLogin(params: {
   return applyAdminLoginPayload(verifyRes.data as unknown as Record<string, unknown>, params.username || "");
 }
 
-export async function reverifyAdminPasskey(options?: { signal?: AbortSignal; actionClass?: string }): Promise<void> {
+export async function reverifyAdminPasskey(options?: { signal?: AbortSignal; actionClass?: string }): Promise<AdminMfaStepUpResult> {
   const optionsRes = await accountApi.beginAdminPasskeyStepUp({ actionClass: options?.actionClass }, options);
   const response = await startAuthentication({ optionsJSON: optionsRes.data });
   const verifyRes = await accountApi.finishAdminPasskeyStepUp({ response }, options);
   setAdminCsrfToken(verifyRes.data?.csrfToken);
+  return verifyRes.data || {};
 }
 
 export async function registerAdminPasskey(label?: string): Promise<void> {

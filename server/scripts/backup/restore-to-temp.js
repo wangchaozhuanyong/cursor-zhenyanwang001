@@ -201,6 +201,7 @@ async function main() {
 
   const job = await repo.findRestoreJob(restoreJobId);
   if (!job) throw new Error(`Restore job not found: ${restoreJobId}`);
+  const isDrillJob = job.validation_result?.drill === true;
   const tempDbName = job.temp_db_name || `restore_tmp_${restoreJobId.replace(/-/g, '').slice(0, 16)}`;
   assertTempDbName(tempDbName);
 
@@ -216,6 +217,7 @@ async function main() {
     await prepareTempDatabase(tempDbName);
     const sqlPath = await materializeFullBackup(sourceFile, workDir);
     await importSql(sqlPath, tempDbName);
+    await repo.updateRestoreJob(restoreJobId, { status: 'temp_restored' });
 
     let binlogRows = [];
     if (job.restore_type === 'point_in_time' || job.target_time) {
@@ -229,12 +231,13 @@ async function main() {
 
     const validation = await validateTempDatabase(tempDbName);
     const finishedAt = new Date();
-    const status = validation.ok ? 'validated' : 'failed';
+    const status = validation.ok ? (isDrillJob ? 'validated' : 'awaiting_approval') : 'failed';
     await repo.updateRestoreJob(restoreJobId, {
       status,
       finishedAt,
       validationResult: {
         ...validation,
+        drill: isDrillJob || undefined,
         sourceBackupFileId: sourceFile.id,
         replayedBinlogCount: binlogRows.length,
         targetTime,
@@ -242,19 +245,21 @@ async function main() {
       },
       errorMessage: validation.ok ? '' : `Missing core tables: ${validation.missingCore.join(', ')}`,
     });
-    await repo.insertRestoreDrillReport({
-      id: generateId(),
-      backupFileId: sourceFile.id,
-      restoreJobId,
-      status: validation.ok ? 'success' : 'failed',
-      tempDbName,
-      tableCounts: validation.tableCounts,
-      durationSeconds: Math.max(1, Math.round((finishedAt.getTime() - startedAt.getTime()) / 1000)),
-      reportJson: validation,
-      errorMessage: validation.ok ? '' : `Missing core tables: ${validation.missingCore.join(', ')}`,
-      startedAt,
-      finishedAt,
-    });
+    if (isDrillJob) {
+      await repo.insertRestoreDrillReport({
+        id: generateId(),
+        backupFileId: sourceFile.id,
+        restoreJobId,
+        status: validation.ok ? 'success' : 'failed',
+        tempDbName,
+        tableCounts: validation.tableCounts,
+        durationSeconds: Math.max(1, Math.round((finishedAt.getTime() - startedAt.getTime()) / 1000)),
+        reportJson: validation,
+        errorMessage: validation.ok ? '' : `Missing core tables: ${validation.missingCore.join(', ')}`,
+        startedAt,
+        finishedAt,
+      });
+    }
     if (!validation.ok) {
       await backupService.emitBackupAlert({
         alertType: 'restore_failed',
@@ -267,7 +272,7 @@ async function main() {
       process.exit(2);
     }
 
-    const drillJob = job.validation_result?.drill === true;
+    const drillJob = isDrillJob;
     if (drillJob && process.env.BACKUP_KEEP_RESTORE_DRILL_DB !== '1') {
       await dropTempDatabase(tempDbName);
     }

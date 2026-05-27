@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -41,6 +41,7 @@ import { THEME_BADGE_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys, type AuditLogListParams } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
 
 export default function AdminLogs() {
   const { tText } = useAdminT();
@@ -63,15 +64,17 @@ export default function AdminLogs() {
   const [objectId, setObjectId] = useState(() => searchParams.get("objectId") || "");
   const [actionType, setActionType] = useState(() => searchParams.get("actionType") || "");
   const [detail, setDetail] = useState<AuditLogRow | null>(null);
+  const visibleOperatorId = isSuperAdmin ? operatorId : "";
+  const visibleObjectId = isSuperAdmin ? objectId : "";
 
   const buildFilterParams = (overrides?: Partial<AuditLogListParams>): AuditLogListParams => ({
     keyword: auditKeyword.trim() || undefined,
     result: auditResult || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
-    operatorId: operatorId.trim() || undefined,
+    operatorId: visibleOperatorId.trim() || undefined,
     objectType: objectType.trim() || undefined,
-    objectId: objectId.trim() || undefined,
+    objectId: visibleObjectId.trim() || undefined,
     actionType: actionType.trim() || undefined,
     ...overrides,
   });
@@ -82,9 +85,9 @@ export default function AdminLogs() {
       result: searchParams.get("result") || undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
-      operatorId: searchParams.get("operatorId") || undefined,
+      operatorId: isSuperAdmin ? (searchParams.get("operatorId") || undefined) : undefined,
       objectType: searchParams.get("objectType") || undefined,
-      objectId: searchParams.get("objectId") || undefined,
+      objectId: isSuperAdmin ? (searchParams.get("objectId") || undefined) : undefined,
       actionType: searchParams.get("actionType") || undefined,
     }),
   );
@@ -140,8 +143,8 @@ export default function AdminLogs() {
   const actionTypeOptions = useMemo(() => getAuditActionTypeFilterOptions(), []);
 
   const filterState = useMemo(
-    () => ({ keyword: auditKeyword, result: auditResult, dateFrom, dateTo, operatorId, objectType, objectId, actionType }),
-    [actionType, auditKeyword, auditResult, dateFrom, dateTo, objectId, objectType, operatorId],
+    () => ({ keyword: auditKeyword, result: auditResult, dateFrom, dateTo, operatorId: visibleOperatorId, objectType, objectId: visibleObjectId, actionType }),
+    [actionType, auditKeyword, auditResult, dateFrom, dateTo, objectType, visibleObjectId, visibleOperatorId],
   );
   const labelize = useCallback((zh: string) => applyAdminTextTranslation(zh, tText), [tText]);
 
@@ -220,9 +223,9 @@ export default function AdminLogs() {
         result: nextResult || undefined,
         dateFrom: nextDateFrom || undefined,
         dateTo: nextDateTo || undefined,
-        operatorId: nextOperatorId.trim() || undefined,
+        operatorId: isSuperAdmin ? (nextOperatorId.trim() || undefined) : undefined,
         objectType: nextObjectType.trim() || undefined,
-        objectId: nextObjectId.trim() || undefined,
+        objectId: isSuperAdmin ? (nextObjectId.trim() || undefined) : undefined,
         actionType: nextActionType.trim() || undefined,
       },
       1,
@@ -242,16 +245,13 @@ export default function AdminLogs() {
       <div className="space-y-2">
         <div className="min-w-0">
           <label className="mb-1 block text-xs text-muted-foreground"><Tx>关键词</Tx></label>
-          <div className="flex items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
-            <Search size={14} className="text-muted-foreground shrink-0" />
-            <input
-              placeholder={tText("摘要 / 操作人 / 动作 / 对象编号 / 错误信息")}
-              value={auditKeyword}
-              onChange={(e) => setAuditKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-            />
-          </div>
+          <AdminSearchInput
+            placeholder={tText("摘要 / 操作人 / 动作 / 关联对象 / 错误信息")}
+            value={auditKeyword}
+            onChange={setAuditKeyword}
+            onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
+            className="theme-rounded border-[var(--theme-border)] bg-[var(--theme-surface)]"
+          />
         </div>
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
         <details className="group theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
@@ -272,16 +272,18 @@ export default function AdminLogs() {
                 <option value="failure"><Tx>失败</Tx></option>
               </select>
             </div>
-            <div className="min-w-[10rem] flex-1">
-              <label className="mb-1 block text-xs text-muted-foreground"><Tx>操作人编号</Tx></label>
-              <input
-                value={operatorId}
-                onChange={(e) => setOperatorId(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
-                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
-                placeholder={tText("管理员或用户编号（可填尾部几位）")}
-              />
-            </div>
+            {isSuperAdmin ? (
+              <div className="min-w-[10rem] flex-1">
+                <label className="mb-1 block text-xs text-muted-foreground"><Tx>操作人编号</Tx></label>
+                <input
+                  value={operatorId}
+                  onChange={(e) => setOperatorId(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
+                  className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                  placeholder={tText("管理员或用户编号（可填尾部几位）")}
+                />
+              </div>
+            ) : null}
             <div className="min-w-[9rem] flex-1">
               <label className="mb-1 block text-xs text-muted-foreground"><Tx>对象类型</Tx></label>
               <select
@@ -295,16 +297,18 @@ export default function AdminLogs() {
                 ))}
               </select>
             </div>
-            <div className="min-w-[10rem] flex-1">
-              <label className="mb-1 block text-xs text-muted-foreground"><Tx>对象编号</Tx></label>
-              <input
-                value={objectId}
-                onChange={(e) => setObjectId(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
-                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
-                placeholder={tText("订单、用户等对象编号")}
-              />
-            </div>
+            {isSuperAdmin ? (
+              <div className="min-w-[10rem] flex-1">
+                <label className="mb-1 block text-xs text-muted-foreground"><Tx>关联对象编号</Tx></label>
+                <input
+                  value={objectId}
+                  onChange={(e) => setObjectId(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
+                  className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                  placeholder={tText("订单、用户等对象的内部编号")}
+                />
+              </div>
+            ) : null}
             <div className="min-w-[11rem] flex-[1.2]">
               <label className="mb-1 block text-xs text-muted-foreground"><Tx>动作</Tx></label>
               <select
@@ -341,6 +345,11 @@ export default function AdminLogs() {
               onClick={handleAuditSearch}
               className="min-h-[44px] theme-rounded px-5 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
             ><Tx>查询</Tx></button>
+            {!isSuperAdmin ? (
+              <div className="min-w-[16rem] rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs text-muted-foreground">
+                <Tx>内部编号筛选仅对超级管理员开放；普通管理员可通过关键词、对象类型、动作和日期定位日志。</Tx>
+              </div>
+            ) : null}
           </div>
         </details>
       </div>

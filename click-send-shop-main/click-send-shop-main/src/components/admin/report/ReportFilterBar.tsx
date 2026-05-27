@@ -8,6 +8,7 @@ import {
 } from "@/utils/reportFilters";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import { Tx } from "@/components/admin/AdminText";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
@@ -224,10 +225,11 @@ export default function ReportFilterBar({
         ) : null}
 
         {isFilterEnabled(enabledFilters, "keyword") ? (
-          <input
+          <AdminSearchInput
             value={keyword}
-            onChange={(e) => update({ keyword: e.target.value })}
+            onChange={(value) => update({ keyword: value })}
             placeholder={tText("搜索关键词")}
+            showIcon={false}
             className={`${selectClass} min-w-[12rem]`}
           />
         ) : null}

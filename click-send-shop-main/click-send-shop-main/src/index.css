@@ -424,6 +424,15 @@
   }
 
   @supports (height: 100dvh) {
+    @media (min-width: 768px) {
+      .auth-page-shell {
+        height: 100dvh;
+        min-height: 100dvh;
+      }
+    }
+  }
+
+  @supports (height: 100dvh) and (not (height: 100svh)) {
     .auth-page-shell {
       height: 100dvh;
       min-height: 100dvh;
@@ -434,6 +443,14 @@
     transition: none;
     scroll-padding-bottom: max(6rem, env(safe-area-inset-bottom, 0px));
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* 聚焦时减少浏览器自动滚动的跳动幅度 */
+  .auth-page-shell input:focus,
+  .auth-page-shell select:focus,
+  .auth-page-shell textarea:focus {
+    scroll-margin-top: 0.5rem;
+    scroll-margin-bottom: max(6rem, env(safe-area-inset-bottom, 0px));
   }
 
   .auth-page-footer {
@@ -901,12 +918,17 @@ html[data-app-scope="admin"] .admin-tech-path {
   }
 
   [data-admin-shell] .admin-work-tabs {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--theme-price) 40%, transparent) transparent;
   }
 
   [data-admin-shell] .admin-work-tabs::-webkit-scrollbar {
-    display: none;
+    height: 4px;
+  }
+
+  [data-admin-shell] .admin-work-tabs::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-price) 40%, transparent);
   }
   @media (min-width: 1024px) {
     .admin-mobile-main {

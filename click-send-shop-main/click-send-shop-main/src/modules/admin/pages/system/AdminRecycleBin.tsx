@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2, RotateCcw } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { AdminFilterSelect } from "@/components/admin/AdminFilterControls";
 import { toast } from "sonner";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -186,9 +187,9 @@ export default function AdminRecycleBin() {
       hint={<Tx>已软删除的数据可恢复或彻底删除。</Tx>}
       filters={(
         <div className="space-y-2">
-          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+          <AdminFilterSelect variant="card" value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}>
             {typeFilterOptions.map((o) => <option key={o.value || "__all"} value={o.value}>{o.label}</option>)}
-          </select>
+          </AdminFilterSelect>
           <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
         </div>
       )}

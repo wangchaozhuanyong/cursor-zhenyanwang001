@@ -85,7 +85,7 @@ export const useUserStore = create<UserState>()(
             wechat: profile.wechat || "",
             whatsapp: profile.whatsapp || "",
             birthday: profile.birthday || null,
-            birthdayLocked: !!(profile.birthdayLocked || profile.birthday_locked),
+            birthdayLocked: Boolean(profile.birthdayLocked ?? profile.birthday_locked ?? false),
             inviteCode: profile.inviteCode || "",
             parentInviteCode: profile.parentInviteCode || "",
             pointsBalance: profile.pointsBalance ?? 0,

@@ -10,6 +10,25 @@ type AdminNavTitleChild = {
   children?: AdminNavTitleChild[];
 };
 
+const ACTIVITY_CREATE_TYPE_LABEL_KEYS: Record<string, string> = {
+  flash_sale: "routeTitles.marketingNewFlashSale",
+  full_reduction: "routeTitles.marketingNewFullReduction",
+  coupon_activity: "routeTitles.marketingNewCouponActivity",
+  points_bonus: "routeTitles.marketingNewPointsBonus",
+  new_user_gift: "routeTitles.marketingNewUserGift",
+  holiday: "routeTitles.marketingNewHoliday",
+};
+
+function getSearchParam(search: string | undefined, key: string): string {
+  if (!search) return "";
+  return new URLSearchParams(search.startsWith("?") ? search.slice(1) : search).get(key) || "";
+}
+
+function idSuffix(pathname: string, pattern: RegExp): string {
+  const id = pathname.match(pattern)?.[1];
+  return id ? ` #${decodeURIComponent(id)}` : "";
+}
+
 function childIsActive(pathname: string, childPath: string | undefined, parentPath: string): boolean {
   if (!childPath) return false;
   if (childPath === parentPath) {
@@ -41,6 +60,7 @@ function resolveChildTitle(
 export function getHiddenAdminHeaderTitle(
   pathname: string,
   t: (key: string) => string,
+  search = "",
 ): string | null {
   const seg = (center: string, child: string, page: string) =>
     `${t(center)} / ${t(child)} / ${t(page)}`;
@@ -53,19 +73,19 @@ export function getHiddenAdminHeaderTitle(
     return seg("nav.productCenter", "nav.productManage", "routeTitles.productNew");
   }
   if (/^\/admin\/products\/[^/]+$/.test(pathname)) {
-    return seg("nav.productCenter", "nav.productManage", "routeTitles.productEdit");
+    return `${seg("nav.productCenter", "nav.productManage", "routeTitles.productEdit")}${idSuffix(pathname, /^\/admin\/products\/([^/]+)$/)}`;
   }
 
   if (/^\/admin\/orders\/[^/]+$/.test(pathname) && !pathname.startsWith("/admin/orders/unfinished")) {
-    return seg("nav.orderCenter", "nav.orderManage", "routeTitles.orderDetail");
+    return `${seg("nav.orderCenter", "nav.orderManage", "routeTitles.orderDetail")}${idSuffix(pathname, /^\/admin\/orders\/([^/]+)$/)}`;
   }
 
   if (/^\/admin\/users\/[^/]+$/.test(pathname)) {
-    return seg("nav.customerCenter", "nav.userManage", "routeTitles.userDetail");
+    return `${seg("nav.customerCenter", "nav.userManage", "routeTitles.userDetail")}${idSuffix(pathname, /^\/admin\/users\/([^/]+)$/)}`;
   }
 
   if (/^\/admin\/notifications\/[^/]+$/.test(pathname)) {
-    return seg("nav.notificationCenter", "nav.notifications", "routeTitles.notificationDetail");
+    return `${seg("nav.notificationCenter", "nav.notifications", "routeTitles.notificationDetail")}${idSuffix(pathname, /^\/admin\/notifications\/([^/]+)$/)}`;
   }
 
   if (pathname === "/admin/marketing/coupons/new") {
@@ -75,14 +95,25 @@ export function getHiddenAdminHeaderTitle(
     /^\/admin\/marketing\/coupons\/[^/]+$/.test(pathname)
     && pathname !== "/admin/marketing/coupons/records"
   ) {
-    return seg("nav.marketingCenter", "nav.coupons", "routeTitles.couponEdit");
+    return `${seg("nav.marketingCenter", "nav.coupons", "routeTitles.couponEdit")}${idSuffix(pathname, /^\/admin\/marketing\/coupons\/([^/]+)$/)}`;
   }
 
   if (pathname === "/admin/marketing/activities/new") {
-    return seg("nav.marketingCenter", "nav.activities", "routeTitles.marketingNewLeaf");
+    const copyFrom = getSearchParam(search, "copy_from");
+    const type = getSearchParam(search, "type");
+    const labelKey = copyFrom
+      ? "routeTitles.marketingCopy"
+      : ACTIVITY_CREATE_TYPE_LABEL_KEYS[type] || "routeTitles.marketingNewLeaf";
+    return `${t("nav.marketingCenter")} / ${t("nav.activities")} / ${t(labelKey)}`;
   }
   if (/^\/admin\/marketing\/activities\/[^/]+\/edit$/.test(pathname)) {
-    return seg("nav.marketingCenter", "nav.activities", "routeTitles.marketingEditLeaf");
+    const id = pathname.match(/^\/admin\/marketing\/activities\/([^/]+)\/edit$/)?.[1];
+    const suffix = id ? ` #${decodeURIComponent(id)}` : "";
+    return `${seg("nav.marketingCenter", "nav.activities", "routeTitles.marketingEditLeaf")}${suffix}`;
+  }
+
+  if (/^\/admin\/monitoring\/anomalies\/[^/]+$/.test(pathname)) {
+    return `${seg("nav.monitoringCenter", "nav.monitoringAnomalies", "routeTitles.monitoringAnomalyDetail")}${idSuffix(pathname, /^\/admin\/monitoring\/anomalies\/([^/]+)$/)}`;
   }
 
   return null;
@@ -94,8 +125,9 @@ export function resolveAdminTabTitle(
   pathname: string,
   fallback: string,
   t: (key: string) => string,
+  search = "",
 ): string {
-  const hidden = getHiddenAdminHeaderTitle(pathname, t);
+  const hidden = getHiddenAdminHeaderTitle(pathname, t, search);
   if (hidden) {
     const parts = hidden.split(" / ").map((p) => p.trim()).filter(Boolean);
     return parts[parts.length - 1] || hidden;

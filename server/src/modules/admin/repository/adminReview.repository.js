@@ -81,16 +81,16 @@ async function softDeleteReview(id, deletedBy) {
   );
 }
 
-async function restoreReview(id) {
+async function restoreReview(id, targetStatus) {
   await db.query(
-    "UPDATE product_reviews SET status = 'normal', deleted_at = NULL, deleted_by = NULL WHERE id = ?",
-    [id],
+    'UPDATE product_reviews SET status = ?, deleted_at = NULL, deleted_by = NULL WHERE id = ?',
+    [targetStatus, id],
   );
 }
 
 async function permanentDeleteReview(id) {
-  await db.query('DELETE FROM product_reviews WHERE id = ?', [id]);
   await db.query('DELETE FROM review_likes WHERE review_id = ?', [id]);
+  await db.query('DELETE FROM product_reviews WHERE id = ?', [id]);
 }
 
 async function batchUpdateStatus(ids, status, fromStatuses) {
@@ -117,7 +117,7 @@ async function batchSoftDelete(ids, deletedBy) {
   const placeholders = ids.map(() => '?').join(',');
   const [result] = await db.query(
     `UPDATE product_reviews SET status = 'deleted', deleted_at = NOW(), deleted_by = ?
-     WHERE id IN (${placeholders}) AND status IN ('normal', 'hidden')`,
+     WHERE id IN (${placeholders}) AND status IN ('normal', 'hidden', 'pending', 'rejected')`,
     [deletedBy, ...ids],
   );
   return result.affectedRows || 0;

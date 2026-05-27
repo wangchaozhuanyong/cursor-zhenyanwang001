@@ -24,6 +24,11 @@ import {
 } from "@/constants/statusDictionary";
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
 import {
+  AdminFilterButton,
+  AdminFilterInput,
+  AdminFilterSelect,
+} from "@/components/admin/AdminFilterControls";
+import {
   useAdminOrderStatusFilterOptions,
   useAdminPaymentStatusFilterOptions,
 } from "@/hooks/useAdminStatusLabels";
@@ -229,7 +234,7 @@ export default function AdminOrders() {
           <button
             type="button"
             onClick={() => navigate(`/admin/orders/${o.id}`)}
-            title={`${tText("订单号")}：${o.order_no}\nUID ${o.user_id || "-"}`}
+            title={`${tText("订单号")}：${o.order_no}`}
             className="block min-w-0 max-w-[9.5rem] truncate text-left font-mono text-xs font-semibold text-[var(--theme-price)] hover:underline"
           >
             {o.order_no}
@@ -381,11 +386,12 @@ export default function AdminOrders() {
   };
 
   return (
-    <AdminPageShell
-      className="min-w-0"
-      hint={<Tx>查看与处理订单，支持状态筛选、批量导出及发货操作。</Tx>}
-      filters={(
-        <>
+    <PermissionGate permission="order.view">
+      <AdminPageShell
+        className="min-w-0"
+        hint={<Tx>查看与处理订单，支持状态筛选、批量导出及发货操作。</Tx>}
+        filters={(
+          <>
       <div className="grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-7">
         {stats.map((stat) => {
           const active = statusFilter === stat.status && !!stat.status;
@@ -408,7 +414,7 @@ export default function AdminOrders() {
       </div>
 
       <div className="space-y-2">
-        <SearchBar placeholder={tText("搜索订单号、昵称、收货人、手机号、用户ID、物流单号")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+        <SearchBar placeholder={tText("搜索订单号、昵称、收货人、手机号、物流单号")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
         <AdminFilterSummaryBar chips={filterChips} onClearAll={() => clearFilters()} onRemove={handleRemoveFilterChip} />
         <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
           <button
@@ -424,62 +430,62 @@ export default function AdminOrders() {
               <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
                 <SegmentedDateInput value={dateFrom} onChange={(v) => { setDateFrom(v); setPage(1); }} />
                 <SegmentedDateInput value={dateTo} onChange={(v) => { setDateTo(v); setPage(1); }} />
-                <input value={amountMin} onChange={(e) => { setAmountMin(e.target.value); setPage(1); }} placeholder={tText("最低金额")} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
-                <input value={amountMax} onChange={(e) => { setAmountMax(e.target.value); setPage(1); }} placeholder={tText("最高金额")} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
+                <AdminFilterInput value={amountMin} onChange={(e) => { setAmountMin(e.target.value); setPage(1); }} placeholder={tText("最低金额")} variant="themeBg" />
+                <AdminFilterInput value={amountMax} onChange={(e) => { setAmountMax(e.target.value); setPage(1); }} placeholder={tText("最高金额")} variant="themeBg" />
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                <AdminFilterSelect value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} variant="themeBg">
                   {orderStatusFilterOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-                <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value as "" | PaymentStatus); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterSelect value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value as "" | PaymentStatus); setPage(1); }} variant="themeBg">
                   {paymentStatusFilterOptions.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
-                </select>
-                <select value={paymentMethod} onChange={(e) => { setPaymentMethod(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterSelect value={paymentMethod} onChange={(e) => { setPaymentMethod(e.target.value); setPage(1); }} variant="themeBg">
                   {paymentMethodOptionsLocalized.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
-                </select>
-                <input value={paymentChannel} onChange={(e) => { setPaymentChannel(e.target.value); setPage(1); }} placeholder={tText("支付渠道")} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
-                <select value={shippingName} onChange={(e) => { setShippingName(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterInput value={paymentChannel} onChange={(e) => { setPaymentChannel(e.target.value); setPage(1); }} placeholder={tText("支付渠道")} variant="themeBg" />
+                <AdminFilterSelect value={shippingName} onChange={(e) => { setShippingName(e.target.value); setPage(1); }} variant="themeBg">
                   {shippingOptionsLocalized.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
-                </select>
-                <select value={returnStatus} onChange={(e) => { setReturnStatus(e.target.value as "" | "none" | "active" | "any"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterSelect value={returnStatus} onChange={(e) => { setReturnStatus(e.target.value as "" | "none" | "active" | "any"); setPage(1); }} variant="themeBg">
                   <option value=""><Tx>全部售后</Tx></option>
                   <option value="none"><Tx>无售后</Tx></option>
                   <option value="active"><Tx>售后中</Tx></option>
                   <option value="any"><Tx>有售后</Tx></option>
-                </select>
-                <select value={refundStatus} onChange={(e) => { setRefundStatus(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterSelect value={refundStatus} onChange={(e) => { setRefundStatus(e.target.value); setPage(1); }} variant="themeBg">
                   <option value=""><Tx>全部退款</Tx></option>
                   <option value="none"><Tx>无退款</Tx></option>
                   <option value="partially_refunded"><Tx>部分退款</Tx></option>
                   <option value="refunded"><Tx>全额退款</Tx></option>
-                </select>
-                <select value={hasNote} onChange={(e) => { setHasNote(e.target.value as "" | "1" | "0"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterSelect value={hasNote} onChange={(e) => { setHasNote(e.target.value as "" | "1" | "0"); setPage(1); }} variant="themeBg">
                   <option value=""><Tx>备注不限</Tx></option>
                   <option value="1"><Tx>有买家备注</Tx></option>
                   <option value="0"><Tx>无买家备注</Tx></option>
-                </select>
-                <select value={costStatus} onChange={(e) => { setCostStatus(e.target.value as "" | "normal" | "missing"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterSelect value={costStatus} onChange={(e) => { setCostStatus(e.target.value as "" | "normal" | "missing"); setPage(1); }} variant="themeBg">
                   <option value=""><Tx>成本不限</Tx></option>
                   <option value="normal"><Tx>成本正常</Tx></option>
                   <option value="missing"><Tx>缺成本</Tx></option>
-                </select>
-                <select value={overduePayment} onChange={(e) => { setOverduePayment(e.target.value as "" | "1" | "0"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterSelect value={overduePayment} onChange={(e) => { setOverduePayment(e.target.value as "" | "1" | "0"); setPage(1); }} variant="themeBg">
                   <option value=""><Tx>付款时效不限</Tx></option>
                   <option value="1"><Tx>超时未支付</Tx></option>
-                </select>
-                <select value={overdueShipment} onChange={(e) => { setOverdueShipment(e.target.value as "" | "1" | "0"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterSelect value={overdueShipment} onChange={(e) => { setOverdueShipment(e.target.value as "" | "1" | "0"); setPage(1); }} variant="themeBg">
                   <option value=""><Tx>发货时效不限</Tx></option>
                   <option value="1"><Tx>待发货超24h</Tx></option>
-                </select>
-                <select value={buyerType} onChange={(e) => { setBuyerType(e.target.value as "" | "new" | "repeat"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                </AdminFilterSelect>
+                <AdminFilterSelect value={buyerType} onChange={(e) => { setBuyerType(e.target.value as "" | "new" | "repeat"); setPage(1); }} variant="themeBg">
                   <option value=""><Tx>全部客户</Tx></option>
                   <option value="new"><Tx>新客</Tx></option>
                   <option value="repeat"><Tx>老客</Tx></option>
-                </select>
-                <button type="button" disabled={exportingScope !== null} onClick={handleExportCsv} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--theme-border)] px-3 text-sm disabled:opacity-60">
+                </AdminFilterSelect>
+                <AdminFilterButton disabled={exportingScope !== null} onClick={handleExportCsv} variant="themeBg" className="gap-1 disabled:opacity-60">
                   {exportingScope === "filtered" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                   <Tx>导出</Tx>
-                </button>
+                </AdminFilterButton>
               </div>
             </div>
           ) : null}
@@ -562,6 +568,7 @@ export default function AdminOrders() {
           }
         }}
       />
-    </AdminPageShell>
+      </AdminPageShell>
+    </PermissionGate>
   );
 }

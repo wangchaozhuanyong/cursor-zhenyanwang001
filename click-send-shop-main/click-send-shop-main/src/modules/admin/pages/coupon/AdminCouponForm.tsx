@@ -15,12 +15,14 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import type { Category } from "@/types/category";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import { Tx } from "@/components/admin/AdminText";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { flattenCategories } from "@/utils/categoryTree";
 import type { Product } from "@/types/product";
 import type { CouponUpsertPayload } from "@/types/coupon";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
+import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 
 const couponTypes = [
   { value: "fixed", label: "满减券" },
@@ -118,6 +120,15 @@ export default function AdminCouponForm() {
   const loading = isNew ? false : couponQuery.isLoading && !couponQuery.data;
   const [formHydrated, setFormHydrated] = useState(isNew);
   const { markClean } = useAdminFormDirty(form, formHydrated && !loading);
+
+  const tabTitle = useMemo(() => {
+    if (isNew) return null;
+    if (form.title.trim()) return tText(`编辑优惠券：${form.title.trim()}`);
+    if (couponId) return tText(`编辑优惠券 #${couponId}`);
+    return null;
+  }, [couponId, form.title, isNew, tText]);
+  useAdminTabTitle(tabTitle, formHydrated && !loading && Boolean(tabTitle));
+
   const claimedCount = Number(couponQuery.data?.claimed_count || 0);
   const coreRulesLocked = isEdit && claimedCount > 0;
 
@@ -432,14 +443,15 @@ export default function AdminCouponForm() {
             {form.usable_scope_type === "product" ? (
               <div className="space-y-2 rounded-lg border border-border bg-secondary/40 p-3">
                 <div className="flex items-center gap-2">
-                  <input
+                  <AdminSearchInput
                     value={productKeyword}
-                    onChange={(e) => {
-                      setProductKeyword(e.target.value);
+                    onChange={(value) => {
+                      setProductKeyword(value);
                       setProductPage(1);
                     }}
-                    className="w-full rounded-lg bg-card px-3 py-2 text-sm text-foreground outline-none"
+                    className="border-0 bg-card"
                     placeholder={tText("搜索商品名")}
+                    showIcon={false}
                   />
                   <span className="whitespace-nowrap text-xs text-muted-foreground">{tText(`已选 ${form.usable_product_ids.length}`)}</span>
                 </div>

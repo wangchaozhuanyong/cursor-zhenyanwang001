@@ -32,4 +32,19 @@ describe('admin sensitive action routes', () => {
     assert.equal(getSensitiveActionClass(req('PUT', '/settings')), 'high_risk_config');
     assert.equal(getSensitiveActionClass(req('POST', '/recycle-bin/item-1/permanent-delete')), 'bulk_delete');
   });
+
+  test('backup read endpoints do not require MFA step-up', () => {
+    assert.equal(getSensitiveActionClass(req('GET', '/backups/overview')), '');
+    assert.equal(getSensitiveActionClass(req('GET', '/backups/files')), '');
+    assert.equal(getSensitiveActionClass(req('GET', '/backups/alerts')), '');
+    assert.equal(getSensitiveActionClass(req('GET', '/restore/jobs')), '');
+    assert.equal(getSensitiveActionClass(req('GET', '/restore/drills')), '');
+  });
+
+  test('backup write endpoints require high-risk MFA step-up', () => {
+    assert.equal(getSensitiveActionClass(req('POST', '/backups/full')), 'high_risk_config');
+    assert.equal(getSensitiveActionClass(req('POST', '/restore/jobs')), 'high_risk_config');
+    assert.equal(getSensitiveActionClass(req('POST', '/restore/jobs/job-1/approve')), 'high_risk_config');
+    assert.equal(getSensitiveActionClass(req('POST', '/restore/jobs/job-1/switch')), 'high_risk_config');
+  });
 });

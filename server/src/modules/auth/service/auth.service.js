@@ -202,6 +202,12 @@ function normalizeBirthdayInput(value) {
   return s;
 }
 
+function normalizeStoredBirthday(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const s = String(value).trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+}
+
 async function updateProfile(userId, body) {
   const {
     nickname,
@@ -249,23 +255,31 @@ async function updateProfile(userId, body) {
     fragments.push('whatsapp = ?');
     values.push(normalizedWhatsapp);
   }
+  let didUpdateBirthday = false;
   if (birthday !== undefined) {
     const normalizedBirthday = normalizeBirthdayInput(birthday);
     const existing = await repo.selectUserBirthdayFields(userId);
-    if (existing?.birthday_locked) {
+    const existingBirthday = normalizeStoredBirthday(existing?.birthday);
+    const birthdayLocked = !!existingBirthday && !!existing?.birthday_locked;
+    if (birthdayLocked) {
       throw new ValidationError('生日已锁定，请联系客服修改');
     }
-    if (existing?.birthday && normalizedBirthday && existing.birthday !== normalizedBirthday) {
+    if (existingBirthday && normalizedBirthday !== existingBirthday) {
       throw new ValidationError('生日仅可设置一次，如需修改请联系客服');
     }
-    await repo.updateUserBirthday(userId, {
-      birthday: normalizedBirthday,
-      birthdayLocked: !!normalizedBirthday,
-      birthdayUpdatedAt: new Date(),
-    });
+    if (existingBirthday && normalizedBirthday === existingBirthday) {
+      // 已存在相同生日时视为无变更，避免重复写入或误清空。
+    } else if (normalizedBirthday) {
+      await repo.updateUserBirthday(userId, {
+        birthday: normalizedBirthday,
+        birthdayLocked: true,
+        birthdayUpdatedAt: new Date(),
+      });
+      didUpdateBirthday = true;
+    }
   }
 
-  if (fragments.length === 0 && birthday === undefined) throw new ValidationError('没有需要更新的字段');
+  if (fragments.length === 0 && !didUpdateBirthday) throw new ValidationError('没有需要更新的字段');
 
   if (fragments.length > 0) {
     await repo.updateUserProfile(userId, fragments, values);

@@ -185,6 +185,12 @@ function groupPolicies(policies: DataCleanupPolicy[]) {
   }, {});
 }
 
+function samePolicyKeys(a: string[], b: string[]) {
+  const left = [...a].sort();
+  const right = [...b].sort();
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
 export default function AdminDataRetention() {
   const { tText } = useAdminT();
   const queryClient = useQueryClient();
@@ -196,6 +202,13 @@ export default function AdminDataRetention() {
   const canExecute = isSuperAdmin || can("data_cleanup.execute");
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const visibleTabs = useMemo(() => {
+    return tabs.filter((tab) => {
+      if (tab.key === "policies") return canManage;
+      if (tab.key === "preview") return canExecute;
+      return true;
+    });
+  }, [canExecute, canManage]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [selectionReady, setSelectionReady] = useState(false);
   const [previewRun, setPreviewRun] = useState<DataCleanupRun | null>(null);
@@ -209,6 +222,7 @@ export default function AdminDataRetention() {
     queryFn: fetchDataCleanupOverview,
     enabled: canView,
     staleTime: 60_000,
+    refetchInterval: (query) => (query.state.data?.runningRun ? 5000 : false),
   });
   const policiesQuery = useQuery({
     queryKey: adminQueryKeys.dataCleanupPolicies(),
@@ -238,12 +252,21 @@ export default function AdminDataRetention() {
     () => policies.filter((policy) => selectedKeys.includes(policy.key)),
     [policies, selectedKeys],
   );
+  const previewKeysMatch = useMemo(
+    () => Boolean(previewRun && samePolicyKeys(selectedKeys, previewRun.policy_keys)),
+    [previewRun, selectedKeys],
+  );
 
   useEffect(() => {
     if (selectionReady || !policies.length) return;
     setSelectedKeys(policies.filter((policy) => policy.enabled).map((policy) => policy.key));
     setSelectionReady(true);
   }, [policies, selectionReady]);
+
+  useEffect(() => {
+    if (visibleTabs.some((t) => t.key === activeTab)) return;
+    setActiveTab(visibleTabs[0]?.key || "overview");
+  }, [activeTab, visibleTabs]);
 
   const invalidateAll = async () => {
     await Promise.all([
@@ -339,6 +362,10 @@ export default function AdminDataRetention() {
       toast.error(tText("请先生成清理预览"));
       return;
     }
+    if (!previewKeysMatch) {
+      toast.error(tText("当前勾选策略与预览不一致，请重新生成预览"));
+      return;
+    }
     confirm({ title: tText("确认执行数据清理"),
       description: `本次预览命中 ${previewRun.total_matched} 条记录，执行后将按批删除命中的可清理数据。`,
       confirmText: "执行清理",
@@ -366,7 +393,7 @@ export default function AdminDataRetention() {
       )}
       filters={(
       <div className="flex flex-wrap gap-2 border-b border-border">
-        {tabs.map((tab) => {
+        {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.key;
           const tabHint = DATA_RETENTION_TAB_HINTS[tab.key];
@@ -396,7 +423,32 @@ export default function AdminDataRetention() {
     >
       {activeTab === "overview" ? (
         <div className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-4">
+          {overview?.runningRun ? (
+            <section className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Play size={16} />
+                  <Tx>清理任务运行中</Tx>
+                  <AdminFieldHint text={tText(DATA_RETENTION_FIELD_HINTS.runningCleanup)} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>#{overview.runningRun.id}</span>
+                  <StatusBadge status={overview.runningRun.status} tText={tText} />
+                  {canExecute ? (
+                    <button
+                      type="button"
+                      disabled={cancelMutation.isPending}
+                      onClick={() => cancelMutation.mutate(overview.runningRun!.id)}
+                      className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs hover:bg-blue-100 disabled:opacity-50"
+                    >
+                      <Tx>请求取消</Tx>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+          ) : null}
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             <Metric label="策略总数" value={overview?.policyCount ?? "-"} fieldHint={DATA_RETENTION_FIELD_HINTS.policyCount} tText={tText} />
             <Metric label="启用策略" value={overview?.enabledPolicyCount ?? "-"} fieldHint={DATA_RETENTION_FIELD_HINTS.enabledPolicyCount} tText={tText} />
             <Metric
@@ -413,14 +465,41 @@ export default function AdminDataRetention() {
               fieldHint={DATA_RETENTION_FIELD_HINTS.batchSizeRange}
               tText={tText}
             />
+            <Metric
+              label="预览有效期"
+              value={overview?.previewTtlMinutes != null ? `${overview.previewTtlMinutes} 分钟` : "-"}
+              fieldHint={DATA_RETENTION_FIELD_HINTS.previewTtlMinutes}
+              tText={tText}
+            />
           </div>
           <section className="rounded-lg border border-border bg-card p-4">
             <div className="mb-3 flex items-center gap-2 font-semibold text-foreground">
               <History size={16} />
               <Tx>最近执行</Tx>
             </div>
-            <RunSteps steps={runDetailQuery.data?.steps} policyTitleByKey={policyTitleByKey} tText={tText} />
-            {!selectedRunId && (
+            {selectedRunId && runDetailQuery.data ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-sm text-foreground">
+                    #{runDetailQuery.data.id} {tText(formatDataCleanupRunType(runDetailQuery.data.run_type))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={runDetailQuery.data.status} tText={tText} />
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRunId(null)}
+                      className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-secondary"
+                    >
+                      <Tx>返回列表</Tx>
+                    </button>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <Tx>命中</Tx> {runDetailQuery.data.total_matched} / <Tx>删除</Tx> {runDetailQuery.data.total_deleted}
+                </div>
+                <RunSteps steps={runDetailQuery.data.steps} policyTitleByKey={policyTitleByKey} tText={tText} />
+              </div>
+            ) : (
               <div className="space-y-2">
                 {(overview?.recentRuns || []).map((run) => (
                   <button key={run.id} type="button" onClick={() => setSelectedRunId(run.id)} className="flex w-full items-center justify-between gap-3 rounded-lg bg-secondary/40 px-3 py-2 text-left text-sm hover:bg-secondary">
@@ -638,12 +717,15 @@ export default function AdminDataRetention() {
               </button>
               <button
                 type="button"
-                disabled={!canExecute || !previewRun || executeMutation.isPending}
+                disabled={!canExecute || !previewRun || !previewKeysMatch || executeMutation.isPending}
                 onClick={confirmExecute}
                 className="inline-flex min-h-[42px] items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 <Play size={16} /> 执行清理
               </button>
+              {!previewKeysMatch && previewRun ? (
+                <span className="text-sm text-amber-700"><Tx>策略选择已变更，请重新生成预览</Tx></span>
+              ) : null}
               <span className="text-sm text-muted-foreground">已选择 {selectedPolicies.length} 项</span>
             </div>
           </section>

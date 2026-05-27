@@ -105,6 +105,19 @@ const DEFAULT_POLICY_DEFINITIONS = [
     }),
   },
   {
+    key: 'admin_sensitive_action_tokens',
+    title: '敏感操作令牌',
+    category: 'security',
+    tableName: 'admin_sensitive_action_tokens',
+    dateColumn: 'expires_at',
+    retentionDays: 7,
+    description: '清理已过期或已撤销的管理员敏感操作二次验证令牌。',
+    where: ({ cutoffAt }) => ({
+      sql: '(expires_at < NOW() OR revoked_at IS NOT NULL) AND COALESCE(revoked_at, expires_at, last_used_at, created_at) < ?',
+      params: [cutoffAt],
+    }),
+  },
+  {
     key: 'cart_items',
     title: '购物车明细',
     category: 'commerce',
@@ -260,6 +273,16 @@ const DEFAULT_POLICY_DEFINITIONS = [
     dateColumn: 'created_at',
     retentionDays: 180,
     description: '清理数据一致性规则事件流水。',
+    where: beforeColumn('created_at'),
+  },
+  {
+    key: 'data_change_events',
+    title: '数据变更事件',
+    category: 'monitoring',
+    tableName: 'data_change_events',
+    dateColumn: 'created_at',
+    retentionDays: 180,
+    description: '清理数据一致性监控产生的变更追踪事件流水。',
     where: beforeColumn('created_at'),
   },
   {

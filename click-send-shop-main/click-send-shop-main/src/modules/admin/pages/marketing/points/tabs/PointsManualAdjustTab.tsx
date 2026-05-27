@@ -18,7 +18,7 @@ export default function PointsManualAdjustTab({ adjustForm, setAdjustForm, onSub
     <div className="space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
       <AdminSectionTitle title={<Tx>手动调整用户积分</Tx>} hint={POINTS_TAB_HINTS["手动调整"]} />
       <div className="grid gap-3 lg:grid-cols-2">
-        <AdminInlineField label={tText("用户 ID")} hint={POINTS_ADJUST_FIELD_HINTS.userId}>
+        <AdminInlineField label={tText("用户编号（从详情复制）")} hint={POINTS_ADJUST_FIELD_HINTS.userId}>
           <input className={adminFormInputCls} value={adjustForm.userId} onChange={(e) => setAdjustForm((s) => ({ ...s, userId: e.target.value }))} />
         </AdminInlineField>
         <AdminInlineField label={tText("调整积分")} hint={POINTS_ADJUST_FIELD_HINTS.points}>

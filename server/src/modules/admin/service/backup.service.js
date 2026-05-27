@@ -19,6 +19,35 @@ function normalizeDate(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function cleanOptionalText(value, maxLength = 255) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  return text.slice(0, maxLength);
+}
+
+const IMPLEMENTED_RESTORE_TYPES = new Set(['site', 'point_in_time']);
+
+function assertRestorePayload({ restoreType, targetTimeRaw, targetTime, targetTable, targetEntityId }) {
+  if (!IMPLEMENTED_RESTORE_TYPES.has(restoreType)) {
+    throw new BusinessError(400, '该恢复类型尚未实现，当前仅支持整站恢复与指定时间点恢复');
+  }
+  if (targetTimeRaw && !targetTime) {
+    throw new BusinessError(400, '指定时间点格式不正确');
+  }
+  if (restoreType === 'point_in_time' && !targetTime) {
+    throw new BusinessError(400, '请填写指定时间点');
+  }
+  if (restoreType === 'table') {
+    if (!targetTable) throw new BusinessError(400, '请填写表名');
+    if (!/^[A-Za-z0-9_]{1,128}$/.test(targetTable)) {
+      throw new BusinessError(400, '表名只能包含字母、数字和下划线');
+    }
+  }
+  if ((restoreType === 'order' || restoreType === 'user') && !targetEntityId) {
+    throw new BusinessError(400, '请填写订单 / 用户编号');
+  }
+}
+
 function runDetachedScript(scriptRelativePath, args = [], env = {}) {
   const child = spawn(process.execPath, [path.join(SERVER_ROOT, scriptRelativePath), ...args], {
     cwd: SERVER_ROOT,
@@ -138,19 +167,35 @@ async function createRestoreJob({ req, userId, body }) {
   const restoreType = String(body?.restoreType || body?.restore_type || '').trim();
   const allowed = new Set(['site', 'point_in_time', 'table', 'order', 'user', 'pre_deploy_rollback']);
   if (!allowed.has(restoreType)) {
-    throw new BusinessError(400, 'Invalid restore type');
+    throw new BusinessError(400, '恢复类型无效');
   }
+  const targetTimeRaw = body?.targetTime || body?.target_time || '';
+  const targetTime = normalizeDate(targetTimeRaw);
+  const targetTable = cleanOptionalText(body?.targetTable || body?.target_table, 128);
+  const targetEntityId = cleanOptionalText(body?.targetEntityId || body?.target_entity_id, 64);
+  const sourceBackupFileId = cleanOptionalText(body?.sourceBackupFileId || body?.source_backup_file_id, 36);
+  assertRestorePayload({ restoreType, targetTimeRaw, targetTime, targetTable, targetEntityId });
+
+  const sourceFile = sourceBackupFileId
+    ? await repo.findBackupFile(sourceBackupFileId)
+    : await repo.findLatestFullBackupBefore(targetTime || new Date());
+  if (!sourceFile) {
+    throw new BusinessError(400, '暂无可用的成功全量备份，无法创建恢复任务');
+  }
+  if (sourceFile.file_kind !== 'mysql_full' || (sourceFile.job_status && sourceFile.job_status !== 'success')) {
+    throw new BusinessError(400, '请选择成功的数据库全量备份文件');
+  }
+
   const id = generateId();
   const tempDbName = `restore_tmp_${id.replace(/-/g, '').slice(0, 16)}`;
-  const targetTime = normalizeDate(body?.targetTime || body?.target_time);
   await repo.insertRestoreJob({
     id,
     restoreType,
     status: 'queued',
-    sourceBackupFileId: body?.sourceBackupFileId || body?.source_backup_file_id || null,
+    sourceBackupFileId: sourceBackupFileId || sourceFile.id,
     targetTime,
-    targetTable: body?.targetTable || body?.target_table || null,
-    targetEntityId: body?.targetEntityId || body?.target_entity_id || null,
+    targetTable,
+    targetEntityId,
     tempDbName,
     requestedBy: userId,
     validationResult: {
@@ -174,12 +219,20 @@ async function createRestoreJob({ req, userId, body }) {
 
 async function approveRestoreJob({ req, userId, restoreJobId }) {
   if (!req.user?.isSuperAdmin) {
-    throw new BusinessError(403, 'Only super admin can approve restore');
+    throw new BusinessError(403, '仅超级管理员可确认恢复任务');
+  }
+  const existing = await repo.findRestoreJob(restoreJobId);
+  if (!existing) {
+    throw new BusinessError(404, '恢复任务不存在');
+  }
+  const approvableStatuses = new Set(['temp_restored', 'validated', 'awaiting_approval']);
+  if (!approvableStatuses.has(existing.status)) {
+    throw new BusinessError(400, '恢复任务尚未完成校验，暂不可确认');
   }
   const affected = await repo.approveRestoreJob(restoreJobId, userId);
   const job = await repo.findRestoreJob(restoreJobId);
   if (!affected || !job) {
-    throw new BusinessError(404, 'Restore job not found or cannot be approved');
+    throw new BusinessError(404, '恢复任务不存在或无法确认');
   }
   await writeAuditLog({
     req,
@@ -192,6 +245,49 @@ async function approveRestoreJob({ req, userId, restoreJobId }) {
     after: { status: job.status, tempDbName: job.temp_db_name },
   });
   return job;
+}
+
+async function switchRestoreJobToProduction({ req, userId, restoreJobId }) {
+  if (!req.user?.isSuperAdmin) {
+    throw new BusinessError(403, '仅超级管理员可执行生产切换');
+  }
+  if (process.env.RESTORE_SWITCH_ENABLED !== '1') {
+    throw new BusinessError(400, '生产切换未启用，请先在服务器设置 RESTORE_SWITCH_ENABLED=1');
+  }
+
+  const existing = await repo.findRestoreJob(restoreJobId);
+  if (!existing) {
+    throw new BusinessError(404, '恢复任务不存在');
+  }
+  if (existing.status !== 'approved') {
+    throw new BusinessError(400, '仅已确认的恢复任务可执行生产切换');
+  }
+  if (!['site', 'point_in_time'].includes(existing.restore_type)) {
+    throw new BusinessError(400, '当前恢复类型不支持生产切换');
+  }
+
+  runDetachedScript(
+    'scripts/backup/restore-switch-production.js',
+    ['--restore-job-id', restoreJobId],
+    { RESTORE_JOB_ID: restoreJobId },
+  );
+
+  await writeAuditLog({
+    req,
+    operatorId: userId,
+    actionType: 'backup.restore.switch',
+    objectType: 'restore_job',
+    objectId: restoreJobId,
+    summary: 'production database switch requested',
+    result: 'success',
+    after: { tempDbName: existing.temp_db_name, restoreType: existing.restore_type },
+  });
+
+  return {
+    id: restoreJobId,
+    status: 'merged',
+    message: '已启动生产切换任务，请稍后刷新查看结果',
+  };
 }
 
 async function listRestoreJobs(query = {}) {
@@ -217,6 +313,7 @@ module.exports = {
   createFullBackup,
   createRestoreJob,
   approveRestoreJob,
+  switchRestoreJobToProduction,
   listRestoreJobs,
   listDrillReports,
   listAlerts,

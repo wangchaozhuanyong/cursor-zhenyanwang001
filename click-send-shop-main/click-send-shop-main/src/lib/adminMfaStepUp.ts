@@ -1,14 +1,29 @@
-let pendingResolve: (() => void) | null = null;
+export type AdminMfaStepUpResult = {
+  sensitiveActionToken?: string;
+  actionClass?: string;
+  expiresAt?: string;
+  expiresIn?: number;
+  csrfToken?: string;
+};
+
+let pendingResolve: ((result: AdminMfaStepUpResult) => void) | null = null;
 let pendingReject: ((reason?: unknown) => void) | null = null;
-let pendingPromise: Promise<void> | null = null;
+let pendingPromise: Promise<AdminMfaStepUpResult> | null = null;
 let openDialog: (() => void) | null = null;
 let pendingActionClass = "admin_sensitive";
+
+const stateListeners = new Set<() => void>();
+
+function emitStateChange(): void {
+  stateListeners.forEach((listener) => listener());
+}
 
 function clearPending(): void {
   pendingResolve = null;
   pendingReject = null;
   pendingPromise = null;
   pendingActionClass = "admin_sensitive";
+  emitStateChange();
 }
 
 export function isAdminMfaRequiredResponse(
@@ -45,22 +60,34 @@ export function getPendingAdminMfaActionClass(): string {
   return pendingActionClass || "admin_sensitive";
 }
 
-export function requestAdminMfaStepUp(actionClass = "admin_sensitive"): Promise<void> {
+/** MFA 弹窗等待中（含用户输入验证码阶段） */
+export function isAdminMfaStepUpPending(): boolean {
+  return pendingPromise !== null;
+}
+
+export function subscribeAdminMfaStepUpState(listener: () => void): () => void {
+  stateListeners.add(listener);
+  return () => {
+    stateListeners.delete(listener);
+  };
+}
+
+export function requestAdminMfaStepUp(actionClass = "admin_sensitive"): Promise<AdminMfaStepUpResult> {
   if (!openDialog) {
     return Promise.reject(new Error("MFA_STEP_UP_UI_MISSING"));
   }
-  pendingActionClass = actionClass;
 
   if (pendingPromise) {
-    openDialog();
     return pendingPromise;
   }
 
+  pendingActionClass = actionClass;
   pendingPromise = new Promise((resolve, reject) => {
     pendingResolve = resolve;
     pendingReject = reject;
     try {
       openDialog?.();
+      emitStateChange();
     } catch (err) {
       clearPending();
       reject(err);
@@ -71,7 +98,12 @@ export function requestAdminMfaStepUp(actionClass = "admin_sensitive"): Promise<
 }
 
 export function completeAdminMfaStepUp(): void {
-  pendingResolve?.();
+  pendingResolve?.({});
+  clearPending();
+}
+
+export function completeAdminMfaStepUpWithResult(result: AdminMfaStepUpResult): void {
+  pendingResolve?.(result);
   clearPending();
 }
 

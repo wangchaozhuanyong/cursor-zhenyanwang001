@@ -176,7 +176,14 @@ export default function AdminFeatureSettings() {
               <h3 className="text-sm font-semibold text-foreground"><Tx>预留能力</Tx></h3>
               <AdminFieldHint text="以下开关已接入配置存储，但业务链路未完整验收；默认仅超级管理员可修改，避免误操作。" />
             </div>
-            <div className="grid gap-3 md:grid-cols-2">{RESERVED_ITEMS.map(renderItem)}</div>
+            {isSuperAdmin ? (
+              <div className="grid gap-3 md:grid-cols-2">{RESERVED_ITEMS.map(renderItem)}</div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border bg-secondary/20 p-4 text-sm text-muted-foreground">
+                <p><Tx>预留能力仅对超级管理员开放。</Tx></p>
+                <p className="mt-1"><Tx>这些开关属于预留/高风险配置，普通管理员无需操作。</Tx></p>
+              </div>
+            )}
           </div>
         </div>
       </section>

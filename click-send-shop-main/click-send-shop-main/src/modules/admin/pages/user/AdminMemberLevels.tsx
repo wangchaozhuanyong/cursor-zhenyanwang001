@@ -94,6 +94,10 @@ export default function AdminMemberLevels() {
   const recalculateMutation = useMutation({
     mutationFn: (force?: boolean) => userService.recalculateAllMemberLevels(force ? { force: true } : undefined),
     onSuccess: (result, force) => {
+      if (result?.async || result?.accepted) {
+        toast.success(tText("全量重算已在后台启动，完成后可在操作日志查看结果"));
+        return;
+      }
       toast.success(
         force
           ? tText(`强制重算完成：${result?.changed || 0}/${result?.total || 0}`)

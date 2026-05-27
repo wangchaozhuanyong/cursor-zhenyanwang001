@@ -38,7 +38,9 @@ function formatUserResponse(user, role = 'user') {
     u.birthday = u.birthday ? String(u.birthday).slice(0, 10) : null;
   }
   if (u.birthday_locked !== undefined) {
-    u.birthdayLocked = !!u.birthday_locked;
+    const effectiveBirthdayLocked = !!u.birthday && !!u.birthday_locked;
+    u.birthday_locked = effectiveBirthdayLocked;
+    u.birthdayLocked = effectiveBirthdayLocked;
   }
   if (u.birthday_updated_at !== undefined) {
     u.birthdayUpdatedAt = u.birthday_updated_at;

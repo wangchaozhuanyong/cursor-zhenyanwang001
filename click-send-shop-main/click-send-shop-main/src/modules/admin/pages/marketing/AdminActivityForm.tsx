@@ -12,6 +12,7 @@ import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactio
 import { Tx } from "@/components/admin/AdminText";
 import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import { DISPLAY_POSITIONS, DISPLAY_POSITION_LABELS, WIP_ACTIVITY_TYPES, type DisplayPosition } from "@/constants/marketingDisplayPositions";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { fetchCoupons } from "@/services/admin/couponService";
@@ -20,34 +21,20 @@ import { adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
+import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
+import { fetchProducts } from "@/services/admin/productService";
+import { fetchCategories } from "@/services/admin/categoryService";
+import type { Product } from "@/types/product";
+import type { Category } from "@/types/category";
+import { flattenCategories } from "@/utils/categoryTree";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 
 const STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
+const OBJECT_SCOPE_TYPES = new Set<ActivityPayload["scope_type"]>(["category", "product"]);
 
-function toggleDisplayPosition(current: string[] | undefined, key: DisplayPosition) {
-  const set = new Set(current || []);
-  if (set.has(key)) set.delete(key);
-  else set.add(key);
-  return [...set];
-}
-
-export default function AdminActivityForm() {
-  const { tText } = useAdminT();
-  const { activityType: labelType } = useAdminDisplayLabel();
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const isEdit = !!id;
-  const [search] = useSearchParams();
-  const copyFromId = !isEdit ? search.get("copy_from") : null;
-  const [step, setStep] = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
-  const [pendingPublishStatus, setPendingPublishStatus] = useState<ActivityStatus | null>(null);
-  const [statusLabel, setStatusLabel] = useState("草稿");
-
-  const [form, setForm] = useState<ActivityPayload>({
-    type: (search.get("type") as ActivityType) || "flash_sale",
+function createInitialActivityForm(type: ActivityType = "flash_sale"): ActivityPayload {
+  return {
+    type,
     title: "",
     subtitle: "",
     description: "",
@@ -68,7 +55,55 @@ export default function AdminActivityForm() {
     activity_config: { full_reduction_rules: [{ threshold_amount: 100, discount_amount: 10 }] },
     sort_order: 0,
     items: [],
-  });
+  };
+}
+
+function toggleDisplayPosition(current: string[] | undefined, key: DisplayPosition) {
+  const set = new Set(current || []);
+  if (set.has(key)) set.delete(key);
+  else set.add(key);
+  return [...set];
+}
+
+function uniqueIds(ids: string[] | undefined) {
+  return Array.from(new Set((ids || []).map((id) => String(id).trim()).filter(Boolean)));
+}
+
+function setScopeIds(current: string[] | undefined, id: string, checked: boolean) {
+  const set = new Set(uniqueIds(current));
+  if (checked) set.add(id);
+  else set.delete(id);
+  return Array.from(set);
+}
+
+function productLabel(product: Product | undefined, id: string) {
+  return product?.name || `商品 ${id}`;
+}
+
+function categoryLabel(category: Category | undefined, id: string) {
+  return category?.name || `分类 ${id}`;
+}
+
+export default function AdminActivityForm() {
+  const { tText } = useAdminT();
+  const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
+  const { activityType: labelType } = useAdminDisplayLabel();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
+  const [search] = useSearchParams();
+  const copyFromId = !isEdit ? search.get("copy_from") : null;
+  const createType = (search.get("type") as ActivityType) || "flash_sale";
+  const [step, setStep] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [pendingPublishStatus, setPendingPublishStatus] = useState<ActivityStatus | null>(null);
+  const [statusLabel, setStatusLabel] = useState("草稿");
+  const [scopeKeyword, setScopeKeyword] = useState("");
+
+  const [form, setForm] = useState<ActivityPayload>(() => createInitialActivityForm(createType));
 
   const activityQuery = useQuery({
     queryKey: adminQueryKeys.activityDetail(id || ""),
@@ -93,11 +128,74 @@ export default function AdminActivityForm() {
 
   const couponOptions = couponsQuery.data ?? [];
   const couponsLoading = couponsQuery.isLoading && !couponsQuery.data;
+  const selectedScopeIds = useMemo(() => uniqueIds(form.scope_ids), [form.scope_ids]);
+  const productScopeEnabled = form.scope_type === "product";
+  const categoryScopeEnabled = form.scope_type === "category";
+
+  const categoriesQuery = useQuery({
+    queryKey: adminQueryKeys.categories(),
+    queryFn: fetchCategories,
+    enabled: categoryScopeEnabled,
+    staleTime: 300_000,
+  });
+
+  const productSearchQuery = useQuery({
+    queryKey: ["admin", "activityScopeProducts", scopeKeyword],
+    queryFn: () => fetchProducts({ page: 1, pageSize: 30, keyword: scopeKeyword, status: "active" }),
+    enabled: productScopeEnabled,
+    staleTime: 60_000,
+  });
+
+  const selectedProductsQuery = useQuery({
+    queryKey: ["admin", "activityScopeSelectedProducts", selectedScopeIds],
+    queryFn: () => fetchProducts({ page: 1, pageSize: Math.max(selectedScopeIds.length, 1), ids: selectedScopeIds }),
+    enabled: productScopeEnabled && selectedScopeIds.length > 0,
+    staleTime: 60_000,
+  });
+
+  const flatCategories = useMemo(
+    () => flattenCategories(categoriesQuery.data || []),
+    [categoriesQuery.data],
+  );
+  const categoryById = useMemo(
+    () => new Map(flatCategories.map((category) => [category.id, category])),
+    [flatCategories],
+  );
+  const categoryOptions = useMemo(() => {
+    const keyword = scopeKeyword.trim().toLowerCase();
+    if (!keyword) return flatCategories;
+    return flatCategories.filter((category) => category.name.toLowerCase().includes(keyword));
+  }, [flatCategories, scopeKeyword]);
+  const productOptions = productSearchQuery.data?.list || [];
+  const productById = useMemo(() => {
+    const map = new Map<string, Product>();
+    for (const product of selectedProductsQuery.data?.list || []) map.set(product.id, product);
+    for (const product of productOptions) map.set(product.id, product);
+    return map;
+  }, [productOptions, selectedProductsQuery.data?.list]);
 
   const activityLoading = (isEdit && activityQuery.isLoading && !activityQuery.data)
     || (!!copyFromId && copySourceQuery.isLoading && !copySourceQuery.data);
   const [formHydrated, setFormHydrated] = useState(!isEdit && !copyFromId);
   const { markClean } = useAdminFormDirty(form, formHydrated && !activityLoading);
+
+  const tabTitle = useMemo(() => {
+    if (isEdit && form.title.trim()) return tText(`编辑活动：${form.title.trim()}`);
+    if (copyFromId && form.title.trim()) return tText(`复制活动：${form.title.trim()}`);
+    return null;
+  }, [copyFromId, form.title, isEdit, tText]);
+  useAdminTabTitle(tabTitle, formHydrated && !activityLoading && Boolean(tabTitle));
+
+  useEffect(() => {
+    if (isEdit || copyFromId) return;
+    const nextForm = createInitialActivityForm(createType);
+    setForm(nextForm);
+    setStep(0);
+    setStatusLabel("草稿");
+    setScopeKeyword("");
+    setFormHydrated(true);
+    markClean(nextForm);
+  }, [copyFromId, createType, isEdit, markClean]);
 
   useEffect(() => {
     if (!activityQuery.data) return;
@@ -202,6 +300,8 @@ export default function AdminActivityForm() {
     if (new Date(form.end_at).getTime() <= new Date(form.start_at).getTime()) return "结束时间必须晚于开始时间";
     if (form.type === "flash_sale" && form.items.length === 0) return "秒杀活动必须选择商品";
     if ((form.type === "coupon_activity" || form.type === "new_user_gift") && !selectedCouponIds.length) return "请至少选择一张优惠券";
+    if (form.scope_type === "category" && selectedScopeIds.length === 0) return "请选择活动适用分类";
+    if (form.scope_type === "product" && selectedScopeIds.length === 0) return "请选择活动适用商品";
     if (!(form.display_positions || []).length) return "请至少选择一个展示位置";
     if (WIP_ACTIVITY_TYPES.includes(form.type)) return "该活动类型尚在开发中，仅可保存草稿";
     if (form.type === "points_bonus") {
@@ -218,7 +318,7 @@ export default function AdminActivityForm() {
       }
     }
     return "";
-  }, [form, fullReductionRules, selectedCouponIds]);
+  }, [form, fullReductionRules, selectedCouponIds, selectedScopeIds.length]);
 
   const performSave = async (targetStatus: ActivityStatus) => {
     setSaving(true);
@@ -267,6 +367,53 @@ export default function AdminActivityForm() {
       return { ...prev, items: next };
     });
   };
+
+  const handleScopeTypeChange = (nextScopeType: ActivityPayload["scope_type"]) => {
+    const currentScopeType = form.scope_type || "product";
+    if (nextScopeType === currentScopeType) return;
+    const shouldClearIds =
+      selectedScopeIds.length > 0
+      && (OBJECT_SCOPE_TYPES.has(currentScopeType) || OBJECT_SCOPE_TYPES.has(nextScopeType));
+    if (shouldClearIds && !window.confirm(tText("切换适用对象后，已选择的商品或分类将清空，是否继续？"))) {
+      return;
+    }
+    setScopeKeyword("");
+    setForm((prev) => ({
+      ...prev,
+      scope_type: nextScopeType,
+      scope_ids: OBJECT_SCOPE_TYPES.has(nextScopeType) ? [] : [],
+    }));
+  };
+
+  const toggleScopeId = (id: string, checked: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      scope_ids: setScopeIds(prev.scope_ids, id, checked),
+    }));
+  };
+
+  const clearScopeIds = () => {
+    setForm((prev) => ({ ...prev, scope_ids: [] }));
+  };
+
+  const scopeSummary = (() => {
+    if (form.scope_type === "all") return tText("活动对全场商品生效");
+    if (form.scope_type === "new_user") return tText("活动仅新用户可参与");
+    if (form.scope_type === "old_user") return tText("活动仅老用户可参与");
+    if (form.scope_type === "category") {
+      const names = selectedScopeIds.slice(0, 3).map((id) => categoryLabel(categoryById.get(id), id));
+      return selectedScopeIds.length
+        ? `${tText("已选")} ${selectedScopeIds.length} ${tText("个分类")}：${names.join("、")}${selectedScopeIds.length > 3 ? "..." : ""}`
+        : tText("请选择活动适用的分类");
+    }
+    if (form.scope_type === "product") {
+      const names = selectedScopeIds.slice(0, 3).map((id) => productLabel(productById.get(id), id));
+      return selectedScopeIds.length
+        ? `${tText("已选")} ${selectedScopeIds.length} ${tText("个商品")}：${names.join("、")}${selectedScopeIds.length > 3 ? "..." : ""}`
+        : tText("请选择活动适用的商品");
+    }
+    return tText("请选择活动适用对象");
+  })();
 
   return (
     <AdminPageShell
@@ -510,15 +657,136 @@ export default function AdminActivityForm() {
           )}
 
           {step === 3 && (
-            <div className="grid gap-2 md:grid-cols-2">
-              <label className="text-sm"><Tx>适用范围</Tx><select value={form.scope_type || "product"} onChange={(e) => setForm((p) => ({ ...p, scope_type: e.target.value as ActivityPayload["scope_type"] }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2">
-                <option value="all"><Tx>全场</Tx></option>
-                <option value="category"><Tx>指定分类</Tx></option>
-                <option value="product"><Tx>指定商品</Tx></option>
-                <option value="new_user"><Tx>新用户</Tx></option>
-                <option value="old_user"><Tx>老用户</Tx></option>
-              </select></label>
-              <label className="text-sm"><Tx>范围 ID 列表（逗号分隔）</Tx><input value={(form.scope_ids || []).join(",")} onChange={(e) => setForm((p) => ({ ...p, scope_ids: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium"><Tx>活动对谁生效</Tx></p>
+                <p className="mt-1 text-xs text-muted-foreground"><Tx>员工只需要选择对象，不需要填写商品或分类编号。</Tx></p>
+                <div className="mt-3 grid gap-2 md:grid-cols-5">
+                  {[
+                    { value: "all" as const, title: "全场商品", desc: "所有商品都参加" },
+                    { value: "category" as const, title: "指定分类", desc: "选择一个或多个分类" },
+                    { value: "product" as const, title: "指定商品", desc: "搜索并选择商品" },
+                    { value: "new_user" as const, title: "新用户", desc: "仅新注册用户" },
+                    { value: "old_user" as const, title: "老用户", desc: "非新用户参与" },
+                  ].map((option) => {
+                    const active = (form.scope_type || "product") === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleScopeTypeChange(option.value)}
+                        className={`rounded-xl border p-3 text-left transition-colors ${active ? "border-gold bg-gold/10" : "border-border hover:bg-secondary/60"}`}
+                      >
+                        <span className="block text-sm font-semibold">{tText(option.title)}</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">{tText(option.desc)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {categoryScopeEnabled ? (
+                <div className="rounded-xl border border-border p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium"><Tx>选择分类</Tx></p>
+                      <p className="mt-1 text-xs text-muted-foreground"><Tx>可按分类名称搜索，勾选后自动加入活动范围。</Tx></p>
+                    </div>
+                    <button type="button" onClick={clearScopeIds} disabled={!selectedScopeIds.length} className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-50"><Tx>清空已选</Tx></button>
+                  </div>
+                  <AdminSearchInput
+                    value={scopeKeyword}
+                    onChange={setScopeKeyword}
+                    placeholder={tText("搜索分类名称")}
+                    className="mt-3 min-h-[40px] border-0 bg-secondary"
+                  />
+                  <div className="mt-3 max-h-72 overflow-y-auto rounded-lg border border-border p-2">
+                    {categoriesQuery.isLoading ? <p className="p-2 text-sm text-muted-foreground"><Tx>分类加载中...</Tx></p> : null}
+                    {!categoriesQuery.isLoading && categoryOptions.length === 0 ? <p className="p-2 text-sm text-muted-foreground"><Tx>未找到匹配分类</Tx></p> : null}
+                    <div className="space-y-1">
+                      {categoryOptions.map((category) => {
+                        const checked = selectedScopeIds.includes(category.id);
+                        return (
+                          <label key={category.id} className={`flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm ${checked ? "bg-gold/10 text-foreground" : "hover:bg-secondary/60"}`}>
+                            <input type="checkbox" checked={checked} onChange={(e) => toggleScopeId(category.id, e.target.checked)} />
+                            <span className="truncate" style={{ paddingLeft: category.level * 12 }}>{category.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {productScopeEnabled ? (
+                <div className="rounded-xl border border-border p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium"><Tx>选择商品</Tx></p>
+                      <p className="mt-1 text-xs text-muted-foreground"><Tx>可按商品名称搜索，勾选后自动加入活动范围。</Tx></p>
+                    </div>
+                    <button type="button" onClick={clearScopeIds} disabled={!selectedScopeIds.length} className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-50"><Tx>清空已选</Tx></button>
+                  </div>
+                  <AdminSearchInput
+                    value={scopeKeyword}
+                    onChange={setScopeKeyword}
+                    placeholder={tText("搜索商品名称")}
+                    className="mt-3 min-h-[40px] border-0 bg-secondary"
+                  />
+                  <div className="mt-3 max-h-72 overflow-y-auto rounded-lg border border-border p-2">
+                    {productSearchQuery.isLoading ? <p className="p-2 text-sm text-muted-foreground"><Tx>商品加载中...</Tx></p> : null}
+                    {!productSearchQuery.isLoading && productOptions.length === 0 ? <p className="p-2 text-sm text-muted-foreground"><Tx>未找到匹配商品</Tx></p> : null}
+                    <div className="space-y-2">
+                      {productOptions.map((product) => {
+                        const checked = selectedScopeIds.includes(product.id);
+                        return (
+                          <label key={product.id} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-2 text-sm ${checked ? "border-gold bg-gold/10" : "border-border hover:bg-secondary/60"}`}>
+                            <input type="checkbox" checked={checked} onChange={(e) => toggleScopeId(product.id, e.target.checked)} />
+                            <img src={product.cover_image || ""} alt={product.name} className="h-10 w-10 rounded bg-secondary object-cover" />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-medium">{product.name}</span>
+                              <span className="block text-xs text-muted-foreground">RM {product.price} · 库存 {product.stock}</span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium"><Tx>已选内容</Tx></p>
+                    <p className="mt-1 text-xs text-muted-foreground">{scopeSummary}</p>
+                  </div>
+                  {OBJECT_SCOPE_TYPES.has(form.scope_type) && selectedScopeIds.length > 0 ? (
+                    <span className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground">共 {selectedScopeIds.length} 项</span>
+                  ) : null}
+                </div>
+                {OBJECT_SCOPE_TYPES.has(form.scope_type) && selectedScopeIds.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {selectedScopeIds.slice(0, 12).map((id) => {
+                      const label = form.scope_type === "category"
+                        ? categoryLabel(categoryById.get(id), id)
+                        : productLabel(productById.get(id), id);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => toggleScopeId(id, false)}
+                          className="rounded-full border border-border bg-card px-3 py-1 text-xs hover:bg-secondary"
+                          title={tText("点击移除")}
+                        >
+                          {label} ×
+                        </button>
+                      );
+                    })}
+                    {selectedScopeIds.length > 12 ? <span className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground">还有 {selectedScopeIds.length - 12} 项</span> : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
           )}
 
@@ -538,7 +806,14 @@ export default function AdminActivityForm() {
                   })}
                 </div>
               </div>
-              <label className="text-sm"><Tx>内部备注</Tx><input value={form.internal_note || ""} onChange={(e) => setForm((p) => ({ ...p, internal_note: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+              {isSuperAdmin ? (
+                <label className="text-sm"><Tx>内部备注</Tx><input value={form.internal_note || ""} onChange={(e) => setForm((p) => ({ ...p, internal_note: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+              ) : (
+                <div className="rounded-lg border border-dashed border-border bg-secondary/30 px-3 py-3 text-sm text-muted-foreground">
+                  <p><Tx>内部备注仅超级管理员可见。</Tx></p>
+                  <p className="mt-1"><Tx>员工侧只保留展示位置配置，避免录入仅供内部流转的说明。</Tx></p>
+                </div>
+              )}
             </div>
           )}
 

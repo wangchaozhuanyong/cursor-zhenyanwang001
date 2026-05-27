@@ -2,7 +2,7 @@ import type { RewardTransactionType } from "@/types/reward";
 
 const REWARD_TX_LABEL: Record<string, string> = {
   settle: "返现入账",
-  reverse: "冲正退回",
+  reverse: "明细",
   wallet_redeem_order: "订单抵扣",
   wallet_redeem_refund: "订单退款退回",
   withdraw_request: "提现申请",

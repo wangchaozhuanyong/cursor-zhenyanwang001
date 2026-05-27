@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Bell, CheckCircle2, Eye, Shield, Siren, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminMfaStepUpPending } from "@/hooks/useAdminMfaStepUpPending";
 import * as eventService from "@/services/admin/eventCenterService";
 import type { AdminEventRecord } from "@/services/admin/eventCenterService";
 import { formatAdminEventSubtitle, formatAdminEventTitle, labelAdminEventSeverity } from "@/utils/adminEventLabels";
@@ -82,17 +83,18 @@ export default function AdminEventBell() {
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("pending");
+  const mfaStepUpPending = useAdminMfaStepUpPending();
 
   const summaryQuery = useQuery({
     queryKey: adminQueryKeys.eventCenterSummary(),
     queryFn: eventService.fetchAdminEventSummary,
-    refetchInterval: 15000,
+    refetchInterval: mfaStepUpPending ? false : 15000,
   });
   const eventsQuery = useQuery({
     queryKey: adminQueryKeys.eventCenterEvents({ tab, page: 1, pageSize: 8 }),
     queryFn: () => eventService.fetchAdminEvents({ tab, page: 1, pageSize: 8 }),
     enabled: open,
-    refetchInterval: open ? 15000 : false,
+    refetchInterval: open && !mfaStepUpPending ? 15000 : false,
   });
 
   const refresh = () => {
@@ -117,7 +119,7 @@ export default function AdminEventBell() {
     queryKey: adminQueryKeys.eventCenterEvents({ tab: "urgent", severity: "P0", page: 1, pageSize: 10 }),
     queryFn: () => eventService.fetchAdminEvents({ tab: "urgent", severity: "P0", page: 1, pageSize: 10 }),
     enabled: hasP0,
-    refetchInterval: hasP0 ? 15000 : false,
+    refetchInterval: hasP0 && !mfaStepUpPending ? 15000 : false,
   });
 
   const markSoundPlayed = useCallback(async (eventId: string) => {

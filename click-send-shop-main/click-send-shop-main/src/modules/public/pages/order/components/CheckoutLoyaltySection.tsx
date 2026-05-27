@@ -19,6 +19,19 @@ function toNum(v: unknown, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function money(v: number) {
+  return v.toFixed(2);
+}
+
+function PointsInfoItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-[var(--theme-bg)] px-3.5 py-3">
+      <p className="text-[11px] leading-none text-muted-foreground">{label}</p>
+      <p className="mt-1.5 text-sm font-bold text-foreground">{value}</p>
+    </div>
+  );
+}
+
 export function CheckoutLoyaltySection({
   pointsRedeemEnabled,
   rewardCashRedeemEnabled,
@@ -40,6 +53,8 @@ export function CheckoutLoyaltySection({
   const actualPointsUsed = Math.max(0, Math.floor(toNum(orderPreview?.points_used, pointsToUse)));
   const pointValue = toNum(orderPreview?.point_value_myr, 0.01);
   const pointsDiscount = toNum(orderPreview?.points_discount_amount, 0);
+  const availablePointsDiscount = availablePoints * pointValue;
+  const orderMaxPointsDiscount = maxPoints * pointValue;
   const disabledReason = orderPreview?.disabled_reason || (maxPoints <= 0 ? "当前订单暂无可用积分抵扣" : "");
   const availableReward = Math.max(0, toNum(orderPreview?.available_reward_balance));
   const maxReward = Math.max(0, toNum(orderPreview?.max_usable_reward_cash));
@@ -49,19 +64,29 @@ export function CheckoutLoyaltySection({
   };
 
   return (
-    <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow space-y-4">
-      <h3 className="text-[15px] font-semibold text-foreground">优惠与抵扣</h3>
+    <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow space-y-4">
+      <div className="mb-1 flex items-center gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">4</span>
+        <div>
+          <h3 className="text-[15px] font-semibold text-foreground">积分抵扣</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">使用积分直接抵扣订单金额，系统会按本单规则计算可抵扣上限</p>
+        </div>
+      </div>
 
       {pointsRedeemEnabled ? (
-        <div className="rounded-xl border border-[var(--theme-border)] p-3">
+        <div className="rounded-2xl border border-[var(--theme-border)] p-3.5">
           <label className="flex items-center justify-between text-sm font-medium">
             <span>积分抵扣</span>
             <input type="checkbox" checked={usePoints} onChange={(e) => onUsePointsChange(e.target.checked)} />
           </label>
-          <p className="mt-1 text-xs text-muted-foreground">可用 {availablePoints}，兑换比例：1 积分 = RM {pointValue.toFixed(2)}，本单最多 {maxPoints}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <PointsInfoItem label="你有积分" value={`${availablePoints} 积分`} />
+            <PointsInfoItem label="最多可抵扣" value={`RM ${money(availablePointsDiscount)}`} />
+            <PointsInfoItem label="本单最多可抵扣" value={`RM ${money(orderMaxPointsDiscount)}`} />
+          </div>
           {disabledReason && maxPoints <= 0 ? <p className="mt-1 text-xs text-[var(--theme-danger)]">{disabledReason}</p> : null}
           {usePoints ? (
-            <div className="mt-2 space-y-2">
+            <div className="mt-3 space-y-2">
               <input
                 className="w-full"
                 type="range"
@@ -85,14 +110,14 @@ export function CheckoutLoyaltySection({
                   全部
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">实际使用 {actualPointsUsed} 积分，可抵扣 RM {pointsDiscount.toFixed(2)}{orderPreview?.adjusted ? "（已按步长自动调整）" : ""}</p>
+              <p className="text-xs text-muted-foreground">本次将使用 {actualPointsUsed} 积分，抵扣 RM {money(pointsDiscount)}{orderPreview?.adjusted ? "（已按规则自动调整）" : ""}</p>
             </div>
           ) : null}
         </div>
       ) : null}
 
       {rewardCashRedeemEnabled ? (
-        <div className="rounded-xl border border-[var(--theme-border)] p-3">
+        <div className="rounded-2xl border border-[var(--theme-border)] p-3.5">
           <label className="flex items-center justify-between text-sm font-medium">
             <span>返现余额抵扣</span>
             <input type="checkbox" checked={useRewardCash} onChange={(e) => onUseRewardCashChange(e.target.checked)} />

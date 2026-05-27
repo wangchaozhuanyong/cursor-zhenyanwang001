@@ -119,7 +119,7 @@ export default function AdminMonitoringRepairTasks() {
             {list.map((task) => (
               <tr key={task.id} className="border-t align-top">
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Badge value={task.repair_status} /></td>
-                <td className={adminTdClassName("font-medium text-slate-900")}>{task.anomaly_title || task.anomaly_id}</td>
+                <td className={adminTdClassName("font-medium text-slate-900")}>{task.anomaly_title || tText("未命名异常")}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
                   {ml.repairType(task.repair_type)}
                 </td>
@@ -130,7 +130,7 @@ export default function AdminMonitoringRepairTasks() {
                     maxWidth="17rem"
                   />
                 </td>
-                <td className={adminTdClassName()}>{task.operator_label || task.operator_id || "-"}</td>
+                <td className={adminTdClassName()}>{task.operator_label || (task.operator_id ? tText("管理员") : "-")}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(task.created_at)}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(task.executed_at)}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>

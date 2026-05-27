@@ -7,6 +7,9 @@ const db = require('../src/config/db');
 
 const REQUIRED_COLUMNS = [
   { table: 'product_variants', column: 'updated_at' },
+  { table: 'coupons', column: 'claimed_count' },
+  { table: 'user_coupons', column: 'coupon_snapshot' },
+  { table: 'user_coupons', column: 'valid_from' },
 ];
 
 const REQUIRED_COLUMN_LENGTHS = [

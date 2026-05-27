@@ -196,18 +196,42 @@ async function deleteReview(id, adminUserId, req) {
   return { message: '已删除' };
 }
 
+function parseAuditJson(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+const RESTORABLE_REVIEW_STATUSES = new Set(['pending', 'normal', 'hidden', 'rejected']);
+
+async function resolveRestoreStatus(reviewId) {
+  const logs = await repo.selectAuditLogsForReview(reviewId, 30);
+  for (const log of logs) {
+    if (log.action_type !== 'review.delete') continue;
+    const before = parseAuditJson(log.before_json);
+    const status = String(before?.status || '').trim();
+    if (RESTORABLE_REVIEW_STATUSES.has(status)) return status;
+  }
+  return 'normal';
+}
+
 async function restoreReview(id, adminUserId, req) {
   const review = await repo.selectReviewById(id);
   if (!review) return { error: { code: 404, message: '评价不存在' } };
   if (review.status !== 'deleted') return { error: { code: 400, message: '评价未删除' } };
 
-  await repo.restoreReview(id);
+  const restoreStatus = await resolveRestoreStatus(id);
+  await repo.restoreReview(id, restoreStatus);
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'review.restore',
     objectType: 'product_review', objectId: id,
     summary: `恢复评价 ${id}`,
-    before: { status: 'deleted' }, after: { status: 'normal' },
+    before: { status: 'deleted' }, after: { status: restoreStatus },
     result: 'success',
   });
   return { message: '已恢复' };

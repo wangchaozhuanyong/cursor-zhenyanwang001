@@ -1,4 +1,5 @@
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchOrderById } from "@/services/admin/orderService";
@@ -6,6 +7,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
 
@@ -27,6 +29,14 @@ export default function AdminOrderDetail() {
 
   const order = orderQuery.data ?? null;
   const loading = orderQuery.isLoading && !orderQuery.data;
+
+  const tabTitle = useMemo(() => {
+    if (!order) return null;
+    if (order.order_no) return tText(`订单：${order.order_no}`);
+    if (id) return tText(`订单 #${id}`);
+    return null;
+  }, [id, order, tText]);
+  useAdminTabTitle(tabTitle, !loading && Boolean(order));
 
   if (loading) return <div className="p-6 text-sm"><Tx>加载中...</Tx></div>;
   if (!order) return <div className="p-6 text-sm"><Tx>订单不存在</Tx></div>;

@@ -100,8 +100,9 @@ async function selectActivitiesByPosition(position, types = []) {
 async function selectCouponsByIds(couponIds) {
   const ids = [...new Set((couponIds || []).map((x) => String(x || '').trim()).filter(Boolean))];
   if (!ids.length) return [];
-  const [rows] = await db.query(
-    `SELECT c.*,
+  const idPlaceholders = ids.map(() => '?').join(',');
+  const modernSql = `
+     SELECT c.*,
             (
               SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
               FROM coupon_categories cc WHERE BINARY cc.coupon_id = BINARY c.id
@@ -114,18 +115,48 @@ async function selectCouponsByIds(couponIds) {
             ) AS category_names
      FROM coupons c
      WHERE c.deleted_at IS NULL
-       AND c.status = 'available'
-       AND c.end_date >= CURDATE()
-       AND c.start_date <= CURDATE()
+       AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) = 'active'
+       AND c.status IN ('available', 'active')
+       AND (c.claim_start_at IS NULL OR c.claim_start_at <= NOW())
+       AND (c.claim_end_at IS NULL OR c.claim_end_at >= NOW())
+       AND c.stop_claim_at IS NULL
+       AND c.archived_at IS NULL
+       AND c.invalidated_at IS NULL
+       AND COALESCE(c.auto_issue, 0) = 0
        AND (
          c.total_quantity <= 0
-         OR (SELECT COUNT(*) FROM user_coupons uc WHERE BINARY uc.coupon_id = BINARY c.id) < c.total_quantity
+         OR COALESCE(c.claimed_count, 0) < c.total_quantity
        )
-       AND c.id IN (${ids.map(() => '?').join(',')})
-     ORDER BY FIELD(c.id, ${ids.map(() => '?').join(',')})`,
-    [...ids, ...ids],
-  );
-  return rows;
+       AND c.id IN (${idPlaceholders})
+     ORDER BY FIELD(c.id, ${idPlaceholders})`;
+  try {
+    const [rows] = await db.query(modernSql, [...ids, ...ids]);
+    return rows;
+  } catch (err) {
+    const { isSchemaDriftError } = require('../../../db/schemaErrors');
+    if (!isSchemaDriftError(err)) throw err;
+    const [rows] = await db.query(
+      `SELECT c.*,
+              (
+                SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
+                FROM coupon_categories cc WHERE BINARY cc.coupon_id = BINARY c.id
+              ) AS category_ids,
+              (
+                SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
+                FROM coupon_categories cc
+                JOIN categories cat ON BINARY cat.id = BINARY cc.category_id
+                WHERE BINARY cc.coupon_id = BINARY c.id
+              ) AS category_names
+       FROM coupons c
+       WHERE c.status = 'available'
+         AND c.end_date >= CURDATE()
+         AND c.start_date <= CURDATE()
+         AND c.id IN (${idPlaceholders})
+       ORDER BY FIELD(c.id, ${idPlaceholders})`,
+      [...ids, ...ids],
+    );
+    return rows;
+  }
 }
 
 function mapPublicCoupon(row) {

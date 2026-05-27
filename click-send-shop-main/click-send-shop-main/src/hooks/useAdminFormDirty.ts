@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 /**
@@ -6,7 +6,12 @@ import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
  */
 export function useAdminFormDirty<T>(value: T, ready: boolean) {
   const baselineRef = useRef<string | null>(null);
+  const valueRef = useRef(value);
   const serialized = useMemo(() => JSON.stringify(value), [value]);
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   useEffect(() => {
     if (!ready) {
@@ -21,9 +26,9 @@ export function useAdminFormDirty<T>(value: T, ready: boolean) {
   const dirty = ready && baselineRef.current !== null && baselineRef.current !== serialized;
   useAdminTabDirty(dirty);
 
-  const markClean = (nextValue?: T) => {
-    baselineRef.current = JSON.stringify(nextValue ?? value);
-  };
+  const markClean = useCallback((nextValue?: T) => {
+    baselineRef.current = JSON.stringify(nextValue ?? valueRef.current);
+  }, []);
 
   return { dirty, markClean };
 }

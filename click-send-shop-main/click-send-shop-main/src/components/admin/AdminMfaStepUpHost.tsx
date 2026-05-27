@@ -5,9 +5,10 @@ import { toast } from "sonner";
 import { ApiError } from "@/types/common";
 import {
   cancelAdminMfaStepUp,
-  completeAdminMfaStepUp,
+  completeAdminMfaStepUpWithResult,
   getPendingAdminMfaActionClass,
   registerAdminMfaStepUpOpener,
+  type AdminMfaStepUpResult,
 } from "@/lib/adminMfaStepUp";
 import { fetchAdminProfile, reverifyAdminMfa, reverifyAdminPasskey } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -24,6 +25,12 @@ export default function AdminMfaStepUpHost() {
   const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const attemptRef = useRef(0);
+  const openRef = useRef(false);
+  const profileRequestedRef = useRef(false);
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   const resetRequestState = useCallback(() => {
     attemptRef.current += 1;
@@ -35,10 +42,13 @@ export default function AdminMfaStepUpHost() {
   }, []);
 
   const show = useCallback(() => {
+    if (openRef.current) return;
     resetRequestState();
     setCode("");
     setMfaEnabled(true);
     setOpen(true);
+    if (profileRequestedRef.current) return;
+    profileRequestedRef.current = true;
     void fetchAdminProfile()
       .then((profile) => {
         const enabled = Boolean((profile as { mfa?: { enabled?: boolean } }).mfa?.enabled);
@@ -57,19 +67,22 @@ export default function AdminMfaStepUpHost() {
 
   const handleClose = () => {
     resetRequestState();
+    profileRequestedRef.current = false;
     setOpen(false);
     cancelAdminMfaStepUp();
   };
 
-  const finishSuccess = (message: string) => {
+  const finishSuccess = (message: string, result: AdminMfaStepUpResult) => {
+    profileRequestedRef.current = false;
     setOpen(false);
-    completeAdminMfaStepUp();
+    completeAdminMfaStepUpWithResult(result);
     toast.success(message);
   };
 
   const failAndCancel = (message: string) => {
     setErrorText(message);
     toast.error(message);
+    profileRequestedRef.current = false;
     setOpen(false);
     cancelAdminMfaStepUp();
   };
@@ -93,12 +106,12 @@ export default function AdminMfaStepUpHost() {
 
     const timeoutId = window.setTimeout(() => controller.abort(), MFA_REVERIFY_TIMEOUT_MS);
     try {
-      await reverifyAdminMfa(normalized, {
+      const result = await reverifyAdminMfa(normalized, {
         signal: controller.signal,
         actionClass: getPendingAdminMfaActionClass(),
       });
       if (attemptRef.current !== attemptId) return;
-      finishSuccess("身份验证已通过");
+      finishSuccess("身份验证已通过", result);
     } catch (err) {
       if (attemptRef.current !== attemptId) return;
 
@@ -109,6 +122,7 @@ export default function AdminMfaStepUpHost() {
       toast.error(message);
 
       if (controller.signal.aborted || (err instanceof ApiError && err.code !== 401)) {
+        profileRequestedRef.current = false;
         setOpen(false);
         cancelAdminMfaStepUp();
       }
@@ -132,12 +146,12 @@ export default function AdminMfaStepUpHost() {
 
     const timeoutId = window.setTimeout(() => controller.abort(), MFA_REVERIFY_TIMEOUT_MS);
     try {
-      await reverifyAdminPasskey({
+      const result = await reverifyAdminPasskey({
         signal: controller.signal,
         actionClass: getPendingAdminMfaActionClass(),
       });
       if (attemptRef.current !== attemptId) return;
-      finishSuccess("Passkey 验证已通过");
+      finishSuccess("Passkey 验证已通过", result);
     } catch (err) {
       if (attemptRef.current !== attemptId) return;
       const message = controller.signal.aborted
@@ -157,10 +171,15 @@ export default function AdminMfaStepUpHost() {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-mfa-step-up-title"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl"
+      >
         <div className="flex items-center gap-2 text-base font-semibold text-foreground">
           <KeyRound size={18} />
-          需要二次身份验证
+          <span id="admin-mfa-step-up-title">需要二次身份验证</span>
         </div>
         {mfaEnabled === false ? (
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -191,7 +210,7 @@ export default function AdminMfaStepUpHost() {
             <input
               type="text"
               inputMode="numeric"
-              autoFocus
+              autoFocus={typeof window !== "undefined" ? !window.matchMedia("(pointer: coarse)").matches : true}
               value={code}
               onChange={(e) => {
                 setCode(e.target.value.replace(/\D/g, "").slice(0, 6));

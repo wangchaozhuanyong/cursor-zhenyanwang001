@@ -8,9 +8,14 @@ import {
 } from "@/utils/token";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { getAdminCsrfToken } from "@/lib/adminCsrf";
-import { isAdminMfaRequiredResponse, requestAdminMfaStepUp } from "@/lib/adminMfaStepUp";
+import {
+  getAdminMfaActionClassFromResponse,
+  isAdminMfaRequiredResponse,
+  requestAdminMfaStepUp,
+} from "@/lib/adminMfaStepUp";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const ADMIN_SENSITIVE_ACTION_HEADER = "X-Admin-Sensitive-Action-Token";
 const IMAGE_MAX_SIZE = 15 * 1024 * 1024;
 const VIDEO_MAX_SIZE = 50 * 1024 * 1024;
 
@@ -152,6 +157,7 @@ function xhrUpload<T>(
   token: string | null,
   options: UploadRequestOptions,
   csrfToken = "",
+  sensitiveActionToken = "",
 ): Promise<{ status: number; payload: UploadEnvelope<T>; rawResponse?: string }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -160,6 +166,7 @@ function xhrUpload<T>(
     xhr.timeout = options.timeoutMs ?? 45_000;
     if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     if (csrfToken) xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+    if (sensitiveActionToken) xhr.setRequestHeader(ADMIN_SENSITIVE_ACTION_HEADER, sensitiveActionToken);
     xhr.setRequestHeader("Accept", "application/json");
 
     const onAbort = () => {
@@ -237,6 +244,7 @@ function xhrJsonPost<T>(
   token: string | null,
   options: UploadRequestOptions,
   csrfToken = "",
+  sensitiveActionToken = "",
 ): Promise<{ status: number; payload: UploadEnvelope<T> }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -247,6 +255,7 @@ function xhrJsonPost<T>(
     xhr.setRequestHeader("Accept", "application/json");
     if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     if (csrfToken) xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+    if (sensitiveActionToken) xhr.setRequestHeader(ADMIN_SENSITIVE_ACTION_HEADER, sensitiveActionToken);
 
     const onAbort = () => {
       xhr.abort();
@@ -340,9 +349,11 @@ async function authorizedJsonPost<T>(
   }
 
   if (adminMode && isAdminMfaRequiredResponse(result.status, result.payload as Record<string, unknown>)) {
-    await requestAdminMfaStepUp();
+    const stepUp = await requestAdminMfaStepUp(
+      getAdminMfaActionClassFromResponse(result.payload as Record<string, unknown>),
+    );
     csrfToken = await getAdminCsrfToken();
-    result = await xhrJsonPost<T>(url, body, getAdminAccessToken(), options, csrfToken);
+    result = await xhrJsonPost<T>(url, body, getAdminAccessToken(), options, csrfToken, stepUp.sensitiveActionToken);
   }
 
   return unwrapEnvelope(result);
@@ -381,9 +392,11 @@ async function doUpload<T>(url: string, formData: FormData, options: UploadReque
   }
 
   if (adminMode && isAdminMfaRequiredResponse(result.status, result.payload as Record<string, unknown>)) {
-    await requestAdminMfaStepUp();
+    const stepUp = await requestAdminMfaStepUp(
+      getAdminMfaActionClassFromResponse(result.payload as Record<string, unknown>),
+    );
     csrfToken = await getAdminCsrfToken();
-    result = await xhrUpload<T>(url, formData, getAdminAccessToken(), options, csrfToken);
+    result = await xhrUpload<T>(url, formData, getAdminAccessToken(), options, csrfToken, stepUp.sensitiveActionToken);
   }
 
   const data = unwrapEnvelope<T>(result);

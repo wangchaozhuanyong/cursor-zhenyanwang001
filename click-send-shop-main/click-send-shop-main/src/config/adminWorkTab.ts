@@ -8,10 +8,24 @@ export function normalizeAdminTabPath(pathname: string, search = ""): string {
   return `${base}${q}`;
 }
 
+function activityCreateTabQueryKey(search: string): string {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const scoped = new URLSearchParams();
+  const type = params.get("type");
+  const copyFrom = params.get("copy_from");
+  if (type) scoped.set("type", type);
+  if (copyFrom) scoped.set("copy_from", copyFrom);
+  const key = scoped.toString();
+  return key ? `?${key}` : "";
+}
+
 export function adminTabPathKey(fullPath: string): string {
-  const [pathname, search = ""] = fullPath.split("?");
+  const [pathname, rawSearch = ""] = fullPath.split("?");
   const base = pathname.replace(/\/+$/, "") || "/admin";
-  return search ? `${base}?${search}` : base;
+  if (base === "/admin/marketing/activities/new") {
+    return `${base}${activityCreateTabQueryKey(rawSearch)}`;
+  }
+  return base;
 }
 
 export function shouldTrackAdminWorkTab(pathname: string): boolean {
@@ -21,4 +35,4 @@ export function shouldTrackAdminWorkTab(pathname: string): boolean {
 }
 
 export const ADMIN_WORK_TABS_MAX = 15;
-export const ADMIN_WORK_TABS_STORAGE_KEY = "admin.workTabs.v2";
+export const ADMIN_WORK_TABS_STORAGE_KEY = "admin.workTabs.v3";

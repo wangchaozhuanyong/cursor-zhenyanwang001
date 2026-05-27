@@ -40,6 +40,11 @@ export async function approveRestoreJob(id: string) {
   return res.data;
 }
 
+export async function switchRestoreJob(id: string) {
+  const res = await api.switchRestoreJob(id);
+  return res.data;
+}
+
 export async function fetchRestoreDrills() {
   const res = await api.getRestoreDrills({ limit: 20 });
   return res.data;

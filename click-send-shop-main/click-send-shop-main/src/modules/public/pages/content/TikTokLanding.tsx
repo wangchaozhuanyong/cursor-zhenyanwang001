@@ -1,40 +1,73 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle2, MapPin, MessageCircle } from "lucide-react";
 
 const LOGO_SRC = "/assets/tiktok-logo.jpeg";
 const OFFICIAL_TARGET = "/";
+const SERVICES_SECTION_ID = "malaysia-services";
 
 const heroSlides = [
   {
     image: "/assets/tiktok-hero-city.svg",
-    title: "马来西亚城市生活入口",
-    subtitle: "从生活安顿到本地资源，一站连接更高效的服务体验。",
+    title: "吉隆坡城市服务",
+    subtitle: "从落地安顿到本地资源，帮你更快进入马来西亚生活节奏。",
   },
   {
     image: "/assets/tiktok-hero-home.svg",
-    title: "华人生活服务平台",
-    subtitle: "面向在马来西亚生活、学习、居住与经营的真实需求。",
+    title: "安家与日常生活",
+    subtitle: "找房、搬家、维修、生活缴费，用中文找到可靠服务。",
   },
   {
     image: "/assets/tiktok-hero-study.svg",
-    title: "留学与长期规划",
-    subtitle: "用清晰的信息入口，帮助用户快速找到合适方向。",
+    title: "留学与身份规划",
+    subtitle: "围绕学习、居住、签证和长期发展，整理清晰服务入口。",
   },
   {
     image: "/assets/tiktok-hero-business.svg",
-    title: "商务与本地对接",
-    subtitle: "服务咨询、商业空间与本地资源，建立更稳的连接。",
+    title: "商务与资源对接",
+    subtitle: "连接商业空间、本地渠道和华人圈资源，降低沟通成本。",
   },
 ];
 
-const highlights = [
-  { label: "生活服务", text: "聚合本地生活咨询与服务入口。" },
-  { label: "留学居住", text: "覆盖学习、居住和长期规划方向。" },
-  { label: "商业资源", text: "连接商务咨询与本地资源对接。" },
+const serviceTags = ["找房租房", "留学生活", "签证咨询", "本地服务", "商务资源", "华人圈资讯"];
+
+const serviceCards = [
+  { label: "安家租房", text: "找房、搬家、家具家电、入住前后常见事项。" },
+  { label: "留学教育", text: "面向留学生和家长，整理学习、住宿和生活支持。" },
+  { label: "签证身份", text: "聚合签证咨询、长期居住和身份规划相关入口。" },
+  { label: "生活缴费", text: "电话卡、水电网、交通、日常缴费和本地办事指南。" },
+  { label: "维修搬家", text: "对接维修、清洁、搬运、安装等高频上门服务。" },
+  { label: "医疗保险", text: "帮助用户了解本地医疗、保险和紧急求助资源。" },
+  { label: "商业对接", text: "连接商铺、办公空间、供应链和本地推广资源。" },
+  { label: "本地优惠", text: "发现适合华人的餐饮、活动、折扣和生活福利。" },
 ];
 
+const starterSteps = [
+  "办理电话卡和基础生活账户",
+  "确认城市、预算和居住区域",
+  "找到交通、缴费、维修等常用入口",
+  "加入华人生活与商务资源网络",
+];
+
+const trustPoints = [
+  "中文沟通，适合新来马来西亚的用户",
+  "覆盖吉隆坡、雪兰莪、槟城、新山等热门城市",
+  "围绕留学生、工作人士、家庭和商家真实需求",
+];
+
+function upsertMeta(selector: string, attributes: Record<string, string>) {
+  let meta = document.head.querySelector<HTMLMetaElement>(selector);
+  if (!meta) {
+    meta = document.createElement("meta");
+    document.head.appendChild(meta);
+  }
+  Object.entries(attributes).forEach(([key, value]) => meta.setAttribute(key, value));
+}
+
 function syncTikTokHead() {
-  document.title = "大马通";
+  const title = "大马通 | 中国人在马来西亚的一站式生活服务平台";
+  const description = "大马通为中国人在马来西亚提供找房安家、留学生活、签证咨询、本地服务和商务资源入口。";
+
+  document.title = title;
 
   document.head.querySelectorAll<HTMLLinkElement>("link[rel='canonical']").forEach((el) => el.remove());
   document.head
@@ -49,7 +82,25 @@ function syncTikTokHead() {
     robots.name = "robots";
     document.head.appendChild(robots);
   }
-  robots.content = "noindex,nofollow";
+  robots.content = "index,follow";
+
+  const canonical = document.createElement("link");
+  canonical.rel = "canonical";
+  canonical.href = window.location.href;
+  document.head.appendChild(canonical);
+
+  upsertMeta("meta[name='description']", { name: "description", content: description });
+  upsertMeta("meta[name='keywords']", {
+    name: "keywords",
+    content: "大马通,马来西亚生活服务,中国人在马来西亚,马来西亚找房,马来西亚留学,吉隆坡生活",
+  });
+  upsertMeta("meta[property='og:title']", { property: "og:title", content: title });
+  upsertMeta("meta[property='og:description']", { property: "og:description", content: description });
+  upsertMeta("meta[property='og:image']", { property: "og:image", content: LOGO_SRC });
+  upsertMeta("meta[property='og:type']", { property: "og:type", content: "website" });
+  upsertMeta("meta[name='twitter:card']", { name: "twitter:card", content: "summary_large_image" });
+  upsertMeta("meta[name='twitter:title']", { name: "twitter:title", content: title });
+  upsertMeta("meta[name='twitter:description']", { name: "twitter:description", content: description });
 
   document
     .querySelectorAll<HTMLLinkElement>("link[rel='icon'], link[rel='shortcut icon']")
@@ -108,10 +159,14 @@ export default function TikTokLanding() {
     window.location.assign(OFFICIAL_TARGET);
   };
 
+  const scrollToServices = () => {
+    document.getElementById(SERVICES_SECTION_ID)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <main className="min-h-screen bg-[#060504] text-[#fff8e6]">
+    <main className="min-h-screen bg-[#070504] text-[#fff8e6]">
       <section className="relative isolate min-h-screen overflow-hidden">
-        <div className="absolute inset-0 -z-20 bg-[#060504]">
+        <div className="absolute inset-0 -z-20 bg-[#070504]">
           {heroSlides.map((slide, index) => (
             <img
               key={slide.image}
@@ -126,9 +181,10 @@ export default function TikTokLanding() {
             />
           ))}
         </div>
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.14),rgba(0,0,0,0.46)_48%,rgba(0,0,0,0.74)_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(115deg,rgba(7,5,4,0.94)_0%,rgba(7,5,4,0.78)_45%,rgba(32,18,7,0.62)_100%)]" />
+        <div className="absolute left-1/2 top-20 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-[#f2c76d]/18 blur-3xl sm:h-96 sm:w-96" />
         <div className="absolute inset-x-0 top-0 z-10 h-36 bg-gradient-to-b from-black/70 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 z-10 h-48 bg-gradient-to-t from-[#060504] via-[#060504]/70 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 z-10 h-48 bg-gradient-to-t from-[#070504] via-[#070504]/76 to-transparent" />
 
         <div className="relative z-20 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-5 sm:px-8 lg:px-10">
           <header className="flex items-center justify-between">
@@ -151,41 +207,130 @@ export default function TikTokLanding() {
             </div>
           </header>
 
-          <div className="flex flex-1 items-center justify-center py-14 text-center">
-            <div className="max-w-4xl rounded-[2rem] border border-white/10 bg-black/24 px-5 py-9 shadow-[0_30px_120px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm sm:px-10 sm:py-12">
-              <p className="text-xs font-semibold uppercase tracking-[0.38em] text-[#f2c76d]">Malaysia Chinese Lifestyle</p>
-              <h1 className="mt-5 text-4xl font-semibold leading-tight text-white sm:text-6xl lg:text-7xl">
-                {activeSlide.title}
+          <div className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[1.08fr_0.92fr] lg:py-14">
+            <div className="text-left">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#f2c76d]/28 bg-black/35 px-4 py-2 text-xs font-semibold tracking-[0.18em] text-[#f2c76d] shadow-[0_14px_45px_rgba(0,0,0,0.25)] backdrop-blur-sm">
+                <MapPin size={15} />
+                MALAYSIA CHINESE SERVICE HUB
+              </div>
+              <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight text-white sm:text-6xl lg:text-7xl">
+                中国人在马来西亚的一站式生活服务平台
               </h1>
-              <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[#eadfc4] sm:text-lg">
-                {activeSlide.subtitle}
+              <p className="mt-6 max-w-2xl text-base leading-8 text-[#eadfc4] sm:text-lg">
+                找房安家、留学陪伴、本地生活、签证咨询、商务资源，从初到马来西亚到长期发展，大马通帮你连接可靠服务。
               </p>
-              <button
-                type="button"
-                onClick={enterOfficialSite}
-                className="group mx-auto mt-9 inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#f2c76d] px-8 text-base font-semibold text-[#171006] shadow-[0_18px_60px_rgba(242,199,109,0.28),inset_0_1px_0_rgba(255,255,255,0.52)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#ffe09a] focus:outline-none focus:ring-2 focus:ring-[#ffe4a0] focus:ring-offset-2 focus:ring-offset-[#090805] sm:min-h-16 sm:px-10 sm:text-lg"
-              >
-                进入大马通官方
-                <ArrowRight className="transition duration-300 group-hover:translate-x-1" size={22} />
-              </button>
+
+              <div className="mt-6 flex flex-wrap gap-2.5">
+                {serviceTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-[#f2c76d]/24 bg-[#f2c76d]/10 px-4 py-2 text-sm font-medium text-[#ffe4a0]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={enterOfficialSite}
+                  className="group inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#f2c76d] px-8 text-base font-semibold text-[#171006] shadow-[0_18px_60px_rgba(242,199,109,0.28),inset_0_1px_0_rgba(255,255,255,0.52)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#ffe09a] focus:outline-none focus:ring-2 focus:ring-[#ffe4a0] focus:ring-offset-2 focus:ring-offset-[#090805] sm:min-h-16 sm:px-10 sm:text-lg"
+                >
+                  进入服务大厅
+                  <ArrowRight className="transition duration-300 group-hover:translate-x-1" size={22} />
+                </button>
+                <button
+                  type="button"
+                  onClick={scrollToServices}
+                  className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-[#f2c76d]/35 bg-black/36 px-8 text-base font-semibold text-[#ffe4a0] shadow-[0_18px_55px_rgba(0,0,0,0.22)] backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#ffe4a0]/70 hover:bg-black/48 focus:outline-none focus:ring-2 focus:ring-[#ffe4a0] focus:ring-offset-2 focus:ring-offset-[#090805] sm:min-h-16 sm:px-10 sm:text-lg"
+                >
+                  <MessageCircle size={21} />
+                  查看可用服务
+                </button>
+              </div>
+
+              <div className="mt-8 grid gap-3 text-sm text-[#eadfc4] sm:grid-cols-3">
+                {trustPoints.map((point) => (
+                  <div key={point} className="flex items-start gap-2 rounded-2xl bg-black/24 p-3 ring-1 ring-white/8">
+                    <CheckCircle2 className="mt-0.5 shrink-0 text-[#f2c76d]" size={17} />
+                    <span>{point}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-white/12 bg-black/34 p-5 shadow-[0_30px_120px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm sm:p-7">
+              <div className="overflow-hidden rounded-[1.5rem] border border-[#f2c76d]/16 bg-[#100d08]/85">
+                <img src={activeSlide.image} alt={activeSlide.title} className="h-56 w-full object-cover sm:h-72" />
+                <div className="p-5">
+                  <p className="text-sm font-semibold text-[#f2c76d]">当前推荐入口</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-white">{activeSlide.title}</h2>
+                  <p className="mt-3 text-sm leading-7 text-[#d8cfb5]">{activeSlide.subtitle}</p>
+                </div>
+              </div>
+              <div className="mt-5 flex items-center justify-center gap-2">{slideButtons}</div>
             </div>
           </div>
-
-          <div className="flex items-center justify-center gap-2 pb-4">{slideButtons}</div>
         </div>
       </section>
 
-      <section className="px-5 py-12 sm:px-8 lg:px-10">
-        <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-3">
-          {highlights.map((item) => (
-            <article
-              key={item.label}
-              className="rounded-2xl border border-[#d8ae62]/18 bg-[#100d08] p-6 shadow-[0_22px_70px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.04)]"
-            >
-              <h2 className="text-lg font-semibold text-[#ffe4a0]">{item.label}</h2>
-              <p className="mt-3 text-sm leading-7 text-[#d8cfb5]">{item.text}</p>
-            </article>
-          ))}
+      <section id={SERVICES_SECTION_ID} className="px-5 py-14 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold tracking-[0.24em] text-[#f2c76d]">SERVICE CATEGORIES</p>
+            <h2 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">刚到马来西亚，从这些服务开始</h2>
+            <p className="mt-4 text-base leading-8 text-[#d8cfb5]">
+              用户不需要先理解平台结构，只要按自己的生活场景进入，就能快速找到对应服务。
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {serviceCards.map((item) => (
+              <article
+                key={item.label}
+                className="rounded-2xl border border-[#d8ae62]/18 bg-[#100d08] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.04)]"
+              >
+                <h3 className="text-lg font-semibold text-[#ffe4a0]">{item.label}</h3>
+                <p className="mt-3 text-sm leading-7 text-[#d8cfb5]">{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 pb-16 sm:px-8 lg:px-10">
+        <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-[2rem] border border-[#d8ae62]/18 bg-[#100d08] p-6 shadow-[0_22px_70px_rgba(0,0,0,0.24)] sm:p-8">
+            <p className="text-sm font-semibold tracking-[0.24em] text-[#f2c76d]">NEWCOMER GUIDE</p>
+            <h2 className="mt-3 text-3xl font-semibold text-white">刚来马来西亚？先走这 4 步</h2>
+            <p className="mt-4 text-sm leading-7 text-[#d8cfb5]">
+              把复杂的本地生活拆成清晰入口，让新用户第一眼知道大马通能帮他开始。
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {starterSteps.map((step, index) => (
+              <div key={step} className="rounded-2xl border border-white/10 bg-black/28 p-5">
+                <span className="text-sm font-semibold text-[#f2c76d]">0{index + 1}</span>
+                <p className="mt-3 text-base font-semibold leading-7 text-white">{step}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mx-auto mt-8 max-w-6xl rounded-[2rem] border border-[#f2c76d]/20 bg-[#f2c76d]/10 p-6 text-center shadow-[0_22px_80px_rgba(0,0,0,0.26)] sm:p-8">
+          <h2 className="text-2xl font-semibold text-white sm:text-3xl">进入大马通，开始你的马来西亚生活</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#eadfc4]">
+            无论你是留学生、工作人士、陪读家庭还是本地商家，都可以从这里找到中文友好的服务入口。
+          </p>
+          <button
+            type="button"
+            onClick={enterOfficialSite}
+            className="group mx-auto mt-6 inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#f2c76d] px-8 text-base font-semibold text-[#171006] transition duration-300 hover:-translate-y-0.5 hover:bg-[#ffe09a] focus:outline-none focus:ring-2 focus:ring-[#ffe4a0] focus:ring-offset-2 focus:ring-offset-[#090805]"
+          >
+            进入服务大厅
+            <ArrowRight className="transition duration-300 group-hover:translate-x-1" size={21} />
+          </button>
         </div>
       </section>
     </main>

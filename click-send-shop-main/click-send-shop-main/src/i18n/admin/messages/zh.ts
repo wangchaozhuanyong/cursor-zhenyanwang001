@@ -124,6 +124,7 @@ export const adminMessagesZh: AdminMessages = {
     roles: "角色权限",
     recycleBin: "回收站",
     eventCenter: "后台事件",
+    eventRules: "事件规则",
     monitoringCenter: "监控中心",
     monitoringOverview: "数据总览",
     monitoringAnomalies: "数据异常",

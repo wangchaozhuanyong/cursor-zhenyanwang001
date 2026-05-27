@@ -6,11 +6,17 @@ interface ProductFilterDrawerProps {
   activeFilterCount: number;
   onReset: () => void;
   onConfirm?: () => boolean | void;
+  /** 外部感知打开/关闭（用于页面滚动栏联动），不改变现有内部状态逻辑 */
+  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
 }
 
-export default function ProductFilterDrawer({ activeFilterCount, onReset, onConfirm, children }: ProductFilterDrawerProps) {
+export default function ProductFilterDrawer({ activeFilterCount, onReset, onConfirm, onOpenChange, children }: ProductFilterDrawerProps) {
   const [open, setOpen] = useState(false);
+  const setOpenSafe = (next: boolean) => {
+    setOpen(next);
+    onOpenChange?.(next);
+  };
 
   const footer = (
     <div className="grid grid-cols-2 gap-2">
@@ -26,7 +32,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
         onClick={() => {
           const ok = onConfirm?.();
           if (ok === false) return;
-          setOpen(false);
+          setOpenSafe(false);
         }}
         className="w-full rounded-xl bg-[var(--theme-primary)] px-3 py-3 text-sm font-semibold text-[var(--theme-primary-foreground)]"
       >
@@ -39,7 +45,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => setOpenSafe(true)}
         className="inline-flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs font-semibold text-[var(--theme-text)]"
       >
         <Filter size={14} />
@@ -54,7 +60,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
       <AppModal
         tier="standard"
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => setOpenSafe(false)}
         title="筛选商品"
         height="90vh"
         stickyFooter

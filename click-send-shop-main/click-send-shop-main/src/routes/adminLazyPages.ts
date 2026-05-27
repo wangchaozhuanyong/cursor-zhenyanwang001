@@ -21,6 +21,7 @@ export const AdminShipping = lazy(() => import("@/modules/admin/pages/order/Admi
 
 export const AdminUsers = lazy(() => import("@/modules/admin/pages/user/AdminUsers"));
 export const AdminUserDetail = lazy(() => import("@/modules/admin/pages/user/AdminUserDetail"));
+export const AdminUserSecurity = lazy(() => import("@/modules/admin/pages/user/AdminUserSecurity"));
 export const AdminMemberLevels = lazy(() => import("@/modules/admin/pages/user/AdminMemberLevels"));
 export const AdminInvites = lazy(() => import("@/modules/admin/pages/user/AdminInvites"));
 
@@ -37,6 +38,8 @@ export const AdminReviews = lazy(() => import("@/modules/admin/pages/review/Admi
 export const AdminNotifications = lazy(() => import("@/modules/admin/pages/notification/AdminNotifications"));
 export const AdminNotificationDetail = lazy(() => import("@/modules/admin/pages/notification/AdminNotificationDetail"));
 export const AdminEventCenter = lazy(() => import("@/modules/admin/pages/event/AdminEventCenter"));
+export const AdminEventDetail = lazy(() => import("@/modules/admin/pages/event/AdminEventDetail"));
+export const AdminEventRules = lazy(() => import("@/modules/admin/pages/event/AdminEventRules"));
 
 export const AdminReports = lazy(() => import("@/modules/admin/pages/report/AdminReports"));
 export const AdminReportOverview = lazy(() => import("@/modules/admin/pages/report/AdminReportOverview"));

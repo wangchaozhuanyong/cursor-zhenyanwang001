@@ -169,7 +169,7 @@ export default function AdminCoupons() {
         skeletonCols={8}
         tableClassName="min-w-[960px]"
         className="overflow-hidden border-border bg-card"
-        theadClassName="bg-secondary/40 text-left text-xs text-muted-foreground"
+        theadClassName="bg-secondary/40 text-xs text-muted-foreground"
         thead={adminTableTheadRow(
           ["标题", "类型", "编码", "面额", "门槛", "有效期", "状态", "操作"],
           COUPON_COLUMN_ALIGNS,

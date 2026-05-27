@@ -8,8 +8,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Play, Volume2 } from "lucide-react";
 import { toast } from "sonner";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { cn } from "@/lib/utils";
 import { isAdminMfaStepUpPending } from "@/lib/adminMfaStepUp";
 import * as orderService from "@/services/admin/orderService";
@@ -226,6 +228,7 @@ function useAdminOrderVoice() {
 
 export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
   const { tText } = useAdminT();
+  const queryClient = useQueryClient();
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -355,6 +358,15 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
     void playQueue();
   }, [playQueue]);
 
+  const invalidateFreshOrderEvents = useCallback((events: AdminOrderVoiceEvent[]) => {
+    const shouldRefresh = events.some((event) => event.type === "order_created" || event.type === "payment_success");
+    if (!shouldRefresh) return;
+    void queryClient.invalidateQueries({ queryKey: adminQueryKeys.ordersRoot() });
+    void queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
+    void queryClient.invalidateQueries({ queryKey: adminQueryKeys.paymentsRoot() });
+    void queryClient.invalidateQueries({ queryKey: adminQueryKeys.notificationsRoot() });
+  }, [queryClient]);
+
   const pollEvents = useCallback(async () => {
     if (!enabledRef.current || pollingRef.current || isAdminMfaStepUpPending()) return;
     pollingRef.current = true;
@@ -375,6 +387,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
 
       if (freshEvents.length > 0) {
         savePlayedIds([...playedIds, ...freshEvents.map((event) => event.id)]);
+        invalidateFreshOrderEvents(freshEvents);
         enqueueEvents(freshEvents);
       }
       window.localStorage.setItem(LAST_CHECKED_KEY, checkedAt);
@@ -383,7 +396,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
     } finally {
       pollingRef.current = false;
     }
-  }, [enqueueEvents]);
+  }, [enqueueEvents, invalidateFreshOrderEvents]);
 
   useEffect(() => {
     if (!enabled || loading) return;

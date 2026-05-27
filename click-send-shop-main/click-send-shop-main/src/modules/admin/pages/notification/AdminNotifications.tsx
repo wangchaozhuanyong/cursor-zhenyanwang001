@@ -18,6 +18,7 @@ import {
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import * as notificationService from "@/services/admin/notificationService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import type { Notification } from "@/types/notification";
 import type { NotificationPayload } from "@/services/admin/notificationService";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -160,15 +161,14 @@ export default function AdminNotifications() {
   const notificationsQuery = useQuery({
     queryKey: [...adminQueryKeys.notificationsRoot(), "list", listParams],
     queryFn: () => notificationService.fetchNotifications(listParams),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
+    ...adminRealtimeQueryOptions.operation,
   });
 
   const rulesQuery = useQuery({
     queryKey: [...adminQueryKeys.notificationsRoot(), "trigger-settings"],
     queryFn: notificationService.fetchNotificationTriggerSettings,
     enabled: tab === "settings",
-    staleTime: 60_000,
+    ...adminRealtimeQueryOptions.config,
   });
 
   const invalidateNotifications = async () => {

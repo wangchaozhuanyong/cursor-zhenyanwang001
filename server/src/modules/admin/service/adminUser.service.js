@@ -446,6 +446,7 @@ module.exports = {
   updateUserRestrictions,
   getUserStatusOverview,
   assertTargetIsNormalUser,
+  persistUserRestrictions,
 };
 
 

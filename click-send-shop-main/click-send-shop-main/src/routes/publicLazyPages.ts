@@ -27,6 +27,7 @@ export const PendingReviews = lazy(() => import("@/modules/public/pages/review/P
 
 export const Profile = lazyWithPreload(() => import("@/modules/public/pages/user/Profile"));
 export const Settings = lazy(() => import("@/modules/public/pages/user/Settings"));
+export const AccountSecurity = lazy(() => import("@/modules/public/pages/user/AccountSecurity"));
 export const AddressManage = lazy(() => import("@/modules/public/pages/user/AddressManage"));
 export const Favorites = lazy(() => import("@/modules/public/pages/user/Favorites"));
 export const History = lazy(() => import("@/modules/public/pages/user/History"));

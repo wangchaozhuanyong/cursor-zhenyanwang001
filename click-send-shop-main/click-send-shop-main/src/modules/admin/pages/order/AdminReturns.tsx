@@ -18,6 +18,7 @@ import {
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import * as returnService from "@/services/admin/returnService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import type { ApproveReturnParams, ReturnDetail, ReturnRequest } from "@/types/return";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
@@ -95,15 +96,14 @@ export default function AdminReturns() {
   const returnsQuery = useQuery({
     queryKey: [...adminQueryKeys.returnsRoot(), "list", params],
     queryFn: () => returnService.fetchReturnRequests(params),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
+    ...adminRealtimeQueryOptions.return,
   });
 
   const detailQuery = useQuery({
     queryKey: [...adminQueryKeys.returnsRoot(), "detail", selectedId],
     queryFn: () => returnService.fetchReturnById(selectedId as string),
     enabled: !!selectedId,
-    staleTime: 30_000,
+    ...adminRealtimeQueryOptions.return,
   });
 
   const invalidateReturns = async () => {

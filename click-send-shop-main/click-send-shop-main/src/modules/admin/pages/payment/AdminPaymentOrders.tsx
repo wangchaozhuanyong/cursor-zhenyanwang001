@@ -19,6 +19,7 @@ import {
 } from "@/components/admin/AdminFilterControls";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import type { PaymentOrderAdminRow } from "@/types/adminPayment";
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
@@ -108,8 +109,7 @@ export default function AdminPaymentOrders() {
   const ordersQuery = useQuery({
     queryKey: [...adminQueryKeys.paymentsRoot(), "orders", params],
     queryFn: () => paymentAdmin.fetchAdminPaymentOrders(params),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
+    ...adminRealtimeQueryOptions.payment,
   });
 
   const markPaidMutation = useMutation({

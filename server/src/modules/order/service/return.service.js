@@ -2,6 +2,7 @@ const { generateId, parseProductImages } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const repo = require('../repository/return.repository');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../../constants/status');
+const { publishAdminEvent, emitAdminEvent } = require('../orderAdminEvents');
 
 function formatReturnRow(row) {
   if (!row) return row;
@@ -70,6 +71,23 @@ async function createReturn(userId, body) {
   });
 
   const row = await repo.selectReturnById(id);
+  publishAdminEvent({
+    type: 'return.created',
+    objectId: id,
+    summary: order.order_no,
+  });
+  emitAdminEvent({
+    eventType: 'return.created',
+    category: 'order',
+    severity: 'P2',
+    title: '售后申请创建',
+    message: `订单 ${order.order_no} 创建了售后申请`,
+    entityType: 'return',
+    entityId: id,
+    fingerprint: { eventType: 'return.created', entityType: 'return', entityId: id },
+    payload: { orderNo: order.order_no, orderId: order_id, userId, type: type || 'refund' },
+    source: 'return_request',
+  });
   return { data: formatReturnRow(row), message: '售后申请已提交' };
 }
 

@@ -31,6 +31,13 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!target || !(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName?.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select";
+}
+
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
   const siteInfo = useSiteInfo();
@@ -206,12 +213,14 @@ export default function Categories() {
   const showFullSkeleton = loading && products.length === 0;
   const showSoftRefreshing = listRefreshing && products.length > 0;
 
-  const chromeHidden = useSmartBars({ hideAfter: 60, showOnUp: 12 });
+  const chromeHidden = useSmartBars({ hideAfter: 36, showOnUp: 10 });
   const [pageScrollable, setPageScrollable] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [inputActive, setInputActive] = useState(false);
 
   useEffect(() => {
     const measure = () => {
-      setPageScrollable(document.documentElement.scrollHeight > window.innerHeight + 100);
+      setPageScrollable(document.documentElement.scrollHeight > window.innerHeight + 24);
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -223,11 +232,24 @@ export default function Categories() {
     };
   }, [products.length, loading, categories.length, subCategories.length, activeFilterCount, debouncedQuery]);
 
-  const chromeCollapsed = chromeHidden && pageScrollable;
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => setInputActive(isEditableTarget(e.target));
+    const onFocusOut = () => setInputActive(false);
+    window.addEventListener("focusin", onFocusIn);
+    window.addEventListener("focusout", onFocusOut);
+    return () => {
+      window.removeEventListener("focusin", onFocusIn);
+      window.removeEventListener("focusout", onFocusOut);
+    };
+  }, []);
+
+  const preventCollapse = filterDrawerOpen || inputActive;
+  const chromeCollapsed = chromeHidden && pageScrollable && !preventCollapse;
 
   const filterDrawer = (
     <ProductFilterDrawer
       activeFilterCount={activeFilterCount}
+      onOpenChange={setFilterDrawerOpen}
       onReset={clearFilters}
       onConfirm={() => {
         const min = minPrice ? Number(minPrice) : undefined;

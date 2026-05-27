@@ -43,9 +43,19 @@ const RULES = [
   { method: 'PUT', pattern: /^\/rewards\/settings$/, actionClass: 'high_risk_config' },
   { method: 'PUT', pattern: /^\/notifications\/trigger-settings$/, actionClass: 'high_risk_config' },
   { method: 'POST', pattern: /^\/backups\/full$/, actionClass: 'high_risk_config' },
+  { method: 'POST', pattern: /^\/backups\/config$/, actionClass: 'high_risk_config' },
+  { method: 'POST', pattern: /^\/backups\/uploads$/, actionClass: 'high_risk_config' },
   { method: 'POST', pattern: /^\/restore\/jobs$/, actionClass: 'high_risk_config' },
   { method: 'POST', pattern: /^\/restore\/jobs\/[^/]+\/approve$/, actionClass: 'high_risk_config' },
   { method: 'POST', pattern: /^\/restore\/jobs\/[^/]+\/switch$/, actionClass: 'high_risk_config' },
+
+  { method: 'PATCH', pattern: /^\/monitoring\/rules\/[^/]+$/, actionClass: 'monitoring_rule_config' },
+  { method: 'POST', pattern: /^\/monitoring\/rules\/[^/]+\/run$/, actionClass: 'monitoring_high_risk' },
+  { method: 'POST', pattern: /^\/monitoring\/repair-tasks\/[^/]+\/(approve|reject|cancel|execute)$/, actionClass: 'monitoring_repair' },
+  { method: 'POST', pattern: /^\/monitoring\/anomalies\/[^/]+\/(ignore|resolve)$/, actionClass: 'monitoring_high_risk' },
+  { method: 'PATCH', pattern: /^\/event-center\/rules\/[^/]+$/, actionClass: 'event_rule_config' },
+  { method: 'POST', pattern: /^\/event-center\/events\/batch\/(ignore|resolve|assign)$/, actionClass: 'event_bulk_action' },
+  { method: 'PUT', pattern: /^\/event-center\/events\/[^/]+\/(resolve|ignore)$/, actionClass: 'event_close' },
 ];
 
 function getSensitiveActionClass(req) {

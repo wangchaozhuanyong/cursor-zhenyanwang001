@@ -34,6 +34,27 @@ function emitAdminEvent(event, options = {}) {
   }
 }
 
+function publishPaymentRealtime({ order, paymentOrderId, type = 'order.paid', summary = '' }) {
+  if (!order) return;
+  publishAdminEvent({
+    type,
+    objectId: order.id,
+    summary: summary || order.order_no || order.id,
+  });
+  if (paymentOrderId) {
+    publishAdminEvent({
+      type: 'payment.updated',
+      objectId: paymentOrderId,
+      summary: summary || order.order_no || paymentOrderId,
+    });
+    publishAdminEvent({
+      type: 'payment.event',
+      objectId: paymentOrderId,
+      summary: summary || order.order_no || paymentOrderId,
+    });
+  }
+}
+
 function getLoyaltyApi() {
   return /** @type {any} */ (require('../../loyalty')).api || {};
 }
@@ -337,6 +358,7 @@ async function payWithRewardWallet(userId, orderId) {
     });
 
     await conn.commit();
+    publishPaymentRealtime({ order: lockedOrder, paymentOrderId });
     emitAdminEvent({
       eventType: 'order.paid',
       category: 'order',
@@ -802,6 +824,7 @@ async function recordStripeCapture(orderId, paymentIntentId, stripeEventId, payl
     // best effort analytics
   }
 
+  publishPaymentRealtime({ order, paymentOrderId });
   return { ok: true, payment_order_id: paymentOrderId };
 }
 
@@ -943,8 +966,13 @@ async function markOrderPaidByAdmin(req, orderId, body) {
 
     await conn.commit();
     publishAdminEvent({
-      type: 'order.payment_success',
+      type: 'order.paid',
       objectId: order.id,
+      summary: order.order_no,
+    });
+    publishAdminEvent({
+      type: 'payment.updated',
+      objectId: paymentOrderId,
       summary: order.order_no,
     });
     publishAdminEvent({
@@ -1091,6 +1119,17 @@ async function recordRefundByAdmin(req, orderId, body, externalConn = null) {
     if (ownConn) await conn.commit();
 
     if (ownConn) {
+      publishPaymentRealtime({
+        order,
+        paymentOrderId: null,
+        type: 'order.refunded',
+        summary: order.order_no,
+      });
+      publishAdminEvent({
+        type: 'payment.event',
+        objectId: order.id,
+        summary: order.order_no,
+      });
       emitAdminEvent({
         eventType: 'refund.requested',
         category: 'refund',
@@ -1485,6 +1524,7 @@ async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
 
     await conn.commit();
     if (shouldQueueMyInvoisInvoice) {
+      publishPaymentRealtime({ order, paymentOrderId: paymentOrder.id });
       emitAdminEvent({
         eventType: 'order.paid',
         category: 'order',

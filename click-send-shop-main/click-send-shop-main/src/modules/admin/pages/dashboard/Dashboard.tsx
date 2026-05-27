@@ -8,6 +8,7 @@ import StatsCard from "@/components/admin/StatsCard";
 import DashboardCustomRangePanel from "@/components/admin/dashboard/DashboardCustomRangePanel";
 import * as dashboardService from "@/services/admin/dashboardService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import type { DashboardRangePreset } from "@/types/admin";
 import { getErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
@@ -71,7 +72,7 @@ export default function Dashboard() {
     queryKey: [...adminQueryKeys.dashboard(), queryParams],
     queryFn: () => dashboardService.fetchDashboardStats(queryParams),
     enabled: rangePreset !== "custom" || customRangeReady,
-    refetchInterval: 90_000,
+    ...adminRealtimeQueryOptions.operation,
   });
 
   const openCustomRangePanel = () => {

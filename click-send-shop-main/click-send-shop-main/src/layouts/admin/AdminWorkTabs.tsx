@@ -67,7 +67,7 @@ export default function AdminWorkTabs() {
 
   useEffect(() => {
     const el = scrollRef.current?.querySelector<HTMLElement>(`[data-tab-id="${activeTabId}"]`);
-    el?.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+    el?.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "auto" });
   }, [activeTabId, tabs.length]);
 
   useEffect(() => {

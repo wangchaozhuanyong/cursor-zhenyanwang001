@@ -1,7 +1,13 @@
 import Pagination from "@/components/admin/Pagination";
 import { Tx } from "@/components/admin/AdminText";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
-import { ADMIN_TABLE_ALIGN_LEFT_CLASS } from "@/utils/adminTableClasses";
+import {
+  ADMIN_TABLE_ALIGN_CENTER_CLASS,
+  ADMIN_TABLE_ALIGN_LEFT_CLASS,
+  ADMIN_TABLE_ALIGN_RIGHT_CLASS,
+  adminTableHeadCellClass,
+  type AdminTableAlign,
+} from "@/utils/adminTableClasses";
 import { INVENTORY_PAGE_SIZE, INVENTORY_SKU_HEADS } from "@/modules/admin/pages/product/inventory/inventoryConstants";
 import {
   INVENTORY_SKU_TABLE_CLASS,
@@ -17,6 +23,21 @@ import { Package } from "lucide-react";
 import { THEME_BADGE_SUCCESS, THEME_BADGE_WARNING, THEME_TEXT_DANGER, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
 import type { UseMutationResult } from "@tanstack/react-query";
 import type { ReactNode } from "react";
+
+const INVENTORY_SKU_COLUMN_ALIGNS: AdminTableAlign[] = [
+  "center",
+  "left",
+  "left",
+  "left",
+  "left",
+  "right",
+  "right",
+  "center",
+  "right",
+  "center",
+  "left",
+  "right",
+];
 
 type Props = {
   skus: InventorySku[];
@@ -77,15 +98,14 @@ export default function InventorySkusTab({
         emptyDescription={L("创建商品规格后会显示库存。")}
         thead={(
           <tr>
-            <th className="w-10 whitespace-nowrap px-3 py-2 text-left">
+            <th className={adminTableHeadCellClass("center", "w-10 px-3 py-2")}>
               <input type="checkbox" checked={allSelectedOnPage} onChange={onTogglePageSelection} aria-label={tText("全选当前页")} />
             </th>
-            {INVENTORY_SKU_HEADS.map((head) => (
+            {INVENTORY_SKU_HEADS.map((head, index) => (
               <th
                 key={head}
                 className={cn(
-                  "whitespace-nowrap px-3 py-2 text-xs font-semibold",
-                  head === "操作" ? "text-right" : "text-left",
+                  adminTableHeadCellClass(INVENTORY_SKU_COLUMN_ALIGNS[index], "px-3 py-2"),
                   head === "图" && "w-12",
                 )}
               >
@@ -104,10 +124,10 @@ export default function InventorySkusTab({
           const updatedLabel = sku.updated_at ? formatDateTime(sku.updated_at) : "—";
           return (
             <>
-              <td className={inventorySkuTd("w-10")}>
+              <td className={inventorySkuTd(`w-10 ${ADMIN_TABLE_ALIGN_CENTER_CLASS}`)}>
                 <input type="checkbox" checked={checked} onChange={() => onToggleVariant(sku.variant_id)} aria-label={`选择 ${productName}`} />
               </td>
-              <td className={inventorySkuTd("w-12")}>
+              <td className={inventorySkuTd(`w-12 ${ADMIN_TABLE_ALIGN_CENTER_CLASS}`)}>
                 {sku.cover_image ? (
                   <img src={sku.cover_image} alt="" className="mx-auto block h-7 w-7 rounded object-cover" />
                 ) : (
@@ -126,16 +146,16 @@ export default function InventorySkusTab({
               <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_LEFT_CLASS)}>
                 {inventoryInlineText(sku.category_name || L("未分类"), { maxWidth: "7rem", muted: true })}
               </td>
-              <td className={inventorySkuTd()}>
+              <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_RIGHT_CLASS)}>
                 <span className={cn("text-sm leading-none", sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium")}>
                   {sku.available_stock} {unit}
                 </span>
               </td>
-              <td className={inventorySkuTd()}>
+              <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_RIGHT_CLASS)}>
                 <span className="text-sm leading-none text-muted-foreground">{sku.stock} {unit}</span>
               </td>
-              <td className={inventorySkuTd()}>{inventoryInlineText(unit, { maxWidth: "3rem" })}</td>
-              <td className={inventorySkuTd()}>
+              <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_CENTER_CLASS)}>{inventoryInlineText(unit, { maxWidth: "3rem" })}</td>
+              <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_RIGHT_CLASS)}>
                 <input
                   type="number"
                   min={0}
@@ -146,14 +166,14 @@ export default function InventorySkusTab({
                       thresholdMutation.mutate({ sku, threshold });
                     }
                   }}
-                  className="w-16 rounded-lg bg-secondary px-2 py-1 text-xs leading-none"
+                  className="w-16 rounded-lg bg-secondary px-2 py-1 text-right text-xs leading-none"
                 />
               </td>
-              <td className={inventorySkuTd("text-xs")}>{inventoryInlineText(stockStatusText(sku, L), { maxWidth: "4rem" })}</td>
+              <td className={inventorySkuTd(`${ADMIN_TABLE_ALIGN_CENTER_CLASS} text-xs`)}>{inventoryInlineText(stockStatusText(sku, L), { maxWidth: "4rem" })}</td>
               <td className={inventorySkuTd("text-xs text-muted-foreground")}>
                 {inventoryInlineText(updatedLabel, { maxWidth: "11rem", mono: true })}
               </td>
-              <td className={inventorySkuTd()}>
+              <td className={inventorySkuTd(ADMIN_TABLE_ALIGN_RIGHT_CLASS)}>
                 <div className="inline-flex flex-nowrap items-center justify-end gap-1.5">
                   <button type="button" onClick={() => onAdjust(emptyAdjust(sku, "in"))} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>入库</Tx></button>
                   <button type="button" onClick={() => onAdjust(emptyAdjust(sku, "out"))} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>出库</Tx></button>

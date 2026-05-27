@@ -3,6 +3,7 @@ const { BusinessError } = require('../../../errors/BusinessError');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { rowsToCsvLocalized, labelInventoryChangeType } = require('../../../utils/adminCsvLabels');
 const repo = require('../repository/adminInventory.repository');
+const adminEventBus = require('./adminEventBus.service');
 
 const CHANGE_TYPES = new Set(['in', 'out', 'adjust']);
 const DEFAULT_VARIANT_TITLE = '默认规格';
@@ -39,6 +40,14 @@ function emitInventoryEvent(event, options = {}) {
   } catch {
     // Event center is best-effort; inventory writes must not depend on it.
   }
+}
+
+function publishInventoryRealtime(objectId, summary) {
+  adminEventBus.publishAdminEvent({
+    type: 'inventory.updated',
+    objectId,
+    summary: summary || objectId,
+  });
 }
 
 function autoResolveInventoryEvent(fingerprint, options = {}) {
@@ -544,6 +553,7 @@ async function adjustSkuStock(variantId, body, adminUserId, req) {
     });
 
     await conn.commit();
+    publishInventoryRealtime(variantId, `${sku.product_name} / ${sku.title || sku.sku_code || variantId}`);
 
     const threshold = Number(sku.stock_warning_threshold || 5);
     const basePayload = {
@@ -667,6 +677,7 @@ async function updateSkuWarningThreshold(variantId, body, adminUserId, req) {
   const threshold = Number(body.stock_warning_threshold);
   if (!Number.isInteger(threshold) || threshold < 0) throw new BusinessError(400, '预警阈值必须为非负整数');
   await repo.updateVariantWarningThreshold(variantId, threshold);
+  publishInventoryRealtime(variantId, `更新SKU库存预警阈值 ${variantId}`);
   await writeAuditLog({
     req,
     operatorId: adminUserId,
@@ -687,6 +698,7 @@ async function batchWarningThreshold(body, adminUserId = null, req = null) {
   if (!Number.isInteger(threshold) || threshold < 0) throw new BusinessError(400, '预警阈值必须为非负整数');
   const beforeRows = await repo.selectVariantLimitSnapshots(ids);
   await repo.batchUpdateVariantWarningThreshold(ids, threshold);
+  publishInventoryRealtime('batch', `批量更新 ${ids.length} 个 SKU 预警值`);
   const afterRows = beforeRows.map((row) => ({ ...row, stock_warning_threshold: threshold }));
   await writeAuditLog({
     req,

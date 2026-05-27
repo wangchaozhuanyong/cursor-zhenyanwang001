@@ -18,6 +18,7 @@ import {
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import type { PaymentEventAdminRow } from "@/types/adminPayment";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
@@ -92,8 +93,7 @@ export default function AdminPaymentEvents() {
   const eventsQuery = useQuery({
     queryKey: [...adminQueryKeys.paymentsRoot(), "events", params],
     queryFn: () => paymentAdmin.fetchAdminPaymentEvents(params),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
+    ...adminRealtimeQueryOptions.payment,
   });
 
   const replayMutation = useMutation({

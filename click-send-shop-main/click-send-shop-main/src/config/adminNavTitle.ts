@@ -10,6 +10,11 @@ type AdminNavTitleChild = {
   children?: AdminNavTitleChild[];
 };
 
+type ChildTitleMatch = {
+  title: string;
+  score: number;
+};
+
 const ACTIVITY_CREATE_TYPE_LABEL_KEYS: Record<string, string> = {
   flash_sale: "routeTitles.marketingNewFlashSale",
   full_reduction: "routeTitles.marketingNewFullReduction",
@@ -29,12 +34,16 @@ function idSuffix(pathname: string, pattern: RegExp): string {
   return id ? ` #${decodeURIComponent(id)}` : "";
 }
 
-function childIsActive(pathname: string, childPath: string | undefined, parentPath: string): boolean {
-  if (!childPath) return false;
+function pathMatches(pathname: string, targetPath: string): boolean {
+  return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+}
+
+function childMatchScore(pathname: string, childPath: string | undefined, parentPath: string): number {
+  if (!childPath) return -1;
   if (childPath === parentPath) {
-    return pathname === childPath || pathname.startsWith(`${childPath}/`);
+    return pathname === childPath ? childPath.length : -1;
   }
-  return pathname === childPath || pathname.startsWith(`${childPath}/`);
+  return pathMatches(pathname, childPath) ? childPath.length : -1;
 }
 
 function resolveChildTitle(
@@ -42,18 +51,20 @@ function resolveChildTitle(
   parent: AdminNavTitleItem,
   child: AdminNavTitleChild,
   parents: string[] = [],
-): string | null {
+): ChildTitleMatch | null {
   const labels = [...parents, child.label];
+  let best: ChildTitleMatch | null = null;
   if (child.children?.length) {
     for (const nested of child.children) {
       const nestedTitle = resolveChildTitle(pathname, parent, nested, labels);
-      if (nestedTitle) return nestedTitle;
+      if (nestedTitle && (!best || nestedTitle.score > best.score)) best = nestedTitle;
     }
   }
-  if (childIsActive(pathname, child.path, parent.path)) {
-    return `${parent.label} / ${labels.join(" / ")}`;
+  const ownScore = childMatchScore(pathname, child.path, parent.path);
+  if (ownScore >= 0 && (!best || ownScore > best.score)) {
+    best = { title: `${parent.label} / ${labels.join(" / ")}`, score: ownScore };
   }
-  return null;
+  return best;
 }
 
 /** 隐藏/详情页三级顶栏标题（优先于侧栏二级匹配） */
@@ -134,15 +145,19 @@ export function resolveAdminTabTitle(
   }
   for (const item of navItems) {
     if (item.children?.length) {
+      let bestChildTitle: ChildTitleMatch | null = null;
       for (const child of item.children) {
         const childTitle = resolveChildTitle(pathname, item, child);
-        if (childTitle) {
-          const parts = childTitle.split(" / ").map((p) => p.trim()).filter(Boolean);
-          return parts[parts.length - 1] || child.label;
+        if (childTitle && (!bestChildTitle || childTitle.score > bestChildTitle.score)) {
+          bestChildTitle = childTitle;
         }
       }
+      if (bestChildTitle) {
+        const parts = bestChildTitle.title.split(" / ").map((p) => p.trim()).filter(Boolean);
+        return parts[parts.length - 1] || bestChildTitle.title;
+      }
     }
-    if (pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path))) {
+    if (pathname === item.path || (item.path !== "/admin" && pathMatches(pathname, item.path))) {
       return item.label;
     }
   }

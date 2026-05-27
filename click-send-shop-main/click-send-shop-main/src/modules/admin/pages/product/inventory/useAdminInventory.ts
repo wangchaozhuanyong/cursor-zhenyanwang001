@@ -2,6 +2,7 @@ import { createElement, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import {
   adjustInventorySkuStock,
   applySmartReplenishmentRun,
@@ -102,7 +103,7 @@ export function useAdminInventory(initialTab: InventoryTabKey = "skus") {
   const [receivingOrder, setReceivingOrder] = useState<ReceivePurchaseOrderForm | null>(null);
 
   const keywordValue = keyword.trim() || undefined;
-  const summaryQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "summary"], queryFn: fetchInventorySummary, staleTime: 60_000, refetchInterval: 90_000 });
+  const summaryQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "summary"], queryFn: fetchInventorySummary, ...adminRealtimeQueryOptions.inventory });
 
   const skuParams = useMemo(() => ({ page, pageSize: PAGE_SIZE, keyword: keywordValue, stock_status: stockStatus || undefined }), [keywordValue, page, stockStatus]);
   const alertParams = useMemo(() => ({ page: alertsPage, pageSize: PAGE_SIZE, keyword: keywordValue, status: alertStatus || undefined }), [alertStatus, alertsPage, keywordValue]);
@@ -111,23 +112,23 @@ export function useAdminInventory(initialTab: InventoryTabKey = "skus") {
   const rulesParams = useMemo(() => ({ page: rulesPage, pageSize: PAGE_SIZE, keyword: keywordValue }), [keywordValue, rulesPage]);
   const conversionsParams = useMemo(() => ({ page: conversionsPage, pageSize: PAGE_SIZE, keyword: keywordValue, type: conversionType || undefined }), [conversionType, conversionsPage, keywordValue]);
 
-  const skusQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "skus", skuParams], queryFn: () => fetchInventorySkus(skuParams), enabled: tab === "skus", staleTime: 60_000, refetchInterval: 90_000 });
-  const alertsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "replenishment-alerts", alertParams], queryFn: () => fetchReplenishmentAlerts(alertParams), enabled: tab === "alerts", staleTime: 30_000, refetchInterval: 90_000 });
-  const purchaseOrdersQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "purchase-orders", purchaseOrderParams], queryFn: () => fetchPurchaseOrders(purchaseOrderParams), enabled: tab === "purchaseOrders", staleTime: 30_000, refetchInterval: 90_000 });
+  const skusQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "skus", skuParams], queryFn: () => fetchInventorySkus(skuParams), enabled: tab === "skus", ...adminRealtimeQueryOptions.inventory });
+  const alertsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "replenishment-alerts", alertParams], queryFn: () => fetchReplenishmentAlerts(alertParams), enabled: tab === "alerts", ...adminRealtimeQueryOptions.inventory });
+  const purchaseOrdersQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "purchase-orders", purchaseOrderParams], queryFn: () => fetchPurchaseOrders(purchaseOrderParams), enabled: tab === "purchaseOrders", ...adminRealtimeQueryOptions.inventory });
   const receivingOrderDetailQuery = useQuery({
     queryKey: [...adminQueryKeys.inventoryRoot(), "purchase-order", receivingOrder?.order.id],
     queryFn: () => fetchPurchaseOrder(receivingOrder!.order.id),
     enabled: !!receivingOrder,
-    staleTime: 0,
+    ...adminRealtimeQueryOptions.inventory,
   });
-  const recordsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "records", recordsParams], queryFn: () => fetchInventoryRecords(recordsParams), enabled: tab === "records", staleTime: 60_000, refetchInterval: 90_000 });
-  const rulesQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "rules", rulesParams], queryFn: () => fetchInventoryPackRules(rulesParams), enabled: tab === "rules" || !!ruleForm || !!convertForm, staleTime: 60_000 });
-  const conversionsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "conversions", conversionsParams], queryFn: () => fetchInventoryConversions(conversionsParams), enabled: tab === "conversions", staleTime: 60_000, refetchInterval: 90_000 });
+  const recordsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "records", recordsParams], queryFn: () => fetchInventoryRecords(recordsParams), enabled: tab === "records", ...adminRealtimeQueryOptions.inventory });
+  const rulesQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "rules", rulesParams], queryFn: () => fetchInventoryPackRules(rulesParams), enabled: tab === "rules" || !!ruleForm || !!convertForm, ...adminRealtimeQueryOptions.operation });
+  const conversionsQuery = useQuery({ queryKey: [...adminQueryKeys.inventoryRoot(), "conversions", conversionsParams], queryFn: () => fetchInventoryConversions(conversionsParams), enabled: tab === "conversions", ...adminRealtimeQueryOptions.inventory });
   const ruleSkuSearchQuery = useQuery({
     queryKey: [...adminQueryKeys.inventoryRoot(), "rule-sku-search", ruleSkuKeyword.trim()],
     queryFn: () => fetchInventorySkus({ page: 1, pageSize: 100, keyword: ruleSkuKeyword.trim() || undefined }),
     enabled: !!ruleForm,
-    staleTime: 30_000,
+    ...adminRealtimeQueryOptions.operation,
   });
 
   const invalidateInventory = async () => {

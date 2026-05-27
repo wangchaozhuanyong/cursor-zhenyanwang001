@@ -200,7 +200,7 @@ export default function AdminPaymentReconciliations() {
           skeletonRows={8}
           skeletonCols={7}
           className="theme-rounded border border-[var(--theme-border)] overflow-x-auto"
-          tableClassName="w-full min-w-[720px] text-left text-sm"
+          tableClassName="w-full min-w-[720px] text-sm"
           theadClassName="bg-secondary/50 text-xs text-muted-foreground"
           thead={(
             <tr>

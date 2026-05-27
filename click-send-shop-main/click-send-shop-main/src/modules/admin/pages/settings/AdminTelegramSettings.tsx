@@ -424,7 +424,7 @@ export default function AdminTelegramSettings() {
                 <h2 className="font-semibold text-foreground"><Tx>最近 20 条 Telegram 通知日志</Tx></h2>
                 <p className="text-xs text-muted-foreground"><Tx>不显示完整 Bot Token，仅展示发送状态与错误摘要。</Tx></p>
               </div>
-              <AdminNativeTable tableClassName="min-w-[760px] text-left text-sm">
+              <AdminNativeTable tableClassName="min-w-[760px] text-sm">
                   <thead className="border-b border-border text-xs text-muted-foreground">
                     <tr>
                       <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>时间</Tx></th>

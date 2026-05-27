@@ -8,6 +8,8 @@ const adminEventService = require('./service/adminEvent.service');
 const adminEventBus = require('./service/adminEventBus.service');
 const adminEventRepo = require('./repository/adminEvent.repository');
 const adminSiteSettingsRepo = require('./repository/adminSiteSettings.repository');
+const adminUserService = require('./service/adminUser.service');
+const backupService = require('./service/backup.service');
 
 const router = Router();
 
@@ -22,6 +24,8 @@ const router = Router();
   listActiveEventRecordsByTypes: adminEventRepo.listActiveRecordsByTypes,
   selectSiteSettingValue: adminSiteSettingsRepo.selectSettingValue,
   upsertSiteSetting: adminSiteSettingsRepo.upsertSetting,
+  persistUserRestrictions: adminUserService.persistUserRestrictions,
+  createPreCleanupBackupAndWait: backupService.createPreCleanupBackupAndWait,
 };
 
 router.use('/admin', require('./routes/admin.routes'));

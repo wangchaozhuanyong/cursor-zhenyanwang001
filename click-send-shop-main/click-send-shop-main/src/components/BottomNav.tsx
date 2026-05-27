@@ -8,7 +8,27 @@ import { isLoggedIn } from "@/utils/token";
 import { cn } from "@/lib/utils";
 import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { useSmartBars } from "@/hooks/useSmartBars";
 import { shouldHideBottomNav } from "./bottomNavVisibility";
+import { useStoreScrollChrome } from "@/contexts/StoreScrollChromeProvider";
+
+function isEditableElement(el: Element | null): boolean {
+  if (!el || !(el instanceof HTMLElement)) return false;
+  if (el.isContentEditable) return true;
+  const tag = el.tagName?.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select";
+}
+
+function isEditableElement(el: Element | null): boolean {
+  if (!el || !(el instanceof HTMLElement)) return false;
+  if (el.isContentEditable) return true;
+  const tag = el.tagName?.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select";
+}
+
+function shouldAutoHideBottomNav(pathname: string): boolean {
+  return pathname === "/categories" || pathname === "/search" || pathname === "/new-arrivals";
+}
 
 const tabs = [
   { path: "/", label: "\u9996\u9875", icon: Home },
@@ -39,6 +59,8 @@ export default function BottomNav() {
   const activePointerRef = useRef<ActivePointer | null>(null);
   const lastNavTapRef = useRef<{ path: string; at: number } | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
+  const [routeReveal, setRouteReveal] = useState(false);
+  const [inputActive, setInputActive] = useState(false);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -51,6 +73,28 @@ export default function BottomNav() {
     return () => {
       window.removeEventListener("cart:badge-bump", onBump);
       if (timer) window.clearTimeout(timer);
+    };
+  }, []);
+
+  const autoHideEnabled = shouldAutoHideBottomNav(location.pathname);
+  const barsHidden = useSmartBars({ hideAfter: 36, showOnUp: 10 });
+
+  useEffect(() => {
+    // 路由切换时强制显示一小段时间，避免残留隐藏态造成“消失”
+    if (!autoHideEnabled) return;
+    setRouteReveal(true);
+    const t = window.setTimeout(() => setRouteReveal(false), 420);
+    return () => window.clearTimeout(t);
+  }, [location.pathname, autoHideEnabled]);
+
+  useEffect(() => {
+    const onFocusIn = () => setInputActive(isEditableElement(document.activeElement));
+    const onFocusOut = () => setInputActive(false);
+    window.addEventListener("focusin", onFocusIn);
+    window.addEventListener("focusout", onFocusOut);
+    return () => {
+      window.removeEventListener("focusin", onFocusIn);
+      window.removeEventListener("focusout", onFocusOut);
     };
   }, []);
 
@@ -84,6 +128,9 @@ export default function BottomNav() {
   }, [handleNavigate]);
 
   if (shouldHideBottomNav(location.pathname)) return null;
+
+  const forceVisible = (window.scrollY || 0) <= 8 || inputActive || routeReveal;
+  const shouldHideByScroll = autoHideEnabled && barsHidden && !forceVisible;
 
   const isTabActive = (path: string) => {
     const base = path.split("?")[0];
@@ -149,7 +196,13 @@ export default function BottomNav() {
 
   return (
     <nav
-      className={cn(getBottomNavShellClassName(navStyle, "fixed"), "lg:hidden")}
+      className={cn(
+        getBottomNavShellClassName(navStyle, "fixed"),
+        "lg:hidden transition-transform transition-opacity duration-200 ease-out motion-reduce:transition-none",
+        shouldHideByScroll
+          ? "translate-y-[calc(100%+env(safe-area-inset-bottom,0px))] opacity-0 pointer-events-none"
+          : "translate-y-0 opacity-100",
+      )}
       data-theme-nav-style={navStyle}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0px)",

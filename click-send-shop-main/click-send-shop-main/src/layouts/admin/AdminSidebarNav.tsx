@@ -28,20 +28,27 @@ function AdminSidebarNav({
   logoutLabel: string;
 }) {
   const [expandedPath, setExpandedPath] = useState<string | null>(null);
-  const childMatchesPath = useCallback((child: ResolvedNavChild, currentPath: string): boolean => {
-    const ownPath = child.path ? currentPath === child.path || currentPath.startsWith(child.path) : false;
-    return ownPath || Boolean(child.children?.some((nested) => childMatchesPath(nested, currentPath)));
+  const pathMatches = useCallback((currentPath: string, targetPath: string): boolean => {
+    return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
   }, []);
+  const childMatchesPath = useCallback((child: ResolvedNavChild, currentPath: string, parentPath?: string): boolean => {
+    const ownPath = child.path
+      ? child.path === parentPath
+        ? currentPath === child.path
+        : pathMatches(currentPath, child.path)
+      : false;
+    return ownPath || Boolean(child.children?.some((nested) => childMatchesPath(nested, currentPath, child.path ?? parentPath)));
+  }, [pathMatches]);
 
   useEffect(() => {
     const activeGroup = navItems.find((item) => {
       if (!item.children?.length) return false;
-      const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
-      const childActive = item.children.some((c) => childMatchesPath(c, pathname));
+      const active = pathname === item.path || (item.path !== "/admin" && pathMatches(pathname, item.path));
+      const childActive = item.children.some((c) => childMatchesPath(c, pathname, item.path));
       return active || childActive;
     });
     if (activeGroup) setExpandedPath(activeGroup.path);
-  }, [childMatchesPath, navItems, pathname]);
+  }, [childMatchesPath, navItems, pathMatches, pathname]);
 
   const listClassName =
     scrollMode === "overlay"
@@ -61,8 +68,8 @@ function AdminSidebarNav({
 
       <div className={listClassName}>
         {navItems.map((item) => {
-          const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
-          const childActive = item.children?.some((c) => childMatchesPath(c, pathname));
+          const active = pathname === item.path || (item.path !== "/admin" && pathMatches(pathname, item.path));
+          const childActive = item.children?.some((c) => childMatchesPath(c, pathname, item.path));
           const isExpanded = expandedPath === item.path;
           return (
             <div key={item.path}>
@@ -96,7 +103,7 @@ function AdminSidebarNav({
                   className="relative z-0 ml-4 mt-0.5 overflow-hidden space-y-0.5 border-l border-border pl-3"
                 >
                   {item.children.map((child) => {
-                    const cActive = childMatchesPath(child, pathname);
+                    const cActive = childMatchesPath(child, pathname, item.path);
                     const ChildIcon = child.icon ?? BarChart3;
                     if (child.children?.length) {
                       return (
@@ -107,7 +114,7 @@ function AdminSidebarNav({
                           </div>
                           <div className="space-y-0.5 pl-4">
                             {child.children.map((nested) => {
-                              const nestedActive = childMatchesPath(nested, pathname);
+                              const nestedActive = childMatchesPath(nested, pathname, child.path);
                               const NestedIcon = nested.icon ?? BarChart3;
                               return (
                                 <button

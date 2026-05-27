@@ -40,7 +40,7 @@ import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
   Cart, Checkout, Orders, OrderDetail, Returns, PendingReviews,
-  Profile, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
+  Profile, Settings, AccountSecurity, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
   Help, About, ContentCmsPage, SupportDownload, TikTokLanding, NotFound,
 } from "@/routes/publicLazyPages";
 
@@ -239,6 +239,7 @@ function MainStoreRoutes() {
 
               <Route path="/checkout" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.mallEnabled}><Checkout /></CapabilityRoute></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/account/security" element={<ProtectedRoute><AccountSecurity /></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
               <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
               <Route path="/invite" element={<ProtectedRoute><LoyaltyRouteGuard feature="referral"><Invite /></LoyaltyRouteGuard></ProtectedRoute>} />

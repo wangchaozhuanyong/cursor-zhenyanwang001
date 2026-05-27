@@ -157,7 +157,7 @@ export default function AdminCouponRecords() {
         skeletonCols={6}
         tableClassName="min-w-[900px]"
         className="overflow-hidden border-border bg-card"
-        theadClassName="bg-secondary/40 text-left text-xs text-muted-foreground"
+        theadClassName="bg-secondary/40 text-xs text-muted-foreground"
         thead={adminTableTheadRow(
           ["用户", "手机号", "优惠券", "状态", "领取时间", "使用时间"],
           COUPON_RECORD_COLUMN_ALIGNS,

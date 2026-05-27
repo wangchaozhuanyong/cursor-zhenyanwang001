@@ -124,6 +124,7 @@ export const adminMessagesEn: AdminMessages = {
     roles: "Roles & permissions",
     recycleBin: "Recycle bin",
     eventCenter: "Admin events",
+    eventRules: "Event rules",
     monitoringCenter: "Monitoring",
     monitoringOverview: "Overview",
     monitoringAnomalies: "Anomalies",

@@ -7,6 +7,7 @@ import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide
 import { useAdminT } from "@/hooks/useAdminT";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   ACCOUNT_STATUS_LABELS,
@@ -122,19 +123,18 @@ export function useAdminUsers() {
   const usersQuery = useQuery({
     queryKey: [...adminQueryKeys.usersRoot(), "list", queryParams],
     queryFn: () => userService.fetchUsers(queryParams),
-    staleTime: 60_000,
-    refetchInterval: 90_000,
+    ...adminRealtimeQueryOptions.operation,
   });
   const tagsQuery = useQuery({
     queryKey: [...adminQueryKeys.usersRoot(), "tags"],
     queryFn: userService.fetchUserTags,
-    staleTime: 60_000,
+    ...adminRealtimeQueryOptions.config,
   });
   const memberLevelsQuery = useQuery({
     queryKey: [...adminQueryKeys.usersRoot(), "member-levels"],
     queryFn: userService.fetchMemberLevels,
-    staleTime: 60_000,
     enabled: capabilities.memberLevelEnabled,
+    ...adminRealtimeQueryOptions.config,
   });
 
   const invalidateUsers = async () => {

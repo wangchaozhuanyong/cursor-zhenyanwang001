@@ -75,7 +75,7 @@ export function InventoryAlertsTab({
         rowKey={(row) => row.id}
         skeletonRows={8}
         skeletonCols={9}
-        tableClassName="w-full min-w-[1180px] text-left text-sm"
+        tableClassName="w-full min-w-[1180px] text-sm"
         theadClassName="border-b border-border text-xs text-muted-foreground"
         emptyIcon={Package}
         emptyTitle={L("暂无补货预警")}
@@ -144,7 +144,7 @@ export function InventoryPurchaseOrdersTab({
         rowKey={(row) => row.id}
         skeletonRows={8}
         skeletonCols={8}
-        tableClassName="w-full min-w-[1080px] text-left text-sm"
+        tableClassName="w-full min-w-[1080px] text-sm"
         theadClassName="border-b border-border text-xs text-muted-foreground"
         emptyIcon={Package}
         emptyTitle={L("暂无采购单")}
@@ -200,7 +200,7 @@ export function InventoryRecordsTab({
         rowKey={(row) => row.id}
         skeletonRows={8}
         skeletonCols={9}
-        tableClassName="w-full min-w-[1200px] text-left text-sm"
+        tableClassName="w-full min-w-[1200px] text-sm"
         theadClassName="border-b border-border text-xs text-muted-foreground"
         emptyIcon={History}
         emptyTitle={L("暂无库存流水")}
@@ -257,7 +257,7 @@ export function InventoryRulesTab({
         rowKey={(row) => row.id}
         skeletonRows={8}
         skeletonCols={8}
-        tableClassName="w-full min-w-[1260px] text-left text-sm"
+        tableClassName="w-full min-w-[1260px] text-sm"
         theadClassName="border-b border-border text-xs text-muted-foreground"
         emptyIcon={SplitSquareHorizontal}
         emptyTitle={L("暂无组装拆包规则")}
@@ -316,7 +316,7 @@ export function InventoryConversionsTab({
         rowKey={(row) => row.id}
         skeletonRows={8}
         skeletonCols={9}
-        tableClassName="w-full min-w-[1320px] text-left text-sm"
+        tableClassName="w-full min-w-[1320px] text-sm"
         theadClassName="border-b border-border text-xs text-muted-foreground"
         emptyIcon={History}
         emptyTitle={L("暂无组装拆包单据")}

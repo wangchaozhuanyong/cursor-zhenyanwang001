@@ -170,11 +170,22 @@ async function createStripeCheckoutSession(userId, orderId) {
  */
 async function completeShippedOrder(conn, order, options = {}) {
   await repo.updateOrderStatus(conn, order.id, ORDER_STATUS.COMPLETED);
-  await orderPoints.maybeGrantOrderEarnPoints(conn, order, {
-    ...options,
-    timing: 'order_completed',
-  });
-  await requireApiMethod(getUserApi(), 'settleOrderRewards')(conn, order, options);
+  const bestEffort = options.bestEffortRewards === true;
+  try {
+    await orderPoints.maybeGrantOrderEarnPoints(conn, order, {
+      ...options,
+      timing: 'order_completed',
+    });
+  } catch (err) {
+    if (!bestEffort) throw err;
+    console.error('[order] grant earn points on completion failed:', err?.message || err);
+  }
+  try {
+    await requireApiMethod(getUserApi(), 'settleOrderRewards')(conn, order, options);
+  } catch (err) {
+    if (!bestEffort) throw err;
+    console.error('[order] settle rewards on completion failed:', err?.message || err);
+  }
 }
 
 async function confirmReceive(userId, orderId) {
@@ -186,7 +197,7 @@ async function confirmReceive(userId, orderId) {
 
     await conn.beginTransaction();
 
-    await completeShippedOrder(conn, order, { trigger: 'user_confirm_receive' });
+    await completeShippedOrder(conn, order, { trigger: 'user_confirm_receive', bestEffortRewards: true });
 
     await conn.commit();
     return { data: null, message: '已确认收货' };

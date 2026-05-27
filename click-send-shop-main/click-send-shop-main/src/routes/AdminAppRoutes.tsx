@@ -28,9 +28,9 @@ import {
   AdminLogin, AdminAccount, AdminAccounts, Dashboard,
   AdminProducts, AdminProductForm, AdminCategories, AdminInventory, AdminProductTags, AdminBanners,
   AdminOrders, AdminCheckoutAbandonments, AdminOrderDetail, AdminReturns, AdminShipping,
-  AdminUsers, AdminUserDetail, AdminMemberLevels, AdminInvites,
+  AdminUsers, AdminUserDetail, AdminUserSecurity, AdminMemberLevels, AdminInvites,
   AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
-  AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
+  AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter, AdminEventDetail, AdminEventRules,
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
   AdminRoles, AdminLogs, AdminRecycleBin, AdminDataRetention, AdminBackupCenter,
   AdminPaymentChannels, AdminPaymentOrders, AdminPaymentEvents, AdminPaymentReconciliations,
@@ -127,6 +127,7 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/marketing/rewards"), titleKey: "routeTitles.rewards" },
       { test: (p) => p.startsWith("/admin/marketing/invites"), titleKey: "routeTitles.invites" },
       { test: (p) => p.startsWith("/admin/users"), titleKey: "routeTitles.users" },
+      { test: (p) => p.startsWith("/admin/user-security"), titleKey: "routeTitles.users" },
       { test: (p) => p.startsWith("/admin/member-levels"), titleKey: "routeTitles.memberLevels" },
       { test: (p) => p.startsWith("/admin/orders/unfinished"), titleKey: "routeTitles.unfinishedOrders" },
       { test: (p) => p.startsWith("/admin/orders"), titleKey: "routeTitles.orders" },
@@ -199,6 +200,7 @@ export function AdminAppRoutes() {
                   <Route path="payments/reconciliations" element={<CapabilityRoute enabled={capabilities.onlinePaymentEnabled}><AdminPaymentReconciliations /></CapabilityRoute>} />
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="users/:id" element={<AdminUserDetail />} />
+                  <Route path="user-security" element={<AdminUserSecurity />} />
                   <Route path="member-levels" element={<CapabilityRoute enabled={capabilities.memberLevelEnabled}><AdminMemberLevels /></CapabilityRoute>} />
                   <Route path="invites" element={<Navigate to="/admin/marketing/invites" replace />} />
                   <Route path="rewards" element={<Navigate to="/admin/marketing/rewards" replace />} />
@@ -231,6 +233,8 @@ export function AdminAppRoutes() {
                   <Route path="reviews" element={<CapabilityRoute enabled={capabilities.reviewEnabled}><AdminReviews /></CapabilityRoute>} />
                   <Route path="returns" element={<AdminReturns />} />
                   <Route path="event-center" element={<AdminEventCenter />} />
+                  <Route path="event-center/rules" element={<AdminEventRules />} />
+                  <Route path="event-center/events/:id" element={<AdminEventDetail />} />
                   <Route path="notifications" element={<AdminNotifications />} />
                   <Route path="notifications/:id" element={<AdminNotificationDetail />} />
                   <Route path="monitoring" element={<AdminMonitoringOverview />} />

@@ -4,6 +4,7 @@ const repo = require('../repository/adminNotification.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const triggerSettings = require('./notificationTriggerSettings.service');
 const { rowsToCsv } = require('../../../utils/csv');
+const adminEventBus = require('./adminEventBus.service');
 
 const NOTIFICATION_TYPES = new Set([
   'system', 'order', 'shipping', 'payment', 'refund', 'after_sale', 'promotion', 'coupon', 'points', 'reward',
@@ -15,6 +16,14 @@ const NOTIFICATION_TEMPLATES = [
   { code: 'order_refunded', name: '订单退款', type: 'refund', title: '退款已处理', content: '您的退款申请已处理完成，请留意账户变动。' },
   { code: 'promotion', name: '活动促销', type: 'promotion', title: '限时活动上线', content: '活动已开启，点击查看详情并参与。' },
 ];
+
+function publishNotificationRealtime(type, objectId, summary) {
+  adminEventBus.publishAdminEvent({
+    type,
+    objectId,
+    summary: summary || objectId,
+  });
+}
 
 let schedulerTimer = null;
 
@@ -209,6 +218,7 @@ async function sendNotification(body, adminUserId, req) {
     after: { title, audienceType, recipientCount: targetUserIds.length, sendStatus, scheduledAt },
     result: 'success',
   });
+  publishNotificationRealtime(sendStatus === 'scheduled' ? 'notification.scheduled' : 'notification.sent', batch.id, title);
 
   return {
     data: {
@@ -272,6 +282,7 @@ async function createDraft(body, adminUserId, req) {
     after: { title: body.title, audienceType },
     result: 'success',
   });
+  publishNotificationRealtime('notification.draft_created', batchId, body.title);
   return { data: { id: batchId, created_at: new Date() }, message: '草稿已保存' };
 }
 
@@ -326,6 +337,7 @@ async function publishDraft(batchId, body, adminUserId, req) {
     after: { sendStatus, scheduledAt: finalScheduledAt, recipientCount: targetUserIds.length },
     result: 'success',
   });
+  publishNotificationRealtime(sendStatus === 'scheduled' ? 'notification.scheduled' : 'notification.sent', batchId, batch.title);
   return { data: { id: batchId, send_status: sendStatus, scheduled_at: finalScheduledAt, sent_at: sentAt }, message: sendStatus === 'scheduled' ? '已发布，等待定时发送' : '发布成功' };
 }
 
@@ -402,6 +414,7 @@ async function deleteDraft(batchId, adminUserId, req) {
   if (batch.workflow_status !== 'draft') throw new BusinessError(400, '仅草稿可删除');
   await repo.markBatchDeleted(batchId);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'notification.delete', objectType: 'notification_batch', objectId: batchId, summary: '删除草稿', result: 'success' });
+  publishNotificationRealtime('notification.deleted', batchId, batch.title);
   return { data: null, message: '草稿已删除' };
 }
 
@@ -411,6 +424,7 @@ async function cancelScheduled(batchId, adminUserId, req) {
   if (batch.send_status !== 'scheduled') throw new BusinessError(400, '仅定时通知可取消');
   await repo.cancelScheduledBatch(batchId);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'notification.cancel', objectType: 'notification_batch', objectId: batchId, summary: '取消定时通知', result: 'success' });
+  publishNotificationRealtime('notification.cancelled', batchId, batch.title);
   return { data: null, message: '已取消定时' };
 }
 
@@ -420,6 +434,7 @@ async function revokeSent(batchId, adminUserId, req) {
   if (batch.send_status !== 'sent') throw new BusinessError(400, '仅已发送通知可撤回');
   await repo.revokeSentBatch(batchId);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'notification.revoke', objectType: 'notification_batch', objectId: batchId, summary: '撤回已发送通知', result: 'success' });
+  publishNotificationRealtime('notification.revoked', batchId, batch.title);
   return { data: null, message: '已撤回通知' };
 }
 

@@ -236,7 +236,7 @@ export default function AdminOperatingExpenses() {
       )}
     >
       <div className="rounded-xl border border-border bg-card p-4">
-        <AdminNativeTable tableClassName="min-w-[860px] text-left text-sm">
+        <AdminNativeTable tableClassName="min-w-[860px] text-sm">
             <thead className="border-b border-border text-xs text-muted-foreground">
               <tr>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>日期</Tx></th>

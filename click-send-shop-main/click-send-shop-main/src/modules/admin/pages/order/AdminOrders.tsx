@@ -1,4 +1,4 @@
-import { Copy, Download, Loader2, Package, Truck } from "lucide-react";
+import { Copy, Download, Loader2, Package, RefreshCw, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
@@ -35,6 +35,7 @@ import {
 import { THEME_OUTLINE_DANGER, THEME_OUTLINE_PRIMARY, THEME_OUTLINE_SUCCESS } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import { useAdminRealtimeStatus } from "@/hooks/admin/useAdminEvents";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import {
   afterSaleLabel,
@@ -121,6 +122,9 @@ export default function AdminOrders() {
     applyQuickStatusFilter,
     orders,
     loading,
+    refetch,
+    isFetching,
+    dataUpdatedAt,
     total,
     stats,
     ordersEmptyGuide,
@@ -137,6 +141,18 @@ export default function AdminOrders() {
     confirmStatusChange,
     reloadAfterAction,
   } = useAdminOrders();
+  const realtimeStatus = useAdminRealtimeStatus();
+  const realtimeLabel = realtimeStatus.mode === "sse"
+    ? tText("实时连接中")
+    : realtimeStatus.mode === "polling"
+      ? tText("轮询同步中")
+      : tText("同步异常");
+  const realtimeClassName = realtimeStatus.mode === "sse"
+    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+    : realtimeStatus.mode === "polling"
+      ? "border-amber-200 bg-amber-50 text-amber-700"
+      : "border-red-200 bg-red-50 text-red-700";
+  const lastUpdatedText = dataUpdatedAt > 0 ? formatDateTime(new Date(dataUpdatedAt).toISOString()) : tText("尚未同步");
 
   const renderActions = (o: Order) => {
     if (o.status === ORDER_STATUS.PENDING) {
@@ -409,6 +425,25 @@ export default function AdminOrders() {
       <AdminPageShell
         className="min-w-0"
         hint={<Tx>查看与处理订单，支持状态筛选、批量导出及发货操作。</Tx>}
+        toolbar={(
+          <div className="flex max-w-full flex-wrap items-center gap-2">
+            <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${realtimeClassName}`}>
+              {realtimeLabel}
+            </span>
+            <span className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 py-1 text-xs text-muted-foreground">
+              {tText(`最后更新：${lastUpdatedText}`)}
+            </span>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary disabled:opacity-60"
+            >
+              <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
+              <Tx>刷新</Tx>
+            </button>
+          </div>
+        )}
         filters={(
           <>
       <div className="grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-7">

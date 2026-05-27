@@ -32,6 +32,8 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p.startsWith("/admin/accounts"), rule: { kind: "one", permission: "role.manage" } },
   { test: (p) => p.startsWith("/admin/data-retention"), rule: { kind: "any", permissions: ["data_cleanup.view", "data_cleanup.manage", "data_cleanup.execute"] } },
   { test: (p) => p.startsWith("/admin/backups"), rule: { kind: "one", permission: "backup.view" } },
+  // 用户安全：该页面路由在部分分支/模块中启用，用 any 以兼容后端路由的权限组合
+  { test: (p) => p.startsWith("/admin/user-security"), rule: { kind: "any", permissions: ["user.view", "event.view", "event.manage"] } },
   { test: (p) => p.startsWith("/admin/recycle-bin"), rule: { kind: "one", permission: "recycle_bin.manage" } },
   { test: (p) => p.startsWith("/admin/coupons"), rule: { kind: "one", permission: "coupon.view" } },
   { test: (p) => p.startsWith("/admin/marketing/activities"), rule: { kind: "one", permission: "activity.manage" } },

@@ -7,6 +7,7 @@ import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import * as orderService from "@/services/admin/orderService";
 import type { OrderListParams, OrderStatus, PaymentStatus } from "@/types/order";
 import {
@@ -198,8 +199,8 @@ export function useAdminOrders() {
   const ordersQuery = useQuery({
     queryKey: adminQueryKeys.orders(queryParams),
     queryFn: () => orderService.fetchOrders(queryParams),
+    ...adminRealtimeQueryOptions.order,
     placeholderData: (previous) => previous,
-    refetchInterval: 60_000,
   });
 
   const orders = useMemo(() => ordersQuery.data?.list ?? [], [ordersQuery.data?.list]);
@@ -395,6 +396,9 @@ export function useAdminOrders() {
     applyQuickStatusFilter,
     orders,
     loading,
+    refetch: ordersQuery.refetch,
+    isFetching: ordersQuery.isFetching,
+    dataUpdatedAt: ordersQuery.dataUpdatedAt,
     total,
     stats,
     ordersEmptyGuide,

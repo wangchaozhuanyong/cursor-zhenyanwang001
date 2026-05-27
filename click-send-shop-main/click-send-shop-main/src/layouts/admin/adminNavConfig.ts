@@ -66,6 +66,7 @@ export type ResolvedNavItem = Omit<NavItem, "children"> & { label: string; child
 
 export const localNavLabels: Record<string, string> = {
   "nav.eventCenter": "后台事件",
+  "nav.eventRules": "事件规则",
   "nav.monitoringCenter": "监控中心",
   "nav.monitoringOverview": "数据总览",
   "nav.monitoringAnomalies": "数据异常",
@@ -248,6 +249,7 @@ export const navItemsRaw: NavItem[] = [
     permission: { anyOf: ["notification.view", "notification.manage", "event.view", "event.manage"] },
     children: [
       { icon: AlertTriangle, labelKey: "nav.eventCenter", path: "/admin/event-center", permission: { anyOf: ["event.view", "event.manage"] } },
+      { icon: Settings, labelKey: "nav.eventRules", path: "/admin/event-center/rules", permission: { anyOf: ["event.rule.manage", "event.manage"] } },
       { icon: Bell, labelKey: "nav.notifications", path: "/admin/notifications", permission: { anyOf: ["notification.view", "notification.manage"] } },
     ],
   },

@@ -22,7 +22,7 @@ async function autoConfirmOneOrder(orderId) {
       await conn.rollback();
       return false;
     }
-    await completeShippedOrder(conn, order, { trigger: 'auto_confirm_receive' });
+    await completeShippedOrder(conn, order, { trigger: 'auto_confirm_receive', bestEffortRewards: true });
     await conn.commit();
     return true;
   } catch (err) {

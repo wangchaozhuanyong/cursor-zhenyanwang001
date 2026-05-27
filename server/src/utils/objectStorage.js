@@ -4,6 +4,8 @@ const {
   HeadObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { NodeHttpHandler } = require('@smithy/node-http-handler');
@@ -182,6 +184,57 @@ async function deleteS3Object(storageKey) {
   }));
 }
 
+async function listS3ObjectsByPrefix(prefix, options = {}) {
+  const storagePrefix = buildStorageKey(prefix);
+  const { client, conf } = getS3Client();
+  const maxKeys = Math.min(1000, Math.max(1, Number(options.maxKeys || 1000)));
+  const objects = [];
+  let ContinuationToken;
+  do {
+    const out = await client.send(new ListObjectsV2Command({
+      Bucket: conf.bucket,
+      Prefix: storagePrefix,
+      MaxKeys: maxKeys,
+      ContinuationToken,
+    }));
+    for (const item of out.Contents || []) {
+      if (!item.Key) continue;
+      objects.push({
+        key: item.Key,
+        size: Number(item.Size || 0),
+        lastModified: item.LastModified || null,
+        url: getPublicUrlByKey(item.Key),
+      });
+    }
+    ContinuationToken = out.IsTruncated ? out.NextContinuationToken : null;
+  } while (ContinuationToken && objects.length < Math.max(maxKeys, Number(options.limit || 10000)));
+  return objects;
+}
+
+async function deleteS3ObjectsBatch(keys, options = {}) {
+  const safeKeys = [...new Set((keys || []).map((key) => String(key || '').trim()).filter(Boolean))];
+  if (!safeKeys.length) return { deleted: 0, errors: [] };
+  if (options.dryRun) return { deleted: safeKeys.length, errors: [] };
+  const { client, conf } = getS3Client();
+  let deleted = 0;
+  const errors = [];
+  for (let i = 0; i < safeKeys.length; i += 1000) {
+    const batch = safeKeys.slice(i, i + 1000);
+    const out = await client.send(new DeleteObjectsCommand({
+      Bucket: conf.bucket,
+      Delete: {
+        Quiet: false,
+        Objects: batch.map((Key) => ({ Key })),
+      },
+    }));
+    deleted += (out.Deleted || []).length;
+    for (const err of out.Errors || []) {
+      errors.push({ key: err.Key, message: err.Message || err.Code || 'DELETE_FAILED' });
+    }
+  }
+  return { deleted, errors };
+}
+
 function buildRawUploadKey(userId, mimeType) {
   const extByMime = {
     'image/jpeg': '.jpg',
@@ -254,6 +307,8 @@ module.exports = {
   headS3Object,
   getS3ObjectBuffer,
   deleteS3Object,
+  listS3ObjectsByPrefix,
+  deleteS3ObjectsBatch,
   buildRawUploadKey,
   assertRawObjectKeyOwnedByUser,
   isTrustedPublicAssetUrl,

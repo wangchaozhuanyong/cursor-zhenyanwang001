@@ -32,7 +32,7 @@ function generateInviteCode() {
 }
 
 async function hashPassword(password) {
-  return bcrypt.hash(password, 10);
+  return bcrypt.hash(password, 12);
 }
 
 async function comparePassword(plain, hash) {

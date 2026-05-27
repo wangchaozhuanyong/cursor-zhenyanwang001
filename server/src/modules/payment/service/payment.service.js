@@ -38,6 +38,15 @@ function emitAdminEvent(event) {
   }
 }
 
+function publishAdminEvent(event) {
+  try {
+    const result = getAdminApi().publishAdminEvent(event);
+    if (result && typeof result.catch === 'function') result.catch(() => {});
+  } catch {
+    // Realtime refresh is best-effort; webhook processing must not depend on it.
+  }
+}
+
 function requireAdminApi(name) {
   const fn = getAdminApi()[name];
   if (typeof fn !== 'function') {
@@ -247,6 +256,11 @@ async function handleStripeEvent(event) {
     console.error('[MyInvois] enqueue invoice after Stripe payment failed:', err?.message || err);
   }
   await notifyTelegramOrderPaid(orderId, 'stripe');
+  publishAdminEvent({
+    type: 'order.paid',
+    objectId: orderId,
+    summary: order.order_no,
+  });
   emitAdminEvent({
     eventType: 'order.paid',
     category: 'order',

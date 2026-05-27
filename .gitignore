@@ -41,6 +41,9 @@ bun.lockb
 .deploy-state/
 deploy.log
 
+# IP 发布打包产物（例如 repo.tar / REVISION.txt），不纳入版本库
+_deploy_bundle/
+
 # 本地回归/截图产物，不纳入版本库
 **/artifacts/
 

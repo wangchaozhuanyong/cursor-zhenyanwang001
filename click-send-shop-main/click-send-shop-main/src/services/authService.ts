@@ -10,6 +10,7 @@ import type {
   WechatBindPhoneParams,
 } from "@/types/auth";
 import type { UserProfile } from "@/types/user";
+import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birthday";
 
 export async function login(params: LoginParams): Promise<LoginResult> {
   const res = await authApi.login(params);
@@ -88,8 +89,15 @@ function mapProfileFromResponse(data: unknown): UserProfile {
     phone: (d.phone ?? "") as string,
     wechat: (d.wechat ?? "") as string,
     whatsapp: (d.whatsapp ?? "") as string,
-    birthday: (d.birthday ?? null) as string | null,
-    birthdayLocked: Boolean(d.birthdayLocked ?? d.birthday_locked ?? false),
+    birthday: (() => {
+      const normalized = normalizeBirthdayValue(d.birthday as string | null | undefined);
+      return normalized || null;
+    })(),
+    birthdayLocked: resolveBirthdayLockedState({
+      birthday: d.birthday as string | null | undefined,
+      birthdayLocked: d.birthdayLocked as boolean | number | undefined,
+      birthday_locked: d.birthday_locked as boolean | number | undefined,
+    }),
     wechatLogin: (() => {
       const raw = (d.wechat_login ?? d.wechatLogin) as unknown as Record<string, unknown> | undefined;
       if (!raw || typeof raw !== "object") return { bound: false };

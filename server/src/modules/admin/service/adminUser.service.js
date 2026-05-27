@@ -243,6 +243,12 @@ function normalizeAdminBirthday(value) {
   return s;
 }
 
+function normalizeStoredBirthday(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const s = String(value).trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+}
+
 async function updateUser(userId, body, adminUserId, req) {
   const beforeUser = await assertTargetIsNormalUser(userId);
   const fields = [];
@@ -251,12 +257,25 @@ async function updateUser(userId, body, adminUserId, req) {
     if (body[f] !== undefined) { fields.push(`${f} = ?`); values.push(body[f]); }
   }
   if (body.birthday !== undefined) {
+    const normalizedBirthday = normalizeAdminBirthday(body.birthday);
     fields.push('birthday = ?');
-    values.push(normalizeAdminBirthday(body.birthday));
+    values.push(normalizedBirthday);
     fields.push('birthday_updated_at = NOW()');
+    if (!normalizedBirthday) {
+      fields.push('birthday_locked = ?');
+      values.push(0);
+    }
   }
   if (body.birthday_locked !== undefined || body.birthdayLocked !== undefined) {
-    const locked = body.birthday_locked ?? body.birthdayLocked;
+    const locked = !!(body.birthday_locked ?? body.birthdayLocked);
+    if (locked) {
+      const effectiveBirthday = body.birthday !== undefined
+        ? normalizeAdminBirthday(body.birthday)
+        : normalizeStoredBirthday(beforeUser?.birthday);
+      if (!effectiveBirthday) {
+        throw new BusinessError(400, '请先填写有效生日后再锁定');
+      }
+    }
     fields.push('birthday_locked = ?');
     values.push(locked ? 1 : 0);
   }

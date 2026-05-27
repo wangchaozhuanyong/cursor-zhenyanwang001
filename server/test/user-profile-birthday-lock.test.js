@@ -23,3 +23,14 @@ test('formatUserResponse keeps locked birthday flag when birthday exists', () =>
   assert.equal(result.birthday_locked, true);
   assert.equal(result.birthdayLocked, true);
 });
+
+test('formatUserResponse treats invalid birthday as empty and clears lock', () => {
+  const result = formatUserResponse({
+    birthday: '1990-1-2',
+    birthday_locked: 1,
+  }, 'user');
+
+  assert.equal(result.birthday, null);
+  assert.equal(result.birthday_locked, false);
+  assert.equal(result.birthdayLocked, false);
+});

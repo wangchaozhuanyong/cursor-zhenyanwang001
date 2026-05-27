@@ -23,21 +23,9 @@ import {
   validatePhoneForCountry,
   type SupportedCountryCode,
 } from "@/utils/authValidation";
+import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birthday";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
-
-function normalizeBirthdayValue(value: string | null | undefined) {
-  return value ? String(value).slice(0, 10) : "";
-}
-
-function resolveBirthdayLockedState(profile: {
-  birthday?: string | null;
-  birthdayLocked?: boolean | number;
-  birthday_locked?: boolean | number;
-}) {
-  const normalizedBirthday = normalizeBirthdayValue(profile.birthday);
-  return Boolean(normalizedBirthday) && Boolean(profile.birthdayLocked ?? profile.birthday_locked ?? false);
-}
 
 export default function Settings() {
   const navigate = useNavigate();

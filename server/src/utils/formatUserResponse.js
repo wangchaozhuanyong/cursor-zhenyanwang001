@@ -35,7 +35,12 @@ function formatUserResponse(user, role = 'user') {
   }
 
   if (u.birthday !== undefined) {
-    u.birthday = u.birthday ? String(u.birthday).slice(0, 10) : null;
+    if (!u.birthday) {
+      u.birthday = null;
+    } else {
+      const s = String(u.birthday).trim().slice(0, 10);
+      u.birthday = /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+    }
   }
   if (u.birthday_locked !== undefined) {
     const effectiveBirthdayLocked = !!u.birthday && !!u.birthday_locked;

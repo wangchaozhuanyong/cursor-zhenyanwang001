@@ -12,8 +12,8 @@ export function resolveSiteLogoUrl(siteInfo: Pick<SiteInfo, "logoUrl" | "favicon
 /** 浏览器标签图标：仅使用 Favicon（建议透明背景或带圆角安全区，与 Logo 分开上传） */
 export function resolveSiteFaviconUrl(siteInfo: Pick<SiteInfo, "logoUrl" | "faviconUrl">): string {
   const faviconUrl = cleanAssetUrl(siteInfo.faviconUrl);
-  const logoUrl = cleanAssetUrl(siteInfo.logoUrl);
-  if (!faviconUrl || faviconUrl === logoUrl) return "";
+  if (!faviconUrl) return "";
+  // 允许 favicon 与 logo 复用同一张图：否则后台只配置一张图时会回退到默认 favicon。
   return faviconUrl;
 }
 

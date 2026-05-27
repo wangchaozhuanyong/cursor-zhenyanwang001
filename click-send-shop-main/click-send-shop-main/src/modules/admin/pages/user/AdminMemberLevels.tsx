@@ -14,6 +14,7 @@ import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 
 type Draft = Omit<MemberLevel, "id" | "created_at" | "updated_at"> & {
   id?: string;
@@ -211,40 +212,47 @@ export default function AdminMemberLevels() {
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={level.enabled !== false} onChange={(e) => updateLocal(level.id, { enabled: e.target.checked, is_default: e.target.checked ? level.is_default : false })} /><Tx>启用</Tx></label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!level.is_default} onChange={(e) => updateLocal(level.id, { is_default: e.target.checked, enabled: e.target.checked ? true : level.enabled })} /><Tx>默认等级</Tx></label>
           </div>
-          <div className="flex gap-2">
-            <LoadingButton
-              type="button"
-              variant="outline"
-              state={savingId === level.id ? "loading" : "normal"}
-              onClick={async () => {
-                const err = validateDraft(level);
-                if (err) {
-                  toast.error(err);
-                  return;
-                }
-                setSavingId(level.id);
-                try {
-                  await userService.updateMemberLevel(level.id, toPayload(level));
-                  await invalidateLevels();
-                  toast.success(tText("已保存"));
-                } catch (e) {
-                  toast.error(toastErrorMessage(e, tText("保存失败")));
-                } finally {
-                  setSavingId(null);
-                }
-              }}
-            >
-              <Tx>保存</Tx>
-            </LoadingButton>
-            <button
-              type="button"
-              onClick={() => setDeleteTarget(level)}
-              disabled={level.is_default === true || savingId === level.id}
-              className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-3 text-sm disabled:opacity-40 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER}`}
-            >
-              <Trash2 size={15} />
-              <Tx>删除</Tx>
-            </button>
+          <div className="flex justify-end">
+            <AdminRowActionsMenu
+              primary={(
+                <LoadingButton
+                  type="button"
+                  variant="outline"
+                  state={savingId === level.id ? "loading" : "normal"}
+                  onClick={async () => {
+                    const err = validateDraft(level);
+                    if (err) {
+                      toast.error(err);
+                      return;
+                    }
+                    setSavingId(level.id);
+                    try {
+                      await userService.updateMemberLevel(level.id, toPayload(level));
+                      await invalidateLevels();
+                      toast.success(tText("已保存"));
+                    } catch (e) {
+                      toast.error(toastErrorMessage(e, tText("保存失败")));
+                    } finally {
+                      setSavingId(null);
+                    }
+                  }}
+                >
+                  <Tx>保存</Tx>
+                </LoadingButton>
+              )}
+              moreLabel={<Tx>更多</Tx>}
+              menuDisabled={savingId === level.id}
+              items={[
+                {
+                  key: "delete",
+                  label: <Tx>删除</Tx>,
+                  icon: <Trash2 size={14} aria-hidden />,
+                  danger: true,
+                  disabled: level.is_default === true || savingId === level.id,
+                  onClick: () => setDeleteTarget(level),
+                },
+              ]}
+            />
           </div>
         </div>
       ))}

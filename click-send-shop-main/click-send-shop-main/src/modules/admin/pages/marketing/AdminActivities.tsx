@@ -45,6 +45,7 @@ import {
   hasActiveActivityFilters,
   removeActivityFilterChip,
 } from "@/utils/adminActivityFilters";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 
 function getActivityPreviewPath(activity: MarketingActivity) {
   const positions = activity.display_positions || [];
@@ -267,21 +268,52 @@ export default function AdminActivities() {
                 />
               </td>
               <td className={adminTableCellClass("right")}>
-                <div className="flex flex-wrap justify-end gap-2 text-xs">
-                  <button type="button" onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)} className="rounded border border-border px-2 py-1"><Tx>编辑</Tx></button>
-                  <button type="button" onClick={() => navigate(`/admin/marketing/activities/new?copy_from=${activity.id}`)} className="rounded border border-border px-2 py-1"><Copy className="mr-1 inline h-3 w-3" /><Tx>复制</Tx></button>
-                  <button type="button" onClick={() => openPreview(activity)} className="rounded border border-border px-2 py-1"><Eye className="mr-1 inline h-3 w-3" /><Tx>预览</Tx></button>
-                  <button type="button" onClick={() => navigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`)} className="rounded border border-border px-2 py-1"><Tx>查看数据</Tx></button>
-                  <button
-                    type="button"
-                    disabled={toggleDisabledMutation.isPending}
-                    onClick={() => toggleDisabledMutation.mutate({ id: activity.id, disabled: activity.status !== "disabled" })}
-                    className="rounded border border-border px-2 py-1"
-                  >
-                    {activity.status === "disabled" ? "启用" : "禁用"}
-                  </button>
-                  <button type="button" onClick={() => setDeleteId(activity.id)} className={`rounded border px-2 py-1 ${THEME_OUTLINE_DANGER}`}><Trash2 className="mr-1 inline h-3 w-3" /><Tx>删除</Tx></button>
-                </div>
+                <AdminRowActionsMenu
+                  primary={(
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)}
+                      className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
+                    >
+                      <Tx>编辑</Tx>
+                    </button>
+                  )}
+                  menuDisabled={toggleDisabledMutation.isPending}
+                  moreLabel={<Tx>更多</Tx>}
+                  items={[
+                    {
+                      key: "copy",
+                      label: <Tx>复制</Tx>,
+                      icon: <Copy className="h-3.5 w-3.5" aria-hidden />,
+                      onClick: () => navigate(`/admin/marketing/activities/new?copy_from=${activity.id}`),
+                    },
+                    {
+                      key: "preview",
+                      label: <Tx>预览</Tx>,
+                      icon: <Eye className="h-3.5 w-3.5" aria-hidden />,
+                      onClick: () => openPreview(activity),
+                    },
+                    {
+                      key: "report",
+                      label: <Tx>查看数据</Tx>,
+                      onClick: () => navigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`),
+                    },
+                    {
+                      key: "toggle",
+                      label: <Tx>{activity.status === "disabled" ? "启用" : "禁用"}</Tx>,
+                      disabled: toggleDisabledMutation.isPending,
+                      onClick: () => toggleDisabledMutation.mutate({ id: activity.id, disabled: activity.status !== "disabled" }),
+                    },
+                    {
+                      key: "delete",
+                      label: <Tx>删除</Tx>,
+                      icon: <Trash2 className="h-3.5 w-3.5" aria-hidden />,
+                      danger: true,
+                      separatorBefore: true,
+                      onClick: () => setDeleteId(activity.id),
+                    },
+                  ]}
+                />
               </td>
             </>
           )}

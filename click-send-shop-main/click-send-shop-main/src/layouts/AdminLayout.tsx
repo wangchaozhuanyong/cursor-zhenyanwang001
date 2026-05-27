@@ -57,6 +57,7 @@ import {
   type ResolvedNavChild,
 } from "@/layouts/admin/adminNavConfig";
 import AdminSidebarNav, { AdminNavTab } from "@/layouts/admin/AdminSidebarNav";
+import AnchoredMenu from "@/components/admin/AnchoredMenu";
 
 function AdminLayoutContent() {
   const navigate = useNavigate();
@@ -75,6 +76,8 @@ function AdminLayoutContent() {
   const [securityAlertsOpen, setSecurityAlertsOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
   const securityAlertsRef = useRef<HTMLDivElement>(null);
+  const avatarBtnRef = useRef<HTMLButtonElement>(null);
+  const securityBtnRef = useRef<HTMLButtonElement>(null);
 
   const can = useAdminPermissionStore((s) => s.can);
   const canAny = useAdminPermissionStore((s) => s.canAny);
@@ -101,22 +104,7 @@ function AdminLayoutContent() {
     }
   }, [location.pathname, can, canAny, navigate]);
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      if (skinPickerOpen) return;
-      if (target.closest('[role="dialog"]')) return;
-      if (avatarRef.current && !avatarRef.current.contains(target)) {
-        setAvatarMenuOpen(false);
-      }
-      if (securityAlertsRef.current && !securityAlertsRef.current.contains(target)) {
-        setSecurityAlertsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [skinPickerOpen]);
+  // 头像菜单 / 安全告警弹层改由 AnchoredMenu 统一关闭逻辑处理（click/contextmenu/ESC/scroll/resize）
 
   useEffect(() => {
     if (!isAdminAuthenticated() || !canViewSecurityAlerts) {
@@ -289,6 +277,7 @@ function AdminLayoutContent() {
             {(showNotifTab || canViewSecurityAlerts) && (
               <div ref={securityAlertsRef} className="relative shrink-0">
                 <button
+                  ref={securityBtnRef}
                   type="button"
                   aria-label={canViewSecurityAlerts ? "安全告警" : t("layout.notifications")}
                   title={canViewSecurityAlerts ? "安全告警" : "通知中心"}
@@ -310,8 +299,15 @@ function AdminLayoutContent() {
                     <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
                   ) : null}
                 </button>
-                {securityAlertsOpen && canViewSecurityAlerts ? (
-                  <motion.div className="absolute right-0 top-full z-50 mt-1 w-[min(92vw,22rem)] rounded-xl border border-border bg-card p-2 shadow-lg">
+                <AnchoredMenu
+                  open={securityAlertsOpen && canViewSecurityAlerts}
+                  onClose={() => setSecurityAlertsOpen(false)}
+                  anchorRef={securityBtnRef}
+                  width={352}
+                  gap={6}
+                  className="p-2"
+                >
+                  <motion.div className="w-[min(92vw,22rem)]">
                     <div className="flex items-center justify-between px-2 py-2">
                       <div className="flex min-w-0 items-center gap-2">
                         <Shield size={16} className="shrink-0 text-destructive" />
@@ -368,12 +364,13 @@ function AdminLayoutContent() {
                       </button>
                     ) : null}
                   </motion.div>
-                ) : null}
+                </AnchoredMenu>
               </div>
             )}
             {can("order.view") ? <AdminOrderVoiceToolbar /> : null}
             <div ref={avatarRef} className="relative shrink-0">
               <button
+                ref={avatarBtnRef}
                 type="button"
                 aria-label={t("layout.account")}
                 className="touch-manipulation flex h-9 min-w-[40px] items-center gap-1 rounded-lg px-1 hover:bg-secondary"
@@ -382,8 +379,15 @@ function AdminLayoutContent() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--theme-primary)] text-xs font-bold text-[var(--theme-primary-foreground)]">A</div>
                 <ChevronDown size={14} className={`hidden text-muted-foreground transition-transform sm:block ${avatarMenuOpen ? "rotate-180" : ""}`} />
               </button>
-              {avatarMenuOpen && (
-                <motion.div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-xl border border-border bg-card py-1 shadow-lg">
+              <AnchoredMenu
+                open={avatarMenuOpen}
+                onClose={() => setAvatarMenuOpen(false)}
+                anchorRef={avatarBtnRef}
+                width={224}
+                gap={6}
+                className="py-1"
+              >
+                <motion.div className="w-56">
                   <button
                     type="button"
                     className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
@@ -411,7 +415,10 @@ function AdminLayoutContent() {
                         <button
                           key={loc}
                           type="button"
-                          onClick={() => { setLocale(loc); setAvatarMenuOpen(false); }}
+                          onClick={() => {
+                            setLocale(loc);
+                            setAvatarMenuOpen(false);
+                          }}
                           className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
                             locale === loc
                               ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
@@ -429,14 +436,18 @@ function AdminLayoutContent() {
                   <div className="mx-3 my-1 h-px bg-border" />
                   <button
                     type="button"
-                    onClick={() => { adminLogout(); navigate("/admin/login"); setAvatarMenuOpen(false); }}
+                    onClick={() => {
+                      adminLogout();
+                      navigate("/admin/login");
+                      setAvatarMenuOpen(false);
+                    }}
                     className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-destructive hover:bg-secondary"
                   >
                     <LogOut size={16} />
                     {t("layout.logout")}
                   </button>
                 </motion.div>
-              )}
+              </AnchoredMenu>
             </div>
             </div>
           </div>

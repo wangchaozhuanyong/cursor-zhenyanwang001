@@ -13,6 +13,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
@@ -56,6 +57,7 @@ export default function AdminBackupCenter() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
+  const can = useAdminPermissionStore((s) => s.can);
   const queryClient = useQueryClient();
   const [restoreType, setRestoreType] = useState<backupService.RestoreJobPayload["restoreType"]>("site");
   const [targetTime, setTargetTime] = useState("");
@@ -231,31 +233,43 @@ export default function AdminBackupCenter() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {canApproveRestoreJob(job) ? (
-            <PermissionGate permission="backup.restore.approve">
+        <div className="flex justify-end">
+          <AdminRowActionsMenu
+            primary={canApproveRestoreJob(job) ? (
               <button
                 type="button"
                 onClick={() => confirmApproveRestoreJob(job)}
-                disabled={approveRestoreMutation.isPending}
-                className="inline-flex min-h-[36px] items-center rounded-md border border-amber-400/60 bg-white px-3 py-1.5 text-xs font-semibold text-amber-950 hover:bg-amber-100 disabled:opacity-60 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-50 dark:hover:bg-amber-900/50"
+                disabled={approveRestoreMutation.isPending || !can("backup.restore.approve")}
+                className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-amber-400/60 bg-white px-2.5 text-xs font-semibold text-amber-950 hover:bg-amber-100 disabled:opacity-60 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-50 dark:hover:bg-amber-900/50"
               >
-                <Tx>确认恢复任务</Tx>
+                <Tx>确认恢复</Tx>
               </button>
-            </PermissionGate>
-          ) : null}
-          {canSwitchRestoreJob(job) ? (
-            <PermissionGate permission="backup.restore.approve">
+            ) : canSwitchRestoreJob(job) ? (
               <button
                 type="button"
                 onClick={() => confirmSwitchRestoreJob(job)}
-                disabled={switchRestoreMutation.isPending}
-                className="inline-flex min-h-[36px] items-center rounded-md border border-red-400 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                disabled={switchRestoreMutation.isPending || !can("backup.restore.approve")}
+                className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-red-400 bg-red-600 px-2.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
-                <Tx>执行生产切换</Tx>
+                <Tx>生产切换</Tx>
               </button>
-            </PermissionGate>
-          ) : null}
+            ) : (
+              <span className="text-xs text-muted-foreground">-</span>
+            )}
+            moreLabel={<Tx>更多</Tx>}
+            menuDisabled={approveRestoreMutation.isPending || switchRestoreMutation.isPending}
+            items={[
+              ...(canApproveRestoreJob(job) && canSwitchRestoreJob(job) ? ([
+                {
+                  key: "switch",
+                  label: <Tx>执行生产切换</Tx>,
+                  danger: true,
+                  disabled: switchRestoreMutation.isPending || !can("backup.restore.approve"),
+                  onClick: () => confirmSwitchRestoreJob(job),
+                },
+              ] as const) : []),
+            ]}
+          />
         </div>
       </div>
     );

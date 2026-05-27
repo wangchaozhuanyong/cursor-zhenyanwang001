@@ -25,7 +25,9 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import {
   adminTableCellClass,
   adminTableTheadRow,
@@ -140,6 +142,7 @@ export default function AdminNotifications() {
   const { tText } = useAdminT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const canAny = useAdminPermissionStore((s) => s.canAny);
   const [tab, setTab] = useState<TabKey>("list");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -372,18 +375,30 @@ export default function AdminNotifications() {
                   <td className={adminTableCellClass("right", "text-sm text-muted-foreground")}>{row.recipient_count || 0} / {row.read_count || 0}</td>
                   <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(row.sent_at || row.scheduled_at || row.created_at)}</td>
                   <td className={adminTableCellClass("right")}>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={() => navigate(`/admin/notifications/${row.id}`)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
-                        详情
-                      </button>
-                      {rowAction ? (
-                        <PermissionGate anyOf={rowAction.permissions}>
-                          <button type="button" onClick={() => deleteMutation.mutate(row)} disabled={deleteMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">
-                            {rowAction.label}
-                          </button>
-                        </PermissionGate>
-                      ) : null}
-                    </div>
+                    <AdminRowActionsMenu
+                      primary={(
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/notifications/${row.id}`)}
+                          className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
+                        >
+                          <Tx>详情</Tx>
+                        </button>
+                      )}
+                      moreLabel={<Tx>更多</Tx>}
+                      menuDisabled={deleteMutation.isPending}
+                      items={[
+                        ...(rowAction && canAny(rowAction.permissions) ? ([
+                          {
+                            key: "rowAction",
+                            label: <Tx>{rowAction.label}</Tx>,
+                            danger: rowAction.action === "deleteDraft",
+                            disabled: deleteMutation.isPending,
+                            onClick: () => deleteMutation.mutate(row),
+                          },
+                        ] as const) : []),
+                      ]}
+                    />
                   </td>
                 </>
                 );

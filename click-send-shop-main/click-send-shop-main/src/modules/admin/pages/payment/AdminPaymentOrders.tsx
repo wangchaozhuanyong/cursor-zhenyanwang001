@@ -38,6 +38,7 @@ import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "pending", label: "待支付" },
@@ -252,25 +253,28 @@ export default function AdminPaymentOrders() {
           <AdminTableCell value={paidAt} fullText={paidAt} maxWidth="10rem" muted />
         </td>
         <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5`, "right")}>
-          <div className="flex flex-col gap-1.5">
-            {row.order_id ? (
+          <AdminRowActionsMenu
+            primary={row.order_id ? (
               <button
                 type="button"
                 onClick={() => navigate(`/admin/orders/${row.order_id}`)}
-                className="text-left text-[11px] font-medium text-[var(--theme-price)] hover:underline"
+                className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
               >
-                <Tx>查看订单</Tx>
+                <Tx>订单</Tx>
               </button>
-            ) : null}
-            <button
-              type="button"
-              disabled={row.status === "paid"}
-              onClick={() => setMarkingRow(row)}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs whitespace-nowrap hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Tx>人工确认</Tx>
-            </button>
-          </div>
+            ) : (
+              <span className="text-xs text-muted-foreground">-</span>
+            )}
+            moreLabel={<Tx>更多</Tx>}
+            items={[
+              {
+                key: "markPaid",
+                label: <Tx>人工确认</Tx>,
+                disabled: row.status === "paid",
+                onClick: () => setMarkingRow(row),
+              },
+            ]}
+          />
         </td>
       </>
     );

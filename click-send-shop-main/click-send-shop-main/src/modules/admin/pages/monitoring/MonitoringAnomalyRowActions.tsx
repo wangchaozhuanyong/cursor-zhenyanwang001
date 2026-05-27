@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, MoreHorizontal } from "lucide-react";
+import AnchoredMenu from "@/components/admin/AnchoredMenu";
 import {
   createRepairTask,
   ignoreMonitoringAnomaly,
@@ -22,42 +23,11 @@ const menuItem =
 
 export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
   const menuId = useId();
-  const rootRef = useRef<HTMLDivElement>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
 
   const terminal = item.status === "resolved" || item.status === "ignored";
-
-  useEffect(() => {
-    if (!open) return;
-    const placeMenu = () => {
-      const btn = menuBtnRef.current;
-      if (!btn) return;
-      const rect = btn.getBoundingClientRect();
-      const menuWidth = 120;
-      const left = Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8);
-      setMenuPos({ top: rect.bottom + 4, left });
-    };
-    placeMenu();
-    const onDoc = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("resize", placeMenu);
-    window.addEventListener("scroll", placeMenu, true);
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("resize", placeMenu);
-      window.removeEventListener("scroll", placeMenu, true);
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
 
   async function run(fn: () => Promise<unknown>) {
     if (busy) return;
@@ -71,7 +41,7 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
   }
 
   return (
-    <div ref={rootRef} className="relative inline-flex max-w-full items-center gap-2">
+    <div className="relative inline-flex max-w-full items-center gap-2">
       <Link className={actionBtn} to={`/admin/monitoring/anomalies/${item.id}`}>
         详情
       </Link>
@@ -92,13 +62,8 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
           <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
         </button>
 
-        {open && menuPos ? (
-          <div
-            id={menuId}
-            role="menu"
-            style={{ top: menuPos.top, left: menuPos.left }}
-            className="fixed z-[200] min-w-[7.5rem] rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
-          >
+        <AnchoredMenu open={open} onClose={() => setOpen(false)} anchorRef={menuBtnRef} width={120} gap={4}>
+          <div id={menuId} role="menu" className="min-w-[7.5rem]">
             <button
               type="button"
               role="menuitem"
@@ -137,7 +102,7 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
               解决
             </button>
           </div>
-        ) : null}
+        </AnchoredMenu>
       </div>
     </div>
   );

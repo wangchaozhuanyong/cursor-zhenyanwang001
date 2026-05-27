@@ -31,6 +31,7 @@ import {
 import { THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
 import { History, Package, SplitSquareHorizontal } from "lucide-react";
 import type { ReactNode } from "react";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 
 type ListTabBase = {
   loading: boolean;
@@ -278,12 +279,37 @@ export function InventoryRulesTab({
             <td className={adminTableCellClass("center")}>{row.enabled ? L("启用") : L("停用")}</td>
             <td className={adminTableCellClass("left", "text-muted-foreground")}>{row.remark || "-"}</td>
             <td className={adminTableCellClass("right")}>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => onConvert("unpack", row)} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即拆包</Tx></button>
-                <button type="button" onClick={() => onConvert("assemble", row)} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>立即组装</Tx></button>
-                <button type="button" onClick={() => onEdit(row)} className="rounded-lg bg-secondary px-3 py-1.5 text-xs"><Tx>编辑</Tx></button>
-                <button type="button" onClick={() => onDelete(row.id)} className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600"><Tx>删除</Tx></button>
-              </div>
+              <AdminRowActionsMenu
+                primary={(
+                  <button
+                    type="button"
+                    onClick={() => onEdit(row)}
+                    className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-secondary px-2.5 text-xs font-medium text-foreground hover:bg-secondary/80"
+                  >
+                    <Tx>编辑</Tx>
+                  </button>
+                )}
+                moreLabel={<Tx>更多</Tx>}
+                items={[
+                  {
+                    key: "unpack",
+                    label: <Tx>立即拆包</Tx>,
+                    onClick: () => onConvert("unpack", row),
+                  },
+                  {
+                    key: "assemble",
+                    label: <Tx>立即组装</Tx>,
+                    onClick: () => onConvert("assemble", row),
+                  },
+                  {
+                    key: "delete",
+                    label: <Tx>删除</Tx>,
+                    danger: true,
+                    separatorBefore: true,
+                    onClick: () => onDelete(row.id),
+                  },
+                ]}
+              />
             </td>
           </>
         )}

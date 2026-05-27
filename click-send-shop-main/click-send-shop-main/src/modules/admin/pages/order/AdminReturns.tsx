@@ -28,6 +28,7 @@ import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import {
   adminTableCellClass,
   adminTableTheadRow,
@@ -252,15 +253,33 @@ export default function AdminReturns() {
               <td className={adminTableCellClass("center")}><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{labelStatus(row.status)}</span></td>
               <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(row.created_at)}</td>
               <td className={adminTableCellClass("right")}>
-                <div className="flex flex-wrap justify-end gap-2">
-                  <button type="button" onClick={() => setSelectedId(row.id)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"><Tx>详情</Tx></button>
-                  {canHandleReturn ? (
-                    <>
-                      <button type="button" onClick={() => openReview('approve', row)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"><Tx>通过</Tx></button>
-                      <button type="button" onClick={() => openReview('reject', row)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"><Tx>拒绝</Tx></button>
-                    </>
-                  ) : null}
-                </div>
+                <AdminRowActionsMenu
+                  primary={(
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(row.id)}
+                      className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
+                    >
+                      <Tx>详情</Tx>
+                    </button>
+                  )}
+                  moreLabel={<Tx>更多</Tx>}
+                  items={[
+                    ...(canHandleReturn ? ([
+                      {
+                        key: "approve",
+                        label: <Tx>通过</Tx>,
+                        onClick: () => openReview("approve", row),
+                      },
+                      {
+                        key: "reject",
+                        label: <Tx>拒绝</Tx>,
+                        danger: true,
+                        onClick: () => openReview("reject", row),
+                      },
+                    ] as const) : []),
+                  ]}
+                />
               </td>
             </>
           )}

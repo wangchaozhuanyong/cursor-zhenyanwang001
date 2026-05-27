@@ -34,6 +34,8 @@ import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import {
   THEME_BADGE_DANGER,
   THEME_BADGE_MUTED,
@@ -117,6 +119,7 @@ function StarRating({ rating }: { rating: number }) {
 export default function AdminReviews() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
+  const canAny = useAdminPermissionStore((s) => s.canAny);
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
@@ -685,35 +688,98 @@ export default function AdminReviews() {
                 </td>
                 <td className={adminTableCellClass("left", "px-3 py-3 text-[11px] text-muted-foreground whitespace-nowrap")}>{r.created_at ? formatDateTime(r.created_at) : "—"}</td>
                 <td className={adminTableCellClass("right", "px-3 py-3")}>
-                  <div className="flex justify-end gap-1">
-                    <button type="button" onClick={() => openDetail(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={tText("详情")}><Info size={14} /></button>
-                    {r.status === "pending" && (
-                      <PermissionGate anyOf={REVIEW_MODERATE}>
-                        <button type="button" onClick={() => handleApprove(r.id)} className={`touch-manipulation rounded-lg p-1.5 ${THEME_OUTLINE_SUCCESS}`} title={tText("通过")}><Check size={14} /></button>
-                        <button type="button" onClick={() => handleReject(r.id)} className={`touch-manipulation rounded-lg p-1.5 ${THEME_OUTLINE_WARNING}`} title={tText("拒绝")}><XCircle size={14} /></button>
-                      </PermissionGate>
+                  <AdminRowActionsMenu
+                    primary={(
+                      <button
+                        type="button"
+                        onClick={() => openDetail(r.id)}
+                        className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
+                        title={tText("详情")}
+                      >
+                        <Info size={14} className="mr-1 inline" />
+                        <Tx>详情</Tx>
+                      </button>
                     )}
-                    {r.status === "rejected" && (
-                      <>
-                        <PermissionGate anyOf={REVIEW_REPLY}><button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground"><MessageSquare size={14} /></button></PermissionGate>
-                        <PermissionGate anyOf={REVIEW_DELETE}><button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER}`}><Trash2 size={14} /></button></PermissionGate>
-                      </>
-                    )}
-                    {r.status !== "deleted" && r.status !== "pending" && r.status !== "rejected" && (
-                      <>
-                        <PermissionGate anyOf={REVIEW_FEATURE}><button type="button" onClick={() => confirm({ title: tText("确认"), description: "切换精选？", onConfirm: () => handleToggleFeatured(r.id) })} className={`touch-manipulation rounded-lg border p-1.5 ${r.is_featured ? "border-gold bg-gold/10 text-theme-price" : "border-border text-muted-foreground"}`}><Sparkles size={14} /></button></PermissionGate>
-                        <PermissionGate anyOf={REVIEW_MODERATE}><button type="button" onClick={() => confirm({ title: tText("确认"), description: "切换显示？", onConfirm: () => handleToggle(r.id) })} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground">{r.status === "hidden" ? <Eye size={14} /> : <EyeOff size={14} />}</button></PermissionGate>
-                        <PermissionGate anyOf={REVIEW_REPLY}><button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground"><MessageSquare size={14} /></button></PermissionGate>
-                        <PermissionGate anyOf={REVIEW_DELETE}><button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER}`}><Trash2 size={14} /></button></PermissionGate>
-                      </>
-                    )}
-                    {r.status === "deleted" && (
-                      <PermissionGate anyOf={REVIEW_DELETE}>
-                        <button type="button" onClick={() => handleRestore(r.id)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT}`}><RotateCcw size={14} /></button>
-                        <button type="button" onClick={() => confirmPermanentDelete(r.id)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>
-                      </PermissionGate>
-                    )}
-                  </div>
+                    moreLabel={<Tx>更多</Tx>}
+                    items={[
+                      ...(r.status === "pending" && canAny(REVIEW_MODERATE) ? ([
+                        {
+                          key: "approve",
+                          label: <Tx>通过</Tx>,
+                          icon: <Check size={14} aria-hidden />,
+                          onClick: () => handleApprove(r.id),
+                        },
+                        {
+                          key: "reject",
+                          label: <Tx>拒绝</Tx>,
+                          icon: <XCircle size={14} aria-hidden />,
+                          onClick: () => handleReject(r.id),
+                        },
+                      ] as const) : []),
+                      ...(r.status !== "deleted" && canAny(REVIEW_FEATURE) ? ([
+                        {
+                          key: "featured",
+                          label: <Tx>{r.is_featured ? "取消精选" : "设为精选"}</Tx>,
+                          icon: <Sparkles size={14} aria-hidden />,
+                          onClick: () => confirm({ title: tText("确认操作"), description: "确定切换该评论的精选状态？", onConfirm: () => handleToggleFeatured(r.id) }),
+                        },
+                      ] as const) : []),
+                      ...(r.status !== "deleted" && canAny(REVIEW_MODERATE) ? ([
+                        {
+                          key: "visibility",
+                          label: <Tx>{r.status === "hidden" ? "显示" : "隐藏"}</Tx>,
+                          icon: r.status === "hidden" ? <Eye size={14} aria-hidden /> : <EyeOff size={14} aria-hidden />,
+                          onClick: () => confirm({ title: tText("确认操作"), description: "确定切换该评论的显示状态？", onConfirm: () => handleToggle(r.id) }),
+                        },
+                      ] as const) : []),
+                      ...(r.status !== "deleted" && canAny(REVIEW_REPLY) ? ([
+                        {
+                          key: "reply",
+                          label: <Tx>回复</Tx>,
+                          icon: <MessageSquare size={14} aria-hidden />,
+                          onClick: () => {
+                            setReplyTarget(r);
+                            setReplyText(r.admin_reply || "");
+                          },
+                        },
+                      ] as const) : []),
+                      ...(r.rating <= 2 && r.status !== "deleted" && canAny(REVIEW_MODERATE) ? ([
+                        {
+                          key: "complaint",
+                          label: <Tx>差评处理</Tx>,
+                          onClick: () => {
+                            setComplaintTarget(r);
+                            setComplaintForm({ status: (r.complaint_status as ComplaintStatus) || "pending", note: r.complaint_note || "" });
+                          },
+                        },
+                      ] as const) : []),
+                      ...(r.status !== "deleted" && canAny(REVIEW_DELETE) ? ([
+                        {
+                          key: "delete",
+                          label: <Tx>删除</Tx>,
+                          icon: <Trash2 size={14} aria-hidden />,
+                          danger: true,
+                          separatorBefore: true,
+                          onClick: () => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id)),
+                        },
+                      ] as const) : []),
+                      ...(r.status === "deleted" && canAny(REVIEW_DELETE) ? ([
+                        {
+                          key: "restore",
+                          label: <Tx>恢复</Tx>,
+                          icon: <RotateCcw size={14} aria-hidden />,
+                          separatorBefore: true,
+                          onClick: () => handleRestore(r.id),
+                        },
+                        {
+                          key: "permanentDelete",
+                          label: <Tx>彻底删除</Tx>,
+                          danger: true,
+                          onClick: () => confirmPermanentDelete(r.id),
+                        },
+                      ] as const) : []),
+                    ]}
+                  />
                 </td>
               </>
             );

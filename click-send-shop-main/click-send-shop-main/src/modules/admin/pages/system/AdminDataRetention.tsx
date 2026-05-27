@@ -43,6 +43,7 @@ import Pagination from "@/components/admin/Pagination";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
   adminTdClassName,
@@ -648,14 +649,28 @@ export default function AdminDataRetention() {
                             ) : <span className="text-xs text-muted-foreground">-</span>}
                           </td>
                           <td className={adminTdClassName("px-3 py-3", "right")}>
-                            <button
-                              type="button"
-                              disabled={!canManage || savePolicyMutation.isPending}
-                              onClick={() => savePolicyMutation.mutate(policy)}
-                              className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-50"
-                            >
-                              <Save size={13} /> 保存
-                            </button>
+                            <AdminRowActionsMenu
+                              primary={(
+                                <button
+                                  type="button"
+                                  disabled={!canManage || savePolicyMutation.isPending}
+                                  onClick={() => savePolicyMutation.mutate(policy)}
+                                  className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary disabled:opacity-50"
+                                >
+                                  <Save size={13} className="mr-1 inline" /> <Tx>保存</Tx>
+                                </button>
+                              )}
+                              moreLabel={<Tx>更多</Tx>}
+                              items={[
+                                {
+                                  key: "help",
+                                  label: <Tx>查看说明</Tx>,
+                                  onClick: () => {
+                                    toast.info(tText(getDataCleanupPolicyHelp(policy.key, policy.description)));
+                                  },
+                                },
+                              ]}
+                            />
                           </td>
                         </tr>
                       );
@@ -773,12 +788,29 @@ export default function AdminDataRetention() {
                       <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{run.total_deleted}</td>
                       <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{run.started_at ? formatDateTime(run.started_at) : "-"}</td>
                       <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
-                        <div className="flex justify-end gap-1">
-                          <button type="button" onClick={() => setSelectedRunId(run.id)} className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-secondary"><Tx>查看</Tx></button>
-                          {run.status === "running" ? (
-                            <button type="button" disabled={!canExecute} onClick={() => cancelMutation.mutate(run.id)} className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50 disabled:opacity-50"><Tx>取消</Tx></button>
-                          ) : null}
-                        </div>
+                        <AdminRowActionsMenu
+                          primary={(
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRunId(run.id)}
+                              className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
+                            >
+                              <Tx>查看</Tx>
+                            </button>
+                          )}
+                          moreLabel={<Tx>更多</Tx>}
+                          items={[
+                            ...(run.status === "running" ? ([
+                              {
+                                key: "cancel",
+                                label: <Tx>取消</Tx>,
+                                danger: true,
+                                disabled: !canExecute,
+                                onClick: () => cancelMutation.mutate(run.id),
+                              },
+                            ] as const) : []),
+                          ]}
+                        />
                       </td>
                     </tr>
                   ))}

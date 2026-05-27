@@ -47,6 +47,8 @@ import {
   adminTableAlignClass,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 
 const ORDER_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left",
@@ -65,6 +67,7 @@ const ORDER_COLUMN_ALIGNS: AdminTableAlign[] = [
 
 export default function AdminOrders() {
   const navigate = useNavigate();
+  const can = useAdminPermissionStore((s) => s.can);
   const orderStatusFilterOptions = useAdminOrderStatusFilterOptions();
   const paymentStatusFilterOptions = useAdminPaymentStatusFilterOptions();
   const {
@@ -138,73 +141,76 @@ export default function AdminOrders() {
     reloadAfterAction,
   } = useAdminOrders();
 
-  const renderActions = (o: Order) => {
+  const buildOrderActionItems = (o: Order) => {
+    const items: Parameters<typeof AdminRowActionsMenu>[0]["items"] = [];
+
     if (o.status === ORDER_STATUS.PENDING) {
-      return (
-        <div className="flex gap-2">
-          <PermissionGate permission="payment.manage">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                confirmStatusChange(o.id, ORDER_STATUS.PAID, tText("确认收款"), tText(`确定将订单「${o.order_no}」标记为已付款？`), tText("订单已确认收款"));
-              }}
-              className={`rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_SUCCESS}`}
-            >
-              <Tx>确认收款</Tx>
-            </button>
-          </PermissionGate>
-          <PermissionGate permission="order.update">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                confirmStatusChange(o.id, ORDER_STATUS.CANCELLED, tText("取消订单"), tText(`确定取消订单「${o.order_no}」？取消后会释放库存并回滚相关权益。`), tText("订单已取消"), true);
-              }}
-              className={`rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_DANGER}`}
-            >
-              <Tx>取消订单</Tx>
-            </button>
-          </PermissionGate>
-        </div>
-      );
+      if (can("payment.manage")) {
+        items.push({
+          key: "confirmPaid",
+          label: <Tx>确认收款</Tx>,
+          onClick: () => confirmStatusChange(
+            o.id,
+            ORDER_STATUS.PAID,
+            tText("确认收款"),
+            tText(`确定将订单「${o.order_no}」标记为已付款？`),
+            tText("订单已确认收款"),
+          ),
+        });
+      }
+      if (can("order.update")) {
+        items.push({
+          key: "cancel",
+          label: <Tx>取消订单</Tx>,
+          danger: true,
+          onClick: () => confirmStatusChange(
+            o.id,
+            ORDER_STATUS.CANCELLED,
+            tText("取消订单"),
+            tText(`确定取消订单「${o.order_no}」？取消后会释放库存并回滚相关权益。`),
+            tText("订单已取消"),
+            true,
+          ),
+        });
+      }
+    } else if (o.status === ORDER_STATUS.PAID) {
+      if (can("order.ship")) {
+        items.push({
+          key: "ship",
+          label: <Tx>发货</Tx>,
+          icon: <Truck size={14} aria-hidden />,
+          onClick: () => setShipTarget({ id: o.id, orderNo: o.order_no }),
+        });
+      }
+    } else if (o.status === ORDER_STATUS.SHIPPED) {
+      if (can("order.update")) {
+        items.push({
+          key: "complete",
+          label: <Tx>标记完成</Tx>,
+          onClick: () => confirmStatusChange(
+            o.id,
+            ORDER_STATUS.COMPLETED,
+            tText("标记完成"),
+            tText(`确定将订单「${o.order_no}」标记为已完成？`),
+            tText("订单已完成"),
+          ),
+        });
+      }
     }
 
-    if (o.status === ORDER_STATUS.PAID) {
-      return (
-        <PermissionGate permission="order.ship">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShipTarget({ id: o.id, orderNo: o.order_no });
-            }}
-            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_PRIMARY}`}
-          >
-            <Truck size={12} /> <Tx>发货</Tx>
-          </button>
-        </PermissionGate>
-      );
-    }
+    items.push({
+      key: "copyOrderNo",
+      label: <Tx>复制订单号</Tx>,
+      icon: <Copy size={14} aria-hidden />,
+      separatorBefore: items.length > 0,
+      onClick: () => {
+        navigator.clipboard?.writeText(o.order_no)
+          .then(() => toast.success(tText("订单号已复制")))
+          .catch(() => {});
+      },
+    });
 
-    if (o.status === ORDER_STATUS.SHIPPED) {
-      return (
-        <PermissionGate permission="order.update">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              confirmStatusChange(o.id, ORDER_STATUS.COMPLETED, tText("标记完成"), tText(`确定将订单「${o.order_no}」标记为已完成？`), tText("订单已完成"));
-            }}
-            className="rounded-md border border-[var(--theme-border)] px-2 py-1 text-[11px]"
-          >
-            <Tx>标记完成</Tx>
-          </button>
-        </PermissionGate>
-      );
-    }
-
-    return <span className="text-xs text-muted-foreground"><Tx>只读</Tx></span>;
+    return items;
   };
 
   const renderRow = (o: Order) => {
@@ -314,21 +320,19 @@ export default function AdminOrders() {
           ].filter(Boolean).join("\n")}>{afterSale.text}</span>
         </td>
         <td className={`whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("right")}`}>
-          <div className="flex items-center justify-end gap-2">
-            {renderActions(o)}
-            <button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="rounded-md border border-[var(--theme-border)] px-2 py-1 text-[11px] hover:bg-[var(--theme-bg)]"><Tx>详情</Tx></button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard?.writeText(o.order_no).then(() => toast.success(tText("订单号已复制"))).catch(() => {});
-              }}
-              className="rounded-md border border-[var(--theme-border)] p-1 hover:bg-[var(--theme-bg)]"
-              aria-label={tText("复制订单号")}
-            >
-              <Copy size={13} />
-            </button>
-          </div>
+          <AdminRowActionsMenu
+            primary={(
+              <button
+                type="button"
+                onClick={() => navigate(`/admin/orders/${o.id}`)}
+                className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 text-xs font-medium text-foreground hover:bg-[var(--theme-bg)]"
+              >
+                <Tx>详情</Tx>
+              </button>
+            )}
+            moreLabel={<Tx>更多</Tx>}
+            items={buildOrderActionItems(o)}
+          />
         </td>
       </>
     );

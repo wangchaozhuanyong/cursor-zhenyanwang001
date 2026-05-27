@@ -45,6 +45,7 @@ import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/Adm
 import { useAdminT } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import {
   adminTableCellClass,
   adminTableTheadRow,
@@ -410,42 +411,57 @@ export default function AdminAccounts() {
               <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{a.created_at ? formatDateTime(a.created_at) : "-"}</td>
               <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{a.last_login_at ? formatDateTime(a.last_login_at) : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
               <td className={adminTableCellClass("right", "whitespace-nowrap")}>
-                <div className="inline-flex flex-nowrap items-center justify-end gap-1">
-                  <PermissionGate permission="role.manage">
-                    {!targetLocked && a.role !== "super_admin" && (
-                      <>
-                        <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? tText("启用") : tText("禁用")}>
-                          {a.role === "disabled" ? <ToggleRight size={14} className={THEME_TEXT_SUCCESS_SOFT} /> : <ToggleLeft size={14} />}
-                        </button>
-                        {(isSuperAdminViewer || !hasPrivilegedRole(a)) && (
-                          <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={tText("重置密码")}>
-                            <KeyRound size={14} />
-                          </button>
-                        )}
-                        <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={tText("安全设置")}>
-                          <ShieldCheck size={14} />
-                        </button>
+                <PermissionGate permission="role.manage">
+                  {!targetLocked && a.role !== "super_admin" ? (
+                    <AdminRowActionsMenu
+                      primary={(
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => setSecurityTarget(a)}
+                          className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 text-xs font-medium text-foreground hover:bg-[var(--theme-bg)]"
+                          title={tText("安全设置")}
+                        >
+                          <ShieldCheck size={14} className="mr-1 inline" />
+                          <Tx>安全</Tx>
+                        </button>
+                      )}
+                      moreLabel={<Tx>更多</Tx>}
+                      items={[
+                        {
+                          key: "toggle",
+                          label: <Tx>{a.role === "disabled" ? "启用" : "禁用"}</Tx>,
+                          icon: a.role === "disabled"
+                            ? <ToggleRight size={14} className={THEME_TEXT_SUCCESS_SOFT} aria-hidden />
+                            : <ToggleLeft size={14} aria-hidden />,
+                          onClick: () => handleToggle(a),
+                        },
+                        ...((isSuperAdminViewer || !hasPrivilegedRole(a)) ? ([
+                          {
+                            key: "resetPwd",
+                            label: <Tx>重置密码</Tx>,
+                            icon: <KeyRound size={14} aria-hidden />,
+                            onClick: () => { setResetTarget(a); setNewPassword(""); },
+                          },
+                        ] as const) : []),
+                        {
+                          key: "delete",
+                          label: <Tx>删除</Tx>,
+                          icon: <Trash2 size={14} aria-hidden />,
+                          danger: true,
+                          separatorBefore: true,
+                          onClick: () =>
                             adminConfirmDelete(askConfirm, a.nickname || a.phone, async () => {
                               await rbacService.deleteAdminUser(a.id);
                               toast.success(tText("管理员已删除"));
                               void invalidateAccounts();
-                            })
-                          }
-                          className={`touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-[var(--theme-bg)]`}
-                          title={tText("删除")}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
-                    {targetLocked && (
-                      <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground"><Shield size={12} /><Tx>不可操作</Tx></span>
-                    )}
-                  </PermissionGate>
-                </div>
+                            }),
+                        },
+                      ]}
+                    />
+                  ) : targetLocked ? (
+                    <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground"><Shield size={12} /><Tx>不可操作</Tx></span>
+                  ) : null}
+                </PermissionGate>
               </td>
             </>
           );

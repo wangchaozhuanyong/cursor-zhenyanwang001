@@ -32,7 +32,9 @@ function idSuffix(pathname: string, pattern: RegExp): string {
 function childIsActive(pathname: string, childPath: string | undefined, parentPath: string): boolean {
   if (!childPath) return false;
   if (childPath === parentPath) {
-    return pathname === childPath || pathname.startsWith(`${childPath}/`);
+    // 子项与父级同 path（例如“总览”）时，只在精确命中父级页面时算激活，
+    // 否则会抢占其余子路由（导致工作标签标题都变成“总览”一类的同名问题）。
+    return pathname === childPath || pathname === `${childPath}/`;
   }
   return pathname === childPath || pathname.startsWith(`${childPath}/`);
 }

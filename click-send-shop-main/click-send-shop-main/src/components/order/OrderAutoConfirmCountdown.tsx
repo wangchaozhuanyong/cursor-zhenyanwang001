@@ -1,7 +1,6 @@
 import { Clock3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { Order } from "@/types/order";
-import { formatPaymentCountdown } from "@/utils/orderPaymentTimeout";
 
 type CountdownOrder = Pick<
   Order,
@@ -17,6 +16,18 @@ function getSecondsLeft(deadlineAt: string | null | undefined): number {
   const end = new Date(deadlineAt).getTime();
   if (!Number.isFinite(end)) return 0;
   return Math.max(0, Math.floor((end - Date.now()) / 1000));
+}
+
+function formatAutoConfirmCountdown(secondsLeft: number): string {
+  const s = Math.max(0, Math.floor(secondsLeft));
+  const days = Math.floor(s / 86400);
+  const hours = Math.floor((s % 86400) / 3600);
+  const minsRaw = Math.floor((s % 3600) / 60);
+  const mins = s > 0 && days === 0 && hours === 0 ? Math.max(1, minsRaw) : minsRaw;
+
+  if (days > 0) return `${days}天 ${hours}小时 ${mins}分钟`;
+  if (hours > 0) return `${hours}小时 ${mins}分钟`;
+  return `${mins}分钟`;
 }
 
 function isActive(order: CountdownOrder | null | undefined) {
@@ -68,10 +79,18 @@ export function OrderAutoConfirmCountdown({
     >
       <Clock3 size={compact ? 14 : 16} className="mt-0.5 shrink-0 opacity-80" />
       <div className="min-w-0 flex-1">
-        <p className="font-medium text-foreground">
+        <p className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 font-medium text-foreground">
           {expired
             ? "系统即将自动确认收货"
-            : <>将于 <span className="font-mono tabular-nums text-[var(--theme-price)]">{formatPaymentCountdown(secondsLeft)}</span> 后自动确认收货</>}
+            : (
+                <>
+                  <span>将于</span>
+                  <span className="font-mono tabular-nums text-[var(--theme-price)] whitespace-nowrap">
+                    {formatAutoConfirmCountdown(secondsLeft)}
+                  </span>
+                  <span>后自动确认收货</span>
+                </>
+              )}
         </p>
         {!compact && order.auto_confirm_receive_days != null ? (
           <p className="mt-0.5 text-[11px] opacity-80">

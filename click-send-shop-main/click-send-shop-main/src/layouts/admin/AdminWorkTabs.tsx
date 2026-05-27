@@ -10,17 +10,14 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { getFirstAllowedAdminPath } from "@/config/adminNavAccess";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useAdminDirtyGuard } from "@/modules/admin/context/AdminDirtyGuardContext";
+import AnchoredMenu from "@/components/admin/AnchoredMenu";
 
 type TabMenuState = {
   tabId: string;
-  x: number;
-  y: number;
+  anchorEl: HTMLElement;
 };
 
 const TAB_MENU_WIDTH = 160;
-const TAB_MENU_ESTIMATED_HEIGHT = 176;
-const TAB_MENU_GAP = 6;
-const TAB_MENU_VIEWPORT_PADDING = 8;
 const TAB_SCROLL_STEP = 180;
 
 export default function AdminWorkTabs() {
@@ -29,7 +26,9 @@ export default function AdminWorkTabs() {
   const location = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const listBtnRef = useRef<HTMLButtonElement>(null);
   const [menu, setMenu] = useState<TabMenuState | null>(null);
+  const tabMenuAnchorRef = useRef<HTMLElement | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -159,21 +158,8 @@ export default function AdminWorkTabs() {
     e.preventDefault();
     e.stopPropagation();
     setListOpen(false);
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const maxLeft = Math.max(TAB_MENU_VIEWPORT_PADDING, viewportWidth - TAB_MENU_WIDTH - TAB_MENU_VIEWPORT_PADDING);
-    const maxTop = Math.max(TAB_MENU_VIEWPORT_PADDING, viewportHeight - TAB_MENU_ESTIMATED_HEIGHT - TAB_MENU_VIEWPORT_PADDING);
-    const preferredLeft = e.clientX + TAB_MENU_GAP;
-    const fallbackLeft = e.clientX - TAB_MENU_WIDTH - TAB_MENU_GAP;
-    const preferredTop = e.clientY + TAB_MENU_GAP;
-    const fallbackTop = e.clientY - TAB_MENU_ESTIMATED_HEIGHT - TAB_MENU_GAP;
-    const left = preferredLeft + TAB_MENU_WIDTH <= viewportWidth - TAB_MENU_VIEWPORT_PADDING
-      ? preferredLeft
-      : Math.max(TAB_MENU_VIEWPORT_PADDING, fallbackLeft);
-    const top = preferredTop + TAB_MENU_ESTIMATED_HEIGHT <= viewportHeight - TAB_MENU_VIEWPORT_PADDING
-      ? preferredTop
-      : Math.max(TAB_MENU_VIEWPORT_PADDING, fallbackTop);
-    setMenu({ tabId: tab.id, x: Math.min(left, maxLeft), y: Math.min(top, maxTop) });
+    tabMenuAnchorRef.current = e.currentTarget;
+    setMenu({ tabId: tab.id, anchorEl: e.currentTarget });
   };
 
   const menuTab = menu ? tabs.find((t) => t.id === menu.tabId) : null;
@@ -247,6 +233,7 @@ export default function AdminWorkTabs() {
 
         <div ref={listRef} className="relative mx-1 shrink-0">
           <button
+            ref={listBtnRef}
             type="button"
             aria-label={tText("全部标签")}
             aria-expanded={listOpen}
@@ -260,11 +247,8 @@ export default function AdminWorkTabs() {
             <Tx>全部</Tx>
             <ChevronDown size={12} className={cn("transition-transform", listOpen ? "rotate-180" : "")} />
           </button>
-          {listOpen ? (
-            <div
-              className="absolute right-0 top-full z-[60] mt-1 max-h-64 w-56 overflow-y-auto rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] py-1 text-sm shadow-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
+          <AnchoredMenu open={listOpen} onClose={() => setListOpen(false)} anchorRef={listBtnRef} width={224} gap={6}>
+            <div className="max-h-64 overflow-y-auto py-1 text-sm" onClick={(e) => e.stopPropagation()}>
               {tabs.map((tab) => {
                 const active = tab.id === activeTabId || tab.id === currentKey;
                 return (
@@ -286,7 +270,7 @@ export default function AdminWorkTabs() {
                 );
               })}
             </div>
-          ) : null}
+          </AnchoredMenu>
         </div>
 
         <div
@@ -302,70 +286,73 @@ export default function AdminWorkTabs() {
         </div>
       </div>
 
-      {menu && menuTab ? (
-        <div
-          className="fixed z-[60] w-40 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] py-1 text-sm shadow-lg"
-          style={{ left: menu.x, top: menu.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            className="flex w-full px-3 py-2 text-left hover:bg-secondary disabled:opacity-50"
-            disabled={menuTab.pinned}
-            onClick={() => {
-              handleClose(menuTab);
-              setMenu(null);
-            }}
-          >
-            <Tx>关闭</Tx>
-          </button>
-          <button
-            type="button"
-            className="flex w-full px-3 py-2 text-left hover:bg-secondary"
-            onClick={() => {
-              void (async () => {
-                const victims = tabs.filter((t) => t.id !== menuTab.id && !t.pinned);
-                await closeTabsBatch(victims);
-                setActiveTab(menuTab.id);
-                if (`${location.pathname}${location.search}` !== menuTab.path) {
-                  navigate(menuTab.path);
-                }
+      <AnchoredMenu
+        open={Boolean(menu && menuTab)}
+        onClose={() => setMenu(null)}
+        anchorRef={tabMenuAnchorRef}
+        width={TAB_MENU_WIDTH}
+      >
+        {menuTab ? (
+          <>
+            <button
+              type="button"
+              className="flex w-full px-3 py-2 text-left hover:bg-secondary disabled:opacity-50"
+              disabled={menuTab.pinned}
+              onClick={() => {
+                handleClose(menuTab);
                 setMenu(null);
-              })();
-            }}
-          >
-            <Tx>关闭其他</Tx>
-          </button>
-          <button
-            type="button"
-            className="flex w-full px-3 py-2 text-left hover:bg-secondary"
-            onClick={() => {
-              void (async () => {
-                const idx = tabs.findIndex((t) => t.id === menuTab.id);
-                const victims = idx < 0 ? [] : tabs.slice(idx + 1).filter((t) => !t.pinned);
-                await closeTabsBatch(victims);
-                setActiveTab(menuTab.id);
-                if (`${location.pathname}${location.search}` !== menuTab.path) {
-                  navigate(menuTab.path);
-                }
+              }}
+            >
+              <Tx>关闭</Tx>
+            </button>
+            <button
+              type="button"
+              className="flex w-full px-3 py-2 text-left hover:bg-secondary"
+              onClick={() => {
+                void (async () => {
+                  const victims = tabs.filter((t) => t.id !== menuTab.id && !t.pinned);
+                  await closeTabsBatch(victims);
+                  setActiveTab(menuTab.id);
+                  if (`${location.pathname}${location.search}` !== menuTab.path) {
+                    navigate(menuTab.path);
+                  }
+                  setMenu(null);
+                })();
+              }}
+            >
+              <Tx>关闭其他</Tx>
+            </button>
+            <button
+              type="button"
+              className="flex w-full px-3 py-2 text-left hover:bg-secondary"
+              onClick={() => {
+                void (async () => {
+                  const idx = tabs.findIndex((t) => t.id === menuTab.id);
+                  const victims = idx < 0 ? [] : tabs.slice(idx + 1).filter((t) => !t.pinned);
+                  await closeTabsBatch(victims);
+                  setActiveTab(menuTab.id);
+                  if (`${location.pathname}${location.search}` !== menuTab.path) {
+                    navigate(menuTab.path);
+                  }
+                  setMenu(null);
+                })();
+              }}
+            >
+              <Tx>关闭右侧</Tx>
+            </button>
+            <button
+              type="button"
+              className="flex w-full px-3 py-2 text-left hover:bg-secondary"
+              onClick={() => {
+                togglePinTab(menuTab.id);
                 setMenu(null);
-              })();
-            }}
-          >
-            <Tx>关闭右侧</Tx>
-          </button>
-          <button
-            type="button"
-            className="flex w-full px-3 py-2 text-left hover:bg-secondary"
-            onClick={() => {
-              togglePinTab(menuTab.id);
-              setMenu(null);
-            }}
-          >
-            {menuTab.pinned ? <Tx>取消固定</Tx> : <Tx>固定标签</Tx>}
-          </button>
-        </div>
-      ) : null}
+              }}
+            >
+              {menuTab.pinned ? <Tx>取消固定</Tx> : <Tx>固定标签</Tx>}
+            </button>
+          </>
+        ) : null}
+      </AnchoredMenu>
     </>
   );
 }

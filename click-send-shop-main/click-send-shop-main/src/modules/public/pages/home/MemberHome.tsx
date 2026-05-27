@@ -111,7 +111,9 @@ export default function MemberHome() {
   const couponTop = useMemo(
     () =>
       coupons
-        .filter((uc) => uc.status === "available")
+        // 这里的「会员专属礼包」只展示“我的券”里可用的券（已领取可使用）。
+        // 「可领取券」由下面的「首页领券中心」负责展示，避免重复。
+        .filter((uc) => uc.status === "available" && Boolean(uc.claimed_at))
         .slice()
         .sort((a, b) => Number(b.coupon?.value || 0) - Number(a.coupon?.value || 0))
         .slice(0, 4),

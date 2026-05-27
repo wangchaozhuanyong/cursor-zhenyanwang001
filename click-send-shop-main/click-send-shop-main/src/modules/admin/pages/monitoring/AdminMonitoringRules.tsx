@@ -14,6 +14,7 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
+  ADMIN_TABLE_WRAP_CLASS,
   adminTdClassName,
   adminThClassName,
 } from "@/utils/adminTableClasses";
@@ -58,10 +59,19 @@ export default function AdminMonitoringRules() {
     >
       {error ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
       {loading ? <div className="text-sm text-slate-500"><Tx>加载中...</Tx></div> : null}
-      <AdminNativeTable>
+      <AdminNativeTable tableClassName="admin-table-fixed">
+          <colgroup>
+            <col style={{ width: "44%" }} />
+            <col style={{ width: "10rem" }} />
+            <col style={{ width: "8.5rem" }} />
+            <col style={{ width: "5.5rem" }} />
+            <col style={{ width: "6.5rem" }} />
+            <col style={{ width: "16rem" }} />
+            <col style={{ width: "8rem" }} />
+          </colgroup>
           <thead className="bg-slate-50 text-slate-500">
             <tr>
-              <th className={adminThClassName(undefined, "left")}><Tx>规则</Tx></th>
+              <th className={adminThClassName("text-left", "left")}><Tx>规则</Tx></th>
               <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>模块</Tx></th>
               <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>严重等级</Tx></th>
               <th className={adminThClassName(undefined, "center")}><Tx>启用</Tx></th>
@@ -78,7 +88,7 @@ export default function AdminMonitoringRules() {
 
               return (
                 <tr key={rule.code} className="border-t align-top">
-                  <td className={adminTdClassName(undefined, "left")}>
+                  <td className={adminTdClassName(`${ADMIN_TABLE_WRAP_CLASS} text-left`, "left")}>
                     <div className="font-medium text-slate-900">{ruleTitle}</div>
                     <div className="mt-1 text-xs leading-relaxed text-slate-600">{ruleDesc}</div>
                   </td>
@@ -97,25 +107,31 @@ export default function AdminMonitoringRules() {
                     </select>
                   </td>
                   <td className={adminTdClassName(undefined, "center")}>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(rule.enabled)}
-                      onChange={(e) => void update(rule, { enabled: e.target.checked })}
-                      aria-label={`${ruleTitle} 启用`}
-                    />
+                    <div className="flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={Boolean(rule.enabled)}
+                        onChange={(e) => void update(rule, { enabled: e.target.checked })}
+                        aria-label={`${ruleTitle} 启用`}
+                      />
+                    </div>
                   </td>
                   <td className={adminTdClassName(undefined, "center")}>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(rule.auto_fix_enabled)}
-                      onChange={(e) => void update(rule, { auto_fix_enabled: e.target.checked })}
-                      aria-label={`${ruleTitle} 自动修复`}
-                    />
+                    <div className="flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={Boolean(rule.auto_fix_enabled)}
+                        onChange={(e) => void update(rule, { auto_fix_enabled: e.target.checked })}
+                        aria-label={`${ruleTitle} 自动修复`}
+                      />
+                    </div>
                   </td>
                   <td className={adminTdClassName(undefined, "left")}>
                     <div className="text-sm font-medium text-slate-800">{scheduleLabel}</div>
                     <input
-                      className="mt-1.5 min-w-[8rem] rounded border px-2 py-1 text-xs text-slate-600"
+                      className="mt-1.5 w-full rounded border px-2 py-1 text-xs text-slate-600"
                       defaultValue={rule.schedule_cron || ""}
                       placeholder={tText("高级：Cron 表达式")}
                       title={tText("技术人员可编辑 Cron，格式：分 时 日 月 周")}

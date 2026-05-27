@@ -26,6 +26,8 @@ import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import {
   THEME_BADGE_DANGER,
   THEME_BADGE_MUTED,
@@ -60,6 +62,7 @@ export default function AdminCoupons() {
   const { couponType: labelCouponType, couponStatus: labelCouponStatus, text: L } = useAdminDisplayLabel();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const can = useAdminPermissionStore((s) => s.can);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [issueCouponId, setIssueCouponId] = useState<string | null>(null);
@@ -193,11 +196,37 @@ export default function AdminCoupons() {
             <td className={adminTableCellClass("left", "text-xs whitespace-nowrap text-muted-foreground")}>{formatAdminDateRange(coupon.start_date, coupon.end_date)}</td>
             <td className={adminTableCellClass("center")}><span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[coupon.status]?.color || "bg-secondary text-foreground"}`}>{statusLabels[coupon.status]?.label ? L(statusLabels[coupon.status].label) : labelCouponStatus(coupon.status)}</span></td>
             <td className={adminTableCellClass("right")}>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title={tText("编辑")}><Pencil size={13} /></button>
-                <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setIssueCouponId(coupon.id)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title={tText("按标签发券")}><Tx>发券</Tx></button></PermissionGate>
-                <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setDeleteId(coupon.id)} className={`rounded-md p-1.5 ${THEME_OUTLINE_DANGER}`} title={tText("删除")}><Trash2 size={13} /></button></PermissionGate>
-              </div>
+              <AdminRowActionsMenu
+                primary={(
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)}
+                    className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
+                    title={tText("编辑")}
+                  >
+                    <Pencil size={13} className="mr-1 inline" />
+                    <Tx>编辑</Tx>
+                  </button>
+                )}
+                moreLabel={<Tx>更多</Tx>}
+                items={[
+                  ...(can("coupon.manage") ? ([
+                    {
+                      key: "issue",
+                      label: <Tx>发券</Tx>,
+                      onClick: () => setIssueCouponId(coupon.id),
+                    },
+                    {
+                      key: "delete",
+                      label: <Tx>删除</Tx>,
+                      icon: <Trash2 size={14} aria-hidden />,
+                      danger: true,
+                      separatorBefore: true,
+                      onClick: () => setDeleteId(coupon.id),
+                    },
+                  ] as const) : []),
+                ]}
+              />
             </td>
           </>
         )}

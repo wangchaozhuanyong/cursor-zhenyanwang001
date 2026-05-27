@@ -92,10 +92,10 @@ async function resolveSafeRemoteFetchTarget(sourceUrl) {
   if (!publicRecord) {
     throw new Error('PWA logo URL resolves to a private address');
   }
-  const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
-  const pathWithQuery = `${parsed.pathname}${parsed.search}`;
   return {
-    fetchUrl: `${parsed.protocol}//${publicRecord.address}:${port}${pathWithQuery}`,
+    // 仅用于校验目标域名解析到公网 IP，防止 SSRF/DNS Rebind；
+    // 但真正请求必须使用原始 hostname，否则 HTTPS 会因为 SNI/证书校验在直连 IP 时失败（例如 AWS S3）。
+    fetchUrl: parsed.toString(),
     hostHeader: parsed.hostname,
   };
 }
@@ -124,7 +124,8 @@ async function loadImageBuffer(sourceUrl) {
     response = await fetch(fetchUrl, {
       redirect: 'error',
       signal: controller.signal,
-      headers: { Host: hostHeader },
+      // 使用原始 hostname 发起请求，避免 HTTPS SNI/证书问题。
+      // Host header 让 fetch/undici 自己处理即可。
     });
   } finally {
     clearTimeout(timer);

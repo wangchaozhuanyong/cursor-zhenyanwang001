@@ -45,8 +45,14 @@ function SiteIdentitySync() {
     const raw = resolveSiteFaviconUrl(siteInfo);
     const custom = raw && !/lovable/i.test(raw) ? raw : "";
     const faviconType = custom ? guessFaviconMime(custom) : undefined;
+    // 部分浏览器不会把 WebP 当作 favicon（即使能下载也可能不显示），这里用后端动态生成的 PNG 作为兜底。
+    const needsPngFallback = faviconType === "image/webp";
+    const pwaPngFallback = "/api/pwa/icon-192x192.png";
     const iconTargets: Array<{ rel: string; href: string; type?: string; sizes?: string }> = custom
       ? [
+          ...(needsPngFallback
+            ? [{ rel: "icon", href: pwaPngFallback, type: "image/png", sizes: "192x192" }]
+            : []),
           { rel: "icon", href: custom, type: faviconType, sizes: faviconType === "image/png" ? "192x192" : undefined },
           { rel: "apple-touch-icon", href: custom, type: faviconType },
         ]

@@ -21,6 +21,7 @@ import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 
 type Tab = "assign" | "manage";
 const PRIVILEGED_ROLE_CODES = new Set(["super_admin", "admin_manager"]);
@@ -273,10 +274,30 @@ export default function AdminRoles() {
                     {r.is_system ? <span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"><Tx>系统</Tx></span> : null}
                   </div>
                   {isSuperAdminViewer && (
-                    <div className="flex gap-1">
-                      <button onClick={() => openRoleEdit(r)} className="theme-rounded p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]"><Pencil size={14} /></button>
-                      {!r.is_system && <button onClick={() => void handleRoleDelete(r)} className={`theme-rounded p-1.5 hover:bg-[color-mix(in_srgb,var(--theme-danger)_8%,var(--theme-surface))] ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>}
-                    </div>
+                    <AdminRowActionsMenu
+                      primary={(
+                        <button
+                          type="button"
+                          onClick={() => openRoleEdit(r)}
+                          className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 text-xs font-medium text-foreground hover:bg-[var(--theme-bg)]"
+                        >
+                          <Pencil size={14} className="mr-1 inline" />
+                          <Tx>编辑</Tx>
+                        </button>
+                      )}
+                      moreLabel={<Tx>更多</Tx>}
+                      items={[
+                        ...(!r.is_system ? ([
+                          {
+                            key: "delete",
+                            label: <Tx>删除</Tx>,
+                            icon: <Trash2 size={14} aria-hidden />,
+                            danger: true,
+                            onClick: () => void handleRoleDelete(r),
+                          },
+                        ] as const) : []),
+                      ]}
+                    />
                   )}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{r.permissionIds.length} 个权限</p>

@@ -9,7 +9,8 @@ exports.getUserCoupons = async (req, res, next) => {
 
 exports.getAvailableCoupons = async (req, res, next) => {
   try {
-    const list = await couponService.getAvailableCoupons(req.user.id);
+    const userId = req.user?.id ? String(req.user.id) : null;
+    const list = await couponService.getAvailableCoupons(userId);
     res.success(list);
   } catch (err) { next(err); }
 };

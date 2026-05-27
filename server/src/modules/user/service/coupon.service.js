@@ -101,6 +101,18 @@ async function getUserCoupons(userId, query) {
 
 async function getAvailableCoupons(userId) {
   const coupons = await repo.selectAvailableCoupons();
+
+  // 未登录：只能展示无需身份判断、无需“每人领取上限统计”的通用可领取券
+  if (!userId) {
+    const now = new Date();
+    return coupons
+      .filter((c) => !c.auto_issue)
+      .filter((c) => !c.new_user_only)
+      .filter((c) => !c.member_only)
+      .filter((c) => isClaimWindowOpen(c, now))
+      .map(mapCouponEntity);
+  }
+
   const claimed = await repo.selectUserCouponClaimCounts(userId);
   const claimedCountMap = new Map(claimed.map((r) => [String(r.coupon_id), Number(r.cnt || 0)]));
   const needsOrderCount = coupons.some((c) => !!c.new_user_only);

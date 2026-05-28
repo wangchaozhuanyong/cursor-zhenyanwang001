@@ -300,6 +300,22 @@ server {
     root ${dist_link};
     index index.html;
 
+    location = /sw.js {
+        add_header Cache-Control \"no-cache, no-store, must-revalidate\" always;
+        add_header Service-Worker-Allowed \"/\" always;
+        try_files \$uri =404;
+    }
+
+    location ~* ^/workbox-[a-z0-9]+\\.js$ {
+        add_header Cache-Control \"no-cache, no-store, must-revalidate\" always;
+        try_files \$uri =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control \"no-cache, no-store, must-revalidate\" always;
+        try_files \$uri =404;
+    }
+
     location /api/ {
         proxy_pass http://shop_api;
         proxy_http_version 1.1;
@@ -322,13 +338,28 @@ server {
         proxy_set_header X-Forwarded-Proto https;
     }
 
+    location = /admin {
+        return 302 /admin/login;
+    }
+
+    location = /admin/admin-index.html {
+        alias ${admin_dist_link}/admin-index.html;
+        add_header Cache-Control \"no-cache, no-store, must-revalidate\" always;
+    }
+
     # admin：用独立构建产物覆盖 /admin 前缀
     location ^~ /admin/ {
         alias ${admin_dist_link}/;
-        try_files \$uri \$uri/ /admin-index.html;
+        try_files \$uri \$uri/ /admin/admin-index.html;
     }
 
     location ~* ^/assets/.*\\.(js|css|png|jpg|jpeg|gif|svg|webp|ico|woff2?)$ {
+        add_header Cache-Control \"public, max-age=31536000, immutable\" always;
+        try_files \$uri @admin_assets;
+    }
+
+    location @admin_assets {
+        root ${admin_dist_link};
         add_header Cache-Control \"public, max-age=31536000, immutable\" always;
         try_files \$uri =404;
     }

@@ -298,18 +298,6 @@ return ({
             handler: "NetworkOnly",
           },
           {
-            urlPattern: ({ request }) =>
-              request.destination === "style" || request.destination === "script" || request.destination === "worker",
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "static-assets-cache",
-              expiration: {
-                maxEntries: 120,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
-            },
-          },
-          {
             urlPattern: ({ url, request }) =>
               request.destination === "image"
               && (

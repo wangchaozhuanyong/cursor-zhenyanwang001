@@ -213,6 +213,115 @@ export default function AdminOrders() {
     return items;
   };
 
+  const renderActions = (o: Order) => {
+    const baseBtn =
+      "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors";
+
+    const buttons: React.ReactNode[] = [];
+
+    buttons.push(
+      <button
+        key="detail"
+        type="button"
+        onClick={() => navigate(`/admin/orders/${o.id}`)}
+        className={`${baseBtn} border border-[var(--theme-border)] bg-[var(--theme-surface)] text-foreground hover:bg-[var(--theme-bg)]`}
+      >
+        <Tx>详情</Tx>
+      </button>,
+    );
+
+    if (o.status === ORDER_STATUS.PENDING) {
+      if (can("payment.manage")) {
+        buttons.push(
+          <button
+            key="confirmPaid"
+            type="button"
+            onClick={() => confirmStatusChange(
+              o.id,
+              ORDER_STATUS.PAID,
+              tText("确认收款"),
+              tText(`确定将订单「${o.order_no}」标记为已付款？`),
+              tText("订单已确认收款"),
+            )}
+            className={`${baseBtn} ${THEME_OUTLINE_SUCCESS}`}
+          >
+            <Tx>确认收款</Tx>
+          </button>,
+        );
+      }
+      if (can("order.update")) {
+        buttons.push(
+          <button
+            key="cancel"
+            type="button"
+            onClick={() => confirmStatusChange(
+              o.id,
+              ORDER_STATUS.CANCELLED,
+              tText("取消订单"),
+              tText(`确定取消订单「${o.order_no}」？取消后会释放库存并回滚相关权益。`),
+              tText("订单已取消"),
+              true,
+            )}
+            className={`${baseBtn} ${THEME_OUTLINE_DANGER}`}
+          >
+            <Tx>取消订单</Tx>
+          </button>,
+        );
+      }
+    } else if (o.status === ORDER_STATUS.PAID) {
+      if (can("order.ship")) {
+        buttons.push(
+          <button
+            key="ship"
+            type="button"
+            onClick={() => setShipTarget({ id: o.id, orderNo: o.order_no })}
+            className={`${baseBtn} ${THEME_OUTLINE_PRIMARY}`}
+          >
+            <Truck size={14} aria-hidden />
+            <Tx>发货</Tx>
+          </button>,
+        );
+      }
+    } else if (o.status === ORDER_STATUS.SHIPPED) {
+      if (can("order.update")) {
+        buttons.push(
+          <button
+            key="complete"
+            type="button"
+            onClick={() => confirmStatusChange(
+              o.id,
+              ORDER_STATUS.COMPLETED,
+              tText("标记完成"),
+              tText(`确定将订单「${o.order_no}」标记为已完成？`),
+              tText("订单已完成"),
+            )}
+            className={`${baseBtn} ${THEME_OUTLINE_SUCCESS}`}
+          >
+            <Tx>标记完成</Tx>
+          </button>,
+        );
+      }
+    }
+
+    buttons.push(
+      <button
+        key="copyOrderNo"
+        type="button"
+        onClick={() => {
+          navigator.clipboard?.writeText(o.order_no)
+            .then(() => toast.success(tText("订单号已复制")))
+            .catch(() => {});
+        }}
+        className={`${baseBtn} border border-[var(--theme-border)] bg-[var(--theme-surface)] text-muted-foreground hover:bg-[var(--theme-bg)]`}
+      >
+        <Copy size={14} aria-hidden />
+        <Tx>复制</Tx>
+      </button>,
+    );
+
+    return buttons;
+  };
+
   const renderRow = (o: Order) => {
     const checked = selectedOrderIds.includes(o.id);
     const afterSale = afterSaleLabel(o, tText);

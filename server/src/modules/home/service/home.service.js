@@ -1,6 +1,19 @@
 const { getInstanceInfo, resolveSiteName } = require('../../../config/instance');
 const { getStorageHealthReport } = require('../../../utils/objectStorage');
 
+function getCouponId(coupon) {
+  return String(coupon?.id || coupon?.coupon_id || '').trim();
+}
+
+function removeCouponsByIds(payload, usedIds) {
+  if (!payload?.coupons?.length) return payload;
+  const coupons = payload.coupons.filter((coupon) => {
+    const id = getCouponId(coupon);
+    return !id || !usedIds.has(id);
+  });
+  return { ...payload, coupons };
+}
+
 function getProductApi() {
   return /** @type {any} */ (require('../../product')).api || {};
 }
@@ -22,7 +35,7 @@ async function getHomeBootstrap() {
     getProductApi().getCategories(),
     getProductApi().getHomeProducts(),
     getMarketingApi().getFlashSaleForHome({ position: 'home_flash_sale' }).then((r) => r.data).catch(() => null),
-    getMarketingApi().getActivitiesByPosition({ position: 'home_promotion_banner', type: 'promotion_banner' }).then((r) => r.data).catch(() => []),
+    getMarketingApi().getActivitiesByPosition({ position: 'promotion_banner' }).then((r) => r.data).catch(() => []),
     getMarketingApi().getFullReductionNotices({ position: 'full_reduction_notice' }).then((r) => r.data).catch(() => []),
     getCapabilitiesApi().isCapabilityEnabled('couponEnabled').then((enabled) => (enabled
       ? getMarketingApi().getCouponCenter({ position: 'home_coupon_center' }).then((r) => r.data).catch(() => null)
@@ -31,6 +44,8 @@ async function getHomeBootstrap() {
   ]);
   const instance = getInstanceInfo();
   const storage = getStorageHealthReport();
+  const newUserGiftCouponIds = new Set((newUserGift?.coupons || []).map(getCouponId).filter(Boolean));
+  const dedupedCouponCenter = removeCouponsByIds(couponCenter, newUserGiftCouponIds);
 
   return {
     siteInfo,
@@ -57,7 +72,7 @@ async function getHomeBootstrap() {
       flashSale,
       promotionBanners,
       fullReductionNotices,
-      couponCenter,
+      couponCenter: dedupedCouponCenter,
       newUserGift,
     },
   };

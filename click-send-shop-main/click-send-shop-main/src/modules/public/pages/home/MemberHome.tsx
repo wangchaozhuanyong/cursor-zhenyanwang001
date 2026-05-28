@@ -41,6 +41,7 @@ import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
+import * as homeService from "@/services/homeService";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
@@ -75,6 +76,7 @@ export default function MemberHome() {
   const orders = useOrderStore((s) => s.orders);
   const loadOrders = useOrderStore((s) => s.loadOrders);
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
+  const [homeMarketingCouponIds, setHomeMarketingCouponIds] = useState<Set<string>>(() => new Set());
   const { banners, loading: bannersLoading } = useHomeBanners();
   const { settings: homeModules } = useHomeModuleSettings();
   const homeLayout = themeConfig.homeLayout ?? "classic";
@@ -108,16 +110,35 @@ export default function MemberHome() {
     });
   }, [loadHistory, loadFavorites, loadCart, loadOrders]);
 
+  useEffect(() => {
+    let cancelled = false;
+    homeService.fetchHomeBootstrap().then((bootstrap) => {
+      if (cancelled) return;
+      const ids = new Set<string>();
+      for (const coupon of bootstrap?.marketing?.newUserGift?.coupons || []) {
+        if (coupon?.id) ids.add(String(coupon.id));
+      }
+      for (const coupon of bootstrap?.marketing?.couponCenter?.coupons || []) {
+        if (coupon?.id) ids.add(String(coupon.id));
+      }
+      setHomeMarketingCouponIds(ids);
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const couponTop = useMemo(
     () =>
       coupons
         // 这里的「会员专属礼包」只展示“我的券”里可用的券（已领取可使用）。
         // 「可领取券」由下面的「首页领券中心」负责展示，避免重复。
         .filter((uc) => uc.status === "available" && Boolean(uc.claimed_at))
+        .filter((uc) => !homeMarketingCouponIds.has(String(uc.coupon?.id || uc.coupon_id || uc.id)))
         .slice()
         .sort((a, b) => Number(b.coupon?.value || 0) - Number(a.coupon?.value || 0))
         .slice(0, 4),
-    [coupons],
+    [coupons, homeMarketingCouponIds],
   );
   const [hotBatchIndex, setHotBatchIndex] = useState(0);
   const [recBatchIndex, setRecBatchIndex] = useState(0);
@@ -186,9 +207,35 @@ export default function MemberHome() {
         ) : null}
           </div>
         ) : null}
+        {isHomeModuleEnabled(homeModules, "new_arrivals", "member") ? (
+        <AnimatedSection delay={0.12}>
+        <NewArrivalSection
+          products={newProducts}
+          loading={homeLoading}
+          title={siteInfo.newArrivalSectionTitle}
+          displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
+          showPrice={siteInfo.newArrivalShowPrice !== "0"}
+        />
+        </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "promotion_banner", "member") ? (
+          <MarketingPromotionBannerSection delay={0.125} />
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "flash_sale_section", "member") ? (
+          <FlashSaleSection delay={0.13} />
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "full_reduction_notice", "member") ? (
+          <MarketingFullReductionSection delay={0.131} />
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "coupon_center", "member") ? (
+          <MarketingCouponCenterSection delay={0.132} />
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "new_user_gift", "member") ? (
+          <MarketingNewUserGiftSection delay={0.133} />
+        ) : null}
         {isHomeModuleEnabled(homeModules, "member_coupons", "member") ? (
         <section>
-          <Header title="会员专属礼包" icon={Ticket} />
+          <Header title="我的优惠券" icon={Ticket} subtitle="已领取且可使用的优惠券" />
           <div className="no-scrollbar -mx-[var(--store-page-x)] flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-[var(--store-page-x)] pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 md:snap-none lg:grid-cols-3 lg:gap-5">
             {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
               if (couponLoading || typeof c === "number") {
@@ -244,36 +291,10 @@ export default function MemberHome() {
           </div>
           {!couponLoading && couponTop.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-8 text-center text-sm text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
-              暂无可用会员礼包
+              暂无可用优惠券
             </div>
           ) : null}
         </section>
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "new_arrivals", "member") ? (
-        <AnimatedSection delay={0.12}>
-        <NewArrivalSection
-          products={newProducts}
-          loading={homeLoading}
-          title={siteInfo.newArrivalSectionTitle}
-          displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
-          showPrice={siteInfo.newArrivalShowPrice !== "0"}
-        />
-        </AnimatedSection>
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "promotion_banner", "member") ? (
-          <MarketingPromotionBannerSection delay={0.125} />
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "flash_sale_section", "member") ? (
-          <FlashSaleSection delay={0.13} />
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "full_reduction_notice", "member") ? (
-          <MarketingFullReductionSection delay={0.131} />
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "coupon_center", "member") ? (
-          <MarketingCouponCenterSection delay={0.132} />
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "new_user_gift", "member") ? (
-          <MarketingNewUserGiftSection delay={0.133} />
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
         <AnimatedSection delay={0.14}>

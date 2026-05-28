@@ -434,7 +434,7 @@ async function resetAdminUserMfa(userId, actor, req) {
   assertActorCanOperateTarget(actor, target, '重置 MFA');
 
   await mfaRepo.resetMfaSettings(userId, true);
-  await mfaRepo.revokeTrustedDevices(userId);
+  const revoked = await mfaRepo.revokeTrustedDevices(userId);
   await repo.bumpRefreshTokenVersion(userId);
 
   const { writeAuditLog } = require('../../../utils/auditLog');
@@ -448,10 +448,10 @@ async function resetAdminUserMfa(userId, actor, req) {
     summary: `重置管理员 MFA userId=${userId}`,
     result: 'success',
     before: { userId, mfa: target.mfa },
-    after: { userId, required: true, enabled: false, trustedDevicesRevoked: true },
+    after: { userId, required: true, enabled: false, trustedDevicesRevoked: true, revokedTrustedDeviceCount: revoked },
   });
 
-  return { data: null, message: '已重置 MFA，下次登录需要重新绑定' };
+  return { data: { revokedTrustedDeviceCount: revoked }, message: '已重置 MFA，下次登录需要重新绑定' };
 }
 
 async function revokeAdminTrustedDevices(userId, actor, req) {

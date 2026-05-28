@@ -22,7 +22,10 @@ const MODULE_KEYS = [
   'promotion_banner',
 ];
 
-const DEFAULT_MODULES = Object.fromEntries(MODULE_KEYS.map((k) => [k, true]));
+const DEFAULT_MODULES = {
+  ...Object.fromEntries(MODULE_KEYS.map((k) => [k, true])),
+  member_coupons: false,
+};
 
 const DEFAULT_SETTINGS = {
   modules: { ...DEFAULT_MODULES },

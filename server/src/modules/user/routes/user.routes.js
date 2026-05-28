@@ -13,6 +13,7 @@ const { cancelAccountBodySchema } = require('../schemas/user.schemas');
 const router = Router();
 
 router.get('/profile', auth, userQueryLimiter, profileCtrl.getProfile);
+router.get('/member-benefits', auth, userQueryLimiter, profileCtrl.getMemberBenefits);
 router.put('/profile', auth, validate({ body: updateProfileBodySchema }), profileCtrl.updateProfile);
 router.put('/password', auth, validate({ body: changePasswordBodySchema }), profileCtrl.changePassword);
 router.get('/export', auth, userQueryLimiter, privacyCtrl.exportAccountData);

@@ -129,7 +129,7 @@ export const DEFAULT_HOME_MODULE_SETTINGS: HomeModuleSettings = {
     banner: true,
     trust_bar: true,
     nav_grid: true,
-    member_coupons: true,
+    member_coupons: false,
     new_arrivals: true,
     hot_sales: true,
     recommend: true,

@@ -151,7 +151,9 @@ export default function AdminActivities() {
   const quickButtons = useMemo(() => [
     { label: tText("秒杀"), to: "/admin/marketing/activities/new?type=flash_sale" },
     { label: tText("满减"), to: "/admin/marketing/activities/new?type=full_reduction" },
-    { label: tText("优惠券"), to: "/admin/marketing/coupons/new" },
+    { label: tText("领券活动"), to: "/admin/marketing/activities/new?type=coupon_activity" },
+    { label: tText("新人礼包"), to: "/admin/marketing/activities/new?type=new_user_gift" },
+    { label: tText("积分活动"), to: "/admin/marketing/activities/new?type=points_bonus" },
   ], [tText]);
 
   const openPreview = (activity: MarketingActivity) => {
@@ -195,7 +197,7 @@ export default function AdminActivities() {
           <div className="space-y-2">
             <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
               <SearchBar placeholder={tText("搜索活动名称")} value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} />
-              <select value={type} onChange={(e) => { setType(e.target.value as ActivityType | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm"><option value=""><Tx>全部类型</Tx></option><option value="flash_sale"><Tx>限时秒杀</Tx></option><option value="full_reduction"><Tx>满减活动</Tx></option></select>
+              <select value={type} onChange={(e) => { setType(e.target.value as ActivityType | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm"><option value=""><Tx>全部类型</Tx></option><option value="flash_sale"><Tx>限时秒杀</Tx></option><option value="full_reduction"><Tx>满减活动</Tx></option><option value="coupon_activity"><Tx>领券活动</Tx></option><option value="new_user_gift"><Tx>新人礼包</Tx></option><option value="points_bonus"><Tx>积分活动</Tx></option></select>
               <button type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>查询</Tx></button>
             </div>
             <AdminFilterSummaryBar

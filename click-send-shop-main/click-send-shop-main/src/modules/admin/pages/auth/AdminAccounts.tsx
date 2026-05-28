@@ -258,28 +258,32 @@ export default function AdminAccounts() {
           </AdminTableMobileCardField>
         </div>
         <PermissionGate permission="role.manage">
-          {!targetLocked && a.role !== "super_admin" ? (
+          {!targetLocked ? (
             <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-              <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary">
-                {a.role === "disabled" ? tText("启用") : tText("禁用")}
-              </button>
+              {a.role !== "super_admin" ? (
+                <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary">
+                  {a.role === "disabled" ? tText("启用") : tText("禁用")}
+                </button>
+              ) : null}
               {(isSuperAdminViewer || !hasPrivilegedRole(a)) ? (
                 <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>重置密码</Tx></button>
               ) : null}
               <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>安全</Tx></button>
-              <button
-                type="button"
-                onClick={() =>
-                  adminConfirmDelete(askConfirm, a.nickname || a.phone, async () => {
-                    await rbacService.deleteAdminUser(a.id);
-                    toast.success(tText("管理员已删除"));
-                    void invalidateAccounts();
-                  })
-                }
-                className={`touch-manipulation rounded-lg border border-border px-3 py-2 text-xs ${THEME_TEXT_DANGER}`}
-              >
-                <Tx>删除</Tx>
-              </button>
+              {a.role !== "super_admin" ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    adminConfirmDelete(askConfirm, a.nickname || a.phone, async () => {
+                      await rbacService.deleteAdminUser(a.id);
+                      toast.success(tText("管理员已删除"));
+                      void invalidateAccounts();
+                    })
+                  }
+                  className={`touch-manipulation rounded-lg border border-border px-3 py-2 text-xs ${THEME_TEXT_DANGER}`}
+                >
+                  <Tx>删除</Tx>
+                </button>
+              ) : null}
             </div>
           ) : targetLocked ? (
             <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground"><Shield size={12} className="mr-1 inline" /><Tx>不可操作</Tx></p>
@@ -412,7 +416,7 @@ export default function AdminAccounts() {
               <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{a.last_login_at ? formatDateTime(a.last_login_at) : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
               <td className={adminTableCellClass("right", "whitespace-nowrap")}>
                 <PermissionGate permission="role.manage">
-                  {!targetLocked && a.role !== "super_admin" ? (
+                  {!targetLocked ? (
                     <AdminRowActionsMenu
                       primary={(
                         <button
@@ -427,14 +431,16 @@ export default function AdminAccounts() {
                       )}
                       moreLabel={<Tx>更多</Tx>}
                       items={[
-                        {
-                          key: "toggle",
-                          label: <Tx>{a.role === "disabled" ? "启用" : "禁用"}</Tx>,
-                          icon: a.role === "disabled"
-                            ? <ToggleRight size={14} className={THEME_TEXT_SUCCESS_SOFT} aria-hidden />
-                            : <ToggleLeft size={14} aria-hidden />,
-                          onClick: () => handleToggle(a),
-                        },
+                        ...(a.role !== "super_admin" ? ([
+                          {
+                            key: "toggle",
+                            label: <Tx>{a.role === "disabled" ? "启用" : "禁用"}</Tx>,
+                            icon: a.role === "disabled"
+                              ? <ToggleRight size={14} className={THEME_TEXT_SUCCESS_SOFT} aria-hidden />
+                              : <ToggleLeft size={14} aria-hidden />,
+                            onClick: () => handleToggle(a),
+                          },
+                        ] as const) : []),
                         ...((isSuperAdminViewer || !hasPrivilegedRole(a)) ? ([
                           {
                             key: "resetPwd",
@@ -443,19 +449,21 @@ export default function AdminAccounts() {
                             onClick: () => { setResetTarget(a); setNewPassword(""); },
                           },
                         ] as const) : []),
-                        {
-                          key: "delete",
-                          label: <Tx>删除</Tx>,
-                          icon: <Trash2 size={14} aria-hidden />,
-                          danger: true,
-                          separatorBefore: true,
-                          onClick: () =>
-                            adminConfirmDelete(askConfirm, a.nickname || a.phone, async () => {
-                              await rbacService.deleteAdminUser(a.id);
-                              toast.success(tText("管理员已删除"));
-                              void invalidateAccounts();
-                            }),
-                        },
+                        ...(a.role !== "super_admin" ? ([
+                          {
+                            key: "delete",
+                            label: <Tx>删除</Tx>,
+                            icon: <Trash2 size={14} aria-hidden />,
+                            danger: true,
+                            separatorBefore: true,
+                            onClick: () =>
+                              adminConfirmDelete(askConfirm, a.nickname || a.phone, async () => {
+                                await rbacService.deleteAdminUser(a.id);
+                                toast.success(tText("管理员已删除"));
+                                void invalidateAccounts();
+                              }),
+                          },
+                        ] as const) : []),
                       ]}
                     />
                   ) : targetLocked ? (
@@ -542,6 +550,7 @@ function AdminSecurityDialog({
   onChanged: () => void;
 }) {
   const { tText } = useAdminT();
+  const { confirm: askConfirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const queryKey = adminQueryKeys.accountSecurity(target.id);
   const securityQuery = useQuery({
@@ -570,12 +579,28 @@ function AdminSecurityDialog({
 
   const resetMfaMutation = useMutation({
     mutationFn: () => rbacService.resetAdminUserMfa(target.id),
-    onSuccess: async () => {
-      toast.success(tText("MFA 已重置，下次登录需要重新绑定"));
+    onSuccess: async (data) => {
+      toast.success(tText(`身份验证器已重置，已撤销 ${data?.revokedTrustedDeviceCount ?? 0} 台可信设备，下次登录需要重新绑定`));
       await refresh();
     },
     onError: (err) => toast.error(toastErrorMessage(err, tText("MFA 重置失败"))),
   });
+
+  const confirmResetMfa = () => {
+    askConfirm({
+      title: tText("确认重置身份验证器"),
+      danger: true,
+      confirmText: tText("确认重置"),
+      description: (
+        <div className="space-y-2 text-sm">
+          <p>{tText(`目标账号：${target.nickname || target.phone}（${target.phone}）`)}</p>
+          <p>{tText("此操作会清除旧 Authenticator/TOTP 绑定，撤销该员工所有可信设备，并要求其下次登录重新扫描二维码绑定。")}</p>
+          <p className="font-medium text-destructive">{tText("如果该员工正在使用后台，当前登录态会失效。")}</p>
+        </div>
+      ),
+      onConfirm: () => resetMfaMutation.mutate(),
+    });
+  };
 
   const revokeAllDevicesMutation = useMutation({
     mutationFn: () => rbacService.revokeAdminTrustedDevices(target.id),
@@ -626,12 +651,19 @@ function AdminSecurityDialog({
               <SecurityMetric label={tText("可信设备")} value={tText(`${activeDevices.length} 台有效`)} />
             </div>
 
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+              <p className="font-semibold"><Tx>Authenticator 丢失处理</Tx></p>
+              <p className="mt-1">
+                <Tx>当员工误删 Google/Microsoft Authenticator 后，请点击“重置身份验证器（MFA）”。系统会保留 MFA 要求，只清除旧密钥并强制对方下次登录重新绑定。</Tx>
+              </p>
+            </div>
+
             <div className="rounded-lg border border-border p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground"><Tx>MFA 登录保护</Tx></p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    <Tx>开启后，该员工下次登录需要绑定身份验证器；重置会撤销旧绑定和可信设备。</Tx>
+                    <Tx>开启后，该员工下次登录需要绑定身份验证器；重置会撤销旧绑定和可信设备，但不会关闭 MFA 要求。</Tx>
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -654,11 +686,11 @@ function AdminSecurityDialog({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => resetMfaMutation.mutate()}
+                    onClick={confirmResetMfa}
                     className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                   >
                     <RotateCcw size={13} />
-                    <Tx>重置 MFA</Tx>
+                    <Tx>重置身份验证器（MFA）</Tx>
                   </button>
                 </div>
               </div>

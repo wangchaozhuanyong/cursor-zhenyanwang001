@@ -106,6 +106,7 @@ describe('rbac authorization boundaries', () => {
   after(async () => {
     const ids = [regularActor?.id, targetUserId, superActor?.id].filter(Boolean);
     for (const id of ids) {
+      await db.query('DELETE FROM audit_logs WHERE operator_id = ? OR object_id = ?', [id, id]).catch(() => {});
       await db.query('DELETE FROM user_roles WHERE user_id = ?', [id]).catch(() => {});
       await db.query('DELETE FROM admin_mfa_settings WHERE user_id = ?', [id]).catch(() => {});
       await db.query('DELETE FROM admin_trusted_devices WHERE user_id = ?', [id]).catch(() => {});
@@ -227,5 +228,90 @@ describe('rbac authorization boundaries', () => {
       mockReq,
     );
     assert.deepEqual(result.data.roleIds, [roleByCode.customer_service.id]);
+  });
+
+  test('super admin can reset another admin MFA and revoke trusted devices', async () => {
+    await db.query(
+      `INSERT INTO admin_mfa_settings (user_id, totp_secret_enc, enabled, required, enabled_at, last_verified_at)
+       VALUES (?, 'encrypted-secret', 1, 1, NOW(), NOW())
+       ON DUPLICATE KEY UPDATE
+         totp_secret_enc = VALUES(totp_secret_enc),
+         enabled = VALUES(enabled),
+         required = VALUES(required),
+         enabled_at = VALUES(enabled_at),
+         last_verified_at = VALUES(last_verified_at)`,
+      [targetUserId],
+    );
+    await db.query(
+      `INSERT INTO admin_trusted_devices (id, user_id, device_hash, user_agent_hash, expires_at)
+       VALUES (?, ?, ?, 'ua-hash', DATE_ADD(NOW(), INTERVAL 7 DAY))
+       ON DUPLICATE KEY UPDATE revoked_at = NULL, expires_at = VALUES(expires_at)`,
+      [generateId(), targetUserId, `device-${Date.now()}`],
+    );
+    const [[beforeUser]] = await db.query('SELECT refresh_token_version FROM users WHERE id = ?', [targetUserId]);
+
+    const result = await rbac.resetAdminUserMfa(targetUserId, superActor, mockReq);
+
+    assert.equal(result.data.revokedTrustedDeviceCount, 1);
+    const [[mfa]] = await db.query(
+      'SELECT totp_secret_enc, enabled, required, enabled_at, last_verified_at FROM admin_mfa_settings WHERE user_id = ?',
+      [targetUserId],
+    );
+    assert.equal(mfa.totp_secret_enc, null);
+    assert.equal(Number(mfa.enabled), 0);
+    assert.equal(Number(mfa.required), 1);
+    assert.equal(mfa.enabled_at, null);
+    assert.equal(mfa.last_verified_at, null);
+
+    const [[devices]] = await db.query(
+      'SELECT COUNT(*) AS active_count FROM admin_trusted_devices WHERE user_id = ? AND revoked_at IS NULL',
+      [targetUserId],
+    );
+    assert.equal(Number(devices.active_count), 0);
+
+    const [[afterUser]] = await db.query('SELECT refresh_token_version FROM users WHERE id = ?', [targetUserId]);
+    assert.equal(Number(afterUser.refresh_token_version), Number(beforeUser.refresh_token_version) + 1);
+  });
+
+  test('resetAdminUserMfa requires role.manage permission', async () => {
+    await expectBusinessError(
+      rbac.resetAdminUserMfa(targetUserId, { ...regularActor, permissions: [] }, mockReq),
+      403,
+      /role.manage/,
+    );
+  });
+
+  test('resetAdminUserMfa rejects resetting own MFA', async () => {
+    await expectBusinessError(
+      rbac.resetAdminUserMfa(superActor.id, superActor, mockReq),
+      400,
+      /自己的 MFA/,
+    );
+  });
+
+  test('regular admin cannot reset privileged admin MFA', async () => {
+    if (!roleByCode.admin_manager) return;
+    const privilegedId = generateId();
+    await repo.createAdminUserWithRoles({
+      id: privilegedId,
+      phone: `rbac-privileged-${Date.now()}`,
+      passwordHash: await bcrypt.hash('RbacTest12', 4),
+      nickname: 'rbac-privileged',
+      legacyRole: 'admin',
+      roleIds: [roleByCode.admin_manager.id],
+    });
+    try {
+      await expectBusinessError(
+        rbac.resetAdminUserMfa(privilegedId, regularActor, mockReq),
+        403,
+        /admin_manager/,
+      );
+    } finally {
+      await db.query('DELETE FROM audit_logs WHERE operator_id = ? OR object_id = ?', [privilegedId, privilegedId]).catch(() => {});
+      await db.query('DELETE FROM user_roles WHERE user_id = ?', [privilegedId]).catch(() => {});
+      await db.query('DELETE FROM admin_mfa_settings WHERE user_id = ?', [privilegedId]).catch(() => {});
+      await db.query('DELETE FROM admin_trusted_devices WHERE user_id = ?', [privilegedId]).catch(() => {});
+      await db.query('DELETE FROM users WHERE id = ?', [privilegedId]).catch(() => {});
+    }
   });
 });

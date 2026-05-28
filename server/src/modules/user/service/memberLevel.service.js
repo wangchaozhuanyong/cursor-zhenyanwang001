@@ -43,6 +43,51 @@ function pickBestLevel(levels, stats) {
   })[0];
 }
 
+function buildBenefits(level) {
+  if (!level) return [];
+  const benefits = [];
+  if (Number(level.discount_rate || 1) < 1) {
+    benefits.push({
+      type: 'discount',
+      name: '????',
+      icon: 'badge-percent',
+      description: `???? ${(Number(level.discount_rate) * 10).toFixed(1).replace(/\.0$/, '')} ???`,
+    });
+  }
+  if (Number(level.points_multiplier || 1) > 1) {
+    benefits.push({
+      type: 'points_multiplier',
+      name: '????',
+      icon: 'sparkles',
+      description: `????? ${Number(level.points_multiplier).toFixed(2).replace(/\.00$/, '')} ???`,
+    });
+  }
+  if (level.free_shipping_enabled) {
+    benefits.push({
+      type: 'free_shipping',
+      name: '????',
+      icon: 'truck',
+      description: '?????????????',
+    });
+  }
+  if (!benefits.length) {
+    benefits.push({
+      type: 'standard',
+      name: '??????',
+      icon: 'shield-check',
+      description: level.description || '??????????????',
+    });
+  }
+  return benefits;
+}
+
+function normalizeStats(row) {
+  return {
+    totalSpent: Number(row?.totalSpent ?? row?.total_spent ?? 0),
+    orderCount: Number(row?.orderCount ?? row?.order_count ?? 0),
+  };
+}
+
 async function getUserMemberLevel(userId) {
   try {
     const [current, stats, defaultLevel] = await Promise.all([
@@ -58,6 +103,57 @@ async function getUserMemberLevel(userId) {
     console.error('[memberLevel] getUserMemberLevel failed:', err?.code || '', err?.message || err);
     return { level: null, stats: { totalSpent: 0, orderCount: 0 } };
   }
+}
+
+async function getMemberBenefitsOverview(userId) {
+  const [currentBundle, levels, userRows] = await Promise.all([
+    getUserMemberLevel(userId),
+    repo.selectEnabledLevels(pool).catch(() => []),
+    pool.query(
+      `SELECT id, nickname, avatar, points_balance, birthday
+       FROM users
+       WHERE id = ? AND deleted_at IS NULL`,
+      [userId],
+    ).catch(() => [[]]),
+  ]);
+  const user = userRows?.[0]?.[0] || {};
+  const currentLevel = currentBundle.level;
+  const stats = normalizeStats(currentBundle.stats);
+  const normalizedLevels = levels.map(normalizeLevel).filter(Boolean);
+  const currentIndex = normalizedLevels.findIndex((level) => level.id === currentLevel?.id);
+  const nextLevel = currentIndex >= 0 ? normalizedLevels[currentIndex + 1] || null : normalizedLevels[0] || null;
+  const currentSpent = stats.totalSpent;
+  const currentOrders = stats.orderCount;
+  const spentToNext = nextLevel ? Math.max(0, Number(nextLevel.min_spent || 0) - currentSpent) : 0;
+  const ordersToNext = nextLevel ? Math.max(0, Number(nextLevel.min_orders || 0) - currentOrders) : 0;
+
+  return {
+    data: {
+      user_id: user.id || userId,
+      nickname: user.nickname || '',
+      avatar: user.avatar || '',
+      current_points: Number(user.points_balance || 0),
+      current_growth_value: currentSpent,
+      birthday_completed: Boolean(user.birthday),
+      profile_completed: Boolean(user.nickname && user.avatar && user.birthday),
+      current_level: currentLevel ? {
+        ...currentLevel,
+        benefits: buildBenefits(currentLevel),
+      } : null,
+      next_level: nextLevel,
+      points_to_next_level: spentToNext,
+      growth_to_next_level: spentToNext,
+      orders_to_next_level: ordersToNext,
+      all_levels: normalizedLevels.map((level) => ({
+        ...level,
+        benefits: buildBenefits(level),
+      })),
+      stats: {
+        total_spent: currentSpent,
+        order_count: currentOrders,
+      },
+    },
+  };
 }
 
 async function refreshUserMemberLevel(q, userId, options = {}) {
@@ -100,6 +196,7 @@ async function refreshUserMemberLevel(q, userId, options = {}) {
 
 module.exports = {
   getUserMemberLevel,
+  getMemberBenefitsOverview,
   refreshUserMemberLevel,
   normalizeLevel,
 };

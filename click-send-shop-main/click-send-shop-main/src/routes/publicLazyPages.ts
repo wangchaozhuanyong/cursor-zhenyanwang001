@@ -26,6 +26,7 @@ export const Returns = lazy(() => import("@/modules/public/pages/order/Returns")
 export const PendingReviews = lazy(() => import("@/modules/public/pages/review/PendingReviews"));
 
 export const Profile = lazyWithPreload(() => import("@/modules/public/pages/user/Profile"));
+export const MemberBenefits = lazy(() => import("@/modules/public/pages/user/MemberBenefits"));
 export const Settings = lazy(() => import("@/modules/public/pages/user/Settings"));
 export const AddressManage = lazy(() => import("@/modules/public/pages/user/AddressManage"));
 export const Favorites = lazy(() => import("@/modules/public/pages/user/Favorites"));

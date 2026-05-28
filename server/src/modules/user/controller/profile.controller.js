@@ -1,8 +1,14 @@
 const profileService = require('../service/profile.service');
+const memberLevelService = require('../service/memberLevel.service');
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 
 exports.getProfile = asyncRoute(async (req, res) => {
   const result = await profileService.getProfile(req.user.id);
+  res.success(result.data);
+});
+
+exports.getMemberBenefits = asyncRoute(async (req, res) => {
+  const result = await memberLevelService.getMemberBenefitsOverview(req.user.id);
   res.success(result.data);
 });
 

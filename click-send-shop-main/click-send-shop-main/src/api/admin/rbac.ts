@@ -113,7 +113,7 @@ export function updateAdminUserMfaRequired(userId: string, required: boolean) {
 }
 
 export function resetAdminUserMfa(userId: string) {
-  return post<null>(`/admin/rbac/admin-users/${userId}/security/mfa-reset`, {});
+  return post<{ revokedTrustedDeviceCount: number }>(`/admin/rbac/admin-users/${userId}/security/mfa-reset`, {});
 }
 
 export function revokeAdminTrustedDevices(userId: string) {

@@ -5,6 +5,8 @@ const {
   PUBLISHABLE_ACTIVITY_TYPES,
   WIP_ACTIVITY_TYPES,
   normalizeDisplayPositions,
+  normalizeDisplayPositionsForActivity,
+  findInvalidDisplayPositionsForActivity,
 } = require('../../../constants/marketingDisplayPositions');
 const repo = require('../repository/adminActivity.repository');
 
@@ -70,7 +72,9 @@ function assertPublishRules(payload) {
   if (!PUBLISHABLE_ACTIVITY_TYPES.includes(payload.type)) {
     throw new BusinessError(400, '不支持的活动类型');
   }
-  const positions = normalizeDisplayPositions(payload.display_positions);
+  const invalidPositions = findInvalidDisplayPositionsForActivity(payload.type, payload.display_positions);
+  if (invalidPositions.length) throw new BusinessError(400, `活动类型与展示位置不匹配：${invalidPositions.join(', ')}`);
+  const positions = normalizeDisplayPositionsForActivity(payload.type, payload.display_positions);
   if (!positions.length) throw new BusinessError(400, '请至少选择一个展示位置');
   payload.display_positions = positions;
 
@@ -158,6 +162,21 @@ function normalizeScopes(body = {}) {
   const scopeIds = Array.isArray(body.scope_ids) ? body.scope_ids.map((x) => String(x || '').trim()).filter(Boolean) : [];
   const scopes = scopeIds.map((scopeId) => ({ id: generateId(), scope_type: scopeType, scope_id: scopeId }));
   return { scopeType, scopes };
+}
+
+function normalizeFlashSaleScopes(items = []) {
+  const productIds = [...new Set(items.map((item) => String(item.product_id || '').trim()).filter(Boolean))];
+  return {
+    scopeType: 'product',
+    scopes: productIds.map((scopeId) => ({ id: generateId(), scope_type: 'product', scope_id: scopeId })),
+  };
+}
+
+function assertDraftDisplayPositions(type, positions) {
+  const invalidPositions = findInvalidDisplayPositionsForActivity(type, positions);
+  if (invalidPositions.length) {
+    throw new BusinessError(400, `活动类型与展示位置不匹配：${invalidPositions.join(', ')}`);
+  }
 }
 
 function normalizePayload(body, partial = false) {
@@ -273,7 +292,9 @@ async function getActivity(id) {
 async function createActivity(body, adminUserId, req) {
   const payload = normalizePayload(body);
   const items = Array.isArray(body.items) ? body.items.map(normalizeItem) : [];
-  const { scopeType, scopes } = normalizeScopes(body);
+  assertDraftDisplayPositions(payload.type, payload.display_positions);
+  payload.display_positions = normalizeDisplayPositionsForActivity(payload.type, payload.display_positions);
+  const { scopeType, scopes } = payload.type === 'flash_sale' ? normalizeFlashSaleScopes(items) : normalizeScopes(body);
   const targetStatus = body.status === 'active' || body.status === 'scheduled' ? body.status : 'draft';
   const finalPayload = { ...payload, items, scope_type: scopeType, status: targetStatus };
   if (WIP_ACTIVITY_TYPES.includes(finalPayload.type) && targetStatus !== 'draft') {
@@ -314,9 +335,22 @@ async function updateActivity(id, body, adminUserId, req) {
   const merged = {
     ...existing,
     ...payload,
+    display_positions: payload.display_positions !== undefined
+      ? payload.display_positions
+      : parseJsonField(existing.display_positions, []),
     items: items ?? await repo.selectActivityItems(id),
     scope_type: scopesNormalized?.scopeType || existing.scope_type,
   };
+  if (payload.display_positions !== undefined || payload.type !== undefined) {
+    assertDraftDisplayPositions(merged.type, merged.display_positions);
+    payload.display_positions = normalizeDisplayPositionsForActivity(merged.type, merged.display_positions);
+    merged.display_positions = payload.display_positions;
+  }
+  const finalScopes = merged.type === 'flash_sale' ? normalizeFlashSaleScopes(merged.items) : scopesNormalized;
+  if (merged.type === 'flash_sale') {
+    payload.scope_type = 'product';
+    merged.scope_type = 'product';
+  }
   if (WIP_ACTIVITY_TYPES.includes(merged.type) && payload.status && payload.status !== 'draft') {
     throw new BusinessError(400, '该活动类型仍在开发中，仅可保存草稿');
   }
@@ -340,7 +374,7 @@ async function updateActivity(id, body, adminUserId, req) {
   }
   if (fragments.length) await repo.updateActivityDynamic(id, fragments, values, adminUserId);
   if (items) await repo.replaceActivityItems(id, items);
-  if (scopesNormalized) await repo.replaceActivityScopes(id, scopesNormalized.scopes);
+  if (finalScopes) await repo.replaceActivityScopes(id, finalScopes.scopes);
   bumpCatalogCache();
   await writeAuditLog({
     req,
@@ -392,7 +426,12 @@ async function deleteActivity(id, adminUserId, req) {
 async function validateActivityBeforePublish(body, id = null) {
   const payload = normalizePayload(body, !!id);
   const items = Array.isArray(body.items) ? body.items.map(normalizeItem) : [];
-  const merged = { ...payload, items };
+  const flashScopes = (payload.type || body.type) === 'flash_sale' ? normalizeFlashSaleScopes(items) : null;
+  const merged = {
+    ...payload,
+    items,
+    ...(flashScopes ? { scope_type: flashScopes.scopeType } : {}),
+  };
   assertPublishRules(merged);
   if ((payload.type || body.type) === 'flash_sale') {
     await validateProductsForFlashSale(items, payload.start_at || body.start_at, payload.end_at || body.end_at, id);

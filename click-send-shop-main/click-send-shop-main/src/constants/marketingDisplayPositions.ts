@@ -9,6 +9,8 @@ export const DISPLAY_POSITION_LABELS: Record<DisplayPosition, string> =
 
 export const PUBLISHABLE_ACTIVITY_TYPES = marketingDisplayData.publishableActivityTypes as readonly string[];
 export const WIP_ACTIVITY_TYPES = marketingDisplayData.wipActivityTypes as readonly string[];
+export const ACTIVITY_TYPE_DISPLAY_POSITION_MAP = marketingDisplayData.activityTypeDisplayPositions as Record<string, DisplayPosition[]>;
+export const ACTIVITY_TYPE_DEFAULT_DISPLAY_POSITION_MAP = marketingDisplayData.activityTypeDefaultDisplayPositions as Record<string, DisplayPosition[]>;
 
 export function isValidDisplayPosition(value: unknown): value is DisplayPosition {
   return DISPLAY_POSITIONS.includes(String(value || "").trim());
@@ -23,4 +25,17 @@ export function labelDisplayPositions(positions: string[] | undefined): string {
   const normalized = normalizeDisplayPositions(positions);
   if (!normalized.length) return "--";
   return normalized.map((p) => DISPLAY_POSITION_LABELS[p] || p).join("、");
+}
+
+export function getAllowedDisplayPositionsForActivity(type: string | undefined): DisplayPosition[] {
+  return ACTIVITY_TYPE_DISPLAY_POSITION_MAP[String(type || "")] || [];
+}
+
+export function getDefaultDisplayPositionsForActivity(type: string | undefined): DisplayPosition[] {
+  return ACTIVITY_TYPE_DEFAULT_DISPLAY_POSITION_MAP[String(type || "")] || [];
+}
+
+export function normalizeDisplayPositionsForActivity(type: string | undefined, positions: unknown): DisplayPosition[] {
+  const allowed = new Set(getAllowedDisplayPositionsForActivity(type));
+  return normalizeDisplayPositions(positions).filter((position) => allowed.has(position));
 }

@@ -13,7 +13,14 @@ import { Tx } from "@/components/admin/AdminText";
 import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
-import { DISPLAY_POSITIONS, DISPLAY_POSITION_LABELS, WIP_ACTIVITY_TYPES, type DisplayPosition } from "@/constants/marketingDisplayPositions";
+import {
+  DISPLAY_POSITION_LABELS,
+  WIP_ACTIVITY_TYPES,
+  getAllowedDisplayPositionsForActivity,
+  getDefaultDisplayPositionsForActivity,
+  normalizeDisplayPositionsForActivity,
+  type DisplayPosition,
+} from "@/constants/marketingDisplayPositions";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { fetchCoupons } from "@/services/admin/couponService";
 import type { Coupon } from "@/types/coupon";
@@ -31,6 +38,23 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 
 const STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
 const OBJECT_SCOPE_TYPES = new Set<ActivityPayload["scope_type"]>(["category", "product"]);
+
+function getStepLabel(stepIndex: number, type: ActivityType) {
+  if (stepIndex === 2 && type === "flash_sale") return "秒杀商品配置";
+  if (stepIndex === 3 && type === "flash_sale") return "范围说明";
+  return STEPS[stepIndex] || "";
+}
+
+function normalizePayloadForSubmit(form: ActivityPayload, status: ActivityStatus): ActivityPayload {
+  if (form.type !== "flash_sale") return { ...form, status };
+  const productIds = form.items.map((item) => item.product_id).filter(Boolean);
+  return {
+    ...form,
+    status,
+    scope_type: "product",
+    scope_ids: Array.from(new Set(productIds)),
+  };
+}
 
 function createInitialActivityForm(type: ActivityType = "flash_sale"): ActivityPayload {
   return {
@@ -51,7 +75,7 @@ function createInitialActivityForm(type: ActivityType = "flash_sale"): ActivityP
     allow_reward: false,
     publish_at: null,
     internal_note: "",
-    display_positions: [],
+    display_positions: getDefaultDisplayPositionsForActivity(type),
     activity_config: { full_reduction_rules: [{ threshold_amount: 100, discount_amount: 10 }] },
     sort_order: 0,
     items: [],
@@ -167,6 +191,14 @@ export default function AdminActivityForm() {
     return flatCategories.filter((category) => category.name.toLowerCase().includes(keyword));
   }, [flatCategories, scopeKeyword]);
   const productOptions = productSearchQuery.data?.list || [];
+  const allowedDisplayPositions = useMemo(
+    () => getAllowedDisplayPositionsForActivity(form.type),
+    [form.type],
+  );
+  const invalidDisplayPositions = useMemo(() => {
+    const allowed = new Set(allowedDisplayPositions);
+    return (form.display_positions || []).filter((position) => !allowed.has(position as DisplayPosition));
+  }, [allowedDisplayPositions, form.display_positions]);
   const productById = useMemo(() => {
     const map = new Map<string, Product>();
     for (const product of selectedProductsQuery.data?.list || []) map.set(product.id, product);
@@ -211,8 +243,8 @@ export default function AdminActivityForm() {
       disabled: d.disabled,
       threshold_amount: d.threshold_amount ?? null,
       discount_amount: d.discount_amount ?? null,
-      scope_type: d.scope_type || "product",
-      scope_ids: d.scope_ids || [],
+      scope_type: d.type === "flash_sale" ? "product" : d.scope_type || "product",
+      scope_ids: d.type === "flash_sale" ? (d.items || []).map((item) => item.product_id).filter(Boolean) : d.scope_ids || [],
       allow_coupon_stack: d.allow_coupon_stack ?? true,
       allow_points_stack: d.allow_points_stack ?? true,
       allow_reward: d.allow_reward ?? false,
@@ -244,8 +276,8 @@ export default function AdminActivityForm() {
       disabled: false,
       threshold_amount: d.threshold_amount ?? null,
       discount_amount: d.discount_amount ?? null,
-      scope_type: d.scope_type || "product",
-      scope_ids: d.scope_ids || [],
+      scope_type: d.type === "flash_sale" ? "product" : d.scope_type || "product",
+      scope_ids: d.type === "flash_sale" ? (d.items || []).map((item) => item.product_id).filter(Boolean) : d.scope_ids || [],
       allow_coupon_stack: d.allow_coupon_stack ?? true,
       allow_points_stack: d.allow_points_stack ?? true,
       allow_reward: d.allow_reward ?? false,
@@ -298,11 +330,12 @@ export default function AdminActivityForm() {
     if (!form.title.trim()) return "活动名称必填";
     if (!form.start_at || !form.end_at) return "开始/结束时间必填";
     if (new Date(form.end_at).getTime() <= new Date(form.start_at).getTime()) return "结束时间必须晚于开始时间";
-    if (form.type === "flash_sale" && form.items.length === 0) return "秒杀活动必须选择商品";
+    if (form.type === "flash_sale" && form.items.length === 0) return "请先选择秒杀商品";
     if ((form.type === "coupon_activity" || form.type === "new_user_gift") && !selectedCouponIds.length) return "请至少选择一张优惠券";
-    if (form.scope_type === "category" && selectedScopeIds.length === 0) return "请选择活动适用分类";
-    if (form.scope_type === "product" && selectedScopeIds.length === 0) return "请选择活动适用商品";
-    if (!(form.display_positions || []).length) return "请至少选择一个展示位置";
+    if (form.type !== "flash_sale" && form.scope_type === "category" && selectedScopeIds.length === 0) return "请选择活动适用分类";
+    if (form.type !== "flash_sale" && form.scope_type === "product" && selectedScopeIds.length === 0) return "请选择活动适用商品";
+    if (!normalizeDisplayPositionsForActivity(form.type, form.display_positions).length) return "请至少选择一个当前活动类型允许的展示位置";
+    if (invalidDisplayPositions.length) return "当前活动类型存在不支持的展示位置，请重新选择";
     if (WIP_ACTIVITY_TYPES.includes(form.type)) return "该活动类型尚在开发中，仅可保存草稿";
     if (form.type === "points_bonus") {
       const cfg = (form.activity_config || {}) as Record<string, unknown>;
@@ -318,12 +351,12 @@ export default function AdminActivityForm() {
       }
     }
     return "";
-  }, [form, fullReductionRules, selectedCouponIds, selectedScopeIds.length]);
+  }, [form, fullReductionRules, invalidDisplayPositions.length, selectedCouponIds, selectedScopeIds.length]);
 
   const performSave = async (targetStatus: ActivityStatus) => {
     setSaving(true);
     try {
-      const payload = { ...form, status: targetStatus };
+      const payload = normalizePayloadForSubmit(form, targetStatus);
       if (targetStatus !== "draft") await activityService.validateActivity(payload, id);
       if (isEdit && id) await activityService.updateActivity(id, payload);
       else await activityService.createActivity(payload);
@@ -342,9 +375,15 @@ export default function AdminActivityForm() {
   };
 
   const validateAndSave = async (targetStatus: ActivityStatus) => {
+    if (targetStatus !== "draft" && form.type === "flash_sale" && form.items.length === 0) {
+      setStep(2);
+      toast.error(tText("请先选择秒杀商品"));
+      return;
+    }
     const err = localValidate();
     if (targetStatus !== "draft" && err) {
       toast.error(tText(err));
+      if (form.type === "flash_sale" && err.includes("秒杀商品")) setStep(2);
       return;
     }
     if (targetStatus !== "draft") {
@@ -433,7 +472,7 @@ export default function AdminActivityForm() {
                 i === step ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"
               }`}
             >
-              {i + 1}. {tText(s)}
+              {i + 1}. {tText(getStepLabel(i, form.type))}
             </button>
           ))}
         </div>
@@ -444,7 +483,7 @@ export default function AdminActivityForm() {
         <div className="hidden rounded-xl border border-border bg-card p-3 lg:block">
           {STEPS.map((s, i) => (
             <button key={s} onClick={() => setStep(i)} className={`mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm ${i === step ? "bg-gold/15 text-theme-price" : "text-muted-foreground hover:bg-secondary"}`}>
-              {i + 1}. {tText(s)}
+              {i + 1}. {tText(getStepLabel(i, form.type))}
             </button>
           ))}
         </div>
@@ -466,15 +505,9 @@ export default function AdminActivityForm() {
                     setForm((p) => ({
                       ...p,
                       type: x.k,
-                      display_positions: (p.display_positions || []).length > 0
-                        ? p.display_positions
-                        : x.k === "coupon_activity"
-                          ? ["home_coupon_center"]
-                          : x.k === "new_user_gift"
-                            ? ["home_new_user_gift"]
-                            : x.k === "points_bonus"
-                              ? ["checkout_notice", "profile_center"]
-                              : p.display_positions,
+                      display_positions: getDefaultDisplayPositionsForActivity(x.k),
+                      scope_type: x.k === "flash_sale" ? "product" : p.scope_type,
+                      scope_ids: x.k === "flash_sale" ? p.items.map((item) => item.product_id).filter(Boolean) : p.scope_ids,
                       activity_config: x.k === "points_bonus"
                         ? {
                           bonus_kind: "normal",
@@ -658,6 +691,18 @@ export default function AdminActivityForm() {
 
           {step === 3 && (
             <div className="space-y-4">
+              {form.type === "flash_sale" ? (
+                <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-4">
+                  <p className="text-sm font-medium"><Tx>秒杀活动范围由已选择的秒杀商品自动决定。</Tx></p>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    <Tx>发布或保存时系统会自动将适用范围设置为“指定商品”，并使用秒杀商品列表生成商品范围，无需在这里额外选择分类或商品。</Tx>
+                  </p>
+                  <div className="mt-3 rounded-lg bg-card px-3 py-2 text-xs text-muted-foreground">
+                    <Tx>已选择秒杀商品</Tx>：{form.items.length} <Tx>个</Tx>
+                  </div>
+                </div>
+              ) : (
+              <>
               <div>
                 <p className="text-sm font-medium"><Tx>活动对谁生效</Tx></p>
                 <p className="mt-1 text-xs text-muted-foreground"><Tx>员工只需要选择对象，不需要填写商品或分类编号。</Tx></p>
@@ -787,6 +832,8 @@ export default function AdminActivityForm() {
                   </div>
                 ) : null}
               </div>
+              </>
+              )}
             </div>
           )}
 
@@ -794,8 +841,13 @@ export default function AdminActivityForm() {
             <div className="grid gap-2 md:grid-cols-2">
               <div className="md:col-span-2">
                 <p className="text-sm font-medium"><Tx>展示位置</Tx></p>
+                {invalidDisplayPositions.length ? (
+                  <p className="mt-1 text-xs text-destructive">
+                    <Tx>当前活动类型存在不支持的历史展示位置，请取消后重新选择。</Tx>
+                  </p>
+                ) : null}
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {DISPLAY_POSITIONS.map((key) => {
+                  {allowedDisplayPositions.map((key) => {
                     const checked = (form.display_positions || []).includes(key);
                     return (
                       <label key={key} className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${checked ? "border-gold bg-gold/10" : "border-border"}`}>
@@ -805,6 +857,20 @@ export default function AdminActivityForm() {
                     );
                   })}
                 </div>
+                {invalidDisplayPositions.length ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {invalidDisplayPositions.map((position) => (
+                      <button
+                        key={position}
+                        type="button"
+                        onClick={() => setForm((p) => ({ ...p, display_positions: (p.display_positions || []).filter((item) => item !== position) }))}
+                        className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs text-destructive"
+                      >
+                        {tText(DISPLAY_POSITION_LABELS[position as DisplayPosition] || position)} ×
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               {isSuperAdmin ? (
                 <label className="text-sm"><Tx>内部备注</Tx><input value={form.internal_note || ""} onChange={(e) => setForm((p) => ({ ...p, internal_note: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>

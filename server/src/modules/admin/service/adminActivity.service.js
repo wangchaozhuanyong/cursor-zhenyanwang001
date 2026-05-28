@@ -348,6 +348,7 @@ async function updateActivity(id, body, adminUserId, req) {
       : parseJsonField(existing.display_positions, []),
     items: items ?? await repo.selectActivityItems(id),
     scope_type: scopesNormalized?.scopeType || existing.scope_type,
+    scope_ids: scopesNormalized?.scopes?.map((scope) => scope.scope_id) || (await repo.selectActivityScopes(id)).map((scope) => scope.scope_id),
   };
   if (payload.display_positions !== undefined || payload.type !== undefined) {
     assertDraftDisplayPositions(merged.type, merged.display_positions);

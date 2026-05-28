@@ -42,6 +42,7 @@ import AdminEventBell from "@/modules/admin/components/AdminEventBell";
 import { isAdminMfaStepUpPending } from "@/lib/adminMfaStepUp";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
+import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 import { getSecurityAlerts, type SecurityAlertSummary } from "@/api/admin/audit";
 import { Tx } from "@/components/admin/AdminText";
 import {
@@ -61,6 +62,7 @@ import AnchoredMenu from "@/components/admin/AnchoredMenu";
 
 function AdminLayoutContent() {
   const navigate = useNavigate();
+  const adminNavigate = useAdminNavigation();
   const location = useLocation();
   const { t, locale, setLocale, tText } = useAdminT();
   const labelize = useCallback(
@@ -102,7 +104,7 @@ function AdminLayoutContent() {
     if (!permHydrated) return;
     const path = location.pathname;
     if (!canAccessAdminPath(path, can, canAny)) {
-      navigate(getFirstAllowedAdminPath(can), { replace: true });
+      navigate(getFirstAllowedAdminPath(can, canAny), { replace: true });
     }
   }, [location.pathname, can, canAny, navigate, permHydrated]);
 
@@ -152,17 +154,17 @@ function AdminLayoutContent() {
     const match = navItems.find((n) => n.label.includes(lq) || findChild(n.children));
     if (match) {
       const child = findChild(match.children);
-      navigate(child?.path ?? match.path);
+      void adminNavigate(child?.path ?? match.path);
     }
     setTopSearch("");
   };
 
   const handleSidebarNavigate = useCallback(
     (path: string) => {
-      navigate(path);
+      void adminNavigate(path);
       setSidebarOpen(false);
     },
-    [navigate],
+    [adminNavigate],
   );
 
   const handleSidebarLogout = useCallback(() => {
@@ -186,6 +188,9 @@ function AdminLayoutContent() {
   const tab = mobileBottomTab(location.pathname);
 
   const showNotifTab = can("notification.manage") || can("notification.view");
+  const showMobileDashboard = canAccessAdminPath("/admin", can, canAny);
+  const showMobileProducts = canAccessAdminPath("/admin/products", can, canAny);
+  const showMobileOrders = canAccessAdminPath("/admin/orders", can, canAny);
   const securityAlertCount = securityAlerts?.total ?? 0;
 
   if (!isAdminAuthenticated()) {
@@ -289,7 +294,7 @@ function AdminLayoutContent() {
                       setSecurityAlertsOpen((v) => !v);
                       return;
                     }
-                    navigate("/admin/notifications");
+                    void adminNavigate("/admin/notifications");
                   }}
                 >
                   <Bell size={20} />
@@ -320,7 +325,7 @@ function AdminLayoutContent() {
                         className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
                         onClick={() => {
                           setSecurityAlertsOpen(false);
-                          navigate("/admin/audit-logs?keyword=security");
+                          void adminNavigate("/admin/audit-logs?keyword=security");
                         }}
                       >
                         <Tx>审计日志</Tx>
@@ -335,7 +340,7 @@ function AdminLayoutContent() {
                             className="flex w-full gap-2 rounded-lg px-2 py-2 text-left hover:bg-secondary"
                             onClick={() => {
                               setSecurityAlertsOpen(false);
-                              navigate(`/admin/audit-logs?actionType=${encodeURIComponent(item.action_type)}`);
+                              void adminNavigate(`/admin/audit-logs?actionType=${encodeURIComponent(item.action_type)}`);
                             }}
                           >
                             <AlertTriangle size={15} className={`mt-0.5 shrink-0 ${item.result === "failure" ? "text-destructive" : "text-[var(--theme-primary)]"}`} />
@@ -359,7 +364,7 @@ function AdminLayoutContent() {
                         className="mt-1 flex min-h-[40px] w-full items-center justify-center rounded-lg border border-border text-sm text-foreground hover:bg-secondary"
                         onClick={() => {
                           setSecurityAlertsOpen(false);
-                          navigate("/admin/notifications");
+                          void adminNavigate("/admin/notifications");
                         }}
                       >
                         打开通知中心
@@ -490,30 +495,36 @@ function AdminLayoutContent() {
           aria-label={t("layout.mainNav")}
         >
           <div className="flex h-14 w-full items-stretch justify-between px-1 md:mx-auto md:max-w-lg">
-            <AdminNavTab
-              icon={LayoutDashboard}
-              label={t("layout.mobileHome")}
-              active={tab === "dash"}
-              onClick={() => navigate("/admin")}
-            />
-            <AdminNavTab
-              icon={Package}
-              label={t("layout.mobileProducts")}
-              active={tab === "products"}
-              onClick={() => navigate("/admin/products")}
-            />
-            <AdminNavTab
-              icon={ShoppingCart}
-              label={t("layout.mobileOrders")}
-              active={tab === "orders"}
-              onClick={() => navigate("/admin/orders")}
-            />
+            {showMobileDashboard ? (
+              <AdminNavTab
+                icon={LayoutDashboard}
+                label={t("layout.mobileHome")}
+                active={tab === "dash"}
+                onClick={() => void adminNavigate("/admin")}
+              />
+            ) : null}
+            {showMobileProducts ? (
+              <AdminNavTab
+                icon={Package}
+                label={t("layout.mobileProducts")}
+                active={tab === "products"}
+                onClick={() => void adminNavigate("/admin/products")}
+              />
+            ) : null}
+            {showMobileOrders ? (
+              <AdminNavTab
+                icon={ShoppingCart}
+                label={t("layout.mobileOrders")}
+                active={tab === "orders"}
+                onClick={() => void adminNavigate("/admin/orders")}
+              />
+            ) : null}
             {showNotifTab ? (
               <AdminNavTab
                 icon={Bell}
                 label={t("layout.mobileNotifications")}
                 active={tab === "notifications"}
-                onClick={() => navigate("/admin/notifications")}
+                onClick={() => void adminNavigate("/admin/notifications")}
               />
             ) : null}
             <AdminNavTab

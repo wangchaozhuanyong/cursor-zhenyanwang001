@@ -70,6 +70,17 @@ describe("useAdminWorkTabsStore", () => {
     expect(state.lastLimitNoticeAt).toEqual(expect.any(Number));
   });
 
+  it("prechecks tab capacity without mutating state", () => {
+    const store = useAdminWorkTabsStore.getState();
+    for (let i = 0; i < ADMIN_WORK_TABS_MAX; i += 1) {
+      store.upsertTab(`/admin/test-${i}`, "", `页面 ${i}`);
+    }
+
+    expect(useAdminWorkTabsStore.getState().canOpenTab("/admin/test-1")).toBe(true);
+    expect(useAdminWorkTabsStore.getState().canOpenTab("/admin/overflow")).toBe(false);
+    expect(useAdminWorkTabsStore.getState().tabs).toHaveLength(ADMIN_WORK_TABS_MAX);
+  });
+
   it("updates tab title without changing tab order", () => {
     const store = useAdminWorkTabsStore.getState();
     store.upsertTab("/admin/marketing/activities/1/edit", "", "编辑活动 #1");

@@ -78,6 +78,14 @@ function assertPublishRules(payload) {
   if (!positions.length) throw new BusinessError(400, '请至少选择一个展示位置');
   payload.display_positions = positions;
 
+  if (payload.type !== 'flash_sale' && ['category', 'product'].includes(payload.scope_type)) {
+    const scopeIds = Array.isArray(payload.scope_ids) ? payload.scope_ids.map((id) => String(id || '').trim()).filter(Boolean) : [];
+    if (!scopeIds.length) {
+      throw new BusinessError(400, payload.scope_type === 'category' ? '请选择活动适用分类' : '请选择活动适用商品');
+    }
+    payload.scope_ids = Array.from(new Set(scopeIds));
+  }
+
   if (payload.type === 'coupon_activity') {
     const couponIds = payload?.activity_config?.coupon_ids;
     if (!Array.isArray(couponIds) || !couponIds.length) {

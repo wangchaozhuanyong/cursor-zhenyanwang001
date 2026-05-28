@@ -29,6 +29,35 @@ timestamp="$(date +%Y%m%d-%H%M%S)"
 release_id="${timestamp}"
 release_dir="${releases_dir}/${release_id}"
 
+preserve_previous_assets() {
+  local target_assets="$1"
+  shift
+
+  mkdir -p "${target_assets}"
+  for source_assets in "$@"; do
+    if [[ -d "${source_assets}" ]]; then
+      rsync -a --ignore-existing "${source_assets}/" "${target_assets}/"
+    fi
+  done
+}
+
+collect_release_assets() {
+  local build_dir="$1"
+  local -n output_ref="$2"
+
+  output_ref=()
+  if [[ -d "${build_dir}/assets" ]]; then
+    output_ref+=("${build_dir}/assets")
+  fi
+
+  local release
+  for release in "${releases_dir}"/*; do
+    if [[ -d "${release}/${build_dir#${release_dir}/}/assets" ]]; then
+      output_ref+=("${release}/${build_dir#${release_dir}/}/assets")
+    fi
+  done
+}
+
 mkdir -p "${releases_dir}" "${shared_dir}"
 
 if [[ ! -d "${APP_DIR}/server" || ! -d "${APP_DIR}/click-send-shop-main" ]]; then
@@ -202,6 +231,16 @@ echo "[deploy] 安装后端依赖"
 pushd "${release_dir}/server" >/dev/null
 npm ci
 popd >/dev/null
+
+echo "[deploy] 保留旧版前端 assets（避免发布中在线用户旧 JS 分包 404）"
+storefront_assets=()
+admin_assets=()
+storefront_build_dir="${release_dir}/click-send-shop-main/click-send-shop-main/dist"
+admin_build_dir="${release_dir}/click-send-shop-main/click-send-shop-main/admin-dist"
+collect_release_assets "${storefront_build_dir}" storefront_assets
+collect_release_assets "${admin_build_dir}" admin_assets
+preserve_previous_assets "${storefront_build_dir}/assets" "${storefront_assets[@]}"
+preserve_previous_assets "${admin_build_dir}/assets" "${admin_assets[@]}"
 
 echo "[deploy] 软链切换（原子）"
 ln -sfn "${release_dir}" "${current_link}"

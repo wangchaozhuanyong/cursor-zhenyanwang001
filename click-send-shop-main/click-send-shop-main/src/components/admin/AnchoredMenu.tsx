@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
+import { useModalStackSignal } from "@/modules/micro-interactions/modal/ModalLayerProvider";
 
 type Props = {
   open: boolean;
@@ -66,6 +67,7 @@ export default function AnchoredMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuHeight, setMenuHeight] = useState<number>(176);
   const [pos, setPos] = useState<Pos | null>(null);
+  const { stackDepth, version: modalStackVersion } = useModalStackSignal();
 
   const place = () => {
     const anchorEl = anchorRef.current;
@@ -131,6 +133,10 @@ export default function AnchoredMenu({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menuHeight, open]);
+
+  useEffect(() => {
+    if (open && stackDepth > 0) onClose();
+  }, [modalStackVersion, onClose, open, stackDepth]);
 
   if (!open || !pos || typeof document === "undefined") return null;
 

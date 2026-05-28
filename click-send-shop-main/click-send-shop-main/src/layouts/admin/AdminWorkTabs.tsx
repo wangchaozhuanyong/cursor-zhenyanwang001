@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Pin } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import { getFirstAllowedAdminPath } from "@/config/adminNavAccess";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useAdminDirtyGuard } from "@/modules/admin/context/AdminDirtyGuardContext";
 import AnchoredMenu from "@/components/admin/AnchoredMenu";
+import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 
 type TabMenuState = {
   tabId: string;
@@ -22,7 +23,7 @@ const TAB_SCROLL_STEP = 180;
 
 export default function AdminWorkTabs() {
   const { tText } = useAdminT();
-  const navigate = useNavigate();
+  const adminNavigate = useAdminNavigation();
   const location = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -106,10 +107,10 @@ export default function AdminWorkTabs() {
     (tab: AdminWorkTab) => {
       setActiveTab(tab.id);
       if (`${location.pathname}${location.search}` !== tab.path) {
-        navigate(tab.path);
+        void adminNavigate(tab.path);
       }
     },
-    [location.pathname, location.search, navigate, setActiveTab],
+    [adminNavigate, location.pathname, location.search, setActiveTab],
   );
 
   const handleClose = useCallback(
@@ -122,14 +123,14 @@ export default function AdminWorkTabs() {
       setTabDirty(tab.id, false);
       const fallbackPath = closeTab(tab.id);
       if (fallbackPath) {
-        navigate(fallbackPath);
+        void adminNavigate(fallbackPath);
         return;
       }
       if (activeTabId === tab.id) {
-        navigate(getFirstAllowedAdminPath(can, canAny));
+        void adminNavigate(getFirstAllowedAdminPath(can, canAny));
       }
     },
-    [activeTabId, can, canAny, closeTab, confirmDiscardTab, navigate, setTabDirty],
+    [activeTabId, adminNavigate, can, canAny, closeTab, confirmDiscardTab, setTabDirty],
   );
 
   const closeTabsBatch = useCallback(
@@ -144,14 +145,14 @@ export default function AdminWorkTabs() {
         if (path) navPath = path;
       }
       if (navPath) {
-        navigate(navPath);
+        void adminNavigate(navPath);
         return;
       }
       if (victims.some((tab) => tab.id === activeTabId)) {
-        navigate(getFirstAllowedAdminPath(can, canAny));
+        void adminNavigate(getFirstAllowedAdminPath(can, canAny));
       }
     },
-    [activeTabId, can, canAny, closeTab, confirmDiscardTabs, navigate, setTabDirty],
+    [activeTabId, adminNavigate, can, canAny, closeTab, confirmDiscardTabs, setTabDirty],
   );
 
   const openContextMenu = (tab: AdminWorkTab, e: React.MouseEvent<HTMLElement>) => {
@@ -314,7 +315,7 @@ export default function AdminWorkTabs() {
                   await closeTabsBatch(victims);
                   setActiveTab(menuTab.id);
                   if (`${location.pathname}${location.search}` !== menuTab.path) {
-                    navigate(menuTab.path);
+                    void adminNavigate(menuTab.path);
                   }
                   setMenu(null);
                 })();
@@ -332,7 +333,7 @@ export default function AdminWorkTabs() {
                   await closeTabsBatch(victims);
                   setActiveTab(menuTab.id);
                   if (`${location.pathname}${location.search}` !== menuTab.path) {
-                    navigate(menuTab.path);
+                    void adminNavigate(menuTab.path);
                   }
                   setMenu(null);
                 })();

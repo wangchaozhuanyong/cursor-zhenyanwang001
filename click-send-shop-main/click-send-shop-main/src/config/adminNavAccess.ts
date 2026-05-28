@@ -59,19 +59,24 @@ export function getPathAccessRule(pathname: string): PathRule | null {
 }
 
 /** 侧栏顺序：首个有权限的入口 */
-const FALLBACK_PATHS: { path: string; permission: string }[] = [
-  { path: "/admin", permission: "dashboard.view" },
-  { path: "/admin/orders", permission: "order.view" },
-  { path: "/admin/products", permission: "product.view" },
-  { path: "/admin/users", permission: "user.view" },
-  { path: "/admin/account", permission: "dashboard.view" },
+const FALLBACK_PATHS: { path: string; rule: PathRule }[] = [
+  { path: "/admin", rule: { kind: "one", permission: "dashboard.view" } },
+  { path: "/admin/orders", rule: { kind: "one", permission: "order.view" } },
+  { path: "/admin/products", rule: { kind: "one", permission: "product.view" } },
+  { path: "/admin/categories", rule: { kind: "one", permission: "category.manage" } },
+  { path: "/admin/tags", rule: { kind: "one", permission: "tag.manage" } },
+  { path: "/admin/users", rule: { kind: "one", permission: "user.view" } },
+  { path: "/admin/marketing", rule: { kind: "any", permissions: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
+  { path: "/admin/accounts", rule: { kind: "one", permission: "role.manage" } },
+  { path: "/admin/account", rule: { kind: "one", permission: "dashboard.view" } },
 ];
 
 export function getFirstAllowedAdminPath(
   can: (c: string) => boolean,
+  canAny: (codes: string[]) => boolean = (codes) => codes.some(can),
 ): string {
-  for (const { path, permission } of FALLBACK_PATHS) {
-    if (can(permission)) return path;
+  for (const { path, rule } of FALLBACK_PATHS) {
+    if (rule.kind === "one" ? can(rule.permission) : canAny(rule.permissions)) return path;
   }
   return "/admin/account";
 }

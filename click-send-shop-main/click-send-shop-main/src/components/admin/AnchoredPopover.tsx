@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useState, type ReactNode, type
 import { createPortal } from "react-dom";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useModalStackSignal } from "@/modules/micro-interactions/modal/ModalLayerProvider";
 
 type PanelPosition = {
   top: number;
@@ -60,6 +61,7 @@ export default function AnchoredPopover({
 }: Props) {
   const { tText } = useAdminT();
   const [position, setPosition] = useState<PanelPosition | null>(null);
+  const { stackDepth, version: modalStackVersion } = useModalStackSignal();
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT,
   );
@@ -103,6 +105,10 @@ export default function AnchoredPopover({
       window.removeEventListener("scroll", onLayoutChange, true);
     };
   }, [open, onClose, isMobile, updatePosition]);
+
+  useEffect(() => {
+    if (open && stackDepth > 0) onClose();
+  }, [modalStackVersion, onClose, open, stackDepth]);
 
   if (!open || typeof document === "undefined") return null;
 

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useDragControls, type Transition } from "framer-motion";
 import { X } from "lucide-react";
-import { useEffect, useId, useMemo, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useModalLayer } from "../modal/ModalLayerProvider";
@@ -57,9 +57,14 @@ export function BottomSheet({
   const descId = useId();
   const { enabled: motionEnabled } = useMotionConfig();
   const reduced = prefersReducedMotion() || !motionEnabled;
-  const { overlayZ, contentZ, isTop } = useModalLayer(open);
+  const [presented, setPresented] = useState(open);
+  const { overlayZ, contentZ, isTop } = useModalLayer(presented);
 
-  useBodyScrollLock(open);
+  useBodyScrollLock(presented);
+
+  useEffect(() => {
+    if (open) setPresented(true);
+  }, [open]);
 
   useEffect(() => {
     if (!open || !isTop) return;
@@ -83,22 +88,25 @@ export function BottomSheet({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <AnimatePresence>
-      {open ? (
+    <AnimatePresence onExitComplete={() => setPresented(false)}>
+      {presented ? (
         <motion.div
           className="fixed inset-0"
-          style={{ zIndex: overlayZ }}
+          style={{ zIndex: overlayZ, pointerEvents: open ? "auto" : "none" }}
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: open ? 1 : 0 }}
           exit={{ opacity: 0 }}
           transition={overlayTransition}
+          onAnimationComplete={() => {
+            if (!open) setPresented(false);
+          }}
         >
           <motion.button
             type="button"
             aria-label="关闭"
             className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: open ? 1 : 0 }}
             exit={{ opacity: 0 }}
             transition={overlayTransition}
             onClick={closeOnOverlay ? onClose : undefined}
@@ -122,7 +130,7 @@ export function BottomSheet({
               boxShadow: "var(--theme-shadow-hover)",
             }}
             initial={reduced ? { opacity: 0 } : { y: "100%" }}
-            animate={reduced ? { opacity: 1 } : { y: 0 }}
+            animate={open ? (reduced ? { opacity: 1 } : { y: 0 }) : (reduced ? { opacity: 0 } : { y: "100%" })}
             exit={reduced ? { opacity: 0 } : { y: "100%" }}
             transition={sheetTransition}
           >

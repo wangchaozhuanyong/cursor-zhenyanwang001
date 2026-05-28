@@ -161,13 +161,13 @@ export const navItemsRaw: NavItem[] = [
     icon: Package,
     labelKey: "nav.productCenter",
     path: "/admin/products",
-    permission: "product.view",
+    permission: { anyOf: ["product.view", "category.manage", "tag.manage", "inventory.manage"] },
     children: [
       { icon: Package, labelKey: "nav.productManage", path: "/admin/products", permission: "product.view" },
-      { icon: FolderTree, labelKey: "nav.categories", path: "/admin/categories", permission: "product.view" },
+      { icon: FolderTree, labelKey: "nav.categories", path: "/admin/categories", permission: "category.manage" },
       { icon: Package, labelKey: "nav.inventory", path: "/admin/inventory", permission: "inventory.manage", capability: "inventoryEnabled" },
       { icon: ClipboardList, label: "智能补货", path: "/admin/replenishment", permission: "inventory.manage", capability: "inventoryEnabled" },
-      { icon: Tags, labelKey: "nav.tags", path: "/admin/tags", permission: "product.view" },
+      { icon: Tags, labelKey: "nav.tags", path: "/admin/tags", permission: "tag.manage" },
     ],
   },
   {

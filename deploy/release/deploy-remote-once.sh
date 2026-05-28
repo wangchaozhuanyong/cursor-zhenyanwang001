@@ -15,6 +15,35 @@ dist_link="${DEPLOY_BASE}/dist"
 admin_dist_link="${DEPLOY_BASE}/admin-dist"
 KEEP_RELEASES="${KEEP_RELEASES:-5}"
 
+preserve_previous_assets() {
+  local target_assets="$1"
+  shift
+
+  mkdir -p "${target_assets}"
+  for source_assets in "$@"; do
+    if [[ -d "${source_assets}" ]]; then
+      rsync -a --ignore-existing "${source_assets}/" "${target_assets}/"
+    fi
+  done
+}
+
+collect_release_assets() {
+  local build_dir="$1"
+  local -n output_ref="$2"
+
+  output_ref=()
+  if [[ -d "${build_dir}/assets" ]]; then
+    output_ref+=("${build_dir}/assets")
+  fi
+
+  local release
+  for release in "${releases_dir}"/*; do
+    if [[ -d "${release}/${build_dir#${release_dir}/}/assets" ]]; then
+      output_ref+=("${release}/${build_dir#${release_dir}/}/assets")
+    fi
+  done
+}
+
 echo "[deploy] release=${release_id}"
 mkdir -p "${release_dir}"
 tar -xf "${ARCHIVE}" -C "${release_dir}"
@@ -40,6 +69,16 @@ set -a
 source "${release_dir}/server/.env"
 set +a
 npm run migrate
+
+echo "[deploy] preserve previous frontend assets"
+storefront_assets=()
+admin_assets=()
+storefront_build_dir="${release_dir}/click-send-shop-main/click-send-shop-main/dist"
+admin_build_dir="${release_dir}/click-send-shop-main/click-send-shop-main/admin-dist"
+collect_release_assets "${storefront_build_dir}" storefront_assets
+collect_release_assets "${admin_build_dir}" admin_assets
+preserve_previous_assets "${storefront_build_dir}/assets" "${storefront_assets[@]}"
+preserve_previous_assets "${admin_build_dir}/assets" "${admin_assets[@]}"
 
 echo "[deploy] switch symlinks"
 ln -sfn "${release_dir}" "${current_link}"

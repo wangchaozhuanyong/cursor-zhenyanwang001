@@ -20,6 +20,8 @@ export type ModalLayerInfo = {
 type ModalLayerContextValue = {
   register: (id: string, open: boolean) => void;
   getLayer: (id: string) => ModalLayerInfo;
+  stackDepth: number;
+  version: number;
 };
 
 const defaultLayer: ModalLayerInfo = {
@@ -65,7 +67,10 @@ export function ModalLayerProvider({ children }: { children: ReactNode }) {
     [version],
   );
 
-  const value = useMemo(() => ({ register, getLayer }), [register, getLayer]);
+  const value = useMemo(
+    () => ({ register, getLayer, stackDepth: stackRef.current.length, version }),
+    [register, getLayer, version],
+  );
 
   return <ModalLayerContext.Provider value={value}>{children}</ModalLayerContext.Provider>;
 }
@@ -85,4 +90,13 @@ export function useModalLayer(open: boolean): ModalLayerInfo {
 
   if (!getLayer) return defaultLayer;
   return getLayer(id);
+}
+
+/** 非模态锚定层可监听该版本号，在模态弹层打开时主动关闭自己。 */
+export function useModalStackSignal() {
+  const ctx = useContext(ModalLayerContext);
+  return {
+    stackDepth: ctx?.stackDepth ?? 0,
+    version: ctx?.version ?? 0,
+  };
 }

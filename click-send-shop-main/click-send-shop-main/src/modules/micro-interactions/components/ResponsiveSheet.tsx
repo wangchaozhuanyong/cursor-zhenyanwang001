@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { AppModalTier, ModalPresentation } from "../modal/modalBreakpoints";
@@ -46,10 +46,16 @@ export function ResponsiveSheet({
   const preferSheet = usePreferBottomSheet(tier);
   const useSheet =
     presentation === "sheet" || (presentation === "auto" && preferSheet);
+  const [lockedUseSheet, setLockedUseSheet] = useState(useSheet);
   const { level, enabled } = useMotionConfig();
   const modal = modalTransition(level);
 
-  if (useSheet) {
+  useEffect(() => {
+    if (open) return;
+    setLockedUseSheet(useSheet);
+  }, [open, useSheet]);
+
+  if (lockedUseSheet) {
     return (
       <BottomSheet
         open={open}

@@ -25,6 +25,7 @@ type AdminWorkTabsState = {
   activeTabId: string | null;
   lastLimitNoticeAt: number | null;
   consumeLimitNotice: () => void;
+  canOpenTab: (pathname: string, search?: string) => boolean;
   upsertTab: (pathname: string, search: string, title: string) => AdminWorkTabUpsertResult;
   updateTabTitle: (pathname: string, search: string, title: string) => void;
   setActiveTab: (id: string) => void;
@@ -42,6 +43,13 @@ export const useAdminWorkTabsStore = create<AdminWorkTabsState>()(
       lastLimitNoticeAt: null,
 
       consumeLimitNotice: () => set({ lastLimitNoticeAt: null }),
+
+      canOpenTab: (pathname, search = "") => {
+        const fullPath = normalizeAdminTabPath(pathname, search);
+        const id = adminTabPathKey(fullPath);
+        const state = get();
+        return Boolean(state.tabs.find((t) => t.id === id)) || state.tabs.length < ADMIN_WORK_TABS_MAX;
+      },
 
       upsertTab: (pathname, search, title) => {
         const fullPath = normalizeAdminTabPath(pathname, search);

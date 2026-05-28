@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as activityService from "@/services/admin/activityService";
 import type { ActivityPayload, ActivityProductItem, ActivityStatus, ActivityType } from "@/types/activity";
-import { toastErrorMessage } from "@/utils/errorMessage";
 import ActivityProductPicker from "@/components/admin/ActivityProductPicker";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
@@ -15,10 +14,8 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import {
   DISPLAY_POSITION_LABELS,
-  WIP_ACTIVITY_TYPES,
   getAllowedDisplayPositionsForActivity,
   getDefaultDisplayPositionsForActivity,
-  normalizeDisplayPositionsForActivity,
   type DisplayPosition,
 } from "@/constants/marketingDisplayPositions";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
@@ -35,70 +32,17 @@ import type { Product } from "@/types/product";
 import type { Category } from "@/types/category";
 import { flattenCategories } from "@/utils/categoryTree";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
-
-const STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
-const OBJECT_SCOPE_TYPES = new Set<ActivityPayload["scope_type"]>(["category", "product"]);
-
-function getStepLabel(stepIndex: number, type: ActivityType) {
-  if (stepIndex === 2 && type === "flash_sale") return "秒杀商品配置";
-  if (stepIndex === 3 && type === "flash_sale") return "范围说明";
-  return STEPS[stepIndex] || "";
-}
-
-function normalizePayloadForSubmit(form: ActivityPayload, status: ActivityStatus): ActivityPayload {
-  if (form.type !== "flash_sale") return { ...form, status };
-  const productIds = form.items.map((item) => item.product_id).filter(Boolean);
-  return {
-    ...form,
-    status,
-    scope_type: "product",
-    scope_ids: Array.from(new Set(productIds)),
-  };
-}
-
-function createInitialActivityForm(type: ActivityType = "flash_sale"): ActivityPayload {
-  return {
-    type,
-    title: "",
-    subtitle: "",
-    description: "",
-    start_at: "",
-    end_at: "",
-    status: "draft",
-    disabled: false,
-    threshold_amount: null,
-    discount_amount: null,
-    scope_type: "product",
-    scope_ids: [],
-    allow_coupon_stack: true,
-    allow_points_stack: true,
-    allow_reward: false,
-    publish_at: null,
-    internal_note: "",
-    display_positions: getDefaultDisplayPositionsForActivity(type),
-    activity_config: { full_reduction_rules: [{ threshold_amount: 100, discount_amount: 10 }] },
-    sort_order: 0,
-    items: [],
-  };
-}
-
-function toggleDisplayPosition(current: string[] | undefined, key: DisplayPosition) {
-  const set = new Set(current || []);
-  if (set.has(key)) set.delete(key);
-  else set.add(key);
-  return [...set];
-}
-
-function uniqueIds(ids: string[] | undefined) {
-  return Array.from(new Set((ids || []).map((id) => String(id).trim()).filter(Boolean)));
-}
-
-function setScopeIds(current: string[] | undefined, id: string, checked: boolean) {
-  const set = new Set(uniqueIds(current));
-  if (checked) set.add(id);
-  else set.delete(id);
-  return Array.from(set);
-}
+import {
+  ACTIVITY_FORM_STEPS,
+  OBJECT_SCOPE_TYPES,
+  createInitialActivityForm,
+  getStepLabel,
+  setScopeIds,
+  toggleDisplayPosition,
+  uniqueIds,
+  useActivitySave,
+  validateActivityForm,
+} from "./activityFormLogic";
 
 function productLabel(product: Product | undefined, id: string) {
   return product?.name || `商品 ${id}`;
@@ -326,53 +270,27 @@ export default function AdminActivityForm() {
     }));
   };
 
-  const localValidate = useCallback(() => {
-    if (!form.title.trim()) return "活动名称必填";
-    if (!form.start_at || !form.end_at) return "开始/结束时间必填";
-    if (new Date(form.end_at).getTime() <= new Date(form.start_at).getTime()) return "结束时间必须晚于开始时间";
-    if (form.type === "flash_sale" && form.items.length === 0) return "请先选择秒杀商品";
-    if ((form.type === "coupon_activity" || form.type === "new_user_gift") && !selectedCouponIds.length) return "请至少选择一张优惠券";
-    if (form.type !== "flash_sale" && form.scope_type === "category" && selectedScopeIds.length === 0) return "请选择活动适用分类";
-    if (form.type !== "flash_sale" && form.scope_type === "product" && selectedScopeIds.length === 0) return "请选择活动适用商品";
-    if (!normalizeDisplayPositionsForActivity(form.type, form.display_positions).length) return "请至少选择一个当前活动类型允许的展示位置";
-    if (invalidDisplayPositions.length) return "当前活动类型存在不支持的展示位置，请重新选择";
-    if (WIP_ACTIVITY_TYPES.includes(form.type)) return "该活动类型尚在开发中，仅可保存草稿";
-    if (form.type === "points_bonus") {
-      const cfg = (form.activity_config || {}) as Record<string, unknown>;
-      const pct = Number(cfg.multiplier_percent ?? 0);
-      if (!Number.isFinite(pct) || pct < 100) return "积分倍率必须至少为 100（200=2倍）";
-    }
-    if (form.type === "full_reduction") {
-      if (!fullReductionRules.length) return "至少配置一档满减";
-      for (const r of fullReductionRules) {
-        if (Number(r.threshold_amount || 0) <= 0) return "满减门槛必须大于 0";
-        if (Number(r.discount_amount || 0) <= 0) return "满减金额必须大于 0";
-        if (Number(r.discount_amount || 0) > Number(r.threshold_amount || 0)) return "满减金额不能大于门槛";
-      }
-    }
-    return "";
-  }, [form, fullReductionRules, invalidDisplayPositions.length, selectedCouponIds, selectedScopeIds.length]);
+  const localValidate = useCallback(
+    () => validateActivityForm({
+      form,
+      selectedCouponIds,
+      selectedScopeIds,
+      invalidDisplayPositions,
+      fullReductionRules,
+    }),
+    [form, fullReductionRules, invalidDisplayPositions, selectedCouponIds, selectedScopeIds],
+  );
 
-  const performSave = async (targetStatus: ActivityStatus) => {
-    setSaving(true);
-    try {
-      const payload = normalizePayloadForSubmit(form, targetStatus);
-      if (targetStatus !== "draft") await activityService.validateActivity(payload, id);
-      if (isEdit && id) await activityService.updateActivity(id, payload);
-      else await activityService.createActivity(payload);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: adminQueryKeys.activitiesRoot() }),
-        queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
-      ]);
-      toast.success(targetStatus === "draft" ? tText("草稿已保存") : tText("活动已发布"));
-      markClean();
-      navigate("/admin/marketing/activities");
-    } catch (e) {
-      toast.error(toastErrorMessage(e, tText("保存失败")));
-    } finally {
-      setSaving(false);
-    }
-  };
+  const performSave = useActivitySave({
+    form,
+    id,
+    isEdit,
+    queryClient,
+    navigate,
+    markClean,
+    setSaving,
+    tText,
+  });
 
   const validateAndSave = async (targetStatus: ActivityStatus) => {
     if (targetStatus !== "draft" && form.type === "flash_sale" && form.items.length === 0) {
@@ -463,7 +381,7 @@ export default function AdminActivityForm() {
       filters={(
       <div className="-mx-1 overflow-x-auto pb-1 lg:hidden">
         <div className="flex w-max gap-2 px-1">
-          {STEPS.map((s, i) => (
+          {ACTIVITY_FORM_STEPS.map((s, i) => (
             <button
               key={s}
               type="button"
@@ -481,7 +399,7 @@ export default function AdminActivityForm() {
     >
       <div className="grid gap-4 lg:grid-cols-[220px_1fr_340px]">
         <div className="hidden rounded-xl border border-border bg-card p-3 lg:block">
-          {STEPS.map((s, i) => (
+          {ACTIVITY_FORM_STEPS.map((s, i) => (
             <button key={s} onClick={() => setStep(i)} className={`mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm ${i === step ? "bg-gold/15 text-theme-price" : "text-muted-foreground hover:bg-secondary"}`}>
               {i + 1}. {tText(getStepLabel(i, form.type))}
             </button>
@@ -896,10 +814,10 @@ export default function AdminActivityForm() {
         </div>
       </div>
 
-      <div className="sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 flex flex-wrap justify-end gap-2 rounded-xl border border-border bg-card/95 p-3 backdrop-blur-md lg:bottom-0">
+      <div className={`${pickerOpen ? "hidden" : "flex"} sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 flex-wrap justify-end gap-2 rounded-xl border border-border bg-card/95 p-3 backdrop-blur-md lg:bottom-0`}>
         <button onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>上一步</Tx></button>
         <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm"><Tx>保存草稿</Tx></LoadingButton>
-        <button onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>下一步</Tx></button>
+        <button onClick={() => setStep((s) => Math.min(ACTIVITY_FORM_STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>下一步</Tx></button>
         <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="发布中..." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold"><Tx>发布活动</Tx></LoadingButton>
         <button onClick={() => navigate("/admin/marketing/activities")} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>取消</Tx></button>
       </div>
@@ -925,7 +843,10 @@ export default function AdminActivityForm() {
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         existingIds={form.items.map((x) => x.product_id)}
-        onConfirm={(rows) => setForm((p) => ({ ...p, items: [...p.items, ...rows] }))}
+        onConfirm={(rows) => setForm((p) => {
+          const existing = new Set(p.items.map((item) => item.product_id));
+          return { ...p, items: [...p.items, ...rows.filter((row) => !existing.has(row.product_id))] };
+        })}
       />
     </AdminPageShell>
   );

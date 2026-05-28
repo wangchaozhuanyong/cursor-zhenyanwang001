@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
-import { useSmartBars } from "@/hooks/useSmartBars";
+import { useState, useEffect, useCallback, useMemo, useLayoutEffect, useRef, type ReactNode } from "react";
+import { useStoreScrollChrome } from "@/contexts/StoreScrollChromeProvider";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -106,7 +106,7 @@ export default function Categories() {
       sort: sort === "default" ? undefined : sort,
       include_descendants: true,
       page: 1,
-      pageSize: 50,
+      pageSize: 24,
     });
   }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, loadProducts, maxPrice, minPrice, sort]);
 
@@ -206,24 +206,36 @@ export default function Categories() {
   const showFullSkeleton = loading && products.length === 0;
   const showSoftRefreshing = listRefreshing && products.length > 0;
 
-  const chromeHidden = useSmartBars({ hideAfter: 60, showOnUp: 12 });
-  const [pageScrollable, setPageScrollable] = useState(false);
+  const barsHidden = useStoreScrollChrome((s) => s.barsHidden);
+  const isAtTop = useStoreScrollChrome((s) => s.isAtTop);
+  const autoHideEnabled = useStoreScrollChrome((s) => s.autoHideEnabled);
+  const [searchFocused, setSearchFocused] = useState(false);
 
-  useEffect(() => {
-    const measure = () => {
-      setPageScrollable(document.documentElement.scrollHeight > window.innerHeight + 100);
+  const shouldHideCategoryChrome =
+    autoHideEnabled && barsHidden && !isAtTop && !searchFocused;
+
+  const mobileChromeRef = useRef<HTMLDivElement>(null);
+  const [mobileChromeHeight, setMobileChromeHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const node = mobileChromeRef.current;
+    if (!node) return;
+
+    const update = () => {
+      setMobileChromeHeight(node.offsetHeight || 0);
     };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(document.documentElement);
-    window.addEventListener("resize", measure);
+
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    window.addEventListener("resize", update);
+
     return () => {
       observer.disconnect();
-      window.removeEventListener("resize", measure);
+      window.removeEventListener("resize", update);
     };
-  }, [products.length, loading, categories.length, subCategories.length, activeFilterCount, debouncedQuery]);
-
-  const chromeCollapsed = chromeHidden && pageScrollable;
+  }, [categories.length, subCategories.length, activeFilterCount, viewMode, loading]);
 
   const filterDrawer = (
     <ProductFilterDrawer
@@ -260,71 +272,78 @@ export default function Categories() {
     </ProductFilterDrawer>
   );
 
+  const mobileCategoryBottomSlot = (
+    <>
+      <div className="space-y-2 pb-2">
+        <CategoryKingkongRow
+          items={rootKingkongItems}
+          scrollKey={scrollTabKey}
+          loading={loading && categories.length === 0}
+          className="-mx-1 rounded-none border-x-0"
+        />
+        {subCategories.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {subCategories.map((child) => (
+              <CategoryTabButton
+                key={child.id}
+                active={activeCat === child.id}
+                onClick={() => handleSelectChild(child.id)}
+                layoutId="category-sub-tab"
+                activeClassName="bg-[var(--theme-price)]"
+                activeTextClass="text-[var(--theme-price-foreground)]"
+                className="px-3"
+              >
+                {child.name}
+              </CategoryTabButton>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-2 border-t border-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] pb-2.5 pt-2">
+        <div className="min-w-0 flex-1">
+          <ProductSortBar value={sort} onChange={setSort} />
+        </div>
+        <ProductListViewToggle value={viewMode} onChange={setViewMode} />
+        {filterDrawer}
+      </div>
+    </>
+  );
+
   return (
     <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead title={title} description={description} canonical={canonical} robots={robots} />
-      <StorePageHeader
-        className={STORE_MOBILE_PAGE_HEADER_CLASS}
-        title="分类"
-        titleInlineSlot={
-          <StoreSearchField
-            mode="filter"
-            placeholder="搜索商品..."
-            value={query}
-            onValueChange={setQuery}
-          />
-        }
-        bottomSlot={
-          <div className="md:hidden">
-            <div
-              className={cn(
-                "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
-                chromeCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
-              )}
-              aria-hidden={chromeCollapsed}
-            >
-              <div className="min-h-0 overflow-hidden">
-                <div className="space-y-2 pb-2">
-                  <CategoryKingkongRow
-                    items={rootKingkongItems}
-                    scrollKey={scrollTabKey}
-                    loading={loading && categories.length === 0}
-                    className="-mx-1 rounded-none border-x-0"
-                  />
-                  {subCategories.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {subCategories.map((child) => (
-                        <CategoryTabButton
-                          key={child.id}
-                          active={activeCat === child.id}
-                          onClick={() => handleSelectChild(child.id)}
-                          layoutId="category-sub-tab"
-                          activeClassName="bg-[var(--theme-price)]"
-                          activeTextClass="text-[var(--theme-price-foreground)]"
-                          className="px-3"
-                        >
-                          {child.name}
-                        </CategoryTabButton>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-            <div
-              className={cn(
-                "flex items-center gap-2 border-t border-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] pt-2",
-                chromeCollapsed ? "pb-2" : "pb-2.5",
-              )}
-            >
-              <div className="min-w-0 flex-1">
-                <ProductSortBar value={sort} onChange={setSort} />
-              </div>
-              <ProductListViewToggle value={viewMode} onChange={setViewMode} />
-              {filterDrawer}
-            </div>
-          </div>
-        }
+      <div
+        ref={mobileChromeRef}
+        className={cn(
+          "fixed inset-x-0 top-0 z-header md:hidden",
+          "transition-[transform,opacity] duration-200 ease-out will-change-transform motion-reduce:transition-none",
+          shouldHideCategoryChrome
+            ? "pointer-events-none -translate-y-full opacity-0"
+            : "translate-y-0 opacity-100",
+        )}
+        aria-hidden={shouldHideCategoryChrome}
+      >
+        <StorePageHeader
+          sticky={false}
+          className={STORE_MOBILE_PAGE_HEADER_CLASS}
+          title="分类"
+          titleInlineSlot={
+            <StoreSearchField
+              mode="filter"
+              placeholder="搜索商品..."
+              value={query}
+              onValueChange={setQuery}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+            />
+          }
+          bottomSlot={mobileCategoryBottomSlot}
+        />
+      </div>
+      <div
+        className="md:hidden"
+        style={{ height: mobileChromeHeight > 0 ? mobileChromeHeight : undefined }}
+        aria-hidden
       />
 
       <main className="mx-auto max-w-screen-xl">

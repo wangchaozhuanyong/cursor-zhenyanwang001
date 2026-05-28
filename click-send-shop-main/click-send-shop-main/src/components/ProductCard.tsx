@@ -178,7 +178,7 @@ function ProductCardInner({
     return (
       <Reveal
         index={index}
-        className="theme-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu"
+        className="theme-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:128px]"
         onClick={() => openDetail("categories")}
       >
         <div ref={impressionRef} className={cn("flex", isListRow ? "gap-3 p-3" : "gap-2.5 p-2.5 sm:gap-3 sm:p-3")}>
@@ -199,6 +199,7 @@ function ProductCardInner({
               sizes={isListRow ? "(max-width: 768px) 112px, 160px" : "(max-width: 768px) 28vw, 200px"}
               loading={imageLoading}
               fetchPriority={imageFetchPriority}
+              withBlurPlaceholder={index <= 8}
             />
             {soldOut ? <ProductSoldOutOverlay compact /> : null}
             {ageBadgeLabel ? (
@@ -261,6 +262,7 @@ function ProductCardInner({
           sizes="(max-width: 768px) 45vw, 320px"
           loading={imageLoading}
           fetchPriority={imageFetchPriority}
+          withBlurPlaceholder={index <= 8}
         />
         <div className="absolute left-2 top-2 z-[1] flex flex-wrap gap-1">
           {product.active_activity && (

@@ -13,6 +13,7 @@ type ProductCoverImageProps = {
   fetchPriority?: "high" | "low" | "auto";
   loading?: "eager" | "lazy";
   variant?: UploadImageVariant;
+  withBlurPlaceholder?: boolean;
 };
 
 /** 商品封面：统一 URL 归一化、card→full 回退，避免列表/购物车白块 */
@@ -25,6 +26,7 @@ export default function ProductCoverImage({
   fetchPriority,
   loading,
   variant = "card",
+  withBlurPlaceholder = true,
 }: ProductCoverImageProps) {
   const { src, fallbackSrc } = resolveProductImageSrc(url, variant);
 
@@ -53,6 +55,7 @@ export default function ProductCoverImage({
       sizes={sizes}
       fetchPriority={fetchPriority}
       loading={loading}
+      withBlurPlaceholder={withBlurPlaceholder}
     />
   );
 }

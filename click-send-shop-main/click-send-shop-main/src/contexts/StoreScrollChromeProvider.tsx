@@ -56,10 +56,19 @@ function createStoreScrollChromeStore(options: SmartBarsOptions): StoreScrollChr
 
   const actions: StoreScrollChromeActions = {
     setAutoHideEnabled(enabled) {
-      setState({ autoHideEnabled: enabled, barsHidden: enabled ? state.barsHidden : false });
+      const currentY = window.scrollY || 0;
+      const isAtTop = currentY <= options.topRevealThreshold;
+
+      setState({
+        autoHideEnabled: enabled,
+        barsHidden: false,
+        isAtTop,
+        isScrollingDown: false,
+      });
+
       downAccumulated = 0;
       upAccumulated = 0;
-      lastY = window.scrollY || 0;
+      lastY = currentY;
     },
   };
 

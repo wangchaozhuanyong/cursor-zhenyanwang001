@@ -11,6 +11,8 @@ type StoreSearchFieldProps = {
   onSubmit?: () => void;
   autoFocus?: boolean;
   className?: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
 };
 
 const fieldClass =
@@ -25,6 +27,8 @@ export default function StoreSearchField({
   onSubmit,
   autoFocus,
   className,
+  onFocus,
+  onBlur,
 }: StoreSearchFieldProps) {
   return (
     <div className={cn("relative min-w-0 flex-1", className)}>
@@ -47,7 +51,11 @@ export default function StoreSearchField({
               }
             : undefined
         }
-        onFocus={mode === "navigate" ? onNavigate : undefined}
+        onFocus={() => {
+          if (mode === "navigate") onNavigate?.();
+          onFocus?.();
+        }}
+        onBlur={onBlur}
         onClick={mode === "navigate" ? onNavigate : undefined}
         autoFocus={mode === "filter" ? autoFocus : undefined}
         className={cn(fieldClass, mode === "navigate" && "cursor-pointer")}

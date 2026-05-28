@@ -15,6 +15,8 @@ export type ProgressiveImageProps = {
   loading?: "eager" | "lazy";
   /** 主图 404 时回退（如仅有 full、无 -card/-detail 的历史上传） */
   fallbackSrc?: string;
+  /** 是否渲染 LQIP 模糊垫底（列表靠后项可关闭以减轻合成压力） */
+  withBlurPlaceholder?: boolean;
 };
 
 /**
@@ -30,6 +32,7 @@ export function ProgressiveImage({
   fetchPriority,
   loading = "lazy",
   fallbackSrc,
+  withBlurPlaceholder = true,
 }: ProgressiveImageProps) {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [hiResLoaded, setHiResLoaded] = useState(false);
@@ -74,17 +77,19 @@ export function ProgressiveImage({
 
   return (
     <div className={cn("relative overflow-hidden bg-[var(--theme-bg)]", className)}>
-      <img
-        src={blurDataUrl}
-        alt=""
-        aria-hidden
-        draggable={false}
-        className={cn(
-          "pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover blur-2xl transition-opacity duration-300",
-          showHiRes ? "opacity-0" : "opacity-100",
-          imgClassName,
-        )}
-      />
+      {withBlurPlaceholder ? (
+        <img
+          src={blurDataUrl}
+          alt=""
+          aria-hidden
+          draggable={false}
+          className={cn(
+            "pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover blur-2xl transition-opacity duration-300",
+            showHiRes ? "opacity-0" : "opacity-100",
+            imgClassName,
+          )}
+        />
+      ) : null}
 
       {showLoadingPlate ? (
         <div

@@ -1,6 +1,7 @@
 const { ZodError } = require('zod');
 const { AppError, ServiceUnavailableError } = require('../errors');
 const { isSchemaDriftError } = require('../db/schemaErrors');
+const { appendRuntimeError } = require('../lib/serverErrorLog');
 
 function isUploadTypeError(message) {
   const raw = String(message || '');
@@ -57,6 +58,7 @@ module.exports = function errorHandler(err, req, res, _next) {
   }
 
   console.error(`[${traceId}]`, err?.stack || err);
+  appendRuntimeError({ traceId, err, req });
   const rawCode = Number(err?.statusCode || err?.status || 500);
   const code = rawCode >= 400 && rawCode <= 599 ? rawCode : 500;
   const message = code >= 500 && err?.expose !== true ? '服务器内部错误' : (err?.message || '请求失败');

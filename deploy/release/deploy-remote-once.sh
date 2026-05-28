@@ -94,11 +94,8 @@ ln -sfnT "${release_dir}/click-send-shop-main/click-send-shop-main/admin-dist" "
 
 echo "[deploy] pm2 restart"
 cd "${release_dir}/server"
-if pm2 describe gc-api >/dev/null 2>&1; then
-  pm2 restart gc-api --update-env
-else
-  pm2 start ecosystem.config.cjs --only gc-api --env production
-fi
+pm2 delete gc-api >/dev/null 2>&1 || true
+pm2 start ecosystem.config.cjs --only gc-api --env production
 pm2 save
 
 echo "[deploy] nginx reload"

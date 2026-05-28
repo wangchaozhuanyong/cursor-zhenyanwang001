@@ -259,7 +259,8 @@ pushd "${release_dir}/server" >/dev/null
 set -a
 source "${release_dir}/server/.env"
 set +a
-pm2 start ecosystem.config.cjs --only "${PM2_APP}" --env production || pm2 restart "${PM2_APP}"
+pm2 delete "${PM2_APP}" >/dev/null 2>&1 || true
+pm2 start ecosystem.config.cjs --only "${PM2_APP}" --env production
 pm2 save
 popd >/dev/null
 

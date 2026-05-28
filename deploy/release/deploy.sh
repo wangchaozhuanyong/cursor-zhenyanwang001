@@ -126,11 +126,16 @@ ln -sfnT "${release_dir}/click-send-shop-main/click-send-shop-main/admin-dist" "
 echo "[deploy] 重启后端（自动探测：pm2 > systemd）"
 restart_done="0"
 if command -v pm2 >/dev/null 2>&1; then
-  if [[ -n "${PM2_APP_NAME}" ]]; then
-    pm2 restart "${PM2_APP_NAME}"
+  pushd "${release_dir}/server" >/dev/null
+  pm2_app="${PM2_APP_NAME:-gc-api}"
+  if [[ -f "ecosystem.config.cjs" ]]; then
+    pm2 delete "${pm2_app}" >/dev/null 2>&1 || true
+    pm2 start ecosystem.config.cjs --only "${pm2_app}" --env production
   else
-    pm2 restart all
+    pm2 restart "${pm2_app}" --update-env
   fi
+  pm2 save
+  popd >/dev/null
   restart_done="1"
 fi
 

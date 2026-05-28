@@ -249,6 +249,10 @@ collect_previous_build_dirs "${admin_build_dir}" admin_build_dirs
 preserve_previous_build_artifacts "${storefront_build_dir}" "${storefront_build_dirs[@]}"
 preserve_previous_build_artifacts "${admin_build_dir}" "${admin_build_dirs[@]}"
 
+echo "[deploy] 校验前端入口 HTML 引用的 assets 是否存在（防止 index 引用旧 hash 导致 404 白屏）"
+node "${release_dir}/deploy/release/verify-frontend-assets.mjs" "${storefront_build_dir}" "index.html"
+node "${release_dir}/deploy/release/verify-frontend-assets.mjs" "${admin_build_dir}" "admin-index.html"
+
 echo "[deploy] 软链切换（原子）"
 ln -sfnT "${release_dir}" "${current_link}"
 ln -sfnT "${release_dir}/click-send-shop-main/click-send-shop-main/dist" "${dist_link}"

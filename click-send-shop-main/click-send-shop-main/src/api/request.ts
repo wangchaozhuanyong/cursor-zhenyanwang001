@@ -11,11 +11,13 @@ import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { notifyAuthExpired } from "@/lib/authSessionBridge";
 import { startGlobalLoadingDeferred, stopGlobalLoading } from "@/lib/loadingProgress";
 import { clearAdminCsrfToken, getAdminCsrfToken, setAdminCsrfToken } from "@/lib/adminCsrf";
+import { clearAdminQueryCache } from "@/lib/queryClient";
 import {
   getAdminMfaActionClassFromResponse,
   isAdminMfaRequiredResponse,
   requestAdminMfaStepUp,
 } from "@/lib/adminMfaStepUp";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const ADMIN_SENSITIVE_ACTION_HEADER = "X-Admin-Sensitive-Action-Token";
@@ -73,6 +75,7 @@ export function toQueryString(params?: Record<string, unknown>): string {
 let refreshing: Promise<string> | null = null;
 let adminRefreshing: Promise<void> | null = null;
 const ADMIN_CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const ADMIN_SESSION_EXPIRED_EVENT = "admin:session-expired";
 
 function isPublicStorefrontPath(pathname: string): boolean {
   return pathname === "/"
@@ -150,8 +153,7 @@ export async function tryRefreshAdminSession(): Promise<void> {
   }
 
   if (!res.ok) {
-    clearAdminTokens();
-    clearAdminCsrfToken();
+    expireAdminSession("refresh-failed", { status: res.status });
     throw new ApiError(401, "登录已过期，请重新登录");
   }
 
@@ -161,6 +163,22 @@ export async function tryRefreshAdminSession(): Promise<void> {
   } catch {
     // Ignore malformed refresh payloads; the next mutation can fetch a token.
   }
+}
+
+function expireAdminSession(reason: string, data?: Record<string, unknown>): void {
+  clearAdminTokens();
+  clearAdminCsrfToken();
+  useAdminPermissionStore.getState().clear();
+  clearAdminQueryCache();
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(ADMIN_SESSION_EXPIRED_EVENT, { detail: { reason, ...data } }));
+  }
+}
+
+function redirectToAdminLogin(reason: string): void {
+  if (typeof window === "undefined" || window.location.pathname.startsWith("/admin/login")) return;
+  expireAdminSession(reason);
+  window.location.assign("/admin/login");
 }
 
 async function request<T>(endpoint: string, options: RequestOptions = {}, retry = true): Promise<T> {
@@ -240,9 +258,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       await adminRefreshing;
       return request<T>(endpoint, options, false);
     } catch {
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
-        window.location.href = "/admin/login";
-      }
+      redirectToAdminLogin("refresh-after-401-failed");
       throw new ApiError(401, "登录已过期，请重新登录");
     }
   }
@@ -282,11 +298,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     }
 
     if (res.status === 401 && isAdminEndpoint) {
-      clearAdminTokens();
-      clearAdminCsrfToken();
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
-        window.location.href = "/admin/login";
-      }
+      redirectToAdminLogin("admin-401-no-retry");
     }
     if (res.status === 401 && !isAdminEndpoint) {
       clearTokens();

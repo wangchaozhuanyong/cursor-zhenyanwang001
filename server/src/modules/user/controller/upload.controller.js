@@ -18,6 +18,45 @@ const fileFilter = (_req, file, cb) => {
 };
 
 const BATCH_MAX_FILES = 5;
+const DEFAULT_UPLOAD_MEMORY_BUDGET = 80 * 1024 * 1024;
+function positiveNumber(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+const UPLOAD_MEMORY_BUDGET = Math.max(
+  VIDEO_MAX_SIZE,
+  positiveNumber(process.env.UPLOAD_MEMORY_BUDGET_BYTES, DEFAULT_UPLOAD_MEMORY_BUDGET),
+);
+let inFlightUploadBytes = 0;
+
+function parseContentLength(req) {
+  const value = Number(req.get('content-length') || 0);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function guardUploadPressure(req, res, next) {
+  const contentLength = parseContentLength(req);
+  if (contentLength > VIDEO_MAX_SIZE) {
+    return res.fail(413, '上传文件过大');
+  }
+
+  // Multer memoryStorage buffers the request; cap concurrent upload bytes before parsing.
+  const reservedBytes = contentLength || VIDEO_MAX_SIZE;
+  if (inFlightUploadBytes + reservedBytes > UPLOAD_MEMORY_BUDGET) {
+    return res.fail(429, '上传任务过多，请稍后再试');
+  }
+
+  inFlightUploadBytes += reservedBytes;
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    inFlightUploadBytes = Math.max(0, inFlightUploadBytes - reservedBytes);
+  };
+  res.on('finish', release);
+  res.on('close', release);
+  next();
+}
 
 const uploadSingle = multer({
   storage: multer.memoryStorage(),
@@ -34,8 +73,15 @@ const uploadBatch = multer({
   limits: { fileSize: IMAGE_MAX_SIZE, files: BATCH_MAX_FILES },
 });
 
-exports.uploadMiddleware = uploadSingle.single('file');
-exports.uploadMultiple = uploadBatch.array('files', BATCH_MAX_FILES);
+function composeUploadMiddleware(middleware) {
+  return (req, res, next) => guardUploadPressure(req, res, (err) => {
+    if (err) return next(err);
+    return middleware(req, res, next);
+  });
+}
+
+exports.uploadMiddleware = composeUploadMiddleware(uploadSingle.single('file'));
+exports.uploadMultiple = composeUploadMiddleware(uploadBatch.array('files', BATCH_MAX_FILES));
 
 async function auditUpload(req, result, errorMessage) {
   await writeAuditLog({

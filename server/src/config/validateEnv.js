@@ -159,6 +159,23 @@ function validateEnv() {
       process.exit(1);
     }
 
+    const adminOrigins = (process.env.ADMIN_ALLOWED_ORIGINS || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!adminOrigins.length) {
+      console.error(`[FATAL][${siteCode}] 生产环境必须设置 ADMIN_ALLOWED_ORIGINS，避免管理端 API 暴露在非管理域名`);
+      process.exit(1);
+    }
+    const hasLocalAdminOrigin = adminOrigins.some((o) => {
+      const lower = o.toLowerCase();
+      return lower.includes('localhost') || lower.includes('127.0.0.1');
+    });
+    if (hasLocalAdminOrigin) {
+      console.error(`[FATAL][${siteCode}] 生产环境 ADMIN_ALLOWED_ORIGINS 不得包含 localhost / 127.0.0.1`);
+      process.exit(1);
+    }
+
     const sk = process.env.STRIPE_SECRET_KEY || '';
     const wh = process.env.STRIPE_WEBHOOK_SECRET || '';
     const stripePartial = (sk && !wh) || (!sk && wh);
@@ -183,15 +200,28 @@ function validateEnv() {
       || (process.env.REDIS_HOST || '').trim(),
     );
     if (!redisConfigured) {
-      console.warn(
-        '[WARN] 生产环境未配置 Redis（REDIS_URL 或 REDIS_HOST）；缓存、分布式锁与 BullMQ 队列将无法正常工作',
-      );
+      const loginRiskStore = String(process.env.ADMIN_LOGIN_RISK_STORE || 'redis').trim().toLowerCase();
+      if (loginRiskStore !== 'memory') {
+        console.error(
+          '[FATAL] 生产环境管理端登录风控需要 Redis（REDIS_URL 或 REDIS_HOST），如确认为单进程应急运行才可显式设置 ADMIN_LOGIN_RISK_STORE=memory',
+        );
+        process.exit(1);
+      }
+      console.warn('[WARN] ADMIN_LOGIN_RISK_STORE=memory 仅适合单进程应急运行；多实例会削弱暴力破解防护');
     }
 
     if (storageDriver !== 's3') {
       console.warn(
         '[WARN] 生产环境建议 STORAGE_DRIVER=s3，避免用户上传落在本地 public/uploads（见 docs/security/backend-upload-go-live-checklist.md）',
       );
+    }
+
+    if (
+      process.env.RESTORE_SWITCH_ENABLED === '1'
+      && process.env.RESTORE_SWITCH_ACK_DESTRUCTIVE !== '1'
+    ) {
+      console.error('[FATAL] RESTORE_SWITCH_ENABLED=1 会允许生产库切换；生产环境必须同时设置 RESTORE_SWITCH_ACK_DESTRUCTIVE=1 作为维护窗口显式确认');
+      process.exit(1);
     }
 
     const smsLoginEnabled = ['1', 'true', 'yes', 'on'].includes(

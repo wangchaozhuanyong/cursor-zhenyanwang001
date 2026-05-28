@@ -29,12 +29,12 @@ next="${releases[1]}"
 echo "[rollback] 当前：${current_target:-<none>}"
 echo "[rollback] 回滚到：${next}"
 
-ln -sfn "${next}" "${current_link}"
+ln -sfnT "${next}" "${current_link}"
 if [[ -d "${next}/click-send-shop-main/click-send-shop-main/dist" ]]; then
-  ln -sfn "${next}/click-send-shop-main/click-send-shop-main/dist" "${dist_link}"
+  ln -sfnT "${next}/click-send-shop-main/click-send-shop-main/dist" "${dist_link}"
 fi
 if [[ -d "${next}/click-send-shop-main/click-send-shop-main/admin-dist" ]]; then
-  ln -sfn "${next}/click-send-shop-main/click-send-shop-main/admin-dist" "${admin_dist_link}"
+  ln -sfnT "${next}/click-send-shop-main/click-send-shop-main/admin-dist" "${admin_dist_link}"
 fi
 
 echo "[rollback] 已切换软链，建议重启后端进程并做健康检查"

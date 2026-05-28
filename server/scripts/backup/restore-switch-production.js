@@ -100,6 +100,12 @@ async function main() {
   if (process.env.RESTORE_SWITCH_ENABLED !== '1') {
     throw new Error('未启用生产切换，请在环境变量中设置 RESTORE_SWITCH_ENABLED=1');
   }
+  if (
+    process.env.NODE_ENV === 'production'
+    && process.env.RESTORE_SWITCH_ACK_DESTRUCTIVE !== '1'
+  ) {
+    throw new Error('生产切换缺少维护窗口确认，请设置 RESTORE_SWITCH_ACK_DESTRUCTIVE=1');
+  }
 
   const args = parseArgs();
   const restoreJobId = args.restoreJobId || process.env.RESTORE_JOB_ID;

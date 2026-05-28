@@ -7,6 +7,7 @@ const rbacService = require('./rbac.service');
 const adminMfaService = require('./adminMfa.service');
 const { buildPhoneLookupCandidates, inferCountryCodeForPhone } = require('../../../utils/phone');
 const { sortUsersForAdminLogin } = require('./rbac.service');
+const adminLoginRiskStore = require('./adminLoginRiskStore');
 
 const PUBLIC_LOGIN_FAILURE_MESSAGE = '账号或密码错误';
 /** 仅当服务端配置了 Turnstile 且登录页可提交 token 时才启用验证码门槛 */
@@ -16,14 +17,11 @@ const ADMIN_CAPTCHA_CONFIGURED = Boolean(
 const CAPTCHA_FAILURE_THRESHOLD = ADMIN_CAPTCHA_CONFIGURED
   ? Number(process.env.ADMIN_LOGIN_CAPTCHA_FAILURES || 3)
   : 0;
-const LOCK_FAILURE_THRESHOLD = Number(process.env.ADMIN_LOGIN_LOCK_FAILURES || 10);
 const SKIP_LOGIN_RISK_INCREMENT = new Set([
   'ACCOUNT_LOCKED',
   'CAPTCHA_REQUIRED',
   'MISSING_CREDENTIALS',
 ]);
-const LOCK_MS = Number(process.env.ADMIN_LOGIN_LOCK_MINUTES || 30) * 60 * 1000;
-const loginRiskState = new Map();
 const ADMIN_ACCESS_EXPIRES_IN = process.env.ADMIN_JWT_EXPIRES_IN || '15m';
 const ADMIN_ACCESS_EXPIRES_SECONDS = Number(process.env.ADMIN_JWT_EXPIRES_SECONDS || 15 * 60);
 
@@ -52,17 +50,6 @@ function riskKey(scope, value) {
   return `${scope}:${String(value || 'unknown').toLowerCase()}`;
 }
 
-function getRiskRecord(key) {
-  const now = Date.now();
-  const record = loginRiskState.get(key);
-  if (!record || (record.lockedUntil && record.lockedUntil <= now)) {
-    const fresh = { failures: 0, lockedUntil: 0, lastFailureAt: 0 };
-    loginRiskState.set(key, fresh);
-    return fresh;
-  }
-  return record;
-}
-
 function getRiskKeys(phone, req) {
   const ip = getClientIp(req);
   return [
@@ -72,49 +59,30 @@ function getRiskKeys(phone, req) {
   ];
 }
 
-function getMaxFailures(keys) {
-  return Math.max(...keys.map((key) => getRiskRecord(key).failures), 0);
-}
-
 function decorateLoginError(err, reason) {
   err.auditReason = reason;
   return err;
 }
 
-function assertLoginRiskAllowed(phone, body, req) {
+async function assertLoginRiskAllowed(phone, body, req) {
   const keys = getRiskKeys(phone, req);
-  const now = Date.now();
-  const locked = keys.find((key) => {
-    const record = getRiskRecord(key);
-    return record.lockedUntil && record.lockedUntil > now;
-  });
-  if (locked) {
+  const snapshot = await adminLoginRiskStore.getSnapshot(keys);
+  if (snapshot.locked) {
     throw decorateLoginError(new BusinessError(423, PUBLIC_LOGIN_FAILURE_MESSAGE), 'ACCOUNT_LOCKED');
   }
 
   const hasCaptcha = Boolean(body?.captchaToken || body?.turnstileToken);
-  if (ADMIN_CAPTCHA_CONFIGURED && CAPTCHA_FAILURE_THRESHOLD > 0 && getMaxFailures(keys) >= CAPTCHA_FAILURE_THRESHOLD && !hasCaptcha) {
+  if (ADMIN_CAPTCHA_CONFIGURED && CAPTCHA_FAILURE_THRESHOLD > 0 && snapshot.maxFailures >= CAPTCHA_FAILURE_THRESHOLD && !hasCaptcha) {
     throw decorateLoginError(new BusinessError(401, PUBLIC_LOGIN_FAILURE_MESSAGE), 'CAPTCHA_REQUIRED');
   }
 }
 
-function recordLoginFailure(phone, req) {
-  const now = Date.now();
-  for (const key of getRiskKeys(phone, req)) {
-    const record = getRiskRecord(key);
-    record.failures += 1;
-    record.lastFailureAt = now;
-    if (record.failures >= LOCK_FAILURE_THRESHOLD) {
-      record.lockedUntil = now + LOCK_MS;
-    }
-    loginRiskState.set(key, record);
-  }
+async function recordLoginFailure(phone, req) {
+  await adminLoginRiskStore.recordFailure(getRiskKeys(phone, req));
 }
 
-function clearLoginFailures(phone, req) {
-  for (const key of getRiskKeys(phone, req)) {
-    loginRiskState.delete(key);
-  }
+async function clearLoginFailures(phone, req) {
+  await adminLoginRiskStore.clear(getRiskKeys(phone, req));
 }
 
 function coerceHash(hash) {
@@ -132,7 +100,7 @@ async function login(body, req) {
     if (!phone || !password) {
       throw decorateLoginError(new BusinessError(400, PUBLIC_LOGIN_FAILURE_MESSAGE), 'MISSING_CREDENTIALS');
     }
-    assertLoginRiskAllowed(phone, body, req);
+    await assertLoginRiskAllowed(phone, body, req);
 
     const matchedUsers = sortUsersForAdminLogin(
       await requireAuthApi('findUsersByPhones')(buildPhoneLookupCandidates(phone, countryCode)),
@@ -216,7 +184,7 @@ async function login(body, req) {
     });
     const access = await rbacService.getAccessContext(uid, user.role);
     try { await requireAuthApi('updateLastLogin')(uid); } catch { /* non-critical */ }
-    clearLoginFailures(phone, req);
+    await clearLoginFailures(phone, req);
     await writeAuditLog({
       req,
       operatorId: uid,
@@ -244,7 +212,7 @@ async function login(body, req) {
     };
   } catch (err) {
     if (!SKIP_LOGIN_RISK_INCREMENT.has(err.auditReason)) {
-      recordLoginFailure(phone, req);
+      await recordLoginFailure(phone, req);
     }
     await writeAuditLog({
       req,

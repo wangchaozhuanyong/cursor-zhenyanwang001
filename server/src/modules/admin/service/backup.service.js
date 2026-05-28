@@ -254,6 +254,12 @@ async function switchRestoreJobToProduction({ req, userId, restoreJobId }) {
   if (process.env.RESTORE_SWITCH_ENABLED !== '1') {
     throw new BusinessError(400, '生产切换未启用，请先在服务器设置 RESTORE_SWITCH_ENABLED=1');
   }
+  if (
+    process.env.NODE_ENV === 'production'
+    && process.env.RESTORE_SWITCH_ACK_DESTRUCTIVE !== '1'
+  ) {
+    throw new BusinessError(400, '生产切换缺少维护窗口确认，请设置 RESTORE_SWITCH_ACK_DESTRUCTIVE=1');
+  }
 
   const existing = await repo.findRestoreJob(restoreJobId);
   if (!existing) {

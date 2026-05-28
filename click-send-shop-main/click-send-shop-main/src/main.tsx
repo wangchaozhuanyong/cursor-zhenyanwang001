@@ -1,4 +1,4 @@
-import { installBrowserCompatShims } from "@/lib/browserBoot";
+import { installBrowserCompatShims, installChunkLoadRecovery } from "@/lib/browserBoot";
 import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -27,6 +27,7 @@ const StoreShell = lazy(async () => {
 const isTikTokLanding = /^\/tiktok\/?$/.test(window.location.pathname);
 
 installBrowserCompatShims();
+installChunkLoadRecovery("storefront");
 if (!isTikTokLanding) {
   initPwaOfflineNavigation();
 }

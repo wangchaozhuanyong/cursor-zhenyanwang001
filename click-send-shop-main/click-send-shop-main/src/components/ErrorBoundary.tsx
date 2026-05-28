@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
+import { recoverFromChunkLoadError } from "@/lib/browserBoot";
 
 interface Props {
   children: ReactNode;
@@ -27,6 +28,9 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(err: Error, info: ErrorInfo) {
     console.error("[ErrorBoundary]", err, info.componentStack);
+    if (this.state.isChunkLoadError) {
+      recoverFromChunkLoadError("error-boundary");
+    }
   }
 
   componentDidUpdate(prevProps: Props) {

@@ -32,7 +32,13 @@ export function useAdminNavigation() {
     async (to: string, options?: NavigateOptions) => {
       const target = resolveAdminTarget(to);
       const currentFullPath = normalizeAdminTabPath(location.pathname, location.search);
-      if (target.fullPath === currentFullPath) return true;
+      const targetTrackable = shouldTrackAdminWorkTab(target.pathname);
+      const targetCanOpen = !targetTrackable || canOpenTab(target.pathname, target.search);
+      const currentTabId = adminTabPathKey(currentFullPath);
+      const currentDirty = Boolean(guard?.isTabDirty(currentTabId));
+      if (target.fullPath === currentFullPath) {
+        return true;
+      }
 
       if (permHydrated && !canAccessAdminPath(target.pathname, can, canAny)) {
         toast.error(tText("没有权限访问该后台页面。"));
@@ -40,13 +46,12 @@ export function useAdminNavigation() {
         return false;
       }
 
-      if (shouldTrackAdminWorkTab(target.pathname) && !canOpenTab(target.pathname, target.search)) {
+      if (!targetCanOpen) {
         toast.error(tText(`已打开 ${ADMIN_WORK_TABS_MAX} 个页面，请先关闭不需要的页面后再打开新页面。`));
         return false;
       }
 
-      const currentTabId = adminTabPathKey(currentFullPath);
-      if (guard?.isTabDirty(currentTabId)) {
+      if (currentDirty) {
         const currentTab = tabs.find((tab) => tab.id === currentTabId);
         const proceed = await guard.confirmDiscardTab(currentTabId, currentTab?.title || tText("当前页面"));
         if (!proceed) return false;

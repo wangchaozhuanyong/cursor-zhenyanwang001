@@ -6,7 +6,8 @@ param(
   [string]$RemoteProjectDir = "/var/www/click-send-shop",
   [switch]$SkipChecks,
   [switch]$Force,
-  [switch]$Quick
+  [switch]$Quick,
+  [switch]$SkipBackup
 )
 
 $ErrorActionPreference = "Stop"
@@ -67,7 +68,8 @@ Run-Step "Push $ReleaseBranch" "git push origin $ReleaseBranch" $RepoRoot
 if ($Quick) {
   $RemoteCmd = "set -e; cd '$RemoteProjectDir'; git fetch origin '$ReleaseBranch'; git reset --hard origin/'$ReleaseBranch'; cd server; pm2 restart gc-api; pm2 save; echo QUICK_DEPLOY_OK"
 } else {
-  $RemoteCmd = "set -e; export PROJECT_DIR='$RemoteProjectDir'; export PM2_APP='gc-api'; export GIT_BRANCH='$ReleaseBranch'; export AUTO_ROLLBACK='1'; export SKIP_FRONTEND_BUILD='1'; cd '$RemoteProjectDir'; bash deploy/release-deploy.sh"
+  $backupFlag = if ($SkipBackup) { "0" } else { "1" }
+  $RemoteCmd = "set -e; export PROJECT_DIR='$RemoteProjectDir'; export PM2_APP='gc-api'; export GIT_BRANCH='$ReleaseBranch'; export AUTO_ROLLBACK='1'; export BACKUP_BEFORE_DEPLOY='$backupFlag'; export BUILD_FRONTEND_ON_SERVER='0'; cd '$RemoteProjectDir'; bash deploy/release-deploy.sh"
 }
 
 Run-Step "Remote deploy on $ServerIp" "ssh -o StrictHostKeyChecking=accept-new -i `"$SshKeyPath`" $ServerUser@$ServerIp `"$RemoteCmd`""

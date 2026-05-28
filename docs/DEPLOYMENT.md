@@ -11,7 +11,7 @@
    通过后再 `git commit` / `push`。若本机已配好 `server/.env` 且 MySQL 可用，可加 `-WithDbTests` 跑 `npm run test:all`。
 2. **GitHub**：`push` 到 `main` 会触发 **CI**（`.github/workflows/ci.yml`：前端 build + 服务端 typecheck，无需数据库）。**自动上架**依赖 **Deploy** workflow，须先配好 Secrets（见下表）。
 3. **服务器**：代码目录必须是 **`git clone` 的标准路径**（默认 `/var/www/click-send-shop`），且存在 **`server/.env`**（生产 **禁止** `DB_USER=root`，脚本会拦截）。**唯一推荐上架入口**：`bash deploy/ci-deploy.sh`（与 GitHub Actions SSH 里调用的一致）；内部会执行 `production-deploy.sh`（迁移、前端带 `VITE_API_BASE_URL=/api` 构建、PM2、健康检查）。你在服务器上改的 **`server/ecosystem.config.cjs`** 在每次 `git reset` 前会自动 **stash / 恢复**，避免被覆盖。
-4. **Codex 主分支发布入口**：日常只记一条——在本机 `main` 直接改源码后执行 `powershell -ExecutionPolicy Bypass -File scripts/codex-deploy-main.ps1`。该脚本会校验、推送 `main`、让服务器拉取主分支并跳过服务器端前端构建，最后把本地构建好的 `dist` 上传到 EC2，避免 `t3.micro` 上 `vite build` OOM。
+4. **一条命令发布（推荐）**：在本机 `main` 改完代码后执行 `powershell -ExecutionPolicy Bypass -File scripts/release-once.ps1 -Force`。详见 [RELEASE_ONCE.md](./RELEASE_ONCE.md)。旧入口 `scripts/codex-deploy-main.ps1` 仍可用，等价于部分步骤。
 5. **不要用多种脚本混着来**：日常优先使用上面的 Codex 入口。需要「仅快进拉代码、不动硬重置」时可用 `deploy/prod-update-safe.sh`（与 `production-deploy.sh` 略有差异，见脚本注释）。
 
 ### GitHub Actions 自动部署 Secrets（Repository secrets）

@@ -15,6 +15,17 @@ const adminEventService = require('./adminEvent.service');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../../constants/status');
 const { resolveOrderPayableAmount, resolveOrderPaidAmount } = require('../../../utils/orderAmountResolve');
+function getOrderApi() {
+  return /** @type {any} */ (require('../../order')).api || {};
+}
+
+function requireOrderApi(name) {
+  const fn = getOrderApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Order 模块 API 未暴露方法：${name}`);
+  }
+  return fn;
+}
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
 }
@@ -96,7 +107,7 @@ function resolveOrderRealtimeType(status, prevPayment, nextPayment) {
   return 'order.adjusted';
 }
 
-function buildAdminOrderListWhere(query) {
+async function buildAdminOrderListWhere(query) {
   let where = 'WHERE 1=1';
   const params = [];
   const {
@@ -207,7 +218,13 @@ function buildAdminOrderListWhere(query) {
     where += " AND NOT EXISTS (SELECT 1 FROM order_items oi_cost WHERE oi_cost.order_id = o.id AND oi_cost.cost_snapshot_source = 'missing')";
   }
   if (overduePayment === '1' || overduePayment === true) {
-    where += " AND COALESCE(o.payment_status, 'pending') = 'pending' AND o.created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR)";
+    const { enabled, minutes } = await requireOrderApi('loadPaymentTimeoutSettings')()
+      .catch(() => ({ enabled: false, minutes: 120 }));
+    const thresholdMinutes = enabled ? Math.max(1, Number(minutes || 30)) : 120;
+    where += ` AND o.status = 'pending'
+      AND COALESCE(o.payment_status, 'pending') = 'pending'
+      AND o.created_at < DATE_SUB(NOW(), INTERVAL ? MINUTE)`;
+    params.push(thresholdMinutes);
   }
   if (overdueShipment === '1' || overdueShipment === true) {
     where += " AND o.status = 'paid' AND o.payment_status IN ('paid', 'partially_refunded') AND COALESCE(o.paid_at, o.payment_time, o.created_at) < DATE_SUB(NOW(), INTERVAL 24 HOUR)";
@@ -382,7 +399,7 @@ function attachItemsAndAmounts(order, items) {
 async function listOrders(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
-  const { where, params } = buildAdminOrderListWhere(query);
+  const { where, params } = await buildAdminOrderListWhere(query);
   const total = await repo.countOrdersAdmin(where, params);
   const offset = (page - 1) * pageSize;
   const [orders, summaryRows, operationalSummary, financialSummary, globalToday] = await Promise.all([
@@ -1288,7 +1305,7 @@ const ORDER_EXPORT_HEADERS = [
 ];
 
 async function exportOrdersCsv(query) {
-  const { where, params } = buildAdminOrderListWhere(query);
+  const { where, params } = await buildAdminOrderListWhere(query);
   const rows = await repo.selectOrdersForExport(where, params);
   const data = rows.map((o) => ({
     id: o.id,

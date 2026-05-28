@@ -12,6 +12,7 @@ import RouteSeoGuard from "@/components/RouteSeoGuard";
 import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
 import ChinaBrowserCompatNotice from "@/components/ChinaBrowserCompatNotice";
+import PwaUpdateToast from "@/components/PwaUpdateToast";
 import FrontLayout from "@/layouts/FrontLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthSessionSync from "@/components/AuthSessionSync";
@@ -217,7 +218,7 @@ function MainStoreRoutes() {
           <TrackingManager />
           {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
           <RouteSeoGuard />
-          {/* <PwaUpdateToast /> */}
+          <PwaUpdateToast />
           <ChinaBrowserCompatNotice />
           <LanguageGate />
           <AgeGate />

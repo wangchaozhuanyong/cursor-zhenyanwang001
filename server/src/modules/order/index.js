@@ -10,6 +10,7 @@ const orderRefundCompensation = require('./service/orderRefundCompensation.servi
 const checkoutAbandonmentService = require('./service/checkoutAbandonment.service');
 const orderPoints = require('./service/orderPoints.service');
 const orderTimeoutEvents = require('./service/orderEventTimeout.service');
+const orderPaymentTimeout = require('./service/orderPaymentTimeout.service');
 
 const router = Router();
 
@@ -66,6 +67,7 @@ const router = Router();
   reverseOrderEarnOnly: orderPoints.reverseOrderEarnOnly,
   rollbackOrderPointsForPartialRefund: orderPoints.rollbackOrderPointsForPartialRefund,
   autoResolveOrderTimeoutEvents: orderTimeoutEvents.autoResolveOrderTimeoutEvents,
+  loadPaymentTimeoutSettings: orderPaymentTimeout.loadPaymentTimeoutSettings,
 };
 
 router.use('/orders', require('./routes/orders.routes'));

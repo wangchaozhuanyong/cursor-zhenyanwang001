@@ -1,28 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, MapPin, MessageCircle } from "lucide-react";
 
-const LOGO_SRC = "/assets/tiktok-logo.jpeg";
+function withViteBase(path: string): string {
+  const base = String(import.meta.env.BASE_URL || "/");
+  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+  return `${normalizedBase}${String(path || "").replace(/^\//, "")}`;
+}
+
+const LOGO_SRC = withViteBase("/assets/tiktok-logo.jpeg");
 const OFFICIAL_TARGET = "/";
 const SERVICES_SECTION_ID = "malaysia-services";
 
 const heroSlides = [
   {
-    image: "/assets/tiktok-hero-city.svg",
+    image: withViteBase("/assets/tiktok-hero-city.svg"),
     title: "吉隆坡城市服务",
     subtitle: "从落地安顿到本地资源，帮你更快进入马来西亚生活节奏。",
   },
   {
-    image: "/assets/tiktok-hero-home.svg",
+    image: withViteBase("/assets/tiktok-hero-home.svg"),
     title: "安家与日常生活",
     subtitle: "找房、搬家、维修、生活缴费，用中文找到可靠服务。",
   },
   {
-    image: "/assets/tiktok-hero-study.svg",
+    image: withViteBase("/assets/tiktok-hero-study.svg"),
     title: "留学与身份规划",
     subtitle: "围绕学习、居住、签证和长期发展，整理清晰服务入口。",
   },
   {
-    image: "/assets/tiktok-hero-business.svg",
+    image: withViteBase("/assets/tiktok-hero-business.svg"),
     title: "商务与资源对接",
     subtitle: "连接商业空间、本地渠道和华人圈资源，降低沟通成本。",
   },

@@ -1321,16 +1321,28 @@ async function insertRewardRecord(q, params) {
   );
 }
 
-async function selectExpiredPendingOrderIds(q, minutes, limit, pendingStatus, pendingPaymentStatus) {
+async function selectExpiredPendingOrderIds(
+  q,
+  minutes,
+  limit,
+  pendingStatus,
+  pendingPaymentStatus,
+  paymentMethods = null,
+) {
+  const methods = paymentMethods === null
+    ? null
+    : (paymentMethods || []).map((m) => String(m || '').trim()).filter(Boolean);
   const [rows] = await q.query(
     `SELECT id FROM orders
      WHERE status = ?
        AND (payment_status IS NULL OR payment_status = ?)
-       AND payment_method = 'online'
+       ${methods ? `AND payment_method IN (${methods.map(() => '?').join(',')})` : ''}
        AND created_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)
      ORDER BY created_at ASC
      LIMIT ?`,
-    [pendingStatus, pendingPaymentStatus, minutes, limit],
+    methods
+      ? [pendingStatus, pendingPaymentStatus, ...methods, minutes, limit]
+      : [pendingStatus, pendingPaymentStatus, minutes, limit],
   );
   return rows.map((r) => r.id);
 }

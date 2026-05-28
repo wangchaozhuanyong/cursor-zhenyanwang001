@@ -80,13 +80,10 @@ async function autoCancelOneOrder(orderId, minutes) {
   try {
     await conn.beginTransaction();
     const order = await orderRepo.selectOrderByIdForUpdate(conn, orderId);
-    const paymentMethod = String(order.payment_method || 'whatsapp');
-    const autoCancelPaymentMethods = new Set(['online', 'points_plus_cash']);
     if (
       !order
       || order.status !== ORDER_STATUS.PENDING
       || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING
-      || !autoCancelPaymentMethods.has(paymentMethod)
       || !isTimedOutByCreatedAt(order, minutes)
     ) {
       await conn.rollback();

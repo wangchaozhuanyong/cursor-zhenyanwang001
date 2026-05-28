@@ -102,7 +102,7 @@ export const SITE_SETTINGS_SECTIONS: SiteSettingsSectionDef[] = [
         key: "orderPaymentTimeoutEnabled",
         label: "未支付订单自动取消",
         type: "switch",
-        hint: "仅在线支付且待付款订单",
+        hint: "所有待付款且未支付订单；支付成功请在订单里确认收款/自动回调更新",
       },
       { key: "orderPaymentTimeoutMinutes", label: "未支付超时（分钟）", placeholder: "30", hint: "1–43200" },
     ],

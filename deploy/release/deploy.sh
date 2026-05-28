@@ -94,14 +94,15 @@ if [[ -f "${shared_dir}/server.env" && ! -f "${release_dir}/server/.env" ]]; the
   ln -sfn "${shared_dir}/server.env" "${release_dir}/server/.env"
 fi
 
-export NODE_ENV
-
 echo "[deploy] 构建前端（storefront + admin）"
 pushd "${release_dir}/click-send-shop-main/click-send-shop-main" >/dev/null
-npm ci
+# Vite 在 devDependencies；NODE_ENV=production 时 npm ci 会省略 dev 依赖导致 vite: not found
+npm ci --include=dev
 npm run build
 npm run build:admin
 popd >/dev/null
+
+export NODE_ENV="${NODE_ENV:-production}"
 
 echo "[deploy] 安装后端依赖"
 pushd "${release_dir}/server" >/dev/null
@@ -160,6 +161,9 @@ fi
 
 echo "[deploy] 健康检查"
 bash "${release_dir}/deploy/release/healthcheck.sh"
+
+echo "[deploy] Cloudflare 缓存清理（若已配置 CF_API_TOKEN / CF_ZONE_ID）"
+CF_ENV_FILE="${release_dir}/server/.env" bash "${release_dir}/deploy/purge-cloudflare-cache.sh" || true
 
 echo "[deploy] 清理旧 release（保留 ${KEEP_RELEASES} 个）"
 if [[ "${KEEP_RELEASES}" =~ ^[0-9]+$ ]] && (( KEEP_RELEASES > 0 )); then

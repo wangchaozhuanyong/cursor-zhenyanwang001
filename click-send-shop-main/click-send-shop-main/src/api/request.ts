@@ -240,12 +240,12 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       };
       return request<T>(endpoint, { ...options, headers: retryHeaders }, false);
     } catch {
-      clearTokens();
       if (!shouldSuppressAuthExpired(options)) {
+        clearTokens();
         notifyAuthExpired();
-      }
-      if (shouldRedirectToLogin(options, isAuthLogout, isAccountCancel)) {
-        window.location.href = "/login";
+        if (shouldRedirectToLogin(options, isAuthLogout, isAccountCancel)) {
+          window.location.href = "/login";
+        }
       }
       throw new ApiError(401, "登录已过期，请重新登录");
     }
@@ -301,11 +301,9 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     if (res.status === 401 && isAdminEndpoint) {
       redirectToAdminLogin("admin-401-no-retry");
     }
-    if (res.status === 401 && !isAdminEndpoint) {
+    if (res.status === 401 && !isAdminEndpoint && !shouldSuppressAuthExpired(options)) {
       clearTokens();
-      if (!shouldSuppressAuthExpired(options)) {
-        notifyAuthExpired();
-      }
+      notifyAuthExpired();
     }
     throw new ApiError(res.status, extractResponseMessage(body, res.status), {
       ...body,
@@ -334,7 +332,7 @@ export function get<T>(
 export function post<T>(
   endpoint: string,
   body?: unknown,
-  options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal">,
+  options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal" | "skipAuthRetry" | "suppressAuthExpired">,
 ) {
   return request<ApiResponse<T>>(endpoint, {
     method: "POST",
@@ -342,6 +340,8 @@ export function post<T>(
     skipGlobalLoading: options?.skipGlobalLoading,
     loadingMode: options?.loadingMode,
     signal: options?.signal,
+    skipAuthRetry: options?.skipAuthRetry,
+    suppressAuthExpired: options?.suppressAuthExpired,
   });
 }
 

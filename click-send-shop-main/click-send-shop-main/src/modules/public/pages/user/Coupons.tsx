@@ -1,4 +1,5 @@
-import { useState, useEffect, forwardRef } from "react";
+import { useState, useEffect, forwardRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Ticket, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ import type { UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { cn } from "@/lib/utils";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import { STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
 import {
   THEME_ACCENT_HERO_LABEL,
   THEME_ACCENT_HERO_MUTED,
@@ -103,6 +105,7 @@ function filterByTab(coupons: DisplayCoupon[], tab: Tab): DisplayCoupon[] {
 }
 
 export default function Coupons() {
+  const navigate = useNavigate();
   const goBack = useGoBack();
   const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
   const [tab, setTab] = useState<Tab>("mine");
@@ -163,16 +166,26 @@ export default function Coupons() {
     );
   }
 
+  const isSessionExpired = error === STORE_SESSION_EXPIRED_MESSAGE;
+
+  const handleRetry = useCallback(() => {
+    if (isSessionExpired) {
+      navigate("/login", { state: { from: "/coupons" }, replace: true });
+      return;
+    }
+    void loadCoupons();
+  }, [isSessionExpired, loadCoupons, navigate]);
+
   if (error && rawCoupons.length === 0) {
     return (
       <div className="store-page flex min-h-screen flex-col items-center justify-center gap-3 px-[var(--store-page-x)] sm:px-4">
         <p className="text-sm text-[var(--theme-danger)]">{error}</p>
         <button
           type="button"
-          onClick={() => loadCoupons()}
+          onClick={handleRetry}
           className={cn("rounded-full px-6 py-2.5 text-sm font-bold", THEME_BTN_PRICE)}
         >
-          重试
+          {isSessionExpired ? "去登录" : "重试"}
         </button>
       </div>
     );

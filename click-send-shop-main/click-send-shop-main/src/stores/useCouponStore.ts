@@ -2,8 +2,37 @@ import { create } from "zustand";
 import type { UserCoupon } from "@/types/coupon";
 import * as couponService from "@/services/couponService";
 import { isLoggedIn } from "@/utils/token";
+import { ApiError } from "@/types/common";
+import { ensureStoreSession, STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
+import { restoreSessionFromCookie } from "@/services/authService";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 const COUPON_PAGE_SIZE = 50;
+function isAuthError(err: unknown): boolean {
+  return err instanceof ApiError && err.code === 401;
+}
+
+async function fetchCouponListPayload(): Promise<UserCoupon[]> {
+  const available = await couponService.fetchAvailableCoupons(0);
+  const userCoupons: UserCoupon[] = [];
+  let page = 1;
+  let total = 0;
+  let lastBatchSize = 0;
+
+  do {
+    const userData = await couponService.fetchUserCoupons({
+      status: "all",
+      page,
+      pageSize: COUPON_PAGE_SIZE,
+    });
+    userCoupons.push(...userData.list);
+    total = userData.total;
+    lastBatchSize = userData.list.length;
+    page += 1;
+  } while (lastBatchSize > 0 && userCoupons.length < total);
+
+  return [...available, ...userCoupons];
+}
 
 interface CouponState {
   coupons: UserCoupon[];
@@ -23,31 +52,37 @@ export const useCouponStore = create<CouponState>((set, get) => ({
     const hasCached = get().coupons.length > 0;
     set({ loading: !hasCached, error: null });
     try {
-      if (!isLoggedIn()) {
+      if (!isLoggedIn() && !useAuthStore.getState().isAuthenticated) {
         set({ coupons: [], loading: false });
         return;
       }
 
-      const available = await couponService.fetchAvailableCoupons(0);
-      const userCoupons: UserCoupon[] = [];
-      let page = 1;
-      let total = 0;
-      let lastBatchSize = 0;
+      const sessionReady = await ensureStoreSession();
+      if (!sessionReady) {
+        set({ coupons: [], loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
+        return;
+      }
 
-      do {
-        const userData = await couponService.fetchUserCoupons({
-          status: "all",
-          page,
-          pageSize: COUPON_PAGE_SIZE,
-        });
-        userCoupons.push(...userData.list);
-        total = userData.total;
-        lastBatchSize = userData.list.length;
-        page += 1;
-      } while (lastBatchSize > 0 && userCoupons.length < total);
-
-      set({ coupons: [...available, ...userCoupons], loading: false });
+      try {
+        set({ coupons: await fetchCouponListPayload(), loading: false });
+        return;
+      } catch (err) {
+        if (!isAuthError(err)) throw err;
+        const restored = await restoreSessionFromCookie();
+        if (!restored) {
+          useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
+          set({ coupons: [], loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
+          return;
+        }
+        useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
+        set({ coupons: await fetchCouponListPayload(), loading: false });
+      }
     } catch (err) {
+      if (isAuthError(err)) {
+        useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
+        set({ coupons: [], loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
+        return;
+      }
       set({
         loading: false,
         error: err instanceof Error ? err.message : "加载优惠券失败",

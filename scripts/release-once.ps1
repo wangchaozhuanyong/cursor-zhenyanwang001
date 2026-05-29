@@ -142,7 +142,7 @@ if (-not $SkipUpload) {
   Run-Step '4/5 upload dist' {
     & (Join-Path $PSScriptRoot 'upload-frontend-dist-ec2.ps1') `
       -ServerHost $ServerIp -ServerUser $ServerUser `
-      -RemoteProjectRoot $RemoteProjectDir -IdentityFile $SshKeyPath -SyncPublicFrontend
+      -RemoteProjectRoot $RemoteProjectDir -IdentityFile $SshKeyPath
     if ($LASTEXITCODE -ne 0) { throw 'upload-frontend-dist failed' }
   }
 }

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { ensureStoreSession } from "@/lib/ensureStoreSession";
 import { Ticket } from "lucide-react";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import { useCouponStore } from "@/stores/useCouponStore";
@@ -11,6 +13,7 @@ import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
 
 export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
   const [payload, setPayload] = useState<Awaited<ReturnType<typeof marketingService.fetchCouponCenter>>>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -38,6 +41,21 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
 
   if (!payload?.coupons?.length) return null;
 
+  const openAllCoupons = () => {
+    void (async () => {
+      if (!isAuthenticated) {
+        navigate("/login", { state: { from: "/coupons" } });
+        return;
+      }
+      const ok = await ensureStoreSession();
+      if (!ok) {
+        navigate("/login", { state: { from: "/coupons" } });
+        return;
+      }
+      navigate("/coupons");
+    })();
+  };
+
   return (
     <section className="w-full">
       <div className="mb-3 flex items-center justify-between">
@@ -45,7 +63,7 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
           <Ticket className="h-5 w-5 text-[var(--theme-primary)]" />
           {payload.activity.title || "领券中心"}
         </h2>
-        <button type="button" onClick={() => navigate("/coupons")} className="text-xs font-semibold text-[var(--theme-primary)]">
+        <button type="button" onClick={openAllCoupons} className="text-xs font-semibold text-[var(--theme-primary)]">
           全部优惠券
         </button>
       </div>

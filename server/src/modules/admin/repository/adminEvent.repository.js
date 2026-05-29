@@ -218,6 +218,7 @@ async function selectCategoryCounts(adminUserId, query = {}) {
 }
 
 async function selectTabCounts(adminUserId, query = {}) {
+  /** @type {Record<string, any>} */
   const baseQuery = { ...query };
   delete baseQuery.tab;
   delete baseQuery.page;
@@ -246,6 +247,7 @@ async function selectTabCounts(adminUserId, query = {}) {
 }
 
 async function selectSummary(adminUserId, query = {}) {
+  /** @type {Record<string, any>} */
   const summaryQuery = { ...query };
   delete summaryQuery.page;
   delete summaryQuery.pageSize;

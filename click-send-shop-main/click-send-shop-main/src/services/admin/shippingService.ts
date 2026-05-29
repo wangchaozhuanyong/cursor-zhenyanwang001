@@ -13,12 +13,12 @@ export async function createTemplate(data: Omit<ShippingTemplate, "id">) {
 }
 
 export async function updateTemplate(id: number, data: Partial<ShippingTemplate>) {
-  const res = await shippingApi.updateShippingTemplate(id, data);
+  const res = await shippingApi.updateShippingTemplate(String(id), data);
   return res.data;
 }
 
 export async function deleteTemplate(id: number) {
-  await shippingApi.deleteShippingTemplate(id);
+  await shippingApi.deleteShippingTemplate(String(id));
 }
 
 export async function fetchGlobalSettings() {

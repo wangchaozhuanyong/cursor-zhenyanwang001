@@ -7,14 +7,42 @@ const { generateId } = require('../../../utils/helpers');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { getStorageHealthReport } = require('../../../utils/objectStorage');
 const repo = require('../repository/backup.repository');
-const {
-  getBackupDir,
-  ensureDir,
-  defaultMinFreeBytes,
-  getAvailableBytes,
-} = require('../../../../scripts/backup/backup-lib');
 
 const SERVER_ROOT = path.resolve(__dirname, '../../../..');
+
+function getBackupDir(...parts) {
+  return path.join(process.env.BACKUP_LOCAL_DIR || path.join(SERVER_ROOT, 'backups'), ...parts);
+}
+
+async function ensureDir(dir) {
+  await fsp.mkdir(dir, { recursive: true });
+}
+
+function defaultMinFreeBytes(extraBytes = 0) {
+  const configured = Number(process.env.BACKUP_MIN_FREE_BYTES || 0);
+  if (configured > 0) return configured + Number(extraBytes || 0);
+  return 1024 * 1024 * 1024 + Number(extraBytes || 0);
+}
+
+async function findExistingParent(dirPath) {
+  let current = path.resolve(dirPath);
+  while (current && current !== path.dirname(current)) {
+    try {
+      const stat = await fsp.stat(current);
+      if (stat.isDirectory()) return current;
+    } catch {
+      current = path.dirname(current);
+    }
+  }
+  return current || path.parse(path.resolve(dirPath)).root;
+}
+
+async function getAvailableBytes(dirPath) {
+  if (typeof fsp.statfs !== 'function') return null;
+  const target = await findExistingParent(dirPath);
+  const stat = await fsp.statfs(target);
+  return Number(stat.bavail) * Number(stat.bsize);
+}
 
 function pageParams(query = {}) {
   const page = Math.max(1, Number.parseInt(query.page, 10) || 1);

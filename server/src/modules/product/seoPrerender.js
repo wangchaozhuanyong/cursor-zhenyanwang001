@@ -299,10 +299,6 @@ async function registerSeoPrerender(app, { frontendDist }) {
     const categoryDescription = String(category?.seo_description || category?.description || '').trim();
     return {
       ...buildHomePayload(baseUrl, siteInfo),
-      title: categoryName ? `${categoryName}｜${siteName}` : `全部分类｜${siteName}`,
-      description: categoryName
-        ? `浏览${siteName} ${categoryName} 相关商品与服务信息。`
-        : `浏览${siteName}的商品与服务分类信息。`,
       canonical: categoryName
         ? `${baseUrl}/categories?cat=${encodeURIComponent(category.id)}`
         : `${baseUrl}/categories`,

@@ -118,6 +118,15 @@ export default function Coupons() {
 
   const coupons = rawCoupons.map((uc) => toDisplayCoupon(uc));
   const available = coupons.filter((c) => c.status === "available");
+  const isSessionExpired = error === STORE_SESSION_EXPIRED_MESSAGE;
+
+  const handleRetry = useCallback(() => {
+    if (isSessionExpired) {
+      navigate("/login", { state: { from: "/coupons" }, replace: true });
+      return;
+    }
+    void loadCoupons();
+  }, [isSessionExpired, loadCoupons, navigate]);
   const usableCount = coupons.filter((c) => c.status === "claimed").length;
   const list = pageView === "claimCenter" ? available : filterByTab(coupons, tab);
 
@@ -165,16 +174,6 @@ export default function Coupons() {
       </div>
     );
   }
-
-  const isSessionExpired = error === STORE_SESSION_EXPIRED_MESSAGE;
-
-  const handleRetry = useCallback(() => {
-    if (isSessionExpired) {
-      navigate("/login", { state: { from: "/coupons" }, replace: true });
-      return;
-    }
-    void loadCoupons();
-  }, [isSessionExpired, loadCoupons, navigate]);
 
   if (error && rawCoupons.length === 0) {
     return (

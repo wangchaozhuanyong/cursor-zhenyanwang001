@@ -101,6 +101,10 @@ async function getBackupHealth() {
     ? makeCheck('BACKUP_ENCRYPTION_KEY', '备份加密密钥', 'ok', '已配置')
     : makeCheck('BACKUP_ENCRYPTION_KEY', '备份加密密钥', process.env.NODE_ENV === 'production' ? 'fail' : 'warn', '未配置，非生产环境会使用本地兜底密钥'));
 
+  checks.push(String(process.env.DB_NAME || '').trim()
+    ? makeCheck('DB_NAME', '数据库名称', 'ok', '已配置')
+    : makeCheck('DB_NAME', '数据库名称', 'fail', '未配置，无法确认要备份哪个数据库'));
+
   const backupBucket = String(process.env.BACKUP_S3_BUCKET || '').trim();
   const allowLocalOnly = process.env.BACKUP_ALLOW_LOCAL_ONLY === '1';
   if (backupBucket) {

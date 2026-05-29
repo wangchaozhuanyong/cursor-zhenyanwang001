@@ -111,14 +111,9 @@ async function getMemberBenefitsOverview(userId) {
   const [currentBundle, levels, userRows] = await Promise.all([
     getUserMemberLevel(userId),
     repo.selectEnabledLevels(pool).catch(() => []),
-    pool.query(
-      `SELECT id, nickname, avatar, points_balance, birthday
-       FROM users
-       WHERE id = ? AND deleted_at IS NULL`,
-      [userId],
-    ).catch(() => [[]]),
+    repo.selectMemberBenefitsUser(pool, userId).catch(() => null),
   ]);
-  const user = userRows?.[0]?.[0] || {};
+  const user = userRows || {};
   const currentLevel = currentBundle.level;
   const stats = normalizeStats(currentBundle.stats);
   const normalizedLevels = levels.map(normalizeLevel).filter(Boolean);
@@ -202,4 +197,3 @@ module.exports = {
   refreshUserMemberLevel,
   normalizeLevel,
 };
-

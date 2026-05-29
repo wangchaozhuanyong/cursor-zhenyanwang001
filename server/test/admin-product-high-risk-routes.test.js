@@ -35,6 +35,7 @@ describe('admin sensitive action routes', () => {
 
   test('backup read endpoints do not require MFA step-up', () => {
     assert.equal(getSensitiveActionClass(req('GET', '/backups/overview')), '');
+    assert.equal(getSensitiveActionClass(req('GET', '/backups/health')), '');
     assert.equal(getSensitiveActionClass(req('GET', '/backups/files')), '');
     assert.equal(getSensitiveActionClass(req('GET', '/backups/alerts')), '');
     assert.equal(getSensitiveActionClass(req('GET', '/restore/jobs')), '');

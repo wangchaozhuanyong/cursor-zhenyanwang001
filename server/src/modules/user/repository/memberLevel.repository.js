@@ -75,6 +75,16 @@ async function selectUserPaidStats(q, userId) {
   };
 }
 
+async function selectMemberBenefitsUser(q, userId) {
+  const [[row]] = await q.query(
+    `SELECT id, nickname, avatar, points_balance, birthday
+     FROM users
+     WHERE id = ? AND deleted_at IS NULL`,
+    [userId],
+  );
+  return row || null;
+}
+
 async function updateUserMemberLevel(q, userId, levelId) {
   await q.query('UPDATE users SET member_level_id = ? WHERE id = ?', [levelId, userId]);
 }
@@ -99,8 +109,8 @@ module.exports = {
   selectDefaultLevel,
   selectUserCurrentLevel,
   selectUserPaidStats,
+  selectMemberBenefitsUser,
   updateUserMemberLevel,
   updateUserMemberLevelCalculated,
 };
-
 

@@ -28,7 +28,7 @@ async function selectActiveBanners() {
 async function selectActiveCategories() {
   return publicRows(
     'categories',
-    `SELECT id, parent_id, name, icon, icon_url, sort_order, is_visible, is_active
+    `SELECT id, parent_id, name, description, buying_guide, faq_json, seo_title, seo_description, icon, icon_url, sort_order, is_visible, is_active
      FROM categories
      WHERE is_active = 1 AND is_visible = 1 AND deleted_at IS NULL
      ORDER BY parent_id IS NOT NULL, parent_id ASC, sort_order ASC, id ASC`,
@@ -37,7 +37,7 @@ async function selectActiveCategories() {
 
 async function selectCategoryById(id) {
   const [[row]] = await db.query(
-    `SELECT id, parent_id, name, icon, icon_url, sort_order, is_visible, is_active
+    `SELECT id, parent_id, name, description, buying_guide, faq_json, seo_title, seo_description, icon, icon_url, sort_order, is_visible, is_active
      FROM categories
      WHERE id = ? AND deleted_at IS NULL`,
     [id],
@@ -317,5 +317,4 @@ module.exports = {
   selectRelatedByCategory,
   insertHomeEngagementEvent,
 };
-
 

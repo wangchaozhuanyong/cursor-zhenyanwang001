@@ -1,12 +1,12 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { Plus, Pencil, Trash2, ClipboardList } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Archive, Ban, ClipboardList, PauseCircle, Pencil, Plus, Trash2, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
-import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import * as couponService from "@/services/admin/couponService";
+import type { CouponOperation } from "@/services/admin/couponService";
 import type { Coupon } from "@/types/coupon";
 import * as userService from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -57,6 +57,35 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   expired: { label: "已过期", color: THEME_BADGE_MUTED },
 };
 
+const couponOperationCopy: Record<CouponOperation, { title: string; description: string; confirmText: string; success: string; danger?: boolean }> = {
+  "pause-claim": {
+    title: "暂停领取优惠券",
+    description: "只会停止新用户继续领取，已经领到手的优惠券不受影响。",
+    confirmText: "暂停领取",
+    success: "已暂停领取",
+  },
+  "disable-use": {
+    title: "停止使用优惠券",
+    description: "会停止这张优惠券继续使用，并作废当前未使用的用户券。",
+    confirmText: "停止使用",
+    success: "已停止使用",
+    danger: true,
+  },
+  archive: {
+    title: "归档优惠券",
+    description: "优惠券会从常规列表隐藏，适合下线已结束的运营券。",
+    confirmText: "归档",
+    success: "已归档",
+  },
+  "invalidate-user-coupons": {
+    title: "作废已领取优惠券",
+    description: "会把用户已经领取但还没使用的券作废，已使用记录会保留。",
+    confirmText: "作废已领券",
+    success: "已作废未使用的用户券",
+    danger: true,
+  },
+};
+
 export default function AdminCoupons() {
   const { tText } = useAdminT();
   const { couponType: labelCouponType, couponStatus: labelCouponStatus, text: L } = useAdminDisplayLabel();
@@ -67,10 +96,22 @@ export default function AdminCoupons() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [issueCouponId, setIssueCouponId] = useState<string | null>(null);
   const [issueTagId, setIssueTagId] = useState("");
+  const [operation, setOperation] = useState<{ coupon: Coupon; type: CouponOperation } | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const couponFilters = useMemo(
+    () => ({
+      page,
+      pageSize,
+      keyword: search.trim() || undefined,
+    }),
+    [page, pageSize, search],
+  );
 
   const couponsQuery = useQuery({
-    queryKey: adminQueryKeys.coupons(),
-    queryFn: () => couponService.fetchCoupons(),
+    queryKey: [...adminQueryKeys.coupons(), couponFilters],
+    queryFn: () => couponService.fetchCoupons(couponFilters),
     staleTime: 60_000,
     refetchOnMount: true,
   });
@@ -88,13 +129,12 @@ export default function AdminCoupons() {
   );
   const loading = couponsQuery.isLoading && !couponsQuery.data;
   const couponsEmptyGuide = useLocalizedAdminEmptyGuide(ADMIN_EMPTY_GUIDES.coupons);
+  const total = couponsQuery.data?.total ?? 0;
 
-  const filteredCoupons = coupons.filter((coupon) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return coupon.title?.toLowerCase().includes(q) || coupon.code?.toLowerCase().includes(q);
-  });
-  const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filteredCoupons, 10);
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) setPage(totalPages);
+  }, [page, pageSize, total]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => couponService.deleteCoupon(id),
@@ -107,12 +147,31 @@ export default function AdminCoupons() {
 
   const issueMutation = useMutation({
     mutationFn: ({ couponId, tagIds }: { couponId: string; tagIds: string[] }) => couponService.issueCouponByTag(couponId, tagIds),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       toast.success(`发放完成：${result?.issued || 0}/${result?.targetUsers || 0}`);
       setIssueCouponId(null);
       setIssueTagId("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponRecordsRoot() }),
+      ]);
     },
     onError: (error) => toast.error(toastErrorMessage(error, "发放失败")),
+  });
+
+  const operationMutation = useMutation({
+    mutationFn: ({ coupon, type }: { coupon: Coupon; type: CouponOperation }) =>
+      couponService.operateCoupon(coupon.id, type, "后台手动作废已领取优惠券"),
+    onSuccess: async (_result, variables) => {
+      toast.success(tText(couponOperationCopy[variables.type].success));
+      setOperation(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponRecordsRoot() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
+      ]);
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "操作失败")),
   });
 
   const renderMobileCard = (coupon: Coupon) => {
@@ -143,6 +202,8 @@ export default function AdminCoupons() {
           <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>编辑</Tx></button>
           <PermissionGate permission="coupon.manage">
             <button type="button" onClick={() => setIssueCouponId(coupon.id)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>发券</Tx></button>
+            <button type="button" onClick={() => setOperation({ coupon, type: "pause-claim" })} className="touch-manipulation rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><PauseCircle size={13} className="mr-1 inline" /><Tx>暂停领取</Tx></button>
+            <button type="button" onClick={() => setOperation({ coupon, type: "disable-use" })} className={`touch-manipulation rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_DANGER}`}><Ban size={13} className="mr-1 inline" /><Tx>停止使用</Tx></button>
             <button type="button" onClick={() => setDeleteId(coupon.id)} className={`touch-manipulation rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_DANGER}`}><Trash2 size={13} className="inline" /></button>
           </PermissionGate>
         </div>
@@ -161,12 +222,12 @@ export default function AdminCoupons() {
           </PermissionGate>
         </div>
       )}
-      filters={<SearchBar placeholder={tText("搜索标题/编码")} value={search} onChange={setSearch} />}
+      filters={<SearchBar placeholder={tText("搜索标题/编码")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />}
     >
 
       <AnimatedTable
         loading={loading}
-        rows={paginatedData}
+        rows={coupons}
         rowKey={(coupon) => coupon.id}
         skeletonRows={8}
         skeletonCols={8}
@@ -217,6 +278,32 @@ export default function AdminCoupons() {
                       onClick: () => setIssueCouponId(coupon.id),
                     },
                     {
+                      key: "pause-claim",
+                      label: <Tx>暂停领取</Tx>,
+                      icon: <PauseCircle size={14} aria-hidden />,
+                      onClick: () => setOperation({ coupon, type: "pause-claim" }),
+                    },
+                    {
+                      key: "disable-use",
+                      label: <Tx>停止使用</Tx>,
+                      icon: <Ban size={14} aria-hidden />,
+                      danger: true,
+                      onClick: () => setOperation({ coupon, type: "disable-use" }),
+                    },
+                    {
+                      key: "archive",
+                      label: <Tx>归档</Tx>,
+                      icon: <Archive size={14} aria-hidden />,
+                      onClick: () => setOperation({ coupon, type: "archive" }),
+                    },
+                    {
+                      key: "invalidate-user-coupons",
+                      label: <Tx>作废已领券</Tx>,
+                      icon: <XCircle size={14} aria-hidden />,
+                      danger: true,
+                      onClick: () => setOperation({ coupon, type: "invalidate-user-coupons" }),
+                    },
+                    {
                       key: "delete",
                       label: <Tx>删除</Tx>,
                       icon: <Trash2 size={14} aria-hidden />,
@@ -242,6 +329,18 @@ export default function AdminCoupons() {
           if (!deleteId) return;
           deleteMutation.mutate(deleteId);
           setDeleteId(null);
+        }}
+      />
+      <AnimatedConfirmDialog
+        open={!!operation}
+        onOpenChange={(open) => !open && setOperation(null)}
+        danger={operation ? couponOperationCopy[operation.type].danger : false}
+        title={operation ? tText(couponOperationCopy[operation.type].title) : ""}
+        description={operation ? couponOperationCopy[operation.type].description : ""}
+        confirmText={operation ? couponOperationCopy[operation.type].confirmText : ""}
+        onConfirm={() => {
+          if (!operation) return;
+          operationMutation.mutate(operation);
         }}
       />
       <AnimatedConfirmDialog

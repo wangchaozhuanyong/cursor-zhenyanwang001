@@ -107,10 +107,11 @@ async function getAccessContext(userId, legacyRole) {
 
   const permissions = await repo.selectPermissionCodesByUserId(userId);
   const roleCodes = await repo.selectRoleCodesByUserId(userId);
+  const isSuperAdmin = (roleCodes || []).includes('super_admin');
 
   return {
-    isSuperAdmin: false,
-    permissions: permissions || [],
+    isSuperAdmin,
+    permissions: isSuperAdmin ? [...ALL_ADMIN_PERMISSION_CODES] : (permissions || []),
     roleCodes: roleCodes || [],
   };
 }
@@ -529,6 +530,5 @@ module.exports = {
   revokeAdminTrustedDevice,
   ALL_ADMIN_PERMISSION_CODES,
 };
-
 
 

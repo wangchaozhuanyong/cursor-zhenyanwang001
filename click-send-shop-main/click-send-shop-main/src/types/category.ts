@@ -1,6 +1,16 @@
+export interface CategoryFaq {
+  question: string;
+  answer: string;
+}
+
 export interface Category {
   id: string;
   name: string;
+  description?: string;
+  buying_guide?: string;
+  faq?: CategoryFaq[];
+  seo_title?: string;
+  seo_description?: string;
   icon?: string;
   icon_url?: string;
   sort_order?: number;

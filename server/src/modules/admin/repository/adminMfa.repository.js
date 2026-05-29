@@ -9,9 +9,15 @@ async function upsertPendingMfaSettings(userId, encryptedSecret) {
   await db.query(
     `INSERT INTO admin_mfa_settings (user_id, totp_secret_enc, enabled)
      VALUES (?, ?, 0)
-     ON DUPLICATE KEY UPDATE totp_secret_enc = VALUES(totp_secret_enc), updated_at = CURRENT_TIMESTAMP`,
+     ON DUPLICATE KEY UPDATE
+       totp_secret_enc = CASE
+         WHEN enabled = 0 AND totp_secret_enc IS NOT NULL AND totp_secret_enc <> '' THEN totp_secret_enc
+         ELSE VALUES(totp_secret_enc)
+       END,
+       updated_at = CURRENT_TIMESTAMP`,
     [userId, encryptedSecret],
   );
+  return selectMfaSettings(userId);
 }
 
 async function enableMfa(userId, encryptedSecret) {

@@ -24,7 +24,15 @@ export async function adminLogin(
   return applyAdminLoginPayload(res.data as unknown as Record<string, unknown>, username);
 }
 
-function applyAdminLoginPayload(d: Record<string, unknown>, username: string): AdminLoginResult {
+function clearAdminSessionState(): void {
+  clearAdminTokens();
+  clearAdminCsrfToken();
+  localStorage.removeItem(ADMIN_FLAG_KEY);
+  useAdminPermissionStore.getState().clear();
+  clearAdminQueryCache();
+}
+
+async function applyAdminLoginPayload(d: Record<string, unknown>, username: string): Promise<AdminLoginResult> {
   if (d.mfaRequired || d.mfaSetupRequired) {
     return {
       mfaRequired: Boolean(d.mfaRequired),
@@ -56,6 +64,13 @@ function applyAdminLoginPayload(d: Record<string, unknown>, username: string): A
     isSuperAdmin,
     roleCodes: (d.roleCodes as string[]) || [],
   };
+
+  try {
+    await fetchAdminProfile();
+  } catch (err) {
+    clearAdminSessionState();
+    throw err;
+  }
 
   return {
     token: accessToken,
@@ -138,9 +153,5 @@ export async function adminLogout(): Promise<void> {
   try {
     await accountApi.adminLogoutApi();
   } catch { /* best-effort */ }
-  clearAdminTokens();
-  clearAdminCsrfToken();
-  localStorage.removeItem(ADMIN_FLAG_KEY);
-  useAdminPermissionStore.getState().clear();
-  clearAdminQueryCache();
+  clearAdminSessionState();
 }

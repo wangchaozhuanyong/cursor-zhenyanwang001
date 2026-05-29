@@ -232,58 +232,60 @@ export default function AdminWorkTabs() {
           <ChevronRight size={16} />
         </button>
 
-        <div ref={listRef} className="relative mx-1 shrink-0">
-          <button
-            ref={listBtnRef}
-            type="button"
-            aria-label={tText("全部标签")}
-            aria-expanded={listOpen}
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenu(null);
-              setListOpen((open) => !open);
-            }}
-            className="flex h-7 items-center gap-0.5 rounded-md border border-[var(--theme-border)] px-2 text-[11px] text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            <Tx>全部</Tx>
-            <ChevronDown size={12} className={cn("transition-transform", listOpen ? "rotate-180" : "")} />
-          </button>
-          <AnchoredMenu open={listOpen} onClose={() => setListOpen(false)} anchorRef={listBtnRef} width={224} gap={6}>
-            <div className="max-h-64 overflow-y-auto py-1 text-sm" onClick={(e) => e.stopPropagation()}>
-              {tabs.map((tab) => {
-                const active = tab.id === activeTabId || tab.id === currentKey;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary",
-                      active ? "font-semibold text-foreground" : "text-muted-foreground",
-                    )}
-                    onClick={() => {
-                      activateTab(tab);
-                      setListOpen(false);
-                    }}
-                  >
-                    {tab.pinned ? <Pin size={12} className="shrink-0 opacity-70" /> : <span className="w-3 shrink-0" />}
-                    <span className="min-w-0 flex-1 truncate">{tab.title}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </AnchoredMenu>
-        </div>
+        <div className="flex h-full shrink-0 items-center gap-1.5 border-l border-[var(--theme-border)]/70 pl-1.5 pr-2">
+          <div ref={listRef} className="relative shrink-0">
+            <button
+              ref={listBtnRef}
+              type="button"
+              aria-label={tText("全部标签")}
+              aria-expanded={listOpen}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenu(null);
+                setListOpen((open) => !open);
+              }}
+              className="flex h-8 min-w-[4.25rem] items-center justify-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-2.5 text-[12px] font-medium leading-none text-muted-foreground shadow-sm transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <Tx>全部</Tx>
+              <ChevronDown size={13} className={cn("shrink-0 transition-transform", listOpen ? "rotate-180" : "")} />
+            </button>
+            <AnchoredMenu open={listOpen} onClose={() => setListOpen(false)} anchorRef={listBtnRef} width={224} gap={6}>
+              <div className="max-h-64 overflow-y-auto py-1 text-sm" onClick={(e) => e.stopPropagation()}>
+                {tabs.map((tab) => {
+                  const active = tab.id === activeTabId || tab.id === currentKey;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={cn(
+                        "flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary",
+                        active ? "font-semibold text-foreground" : "text-muted-foreground",
+                      )}
+                      onClick={() => {
+                        activateTab(tab);
+                        setListOpen(false);
+                      }}
+                    >
+                      {tab.pinned ? <Pin size={12} className="shrink-0 opacity-70" /> : <span className="w-3 shrink-0" />}
+                      <span className="min-w-0 flex-1 truncate">{tab.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </AnchoredMenu>
+          </div>
 
-        <div
-          className={cn(
-            "mr-2 shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium",
-            isFull
-              ? "border-destructive/40 bg-destructive/10 text-destructive"
-              : "border-[var(--theme-border)] bg-[var(--theme-card)] text-muted-foreground",
-          )}
-          title={isFull ? tText("标签已达上限，请关闭不需要的页面") : tText("已打开页面数量")}
-        >
-          {tabs.length}/{ADMIN_WORK_TABS_MAX}
+          <div
+            className={cn(
+              "flex h-8 min-w-[3.5rem] shrink-0 items-center justify-center rounded-full border px-2.5 text-[12px] font-semibold leading-none shadow-sm",
+              isFull
+                ? "border-destructive/40 bg-destructive/10 text-destructive"
+                : "border-[var(--theme-border)] bg-[var(--theme-card)] text-muted-foreground",
+            )}
+            title={isFull ? tText("标签已达上限，请关闭不需要的页面") : tText("已打开页面数量")}
+          >
+            {tabs.length}/{ADMIN_WORK_TABS_MAX}
+          </div>
         </div>
       </div>
 

@@ -121,6 +121,10 @@ async function main() {
       finishedAt: new Date(),
       metadata: { storageKey, sizeBytes, sha256 },
     }));
+    await backupService.resolveBackupAlerts({
+      alertTypes: uploaded.skipped ? ['full_failed'] : ['full_failed', 's3_upload_failed'],
+      remark: 'full backup completed successfully',
+    });
   } catch (err) {
     await safeRepo('mark failed', () => repo.updateBackupJob(jobId, {
       status: 'failed',

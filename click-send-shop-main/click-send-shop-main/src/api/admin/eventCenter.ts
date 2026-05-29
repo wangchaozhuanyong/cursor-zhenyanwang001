@@ -109,7 +109,7 @@ export function getAdminEvents(params?: AdminEventListParams) {
   return get<PaginatedData<AdminEventRecord>>("/admin/event-center/events", params as unknown as Record<string, string>);
 }
 
-export function getAdminEventSummary(params?: Pick<AdminEventListParams, "tab">) {
+export function getAdminEventSummary(params?: Pick<AdminEventListParams, "tab" | "category" | "severity" | "unread" | "keyword">) {
   return get<AdminEventSummary>("/admin/event-center/summary", params as unknown as Record<string, string>);
 }
 

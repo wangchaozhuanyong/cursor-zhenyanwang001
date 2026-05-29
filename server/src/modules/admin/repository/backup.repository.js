@@ -356,6 +356,29 @@ async function insertAlert(alert) {
   );
 }
 
+async function resolveAlerts({ alertTypes = [], relatedJobId = null, relatedFileId = null } = {}) {
+  const types = Array.isArray(alertTypes) ? alertTypes.filter(Boolean) : [];
+  if (!types.length) return 0;
+  const placeholders = types.map(() => '?').join(',');
+  const where = [`status = 'open'`, `alert_type IN (${placeholders})`];
+  const params = [...types];
+  if (relatedJobId) {
+    where.push('related_job_id = ?');
+    params.push(relatedJobId);
+  }
+  if (relatedFileId) {
+    where.push('related_file_id = ?');
+    params.push(relatedFileId);
+  }
+  const [res] = await db.query(
+    `UPDATE backup_alerts
+        SET status = 'resolved', resolved_at = COALESCE(resolved_at, NOW())
+      WHERE ${where.join(' AND ')}`,
+    params,
+  );
+  return Number(res.affectedRows || 0);
+}
+
 async function getOverviewRows() {
   const [[full]] = await db.query(
     `SELECT f.*, j.job_type, j.status AS job_status
@@ -408,6 +431,7 @@ module.exports = {
   listDrillReports,
   listAlerts,
   insertAlert,
+  resolveAlerts,
   getOverviewRows,
   getRecentJobs,
 };

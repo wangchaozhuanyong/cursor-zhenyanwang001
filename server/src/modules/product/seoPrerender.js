@@ -80,6 +80,85 @@ function safeJsonScript(data) {
   return JSON.stringify(data).replace(/<\//g, '<\\/');
 }
 
+function parseJsonArray(value) {
+  try {
+    const parsed = JSON.parse(String(value || '[]'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function buildWebsiteJsonLd(baseUrl, siteInfo) {
+  const siteName = resolveSiteName(siteInfo);
+  const description = truncate(stripHtml(siteInfo.seoDescription || resolveSiteDescription(siteInfo)), 180);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: siteName,
+    url: baseUrl,
+    description,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${baseUrl}/search?keyword={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}
+
+function buildOrganizationJsonLd(baseUrl, siteInfo) {
+  const siteName = resolveSiteName(siteInfo);
+  const description = truncate(stripHtml(siteInfo.seoDescription || resolveSiteDescription(siteInfo)), 180);
+  const sameAs = [
+    siteInfo.facebookUrl,
+    siteInfo.instagramUrl,
+    siteInfo.tiktokUrl,
+    siteInfo.xhsUrl,
+    siteInfo.youtubeUrl,
+    ...parseJsonArray(siteInfo.otherSocialLinks),
+  ].map((url) => String(url || '').trim()).filter(Boolean);
+
+  const output = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: siteName,
+    url: baseUrl,
+    description,
+  };
+  const logo = toAbsolute(baseUrl, siteInfo.logoUrl || siteInfo.faviconUrl || '');
+  if (logo) output.logo = logo;
+  if (sameAs.length > 0) output.sameAs = sameAs;
+  return output;
+}
+
+function buildProductJsonLd(baseUrl, product, description) {
+  if (!product || isRestrictedProduct(product)) return null;
+  const price = Number(product.price);
+  const stock = Number(product.stock || 0);
+  const image = toAbsolute(
+    baseUrl,
+    product.cover_image || (Array.isArray(product.images) ? product.images[0] : ''),
+  );
+  const offers = {
+    '@type': 'Offer',
+    url: `${baseUrl}/product/${encodeURIComponent(product.id)}`,
+    priceCurrency: 'MYR',
+    availability: stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+  };
+  if (Number.isFinite(price) && price >= 0) offers.price = price;
+
+  const output = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: truncate(stripHtml(description || product.description || ''), 200),
+    sku: product.default_variant?.sku_code || product.id,
+    offers,
+  };
+  if (image) output.image = [image];
+  return output;
+}
+
 function renderHtmlWithSeo(baseHtml, payload = {}) {
   let html = baseHtml;
   const title = payload.title || '';
@@ -162,6 +241,10 @@ function buildHomePayload(baseUrl, siteInfo) {
     robots: 'index,follow',
     prerenderH1: siteName,
     prerenderText: description,
+    jsonLd: [
+      buildWebsiteJsonLd(baseUrl, siteInfo),
+      buildOrganizationJsonLd(baseUrl, siteInfo),
+    ],
   };
 }
 
@@ -200,17 +283,48 @@ async function registerSeoPrerender(app, { frontendDist }) {
     description: `查看${resolveSiteName(siteInfo)}最新发布的商品、服务与活动信息。`,
     canonical: `${baseUrl}/new-arrivals`,
   })));
-  app.get('/categories', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
-    ...buildHomePayload(baseUrl, siteInfo),
-    title: `全部分类｜${resolveSiteName(siteInfo)}`,
-    description: `浏览${resolveSiteName(siteInfo)}的商品与服务分类信息。`,
-    canonical: `${baseUrl}/categories`,
-  })));
+  app.get('/categories', (req, res) => render(req, res, async (baseUrl, siteInfo) => {
+    const siteName = resolveSiteName(siteInfo);
+    const categoryId = String(req.query?.cat || '').trim();
+    let category = null;
+    if (categoryId && categoryId !== 'all') {
+      try {
+        category = await catalogService.getCategoryById(categoryId);
+      } catch {
+        category = null;
+      }
+    }
+    const categoryName = String(category?.name || '').trim();
+    const categoryTitle = String(category?.seo_title || '').trim();
+    const categoryDescription = String(category?.seo_description || category?.description || '').trim();
+    return {
+      ...buildHomePayload(baseUrl, siteInfo),
+      title: categoryName ? `${categoryName}｜${siteName}` : `全部分类｜${siteName}`,
+      description: categoryName
+        ? `浏览${siteName} ${categoryName} 相关商品与服务信息。`
+        : `浏览${siteName}的商品与服务分类信息。`,
+      canonical: categoryName
+        ? `${baseUrl}/categories?cat=${encodeURIComponent(category.id)}`
+        : `${baseUrl}/categories`,
+      title: categoryTitle || (categoryName ? `${categoryName}｜${siteName}` : `全部分类｜${siteName}`),
+      description: categoryName
+        ? truncate(stripHtml(categoryDescription || `浏览${siteName} ${categoryName} 相关商品与服务信息。`), 150)
+        : `浏览${siteName}的商品与服务分类信息。`,
+      prerenderH1: categoryName || '全部分类',
+      prerenderText: categoryDescription || '',
+    };
+  }));
   app.get('/help', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
     ...buildHomePayload(baseUrl, siteInfo),
     title: `帮助中心｜${resolveSiteName(siteInfo)}`,
     description: `查看${resolveSiteName(siteInfo)}常见问题、下单流程、支付配送、售后退款与账户说明。`,
     canonical: `${baseUrl}/help`,
+  })));
+  app.get('/support-download', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
+    ...buildHomePayload(baseUrl, siteInfo),
+    title: `客服/下载 - ${resolveSiteName(siteInfo)}`,
+    description: `联系${resolveSiteName(siteInfo)}客服，或查看如何把商城添加到手机桌面。`,
+    canonical: `${baseUrl}/support-download`,
   })));
   app.get('/about', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
     ...buildHomePayload(baseUrl, siteInfo),
@@ -239,8 +353,10 @@ async function registerSeoPrerender(app, { frontendDist }) {
     const description = restricted
       ? '本页面包含受年龄、地区或当地法规限制的商品或服务信息，仅面向符合法定年龄并符合当地规定的用户展示。具体适用范围以当地法律法规、平台规则和客服确认为准。'
       : truncate(stripHtml(product.description || `查看 ${product.name} 的详情、价格、库存、规格与服务信息，支持中文客服咨询。`), 150);
+    const basePayload = buildHomePayload(baseUrl, siteInfo);
+    const productJsonLd = buildProductJsonLd(baseUrl, product, description);
     return {
-      ...buildHomePayload(baseUrl, siteInfo),
+      ...basePayload,
       title,
       description,
       canonical: `${baseUrl}/product/${encodeURIComponent(product.id)}`,
@@ -249,6 +365,7 @@ async function registerSeoPrerender(app, { frontendDist }) {
       robots: restricted ? 'noindex,follow' : 'index,follow',
       prerenderH1: product.name,
       prerenderText: description,
+      jsonLd: productJsonLd ? [...basePayload.jsonLd, productJsonLd] : basePayload.jsonLd,
     };
   }));
 }

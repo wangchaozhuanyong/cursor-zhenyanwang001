@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Eye, ExternalLink, RefreshCw, Shield, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Eye, ExternalLink, RefreshCw, Shield, XCircle } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as eventService from "@/services/admin/eventCenterService";
@@ -58,7 +58,10 @@ export default function AdminEventCenter() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("pending");
   const [category, setCategory] = useState("");
-  const params = useMemo(() => ({ tab, category: category || undefined, page: 1, pageSize: 30 }), [tab, category]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(30);
+  const params = useMemo(() => ({ tab, category: category || undefined, page, pageSize }), [tab, category, page, pageSize]);
+  const summaryParams = useMemo(() => ({ tab, category: category || undefined }), [tab, category]);
 
   const eventsQuery = useQuery({
     queryKey: adminQueryKeys.eventCenterEvents(params),
@@ -69,8 +72,8 @@ export default function AdminEventCenter() {
     queryFn: eventService.fetchAdminEventBossMetrics,
   });
   const summaryQuery = useQuery({
-    queryKey: adminQueryKeys.eventCenterSummary({ tab }),
-    queryFn: () => eventService.fetchAdminEventSummary({ tab }),
+    queryKey: adminQueryKeys.eventCenterSummary(summaryParams),
+    queryFn: () => eventService.fetchAdminEventSummary(summaryParams),
   });
 
   const refresh = () => {
@@ -102,6 +105,8 @@ export default function AdminEventCenter() {
   ] as const;
 
   const rows = eventsQuery.data?.list || [];
+  const listTotal = eventsQuery.data?.total ?? 0;
+  const totalPages = Math.max(1, eventsQuery.data?.totalPages || Math.ceil(listTotal / pageSize) || 1);
   const summary = summaryQuery.data;
   const categoryCounts = summaryQuery.data?.categoryCounts || {};
   const categoryOptions = useMemo(() => {
@@ -121,6 +126,28 @@ export default function AdminEventCenter() {
     { label: tText("已恢复"), value: summary?.recoveredCount || 0, valueClassName: "text-emerald-600" },
   ]), [summary, tText]);
   const activeTabCount = summary?.tabCounts?.[tab] ?? 0;
+  const safePage = Math.min(page, totalPages);
+
+  useEffect(() => {
+    if (!eventsQuery.isFetching && page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [eventsQuery.isFetching, page, totalPages]);
+
+  const changeTab = (nextTab: (typeof tabs)[number]["key"]) => {
+    setTab(nextTab);
+    setPage(1);
+  };
+
+  const changeCategory = (nextCategory: string) => {
+    setCategory(nextCategory);
+    setPage(1);
+  };
+
+  const changePageSize = (nextPageSize: number) => {
+    setPageSize(nextPageSize);
+    setPage(1);
+  };
 
   return (
     <AdminPageShell
@@ -159,14 +186,14 @@ export default function AdminEventCenter() {
                   key={item.key}
                   type="button"
                   className={`rounded-lg px-3 py-2 text-sm ${tab === item.key ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-secondary"}`}
-                  onClick={() => setTab(item.key)}
+                  onClick={() => changeTab(item.key)}
                 >
                   {tText(`${item.label} (${tabCount})`)}
                 </button>
               );
             })}
             <div className="ml-auto flex flex-wrap items-center gap-2">
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+              <select value={category} onChange={(e) => changeCategory(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
                 <option value="">{tText(`全部分类 (${categoryTotal})`)}</option>
                 {categoryOptions.map(({ key, label, count }) => (
                   <option key={key} value={key}>
@@ -174,8 +201,17 @@ export default function AdminEventCenter() {
                   </option>
                 ))}
               </select>
+              <select
+                value={pageSize}
+                onChange={(e) => changePageSize(Number(e.target.value))}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              >
+                {[20, 30, 50, 100].map((size) => (
+                  <option key={size} value={size}>{tText(`每页 ${size} 条`)}</option>
+                ))}
+              </select>
               <div className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
-                {tText(`当前视图 ${activeTabCount} 条 / 当前页 ${rows.length} 条`)}
+                {tText(`当前筛选 ${listTotal} 条 / 本页 ${rows.length} 条 / 第 ${safePage}/${totalPages} 页`)}
               </div>
             </div>
           </div>
@@ -260,6 +296,35 @@ export default function AdminEventCenter() {
           }) : (
             <div className="px-4 py-10 text-center text-sm text-muted-foreground"><Tx>暂无事件</Tx></div>
           )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card px-4 py-3">
+        <div className="text-sm text-muted-foreground">
+          {tText(`当前筛选共 ${listTotal} 条，当前 Tab 数量 ${activeTabCount} 条`)}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            disabled={page <= 1 || eventsQuery.isFetching}
+            className="inline-flex min-h-[36px] items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-secondary disabled:opacity-50"
+          >
+            <ChevronLeft size={15} />
+            <Tx>上一页</Tx>
+          </button>
+          <span className="min-w-[5rem] text-center text-sm text-muted-foreground">
+            {safePage} / {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            disabled={page >= totalPages || eventsQuery.isFetching}
+            className="inline-flex min-h-[36px] items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-secondary disabled:opacity-50"
+          >
+            <Tx>下一页</Tx>
+            <ChevronRight size={15} />
+          </button>
         </div>
       </div>
     </AdminPageShell>

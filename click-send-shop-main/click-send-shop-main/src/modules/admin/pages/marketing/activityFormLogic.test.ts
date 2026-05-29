@@ -4,6 +4,7 @@ import {
   normalizePayloadForSubmit,
   validateActivityForm,
 } from "./activityFormLogic";
+import { getAllowedDisplayPositionsForActivity } from "@/constants/marketingDisplayPositions";
 
 describe("activityFormLogic", () => {
   it("keeps flash sale scope derived from selected items", () => {
@@ -53,5 +54,11 @@ describe("activityFormLogic", () => {
       invalidDisplayPositions: [],
       fullReductionRules: [{ threshold_amount: 100, discount_amount: 10 }],
     })).toBe("");
+  });
+
+  it("允许可发布活动选择营销横幅位", () => {
+    for (const type of ["flash_sale", "full_reduction", "coupon_activity", "new_user_gift", "points_bonus"]) {
+      expect(getAllowedDisplayPositionsForActivity(type)).toContain("promotion_banner");
+    }
   });
 });

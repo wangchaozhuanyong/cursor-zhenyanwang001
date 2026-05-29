@@ -1,11 +1,57 @@
 const db = require('../../../config/db');
 
-async function countCoupons() {
-  const [[{ total }]] = await db.query("SELECT COUNT(*) AS total FROM coupons WHERE deleted_at IS NULL AND archived_at IS NULL");
+function couponListWhere(query = {}) {
+  const where = ['c.deleted_at IS NULL', 'c.archived_at IS NULL'];
+  const params = [];
+  const keyword = String(query.keyword || query.search || '').trim();
+  if (keyword) {
+    where.push('(c.title LIKE ? OR c.code LIKE ?)');
+    params.push(`%${keyword}%`, `%${keyword}%`);
+  }
+  const publishStatus = String(query.publish_status || query.publishStatus || '').trim();
+  if (publishStatus) {
+    where.push('c.publish_status = ?');
+    params.push(publishStatus);
+  }
+  return { where: where.join(' AND '), params };
+}
+
+function couponRecordWhere(query = {}, couponId = '') {
+  const where = [];
+  const params = [];
+  if (couponId) {
+    where.push('BINARY uc.coupon_id = BINARY ?');
+    params.push(couponId);
+  }
+  const status = String(query.status || '').trim();
+  if (status) {
+    where.push(`(
+      CASE
+        WHEN uc.status = 'available' AND c.end_date < CURDATE() THEN 'expired'
+        ELSE uc.status
+      END
+    ) = ?`);
+    params.push(status);
+  }
+  const keyword = String(query.keyword || query.search || '').trim();
+  if (keyword) {
+    where.push('(u.nickname LIKE ? OR u.phone LIKE ? OR c.title LIKE ? OR c.code LIKE ?)');
+    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+  }
+  return {
+    whereSql: where.length ? `WHERE ${where.join(' AND ')}` : '',
+    params,
+  };
+}
+
+async function countCoupons(query = {}) {
+  const { where, params } = couponListWhere(query);
+  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM coupons c WHERE ${where}`, params);
   return total;
 }
 
-async function selectCouponsPage(pageSize, offset) {
+async function selectCouponsPage(pageSize, offset, query = {}) {
+  const { where, params } = couponListWhere(query);
   const [rows] = await db.query(
     `SELECT c.*,
             COALESCE(stats.claimed_count_real, 0) AS claimed_count_real,
@@ -33,11 +79,10 @@ async function selectCouponsPage(pageSize, offset) {
          FROM user_coupons
         GROUP BY coupon_id
      ) stats ON BINARY stats.coupon_id = BINARY c.id
-     WHERE c.deleted_at IS NULL
-       AND c.archived_at IS NULL
+     WHERE ${where}
      ORDER BY c.created_at DESC
      LIMIT ? OFFSET ?`,
-    [pageSize, offset],
+    [...params, pageSize, offset],
   );
   return rows;
 }
@@ -123,12 +168,21 @@ async function insertCouponCategory(id, couponId, categoryId) {
   );
 }
 
-async function countAllUserCoupons() {
-  const [[{ total }]] = await db.query('SELECT COUNT(*) AS total FROM user_coupons');
+async function countAllUserCoupons(query = {}) {
+  const { whereSql, params } = couponRecordWhere(query);
+  const [[{ total }]] = await db.query(
+    `SELECT COUNT(*) AS total
+       FROM user_coupons uc
+       LEFT JOIN users u ON BINARY uc.user_id = BINARY u.id
+       LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+       ${whereSql}`,
+    params,
+  );
   return total;
 }
 
-async function selectAllCouponRecordsPage(pageSize, offset) {
+async function selectAllCouponRecordsPage(pageSize, offset, query = {}) {
+  const { whereSql, params } = couponRecordWhere(query);
   const [rows] = await db.query(
     `SELECT uc.*,
             CASE
@@ -139,21 +193,28 @@ async function selectAllCouponRecordsPage(pageSize, offset) {
      FROM user_coupons uc
      LEFT JOIN users u ON BINARY uc.user_id = BINARY u.id
      LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+     ${whereSql}
      ORDER BY uc.claimed_at DESC LIMIT ? OFFSET ?`,
-    [pageSize, offset],
+    [...params, pageSize, offset],
   );
   return rows;
 }
 
-async function countUserCouponsByCouponId(couponId) {
+async function countUserCouponsByCouponId(couponId, query = {}) {
+  const { whereSql, params } = couponRecordWhere(query, couponId);
   const [[{ total }]] = await db.query(
-    'SELECT COUNT(*) AS total FROM user_coupons WHERE BINARY coupon_id = BINARY ?',
-    [couponId],
+    `SELECT COUNT(*) AS total
+       FROM user_coupons uc
+       LEFT JOIN users u ON BINARY uc.user_id = BINARY u.id
+       LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+       ${whereSql}`,
+    params,
   );
   return total;
 }
 
-async function selectCouponRecordsPage(couponId, pageSize, offset) {
+async function selectCouponRecordsPage(couponId, pageSize, offset, query = {}) {
+  const { whereSql, params } = couponRecordWhere(query, couponId);
   const [rows] = await db.query(
     `SELECT uc.*,
             CASE
@@ -164,9 +225,9 @@ async function selectCouponRecordsPage(couponId, pageSize, offset) {
      FROM user_coupons uc
      LEFT JOIN users u ON BINARY uc.user_id = BINARY u.id
      LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
-     WHERE BINARY uc.coupon_id = BINARY ?
+     ${whereSql}
      ORDER BY uc.claimed_at DESC LIMIT ? OFFSET ?`,
-    [couponId, pageSize, offset],
+    [...params, pageSize, offset],
   );
   return rows;
 }
@@ -263,5 +324,4 @@ module.exports = {
   invalidateUsableUserCouponsByCoupon,
   batchIssueCouponToUsers,
 };
-
 

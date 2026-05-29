@@ -21,14 +21,33 @@ async function selectAllCategoriesOrdered() {
 }
 
 async function insertCategory(params) {
-  const { id, parent_id, name, icon, icon_url, sort_order, is_visible } = params;
+  const {
+    id,
+    parent_id,
+    name,
+    description,
+    buying_guide,
+    faq_json,
+    seo_title,
+    seo_description,
+    icon,
+    icon_url,
+    sort_order,
+    is_visible,
+  } = params;
   await db.query(
-    `INSERT INTO categories (id, parent_id, name, icon, icon_url, sort_order, is_visible, is_active)
-     VALUES (?,?,?,?,?,?,?,?)`,
+    `INSERT INTO categories
+       (id, parent_id, name, description, buying_guide, faq_json, seo_title, seo_description, icon, icon_url, sort_order, is_visible, is_active)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       parent_id || null,
       name,
+      description || '',
+      buying_guide || '',
+      faq_json ? JSON.stringify(faq_json) : null,
+      seo_title || '',
+      seo_description || '',
       icon || '',
       icon_url || icon || '',
       sort_order || 0,
@@ -110,6 +129,5 @@ module.exports = {
   deleteCategoryById,
   restoreCategoryById,
 };
-
 
 

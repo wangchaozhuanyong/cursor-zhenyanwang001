@@ -11,6 +11,11 @@ function parseCookies(req) {
     const key = part.slice(0, idx).trim();
     const value = part.slice(idx + 1).trim();
     if (!key) return acc;
+    if (Object.prototype.hasOwnProperty.call(acc, key)) {
+      // Browsers send more specific cookie paths first; keep that value if a
+      // stale broader-path cookie with the same name is also present.
+      return acc;
+    }
     try {
       acc[key] = decodeURIComponent(value);
     } catch {
@@ -37,6 +42,8 @@ function setAuthCookies(req, res, token, prefix = '') {
   const refreshName = prefix === 'admin' ? ADMIN_REFRESH_COOKIE : REFRESH_COOKIE;
   const secure = resolveCookieSecure(req);
 
+  clearLegacyAuthCookies(req, res, prefix);
+
   res.cookie(accessName, token.accessToken, {
     httpOnly: true,
     secure,
@@ -53,6 +60,16 @@ function setAuthCookies(req, res, token, prefix = '') {
   });
 }
 
+function clearLegacyAuthCookies(req, res, prefix = '') {
+  const secure = resolveCookieSecure(req);
+  const common = { httpOnly: true, secure };
+  if (prefix === 'admin') {
+    res.clearCookie(ADMIN_ACCESS_COOKIE, { ...common, sameSite: 'lax', path: '/' });
+    return;
+  }
+  res.clearCookie(REFRESH_COOKIE, { ...common, sameSite: 'strict', path: '/' });
+}
+
 function clearAuthCookies(req, res, prefix = '') {
   const secure = resolveCookieSecure(req);
   const common = { httpOnly: true, secure };
@@ -63,6 +80,7 @@ function clearAuthCookies(req, res, prefix = '') {
     return;
   }
   res.clearCookie(ACCESS_COOKIE, { ...common, sameSite: 'lax', path: '/' });
+  res.clearCookie(REFRESH_COOKIE, { ...common, sameSite: 'strict', path: '/' });
   res.clearCookie(REFRESH_COOKIE, { ...common, sameSite: 'strict', path: '/api/auth/refresh' });
 }
 

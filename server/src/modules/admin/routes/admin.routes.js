@@ -171,6 +171,7 @@ router.post('/user-security/users/:id/unprotect', adminAuth, requirePermission('
 
 /* ---- Data safety / Backup & Restore ---- */
 router.get('/backups/overview', adminAuth, requirePermission('backup.view'), backupCtrl.overview);
+router.get('/backups/health', adminAuth, requirePermission('backup.view'), backupCtrl.health);
 router.get('/backups/files', adminAuth, requirePermission('backup.view'), backupCtrl.listFiles);
 router.post('/backups/full', adminAuth, requirePermission('backup.create'), backupCtrl.createFullBackup);
 router.post('/backups/config', adminAuth, requirePermission('backup.create'), backupCtrl.createConfigBackup);
@@ -257,8 +258,8 @@ router.post(
   validate({ body: productSchemas.adminProductBatchStatusBodySchema }),
   productCtrl.batchUpdateStatus,
 );
-/** 管理端图片上传：要求具备商品或站点配置权限，避免低权限账号滥用上传通道 */
-const uploadPermission = requireAnyPermission(['product.manage', 'settings.manage']);
+/** 管理端图片上传：要求具备商品、轮播图或站点配置权限，避免低权限账号滥用上传通道 */
+const uploadPermission = requireAnyPermission(['product.manage', 'settings.manage', 'banner.manage']);
 router.post('/upload/ticket', adminAuth, uploadPermission, adminUploadCtrl.createTicket);
 router.post('/upload/complete', adminAuth, uploadPermission, adminUploadCtrl.completeUpload);
 router.post('/upload', adminAuth, uploadPermission, adminUploadCtrl.uploadMiddleware, adminUploadCtrl.uploadFile);

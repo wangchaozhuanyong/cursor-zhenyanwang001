@@ -1,9 +1,8 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
-import { usePagination } from "@/hooks/usePagination";
 import { fetchCouponRecords } from "@/services/admin/couponService";
 import type { CouponClaimRecord } from "@/types/coupon";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -49,27 +48,33 @@ export default function AdminCouponRecords() {
   const { couponRecordStatus: labelCouponRecordStatus, text: L } = useAdminDisplayLabel();
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const queryParams = useMemo(
+    () => ({
+      page,
+      pageSize,
+      status: statusFilter || undefined,
+      keyword: search.trim() || undefined,
+    }),
+    [page, pageSize, statusFilter, search],
+  );
 
   const recordsQuery = useQuery({
-    queryKey: adminQueryKeys.couponRecords(),
-    queryFn: () => fetchCouponRecords(),
+    queryKey: [...adminQueryKeys.couponRecords(), queryParams],
+    queryFn: () => fetchCouponRecords(undefined, queryParams),
     staleTime: 60_000,
   });
 
   const records = recordsQuery.data?.list ?? [];
   const loading = recordsQuery.isLoading && !recordsQuery.data;
+  const total = recordsQuery.data?.total ?? 0;
 
-  const filtered = records.filter((record) => {
-    if (statusFilter && record.status !== statusFilter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return (record.nickname || "").toLowerCase().includes(q)
-        || (record.phone || "").toLowerCase().includes(q)
-        || (record.coupon_title || "").toLowerCase().includes(q);
-    }
-    return true;
-  });
-  const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filtered, 10);
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) setPage(totalPages);
+  }, [page, pageSize, total]);
 
   const filterState = useMemo(() => ({ search, statusFilter }), [search, statusFilter]);
   const filterChips = useMemo(() => buildCouponRecordFilterChips(filterState), [filterState]);
@@ -151,7 +156,7 @@ export default function AdminCouponRecords() {
 
       <AnimatedTable
         loading={loading}
-        rows={paginatedData}
+        rows={records}
         rowKey={(record: CouponClaimRecord) => record.id}
         skeletonRows={8}
         skeletonCols={6}

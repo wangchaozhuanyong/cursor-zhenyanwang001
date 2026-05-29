@@ -79,6 +79,30 @@ export type BackupOverview = {
   safeguards: Record<string, boolean>;
 };
 
+export type BackupHealthCheck = {
+  key: string;
+  label: string;
+  status: "ok" | "warn" | "fail";
+  message: string;
+  path?: string;
+  command?: string;
+  bucket?: string;
+  availableBytes?: number;
+  requiredBytes?: number;
+  storage?: unknown;
+};
+
+export type BackupHealth = {
+  healthy: boolean;
+  canRunFullBackup: boolean;
+  canRunIncrementalBackup: boolean;
+  canRunPointInTimeRestore: boolean;
+  canUseCloudBackup: boolean;
+  localOnly: boolean;
+  checkedAt: string;
+  checks: BackupHealthCheck[];
+};
+
 export type RestoreJobPayload = {
   restoreType: "site" | "point_in_time" | "table" | "order" | "user" | "pre_deploy_rollback";
   sourceBackupFileId?: string;
@@ -91,12 +115,24 @@ export function getBackupOverview() {
   return get<BackupOverview>("/admin/backups/overview");
 }
 
+export function getBackupHealth() {
+  return get<BackupHealth>("/admin/backups/health");
+}
+
 export function getBackupFiles(params?: { page?: number; pageSize?: number; kind?: string; status?: string }) {
   return get<PaginatedData<BackupFile>>("/admin/backups/files", params);
 }
 
 export function createFullBackup(reason = "manual") {
   return post<{ id: string; status: string }>("/admin/backups/full", { reason });
+}
+
+export function createConfigBackup(reason = "manual") {
+  return post<{ id: string; status: string }>("/admin/backups/config", { reason });
+}
+
+export function createUploadsBackup(reason = "manual") {
+  return post<{ id: string; status: string }>("/admin/backups/uploads", { reason });
 }
 
 export function getBackupAlerts(params?: { limit?: number; status?: string }) {

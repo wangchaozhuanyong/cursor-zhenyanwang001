@@ -130,7 +130,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
       <div className="absolute inset-0">
         {banners.map((item, index) => {
           const isActive = index === safeIndex;
-          const alt = item.title || "首页轮播图";
+          const alt = item.title?.trim() || `首页轮播图 ${index + 1}`;
           const sharedClass = "absolute inset-0 h-full w-full object-cover object-center";
 
           if (motionEnabled) {
@@ -180,10 +180,10 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
 
       {showDots ? (
         <div
-          className="pointer-events-auto absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full bg-black/25 px-2 py-1 backdrop-blur-md"
+          className="pointer-events-auto absolute bottom-2 left-1/2 z-30 -translate-x-1/2 rounded-full bg-black/15 px-1.5 py-1 shadow-[0_2px_10px_rgba(0,0,0,0.14)] backdrop-blur-sm sm:bottom-2.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center gap-1.5">
+          <div className="flex h-2.5 items-center gap-1.5">
             {banners.map((_, index) => (
               <button
                 key={index}
@@ -192,7 +192,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                   e.stopPropagation();
                   goTo(index);
                 }}
-                className="touch-target flex items-center justify-center p-0.5"
+                className="flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 transition-transform active:scale-95"
                 aria-label={`Banner ${index + 1}`}
                 aria-current={index === safeIndex ? "true" : undefined}
               >
@@ -200,16 +200,16 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                   <motion.div
                     className="rounded-full bg-white"
                     animate={{
-                      width: index === safeIndex ? 20 : 6,
-                      height: 6,
-                      opacity: index === safeIndex ? 1 : 0.5,
+                      width: index === safeIndex ? 16 : 4,
+                      height: 4,
+                      opacity: index === safeIndex ? 0.95 : 0.55,
                     }}
                     transition={{ duration: 0.2 }}
                   />
                 ) : (
                   <span
-                    className={`block h-1.5 rounded-full bg-white transition-all ${
-                      index === safeIndex ? "w-5 opacity-100" : "w-1.5 opacity-50"
+                    className={`block h-1 rounded-full bg-white transition-all ${
+                      index === safeIndex ? "w-4 opacity-95" : "w-1 opacity-55"
                     }`}
                   />
                 )}

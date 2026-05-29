@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, ChevronRight, LogOut } from "lucide-react";
+import { BarChart3, ChevronRight, LogOut, X } from "lucide-react";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 import type { ResolvedNavChild, ResolvedNavItem } from "./adminNavConfig";
 
@@ -15,17 +15,23 @@ function AdminSidebarNav({
   pathname,
   onNavigate,
   onLogout,
+  onClose,
+  loggingOut = false,
   scrollMode,
   layoutTitle,
   logoutLabel,
+  closeLabel,
 }: {
   navItems: ResolvedNavItem[];
   pathname: string;
   onNavigate: (path: string) => void;
   onLogout: () => void;
+  onClose?: () => void;
+  loggingOut?: boolean;
   scrollMode: "inline" | "overlay";
   layoutTitle: string;
   logoutLabel: string;
+  closeLabel?: string;
 }) {
   const [expandedPath, setExpandedPath] = useState<string | null>(null);
   const childMatchesPath = useCallback((child: ResolvedNavChild, currentPath: string): boolean => {
@@ -56,7 +62,17 @@ function AdminSidebarNav({
     >
       <div className="safe-area-pt flex shrink-0 items-center gap-2 border-b border-border px-5 py-4">
         <AdminSiteLogo size="sm" />
-        <span className="min-w-0 truncate font-display text-lg font-bold text-foreground">{layoutTitle}</span>
+        <span className="min-w-0 flex-1 truncate font-display text-lg font-bold text-foreground">{layoutTitle}</span>
+        {scrollMode === "overlay" && onClose ? (
+          <button
+            type="button"
+            aria-label={closeLabel ?? "关闭菜单"}
+            onClick={onClose}
+            className="touch-manipulation flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground active:bg-secondary/80"
+          >
+            <X size={20} />
+          </button>
+        ) : null}
       </div>
 
       <div className={listClassName}>
@@ -153,7 +169,8 @@ function AdminSidebarNav({
         <button
           type="button"
           onClick={onLogout}
-          className="flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 py-3 text-[15px] text-muted-foreground hover:bg-secondary active:bg-secondary/80"
+          disabled={loggingOut}
+          className="flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 py-3 text-[15px] text-muted-foreground hover:bg-secondary active:bg-secondary/80 disabled:pointer-events-none disabled:opacity-50"
         >
           <LogOut size={20} />
           {logoutLabel}

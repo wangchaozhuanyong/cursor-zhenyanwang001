@@ -76,6 +76,7 @@ function AdminLayoutContent() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [securityAlerts, setSecurityAlerts] = useState<SecurityAlertSummary | null>(null);
   const [securityAlertsOpen, setSecurityAlertsOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
   const securityAlertsRef = useRef<HTMLDivElement>(null);
   const avatarBtnRef = useRef<HTMLButtonElement>(null);
@@ -167,10 +168,17 @@ function AdminLayoutContent() {
     [adminNavigate],
   );
 
-  const handleSidebarLogout = useCallback(() => {
-    adminLogout();
-    navigate("/admin/login");
-  }, [navigate]);
+  const handleAdminLogout = useCallback(async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    setAvatarMenuOpen(false);
+    setSidebarOpen(false);
+    try {
+      await adminLogout();
+    } finally {
+      navigate("/admin/login", { replace: true });
+    }
+  }, [loggingOut, navigate]);
 
   useEffect(() => {
     const title = resolveAdminTabTitle(navItems, location.pathname, t("layout.title"), t, location.search);
@@ -210,7 +218,8 @@ function AdminLayoutContent() {
           navItems={navItems}
           pathname={location.pathname}
           onNavigate={handleSidebarNavigate}
-          onLogout={handleSidebarLogout}
+          onLogout={() => { void handleAdminLogout(); }}
+          loggingOut={loggingOut}
           layoutTitle={t("layout.title")}
           logoutLabel={t("layout.logout")}
         />
@@ -240,9 +249,12 @@ function AdminLayoutContent() {
               navItems={navItems}
               pathname={location.pathname}
               onNavigate={handleSidebarNavigate}
-              onLogout={handleSidebarLogout}
+              onLogout={() => { void handleAdminLogout(); }}
+              loggingOut={loggingOut}
+              onClose={() => setSidebarOpen(false)}
               layoutTitle={t("layout.title")}
               logoutLabel={t("layout.logout")}
+              closeLabel={t("layout.closeMenu")}
             />
           </motion.aside>
         </div>
@@ -443,12 +455,9 @@ function AdminLayoutContent() {
                   <div className="mx-3 my-1 h-px bg-border" />
                   <button
                     type="button"
-                    onClick={() => {
-                      adminLogout();
-                      navigate("/admin/login");
-                      setAvatarMenuOpen(false);
-                    }}
-                    className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-destructive hover:bg-secondary"
+                    onClick={() => { void handleAdminLogout(); }}
+                    disabled={loggingOut}
+                    className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-destructive hover:bg-secondary disabled:pointer-events-none disabled:opacity-50"
                   >
                     <LogOut size={16} />
                     {t("layout.logout")}

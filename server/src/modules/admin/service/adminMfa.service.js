@@ -366,9 +366,20 @@ async function buildLoginMfaChallenge(user, req) {
   }
 
   if (user.role === 'admin' || user.role === 'super_admin' || settings?.required) {
-    const secret = randomBase32();
+    let secret = safeDecryptMfaSecret(settings?.totp_secret_enc);
+    if (!secret) {
+      const generatedSecret = randomBase32();
+      const pending = await repo.upsertPendingMfaSettings(user.id, encryptSecret(generatedSecret));
+      const persistedSecret = safeDecryptMfaSecret(pending?.totp_secret_enc);
+      if (persistedSecret) {
+        secret = persistedSecret;
+      } else if (pending?.totp_secret_enc) {
+        throw new BusinessError(409, 'MFA secret invalid, please reset MFA');
+      } else {
+        secret = generatedSecret;
+      }
+    }
     const issuer = process.env.ADMIN_MFA_ISSUER || 'Admin Console';
-    await repo.upsertPendingMfaSettings(user.id, encryptSecret(secret));
     return {
       data: {
         mfaSetupRequired: true,

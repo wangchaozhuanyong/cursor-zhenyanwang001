@@ -230,6 +230,28 @@ describe('rbac authorization boundaries', () => {
     assert.deepEqual(result.data.roleIds, [roleByCode.customer_service.id]);
   });
 
+  test('RBAC super_admin role grants full super admin access context', async () => {
+    const rbacSuperId = generateId();
+    await repo.createAdminUserWithRoles({
+      id: rbacSuperId,
+      phone: `rbac-super-context-${Date.now()}`,
+      passwordHash: await bcrypt.hash('RbacTest12', 4),
+      nickname: 'rbac-super-context',
+      legacyRole: 'admin',
+      roleIds: [roleByCode.super_admin.id],
+    });
+
+    try {
+      const ctx = await rbac.getAccessContext(rbacSuperId, 'admin');
+      assert.equal(ctx.isSuperAdmin, true);
+      assert.ok(ctx.roleCodes.includes('super_admin'));
+      assert.deepEqual(new Set(ctx.permissions), new Set(rbac.ALL_ADMIN_PERMISSION_CODES));
+    } finally {
+      await db.query('DELETE FROM user_roles WHERE user_id = ?', [rbacSuperId]).catch(() => {});
+      await db.query('DELETE FROM users WHERE id = ?', [rbacSuperId]).catch(() => {});
+    }
+  });
+
   test('super admin can reset another admin MFA and revoke trusted devices', async () => {
     await db.query(
       `INSERT INTO admin_mfa_settings (user_id, totp_secret_enc, enabled, required, enabled_at, last_verified_at)

@@ -34,5 +34,5 @@ export function shouldTrackAdminWorkTab(pathname: string): boolean {
   return true;
 }
 
-export const ADMIN_WORK_TABS_MAX = 15;
+export const ADMIN_WORK_TABS_MAX = 20;
 export const ADMIN_WORK_TABS_STORAGE_KEY = "admin.workTabs.v3";

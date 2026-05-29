@@ -28,7 +28,7 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 const BANNER_RATIO_LABEL = `${BANNER_ASPECT_RATIO.toFixed(2)}:1`;
-const EMPTY_FORM = { title: "", link: "", image: "" };
+const EMPTY_FORM = { title: "", description: "", link: "", image: "" };
 
 export default function AdminBanners() {
   const { tText } = useAdminT();
@@ -52,7 +52,7 @@ export default function AdminBanners() {
   const loading = bannersQuery.isLoading && !bannersQuery.data;
   const editingBanner = editingId ? banners.find((b) => b.id === editingId) ?? null : null;
   const formBaseline = editingBanner
-    ? { title: editingBanner.title || "", link: editingBanner.link || "", image: editingBanner.image || "" }
+    ? { title: editingBanner.title || "", description: editingBanner.description || "", link: editingBanner.link || "", image: editingBanner.image || "" }
     : EMPTY_FORM;
   const formDirty = showForm && JSON.stringify(form) !== JSON.stringify(formBaseline);
   useAdminTabDirty(formDirty);
@@ -88,7 +88,7 @@ export default function AdminBanners() {
 
   const openEdit = (b: Banner) => {
     setEditingId(b.id);
-    setForm({ title: b.title || "", link: b.link || "", image: b.image || "" });
+    setForm({ title: b.title || "", description: b.description || "", link: b.link || "", image: b.image || "" });
     setStrictRatioCheck(false);
     setShowForm(true);
   };
@@ -108,12 +108,13 @@ export default function AdminBanners() {
     setSaving(true);
     try {
       if (editingId) {
-        await bannerService.updateBanner(editingId, { title: form.title, link: form.link, image: form.image });
+        await bannerService.updateBanner(editingId, { title: form.title, description: form.description, link: form.link, image: form.image });
         closeForm();
         toast.success(tText("Banner 已更新"));
       } else {
         await bannerService.createBanner({
           title: form.title,
+          description: form.description,
           link: form.link,
           image: form.image,
           sort_order: banners.length + 1,
@@ -251,6 +252,7 @@ export default function AdminBanners() {
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="truncate font-medium text-foreground">{b.title || "无标题"}</h4>
+              {b.description ? <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{b.description}</p> : null}
               <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                 <ExternalLink size={10} /> {b.link || "无链接"}
               </p>
@@ -359,6 +361,7 @@ export default function AdminBanners() {
               />
             </label>
             <input placeholder={tText("Banner 标题")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <textarea rows={3} placeholder={tText("Banner 说明，用于后台识别和图片 alt 补充")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <input placeholder={tText("跳转链接（如 /categories）")} value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <PermissionGate permission="banner.manage">
               <LoadingButton

@@ -59,7 +59,7 @@ async function selectCategoriesForSitemapFallback() {
 
 async function selectContentPagesForSitemap() {
   const [rows] = await db.query(
-    `SELECT slug, title, content, last_modified_at AS lastmod
+    `SELECT slug, title, body AS content, last_modified_at AS lastmod
      FROM content_pages
      WHERE publish_status = 'published'
        AND deleted_at IS NULL

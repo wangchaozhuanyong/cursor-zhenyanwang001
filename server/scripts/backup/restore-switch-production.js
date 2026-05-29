@@ -153,6 +153,11 @@ async function main() {
         durationSeconds: Math.max(1, Math.round((finishedAt.getTime() - startedAt.getTime()) / 1000)),
       },
     });
+    await backupService.resolveBackupAlerts({
+      alertTypes: ['restore_failed'],
+      relatedJobId: restoreJobId,
+      remark: 'production restore switch completed successfully',
+    });
   } catch (err) {
     const message = String(err.message || err).slice(0, 1000);
     await repo.updateRestoreJob(restoreJobId, {

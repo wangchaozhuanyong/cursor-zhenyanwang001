@@ -13,6 +13,7 @@ function loadWithMocks() {
   const actions = [];
   const userStates = new Map();
   const frames = [];
+  const summaryQueries = [];
 
   const repo = {
     async findRuleByType(eventType) {
@@ -93,6 +94,18 @@ function loadWithMocks() {
     async countEvents() {
       return records.size;
     },
+    async selectSummary(adminUserId, query) {
+      summaryQueries.push({ type: 'summary', adminUserId, query });
+      return { unreadCount: 0, unresolvedCount: 0, p0Count: 0, securityCount: 0, recoveredCount: 0 };
+    },
+    async selectCategoryCounts(adminUserId, query) {
+      summaryQueries.push({ type: 'category', adminUserId, query });
+      return { backup: 1 };
+    },
+    async selectTabCounts(adminUserId, query) {
+      summaryQueries.push({ type: 'tab', adminUserId, query });
+      return { all: 1, pending: 1, urgent: 0, security: 0, recovered: 0 };
+    },
   };
 
   require.cache[repoPath] = { id: repoPath, filename: repoPath, loaded: true, exports: repo };
@@ -103,7 +116,7 @@ function loadWithMocks() {
     exports: { publishAdminEvent: (frame) => frames.push(frame) },
   };
   const service = require(servicePath);
-  return { service, records, actions, userStates, frames };
+  return { service, records, actions, userStates, frames, summaryQueries };
 }
 
 describe('admin event service', () => {
@@ -151,5 +164,15 @@ describe('admin event service', () => {
 
     assert.ok(a.list[0].readAt);
     assert.equal(b.list[0].readAt, null);
+  });
+
+  test('passes current filters into summary counters', async () => {
+    const { service, summaryQueries } = loadWithMocks();
+    const query = { tab: 'pending', category: 'backup' };
+    const summary = await service.getSummary('admin-a', query);
+
+    assert.deepEqual(summary.tabCounts, { all: 1, pending: 1, urgent: 0, security: 0, recovered: 0 });
+    assert.equal(summaryQueries.length, 3);
+    assert.deepEqual(summaryQueries.map((item) => item.query), [query, query, query]);
   });
 });

@@ -14,11 +14,38 @@ function bumpCatalogCache() {
 
 const MAX_CATEGORY_DEPTH = 3;
 
+function normalizeCategoryFaq(value) {
+  let parsed = value;
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      parsed = [];
+    }
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .map((item) => ({
+      question: String(item?.question || '').trim(),
+      answer: String(item?.answer || '').trim(),
+    }))
+    .filter((item) => item.question && item.answer);
+}
+
+function normalizeText(value, max = 2000) {
+  return String(value || '').trim().slice(0, max);
+}
+
 function normalizeCategory(row) {
   return {
     id: row.id,
     parent_id: row.parent_id || null,
     name: row.name,
+    description: row.description || '',
+    buying_guide: row.buying_guide || '',
+    faq: normalizeCategoryFaq(row.faq_json),
+    seo_title: row.seo_title || '',
+    seo_description: row.seo_description || '',
     icon: row.icon || '',
     icon_url: row.icon_url || row.icon || '',
     sort_order: row.sort_order ?? 0,
@@ -103,7 +130,14 @@ async function createCategory(body, adminUserId, req) {
   const id = body.id || generateId();
   if (!name) throw new BusinessError(400, '分类名称不能为空');
   await assertParentAllowed(parent_id, id);
-  await repo.insertCategory({ id, parent_id, name, icon, icon_url, sort_order, is_visible });
+  const contentFields = {
+    description: normalizeText(body.description),
+    buying_guide: normalizeText(body.buying_guide),
+    faq_json: normalizeCategoryFaq(body.faq || body.faq_json),
+    seo_title: normalizeText(body.seo_title, 255),
+    seo_description: normalizeText(body.seo_description, 500),
+  };
+  await repo.insertCategory({ id, parent_id, name, icon, icon_url, sort_order, is_visible, ...contentFields });
   await writeAuditLog({
     req,
     operatorId: adminUserId,
@@ -111,7 +145,7 @@ async function createCategory(body, adminUserId, req) {
     objectType: 'category',
     objectId: id,
     summary: `创建分类 ${name}`,
-    after: { name, icon, icon_url, parent_id, sort_order, is_visible },
+    after: { name, icon, icon_url, parent_id, sort_order, is_visible, ...contentFields },
     result: 'success',
   });
   bumpCatalogCache();
@@ -120,6 +154,11 @@ async function createCategory(body, adminUserId, req) {
       id,
       parent_id: parent_id || null,
       name,
+      description: contentFields.description,
+      buying_guide: contentFields.buying_guide,
+      faq: contentFields.faq_json,
+      seo_title: contentFields.seo_title,
+      seo_description: contentFields.seo_description,
       icon: icon || '',
       icon_url: icon_url || icon || '',
       sort_order: sort_order ?? 0,
@@ -141,6 +180,26 @@ async function updateCategory(id, body, adminUserId, req) {
   if (name !== undefined) {
     fragments.push('name = ?');
     values.push(name);
+  }
+  if (body.description !== undefined) {
+    fragments.push('description = ?');
+    values.push(normalizeText(body.description));
+  }
+  if (body.buying_guide !== undefined) {
+    fragments.push('buying_guide = ?');
+    values.push(normalizeText(body.buying_guide));
+  }
+  if (body.faq !== undefined || body.faq_json !== undefined) {
+    fragments.push('faq_json = ?');
+    values.push(JSON.stringify(normalizeCategoryFaq(body.faq || body.faq_json)));
+  }
+  if (body.seo_title !== undefined) {
+    fragments.push('seo_title = ?');
+    values.push(normalizeText(body.seo_title, 255));
+  }
+  if (body.seo_description !== undefined) {
+    fragments.push('seo_description = ?');
+    values.push(normalizeText(body.seo_description, 500));
   }
   if (icon !== undefined) {
     fragments.push('icon = ?');
@@ -215,10 +274,5 @@ module.exports = {
   deleteCategory,
   updateCategorySort,
 };
-
-
-
-
-
 
 

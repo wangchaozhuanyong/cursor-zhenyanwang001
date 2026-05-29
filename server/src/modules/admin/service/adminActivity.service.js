@@ -304,7 +304,13 @@ async function createActivity(body, adminUserId, req) {
   payload.display_positions = normalizeDisplayPositionsForActivity(payload.type, payload.display_positions);
   const { scopeType, scopes } = payload.type === 'flash_sale' ? normalizeFlashSaleScopes(items) : normalizeScopes(body);
   const targetStatus = body.status === 'active' || body.status === 'scheduled' ? body.status : 'draft';
-  const finalPayload = { ...payload, items, scope_type: scopeType, status: targetStatus };
+  const finalPayload = {
+    ...payload,
+    items,
+    scope_type: scopeType,
+    scope_ids: scopes.map((scope) => scope.scope_id),
+    status: targetStatus,
+  };
   if (WIP_ACTIVITY_TYPES.includes(finalPayload.type) && targetStatus !== 'draft') {
     throw new BusinessError(400, '该活动类型仍在开发中，仅可保存草稿');
   }
@@ -436,10 +442,12 @@ async function validateActivityBeforePublish(body, id = null) {
   const payload = normalizePayload(body, !!id);
   const items = Array.isArray(body.items) ? body.items.map(normalizeItem) : [];
   const flashScopes = (payload.type || body.type) === 'flash_sale' ? normalizeFlashSaleScopes(items) : null;
+  const bodyScopes = flashScopes || normalizeScopes(body);
   const merged = {
     ...payload,
     items,
-    ...(flashScopes ? { scope_type: flashScopes.scopeType } : {}),
+    scope_type: bodyScopes.scopeType,
+    scope_ids: bodyScopes.scopes.map((scope) => scope.scope_id),
   };
   assertPublishRules(merged);
   if ((payload.type || body.type) === 'flash_sale') {
@@ -462,7 +470,6 @@ module.exports = {
   validateActivityBeforePublish,
   searchActivityProducts,
 };
-
 
 
 

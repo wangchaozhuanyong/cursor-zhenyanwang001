@@ -5,6 +5,10 @@ exports.overview = asyncRoute(async (_req, res) => {
   res.success(await service.getOverview());
 });
 
+exports.health = asyncRoute(async (_req, res) => {
+  res.success(await service.getBackupHealth());
+});
+
 exports.listFiles = asyncRoute(async (req, res) => {
   const r = await service.listBackupFiles(req.query);
   res.paginate(r.list, r.total, r.page, r.pageSize);

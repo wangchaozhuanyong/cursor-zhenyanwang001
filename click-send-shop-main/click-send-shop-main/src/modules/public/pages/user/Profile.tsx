@@ -216,10 +216,9 @@ function ProfileHeroCard({
             <button
               type="button"
               onClick={onViewAllBenefits}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-0.5 self-start rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] sm:self-center"
+              className="inline-flex h-10 shrink-0 items-center justify-center self-start rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] sm:self-center"
             >
-              查看全部权益
-              <ChevronRight size={16} className="shrink-0" />
+              查看会员权益
             </button>
           </div>
         </div>

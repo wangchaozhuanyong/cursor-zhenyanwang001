@@ -75,6 +75,7 @@ async function main() {
 
   const nextState = { ...state };
   let uploadedCount = 0;
+  let uploadedCloudCount = 0;
   let skippedActiveCount = 0;
   let skippedTooNewCount = 0;
 
@@ -111,6 +112,7 @@ async function main() {
       uploaded = await uploadObject(encryptedPath, storageKey);
       if (!uploaded.skipped) {
         await uploadObject(`${encryptedPath}.meta.json`, `${storageKey}.meta.json`);
+        uploadedCloudCount += 1;
       }
       await repo.insertBinlogFile({
         id: generateId(),
@@ -138,10 +140,15 @@ async function main() {
     ...nextState,
     _lastRunAt: new Date().toISOString(),
     _lastUploadedCount: uploadedCount,
+    _lastUploadedCloudCount: uploadedCloudCount,
     _lastSkippedActiveCount: skippedActiveCount,
     _lastSkippedTooNewCount: skippedTooNewCount,
     _lastActiveFile: activeFileName,
   }, null, 2));
+  await backupService.resolveBackupAlerts({
+    alertTypes: uploadedCloudCount > 0 ? ['binlog_upload_failed', 's3_upload_failed'] : ['binlog_upload_failed'],
+    remark: 'binlog backup sync completed successfully',
+  });
 }
 
 main().then(() => process.exit(0)).catch(async (err) => {

@@ -199,6 +199,7 @@ async function selectCategoryCounts(adminUserId, query = {}) {
   delete listQuery.category;
   delete listQuery.page;
   delete listQuery.pageSize;
+  delete listQuery.limit;
   const { where, params } = buildListWhere(listQuery, adminUserId);
   const [rows] = await db.query(
     `SELECT r.category, COUNT(*) AS total
@@ -216,7 +217,13 @@ async function selectCategoryCounts(adminUserId, query = {}) {
   return counts;
 }
 
-async function selectTabCounts(adminUserId) {
+async function selectTabCounts(adminUserId, query = {}) {
+  const baseQuery = { ...query };
+  delete baseQuery.tab;
+  delete baseQuery.page;
+  delete baseQuery.pageSize;
+  delete baseQuery.limit;
+  const { where, params } = buildListWhere(baseQuery, adminUserId);
   const [[row]] = await db.query(
     `SELECT
       SUM(CASE WHEN us.hidden_at IS NULL THEN 1 ELSE 0 END) AS all_count,
@@ -225,8 +232,9 @@ async function selectTabCounts(adminUserId) {
       SUM(CASE WHEN us.hidden_at IS NULL AND r.category = 'security' THEN 1 ELSE 0 END) AS security_count,
       SUM(CASE WHEN us.hidden_at IS NULL AND r.status IN ('resolved', 'auto_resolved') THEN 1 ELSE 0 END) AS recovered_count
      FROM admin_event_records r
-     LEFT JOIN admin_event_user_states us ON us.event_id = r.id AND us.admin_user_id = ?`,
-    [adminUserId],
+     LEFT JOIN admin_event_user_states us ON us.event_id = r.id AND us.admin_user_id = ?
+     ${where}`,
+    params,
   );
   return {
     all: Number(row?.all_count || 0),
@@ -237,7 +245,12 @@ async function selectTabCounts(adminUserId) {
   };
 }
 
-async function selectSummary(adminUserId) {
+async function selectSummary(adminUserId, query = {}) {
+  const summaryQuery = { ...query };
+  delete summaryQuery.page;
+  delete summaryQuery.pageSize;
+  delete summaryQuery.limit;
+  const { where, params } = buildListWhere(summaryQuery, adminUserId);
   const [[row]] = await db.query(
     `SELECT
       SUM(CASE WHEN us.read_at IS NULL AND us.hidden_at IS NULL THEN 1 ELSE 0 END) AS unread_count,
@@ -246,8 +259,9 @@ async function selectSummary(adminUserId) {
       SUM(CASE WHEN us.hidden_at IS NULL AND r.category = 'security' AND r.status IN ('open', 'acknowledged', 'in_progress') THEN 1 ELSE 0 END) AS security_count,
       SUM(CASE WHEN us.hidden_at IS NULL AND r.status IN ('resolved', 'auto_resolved') THEN 1 ELSE 0 END) AS recovered_count
      FROM admin_event_records r
-     LEFT JOIN admin_event_user_states us ON us.event_id = r.id AND us.admin_user_id = ?`,
-    [adminUserId],
+     LEFT JOIN admin_event_user_states us ON us.event_id = r.id AND us.admin_user_id = ?
+     ${where}`,
+    params,
   );
   return {
     unreadCount: Number(row?.unread_count || 0),

@@ -300,9 +300,9 @@ async function listEvents(query = {}, adminUserId) {
 
 async function getSummary(adminUserId, query = {}) {
   const [base, categoryCounts, tabCounts] = await Promise.all([
-    repo.selectSummary(adminUserId),
+    repo.selectSummary(adminUserId, query),
     repo.selectCategoryCounts(adminUserId, query),
-    repo.selectTabCounts(adminUserId),
+    repo.selectTabCounts(adminUserId, query),
   ]);
   return { ...base, categoryCounts, tabCounts };
 }

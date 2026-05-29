@@ -3,6 +3,8 @@ import * as api from "@/api/admin/backup";
 export type {
   BackupAlert,
   BackupFile,
+  BackupHealth,
+  BackupHealthCheck,
   BackupJob,
   BackupOverview,
   RestoreDrillReport,
@@ -15,6 +17,11 @@ export async function fetchBackupOverview() {
   return res.data;
 }
 
+export async function fetchBackupHealth() {
+  const res = await api.getBackupHealth();
+  return res.data;
+}
+
 export async function fetchBackupFiles(params?: Parameters<typeof api.getBackupFiles>[0]) {
   const res = await api.getBackupFiles(params);
   return res.data;
@@ -22,6 +29,16 @@ export async function fetchBackupFiles(params?: Parameters<typeof api.getBackupF
 
 export async function requestFullBackup(reason?: string) {
   const res = await api.createFullBackup(reason);
+  return res.data;
+}
+
+export async function requestConfigBackup(reason?: string) {
+  const res = await api.createConfigBackup(reason);
+  return res.data;
+}
+
+export async function requestUploadsBackup(reason?: string) {
+  const res = await api.createUploadsBackup(reason);
   return res.data;
 }
 

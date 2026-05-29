@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Clock, DatabaseBackup, Play, RotateCcw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Cloud, DatabaseBackup, HardDrive, Play, RotateCcw, Settings, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as backupService from "@/services/admin/backupService";
@@ -53,6 +53,12 @@ function StatusBadge({ value, tText }: { value?: string; tText: (zh: string) => 
   );
 }
 
+function healthTone(status?: string) {
+  if (status === "ok") return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200";
+  if (status === "warn") return "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100";
+  return "border-red-200 bg-red-50 text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-100";
+}
+
 export default function AdminBackupCenter() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
@@ -66,6 +72,11 @@ export default function AdminBackupCenter() {
   const overviewQuery = useQuery({
     queryKey: adminQueryKeys.backupsOverview(),
     queryFn: backupService.fetchBackupOverview,
+    refetchInterval: 60_000,
+  });
+  const healthQuery = useQuery({
+    queryKey: adminQueryKeys.backupsHealth(),
+    queryFn: backupService.fetchBackupHealth,
     refetchInterval: 60_000,
   });
   const filesQuery = useQuery({
@@ -105,6 +116,24 @@ export default function AdminBackupCenter() {
     onError: (err: Error) => toast.error(err.message || tText("创建备份失败")),
   });
 
+  const configBackupMutation = useMutation({
+    mutationFn: () => backupService.requestConfigBackup("备份中心手动触发"),
+    onSuccess: async () => {
+      toast.success(tText("已创建配置备份任务"));
+      await invalidate();
+    },
+    onError: (err) => toast.error(toastErrorMessage(err, tText("创建配置备份失败"))),
+  });
+
+  const uploadsBackupMutation = useMutation({
+    mutationFn: () => backupService.requestUploadsBackup("备份中心手动触发"),
+    onSuccess: async () => {
+      toast.success(tText("已创建上传文件备份任务"));
+      await invalidate();
+    },
+    onError: (err) => toast.error(toastErrorMessage(err, tText("创建上传文件备份失败"))),
+  });
+
   const restoreMutation = useMutation({
     mutationFn: (payload: backupService.RestoreJobPayload) => backupService.requestRestoreJob(payload),
     onSuccess: async () => {
@@ -133,6 +162,9 @@ export default function AdminBackupCenter() {
   });
 
   const overview = overviewQuery.data;
+  const health = healthQuery.data;
+  const healthFailed = (health?.checks || []).filter((item) => item.status === "fail").length;
+  const healthWarn = (health?.checks || []).filter((item) => item.status === "warn").length;
   const hasSuccessfulFullBackup = Boolean(overview?.latestFullBackupAt);
   const latestFile = useMemo(
     () => filesQuery.data?.list?.find((file) => file.file_kind === "mysql_full" && file.job_status === "success"),
@@ -148,6 +180,11 @@ export default function AdminBackupCenter() {
   );
   const restoreBlockedReason = !hasSuccessfulFullBackup
     ? tText("暂无成功的全量备份，无法创建恢复任务")
+    : restoreType === "point_in_time" && health && !health.canRunPointInTimeRestore
+      ? tText("增量备份未就绪，无法创建指定时间点恢复")
+      : "";
+  const fullBackupBlockedReason = health && !health.canRunFullBackup
+    ? tText("备份自检未通过，暂不能创建全量备份")
     : "";
 
   function buildRestorePayload(): backupService.RestoreJobPayload {
@@ -298,15 +335,36 @@ export default function AdminBackupCenter() {
       hint={<Tx>管理系统全量/增量备份、恢复任务与演练记录。</Tx>}
       toolbar={(
         <PermissionGate permission="backup.create">
-          <button
-            type="button"
-            onClick={() => fullBackupMutation.mutate()}
-            disabled={fullBackupMutation.isPending}
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-md bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-          >
-            <DatabaseBackup size={16} />
-            <Tx>手动创建备份</Tx>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => fullBackupMutation.mutate()}
+              disabled={fullBackupMutation.isPending || Boolean(fullBackupBlockedReason)}
+              title={fullBackupBlockedReason || undefined}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-md bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
+              <DatabaseBackup size={16} />
+              <Tx>全量备份</Tx>
+            </button>
+            <button
+              type="button"
+              onClick={() => configBackupMutation.mutate()}
+              disabled={configBackupMutation.isPending}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold hover:bg-secondary disabled:opacity-60"
+            >
+              <Settings size={16} />
+              <Tx>配置备份</Tx>
+            </button>
+            <button
+              type="button"
+              onClick={() => uploadsBackupMutation.mutate()}
+              disabled={uploadsBackupMutation.isPending}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold hover:bg-secondary disabled:opacity-60"
+            >
+              <Upload size={16} />
+              <Tx>上传文件备份</Tx>
+            </button>
+          </div>
         </PermissionGate>
       )}
     >
@@ -342,6 +400,44 @@ export default function AdminBackupCenter() {
           </div>
         </div>
       </div>
+
+      <section className="rounded-lg border border-border bg-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="font-semibold"><Tx>备份环境自检</Tx></div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {health
+                ? tText(`失败 ${healthFailed} 项 / 警告 ${healthWarn} 项 / ${health.localOnly ? "当前本地备份模式" : "云端备份已配置"}`)
+                : tText("正在读取自检结果")}
+            </div>
+          </div>
+          <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${!health ? healthTone("warn") : health.healthy ? healthTone("ok") : healthTone("fail")}`}>
+            {health?.healthy ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+            {!health ? <Tx>读取中</Tx> : health.healthy ? <Tx>可运行</Tx> : <Tx>需要处理</Tx>}
+          </div>
+        </div>
+        <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {(health?.checks || []).map((item) => (
+            <div key={item.key} className={`rounded-lg border px-3 py-2 text-sm ${healthTone(item.status)}`}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium">{tText(item.label)}</span>
+                <span className="text-xs uppercase">{item.status}</span>
+              </div>
+              <div className="mt-1 text-xs opacity-90">{tText(item.message || "-")}</div>
+            </div>
+          ))}
+          {!health?.checks?.length ? (
+            <div className="rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-muted-foreground">
+              <Tx>暂无自检数据</Tx>
+            </div>
+          ) : null}
+        </div>
+        <div className="mt-3 grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
+          <div className="flex items-center gap-2"><DatabaseBackup size={14} /><span><Tx>全量备份</Tx>：{health?.canRunFullBackup ? tText("可用") : tText("不可用")}</span></div>
+          <div className="flex items-center gap-2"><HardDrive size={14} /><span><Tx>指定时间点恢复</Tx>：{health?.canRunPointInTimeRestore ? tText("可用") : tText("不可用")}</span></div>
+          <div className="flex items-center gap-2"><Cloud size={14} /><span><Tx>云端备份</Tx>：{health?.canUseCloudBackup ? tText("已配置") : tText("未配置")}</span></div>
+        </div>
+      </section>
 
       <div className="grid gap-5 xl:grid-cols-[1.3fr_0.9fr]">
         <section className="rounded-lg border border-border bg-card">
@@ -441,7 +537,7 @@ export default function AdminBackupCenter() {
                 <span className="text-muted-foreground"><Tx>恢复类型</Tx></span>
                 <select value={restoreType} onChange={(e) => setRestoreType(e.target.value as typeof restoreType)} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
                   <option value="site"><Tx>整站恢复</Tx></option>
-                  <option value="point_in_time"><Tx>指定时间点恢复</Tx></option>
+                  <option value="point_in_time" disabled={health ? !health.canRunPointInTimeRestore : false}><Tx>指定时间点恢复</Tx></option>
                 </select>
               </label>
               {showTargetTime ? (
@@ -454,7 +550,7 @@ export default function AdminBackupCenter() {
                 <button
                   type="button"
                   onClick={handleCreateRestoreJob}
-                  disabled={restoreMutation.isPending || !hasSuccessfulFullBackup}
+                  disabled={restoreMutation.isPending || Boolean(restoreBlockedReason)}
                   title={restoreBlockedReason || undefined}
                   className="inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary disabled:opacity-60"
                 >

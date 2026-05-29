@@ -1,22 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "@/stores/useAuthStore";
-import { ensureStoreSession } from "@/lib/ensureStoreSession";
-import { Ticket } from "lucide-react";
+import { BadgeCheck, ShoppingBag, Ticket } from "lucide-react";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { useCouponStore } from "@/stores/useCouponStore";
+import { ensureStoreSession } from "@/lib/ensureStoreSession";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as marketingService from "@/services/marketingService";
 import * as homeService from "@/services/homeService";
 import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
+import {
+  buildHomeCouponCardItems,
+  summarizeHomeCouponState,
+  type HomeCouponCardItem,
+} from "@/utils/homeCouponPresentation";
 
 export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const coupons = useCouponStore((s) => s.coupons);
+  const loadCoupons = useCouponStore((s) => s.loadCoupons);
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
+  const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const [payload, setPayload] = useState<Awaited<ReturnType<typeof marketingService.fetchCouponCenter>>>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [couponStateReady, setCouponStateReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +49,42 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!isAuthenticated) {
+      setCouponStateReady(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setCouponStateReady(false);
+    void (async () => {
+      const ok = await ensureStoreSession();
+      if (!ok) {
+        if (!cancelled) setCouponStateReady(true);
+        return;
+      }
+      try {
+        await loadCoupons();
+      } finally {
+        if (!cancelled) setCouponStateReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, loadCoupons]);
+
+  const visibleItems = useMemo<HomeCouponCardItem[]>(() => {
+    if (!payload?.coupons?.length) return [];
+    if (isAuthenticated && !couponStateReady) return [];
+    return buildHomeCouponCardItems(payload.coupons, coupons, isAuthenticated);
+  }, [payload?.coupons, coupons, isAuthenticated, couponStateReady]);
+
+  const couponSummary = useMemo(() => summarizeHomeCouponState(coupons), [coupons]);
+
   if (!payload?.coupons?.length) return null;
 
   const openAllCoupons = () => {
@@ -56,6 +102,51 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
     })();
   };
 
+  const goUseCoupon = async (item: HomeCouponCardItem) => {
+    if (!item.userCoupon) {
+      navigate("/coupons");
+      return;
+    }
+    const ok = await ensureStoreSession();
+    if (!ok) {
+      navigate("/login", { state: { from: "/" } });
+      return;
+    }
+    if (item.action === "view") {
+      navigate("/coupons");
+      return;
+    }
+    if (selectedCartCount > 0) navigate(`/checkout?coupon_id=${item.userCoupon.id}`);
+    else navigate("/cart", { state: { coupon_id: item.userCoupon.id } });
+  };
+
+  const handleClaim = async (item: HomeCouponCardItem) => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: "/" } });
+      return;
+    }
+    const ok = await ensureStoreSession();
+    if (!ok) {
+      navigate("/login", { state: { from: "/" } });
+      return;
+    }
+    try {
+      setClaimingId(item.coupon.id);
+      await claimCoupon(item.coupon.code || item.coupon.id);
+      toast.success("领取成功，已放入你的券包", toastPresetQuickSuccess);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "领取失败");
+    } finally {
+      setClaimingId(null);
+    }
+  };
+
+  const handleAction = (item: HomeCouponCardItem) => {
+    void (item.action === "claim" ? handleClaim(item) : goUseCoupon(item));
+  };
+
+  const showFallback = isAuthenticated && couponStateReady && visibleItems.length === 0;
+
   return (
     <section className="w-full">
       <div className="mb-3 flex items-center justify-between">
@@ -67,40 +158,81 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
           全部优惠券
         </button>
       </div>
-      <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
-        {payload.coupons.map((c) => {
-          const display = marketingCouponToPremiumDisplay(c);
-          return (
-            <div key={c.id} className="w-[min(88vw,320px)] shrink-0 snap-center">
-              <PremiumCouponCard
-                colorScheme="invite"
-                layout="home"
-                title={display.title}
-                amountPrefix={display.amountPrefix}
-                amount={display.amount}
-                minSpendText={display.minSpendText}
-                expireText={display.expireText}
-                scopeText={display.scopeText}
-                actionLabel="领取"
-                actionLoading={claimingId === c.id}
-                onAction={() => {
-                  void (async () => {
-                    try {
-                      setClaimingId(c.id);
-                      await claimCoupon(c.code || c.id);
-                      toast.success("领取成功", toastPresetQuickSuccess);
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "领取失败");
-                    } finally {
-                      setClaimingId(null);
-                    }
-                  })();
-                }}
-              />
+
+      {isAuthenticated && !couponStateReady ? (
+        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+          {Array.from({ length: Math.min(3, payload.coupons.length || 3) }).map((_, index) => (
+            <div
+              key={index}
+              className="h-[6.75rem] w-[min(88vw,320px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)]"
+            />
+          ))}
+        </div>
+      ) : showFallback ? (
+        <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_14%,transparent)] text-[var(--theme-primary)]">
+              <BadgeCheck size={20} />
             </div>
-          );
-        })}
-      </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-[var(--theme-text-on-surface)]">
+                {couponSummary.usableCount > 0 ? `你有 ${couponSummary.usableCount} 张优惠券可用` : "当前可领优惠已处理完"}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--theme-text-muted)]">
+                {couponSummary.usableCount > 0
+                  ? "已领取的优惠券可以在下单时使用，也可以进券包查看有效期。"
+                  : "有新活动时这里会继续展示领券入口，现在可以先去看看商品。"}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("/coupons")}
+                  className="rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+                >
+                  查看券包
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/categories")}
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--theme-border)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-text-on-surface)]"
+                >
+                  <ShoppingBag size={13} />
+                  去逛逛
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+          {visibleItems.map((item) => {
+            const display = marketingCouponToPremiumDisplay(item.coupon);
+            return (
+              <div key={item.coupon.id} className="relative w-[min(88vw,320px)] shrink-0 snap-center">
+                {item.statusLabel ? (
+                  <span className="absolute right-3 top-2 z-10 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_16%,var(--theme-surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-primary)]">
+                    {item.statusLabel}
+                  </span>
+                ) : null}
+                <PremiumCouponCard
+                  colorScheme="invite"
+                  layout="home"
+                  title={display.title}
+                  amountPrefix={display.amountPrefix}
+                  amount={display.amount}
+                  minSpendText={display.minSpendText}
+                  expireText={display.expireText}
+                  scopeText={display.scopeText}
+                  actionLabel={item.actionLabel}
+                  actionLoading={item.action === "claim" && claimingId === item.coupon.id}
+                  actionDisabled={item.action === "claim" && claimingId === item.coupon.id}
+                  onAction={() => handleAction(item)}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }

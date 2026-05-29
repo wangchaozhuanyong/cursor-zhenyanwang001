@@ -5,7 +5,6 @@ const { formatOrderItem, formatOrder } = require('../order.mapper');
 const { enrichOrderWithPaymentDeadline } = require('../orderPaymentDeadline');
 const { enrichOrderWithAutoConfirmReceiveDeadline } = require('../orderReceiveDeadline');
 const repo = require('../repository/order.repository');
-const userModule = require('../../user');
 const checkoutAbandonmentRepo = require('../repository/checkoutAbandonment.repository');
 const siteSettingsRepo = require('../repository/siteSettings.repository');
 const sstTax = require('../sstTax');
@@ -17,7 +16,7 @@ const { publishAdminEvent, emitAdminEvent } = require('../orderAdminEvents');
 const { allocateOrderProfitSnapshot, normalizeMalaysiaAddress } = require('./orderCreate.helpers');
 
 function getUserApi() {
-  return /** @type {any} */ (userModule).api || {};
+  return /** @type {any} */ (require('../../user')).api || {};
 }
 
 function requireApiMethod(api, name) {

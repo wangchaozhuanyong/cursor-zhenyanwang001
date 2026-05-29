@@ -18,7 +18,7 @@ export async function fetchAdminEvents(params?: eventApi.AdminEventListParams): 
   return unwrapPaginated<eventApi.AdminEventRecord>(res.data);
 }
 
-export async function fetchAdminEventSummary(params?: Pick<eventApi.AdminEventListParams, "tab">) {
+export async function fetchAdminEventSummary(params?: Pick<eventApi.AdminEventListParams, "tab" | "category" | "severity" | "unread" | "keyword">) {
   const res = await eventApi.getAdminEventSummary(params);
   return res.data;
 }

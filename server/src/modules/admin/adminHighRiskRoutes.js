@@ -43,6 +43,8 @@ const RULES = [
   { method: 'PUT', pattern: /^\/rewards\/settings$/, actionClass: 'high_risk_config' },
   { method: 'PUT', pattern: /^\/notifications\/trigger-settings$/, actionClass: 'high_risk_config' },
   { method: 'POST', pattern: /^\/backups\/full$/, actionClass: 'high_risk_config' },
+  { method: 'POST', pattern: /^\/backups\/config$/, actionClass: 'high_risk_config' },
+  { method: 'POST', pattern: /^\/backups\/uploads$/, actionClass: 'high_risk_config' },
   { method: 'POST', pattern: /^\/restore\/jobs$/, actionClass: 'high_risk_config' },
   { method: 'POST', pattern: /^\/restore\/jobs\/[^/]+\/approve$/, actionClass: 'high_risk_config' },
   { method: 'POST', pattern: /^\/restore\/jobs\/[^/]+\/switch$/, actionClass: 'high_risk_config' },

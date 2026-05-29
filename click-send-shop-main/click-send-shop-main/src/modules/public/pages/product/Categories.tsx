@@ -195,12 +195,16 @@ export default function Categories() {
     || searchParams.get("is_recommended")
     || searchParams.get("page"),
   );
-  const activeCategoryName = activeCat === "all" ? "" : categories.find((c) => c.id === activeCat)?.name || "";
-  const siteName = siteInfo.siteName || "官方商城";
-  const title = activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`;
-  const description = activeCategoryName
-    ? `浏览${siteName} ${activeCategoryName} 相关商品与服务信息。`
-    : `浏览${siteName}的商品与服务分类信息。`;
+  const activeCategory = useMemo(() => (activeCat === "all" ? null : findCategoryById(categories, activeCat)), [activeCat, categories]);
+  const activeCategoryName = activeCategory?.name || "";
+  const categoryDescription = activeCategory?.description?.trim() || "";
+  const categoryGuide = activeCategory?.buying_guide?.trim() || "";
+  const categoryFaq = activeCategory?.faq || [];
+  const siteName = siteInfo.siteName || "???";
+  const title = activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}?${siteName}` : `?????${siteName}`);
+  const description = activeCategory?.seo_description?.trim() || (activeCategoryName
+    ? categoryDescription || `??${siteName} ${activeCategoryName} ??????????`
+    : `??${siteName}???????????`);
   const robots = hasComplexParams ? "noindex,follow" : "index,follow";
   const canonical = activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
   const showFullSkeleton = loading && products.length === 0;
@@ -326,7 +330,7 @@ export default function Categories() {
         <StorePageHeader
           sticky={false}
           className={STORE_MOBILE_PAGE_HEADER_CLASS}
-          title="分类"
+          title={activeCategoryName || "全部分类"}
           titleInlineSlot={
             <StoreSearchField
               mode="filter"
@@ -378,6 +382,29 @@ export default function Categories() {
                 <p className={`mb-3 px-3 py-2 text-center text-xs ${THEME_ALERT_ERROR_SOFT}`}>
                   商品列表暂时无法刷新，以下为缓存数据
                 </p>
+              ) : null}
+
+              {activeCategoryName && (categoryDescription || categoryGuide || categoryFaq.length > 0) ? (
+                <section className="mb-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-[var(--theme-text)]">
+                  <p className="text-base font-semibold">{activeCategoryName}</p>
+                  {categoryDescription ? <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--theme-text)_78%,var(--theme-text-muted))]">{categoryDescription}</p> : null}
+                  {categoryGuide ? (
+                    <div className="mt-3 rounded-lg bg-[var(--theme-bg)] px-3 py-2 text-sm leading-6 text-[color-mix(in_srgb,var(--theme-text)_78%,var(--theme-text-muted))]">
+                      <p className="mb-1 font-medium text-[var(--theme-text)]">选购 / 咨询说明</p>
+                      <p>{categoryGuide}</p>
+                    </div>
+                  ) : null}
+                  {categoryFaq.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {categoryFaq.map((item, index) => (
+                        <details key={`${item.question}-${index}`} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm">
+                          <summary className="cursor-pointer font-medium text-[var(--theme-text)]">{item.question}</summary>
+                          <p className="mt-2 leading-6 text-[color-mix(in_srgb,var(--theme-text)_76%,var(--theme-text-muted))]">{item.answer}</p>
+                        </details>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
               ) : null}
 
               <SilkProductGrid

@@ -372,10 +372,10 @@ async function listBanners() {
 }
 
 async function createBanner(body, adminUserId, req) {
-  const { title, image, link, sort_order, enabled, publish_status } = body;
+  const { title, description, image, link, sort_order, enabled, publish_status } = body;
   if (!image) return { error: { code: 400, message: '图片地址必填' } };
   const id = generateId();
-  await repo.insertBanner({ id, title, image, link, sort_order, enabled: enabled !== false ? 1 : 0, publish_status: publish_status || 'published', last_modified_by: adminUserId });
+  await repo.insertBanner({ id, title, description, image, link, sort_order, enabled: enabled !== false ? 1 : 0, publish_status: publish_status || 'published', last_modified_by: adminUserId });
   const row = await repo.selectBannerById(id);
   safeClearCatalogCache();
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.create', objectType: 'banner', objectId: id, summary: `创建 Banner ${title || id}`, after: { title, image }, result: 'success' });
@@ -385,7 +385,7 @@ async function createBanner(body, adminUserId, req) {
 async function updateBanner(id, body, adminUserId, req) {
   const setFragments = [];
   const values = [];
-  for (const f of ['title', 'image', 'link']) {
+  for (const f of ['title', 'description', 'image', 'link']) {
     if (body[f] !== undefined) { setFragments.push(`${f} = ?`); values.push(body[f]); }
   }
   if (body.sort_order !== undefined) { setFragments.push('sort_order = ?'); values.push(body.sort_order); }
@@ -1134,7 +1134,4 @@ module.exports = {
   ensureDefaultLegalContentPages,
   _sanitizeCmsHtmlForTest: sanitizeCmsHtml,
 };
-
-
-
 

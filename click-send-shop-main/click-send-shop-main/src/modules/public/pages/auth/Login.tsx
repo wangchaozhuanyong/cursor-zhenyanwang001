@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, type KeyboardEvent } from "react";
-import { Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -9,7 +9,6 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import LoginBannerCarousel from "@/components/LoginBannerCarousel";
 import { LoginAgreementFooter } from "@/components/auth/LoginAgreementFooter";
 import { LoginPasswordResetSheet } from "@/components/auth/LoginPasswordResetSheet";
-import { ApiError } from "@/types/common";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
@@ -38,6 +37,8 @@ const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
 const INPUT_CLASS =
   "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
+const INPUT_ERROR_CLASS =
+  "border-destructive focus:border-destructive focus:ring-destructive/20";
 const REMEMBER_COUNTRY_CODE_KEY = "login_remembered_country_code";
 type AuthMode = "login" | "register";
 type CredentialMode = "password" | "otp";
@@ -100,10 +101,27 @@ export default function Login() {
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<{ phone?: string; password?: string; otp?: string; nickname?: string }>({});
+  const [formError, setFormError] = useState("");
+  const focusField = (field: keyof typeof fieldErrors) => {
+    const idByField: Record<keyof typeof fieldErrors, string> = {
+      phone: "auth-phone",
+      password: "auth-password",
+      otp: "auth-otp",
+      nickname: "auth-nickname",
+    };
+    window.requestAnimationFrame(() => document.getElementById(idByField[field])?.focus());
+  };
+  const clearFieldError = (field: keyof typeof fieldErrors) => {
+    if (!fieldErrors[field] && !formError) return;
+    setFieldErrors((s) => ({ ...s, [field]: undefined }));
+    setFormError("");
+  };
   const failValidation = (message: string, field?: keyof typeof fieldErrors) => {
     setShakeKey((k) => k + 1);
+    setFormError(message);
     if (field) {
-      setFieldErrors((prev) => ({ ...prev, [field]: message }));
+      setFieldErrors({ [field]: message } as typeof fieldErrors);
+      focusField(field);
       return;
     }
     toast.error(message);
@@ -157,6 +175,8 @@ export default function Login() {
   const switchAuthMode = (m: AuthMode) => {
     setMode(m);
     setShowReset(false);
+    setFieldErrors({});
+    setFormError("");
     if (m === "register") setCredentialMode("password");
     const target = m === "register" ? "/register" : "/login";
     if (location.pathname !== target) {
@@ -277,7 +297,7 @@ export default function Login() {
     }
     const phoneError = validatePhoneForCountry(phone, countryCode);
     if (phoneError) {
-      failValidation(phoneError);
+      failValidation(phoneError, "phone");
       return;
     }
     if (otpCooldown > 0 || otpSending) return;
@@ -298,6 +318,12 @@ export default function Login() {
 
   const handleSubmit = async () => {
     setFieldErrors({});
+    setFormError("");
+    if (mode === "register" && !hasLockedInviteCode && !nickname.trim()) {
+      failValidation("请输入昵称", "nickname");
+      return;
+    }
+
     const phoneError = validatePhoneForCountry(phone, countryCode);
     if (phoneError) {
       failValidation(phoneError, "phone");
@@ -319,10 +345,6 @@ export default function Login() {
     }
 
     if (mode === "register") {
-      if (!hasLockedInviteCode && !nickname.trim()) {
-        failValidation("请输入昵称", "nickname");
-        return;
-      }
       const passwordError = validateStrongPassword(password);
       if (passwordError) {
         failValidation(passwordError, "password");
@@ -497,6 +519,7 @@ export default function Login() {
                   setCredentialMode(c);
                   setShowReset(false);
                   setFieldErrors({});
+                  setFormError("");
                 }}
                 className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
                   credentialMode === c
@@ -510,9 +533,16 @@ export default function Login() {
           </section>
         ) : null}
 
+        {formError ? (
+          <div className="mb-3 flex items-start gap-2 rounded-2xl border border-destructive/25 bg-destructive/10 px-3.5 py-3 text-sm leading-relaxed text-destructive" role="alert">
+            <AlertCircle size={17} className="mt-0.5 shrink-0" />
+            <span>{formError}</span>
+          </div>
+        ) : null}
+
         <FormFieldShake shake={shakeKey} className="space-y-3.5">
           <form
-            className="space-y-3.5"
+            className="flex flex-col gap-3.5"
             autoComplete="on"
             onSubmit={(e) => {
               e.preventDefault();
@@ -520,42 +550,37 @@ export default function Login() {
             }}
           >
           {mode === "register" && !hasLockedInviteCode && (
-            <div>
-              <div className="relative">
-                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="昵称"
-                  value={nickname}
-                  onChange={(e) => {
-                    setNickname(e.target.value);
-                    if (fieldErrors.nickname) setFieldErrors((s) => ({ ...s, nickname: undefined }));
-                  }}
-                  className={cn(INPUT_CLASS, "pl-12 pr-4")}
-                />
-              </div>
-              <p className={cn("min-h-[1.125rem] text-xs leading-snug", fieldErrors.nickname ? "text-destructive" : "invisible")}>
-                {fieldErrors.nickname || "\u00a0"}
-              </p>
+            <div className="relative">
+              <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="auth-nickname"
+                type="text"
+                placeholder="昵称"
+                value={nickname}
+                aria-invalid={Boolean(fieldErrors.nickname) || undefined}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  clearFieldError("nickname");
+                }}
+                className={cn(INPUT_CLASS, "pl-12 pr-4", fieldErrors.nickname && INPUT_ERROR_CLASS)}
+              />
             </div>
           )}
           {mode === "register" && (
-            <div>
-              <div className="relative">
-                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder={hasLockedInviteCode ? "邀请码（已锁定）" : "邀请码（选填）"}
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  readOnly={hasLockedInviteCode}
-                  className={cn(
-                    INPUT_CLASS,
-                    "pl-12 pr-4",
-                    hasLockedInviteCode && "cursor-default opacity-80",
-                  )}
-                />
-              </div>
+            <div className="relative">
+              <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder={hasLockedInviteCode ? "邀请码（已锁定）" : "邀请码（选填）"}
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                readOnly={hasLockedInviteCode}
+                className={cn(
+                  INPUT_CLASS,
+                  "pl-12 pr-4",
+                  hasLockedInviteCode && "cursor-default opacity-80",
+                )}
+              />
             </div>
           )}
 
@@ -563,14 +588,16 @@ export default function Login() {
             countryCode={countryCode}
             onCountryCodeChange={(value) => {
               setCountryCode(value);
-              if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
+              clearFieldError("phone");
             }}
             phone={phone}
             onPhoneChange={(value) => {
               setPhone(value);
-              if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
+              clearFieldError("phone");
             }}
             errorText={fieldErrors.phone}
+            hasError={Boolean(fieldErrors.phone)}
+            showErrorText={false}
             phoneInputId="auth-phone"
             phoneInputName="tel"
             phoneAutoComplete="tel"
@@ -578,73 +605,67 @@ export default function Login() {
             onPhoneKeyDown={handlePhoneKeyDown}
           />
 
-          <div className="space-y-3.5">
-            {(mode === "register" || (mode === "login" && effectiveCredentialMode === "password")) ? (
-              <div className="relative">
-                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  id="auth-password"
-                  name="password"
-                  type={showPwd ? "text" : "password"}
-                  placeholder="密码"
-                  value={password}
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  autoCorrect="off"
-                  autoCapitalize="none"
-                  enterKeyHint={mode === "login" ? "go" : "done"}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (fieldErrors.password) setFieldErrors((s) => ({ ...s, password: undefined }));
-                  }}
-                  className={cn(INPUT_CLASS, "pl-12 pr-12")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground touch-target"
-                >
-                  {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            ) : null}
-            <p className={cn("min-h-[1.125rem] text-xs leading-snug", fieldErrors.password ? "text-destructive" : "invisible")}>
-              {fieldErrors.password || "\u00a0"}
-            </p>
+          {(mode === "register" || (mode === "login" && effectiveCredentialMode === "password")) ? (
+            <div className="relative">
+              <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="auth-password"
+                name="password"
+                type={showPwd ? "text" : "password"}
+                placeholder="密码"
+                value={password}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                autoCorrect="off"
+                autoCapitalize="none"
+                enterKeyHint={mode === "login" ? "go" : "done"}
+                aria-invalid={Boolean(fieldErrors.password) || undefined}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  clearFieldError("password");
+                }}
+                className={cn(INPUT_CLASS, "pl-12 pr-12", fieldErrors.password && INPUT_ERROR_CLASS)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd(!showPwd)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground touch-target"
+              >
+                {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          ) : null}
 
-            {mode === "login" && effectiveCredentialMode === "otp" ? (
-              <div className="space-y-2">
-                <div className="relative">
-                  <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    id="auth-otp"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    placeholder="6 位验证码"
-                    enterKeyHint="go"
-                    value={otpCode}
-                    maxLength={6}
-                    onChange={(e) => {
-                      setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
-                      if (fieldErrors.otp) setFieldErrors((s) => ({ ...s, otp: undefined }));
-                    }}
-                    className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest")}
-                  />
-                </div>
-                <p className={cn("min-h-[1.125rem] text-xs leading-snug", fieldErrors.otp ? "text-destructive" : "invisible")}>
-                  {fieldErrors.otp || "\u00a0"}
-                </p>
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={otpSending || otpCooldown > 0 || !authFeaturesReady}
-                  className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-theme-price disabled:opacity-50"
-                >
-                  {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "发送验证码"}
-                </button>
+          {mode === "login" && effectiveCredentialMode === "otp" ? (
+            <>
+              <div className="relative">
+                <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id="auth-otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="6 位验证码"
+                  enterKeyHint="go"
+                  value={otpCode}
+                  maxLength={6}
+                  aria-invalid={Boolean(fieldErrors.otp) || undefined}
+                  onChange={(e) => {
+                    setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                    clearFieldError("otp");
+                  }}
+                  className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest", fieldErrors.otp && INPUT_ERROR_CLASS)}
+                />
               </div>
-            ) : null}
-          </div>
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={otpSending || otpCooldown > 0 || !authFeaturesReady}
+                className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-theme-price disabled:opacity-50"
+              >
+                {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "发送验证码"}
+              </button>
+            </>
+          ) : null}
 
           {mode === "login" && effectiveCredentialMode === "password" && (
             <div className="flex items-center justify-between">

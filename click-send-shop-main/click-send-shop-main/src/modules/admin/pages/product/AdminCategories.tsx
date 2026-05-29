@@ -44,6 +44,11 @@ import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 
 type CategoryForm = {
   name: string;
+  description: string;
+  buying_guide: string;
+  faq_text: string;
+  seo_title: string;
+  seo_description: string;
   icon: string;
   icon_url: string;
   parent_id: string;
@@ -58,6 +63,11 @@ type FlatCategory = Category & {
 
 const EMPTY_FORM: CategoryForm = {
   name: "",
+  description: "",
+  buying_guide: "",
+  faq_text: "",
+  seo_title: "",
+  seo_description: "",
   icon: "",
   icon_url: "",
   parent_id: "",
@@ -68,12 +78,37 @@ const EMPTY_FORM: CategoryForm = {
 function serializeCategoryForm(value: CategoryForm) {
   return JSON.stringify({
     name: value.name,
+    description: value.description,
+    buying_guide: value.buying_guide,
+    faq_text: value.faq_text,
+    seo_title: value.seo_title,
+    seo_description: value.seo_description,
     icon: value.icon,
     icon_url: value.icon_url,
     parent_id: value.parent_id,
     sort_order: Number(value.sort_order || 0),
     is_visible: value.is_visible !== false,
   });
+}
+
+function formatCategoryFaq(faq: Category["faq"] = []) {
+  return faq.map((item) => `${item.question}：${item.answer}`).join("\n");
+}
+
+function parseCategoryFaqText(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const splitAt = line.indexOf("：") >= 0 ? line.indexOf("：") : line.indexOf(":");
+      if (splitAt < 0) return null;
+      return {
+        question: line.slice(0, splitAt).trim(),
+        answer: line.slice(splitAt + 1).trim(),
+      };
+    })
+    .filter((item): item is { question: string; answer: string } => Boolean(item?.question && item?.answer));
 }
 
 function flattenTree(nodes: Category[], expanded: Set<string>, level = 0): FlatCategory[] {
@@ -139,6 +174,70 @@ function reorderSiblings(nodes: Category[], draggedId: string, targetId: string)
   return { tree, payload: resultPayload };
 }
 
+function CategoryContentFields({
+  value,
+  onChange,
+}: {
+  value: CategoryForm;
+  onChange: (patch: Partial<CategoryForm>) => void;
+}) {
+  return (
+    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+      <div>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类介绍</Tx></label>
+        <textarea
+          rows={3}
+          value={value.description}
+          onChange={(e) => onChange({ description: e.target.value })}
+          placeholder="说明这个分类适合谁、主要提供什么商品或服务。"
+          className="w-full resize-none rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>选购 / 咨询说明</Tx></label>
+        <textarea
+          rows={3}
+          value={value.buying_guide}
+          onChange={(e) => onChange({ buying_guide: e.target.value })}
+          placeholder="写清楚咨询前要准备什么、如何确认库存/地区/服务细节。"
+          className="w-full resize-none rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类 FAQ</Tx></label>
+        <textarea
+          rows={4}
+          value={value.faq_text}
+          onChange={(e) => onChange({ faq_text: e.target.value })}
+          placeholder="每行一个问题：答案。例如：可以保证通过吗？：不能保证，需以主管部门审核结果为准。"
+          className="w-full resize-none rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
+        />
+      </div>
+      <div className="space-y-2">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>SEO Title</Tx></label>
+          <input
+            value={value.seo_title}
+            onChange={(e) => onChange({ seo_title: e.target.value })}
+            placeholder="留空则使用 分类名｜站点名"
+            className="w-full rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>Meta Description</Tx></label>
+          <textarea
+            rows={2}
+            value={value.seo_description}
+            onChange={(e) => onChange({ seo_description: e.target.value })}
+            placeholder="150 字以内，说明分类内容、适合人群和咨询方式。"
+            className="w-full resize-none rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminCategories() {
   const { tText } = useAdminT();
   const queryClient = useQueryClient();
@@ -182,6 +281,11 @@ export default function AdminCategories() {
     editingCategory
       ? {
           name: editingCategory.name,
+          description: editingCategory.description || "",
+          buying_guide: editingCategory.buying_guide || "",
+          faq_text: formatCategoryFaq(editingCategory.faq),
+          seo_title: editingCategory.seo_title || "",
+          seo_description: editingCategory.seo_description || "",
           icon: editingCategory.icon || "",
           icon_url: editingCategory.icon_url || "",
           parent_id: editingCategory.parent_id || "",
@@ -243,6 +347,11 @@ export default function AdminCategories() {
     try {
       await categoryService.createCategory({
         name: formData.name.trim(),
+        description: formData.description.trim(),
+        buying_guide: formData.buying_guide.trim(),
+        faq: parseCategoryFaqText(formData.faq_text),
+        seo_title: formData.seo_title.trim(),
+        seo_description: formData.seo_description.trim(),
         icon: formData.icon.trim(),
         icon_url: formData.icon_url.trim(),
         parent_id: formData.parent_id || null,
@@ -263,6 +372,11 @@ export default function AdminCategories() {
     setEditingId(cat.id);
     setEditData({
       name: cat.name,
+      description: cat.description || "",
+      buying_guide: cat.buying_guide || "",
+      faq_text: formatCategoryFaq(cat.faq),
+      seo_title: cat.seo_title || "",
+      seo_description: cat.seo_description || "",
       icon: cat.icon || "",
       icon_url: cat.icon_url || "",
       parent_id: cat.parent_id || "",
@@ -280,6 +394,11 @@ export default function AdminCategories() {
     try {
       await categoryService.updateCategory(id, {
         name: editData.name.trim(),
+        description: editData.description.trim(),
+        buying_guide: editData.buying_guide.trim(),
+        faq: parseCategoryFaqText(editData.faq_text),
+        seo_title: editData.seo_title.trim(),
+        seo_description: editData.seo_description.trim(),
         icon: editData.icon.trim(),
         icon_url: editData.icon_url.trim(),
         parent_id: editData.parent_id || null,
@@ -463,6 +582,10 @@ export default function AdminCategories() {
               </Tx></button>
             </div>
           </div>
+          <CategoryContentFields
+            value={formData}
+            onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+          />
         </div>
       )}
 
@@ -539,16 +662,25 @@ export default function AdminCategories() {
                       </div>
                     </div>
                     {parentSelect(editData.parent_id, (v) => setEditData({ ...editData, parent_id: v }), cat.id)}
+                    <CategoryContentFields
+                      value={editData}
+                      onChange={(patch) => setEditData((prev) => ({ ...prev, ...patch }))}
+                    />
                   </div>
                 ) : (
                   <div
                     className="flex min-w-0 flex-1 items-center gap-2"
                     title={[cat.name, categorySubtitle(cat, categoryNameById, tText), cat.id].join("\n")}
                   >
-                    <span className="truncate text-sm font-medium text-foreground">{cat.name}</span>
-                    <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
-                      {categorySubtitle(cat, categoryNameById, tText)}
-                    </span>
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-sm font-medium text-foreground">{cat.name}</span>
+                        <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                          {categorySubtitle(cat, categoryNameById, tText)}
+                        </span>
+                      </div>
+                      {cat.description ? <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{cat.description}</p> : null}
+                    </div>
                   </div>
                 )}
               </div>

@@ -164,6 +164,7 @@ async function listUserTags() {
 async function createUserTag(body, adminUserId, req) {
   const tag = normalizeTagInput(body || {});
   if (!tag.name) throw new BusinessError(400, '标签名称必填');
+  if (tag.name.length > 50) throw new BusinessError(400, '标签名称不能超过 50 个字符');
   const id = generateId();
   try { await repo.insertUserTag({ id, ...tag }); } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') throw new BusinessError(400, '标签已存在');
@@ -176,7 +177,7 @@ async function createUserTag(body, adminUserId, req) {
 async function updateUserTag(tagId, body, adminUserId, req) {
   const fields = [];
   const values = [];
-  if (body.name !== undefined) { const name = String(body.name).trim(); if (!name) throw new BusinessError(400, '标签名称必填'); fields.push('name = ?'); values.push(name); }
+  if (body.name !== undefined) { const name = String(body.name).trim(); if (!name) throw new BusinessError(400, '标签名称必填'); if (name.length > 50) throw new BusinessError(400, '标签名称不能超过 50 个字符'); fields.push('name = ?'); values.push(name); }
   if (body.color !== undefined) { fields.push('color = ?'); values.push(String(body.color || '金色').trim().slice(0, 20) || '金色'); }
   if (body.description !== undefined) { fields.push('description = ?'); values.push(String(body.description || '').trim().slice(0, 255)); }
   if (body.sort_order !== undefined || body.sortOrder !== undefined) { const sortOrder = Number(body.sort_order ?? body.sortOrder); fields.push('sort_order = ?'); values.push(Number.isFinite(sortOrder) ? sortOrder : 0); }
@@ -466,7 +467,6 @@ module.exports = {
   getUserStatusOverview,
   assertTargetIsNormalUser,
 };
-
 
 
 

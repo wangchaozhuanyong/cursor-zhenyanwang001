@@ -269,8 +269,24 @@ async function main() {
         relatedJobId: restoreJobId,
         relatedFileId: sourceFile.id,
       });
+      if (isDrillJob) {
+        await backupService.emitBackupAlert({
+          alertType: 'restore_drill_failed',
+          severity: 'P0',
+          title: '恢复演练失败',
+          message: `Restore drill ${restoreJobId} failed validation`,
+          relatedJobId: restoreJobId,
+          relatedFileId: sourceFile.id,
+        });
+      }
       process.exit(2);
     }
+
+    await backupService.resolveBackupAlerts({
+      alertTypes: isDrillJob ? ['restore_failed', 'restore_drill_failed'] : ['restore_failed'],
+      relatedJobId: isDrillJob ? null : restoreJobId,
+      remark: isDrillJob ? 'restore drill completed successfully' : 'restore to temp completed successfully',
+    });
 
     const drillJob = isDrillJob;
     if (drillJob && process.env.BACKUP_KEEP_RESTORE_DRILL_DB !== '1') {
@@ -293,6 +309,16 @@ async function main() {
       message: String(err.message || err),
       relatedJobId: restoreJobId,
     }).catch(() => {});
+    const failedJob = await repo.findRestoreJob(restoreJobId).catch(() => null);
+    if (failedJob?.validation_result?.drill === true) {
+      await backupService.emitBackupAlert({
+        alertType: 'restore_drill_failed',
+        severity: 'P0',
+        title: '恢复演练失败',
+        message: String(err.message || err),
+        relatedJobId: restoreJobId,
+      }).catch(() => {});
+    }
     throw err;
   }
 }

@@ -107,9 +107,9 @@ const CORE_FIELDS = new Set([
 async function listCoupons(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(query.pageSize, 10) || 20));
-  const total = await repo.countCoupons();
+  const total = await repo.countCoupons(query);
   const offset = (page - 1) * pageSize;
-  const rows = await repo.selectCouponsPage(pageSize, offset);
+  const rows = await repo.selectCouponsPage(pageSize, offset, query);
   const list = rows.map(formatCouponRow);
   return { kind: 'paginate', list, total, page, pageSize };
 }
@@ -274,18 +274,18 @@ async function invalidateUserCoupons(id, body, adminUserId, req) {
 async function getAllCouponRecords(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
-  const total = await repo.countAllUserCoupons();
+  const total = await repo.countAllUserCoupons(query);
   const offset = (page - 1) * pageSize;
-  const list = await repo.selectAllCouponRecordsPage(pageSize, offset);
+  const list = await repo.selectAllCouponRecordsPage(pageSize, offset, query);
   return { kind: 'paginate', list, total, page, pageSize };
 }
 
 async function getCouponRecords(couponId, query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
-  const total = await repo.countUserCouponsByCouponId(couponId);
+  const total = await repo.countUserCouponsByCouponId(couponId, query);
   const offset = (page - 1) * pageSize;
-  const list = await repo.selectCouponRecordsPage(couponId, pageSize, offset);
+  const list = await repo.selectCouponRecordsPage(couponId, pageSize, offset, query);
   return { kind: 'paginate', list, total, page, pageSize };
 }
 

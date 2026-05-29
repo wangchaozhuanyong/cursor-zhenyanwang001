@@ -71,6 +71,24 @@ async function getProductTags(limit) {
   }));
 }
 
+function normalizeCategoryFaq(value) {
+  let parsed = value;
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      parsed = [];
+    }
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .map((item) => ({
+      question: String(item?.question || '').trim(),
+      answer: String(item?.answer || '').trim(),
+    }))
+    .filter((item) => item.question && item.answer);
+}
+
 function buildCategoryTree(rows) {
   const map = new Map();
   const roots = [];
@@ -79,6 +97,11 @@ function buildCategoryTree(rows) {
       id: row.id,
       parent_id: row.parent_id || null,
       name: row.name,
+      description: row.description || '',
+      buying_guide: row.buying_guide || '',
+      faq: normalizeCategoryFaq(row.faq_json),
+      seo_title: row.seo_title || '',
+      seo_description: row.seo_description || '',
       icon: row.icon || '',
       icon_url: row.icon_url || row.icon || '',
       sort_order: row.sort_order ?? 0,
@@ -473,5 +496,4 @@ module.exports = {
   trackHomeEngagement,
   clearCatalogCache,
 };
-
 

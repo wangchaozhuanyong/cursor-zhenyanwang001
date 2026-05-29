@@ -43,6 +43,8 @@ describe('admin sensitive action routes', () => {
 
   test('backup write endpoints require high-risk MFA step-up', () => {
     assert.equal(getSensitiveActionClass(req('POST', '/backups/full')), 'high_risk_config');
+    assert.equal(getSensitiveActionClass(req('POST', '/backups/config')), 'high_risk_config');
+    assert.equal(getSensitiveActionClass(req('POST', '/backups/uploads')), 'high_risk_config');
     assert.equal(getSensitiveActionClass(req('POST', '/restore/jobs')), 'high_risk_config');
     assert.equal(getSensitiveActionClass(req('POST', '/restore/jobs/job-1/approve')), 'high_risk_config');
     assert.equal(getSensitiveActionClass(req('POST', '/restore/jobs/job-1/switch')), 'high_risk_config');

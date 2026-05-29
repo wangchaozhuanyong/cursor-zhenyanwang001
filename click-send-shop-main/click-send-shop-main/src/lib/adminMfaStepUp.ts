@@ -78,6 +78,9 @@ export function requestAdminMfaStepUp(actionClass = "admin_sensitive"): Promise<
   }
 
   if (pendingPromise) {
+    if (pendingActionClass !== actionClass) {
+      return Promise.reject(new Error("MFA_STEP_UP_BUSY"));
+    }
     return pendingPromise;
   }
 

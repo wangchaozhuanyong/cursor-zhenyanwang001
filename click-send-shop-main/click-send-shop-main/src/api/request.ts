@@ -77,6 +77,23 @@ let adminRefreshing: Promise<void> | null = null;
 const ADMIN_CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const ADMIN_SESSION_EXPIRED_EVENT = "admin:session-expired";
 
+function isAdminMfaLoginVerifyEndpoint(endpoint: string): boolean {
+  return endpoint.startsWith("/admin/auth/mfa/verify");
+}
+
+function isAdminMfaReverifyEndpoint(endpoint: string): boolean {
+  return endpoint.startsWith("/admin/auth/mfa/reverify");
+}
+
+function isAdminPasskeyLoginEndpoint(endpoint: string): boolean {
+  return endpoint.startsWith("/admin/auth/passkeys/login/")
+    || endpoint.startsWith("/admin/auth/passkeys/authentication/");
+}
+
+function isAdminCsrfInvalidResponse(status: number, body: Record<string, unknown>): boolean {
+  return status === 403 && /CSRF token invalid/i.test(extractResponseMessage(body, status));
+}
+
 function isPublicStorefrontPath(pathname: string): boolean {
   return pathname === "/"
     || pathname.startsWith("/categories")
@@ -195,8 +212,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   const isAdminAuthLogin = endpoint.startsWith("/admin/auth/login");
   const isAdminAuthRefresh = endpoint.startsWith("/admin/auth/refresh");
   const isAdminMfaEndpoint = endpoint.startsWith("/admin/auth/mfa/");
+  const isAdminMfaLoginVerify = isAdminMfaLoginVerifyEndpoint(endpoint);
+  const isAdminMfaReverify = isAdminMfaReverifyEndpoint(endpoint);
   const isAdminPasskeyEndpoint = endpoint.startsWith("/admin/auth/passkeys/");
-  const isAdminPasskeyLoginEndpoint = endpoint.startsWith("/admin/auth/passkeys/login/");
+  const isAdminPasskeyLogin = isAdminPasskeyLoginEndpoint(endpoint);
   const isAdminCsrfEndpoint = endpoint.startsWith("/admin/auth/csrf");
   const isAccountCancel = endpoint.startsWith("/user/account/cancel");
   const token = isAdminEndpoint ? getAdminAccessToken() : getAccessToken();
@@ -205,8 +224,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     && ADMIN_CSRF_METHODS.has(method)
     && !isAdminAuthLogin
     && !isAdminAuthRefresh
-    && !isAdminMfaEndpoint
-    && !isAdminPasskeyLoginEndpoint
+    && !isAdminMfaLoginVerify
+    && !isAdminPasskeyLogin
     && !isAdminCsrfEndpoint;
   const csrfToken = needsAdminCsrf ? await getAdminCsrfToken() : "";
 
@@ -272,13 +291,30 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       // ignore malformed error bodies
     }
 
+    if (retry && needsAdminCsrf && isAdminCsrfInvalidResponse(res.status, body)) {
+      clearAdminCsrfToken();
+      const refreshedCsrfToken = await getAdminCsrfToken();
+      return request<T>(
+        endpoint,
+        {
+          ...options,
+          headers: {
+            ...(options.headers || {}),
+            ...(refreshedCsrfToken ? { "X-CSRF-Token": refreshedCsrfToken } : {}),
+          },
+        },
+        false,
+      );
+    }
+
     const mfaRequired = isAdminMfaRequiredResponse(res.status, body);
     if (
       retry
       && isAdminEndpoint
       && mfaRequired
       && typeof window !== "undefined"
-      && !isAdminMfaEndpoint
+      && !isAdminMfaLoginVerify
+      && !isAdminMfaReverify
       && !isAdminPasskeyEndpoint
     ) {
       try {
@@ -298,7 +334,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       }
     }
 
-    if (res.status === 401 && isAdminEndpoint) {
+    if (res.status === 401 && isAdminEndpoint && !isAdminMfaEndpoint && !isAdminPasskeyEndpoint) {
       redirectToAdminLogin("admin-401-no-retry");
     }
     if (res.status === 401 && !isAdminEndpoint && !shouldSuppressAuthExpired(options)) {

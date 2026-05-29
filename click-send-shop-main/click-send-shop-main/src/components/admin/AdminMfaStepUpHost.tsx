@@ -15,6 +15,27 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 
 const MFA_REVERIFY_TIMEOUT_MS = 15_000;
 
+type StepUpMfaStatus = {
+  enabled: boolean;
+  passkeyRegistered: boolean;
+};
+
+function readStepUpMfaStatus(profile: Awaited<ReturnType<typeof fetchAdminProfile>>): StepUpMfaStatus {
+  const mfa = profile.mfa;
+  const methods = mfa?.methods || [];
+  return {
+    enabled: Boolean(mfa?.enabled),
+    passkeyRegistered: Boolean(mfa?.passkeyRegistered || (mfa?.passkeyCount || 0) > 0 || methods.includes("passkey")),
+  };
+}
+
+function shouldKeepMfaStepUpOpen(err: unknown, aborted: boolean): boolean {
+  if (aborted) return false;
+  if (!(err instanceof ApiError)) return true;
+  if (err.code === 400 || err.code === 401 || err.code === 404) return true;
+  return err.code === 403 && /CSRF token invalid/i.test(err.message);
+}
+
 export default function AdminMfaStepUpHost() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -22,11 +43,13 @@ export default function AdminMfaStepUpHost() {
   const [loading, setLoading] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [errorText, setErrorText] = useState("");
-  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
+  const [mfaStatus, setMfaStatus] = useState<StepUpMfaStatus | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const attemptRef = useRef(0);
   const openRef = useRef(false);
   const profileRequestedRef = useRef(false);
+  const mfaEnabled = mfaStatus?.enabled ?? true;
+  const passkeyAvailable = Boolean(mfaStatus?.passkeyRegistered);
 
   useEffect(() => {
     openRef.current = open;
@@ -45,16 +68,13 @@ export default function AdminMfaStepUpHost() {
     if (openRef.current) return;
     resetRequestState();
     setCode("");
-    setMfaEnabled(true);
+    setMfaStatus({ enabled: true, passkeyRegistered: false });
     setOpen(true);
     if (profileRequestedRef.current) return;
     profileRequestedRef.current = true;
     void fetchAdminProfile()
-      .then((profile) => {
-        const enabled = Boolean((profile as { mfa?: { enabled?: boolean } }).mfa?.enabled);
-        setMfaEnabled(enabled);
-      })
-      .catch(() => setMfaEnabled(true));
+      .then((profile) => setMfaStatus(readStepUpMfaStatus(profile)))
+      .catch(() => setMfaStatus({ enabled: true, passkeyRegistered: false }));
   }, [resetRequestState]);
 
   useEffect(() => {
@@ -121,7 +141,7 @@ export default function AdminMfaStepUpHost() {
       setErrorText(message);
       toast.error(message);
 
-      if (controller.signal.aborted || (err instanceof ApiError && err.code !== 401)) {
+      if (!shouldKeepMfaStepUpOpen(err, controller.signal.aborted)) {
         profileRequestedRef.current = false;
         setOpen(false);
         cancelAdminMfaStepUp();
@@ -157,7 +177,18 @@ export default function AdminMfaStepUpHost() {
       const message = controller.signal.aborted
         ? "Passkey 验证超时，请重新发起该操作后再验证"
         : toastErrorMessage(err, "Passkey 验证失败");
-      failAndCancel(message);
+      if (!shouldKeepMfaStepUpOpen(err, controller.signal.aborted)) {
+        failAndCancel(message);
+      } else {
+        setErrorText(message);
+        toast.error(message);
+        if (err instanceof ApiError && err.code === 404) {
+          setMfaStatus((current) => ({
+            enabled: current?.enabled ?? true,
+            passkeyRegistered: false,
+          }));
+        }
+      }
     } finally {
       window.clearTimeout(timeoutId);
       if (attemptRef.current === attemptId) {
@@ -192,6 +223,8 @@ export default function AdminMfaStepUpHost() {
         )}
         {mfaEnabled !== false ? (
           <>
+            {passkeyAvailable ? (
+              <>
             <button
               type="button"
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background disabled:opacity-50"
@@ -206,7 +239,9 @@ export default function AdminMfaStepUpHost() {
               <span>或</span>
               <span className="h-px flex-1 bg-border" />
             </div>
-            <label className="block text-xs font-medium text-muted-foreground">验证码</label>
+              </>
+            ) : null}
+            <label className={`${passkeyAvailable ? "" : "mt-4 "}block text-xs font-medium text-muted-foreground`}>验证码</label>
             <input
               type="text"
               inputMode="numeric"

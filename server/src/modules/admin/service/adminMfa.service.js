@@ -295,10 +295,15 @@ function credentialRowToWebAuthn(row) {
 
 async function getStatus(userId) {
   const settings = await repo.selectMfaSettings(userId);
+  const credentials = userId ? await repo.listWebAuthnCredentials(userId).catch(() => []) : [];
+  const passkeyCount = credentials.length;
   return {
     enabled: Boolean(settings?.enabled),
     required: Boolean(settings?.required),
     lastVerifiedAt: settings?.last_verified_at || null,
+    methods: passkeyCount ? ['totp', 'passkey'] : ['totp'],
+    passkeyRegistered: passkeyCount > 0,
+    passkeyCount,
   };
 }
 

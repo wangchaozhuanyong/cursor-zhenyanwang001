@@ -1,5 +1,13 @@
-import { describe, expect, test } from "vitest";
-import { extractResponseMessage, toQueryString } from "@/api/request";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { extractResponseMessage, post, toQueryString } from "@/api/request";
+import { clearAdminCsrfToken } from "@/lib/adminCsrf";
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
 
 describe("toQueryString", () => {
   test("returns empty string for empty params", () => {
@@ -13,6 +21,76 @@ describe("toQueryString", () => {
 
   test("skips null and undefined", () => {
     expect(toQueryString({ a: null, b: undefined, c: "ok" })).toBe("?c=ok");
+  });
+});
+
+describe("admin MFA request CSRF handling", () => {
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
+
+  beforeEach(() => {
+    calls.length = 0;
+    clearAdminCsrfToken();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    clearAdminCsrfToken();
+  });
+
+  test("adds CSRF header when reverifying admin MFA", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      calls.push({ url, init });
+      if (url.endsWith("/admin/auth/csrf")) {
+        return jsonResponse({ data: { csrfToken: "csrf-one" } });
+      }
+      return jsonResponse({ data: { ok: true } });
+    }));
+
+    await post("/admin/auth/mfa/reverify", { code: "123456" }, { loadingMode: "silent" });
+
+    const reverifyCall = calls.find((call) => call.url.endsWith("/admin/auth/mfa/reverify"));
+    expect(reverifyCall?.init?.headers).toMatchObject({ "X-CSRF-Token": "csrf-one" });
+  });
+
+  test("does not require CSRF for login MFA verification", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({ url: String(input), init });
+      return jsonResponse({ data: { token: "ok" } });
+    }));
+
+    await post("/admin/auth/mfa/verify", { mfaTicket: "ticket", code: "123456" }, { loadingMode: "silent" });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].init?.headers).not.toMatchObject({ "X-CSRF-Token": expect.any(String) });
+  });
+
+  test("refreshes stale CSRF token once and retries the MFA reverify request", async () => {
+    let csrfFetchCount = 0;
+    let reverifyCount = 0;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      calls.push({ url, init });
+      if (url.endsWith("/admin/auth/csrf")) {
+        csrfFetchCount += 1;
+        return jsonResponse({ data: { csrfToken: csrfFetchCount === 1 ? "csrf-old" : "csrf-new" } });
+      }
+      if (url.endsWith("/admin/auth/mfa/reverify")) {
+        reverifyCount += 1;
+        if (reverifyCount === 1) {
+          return jsonResponse({ code: 403, message: "CSRF token invalid" }, 403);
+        }
+        return jsonResponse({ data: { ok: true } });
+      }
+      return jsonResponse({});
+    }));
+
+    await post("/admin/auth/mfa/reverify", { code: "123456" }, { loadingMode: "silent" });
+
+    const reverifyCalls = calls.filter((call) => call.url.endsWith("/admin/auth/mfa/reverify"));
+    expect(reverifyCalls).toHaveLength(2);
+    expect(reverifyCalls[0].init?.headers).toMatchObject({ "X-CSRF-Token": "csrf-old" });
+    expect(reverifyCalls[1].init?.headers).toMatchObject({ "X-CSRF-Token": "csrf-new" });
   });
 });
 

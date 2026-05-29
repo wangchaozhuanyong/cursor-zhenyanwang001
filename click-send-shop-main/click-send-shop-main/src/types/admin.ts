@@ -16,6 +16,9 @@ export interface AdminUser {
     enabled: boolean;
     required: boolean;
     lastVerifiedAt?: string | null;
+    methods?: string[];
+    passkeyRegistered?: boolean;
+    passkeyCount?: number;
   };
 }
 

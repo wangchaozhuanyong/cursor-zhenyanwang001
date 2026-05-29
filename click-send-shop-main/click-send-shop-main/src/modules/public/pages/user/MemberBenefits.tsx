@@ -1,22 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
-import { BadgePercent, ChevronRight, Gift, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import * as memberBenefitsService from "@/services/memberBenefitsService";
 import type { MemberBenefitsOverview, MemberBenefit } from "@/services/memberBenefitsService";
 import { cn } from "@/lib/utils";
+import {
+  THEME_MEMBER_CARD_MUTED,
+  THEME_MEMBER_CARD_SHELL,
+} from "@/utils/themeVisuals";
+import {
+  benefitIcon,
+  buildBenefitSummaryFromBenefits,
+  computeUpgradeProgress,
+  formatLevelRequirement,
+  MEMBER_BENEFIT_SUMMARY_BG,
+  MEMBER_BENEFIT_TILE_BG,
+} from "@/utils/memberBenefitPresentation";
 
-const CARD_CLASS = "rounded-2xl bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]";
+const CARD_CLASS = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
 
-function benefitIcon(type: string) {
-  if (type === "discount") return BadgePercent;
-  if (type === "points_multiplier") return Sparkles;
-  if (type === "free_shipping") return Truck;
-  if (type === "birthday_gift") return Gift;
-  return ShieldCheck;
-}
-
-function benefitSummary(benefits: MemberBenefit[]) {
-  return benefits.map((benefit) => benefit.name).join(" · ") || "会员专属服务";
+function HeroSkeleton() {
+  return (
+    <div className="space-y-3">
+      <div className="h-8 w-2/3 animate-pulse rounded-lg bg-[var(--theme-bg)]" />
+      <div className="h-4 w-full animate-pulse rounded-lg bg-[var(--theme-bg)]" />
+      <div className="h-16 animate-pulse rounded-xl bg-[var(--theme-bg)]" />
+    </div>
+  );
 }
 
 export default function MemberBenefits() {
@@ -39,6 +49,8 @@ export default function MemberBenefits() {
 
   const currentLevel = data?.current_level;
   const nextLevel = data?.next_level;
+  const progressPercent = useMemo(() => computeUpgradeProgress(data), [data]);
+
   const progressText = useMemo(() => {
     if (!nextLevel) return "你已达到当前最高会员等级";
     const spent = Number(data?.growth_to_next_level || 0);
@@ -47,76 +59,154 @@ export default function MemberBenefits() {
     return `距离 ${nextLevel.name} 还差 RM ${spent.toFixed(2)} 消费或 ${orders} 笔有效订单`;
   }, [data?.growth_to_next_level, data?.orders_to_next_level, nextLevel]);
 
+  const currentBenefits = currentLevel?.benefits || [];
+  const allLevels = data?.all_levels || [];
+
   return (
     <StoreAccountLayout title="会员权益">
       <div className="space-y-4">
-        <section className={cn(CARD_CLASS, "overflow-hidden")}>
-          {loading ? (
-            <div className="h-28 animate-pulse rounded-xl bg-[var(--theme-bg)]" />
-          ) : (
-            <>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs text-[var(--theme-text-muted-on-surface)]">当前会员等级</p>
-                  <h1 className="mt-1 truncate text-2xl font-bold text-[var(--theme-text)]">
-                    {currentLevel?.name || "普通会员"}
-                  </h1>
-                  <p className="mt-2 text-sm leading-6 text-[var(--theme-text-muted-on-surface)]">
-                    {currentLevel?.description || benefitSummary(currentLevel?.benefits || [])}
-                  </p>
+        <section
+          className={cn(
+            CARD_CLASS,
+            THEME_MEMBER_CARD_SHELL,
+            "relative overflow-hidden rounded-3xl p-4",
+          )}
+        >
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 12%, var(--theme-surface)) 0%, color-mix(in srgb, var(--theme-primary) 5%, var(--theme-surface)) 55%, var(--theme-surface) 100%)",
+            }}
+          />
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 w-28 opacity-70"
+            style={{ background: "var(--theme-member-card-sheen)" }}
+          />
+          <div className="relative z-10">
+            {loading ? (
+              <HeroSkeleton />
+            ) : (
+              <>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs ${THEME_MEMBER_CARD_MUTED}`}>当前会员等级</p>
+                    <h1 className="mt-1 text-2xl font-bold leading-tight text-[var(--theme-text)] sm:text-3xl">
+                      {currentLevel?.name || "普通会员"}
+                    </h1>
+                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--theme-text-muted-on-surface)]">
+                      {currentLevel?.description || buildBenefitSummaryFromBenefits(currentBenefits)}
+                    </p>
+                  </div>
+                  <span className="inline-flex shrink-0 items-center gap-1 self-start rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]">
+                    <Sparkles size={14} className="shrink-0" />
+                    会员成长
+                  </span>
                 </div>
-                <span className="shrink-0 rounded-full bg-[var(--theme-primary)] px-3 py-1 text-xs font-semibold text-[var(--theme-primary-foreground)]">
-                  会员权益
-                </span>
-              </div>
-              <div className="mt-4 rounded-xl bg-[var(--theme-bg)] p-3">
-                <p className="text-xs text-[var(--theme-text-muted-on-surface)]">升级进度</p>
-                <p className="mt-1 text-sm font-medium text-[var(--theme-text)]">{progressText}</p>
-                <p className="mt-1 text-xs text-[var(--theme-text-muted-on-surface)]">
-                  当前有效消费 RM {Number(data?.stats.total_spent || 0).toFixed(2)} · 有效订单 {data?.stats.order_count || 0} 笔
-                </p>
-              </div>
-            </>
+
+                <div className={cn("mt-4 rounded-2xl p-3", MEMBER_BENEFIT_SUMMARY_BG)}>
+                  <p className="text-xs text-[var(--theme-text-muted-on-surface)]">升级进度</p>
+                  <p className="mt-1 text-sm font-medium leading-6 text-[var(--theme-text)]">{progressText}</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
+                    当前有效消费 RM {Number(data?.stats.total_spent || 0).toFixed(2)} · 有效订单{" "}
+                    {data?.stats.order_count || 0} 笔
+                  </p>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-bg)_88%,transparent)]">
+                    <div
+                      className="h-full rounded-full bg-[var(--theme-primary)] transition-[width] duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                      role="progressbar"
+                      aria-valuenow={progressPercent}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label="升级进度"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        <section className={cn(CARD_CLASS, "p-4")}>
+          <h2 className="text-base font-semibold text-[var(--theme-text)]">当前等级权益</h2>
+          {loading ? (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="min-h-[88px] animate-pulse rounded-2xl bg-[var(--theme-bg)]" />
+              ))}
+            </div>
+          ) : currentBenefits.length === 0 ? (
+            <p className="mt-3 text-sm text-[var(--theme-text-muted-on-surface)]">暂无配置权益，请联系客服了解详情。</p>
+          ) : (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {currentBenefits.map((benefit) => (
+                <BenefitTileCard key={`${benefit.type}-${benefit.name}`} benefit={benefit} />
+              ))}
+            </div>
           )}
         </section>
 
-        <section className={CARD_CLASS}>
-          <h2 className="text-base font-semibold text-[var(--theme-text)]">当前等级权益</h2>
-          <div className="mt-3 grid gap-3">
-            {(currentLevel?.benefits || []).map((benefit) => {
-              const Icon = benefitIcon(benefit.type);
-              return (
-                <div key={`${benefit.type}-${benefit.name}`} className="flex gap-3 rounded-xl bg-[var(--theme-bg)] p-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/12 text-[var(--theme-primary)]">
-                    <Icon size={20} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-[var(--theme-text)]">{benefit.name}</span>
-                    <span className="mt-1 block text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">{benefit.description}</span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className={CARD_CLASS}>
+        <section className={cn(CARD_CLASS, "p-4")}>
           <h2 className="text-base font-semibold text-[var(--theme-text)]">等级权益对比</h2>
-          <div className="mt-3 divide-y divide-[var(--theme-border)]">
-            {(data?.all_levels || []).map((level) => (
-              <div key={level.id} className="flex items-center justify-between gap-3 py-3">
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-[var(--theme-text)]">{level.name}</span>
-                  <span className="mt-1 block truncate text-xs text-[var(--theme-text-muted-on-surface)]">
-                    {benefitSummary(level.benefits)}
-                  </span>
-                </span>
-                <ChevronRight size={16} className="shrink-0 text-[var(--theme-text-muted-on-surface)]" />
-              </div>
-            ))}
-          </div>
+          {loading ? (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="min-h-[100px] animate-pulse rounded-2xl bg-[var(--theme-bg)]" />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {allLevels.map((level) => {
+                const isCurrent = level.id === currentLevel?.id;
+                return (
+                  <div
+                    key={level.id}
+                    className={cn(
+                      "min-w-0 rounded-2xl border p-3",
+                      isCurrent
+                        ? "border-[color-mix(in_srgb,var(--theme-primary)_35%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]"
+                        : "border-[var(--theme-border)] bg-[var(--theme-bg)]",
+                    )}
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="min-w-0 text-sm font-semibold text-[var(--theme-text)]">{level.name}</p>
+                      {isCurrent ? (
+                        <span className="shrink-0 rounded-full bg-[var(--theme-primary)] px-2.5 py-1 text-xs font-semibold text-[var(--theme-primary-foreground)]">
+                          当前等级
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
+                      {buildBenefitSummaryFromBenefits(level.benefits || [])}
+                    </p>
+                    <p className="mt-2 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)]">
+                      升级条件：{formatLevelRequirement(level)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       </div>
     </StoreAccountLayout>
+  );
+}
+
+function BenefitTileCard({ benefit }: { benefit: MemberBenefit }) {
+  const Icon = benefitIcon(benefit.type);
+  return (
+    <div className={cn("flex min-w-0 gap-3 rounded-2xl p-3", MEMBER_BENEFIT_TILE_BG)}>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-surface))] text-[var(--theme-primary)]">
+        <Icon size={20} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="line-clamp-1 block text-sm font-semibold text-[var(--theme-text)]">{benefit.name}</span>
+        <span className="mt-1 line-clamp-3 block text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
+          {benefit.description}
+        </span>
+      </span>
+    </div>
   );
 }

@@ -54,3 +54,9 @@ readlink -f /var/www/damatong/current
 - `PM2_APP_NAME`：可选，指定 PM2 应用名（否则重启 all）
 - `SYSTEMD_SERVICE`：可选，指定 systemd 服务名（否则尝试自动发现）
 
+### 发版后检查清单
+
+未配置 `CF_API_TOKEN` / `CF_ZONE_ID` 时，脚本**不会**自动清 Cloudflare 边缘缓存。每次前端发版成功后，请按清单执行 **Purge Everything**：
+
+→ **[POST-RELEASE-CHECKLIST.md](./POST-RELEASE-CHECKLIST.md)**
+

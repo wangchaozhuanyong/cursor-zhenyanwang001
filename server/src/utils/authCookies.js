@@ -25,10 +25,17 @@ function isSecureCookie(req) {
   return req.secure || req.protocol === 'https' || req.get('x-forwarded-proto') === 'https';
 }
 
+function resolveCookieSecure(req) {
+  const override = process.env.AUTH_COOKIE_SECURE;
+  if (override === '1') return true;
+  if (override === '0') return false;
+  return isSecureCookie(req);
+}
+
 function setAuthCookies(req, res, token, prefix = '') {
   const accessName = prefix === 'admin' ? ADMIN_ACCESS_COOKIE : ACCESS_COOKIE;
   const refreshName = prefix === 'admin' ? ADMIN_REFRESH_COOKIE : REFRESH_COOKIE;
-  const secure = process.env.NODE_ENV === 'production' || isSecureCookie(req);
+  const secure = resolveCookieSecure(req);
 
   res.cookie(accessName, token.accessToken, {
     httpOnly: true,
@@ -47,7 +54,7 @@ function setAuthCookies(req, res, token, prefix = '') {
 }
 
 function clearAuthCookies(req, res, prefix = '') {
-  const secure = process.env.NODE_ENV === 'production' || isSecureCookie(req);
+  const secure = resolveCookieSecure(req);
   const common = { httpOnly: true, secure };
   if (prefix === 'admin') {
     res.clearCookie(ADMIN_ACCESS_COOKIE, { ...common, sameSite: 'lax', path: '/' });
@@ -76,4 +83,6 @@ module.exports = {
   clearAuthCookies,
   getAccessTokenFromRequest,
   getRefreshTokenFromRequest,
+  resolveCookieSecure,
+  isSecureCookie,
 };

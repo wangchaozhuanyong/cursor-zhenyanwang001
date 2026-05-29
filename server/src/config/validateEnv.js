@@ -95,6 +95,18 @@ function validateEnv() {
       }
     }
 
+    const adminMfaSecret = String(process.env.ADMIN_MFA_SECRET_KEY || '').trim();
+    if (!adminMfaSecret || adminMfaSecret.length < 64) {
+      console.error(
+        '[FATAL] 生产环境必须设置稳定的 ADMIN_MFA_SECRET_KEY，长度至少 64（建议使用 openssl rand -hex 48 或等价方式生成；勿与 JWT_SECRET 混用）',
+      );
+      process.exit(1);
+    }
+    if (hasPlaceholder(adminMfaSecret)) {
+      console.error('[FATAL] 生产环境请勿使用占位符 ADMIN_MFA_SECRET_KEY');
+      process.exit(1);
+    }
+
     if (!jwt || jwt.length < 64) {
       console.error(
         '[FATAL] 生产环境 JWT_SECRET 须为强随机字符串，长度至少 64（建议使用 openssl rand -hex 48 或等价方式生成）',

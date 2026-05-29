@@ -12,17 +12,34 @@ import type {
 import type { UserProfile } from "@/types/user";
 import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birthday";
 
+const COOKIE_SESSION_ERROR = "登录凭证未生效，请检查 HTTPS、Cookie、域名或 CORS 配置";
+
+/** 登录/注册写入本地标记后，用 Cookie 会话拉取资料，确认浏览器已保存并携带 HttpOnly Cookie */
+export async function assertCookieSessionReady(): Promise<void> {
+  try {
+    await getProfile({ sessionProbe: true });
+  } catch {
+    clearTokens();
+    throw new Error(COOKIE_SESSION_ERROR);
+  }
+}
+
+async function establishSessionAfterAuth(accessToken: string, refreshToken: string): Promise<void> {
+  setTokens(accessToken, refreshToken);
+  await assertCookieSessionReady();
+}
+
 export async function login(params: LoginParams): Promise<LoginResult> {
   const res = await authApi.login(params);
   const { accessToken, refreshToken } = res.data.token;
-  setTokens(accessToken, refreshToken);
+  await establishSessionAfterAuth(accessToken, refreshToken);
   return res.data;
 }
 
 export async function register(params: RegisterParams): Promise<LoginResult> {
   const res = await authApi.register(params);
   const { accessToken, refreshToken } = res.data.token;
-  setTokens(accessToken, refreshToken);
+  await establishSessionAfterAuth(accessToken, refreshToken);
   return res.data;
 }
 
@@ -51,7 +68,7 @@ export async function sendOtp(params: OtpSendParams) {
 export async function loginWithOtp(params: OtpLoginParams): Promise<LoginResult> {
   const res = await authApi.loginWithOtp(params);
   const { accessToken, refreshToken } = res.data.token;
-  setTokens(accessToken, refreshToken);
+  await establishSessionAfterAuth(accessToken, refreshToken);
   return res.data;
 }
 
@@ -63,7 +80,7 @@ export async function getAuthFeatures() {
 export async function exchangeOAuthTicket(params: OAuthExchangeParams): Promise<LoginResult> {
   const res = await authApi.exchangeOAuthTicket(params);
   const { accessToken, refreshToken } = res.data.token;
-  setTokens(accessToken, refreshToken);
+  await establishSessionAfterAuth(accessToken, refreshToken);
   return res.data;
 }
 
@@ -75,8 +92,14 @@ export async function sendWechatBindOtp(params: { phone: string; countryCode: st
 export async function bindWechatPhone(params: WechatBindPhoneParams): Promise<LoginResult> {
   const res = await authApi.bindWechatPhone(params);
   const { accessToken, refreshToken } = res.data.token;
-  setTokens(accessToken, refreshToken);
+  await establishSessionAfterAuth(accessToken, refreshToken);
   return res.data;
+}
+
+/** OAuth 重定向已写入 Cookie、仅缺本地登录标记时使用 */
+export async function establishSessionFromExistingCookies(): Promise<void> {
+  setTokens("", "");
+  await assertCookieSessionReady();
 }
 
 function mapProfileFromResponse(data: unknown): UserProfile {

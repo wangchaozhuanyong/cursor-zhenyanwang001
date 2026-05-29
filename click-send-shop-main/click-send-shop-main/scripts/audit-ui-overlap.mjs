@@ -39,6 +39,7 @@ const PUBLIC_ROUTES = [
   { path: "/history", name: "浏览记录" },
   { path: "/orders", name: "订单列表", needsAuth: true },
   { path: "/settings", name: "设置", needsAuth: true },
+  { path: "/member/benefits", name: "会员权益", needsAuth: true },
   { path: "/points", name: "积分", needsAuth: true },
   { path: "/rewards", name: "返现", needsAuth: true },
   { path: "/invite", name: "邀请", needsAuth: true },

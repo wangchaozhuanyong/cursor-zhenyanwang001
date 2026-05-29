@@ -188,7 +188,7 @@ async function refreshUserMemberLevel(q, userId, options = {}) {
       stats,
     };
   } catch (err) {
-    /** 等级表未迁移�?SQL 异常时不得阻断支�?返现钱包事务 */
+    /** 等级表未迁移�?SQL 异常时不得阻断支�?返现钱包事务 */
     console.error('[memberLevel] refreshUserMemberLevel skipped:', err?.code || '', err?.message || err);
     return { changed: false, level: null, stats: { totalSpent: 0, orderCount: 0 }, skipped: true };
   }

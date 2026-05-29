@@ -213,6 +213,9 @@ export default function Login() {
       let cancelled = false;
       (async () => {
         try {
+          await authService.establishSessionFromExistingCookies();
+          if (cancelled) return;
+          useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
           const { useCartStore } = await import("@/stores/useCartStore");
           const { useFavoritesStore } = await import("@/stores/useFavoritesStore");
           const { useHistoryStore } = await import("@/stores/useHistoryStore");
@@ -220,11 +223,12 @@ export default function Login() {
           const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
           const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
           const localHistorySnapshot = [...useHistoryStore.getState().history];
-          useAuthStore.setState({ isAuthenticated: true });
-          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
-          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
-          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
-          await useUserStore.getState().loadProfile();
+          await Promise.allSettled([
+            useCartStore.getState().mergeLocalThenSync(localCartSnapshot),
+            useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts),
+            useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot),
+            useUserStore.getState().loadProfile(),
+          ]);
           if (cancelled) return;
           toast.success("登录成功", { duration: 900, position: "top-center" });
           navigate(from, { replace: true, state: fromState });

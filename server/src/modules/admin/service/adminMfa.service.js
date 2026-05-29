@@ -13,6 +13,7 @@ const {
 } = require('@simplewebauthn/server');
 
 const MFA_CHALLENGE_TTL_MS = 5 * 60 * 1000;
+const MFA_MAX_FAILED_ATTEMPTS = 5;
 const SENSITIVE_ACTION_TOKEN_TTL_MS = Number(process.env.ADMIN_SENSITIVE_ACTION_TOKEN_MINUTES || 60) * 60 * 1000;
 const ADMIN_ACCESS_EXPIRES_IN = process.env.ADMIN_JWT_EXPIRES_IN || '15m';
 const ADMIN_ACCESS_EXPIRES_SECONDS = Number(process.env.ADMIN_JWT_EXPIRES_SECONDS || 15 * 60);
@@ -26,11 +27,31 @@ const challenges = new Map();
 const webAuthnChallenges = new Map();
 
 function getEncryptionKey() {
-  const seed = process.env.ADMIN_MFA_SECRET_KEY || process.env.JWT_SECRET || 'dev-admin-mfa-secret';
-  if (process.env.NODE_ENV === 'production' && (!seed || seed === 'dev-admin-mfa-secret')) {
-    throw new Error('ADMIN_MFA_SECRET_KEY or JWT_SECRET is required for admin MFA in production');
+  const isProd = process.env.NODE_ENV === 'production';
+  const adminMfaSecret = String(process.env.ADMIN_MFA_SECRET_KEY || '').trim();
+  if (isProd) {
+    if (!adminMfaSecret || adminMfaSecret.length < 64) {
+      throw new Error('ADMIN_MFA_SECRET_KEY is required for admin MFA in production (min 64 chars)');
+    }
+    return crypto.createHash('sha256').update(adminMfaSecret).digest();
   }
+  const seed = adminMfaSecret || process.env.JWT_SECRET || 'dev-admin-mfa-secret';
   return crypto.createHash('sha256').update(seed).digest();
+}
+
+function normalizeMfaCode(value) {
+  return String(value || '')
+    .replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+    .replace(/\D/g, '')
+    .slice(0, 6);
+}
+
+function safeDecryptMfaSecret(value) {
+  try {
+    return decryptSecret(value);
+  } catch {
+    return '';
+  }
 }
 
 function encryptSecret(secret) {
@@ -173,6 +194,7 @@ function putChallenge(payload) {
   const ticket = crypto.randomBytes(32).toString('base64url');
   challenges.set(ticket, {
     ...payload,
+    failedAttempts: 0,
     expiresAt: Date.now() + MFA_CHALLENGE_TTL_MS,
   });
   return ticket;
@@ -197,15 +219,6 @@ function takeWebAuthnChallenge(challenge, expectedPurpose) {
   return row;
 }
 
-function takeChallenge(ticket) {
-  const challenge = challenges.get(ticket);
-  challenges.delete(ticket);
-  if (!challenge || challenge.expiresAt < Date.now()) {
-    throw new BusinessError(401, 'MFA challenge expired, please log in again');
-  }
-  return challenge;
-}
-
 function peekChallenge(ticket, expectedPurpose) {
   const challenge = challenges.get(ticket);
   if (!challenge || challenge.expiresAt < Date.now()) {
@@ -216,6 +229,33 @@ function peekChallenge(ticket, expectedPurpose) {
     throw new BusinessError(400, 'Invalid MFA challenge');
   }
   return challenge;
+}
+
+function consumeChallenge(ticket) {
+  challenges.delete(ticket);
+}
+
+async function recordMfaFailedAttempt(ticket, user, req) {
+  const challenge = challenges.get(ticket);
+  if (challenge) {
+    challenge.failedAttempts = Number(challenge.failedAttempts || 0) + 1;
+    if (challenge.failedAttempts >= MFA_MAX_FAILED_ATTEMPTS) {
+      challenges.delete(ticket);
+    }
+  }
+
+  await writeAuditLog({
+    req,
+    operatorId: user.id,
+    operatorName: user.nickname || user.phone || '',
+    operatorRole: user.role,
+    actionType: 'admin.mfa.verify',
+    objectType: 'auth',
+    objectId: user.id,
+    summary: 'admin MFA verify failed',
+    result: 'failure',
+    errorMessage: 'MFA_CODE_INVALID',
+  });
 }
 
 function getWebAuthnOrigin(req) {
@@ -390,8 +430,16 @@ async function issueAdminSession(user, req, mfaVerifiedAt = 0, mfaMethod = 'totp
 
 async function verifyChallenge(body, req, res) {
   const ticket = String(body?.mfaTicket || '');
-  const code = String(body?.code || '');
-  const challenge = takeChallenge(ticket);
+  const code = normalizeMfaCode(body?.code);
+
+  if (!ticket) {
+    throw new BusinessError(400, 'MFA challenge invalid');
+  }
+  if (!/^\d{6}$/.test(code)) {
+    throw new BusinessError(400, 'MFA code invalid');
+  }
+
+  const challenge = peekChallenge(ticket);
   const user = await repo.selectUserForMfa(challenge.userId);
   if (!user) throw new BusinessError(401, 'MFA session is invalid, please log in again');
   if (user.account_status === 'disabled' || user.account_status === 'blacklisted') {
@@ -399,22 +447,16 @@ async function verifyChallenge(body, req, res) {
   }
 
   const settings = await repo.selectMfaSettings(user.id);
-  const secret = decryptSecret(settings?.totp_secret_enc);
-  if (!secret || !verifyTotp(secret, code)) {
-    await writeAuditLog({
-      req,
-      operatorId: user.id,
-      operatorName: user.nickname || user.phone || '',
-      operatorRole: user.role,
-      actionType: 'admin.mfa.verify',
-      objectType: 'auth',
-      objectId: user.id,
-      summary: 'admin MFA verify failed',
-      result: 'failure',
-      errorMessage: 'TOTP_INVALID',
-    });
-    throw new BusinessError(401, 'Invalid or expired verification code');
+  const secret = safeDecryptMfaSecret(settings?.totp_secret_enc);
+  if (!secret) {
+    throw new BusinessError(409, 'MFA secret invalid, please reset MFA');
   }
+  if (!verifyTotp(secret, code, { window: 2 })) {
+    await recordMfaFailedAttempt(ticket, user, req);
+    throw new BusinessError(401, 'MFA code invalid');
+  }
+
+  consumeChallenge(ticket);
 
   if (challenge.purpose === 'setup') {
     await repo.enableMfa(user.id, settings.totp_secret_enc);
@@ -582,10 +624,11 @@ async function verifyPasskeyAuthenticationResponse({ response, expectedPurpose, 
 async function finishPasskeyLogin(body, req, res) {
   const response = body?.response || body;
   const { challengeRow } = await verifyPasskeyAuthenticationResponse({ response, expectedPurpose: 'login', req });
-  const mfaChallenge = takeChallenge(challengeRow.mfaTicket);
-  if (String(mfaChallenge.userId) !== String(challengeRow.userId) || mfaChallenge.purpose !== 'login') {
+  const mfaChallenge = peekChallenge(challengeRow.mfaTicket, 'login');
+  if (String(mfaChallenge.userId) !== String(challengeRow.userId)) {
     throw new BusinessError(400, 'Invalid MFA challenge');
   }
+  consumeChallenge(challengeRow.mfaTicket);
   const user = await repo.selectUserForMfa(challengeRow.userId);
   if (!user) throw new BusinessError(401, 'User does not exist');
   if (body?.trustDevice) {
@@ -672,13 +715,20 @@ async function verifyReverify(body, req, res) {
   if (!userId) throw new BusinessError(401, 'Please log in first');
 
   const settings = await repo.selectMfaSettings(userId);
-  const secret = decryptSecret(settings?.totp_secret_enc);
-  if (!settings?.enabled || !secret) {
+  if (!settings?.enabled) {
     throw new BusinessError(403, 'Please complete MFA setup first');
   }
 
-  const code = String(body?.code || '');
-  if (!verifyTotp(secret, code)) {
+  const secret = safeDecryptMfaSecret(settings?.totp_secret_enc);
+  if (!secret) {
+    throw new BusinessError(409, 'MFA secret invalid, please reset MFA');
+  }
+
+  const code = normalizeMfaCode(body?.code);
+  if (!/^\d{6}$/.test(code)) {
+    throw new BusinessError(400, 'MFA code invalid');
+  }
+  if (!verifyTotp(secret, code, { window: 2 })) {
     await writeAuditLog({
       req,
       operatorId: userId,
@@ -689,9 +739,9 @@ async function verifyReverify(body, req, res) {
       objectId: userId,
       summary: 'admin MFA reverify failed',
       result: 'failure',
-      errorMessage: 'TOTP_INVALID',
+      errorMessage: 'MFA_CODE_INVALID',
     });
-    throw new BusinessError(401, 'Invalid or expired verification code');
+    throw new BusinessError(401, 'MFA code invalid');
   }
 
   await repo.touchMfaVerified(userId);

@@ -163,7 +163,14 @@ echo "[deploy] 健康检查"
 bash "${release_dir}/deploy/release/healthcheck.sh"
 
 echo "[deploy] Cloudflare 缓存清理（若已配置 CF_API_TOKEN / CF_ZONE_ID）"
-CF_ENV_FILE="${release_dir}/server/.env" bash "${release_dir}/deploy/purge-cloudflare-cache.sh" || true
+cf_env_file="${DEPLOY_BASE}/shared/server.env"
+[[ -f "${cf_env_file}" ]] || cf_env_file="${release_dir}/server/.env"
+cf_purge_out="$(CF_ENV_FILE="${cf_env_file}" bash "${release_dir}/deploy/purge-cloudflare-cache.sh" 2>&1)" || true
+printf '%s\n' "${cf_purge_out}"
+if printf '%s' "${cf_purge_out}" | grep -q 'skip: missing CF_API_TOKEN'; then
+  echo "[deploy] 发版后请手动 Purge：Cloudflare → damatong.net → Caching → Configuration → Purge Everything"
+  echo "[deploy] 清单：deploy/release/POST-RELEASE-CHECKLIST.md"
+fi
 
 echo "[deploy] 清理旧 release（保留 ${KEEP_RELEASES} 个）"
 if [[ "${KEEP_RELEASES}" =~ ^[0-9]+$ ]] && (( KEEP_RELEASES > 0 )); then

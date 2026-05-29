@@ -14,6 +14,8 @@ import type {
   WechatBindPhoneParams,
 } from "@/types/auth";
 import type { CartItem } from "@/types/cart";
+import type { Product } from "@/types/product";
+import type { FavoriteProduct } from "@/stores/useFavoritesStore";
 import { registerAuthExpiredHandler } from "@/lib/authSessionBridge";
 
 interface AuthState {
@@ -32,6 +34,61 @@ interface AuthState {
   clearError: () => void;
 }
 
+type LocalAuthSnapshots = {
+  localCartSnapshot: CartItem[];
+  localFavoriteIds: string[];
+  localFavoriteProducts: FavoriteProduct[];
+  localHistorySnapshot: Product[];
+};
+
+function captureLocalAuthSnapshots(): LocalAuthSnapshots {
+  return {
+    localCartSnapshot: [...useCartStore.getState().items],
+    localFavoriteIds: [...useFavoritesStore.getState().favoriteIds],
+    localFavoriteProducts: [...useFavoritesStore.getState().favoriteProducts],
+    localHistorySnapshot: [...useHistoryStore.getState().history],
+  };
+}
+
+/** Cookie 会话已确认后同步本地数据；非核心失败不抛出，避免触发全局登出 */
+async function syncAfterAuthenticated({
+  localCartSnapshot,
+  localFavoriteIds,
+  localFavoriteProducts,
+  localHistorySnapshot,
+}: LocalAuthSnapshots): Promise<void> {
+  await Promise.allSettled([
+    useCartStore.getState().mergeLocalThenSync(localCartSnapshot),
+    useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts),
+    useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot),
+    useUserStore.getState().loadProfile(),
+  ]);
+}
+
+function createAuthFlow<A extends unknown[]>(
+  set: (partial: Partial<AuthState>) => void,
+  runAuth: (...args: A) => Promise<unknown>,
+  failureMessage: string,
+) {
+  return async (...args: A) => {
+    const snapshots = captureLocalAuthSnapshots();
+    set({ loading: true, error: null });
+    try {
+      await runAuth(...args);
+      set({ isAuthenticated: true, authHydrated: true });
+      await syncAfterAuthenticated(snapshots);
+      set({ loading: false });
+    } catch (e) {
+      set({
+        loading: false,
+        isAuthenticated: false,
+        error: e instanceof Error ? e.message : failureMessage,
+      });
+      throw e;
+    }
+  };
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -40,120 +97,11 @@ export const useAuthStore = create<AuthState>()(
       loading: false,
       error: null,
 
-      login: async (params) => {
-        const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
-        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
-        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
-        const localHistorySnapshot = [...useHistoryStore.getState().history];
-        set({ loading: true, error: null });
-        try {
-          await authService.login(params);
-          set({ isAuthenticated: true, authHydrated: true });
-          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
-          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
-          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
-          await useUserStore.getState().loadProfile();
-          set({ loading: false });
-        } catch (e) {
-          set({
-            loading: false,
-            error: e instanceof Error ? e.message : "登录失败",
-          });
-          throw e;
-        }
-      },
-
-      register: async (params) => {
-        const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
-        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
-        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
-        const localHistorySnapshot = [...useHistoryStore.getState().history];
-        set({ loading: true, error: null });
-        try {
-          await authService.register(params);
-          set({ isAuthenticated: true, authHydrated: true });
-          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
-          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
-          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
-          await useUserStore.getState().loadProfile();
-          set({ loading: false });
-        } catch (e) {
-          set({
-            loading: false,
-            error: e instanceof Error ? e.message : "注册失败",
-          });
-          throw e;
-        }
-      },
-
-      loginWithOtp: async (params) => {
-        const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
-        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
-        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
-        const localHistorySnapshot = [...useHistoryStore.getState().history];
-        set({ loading: true, error: null });
-        try {
-          await authService.loginWithOtp(params);
-          set({ isAuthenticated: true, authHydrated: true });
-          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
-          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
-          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
-          await useUserStore.getState().loadProfile();
-          set({ loading: false });
-        } catch (e) {
-          set({
-            loading: false,
-            error: e instanceof Error ? e.message : "登录失败",
-          });
-          throw e;
-        }
-      },
-
-      completeOAuthLogin: async (params) => {
-        const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
-        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
-        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
-        const localHistorySnapshot = [...useHistoryStore.getState().history];
-        set({ loading: true, error: null });
-        try {
-          await authService.exchangeOAuthTicket(params);
-          set({ isAuthenticated: true, authHydrated: true });
-          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
-          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
-          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
-          await useUserStore.getState().loadProfile();
-          set({ loading: false });
-        } catch (e) {
-          set({
-            loading: false,
-            error: e instanceof Error ? e.message : "登录失败",
-          });
-          throw e;
-        }
-      },
-
-      bindWechatPhone: async (params) => {
-        const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
-        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
-        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
-        const localHistorySnapshot = [...useHistoryStore.getState().history];
-        set({ loading: true, error: null });
-        try {
-          await authService.bindWechatPhone(params);
-          set({ isAuthenticated: true, authHydrated: true });
-          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
-          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
-          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
-          await useUserStore.getState().loadProfile();
-          set({ loading: false });
-        } catch (e) {
-          set({
-            loading: false,
-            error: e instanceof Error ? e.message : "绑定失败",
-          });
-          throw e;
-        }
-      },
+      login: createAuthFlow(set, authService.login, "登录失败"),
+      register: createAuthFlow(set, authService.register, "注册失败"),
+      loginWithOtp: createAuthFlow(set, authService.loginWithOtp, "登录失败"),
+      completeOAuthLogin: createAuthFlow(set, authService.exchangeOAuthTicket, "登录失败"),
+      bindWechatPhone: createAuthFlow(set, authService.bindWechatPhone, "绑定失败"),
 
       logout: async () => {
         try { await authService.logout(); } catch { /* best-effort */ }

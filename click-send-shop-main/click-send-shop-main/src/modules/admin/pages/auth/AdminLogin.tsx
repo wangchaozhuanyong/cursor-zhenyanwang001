@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Fingerprint, KeyRound, Lock, User } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -8,6 +8,13 @@ import { adminLoginErrorMessage } from "@/utils/storefrontError";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import { useAdminT } from "@/hooks/useAdminT";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
+
+function normalizeMfaCode(value: string) {
+  return value
+    .replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+    .replace(/\D/g, "")
+    .slice(0, 6);
+}
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -29,6 +36,7 @@ export default function AdminLogin() {
   } | null>(null);
   const [shakeKey, setShakeKey] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<{ account?: string; password?: string }>({});
+  const mfaSubmittingRef = useRef(false);
 
   const finishLogin = () => {
     toast.success(t("login.loginSuccess"));
@@ -70,16 +78,23 @@ export default function AdminLogin() {
   };
 
   const handleVerifyMfa = async () => {
-    if (!mfaState?.ticket || !mfaCode.trim()) {
+    if (mfaSubmittingRef.current || loading || passkeyLoading) return;
+    if (!mfaState?.ticket) {
       setShakeKey((k) => k + 1);
-      toast.error(t("login.mfaCodeRequired"));
       return;
     }
+    const code = normalizeMfaCode(mfaCode);
+    if (!/^\d{6}$/.test(code)) {
+      setShakeKey((k) => k + 1);
+      toast.error("请输入完整的 6 位验证码");
+      return;
+    }
+    mfaSubmittingRef.current = true;
     setLoading(true);
     try {
       await verifyAdminMfa({
         mfaTicket: mfaState.ticket,
-        code: mfaCode.trim(),
+        code,
         username: account.trim(),
         trustDevice,
         trustDays,
@@ -89,6 +104,7 @@ export default function AdminLogin() {
       setShakeKey((k) => k + 1);
       toast.error(adminLoginErrorMessage(e, t("login.mfaVerifyFailed")));
     } finally {
+      mfaSubmittingRef.current = false;
       setLoading(false);
     }
   };
@@ -181,10 +197,14 @@ export default function AdminLogin() {
                       type="text"
                       inputMode="numeric"
                       value={mfaCode}
-                      onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      onChange={(e) => setMfaCode(normalizeMfaCode(e.target.value))}
                       placeholder={t("login.mfaCodePlaceholder")}
                       className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                      onKeyDown={(e) => e.key === "Enter" && !loading && !passkeyLoading && handleVerifyMfa()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !loading && !passkeyLoading && mfaCode.length === 6) {
+                          void handleVerifyMfa();
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -222,7 +242,7 @@ export default function AdminLogin() {
                 <button
                   type="button"
                   onClick={handleVerifyMfa}
-                  disabled={loading || passkeyLoading}
+                  disabled={loading || passkeyLoading || mfaCode.length !== 6}
                   className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
                 >
                   {loading ? t("login.mfaVerifying") : t("login.mfaVerifySubmit")}

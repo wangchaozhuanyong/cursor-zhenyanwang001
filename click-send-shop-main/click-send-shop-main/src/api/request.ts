@@ -205,6 +205,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     && ADMIN_CSRF_METHODS.has(method)
     && !isAdminAuthLogin
     && !isAdminAuthRefresh
+    && !isAdminMfaEndpoint
     && !isAdminPasskeyLoginEndpoint
     && !isAdminCsrfEndpoint;
   const csrfToken = needsAdminCsrf ? await getAdminCsrfToken() : "";

@@ -2,7 +2,7 @@ import { get, post, put, del } from "@/api/request";
 import type { CartItem } from "@/types/cart";
 
 export function getCart() {
-  return get<CartItem[]>("/cart", undefined, { skipAuthRetry: true });
+  return get<CartItem[]>("/cart", undefined, { skipAuthRetry: true, suppressAuthExpired: true });
 }
 
 export function addToCart(productId: string, qty: number, variantId = "", skuCode = "") {

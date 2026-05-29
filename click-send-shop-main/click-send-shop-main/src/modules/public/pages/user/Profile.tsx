@@ -55,6 +55,13 @@ import {
   THEME_MEMBER_CARD_MUTED,
   THEME_MEMBER_CARD_SHELL,
 } from "@/utils/themeVisuals";
+import {
+  buildBenefitHighlightsFromLevel,
+  buildBenefitSummaryFromLevel,
+  MEMBER_BENEFIT_SUMMARY_BG,
+  MEMBER_BENEFIT_TILE_BG,
+  type BenefitHighlightTile,
+} from "@/utils/memberBenefitPresentation";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 
 const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
@@ -109,118 +116,134 @@ function ProfileHeroCard({
   avatar,
   userName,
   memberLevelName,
+  memberBenefitsSummary,
+  benefitItems,
   profileHint,
   unreadCount,
   onMessageClick,
   onSettingsClick,
   onMemberLevelClick,
   onProfileHintClick,
+  onViewAllBenefits,
   onAvatarClick,
 }: {
   logoSrc: string;
   avatar?: string;
   userName: string;
   memberLevelName: string;
+  memberBenefitsSummary: string;
+  benefitItems: BenefitHighlightTile[];
   profileHint: string;
   unreadCount: number;
   onMessageClick: () => void;
   onSettingsClick: () => void;
   onMemberLevelClick: () => void;
   onProfileHintClick: () => void;
+  onViewAllBenefits: () => void;
   onAvatarClick: () => void;
 }) {
   return (
-    <section className={`relative overflow-hidden rounded-2xl px-[var(--store-card-x)] py-3 shadow-[var(--theme-shadow)] ${THEME_MEMBER_CARD_SHELL}`}>
+    <section
+      className={`relative overflow-hidden rounded-3xl px-[var(--store-card-x)] py-4 shadow-[var(--theme-shadow)] ${THEME_MEMBER_CARD_SHELL}`}
+    >
       <div
         className="pointer-events-none absolute inset-0"
-        style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 10%, var(--theme-surface)) 0%, color-mix(in srgb, var(--theme-primary) 4%, var(--theme-surface)) 52%, var(--theme-surface) 100%)" }}
+        style={{
+          background:
+            "linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 10%, var(--theme-surface)) 0%, color-mix(in srgb, var(--theme-primary) 4%, var(--theme-surface)) 52%, var(--theme-surface) 100%)",
+        }}
       />
       <div
         className="pointer-events-none absolute inset-y-0 right-0 w-24 opacity-70"
         style={{ background: "var(--theme-member-card-sheen)" }}
       />
-      <div className="relative flex min-h-[60px] items-start gap-3.5">
-        <button type="button" onClick={onAvatarClick} className="relative -mt-0.5 shrink-0" aria-label="更换头像">
-          <span
-            className="flex h-14 w-14 items-center justify-center rounded-full border bg-[var(--theme-surface)] p-[3px] shadow-sm"
-            style={{ borderColor: "var(--theme-member-card-avatar-ring)" }}
-          >
-            {avatar || logoSrc ? (
-              <img src={avatar || logoSrc} alt={userName} className="h-full w-full rounded-full object-cover" />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center rounded-full bg-black/25 text-lg font-bold">
-                {userName.slice(0, 1)}
-              </span>
-            )}
-          </span>
-          <span className="absolute -bottom-px -right-px flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm">
-            <Camera size={11} />
-          </span>
-        </button>
-        <div className="min-w-0 flex-1 pt-0.5">
-          <div className="flex min-w-0 items-center gap-2">
-            <p className="max-w-full truncate text-lg font-bold leading-tight text-[var(--theme-text)]">{userName}</p>
+      <div className="relative z-10 space-y-4">
+        <div className="flex items-start gap-3">
+          <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
+            <span
+              className="flex h-14 w-14 items-center justify-center rounded-full border bg-[var(--theme-surface)] p-[3px] shadow-sm"
+              style={{ borderColor: "var(--theme-member-card-avatar-ring)" }}
+            >
+              {avatar || logoSrc ? (
+                <img src={avatar || logoSrc} alt={userName} className="h-full w-full rounded-full object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-text)_18%,transparent)] text-lg font-bold text-[var(--theme-text)]">
+                  {userName.slice(0, 1)}
+                </span>
+              )}
+            </span>
+            <span className="absolute -bottom-px -right-px flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm">
+              <Camera size={11} />
+            </span>
+          </button>
+          <div className="min-w-0 flex-1 pt-0.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <p className="min-w-0 max-w-full truncate text-lg font-bold leading-tight text-[var(--theme-text)]">{userName}</p>
+              <button
+                type="button"
+                onClick={onMemberLevelClick}
+                className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm"
+                style={{
+                  backgroundColor: "var(--theme-member-card-badge-bg)",
+                  color: "var(--theme-member-card-badge-fg)",
+                }}
+              >
+                {memberLevelName}
+              </button>
+            </div>
             <button
               type="button"
-              onClick={onMemberLevelClick}
-              className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm"
-              style={{
-                backgroundColor: "var(--theme-member-card-badge-bg)",
-                color: "var(--theme-member-card-badge-fg)",
-              }}
+              onClick={onProfileHintClick}
+              className={`mt-1 block max-w-full text-left text-xs leading-5 ${THEME_MEMBER_CARD_MUTED}`}
             >
-              {memberLevelName}
+              <span className="line-clamp-2">{profileHint}</span>
             </button>
           </div>
-          <button
-            type="button"
-            onClick={onProfileHintClick}
-            className={`mt-1 block max-w-full text-left text-xs leading-5 ${THEME_MEMBER_CARD_MUTED}`}
-          >
-            <span className="line-clamp-1">{profileHint}</span>
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <NotificationIconButton unreadCount={unreadCount} onClick={onMessageClick} className="h-11 w-11" />
+            <button
+              type="button"
+              onClick={onSettingsClick}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-border)_76%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] text-[var(--theme-text)]"
+              aria-label="设置"
+            >
+              <Settings size={16} />
+            </button>
+          </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2 pt-0.5">
-          <NotificationIconButton unreadCount={unreadCount} onClick={onMessageClick} />
-          <button
-            type="button"
-            onClick={onSettingsClick}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-border)_76%,transparent)] bg-[var(--theme-surface)]/82 text-[var(--theme-text)]"
-            aria-label="设置"
-          >
-            <Settings size={16} />
-          </button>
+
+        <div className={cn("rounded-2xl p-3", MEMBER_BENEFIT_SUMMARY_BG)}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-[var(--theme-text-muted-on-surface)]">当前会员权益</p>
+              <p className="mt-1 line-clamp-2 text-sm leading-6 text-[var(--theme-text)]">{memberBenefitsSummary}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onViewAllBenefits}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-0.5 self-start rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] sm:self-center"
+            >
+              查看全部权益
+              <ChevronRight size={16} className="shrink-0" />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {benefitItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className={cn("min-w-0 rounded-2xl p-3", MEMBER_BENEFIT_TILE_BG)}>
+                <Icon size={18} className="shrink-0 text-[var(--theme-primary)]" />
+                <p className="mt-2 line-clamp-1 text-sm font-semibold text-[var(--theme-text)]">{item.label}</p>
+                {item.value ? (
+                  <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">{item.value}</p>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       </div>
-    </section>
-  );
-}
-
-function MemberBenefitsCard({
-  memberLevelName,
-  summary,
-  onClick,
-}: {
-  memberLevelName: string;
-  summary: string;
-  onClick: () => void;
-}) {
-  return (
-    <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex min-h-16 w-full items-center justify-between gap-3 rounded-xl border border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-3 py-3 text-left"
-      >
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold text-[var(--theme-text)]">{memberLevelName}权益</span>
-          <span className="mt-1 block truncate text-xs text-[var(--theme-text-muted-on-surface)]">{summary}</span>
-        </span>
-        <span className="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--theme-primary)]">
-          查看全部权益
-          <ChevronRight size={14} />
-        </span>
-      </button>
     </section>
   );
 }
@@ -314,12 +337,8 @@ export default function Profile() {
 
   const userName = nickname?.trim() || "会员用户";
   const memberLevelName = memberLevel?.name?.trim() || "普通会员";
-  const memberBenefitsSummary = [
-    Number(memberLevel?.discount_rate || 1) < 1 ? "专属折扣" : "",
-    Number(memberLevel?.points_multiplier || 1) > 1 ? "积分加速" : "",
-    memberLevel?.free_shipping_enabled ? "免邮权益" : "",
-    "专属服务",
-  ].filter(Boolean).join(" · ");
+  const memberBenefitsSummary = buildBenefitSummaryFromLevel(memberLevel);
+  const memberBenefitItems = buildBenefitHighlightsFromLevel(memberLevel);
   const code = inviteCode?.trim() || "暂无";
   const profileHint = getProfileCompletionText({ avatar, birthday, wechat, whatsapp });
   const couponCount = useMemo(() => coupons.filter((c) => !c.used_at).length, [coupons]);
@@ -404,18 +423,16 @@ export default function Profile() {
                 avatar={avatar}
                 userName={userName}
                 memberLevelName={memberLevelName}
+                memberBenefitsSummary={memberBenefitsSummary}
+                benefitItems={memberBenefitItems}
                 profileHint={profileHint}
                 unreadCount={unreadCount}
                 onMessageClick={() => navigate("/notifications", { state: { from: "/profile" } })}
                 onSettingsClick={() => navigate("/settings", { state: { from: "/profile" } })}
                 onMemberLevelClick={() => gateNavigate(navigate, "/member/benefits", true)}
                 onProfileHintClick={() => gateNavigate(navigate, "/settings", true)}
+                onViewAllBenefits={() => gateNavigate(navigate, "/member/benefits", true)}
                 onAvatarClick={() => avatarInputRef.current?.click()}
-              />
-              <MemberBenefitsCard
-                memberLevelName={memberLevelName}
-                summary={memberBenefitsSummary}
-                onClick={() => gateNavigate(navigate, "/member/benefits", true)}
               />
               <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
               {ProfileWechatBindSection ? (

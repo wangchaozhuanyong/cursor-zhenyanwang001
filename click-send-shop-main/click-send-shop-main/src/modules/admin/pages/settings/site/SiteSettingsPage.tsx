@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useHydrateFromQuery } from "@/hooks/useHydrateFromQuery";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -64,12 +65,11 @@ export default function SiteSettingsPage() {
 
   const loading = settingsQuery.isLoading && !settingsQuery.data;
 
-  useEffect(() => {
-    if (!settingsQuery.data) return;
-    const merged = mergeSettings(settingsQuery.data);
+  const hydrateFromServer = useCallback((data: Partial<SiteSettings>) => {
+    const merged = mergeSettings(data);
     setSettings(merged);
     setSaved(merged);
-  }, [settingsQuery.data]);
+  }, []);
 
   useEffect(() => {
     if (loading || location.hash !== "#policy-paths") return;
@@ -94,6 +94,8 @@ export default function SiteSettingsPage() {
 
   const anyDirty = useMemo(() => Object.values(dirtyMap).some(Boolean), [dirtyMap]);
   useAdminTabDirty(anyDirty);
+
+  useHydrateFromQuery(settingsQuery.data, hydrateFromServer, anyDirty);
 
   useEffect(() => {
     if (!anyDirty) return;

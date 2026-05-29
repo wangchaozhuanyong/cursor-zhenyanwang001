@@ -84,13 +84,13 @@ export default function AdminSupportDownload() {
   });
 
   const loading = settingsQuery.isLoading && !settingsQuery.data;
-  const { markClean } = useAdminFormDirty(form, formHydrated && !loading);
+  const { dirty, markClean } = useAdminFormDirty(form, formHydrated && !loading);
 
   useEffect(() => {
-    if (!settingsQuery.data) return;
+    if (!settingsQuery.data || dirty) return;
     setForm(parseSupportDownloadConfig(settingsQuery.data.supportDownloadConfig));
     setFormHydrated(true);
-  }, [settingsQuery.data]);
+  }, [settingsQuery.data, dirty]);
 
   const channels = useMemo(() => [...form.support.channels].sort((a, b) => a.sortOrder - b.sortOrder), [form.support.channels]);
   const platforms = useMemo(() => ensureMobilePlatforms(form.download.platforms), [form.download.platforms]);

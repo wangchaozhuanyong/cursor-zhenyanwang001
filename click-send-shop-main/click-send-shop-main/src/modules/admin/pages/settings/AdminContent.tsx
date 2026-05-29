@@ -92,7 +92,7 @@ export default function AdminContent() {
   const invalidateContent = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.contentHub() });
 
   useEffect(() => {
-    if (!contentQuery.data) return;
+    if (!contentQuery.data || helpDirty || editDirty || createDirty) return;
     const { settings } = contentQuery.data;
     setPolicyPaths({
       termsPath: settings.termsPath?.trim() || DEFAULT_POLICY_PATHS.termsPath,
@@ -103,7 +103,7 @@ export default function AdminContent() {
     setHelpForm(parsed);
     setHelpJson(prettyJson);
     setHelpBaseline({ form: JSON.stringify(parsed), json: prettyJson });
-  }, [contentQuery.data]);
+  }, [contentQuery.data, helpDirty, editDirty, createDirty]);
 
   const handleSave = async () => {
     if (!form.title || !form.content || !editing) {

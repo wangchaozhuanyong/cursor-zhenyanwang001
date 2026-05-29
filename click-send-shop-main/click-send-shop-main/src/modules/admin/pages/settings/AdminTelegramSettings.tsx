@@ -95,10 +95,10 @@ export default function AdminTelegramSettings() {
 
   const loading = telegramQuery.isLoading && !telegramQuery.data;
   const dirtyDraft = useMemo(() => ({ form, botTokenInput }), [form, botTokenInput]);
-  const { markClean } = useAdminFormDirty(dirtyDraft, formHydrated && !loading);
+  const { dirty, markClean } = useAdminFormDirty(dirtyDraft, formHydrated && !loading);
 
   useEffect(() => {
-    if (!telegramQuery.data?.settings) return;
+    if (!telegramQuery.data?.settings || dirty) return;
     const s = telegramQuery.data.settings;
     setForm(settingsToForm(s));
     setBotTokenMasked(s.botTokenMasked || "");
@@ -108,7 +108,7 @@ export default function AdminTelegramSettings() {
     setLogs(telegramQuery.data.logs);
     void loadPreview(settingsToForm(s));
     setFormHydrated(true);
-  }, [telegramQuery.data, loadPreview]);
+  }, [telegramQuery.data, loadPreview, dirty]);
 
   const reload = () => void telegramQuery.refetch();
 

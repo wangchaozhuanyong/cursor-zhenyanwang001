@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useHydrateFromQuery } from "@/hooks/useHydrateFromQuery";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
@@ -11,6 +12,7 @@ import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 type FeatureItem = {
   key: keyof SiteCapabilities;
@@ -78,13 +80,14 @@ export default function AdminFeatureSettings() {
   });
 
   const loading = capabilitiesQuery.isLoading && !capabilitiesQuery.data;
-  const { markClean } = useAdminFormDirty(values, formHydrated && !loading);
+  const { dirty, markClean } = useAdminFormDirty(values, formHydrated && !loading);
 
-  useEffect(() => {
-    if (!capabilitiesQuery.data) return;
-    setValues({ ...DEFAULT_SITE_CAPABILITIES, ...capabilitiesQuery.data });
+  const hydrateFromServer = useCallback((data: SiteCapabilities) => {
+    setValues({ ...DEFAULT_SITE_CAPABILITIES, ...data });
     setFormHydrated(true);
-  }, [capabilitiesQuery.data]);
+  }, []);
+
+  useHydrateFromQuery(capabilitiesQuery.data, hydrateFromServer, dirty);
 
   const enabledOperationalCount = useMemo(
     () => OPERATIONAL_ITEMS.filter((item) => values[item.key]).length,
@@ -102,8 +105,8 @@ export default function AdminFeatureSettings() {
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteCapabilities() });
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.telegramSettings() });
       toast.success(tText("功能开关已保存"));
-    } catch {
-      toast.error(tText("保存失败"));
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
       setSaving(false);
     }
@@ -150,17 +153,21 @@ export default function AdminFeatureSettings() {
     <AdminPageShell
       hint={(
         <Tx>
-          {`常规开关已启用 ${enabledOperationalCount} / ${OPERATIONAL_ITEMS.length} 项。保存后立即作用于前台入口与相关接口；底部「预留」项仅超级管理员可修改。`}
+          {dirty
+            ? `已修改功能开关，请点击右上角「保存」写入数据库（${enabledOperationalCount} / ${OPERATIONAL_ITEMS.length} 项已开启）。`
+            : `常规开关已启用 ${enabledOperationalCount} / ${OPERATIONAL_ITEMS.length} 项。保存后立即作用于前台入口与相关接口；底部「预留」项仅超级管理员可修改。`}
         </Tx>
       )}
       toolbar={(
         <button
           type="button"
           onClick={save}
-          disabled={saving || loading}
-          className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          disabled={saving || loading || !dirty}
+          className={`rounded-full px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50 ${
+            dirty ? "bg-primary" : "bg-muted text-muted-foreground"
+          }`}
         >
-          {saving ? tText("保存中...") : tText("保存")}
+          {saving ? tText("保存中...") : dirty ? tText("保存") : tText("已保存")}
         </button>
       )}
     >

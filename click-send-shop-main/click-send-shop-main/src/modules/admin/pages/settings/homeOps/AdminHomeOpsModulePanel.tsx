@@ -50,17 +50,17 @@ export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
 
   const loading = settingsQuery.isLoading && !settingsQuery.data;
 
-  useEffect(() => {
-    if (!settingsQuery.data) return;
-    const merged = mergeHomeModuleSettings(settingsQuery.data);
-    setSettings(merged);
-    setBaseline(serializeModuleDraft(merged));
-  }, [settingsQuery.data]);
-
   const dirty = useMemo(
     () => !loading && serializeModuleDraft(settings) !== baseline,
     [baseline, loading, settings],
   );
+
+  useEffect(() => {
+    if (!settingsQuery.data || dirty) return;
+    const merged = mergeHomeModuleSettings(settingsQuery.data);
+    setSettings(merged);
+    setBaseline(serializeModuleDraft(merged));
+  }, [settingsQuery.data, dirty]);
 
   useEffect(() => {
     onDirtyChange?.(dirty);

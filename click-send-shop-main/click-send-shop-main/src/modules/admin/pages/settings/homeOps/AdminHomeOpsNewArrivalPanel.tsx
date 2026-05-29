@@ -52,8 +52,13 @@ export default function AdminHomeOpsNewArrivalPanel({ onDirtyChange }: Props) {
 
   const loading = settingsQuery.isLoading && !settingsQuery.data;
 
+  const dirty = useMemo(
+    () => !loading && serializeNewArrivalForm(form) !== baseline,
+    [baseline, form, loading],
+  );
+
   useEffect(() => {
-    if (!settingsQuery.data) return;
+    if (!settingsQuery.data || dirty) return;
     const data = settingsQuery.data;
     const nextForm = {
       newArrivalSectionTitle: data?.newArrivalSectionTitle ?? "",
@@ -64,12 +69,7 @@ export default function AdminHomeOpsNewArrivalPanel({ onDirtyChange }: Props) {
     };
     setForm(nextForm);
     setBaseline(serializeNewArrivalForm(nextForm));
-  }, [settingsQuery.data]);
-
-  const dirty = useMemo(
-    () => !loading && serializeNewArrivalForm(form) !== baseline,
-    [baseline, form, loading],
-  );
+  }, [settingsQuery.data, dirty]);
 
   useEffect(() => {
     onDirtyChange?.(dirty);

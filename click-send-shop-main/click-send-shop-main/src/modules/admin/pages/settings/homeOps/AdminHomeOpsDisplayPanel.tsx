@@ -41,17 +41,17 @@ export default function AdminHomeOpsDisplayPanel({ onDirtyChange }: Props) {
 
   const loading = settingsQuery.isLoading && !settingsQuery.data;
 
-  useEffect(() => {
-    if (!settingsQuery.data) return;
-    const merged = mergeHomeModuleSettings(settingsQuery.data);
-    setSettings(merged);
-    setBaseline(serializeDisplayDraft(merged));
-  }, [settingsQuery.data]);
-
   const dirty = useMemo(
     () => !loading && serializeDisplayDraft(settings) !== baseline,
     [baseline, loading, settings],
   );
+
+  useEffect(() => {
+    if (!settingsQuery.data || dirty) return;
+    const merged = mergeHomeModuleSettings(settingsQuery.data);
+    setSettings(merged);
+    setBaseline(serializeDisplayDraft(merged));
+  }, [settingsQuery.data, dirty]);
 
   useEffect(() => {
     onDirtyChange?.(dirty);

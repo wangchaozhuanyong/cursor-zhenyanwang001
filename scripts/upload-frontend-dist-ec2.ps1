@@ -32,8 +32,9 @@ function Invoke-Native {
     [Parameter(Mandatory = $true)][string[]]$ArgumentList
   )
   & $FilePath @ArgumentList
-  if ($LASTEXITCODE -ne 0) {
-    throw "$FilePath failed with exit code $LASTEXITCODE"
+  $exitCode = if ($null -ne $global:LASTEXITCODE) { $global:LASTEXITCODE } elseif ($?) { 0 } else { 1 }
+  if ($exitCode -ne 0) {
+    throw "$FilePath failed with exit code $exitCode"
   }
 }
 

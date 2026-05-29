@@ -315,30 +315,39 @@ async function registerSeoPrerender(app, { frontendDist }) {
     title: `帮助中心｜${resolveSiteName(siteInfo)}`,
     description: `查看${resolveSiteName(siteInfo)}常见问题、下单流程、支付配送、售后退款与账户说明。`,
     canonical: `${baseUrl}/help`,
+    prerenderH1: '帮助中心',
+    prerenderText: '查看大马通常见问题，包括下单、配送、售后、退款、签证、留学、第二家园和联系客服说明。',
   })));
   app.get('/support-download', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
     ...buildHomePayload(baseUrl, siteInfo),
     title: `客服/下载 - ${resolveSiteName(siteInfo)}`,
     description: `联系${resolveSiteName(siteInfo)}客服，或查看如何把商城添加到手机桌面。`,
     canonical: `${baseUrl}/support-download`,
+    prerenderH1: '客服与下载',
+    prerenderText: '查看大马通客服联系方式、服务时间和手机桌面添加说明。',
   })));
   app.get('/about', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
     ...buildHomePayload(baseUrl, siteInfo),
     title: `关于我们｜${resolveSiteName(siteInfo)}`,
     description: `了解${resolveSiteName(siteInfo)}的平台信息、服务范围和联系方式。`,
     canonical: `${baseUrl}/about`,
+    prerenderH1: '关于我们',
+    prerenderText: '了解大马通的平台信息、服务范围、联系方式和面向马来西亚中文用户的业务说明。',
   })));
   app.get('/content/:slug', (req, res) => render(req, res, async (baseUrl, siteInfo) => {
     const page = await contentService.getContentPageBySlug(req.params.slug);
     if (!page) return null;
     const seoTitle = page.seo_title || '';
     const seoDesc = page.seo_description || '';
+    const contentText = stripHtml(page.content || NEUTRAL_SITE_DESCRIPTION);
     return {
       ...buildHomePayload(baseUrl, siteInfo),
       title: seoTitle || `${page.title}｜${resolveSiteName(siteInfo)}`,
-      description: seoDesc || truncate(stripHtml(page.content || NEUTRAL_SITE_DESCRIPTION), 150),
+      description: seoDesc || truncate(contentText, 150),
       canonical: `${baseUrl}/content/${encodeURIComponent(req.params.slug)}`,
       robots: ['draft', 'hidden', 'private'].includes(String(page.status || '').toLowerCase()) || Number(page.noindex || 0) === 1 ? 'noindex,follow' : 'index,follow',
+      prerenderH1: page.title,
+      prerenderText: truncate(contentText, 260),
     };
   }));
   app.get('/product/:id', (req, res) => render(req, res, async (baseUrl, siteInfo) => {

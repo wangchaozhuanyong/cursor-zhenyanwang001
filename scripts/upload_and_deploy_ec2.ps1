@@ -21,8 +21,9 @@ function Invoke-Native {
   # 必须整组传入 ArgumentList；若用 ValueFromRemainingArguments + 外层 @() 展开，
   # PowerShell 会把 -o 等误绑到其它形参，导致 ssh 报 “stricthostkeychecking extra arguments”。
   & $FilePath @ArgumentList
-  if ($LASTEXITCODE -ne 0) {
-    throw "$FilePath failed with exit code $LASTEXITCODE"
+  $exitCode = if ($null -ne $global:LASTEXITCODE) { $global:LASTEXITCODE } elseif ($?) { 0 } else { 1 }
+  if ($exitCode -ne 0) {
+    throw "$FilePath failed with exit code $exitCode"
   }
 }
 
@@ -97,7 +98,7 @@ Invoke-Native scp ($sshOpts + @($archivePath, "${ServerUser}@${ServerHost}:${rem
 Write-Host "[4/5] Extracting archive to staging directory on server ..."
 Invoke-Native ssh ($sshOpts + @(
   "${ServerUser}@${ServerHost}",
-  "set -euo pipefail; rm -rf '${remoteStaging}'; mkdir -p '${remoteStaging}'; tar -xzf '${remoteArchive}' -C '${remoteStaging}' --strip-components=1; test -f '${remoteStaging}/deploy/ci-deploy.sh'; if [ -f '${RemoteProjectRoot}/server/.env' ]; then mkdir -p '${remoteStaging}/server' && cp '${RemoteProjectRoot}/server/.env' '${remoteStaging}/server/.env'; fi; rsync -a --delete --exclude='.git/' --exclude='server/.env' --exclude='**/node_modules/' --exclude='click-send-shop-main/click-send-shop-main/dist/' --exclude='public-frontend/' '${remoteStaging}/' '${RemoteProjectRoot}/'; find '${RemoteProjectRoot}/deploy' -maxdepth 1 -name '*.sh' -exec sed -i 's/\r$//' {} +; rm -rf '${remoteStaging}' '${remoteArchive}'"
+  "set -euo pipefail; rm -rf '${remoteStaging}'; mkdir -p '${remoteStaging}'; tar -xzf '${remoteArchive}' -C '${remoteStaging}' --strip-components=1; test -f '${remoteStaging}/deploy/ci-deploy.sh'; if [ -f '${RemoteProjectRoot}/server/.env' ]; then mkdir -p '${remoteStaging}/server' && cp '${RemoteProjectRoot}/server/.env' '${remoteStaging}/server/.env'; fi; rsync -a --delete --exclude='.git/' --exclude='server/.env' --exclude='server/backups/' --exclude='**/node_modules/' --exclude='click-send-shop-main/click-send-shop-main/dist/' --exclude='public-frontend/' '${remoteStaging}/' '${RemoteProjectRoot}/'; find '${RemoteProjectRoot}/deploy' -maxdepth 1 -name '*.sh' -exec sed -i 's/\r$//' {} +; rm -rf '${remoteStaging}' '${remoteArchive}'"
 ))
 
 Write-Host "[5/5] Running safe CI deploy script ..."

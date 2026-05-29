@@ -6,6 +6,7 @@ import type { ActivityProductOption } from "@/api/admin/activity";
 import * as activityService from "@/services/admin/activityService";
 import { getProducts } from "@/api/admin/product";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 
 type Props = {
   open: boolean;
@@ -15,6 +16,9 @@ type Props = {
 };
 
 export default function ActivityProductPicker({ open, onClose, onConfirm, existingIds }: Props) {
+  const { locale } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [list, setList] = useState<ActivityProductOption[]>([]);
@@ -125,13 +129,13 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
     <AdminResponsiveSheet
       open={open}
       onOpenChange={(next) => !next && onClose()}
-      title="选择活动商品"
+      title={L("选择活动商品", "Select products for promotion")}
       size="xl"
       height="90vh"
       footer={(
         <div className="flex gap-2">
-          <button type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation flex-1 rounded-lg bg-gold px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">加入活动</button>
-          <button type="button" onClick={onClose} className="touch-manipulation rounded-lg border border-border px-3 py-2.5 text-sm">取消</button>
+          <button type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation flex-1 rounded-lg bg-gold px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{L("加入活动", "Add to promotion")}</button>
+          <button type="button" onClick={onClose} className="touch-manipulation rounded-lg border border-border px-3 py-2.5 text-sm">{L("取消", "Cancel")}</button>
         </div>
       )}
       stickyFooter
@@ -142,14 +146,14 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
             <AdminSearchInput
               value={keyword}
               onChange={setKeyword}
-              placeholder="搜索商品名称"
+              placeholder={L("搜索商品名称", "Search product name")}
               iconSize={16}
               className="min-h-[40px] border-0 bg-secondary"
             />
           </div>
           <div className="max-h-[50vh] lg:max-h-[60vh] overflow-auto p-3">
-            {loading ? <div className="text-sm text-muted-foreground">加载中...</div> : null}
-            {!loading && filtered.length === 0 ? <div className="text-sm text-muted-foreground">暂无可选商品</div> : null}
+            {loading ? <div className="text-sm text-muted-foreground">{L("加载中...", "Loading...")}</div> : null}
+            {!loading && filtered.length === 0 ? <div className="text-sm text-muted-foreground">{L("暂无可选商品", "No selectable products")}</div> : null}
             <div className="space-y-2">
               {filtered.map((p) => {
                 const checked = !!selected[p.id];
@@ -164,7 +168,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
                     <img src={p.cover_image || ""} alt={p.name} className="h-12 w-12 rounded object-cover bg-secondary" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{p.name}</div>
-                      <div className="text-xs text-muted-foreground">库存 {p.stock} · 原价 RM {p.price}</div>
+                      <div className="text-xs text-muted-foreground">{L("库存", "Stock")} {p.stock} · {L("原价", "Original")} RM {p.price}</div>
                     </div>
                   </button>
                 );
@@ -175,13 +179,13 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
 
         <div className="flex min-h-0 flex-col rounded-lg border border-border p-3">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold">已选商品（{selectedList.length}）</h3>
-            <button type="button" onClick={() => setSelected({})} className="text-xs text-muted-foreground">清空</button>
+            <h3 className="text-sm font-semibold">{L("已选商品", "Selected products")}（{selectedList.length}）</h3>
+            <button type="button" onClick={() => setSelected({})} className="text-xs text-muted-foreground">{L("清空", "Clear")}</button>
           </div>
           <div className="grid gap-2">
-            <input value={batchDiscount} onChange={(e) => setBatchDiscount(e.target.value)} placeholder="批量折扣系数（如 0.8）" className="rounded-lg bg-secondary px-3 py-2 text-sm" />
-            <input value={batchStock} onChange={(e) => setBatchStock(e.target.value)} placeholder="统一活动库存" className="rounded-lg bg-secondary px-3 py-2 text-sm" />
-            <input value={batchLimit} onChange={(e) => setBatchLimit(e.target.value)} placeholder="统一每人限购" className="rounded-lg bg-secondary px-3 py-2 text-sm" />
+            <input value={batchDiscount} onChange={(e) => setBatchDiscount(e.target.value)} placeholder={L("批量折扣系数（如 0.8）", "Bulk discount factor (e.g. 0.8)")} className="rounded-lg bg-secondary px-3 py-2 text-sm" />
+            <input value={batchStock} onChange={(e) => setBatchStock(e.target.value)} placeholder={L("统一活动库存", "Shared promotion stock")} className="rounded-lg bg-secondary px-3 py-2 text-sm" />
+            <input value={batchLimit} onChange={(e) => setBatchLimit(e.target.value)} placeholder={L("统一每人限购", "Shared per-user limit")} className="rounded-lg bg-secondary px-3 py-2 text-sm" />
           </div>
           <div className="mt-3 max-h-40 space-y-2 overflow-auto lg:max-h-none lg:flex-1">
             {selectedList.map((p) => (

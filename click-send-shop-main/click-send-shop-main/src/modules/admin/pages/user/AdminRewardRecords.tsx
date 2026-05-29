@@ -10,19 +10,11 @@ import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
 import { fetchReferralRules, updateReferralRule } from "@/services/admin/inviteService";
 import { fetchRewardSettings, saveRewardSettings } from "@/services/admin/rewardSettingsService";
 import type { ReferralRule, ReferralRuleEditRow, ReferralSettlementTiming } from "@/types/invite";
-
-const REFERRAL_SETTLEMENT_OPTIONS: { value: ReferralSettlementTiming; label: string }[] = [
-  { value: "order_paid", label: "付款成功后" },
-  { value: "order_shipped", label: "发货后" },
-  { value: "order_completed", label: "订单完成后" },
-];
 import type { RewardRecord, RewardStats, RewardStatus, RewardUsageSettings } from "@/types/reward";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatUserDisplay } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
-import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
-import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import {
@@ -35,7 +27,6 @@ import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideAction
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
-  buildRewardRecordFilterChips,
   hasActiveRewardRecordFilters,
   removeRewardRecordFilterChip,
 } from "@/utils/adminRewardRecordFilters";
@@ -48,7 +39,7 @@ import {
   THEME_TEXT_DANGER,
 } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import {
   adminTableCellClass,
   adminTableTheadRow,
@@ -58,23 +49,6 @@ import {
 const REWARD_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "right", "right", "right", "right", "center", "left", "left",
 ];
-
-const statusOptions: Array<{ value: "" | RewardStatus; label: string }> = [
-  { value: "", label: "全部状态" },
-  { value: "approved", label: "已入账" },
-  { value: "paid", label: "已提现" },
-  { value: "reversed", label: "已冲正" },
-  { value: "pending", label: "待处理" },
-  { value: "rejected", label: "已拒绝" },
-];
-
-const statusLabels: Record<string, { label: string; className: string }> = {
-  pending: { label: "待处理", className: THEME_BADGE_WARNING },
-  approved: { label: "已入账", className: THEME_BADGE_SUCCESS },
-  paid: { label: "已提现", className: THEME_BADGE_PRIMARY },
-  rejected: { label: "已拒绝", className: THEME_BADGE_MUTED },
-  reversed: { label: "已冲正", className: THEME_BADGE_DANGER },
-};
 
 const emptyStats: RewardStats = {
   settledAmount: 0,
@@ -88,11 +62,11 @@ function money(value: unknown) {
   return Number.isFinite(n) ? n.toFixed(2) : "0.00";
 }
 
-function normalizeReferralRules(data: ReferralRule[]): ReferralRuleEditRow[] {
+function normalizeReferralRules(data: ReferralRule[], localeIsEn: boolean): ReferralRuleEditRow[] {
   return data.map((r, idx) => ({
     id: String(r.id ?? idx),
     level: Number(r.level ?? idx + 1),
-    name: String(r.name || `等级 ${idx + 1}`),
+    name: String(r.name || (localeIsEn ? `Tier ${idx + 1}` : `等级 ${idx + 1}`)),
     rewardPercent: Number(r.rewardPercent ?? 0),
     settlementTiming: (r.settlementTiming || "order_paid") as ReferralSettlementTiming,
     enabled: Boolean(r.enabled ?? true),
@@ -100,9 +74,10 @@ function normalizeReferralRules(data: ReferralRule[]): ReferralRuleEditRow[] {
 }
 
 export default function AdminRewardRecords({ embedded = false }: { embedded?: boolean }) {
-  const { tText } = useAdminT();
-  const { rewardStatus: labelRewardStatus, text: L } = useAdminDisplayLabel();
-  const statusOptionsLocalized = useLocalizedOptions(statusOptions);
+  const { locale } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const { rewardStatus: labelRewardStatus } = useAdminDisplayLabel();
   const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState<"" | RewardStatus>("");
@@ -112,9 +87,32 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
   const [displaySaving, setDisplaySaving] = useState(false);
   const [rules, setRules] = useState<ReferralRuleEditRow[]>([]);
   const [displaySettings, setDisplaySettings] = useState<RewardUsageSettings>({
-    balanceLabel: "购物可用返现",
-    usageNotice: "返现金额仅可用于购物，不可提现。",
+    balanceLabel: L("购物可用返现", "Cashback available for shopping"),
+    usageNotice: L("返现金额仅可用于购物，不可提现。", "Cashback can only be used for shopping and cannot be withdrawn."),
   });
+
+  const settlementOptions = useMemo(() => ([
+    { value: "order_paid" as const, label: L("付款成功后", "After payment") },
+    { value: "order_shipped" as const, label: L("发货后", "After shipping") },
+    { value: "order_completed" as const, label: L("订单完成后", "After order completion") },
+  ]), [L]);
+
+  const statusOptions = useMemo(() => ([
+    { value: "", label: L("全部状态", "All statuses") },
+    { value: "approved" as const, label: L("已入账", "Credited") },
+    { value: "paid" as const, label: L("已提现", "Withdrawn") },
+    { value: "reversed" as const, label: L("已冲正", "Reversed") },
+    { value: "pending" as const, label: L("待处理", "Pending") },
+    { value: "rejected" as const, label: L("已拒绝", "Rejected") },
+  ]), [L]);
+
+  const statusLabels = useMemo(() => ({
+    pending: { label: L("待处理", "Pending"), className: THEME_BADGE_WARNING },
+    approved: { label: L("已入账", "Credited"), className: THEME_BADGE_SUCCESS },
+    paid: { label: L("已提现", "Withdrawn"), className: THEME_BADGE_PRIMARY },
+    rejected: { label: L("已拒绝", "Rejected"), className: THEME_BADGE_MUTED },
+    reversed: { label: L("已冲正", "Reversed"), className: THEME_BADGE_DANGER },
+  }), [L]);
 
   const queryParams = useMemo(
     () => ({ page, pageSize, keyword, status: status || undefined }),
@@ -149,8 +147,8 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
 
   useEffect(() => {
     if (!rulesQuery.data) return;
-    setRules(normalizeReferralRules(rulesQuery.data));
-  }, [rulesQuery.data]);
+    setRules(normalizeReferralRules(rulesQuery.data, isEn));
+  }, [isEn, rulesQuery.data]);
 
   useEffect(() => {
     if (!displayQuery.data) return;
@@ -176,10 +174,10 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
           enabled: rule.enabled,
         });
       }
-      toast.success(tText("返现规则已保存"));
+      toast.success(L("返现规则已保存", "Cashback rules saved"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.referralRules() });
     } catch (e) {
-      toast.error(toastErrorMessage(e, "保存返现规则失败"));
+      toast.error(toastErrorMessage(e, L("保存返现规则失败", "Failed to save cashback rules")));
     } finally {
       setRulesSaving(false);
     }
@@ -189,17 +187,25 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
     setDisplaySaving(true);
     try {
       await saveRewardSettings(displaySettings);
-      toast.success(tText("前台展示设置已保存"));
+      toast.success(L("前台展示设置已保存", "Display settings saved"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.rewardSettings() });
     } catch (e) {
-      toast.error(toastErrorMessage(e, "保存展示设置失败"));
+      toast.error(toastErrorMessage(e, L("保存展示设置失败", "Failed to save display settings")));
     } finally {
       setDisplaySaving(false);
     }
   };
 
   const filterState = useMemo(() => ({ keyword, status }), [keyword, status]);
-  const filterChips = useMemo(() => buildRewardRecordFilterChips(filterState), [filterState]);
+  const filterChips = useMemo(() => {
+    const chips: Array<{ key: string; label: string }> = [];
+    if (keyword.trim()) chips.push({ key: "keyword", label: L(`关键词：${keyword.trim()}`, `Keyword: ${keyword.trim()}`) });
+    if (status) {
+      const statusLabel = statusLabels[status]?.label || status;
+      chips.push({ key: "status", label: L(`状态：${statusLabel}`, `Status: ${statusLabel}`) });
+    }
+    return chips;
+  }, [L, keyword, status, statusLabels]);
   const filtersActive = hasActiveRewardRecordFilters(filterState);
   const emptyGuide = useLocalizedAdminEmptyGuide(
     filtersActive ? ADMIN_EMPTY_GUIDES.rewardRecordsFiltered : ADMIN_EMPTY_GUIDES.rewardRecords,
@@ -219,38 +225,40 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
   };
 
   const cards = [
-    { label: tText("累计入账"), value: `RM ${money(stats.settledAmount)}`, icon: TrendingUp, className: "text-[var(--theme-price)]" },
-    { label: tText("累计冲正"), value: `RM ${money(stats.reversedAmount)}`, icon: TrendingDown, className: THEME_TEXT_DANGER },
-    { label: tText("返现记录"), value: String(stats.totalRecords || 0), icon: RotateCcw, className: "text-[var(--theme-price)]" },
-    { label: tText("获奖用户"), value: String(stats.rewardedUsers || 0), icon: Users, className: "text-[var(--theme-primary)]" },
+    { label: L("累计入账", "Total credited"), value: `RM ${money(stats.settledAmount)}`, icon: TrendingUp, className: "text-[var(--theme-price)]" },
+    { label: L("累计冲正", "Total reversed"), value: `RM ${money(stats.reversedAmount)}`, icon: TrendingDown, className: THEME_TEXT_DANGER },
+    { label: L("返现记录", "Cashback records"), value: String(stats.totalRecords || 0), icon: RotateCcw, className: "text-[var(--theme-price)]" },
+    { label: L("获奖用户", "Rewarded users"), value: String(stats.rewardedUsers || 0), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
 
   const renderMobileCard = (record: RewardRecord) => {
-    const status = statusLabels[record.status]
-      ? { label: L(statusLabels[record.status].label), className: statusLabels[record.status].className }
+    const statusItem = statusLabels[record.status]
+      ? { label: statusLabels[record.status].label, className: statusLabels[record.status].className }
       : { label: labelRewardStatus(record.status), className: "bg-muted text-muted-foreground" };
 
     return (
       <AdminTableMobileCard>
         <div className="mb-2 flex items-start justify-between gap-2">
           <p className="text-sm font-semibold">{formatUserDisplay(record.user_nickname, record.user_phone)}</p>
-          <span className={`shrink-0 rounded-full px-2 py-1 text-xs ${status.className}`}>{status.label}</span>
+          <span className={`shrink-0 rounded-full px-2 py-1 text-xs ${statusItem.className}`}>{statusItem.label}</span>
         </div>
         <p className="mb-2 text-base font-semibold text-[var(--theme-price)]">RM {money(record.amount)}</p>
         <div className="space-y-2">
-          <AdminTableMobileCardField label={tText("订单号")}>
-            <span className="font-mono text-xs text-muted-foreground">{record.order_no || "—"}</span>
+          <AdminTableMobileCardField label={L("订单号", "Order No.")}>
+            <span className="font-mono text-xs text-muted-foreground">{record.order_no || "-"}</span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label={tText("订单 / 比例")}>
-            <span className="text-xs text-muted-foreground">RM {money(record.order_amount)} · {money(record.rate)}% · {tText("层级")} {record.level || 1}</span>
+          <AdminTableMobileCardField label={L("订单 / 比例", "Order / Rate")}>
+            <span className="text-xs text-muted-foreground">
+              RM {money(record.order_amount)} · {money(record.rate)}% · {L("层级", "Tier")} {record.level || 1}
+            </span>
           </AdminTableMobileCardField>
           {record.remark ? (
-            <AdminTableMobileCardField label={tText("备注")}>
+            <AdminTableMobileCardField label={L("备注", "Note")}>
               <span className="text-xs text-muted-foreground line-clamp-2">{record.remark}</span>
             </AdminTableMobileCardField>
           ) : null}
-          <AdminTableMobileCardField label={tText("时间")}>
-            <span className="text-xs text-muted-foreground">{record.created_at ? formatDateTime(record.created_at) : "—"}</span>
+          <AdminTableMobileCardField label={L("时间", "Time")}>
+            <span className="text-xs text-muted-foreground">{record.created_at ? formatDateTime(record.created_at) : "-"}</span>
           </AdminTableMobileCardField>
         </div>
       </AdminTableMobileCard>
@@ -273,8 +281,8 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
 
       <section className="rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4 theme-shadow">
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]"><Tx>返现规则</Tx></h2>
-          <p className="text-xs text-theme-muted"><Tx>返现规则与返现记录同页维护，修改后点击保存。</Tx></p>
+          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]">{L("返现规则", "Cashback Rules")}</h2>
+          <p className="text-xs text-theme-muted">{L("返现规则与返现记录同页维护，修改后点击保存。", "Manage cashback rules and records on the same page. Save after making changes.")}</p>
         </div>
         {rulesLoading ? (
           <div className="space-y-3">
@@ -289,17 +297,17 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
             ))}
           </div>
         ) : rules.length === 0 ? (
-          <div className="py-8 text-center text-sm text-theme-muted"><Tx>暂无返现规则</Tx></div>
+          <div className="py-8 text-center text-sm text-theme-muted">{L("暂无返现规则", "No cashback rules yet")}</div>
         ) : (
           <div className="space-y-3">
             {rules.map((rule) => (
               <div key={rule.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] px-3 py-2.5">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-[var(--theme-text-on-surface)]">{rule.name}</p>
-                  <p className="text-[11px] text-theme-muted">第 {rule.level} 级返现</p>
+                  <p className="text-[11px] text-theme-muted">{L(`第 ${rule.level} 级返现`, `Tier ${rule.level} cashback`)}</p>
                   <PermissionGate permission="referral.manage">
                     <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-theme-muted">
-                      <span><Tx>结算时机</Tx></span>
+                      <span>{L("结算时机", "Settlement timing")}</span>
                       <select
                         className="rounded-md border border-[var(--theme-border)] bg-theme-surface px-1.5 py-0.5 text-[11px] text-[var(--theme-text-on-surface)]"
                         value={rule.settlementTiming}
@@ -307,7 +315,7 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
                           updateRuleField(rule.id, "settlementTiming", e.target.value as ReferralSettlementTiming)
                         }
                       >
-                        {REFERRAL_SETTLEMENT_OPTIONS.map((opt) => (
+                        {settlementOptions.map((opt) => (
                           <option key={opt.value} value={opt.value}>
                             {opt.label}
                           </option>
@@ -324,9 +332,9 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
                         className="accent-[var(--theme-price)]"
                         checked={rule.enabled}
                         onChange={(e) => updateRuleField(rule.id, "enabled", e.target.checked)}
-                      /><Tx>
-                      启用
-                    </Tx></label>
+                      />
+                      {L("启用", "Enabled")}
+                    </label>
                   </PermissionGate>
                   <PermissionGate permission="referral.manage">
                     <div className="flex items-center gap-1">
@@ -347,12 +355,12 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
                 type="button"
                 variant="gold"
                 state={rulesSaving ? "loading" : "normal"}
-                loadingText="保存中..."
+                loadingText={L("保存中...", "Saving...")}
                 onClick={() => void saveRules()}
                 className="rounded-lg px-4 py-2 text-xs font-semibold"
-              ><Tx>
-                保存返现规则
-              </Tx></LoadingButton>
+              >
+                {L("保存返现规则", "Save cashback rules")}
+              </LoadingButton>
             </PermissionGate>
           </div>
         )}
@@ -360,8 +368,8 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
 
       <section className="rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4 theme-shadow">
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]"><Tx>前台展示设置</Tx></h2>
-          <p className="text-xs text-theme-muted"><Tx>配置用户返现记录页的余额标签与使用说明，保存后立即生效。</Tx></p>
+          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]">{L("前台展示设置", "Frontend display settings")}</h2>
+          <p className="text-xs text-theme-muted">{L("配置用户返现记录页的余额标签与使用说明，保存后立即生效。", "Configure the balance label and usage note on the user cashback page. Changes take effect immediately after saving.")}</p>
         </div>
         {displayLoading ? (
           <div className="space-y-3">
@@ -371,37 +379,39 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
         ) : (
           <div className="space-y-3">
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-theme-muted"><Tx>余额标签</Tx></span>
+              <span className="text-xs font-medium text-theme-muted">{L("余额标签", "Balance label")}</span>
               <input
                 value={displaySettings.balanceLabel}
                 onChange={(e) => setDisplaySettings((prev) => ({ ...prev, balanceLabel: e.target.value }))}
                 className="rounded-lg border border-[var(--theme-border)] bg-theme-surface px-3 py-2.5 text-sm text-[var(--theme-text-on-surface)] outline-none"
-                placeholder={tText("购物可用返现")}
+                placeholder={L("购物可用返现", "Cashback available for shopping")}
               />
             </label>
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-theme-muted"><Tx>使用说明</Tx></span>
+              <span className="text-xs font-medium text-theme-muted">{L("使用说明", "Usage note")}</span>
               <textarea
                 value={displaySettings.usageNotice}
                 onChange={(e) => setDisplaySettings((prev) => ({ ...prev, usageNotice: e.target.value }))}
                 rows={3}
                 className="rounded-lg border border-[var(--theme-border)] bg-theme-surface px-3 py-2.5 text-sm text-[var(--theme-text-on-surface)] outline-none"
-                placeholder={tText("返现金额仅可用于购物，不可提现。")}
+                placeholder={L("返现金额仅可用于购物，不可提现。", "Cashback can only be used for shopping and cannot be withdrawn.")}
               />
             </label>
             <div className="rounded-lg border border-dashed border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] px-3 py-2.5 text-xs text-theme-muted">
-              <p className="font-medium text-[var(--theme-text-on-surface)]">{displaySettings.balanceLabel || tText("购物可用返现")}</p>
-              <p className="mt-1">{displaySettings.usageNotice || tText("返现金额仅可用于购物，不可提现。")}</p>
+              <p className="font-medium text-[var(--theme-text-on-surface)]">{displaySettings.balanceLabel || L("购物可用返现", "Cashback available for shopping")}</p>
+              <p className="mt-1">{displaySettings.usageNotice || L("返现金额仅可用于购物，不可提现。", "Cashback can only be used for shopping and cannot be withdrawn.")}</p>
             </div>
             <PermissionGate permission="referral.manage">
               <LoadingButton
                 type="button"
                 variant="gold"
                 state={displaySaving ? "loading" : "normal"}
-                loadingText="保存中..."
+                loadingText={L("保存中...", "Saving...")}
                 onClick={() => void saveDisplaySettings()}
                 className="rounded-lg px-4 py-2 text-xs font-semibold"
-              ><Tx>保存展示设置</Tx></LoadingButton>
+              >
+                {L("保存展示设置", "Save display settings")}
+              </LoadingButton>
             </PermissionGate>
           </div>
         )}
@@ -411,14 +421,17 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="flex-1">
             <SearchBar
-              placeholder={tText("搜索订单号 / 昵称 / 手机号...")}
+              placeholder={L("搜索订单号 / 昵称 / 手机号...", "Search order no. / nickname / phone...")}
               value={keyword}
-              onChange={(v) => { setKeyword(v); setPage(1); }}
+              onChange={(v) => {
+                setKeyword(v);
+                setPage(1);
+              }}
             />
           </div>
           <AdminFilterSelect value={status} onChange={(e) => { setStatus(e.target.value as "" | RewardStatus); setPage(1); }} variant="theme">
-            {statusOptionsLocalized.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {statusOptions.map((opt) => (
+              <option key={opt.value || "all"} value={opt.value}>{opt.label}</option>
             ))}
           </AdminFilterSelect>
         </div>
@@ -435,7 +448,17 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
         tableClassName="w-full min-w-[940px] text-sm"
         theadClassName="border-b border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]"
         thead={adminTableTheadRow(
-          ["用户", "订单号", "层级", "订单金额", "比例", "返现金额", "状态", "备注", "时间"],
+          [
+            L("用户", "User"),
+            L("订单号", "Order No."),
+            L("层级", "Tier"),
+            L("订单金额", "Order Amount"),
+            L("比例", "Rate"),
+            L("返现金额", "Cashback"),
+            L("状态", "Status"),
+            L("备注", "Note"),
+            L("时间", "Time"),
+          ],
           REWARD_COLUMN_ALIGNS,
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
@@ -451,12 +474,12 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
         )}
         renderMobileCard={renderMobileCard}
         renderRow={(record) => {
-          const label = statusLabels[record.status]
-            ? { label: L(statusLabels[record.status].label), className: statusLabels[record.status].className }
+          const statusItem = statusLabels[record.status]
+            ? { label: statusLabels[record.status].label, className: statusLabels[record.status].className }
             : {
-            label: labelRewardStatus(record.status),
-            className: "bg-muted text-muted-foreground",
-          };
+              label: labelRewardStatus(record.status),
+              className: "bg-muted text-muted-foreground",
+            };
           return (
             <>
               <td className={adminTableCellClass("left")} title={record.user_id || undefined}>
@@ -464,19 +487,19 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
                   {formatUserDisplay(record.user_nickname, record.user_phone)}
                 </p>
               </td>
-              <td className={adminTableCellClass("left", "font-mono text-xs text-[var(--theme-text-on-surface)]")}>{record.order_no || "—"}</td>
+              <td className={adminTableCellClass("left", "font-mono text-xs text-[var(--theme-text-on-surface)]")}>{record.order_no || "-"}</td>
               <td className={adminTableCellClass("right", "text-theme-muted")}>{record.level || 1}</td>
               <td className={adminTableCellClass("right", "text-theme-muted")}>RM {money(record.order_amount)}</td>
               <td className={adminTableCellClass("right", "text-theme-muted")}>{money(record.rate)}%</td>
               <td className={adminTableCellClass("right", "font-semibold text-[var(--theme-price)]")}>RM {money(record.amount)}</td>
               <td className={adminTableCellClass("center")}>
-                <span className={`rounded-full px-2 py-1 text-xs ${label.className}`}>{label.label}</span>
+                <span className={`rounded-full px-2 py-1 text-xs ${statusItem.className}`}>{statusItem.label}</span>
               </td>
               <td className={adminTableCellClass("left", "max-w-[14rem]")}>
-                <AdminTableCell value={record.remark || "—"} fullText={record.remark || ""} maxWidth="13rem" muted />
+                <AdminTableCell value={record.remark || "-"} fullText={record.remark || ""} maxWidth="13rem" muted />
               </td>
               <td className={adminTableCellClass("left", "text-xs text-theme-muted")}>
-                {record.created_at ? formatDateTime(record.created_at) : "—"}
+                {record.created_at ? formatDateTime(record.created_at) : "-"}
               </td>
             </>
           );
@@ -491,7 +514,10 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
 
   return (
     <AdminPageShell
-      hint={<Tx>查看邀请返现入账、冲正和结算状态，用于查账和争议处理</Tx>}
+      hint={L(
+        "查看邀请返现入账、冲正和结算状态，用于查账和争议处理。",
+        "Review cashback credits, reversals, and settlement status for bookkeeping and disputes.",
+      )}
     >
       {body}
     </AdminPageShell>

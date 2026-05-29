@@ -33,7 +33,9 @@ function trimOrUndef(value: string) {
 }
 
 export function useAdminUsers() {
-  const { tText } = useAdminT();
+  const { locale, tText } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
   const capabilities = useSiteCapabilities();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -65,6 +67,13 @@ export function useAdminUsers() {
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const [deletingTagId, setDeletingTagId] = useState<string | null>(null);
   const { confirm } = useAdminConfirm();
+  const USER_SORT_OPTIONS = [
+    { value: "", label: L("注册时间（默认）", "Registration time (default)") },
+    { value: "total_spent", label: L("累计消费", "Total spent") },
+    { value: "valid_order_count", label: L("有效订单数", "Valid orders") },
+    { value: "last_purchase_at", label: L("最近购买", "Last purchase") },
+    { value: "refund_rate", label: L("退款率", "Refund rate") },
+  ] as const;
 
   const queryParams = useMemo<userService.UserListQuery>(
     () => ({
@@ -144,37 +153,37 @@ export function useAdminUsers() {
   const createTagMutation = useMutation({
     mutationFn: (payload: { name: string; color: string }) => userService.createUserTag(payload),
     onSuccess: async () => {
-      toast.success(tText("标签已创建"));
+      toast.success(L("标签已创建", "Tag created"));
       await invalidateUsers();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, tText("创建标签失败"))),
+    onError: (error) => toast.error(toastErrorMessage(error, L("创建标签失败", "Failed to create tag"))),
   });
 
   const deleteTagMutation = useMutation({
     mutationFn: (id: string) => userService.deleteUserTag(id),
     onSuccess: async () => {
-      toast.success(tText("标签已删除"));
+      toast.success(L("标签已删除", "Tag deleted"));
       setDeletingTagId(null);
       await invalidateUsers();
     },
     onError: (error) => {
       setDeletingTagId(null);
-      toast.error(toastErrorMessage(error, tText("删除标签失败")));
+      toast.error(toastErrorMessage(error, L("删除标签失败", "Failed to delete tag")));
     },
   });
 
   const batchTagMutation = useMutation({
     mutationFn: async () => {
-      if (!batchTagId) throw new Error(tText("请先选择标签"));
-      if (!selectedUserIds.length) throw new Error(tText("请先勾选用户"));
+      if (!batchTagId) throw new Error(L("请先选择标签", "Please choose a tag first"));
+      if (!selectedUserIds.length) throw new Error(L("请先勾选用户", "Please select users first"));
       return userService.batchSetUserTag(batchTagId, selectedUserIds);
     },
     onSuccess: async (affected) => {
-      toast.success(tText(`批量打标完成：${affected}/${selectedUserIds.length}`));
+      toast.success(L(`批量打标完成：${affected}/${selectedUserIds.length}`, `Batch tagging done: ${affected}/${selectedUserIds.length}`));
       setSelectedUserIds([]);
       await invalidateUsers();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, tText("批量打标失败"))),
+    onError: (error) => toast.error(toastErrorMessage(error, L("批量打标失败", "Failed to batch tag"))),
   });
 
   const users = usersQuery.data?.list || [];
@@ -223,38 +232,38 @@ export function useAdminUsers() {
 
   const filterChips = useMemo(() => {
     const chips: AdminFilterChip[] = [];
-    if (search.trim()) chips.push({ key: "search", label: tText(`关键词：${search.trim()}`) });
-    if (selectedTagId) chips.push({ key: "tag", label: tText(`标签：${selectedTagName || selectedTagId}`) });
-    const wechat = filterBoundLabel(tText, tText("微信"), wechatBoundFilter);
+    if (search.trim()) chips.push({ key: "search", label: L(`关键词：${search.trim()}`, `Keyword: ${search.trim()}`) });
+    if (selectedTagId) chips.push({ key: "tag", label: L(`标签：${selectedTagName || selectedTagId}`, `Tag: ${selectedTagName || selectedTagId}`) });
+    const wechat = filterBoundLabel((zh) => L(zh, zh), L("微信", "WeChat"), wechatBoundFilter);
     if (wechat) chips.push({ key: "wechat", label: wechat });
-    const phone = filterBoundLabel(tText, tText("手机号"), phoneBoundFilter);
+    const phone = filterBoundLabel((zh) => L(zh, zh), L("手机号", "Phone"), phoneBoundFilter);
     if (phone) chips.push({ key: "phone", label: phone });
-    if (memberLevelIdFilter) chips.push({ key: "memberLevel", label: tText(`会员：${selectedMemberLevelName || memberLevelIdFilter}`) });
+    if (memberLevelIdFilter) chips.push({ key: "memberLevel", label: L(`会员：${selectedMemberLevelName || memberLevelIdFilter}`, `Member: ${selectedMemberLevelName || memberLevelIdFilter}`) });
     if (accountStatusFilter) {
       chips.push({
         key: "accountStatus",
-        label: tText(`账号：${ACCOUNT_STATUS_LABELS[accountStatusFilter] || accountStatusFilter}`),
+        label: L(`账号：${ACCOUNT_STATUS_LABELS[accountStatusFilter] || accountStatusFilter}`, `Account: ${ACCOUNT_STATUS_LABELS[accountStatusFilter] || accountStatusFilter}`),
       });
     }
-    const order = restrictionLabel(tText, tText("下单"), orderRestrictedFilter);
+    const order = restrictionLabel((zh) => L(zh, zh), L("下单", "Order"), orderRestrictedFilter);
     if (order) chips.push({ key: "orderRestricted", label: order });
-    const coupon = restrictionLabel(tText, tText("领券"), couponRestrictedFilter);
+    const coupon = restrictionLabel((zh) => L(zh, zh), L("领券", "Coupon"), couponRestrictedFilter);
     if (coupon) chips.push({ key: "couponRestricted", label: coupon });
-    const comment = restrictionLabel(tText, tText("评论"), commentRestrictedFilter);
+    const comment = restrictionLabel((zh) => L(zh, zh), L("评论", "Comment"), commentRestrictedFilter);
     if (comment) chips.push({ key: "commentRestricted", label: comment });
-    if (dateFromFilter.trim()) chips.push({ key: "dateFrom", label: tText(`注册起：${dateFromFilter.trim()}`) });
-    if (dateToFilter.trim()) chips.push({ key: "dateTo", label: tText(`注册止：${dateToFilter.trim()}`) });
-    if (totalSpentMinFilter.trim()) chips.push({ key: "totalSpentMin", label: tText(`消费≥${totalSpentMinFilter.trim()}`) });
-    if (totalSpentMaxFilter.trim()) chips.push({ key: "totalSpentMax", label: tText(`消费≤${totalSpentMaxFilter.trim()}`) });
-    if (orderCountMinFilter.trim()) chips.push({ key: "orderCountMin", label: tText(`订单≥${orderCountMinFilter.trim()}`) });
-    if (orderCountMaxFilter.trim()) chips.push({ key: "orderCountMax", label: tText(`订单≤${orderCountMaxFilter.trim()}`) });
-    if (pointsMinFilter.trim()) chips.push({ key: "pointsMin", label: tText(`积分≥${pointsMinFilter.trim()}`) });
-    if (pointsMaxFilter.trim()) chips.push({ key: "pointsMax", label: tText(`积分≤${pointsMaxFilter.trim()}`) });
-    if (refundRateMinFilter.trim()) chips.push({ key: "refundRateMin", label: tText(`退款率≥${refundRateMinFilter.trim()}`) });
-    if (refundRateMaxFilter.trim()) chips.push({ key: "refundRateMax", label: tText(`退款率≤${refundRateMaxFilter.trim()}`) });
+    if (dateFromFilter.trim()) chips.push({ key: "dateFrom", label: L(`注册起：${dateFromFilter.trim()}`, `Registered from: ${dateFromFilter.trim()}`) });
+    if (dateToFilter.trim()) chips.push({ key: "dateTo", label: L(`注册止：${dateToFilter.trim()}`, `Registered to: ${dateToFilter.trim()}`) });
+    if (totalSpentMinFilter.trim()) chips.push({ key: "totalSpentMin", label: L(`消费≥${totalSpentMinFilter.trim()}`, `Spent ≥ ${totalSpentMinFilter.trim()}`) });
+    if (totalSpentMaxFilter.trim()) chips.push({ key: "totalSpentMax", label: L(`消费≤${totalSpentMaxFilter.trim()}`, `Spent ≤ ${totalSpentMaxFilter.trim()}`) });
+    if (orderCountMinFilter.trim()) chips.push({ key: "orderCountMin", label: L(`订单≥${orderCountMinFilter.trim()}`, `Orders ≥ ${orderCountMinFilter.trim()}`) });
+    if (orderCountMaxFilter.trim()) chips.push({ key: "orderCountMax", label: L(`订单≤${orderCountMaxFilter.trim()}`, `Orders ≤ ${orderCountMaxFilter.trim()}`) });
+    if (pointsMinFilter.trim()) chips.push({ key: "pointsMin", label: L(`积分≥${pointsMinFilter.trim()}`, `Points ≥ ${pointsMinFilter.trim()}`) });
+    if (pointsMaxFilter.trim()) chips.push({ key: "pointsMax", label: L(`积分≤${pointsMaxFilter.trim()}`, `Points ≤ ${pointsMaxFilter.trim()}`) });
+    if (refundRateMinFilter.trim()) chips.push({ key: "refundRateMin", label: L(`退款率≥${refundRateMinFilter.trim()}`, `Refund rate ≥ ${refundRateMinFilter.trim()}`) });
+    if (refundRateMaxFilter.trim()) chips.push({ key: "refundRateMax", label: L(`退款率≤${refundRateMaxFilter.trim()}`, `Refund rate ≤ ${refundRateMaxFilter.trim()}`) });
     if (sortByFilter) {
       const sortLabel = USER_SORT_OPTIONS.find((o) => o.value === sortByFilter)?.label || sortByFilter;
-      chips.push({ key: "sortBy", label: tText(`排序：${sortLabel}${sortDirFilter === "asc" ? " ↑" : " ↓"}`) });
+      chips.push({ key: "sortBy", label: L(`排序：${sortLabel}${sortDirFilter === "asc" ? " ↑" : " ↓"}`, `Sort: ${sortLabel}${sortDirFilter === "asc" ? " ↑" : " ↓"}`) });
     }
     return chips;
   }, [
@@ -285,8 +294,8 @@ export function useAdminUsers() {
   ]);
 
   const tableHeaders = useMemo(
-    () => ["用户", "手机号", "状态", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((h) => tText(h)),
-    [tText],
+    () => [L("用户", "User"), L("手机号", "Phone"), L("状态", "Status"), L("会员等级", "Member level"), L("标签", "Tags"), L("邀请码", "Invite code"), L("上级邀请码", "Parent invite code"), L("积分", "Points"), L("注册时间", "Registered at"), L("操作", "Actions")],
+    [L],
   );
 
   const usersEmptyGuide = useLocalizedAdminEmptyGuide(
@@ -348,18 +357,18 @@ export function useAdminUsers() {
   const handleExportCsv = async () => {
     try {
       await userService.exportUsersCsv(queryParams);
-      toast.success(tText("已开始导出 CSV"));
+      toast.success(L("已开始导出 CSV", "CSV export started"));
     } catch (error) {
-      toast.error(toastErrorMessage(error, tText("导出失败")));
+      toast.error(toastErrorMessage(error, L("导出失败", "Export failed")));
     }
   };
 
   const handleDeleteTag = async (tag: UserTag) => {
     const impact = await userService.fetchUserTagImpact(tag.id).catch(() => tag.count || 0);
     confirm({
-      title: tText("确认删除标签"),
-      description: tText(`该标签当前影响 ${impact} 位用户，确认删除？`),
-      confirmText: tText("删除"),
+      title: L("确认删除标签", "Confirm tag deletion"),
+      description: L(`该标签当前影响 ${impact} 位用户，确认删除？`, `This tag affects ${impact} users. Delete it?`),
+      confirmText: L("删除", "Delete"),
       danger: true,
       onConfirm: async () => {
         setDeletingTagId(tag.id);
@@ -374,9 +383,9 @@ export function useAdminUsers() {
   };
 
   const statCards = [
-    { label: tText("匹配用户数"), value: String(total), highlight: filtersActive },
-    { label: tText("今日新增"), value: String(summary.todayNew || 0), highlight: false },
-    { label: tText("被邀请用户"), value: String(summary.invitedUsers || 0), highlight: false },
+    { label: L("匹配用户数", "Matched users"), value: String(total), highlight: filtersActive },
+    { label: L("今日新增", "New today"), value: String(summary.todayNew || 0), highlight: false },
+    { label: L("被邀请用户", "Invited users"), value: String(summary.invitedUsers || 0), highlight: false },
   ] as const;
 
   const isUserSelected = (userId: string) => selectedUserIds.includes(userId);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type TouchEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supportsColorMix } from "@/utils/cssSupport";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -13,7 +13,6 @@ interface LoginBanner {
 
 interface LoginBannerCarouselProps {
   banners: LoginBanner[];
-  /** 表单聚焦时暂停自动轮播，避免与软键盘 resize 叠加闪动 */
   paused?: boolean;
 }
 
@@ -25,12 +24,18 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
   const [direction, setDirection] = useState(1);
   const touchStartX = useRef(0);
 
+  useEffect(() => {
+    if (banners.length > 0 && current >= banners.length) {
+      setCurrent(0);
+    }
+  }, [banners.length, current]);
+
   const goTo = useCallback(
     (index: number) => {
       setDirection(index > current ? 1 : -1);
       setCurrent(index);
     },
-    [current]
+    [current],
   );
 
   useEffect(() => {
@@ -42,10 +47,11 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
     return () => clearInterval(timer);
   }, [banners.length, paused]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
-  const handleTouchEnd = (e: React.TouchEvent) => {
+
+  const handleTouchEnd = (e: TouchEvent) => {
     const diff = touchStartX.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
       goTo(diff > 0 ? (current + 1) % banners.length : (current - 1 + banners.length) % banners.length);
@@ -53,8 +59,9 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
   };
 
   if (banners.length === 0) return null;
-  const inactiveDotColor = supportsColorMix() ? "color-mix(in srgb, #ffffff 50%, transparent)" : "rgba(255,255,255,0.5)";
 
+  const safeCurrent = current >= banners.length ? 0 : current;
+  const inactiveDotColor = supportsColorMix() ? "color-mix(in srgb, #ffffff 50%, transparent)" : "rgba(255,255,255,0.5)";
   const variants = {
     enter: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
     center: { x: 0, opacity: 1 },
@@ -71,7 +78,7 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
     >
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.div
-          key={current}
+          key={safeCurrent}
           className="absolute inset-0"
           custom={direction}
           variants={variants}
@@ -81,8 +88,8 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
           transition={{ duration: 0.35, ease: "easeOut" }}
         >
           <img
-            src={banners[current].image}
-            alt={banners[current].title}
+            src={banners[safeCurrent].image}
+            alt={banners[safeCurrent].title}
             className="h-full w-full object-cover object-center"
             decoding="async"
           />
@@ -91,34 +98,25 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
           ) : (
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
           )}
-          {/* Title */}
-          {banners[current].title && (
-            <div className="absolute bottom-3 left-4 right-12">
-              <p className="text-sm font-semibold btn-theme-gradient drop-shadow-md">{banners[current].title}</p>
-            </div>
-          )}
         </motion.div>
       </AnimatePresence>
 
-      {/* Dots */}
       {banners.length > 1 && (
-        <div className="absolute bottom-2.5 right-3 flex gap-1">
+        <div className="absolute bottom-2 right-2 flex rounded-full border border-white/35 bg-black/28 px-1.5 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-sm">
           {banners.map((_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => goTo(i)}
-              className="touch-target flex items-center justify-center p-0.5"
-              aria-label={`幻灯 ${i + 1}`}
+              className="flex h-3 min-w-3 items-center justify-center rounded-full px-0.5 transition-transform active:scale-95"
+              aria-label={`Banner ${i + 1}`}
+              aria-current={i === safeCurrent ? "true" : undefined}
             >
               <span
-                className="block rounded-full transition-[width,background-color] duration-300 ease-out h-[5px]"
+                className="block h-[5px] rounded-full transition-[width,background-color] duration-300 ease-out"
                 style={{
-                  width: i === current ? 14 : 5,
-                  backgroundColor:
-                    i === current
-                      ? "var(--theme-price)"
-                      : inactiveDotColor,
+                  width: i === safeCurrent ? 14 : 5,
+                  backgroundColor: i === safeCurrent ? "var(--theme-price)" : inactiveDotColor,
                 }}
               />
             </button>

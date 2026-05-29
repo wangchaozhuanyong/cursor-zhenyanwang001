@@ -12,7 +12,9 @@ import type { UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { cn } from "@/lib/utils";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
-import { STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
+import { ensureStoreSession, STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { isLoggedIn } from "@/utils/token";
 import {
   THEME_ACCENT_HERO_LABEL,
   THEME_ACCENT_HERO_MUTED,
@@ -108,13 +110,22 @@ export default function Coupons() {
   const navigate = useNavigate();
   const goBack = useGoBack();
   const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const authHydrated = useAuthStore((s) => s.authHydrated);
   const [tab, setTab] = useState<Tab>("mine");
-  const [pageView, setPageView] = useState<PageView>("mine");
+  const [pageView, setPageView] = useState<PageView>(() => (isLoggedIn() ? "mine" : "claimCenter"));
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const canViewOwnedCoupons = isAuthenticated;
 
   useEffect(() => {
     loadCoupons();
   }, [loadCoupons]);
+
+  useEffect(() => {
+    if (authHydrated && !canViewOwnedCoupons) {
+      setPageView("claimCenter");
+    }
+  }, [authHydrated, canViewOwnedCoupons]);
 
   const coupons = rawCoupons.map((uc) => toDisplayCoupon(uc));
   const available = coupons.filter((c) => c.status === "available");
@@ -131,6 +142,15 @@ export default function Coupons() {
   const list = pageView === "claimCenter" ? available : filterByTab(coupons, tab);
 
   const handleClaim = async (coupon: DisplayCoupon) => {
+    if (!canViewOwnedCoupons) {
+      navigate("/login", { state: { from: "/coupons" } });
+      return;
+    }
+    const sessionReady = await ensureStoreSession();
+    if (!sessionReady) {
+      navigate("/login", { state: { from: "/coupons" } });
+      return;
+    }
     setClaimingId(coupon.id);
     try {
       await claimCoupon(coupon.code || coupon.id);
@@ -145,13 +165,23 @@ export default function Coupons() {
   };
 
   const headerRightSlot = pageView === "claimCenter" ? (
-    <button
-      type="button"
-      onClick={() => setPageView("mine")}
-      className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
-    >
-      我的优惠券
-    </button>
+    canViewOwnedCoupons ? (
+      <button
+        type="button"
+        onClick={() => setPageView("mine")}
+        className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
+      >
+        我的优惠券
+      </button>
+    ) : (
+      <button
+        type="button"
+        onClick={() => navigate("/login", { state: { from: "/coupons" } })}
+        className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
+      >
+        登录领取
+      </button>
+    )
   ) : (
     <button
       type="button"

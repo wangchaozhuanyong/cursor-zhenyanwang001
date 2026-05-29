@@ -15,7 +15,6 @@ import { formatUserDisplay } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
-import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import {
@@ -34,7 +33,7 @@ import {
 } from "@/utils/adminPointsRecordFilters";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import {
   adminTableCellClass,
   adminTableTheadRow,
@@ -44,33 +43,6 @@ import {
 const POINTS_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "left", "right", "right", "right", "left", "left",
 ];
-
-const actionOptions: Array<{ value: "" | PointsAction; label: string }> = [
-  { value: "", label: "全部类型" },
-  { value: "order_earn", label: "订单奖励" },
-  { value: "order_reverse", label: "订单回滚" },
-  { value: "sign_in", label: "每日签到" },
-  { value: "admin_add", label: "管理员增加" },
-  { value: "admin_deduct", label: "管理员扣减" },
-  { value: "redeem", label: "积分抵扣" },
-];
-
-const actionLabels: Record<string, string> = {
-  register: "注册奖励",
-  first_order: "首单奖励",
-  order: "下单奖励(旧)",
-  order_earn: "订单奖励",
-  order_reverse: "订单回滚",
-  refund: "退款扣回(旧)",
-  sign_in: "每日签到",
-  daily_checkin: "每日签到",
-  invite_reward: "邀请奖励",
-  admin_add: "管理员增加",
-  admin_deduct: "管理员扣减",
-  admin_adjust: "管理员调整",
-  redeem: "积分抵扣",
-};
-
 
 const emptyStats: PointsStats = {
   totalEarned: 0,
@@ -95,12 +67,65 @@ function normalizePointsRules(data: PointsRule[]): PointsRuleEditRow[] {
 }
 
 export default function AdminPointsRecords({ embedded = false }: { embedded?: boolean }) {
-  const { tText } = useAdminT();
-  const { pointsAction: labelPointsAction, text: L } = useAdminDisplayLabel();
-  const actionOptionsLocalized = useLocalizedOptions(actionOptions);
+  const { locale, tText } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const { pointsAction: labelPointsAction, text: localizedText } = useAdminDisplayLabel();
+  const actionOptionsLocalized = useLocalizedOptions(
+    isEn
+      ? [
+          { value: "", label: "All types" },
+          { value: "order_earn", label: "Order rewards" },
+          { value: "order_reverse", label: "Order rollback" },
+          { value: "sign_in", label: "Daily check-in" },
+          { value: "admin_add", label: "Admin add" },
+          { value: "admin_deduct", label: "Admin deduct" },
+          { value: "redeem", label: "Points redemption" },
+        ]
+      : [
+          { value: "", label: "全部类型" },
+          { value: "order_earn", label: "订单奖励" },
+          { value: "order_reverse", label: "订单回滚" },
+          { value: "sign_in", label: "每日签到" },
+          { value: "admin_add", label: "管理员增加" },
+          { value: "admin_deduct", label: "管理员扣减" },
+          { value: "redeem", label: "积分抵扣" },
+        ],
+  );
+  const actionLabels = isEn
+    ? {
+        register: "Registration reward",
+        first_order: "First order reward",
+        order: "Order reward (legacy)",
+        order_earn: "Order reward",
+        order_reverse: "Order rollback",
+        refund: "Refund clawback (legacy)",
+        sign_in: "Daily check-in",
+        daily_checkin: "Daily check-in",
+        invite_reward: "Referral reward",
+        admin_add: "Admin add",
+        admin_deduct: "Admin deduct",
+        admin_adjust: "Admin adjust",
+        redeem: "Points redemption",
+      }
+    : {
+        register: "注册奖励",
+        first_order: "首单奖励",
+        order: "下单奖励(旧)",
+        order_earn: "订单奖励",
+        order_reverse: "订单回滚",
+        refund: "退款扣回(旧)",
+        sign_in: "每日签到",
+        daily_checkin: "每日签到",
+        invite_reward: "邀请奖励",
+        admin_add: "管理员增加",
+        admin_deduct: "管理员扣减",
+        admin_adjust: "管理员调整",
+        redeem: "积分抵扣",
+      };
   const labelPointRuleAction = (action: string) => {
     if (!action) return tText("通用规则");
-    return L(actionLabels[action] || "通用规则");
+    return localizedText(actionLabels[action] || (isEn ? "General rule" : "通用规则"));
   };
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -156,10 +181,10 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
       for (const rule of rules) {
         await updatePointsRule(rule.id, { name: rule.name, enabled: rule.enabled, points: rule.points });
       }
-      toast.success(tText("积分规则已保存"));
+      toast.success(L("积分规则已保存", "Points rules saved"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.pointsRules() });
     } catch (e) {
-      toast.error(toastErrorMessage(e, "保存积分规则失败"));
+      toast.error(toastErrorMessage(e, L("保存积分规则失败", "Failed to save points rules")));
     } finally {
       setRulesSaving(false);
     }
@@ -186,10 +211,10 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
   };
 
   const cards = [
-    { label: tText("累计增加"), value: String(intValue(stats.totalEarned)), icon: TrendingUp, className: "text-[var(--theme-price)]" },
-    { label: tText("累计扣减/回滚"), value: String(intValue(stats.totalDeducted)), icon: TrendingDown, className: THEME_TEXT_DANGER },
-    { label: tText("流水总数"), value: String(intValue(stats.totalRecords)), icon: Star, className: "text-[var(--theme-price)]" },
-    { label: tText("涉及用户"), value: String(intValue(stats.activeUsers)), icon: Users, className: "text-[var(--theme-primary)]" },
+    { label: L("累计增加", "Total earned"), value: String(intValue(stats.totalEarned)), icon: TrendingUp, className: "text-[var(--theme-price)]" },
+    { label: L("累计扣减/回滚", "Total deducted / rolled back"), value: String(intValue(stats.totalDeducted)), icon: TrendingDown, className: THEME_TEXT_DANGER },
+    { label: L("流水总数", "Total records"), value: String(intValue(stats.totalRecords)), icon: Star, className: "text-[var(--theme-price)]" },
+    { label: L("涉及用户", "Users affected"), value: String(intValue(stats.activeUsers)), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
 
   const renderMobileCard = (record: PointsRecord) => {
@@ -207,19 +232,19 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
         </div>
         <div className="space-y-2">
           {record.order_no ? (
-            <AdminTableMobileCardField label={tText("订单号")}>
+            <AdminTableMobileCardField label={L("订单号", "Order no.")}>
               <span className="font-mono text-xs text-muted-foreground">{record.order_no}</span>
             </AdminTableMobileCardField>
           ) : null}
-          <AdminTableMobileCardField label={tText("余额变动")}>
+          <AdminTableMobileCardField label={L("余额变动", "Balance change")}>
             <span className="text-xs text-muted-foreground">{record.balance_before ?? "—"} → {record.balance_after ?? "—"}</span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label={tText("说明")}>
+          <AdminTableMobileCardField label={L("说明", "Description")}>
             <span className="text-xs text-muted-foreground line-clamp-2">
               {formatPointsRecordLabel({ action: record.action, description: record.description }) || "—"}
             </span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label={tText("时间")}>
+          <AdminTableMobileCardField label={L("时间", "Time")}>
             <span className="text-xs text-muted-foreground">{record.created_at ? formatDateTime(record.created_at) : "—"}</span>
           </AdminTableMobileCardField>
         </div>
@@ -243,8 +268,8 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
 
       <section className="rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4 theme-shadow">
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]"><Tx>行为奖励规则</Tx></h2>
-          <p className="text-xs text-theme-muted"><Tx>签到、首单等行为触发的固定积分奖励；与「全局积分设置」中的消费积分规则不同。修改后点击保存立即生效。</Tx></p>
+          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]">{L("行为奖励规则", "Behavior reward rules")}</h2>
+          <p className="text-xs text-theme-muted">{L("签到、首单等行为触发的固定积分奖励；与「全局积分设置」中的消费积分规则不同。修改后点击保存立即生效。", "Fixed point rewards triggered by actions like check-ins and first orders; different from the spending points rules in Global Points Settings. Changes take effect after saving.")}</p>
         </div>
         {rulesLoading ? (
           <div className="space-y-3">
@@ -259,7 +284,7 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
             ))}
           </div>
         ) : rules.length === 0 ? (
-          <div className="py-8 text-center text-sm text-theme-muted"><Tx>暂无积分规则</Tx></div>
+          <div className="py-8 text-center text-sm text-theme-muted">{L("暂无积分规则", "No points rules")}</div>
         ) : (
           <div className="space-y-3">
             {rules.map((rule) => (
@@ -276,9 +301,7 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
                         className="accent-[var(--theme-price)]"
                         checked={rule.enabled}
                         onChange={(e) => updateRuleField(rule.id, "enabled", e.target.checked)}
-                      /><Tx>
-                      启用
-                    </Tx></label>
+                      />{L("启用", "Enabled")}</label>
                   </PermissionGate>
                   <PermissionGate permission="points.manage">
                     <input
@@ -296,12 +319,10 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
                 type="button"
                 variant="gold"
                 state={rulesSaving ? "loading" : "normal"}
-                loadingText="保存中..."
+                loadingText={L("保存中...", "Saving...")}
                 onClick={() => void saveRules()}
                 className="rounded-lg px-4 py-2 text-xs font-semibold"
-              ><Tx>
-                保存积分规则
-              </Tx></LoadingButton>
+              >{L("保存积分规则", "Save points rules")}</LoadingButton>
             </PermissionGate>
           </div>
         )}
@@ -311,7 +332,7 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="flex-1">
             <SearchBar
-              placeholder={tText("搜索订单号 / 描述 / 昵称 / 手机号...")}
+              placeholder={L("搜索订单号 / 描述 / 昵称 / 手机号...", "Search order no. / description / nickname / phone...")}
               value={keyword}
               onChange={(v) => { setKeyword(v); setPage(1); }}
             />
@@ -335,7 +356,7 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
         tableClassName="w-full min-w-[940px] text-sm"
         theadClassName="border-b border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]"
         thead={adminTableTheadRow(
-          ["用户", "类型", "订单号", "变动", "变动前", "变动后", "说明", "时间"],
+          [L("用户", "User"), L("类型", "Type"), L("订单号", "Order no."), L("变动", "Change"), L("变动前", "Before"), L("变动后", "After"), L("说明", "Description"), L("时间", "Time")],
           POINTS_COLUMN_ALIGNS,
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
@@ -392,12 +413,8 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
     <AdminPageShell
       hint={(
         <>
-          <p><Tx>
-            查看积分发放、扣减、订单退款回滚和管理员调整流水。列表与统计均来自数据库实时查询，无内置演示数据。
-          </Tx></p>
-          <p className="mt-1"><Tx>
-            若需清空联调/演示环境产生的流水，请在备份后使用 server 目录 WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js（会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。
-          </Tx></p>
+            <p>{L("查看积分发放、扣减、订单退款回滚和管理员调整流水。列表与统计均来自数据库实时查询，无内置演示数据。", "View point grants, deductions, order refund rollbacks, and admin adjustments. The list and stats are queried live from the database; there is no built-in demo data.")}</p>
+          <p className="mt-1">{L("若需清空联调/演示环境产生的流水，请在备份后使用 server 目录 WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js（会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。", "To clear data from a staging/demo environment, back up first and then run server/scripts/wipe-business-data.js with WIPE_CONFIRM=YES_I_UNDERSTAND (it also clears business tables such as orders). Do not run ad hoc DELETEs on production tables or point balances may no longer match the ledger.")}</p>
         </>
       )}
     >

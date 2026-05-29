@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { formatDateTime } from "@/utils/formatDateTime";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
-import { useNavigate } from "react-router-dom";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchInviteRecords } from "@/services/admin/inviteService";
 import type { InviteRecord, InviteRecordsSummary } from "@/types/invite";
-import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import {
@@ -23,7 +22,7 @@ import {
   removeInviteRecordFilterChip,
 } from "@/utils/adminInviteRecordFilters";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import {
   adminTableCellClass,
@@ -36,7 +35,9 @@ const INVITE_COLUMN_ALIGNS: AdminTableAlign[] = [
 ];
 
 export default function AdminInvites() {
-  const { tText } = useAdminT();
+  const { locale } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -60,13 +61,24 @@ export default function AdminInvites() {
   const loading = listQuery.isLoading && !listQuery.data;
 
   const filterState = useMemo(() => ({ search }), [search]);
-  const filterChips = useMemo(
-    () => buildInviteRecordFilterChips(filterState).map((chip) => ({ ...chip, label: tText(chip.label) })),
-    [filterState, tText],
-  );
+  const filterChips = useMemo(() => {
+    const chips = buildInviteRecordFilterChips(filterState);
+    return chips.map((chip) => (
+      chip.key === "search"
+        ? { ...chip, label: L(`关键词：${search.trim()}`, `Keyword: ${search.trim()}`) }
+        : chip
+    ));
+  }, [filterState, search, L]);
   const tableHeaders = useMemo(
-    () => ["被邀请人", "手机号", "邀请人", "邀请码", "注册时间", "操作"].map((h) => tText(h)),
-    [tText],
+    () => [
+      L("被邀请人", "Invitee"),
+      L("手机号", "Phone"),
+      L("邀请人", "Inviter"),
+      L("邀请码", "Invite Code"),
+      L("注册时间", "Registered At"),
+      L("操作", "Actions"),
+    ],
+    [L],
   );
   const filtersActive = hasActiveInviteRecordFilters(filterState);
   const emptyGuide = useLocalizedAdminEmptyGuide(
@@ -92,19 +104,23 @@ export default function AdminInvites() {
           <p className="mt-0.5 text-xs text-muted-foreground">{inv.phone || "-"}</p>
         </div>
         <PermissionGate permission="user.view" fallback={null}>
-          <button type="button" onClick={() => navigate(`/admin/users/${inv.id}`)} className="shrink-0 text-xs text-theme-price hover:underline">
-            <Tx>查看用户</Tx>
+          <button
+            type="button"
+            onClick={() => navigate(`/admin/users/${inv.id}`)}
+            className="shrink-0 text-xs text-theme-price hover:underline"
+          >
+            {L("查看用户", "View user")}
           </button>
         </PermissionGate>
       </div>
       <div className="mt-3 space-y-2">
-        <AdminTableMobileCardField label={tText("邀请人")}>
+        <AdminTableMobileCardField label={L("邀请人", "Inviter")}>
           <span className="text-xs text-muted-foreground">{inv.inviter_nickname || "-"}</span>
         </AdminTableMobileCardField>
-        <AdminTableMobileCardField label={tText("邀请码")}>
+        <AdminTableMobileCardField label={L("邀请码", "Invite Code")}>
           <span className="font-mono text-xs text-muted-foreground">{inv.parent_invite_code || "-"}</span>
         </AdminTableMobileCardField>
-        <AdminTableMobileCardField label={tText("注册时间")}>
+        <AdminTableMobileCardField label={L("注册时间", "Registered At")}>
           <span className="text-xs text-muted-foreground">{inv.created_at ? formatDateTime(inv.created_at) : "-"}</span>
         </AdminTableMobileCardField>
       </div>
@@ -113,24 +129,34 @@ export default function AdminInvites() {
 
   return (
     <AdminPageShell
-      hint={<Tx>查看邀请注册记录与邀请关系，可跳转用户详情。</Tx>}
+      hint={L(
+        "查看邀请注册记录与邀请关系，可跳转用户详情。",
+        "Review invite registrations and relationships, with a shortcut to user details.",
+      )}
       filters={(
         <>
           <div className="space-y-2">
-            <SearchBar placeholder={tText("搜索邀请人 / 被邀请人 / 邀请码...")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+            <SearchBar
+              placeholder={L("搜索邀请人 / 被邀请人 / 邀请码...", "Search inviter / invitee / invite code...")}
+              value={search}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+            />
             <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
           </div>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        {[
-          { label: tText("总邀请记录"), value: String(summary.totalRecords || total || 0) },
-          { label: tText("邀请人数"), value: String(summary.inviterUsers || 0) },
-          { label: tText("被邀请人数"), value: String(summary.inviteeUsers || 0) },
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-border bg-card p-4 text-center">
-            <p className="text-lg font-bold text-foreground">{stat.value}</p>
-            <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-          </div>
-        ))}
+            {[
+              { label: L("总邀请记录", "Total records"), value: String(summary.totalRecords || total || 0) },
+              { label: L("邀请人数", "Inviters"), value: String(summary.inviterUsers || 0) },
+              { label: L("被邀请人数", "Invitees"), value: String(summary.inviteeUsers || 0) },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-xl border border-border bg-card p-4 text-center">
+                <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -143,36 +169,42 @@ export default function AdminInvites() {
         skeletonCols={6}
         mobileCardFrom="md"
         className="overflow-x-auto rounded-xl border border-border bg-card"
-          tableClassName="w-full min-w-[720px] text-sm"
-          theadClassName="border-b border-border bg-secondary/50"
-          thead={adminTableTheadRow(tableHeaders, INVITE_COLUMN_ALIGNS)}
-          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(v) => { setPageSize(v); setPage(1); }} />}
-          emptyIcon={emptyGuide.icon}
-          emptyTitle={emptyGuide.title}
-          emptyDescription={emptyGuide.description}
-          emptyAction={(
-            <AdminEmptyGuideActions
-              guide={emptyGuide}
-              showClearFilters={filtersActive}
-              onClearFilters={clearFilters}
-            />
-          )}
+        tableClassName="w-full min-w-[720px] text-sm"
+        theadClassName="border-b border-border bg-secondary/50"
+        thead={adminTableTheadRow(tableHeaders, INVITE_COLUMN_ALIGNS)}
+        footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(v) => { setPageSize(v); setPage(1); }} />}
+        emptyIcon={emptyGuide.icon}
+        emptyTitle={emptyGuide.title}
+        emptyDescription={emptyGuide.description}
+        emptyAction={(
+          <AdminEmptyGuideActions
+            guide={emptyGuide}
+            showClearFilters={filtersActive}
+            onClearFilters={clearFilters}
+          />
+        )}
         renderMobileCard={renderMobileCard}
         renderRow={(inv) => (
-            <>
-              <td className={adminTableCellClass("left", "text-foreground")}>{inv.nickname || "-"}</td>
-              <td className={adminTableCellClass("left", "text-foreground")}>{inv.phone || "-"}</td>
-              <td className={adminTableCellClass("left", "text-foreground")}>{inv.inviter_nickname || "-"}</td>
-              <td className={adminTableCellClass("left", "font-mono text-xs text-muted-foreground")}>{inv.parent_invite_code || "-"}</td>
-              <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{inv.created_at ? formatDateTime(inv.created_at) : "-"}</td>
-              <td className={adminTableCellClass("right")}>
-                <PermissionGate permission="user.view" fallback={<span className="text-xs text-muted-foreground">-</span>}>
-                  <button type="button" onClick={() => navigate(`/admin/users/${inv.id}`)} className="text-xs text-theme-price hover:underline"><Tx>查看用户</Tx></button>
-                </PermissionGate>
-              </td>
-            </>
-          )}
-        />
+          <>
+            <td className={adminTableCellClass("left", "text-foreground")}>{inv.nickname || "-"}</td>
+            <td className={adminTableCellClass("left", "text-foreground")}>{inv.phone || "-"}</td>
+            <td className={adminTableCellClass("left", "text-foreground")}>{inv.inviter_nickname || "-"}</td>
+            <td className={adminTableCellClass("left", "font-mono text-xs text-muted-foreground")}>{inv.parent_invite_code || "-"}</td>
+            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{inv.created_at ? formatDateTime(inv.created_at) : "-"}</td>
+            <td className={adminTableCellClass("right")}>
+              <PermissionGate permission="user.view" fallback={<span className="text-xs text-muted-foreground">-</span>}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/admin/users/${inv.id}`)}
+                  className="text-xs text-theme-price hover:underline"
+                >
+                  {L("查看用户", "View user")}
+                </button>
+              </PermissionGate>
+            </td>
+          </>
+        )}
+      />
     </AdminPageShell>
   );
 }

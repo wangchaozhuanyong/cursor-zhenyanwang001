@@ -55,10 +55,6 @@ import {
   THEME_MEMBER_CARD_MUTED,
   THEME_MEMBER_CARD_SHELL,
 } from "@/utils/themeVisuals";
-import {
-  buildBenefitSummaryFromLevel,
-  MEMBER_BENEFIT_SUMMARY_BG,
-} from "@/utils/memberBenefitPresentation";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 
 const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
@@ -68,6 +64,14 @@ const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
 const CARD_CLASS = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
 const SECTION_PADDING = "px-[var(--store-card-x)] py-[var(--store-card-y)]";
 const MENU_TAP = "transition-transform active:scale-[0.97]";
+const INVITE_CARD_CLASS =
+  "overflow-hidden rounded-3xl border border-[#f3d8de] bg-[#fffafa] px-4 py-4 shadow-[0_14px_34px_rgba(159,40,57,0.08)]";
+const INVITE_BUTTON_BASE =
+  "inline-flex h-11 min-w-0 items-center justify-center rounded-full px-2 text-center text-xs font-semibold leading-none transition-transform active:scale-[0.98]";
+const INVITE_BUTTON_PRIMARY =
+  "bg-[#e3243b] text-white shadow-[0_8px_18px_rgba(227,36,59,0.18)]";
+const INVITE_BUTTON_SECONDARY =
+  "border border-[#f0d9de] bg-white text-[#3d2730]";
 
 function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
   if (requireAuth && !isLoggedIn()) {
@@ -113,7 +117,6 @@ function ProfileHeroCard({
   avatar,
   userName,
   memberLevelName,
-  memberBenefitsSummary,
   profileHint,
   unreadCount,
   onMessageClick,
@@ -127,7 +130,6 @@ function ProfileHeroCard({
   avatar?: string;
   userName: string;
   memberLevelName: string;
-  memberBenefitsSummary: string;
   profileHint: string;
   unreadCount: number;
   onMessageClick: () => void;
@@ -207,20 +209,15 @@ function ProfileHeroCard({
           </div>
         </div>
 
-        <div className={cn("rounded-2xl p-3", MEMBER_BENEFIT_SUMMARY_BG)}>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-[var(--theme-text-muted-on-surface)]">当前会员权益</p>
-              <p className="mt-1 line-clamp-2 text-sm leading-6 text-[var(--theme-text)]">{memberBenefitsSummary}</p>
-            </div>
-            <button
-              type="button"
-              onClick={onViewAllBenefits}
-              className="inline-flex h-10 shrink-0 items-center justify-center self-start rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] sm:self-center"
-            >
-              查看会员权益
-            </button>
-          </div>
+        <div className="flex justify-center border-t border-[color-mix(in_srgb,var(--theme-member-card-muted)_22%,transparent)] pt-3">
+          <button
+            type="button"
+            onClick={onViewAllBenefits}
+            className="inline-flex h-11 w-full max-w-[176px] items-center justify-center gap-1 rounded-full bg-[var(--theme-primary)] px-5 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition-transform active:scale-[0.98]"
+          >
+            查看会员权益
+            <ChevronRight size={15} />
+          </button>
         </div>
       </div>
     </section>
@@ -316,7 +313,6 @@ export default function Profile() {
 
   const userName = nickname?.trim() || "会员用户";
   const memberLevelName = memberLevel?.name?.trim() || "普通会员";
-  const memberBenefitsSummary = buildBenefitSummaryFromLevel(memberLevel);
   const code = inviteCode?.trim() || "暂无";
   const profileHint = getProfileCompletionText({ avatar, birthday, wechat, whatsapp });
   const couponCount = useMemo(() => coupons.filter((c) => !c.used_at).length, [coupons]);
@@ -401,7 +397,6 @@ export default function Profile() {
                 avatar={avatar}
                 userName={userName}
                 memberLevelName={memberLevelName}
-                memberBenefitsSummary={memberBenefitsSummary}
                 profileHint={profileHint}
                 unreadCount={unreadCount}
                 onMessageClick={() => navigate("/notifications", { state: { from: "/profile" } })}
@@ -463,44 +458,47 @@ export default function Profile() {
         ) : null}
 
         {inviteEnabled ? (
-          <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
+          <section className={INVITE_CARD_CLASS}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-base font-semibold tracking-tight text-[var(--theme-text)]">邀请好友得奖励</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
+                <p className="text-base font-semibold tracking-tight text-[#24161a]">邀请好友得奖励</p>
+                <p className="mt-1 text-xs leading-5 text-[#7b646b]">
                   {loggedIn ? "好友付款成功后，你可获得现金返现" : "登录后邀请好友获得现金返现"}
                 </p>
                 {loggedIn ? (
-                  <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
+                  <p className="mt-1 text-xs leading-5 text-[#7b646b]">
                     已邀请 {inviteCount} 人，返现余额 RM {rewardBalance.toFixed(2)}
                   </p>
                 ) : null}
               </div>
-              <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#ffe4e8] text-[#e3243b]">
                 <Gift size={18} strokeWidth={2} />
               </span>
             </div>
             {loggedIn && inviteCodeVisible ? (
-              <div className="mt-3 flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-[color-mix(in_srgb,var(--theme-primary)_32%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] px-3">
-                <p className="min-w-0 flex-1 truncate text-xs text-[var(--theme-text-muted-on-surface)]">
-                  邀请码：<span className="font-semibold text-[var(--theme-text)]">{code}</span>
+              <div className="mt-3 flex min-h-11 items-center gap-2 rounded-2xl border border-dashed border-[#efc5cd] bg-[#fff3f5] px-3">
+                <p className="min-w-0 flex-1 truncate text-xs text-[#7b646b]">
+                  邀请码：<span className="font-semibold text-[#24161a]">{code}</span>
                 </p>
                 <button
                   type="button"
                   onClick={handleCopyInviteCode}
                   disabled={code === "暂无"}
-                  className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 text-xs font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-50"
+                  className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-[#e3243b] px-3 text-xs font-semibold text-white disabled:opacity-50"
                 >
                   <Copy size={13} />
                   复制
                 </button>
               </div>
             ) : null}
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className={cn(
+              "mt-4 grid gap-2",
+              loggedIn ? "grid-cols-3" : "mx-auto max-w-[180px] grid-cols-1",
+            )}>
               <button
                 type="button"
                 onClick={() => loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } })}
-                className="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
+                className={cn(INVITE_BUTTON_BASE, INVITE_BUTTON_PRIMARY)}
               >
                 {loggedIn ? "立即邀请" : "去登录"}
               </button>
@@ -509,14 +507,14 @@ export default function Profile() {
                   <button
                     type="button"
                     onClick={() => setInviteCodeVisible((v) => !v)}
-                    className="inline-flex min-h-10 items-center justify-center rounded-full border border-[var(--theme-border)] px-3 text-xs font-semibold text-[var(--theme-text)]"
+                    className={cn(INVITE_BUTTON_BASE, INVITE_BUTTON_SECONDARY)}
                   >
                     {inviteCodeVisible ? "隐藏邀请码" : "查看邀请码"}
                   </button>
                   <button
                     type="button"
                     onClick={() => gateNavigate(navigate, "/invite", true)}
-                    className="inline-flex min-h-10 items-center justify-center rounded-full border border-[var(--theme-border)] px-3 text-xs font-semibold text-[var(--theme-text)]"
+                    className={cn(INVITE_BUTTON_BASE, INVITE_BUTTON_SECONDARY)}
                   >
                     邀请记录
                   </button>

@@ -18,7 +18,7 @@ function normalizeMfaCode(value: string) {
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const { t } = useAdminT();
+  const { t, tText, locale } = useAdminT();
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -46,8 +46,8 @@ export default function AdminLogin() {
   const handleLogin = async () => {
     const normalizedAccount = account.trim();
     const nextErrors: { account?: string; password?: string } = {};
-    if (!normalizedAccount) nextErrors.account = "请输入管理员账号";
-    if (!password.trim()) nextErrors.password = "请输入密码";
+    if (!normalizedAccount) nextErrors.account = tText("请输入管理员账号");
+    if (!password.trim()) nextErrors.password = tText("请输入密码");
     if (nextErrors.account || nextErrors.password) {
       setFieldErrors(nextErrors);
       setShakeKey((k) => k + 1);
@@ -86,7 +86,7 @@ export default function AdminLogin() {
     const code = normalizeMfaCode(mfaCode);
     if (!/^\d{6}$/.test(code)) {
       setShakeKey((k) => k + 1);
-      toast.error("请输入完整的 6 位验证码");
+      toast.error(tText("请输入完整的 6 位验证码"));
       return;
     }
     mfaSubmittingRef.current = true;
@@ -102,7 +102,7 @@ export default function AdminLogin() {
       finishLogin();
     } catch (e) {
       setShakeKey((k) => k + 1);
-      toast.error(adminLoginErrorMessage(e, t("login.mfaVerifyFailed")));
+      toast.error(adminLoginErrorMessage(e, tText("多因素验证失败，请检查验证码是否正确或是否已过期")));
     } finally {
       mfaSubmittingRef.current = false;
       setLoading(false);
@@ -122,7 +122,7 @@ export default function AdminLogin() {
       finishLogin();
     } catch (e) {
       setShakeKey((k) => k + 1);
-      toast.error(adminLoginErrorMessage(e, "Passkey 验证失败"));
+      toast.error(adminLoginErrorMessage(e, tText("Passkey 验证失败")));
     } finally {
       setPasskeyLoading(false);
     }
@@ -179,11 +179,11 @@ export default function AdminLogin() {
                       className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background disabled:opacity-50"
                     >
                       <Fingerprint size={16} />
-                      {passkeyLoading ? "正在验证 Passkey..." : "使用 Passkey 登录"}
+                      {passkeyLoading ? tText("正在验证 Passkey...") : tText("使用 Passkey 登录")}
                     </button>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="h-px flex-1 bg-border" />
-                      <span>或输入验证码</span>
+                      <span>{tText("或输入验证码")}</span>
                       <span className="h-px flex-1 bg-border" />
                     </div>
                   </>
@@ -217,7 +217,7 @@ export default function AdminLogin() {
                       onChange={(e) => setTrustDevice(e.target.checked)}
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span>信任此设备</span>
+                    <span>{tText("信任此设备")}</span>
                   </label>
                   {trustDevice ? (
                     <div className="mt-3 grid grid-cols-3 gap-2">
@@ -232,7 +232,7 @@ export default function AdminLogin() {
                               : "border-border text-muted-foreground hover:bg-background"
                           }`}
                         >
-                          {days} 天
+                          {locale === "en" ? `${days} days` : `${days} 天`}
                         </button>
                       ))}
                     </div>

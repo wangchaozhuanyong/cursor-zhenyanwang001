@@ -1,5 +1,5 @@
 import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import type { UserProfile, UserTag } from "@/types/user";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
 
@@ -23,16 +23,18 @@ export function UserTagBadges({ tags }: { tags?: UserTag[] }) {
 }
 
 export function UserStatusBadges({ user }: { user: UserProfile }) {
-  const { tText } = useAdminT();
+  const { locale, tText } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
   const accountStatus = String(user.account_status || "normal");
   const items = [
-    accountStatus === "disabled" ? tText("禁用登录") : null,
-    accountStatus === "blacklisted" ? tText("黑名单") : null,
-    Number(user.order_restricted || 0) ? tText("限制下单") : null,
-    Number(user.coupon_restricted || 0) ? tText("限制领券") : null,
-    Number(user.comment_restricted || 0) ? tText("限制评论") : null,
+    accountStatus === "disabled" ? L("禁用登录", "Login disabled") : null,
+    accountStatus === "blacklisted" ? L("黑名单", "Blacklisted") : null,
+    Number(user.order_restricted || 0) ? L("限制下单", "Order restricted") : null,
+    Number(user.coupon_restricted || 0) ? L("限制领券", "Coupon restricted") : null,
+    Number(user.comment_restricted || 0) ? L("限制评论", "Comment restricted") : null,
   ].filter(Boolean) as string[];
-  if (!items.length) return <span className="text-xs text-emerald-700"><Tx>正常</Tx></span>;
+  if (!items.length) return <span className="text-xs text-emerald-700">{L("正常", "Normal")}</span>;
   return (
     <div className="flex flex-wrap gap-1">
       {items.map((item) => (
@@ -45,13 +47,13 @@ export function UserStatusBadges({ user }: { user: UserProfile }) {
 }
 
 export function filterBoundLabel(tText: (zh: string) => string, prefix: string, value: string) {
-  if (value === "1") return tText(`${prefix}：已绑定`);
-  if (value === "0") return tText(`${prefix}：未绑定`);
+  if (value === "1") return prefix.includes("WeChat") || prefix.includes("Phone") ? `${prefix}: Bound` : tText(`${prefix}：已绑定`);
+  if (value === "0") return prefix.includes("WeChat") || prefix.includes("Phone") ? `${prefix}: Not bound` : tText(`${prefix}：未绑定`);
   return "";
 }
 
 export function restrictionLabel(tText: (zh: string) => string, prefix: string, value: string) {
-  if (value === "1") return tText(`${prefix}：已限制`);
-  if (value === "0") return tText(`${prefix}：未限制`);
+  if (value === "1") return prefix ? `${prefix}: Restricted` : tText(`${prefix}：已限制`);
+  if (value === "0") return prefix ? `${prefix}: Not restricted` : tText(`${prefix}：未限制`);
   return "";
 }

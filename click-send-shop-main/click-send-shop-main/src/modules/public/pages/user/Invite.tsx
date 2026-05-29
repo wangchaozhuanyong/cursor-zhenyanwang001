@@ -60,7 +60,11 @@ export default function Invite() {
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "???????", text: `??????? ${inviteCode} ??`, url: inviteLink });
+        await navigator.share({
+          title: "邀请好友得奖励",
+          text: `邀请好友得奖励 ${inviteCode || ""}，快来一起领取福利。`,
+          url: inviteLink,
+        });
         return;
       } catch {
         // Fall back to copying the invite link when native share is cancelled or unavailable.

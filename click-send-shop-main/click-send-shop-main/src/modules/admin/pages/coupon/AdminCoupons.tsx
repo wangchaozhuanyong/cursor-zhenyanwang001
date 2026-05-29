@@ -16,79 +16,81 @@ import { formatAdminDateRange } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
-import {
-  AdminTableMobileCard,
-  AdminTableMobileCardField,
-} from "@/components/admin/AdminTableMobileCard";
+import { AdminTableMobileCard, AdminTableMobileCardField } from "@/components/admin/AdminTableMobileCard";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
-import {
-  THEME_BADGE_DANGER,
-  THEME_BADGE_MUTED,
-  THEME_BADGE_PRICE,
-  THEME_BADGE_PRIMARY,
-  THEME_BADGE_SUCCESS,
-  THEME_OUTLINE_DANGER,
-} from "@/utils/themeVisuals";
-import {
-  adminTableCellClass,
-  adminTableTheadRow,
-  type AdminTableAlign,
-} from "@/utils/adminTableClasses";
+import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
+import { adminTableCellClass, adminTableTheadRow, type AdminTableAlign } from "@/utils/adminTableClasses";
 
-const COUPON_COLUMN_ALIGNS: AdminTableAlign[] = [
-  "left", "center", "left", "right", "right", "left", "center", "right",
-];
+const COUPON_COLUMN_ALIGNS: AdminTableAlign[] = ["left", "center", "left", "right", "right", "left", "center", "right"];
 
-const typeLabels: Record<string, { label: string; color: string }> = {
-  fixed: { label: "满减券", color: THEME_BADGE_DANGER },
-  percentage: { label: "折扣券", color: THEME_BADGE_PRIMARY },
-  shipping: { label: "运费券", color: THEME_BADGE_PRICE },
+const typeLabels: Record<string, { zh: string; en: string; color: string }> = {
+  fixed: { zh: "满减券", en: "Fixed amount", color: "bg-red-100 text-red-700" },
+  percentage: { zh: "折扣券", en: "Percentage", color: "bg-blue-100 text-blue-700" },
+  shipping: { zh: "运费券", en: "Shipping", color: "bg-amber-100 text-amber-700" },
 };
 
-const statusLabels: Record<string, { label: string; color: string }> = {
-  available: { label: "启用", color: THEME_BADGE_SUCCESS },
-  expired: { label: "已过期", color: THEME_BADGE_MUTED },
+const statusLabels: Record<string, { zh: string; en: string; color: string }> = {
+  available: { zh: "启用", en: "Active", color: "bg-green-100 text-green-700" },
+  expired: { zh: "已过期", en: "Expired", color: "bg-muted text-muted-foreground" },
 };
 
-const couponOperationCopy: Record<CouponOperation, { title: string; description: string; confirmText: string; success: string; danger?: boolean }> = {
+const couponOperationCopy: Record<CouponOperation, { titleZh: string; titleEn: string; descriptionZh: string; descriptionEn: string; confirmTextZh: string; confirmTextEn: string; successZh: string; successEn: string; danger?: boolean }> = {
   "pause-claim": {
-    title: "暂停领取优惠券",
-    description: "只会停止新用户继续领取，已经领到手的优惠券不受影响。",
-    confirmText: "暂停领取",
-    success: "已暂停领取",
+    titleZh: "暂停领取优惠券",
+    titleEn: "Pause coupon claim",
+    descriptionZh: "只会停止新用户继续领取，已经领到手的优惠券不受影响。",
+    descriptionEn: "Only stops new users from claiming it. Claimed coupons are not affected.",
+    confirmTextZh: "暂停领取",
+    confirmTextEn: "Pause claim",
+    successZh: "已暂停领取",
+    successEn: "Claim paused",
   },
   "disable-use": {
-    title: "停止使用优惠券",
-    description: "会停止这张优惠券继续使用，并作废当前未使用的用户券。",
-    confirmText: "停止使用",
-    success: "已停止使用",
+    titleZh: "停止使用优惠券",
+    titleEn: "Disable coupon usage",
+    descriptionZh: "会停止这张优惠券继续使用，并作废当前未使用的用户券。",
+    descriptionEn: "Stops using this coupon and invalidates the currently unused user coupons.",
+    confirmTextZh: "停止使用",
+    confirmTextEn: "Disable usage",
+    successZh: "已停止使用",
+    successEn: "Usage disabled",
     danger: true,
   },
   archive: {
-    title: "归档优惠券",
-    description: "优惠券会从常规列表隐藏，适合下线已结束的运营券。",
-    confirmText: "归档",
-    success: "已归档",
+    titleZh: "归档优惠券",
+    titleEn: "Archive coupon",
+    descriptionZh: "优惠券会从常规列表隐藏，适合下线已结束的运营券。",
+    descriptionEn: "Hides the coupon from the main list, suitable for finished campaigns.",
+    confirmTextZh: "归档",
+    confirmTextEn: "Archive",
+    successZh: "已归档",
+    successEn: "Archived",
   },
   "invalidate-user-coupons": {
-    title: "作废已领取优惠券",
-    description: "会把用户已经领取但还没使用的券作废，已使用记录会保留。",
-    confirmText: "作废已领券",
-    success: "已作废未使用的用户券",
+    titleZh: "作废已领取优惠券",
+    titleEn: "Invalidate claimed coupons",
+    descriptionZh: "会把用户已经领取但还没使用的券作废，已使用记录会保留。",
+    descriptionEn: "Invalidates claimed but unused coupons while keeping used records.",
+    confirmTextZh: "作废已领券",
+    confirmTextEn: "Invalidate",
+    successZh: "已作废未使用的用户券",
+    successEn: "Unused user coupons invalidated",
     danger: true,
   },
 };
 
 export default function AdminCoupons() {
-  const { tText } = useAdminT();
-  const { couponType: labelCouponType, couponStatus: labelCouponStatus, text: L } = useAdminDisplayLabel();
+  const { locale } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const { couponType: labelCouponType, couponStatus: labelCouponStatus } = useAdminDisplayLabel();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const can = useAdminPermissionStore((s) => s.can);
@@ -123,10 +125,7 @@ export default function AdminCoupons() {
   });
 
   const coupons = couponsQuery.data?.list ?? [];
-  const tags = useMemo(
-    () => (tagsQuery.data ?? []).map((tag) => ({ id: tag.id, name: tag.name })),
-    [tagsQuery.data],
-  );
+  const tags = useMemo(() => (tagsQuery.data ?? []).map((tag) => ({ id: tag.id, name: tag.name })), [tagsQuery.data]);
   const loading = couponsQuery.isLoading && !couponsQuery.data;
   const couponsEmptyGuide = useLocalizedAdminEmptyGuide(ADMIN_EMPTY_GUIDES.coupons);
   const total = couponsQuery.data?.total ?? 0;
@@ -139,16 +138,16 @@ export default function AdminCoupons() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => couponService.deleteCoupon(id),
     onSuccess: async () => {
-      toast.success(tText("已删除"));
+      toast.success(L("已删除", "Deleted"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() });
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "删除失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, L("删除失败", "Delete failed"))),
   });
 
   const issueMutation = useMutation({
     mutationFn: ({ couponId, tagIds }: { couponId: string; tagIds: string[] }) => couponService.issueCouponByTag(couponId, tagIds),
     onSuccess: async (result) => {
-      toast.success(`发放完成：${result?.issued || 0}/${result?.targetUsers || 0}`);
+      toast.success(L(`发放完成：${result?.issued || 0}/${result?.targetUsers || 0}`, `Issued: ${result?.issued || 0}/${result?.targetUsers || 0}`));
       setIssueCouponId(null);
       setIssueTagId("");
       await Promise.all([
@@ -156,14 +155,15 @@ export default function AdminCoupons() {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponRecordsRoot() }),
       ]);
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "发放失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, L("发放失败", "Issue failed"))),
   });
 
   const operationMutation = useMutation({
     mutationFn: ({ coupon, type }: { coupon: Coupon; type: CouponOperation }) =>
-      couponService.operateCoupon(coupon.id, type, "后台手动作废已领取优惠券"),
+      couponService.operateCoupon(coupon.id, type, L("后台手动作废已领取优惠券", "Invalidate claimed coupons from admin")),
     onSuccess: async (_result, variables) => {
-      toast.success(tText(couponOperationCopy[variables.type].success));
+      const copy = couponOperationCopy[variables.type];
+      toast.success(L(copy.successZh, copy.successEn));
       setOperation(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() }),
@@ -171,30 +171,28 @@ export default function AdminCoupons() {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
       ]);
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "操作失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, L("操作失败", "Operation failed"))),
   });
 
   const renderMobileCard = (coupon: Coupon) => {
-    const typeLabel = typeLabels[coupon.type]?.label ? L(typeLabels[coupon.type].label) : labelCouponType(coupon.type);
-    const statusLabel = statusLabels[coupon.status]?.label ? L(statusLabels[coupon.status].label) : labelCouponStatus(coupon.status);
-    const typeColor = typeLabels[coupon.type]?.color || "bg-secondary text-foreground";
-    const statusColor = statusLabels[coupon.status]?.color || "bg-secondary text-foreground";
+    const type = typeLabels[coupon.type] || { zh: labelCouponType(coupon.type), en: labelCouponType(coupon.type), color: "bg-secondary text-foreground" };
+    const status = statusLabels[coupon.status] || { zh: labelCouponStatus(coupon.status), en: labelCouponStatus(coupon.status), color: "bg-secondary text-foreground" };
 
     return (
       <AdminTableMobileCard>
         <div className="mb-2 flex items-start justify-between gap-2">
           <p className="text-sm font-semibold">{coupon.title}</p>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${statusColor}`}>{statusLabel}</span>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${status.color}`}>{isEn ? status.en : status.zh}</span>
         </div>
         <div className="mb-2 flex flex-wrap gap-1.5">
-          <span className={`rounded-full px-2 py-0.5 text-xs ${typeColor}`}>{typeLabel}</span>
+          <span className={`rounded-full px-2 py-0.5 text-xs ${type.color}`}>{isEn ? type.en : type.zh}</span>
           {coupon.code ? <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-xs">{coupon.code}</span> : null}
         </div>
         <div className="space-y-2">
-          <AdminTableMobileCardField label={tText("面额 / 门槛")}>
-            <span className="text-xs text-muted-foreground">{coupon.value} · {tText("门槛")} {coupon.min_amount}</span>
+          <AdminTableMobileCardField label={L("面额 / 门槛", "Value / min.")}>
+            <span className="text-xs text-muted-foreground">{coupon.value} · {L("门槛", "Min.")} {coupon.min_amount}</span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label={tText("有效期")}>
+          <AdminTableMobileCardField label={L("有效期", "Validity")}>
             <span className="text-xs text-muted-foreground">{formatAdminDateRange(coupon.start_date, coupon.end_date)}</span>
           </AdminTableMobileCardField>
         </div>
@@ -222,9 +220,8 @@ export default function AdminCoupons() {
           </PermissionGate>
         </div>
       )}
-      filters={<SearchBar placeholder={tText("搜索标题/编码")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />}
+      filters={<SearchBar placeholder={L("搜索标题/编码", "Search title/code")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />}
     >
-
       <AnimatedTable
         loading={loading}
         rows={coupons}
@@ -235,7 +232,7 @@ export default function AdminCoupons() {
         className="overflow-hidden border-border bg-card"
         theadClassName="bg-secondary/40 text-left text-xs text-muted-foreground"
         thead={adminTableTheadRow(
-          ["标题", "类型", "编码", "面额", "门槛", "有效期", "状态", "操作"],
+          [L("标题", "Title"), L("类型", "Type"), L("编码", "Code"), L("面额", "Value"), L("门槛", "Min."), L("有效期", "Validity"), L("状态", "Status"), L("操作", "Actions")],
           COUPON_COLUMN_ALIGNS,
           (label) => <Tx>{label}</Tx>,
         )}
@@ -245,121 +242,95 @@ export default function AdminCoupons() {
         emptyDescription={couponsEmptyGuide.description}
         emptyAction={<AdminEmptyGuideActions guide={couponsEmptyGuide} />}
         renderMobileCard={renderMobileCard}
-        renderRow={(coupon) => (
-          <>
-            <td className={adminTableCellClass("left", "max-w-[12rem]")}>
-              <AdminTableCell value={coupon.title} fullText={coupon.title} maxWidth="11rem" />
-            </td>
-            <td className={adminTableCellClass("center")}><span className={`rounded-full px-2 py-0.5 text-xs ${typeLabels[coupon.type]?.color || "bg-secondary text-foreground"}`}>{typeLabels[coupon.type]?.label ? L(typeLabels[coupon.type].label) : labelCouponType(coupon.type)}</span></td>
-            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{coupon.code}</td>
-            <td className={adminTableCellClass("right")}>{coupon.value}</td>
-            <td className={adminTableCellClass("right")}>{coupon.min_amount}</td>
-            <td className={adminTableCellClass("left", "text-xs whitespace-nowrap text-muted-foreground")}>{formatAdminDateRange(coupon.start_date, coupon.end_date)}</td>
-            <td className={adminTableCellClass("center")}><span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[coupon.status]?.color || "bg-secondary text-foreground"}`}>{statusLabels[coupon.status]?.label ? L(statusLabels[coupon.status].label) : labelCouponStatus(coupon.status)}</span></td>
-            <td className={adminTableCellClass("right")}>
-              <AdminRowActionsMenu
-                primary={(
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)}
-                    className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
-                    title={tText("编辑")}
-                  >
-                    <Pencil size={13} className="mr-1 inline" />
-                    <Tx>编辑</Tx>
-                  </button>
-                )}
-                moreLabel={<Tx>更多</Tx>}
-                items={[
-                  ...(can("coupon.manage") ? ([
-                    {
-                      key: "issue",
-                      label: <Tx>发券</Tx>,
-                      onClick: () => setIssueCouponId(coupon.id),
-                    },
-                    {
-                      key: "pause-claim",
-                      label: <Tx>暂停领取</Tx>,
-                      icon: <PauseCircle size={14} aria-hidden />,
-                      onClick: () => setOperation({ coupon, type: "pause-claim" }),
-                    },
-                    {
-                      key: "disable-use",
-                      label: <Tx>停止使用</Tx>,
-                      icon: <Ban size={14} aria-hidden />,
-                      danger: true,
-                      onClick: () => setOperation({ coupon, type: "disable-use" }),
-                    },
-                    {
-                      key: "archive",
-                      label: <Tx>归档</Tx>,
-                      icon: <Archive size={14} aria-hidden />,
-                      onClick: () => setOperation({ coupon, type: "archive" }),
-                    },
-                    {
-                      key: "invalidate-user-coupons",
-                      label: <Tx>作废已领券</Tx>,
-                      icon: <XCircle size={14} aria-hidden />,
-                      danger: true,
-                      onClick: () => setOperation({ coupon, type: "invalidate-user-coupons" }),
-                    },
-                    {
-                      key: "delete",
-                      label: <Tx>删除</Tx>,
-                      icon: <Trash2 size={14} aria-hidden />,
-                      danger: true,
-                      separatorBefore: true,
-                      onClick: () => setDeleteId(coupon.id),
-                    },
-                  ] as const) : []),
-                ]}
-              />
-            </td>
-          </>
-        )}
+        renderRow={(coupon) => {
+          const type = typeLabels[coupon.type] || { zh: labelCouponType(coupon.type), en: labelCouponType(coupon.type), color: "bg-secondary text-foreground" };
+          const status = statusLabels[coupon.status] || { zh: labelCouponStatus(coupon.status), en: labelCouponStatus(coupon.status), color: "bg-secondary text-foreground" };
+          return (
+            <>
+              <td className={adminTableCellClass("left", "max-w-[12rem]")}>
+                <AdminTableCell value={coupon.title} fullText={coupon.title} maxWidth="11rem" />
+              </td>
+              <td className={adminTableCellClass("center")}><span className={`rounded-full px-2 py-0.5 text-xs ${type.color}`}>{isEn ? type.en : type.zh}</span></td>
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{coupon.code}</td>
+              <td className={adminTableCellClass("right")}>{coupon.value}</td>
+              <td className={adminTableCellClass("right")}>{coupon.min_amount}</td>
+              <td className={adminTableCellClass("left", "text-xs whitespace-nowrap text-muted-foreground")}>{formatAdminDateRange(coupon.start_date, coupon.end_date)}</td>
+              <td className={adminTableCellClass("center")}><span className={`rounded-full px-2 py-0.5 text-xs ${status.color}`}>{isEn ? status.en : status.zh}</span></td>
+              <td className={adminTableCellClass("right")}>
+                <AdminRowActionsMenu
+                  primary={(
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)}
+                      className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
+                      title={L("编辑", "Edit")}
+                    >
+                      <Pencil size={13} className="mr-1 inline" />
+                      <Tx>编辑</Tx>
+                    </button>
+                  )}
+                  moreLabel={<Tx>更多</Tx>}
+                  items={[
+                    ...(can("coupon.manage") ? ([
+                      { key: "issue", label: <Tx>发券</Tx>, onClick: () => setIssueCouponId(coupon.id) },
+                      { key: "pause-claim", label: <Tx>暂停领取</Tx>, icon: <PauseCircle size={14} aria-hidden />, onClick: () => setOperation({ coupon, type: "pause-claim" }) },
+                      { key: "disable-use", label: <Tx>停止使用</Tx>, icon: <Ban size={14} aria-hidden />, danger: true, onClick: () => setOperation({ coupon, type: "disable-use" }) },
+                      { key: "archive", label: <Tx>归档</Tx>, icon: <Archive size={14} aria-hidden />, onClick: () => setOperation({ coupon, type: "archive" }) },
+                      { key: "invalidate-user-coupons", label: <Tx>作废已领券</Tx>, icon: <XCircle size={14} aria-hidden />, danger: true, onClick: () => setOperation({ coupon, type: "invalidate-user-coupons" }) },
+                      { key: "delete", label: <Tx>删除</Tx>, icon: <Trash2 size={14} aria-hidden />, danger: true, separatorBefore: true, onClick: () => setDeleteId(coupon.id) },
+                    ] as const) : []),
+                  ]}
+                />
+              </td>
+            </>
+          );
+        }}
       />
+
       <AnimatedConfirmDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
         danger
-        title={tText("删除优惠券")}
-        description="确定删除该优惠券？已领取记录将保留。"
-        confirmText="删除"
+        title={L("删除优惠券", "Delete coupon")}
+        description={L("确定删除该优惠券？已领取记录将保留。", "Delete this coupon? Claimed records will be kept.")}
+        confirmText={L("删除", "Delete")}
         onConfirm={() => {
           if (!deleteId) return;
           deleteMutation.mutate(deleteId);
           setDeleteId(null);
         }}
       />
+
       <AnimatedConfirmDialog
         open={!!operation}
         onOpenChange={(open) => !open && setOperation(null)}
         danger={operation ? couponOperationCopy[operation.type].danger : false}
-        title={operation ? tText(couponOperationCopy[operation.type].title) : ""}
-        description={operation ? couponOperationCopy[operation.type].description : ""}
-        confirmText={operation ? couponOperationCopy[operation.type].confirmText : ""}
+        title={operation ? L(couponOperationCopy[operation.type].titleZh, couponOperationCopy[operation.type].titleEn) : ""}
+        description={operation ? L(couponOperationCopy[operation.type].descriptionZh, couponOperationCopy[operation.type].descriptionEn) : ""}
+        confirmText={operation ? L(couponOperationCopy[operation.type].confirmTextZh, couponOperationCopy[operation.type].confirmTextEn) : ""}
         onConfirm={() => {
           if (!operation) return;
           operationMutation.mutate(operation);
         }}
       />
+
       <AnimatedConfirmDialog
         open={!!issueCouponId}
         onOpenChange={(open) => { if (!open) { setIssueCouponId(null); setIssueTagId(""); } }}
-        title={tText("按标签发券")}
+        title={L("按标签发券", "Issue by tag")}
         description={(
           <div className="space-y-2 text-sm">
             <p><Tx>选择一个用户标签，系统将向该标签用户批量发放当前优惠券。</Tx></p>
             <select value={issueTagId} onChange={(e) => setIssueTagId(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-              <option value=""><Tx>请选择标签</Tx></option>
+              <option value="">{L("请选择标签", "Select a tag")}</option>
               {tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
             </select>
           </div>
         ) as ReactNode}
-        confirmText="确认发放"
+        confirmText={L("确认发放", "Confirm")}
         onConfirm={() => {
           if (!issueCouponId || !issueTagId) {
-            toast.error(tText("请先选择标签"));
+            toast.error(L("请先选择标签", "Please select a tag first"));
             return;
           }
           issueMutation.mutate({ couponId: issueCouponId, tagIds: [issueTagId] });

@@ -1,23 +1,23 @@
 import { ArrowLeft, Copy, ShieldAlert, UserRound } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  fetchUserById,
-  fetchUserTags,
-  setUserTags,
-  resetUserPassword,
-  updateUserProfile,
-  updateUserAccountStatus,
-  updateUserRestrictions,
-  fetchUserStatusOverview,
-  recalculateUserMemberLevel,
   assignUserMemberLevel,
-  unlockUserMemberLevel,
   fetchMemberLevels,
-  unbindUserWechat,
+  fetchUserById,
+  fetchUserStatusOverview,
+  fetchUserTags,
+  resetUserPassword,
+  recalculateUserMemberLevel,
+  setUserTags,
   toggleSubordinate,
+  unbindUserWechat,
+  updateUserAccountStatus,
+  updateUserProfile,
+  updateUserRestrictions,
+  unlockUserMemberLevel,
 } from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
@@ -28,7 +28,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminInputSheet } from "@/modules/admin/components/AdminInputSheet";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
-import type { MemberLevel, UserEditForm, UserProfile, UserStatusOverview, UserTag } from "@/types/user";
+import type { MemberLevel, UserEditForm, UserProfile } from "@/types/user";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { Tx } from "@/components/admin/AdminText";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
@@ -38,7 +38,6 @@ import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 
 const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "邀请/返现", "售后记录", "评论记录", "操作日志"] as const;
-
 type TabType = (typeof tabs)[number];
 
 function buildUserEditForm(user: UserProfile | null): UserEditForm {
@@ -69,7 +68,7 @@ export default function AdminUserDetail() {
   const { confirm } = useAdminConfirm();
 
   type ReasonPrompt =
-    | { kind: "status"; status: "disabled" | "blacklisted" }
+    | { kind: "status"; status: "normal" | "disabled" | "blacklisted" }
     | { kind: "restriction"; type: "order" | "coupon" | "comment"; enabled: boolean }
     | { kind: "memberLevel"; levelId: string };
 
@@ -88,7 +87,7 @@ export default function AdminUserDetail() {
       return {
         user: u.value,
         allTags: tags.status === "fulfilled" ? tags.value : [],
-        levels: memberLevels.status === "fulfilled" ? (memberLevels.value || []) : [],
+        levels: memberLevels.status === "fulfilled" ? memberLevels.value || [] : [],
         levelsLoadFailed: memberLevels.status === "rejected",
         statusOverview: statusSnap.status === "fulfilled" ? statusSnap.value || null : null,
       };
@@ -118,32 +117,13 @@ export default function AdminUserDetail() {
   }, [id, user, tText]);
   useAdminTabTitle(tabTitle, !loading && Boolean(user));
 
-  const invalidateUserDetail = () =>
-    queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(id) });
-
-  const doResetPassword = () => {
-    if (!id) return;
-    confirm({ title: tText("确认重置密码"),
-      description: tText("将为该用户生成临时密码并复制到剪贴板。"),
-      confirmText: tText("重置"),
-      onConfirm: async () => {
-        const pwd = await resetUserPassword(id);
-        await navigator.clipboard.writeText(pwd);
-        toast.success(tText(`临时密码：${pwd}（已复制）`));
-      },
-    });
-  };
+  const queryClientInvalidate = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(id) });
 
   const applyAccountStatus = async (status: "normal" | "disabled" | "blacklisted", reason: string) => {
-    if (!id) return;
     await updateUserAccountStatus(id, status, reason);
-    await invalidateUserDetail();
+    await queryClientInvalidate();
     toast.success(
-      status === "normal"
-        ? tText("账号已恢复正常")
-        : status === "disabled"
-          ? tText("已禁用登录（会话已失效）")
-          : tText("已加入黑名单"),
+      status === "normal" ? tText("账号已恢复正常") : status === "disabled" ? tText("已禁用登录（会话已失效）") : tText("已加入黑名单"),
     );
   };
 
@@ -158,43 +138,82 @@ export default function AdminUserDetail() {
     });
   };
 
-  const applyRestriction = async (
-    type: "order" | "coupon" | "comment",
-    enabled: boolean,
-    reason: string,
-  ) => {
-    if (!id) return;
+  const applyRestriction = async (type: "order" | "coupon" | "comment", enabled: boolean, reason: string) => {
     await updateUserRestrictions(id, {
       reason,
       orderRestricted: type === "order" ? enabled : undefined,
       couponRestricted: type === "coupon" ? enabled : undefined,
       commentRestricted: type === "comment" ? enabled : undefined,
     });
-    await invalidateUserDetail();
-    const typeLabel =
-      type === "order" ? tText("下单") : type === "coupon" ? tText("领券") : tText("评论");
-    toast.success(
-      enabled
-        ? tText(`已开启${typeLabel}限制`)
-        : tText(`已取消${typeLabel}限制`),
-    );
-  };
-
-  const doRestriction = (type: "order" | "coupon" | "comment", enabled: boolean) => {
-    if (!id) return;
-    setReasonPrompt({ kind: "restriction", type, enabled });
+    await queryClientInvalidate();
+    const typeLabel = type === "order" ? tText("下单") : type === "coupon" ? tText("领券") : tText("评论");
+    toast.success(enabled ? tText(`已开启${typeLabel}限制`) : tText(`已取消${typeLabel}限制`));
   };
 
   const saveProfile = async () => {
-    if (!id) return;
     try {
       await updateUserProfile(id, editForm);
       setEditOpen(false);
-      await invalidateUserDetail();
+      await queryClientInvalidate();
       toast.success(tText("资料已保存"));
     } catch (e) {
       toast.error(toastErrorMessage(e, tText("保存失败")));
     }
+  };
+
+  const doResetPassword = () => {
+    if (!id) return;
+    confirm({
+      title: tText("确认重置密码"),
+      description: tText("将为该用户生成临时密码并复制到剪贴板。"),
+      confirmText: tText("重置"),
+      onConfirm: async () => {
+        const pwd = await resetUserPassword(id);
+        await navigator.clipboard.writeText(pwd);
+        toast.success(tText(`临时密码：${pwd}（已复制）`));
+      },
+    });
+  };
+
+  const doToggleSubordinate = () => {
+    if (!id || !user) return;
+    const current = Boolean(user.subordinate_enabled ?? user.subordinateEnabled);
+    const nextEnabled = !current;
+    confirm({
+      title: nextEnabled ? tText("开启下级功能") : tText("关闭下级功能"),
+      description: nextEnabled
+        ? tText("开启后该用户可发展下级并参与相关返现规则。")
+        : tText("关闭后该用户将无法继续发展下级。"),
+      confirmText: nextEnabled ? tText("开启") : tText("关闭"),
+      onConfirm: async () => {
+        try {
+          await toggleSubordinate(id, nextEnabled);
+          await queryClientInvalidate();
+          toast.success(nextEnabled ? tText("已开启下级功能") : tText("已关闭下级功能"));
+        } catch (e) {
+          toast.error(toastErrorMessage(e, tText("操作失败")));
+        }
+      },
+    });
+  };
+
+  const doUnbindWechat = () => {
+    if (!id || !user?.wechat_auth?.bound) return;
+    confirm({
+      title: tText("确认解绑微信"),
+      description: tText("解绑后用户将无法使用微信登录，请确保用户已有手机号或密码登录方式。"),
+      confirmText: tText("解绑"),
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await unbindUserWechat(id);
+          await queryClientInvalidate();
+          toast.success(tText("微信已解绑"));
+        } catch (e) {
+          toast.error(toastErrorMessage(e, tText("解绑失败")));
+        }
+      },
+    });
   };
 
   if (loading && !user) return <div className="p-6"><Tx>加载中...</Tx></div>;
@@ -214,7 +233,7 @@ export default function AdminUserDetail() {
   const memberLevelLabel = user.member_level_name || user.memberLevel?.name || tText("未设置");
   const pointsBalanceLabel = String(user.points_balance ?? user.pointsBalance ?? 0);
   const inviteCodeLabel = user.invite_code || user.inviteCode || "-";
-  const couponStats = normalizeCouponStats(user.related?.coupon_stats);
+  const subordinateEnabled = Boolean(user.subordinate_enabled ?? user.subordinateEnabled);
 
   const copyUserId = async () => {
     if (!user.id) return;
@@ -226,48 +245,7 @@ export default function AdminUserDetail() {
     }
   };
 
-  const wechatAuthBound = Boolean(user.wechat_auth?.bound);
-  const subordinateEnabled = Boolean(user.subordinate_enabled ?? user.subordinateEnabled);
-
-  const doToggleSubordinate = () => {
-    if (!id) return;
-    const nextEnabled = !subordinateEnabled;
-    confirm({
-      title: nextEnabled ? tText("开启下级功能") : tText("关闭下级功能"),
-      description: nextEnabled
-        ? tText("开启后该用户可发展下级并参与相关返现规则。")
-        : tText("关闭后该用户将无法继续发展下级。"),
-      confirmText: nextEnabled ? tText("开启") : tText("关闭"),
-      onConfirm: async () => {
-        try {
-          await toggleSubordinate(id, nextEnabled);
-          await invalidateUserDetail();
-          toast.success(nextEnabled ? tText("已开启下级功能") : tText("已关闭下级功能"));
-        } catch (e) {
-          toast.error(toastErrorMessage(e, tText("操作失败")));
-        }
-      },
-    });
-  };
-
-  const doUnbindWechat = () => {
-    if (!id || !wechatAuthBound) return;
-    confirm({
-      title: tText("确认解绑微信"),
-      description: tText("解绑后用户将无法使用微信登录，请确保用户已有手机号或密码登录方式。"),
-      confirmText: tText("解绑"),
-      danger: true,
-      onConfirm: async () => {
-        try {
-          await unbindUserWechat(id);
-          await invalidateUserDetail();
-          toast.success(tText("微信已解绑"));
-        } catch (e) {
-          toast.error(toastErrorMessage(e, tText("解绑失败")));
-        }
-      },
-    });
-  };
+  const couponStats = normalizeCouponStats(user.related?.coupon_stats);
 
   return (
     <div className="space-y-4">
@@ -297,11 +275,7 @@ export default function AdminUserDetail() {
           </div>
 
           <div className="flex flex-col items-start gap-2 lg:items-end">
-            <button
-              type="button"
-              onClick={() => void copyUserId()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground hover:bg-secondary"
-            >
+            <button type="button" onClick={() => void copyUserId()} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground hover:bg-secondary">
               <Copy size={12} />
               <Tx>复制用户ID</Tx>
             </button>
@@ -329,23 +303,16 @@ export default function AdminUserDetail() {
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <PermissionGate permission="user.update"><ActionBtn label={tText("编辑资料")} onClick={() => { setEditOpen(true); setEditForm(buildUserEditForm(user)); }} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("重置密码")} onClick={doResetPassword} /></PermissionGate>
-          {wechatAuthBound ? (
-            <PermissionGate permission="user.update"><ActionBtn label={tText("解绑微信")} onClick={doUnbindWechat} danger /></PermissionGate>
-          ) : null}
-          <PermissionGate permission="user.update">
-            <ActionBtn
-              label={subordinateEnabled ? tText("关闭下级功能") : tText("开启下级功能")}
-              onClick={doToggleSubordinate}
-            />
-          </PermissionGate>
+          {user.wechat_auth?.bound ? <PermissionGate permission="user.update"><ActionBtn label={tText("解绑微信")} onClick={doUnbindWechat} danger /></PermissionGate> : null}
+          <PermissionGate permission="user.update"><ActionBtn label={subordinateEnabled ? tText("关闭下级功能") : tText("开启下级功能")} onClick={doToggleSubordinate} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("禁用登录")} disabled={(statusOverview?.account_status || user.account_status) === "disabled"} onClick={() => void doStatus("disabled")} danger /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("恢复账号")} disabled={(statusOverview?.account_status || user.account_status) === "normal"} onClick={() => void doStatus("normal")} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("加入黑名单")} disabled={(statusOverview?.account_status || user.account_status) === "blacklisted"} onClick={() => void doStatus("blacklisted")} danger /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.order_restricted ? tText("取消下单限制") : tText("开启下单限制")} onClick={() => void doRestriction("order", !statusOverview?.restrictions?.order_restricted)} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.coupon_restricted ? tText("取消领券限制") : tText("开启领券限制")} onClick={() => void doRestriction("coupon", !statusOverview?.restrictions?.coupon_restricted)} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.comment_restricted ? tText("取消评论限制") : tText("开启评论限制")} onClick={() => void doRestriction("comment", !statusOverview?.restrictions?.comment_restricted)} /></PermissionGate>
-          {canManageMemberLevel ? <ActionBtn label={tText("按规则重新计算")} onClick={async () => { try { await recalculateUserMemberLevel(id, { force: true }); await invalidateUserDetail(); toast.success(tText("会员等级已按规则重算")); } catch (e) { toast.error(toastErrorMessage(e, tText("重算失败"))); } }} /> : null}
-          {canManageMemberLevel ? <ActionBtn label={tText("解除手动锁定")} disabled={!Number(user.member_level_manual_locked || 0)} onClick={async () => { try { await unlockUserMemberLevel(id); await invalidateUserDetail(); toast.success(tText("已解除手动锁定")); } catch (e) { toast.error(toastErrorMessage(e, tText("解除失败"))); } }} /> : null}
+          {canManageMemberLevel ? <ActionBtn label={tText("按规则重新计算")} onClick={async () => { try { await recalculateUserMemberLevel(id, { force: true }); await queryClientInvalidate(); toast.success(tText("会员等级已按规则重算")); } catch (e) { toast.error(toastErrorMessage(e, tText("重算失败"))); } }} /> : null}
+          {canManageMemberLevel ? <ActionBtn label={tText("解除手动锁定")} disabled={!Number(user.member_level_manual_locked || 0)} onClick={async () => { try { await unlockUserMemberLevel(id); await queryClientInvalidate(); toast.success(tText("已解除手动锁定")); } catch (e) { toast.error(toastErrorMessage(e, tText("解除失败"))); } }} /> : null}
         </div>
       </section>
 
@@ -436,7 +403,7 @@ export default function AdminUserDetail() {
                 const ids = Array.from(userTagIds);
                 const next = userTagIds.has(tag.id) ? ids.filter((x) => x !== tag.id) : [...ids, tag.id];
                 await setUserTags(id, next as string[]);
-                await invalidateUserDetail();
+                await queryClientInvalidate();
               }}
             >
               {tag.name}
@@ -449,9 +416,7 @@ export default function AdminUserDetail() {
         open={editOpen}
         onOpenChange={(open) => {
           setEditOpen(open);
-          if (!open) {
-            setEditForm({});
-          }
+          if (!open) setEditForm({});
         }}
         title={tText("编辑资料")}
         submitText={tText("保存")}
@@ -470,19 +435,10 @@ export default function AdminUserDetail() {
           ))}
           <label className="text-xs text-muted-foreground sm:col-span-2">
             <Tx>生日 (YYYY-MM-DD)</Tx>
-            <SegmentedDateInput
-              className="mt-1 w-full"
-              controlClassName="bg-background"
-              value={editForm.birthday || ""}
-              onChange={(birthday) => setEditForm((s) => ({ ...s, birthday }))}
-            />
+            <SegmentedDateInput className="mt-1 w-full" controlClassName="bg-background" value={editForm.birthday || ""} onChange={(birthday) => setEditForm((s) => ({ ...s, birthday }))} />
           </label>
           <label className="flex items-center gap-2 text-sm sm:col-span-2">
-            <input
-              type="checkbox"
-              checked={!!editForm.birthday_locked}
-              onChange={(e) => setEditForm((s) => ({ ...s, birthday_locked: e.target.checked }))}
-            />
+            <input type="checkbox" checked={!!editForm.birthday_locked} onChange={(e) => setEditForm((s) => ({ ...s, birthday_locked: e.target.checked }))} />
             <Tx>锁定生日（用户不可自行修改）</Tx>
           </label>
         </div>
@@ -500,30 +456,16 @@ export default function AdminUserDetail() {
               : tText("加入黑名单")
             : reasonPrompt?.kind === "restriction"
               ? reasonPrompt.enabled
-                ? tText(
-                    `开启${
-                      reasonPrompt.type === "order" ? "下单" : reasonPrompt.type === "coupon" ? "领券" : "评论"
-                    }限制`,
-                  )
-                : tText(
-                    `取消${
-                      reasonPrompt.type === "order" ? "下单" : reasonPrompt.type === "coupon" ? "领券" : "评论"
-                    }限制`,
-                  )
+                ? tText(`开启${reasonPrompt.type === "order" ? "下单" : reasonPrompt.type === "coupon" ? "领券" : "评论"}限制`)
+                : tText(`取消${reasonPrompt.type === "order" ? "下单" : reasonPrompt.type === "coupon" ? "领券" : "评论"}限制`)
               : tText("手动指定会员等级")
         }
-        description={
-          reasonPrompt?.kind === "memberLevel"
-            ? tText("可选填写原因，确认后将锁定为该等级。")
-            : tText("请填写操作原因，将记录到操作日志。")
-        }
-        placeholder={
-          reasonPrompt?.kind === "memberLevel" ? tText("手动指定原因（可选）") : tText("请输入操作原因")
-        }
+        description={reasonPrompt?.kind === "memberLevel" ? tText("可选填写原因，确认后将锁定为该等级。") : tText("请填写操作原因，将记录到操作日志。")}
+        placeholder={reasonPrompt?.kind === "memberLevel" ? tText("手动指定原因（可选）") : tText("请输入操作原因")}
         required={reasonPrompt?.kind !== "memberLevel"}
         submitText={tText("确认")}
         onSubmit={async (reason) => {
-          if (!reasonPrompt || !id) return;
+          if (!reasonPrompt) return;
           try {
             if (reasonPrompt.kind === "status") {
               await applyAccountStatus(reasonPrompt.status, reason);
@@ -531,7 +473,7 @@ export default function AdminUserDetail() {
               await applyRestriction(reasonPrompt.type, reasonPrompt.enabled, reason);
             } else {
               await assignUserMemberLevel(id, reasonPrompt.levelId, reason);
-              await invalidateUserDetail();
+              await queryClientInvalidate();
               toast.success(tText("会员等级已手动指定并锁定"));
             }
           } catch (e) {

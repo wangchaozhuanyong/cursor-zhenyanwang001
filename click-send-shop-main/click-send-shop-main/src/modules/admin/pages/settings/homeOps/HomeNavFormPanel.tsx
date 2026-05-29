@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_HOME_NAV_ICON } from "@/constants/imageUploadHints";
@@ -16,13 +15,7 @@ import type { HomeNavSupportChannelOption } from "@/services/admin/homeOpsServic
 import type { NavForm } from "./homeNavUtils";
 import { buildSupportNavLink } from "./homeNavUtils";
 import HomeNavIconPreview from "./HomeNavIconPreview";
-import { useAdminT } from "@/hooks/useAdminT";
-
-const SUPPORT_TYPE_LABELS: Record<string, string> = {
-  wechat: "微信",
-  whatsapp: "WhatsApp",
-  telegram: "Telegram",
-};
+import { useAdminTOptional } from "@/hooks/useAdminT";
 
 type Props = {
   navForm: NavForm;
@@ -47,7 +40,12 @@ export default function HomeNavFormPanel({
   supportNavEnabled,
   nextSortOrder,
 }: Props) {
-  const { tText } = useAdminT();
+  const { locale } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const supportTypeLabels: Record<string, string> = isEn
+    ? { wechat: "WeChat", whatsapp: "WhatsApp", telegram: "Telegram" }
+    : { wechat: "微信", whatsapp: "WhatsApp", telegram: "Telegram" };
   const { confirm } = useAdminConfirm();
   const [navIconUploading, setNavIconUploading] = useState(false);
   const navIconFileRef = useRef<HTMLInputElement>(null);
@@ -70,10 +68,12 @@ export default function HomeNavFormPanel({
       const { url } = await uploadService.uploadSingleWithProgress(prepared, { mode: "thumb", timeoutMs: 45000 });
       setNavForm((prev) => ({ ...prev, icon_url: url }));
       toast.success(
-        autoMatted ? `${iconMatteSuccessToast(matteMethod)}，请保存生效。` : "图标上传成功，请保存生效。",
+        autoMatted
+          ? `${iconMatteSuccessToast(matteMethod)}${isEn ? ", please save to apply." : "，请保存生效。"}`
+          : L("图标上传成功，请保存生效。", "Icon uploaded successfully. Please save to apply."),
       );
     } catch (err) {
-      toast.error(toastErrorMessage(err, "图标上传失败"));
+      toast.error(toastErrorMessage(err, L("图标上传失败", "Failed to upload icon")));
     } finally {
       setNavIconUploading(false);
     }
@@ -82,11 +82,11 @@ export default function HomeNavFormPanel({
   return (
     <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_1fr_1.4fr_minmax(7rem,1fr)_auto_auto]">
       <label className="flex min-w-0 flex-col gap-1 md:col-span-1">
-        <span className="text-[11px] font-medium text-muted-foreground"><Tx>图标</Tx></span>
+        <span className="text-[11px] font-medium text-muted-foreground">{L("图标", "Icon")}</span>
         <div className="flex flex-wrap items-stretch gap-2">
           <input
             className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-            placeholder={tText("支持图片 URL、站内路径或 Emoji")}
+            placeholder={L("支持图片 URL、站内路径或 Emoji", "链接地址（URL）")}
             value={navForm.icon_url}
             onChange={(e) => setNavForm({ ...navForm, icon_url: e.target.value })}
           />
@@ -104,11 +104,11 @@ export default function HomeNavFormPanel({
             className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary/80 disabled:opacity-50"
           >
             {navIconUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            上传
+            {L("上传", "Upload")}
           </button>
           <div
             className="flex shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background/50 px-1 py-1"
-            title={tText("图标预览")}
+            title={L("图标预览", "Icon preview")}
           >
             <HomeNavIconPreview value={navForm.icon_url} />
           </div>
@@ -124,17 +124,19 @@ export default function HomeNavFormPanel({
           />
         </div>
       </label>
+
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-medium text-muted-foreground"><Tx>标题</Tx></span>
+        <span className="text-[11px] font-medium text-muted-foreground">{L("标题", "Title")}</span>
         <input
           className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-          placeholder={tText("导航标题")}
+          placeholder={L("导航标题", "Navigation title")}
           value={navForm.title}
           onChange={(e) => setNavForm({ ...navForm, title: e.target.value })}
         />
       </label>
+
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-medium text-muted-foreground"><Tx>跳转方式</Tx></span>
+        <span className="text-[11px] font-medium text-muted-foreground">{L("跳转方式", "Link type")}</span>
         <select
           className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
           value={navForm.target_type || "url"}
@@ -153,20 +155,15 @@ export default function HomeNavFormPanel({
               target_type: next,
               target_category_id: next === "category" ? prev.target_category_id : null,
               target_support_channel_id: next === "support" ? prev.target_support_channel_id : null,
-              link_url:
-                next === "url"
-                  ? prev.link_url
-                  : next === "categories"
-                    ? "/categories"
-                    : "",
+              link_url: next === "url" ? prev.link_url : next === "categories" ? "/categories" : "",
             }));
           }}
         >
-          <option value="url"><Tx>URL / 站内路径</Tx></option>
-          <option value="categories"><Tx>全部分类</Tx></option>
-          <option value="category"><Tx>分类页</Tx></option>
+          <option value="url">{L("URL / 站内路径", "链接地址（URL）")}</option>
+          <option value="categories">{L("全部分类", "All categories")}</option>
+          <option value="category">{L("分类页", "Category page")}</option>
           <option value="support" disabled={!supportNavEnabled}>
-            <Tx>联系客服</Tx>
+            {L("联系客服", "Contact support")}
           </option>
         </select>
         {navForm.target_type === "category" ? (
@@ -182,7 +179,7 @@ export default function HomeNavFormPanel({
               }));
             }}
           >
-            <option value=""><Tx>请选择分类</Tx></option>
+            <option value="">{L("请选择分类", "Select a category")}</option>
             {categoryOptions.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.label}
@@ -203,12 +200,12 @@ export default function HomeNavFormPanel({
               }));
             }}
           >
-            <option value=""><Tx>请选择客服账号</Tx></option>
+            <option value="">{L("请选择客服账号", "Select a support account")}</option>
             {supportChannels.map((channel) => (
               <option key={channel.id} value={channel.id}>
                 {channel.name}
                 {channel.account ? ` · ${channel.account}` : ""}
-                {` (${SUPPORT_TYPE_LABELS[channel.type] || channel.type})`}
+                {` (${supportTypeLabels[channel.type] || channel.type})`}
               </option>
             ))}
           </select>
@@ -216,7 +213,7 @@ export default function HomeNavFormPanel({
         {navForm.target_type === "url" ? (
           <input
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-            placeholder={tText("/categories 或 https://...")}
+            placeholder={L("/categories 或 https://...", "/categories or https://...")}
             value={navForm.link_url}
             onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })}
           />
@@ -225,40 +222,45 @@ export default function HomeNavFormPanel({
           <AdminFieldHint
             text={
               navForm.target_type === "categories"
-                ? "将跳转到分类 Tab 的全部分类列表（/categories）"
+                ? L("将跳转到分类 Tab 的全部分类列表（/categories）", "Will go to the full category list tab (/categories)")
                 : navForm.target_type === "category"
-                ? "将自动跳转到对应分类页"
-                : navForm.target_type === "support"
-                  ? supportNavEnabled
-                    ? "账号在「页面装修 → 客服与安装」中维护，仅显示已启用账号"
-                    : "请先在站点能力中开启「客服/APP 页」"
-                  : "支持站内路径和完整 URL"
+                  ? L("将自动跳转到对应分类页", "Will automatically jump to the matching category page")
+                  : navForm.target_type === "support"
+                    ? supportNavEnabled
+                      ? L(
+                          "账号在「页面装修 → 客服与安装」中维护，仅显示已启用账号",
+                          'Accounts are managed in "Page Design → Support & Install" and only enabled accounts are shown',
+                        )
+                      : L("请先在站点能力中开启「客服/APP 页」", 'Please enable the "Support/App Page" capability first')
+                    : L("支持站内路径和完整 URL", "Supports internal paths and full URLs")
             }
           />
         </div>
       </label>
+
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-medium text-muted-foreground"><Tx>排序</Tx></span>
+        <span className="text-[11px] font-medium text-muted-foreground">{L("排序", "Sort order")}</span>
         {editingNavId ? (
           <input
             type="number"
             min={1}
-            title={tText("排序值越小越靠前")}
+            title={L("排序值越小越靠前", "Smaller numbers appear first")}
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
             value={navForm.sort_order}
             onChange={(e) => setNavForm({ ...navForm, sort_order: Math.max(1, Number(e.target.value) || 1) })}
           />
         ) : (
           <div className="flex min-h-[42px] items-center rounded-xl border border-dashed border-border bg-background/40 px-3 text-sm text-muted-foreground">
-            新增后排在第 {nextSortOrder} 位
+            {L(`新增后排在第 ${nextSortOrder} 位`, `New item will be placed at position ${nextSortOrder}`)}
           </div>
         )}
         <div className="flex justify-end">
-          <AdminFieldHint text={<Tx>列表可拖拽或点击序号调整顺序</Tx>} />
+          <AdminFieldHint text={L("列表可拖拽或点击序号调整顺序", "Drag items or click the number to change the order")} />
         </div>
       </label>
+
       <label className="flex cursor-pointer flex-col justify-end gap-1 pb-0.5">
-        <span className="text-[11px] font-medium text-muted-foreground"><Tx>状态</Tx></span>
+        <span className="text-[11px] font-medium text-muted-foreground">{L("状态", "Status")}</span>
         <span className="flex min-h-[42px] items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground">
           <input
             type="checkbox"
@@ -266,21 +268,22 @@ export default function HomeNavFormPanel({
             checked={navForm.enabled}
             onChange={(e) => setNavForm({ ...navForm, enabled: e.target.checked })}
           />
-          <Tx>{navForm.enabled ? "启用" : "禁用"}</Tx>
+          {navForm.enabled ? L("启用", "Enabled") : L("禁用", "Disabled")}
         </span>
       </label>
+
       <div className="flex flex-col justify-end gap-1">
-        <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none"><Tx>操作</Tx></span>
+        <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none">{L("操作", "Actions")}</span>
         <PermissionGate permission="home_ops.manage">
           <LoadingButton
             type="button"
             variant="gold"
             state={saving ? "loading" : "normal"}
-            loadingText="保存中..."
-            onClick={() => adminConfirmSave(confirm, editingNavId ? "保存导航修改" : "新增导航", () => onSave())}
+            loadingText={L("保存中...", "Saving...")}
+            onClick={() => adminConfirmSave(confirm, editingNavId ? L("保存导航修改", "Save navigation changes") : L("新增导航", "Add navigation item"), () => onSave())}
             className="inline-flex h-[42px] rounded-xl px-4 text-sm font-bold"
           >
-            {editingNavId ? "保存" : "新增"}
+            {editingNavId ? L("保存", "Save") : L("新增", "Add")}
           </LoadingButton>
         </PermissionGate>
       </div>

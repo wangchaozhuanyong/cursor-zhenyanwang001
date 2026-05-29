@@ -22,11 +22,10 @@ import type { Notification } from "@/types/notification";
 import type { NotificationPayload } from "@/services/admin/notificationService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
-import { Tx } from "@/components/admin/AdminText";
 import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import {
   adminTableCellClass,
@@ -43,37 +42,6 @@ import {
   normalizeTriggerRuleForSave,
   patchTriggerRuleTemplate,
 } from "./triggerRuleTemplates";
-
-const TYPE_LABELS: Record<string, string> = {
-  system: "系统通知",
-  order: "订单通知",
-  shipping: "物流通知",
-  payment: "支付通知",
-  refund: "退款通知",
-  after_sale: "售后通知",
-  promotion: "营销通知",
-  coupon: "优惠券通知",
-  points: "积分通知",
-  reward: "返现通知",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: "草稿",
-  sent: "已发送",
-  scheduled: "定时发送",
-  cancelled: "已取消",
-  published: "已发布",
-};
-
-const AUDIENCE_LABELS: Record<string, string> = {
-  all: "全部用户",
-  single: "单个用户",
-  specific: "指定用户",
-  user_tag: "用户标签",
-  member_level: "会员等级",
-  has_order: "有订单用户",
-  no_order: "无订单用户",
-};
 
 const NOTIFICATION_PAGE_PERMISSIONS = ["notification.view", "notification.manage"];
 const NOTIFICATION_COMPOSE_PERMISSIONS = ["notification.create", "notification.send", "notification.manage"];
@@ -127,19 +95,80 @@ function buildPayload(form: ManualForm): NotificationPayload {
 function getRowAction(row: Notification): { action: RowAction; label: string; permissions: string[] } | null {
   const status = row.send_status || row.workflow_status;
   if (row.workflow_status === "draft" || status === "draft") {
-    return { action: "deleteDraft", label: "删除草稿", permissions: NOTIFICATION_DRAFT_PERMISSIONS };
+    return { action: "deleteDraft", label: "Delete draft", permissions: NOTIFICATION_DRAFT_PERMISSIONS };
   }
   if (status === "scheduled") {
-    return { action: "cancelScheduled", label: "取消定时", permissions: NOTIFICATION_SEND_PERMISSIONS };
+    return { action: "cancelScheduled", label: "Cancel schedule", permissions: NOTIFICATION_SEND_PERMISSIONS };
   }
   if (status === "sent") {
-    return { action: "revokeSent", label: "撤回", permissions: NOTIFICATION_REVOKE_PERMISSIONS };
+    return { action: "revokeSent", label: "Revoke", permissions: NOTIFICATION_REVOKE_PERMISSIONS };
   }
   return null;
 }
 
 export default function AdminNotifications() {
-  const { tText } = useAdminT();
+  const { locale, tText } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const typeLabels: Record<string, string> = isEn
+    ? {
+        system: "System",
+        order: "Order",
+        shipping: "Shipping",
+        payment: "Payment",
+        refund: "Refund",
+        after_sale: "After-sales",
+        promotion: "Marketing",
+        coupon: "Coupon",
+        points: "Points",
+        reward: "Cashback",
+      }
+    : {
+        system: "系统通知",
+        order: "订单通知",
+        shipping: "物流通知",
+        payment: "支付通知",
+        refund: "退款通知",
+        after_sale: "售后通知",
+        promotion: "营销通知",
+        coupon: "优惠券通知",
+        points: "积分通知",
+        reward: "返现通知",
+      };
+  const statusLabels: Record<string, string> = isEn
+    ? {
+        draft: "Draft",
+        sent: "Sent",
+        scheduled: "Scheduled",
+        cancelled: "Cancelled",
+        published: "Published",
+      }
+    : {
+        draft: "草稿",
+        sent: "已发送",
+        scheduled: "定时发送",
+        cancelled: "已取消",
+        published: "已发布",
+      };
+  const audienceLabels: Record<string, string> = isEn
+    ? {
+        all: "All users",
+        single: "Single user",
+        specific: "Specific users",
+        user_tag: "User tags",
+        member_level: "Member level",
+        has_order: "Users with orders",
+        no_order: "Users without orders",
+      }
+    : {
+        all: "全部用户",
+        single: "单个用户",
+        specific: "指定用户",
+        user_tag: "用户标签",
+        member_level: "会员等级",
+        has_order: "有订单用户",
+        no_order: "无订单用户",
+      };
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const canAny = useAdminPermissionStore((s) => s.canAny);
@@ -185,20 +214,20 @@ export default function AdminNotifications() {
     mutationFn: (mode: "send" | "draft") => {
       const payload = buildPayload(form);
       if (!payload.title || !payload.content) {
-        throw new Error("请填写标题和正文");
+        throw new Error(L("请填写标题和正文", "Please fill in the title and body"));
       }
       if ((payload.audience_type === "single" || payload.audience_type === "specific") && !form.identifiers.trim()) {
-        throw new Error("请填写接收用户（编号或手机号）");
+        throw new Error(L("请填写接收用户（编号或手机号）", "Please fill in the recipients (ID or phone number)"));
       }
       return mode === "send" ? notificationService.sendNotification(payload) : notificationService.saveNotificationDraft(payload);
     },
     onSuccess: async (_, mode) => {
-      toast.success(mode === "send" ? "通知已发送" : "草稿已保存");
+      toast.success(mode === "send" ? L("通知已发送", "Notification sent") : L("草稿已保存", "Draft saved"));
       setForm(defaultManualForm);
       setTab("list");
       await invalidateNotifications();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "通知提交失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, L("通知提交失败", "Failed to submit notification"))),
   });
 
   const deleteMutation = useMutation({
@@ -211,14 +240,14 @@ export default function AdminNotifications() {
       } else if (action === "revokeSent") {
         await notificationService.revokeSentNotification(row.id);
       } else {
-        throw new Error("当前通知状态不支持该操作");
+        throw new Error(L("当前通知状态不支持该操作", "This notification status does not support that action"));
       }
     },
     onSuccess: async () => {
-      toast.success(tText("通知已处理"));
+      toast.success(L("通知已处理", "Notification handled"));
       await invalidateNotifications();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "处理通知失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, L("处理通知失败", "Failed to process notification"))),
   });
 
   const saveRulesMutation = useMutation({
@@ -226,11 +255,11 @@ export default function AdminNotifications() {
       (rulesDraft || rulesQuery.data || []).map(normalizeTriggerRuleForSave),
     ),
     onSuccess: async (nextRules) => {
-      toast.success(tText("触发通知设置已保存"));
+      toast.success(L("触发通知设置已保存", "Notification trigger settings saved"));
       setRulesDraft(nextRules);
       await invalidateNotifications();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "保存设置失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, L("保存设置失败", "Failed to save settings"))),
   });
 
   const rows = notificationsQuery.data?.list || [];
@@ -266,21 +295,21 @@ export default function AdminNotifications() {
             <p className="line-clamp-2 text-sm font-semibold">{row.title}</p>
             <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{row.content || "—"}</p>
           </div>
-          <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs">{label(STATUS_LABELS, row.send_status || row.workflow_status)}</span>
+          <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs">{label(statusLabels, row.send_status || row.workflow_status)}</span>
         </div>
         <div className="space-y-2">
-          <AdminTableMobileCardField label="类型">{label(TYPE_LABELS, row.type)}</AdminTableMobileCardField>
-          <AdminTableMobileCardField label="受众">{label(AUDIENCE_LABELS, row.audience_type)}</AdminTableMobileCardField>
-          <AdminTableMobileCardField label="触达 / 已读">
+          <AdminTableMobileCardField label={L("类型", "Type")}>{label(typeLabels, row.type)}</AdminTableMobileCardField>
+          <AdminTableMobileCardField label={L("受众", "Audience")}>{label(audienceLabels, row.audience_type)}</AdminTableMobileCardField>
+          <AdminTableMobileCardField label={L("触达 / 已读", "Delivered / Read")}>
             <span className="text-xs text-muted-foreground">{row.recipient_count || 0} / {row.read_count || 0}</span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label="时间">
+          <AdminTableMobileCardField label={L("时间", "Time")}>
             <span className="text-xs text-muted-foreground">{formatDateTime(row.sent_at || row.scheduled_at || row.created_at)}</span>
           </AdminTableMobileCardField>
         </div>
         <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
           <button type="button" onClick={() => navigate(`/admin/notifications/${row.id}`)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
-            详情
+            {L("详情", "Details")}
           </button>
           {rowAction ? (
             <PermissionGate anyOf={rowAction.permissions}>
@@ -297,27 +326,27 @@ export default function AdminNotifications() {
   return (
     <PermissionGate anyOf={NOTIFICATION_PAGE_PERMISSIONS}>
       <AdminPageShell
-        hint={<Tx>通知列表和触发设置已接入 Query，发送、保存或删除后自动刷新。</Tx>}
+        hint={L("通知列表和触发设置已接入 Query，发送、保存或删除后自动刷新。", "Notification list and trigger settings are connected to Query and refresh automatically after sending, saving, or deleting.")}
         filters={(
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--theme-border)] pb-3">
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => setTab("list")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "list" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
-                通知列表
+                {L("通知列表", "Notifications")}
               </button>
               <PermissionGate anyOf={NOTIFICATION_COMPOSE_PERMISSIONS}>
                 <button type="button" onClick={() => setTab("manual")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "manual" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
-                  手动发送
+                  {L("手动发送", "Send manually")}
                 </button>
               </PermissionGate>
               <PermissionGate anyOf={NOTIFICATION_TRIGGER_PERMISSIONS}>
                 <button type="button" onClick={() => setTab("settings")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "settings" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
-                  触发设置
+                  {L("触发设置", "Trigger settings")}
                 </button>
               </PermissionGate>
             </div>
             <button type="button" onClick={handleRefresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
               <RefreshCw size={16} className={(tab === "settings" ? rulesQuery.isFetching : notificationsQuery.isFetching) ? "animate-spin" : ""} />
-              <Tx>刷新</Tx>
+              {L("刷新", "Refresh")}
             </button>
           </div>
         )}
@@ -326,15 +355,15 @@ export default function AdminNotifications() {
           <>
             <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_180px_1fr_auto]">
               <AdminFilterSelect value={type} onChange={(e) => { setType(e.target.value); setPage(1); }}>
-                <option value=""><Tx>全部类型</Tx></option>
-                {Object.entries(TYPE_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                <option value="">{L("全部类型", "All types")}</option>
+                {Object.entries(typeLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
               </AdminFilterSelect>
               <AdminFilterSelect value={sendStatus} onChange={(e) => { setSendStatus(e.target.value); setPage(1); }}>
-                <option value=""><Tx>全部状态</Tx></option>
-                {Object.entries(STATUS_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                <option value="">{L("全部状态", "All statuses")}</option>
+                {Object.entries(statusLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
               </AdminFilterSelect>
-              <AdminSearchInput value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} placeholder={tText("搜索标题或正文")} />
-              <AdminFilterButton onClick={() => { setType(""); setSendStatus(""); setKeyword(""); setPage(1); }}><Tx>清空筛选</Tx></AdminFilterButton>
+              <AdminSearchInput value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} placeholder={L("搜索标题或正文", "Search title or body")} />
+              <AdminFilterButton onClick={() => { setType(""); setSendStatus(""); setKeyword(""); setPage(1); }}>{L("清空筛选", "Clear filters")}</AdminFilterButton>
             </div>
 
             <AnimatedTable
@@ -344,13 +373,13 @@ export default function AdminNotifications() {
               skeletonRows={8}
               skeletonCols={8}
               emptyIcon={Bell}
-              emptyTitle="暂无通知"
-              emptyDescription="当前筛选条件下没有通知记录。"
+              emptyTitle={L("暂无通知", "No notifications")}
+              emptyDescription={L("当前筛选条件下没有通知记录。", "No notification records match the current filters.")}
               className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
               tableClassName="min-w-[1040px] w-full text-sm"
               theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
               thead={adminTableTheadRow(
-                ["标题", "类型", "受众", "发送状态", "触达 / 已读", "时间", "操作"],
+                [L("标题", "Title"), L("类型", "Type"), L("受众", "Audience"), L("发送状态", "Status"), L("触达 / 已读", "Delivered / Read"), L("时间", "Time"), L("操作", "Actions")],
                 NOTIFICATION_COLUMN_ALIGNS,
               )}
               footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
@@ -369,9 +398,9 @@ export default function AdminNotifications() {
                       tooltipLines={[row.title, row.content || "—"]}
                     />
                   </td>
-                  <td className={adminTableCellClass("left", "text-sm")}>{label(TYPE_LABELS, row.type)}</td>
-                  <td className={adminTableCellClass("left", "text-sm")}>{label(AUDIENCE_LABELS, row.audience_type)}</td>
-                  <td className={adminTableCellClass("center")}><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{label(STATUS_LABELS, row.send_status || row.workflow_status)}</span></td>
+                  <td className={adminTableCellClass("left", "text-sm")}>{label(typeLabels, row.type)}</td>
+                  <td className={adminTableCellClass("left", "text-sm")}>{label(audienceLabels, row.audience_type)}</td>
+                  <td className={adminTableCellClass("center")}><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{label(statusLabels, row.send_status || row.workflow_status)}</span></td>
                   <td className={adminTableCellClass("right", "text-sm text-muted-foreground")}>{row.recipient_count || 0} / {row.read_count || 0}</td>
                   <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(row.sent_at || row.scheduled_at || row.created_at)}</td>
                   <td className={adminTableCellClass("right")}>
@@ -382,16 +411,16 @@ export default function AdminNotifications() {
                           onClick={() => navigate(`/admin/notifications/${row.id}`)}
                           className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
                         >
-                          <Tx>详情</Tx>
+                          {L("详情", "Details")}
                         </button>
                       )}
-                      moreLabel={<Tx>更多</Tx>}
+                      moreLabel={L("更多", "More")}
                       menuDisabled={deleteMutation.isPending}
                       items={[
                         ...(rowAction && canAny(rowAction.permissions) ? ([
                           {
                             key: "rowAction",
-                            label: <Tx>{rowAction.label}</Tx>,
+                            label: rowAction.label,
                             danger: rowAction.action === "deleteDraft",
                             disabled: deleteMutation.isPending,
                             onClick: () => deleteMutation.mutate(row),
@@ -411,42 +440,42 @@ export default function AdminNotifications() {
           <PermissionGate anyOf={NOTIFICATION_COMPOSE_PERMISSIONS}>
           <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="text-xs font-medium text-muted-foreground">通知类型
+              <label className="text-xs font-medium text-muted-foreground">{L("通知类型", "Notification type")}
                 <select value={form.type} onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                  {Object.entries(TYPE_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                  {Object.entries(typeLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
                 </select>
               </label>
-              <label className="text-xs font-medium text-muted-foreground">接收人
+              <label className="text-xs font-medium text-muted-foreground">{L("接收人", "Audience")}
                 <select value={form.audience_type} onChange={(e) => setForm((prev) => ({ ...prev, audience_type: e.target.value as AudienceType }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                  {Object.entries(AUDIENCE_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                  {Object.entries(audienceLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
                 </select>
               </label>
-              <label className="md:col-span-2 text-xs font-medium text-muted-foreground">标题
+              <label className="md:col-span-2 text-xs font-medium text-muted-foreground">{L("标题", "Title")}
                 <input value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               </label>
-              <label className="md:col-span-2 text-xs font-medium text-muted-foreground">正文
+              <label className="md:col-span-2 text-xs font-medium text-muted-foreground">{L("正文", "Body")}
                 <textarea value={form.content} onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))} rows={5} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               </label>
-              <label className="text-xs font-medium text-muted-foreground">接收用户（编号 / 手机号）
-                <textarea value={form.identifiers} onChange={(e) => setForm((prev) => ({ ...prev, identifiers: e.target.value }))} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={tText("单个用户或指定用户时填写，多个用换行/逗号分隔")} />
+              <label className="text-xs font-medium text-muted-foreground">{L("接收用户（编号 / 手机号）", "Recipients (ID / phone number)")}
+                <textarea value={form.identifiers} onChange={(e) => setForm((prev) => ({ ...prev, identifiers: e.target.value }))} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={L("单个用户或指定用户时填写，多个用换行/逗号分隔", "Fill when targeting one or specific users; separate multiple entries with new lines or commas")} />
               </label>
               <div className="space-y-4">
-                <label className="block text-xs font-medium text-muted-foreground">定时发送时间
+                <label className="block text-xs font-medium text-muted-foreground">{L("定时发送时间", "Scheduled time")}
                   <SegmentedDateTimeInput value={form.scheduled_at} onChange={(scheduled_at) => setForm((prev) => ({ ...prev, scheduled_at }))} className="mt-1 w-full" controlClassName="bg-background" />
                 </label>
-                <label className="block text-xs font-medium text-muted-foreground">跳转链接
-                  <input value={form.link_url} onChange={(e) => setForm((prev) => ({ ...prev, link_url: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={tText("/orders 或完整 URL")} />
+                <label className="block text-xs font-medium text-muted-foreground">{L("跳转链接", "Link URL")}
+                  <input value={form.link_url} onChange={(e) => setForm((prev) => ({ ...prev, link_url: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={L("/orders 或完整 URL", "/orders or a full URL")} />
                 </label>
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <PermissionGate anyOf={NOTIFICATION_DRAFT_PERMISSIONS}>
-                <button type="button" onClick={() => sendMutation.mutate("draft")} disabled={sendMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60"><Tx>保存草稿</Tx></button>
+                <button type="button" onClick={() => sendMutation.mutate("draft")} disabled={sendMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60">{L("保存草稿", "Save draft")}</button>
               </PermissionGate>
               <PermissionGate anyOf={NOTIFICATION_SEND_PERMISSIONS}>
                 <button type="button" onClick={() => sendMutation.mutate("send")} disabled={sendMutation.isPending} className="inline-flex items-center gap-2 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
                   <Send size={16} />
-                  立即发送
+                  {L("立即发送", "Send now")}
                 </button>
               </PermissionGate>
             </div>
@@ -457,7 +486,7 @@ export default function AdminNotifications() {
         {tab === "settings" ? (
           <PermissionGate anyOf={NOTIFICATION_TRIGGER_PERMISSIONS}>
           <div className="space-y-4">
-            {rulesQuery.isLoading ? <p className="text-sm text-muted-foreground"><Tx>正在加载触发规则...</Tx></p> : null}
+            {rulesQuery.isLoading ? <p className="text-sm text-muted-foreground">{L("正在加载触发规则...", "Loading trigger rules...")}</p> : null}
             {rules.map((rule) => (
               <div key={rule.key} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -467,15 +496,15 @@ export default function AdminNotifications() {
                   </div>
                   <label className="inline-flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={!!rule.enabled} onChange={(e) => updateRule(rule.key, { enabled: e.target.checked })} />
-                    启用
+                    {L("启用", "Enabled")}
                   </label>
                 </div>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <label className="block text-xs font-medium text-muted-foreground">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                      <span><Tx>标题模板</Tx></span>
+                      <span>{L("标题模板", "Title template")}</span>
                       {!hasCustomTriggerTemplate(rule, "title") ? (
-                        <span className="font-normal text-muted-foreground/80"><Tx>系统默认</Tx></span>
+                        <span className="font-normal text-muted-foreground/80">{L("系统默认", "System default")}</span>
                       ) : null}
                     </span>
                     <input
@@ -486,9 +515,9 @@ export default function AdminNotifications() {
                   </label>
                   <label className="block text-xs font-medium text-muted-foreground">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                      <span><Tx>正文模板</Tx></span>
+                      <span>{L("正文模板", "Body template")}</span>
                       {!hasCustomTriggerTemplate(rule, "content") ? (
-                        <span className="font-normal text-muted-foreground/80"><Tx>系统默认</Tx></span>
+                        <span className="font-normal text-muted-foreground/80">{L("系统默认", "System default")}</span>
                       ) : null}
                     </span>
                     <textarea
@@ -502,7 +531,7 @@ export default function AdminNotifications() {
               </div>
             ))}
             <div className="flex justify-end">
-              <button type="button" onClick={() => saveRulesMutation.mutate()} disabled={saveRulesMutation.isPending} className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"><Tx>保存触发设置</Tx></button>
+              <button type="button" onClick={() => saveRulesMutation.mutate()} disabled={saveRulesMutation.isPending} className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{L("保存触发设置", "Save trigger settings")}</button>
             </div>
           </div>
           </PermissionGate>

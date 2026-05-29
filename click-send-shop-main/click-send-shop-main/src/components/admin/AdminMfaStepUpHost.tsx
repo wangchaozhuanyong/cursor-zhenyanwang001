@@ -12,6 +12,7 @@ import {
 } from "@/lib/adminMfaStepUp";
 import { fetchAdminProfile, reverifyAdminMfa, reverifyAdminPasskey } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const MFA_REVERIFY_TIMEOUT_MS = 15_000;
 
@@ -38,6 +39,9 @@ function shouldKeepMfaStepUpOpen(err: unknown, aborted: boolean): boolean {
 
 export default function AdminMfaStepUpHost() {
   const navigate = useNavigate();
+  const { locale } = useAdminT();
+  const isEnglish = locale === "en";
+
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,6 +52,7 @@ export default function AdminMfaStepUpHost() {
   const attemptRef = useRef(0);
   const openRef = useRef(false);
   const profileRequestedRef = useRef(false);
+
   const mfaEnabled = mfaStatus?.enabled ?? true;
   const passkeyAvailable = Boolean(mfaStatus?.passkeyRegistered);
 
@@ -110,7 +115,9 @@ export default function AdminMfaStepUpHost() {
   const handleSubmit = async () => {
     const normalized = code.replace(/\D/g, "").slice(0, 6);
     if (normalized.length !== 6) {
-      const message = "请输入身份验证器中的 6 位验证码";
+      const message = isEnglish
+        ? "Enter the 6-digit code from your authenticator."
+        : "请输入身份验证器中的 6 位验证码";
       setErrorText(message);
       toast.error(message);
       return;
@@ -131,13 +138,15 @@ export default function AdminMfaStepUpHost() {
         actionClass: getPendingAdminMfaActionClass(),
       });
       if (attemptRef.current !== attemptId) return;
-      finishSuccess("身份验证已通过", result);
+      finishSuccess(isEnglish ? "Identity verification passed" : "身份验证已通过", result);
     } catch (err) {
       if (attemptRef.current !== attemptId) return;
 
       const message = controller.signal.aborted
-        ? "验证请求超时，请重新发起该操作后再验证"
-        : toastErrorMessage(err, "验证失败");
+        ? isEnglish
+          ? "Verification timed out. Please start the action again and verify."
+          : "验证请求超时，请重新发起该操作后再验证"
+        : toastErrorMessage(err, isEnglish ? "Verification failed" : "验证失败");
       setErrorText(message);
       toast.error(message);
 
@@ -171,12 +180,14 @@ export default function AdminMfaStepUpHost() {
         actionClass: getPendingAdminMfaActionClass(),
       });
       if (attemptRef.current !== attemptId) return;
-      finishSuccess("Passkey 验证已通过", result);
+      finishSuccess(isEnglish ? "Passkey verification passed" : "Passkey 验证已通过", result);
     } catch (err) {
       if (attemptRef.current !== attemptId) return;
       const message = controller.signal.aborted
-        ? "Passkey 验证超时，请重新发起该操作后再验证"
-        : toastErrorMessage(err, "Passkey 验证失败");
+        ? isEnglish
+          ? "Passkey verification timed out. Please start the action again and verify."
+          : "Passkey 验证超时，请重新发起该操作后再验证"
+        : toastErrorMessage(err, isEnglish ? "Passkey verification failed" : "Passkey 验证失败");
       if (!shouldKeepMfaStepUpOpen(err, controller.signal.aborted)) {
         failAndCancel(message);
       } else {
@@ -200,6 +211,15 @@ export default function AdminMfaStepUpHost() {
 
   if (!open) return null;
 
+  const title = isEnglish ? "Second-factor verification" : "需要二次身份验证";
+  const description = mfaEnabled === false
+    ? isEnglish
+      ? "This account has not bound an authenticator yet. Please sign out, sign in again, and finish MFA binding; or ask a super admin to reset MFA from Staff accounts."
+      : "当前账号尚未绑定身份验证器，无法完成二次验证。请退出后重新登录并完成 MFA 绑定；或由超级管理员在「员工账号」中为您重置 MFA 后重新绑定。"
+    : isEnglish
+      ? "This action needs a higher security level. You can use Passkey or enter the 6-digit code from your authenticator."
+      : "该操作需要更高安全等级。可使用 Passkey，或输入身份验证器中的 6 位验证码后继续。";
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
       <div
@@ -210,38 +230,37 @@ export default function AdminMfaStepUpHost() {
       >
         <div className="flex items-center gap-2 text-base font-semibold text-foreground">
           <KeyRound size={18} />
-          <span id="admin-mfa-step-up-title">需要二次身份验证</span>
+          <span id="admin-mfa-step-up-title">{title}</span>
         </div>
-        {mfaEnabled === false ? (
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            当前账号尚未绑定身份验证器，无法完成二次验证。请退出后重新登录并完成 MFA 绑定；或由超级管理员在「员工账号」中为您重置 MFA 后重新绑定。
-          </p>
-        ) : (
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            该操作需要更高安全等级。可使用 Passkey，或输入身份验证器中的 6 位验证码后继续。
-          </p>
-        )}
+
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+
         {mfaEnabled !== false ? (
           <>
             {passkeyAvailable ? (
               <>
-            <button
-              type="button"
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background disabled:opacity-50"
-              disabled={loading || passkeyLoading}
-              onClick={() => void handlePasskey()}
-            >
-              <Fingerprint size={16} />
-              {passkeyLoading ? "正在验证 Passkey..." : "使用 Passkey 验证"}
-            </button>
-            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              <span>或</span>
-              <span className="h-px flex-1 bg-border" />
-            </div>
+                <button
+                  type="button"
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background disabled:opacity-50"
+                  disabled={loading || passkeyLoading}
+                  onClick={() => void handlePasskey()}
+                >
+                  <Fingerprint size={16} />
+                  {passkeyLoading
+                    ? isEnglish ? "Verifying Passkey..." : "正在验证 Passkey..."
+                    : isEnglish ? "Verify with Passkey" : "使用 Passkey 验证"}
+                </button>
+                <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  <span>{isEnglish ? "or" : "或"}</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
               </>
             ) : null}
-            <label className={`${passkeyAvailable ? "" : "mt-4 "}block text-xs font-medium text-muted-foreground`}>验证码</label>
+
+            <label className={`${passkeyAvailable ? "" : "mt-4 "}block text-xs font-medium text-muted-foreground`}>
+              {isEnglish ? "Verification code" : "验证码"}
+            </label>
             <input
               type="text"
               inputMode="numeric"
@@ -258,13 +277,14 @@ export default function AdminMfaStepUpHost() {
             {errorText ? <p className="mt-2 text-xs leading-5 text-destructive">{errorText}</p> : null}
           </>
         ) : null}
+
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <button
             type="button"
             className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-secondary"
             onClick={handleClose}
           >
-            取消
+            {isEnglish ? "Cancel" : "取消"}
           </button>
           {mfaEnabled === false ? (
             <button
@@ -275,7 +295,7 @@ export default function AdminMfaStepUpHost() {
                 navigate("/admin/login");
               }}
             >
-              前往登录页
+              {isEnglish ? "Back to login" : "前往登录页"}
             </button>
           ) : (
             <button
@@ -284,7 +304,7 @@ export default function AdminMfaStepUpHost() {
               disabled={loading || passkeyLoading}
               onClick={() => void handleSubmit()}
             >
-              {loading ? "验证中..." : "确认验证"}
+              {loading ? (isEnglish ? "Verifying..." : "验证中...") : (isEnglish ? "Confirm verification" : "确认验证")}
             </button>
           )}
         </div>

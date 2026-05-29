@@ -9,11 +9,9 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
-import { THEME_BORDER_DANGER_SOFT, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
-import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 
@@ -39,12 +37,13 @@ const emptyDraft: Draft = {
   enabled: true,
   is_default: false,
 };
+
 const EMPTY_DRAFT_SERIALIZED = JSON.stringify(emptyDraft);
 
 function coerceNumberOrDefault(value: unknown, defaultValue: number) {
   if (value === "" || value === null || value === undefined) return defaultValue;
   const n = Number(value);
-  return n;
+  return Number.isFinite(n) ? n : defaultValue;
 }
 
 function toPayload(draft: Draft): MemberLevelPayload {
@@ -63,39 +62,46 @@ function toPayload(draft: Draft): MemberLevelPayload {
 }
 
 export default function AdminMemberLevels() {
-  const { tText } = useAdminT();
-  const hints = useMemo(() => ({
-    name: tText("会员等级的显示名称（如“普通会员”“白银会员”）。"),
-    description: tText("等级规则说明文案（例如“累计消费 RM500 或完成 3 笔订单后可升级”。"),
-    min_spent: tText("达到该金额门槛后可升级/匹配到该等级。"),
-    min_orders: tText("达到该订单数门槛后可升级/匹配到该等级。"),
-    discount_rate: tText("商品折扣比例，取值 0.01～1（例如 0.9 表示 9 折）。"),
-    points_multiplier: tText("积分累计倍率，0～10（例如 2 表示 2 倍积分）。"),
-    sort_order: tText("等级在列表中的显示排序（整数）。"),
-    free_shipping_enabled: tText("勾选后该等级享受免邮权益。"),
-    enabled: tText("该等级是否生效；不启用则不会参与自动匹配。"),
-    is_default: tText("新注册用户默认归属等级（默认等级必须启用，且不能删除）。"),
-    create: tText("填写完毕后点击「新增」创建一条新的会员等级。"),
-    save: tText("保存当前这一条等级的修改。"),
-    delete: tText("删除该等级（默认等级不可删除；删除时会把用户迁移到启用的默认等级）。"),
-  }), [tText]);
+  const { locale } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
+
+  const hints = useMemo(
+    () => ({
+      name: L("会员等级的显示名称，例如普通会员、白银会员。", "Display name for the tier, such as Regular or Silver."),
+      description: L("等级规则说明，例如累计消费 RM500 或完成 3 笔订单后可升级。", "Rule description, such as upgrade after RM500 spent or 3 completed orders."),
+      min_spent: L("达到这个消费门槛后可升级或匹配到该等级。", "Upgrade or match once this spending threshold is reached."),
+      min_orders: L("达到这个订单数门槛后可升级或匹配到该等级。", "Upgrade or match once this order threshold is reached."),
+      discount_rate: L("商品折扣比例，取值 0.01 到 1，例如 0.9 表示 9 折。", "Discount rate, from 0.01 to 1. For example, 0.9 means 10% off."),
+      points_multiplier: L("积分累计倍率，取值 0 到 10，例如 2 表示 2 倍积分。", "Points multiplier, from 0 to 10. For example, 2 means 2x points."),
+      sort_order: L("等级在列表中的显示排序（整数）。", "Display order in the list (integer)."),
+      free_shipping_enabled: L("勾选后该等级享受免邮权益。", "Checked tiers get free shipping."),
+      enabled: L("该等级是否生效；不启用则不会参与自动匹配。", "Whether this tier is active. Disabled tiers won't be auto matched."),
+      is_default: L("新注册用户默认归属等级。默认等级必须启用，且不能删除。", "Default tier for new users. The default tier must be enabled and cannot be deleted."),
+      create: L("填写完毕后点击新增，创建一条新的会员等级。", "Fill the form and click Add to create a new tier."),
+      save: L("保存当前这一级别的修改。", "Save the changes for this tier."),
+      delete: L("删除该等级。默认等级不可删除；删除后用户会迁移到当前启用的默认等级。", "Delete this tier. The default tier cannot be deleted; users will be moved to the active default tier."),
+    }),
+    [L],
+  );
 
   const validateDraft = (draft: Draft) => {
     const payload = toPayload(draft);
-    if (!payload.name) return tText("等级名称不能为空");
-    if (!Number.isFinite(payload.min_spent)) return tText("累计消费请输入有效数字");
-    if (payload.min_spent < 0) return tText("累计消费不能小于 0");
-    if (!Number.isFinite(payload.min_orders)) return tText("累计订单请输入有效数字");
-    if (payload.min_orders < 0) return tText("累计订单不能小于 0");
-    if (!Number.isFinite(payload.discount_rate)) return tText("折扣率请输入有效数字");
-    if (payload.discount_rate <= 0 || payload.discount_rate > 1) return tText("折扣率必须在 0.01 - 1 之间");
-    if (!Number.isFinite(payload.points_multiplier)) return tText("积分倍率请输入有效数字");
-    if (payload.points_multiplier < 0 || payload.points_multiplier > 10) return tText("积分倍率必须在 0 - 10 之间");
-    if (!Number.isFinite(payload.sort_order)) return tText("排序值请输入有效数字");
-    if (!Number.isInteger(payload.sort_order)) return tText("排序值必须为整数");
-    if (payload.is_default && !payload.enabled) return tText("默认等级必须启用");
+    if (!payload.name) return L("等级名称不能为空", "Tier name is required");
+    if (!Number.isFinite(payload.min_spent)) return L("累计消费请输入有效数字", "Please enter a valid number for total spent");
+    if (payload.min_spent < 0) return L("累计消费不能小于 0", "Total spent cannot be less than 0");
+    if (!Number.isFinite(payload.min_orders)) return L("累计订单请输入有效数字", "Please enter a valid number for total orders");
+    if (payload.min_orders < 0) return L("累计订单不能小于 0", "Total orders cannot be less than 0");
+    if (!Number.isFinite(payload.discount_rate)) return L("折扣率请输入有效数字", "Please enter a valid number for discount rate");
+    if (payload.discount_rate <= 0 || payload.discount_rate > 1) return L("折扣率必须在 0.01 - 1 之间", "Discount rate must be between 0.01 and 1");
+    if (!Number.isFinite(payload.points_multiplier)) return L("积分倍率请输入有效数字", "Please enter a valid number for points multiplier");
+    if (payload.points_multiplier < 0 || payload.points_multiplier > 10) return L("积分倍率必须在 0 - 10 之间", "Points multiplier must be between 0 and 10");
+    if (!Number.isFinite(payload.sort_order)) return L("排序值请输入有效数字", "Please enter a valid number for sort order");
+    if (!Number.isInteger(payload.sort_order)) return L("排序值必须是整数", "Sort order must be an integer");
+    if (payload.is_default && !payload.enabled) return L("默认等级必须启用", "Default tier must be enabled");
     return "";
   };
+
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [levels, setLevels] = useState<Draft[]>([]);
@@ -135,16 +141,16 @@ export default function AdminMemberLevels() {
     mutationFn: (force?: boolean) => userService.recalculateAllMemberLevels(force ? { force: true } : undefined),
     onSuccess: (result, force) => {
       if (result?.async || result?.accepted) {
-        toast.success(tText("全量重算已在后台启动，完成后可在操作日志查看结果"));
+        toast.success(L("全量重算已在后台启动，完成后可在操作日志查看结果", "A full recalculation has been started in the background. Check the activity log when it finishes."));
         return;
       }
       toast.success(
         force
-          ? tText(`强制重算完成：${result?.changed || 0}/${result?.total || 0}`)
-          : tText(`重算完成：${result?.changed || 0}/${result?.total || 0}，跳过锁定 ${result?.skippedLocked || 0}`),
+          ? L(`强制重算完成：${result?.changed || 0}/${result?.total || 0}`, `Forced recalculation done: ${result?.changed || 0}/${result?.total || 0}`)
+          : L(`重算完成：${result?.changed || 0}/${result?.total || 0}，跳过锁定 ${result?.skippedLocked || 0}`, `Recalculation done: ${result?.changed || 0}/${result?.total || 0}, skipped locked ${result?.skippedLocked || 0}`),
       );
     },
-    onError: (error) => toast.error(toastErrorMessage(error, tText("重算失败"))),
+    onError: (error) => toast.error(toastErrorMessage(error, L("重算失败", "Recalculation failed"))),
   });
 
   const updateLocal = (id: string, patch: Partial<Draft>) => {
@@ -152,19 +158,13 @@ export default function AdminMemberLevels() {
   };
 
   const loading = levelsQuery.isLoading && !levelsQuery.data;
-  const levelsDirty = useMemo(
-    () => levelsBaseline !== null && JSON.stringify(levels) !== levelsBaseline,
-    [levels, levelsBaseline],
-  );
-  const newLevelDirty = useMemo(
-    () => JSON.stringify(newLevel) !== EMPTY_DRAFT_SERIALIZED,
-    [newLevel],
-  );
+  const levelsDirty = useMemo(() => levelsBaseline !== null && JSON.stringify(levels) !== levelsBaseline, [levels, levelsBaseline]);
+  const newLevelDirty = useMemo(() => JSON.stringify(newLevel) !== EMPTY_DRAFT_SERIALIZED, [newLevel]);
   useAdminTabDirty(levelsDirty || newLevelDirty);
 
   return (
     <AdminPageShell
-      hint={<Tx>配置会员等级门槛、折扣与积分倍率；重算会按消费与订单数自动匹配等级。</Tx>}
+      hint={L("配置会员等级门槛、折扣和积分倍率；重算会按消费和订单数自动匹配等级。", "Configure member tier thresholds, discounts, and points multipliers. Recalculation matches tiers automatically by spending and order count.")}
       toolbar={(
         <div className="flex flex-wrap gap-2">
           <LoadingButton
@@ -173,16 +173,17 @@ export default function AdminMemberLevels() {
             state={recalculateMutation.isPending ? "loading" : "normal"}
             onClick={() => recalculateMutation.mutate(false)}
           >
-            <Tx>跳过锁定重算</Tx>
+            {L("跳过锁定重算", "Recalculate excluding locked users")}
           </LoadingButton>
           <LoadingButton
             type="button"
             variant="outline"
             state={recalculateMutation.isPending ? "loading" : "normal"}
             onClick={() => {
-              confirm({ title: tText("确认强制重算"),
-                description: tText("强制重算会覆盖管理员手动指定等级，确认继续？"),
-                confirmText: tText("继续重算"),
+              confirm({
+                title: L("确认强制重算", "Confirm forced recalculation"),
+                description: L("强制重算会覆盖管理员手动指定的等级，确定继续吗？", "Forced recalculation will override manually assigned tiers. Continue?"),
+                confirmText: L("继续重算", "Continue"),
                 danger: true,
                 onConfirm: async () => {
                   recalculateMutation.mutate(true);
@@ -190,60 +191,115 @@ export default function AdminMemberLevels() {
               });
             }}
           >
-            <Tx>强制重算全部</Tx>
+            {L("强制重算全部", "Force recalculate all")}
           </LoadingButton>
         </div>
       )}
     >
       <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
         <div className="mb-3 flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground"><Tx>新增等级</Tx></h3>
-          <AdminFieldHint text={<Tx>{hints.create}</Tx>} size="md" />
+          <h3 className="text-sm font-semibold text-foreground">{L("新增等级", "Add tier")}</h3>
+          <AdminFieldHint text={hints.create} size="md" />
         </div>
         <div className="grid gap-2 md:grid-cols-4">
           <div>
-            <AdminLabelWithHint label={<Tx>等级名称</Tx>} hint={<Tx>{hints.name}</Tx>} />
-            <input value={newLevel.name || ""} onChange={(e) => setNewLevel((s) => ({ ...s, name: e.target.value }))} placeholder={tText("等级名称")} className="w-full rounded border px-2 py-1" />
+            <AdminLabelWithHint label={L("等级名称", "Tier name")} hint={hints.name} />
+            <input
+              value={newLevel.name || ""}
+              onChange={(e) => setNewLevel((s) => ({ ...s, name: e.target.value }))}
+              placeholder={L("等级名称", "Tier name")}
+              className="w-full rounded border px-2 py-1"
+            />
           </div>
           <div>
-            <AdminLabelWithHint label={<Tx>描述</Tx>} hint={<Tx>{hints.description}</Tx>} />
-            <input value={newLevel.description || ""} onChange={(e) => setNewLevel((s) => ({ ...s, description: e.target.value }))} placeholder={tText("描述")} className="w-full rounded border px-2 py-1" />
+            <AdminLabelWithHint label={L("描述", "Description")} hint={hints.description} />
+            <input
+              value={newLevel.description || ""}
+              onChange={(e) => setNewLevel((s) => ({ ...s, description: e.target.value }))}
+              placeholder={L("描述", "Description")}
+              className="w-full rounded border px-2 py-1"
+            />
           </div>
           <div>
-            <AdminLabelWithHint label={<Tx>累计消费</Tx>} hint={<Tx>{hints.min_spent}</Tx>} />
-            <input type="number" value={newLevel.min_spent ?? ""} onChange={(e) => setNewLevel((s) => ({ ...s, min_spent: e.target.value }))} placeholder={tText("累计消费")} className="w-full rounded border px-2 py-1" />
+            <AdminLabelWithHint label={L("累计消费", "Total spent")} hint={hints.min_spent} />
+            <input
+              type="number"
+              value={newLevel.min_spent ?? ""}
+              onChange={(e) => setNewLevel((s) => ({ ...s, min_spent: e.target.value }))}
+              placeholder={L("累计消费", "Total spent")}
+              className="w-full rounded border px-2 py-1"
+            />
           </div>
           <div>
-            <AdminLabelWithHint label={<Tx>累计订单</Tx>} hint={<Tx>{hints.min_orders}</Tx>} />
-            <input type="number" value={newLevel.min_orders ?? ""} onChange={(e) => setNewLevel((s) => ({ ...s, min_orders: e.target.value }))} placeholder={tText("累计订单")} className="w-full rounded border px-2 py-1" />
+            <AdminLabelWithHint label={L("累计订单", "Total orders")} hint={hints.min_orders} />
+            <input
+              type="number"
+              value={newLevel.min_orders ?? ""}
+              onChange={(e) => setNewLevel((s) => ({ ...s, min_orders: e.target.value }))}
+              placeholder={L("累计订单", "Total orders")}
+              className="w-full rounded border px-2 py-1"
+            />
           </div>
           <div>
-            <AdminLabelWithHint label={<Tx>折扣率</Tx>} hint={<Tx>{hints.discount_rate}</Tx>} />
-            <input type="number" step="0.01" value={newLevel.discount_rate ?? ""} onChange={(e) => setNewLevel((s) => ({ ...s, discount_rate: e.target.value }))} placeholder={tText("折扣率")} className="w-full rounded border px-2 py-1" />
+            <AdminLabelWithHint label={L("折扣率", "Discount rate")} hint={hints.discount_rate} />
+            <input
+              type="number"
+              step="0.01"
+              value={newLevel.discount_rate ?? ""}
+              onChange={(e) => setNewLevel((s) => ({ ...s, discount_rate: e.target.value }))}
+              placeholder={L("折扣率", "Discount rate")}
+              className="w-full rounded border px-2 py-1"
+            />
           </div>
           <div>
-            <AdminLabelWithHint label={<Tx>积分倍率</Tx>} hint={<Tx>{hints.points_multiplier}</Tx>} />
-            <input type="number" step="0.01" value={newLevel.points_multiplier ?? ""} onChange={(e) => setNewLevel((s) => ({ ...s, points_multiplier: e.target.value }))} placeholder={tText("积分倍率")} className="w-full rounded border px-2 py-1" />
+            <AdminLabelWithHint label={L("积分倍率", "Points multiplier")} hint={hints.points_multiplier} />
+            <input
+              type="number"
+              step="0.01"
+              value={newLevel.points_multiplier ?? ""}
+              onChange={(e) => setNewLevel((s) => ({ ...s, points_multiplier: e.target.value }))}
+              placeholder={L("积分倍率", "Points multiplier")}
+              className="w-full rounded border px-2 py-1"
+            />
           </div>
           <div>
-            <AdminLabelWithHint label={<Tx>排序</Tx>} hint={<Tx>{hints.sort_order}</Tx>} />
-            <input type="number" step="1" value={newLevel.sort_order ?? ""} onChange={(e) => setNewLevel((s) => ({ ...s, sort_order: e.target.value }))} placeholder={tText("排序")} className="w-full rounded border px-2 py-1" />
+            <AdminLabelWithHint label={L("排序", "Sort order")} hint={hints.sort_order} />
+            <input
+              type="number"
+              step="1"
+              value={newLevel.sort_order ?? ""}
+              onChange={(e) => setNewLevel((s) => ({ ...s, sort_order: e.target.value }))}
+              placeholder={L("排序", "Sort order")}
+              className="w-full rounded border px-2 py-1"
+            />
           </div>
           <div className="flex flex-col justify-end gap-2 pt-5">
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={newLevel.free_shipping_enabled || false} onChange={(e) => setNewLevel((s) => ({ ...s, free_shipping_enabled: e.target.checked }))} />
-              <Tx>免邮</Tx>
-              <AdminFieldHint text={<Tx>{hints.free_shipping_enabled}</Tx>} />
+              <input
+                type="checkbox"
+                checked={newLevel.free_shipping_enabled || false}
+                onChange={(e) => setNewLevel((s) => ({ ...s, free_shipping_enabled: e.target.checked }))}
+              />
+              {L("免邮", "Free shipping")}
+              <AdminFieldHint text={hints.free_shipping_enabled} />
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={newLevel.enabled !== false} onChange={(e) => setNewLevel((s) => ({ ...s, enabled: e.target.checked, is_default: e.target.checked ? s.is_default : false }))} />
-              <Tx>启用</Tx>
-              <AdminFieldHint text={<Tx>{hints.enabled}</Tx>} />
+              <input
+                type="checkbox"
+                checked={newLevel.enabled !== false}
+                onChange={(e) => setNewLevel((s) => ({ ...s, enabled: e.target.checked, is_default: e.target.checked ? s.is_default : false }))}
+              />
+              {L("启用", "Enabled")}
+              <AdminFieldHint text={hints.enabled} />
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={newLevel.is_default || false} onChange={(e) => setNewLevel((s) => ({ ...s, is_default: e.target.checked, enabled: e.target.checked ? true : s.enabled }))} />
-              <Tx>默认等级</Tx>
-              <AdminFieldHint text={<Tx>{hints.is_default}</Tx>} />
+              <input
+                type="checkbox"
+                checked={newLevel.is_default || false}
+                onChange={(e) => setNewLevel((s) => ({ ...s, is_default: e.target.checked, enabled: e.target.checked ? true : s.enabled }))}
+              />
+              {L("默认等级", "Default tier")}
+              <AdminFieldHint text={hints.is_default} />
             </label>
           </div>
         </div>
@@ -263,129 +319,133 @@ export default function AdminMemberLevels() {
               await userService.createMemberLevel(toPayload(newLevel));
               setNewLevel(emptyDraft);
               await invalidateLevels();
-              toast.success(tText("已创建"));
+              toast.success(L("已创建", "Created"));
             } catch (e) {
-              toast.error(toastErrorMessage(e, tText("创建失败")));
+              toast.error(toastErrorMessage(e, L("创建失败", "Creation failed")));
             } finally {
               setSavingId(null);
             }
           }}
         >
-          <Tx>新增</Tx>
+          {L("新增", "Add")}
         </LoadingButton>
       </section>
 
-      {loading ? <div><Tx>加载中...</Tx></div> : levels.map((level) => (
-        <div key={level.id} className="theme-rounded space-y-2 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-          <div className="grid gap-2 md:grid-cols-4">
-            <div>
-              <AdminLabelWithHint label={<Tx>等级名称</Tx>} hint={<Tx>{hints.name}</Tx>} />
-              <input value={level.name || ""} onChange={(e) => updateLocal(level.id, { name: e.target.value })} className="w-full rounded border px-2 py-1" />
+      {loading ? (
+        <div>{L("加载中...", "Loading...")}</div>
+      ) : (
+        levels.map((level) => (
+          <div key={level.id} className="theme-rounded space-y-2 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+            <div className="grid gap-2 md:grid-cols-4">
+              <div>
+                <AdminLabelWithHint label={L("等级名称", "Tier name")} hint={hints.name} />
+                <input value={level.name || ""} onChange={(e) => updateLocal(level.id, { name: e.target.value })} className="w-full rounded border px-2 py-1" />
+              </div>
+              <div>
+                <AdminLabelWithHint label={L("描述", "Description")} hint={hints.description} />
+                <input value={level.description || ""} onChange={(e) => updateLocal(level.id, { description: e.target.value })} className="w-full rounded border px-2 py-1" />
+              </div>
+              <div>
+                <AdminLabelWithHint label={L("累计消费", "Total spent")} hint={hints.min_spent} />
+                <input type="number" value={level.min_spent ?? ""} onChange={(e) => updateLocal(level.id, { min_spent: e.target.value })} className="w-full rounded border px-2 py-1" />
+              </div>
+              <div>
+                <AdminLabelWithHint label={L("累计订单", "Total orders")} hint={hints.min_orders} />
+                <input type="number" value={level.min_orders ?? ""} onChange={(e) => updateLocal(level.id, { min_orders: e.target.value })} className="w-full rounded border px-2 py-1" />
+              </div>
+              <div>
+                <AdminLabelWithHint label={L("折扣率", "Discount rate")} hint={hints.discount_rate} />
+                <input type="number" step="0.01" value={level.discount_rate ?? ""} onChange={(e) => updateLocal(level.id, { discount_rate: e.target.value })} className="w-full rounded border px-2 py-1" />
+              </div>
+              <div>
+                <AdminLabelWithHint label={L("积分倍率", "Points multiplier")} hint={hints.points_multiplier} />
+                <input type="number" step="0.01" value={level.points_multiplier ?? ""} onChange={(e) => updateLocal(level.id, { points_multiplier: e.target.value })} className="w-full rounded border px-2 py-1" />
+              </div>
+              <div>
+                <AdminLabelWithHint label={L("排序", "Sort order")} hint={hints.sort_order} />
+                <input type="number" step="1" value={level.sort_order ?? ""} onChange={(e) => updateLocal(level.id, { sort_order: e.target.value })} className="w-full rounded border px-2 py-1" />
+              </div>
+              <div className="flex flex-col justify-end gap-2 pt-5">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={!!level.free_shipping_enabled} onChange={(e) => updateLocal(level.id, { free_shipping_enabled: e.target.checked })} />
+                  {L("免邮", "Free shipping")}
+                  <AdminFieldHint text={hints.free_shipping_enabled} />
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={level.enabled !== false} onChange={(e) => updateLocal(level.id, { enabled: e.target.checked, is_default: e.target.checked ? level.is_default : false })} />
+                  {L("启用", "Enabled")}
+                  <AdminFieldHint text={hints.enabled} />
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={!!level.is_default} onChange={(e) => updateLocal(level.id, { is_default: e.target.checked, enabled: e.target.checked ? true : level.enabled })} />
+                  {L("默认等级", "Default tier")}
+                  <AdminFieldHint text={hints.is_default} />
+                </label>
+              </div>
             </div>
-            <div>
-              <AdminLabelWithHint label={<Tx>描述</Tx>} hint={<Tx>{hints.description}</Tx>} />
-              <input value={level.description || ""} onChange={(e) => updateLocal(level.id, { description: e.target.value })} className="w-full rounded border px-2 py-1" />
-            </div>
-            <div>
-              <AdminLabelWithHint label={<Tx>累计消费</Tx>} hint={<Tx>{hints.min_spent}</Tx>} />
-              <input type="number" value={level.min_spent ?? ""} onChange={(e) => updateLocal(level.id, { min_spent: e.target.value })} className="w-full rounded border px-2 py-1" />
-            </div>
-            <div>
-              <AdminLabelWithHint label={<Tx>累计订单</Tx>} hint={<Tx>{hints.min_orders}</Tx>} />
-              <input type="number" value={level.min_orders ?? ""} onChange={(e) => updateLocal(level.id, { min_orders: e.target.value })} className="w-full rounded border px-2 py-1" />
-            </div>
-            <div>
-              <AdminLabelWithHint label={<Tx>折扣率</Tx>} hint={<Tx>{hints.discount_rate}</Tx>} />
-              <input type="number" step="0.01" value={level.discount_rate ?? ""} onChange={(e) => updateLocal(level.id, { discount_rate: e.target.value })} className="w-full rounded border px-2 py-1" />
-            </div>
-            <div>
-              <AdminLabelWithHint label={<Tx>积分倍率</Tx>} hint={<Tx>{hints.points_multiplier}</Tx>} />
-              <input type="number" step="0.01" value={level.points_multiplier ?? ""} onChange={(e) => updateLocal(level.id, { points_multiplier: e.target.value })} className="w-full rounded border px-2 py-1" />
-            </div>
-            <div>
-              <AdminLabelWithHint label={<Tx>排序</Tx>} hint={<Tx>{hints.sort_order}</Tx>} />
-              <input type="number" step="1" value={level.sort_order ?? ""} onChange={(e) => updateLocal(level.id, { sort_order: e.target.value })} className="w-full rounded border px-2 py-1" />
-            </div>
-            <div className="flex flex-col justify-end gap-2 pt-5">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={!!level.free_shipping_enabled} onChange={(e) => updateLocal(level.id, { free_shipping_enabled: e.target.checked })} />
-                <Tx>免邮</Tx>
-                <AdminFieldHint text={<Tx>{hints.free_shipping_enabled}</Tx>} />
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={level.enabled !== false} onChange={(e) => updateLocal(level.id, { enabled: e.target.checked, is_default: e.target.checked ? level.is_default : false })} />
-                <Tx>启用</Tx>
-                <AdminFieldHint text={<Tx>{hints.enabled}</Tx>} />
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={!!level.is_default} onChange={(e) => updateLocal(level.id, { is_default: e.target.checked, enabled: e.target.checked ? true : level.enabled })} />
-                <Tx>默认等级</Tx>
-                <AdminFieldHint text={<Tx>{hints.is_default}</Tx>} />
-              </label>
+            <div className="flex justify-end">
+              <AdminRowActionsMenu
+                primary={(
+                  <LoadingButton
+                    type="button"
+                    variant="outline"
+                    state={savingId === level.id ? "loading" : "normal"}
+                    onClick={async () => {
+                      const err = validateDraft(level);
+                      if (err) {
+                        toast.error(err);
+                        return;
+                      }
+                      setSavingId(level.id);
+                      try {
+                        await userService.updateMemberLevel(level.id, toPayload(level));
+                        await invalidateLevels();
+                        toast.success(L("已保存", "Saved"));
+                      } catch (e) {
+                        toast.error(toastErrorMessage(e, L("保存失败", "Save failed")));
+                      } finally {
+                        setSavingId(null);
+                      }
+                    }}
+                  >
+                    {L("保存", "Save")}
+                  </LoadingButton>
+                )}
+                moreLabel={L("更多", "More")}
+                menuDisabled={savingId === level.id}
+                items={[
+                  {
+                    key: "delete",
+                    label: L("删除", "Delete"),
+                    icon: <Trash2 size={14} aria-hidden />,
+                    danger: true,
+                    disabled: level.is_default === true || savingId === level.id,
+                    onClick: () => setDeleteTarget(level),
+                  },
+                ]}
+              />
             </div>
           </div>
-          <div className="flex justify-end">
-            <AdminRowActionsMenu
-              primary={(
-                <LoadingButton
-                  type="button"
-                  variant="outline"
-                  state={savingId === level.id ? "loading" : "normal"}
-                  onClick={async () => {
-                    const err = validateDraft(level);
-                    if (err) {
-                      toast.error(err);
-                      return;
-                    }
-                    setSavingId(level.id);
-                    try {
-                      await userService.updateMemberLevel(level.id, toPayload(level));
-                      await invalidateLevels();
-                      toast.success(tText("已保存"));
-                    } catch (e) {
-                      toast.error(toastErrorMessage(e, tText("保存失败")));
-                    } finally {
-                      setSavingId(null);
-                    }
-                  }}
-                >
-                  <Tx>保存</Tx>
-                </LoadingButton>
-              )}
-              moreLabel={<Tx>更多</Tx>}
-              menuDisabled={savingId === level.id}
-              items={[
-                {
-                  key: "delete",
-                  label: <Tx>删除</Tx>,
-                  icon: <Trash2 size={14} aria-hidden />,
-                  danger: true,
-                  disabled: level.is_default === true || savingId === level.id,
-                  onClick: () => setDeleteTarget(level),
-                },
-              ]}
-            />
-          </div>
-        </div>
-      ))}
+        ))
+      )}
 
       <AnimatedConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         danger
-        title={tText("删除会员等级")}
-        description={deleteTarget ? tText(`确定删除 ${deleteTarget.name}？`) : ""}
-        confirmText={tText("删除")}
+        title={L("删除会员等级", "Delete member tier")}
+        description={deleteTarget ? L(`确定删除 ${deleteTarget.name}？`, `Delete ${deleteTarget.name}?`) : ""}
+        confirmText={L("删除", "Delete")}
         onConfirm={async () => {
           if (!deleteTarget) return;
           setSavingId(deleteTarget.id);
           try {
             await userService.deleteMemberLevel(deleteTarget.id);
             await invalidateLevels();
-            toast.success(tText("已删除"));
+            toast.success(L("已删除", "Deleted"));
             setDeleteTarget(null);
           } catch (e) {
-            toast.error(toastErrorMessage(e, tText("删除失败")));
+            toast.error(toastErrorMessage(e, L("删除失败", "Delete failed")));
           } finally {
             setSavingId(null);
           }

@@ -18,6 +18,7 @@ import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideAction
 import UserTagManageDialog from "@/modules/admin/components/user/UserTagManageDialog";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useAdminUsers } from "@/modules/admin/pages/user/useAdminUsers";
 import { UserStatusBadges, UserTagBadges } from "@/modules/admin/pages/user/userListDisplay";
 import type { UserProfile } from "@/types/user";
@@ -44,6 +45,9 @@ const USER_COLUMN_ALIGNS: AdminTableAlign[] = [
 
 export default function AdminUsers() {
   const navigate = useNavigate();
+  const { locale } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
   const {
     tText,
     page,
@@ -135,7 +139,7 @@ export default function AdminUsers() {
             checked={checked}
             onChange={(e) => toggleUserSelection(user.id, e.target.checked)}
             className="mt-1"
-            aria-label={`选择用户 ${user.nickname || user.phone || user.id}`}
+            aria-label={L(`选择用户 ${user.nickname || user.phone || user.id}`, `Select user ${user.nickname || user.phone || user.id}`)}
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
@@ -148,11 +152,11 @@ export default function AdminUsers() {
                 onClick={() => navigate(`/admin/users/${user.id}`)}
                 className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
               >
-                详情
+                {L("详情", "Details")}
               </button>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {user.member_level_name || user.memberLevel?.name || "普通会员"} · 积分 {user.points_balance ?? user.pointsBalance ?? 0}
+              {user.member_level_name || user.memberLevel?.name || L("普通会员", "Regular member")} · {L("积分", "Points")} {user.points_balance ?? user.pointsBalance ?? 0}
             </p>
           </div>
         </div>
@@ -160,13 +164,13 @@ export default function AdminUsers() {
           <UserStatusBadges user={user} />
         </div>
         <div className="space-y-2">
-          <AdminTableMobileCardField label="标签">
+          <AdminTableMobileCardField label={L("标签", "Tags")}>
             <UserTagBadges tags={user.tags} />
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label="邀请码">
+          <AdminTableMobileCardField label={L("邀请码", "Invite code")}>
             <span className="font-mono text-xs">{user.invite_code || user.inviteCode || "-"}</span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label="注册">
+          <AdminTableMobileCardField label={L("注册", "Registered at")}>
             <span className="text-xs text-muted-foreground">{user.created_at ? formatDateTime(user.created_at) : "-"}</span>
           </AdminTableMobileCardField>
         </div>
@@ -215,7 +219,7 @@ export default function AdminUsers() {
             className="w-full text-left text-sm font-medium text-foreground"
             aria-expanded={advancedFiltersOpen}
           >
-            {advancedFiltersOpen ? tText("收起高级筛选") : tText("展开高级筛选")}
+            {advancedFiltersOpen ? L("收起高级筛选", "Collapse advanced filters") : L("展开高级筛选", "Expand advanced filters")}
           </button>
           {advancedFiltersOpen ? (
             <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 border-t border-[var(--theme-border)] pt-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -228,7 +232,7 @@ export default function AdminUsers() {
                 variant="theme"
                 className="w-full min-w-0"
               >
-                <option value=""><Tx>全部标签</Tx></option>
+                <option value="">{L("全部标签", "All tags")}</option>
                 {tags.map((tag) => (
                   <option key={tag.id} value={tag.id}>
                     {tag.name}
@@ -244,9 +248,9 @@ export default function AdminUsers() {
                 variant="theme"
                 className="w-full min-w-0"
               >
-                <option value=""><Tx>微信绑定（全部）</Tx></option>
-                <option value="1"><Tx>已绑定</Tx></option>
-                <option value="0"><Tx>未绑定</Tx></option>
+                <option value="">{L("微信绑定（全部）", "WeChat bound (all)")}</option>
+                <option value="1">{L("已绑定", "Bound")}</option>
+                <option value="0">{L("未绑定", "Not bound")}</option>
               </AdminFilterSelect>
               <AdminFilterSelect
                 value={phoneBoundFilter}
@@ -257,9 +261,9 @@ export default function AdminUsers() {
                 variant="theme"
                 className="w-full min-w-0"
               >
-                <option value=""><Tx>手机号（全部）</Tx></option>
-                <option value="1"><Tx>已绑定</Tx></option>
-                <option value="0"><Tx>未绑定</Tx></option>
+                <option value="">{L("手机号（全部）", "Phone bound (all)")}</option>
+                <option value="1">{L("已绑定", "Bound")}</option>
+                <option value="0">{L("未绑定", "Not bound")}</option>
               </AdminFilterSelect>
               {memberLevels.length > 0 ? (
                 <AdminFilterSelect
@@ -271,11 +275,11 @@ export default function AdminUsers() {
                   variant="theme"
                   className="w-full min-w-0"
                 >
-                  <option value=""><Tx>会员等级（全部）</Tx></option>
+                  <option value="">{L("会员等级（全部）", "Member level (all)")}</option>
                   {memberLevels.map((level) => (
                     <option key={level.id} value={level.id}>
                       {level.name}
-                      {level.enabled === false ? tText("（已禁用）") : ""}
+                      {level.enabled === false ? L("（已禁用）", " (disabled)") : ""}
                     </option>
                   ))}
                 </AdminFilterSelect>
@@ -289,10 +293,10 @@ export default function AdminUsers() {
                 variant="theme"
                 className="w-full min-w-0"
               >
-                <option value=""><Tx>账号状态（全部）</Tx></option>
-                <option value="normal"><Tx>正常</Tx></option>
-                <option value="disabled"><Tx>禁用登录</Tx></option>
-                <option value="blacklisted"><Tx>黑名单</Tx></option>
+                <option value="">{L("账号状态（全部）", "Account status (all)")}</option>
+                <option value="normal">{L("正常", "Normal")}</option>
+                <option value="disabled">{L("禁用登录", "Login disabled")}</option>
+                <option value="blacklisted">{L("黑名单", "Blacklisted")}</option>
               </AdminFilterSelect>
               <AdminFilterSelect
                 value={orderRestrictedFilter}
@@ -303,9 +307,9 @@ export default function AdminUsers() {
                 variant="theme"
                 className="w-full min-w-0"
               >
-                <option value=""><Tx>下单限制（全部）</Tx></option>
-                <option value="1"><Tx>已限制</Tx></option>
-                <option value="0"><Tx>未限制</Tx></option>
+                <option value="">{L("下单限制（全部）", "Order restriction (all)")}</option>
+                <option value="1">{L("已限制", "Restricted")}</option>
+                <option value="0">{L("未限制", "Not restricted")}</option>
               </AdminFilterSelect>
               <AdminFilterSelect
                 value={couponRestrictedFilter}
@@ -316,9 +320,9 @@ export default function AdminUsers() {
                 variant="theme"
                 className="w-full min-w-0"
               >
-                <option value=""><Tx>领券限制（全部）</Tx></option>
-                <option value="1"><Tx>已限制</Tx></option>
-                <option value="0"><Tx>未限制</Tx></option>
+                <option value="">{L("领券限制（全部）", "Coupon restriction (all)")}</option>
+                <option value="1">{L("已限制", "Restricted")}</option>
+                <option value="0">{L("未限制", "Not restricted")}</option>
               </AdminFilterSelect>
               <AdminFilterSelect
                 value={commentRestrictedFilter}
@@ -329,19 +333,19 @@ export default function AdminUsers() {
                 variant="theme"
                 className="w-full min-w-0"
               >
-                <option value=""><Tx>评论限制（全部）</Tx></option>
-                <option value="1"><Tx>已限制</Tx></option>
-                <option value="0"><Tx>未限制</Tx></option>
+                <option value="">{L("评论限制（全部）", "Comment restriction (all)")}</option>
+                <option value="1">{L("已限制", "Restricted")}</option>
+                <option value="0">{L("未限制", "Not restricted")}</option>
               </AdminFilterSelect>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground"><Tx>注册开始</Tx></p>
+                <p className="text-xs text-muted-foreground">{L("注册开始", "Registered from")}</p>
                 <SegmentedDateInput
                   value={dateFromFilter}
                   onChange={(v) => { setDateFromFilter(v); setPage(1); }}
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground"><Tx>注册结束</Tx></p>
+                <p className="text-xs text-muted-foreground">{L("注册结束", "Registered to")}</p>
                 <SegmentedDateInput
                   value={dateToFilter}
                   onChange={(v) => { setDateToFilter(v); setPage(1); }}
@@ -353,7 +357,7 @@ export default function AdminUsers() {
                 step="0.01"
                 value={totalSpentMinFilter}
                 onChange={(e) => { setTotalSpentMinFilter(e.target.value); setPage(1); }}
-                placeholder={tText("累计消费 ≥")}
+                placeholder={L("累计消费 ≥", "Total spent ≥")}
                 className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
               <input
@@ -362,7 +366,7 @@ export default function AdminUsers() {
                 step="0.01"
                 value={totalSpentMaxFilter}
                 onChange={(e) => { setTotalSpentMaxFilter(e.target.value); setPage(1); }}
-                placeholder={tText("累计消费 ≤")}
+                placeholder={L("累计消费 ≤", "Total spent ≤")}
                 className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
               <input
@@ -371,7 +375,7 @@ export default function AdminUsers() {
                 step="1"
                 value={orderCountMinFilter}
                 onChange={(e) => { setOrderCountMinFilter(e.target.value); setPage(1); }}
-                placeholder={tText("有效订单 ≥")}
+                placeholder={L("有效订单 ≥", "Valid orders ≥")}
                 className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
               <input
@@ -380,7 +384,7 @@ export default function AdminUsers() {
                 step="1"
                 value={orderCountMaxFilter}
                 onChange={(e) => { setOrderCountMaxFilter(e.target.value); setPage(1); }}
-                placeholder={tText("有效订单 ≤")}
+                placeholder={L("有效订单 ≤", "Valid orders ≤")}
                 className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
               <input
@@ -389,7 +393,7 @@ export default function AdminUsers() {
                 step="1"
                 value={pointsMinFilter}
                 onChange={(e) => { setPointsMinFilter(e.target.value); setPage(1); }}
-                placeholder={tText("积分 ≥")}
+                placeholder={L("积分 ≥", "Points ≥")}
                 className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
               <input
@@ -398,7 +402,7 @@ export default function AdminUsers() {
                 step="1"
                 value={pointsMaxFilter}
                 onChange={(e) => { setPointsMaxFilter(e.target.value); setPage(1); }}
-                placeholder={tText("积分 ≤")}
+                placeholder={L("积分 ≤", "Points ≤")}
                 className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
               <input
@@ -408,7 +412,7 @@ export default function AdminUsers() {
                 step="0.01"
                 value={refundRateMinFilter}
                 onChange={(e) => { setRefundRateMinFilter(e.target.value); setPage(1); }}
-                placeholder={tText("退款率 ≥ (0~1)")}
+                placeholder={L("退款率 ≥ (0~1)", "Refund rate ≥ (0~1)")}
                 className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
               <input
@@ -418,7 +422,7 @@ export default function AdminUsers() {
                 step="0.01"
                 value={refundRateMaxFilter}
                 onChange={(e) => { setRefundRateMaxFilter(e.target.value); setPage(1); }}
-                placeholder={tText("退款率 ≤ (0~1)")}
+                placeholder={L("退款率 ≤ (0~1)", "Refund rate ≤ (0~1)")}
                 className="w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
               <AdminFilterSelect
@@ -438,8 +442,8 @@ export default function AdminUsers() {
                   variant="theme"
                   className="w-full min-w-0"
                 >
-                  <option value="desc"><Tx>降序</Tx></option>
-                  <option value="asc"><Tx>升序</Tx></option>
+                  <option value="desc">{L("降序", "Descending")}</option>
+                  <option value="asc">{L("升序", "Ascending")}</option>
                 </AdminFilterSelect>
               ) : null}
               <PermissionGate permission="user.view">
@@ -448,7 +452,7 @@ export default function AdminUsers() {
                   variant="theme"
                   className="shrink-0 gap-1.5"
                 >
-                  <Download size={16} /> <Tx>导出</Tx>
+                  <Download size={16} /> {L("导出", "Export")}
                 </AdminFilterButton>
               </PermissionGate>
             </div>
@@ -464,14 +468,14 @@ export default function AdminUsers() {
           <PermissionGate permission="user.update">
             <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <span className={`text-xs ${selectedUserIds.length ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
-                {tText(`已选 ${selectedUserIds.length} 人`)}
+                {L(`已选 ${selectedUserIds.length} 人`, `${selectedUserIds.length} selected`)}
               </span>
               <select
                 value={batchTagId}
                 onChange={(e) => setBatchTagId(e.target.value)}
                 className="min-h-[40px] w-full min-w-0 rounded-lg bg-secondary px-3 py-2 text-sm sm:w-auto sm:max-w-xs"
               >
-                <option value=""><Tx>选择要批量打的标签</Tx></option>
+                <option value="">{L("选择要批量打的标签", "Choose a tag for batch tagging")}</option>
                 {tags.map((tag) => (
                   <option key={tag.id} value={tag.id}>
                     {tag.name}
@@ -484,7 +488,7 @@ export default function AdminUsers() {
                 onClick={applyBatchTag}
                 className="min-h-[40px] rounded-lg bg-[var(--theme-price)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
               >
-                <Tx>批量打标</Tx>
+                {L("批量打标", "Batch tag")}
               </button>
             </div>
           </PermissionGate>
@@ -492,7 +496,7 @@ export default function AdminUsers() {
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-xl lg:justify-end">
             <div className="min-w-0 flex-1 basis-[12rem]">
               <SearchBar
-                placeholder={tText("搜索昵称 / 手机号 / 微信 / 邀请码")}
+                placeholder={L("搜索昵称 / 手机号 / 微信 / 邀请码", "Search nickname / phone / WeChat / invite code")}
                 value={search}
                 onChange={(value) => {
                   setSearch(value);
@@ -597,7 +601,7 @@ export default function AdminUsers() {
             <td className={`px-4 py-3 ${adminTableAlignClass("center")}`}>
               <UserStatusBadges user={user} />
             </td>
-            <td className={`px-4 py-3 whitespace-nowrap ${adminTableAlignClass("left")}`}>{user.member_level_name || user.memberLevel?.name || tText("普通会员")}</td>
+            <td className={`px-4 py-3 whitespace-nowrap ${adminTableAlignClass("left")}`}>{user.member_level_name || user.memberLevel?.name || L("普通会员", "Regular member")}</td>
             <td className={`px-4 py-3 ${adminTableAlignClass("left")}`}>
               <UserTagBadges tags={user.tags} />
             </td>
@@ -609,7 +613,7 @@ export default function AdminUsers() {
             </td>
             <td className={`px-4 py-3 ${adminTableAlignClass("right")}`}>
               <button type="button" onClick={() => navigate(`/admin/users/${user.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">
-                <Tx>详情</Tx>
+                {L("详情", "Details")}
               </button>
             </td>
           </>

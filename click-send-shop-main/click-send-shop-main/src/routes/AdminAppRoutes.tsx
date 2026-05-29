@@ -92,10 +92,11 @@ function AppScopeSync() {
 function AdminTitleSync() {
   const location = useLocation();
   const siteInfo = useSiteInfo();
-  const { t } = useAdminTOptional();
+  const { t, locale } = useAdminTOptional();
 
   useEffect(() => {
-    const siteName = (siteInfo.siteName || "大马通").trim();
+    const rawSiteName = (siteInfo.siteName || "大马通").trim();
+    const siteName = locale === "en" && /[\u4e00-\u9fff]/.test(rawSiteName) ? "Official Shop" : rawSiteName;
     const routeTitleMap: Array<{ test: (path: string) => boolean; titleKey: string }> = [
       { test: (p) => p === "/admin" || p === "/admin/", titleKey: "routeTitles.admin" },
       { test: (p) => p === "/admin/account", titleKey: "routeTitles.account" },
@@ -154,7 +155,7 @@ function AdminTitleSync() {
     const translatedTitle = t(rawTitleKey);
     const pageTitle = translatedTitle === rawTitleKey ? "Admin" : translatedTitle;
     document.title = `${pageTitle} | ${siteName}`;
-  }, [location.pathname, siteInfo.siteName, t]);
+  }, [location.pathname, locale, siteInfo.siteName, t]);
 
   return null;
 }

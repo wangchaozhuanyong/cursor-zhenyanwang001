@@ -13,27 +13,27 @@ import { getErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
-import { useAdminT, useAdminTOptional } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import { formatTimezoneLabel } from "@/utils/formatTimezoneLabel";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 
-const RANGE_OPTIONS: { value: DashboardRangePreset; label: string }[] = [
-  { value: "today", label: "今天" },
-  { value: "last_7_days", label: "近7天" },
-  { value: "last_30_days", label: "近30天" },
-  { value: "this_month", label: "本月" },
-  { value: "custom", label: "自定义" },
-];
-
 type TrendMetric = "sales" | "order_count" | "paid_order_count" | "refund_amount" | "avg_order_value";
 
-const TREND_METRICS: { key: TrendMetric; label: string; isMoney?: boolean }[] = [
-  { key: "sales", label: "销售额", isMoney: true },
-  { key: "order_count", label: "订单数" },
-  { key: "paid_order_count", label: "支付订单数" },
-  { key: "refund_amount", label: "退款金额", isMoney: true },
-  { key: "avg_order_value", label: "客单价", isMoney: true },
+const RANGE_OPTIONS: { value: DashboardRangePreset; zh: string; en: string }[] = [
+  { value: "today", zh: "今天", en: "Today" },
+  { value: "last_7_days", zh: "近 7 天", en: "Last 7 days" },
+  { value: "last_30_days", zh: "近 30 天", en: "Last 30 days" },
+  { value: "this_month", zh: "本月", en: "This month" },
+  { value: "custom", zh: "自定义", en: "Custom" },
+];
+
+const TREND_METRICS: { key: TrendMetric; zh: string; en: string; isMoney?: boolean }[] = [
+  { key: "sales", zh: "销售额", en: "Sales", isMoney: true },
+  { key: "order_count", zh: "订单数", en: "Orders" },
+  { key: "paid_order_count", zh: "支付订单数", en: "Paid orders" },
+  { key: "refund_amount", zh: "退款金额", en: "Refunds", isMoney: true },
+  { key: "avg_order_value", zh: "客单价", en: "AOV", isMoney: true },
 ];
 
 function money(value: unknown) {
@@ -42,10 +42,11 @@ function money(value: unknown) {
 }
 
 export default function Dashboard() {
-  const { tText } = useAdminT();
+  const { locale } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
   const navigate = useNavigate();
   const can = useAdminPermissionStore((s) => s.can);
-  const { locale } = useAdminTOptional();
   const [rangePreset, setRangePreset] = useState<DashboardRangePreset>("last_7_days");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -83,9 +84,7 @@ export default function Dashboard() {
 
   const selectRangePreset = (value: DashboardRangePreset) => {
     if (value === "custom") {
-      if (rangePreset !== "custom") {
-        setLastPresetBeforeCustom(rangePreset);
-      }
+      if (rangePreset !== "custom") setLastPresetBeforeCustom(rangePreset);
       setRangePreset("custom");
       openCustomRangePanel();
       return;
@@ -103,11 +102,11 @@ export default function Dashboard() {
 
   const applyCustomRange = () => {
     if (!draftFrom || !draftTo) {
-      toast.error(tText("请选择开始和结束日期"));
+      toast.error(L("请选择开始和结束日期", "Please choose both start and end dates"));
       return;
     }
     if (draftFrom > draftTo) {
-      toast.error(tText("开始日期不能晚于结束日期"));
+      toast.error(L("开始日期不能晚于结束日期", "Start date cannot be later than end date"));
       return;
     }
     setDateFrom(draftFrom);
@@ -123,10 +122,10 @@ export default function Dashboard() {
   const canViewOrders = stats?.canViewOrders ?? can("order.view");
   const trendConfig = TREND_METRICS.find((item) => item.key === trendMetric) ?? TREND_METRICS[0];
   const trendChartData = salesTrend.map((row: any) => ({ ...row, metric: row[trendMetric] ?? 0 }));
-  const error = dashboardQuery.error ? getErrorMessage(dashboardQuery.error, "加载仪表盘数据失败") : null;
-  const rangeMetricPrefix = rangePreset === "today" ? "今日" : "筛选范围";
+  const error = dashboardQuery.error ? getErrorMessage(dashboardQuery.error, L("加载仪表盘数据失败", "Failed to load dashboard data")) : null;
+  const rangeMetricPrefix = rangePreset === "today" ? L("今日", "Today") : L("筛选范围", "Range");
   const rangeMeta = stats?.range
-    ? `统计时区：${formatTimezoneLabel(stats.range.timezone, locale)} · ${stats.range.dateFrom} 至 ${stats.range.dateTo}`
+    ? `${L("统计时区", "Timezone")}: ${formatTimezoneLabel(stats.range.timezone, locale)} · ${stats.range.dateFrom} ${L("至", "to")} ${stats.range.dateTo}`
     : null;
   const overviewReportPath = `/admin/reports/overview?range_preset=${encodeURIComponent(rangePreset)}${
     rangePreset === "custom"
@@ -167,7 +166,7 @@ export default function Dashboard() {
                   : "border border-[var(--theme-border)] text-muted-foreground hover:bg-[var(--theme-bg)]"
               }`}
             >
-              {opt.label}
+              {isEn ? opt.en : opt.zh}
             </button>
           ))}
           <button
@@ -180,7 +179,6 @@ export default function Dashboard() {
         </div>
       )}
     >
-
       <DashboardCustomRangePanel
         open={customRangeOpen}
         onClose={closeCustomRangePanel}
@@ -202,14 +200,14 @@ export default function Dashboard() {
       <section>
         <h2 className="mb-3 text-sm font-semibold text-foreground"><Tx>经营概览</Tx></h2>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <StatsCard icon={DollarSign} label={`${rangeMetricPrefix}销售额`} value={money(today.revenue ?? stats?.todayRevenue)} onClick={() => navigate(overviewReportPath)} />
-          <StatsCard icon={ShoppingCart} label={`${rangeMetricPrefix}支付订单`} value={today.paidOrders ?? 0} onClick={() => navigate("/admin/orders?payment_status=paid")} />
-          <StatsCard icon={Package} label={`${rangeMetricPrefix}下单数`} value={today.orderCount ?? stats?.todayOrders ?? 0} onClick={() => navigate("/admin/orders")} />
-          <StatsCard icon={Users} label={`${rangeMetricPrefix}新增用户`} value={today.newUsers ?? stats?.todayNewUsers ?? 0} onClick={() => navigate("/admin/users")} />
-          <StatsCard icon={AlertTriangle} label={tText("当前待付款")} value={today.pendingPayment ?? 0} onClick={() => navigate("/admin/orders?payment_status=pending")} />
-          <StatsCard icon={Truck} label={tText("当前待发货")} value={today.pendingShip ?? stats?.pendingOrders ?? 0} onClick={() => navigate("/admin/orders?status=paid")} />
-          <StatsCard icon={RefreshCw} label={tText("当前待售后")} value={today.pendingAfterSale ?? 0} onClick={() => navigate("/admin/returns")} />
-          <StatsCard icon={Package} label={tText("当前低库存")} value={today.lowStock ?? 0} onClick={() => navigate("/admin/inventory")} />
+          <StatsCard icon={DollarSign} label={`${rangeMetricPrefix}${isEn ? " Sales" : "销售额"}`} value={money(today.revenue ?? stats?.todayRevenue)} onClick={() => navigate(overviewReportPath)} />
+          <StatsCard icon={ShoppingCart} label={`${rangeMetricPrefix}${isEn ? " Paid orders" : "支付订单"}`} value={today.paidOrders ?? 0} onClick={() => navigate("/admin/orders?payment_status=paid")} />
+          <StatsCard icon={Package} label={`${rangeMetricPrefix}${isEn ? " Orders" : "下单数"}`} value={today.orderCount ?? stats?.todayOrders ?? 0} onClick={() => navigate("/admin/orders")} />
+          <StatsCard icon={Users} label={`${rangeMetricPrefix}${isEn ? " New users" : "新增用户"}`} value={today.newUsers ?? stats?.todayNewUsers ?? 0} onClick={() => navigate("/admin/users")} />
+          <StatsCard icon={AlertTriangle} label={L("当前待付款", "Pending payment")} value={today.pendingPayment ?? 0} onClick={() => navigate("/admin/orders?payment_status=pending")} />
+          <StatsCard icon={Truck} label={L("当前待发货", "Pending shipment")} value={today.pendingShip ?? stats?.pendingOrders ?? 0} onClick={() => navigate("/admin/orders?status=paid")} />
+          <StatsCard icon={RefreshCw} label={L("当前待售后", "Pending after-sales")} value={today.pendingAfterSale ?? 0} onClick={() => navigate("/admin/returns")} />
+          <StatsCard icon={Package} label={L("当前低库存", "Low stock")} value={today.lowStock ?? 0} onClick={() => navigate("/admin/inventory")} />
         </div>
       </section>
 
@@ -217,11 +215,11 @@ export default function Dashboard() {
         <h2 className="mb-3 text-sm font-semibold text-foreground"><Tx>待办中心</Tx></h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {[
-            { label: tText("待发货订单"), value: todos.pendingShip ?? 0, path: "/admin/orders?status=paid" },
-            { label: tText("退款/售后"), value: todos.afterSale ?? 0, path: "/admin/returns" },
-            { label: tText("付款失败"), value: todos.paymentFailed ?? 0, path: "/admin/orders?payment_status=failed" },
-            { label: tText("低库存"), value: todos.lowStock ?? 0, path: "/admin/inventory" },
-            { label: tText("缺货商品"), value: todos.outOfStock ?? 0, path: "/admin/inventory" },
+            { label: L("待发货订单", "Pending shipments"), value: todos.pendingShip ?? 0, path: "/admin/orders?status=paid" },
+            { label: L("退款/售后", "Refunds / after-sales"), value: todos.afterSale ?? 0, path: "/admin/returns" },
+            { label: L("付款失败", "Payment failed"), value: todos.paymentFailed ?? 0, path: "/admin/orders?payment_status=failed" },
+            { label: L("低库存", "Low stock"), value: todos.lowStock ?? 0, path: "/admin/inventory" },
+            { label: L("缺货商品", "Out of stock"), value: todos.outOfStock ?? 0, path: "/admin/inventory" },
           ].map((item) => (
             <button key={item.label} type="button" onClick={() => navigate(item.path)} className="touch-manipulation rounded-xl border border-[var(--theme-border)] p-3 text-left transition hover:bg-[var(--theme-bg)]">
               <p className="text-[11px] text-muted-foreground">{item.label}</p>
@@ -237,8 +235,13 @@ export default function Dashboard() {
             <h3 className="text-sm font-semibold text-foreground"><Tx>经营趋势</Tx></h3>
             <div className="flex flex-wrap gap-1">
               {TREND_METRICS.map((metric) => (
-                <button key={metric.key} type="button" onClick={() => setTrendMetric(metric.key)} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${trendMetric === metric.key ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "border border-[var(--theme-border)] text-muted-foreground"}`}>
-                  {metric.label}
+                <button
+                  key={metric.key}
+                  type="button"
+                  onClick={() => setTrendMetric(metric.key)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${trendMetric === metric.key ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "border border-[var(--theme-border)] text-muted-foreground"}`}
+                >
+                  {isEn ? metric.en : metric.zh}
                 </button>
               ))}
             </div>
@@ -251,7 +254,7 @@ export default function Dashboard() {
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(v: number) => (trendConfig.isMoney ? money(v) : String(v))} />
-                  <Line type="monotone" dataKey="metric" stroke="var(--theme-price)" strokeWidth={2.5} dot={false} name={trendConfig.label} />
+                  <Line type="monotone" dataKey="metric" stroke="var(--theme-price)" strokeWidth={2.5} dot={false} name={isEn ? trendConfig.en : trendConfig.zh} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

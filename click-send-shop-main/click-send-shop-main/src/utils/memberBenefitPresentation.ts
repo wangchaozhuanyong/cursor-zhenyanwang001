@@ -33,32 +33,45 @@ export function buildBenefitSummaryFromBenefits(
   benefits: MemberBenefit[],
   level?: MemberLevel | null,
 ): string {
+  const descriptions = benefits
+    .map((b) => b.description?.trim())
+    .filter((desc): desc is string => Boolean(desc) && !isGarbledBenefitText(desc));
+  if (descriptions.length) return descriptions.join(" · ");
+
   const names = benefits
     .map((b) => b.name?.trim())
     .filter((name): name is string => Boolean(name) && !isGarbledBenefitText(name));
   if (names.length) return names.join(" · ");
+
   if (level) return buildBenefitSummaryFromLevel(level);
-  const descriptions = benefits
-    .map((b) => b.description?.trim())
-    .filter((desc): desc is string => Boolean(desc) && !isGarbledBenefitText(desc));
-  return descriptions.join(" · ") || "会员专属服务";
+  return "会员专属服务";
 }
 
 export function buildBenefitSummaryFromLevel(level?: MemberLevel | null): string {
   if (!level) return "会员专属服务";
   const parts: string[] = [];
-  if (Number(level.discount_rate ?? 1) < 1) parts.push("专属折扣");
-  if (Number(level.points_multiplier ?? 1) > 1) parts.push("积分加速");
-  if (level.free_shipping_enabled) parts.push("免邮权益");
-  parts.push("专属服务");
+  const rate = Number(level.discount_rate ?? 1);
+  if (rate < 1) {
+    const rateLabel = (rate * 10).toFixed(1).replace(/\.0$/, "");
+    parts.push(`购物享 ${rateLabel} 折优惠`);
+  }
+
+  const multiplier = Number(level.points_multiplier ?? 1);
+  if (multiplier > 1) {
+    const multiplierLabel = multiplier.toFixed(2).replace(/\.00$/, "");
+    parts.push(`积分获取 ${multiplierLabel} 倍加速`);
+  }
+
+  if (level.free_shipping_enabled) parts.push("符合条件订单享受免邮配送");
+  if (!parts.length) parts.push(level.description?.trim() || "享受平台基础会员服务与活动权益");
   return parts.join(" · ");
 }
 
 function discountLabel(rate?: number): string {
   const r = Number(rate ?? 1);
   if (r >= 1) return "全场原价";
-  const pct = Math.round((1 - r) * 100);
-  return pct > 0 ? `约 ${pct} 折` : "专属折扣";
+  const rateLabel = (r * 10).toFixed(1).replace(/\.0$/, "");
+  return `${rateLabel} 折`;
 }
 
 function pointsLabel(multiplier?: number): string {

@@ -338,6 +338,20 @@
     border-radius: var(--theme-radius);
     color: var(--theme-text);
   }
+  /* CMS/运营服务卡：给右上角编号预留标题空间，避免手机端压字 */
+  .card-equal {
+    position: relative;
+  }
+  .card-equal > div.mb-3.flex.items-start.gap-3 {
+    padding-right: clamp(3rem, 10vw, 4.5rem);
+  }
+  .card-equal .heading-safe {
+    min-width: 0;
+    word-break: break-word;
+  }
+  .card-equal-body {
+    padding-right: clamp(1rem, 4vw, 2.5rem);
+  }
   .store-button {
     border-radius: var(--theme-radius);
     transition: all 0.2s ease;
@@ -459,6 +473,37 @@
 
   /* 移动端表单字号 ≥16px，避免 iOS Safari 聚焦输入时自动缩放页面 */
   @media (max-width: 767px) {
+    .card-equal {
+      padding: 18px 18px 18px 18px !important;
+    }
+    html[data-app-scope="store"] .card-equal > span.absolute.right-4.top-4 {
+      position: static !important;
+      inset: auto !important;
+      left: auto !important;
+      top: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      float: none !important;
+      transform: none !important;
+      display: block !important;
+      width: fit-content !important;
+      margin: 0 0 10px auto !important;
+      font-size: 1.125rem !important;
+      line-height: 1 !important;
+      opacity: 0.14 !important;
+      pointer-events: none !important;
+    }
+    html[data-app-scope="store"] .card-equal > div.mb-3.flex.items-start.gap-3 {
+      padding-right: 0 !important;
+      align-items: flex-start !important;
+    }
+    html[data-app-scope="store"] .card-equal .heading-safe {
+      min-width: 0 !important;
+      max-width: none !important;
+    }
+    html[data-app-scope="store"] .card-equal-body {
+      padding-right: 0 !important;
+    }
     .auth-page-shell input:not([type="checkbox"]):not([type="radio"]),
     .auth-page-shell select,
     .auth-page-shell textarea {

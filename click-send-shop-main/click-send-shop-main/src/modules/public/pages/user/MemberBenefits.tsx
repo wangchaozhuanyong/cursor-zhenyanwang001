@@ -146,32 +146,35 @@ export default function MemberBenefits() {
         </section>
 
         <section className={cn(CARD_CLASS, "p-4")}>
-          <h2 className="text-base font-semibold text-[var(--theme-text)]">当前等级权益</h2>
           {loading ? (
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="min-h-[88px] animate-pulse rounded-2xl bg-[var(--theme-bg)]" />
+                <div key={i} className="min-h-[104px] animate-pulse rounded-2xl bg-[var(--theme-bg)]" />
               ))}
             </div>
           ) : (
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3">
               {benefitHighlightTiles.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.label} className={cn("min-w-0 rounded-2xl p-3", MEMBER_BENEFIT_TILE_BG)}>
-                    <div className="flex min-w-0 items-start gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]">
-                        <Icon size={18} />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold leading-5 text-[var(--theme-text)]">{item.label}</p>
-                        {item.value ? (
-                          <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
-                            {item.value}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
+                  <div
+                    key={item.label}
+                    className={cn(
+                      "flex min-h-[104px] min-w-0 flex-col items-center justify-center rounded-2xl px-2.5 py-3 text-center",
+                      MEMBER_BENEFIT_TILE_BG,
+                    )}
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]">
+                      <Icon size={18} />
+                    </span>
+                    <p className="mt-2 max-w-full break-words text-sm font-semibold leading-5 text-[var(--theme-text)]">
+                      {item.label}
+                    </p>
+                    {item.value ? (
+                      <p className="mt-0.5 max-w-full break-words text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
+                        {item.value}
+                      </p>
+                    ) : null}
                   </div>
                 );
               })}
@@ -212,7 +215,7 @@ export default function MemberBenefits() {
                     <p className="mt-2 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)]">
                       升级条件：{formatLevelRequirement(level)}
                     </p>
-                    <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
+                    <p className="mt-1 break-words text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
                       {buildBenefitSummaryFromBenefits(level.benefits || [], level)}
                     </p>
                   </div>

@@ -1,16 +1,13 @@
-import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import SearchBar from "@/components/SearchBar";
-import Pagination from "@/components/admin/Pagination";
 import { fetchCouponRecords } from "@/services/admin/couponService";
 import type { CouponClaimRecord } from "@/types/coupon";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import SearchBar from "@/components/SearchBar";
+import Pagination from "@/components/admin/Pagination";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
-import {
-  AdminTableMobileCard,
-  AdminTableMobileCardField,
-} from "@/components/admin/AdminTableMobileCard";
+import { AdminTableMobileCard, AdminTableMobileCardField } from "@/components/admin/AdminTableMobileCard";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Tx } from "@/components/admin/AdminText";
@@ -18,34 +15,27 @@ import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
-import {
-  buildCouponRecordFilterChips,
-  hasActiveCouponRecordFilters,
-  removeCouponRecordFilterChip,
-} from "@/utils/adminCouponRecordFilters";
+import { buildCouponRecordFilterChips, hasActiveCouponRecordFilters, removeCouponRecordFilterChip } from "@/utils/adminCouponRecordFilters";
 import { formatUserDisplay } from "@/utils/adminDisplayLabels";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
-import {
-  adminTableCellClass,
-  adminTableTheadRow,
-  type AdminTableAlign,
-} from "@/utils/adminTableClasses";
-
-const COUPON_RECORD_COLUMN_ALIGNS: AdminTableAlign[] = [
-  "left", "left", "left", "center", "left", "left",
-];
 import { THEME_BADGE_SUCCESS } from "@/utils/themeVisuals";
-import { useAdminT } from "@/hooks/useAdminT";
+import { adminTableCellClass, adminTableTheadRow, type AdminTableAlign } from "@/utils/adminTableClasses";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 
-const statusLabels: Record<string, { label: string; color: string }> = {
-  available: { label: "未使用", color: "bg-gold/10 text-theme-price" },
-  used: { label: "已使用", color: THEME_BADGE_SUCCESS },
-  expired: { label: "已过期", color: "bg-muted text-muted-foreground" },
+const COUPON_RECORD_COLUMN_ALIGNS: AdminTableAlign[] = ["left", "left", "left", "center", "left", "left"];
+
+const STATUS_LABELS: Record<string, { zh: string; en: string; color: string }> = {
+  available: { zh: "未使用", en: "Unused", color: "bg-gold/10 text-theme-price" },
+  used: { zh: "已使用", en: "Used", color: THEME_BADGE_SUCCESS },
+  expired: { zh: "已过期", en: "Expired", color: "bg-muted text-muted-foreground" },
 };
 
 export default function AdminCouponRecords() {
-  const { tText } = useAdminT();
-  const { couponRecordStatus: labelCouponRecordStatus, text: L } = useAdminDisplayLabel();
+  const { locale } = useAdminTOptional();
+  const isEn = locale === "en";
+  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const { couponRecordStatus: labelCouponRecordStatus, text: label } = useAdminDisplayLabel();
+
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -58,7 +48,7 @@ export default function AdminCouponRecords() {
       status: statusFilter || undefined,
       keyword: search.trim() || undefined,
     }),
-    [page, pageSize, statusFilter, search],
+    [page, pageSize, search, statusFilter],
   );
 
   const recordsQuery = useQuery({
@@ -97,15 +87,16 @@ export default function AdminCouponRecords() {
   };
 
   const formatPhone = (phone: string | null | undefined) => {
-    if (!phone) return "—";
+    if (!phone) return "-";
     const raw = String(phone).trim();
     if (raw.length < 7) return raw;
     return `${raw.slice(0, 3)}****${raw.slice(-4)}`;
   };
 
   const renderMobileCard = (record: CouponClaimRecord) => {
-    const statusLabel = statusLabels[record.status]?.label ? L(statusLabels[record.status].label) : labelCouponRecordStatus(record.status);
-    const statusColor = statusLabels[record.status]?.color || "bg-secondary text-foreground";
+    const statusInfo = STATUS_LABELS[record.status];
+    const statusLabel = statusInfo ? L(statusInfo.zh, statusInfo.en) : labelCouponRecordStatus(record.status);
+    const statusColor = statusInfo?.color || "bg-secondary text-foreground";
 
     return (
       <AdminTableMobileCard>
@@ -114,17 +105,17 @@ export default function AdminCouponRecords() {
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${statusColor}`}>{statusLabel}</span>
         </div>
         <div className="space-y-2">
-          <AdminTableMobileCardField label={tText("优惠券")}>
-            <span className="text-xs text-muted-foreground">{record.coupon_title || "—"}</span>
+          <AdminTableMobileCardField label={L("优惠券", "Coupon")}>
+            <span className="text-xs text-muted-foreground">{record.coupon_title || "-"}</span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label={tText("手机号")}>
+          <AdminTableMobileCardField label={L("手机号", "Phone")}>
             <span className="text-xs text-muted-foreground">{formatPhone(record.phone)}</span>
           </AdminTableMobileCardField>
-          <AdminTableMobileCardField label={tText("领取时间")}>
+          <AdminTableMobileCardField label={L("领取时间", "Claimed at")}>
             <span className="text-xs text-muted-foreground">{formatDateTime(record.claimed_at)}</span>
           </AdminTableMobileCardField>
           {record.used_at ? (
-            <AdminTableMobileCardField label={tText("使用时间")}>
+            <AdminTableMobileCardField label={L("使用时间", "Used at")}>
               <span className="text-xs text-muted-foreground">{formatDateTime(record.used_at)}</span>
             </AdminTableMobileCardField>
           ) : null}
@@ -135,19 +126,19 @@ export default function AdminCouponRecords() {
 
   return (
     <AdminPageShell
-      hint={<Tx>查看用户领券与使用状态，支持按用户、优惠券与状态筛选。</Tx>}
+      hint={<Tx>{L("查看用户领券与使用状态，支持按用户、优惠券与状态筛选。", "View claim and usage status, with filters for user, coupon, and status.")}</Tx>}
       filters={(
         <div className="flex flex-wrap gap-2">
-          <SearchBar placeholder={tText("搜索用户/优惠券")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
+          <SearchBar placeholder={L("搜索用户/优惠券", "Search user/coupon")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="rounded-lg bg-secondary px-3 py-2 text-sm"
           >
-            <option value=""><Tx>全部状态</Tx></option>
-            <option value="available"><Tx>未使用</Tx></option>
-            <option value="used"><Tx>已使用</Tx></option>
-            <option value="expired"><Tx>已过期</Tx></option>
+            <option value="">{L("全部状态", "All statuses")}</option>
+            <option value="available">{L("未使用", "Unused")}</option>
+            <option value="used">{L("已使用", "Used")}</option>
+            <option value="expired">{L("已过期", "Expired")}</option>
           </select>
         </div>
       )}
@@ -164,9 +155,9 @@ export default function AdminCouponRecords() {
         className="overflow-hidden border-border bg-card"
         theadClassName="bg-secondary/40 text-left text-xs text-muted-foreground"
         thead={adminTableTheadRow(
-          ["用户", "手机号", "优惠券", "状态", "领取时间", "使用时间"],
+          [L("用户", "User"), L("手机号", "Phone"), L("优惠券", "Coupon"), L("状态", "Status"), L("领取时间", "Claimed at"), L("使用时间", "Used at")],
           COUPON_RECORD_COLUMN_ALIGNS,
-          (label) => <Tx>{label}</Tx>,
+          (title) => <Tx>{title}</Tx>,
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
         emptyIcon={emptyGuide.icon}
@@ -180,22 +171,26 @@ export default function AdminCouponRecords() {
           />
         )}
         renderMobileCard={renderMobileCard}
-        renderRow={(record) => (
-          <>
-            <td className={adminTableCellClass("left")}>{formatUserDisplay(record.nickname, record.phone)}</td>
-            <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{formatPhone(record.phone)}</td>
-            <td className={adminTableCellClass("left", "max-w-[12rem]")}>
-              <AdminTableCell value={record.coupon_title || "—"} fullText={record.coupon_title || ""} maxWidth="11rem" />
-            </td>
-            <td className={adminTableCellClass("center")}>
-              <span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[record.status]?.color || "bg-secondary text-foreground"}`}>
-                {statusLabels[record.status]?.label ? L(statusLabels[record.status].label) : labelCouponRecordStatus(record.status)}
-              </span>
-            </td>
-            <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(record.claimed_at)}</td>
-            <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{record.used_at ? formatDateTime(record.used_at) : "—"}</td>
-          </>
-        )}
+        renderRow={(record) => {
+          const statusInfo = STATUS_LABELS[record.status];
+          const statusLabel = statusInfo ? L(statusInfo.zh, statusInfo.en) : labelCouponRecordStatus(record.status);
+          const statusColor = statusInfo?.color || "bg-secondary text-foreground";
+
+          return (
+            <>
+              <td className={adminTableCellClass("left")}>{formatUserDisplay(record.nickname, record.phone)}</td>
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{formatPhone(record.phone)}</td>
+              <td className={adminTableCellClass("left", "max-w-[12rem]")}>
+                <AdminTableCell value={record.coupon_title || "-"} fullText={record.coupon_title || ""} maxWidth="11rem" />
+              </td>
+              <td className={adminTableCellClass("center")}>
+                <span className={`rounded-full px-2 py-0.5 text-xs ${statusColor}`}>{statusLabel}</span>
+              </td>
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(record.claimed_at)}</td>
+              <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{record.used_at ? formatDateTime(record.used_at) : "-"}</td>
+            </>
+          );
+        }}
       />
     </AdminPageShell>
   );

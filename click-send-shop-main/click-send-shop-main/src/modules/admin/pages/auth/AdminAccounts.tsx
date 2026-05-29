@@ -407,7 +407,7 @@ export default function AdminAccounts() {
                   {Number(a.mfa?.trustedDeviceCount || 0) > 0 ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
                       <Smartphone size={11} />
-                      {tText(`${a.mfa?.trustedDeviceCount} 台设备`)}
+                      {tText(`${a.mfa?.trustedDeviceCount} 台可信设备`)}
                     </span>
                   ) : null}
                 </div>
@@ -580,7 +580,7 @@ function AdminSecurityDialog({
   const resetMfaMutation = useMutation({
     mutationFn: () => rbacService.resetAdminUserMfa(target.id),
     onSuccess: async (data) => {
-      toast.success(tText(`身份验证器已重置，已撤销 ${data?.revokedTrustedDeviceCount ?? 0} 台可信设备，下次登录需要重新绑定`));
+      toast.success(tText(`身份验证器已重置，已撤销 ${data?.revokedTrustedDeviceCount ?? 0} 台可信设备，下次登录需要重新绑定`, `Authenticator reset. Revoked ${data?.revokedTrustedDeviceCount ?? 0} trusted devices. Rebind on next login.`));
       await refresh();
     },
     onError: (err) => toast.error(toastErrorMessage(err, tText("MFA 重置失败"))),

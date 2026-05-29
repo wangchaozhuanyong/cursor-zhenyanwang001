@@ -217,9 +217,22 @@ return ({
           {
             urlPattern: ({ url, request }) =>
               request.method === "GET"
+              && url.pathname === "/api/home/bootstrap",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "public-home-bootstrap-cache",
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url, request }) =>
+              request.method === "GET"
               && (
-                url.pathname === "/api/home/bootstrap"
-                || url.pathname === "/api/content/site-info"
+                url.pathname === "/api/content/site-info"
                 || url.pathname === "/api/content/home-ops"
               ),
             handler: "StaleWhileRevalidate",
@@ -280,9 +293,22 @@ return ({
           {
             urlPattern: ({ url, request }) =>
               request.method === "GET"
+              && url.pathname.startsWith("/api/banners"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "public-banner-cache",
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url, request }) =>
+              request.method === "GET"
               && (
-                url.pathname.startsWith("/api/banners")
-                || url.pathname.startsWith("/api/content/")
+                url.pathname.startsWith("/api/content/")
               ),
             handler: "StaleWhileRevalidate",
             options: {

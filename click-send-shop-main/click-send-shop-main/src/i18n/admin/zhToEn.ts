@@ -3191,4 +3191,11 @@ export const adminZhToEn: Record<string, string> = {
   "电话、邮箱、地址等法定/展示类联系信息。即时客服（微信 / WhatsApp / Telegram）、二维码、服务时间与「添加到桌面」请在「页面装修 → 客服与安装」统一维护。": "电话、邮箱、地址等法定/展示类联系信息。即时客服（微信 / WhatsApp / Telegram）、二维码、服务时间与「添加到桌面」请在「页面装修 → 客服与安装」统一维护。",
   "若需清空联调/演示环境产生的流水，请在备份后使用 server 目录 WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js（会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。": "若需清空联调/演示环境产生的流水，请在备份后使用 server 目录 WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js（会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。",
   "画面比例请与「站点外观 → 商品图比例」一致（常见为 1:1，如 1080×1080 / 720×720；若为 3:4 则如 1080×1440）。码率约 5–8 Mbps，时长 1 分钟内更易压在 50MB 内。详情页图集主区域固定为当前主题的商品图比例，视频在区域内 object-contain：与主题同比例导出时黑边最少；横屏或与主题不一致时可能出现留黑。": "画面比例请与「站点外观 → 商品图比例」一致（常见为 1:1，如 1080×1080 / 720×720；若为 3:4 则如 1080×1440）。码率约 5–8 Mbps，时长 1 分钟内更易压在 50MB 内。详情页图集主区域固定为当前主题的商品图比例，视频在区域内 object-contain：与主题同比例导出时黑边最少；横屏或与主题不一致时可能出现留黑。",
+  "请输入完整的 6 位验证码": "Please enter the complete 6-digit verification code",
+  "Passkey 验证失败": "Passkey verification failed",
+  "正在验证 Passkey...": "Verifying Passkey...",
+  "使用 Passkey 登录": "Sign in with Passkey",
+  "或输入验证码": "Or enter the verification code",
+  "信任此设备": "Trust this device",
+  "多因素验证失败，请检查验证码是否正确或是否已过期": "MFA verification failed. Check the code or sign in again.",
 };

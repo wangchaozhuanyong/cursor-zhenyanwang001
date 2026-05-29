@@ -200,11 +200,11 @@ export default function Categories() {
   const categoryDescription = activeCategory?.description?.trim() || "";
   const categoryGuide = activeCategory?.buying_guide?.trim() || "";
   const categoryFaq = activeCategory?.faq || [];
-  const siteName = siteInfo.siteName || "???";
-  const title = activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}?${siteName}` : `?????${siteName}`);
+  const siteName = (siteInfo.siteName || "官方商城").trim();
+  const title = activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `分类页｜${siteName}`);
   const description = activeCategory?.seo_description?.trim() || (activeCategoryName
-    ? categoryDescription || `??${siteName} ${activeCategoryName} ??????????`
-    : `??${siteName}???????????`);
+    ? categoryDescription || `查看${siteName}${activeCategoryName}分类，发现更多相关商品和服务。`
+    : `查看${siteName}全部分类，快速找到更多商品和服务。`);
   const robots = hasComplexParams ? "noindex,follow" : "index,follow";
   const canonical = activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
   const showFullSkeleton = loading && products.length === 0;

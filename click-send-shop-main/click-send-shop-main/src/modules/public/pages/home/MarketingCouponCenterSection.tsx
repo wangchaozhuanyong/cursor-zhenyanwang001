@@ -88,18 +88,7 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
   if (!payload?.coupons?.length) return null;
 
   const openAllCoupons = () => {
-    void (async () => {
-      if (!isAuthenticated) {
-        navigate("/login", { state: { from: "/coupons" } });
-        return;
-      }
-      const ok = await ensureStoreSession();
-      if (!ok) {
-        navigate("/login", { state: { from: "/coupons" } });
-        return;
-      }
-      navigate("/coupons");
-    })();
+    navigate("/coupons");
   };
 
   const goUseCoupon = async (item: HomeCouponCardItem) => {

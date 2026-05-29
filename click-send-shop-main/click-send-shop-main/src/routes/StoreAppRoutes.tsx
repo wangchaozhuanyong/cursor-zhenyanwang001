@@ -45,6 +45,8 @@ import {
   Help, About, ContentCmsPage, SupportDownload, TikTokLanding, NotFound,
 } from "@/routes/publicLazyPages";
 
+const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "store-card-equal-mobile-fix";
+
 function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
 
@@ -121,6 +123,64 @@ function AppScopeSync() {
     document.documentElement.setAttribute("data-app-scope", "store");
     window.dispatchEvent(new CustomEvent("app:scope-changed", { detail: { scope: "store" } }));
   }, []);
+  return null;
+}
+
+function StoreCardOverlapFix() {
+  useLayoutEffect(() => {
+    if (typeof document === "undefined") return;
+
+    let style = document.getElementById(CARD_EQUAL_MOBILE_FIX_STYLE_ID) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement("style");
+      style.id = CARD_EQUAL_MOBILE_FIX_STYLE_ID;
+      style.textContent = `
+        @media (max-width: 767px) {
+          html[data-app-scope="store"] .card-equal {
+            padding: 18px !important;
+          }
+
+          html[data-app-scope="store"] .card-equal > span.absolute.right-4.top-4 {
+            position: static !important;
+            inset: auto !important;
+            left: auto !important;
+            top: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            float: none !important;
+            transform: none !important;
+            display: block !important;
+            width: fit-content !important;
+            margin: 0 0 10px auto !important;
+            font-size: 1.125rem !important;
+            line-height: 1 !important;
+            opacity: 0.14 !important;
+            pointer-events: none !important;
+          }
+
+          html[data-app-scope="store"] .card-equal > div.mb-3.flex.items-start.gap-3 {
+            padding-right: 0 !important;
+            align-items: flex-start !important;
+          }
+
+          html[data-app-scope="store"] .card-equal .heading-safe {
+            min-width: 0 !important;
+            max-width: none !important;
+          }
+
+          html[data-app-scope="store"] .card-equal-body {
+            padding-right: 0 !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      style?.remove();
+    };
+  }, []);
+
   return null;
 }
 
@@ -222,6 +282,7 @@ function MainStoreRoutes() {
           <ChinaBrowserCompatNotice />
           <LanguageGate />
           <AgeGate />
+          <StoreCardOverlapFix />
           <Suspense fallback={<AppRouteFallback />}>
             <Routes>
               <Route element={<FrontLayout />}>
@@ -269,7 +330,7 @@ function MainStoreRoutes() {
               />
               <Route path="/rewards" element={<ProtectedRoute><LoyaltyRouteGuard feature="reward"><Rewards /></LoyaltyRouteGuard></ProtectedRoute>} />
               <Route path="/address" element={<ProtectedRoute><AddressManage /></ProtectedRoute>} />
-              <Route path="/coupons" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute></ProtectedRoute>} />
+              <Route path="/coupons" element={<CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
               <Route path="/reviews/pending" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.reviewEnabled}><PendingReviews /></CapabilityRoute></ProtectedRoute>} />

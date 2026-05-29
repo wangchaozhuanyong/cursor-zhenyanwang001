@@ -5,6 +5,7 @@ import type { Banner } from "@/types/banner";
 
 type UseHomeBannersOpts = { fetchRemote?: boolean };
 const BANNER_CACHE_KEY = "home_banners_cache_v1";
+const BANNER_CACHE_TTL_MS = 60_000;
 
 function sanitizeBanners(list: Banner[]): Banner[] {
   if (!Array.isArray(list)) return [];
@@ -37,50 +38,40 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
     if (!fetchRemote) return;
     let cancelled = false;
 
+    const applyBanners = (next: Banner[]) => {
+      if (cancelled || next.length === 0) return;
+      setBanners(next);
+      writeBannerCache(next);
+      setLoading(false);
+    };
+
     const cachedBootstrap = homeService.getCachedHomeBootstrap();
     if (cachedBootstrap?.banners) {
       const next = normalizeBootstrapBanners(cachedBootstrap.banners);
-      if (next.length > 0) {
-        setBanners(next);
-        writeBannerCache(next);
-        setLoading(false);
-      }
+      applyBanners(next);
     }
 
     setLoading((prev) => prev && readBannerCache().length === 0);
-    homeService
-      .fetchHomeBootstrap()
-      .then((bootstrap) => {
-        if (cancelled) return;
-        const next = normalizeBootstrapBanners(bootstrap?.banners);
-        if (next.length > 0) {
-          setBanners(next);
-          writeBannerCache(next);
-          return;
-        }
-        return homeBannerService.fetchActiveBanners().then((list) => {
-          if (cancelled) return;
-          const fallback = sanitizeBanners(Array.isArray(list) ? list : []);
-          setBanners(fallback);
-          writeBannerCache(fallback);
-        });
-      })
-      .catch(() => {
-        homeBannerService
-          .fetchActiveBanners()
-          .then((list) => {
-            if (cancelled) return;
-            const fallback = sanitizeBanners(Array.isArray(list) ? list : []);
-            setBanners(fallback);
-            writeBannerCache(fallback);
-          })
-          .catch(() => {
-            // keep existing cached banners
-          });
-      })
-      .finally(() => {
+
+    const loadBanners = async () => {
+      try {
+        const bootstrap = await homeService.fetchHomeBootstrap();
+        applyBanners(normalizeBootstrapBanners(bootstrap?.banners));
+      } catch {
+        // Keep going; /api/banners is the authoritative fallback.
+      }
+
+      try {
+        const latest = await homeBannerService.fetchActiveBanners({ fresh: true });
+        applyBanners(sanitizeBanners(Array.isArray(latest) ? latest : []));
+      } catch {
+        // keep existing cached banners
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    void loadBanners();
 
     return () => {
       cancelled = true;
@@ -95,6 +86,7 @@ export function invalidateHomeBannersCache() {
   if (typeof window === "undefined") return;
   try {
     sessionStorage.removeItem(BANNER_CACHE_KEY);
+    localStorage.removeItem(BANNER_CACHE_KEY);
   } catch {
     // ignore storage failures
   }
@@ -103,7 +95,12 @@ export function invalidateHomeBannersCache() {
 function readBannerCache(): Banner[] {
   if (typeof window === "undefined") return [];
   try {
-    return sanitizeBanners(JSON.parse(sessionStorage.getItem(BANNER_CACHE_KEY) || "[]"));
+    const parsed = JSON.parse(sessionStorage.getItem(BANNER_CACHE_KEY) || "[]");
+    if (Array.isArray(parsed)) return sanitizeBanners(parsed);
+    if (!parsed || typeof parsed !== "object") return [];
+    const cachedAt = Number((parsed as { cachedAt?: unknown }).cachedAt || 0);
+    if (!cachedAt || Date.now() - cachedAt > BANNER_CACHE_TTL_MS) return [];
+    return sanitizeBanners((parsed as { items?: Banner[] }).items || []);
   } catch {
     return [];
   }
@@ -112,7 +109,10 @@ function readBannerCache(): Banner[] {
 function writeBannerCache(list: Banner[]) {
   if (typeof window === "undefined") return;
   try {
-    sessionStorage.setItem(BANNER_CACHE_KEY, JSON.stringify(list.slice(0, 8)));
+    sessionStorage.setItem(BANNER_CACHE_KEY, JSON.stringify({
+      cachedAt: Date.now(),
+      items: list.slice(0, 8),
+    }));
   } catch {
     // ignore storage quota/privacy failures
   }

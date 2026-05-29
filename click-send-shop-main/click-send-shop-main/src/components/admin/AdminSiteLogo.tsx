@@ -1,17 +1,23 @@
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import { cn } from "@/lib/utils";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 
 type AdminSiteLogoProps = {
-  /** sm：侧栏 36px；lg：登录页 64px */
+  /** sm: 36px; lg: login page 64px */
   size?: "sm" | "lg";
   className?: string;
 };
 
 export default function AdminSiteLogo({ size = "sm", className }: AdminSiteLogoProps) {
   const siteInfo = useSiteInfo();
+  const { locale } = useAdminTOptional();
   const logoSrc = resolveSiteLogoUrl(siteInfo);
-  const alt = siteInfo.siteName?.trim() || "站点 Logo";
+  const siteName = siteInfo.siteName?.trim() || "";
+  const isEnglish = locale === "en";
+  const hasCjkSiteName = /[\u4e00-\u9fff]/.test(siteName);
+  const alt = siteName && !(isEnglish && hasCjkSiteName) ? siteName : isEnglish ? "Site logo" : "站点 Logo";
+  const fallbackText = isEnglish && hasCjkSiteName ? "A" : alt.slice(0, 1);
 
   const boxClass =
     size === "lg"
@@ -28,7 +34,7 @@ export default function AdminSiteLogo({ size = "sm", className }: AdminSiteLogoP
         )}
         aria-label={alt}
       >
-        {alt.slice(0, 1)}
+        {fallbackText}
       </div>
     );
   }

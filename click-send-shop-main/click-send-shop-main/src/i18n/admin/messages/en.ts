@@ -13,7 +13,7 @@ export const adminMessagesEn: AdminMessages = {
     changePassword: "Change password",
     logout: "Sign out",
     language: "Language",
-    languageZh: "中文",
+    languageZh: "Chinese",
     languageEn: "English",
     mainNav: "Main navigation",
     mobileHome: "Home",

@@ -56,11 +56,8 @@ import {
   THEME_MEMBER_CARD_SHELL,
 } from "@/utils/themeVisuals";
 import {
-  buildBenefitHighlightsFromLevel,
   buildBenefitSummaryFromLevel,
   MEMBER_BENEFIT_SUMMARY_BG,
-  MEMBER_BENEFIT_TILE_BG,
-  type BenefitHighlightTile,
 } from "@/utils/memberBenefitPresentation";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 
@@ -117,7 +114,6 @@ function ProfileHeroCard({
   userName,
   memberLevelName,
   memberBenefitsSummary,
-  benefitItems,
   profileHint,
   unreadCount,
   onMessageClick,
@@ -132,7 +128,6 @@ function ProfileHeroCard({
   userName: string;
   memberLevelName: string;
   memberBenefitsSummary: string;
-  benefitItems: BenefitHighlightTile[];
   profileHint: string;
   unreadCount: number;
   onMessageClick: () => void;
@@ -227,21 +222,6 @@ function ProfileHeroCard({
               <ChevronRight size={16} className="shrink-0" />
             </button>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {benefitItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div key={item.label} className={cn("min-w-0 rounded-2xl p-3", MEMBER_BENEFIT_TILE_BG)}>
-                <Icon size={18} className="shrink-0 text-[var(--theme-primary)]" />
-                <p className="mt-2 line-clamp-1 text-sm font-semibold text-[var(--theme-text)]">{item.label}</p>
-                {item.value ? (
-                  <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">{item.value}</p>
-                ) : null}
-              </div>
-            );
-          })}
         </div>
       </div>
     </section>
@@ -338,7 +318,6 @@ export default function Profile() {
   const userName = nickname?.trim() || "会员用户";
   const memberLevelName = memberLevel?.name?.trim() || "普通会员";
   const memberBenefitsSummary = buildBenefitSummaryFromLevel(memberLevel);
-  const memberBenefitItems = buildBenefitHighlightsFromLevel(memberLevel);
   const code = inviteCode?.trim() || "暂无";
   const profileHint = getProfileCompletionText({ avatar, birthday, wechat, whatsapp });
   const couponCount = useMemo(() => coupons.filter((c) => !c.used_at).length, [coupons]);
@@ -424,7 +403,6 @@ export default function Profile() {
                 userName={userName}
                 memberLevelName={memberLevelName}
                 memberBenefitsSummary={memberBenefitsSummary}
-                benefitItems={memberBenefitItems}
                 profileHint={profileHint}
                 unreadCount={unreadCount}
                 onMessageClick={() => navigate("/notifications", { state: { from: "/profile" } })}

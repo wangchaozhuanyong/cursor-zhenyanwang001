@@ -23,8 +23,25 @@ export function benefitIcon(type: string): LucideIcon {
   return ShieldCheck;
 }
 
-export function buildBenefitSummaryFromBenefits(benefits: MemberBenefit[]): string {
-  return benefits.map((b) => b.name).join(" · ") || "会员专属服务";
+function isGarbledBenefitText(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+  return /^\?+$/.test(trimmed);
+}
+
+export function buildBenefitSummaryFromBenefits(
+  benefits: MemberBenefit[],
+  level?: MemberLevel | null,
+): string {
+  const names = benefits
+    .map((b) => b.name?.trim())
+    .filter((name): name is string => Boolean(name) && !isGarbledBenefitText(name));
+  if (names.length) return names.join(" · ");
+  if (level) return buildBenefitSummaryFromLevel(level);
+  const descriptions = benefits
+    .map((b) => b.description?.trim())
+    .filter((desc): desc is string => Boolean(desc) && !isGarbledBenefitText(desc));
+  return descriptions.join(" · ") || "会员专属服务";
 }
 
 export function buildBenefitSummaryFromLevel(level?: MemberLevel | null): string {

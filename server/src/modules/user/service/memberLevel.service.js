@@ -47,35 +47,37 @@ function buildBenefits(level) {
   if (!level) return [];
   const benefits = [];
   if (Number(level.discount_rate || 1) < 1) {
+    const rateLabel = (Number(level.discount_rate) * 10).toFixed(1).replace(/\.0$/, '');
     benefits.push({
       type: 'discount',
-      name: '????',
+      name: '专属折扣',
       icon: 'badge-percent',
-      description: `???? ${(Number(level.discount_rate) * 10).toFixed(1).replace(/\.0$/, '')} ???`,
+      description: `购物享 ${rateLabel} 折优惠`,
     });
   }
   if (Number(level.points_multiplier || 1) > 1) {
+    const multiplierLabel = Number(level.points_multiplier).toFixed(2).replace(/\.00$/, '');
     benefits.push({
       type: 'points_multiplier',
-      name: '????',
+      name: '积分加速',
       icon: 'sparkles',
-      description: `????? ${Number(level.points_multiplier).toFixed(2).replace(/\.00$/, '')} ???`,
+      description: `积分获取 ${multiplierLabel} 倍加速`,
     });
   }
   if (level.free_shipping_enabled) {
     benefits.push({
       type: 'free_shipping',
-      name: '????',
+      name: '免邮权益',
       icon: 'truck',
-      description: '?????????????',
+      description: '符合条件订单享受免邮配送',
     });
   }
   if (!benefits.length) {
     benefits.push({
       type: 'standard',
-      name: '??????',
+      name: '会员服务',
       icon: 'shield-check',
-      description: level.description || '??????????????',
+      description: level.description || '享受平台基础会员服务与活动权益',
     });
   }
   return benefits;

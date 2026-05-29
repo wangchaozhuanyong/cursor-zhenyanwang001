@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import * as memberBenefitsService from "@/services/memberBenefitsService";
-import type { MemberBenefitsOverview, MemberBenefit } from "@/services/memberBenefitsService";
+import type { MemberBenefitsOverview } from "@/services/memberBenefitsService";
 import { cn } from "@/lib/utils";
 import {
   THEME_MEMBER_CARD_MUTED,
   THEME_MEMBER_CARD_SHELL,
 } from "@/utils/themeVisuals";
 import {
-  benefitIcon,
+  buildBenefitHighlightsFromLevel,
   buildBenefitSummaryFromBenefits,
   computeUpgradeProgress,
   formatLevelRequirement,
@@ -59,8 +59,11 @@ export default function MemberBenefits() {
     return `距离 ${nextLevel.name} 还差 RM ${spent.toFixed(2)} 消费或 ${orders} 笔有效订单`;
   }, [data?.growth_to_next_level, data?.orders_to_next_level, nextLevel]);
 
-  const currentBenefits = currentLevel?.benefits || [];
   const allLevels = data?.all_levels || [];
+  const benefitHighlightTiles = useMemo(
+    () => buildBenefitHighlightsFromLevel(currentLevel),
+    [currentLevel],
+  );
 
   return (
     <StoreAccountLayout title="会员权益">
@@ -95,7 +98,7 @@ export default function MemberBenefits() {
                       {currentLevel?.name || "普通会员"}
                     </h1>
                     <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--theme-text-muted-on-surface)]">
-                      {currentLevel?.description || buildBenefitSummaryFromBenefits(currentBenefits)}
+                      {currentLevel?.description || buildBenefitSummaryFromBenefits(currentLevel?.benefits || [], currentLevel)}
                     </p>
                   </div>
                   <span className="inline-flex shrink-0 items-center gap-1 self-start rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]">
@@ -131,18 +134,27 @@ export default function MemberBenefits() {
         <section className={cn(CARD_CLASS, "p-4")}>
           <h2 className="text-base font-semibold text-[var(--theme-text)]">当前等级权益</h2>
           {loading ? (
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="min-h-[88px] animate-pulse rounded-2xl bg-[var(--theme-bg)]" />
               ))}
             </div>
-          ) : currentBenefits.length === 0 ? (
-            <p className="mt-3 text-sm text-[var(--theme-text-muted-on-surface)]">暂无配置权益，请联系客服了解详情。</p>
           ) : (
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {currentBenefits.map((benefit) => (
-                <BenefitTileCard key={`${benefit.type}-${benefit.name}`} benefit={benefit} />
-              ))}
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {benefitHighlightTiles.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className={cn("min-w-0 rounded-2xl p-3", MEMBER_BENEFIT_TILE_BG)}>
+                    <Icon size={18} className="shrink-0 text-[var(--theme-primary)]" />
+                    <p className="mt-2 line-clamp-1 text-sm font-semibold text-[var(--theme-text)]">{item.label}</p>
+                    {item.value ? (
+                      <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
+                        {item.value}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
@@ -178,7 +190,7 @@ export default function MemberBenefits() {
                       ) : null}
                     </div>
                     <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
-                      {buildBenefitSummaryFromBenefits(level.benefits || [])}
+                      {buildBenefitSummaryFromBenefits(level.benefits || [], level)}
                     </p>
                     <p className="mt-2 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)]">
                       升级条件：{formatLevelRequirement(level)}
@@ -191,22 +203,5 @@ export default function MemberBenefits() {
         </section>
       </div>
     </StoreAccountLayout>
-  );
-}
-
-function BenefitTileCard({ benefit }: { benefit: MemberBenefit }) {
-  const Icon = benefitIcon(benefit.type);
-  return (
-    <div className={cn("flex min-w-0 gap-3 rounded-2xl p-3", MEMBER_BENEFIT_TILE_BG)}>
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-surface))] text-[var(--theme-primary)]">
-        <Icon size={20} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="line-clamp-1 block text-sm font-semibold text-[var(--theme-text)]">{benefit.name}</span>
-        <span className="mt-1 line-clamp-3 block text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
-          {benefit.description}
-        </span>
-      </span>
-    </div>
   );
 }

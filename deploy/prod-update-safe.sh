@@ -60,12 +60,22 @@ else
   npm install --no-audit --fund=false
   npm run build
   cd "$PROJECT_DIR"
+  ASSET_BACKUP=""
+  if [[ -d "$PROJECT_DIR/public-frontend/assets" ]]; then
+    ASSET_BACKUP="$(mktemp -d)"
+    cp -a "$PROJECT_DIR/public-frontend/assets/." "$ASSET_BACKUP/" 2>/dev/null || true
+  fi
   mkdir -p "$PROJECT_DIR/public-frontend"
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --delete "$PROJECT_DIR/$FRONTEND_SUB/dist/" "$PROJECT_DIR/public-frontend/"
   else
     rm -rf "${PROJECT_DIR:?}/public-frontend/"*
     cp -a "$PROJECT_DIR/$FRONTEND_SUB/dist/." "$PROJECT_DIR/public-frontend/"
+  fi
+  if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
+    mkdir -p "$PROJECT_DIR/public-frontend/assets"
+    cp -an "$ASSET_BACKUP/." "$PROJECT_DIR/public-frontend/assets/" 2>/dev/null || true
+    rm -rf "$ASSET_BACKUP"
   fi
   echo "public-frontend synced."
 fi

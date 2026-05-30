@@ -52,8 +52,18 @@ npm ci
 npm run build
 
 echo "==> Syncing frontend dist"
+ASSET_BACKUP=""
+if [[ -d "$PUBLIC_FRONTEND/assets" ]]; then
+  ASSET_BACKUP="$(mktemp -d)"
+  cp -a "$PUBLIC_FRONTEND/assets/." "$ASSET_BACKUP/" 2>/dev/null || true
+fi
 mkdir -p "$PUBLIC_FRONTEND"
 rsync -a --delete "$FRONTEND_DIR/dist/" "$PUBLIC_FRONTEND/"
+if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
+  mkdir -p "$PUBLIC_FRONTEND/assets"
+  cp -an "$ASSET_BACKUP/." "$PUBLIC_FRONTEND/assets/" 2>/dev/null || true
+  rm -rf "$ASSET_BACKUP"
+fi
 
 echo "==> Reloading PM2 app $PM2_APP"
 cd "$PROJECT_DIR/server"

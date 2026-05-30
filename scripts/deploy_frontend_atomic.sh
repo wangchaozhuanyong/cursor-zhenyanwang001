@@ -8,6 +8,31 @@ PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/damatong/dist}"
 ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/damatong/admin-dist}"
 export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 
+sync_static_preserve_assets() {
+  local src_dir="$1"
+  local dest_dir="$2"
+  local backup=""
+
+  if [ -d "$dest_dir/assets" ]; then
+    backup="$(mktemp -d)"
+    cp -a "$dest_dir/assets/." "$backup/" 2>/dev/null || true
+  fi
+
+  mkdir -p "$dest_dir"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete "${src_dir%/}/" "${dest_dir%/}/"
+  else
+    rm -rf "${dest_dir:?}/"*
+    cp -a "${src_dir%/}/." "$dest_dir/"
+  fi
+
+  if [ -n "$backup" ] && [ -d "$backup" ]; then
+    mkdir -p "$dest_dir/assets"
+    cp -an "$backup/." "$dest_dir/assets/" 2>/dev/null || true
+    rm -rf "$backup"
+  fi
+}
+
 echo "[atomic-deploy] root: $ROOT_DIR"
 cd "$FRONT_DIR"
 
@@ -38,15 +63,8 @@ if [ ! -f admin-dist/admin-index.html ]; then
 fi
 
 echo "[atomic-deploy] syncing static roots ..."
-mkdir -p "$PUBLIC_FRONTEND" "$ADMIN_PUBLIC_FRONTEND"
-if command -v rsync >/dev/null 2>&1; then
-  rsync -a --delete dist/ "$PUBLIC_FRONTEND/"
-  rsync -a --delete admin-dist/ "$ADMIN_PUBLIC_FRONTEND/"
-else
-  rm -rf "${PUBLIC_FRONTEND:?}/"* "${ADMIN_PUBLIC_FRONTEND:?}/"*
-  cp -a dist/. "$PUBLIC_FRONTEND/"
-  cp -a admin-dist/. "$ADMIN_PUBLIC_FRONTEND/"
-fi
+sync_static_preserve_assets dist "$PUBLIC_FRONTEND"
+sync_static_preserve_assets admin-dist "$ADMIN_PUBLIC_FRONTEND"
 test -f "$PUBLIC_FRONTEND/index.html"
 test -f "$ADMIN_PUBLIC_FRONTEND/admin-index.html"
 

@@ -7,10 +7,14 @@ import { AnimatedSection } from "@/modules/micro-interactions";
 
 function formatCountdown(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  const days = Math.floor(s / 86400);
+  const hours = Math.floor((s % 86400) / 3600);
+  const minsRaw = Math.floor((s % 3600) / 60);
+  const mins = s > 0 && days === 0 && hours === 0 ? Math.max(1, minsRaw) : minsRaw;
+
+  if (days > 0) return `${days}天 ${hours}小时 ${mins}分钟`;
+  if (hours > 0) return `${hours}小时 ${mins}分钟`;
+  return `${mins}分钟`;
 }
 
 export default function FlashSaleSection({ delay = 0 }: { delay?: number }) {
@@ -70,7 +74,7 @@ export default function FlashSaleSection({ delay = 0 }: { delay?: number }) {
             <p className="truncate text-xs text-[var(--theme-text-muted)]">{activity.subtitle}</p>
           ) : null}
         </div>
-        <div className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--theme-primary)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--theme-primary)]">
+        <div className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-[var(--theme-primary)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--theme-primary)]">
           <Clock size={14} />
           {formatCountdown(countdown)}
         </div>

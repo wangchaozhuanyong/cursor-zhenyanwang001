@@ -38,7 +38,18 @@ sync_public_static() {
   local src="${src_dir%/}/"
   local dest="${dest_dir%/}"
   local rsync_flags=(-r --delete)
+  local asset_backup=""
+  if [[ -d "$dest/assets" ]]; then
+    asset_backup="$(mktemp -d)"
+    cp -a "$dest/assets/." "$asset_backup/" 2>/dev/null || true
+  fi
+
+  local needs_sudo=0
   if [[ "$dest" == /var/www/* ]] && { [[ ! -e "$dest" ]] || [[ ! -w "$dest" ]]; }; then
+    needs_sudo=1
+  fi
+
+  if [[ "$needs_sudo" == "1" ]]; then
     sudo mkdir -p "$dest"
     sudo rsync "${rsync_flags[@]}" "$src" "$dest/"
     if id www-data &>/dev/null; then
@@ -52,6 +63,20 @@ sync_public_static() {
       rm -rf "${dest:?}/"*
       cp -a "$src." "$dest/"
     fi
+  fi
+
+  if [[ -n "$asset_backup" && -d "$asset_backup" ]]; then
+    if [[ "$needs_sudo" == "1" ]]; then
+      sudo mkdir -p "$dest/assets"
+      sudo cp -an "$asset_backup/." "$dest/assets/" 2>/dev/null || true
+      if id www-data &>/dev/null; then
+        sudo chown -R www-data:www-data "$dest/assets"
+      fi
+    else
+      mkdir -p "$dest/assets"
+      cp -an "$asset_backup/." "$dest/assets/" 2>/dev/null || true
+    fi
+    rm -rf "$asset_backup"
   fi
 }
 

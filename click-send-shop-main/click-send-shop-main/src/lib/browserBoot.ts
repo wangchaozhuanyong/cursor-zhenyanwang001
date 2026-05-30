@@ -1,7 +1,14 @@
 import { getChinaBrowserCompatHint, isLikelyLegacyChinaBrowserMode } from "@/utils/chinaBrowser";
 
 const CHUNK_RECOVERY_STORAGE_KEY = "app:chunk-load-recovery";
-const CHUNK_RECOVERY_COOLDOWN_MS = 15_000;
+const CHUNK_RECOVERY_AUTO_RELOAD_WINDOW_MS = 10 * 60 * 1000;
+
+type ChunkRecoveryState = {
+  app?: string;
+  firstAt?: number;
+  lastAt?: number;
+  attempts?: number;
+};
 
 /**
  * 国产浏览器 / 旧 WebView 启动兼容：在应用主包执行前安装 shim，避免首屏脚本抛错导致 React 未挂载。
@@ -53,20 +60,58 @@ export function recoverFromChunkLoadError(appName = "app"): boolean {
 
   try {
     const now = Date.now();
-    const raw = window.sessionStorage.getItem(CHUNK_RECOVERY_STORAGE_KEY);
-    const last = raw ? JSON.parse(raw) as { app?: string; at?: number } : null;
-    const recentlyReloaded =
-      last?.app === appName && typeof last.at === "number" && now - last.at < CHUNK_RECOVERY_COOLDOWN_MS;
+    const last = readChunkRecoveryState();
+    const sameRecoveryWindow =
+      last?.app === appName &&
+      typeof last.firstAt === "number" &&
+      now - last.firstAt < CHUNK_RECOVERY_AUTO_RELOAD_WINDOW_MS;
+    const attempts = sameRecoveryWindow ? Math.max(0, Number(last?.attempts || 0)) : 0;
+    const firstAt = sameRecoveryWindow && typeof last?.firstAt === "number" ? last.firstAt : now;
+    const waitForManualRefresh = attempts >= 1;
 
-    showChunkRecoveryNotice(recentlyReloaded);
-    if (recentlyReloaded) return true;
+    writeChunkRecoveryState({
+      app: appName,
+      firstAt,
+      lastAt: now,
+      attempts: attempts + 1,
+    });
 
-    window.sessionStorage.setItem(CHUNK_RECOVERY_STORAGE_KEY, JSON.stringify({ app: appName, at: now }));
-    window.setTimeout(() => window.location.reload(), 300);
+    showChunkRecoveryNotice(waitForManualRefresh);
+    if (waitForManualRefresh) return true;
+
+    window.setTimeout(forceReloadWithCacheBuster, 300);
     return true;
   } catch {
-    window.location.reload();
+    showChunkRecoveryNotice(true);
     return true;
+  }
+}
+
+function readChunkRecoveryState(): ChunkRecoveryState | null {
+  try {
+    const raw = window.sessionStorage.getItem(CHUNK_RECOVERY_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ChunkRecoveryState;
+  } catch {
+    return null;
+  }
+}
+
+function writeChunkRecoveryState(state: ChunkRecoveryState): void {
+  try {
+    window.sessionStorage.setItem(CHUNK_RECOVERY_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // ignore
+  }
+}
+
+function forceReloadWithCacheBuster(): void {
+  try {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set("__fresh", String(Date.now()));
+    window.location.replace(nextUrl.toString());
+  } catch {
+    window.location.reload();
   }
 }
 
@@ -89,8 +134,7 @@ function stringifyError(reason: unknown): string {
 
 function showChunkRecoveryNotice(waitForManualRefresh: boolean): void {
   try {
-    const existing = document.getElementById("chunk-load-recovery-notice");
-    if (existing) return;
+    document.getElementById("chunk-load-recovery-notice")?.remove();
 
     const el = document.createElement("div");
     el.id = "chunk-load-recovery-notice";
@@ -116,7 +160,7 @@ function showChunkRecoveryNotice(waitForManualRefresh: boolean): void {
         </button>
       </div>
     `;
-    el.querySelector("button")?.addEventListener("click", () => window.location.reload());
+    el.querySelector("button")?.addEventListener("click", forceReloadWithCacheBuster);
     document.body.appendChild(el);
   } catch {
     // ignore

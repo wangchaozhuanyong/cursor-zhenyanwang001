@@ -29,7 +29,7 @@ import {
   AdminLogin, AdminAccount, AdminAccounts, Dashboard,
   AdminProducts, AdminProductForm, AdminCategories, AdminInventory, AdminProductTags, AdminBanners,
   AdminOrders, AdminCheckoutAbandonments, AdminOrderDetail, AdminReturns, AdminShipping,
-  AdminUsers, AdminUserDetail, AdminMemberLevels, AdminInvites,
+  AdminUsers, AdminUserDetail, AdminUserSecurity, AdminMemberLevels, AdminInvites,
   AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
   AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
@@ -134,6 +134,7 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/marketing/points"), titleKey: "routeTitles.points" },
       { test: (p) => p.startsWith("/admin/marketing/rewards"), titleKey: "routeTitles.rewards" },
       { test: (p) => p.startsWith("/admin/marketing/invites"), titleKey: "routeTitles.invites" },
+      { test: (p) => p.startsWith("/admin/user-security"), titleKey: "routeTitles.users" },
       { test: (p) => p.startsWith("/admin/users"), titleKey: "routeTitles.users" },
       { test: (p) => p.startsWith("/admin/member-levels"), titleKey: "routeTitles.memberLevels" },
       { test: (p) => p.startsWith("/admin/orders/unfinished"), titleKey: "routeTitles.unfinishedOrders" },
@@ -207,6 +208,7 @@ export function AdminAppRoutes() {
                   <Route path="payments/events" element={<CapabilityRoute enabled={capabilities.onlinePaymentEnabled}><AdminPaymentEvents /></CapabilityRoute>} />
                   <Route path="payments/reconciliations" element={<CapabilityRoute enabled={capabilities.onlinePaymentEnabled}><AdminPaymentReconciliations /></CapabilityRoute>} />
                   <Route path="users" element={<AdminUsers />} />
+                  <Route path="user-security" element={<AdminUserSecurity />} />
                   <Route path="users/:id" element={<AdminUserDetail />} />
                   <Route path="member-levels" element={<CapabilityRoute enabled={capabilities.memberLevelEnabled}><AdminMemberLevels /></CapabilityRoute>} />
                   <Route path="invites" element={<Navigate to="/admin/marketing/invites" replace />} />

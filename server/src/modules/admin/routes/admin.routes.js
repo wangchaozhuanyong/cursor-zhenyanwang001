@@ -139,6 +139,12 @@ router.use([
   '/points/expire-run',
   '/reports',
   '/exports',
+  '/user-security/risk-ips/block',
+  '/user-security/risk-ips/unblock',
+  '/user-security/risk-devices/block',
+  '/user-security/risk-devices/unblock',
+  '/user-security/users/:id/revoke-sessions',
+  '/user-security/users/:id/unprotect',
 ], highCostApiLimiter);
 
 /* ---- RBAC ---- */

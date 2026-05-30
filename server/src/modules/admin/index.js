@@ -8,6 +8,7 @@ const adminEventService = require('./service/adminEvent.service');
 const adminEventBus = require('./service/adminEventBus.service');
 const adminEventRepo = require('./repository/adminEvent.repository');
 const adminSiteSettingsRepo = require('./repository/adminSiteSettings.repository');
+const adminUserSecurityRepo = require('./repository/adminUserSecurity.repository');
 
 const router = Router();
 
@@ -22,6 +23,9 @@ const router = Router();
   listActiveEventRecordsByTypes: adminEventRepo.listActiveRecordsByTypes,
   selectSiteSettingValue: adminSiteSettingsRepo.selectSettingValue,
   upsertSiteSetting: adminSiteSettingsRepo.upsertSetting,
+  isUserSecurityIpBlocked: adminUserSecurityRepo.isIpBlocked,
+  isUserSecurityDeviceBlocked: adminUserSecurityRepo.isDeviceBlocked,
+  insertUserSecurityEvent: adminUserSecurityRepo.insertSecurityEvent,
 };
 
 router.use('/admin', require('./routes/admin.routes'));

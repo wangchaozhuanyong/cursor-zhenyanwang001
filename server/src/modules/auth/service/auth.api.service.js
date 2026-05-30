@@ -4,8 +4,8 @@ async function register(body) {
   return authService.register(body);
 }
 
-async function login(body) {
-  return authService.login(body);
+async function login(body, req) {
+  return authService.login(body, req);
 }
 
 module.exports = {

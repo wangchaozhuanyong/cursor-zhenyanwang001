@@ -206,9 +206,10 @@ export const navItemsRaw: NavItem[] = [
     icon: Users,
     labelKey: "nav.customerCenter",
     path: "/admin/users",
-    permission: { anyOf: ["user.view", "member_level.manage", "review.view", "review.manage"] },
+    permission: { anyOf: ["user.view", "member_level.manage", "review.view", "review.manage", "event.view", "event.manage"] },
     children: [
       { icon: Users, labelKey: "nav.userManage", path: "/admin/users", permission: "user.view" },
+      { icon: Shield, label: "用户安全", path: "/admin/user-security", permission: { anyOf: ["user.view", "event.view", "event.manage"] } },
       { icon: Crown, labelKey: "nav.memberLevels", path: "/admin/member-levels", permission: "member_level.manage", capability: "memberLevelEnabled" },
       { icon: MessageSquareMore, labelKey: "nav.reviews", path: "/admin/reviews", permission: { anyOf: ["review.view", "review.manage"] }, capability: "reviewEnabled" },
     ],

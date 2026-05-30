@@ -45,11 +45,46 @@ const categories = [
 ];
 
 const banners = [
-  { id: `${PREFIX}-banner-01`, title: 'Preview hero: platform launch', image: images[0], link: '/products', sort: 1 },
-  { id: `${PREFIX}-banner-02`, title: 'Preview hero: study and visa', image: images[1], link: '/products', sort: 2 },
-  { id: `${PREFIX}-banner-03`, title: 'Preview hero: local goods', image: images[2], link: '/products', sort: 3 },
-  { id: `${PREFIX}-banner-04`, title: 'Preview hero: home renovation', image: images[3], link: '/products', sort: 4 },
-  { id: `${PREFIX}-banner-05`, title: 'Preview hero: support service', image: images[4], link: '/content/contact-us', sort: 5 },
+  {
+    id: `${PREFIX}-banner-01`,
+    title: '大马通平台总览',
+    description: '大马通面向马来西亚中文用户的一站式服务入口。',
+    image: images[0],
+    link: '',
+    sort: 1,
+  },
+  {
+    id: `${PREFIX}-banner-02`,
+    title: '签证留学第二家园',
+    description: '适合需要了解签证、留学、第二家园服务的用户。',
+    image: images[1],
+    link: '',
+    sort: 2,
+  },
+  {
+    id: `${PREFIX}-banner-03`,
+    title: '本地优选与中国好物',
+    description: '集合零食饮料、日用好物与精选商品。',
+    image: images[2],
+    link: '',
+    sort: 3,
+  },
+  {
+    id: `${PREFIX}-banner-04`,
+    title: '商业装修服务',
+    description: '面向门店、办公室和商业空间的装修服务。',
+    image: images[3],
+    link: '',
+    sort: 4,
+  },
+  {
+    id: `${PREFIX}-banner-05`,
+    title: '本地中文客服与订单支持',
+    description: '提供中文咨询、下单、售后与订单跟进。',
+    image: images[4],
+    link: '',
+    sort: 5,
+  },
 ];
 
 const navItems = [
@@ -173,7 +208,7 @@ async function seedBanners() {
     const values = [item.id, item.title, item.image, item.link, item.sort, 1, 'published', new Date()];
     if (hasDescription) {
       columns.push('description');
-      values.push('Local preview banner for visual layout checks.');
+      values.push(item.description || 'Local preview banner for visual layout checks.');
     }
     const updates = columns
       .filter((column) => column !== 'id')

@@ -21,6 +21,7 @@ export const AdminShipping = lazy(() => import("@/modules/admin/pages/order/Admi
 
 export const AdminUsers = lazy(() => import("@/modules/admin/pages/user/AdminUsers"));
 export const AdminUserDetail = lazy(() => import("@/modules/admin/pages/user/AdminUserDetail"));
+export const AdminUserSecurity = lazy(() => import("@/modules/admin/pages/user/AdminUserSecurity"));
 export const AdminMemberLevels = lazy(() => import("@/modules/admin/pages/user/AdminMemberLevels"));
 export const AdminInvites = lazy(() => import("@/modules/admin/pages/user/AdminInvites"));
 

@@ -44,7 +44,7 @@ async function sendOtp(body, reqMeta) {
   return sendOtpWithPurpose(body, reqMeta, OTP_PURPOSE_LOGIN);
 }
 
-async function loginWithOtp(body) {
+async function loginWithOtp(body, reqMeta = {}) {
   const { phone, countryCode, code } = body;
   const normalizedPhone = normalizeIntlPhone(phone, countryCode);
   if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
@@ -92,7 +92,11 @@ async function loginWithOtp(body) {
     if (!user) throw new AuthError('登录失败，请稍后再试');
   }
 
-  return getAuthService().issueLoginForUserId(user.id, { loginMethod: 'phone_sms' });
+  return getAuthService().issueLoginForUserId(user.id, {
+    loginMethod: 'phone_sms',
+    ip: reqMeta.ip || null,
+    userAgent: reqMeta.userAgent || null,
+  });
 }
 
 async function sendOtpForWechatBind(body, reqMeta) {
@@ -200,4 +204,3 @@ module.exports = {
   OTP_PURPOSE_LOGIN,
   OTP_PURPOSE_WECHAT_BIND,
 };
-

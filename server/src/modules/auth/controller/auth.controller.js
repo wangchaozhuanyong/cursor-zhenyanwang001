@@ -18,7 +18,7 @@ exports.register = asyncRoute(async (req, res) => {
 });
 
 exports.login = asyncRoute(async (req, res) => {
-  const result = await authApiService.login(req.body);
+  const result = await authApiService.login(req.body, req);
   setAuthCookies(req, res, result.data.token);
   res.success(result.data, result.message);
 });
@@ -143,7 +143,10 @@ exports.otpSend = asyncRoute(async (req, res) => {
 });
 
 exports.otpLogin = asyncRoute(async (req, res) => {
-  const result = await otpService.loginWithOtp(req.body);
+  const result = await otpService.loginWithOtp(req.body, {
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+  });
   setAuthCookies(req, res, result.data.token);
   res.success(result.data, result.message);
 });

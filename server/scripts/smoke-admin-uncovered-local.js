@@ -460,6 +460,48 @@ async function cleanupOldSmokeRoles() {
   }
 }
 
+async function testUserSecurityWrites() {
+  const ipTail = 10 + (Date.now() % 200);
+  const testIp = `203.0.113.${ipTail}`;
+  const testDeviceId = crypto.createHash('sha256').update(`${RUN_ID}:risk-device`).digest('hex');
+  const reason = `${RUN_ID} user-security smoke`;
+
+  state.cleanup.push({
+    name: `user-security risk ip ${testIp}`,
+    fn: () => api('POST', '/admin/user-security/risk-ips/unblock', { ip: testIp, reason: `${RUN_ID} cleanup` }),
+  });
+  state.cleanup.push({
+    name: `user-security risk device ${testDeviceId}`,
+    fn: () => api('POST', '/admin/user-security/risk-devices/unblock', { deviceId: testDeviceId, reason: `${RUN_ID} cleanup` }),
+  });
+
+  await run('用户安全：封禁风险 IP', () => api('POST', '/admin/user-security/risk-ips/block', { ip: testIp, reason }));
+  await run('用户安全：封禁风险设备', () => api('POST', '/admin/user-security/risk-devices/block', {
+    deviceId: testDeviceId,
+    deviceLabel: 'Codex smoke test device',
+    reason,
+  }));
+
+  await run('用户安全：风险 IP 可查询', async () => {
+    const data = await api('GET', `/admin/user-security/risk-ips?keyword=${encodeURIComponent(testIp)}&page=1&pageSize=5`);
+    const list = listFrom(data);
+    if (!list.some((row) => row.ip === testIp && row.status === 'blocked')) {
+      throw new Error(`Blocked IP ${testIp} was not found in risk IP list.`);
+    }
+  });
+
+  await run('用户安全：风险设备可查询', async () => {
+    const data = await api('GET', `/admin/user-security/risk-devices?keyword=${encodeURIComponent(testDeviceId)}&page=1&pageSize=5`);
+    const list = listFrom(data);
+    if (!list.some((row) => row.device_id === testDeviceId && row.status === 'blocked')) {
+      throw new Error(`Blocked device ${testDeviceId} was not found in risk device list.`);
+    }
+  });
+
+  await run('用户安全：解封风险 IP', () => api('POST', '/admin/user-security/risk-ips/unblock', { ip: testIp, reason: `${RUN_ID} unblock` }));
+  await run('用户安全：解封风险设备', () => api('POST', '/admin/user-security/risk-devices/unblock', { deviceId: testDeviceId, reason: `${RUN_ID} unblock` }));
+}
+
 async function testRbacWrites() {
   await ensureSensitiveAction('rbac_admin');
   const code = `smoke_${Date.now().toString(36)}`;
@@ -854,6 +896,7 @@ async function main() {
   try {
     await cleanupOldSmokeRoles();
     await testReadOnlyEndpoints();
+    await testUserSecurityWrites();
     await testRbacWrites();
     await testCategoryWrites();
     await testBannerWrites();

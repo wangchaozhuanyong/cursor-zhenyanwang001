@@ -27,6 +27,109 @@ const { POINTS_ACTION } = require('../../../constants/pointsActions');
 
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 
+function getAdminApi() {
+  return /** @type {any} */ (require('../../admin')).api || {};
+}
+
+function getReqHeader(req, name) {
+  if (!req) return '';
+  if (typeof req.get === 'function') return req.get(name) || '';
+  const headers = req.headers && typeof req.headers === 'object' ? req.headers : {};
+  return headers[String(name).toLowerCase()] || headers[name] || '';
+}
+
+function getReqIp(req) {
+  if (!req) return '';
+  const xf = getReqHeader(req, 'x-forwarded-for');
+  const raw = req.ip || (typeof xf === 'string' ? xf.split(',')[0].trim() : '') || req.socket?.remoteAddress || '';
+  return String(raw || '').slice(0, 45);
+}
+
+function hashUserAgent(userAgent) {
+  if (!userAgent || typeof userAgent !== 'string') return null;
+  return crypto.createHash('sha256').update(userAgent, 'utf8').digest('hex');
+}
+
+function buildLoginMeta(body = {}, req = null) {
+  const userAgent = String(getReqHeader(req, 'user-agent') || body.userAgent || body.user_agent || '').slice(0, 500);
+  const explicitDeviceId = String(
+    body.deviceId
+      || body.device_id
+      || getReqHeader(req, 'x-device-id')
+      || '',
+  ).trim();
+  return {
+    ip: getReqIp(req) || body.ip || null,
+    userAgent: userAgent || null,
+    deviceId: explicitDeviceId || hashUserAgent(userAgent),
+  };
+}
+
+async function safeIsIpBlocked(ip) {
+  try {
+    const fn = getAdminApi().isUserSecurityIpBlocked;
+    return typeof fn === 'function' ? await fn(ip) : false;
+  } catch (err) {
+    if (err?.code === 'ER_NO_SUCH_TABLE') return false;
+    throw err;
+  }
+}
+
+async function safeIsDeviceBlocked(deviceId) {
+  try {
+    const fn = getAdminApi().isUserSecurityDeviceBlocked;
+    return typeof fn === 'function' ? await fn(deviceId) : false;
+  } catch (err) {
+    if (err?.code === 'ER_NO_SUCH_TABLE') return false;
+    throw err;
+  }
+}
+
+async function safeRecordSecurityEvent(event) {
+  try {
+    const fn = getAdminApi().insertUserSecurityEvent;
+    if (typeof fn !== 'function') return;
+    await fn({
+      id: generateId(),
+      ...event,
+    });
+  } catch (err) {
+    if (err?.code === 'ER_NO_SUCH_TABLE') return;
+    throw err;
+  }
+}
+
+async function assertLoginRiskAllowed({ userId, loginMethod, ip, deviceId, userAgent }) {
+  if (ip && await safeIsIpBlocked(ip)) {
+    await safeRecordSecurityEvent({
+      userId,
+      eventType: 'login_blocked_by_ip',
+      severity: 'high',
+      title: '登录被风险 IP 拦截',
+      description: '该 IP 已被后台封禁',
+      ip,
+      deviceId,
+      userAgent,
+      metadata: { loginMethod },
+    });
+    throw new AuthError('当前登录 IP 已被限制，请联系客服');
+  }
+  if (deviceId && await safeIsDeviceBlocked(deviceId)) {
+    await safeRecordSecurityEvent({
+      userId,
+      eventType: 'login_blocked_by_device',
+      severity: 'high',
+      title: '登录被风险设备拦截',
+      description: '该设备已被后台封禁',
+      ip,
+      deviceId,
+      userAgent,
+      metadata: { loginMethod },
+    });
+    throw new AuthError('当前登录设备已被限制，请联系客服');
+  }
+}
+
 function hashResetToken(token) {
   return crypto.createHash('sha256').update(String(token)).digest('hex');
 }
@@ -101,7 +204,7 @@ async function register(body) {
   return { data: { token, userId: id }, message: '注册成功' };
 }
 
-async function login(body) {
+async function login(body, req) {
   const phone = body.phone || body.username;
   const countryCode = body.countryCode;
   const { password } = body;
@@ -134,7 +237,10 @@ async function login(body) {
   }
   if (!user) throw new AuthError('手机号或密码不正确');
 
-  return issueLoginForUserId(user.id, { loginMethod: 'phone_password' });
+  return issueLoginForUserId(user.id, {
+    loginMethod: 'phone_password',
+    ...buildLoginMeta(body, req),
+  });
 }
 
 function buildLoginResult(userRow) {
@@ -161,15 +267,19 @@ function buildLoginResult(userRow) {
 async function issueLoginForUserId(userId, options = {}) {
   const row = await repo.selectRefreshVersion(userId);
   if (!row) throw new AuthError('登录状态无效，请重新登录');
-  await repo.updateLastLogin(userId);
 
   const loginMethod = options.loginMethod;
   if (loginMethod) {
-    const crypto = require('crypto');
-    let uaHash = null;
-    if (options.userAgent && typeof options.userAgent === 'string') {
-      uaHash = crypto.createHash('sha256').update(options.userAgent, 'utf8').digest('hex');
-    }
+    const uaHash = hashUserAgent(options.userAgent);
+    const deviceId = options.deviceId || uaHash;
+    await assertLoginRiskAllowed({
+      userId,
+      loginMethod,
+      ip: options.ip || null,
+      deviceId,
+      userAgent: options.userAgent || null,
+    });
+    await repo.updateLastLogin(userId);
     await repo.insertLoginAudit({
       id: generateId(),
       userId,
@@ -177,6 +287,8 @@ async function issueLoginForUserId(userId, options = {}) {
       ip: options.ip || null,
       uaHash,
     });
+  } else {
+    await repo.updateLastLogin(userId);
   }
 
   return buildLoginResult(row);

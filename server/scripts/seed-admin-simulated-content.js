@@ -727,40 +727,62 @@ async function seedProducts() {
 }
 
 async function seedBannersAndHomeOps() {
+  const cleanBannerImages = [
+    '/assets/home-banners/home-hero-01-platform-bg.webp',
+    '/assets/home-banners/home-hero-02-visa-study-bg.webp',
+    '/assets/home-banners/home-hero-03-local-goods-bg.webp',
+    '/assets/home-banners/home-hero-04-renovation-bg.webp',
+    '/assets/home-banners/home-hero-05-support-bg.webp',
+  ];
+  const legacyPreviewBannerTitles = [
+    '本地预览：首页主视觉',
+    '本地预览：马来西亚配送',
+    '本地预览：新人优惠',
+    '本地预览：企业采购',
+  ];
   const banners = [
     {
-      title: '本地预览：首页主视觉',
-      description: '这是一条通过后台接口写入的本地 Banner，用于测试首页布局。',
-      image: imageUrl(),
-      link: '/products',
-      sort_order: -100,
+      title: '大马通平台总览',
+      description: '大马通面向马来西亚中文用户的一站式服务入口。',
+      image: cleanBannerImages[0],
+      link: '',
+      sort_order: 1,
       enabled: true,
       publish_status: 'published',
     },
     {
-      title: '本地预览：马来西亚配送',
-      description: '测试英文地址和中文文案混排：Kuala Lumpur, Selangor, Penang。',
-      image: imageUrl(),
-      link: '/categories',
-      sort_order: -90,
+      title: '签证留学第二家园',
+      description: '适合需要了解签证、留学、第二家园服务的用户。',
+      image: cleanBannerImages[1],
+      link: '',
+      sort_order: 2,
       enabled: true,
       publish_status: 'published',
     },
     {
-      title: '本地预览：新人优惠',
-      description: '用于测试优惠券和活动入口。',
-      image: imageUrl(),
-      link: '/coupons',
-      sort_order: -80,
+      title: '本地优选与中国好物',
+      description: '集合零食饮料、日用好物与精选商品。',
+      image: cleanBannerImages[2],
+      link: '',
+      sort_order: 3,
       enabled: true,
       publish_status: 'published',
     },
     {
-      title: '本地预览：企业采购',
-      description: '用于测试企业采购页面引导。',
-      image: imageUrl(),
-      link: '/content/local-preview-guide',
-      sort_order: -70,
+      title: '商业装修服务',
+      description: '面向门店、办公室和商业空间的装修服务。',
+      image: cleanBannerImages[3],
+      link: '',
+      sort_order: 4,
+      enabled: true,
+      publish_status: 'published',
+    },
+    {
+      title: '本地中文客服与订单支持',
+      description: '提供中文咨询、下单、售后与订单跟进。',
+      image: cleanBannerImages[4],
+      link: '',
+      sort_order: 5,
       enabled: true,
       publish_status: 'published',
     },
@@ -768,6 +790,12 @@ async function seedBannersAndHomeOps() {
   for (const payload of banners) {
     const banner = await ensureBanner(payload);
     state.banners[payload.title] = banner;
+  }
+  const existingBanners = await api('GET', '/admin/banners');
+  for (const item of existingBanners || []) {
+    if (legacyPreviewBannerTitles.includes(item.title)) {
+      await api('DELETE', `/admin/banners/${item.id}`);
+    }
   }
 
   const navItems = [

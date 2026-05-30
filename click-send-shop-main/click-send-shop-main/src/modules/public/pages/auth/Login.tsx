@@ -289,6 +289,8 @@ export default function Login() {
   }, [location.search, navigate, from, fromState]);
 
   const loading = authStore.loading;
+  const submitLabel = mode === "login" ? "登录" : "注册";
+  const submitLoadingLabel = mode === "login" ? "登录中..." : "注册中...";
 
   const handleSendOtp = async () => {
     if (!smsOtpLoginEnabled) {
@@ -317,6 +319,7 @@ export default function Login() {
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
     setFieldErrors({});
     setFormError("");
     if (mode === "register" && !hasLockedInviteCode && !nickname.trim()) {
@@ -691,17 +694,18 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl btn-theme-price py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+            aria-busy={loading || undefined}
+            className="w-full min-h-12 rounded-2xl btn-theme-price px-4 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
           >
             {loading ? (
-              <span className="flex items-center justify-center gap-2">
+              <span className="flex min-w-0 items-center justify-center gap-2 whitespace-nowrap">
                 <span
                   aria-hidden="true"
                   className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"
                 />
-                处理中...
+                {submitLoadingLabel}
               </span>
-            ) : mode === "login" ? "登 录" : "注 册"}
+            ) : submitLabel}
           </button>
           </form>
         </FormFieldShake>

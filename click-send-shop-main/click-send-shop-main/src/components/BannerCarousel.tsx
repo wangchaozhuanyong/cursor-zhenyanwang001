@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
-import { getBannerContainerClassName, getBannerOverlayClassName } from "@/utils/themeVisuals";
+import { getBannerContainerClassName } from "@/utils/themeVisuals";
 import { trackEvent } from "@/services/analyticsService";
 import {
   BANNER_ASPECT_CSS,
@@ -24,6 +24,9 @@ const CROSSFADE_TRANSITION = {
   scale: { duration: 1.2, ease: "easeOut" as const },
 };
 
+const HERO_TEXT_GRADIENT =
+  "linear-gradient(90deg, color-mix(in srgb, var(--theme-surface) 96%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 88%, transparent) 38%, color-mix(in srgb, var(--theme-surface) 30%, transparent) 66%, transparent 100%)";
+
 function resolveBannerLink(link: string): string {
   const value = (link || "").trim();
   if (!value) return "";
@@ -34,7 +37,6 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   const { themeConfig: runtimeConfig } = useThemeRuntime();
   const bannerStyle = themeConfigOverride?.bannerStyle ?? runtimeConfig.bannerStyle;
   const bannerContainerClass = getBannerContainerClassName(bannerStyle);
-  const bannerOverlayClass = getBannerOverlayClassName(bannerStyle);
   const { enabled: motionEnabled } = useMotionConfig();
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
@@ -102,6 +104,9 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   if (!banner) return null;
 
   const bannerLink = resolveBannerLink(banner.link);
+  const bannerTitle = banner.title?.trim() || "";
+  const bannerDescription = banner.description?.trim() || "";
+  const hasTextLayer = Boolean(bannerTitle || bannerDescription);
   const showDots = banners.length > 1;
 
   const handleOpenBanner = () => {
@@ -116,11 +121,13 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
 
   return (
     <div
-      className={`relative overflow-hidden theme-shadow ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
+      className={`relative w-full overflow-hidden theme-shadow ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
       style={{
         aspectRatio: BANNER_ASPECT_CSS,
+        minHeight: "min(210px, max(180px, calc(100vw * 0.43)))",
+        maxHeight: "26rem",
         borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)",
       }}
       onTouchStart={handleTouchStart}
@@ -141,6 +148,8 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                 alt={alt}
                 width={BANNER_IMAGE_WIDTH}
                 height={BANNER_IMAGE_HEIGHT}
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
                 className={sharedClass}
                 animate={{
                   opacity: isActive ? 1 : 0,
@@ -162,6 +171,8 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               alt={alt}
               width={BANNER_IMAGE_WIDTH}
               height={BANNER_IMAGE_HEIGHT}
+              loading={index === 0 ? "eager" : "lazy"}
+              decoding="async"
               className={`${sharedClass} transition-[opacity,transform] duration-700 ease-in-out`}
               style={{
                 opacity: isActive ? 1 : 0,
@@ -174,8 +185,22 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
         })}
       </div>
 
-      {bannerOverlayClass ? (
-        <div className={`${bannerOverlayClass} z-10`} aria-hidden />
+      {hasTextLayer ? (
+        <>
+          <div className="pointer-events-none absolute inset-0 z-10" style={{ background: HERO_TEXT_GRADIENT }} aria-hidden />
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-[58%] max-w-[22rem] flex-col justify-center px-4 py-4 sm:w-[54%] sm:px-6 lg:w-[46%] lg:max-w-[28rem] lg:px-8">
+            {bannerTitle ? (
+              <h2 className="line-clamp-2 text-[17px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
+                {bannerTitle}
+              </h2>
+            ) : null}
+            {bannerDescription ? (
+              <p className="mt-1.5 line-clamp-2 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
+                {bannerDescription}
+              </p>
+            ) : null}
+          </div>
+        </>
       ) : null}
 
       {showDots ? (

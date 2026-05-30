@@ -25,8 +25,18 @@ const userQueryLimiter = rateLimit({
   message: { code: 429, message: '请求过于频繁，请稍后再试' },
 });
 
+/** High-cost API: reports, search suggestions, exports, batch operations. */
+const highCostApiLimiter = rateLimit({
+  windowMs: Number(process.env.HIGH_COST_API_RATE_LIMIT_WINDOW_MS) || 60 * 1000,
+  limit: Number(process.env.HIGH_COST_API_RATE_LIMIT_PER_WINDOW) || 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: clientKey,
+  message: { code: 429, message: '高成本接口请求过于频繁，请稍后再试' },
+});
+
 module.exports = {
   generalApiLimiter,
+  highCostApiLimiter,
   userQueryLimiter,
 };
-

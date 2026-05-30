@@ -466,7 +466,7 @@ export default function AdminCategories() {
   };
 
   const renderIcon = (cat: Category) => {
-    if (cat.icon_url) return <img src={cat.icon_url} alt="" className="h-12 w-12 object-contain object-center" />;
+    if (cat.icon_url) return <img src={cat.icon_url} alt={`${cat.name || "分类"} 分类图标`} className="h-12 w-12 object-contain object-center" />;
     if (cat.icon) return <span className="text-xl leading-none">{cat.icon}</span>;
     return <ImageIcon size={18} className="text-muted-foreground" />;
   };

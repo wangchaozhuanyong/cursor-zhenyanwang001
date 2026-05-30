@@ -47,6 +47,10 @@ import ProductSpecGroupsSection from "@/modules/admin/pages/product/ProductSpecG
 
 const tempId = tempVariantId;
 
+const imageAltBaseName = (name?: string) => (name || "").trim() || "商品";
+const defaultCoverImageAlt = (name?: string) => `${imageAltBaseName(name)} 封面图`;
+const defaultGalleryImageAlt = (name: string | undefined, index: number) => `${imageAltBaseName(name)} 详情图 ${index + 1}`;
+
 export default function AdminProductForm() {
   const { tText } = useAdminT();
   const { complianceType: labelComplianceType, text: L } = useAdminDisplayLabel();
@@ -90,8 +94,10 @@ export default function AdminProductForm() {
     sort_order: "",
     description: "",
     cover_image: "",
+    cover_image_alt: "",
     video_url: "",
     images: [] as string[],
+    image_alts: [] as string[],
     status: "active" as "draft" | "active" | "inactive",
     is_hot: false,
     is_new: false,
@@ -194,6 +200,8 @@ export default function AdminProductForm() {
                   },
                 ];
             const mainStockLimits = resolveStockLimitsFromProduct(data);
+            const productImages = Array.isArray(data.images) ? data.images : [];
+            const productImageAlts = Array.isArray(data.image_alts) ? data.image_alts : [];
             setForm({
               name: data.name || "",
               price: data.price?.toString() || "",
@@ -209,8 +217,10 @@ export default function AdminProductForm() {
               sort_order: data.sort_order?.toString() || "",
               description: data.description || "",
               cover_image: data.cover_image || "",
+              cover_image_alt: data.cover_image_alt || "",
               video_url: data.video_url || "",
-              images: data.images || [],
+              images: productImages,
+              image_alts: productImages.map((_, index) => productImageAlts[index] || ""),
               status: st,
               is_hot: !!data.is_hot,
               is_new: !!data.is_new,
@@ -281,9 +291,17 @@ export default function AdminProductForm() {
         return;
       }
       if (field === "cover") {
-        setForm((f) => ({ ...f, cover_image: url }));
+        setForm((f) => ({
+          ...f,
+          cover_image: url,
+          cover_image_alt: f.cover_image_alt || defaultCoverImageAlt(f.name),
+        }));
       } else {
-        setForm((f) => ({ ...f, images: [...f.images, url] }));
+        setForm((f) => ({
+          ...f,
+          images: [...f.images, url],
+          image_alts: [...f.image_alts, defaultGalleryImageAlt(f.name, f.images.length)],
+        }));
       }
       toast.success(tText("图片已上传"));
     } catch (e) {
@@ -526,8 +544,10 @@ export default function AdminProductForm() {
         sort_order: parseInt(form.sort_order, 10) || 0,
         description: form.description,
         cover_image: form.cover_image,
+        cover_image_alt: form.cover_image_alt.trim(),
         video_url: form.video_url.trim(),
         images: form.images,
+        image_alts: form.images.map((_, index) => (form.image_alts[index] || "").trim()),
         status: publish ? "active" : form.status,
         is_hot: form.is_hot,
         is_new: form.is_new,
@@ -645,7 +665,7 @@ export default function AdminProductForm() {
                     }}
                   >
                     {form.cover_image ? (
-                      <img src={form.cover_image} alt="" className="h-full w-full object-cover" />
+                      <img src={form.cover_image} alt={form.cover_image_alt || `${form.name || "商品"} 封面图`} className="h-full w-full object-cover" />
                     ) : (
                       <div className="text-center">
                         <Upload size={22} className="mx-auto text-muted-foreground" />
@@ -661,14 +681,29 @@ export default function AdminProductForm() {
                     ) : null}
                     <input disabled={uploadingCover} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "cover")} />
                   </UploadDropZone>
+                  <div className="mt-2">
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      封面图说明（alt）
+                    </label>
+                    <input
+                      value={form.cover_image_alt}
+                      onChange={(e) => setForm((f) => ({ ...f, cover_image_alt: e.target.value }))}
+                      maxLength={255}
+                      placeholder={defaultCoverImageAlt(form.name)}
+                      className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                    />
+                    <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
+                      用来给搜索引擎和读屏工具理解图片，不会显示在商品详情正文里。
+                    </p>
+                  </div>
                 </div>
                 <div className="min-w-0">
                   <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>轮播图（最多 6 张）</Tx></label>
                   <div className="flex flex-wrap gap-2">
                     {form.images.map((img, i) => (
                       <div key={i} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border">
-                        <img src={img} alt="" className="h-full w-full object-cover" />
-                        <button onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</button>
+                        <img src={img} alt={form.image_alts[i] || `${form.name || "商品"} 详情图 ${i + 1}`} className="h-full w-full object-cover" />
+                        <button onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i), image_alts: f.image_alts.filter((_, idx) => idx !== i) }))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</button>
                       </div>
                     ))}
                     {uploadingGallery && (
@@ -692,6 +727,26 @@ export default function AdminProductForm() {
                       </UploadDropZone>
                     )}
                   </div>
+                  {form.images.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {form.images.map((img, i) => (
+                        <div key={`${img}-${i}`} className="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-2">
+                          <img src={img} alt={form.image_alts[i] || defaultGalleryImageAlt(form.name, i)} className="h-12 w-12 rounded-md object-cover" />
+                          <input
+                            value={form.image_alts[i] || ""}
+                            onChange={(e) => setForm((f) => {
+                              const next = [...f.image_alts];
+                              next[i] = e.target.value;
+                              return { ...f, image_alts: next };
+                            })}
+                            maxLength={255}
+                            placeholder={defaultGalleryImageAlt(form.name, i)}
+                            className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <div className="rounded-xl border border-border bg-background/50 p-3 sm:p-4">
@@ -1150,7 +1205,7 @@ export default function AdminProductForm() {
             <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>预览</Tx></h3>
             <div className="rounded-lg border border-border p-3">
               {form.cover_image ? (
-                <img src={form.cover_image} alt="" className="mb-2 h-32 w-full rounded-md object-cover" />
+                <img src={form.cover_image} alt={form.cover_image_alt || `${form.name || "商品"} 卡片预览图`} className="mb-2 h-32 w-full rounded-md object-cover" />
               ) : (
                 <div className="mb-2 h-32 rounded-md bg-secondary" />
               )}

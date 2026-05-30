@@ -403,7 +403,7 @@ export default function AdminReviews() {
 <div className="flex items-start gap-3">
                     <input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-gold mt-1 h-5 w-5 shrink-0" />
                     {r.avatar ? (
-                      <img src={r.avatar} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                      <img src={r.avatar} alt={`${r.nickname || "用户"} 头像`} className="h-10 w-10 shrink-0 rounded-full object-cover" />
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full btn-theme-price text-xs font-bold text-primary-foreground">{(r.nickname || "?")[0]}</div>
                     )}
@@ -419,7 +419,7 @@ export default function AdminReviews() {
                       <button type="button" onClick={() => openDetail(r.id)} className="block w-full text-left text-sm text-foreground leading-relaxed hover:text-theme-price">{r.content}</button>
                       {r.images?.length > 0 && (
                         <div className="flex gap-1.5 overflow-x-auto">
-                          {r.images.map((img, i) => <img key={i} src={img} alt="" className="h-14 w-14 rounded-lg object-cover" />)}
+                          {r.images.map((img, i) => <img key={i} src={img} alt={`${r.product_name || "商品"} 评价图片 ${i + 1}`} className="h-14 w-14 rounded-lg object-cover" />)}
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground">商品：{r.product_name || "未命名商品"}</p>
@@ -656,7 +656,7 @@ export default function AdminReviews() {
                 <td className={adminTableCellClass("left", "px-3 py-3")}>
                   <div className="flex items-center gap-2">
                     {r.avatar ? (
-                      <img src={r.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
+                      <img src={r.avatar} alt={`${r.nickname || "用户"} 头像`} className="h-7 w-7 rounded-full object-cover" />
                     ) : (
                       <div className="flex h-7 w-7 items-center justify-center rounded-full btn-theme-price text-[10px] font-bold text-primary-foreground">{(r.nickname || "?")[0]}</div>
                     )}
@@ -671,14 +671,14 @@ export default function AdminReviews() {
                   {r.is_verified_purchase && <p className={`mt-0.5 text-[10px] ${THEME_TEXT_SUCCESS_SOFT}`}><Tx>已购</Tx></p>}
                   {r.images?.length > 0 && (
                     <div className="mt-1 flex gap-1">
-                      {r.images.slice(0, 3).map((img, i) => <img key={i} src={img} alt="" className="h-8 w-8 rounded object-cover" />)}
+                      {r.images.slice(0, 3).map((img, i) => <img key={i} src={img} alt={`${r.product_name || "商品"} 评价图片 ${i + 1}`} className="h-8 w-8 rounded object-cover" />)}
                       {r.images.length > 3 && <span className="text-[10px] text-muted-foreground">+{r.images.length - 3}</span>}
                     </div>
                   )}
                 </td>
                 <td className={adminTableCellClass("left", "px-3 py-3")}>
                   <div className="flex items-center gap-1.5">
-                    {r.product_cover && <img src={r.product_cover} alt="" className="h-7 w-7 rounded object-cover" />}
+                    {r.product_cover && <img src={r.product_cover} alt={`${r.product_name || "商品"} 商品图`} className="h-7 w-7 rounded object-cover" />}
                     <AdminTableCell value={r.product_name || "—"} fullText={r.product_name || ""} maxWidth="6.5rem" />
                   </div>
                 </td>
@@ -810,7 +810,7 @@ export default function AdminReviews() {
         size="xl"
       >
         {imagePreview ? (
-          <img src={imagePreview} alt="" className="mx-auto max-h-[70vh] w-auto max-w-full rounded-lg object-contain" />
+          <img src={imagePreview} alt="评价图片预览" className="mx-auto max-h-[70vh] w-auto max-w-full rounded-lg object-contain" />
         ) : null}
       </AdminResponsiveSheet>
 

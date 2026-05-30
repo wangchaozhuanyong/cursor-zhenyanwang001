@@ -49,7 +49,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
       <div className="mx-auto flex h-full w-full max-w-screen-xl items-center gap-6 px-6 lg:px-8">
         <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label={`${siteName} 首页`}>
           {logoSrc ? (
-            <img src={logoSrc} alt="" width={40} height={40} className="store-brand-logo" />
+            <img src={logoSrc} alt={`${siteName} Logo`} width={40} height={40} className="store-brand-logo" />
           ) : null}
           <span className="max-w-[10rem] truncate text-base font-bold tracking-wide text-[var(--theme-text-on-surface)]">
             {siteName}

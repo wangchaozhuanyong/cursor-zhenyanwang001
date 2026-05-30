@@ -307,6 +307,10 @@ async function getStatus(userId) {
   };
 }
 
+async function getMfaPolicy() {
+  return repo.selectMfaPolicy();
+}
+
 async function resolveRecentMfaVerifiedAt() {
   return 0;
 }
@@ -339,6 +343,8 @@ async function isTrustedDevice(userId, req) {
 }
 
 async function resolveLoginMfaContext(user, req) {
+  const policy = await getMfaPolicy();
+  if (!policy.enabled) return { mfaVerifiedAt: 0, mfaMethod: '', riskReasons: [] };
   const settings = await repo.selectMfaSettings(user.id);
   if (!settings?.enabled) return { mfaVerifiedAt: 0, mfaMethod: '' };
   const trusted = await evaluateTrustedDevice(user.id, req);
@@ -351,6 +357,9 @@ async function resolveLoginMfaContext(user, req) {
 }
 
 async function buildLoginMfaChallenge(user, req) {
+  const policy = await getMfaPolicy();
+  if (!policy.enabled) return null;
+
   const settings = await repo.selectMfaSettings(user.id);
   const enabled = Boolean(settings?.enabled);
 
@@ -823,6 +832,9 @@ function requireSensitiveAction(actionClass = DEFAULT_SENSITIVE_ACTION_CLASS) {
         return res.status(401).json({ code: 401, message: 'Please log in first' });
       }
 
+      const policy = await getMfaPolicy();
+      if (!policy.enabled) return next();
+
       const adminSessionId = String(req.user.adminSessionId || '');
       const rawToken = getSensitiveActionToken(req);
       if (!adminSessionId || !rawToken) {
@@ -852,11 +864,24 @@ function requireSensitiveAction(actionClass = DEFAULT_SENSITIVE_ACTION_CLASS) {
 }
 
 function requireRecentMfa(req, res, next) {
-  return requireSensitiveAction(DEFAULT_SENSITIVE_ACTION_CLASS)(req, res, next);
+  if (!req.user) {
+    if (typeof res.fail === 'function') return res.fail(401, 'Please log in first');
+    return res.status(401).json({ code: 401, message: 'Please log in first' });
+  }
+
+  const verifiedAt = Number(req.user.mfaVerifiedAt || 0);
+  const maxAgeSeconds = Math.floor(SENSITIVE_ACTION_TOKEN_TTL_MS / 1000);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (verifiedAt > 0 && nowSeconds - verifiedAt <= maxAgeSeconds) {
+    return next();
+  }
+
+  return mfaRequiredResponse(res, 'Step-up MFA required', DEFAULT_SENSITIVE_ACTION_CLASS);
 }
 
 module.exports = {
   getStatus,
+  getMfaPolicy,
   resolveRecentMfaVerifiedAt,
   resolveLoginMfaContext,
   buildLoginMfaChallenge,

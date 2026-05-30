@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Click Send production health check every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Persistent=true
+Unit=click-send-health-check.service
+
+[Install]
+WantedBy=timers.target

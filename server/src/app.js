@@ -7,8 +7,12 @@ const crypto = require('crypto');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const requestContext = require('./middleware/requestContext');
+const accessLogger = require('./middleware/accessLogger');
+const apiTimeout = require('./middleware/apiTimeout');
 const responseMiddleware = require('./middleware/response');
 const errorHandler = require('./middleware/errorHandler');
+const apiNotFound = require('./middleware/apiNotFound');
 const {
   adminGatewayGuard,
   adminCsrfGuard,
@@ -21,6 +25,9 @@ const { registerPwaBrandRoutes } = require('./modules/pwa/routes/pwa.routes');
 const stripeWebhook = require('./modules/payment/controller/stripeWebhook.controller');
 
 const app = express();
+
+app.use(requestContext);
+app.use(accessLogger);
 
 app.use((req, res, next) => {
   res.charset = 'utf-8';
@@ -233,10 +240,6 @@ app.use(compression());
 app.use(blockAdminApiOnPublicHost);
 app.use(adminGatewayGuard);
 
-if (process.env.NODE_ENV !== 'test') {
-  app.use(require('morgan')('combined'));
-}
-
 const paymentWebhookLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
@@ -252,6 +255,7 @@ app.post(
 );
 
 // Multipart uploads are parsed by multer; keep JSON small to reduce memory pressure.
+app.use('/api', apiTimeout());
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '1mb' }));
 app.use(adminCsrfGuard);
 
@@ -331,6 +335,7 @@ app.use('/api/admin/upload', uploadLimiter);
 
 app.use(responseMiddleware);
 app.use('/api', routes);
+app.use('/api', apiNotFound);
 
 /** Serve the SPA when the build exists, unless SERVE_SPA=0 is set. */
 const serveSpa = fs.existsSync(frontendDist) && process.env.SERVE_SPA !== '0';

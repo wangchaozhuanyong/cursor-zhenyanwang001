@@ -115,9 +115,11 @@ export interface Product {
   id: string;
   name: string;
   cover_image: string;
+  cover_image_alt?: string;
   /** 商品详情页视频 URL。商品卡不展示，仅详情页图集使用 */
   video_url?: string;
   images: string[];
+  image_alts?: string[];
   price: number;
   /** 活动价/实际展示成交价；有 active_activity 时与 price 一致 */
   effective_price?: number;

@@ -154,6 +154,8 @@ const ACTION_ZH: Record<string, string> = {
   "admin.mfa.reverify": "管理员多因素验证（再次确认）",
   "admin.security.require_mfa": "要求管理员启用多因素验证",
   "admin.security.disable_mfa_requirement": "关闭管理员多因素验证要求",
+  "admin.security.enable_mfa_policy": "开启后台 MFA 强制保护",
+  "admin.security.disable_mfa_policy": "关闭后台 MFA 强制保护",
   "admin.security.reset_mfa": "重置管理员多因素验证",
   "admin.security.revoke_trusted_devices": "撤销管理员全部可信设备",
   "admin.security.revoke_trusted_device": "撤销管理员单个可信设备",

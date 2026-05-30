@@ -23,6 +23,7 @@ interface PremiumCouponCardProps {
   scopeText?: string;
   /** @deprecated 未使用 */
   badge?: string;
+  statusLabel?: string;
   actionLabel?: string;
   actionLoading?: boolean;
   actionDisabled?: boolean;
@@ -108,6 +109,7 @@ export default function PremiumCouponCard({
   minSpendText: minSpendTextProp,
   expireText,
   scopeText = "适用范围：全场商品",
+  statusLabel,
   actionLabel,
   actionLoading = false,
   actionDisabled = false,
@@ -131,6 +133,7 @@ export default function PremiumCouponCard({
   const amountRmMatch = leftValue.match(/^(RM)\s*(.+)$/i);
   const expireLabel = expireText.includes("有效期") ? expireText : `有效期至：${expireText}`;
   const displayActionLabel = actionLabel ? formatCouponActionLabel(actionLabel, layout) : "";
+  const actionHasStatus = layout === "home" && Boolean(statusLabel && displayActionLabel);
 
   const infoRows: Array<{ icon: LucideIcon; prominent: boolean; text: string }> = infoFieldOrder === "thresholdFirst"
     ? [
@@ -164,7 +167,10 @@ export default function PremiumCouponCard({
           e.stopPropagation();
           onAction?.();
         }}
-        className={skin.actionButtonClass}
+        className={cn(
+          skin.actionButtonClass,
+          actionHasStatus && "!h-auto !min-h-[2.45rem] flex-1 !rounded-md !py-1",
+        )}
         style={{ background: "var(--theme-coupon-card-cta-bg)" }}
       >
         {actionButtonInner}
@@ -178,7 +184,10 @@ export default function PremiumCouponCard({
           e.stopPropagation();
           onAction?.();
         }}
-        className={skin.actionButtonClass}
+        className={cn(
+          skin.actionButtonClass,
+          actionHasStatus && "!h-auto !min-h-[2.45rem] flex-1 !rounded-md !py-1",
+        )}
       >
         {actionButtonInner}
       </StoreButton>
@@ -238,7 +247,21 @@ export default function PremiumCouponCard({
         ))}
       </div>
 
-      {actionButton ? <div className="flex w-full min-w-0 items-stretch justify-center">{actionButton}</div> : null}
+      {actionButton ? (
+        <div
+          className={cn(
+            "flex w-full min-w-0 items-stretch justify-center",
+            actionHasStatus && "flex-col items-center gap-1 py-0.5",
+          )}
+        >
+          {actionHasStatus ? (
+            <span className="inline-flex h-5 w-full max-w-[3.1rem] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_16%,var(--theme-surface))] px-1 text-[10px] font-semibold leading-none text-[var(--theme-primary)]">
+              {statusLabel}
+            </span>
+          ) : null}
+          {actionButton}
+        </div>
+      ) : null}
     </div>
   );
 

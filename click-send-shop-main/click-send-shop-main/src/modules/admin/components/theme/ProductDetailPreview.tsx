@@ -39,7 +39,7 @@ export default function ProductDetailPreview({ config }: { config: ThemeConfig }
         >
           <img
             src={previewProduct.cover_image as string}
-            alt=""
+            alt={`${previewProduct.name} 商品预览图`}
             className="h-full w-full"
             style={{ objectFit: config.imageFit }}
           />

@@ -11,7 +11,7 @@ export default function HomeNavIconPreview({ value }: { value: string }) {
     );
   }
   if (v.startsWith("http") || v.startsWith("/")) {
-    return <img src={v} alt="" className="h-12 w-12 object-contain object-center" />;
+    return <img src={v} alt="首页导航图标预览" className="h-12 w-12 object-contain object-center" />;
   }
   return <div className="flex h-12 w-12 items-center justify-center text-xl leading-none">{v.slice(0, 2)}</div>;
 }

@@ -1,8 +1,9 @@
 const crypto = require('crypto');
 
 module.exports = function responseMiddleware(req, res, next) {
-  const traceId = crypto.randomUUID();
+  const traceId = req.traceId || crypto.randomUUID();
   req.traceId = traceId;
+  res.setHeader('X-Trace-Id', traceId);
 
   res.success = (data = null, message = '成功') => {
     res.json({ code: 0, message, data, traceId });

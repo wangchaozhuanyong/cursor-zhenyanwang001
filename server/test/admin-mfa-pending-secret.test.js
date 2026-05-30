@@ -51,6 +51,9 @@ test('MFA setup reuses pending secret instead of replacing the QR code secret', 
   const rows = new Map();
   const upserts = [];
   const repo = {
+    async selectMfaPolicy() {
+      return { enabled: true, updatedAt: null };
+    },
     async selectMfaSettings(userId) {
       return rows.get(userId) || null;
     },
@@ -87,4 +90,52 @@ test('MFA setup reuses pending secret instead of replacing the QR code secret', 
     if (prevJwtSecret === undefined) delete process.env.JWT_SECRET;
     else process.env.JWT_SECRET = prevJwtSecret;
   }
+});
+
+test('MFA policy disabled skips login MFA challenge even for super admin', async () => {
+  const repo = {
+    async selectMfaPolicy() {
+      return { enabled: false, updatedAt: null };
+    },
+    async selectMfaSettings() {
+      throw new Error('selectMfaSettings should not be called when MFA policy is disabled');
+    },
+    async upsertPendingMfaSettings() {
+      throw new Error('upsertPendingMfaSettings should not be called when MFA policy is disabled');
+    },
+  };
+
+  const service = loadServiceWithRepo(repo);
+  const user = { id: 'admin-1', phone: '18800000001', nickname: 'Admin', role: 'super_admin' };
+  const result = await service.buildLoginMfaChallenge(user, makeReq());
+
+  assert.equal(result, null);
+});
+
+test('MFA policy disabled lets sensitive admin actions continue without step-up', async () => {
+  const repo = {
+    async selectMfaPolicy() {
+      return { enabled: false, updatedAt: null };
+    },
+    async selectSensitiveActionToken() {
+      throw new Error('selectSensitiveActionToken should not be called when MFA policy is disabled');
+    },
+  };
+
+  const service = loadServiceWithRepo(repo);
+  let nextCalled = false;
+
+  await new Promise((resolve, reject) => {
+    service.requireSensitiveAction('bulk_delete')(
+      { user: { id: 'admin-1', adminSessionId: 'session-1' } },
+      {},
+      (err) => {
+        if (err) return reject(err);
+        nextCalled = true;
+        return resolve();
+      },
+    );
+  });
+
+  assert.equal(nextCalled, true);
 });

@@ -74,7 +74,7 @@ export default function StoreTabHeader({
           {logoSrc ? (
             <img
               src={logoSrc}
-              alt=""
+              alt={`${siteName} Logo`}
               width={36}
               height={36}
               className="store-brand-logo"

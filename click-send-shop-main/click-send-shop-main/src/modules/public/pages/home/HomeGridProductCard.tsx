@@ -39,7 +39,7 @@ export default function HomeGridProductCard({
   const soldOut = displayStock <= 0;
   const showNewBadge = isProductNewArrival(product);
   const isServiceLike = isHomeServiceLikeProduct(product);
-  const cardImageAlt = isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`;
+  const cardImageAlt = product.cover_image_alt || (isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`);
   const imageLoading = index < 4 ? "eager" : "lazy";
   const imageFetchPriority = index < 2 ? "high" : undefined;
   const priceNum = Number(product.price || 0);

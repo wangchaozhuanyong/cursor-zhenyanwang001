@@ -20,6 +20,9 @@ export interface RbacAdminUserRow {
   mfa?: {
     enabled: boolean;
     required: boolean;
+    accountRequired?: boolean;
+    policyEnabled?: boolean;
+    policyRequired?: boolean;
     lastVerifiedAt: string | null;
     trustedDeviceCount: number;
   };
@@ -39,14 +42,22 @@ export interface RbacTrustedDeviceRow {
 
 export interface RbacAdminUserSecurity {
   user: RbacAdminUserRow;
+  policy?: RbacMfaPolicy;
   mfa: {
     enabled: boolean;
     required: boolean;
     lockedRequired: boolean;
+    accountRequired?: boolean;
+    policyRequired?: boolean;
     enabledAt: string | null;
     lastVerifiedAt: string | null;
   };
   trustedDevices: RbacTrustedDeviceRow[];
+}
+
+export interface RbacMfaPolicy {
+  enabled: boolean;
+  updatedAt: string | null;
 }
 
 export interface RbacUserRolesPayload {
@@ -62,6 +73,14 @@ export function fetchRbacRoles() {
 
 export function fetchRbacAdminUsers() {
   return get<RbacAdminUserRow[]>("/admin/rbac/admin-users");
+}
+
+export function fetchAdminMfaPolicy() {
+  return get<RbacMfaPolicy>("/admin/rbac/mfa-policy");
+}
+
+export function updateAdminMfaPolicy(enabled: boolean) {
+  return put<RbacMfaPolicy>("/admin/rbac/mfa-policy", { enabled });
 }
 
 export function fetchRbacUserRoles(userId: string) {

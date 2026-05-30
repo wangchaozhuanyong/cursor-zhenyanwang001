@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, Copy, ShieldCheck, Smartphone, RotateCcw } from "lucide-react";
+import { Plus, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, Copy, ShieldCheck, ShieldOff, Smartphone, RotateCcw } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import {
   AdminTableMobileCard,
@@ -108,6 +108,13 @@ export default function AdminAccounts() {
     staleTime: 60_000,
   });
 
+  const mfaPolicyQuery = useQuery({
+    queryKey: adminQueryKeys.rbacMfaPolicy(),
+    queryFn: rbacService.loadAdminMfaPolicy,
+    enabled: isSuperAdminViewer,
+    staleTime: 60_000,
+  });
+
   const admins = adminsQuery.data ?? [];
   const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
   const loading = adminsQuery.isLoading && !adminsQuery.data;
@@ -140,8 +147,18 @@ export default function AdminAccounts() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.accounts() }),
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.rbacRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.rbacMfaPolicy() }),
     ]);
   };
+
+  const mfaPolicyMutation = useMutation({
+    mutationFn: (enabled: boolean) => rbacService.updateAdminMfaPolicy(enabled),
+    onSuccess: async (_data, enabled) => {
+      toast.success(enabled ? tText("已开启后台 MFA 强制保护") : tText("已关闭后台 MFA 强制保护"));
+      await invalidateAccounts();
+    },
+    onError: (err) => toast.error(toastErrorMessage(err, tText("MFA 策略更新失败"))),
+  });
 
   const filtered = admins.filter((a) => {
     if (!search) return true;
@@ -309,6 +326,41 @@ export default function AdminAccounts() {
             <SearchBar placeholder={tText("搜索管理员手机号/昵称...")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
             <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
           </div>
+          {isSuperAdminViewer ? (
+            <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    {mfaPolicyQuery.data?.enabled !== false ? (
+                      <ShieldCheck size={18} className="text-emerald-600" />
+                    ) : (
+                      <ShieldOff size={18} className="text-amber-600" />
+                    )}
+                    <p className="text-sm font-semibold text-foreground"><Tx>后台 MFA 强制保护</Tx></p>
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    <Tx>关闭后，后台登录和高风险操作不再强制验证 MFA；原有绑定会保留，重新开启后继续生效。</Tx>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={mfaPolicyQuery.isLoading || mfaPolicyMutation.isPending}
+                  onClick={() => mfaPolicyMutation.mutate(mfaPolicyQuery.data?.enabled === false)}
+                  className={`inline-flex min-h-[40px] shrink-0 items-center justify-center rounded-lg px-4 text-xs font-semibold transition disabled:opacity-50 ${
+                    mfaPolicyQuery.data?.enabled === false
+                      ? "border border-border bg-card text-foreground hover:bg-secondary"
+                      : "btn-theme-gradient"
+                  }`}
+                >
+                  {mfaPolicyMutation.isPending
+                    ? tText("保存中...")
+                    : mfaPolicyQuery.data?.enabled === false
+                      ? tText("开启强制 MFA")
+                      : tText("关闭强制 MFA")}
+                </button>
+              </div>
+            </div>
+          ) : null}
           <div className={`theme-rounded border px-4 py-3 text-xs text-foreground/90 ${THEME_ALERT_ERROR_SOFT}`}>
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-medium text-foreground"><Tx>超级管理员帮助</Tx></p>
@@ -695,7 +747,7 @@ function AdminSecurityDialog({
                 </div>
               </div>
               {security?.mfa.lockedRequired ? (
-                <p className="mt-3 text-xs text-amber-700"><Tx>超级管理员必须启用 MFA，不能关闭要求。</Tx></p>
+                <p className="mt-3 text-xs text-amber-700"><Tx>当前已开启后台 MFA 强制保护，不能在单个员工里关闭；如需关闭，请使用页面顶部总开关。</Tx></p>
               ) : null}
             </div>
 

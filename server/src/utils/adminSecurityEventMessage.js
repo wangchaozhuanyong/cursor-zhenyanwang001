@@ -34,6 +34,7 @@ const PATH_RULES = [
   { pattern: /^\/settings\/assets\/faviconUrl\/?$/, label: '网站图标' },
   { pattern: /^\/settings\/assets\/logoUrl\/?$/, label: '站点 Logo 图片' },
   { pattern: /^\/settings\/?$/, label: '站点设置' },
+  { pattern: /^\/rbac\/mfa-policy\/?$/, label: '后台 MFA 强制保护' },
   {
     pattern: /^\/rbac\/admin-users\/([^/]+)\/security\/mfa-required\/?$/,
     label: (m) => `管理员账号 ${shortId(m[1])} · 多因素验证`,

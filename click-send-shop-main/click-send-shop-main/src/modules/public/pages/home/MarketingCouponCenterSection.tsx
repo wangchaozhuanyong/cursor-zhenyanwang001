@@ -198,11 +198,6 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
             const display = marketingCouponToPremiumDisplay(item.coupon);
             return (
               <div key={item.coupon.id} className="relative w-[min(88vw,320px)] shrink-0 snap-center">
-                {item.statusLabel ? (
-                  <span className="absolute right-3 top-2 z-10 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_16%,var(--theme-surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-primary)]">
-                    {item.statusLabel}
-                  </span>
-                ) : null}
                 <PremiumCouponCard
                   colorScheme="invite"
                   layout="home"
@@ -212,6 +207,7 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
                   minSpendText={display.minSpendText}
                   expireText={display.expireText}
                   scopeText={display.scopeText}
+                  statusLabel={item.statusLabel}
                   actionLabel={item.actionLabel}
                   actionLoading={item.action === "claim" && claimingId === item.coupon.id}
                   actionDisabled={item.action === "claim" && claimingId === item.coupon.id}

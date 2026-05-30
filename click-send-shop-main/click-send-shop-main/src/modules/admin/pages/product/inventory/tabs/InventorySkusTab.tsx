@@ -109,7 +109,7 @@ export default function InventorySkusTab({
               </td>
               <td className={inventorySkuTd("w-12")}>
                 {sku.cover_image ? (
-                  <img src={sku.cover_image} alt="" className="mx-auto block h-7 w-7 rounded object-cover" />
+                  <img src={sku.cover_image} alt={`${productName || "商品"} ${specName || "SKU"} 库存图`} className="mx-auto block h-7 w-7 rounded object-cover" />
                 ) : (
                   <span className="mx-auto block h-7 w-7 rounded bg-secondary" aria-hidden />
                 )}

@@ -1,4 +1,4 @@
-const { generateId, formatProduct } = require('../../../utils/helpers');
+const { generateId, formatProduct, parseProductImages, parseProductImageAlts } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { ValidationError } = require('../../../errors');
 const { parseCsv, parseBool } = require('../../../utils/csv');
@@ -65,6 +65,20 @@ function resolveProductImages(row) {
     }
   }
   return images.filter(Boolean);
+}
+
+function normalizeProductImageAltText(value) {
+  return String(value || '').trim().slice(0, 255);
+}
+
+function normalizeProductImageAlts(value, imageCount) {
+  const parsed = parseProductImageAlts(value);
+  const count = Math.max(0, Number(imageCount) || 0);
+  return Array.from({ length: count }, (_, index) => normalizeProductImageAltText(parsed[index] || ''));
+}
+
+function normalizeProductImagesInput(value) {
+  return parseProductImages(value).map((url) => String(url || '').trim()).filter(Boolean);
 }
 
 function emitProductRiskEvents(row, variants = [], adminUserId = null) {
@@ -497,7 +511,7 @@ async function getProductById(id) {
 
 async function createProduct(body, adminUserId, req) {
   const {
-    name, cover_image, video_url, images, price, original_price, sales_count,
+    name, cover_image, cover_image_alt, video_url, images, image_alts, price, original_price, sales_count,
     category_id, stock, stock_warning_threshold, stock_lower_limit, stock_upper_limit, sort_order,
     description, is_recommended, is_new, isNewArrival, is_hot,
     variants,
@@ -508,6 +522,8 @@ async function createProduct(body, adminUserId, req) {
   const statusStr = statusVarcharFromLifecycle(lcResolved);
 
   const id = generateId();
+  const productImages = normalizeProductImagesInput(images);
+  const productImageAlts = normalizeProductImageAlts(image_alts, productImages.length);
   const variantRows = normalizeVariantPayloadForDb(variants, generateId, price, stock, {
     stock_warning_threshold,
     stock_lower_limit,
@@ -518,8 +534,10 @@ async function createProduct(body, adminUserId, req) {
       id,
       name,
       cover_image: cover_image || '',
+      cover_image_alt: normalizeProductImageAltText(cover_image_alt),
       video_url: video_url || '',
-      imagesJson: JSON.stringify(images || []),
+      imagesJson: JSON.stringify(productImages),
+      imageAltJson: JSON.stringify(productImageAlts),
       price,
       original_price: original_price === '' || original_price == null
         ? null
@@ -648,6 +666,10 @@ async function updateProduct(id, body, adminUserId, req) {
         values.push(body[f]);
       }
     }
+    if (body.cover_image_alt !== undefined) {
+      fields.push('cover_image_alt = ?');
+      values.push(normalizeProductImageAltText(body.cover_image_alt));
+    }
     if (body.lifecycle_status !== undefined || body.status !== undefined) {
       const lc = lifecycleFromBody(body);
       if (lc === null) throw new BusinessError(400, '状态无效');
@@ -659,9 +681,19 @@ async function updateProduct(id, body, adminUserId, req) {
       fields.push('original_price = ?');
       values.push(op === '' || op == null ? null : Number(op));
     }
-    if (body.images !== undefined) {
+    const hasImageAltPayload = body.image_alts !== undefined || body.image_alt_json !== undefined;
+    const nextProductImages = body.images !== undefined ? normalizeProductImagesInput(body.images) : null;
+    if (nextProductImages) {
       fields.push('images = ?');
-      values.push(JSON.stringify(body.images));
+      values.push(JSON.stringify(nextProductImages));
+    }
+    if (hasImageAltPayload) {
+      const imageCount = nextProductImages ? nextProductImages.length : parseProductImages(beforeRow.images).length;
+      fields.push('image_alt_json = ?');
+      values.push(JSON.stringify(normalizeProductImageAlts(body.image_alts ?? body.image_alt_json, imageCount)));
+    } else if (nextProductImages) {
+      fields.push('image_alt_json = ?');
+      values.push(JSON.stringify(normalizeProductImageAlts(beforeRow.image_alt_json, nextProductImages.length)));
     }
     for (const bool of ['is_recommended', 'is_new', 'is_hot']) {
       if (body[bool] !== undefined) {

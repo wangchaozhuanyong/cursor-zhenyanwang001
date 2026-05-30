@@ -5,33 +5,8 @@ const { ORDER_STATUS } = require('../../../constants/status');
 const PUBLIC_VISIBLE_WHERE = "(status = 'normal' OR status IS NULL)";
 
 async function ensureReviewSchema() {
-  try {
-    await db.query(`CREATE TABLE IF NOT EXISTS review_likes (
-      id VARCHAR(32) PRIMARY KEY,
-      review_id VARCHAR(32) NOT NULL,
-      user_id VARCHAR(32) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY uk_review_user (review_id, user_id)
-    )`);
-    const [[column]] = await db.query(
-      `SELECT COLUMN_NAME
-       FROM INFORMATION_SCHEMA.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE()
-         AND TABLE_NAME = 'product_reviews'
-         AND COLUMN_NAME = 'likes_count'
-       LIMIT 1`,
-    );
-    if (!column) {
-      await db.query('ALTER TABLE product_reviews ADD COLUMN likes_count INT NOT NULL DEFAULT 0');
-    }
-  } catch (e) {
-    // Schema compatibility should not block the public review/product pages.
-  }
+  // Kept for compatibility; schema changes are managed by migrations.
 }
-
-(async () => {
-  await ensureReviewSchema();
-})();
 
 async function countReviewsByProduct(productId) {
   const [[{ total }]] = await db.query(
@@ -340,6 +315,5 @@ module.exports = {
   selectFeaturedReviews,
   selectAutoFeaturedReviews,
 };
-
 
 

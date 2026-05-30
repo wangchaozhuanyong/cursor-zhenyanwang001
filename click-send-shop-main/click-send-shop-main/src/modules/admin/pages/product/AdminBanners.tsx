@@ -248,7 +248,7 @@ export default function AdminBanners() {
           >
             <GripVertical size={16} className="cursor-grab text-muted-foreground" />
             <div className={`flex ${BANNER_ASPECT_CLASS} w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary`}>
-              {b.image ? <img src={b.image} alt="" className="h-full w-full object-cover" /> : <Image size={24} className="text-muted-foreground" />}
+              {b.image ? <img src={b.image} alt={`${b.title || "Banner"} 首页轮播图`} className="h-full w-full object-cover" /> : <Image size={24} className="text-muted-foreground" />}
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="truncate font-medium text-foreground">{b.title || "无标题"}</h4>
@@ -314,7 +314,7 @@ export default function AdminBanners() {
             </label>
             <label className={`flex ${BANNER_ASPECT_CLASS} w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-secondary hover:border-gold/50`}>
               {form.image ? (
-                <img src={form.image} alt="" className="h-full w-full object-cover" />
+                <img src={form.image} alt={`${form.title || "Banner"} 图片预览`} className="h-full w-full object-cover" />
               ) : (
                 <>
                   <Image size={32} className="text-muted-foreground" />

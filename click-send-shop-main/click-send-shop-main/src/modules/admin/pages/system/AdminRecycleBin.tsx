@@ -142,7 +142,7 @@ export default function AdminRecycleBin() {
   const renderMobileCard = (item: RecycleBinItem) => (
     <AdminTableMobileCard className="p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        {item.cover_image ? <img src={item.cover_image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : null}
+        {item.cover_image ? <img src={item.cover_image} alt={`${formatRecycleBinItemName(item)} 已删除项目图片`} className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : null}
         <div className="min-w-0 flex-1 space-y-1">
           <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
             {labelRecycleType(item.type, item.type_label)}
@@ -233,7 +233,7 @@ export default function AdminRecycleBin() {
               </td>
               <td className={adminTableCellClass("left")}>
                 <div className="flex items-center gap-2">
-                  {item.cover_image && <img src={item.cover_image} alt="" className="h-8 w-8 rounded object-cover" />}
+                  {item.cover_image && <img src={item.cover_image} alt={`${formatRecycleBinItemName(item)} 已删除项目图片`} className="h-8 w-8 rounded object-cover" />}
                   <AdminTableCell
                     value={formatRecycleBinItemName(item)}
                     fullText={formatRecycleBinItemFullText(item)}

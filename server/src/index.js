@@ -1,4 +1,5 @@
 // @ts-nocheck
+require('./utils/logRedaction').installConsoleRedaction();
 require('dotenv').config();
 const { validateEnv } = require('./config/validateEnv');
 validateEnv();

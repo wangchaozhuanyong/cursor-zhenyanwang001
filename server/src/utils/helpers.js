@@ -79,6 +79,20 @@ function parseProductImages(images) {
   return [];
 }
 
+function parseProductImageAlts(value) {
+  if (value == null || value === '') return [];
+  if (Array.isArray(value)) return value.map((item) => String(item || '').trim());
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map((item) => String(item || '').trim()) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 const {
   normalizeLifecycleFromRow,
   statusVarcharFromLifecycle,
@@ -91,8 +105,10 @@ function formatProduct(row) {
     id: row.id,
     name: row.name,
     cover_image: row.cover_image,
+    cover_image_alt: row.cover_image_alt || '',
     video_url: row.video_url || '',
     images: parseProductImages(row.images),
+    image_alts: parseProductImageAlts(row.image_alt_json),
     price: parseFloat(row.price),
     original_price: row.original_price != null ? parseFloat(row.original_price) : null,
     sales_count: row.sales_count != null ? Number(row.sales_count) : 0,
@@ -128,5 +144,5 @@ module.exports = {
   generateId, generateOrderNo, generateInviteCode,
   hashPassword, comparePassword,
   signToken, verifyToken,
-  parseBool, parseProductImages, formatProduct,
+  parseBool, parseProductImages, parseProductImageAlts, formatProduct,
 };

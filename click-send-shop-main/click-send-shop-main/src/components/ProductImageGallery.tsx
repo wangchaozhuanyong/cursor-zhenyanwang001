@@ -8,19 +8,20 @@ import { productCoverForDetail } from "@/utils/uploadImageVariant";
 
 interface ProductImageGalleryProps {
   images: string[];
+  imageAlts?: string[];
   name: string;
   videoUrl?: string;
   /** 图集上方悬浮层（返回、分享等） */
   overlay?: React.ReactNode;
 }
 
-type GalleryItem = { type: "image" | "video"; url: string };
+type GalleryItem = { type: "image" | "video"; url: string; alt?: string };
 
-export default function ProductImageGallery({ images, name, videoUrl, overlay }: ProductImageGalleryProps) {
+export default function ProductImageGallery({ images, imageAlts, name, videoUrl, overlay }: ProductImageGalleryProps) {
   const safeImages = Array.isArray(images) && images.length ? images : [];
   const media: GalleryItem[] = [
     ...(videoUrl ? [{ type: "video" as const, url: videoUrl }] : []),
-    ...safeImages.map((url) => ({ type: "image" as const, url })),
+    ...safeImages.map((url, index) => ({ type: "image" as const, url, alt: imageAlts?.[index] })),
   ];
   const [current, setCurrent] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
@@ -82,7 +83,7 @@ export default function ProductImageGallery({ images, name, videoUrl, overlay }:
               <ProgressiveImage
                 src={productCoverForDetail(currentItem.url)}
                 blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
-                alt={current === 0 ? `${name} 主图` : `${name} 详情图 ${current + 1}`}
+                alt={currentItem.alt || (current === 0 ? `${name} 主图` : `${name} 详情图 ${current + 1}`)}
                 className="h-full w-full bg-transparent"
                 imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
                 sizes="100vw"

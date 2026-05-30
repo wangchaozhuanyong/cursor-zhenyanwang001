@@ -36,18 +36,18 @@ async function selectProductById(id, opts = {}) {
 
 async function insertProduct(params) {
   const {
-    id, name, cover_image, video_url, imagesJson, price, original_price, sales_count,
+    id, name, cover_image, cover_image_alt = '', video_url, imagesJson, imageAltJson = '[]', price, original_price, sales_count,
     category_id, stock, stock_warning_threshold, stock_lower_limit, stock_upper_limit,
     status, lifecycle_status, sort_order, description, search_keywords,
     is_recommended, is_new, is_hot,
   } = params;
   await db.query(
-    `INSERT INTO products (id, name, cover_image, video_url, images, price, original_price, sales_count,
+    `INSERT INTO products (id, name, cover_image, cover_image_alt, video_url, images, image_alt_json, price, original_price, sales_count,
       category_id, stock, stock_warning_threshold, stock_lower_limit, stock_upper_limit,
       status, lifecycle_status, sort_order, description, search_keywords, is_recommended, is_new, is_hot)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
-      id, name, cover_image, video_url || '', imagesJson, price,
+      id, name, cover_image, cover_image_alt || '', video_url || '', imagesJson, imageAltJson || '[]', price,
       original_price ?? null,
       Number.isFinite(sales_count) ? sales_count : 0,
       category_id, stock, stock_warning_threshold ?? 5, stock_lower_limit ?? null, stock_upper_limit ?? null,

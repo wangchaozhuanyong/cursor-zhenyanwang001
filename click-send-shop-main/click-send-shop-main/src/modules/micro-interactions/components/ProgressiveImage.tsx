@@ -80,7 +80,7 @@ export function ProgressiveImage({
       {withBlurPlaceholder ? (
         <img
           src={blurDataUrl}
-          alt=""
+          alt={`${alt} 模糊占位图`}
           aria-hidden
           draggable={false}
           className={cn(

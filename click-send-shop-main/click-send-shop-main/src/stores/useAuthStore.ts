@@ -75,9 +75,8 @@ function createAuthFlow<A extends unknown[]>(
     set({ loading: true, error: null });
     try {
       await runAuth(...args);
-      set({ isAuthenticated: true, authHydrated: true });
-      await syncAfterAuthenticated(snapshots);
-      set({ loading: false });
+      set({ isAuthenticated: true, authHydrated: true, loading: false });
+      void syncAfterAuthenticated(snapshots);
     } catch (e) {
       set({
         loading: false,

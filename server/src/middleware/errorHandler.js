@@ -2,6 +2,7 @@ const { ZodError } = require('zod');
 const { AppError, ServiceUnavailableError } = require('../errors');
 const { isSchemaDriftError } = require('../db/schemaErrors');
 const { appendRuntimeError } = require('../lib/serverErrorLog');
+const { redactString, sanitizeLogValue } = require('../utils/logRedaction');
 
 function isUploadTypeError(message) {
   const raw = String(message || '');
@@ -48,16 +49,16 @@ module.exports = function errorHandler(err, req, res, _next) {
     const schemaErr = new ServiceUnavailableError(
       '数据库结构未与当前代码同步。请在服务器执行：cd server && npm run migrate，然后重启服务。',
     );
-    console.error(`[${traceId}] schema drift:`, err?.message || err);
+    console.error(`[${traceId}] schema drift:`, sanitizeLogValue(err?.message || err));
     return res.status(503).json({
       code: 503,
       message: schemaErr.message,
-      data: { hint: 'schema_migration_required', sqlMessage: String(err?.message || '').slice(0, 500) },
+      data: { hint: 'schema_migration_required', sqlMessage: redactString(err?.message || '').slice(0, 500) },
       traceId,
     });
   }
 
-  console.error(`[${traceId}]`, err?.stack || err);
+  console.error(`[${traceId}]`, sanitizeLogValue(err?.stack || err));
   appendRuntimeError({ traceId, err, req });
   const rawCode = Number(err?.statusCode || err?.status || 500);
   const code = rawCode >= 400 && rawCode <= 599 ? rawCode : 500;

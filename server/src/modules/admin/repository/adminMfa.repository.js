@@ -1,5 +1,41 @@
 const db = require('../../../config/db');
 
+const MFA_POLICY_KEY = 'admin_mfa_policy';
+
+function normalizeMfaPolicy(row) {
+  if (!row?.setting_value) {
+    return { enabled: true, updatedAt: null };
+  }
+  try {
+    const parsed = JSON.parse(String(row.setting_value || '{}'));
+    return {
+      enabled: parsed.enabled !== false,
+      updatedAt: row.updated_at || null,
+    };
+  } catch {
+    return { enabled: true, updatedAt: row.updated_at || null };
+  }
+}
+
+async function selectMfaPolicy() {
+  const [[row]] = await db.query(
+    'SELECT setting_value, updated_at FROM site_settings WHERE setting_key = ? LIMIT 1',
+    [MFA_POLICY_KEY],
+  );
+  return normalizeMfaPolicy(row || null);
+}
+
+async function upsertMfaPolicy(policy) {
+  const payload = JSON.stringify({ enabled: policy?.enabled !== false });
+  await db.query(
+    `INSERT INTO site_settings (setting_key, setting_value)
+     VALUES (?, ?)
+     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), version = version + 1, updated_at = NOW()`,
+    [MFA_POLICY_KEY, payload],
+  );
+  return selectMfaPolicy();
+}
+
 async function selectMfaSettings(userId) {
   const [[row]] = await db.query('SELECT * FROM admin_mfa_settings WHERE user_id = ?', [userId]);
   return row || null;
@@ -245,6 +281,8 @@ async function revokeTrustedDevices(userId) {
 }
 
 module.exports = {
+  selectMfaPolicy,
+  upsertMfaPolicy,
   selectMfaSettings,
   upsertPendingMfaSettings,
   enableMfa,

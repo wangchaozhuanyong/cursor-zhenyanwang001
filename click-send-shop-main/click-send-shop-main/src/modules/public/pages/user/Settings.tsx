@@ -174,11 +174,7 @@ export default function Settings() {
   return (
     <StoreAccountLayout title="账户设置" onBack={goBack} className="store-page text-[var(--theme-text)]" mainClassName="space-y-3 pb-24 sm:py-4 lg:pb-12">
         <section className={CARD}>
-          <div className="flex flex-col items-center gap-3 py-2">
-            <div className="w-full text-center">
-              <p className="text-xs font-medium text-[var(--theme-muted)]">头像</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-[var(--theme-muted)]">上传清晰头像，方便客服与售后沟通</p>
-            </div>
+          <div className="flex flex-col items-center gap-4 py-1">
             {avatar ? (
               <div className="h-20 w-20 overflow-hidden rounded-full ring-1 ring-[var(--theme-border)]">
                 <img src={avatar} alt="头像" className="h-full w-full object-cover" />

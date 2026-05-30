@@ -1,26 +1,6 @@
 // @ts-nocheck
 const db = require('../../../config/db');
 
-let passwordResetTableEnsured = false;
-
-async function ensurePasswordResetTokenTable() {
-  if (passwordResetTableEnsured) return;
-  await db.query(
-    `CREATE TABLE IF NOT EXISTS password_reset_tokens (
-      id VARCHAR(64) NOT NULL PRIMARY KEY,
-      user_id VARCHAR(64) NOT NULL,
-      token_hash VARCHAR(128) NOT NULL,
-      expires_at DATETIME NOT NULL,
-      used_at DATETIME NULL,
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_prt_user_unused (user_id, used_at),
-      INDEX idx_prt_token_hash (token_hash),
-      INDEX idx_prt_expires (expires_at)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-  );
-  passwordResetTableEnsured = true;
-}
-
 async function findUserIdByPhone(phone) {
   const [[row]] = await db.query('SELECT id FROM users WHERE phone = ? AND deleted_at IS NULL', [phone]);
   return row || null;
@@ -226,12 +206,10 @@ async function updateLastLogin(userId) {
 }
 
 async function deleteUnusedPasswordResetTokens(userId) {
-  await ensurePasswordResetTokenTable();
   await db.query('DELETE FROM password_reset_tokens WHERE BINARY user_id = BINARY ? AND used_at IS NULL', [userId]);
 }
 
 async function insertPasswordResetToken({ id, userId, tokenHash, expiresAt }) {
-  await ensurePasswordResetTokenTable();
   await db.query(
     `INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at)
      VALUES (?, ?, ?, ?)`,
@@ -240,7 +218,6 @@ async function insertPasswordResetToken({ id, userId, tokenHash, expiresAt }) {
 }
 
 async function selectPasswordResetToken(tokenHash) {
-  await ensurePasswordResetTokenTable();
   const [[row]] = await db.query(
     `SELECT prt.id, prt.user_id, prt.expires_at, prt.used_at, u.password_hash
      FROM password_reset_tokens prt
@@ -253,7 +230,6 @@ async function selectPasswordResetToken(tokenHash) {
 }
 
 async function markPasswordResetTokenUsed(id) {
-  await ensurePasswordResetTokenTable();
   await db.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?', [id]);
 }
 

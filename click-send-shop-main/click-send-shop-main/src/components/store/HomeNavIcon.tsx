@@ -23,7 +23,7 @@ export default function HomeNavIcon({
     return (
       <img
         src={iconValue}
-        alt=""
+        alt="首页导航图标"
         className={cn("h-full w-full object-contain object-center", imageClassName)}
         loading="lazy"
         decoding="async"

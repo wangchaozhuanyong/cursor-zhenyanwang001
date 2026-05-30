@@ -31,7 +31,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
       <div className="mx-auto flex h-full w-full max-w-screen-xl items-center gap-3 px-6">
         <Link to="/" className="flex shrink-0 items-center gap-2" aria-label={`${siteName} 首页`}>
           {logoSrc ? (
-            <img src={logoSrc} alt="" width={36} height={36} className="store-brand-logo" />
+            <img src={logoSrc} alt={`${siteName} Logo`} width={36} height={36} className="store-brand-logo" />
           ) : null}
           <span className="hidden max-w-[8rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline">
             {siteName}

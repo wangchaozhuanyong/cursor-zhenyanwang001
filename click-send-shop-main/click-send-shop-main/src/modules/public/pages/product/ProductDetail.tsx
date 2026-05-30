@@ -249,6 +249,19 @@ export default function ProductDetail() {
   const seoImage = selectedVariant?.image_url || product.cover_image || product.images?.[0] || siteInfo.defaultOgImageUrl || "/og-default.png";
   const productJsonLd = canIndex ? buildProductJsonLd(product) : null;
   const galleryImages = Array.from(new Set([...(selectedVariant?.image_url ? [selectedVariant.image_url] : []), ...(Array.isArray(product.images) && product.images.length ? product.images : []), ...(product.cover_image ? [product.cover_image] : [])].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
+  const galleryImageAlts = galleryImages.map((url, index) => {
+    if (selectedVariant?.image_url && url === selectedVariant.image_url) {
+      return `${product.name} ${selectedVariant.title || selectedVariant.sku_code || "规格图"}`;
+    }
+    if (product.cover_image && url === product.cover_image) {
+      return product.cover_image_alt || `${product.name} 主图`;
+    }
+    const imageIndex = Array.isArray(product.images) ? product.images.findIndex((img) => img === url) : -1;
+    if (imageIndex >= 0) {
+      return product.image_alts?.[imageIndex] || `${product.name} 详情图 ${imageIndex + 1}`;
+    }
+    return `${product.name} 商品图 ${index + 1}`;
+  });
 
   const ensureVariantSelected = () => {
     if (availableVariants.length === 1 && !selectedVariantId) {
@@ -423,6 +436,7 @@ export default function ProductDetail() {
             <div className="relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
               <ProductImageGallery
                 images={galleryImages}
+                imageAlts={galleryImageAlts}
                 name={product.name}
                 videoUrl={product.video_url}
               />

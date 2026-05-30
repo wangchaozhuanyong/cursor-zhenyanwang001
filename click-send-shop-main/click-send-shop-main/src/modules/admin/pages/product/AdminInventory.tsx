@@ -170,7 +170,7 @@ export default function AdminInventory({
             aria-label={`选择 ${sku.product_name}`}
           />
           {sku.cover_image ? (
-            <img src={sku.cover_image} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+            <img src={sku.cover_image} alt={`${sku.product_name || "商品"} 库存商品图`} className="h-11 w-11 shrink-0 rounded-lg object-cover" />
           ) : (
             <div className="h-11 w-11 shrink-0 rounded-lg bg-secondary" />
           )}

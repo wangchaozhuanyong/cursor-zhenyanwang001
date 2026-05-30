@@ -98,7 +98,7 @@ function ProductCardInner({
   const salesCount = getProductSalesCount(product.sales_count);
   const showSales = hasProductSales(product.sales_count);
   const isServiceLike = /服务|咨询|办理|申请|装修/.test(String(product.category_name || product.name || ""));
-  const cardImageAlt = isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`;
+  const cardImageAlt = product.cover_image_alt || (isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`);
   const showNewBadge = isProductNewArrival(product);
   const imageLoading = index < 4 ? "eager" : "lazy";
   const imageFetchPriority = index < 2 ? "high" : undefined;

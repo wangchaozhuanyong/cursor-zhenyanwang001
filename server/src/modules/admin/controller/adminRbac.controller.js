@@ -16,6 +16,16 @@ exports.listAdminUsers = asyncRoute(async (_req, res) => {
   res.success(r.data);
 });
 
+exports.getAdminMfaPolicy = asyncRoute(async (_req, res) => {
+  const r = await svc.getAdminMfaPolicy();
+  res.success(r.data);
+});
+
+exports.updateAdminMfaPolicy = asyncRoute(async (req, res) => {
+  const r = await svc.updateAdminMfaPolicy(req.body || {}, req.user, req);
+  res.success(r.data, r.message);
+});
+
 exports.getUserRoles = asyncRoute(async (req, res) => {
   const r = await svc.getUserRoles(req.params.userId);
   res.success(r.data);
@@ -85,4 +95,3 @@ exports.revokeAdminTrustedDevice = asyncRoute(async (req, res) => {
   const r = await svc.revokeAdminTrustedDevice(req.params.userId, req.params.deviceId, req.user, req);
   res.success(r.data, r.message);
 });
-

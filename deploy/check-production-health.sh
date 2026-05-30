@@ -9,24 +9,64 @@ set -euo pipefail
 #   PM2_APP=gc-api
 #   NGINX_ACCESS_LOG=/var/log/nginx/access.log
 #   LOG_SAMPLE_LINES=1000
+#   HEALTH_ALERT_WEBHOOK_URL=https://example.com/webhook
 
 API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:3001}"
 PM2_APP="${PM2_APP:-gc-api}"
 NGINX_ACCESS_LOG="${NGINX_ACCESS_LOG:-/var/log/nginx/access.log}"
 LOG_SAMPLE_LINES="${LOG_SAMPLE_LINES:-1000}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-READY_FAIL_THRESHOLD=3
-MAX_5XX_RATE_PERCENT=1
-MAX_API_LATENCY_SEC=2
-MAX_DISK_PERCENT=80
-MAX_MEM_PERCENT=85
-MAX_CPU_PERCENT=85
+READY_FAIL_THRESHOLD="${READY_FAIL_THRESHOLD:-3}"
+MAX_5XX_RATE_PERCENT="${MAX_5XX_RATE_PERCENT:-1}"
+MAX_API_LATENCY_SEC="${MAX_API_LATENCY_SEC:-2}"
+MAX_DISK_PERCENT="${MAX_DISK_PERCENT:-80}"
+MAX_MEM_PERCENT="${MAX_MEM_PERCENT:-85}"
+MAX_CPU_PERCENT="${MAX_CPU_PERCENT:-85}"
 
 failed=0
 
 ok() { echo "[OK] $*"; }
 warn() { echo "[WARN] $*"; }
 alert() { echo "[ALERT] $*"; failed=1; }
+
+json_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+notify_failure() {
+  local host now message payload
+  host="$(hostname 2>/dev/null || echo unknown-host)"
+  now="$(date -Is 2>/dev/null || date)"
+  message="ALERT: production health check failed on ${host} at ${now}. API_BASE_URL=${API_BASE_URL}, PM2_APP=${PM2_APP}"
+
+  if [[ -f "${PROJECT_ROOT}/server/.env" && -f "${PROJECT_ROOT}/deploy/send-telegram-health-alert.js" ]]; then
+    if (
+      set -a
+      # shellcheck disable=SC1090
+      . "${PROJECT_ROOT}/server/.env"
+      set +a
+      ALERT_MESSAGE="${message}" node "${PROJECT_ROOT}/deploy/send-telegram-health-alert.js"
+    ); then
+      ok "failure alert sent to Telegram"
+      return 0
+    fi
+    warn "failed to send Telegram alert"
+  fi
+
+  if [[ -n "${HEALTH_ALERT_WEBHOOK_URL:-}" ]]; then
+    payload="{\"text\":\"$(json_escape "${message}")\"}"
+    if curl -fsS -m 8 -H 'Content-Type: application/json' -d "${payload}" "${HEALTH_ALERT_WEBHOOK_URL}" >/dev/null; then
+      ok "failure alert sent to HEALTH_ALERT_WEBHOOK_URL"
+      return 0
+    fi
+    warn "failed to send HEALTH_ALERT_WEBHOOK_URL alert"
+    return 0
+  fi
+
+  warn "no Telegram config or webhook configured; skip external alert"
+}
 
 echo "== Production Health Check =="
 echo "API_BASE_URL=${API_BASE_URL}"
@@ -56,7 +96,18 @@ else
 fi
 
 if command -v pm2 >/dev/null 2>&1; then
-  pm2_line="$(pm2 show "${PM2_APP}" 2>/dev/null | awk -F'│' '/status/{gsub(/^[ \t]+|[ \t]+$/, "", $3); print $3; exit}' || true)"
+  pm2_line="$(
+    PM2_APP="${PM2_APP}" pm2 jlist 2>/dev/null | node -e "
+let raw = '';
+process.stdin.on('data', (chunk) => raw += chunk);
+process.stdin.on('end', () => {
+  try {
+    const app = JSON.parse(raw).find((item) => item && item.name === process.env.PM2_APP);
+    process.stdout.write(app?.pm2_env?.status || '');
+  } catch {}
+});
+" || true
+  )"
   if [[ "${pm2_line}" == "online" ]]; then
     ok "PM2 app ${PM2_APP} is online"
   else
@@ -130,6 +181,7 @@ fi
 echo "== Result =="
 if [[ "${failed}" -ne 0 ]]; then
   echo "Production health check FAILED"
+  notify_failure
   exit 2
 fi
 echo "Production health check PASSED"

@@ -35,11 +35,34 @@ Optional runtime overrides:
 API_BASE_URL=http://127.0.0.1:3001 PM2_APP=gc-api NGINX_ACCESS_LOG=/var/log/nginx/access.log bash deploy/check-production-health.sh
 ```
 
+Optional webhook alert on failure:
+
+```bash
+HEALTH_ALERT_WEBHOOK_URL=https://example.com/webhook bash deploy/check-production-health.sh
+```
+
+If `server/.env` is available and Telegram is configured in the admin backend, the health check will try Telegram first and use the webhook only as fallback.
+
 ## 4. Suggested continuous checks
 
 1. Every 1 minute: run liveness + readiness + PM2 online.
 2. Every 5 minutes: run full script including host metrics + 5xx sample.
 3. Deployment gate: run once before cutover and once after cutover.
+
+Systemd timer examples are provided in:
+
+1. `deploy/systemd/click-send-health-check.service.example`
+2. `deploy/systemd/click-send-health-check.timer.example`
+
+Install shape on the server:
+
+```bash
+sudo cp deploy/systemd/click-send-health-check.service.example /etc/systemd/system/click-send-health-check.service
+sudo cp deploy/systemd/click-send-health-check.timer.example /etc/systemd/system/click-send-health-check.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now click-send-health-check.timer
+systemctl list-timers | grep click-send-health-check
+```
 
 ## 5. Notification chain (on-call)
 
@@ -65,4 +88,3 @@ Escalation policy:
 2. Latest `pm2 show gc-api` output.
 3. Sample Nginx access log based 5xx computation.
 4. Incident contact list with real names/phone numbers (kept in internal ops vault, not in git).
-

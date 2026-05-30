@@ -16,7 +16,7 @@ const requirePermission = adminAuth.requirePermission;
 const requireAnyPermission = adminAuth.requireAnyPermission;
 const requireSensitiveAction = adminAuth.requireSensitiveAction;
 const { adminSecurityAudit } = require('../../../middleware/adminSecurityAudit');
-const { userQueryLimiter } = require('../../../middleware/rateLimiters');
+const { highCostApiLimiter, userQueryLimiter } = require('../../../middleware/rateLimiters');
 const { paginationCap } = require('../../../middleware/paginationCap');
 const { validate } = require('../../../middleware/validate');
 const { requireSiteCapability } = require('../../../middleware/siteCapabilityGuard');
@@ -106,11 +106,48 @@ router.use((req, res, next) => {
 
 router.use(adminSecurityAudit);
 
+router.use([
+  '/event-center/events/export',
+  '/event-center/events/batch',
+  '/backups/full',
+  '/backups/config',
+  '/backups/uploads',
+  '/restore/jobs',
+  '/products/export',
+  '/products/import',
+  '/products/batch-status',
+  '/orders/export',
+  '/orders/batch-ship',
+  '/inventory/replenishment-alerts/generate',
+  '/inventory/replenishment-runs/preview',
+  '/inventory/replenishment-profiles/batch',
+  '/inventory/daily-snapshots/generate',
+  '/inventory/export',
+  '/inventory/records/export',
+  '/inventory/batch-warning-threshold',
+  '/inventory/batch-adjust',
+  '/activities/products/options',
+  '/member-levels/recalculate',
+  '/users/export',
+  '/users/tags/batch',
+  '/coupons/:id/issue-by-tag',
+  '/reviews/batch-hide',
+  '/reviews/batch-delete',
+  '/notifications/resolve-users',
+  '/notifications/audience-estimate',
+  '/notifications/:id/recipients/export',
+  '/points/expire-run',
+  '/reports',
+  '/exports',
+], highCostApiLimiter);
+
 /* ---- RBAC ---- */
 router.get('/rbac/me', adminAuth, authCtrl.getRbacMe);
 router.get('/rbac/permissions', adminAuth, requirePermission('role.manage'), rbacCtrl.listPermissions);
 router.get('/rbac/roles', adminAuth, requirePermission('role.manage'), rbacCtrl.listRoles);
 router.get('/rbac/admin-users', adminAuth, requirePermission('role.manage'), rbacCtrl.listAdminUsers);
+router.get('/rbac/mfa-policy', adminAuth, requirePermission('role.manage'), rbacCtrl.getAdminMfaPolicy);
+router.put('/rbac/mfa-policy', adminAuth, requirePermission('role.manage'), rbacCtrl.updateAdminMfaPolicy);
 router.get('/rbac/users/:userId/roles', adminAuth, requirePermission('role.manage'), rbacCtrl.getUserRoles);
 router.put('/rbac/users/:userId/roles', adminAuth, requirePermission('role.manage'), rbacCtrl.setUserRoles);
 router.post('/rbac/roles', adminAuth, requirePermission('role.manage'), rbacCtrl.createRole);

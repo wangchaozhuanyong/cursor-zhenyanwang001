@@ -52,7 +52,6 @@ import { formatUnreadBadge } from "@/utils/notificationBadge";
 import {
   THEME_ACCENT_ICON_CLASS,
   THEME_ACCENT_ICON_SHELL_CLASS,
-  THEME_MEMBER_CARD_MUTED,
   THEME_MEMBER_CARD_SHELL,
 } from "@/utils/themeVisuals";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
@@ -95,34 +94,15 @@ function SectionTitle({ title, rightLabel, onRightClick }: { title: string; righ
   );
 }
 
-function getProfileCompletionText({
-  avatar,
-  birthday,
-  wechat,
-  whatsapp,
-}: {
-  avatar: string;
-  birthday?: string | null;
-  wechat: string;
-  whatsapp: string;
-}) {
-  if (!avatar.trim()) return "上传头像，让会员资料更完整";
-  if (!wechat.trim() && !whatsapp.trim()) return "完善联系方式，售后沟通更方便";
-  if (!birthday) return "填写生日，解锁生日专属权益";
-  return "资料已完善，会员权益持续升级";
-}
-
 function ProfileHeroCard({
   logoSrc,
   avatar,
   userName,
   memberLevelName,
-  profileHint,
   unreadCount,
   onMessageClick,
-  onSettingsClick,
   onMemberLevelClick,
-  onProfileHintClick,
+  onProfileClick,
   onViewAllBenefits,
   onAvatarClick,
 }: {
@@ -130,35 +110,33 @@ function ProfileHeroCard({
   avatar?: string;
   userName: string;
   memberLevelName: string;
-  profileHint: string;
   unreadCount: number;
   onMessageClick: () => void;
-  onSettingsClick: () => void;
   onMemberLevelClick: () => void;
-  onProfileHintClick: () => void;
+  onProfileClick: () => void;
   onViewAllBenefits: () => void;
   onAvatarClick: () => void;
 }) {
   return (
     <section
-      className={`relative overflow-hidden rounded-3xl px-[var(--store-card-x)] py-4 shadow-[var(--theme-shadow)] ${THEME_MEMBER_CARD_SHELL}`}
+      className={`relative overflow-hidden rounded-3xl px-[var(--store-card-x)] py-4 shadow-[0_18px_42px_rgba(15,71,55,0.11)] ${THEME_MEMBER_CARD_SHELL}`}
     >
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 10%, var(--theme-surface)) 0%, color-mix(in srgb, var(--theme-primary) 4%, var(--theme-surface)) 52%, var(--theme-surface) 100%)",
+            "radial-gradient(circle at 14% 8%, color-mix(in srgb, var(--theme-member-card-badge-bg) 28%, transparent) 0%, transparent 34%), linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 10%, var(--theme-surface)) 0%, color-mix(in srgb, var(--theme-primary) 4%, var(--theme-surface)) 52%, var(--theme-surface) 100%)",
         }}
       />
       <div
-        className="pointer-events-none absolute inset-y-0 right-0 w-24 opacity-70"
-        style={{ background: "var(--theme-member-card-sheen)" }}
+        className="pointer-events-none absolute inset-y-0 right-0 w-32 opacity-70"
+        style={{ background: "linear-gradient(90deg, transparent, color-mix(in srgb, var(--theme-member-card-badge-bg) 18%, transparent))" }}
       />
       <div className="relative z-10 space-y-4">
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3 pr-12">
           <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
             <span
-              className="flex h-14 w-14 items-center justify-center rounded-full border bg-[var(--theme-surface)] p-[3px] shadow-sm"
+              className="flex h-14 w-14 items-center justify-center rounded-full border bg-[var(--theme-surface)] p-[3px] shadow-[0_10px_24px_rgba(15,71,55,0.12)]"
               style={{ borderColor: "var(--theme-member-card-avatar-ring)" }}
             >
               {avatar || logoSrc ? (
@@ -173,50 +151,46 @@ function ProfileHeroCard({
               <Camera size={11} />
             </span>
           </button>
-          <div className="min-w-0 flex-1 pt-0.5">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <p className="min-w-0 max-w-full truncate text-lg font-bold leading-tight text-[var(--theme-text)]">{userName}</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex max-w-full min-w-0 items-center gap-2">
+              <p className="min-w-0 truncate text-lg font-bold leading-tight text-[var(--theme-text)]">{userName}</p>
               <button
                 type="button"
                 onClick={onMemberLevelClick}
-                className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm"
+                className="shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold shadow-[0_6px_14px_rgba(135,95,30,0.12)]"
                 style={{
                   backgroundColor: "var(--theme-member-card-badge-bg)",
+                  borderColor: "color-mix(in srgb, var(--theme-member-card-badge-bg) 68%, var(--theme-surface))",
                   color: "var(--theme-member-card-badge-fg)",
                 }}
               >
                 {memberLevelName}
               </button>
             </div>
-            <button
-              type="button"
-              onClick={onProfileHintClick}
-              className={`mt-1 block max-w-full text-left text-xs leading-5 ${THEME_MEMBER_CARD_MUTED}`}
-            >
-              <span className="line-clamp-2">{profileHint}</span>
-            </button>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <NotificationIconButton unreadCount={unreadCount} onClick={onMessageClick} className="h-11 w-11" />
-            <button
-              type="button"
-              onClick={onSettingsClick}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-border)_76%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] text-[var(--theme-text)]"
-              aria-label="设置"
-            >
-              <Settings size={16} />
-            </button>
+          <div className="absolute right-[var(--store-card-x)] top-4">
+            <NotificationIconButton
+              unreadCount={unreadCount}
+              onClick={onMessageClick}
+              className="h-11 w-11 border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_84%,transparent)] shadow-[0_8px_20px_rgba(15,71,55,0.08)] backdrop-blur"
+            />
           </div>
         </div>
 
-        <div className="flex justify-center border-t border-[color-mix(in_srgb,var(--theme-member-card-muted)_22%,transparent)] pt-3">
+        <div className="grid grid-cols-2 gap-2 border-t border-[color-mix(in_srgb,var(--theme-member-card-muted)_20%,transparent)] pt-3">
+          <button
+            type="button"
+            onClick={onProfileClick}
+            className="inline-flex h-11 min-w-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] px-4 text-sm font-semibold text-[var(--theme-text)] shadow-sm transition-transform active:scale-[0.98]"
+          >
+            个人资料
+          </button>
           <button
             type="button"
             onClick={onViewAllBenefits}
-            className="inline-flex h-11 w-full max-w-[176px] items-center justify-center gap-1 rounded-full bg-[var(--theme-primary)] px-5 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition-transform active:scale-[0.98]"
+            className="inline-flex h-11 min-w-0 items-center justify-center rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-[0_10px_22px_rgba(15,71,55,0.16)] transition-transform active:scale-[0.98]"
           >
-            查看会员权益
-            <ChevronRight size={15} />
+            会员权益
           </button>
         </div>
       </div>
@@ -232,7 +206,7 @@ export default function Profile() {
   const siteName = siteInfo.siteName || "官方商城";
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const authStore = useAuthStore();
-  const { nickname, avatar, birthday, pointsBalance, inviteCode, memberLevel, wechat, whatsapp, wechatLogin, loadProfile } = useUserStore();
+  const { nickname, avatar, pointsBalance, inviteCode, memberLevel, wechatLogin, loadProfile } = useUserStore();
   const { orders, loadOrders } = useOrderStore();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
@@ -314,7 +288,6 @@ export default function Profile() {
   const userName = nickname?.trim() || "会员用户";
   const memberLevelName = memberLevel?.name?.trim() || "普通会员";
   const code = inviteCode?.trim() || "暂无";
-  const profileHint = getProfileCompletionText({ avatar, birthday, wechat, whatsapp });
   const couponCount = useMemo(() => coupons.filter((c) => !c.used_at).length, [coupons]);
 
   const orderPending = useMemo(() => orders.filter((o) => o.status === "pending" && o.payment_status !== "paid").length, [orders]);
@@ -397,12 +370,10 @@ export default function Profile() {
                 avatar={avatar}
                 userName={userName}
                 memberLevelName={memberLevelName}
-                profileHint={profileHint}
                 unreadCount={unreadCount}
                 onMessageClick={() => navigate("/notifications", { state: { from: "/profile" } })}
-                onSettingsClick={() => navigate("/settings", { state: { from: "/profile" } })}
                 onMemberLevelClick={() => gateNavigate(navigate, "/member/benefits", true)}
-                onProfileHintClick={() => gateNavigate(navigate, "/settings", true)}
+                onProfileClick={() => gateNavigate(navigate, "/settings", true)}
                 onViewAllBenefits={() => gateNavigate(navigate, "/member/benefits", true)}
                 onAvatarClick={() => avatarInputRef.current?.click()}
               />

@@ -120,6 +120,7 @@ export const adminQueryKeys = {
   recycleBin: (filters?: RecycleBinListParams) => ["admin", "recycle-bin", filters ?? {}] as const,
   rbacRoot: () => ["admin", "rbac"] as const,
   rbacOverview: () => ["admin", "rbac", "overview"] as const,
+  rbacMfaPolicy: () => ["admin", "rbac", "mfa-policy"] as const,
   rbacUserRoles: (userId: string) => ["admin", "rbac", "user-roles", userId] as const,
   accounts: () => ["admin", "rbac", "accounts"] as const,
   accountSecurity: (userId: string) => ["admin", "rbac", "accounts", userId, "security"] as const,

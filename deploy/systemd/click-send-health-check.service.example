@@ -1,0 +1,16 @@
+[Unit]
+Description=Click Send production health check
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/var/www/click-send-shop
+Environment=API_BASE_URL=http://127.0.0.1:3001
+Environment=PM2_APP=gc-api
+Environment=PM2_HOME=/home/ubuntu/.pm2
+Environment=NGINX_ACCESS_LOG=/var/log/nginx/access.log
+# Optional: set to Slack/Feishu/Teams/generic webhook URL in a local override, not in git.
+# Environment=HEALTH_ALERT_WEBHOOK_URL=
+ExecStart=/usr/bin/env bash /var/www/click-send-shop/deploy/check-production-health.sh

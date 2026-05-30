@@ -137,7 +137,7 @@ async function listAdminUsers() {
     ...row,
     mfa: {
       enabled: Boolean(row.mfa_enabled),
-      required: row.role === 'super_admin' || Boolean(row.mfa_required),
+      required: Boolean(row.mfa_required),
       lastVerifiedAt: row.mfa_last_verified_at || null,
       trustedDeviceCount: Number(row.trusted_device_count || 0),
     },
@@ -176,7 +176,7 @@ async function selectAdminUserById(userId) {
     ...row,
     mfa: {
       enabled: Boolean(row.mfa_enabled),
-      required: row.role === 'super_admin' || Boolean(row.mfa_required),
+      required: Boolean(row.mfa_required),
       lastVerifiedAt: row.mfa_last_verified_at || null,
       trustedDeviceCount: Number(row.trusted_device_count || 0),
     },
@@ -346,5 +346,4 @@ module.exports = {
   deleteRoleById,
   replaceRolePermissions,
 };
-
 

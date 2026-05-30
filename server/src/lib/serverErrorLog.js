@@ -1,13 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const { safeStringifyForLog } = require('../utils/logRedaction');
 
 function safeStringify(value) {
-  try {
-    if (typeof value === 'string') return value;
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
+  return safeStringifyForLog(value);
 }
 
 function ensureDir(dirPath) {

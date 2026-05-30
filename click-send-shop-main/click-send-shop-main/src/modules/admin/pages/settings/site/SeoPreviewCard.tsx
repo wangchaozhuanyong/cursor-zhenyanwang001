@@ -21,7 +21,7 @@ export default function SeoPreviewCard({ settings }: Props) {
       <div className="rounded-xl border border-border bg-background p-3">
         <p className="mb-2 font-medium text-foreground"><Tx>分享卡片</Tx></p>
         {og ? (
-          <img src={og} alt="" className="mb-2 aspect-[1.91/1] w-full rounded-lg border border-border object-cover" />
+          <img src={og} alt={`${title} 分享图预览`} className="mb-2 aspect-[1.91/1] w-full rounded-lg border border-border object-cover" />
         ) : (
           <div className="mb-2 flex aspect-[1.91/1] w-full items-center justify-center rounded-lg border border-dashed border-border bg-secondary text-muted-foreground">
             无 OG 图

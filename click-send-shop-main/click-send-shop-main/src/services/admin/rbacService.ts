@@ -1,7 +1,7 @@
 import * as rbacApi from "@/api/admin/rbac";
-import type { RbacAdminUserRow, RbacAdminUserSecurity, RbacRoleRow } from "@/api/admin/rbac";
+import type { RbacAdminUserRow, RbacAdminUserSecurity, RbacMfaPolicy, RbacRoleRow } from "@/api/admin/rbac";
 
-export type { RbacAdminUserRow, RbacAdminUserSecurity, RbacRoleRow };
+export type { RbacAdminUserRow, RbacAdminUserSecurity, RbacMfaPolicy, RbacRoleRow };
 
 export async function loadRbacRoles() {
   const res = await rbacApi.fetchRbacRoles();
@@ -15,6 +15,16 @@ export async function loadRbacPermissions() {
 
 export async function loadRbacAdminUsers() {
   const res = await rbacApi.fetchRbacAdminUsers();
+  return res.data;
+}
+
+export async function loadAdminMfaPolicy() {
+  const res = await rbacApi.fetchAdminMfaPolicy();
+  return res.data;
+}
+
+export async function updateAdminMfaPolicy(enabled: boolean) {
+  const res = await rbacApi.updateAdminMfaPolicy(enabled);
   return res.data;
 }
 

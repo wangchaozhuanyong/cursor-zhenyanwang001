@@ -45,7 +45,7 @@ export default function Favorites() {
                 <div className="flex gap-3">
                   <ProductCoverImage
                     url={p.cover_image}
-                    alt={p.name}
+                    alt={p.cover_image_alt || p.name}
                     className="h-24 w-24 rounded-xl"
                     imgClassName="h-full w-full rounded-xl object-cover"
                   />

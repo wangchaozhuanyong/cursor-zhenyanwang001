@@ -69,6 +69,32 @@ function isRbacAdminTarget(user) {
   return user.role === 'disabled' && normalizeRoleCodes(user).length > 0;
 }
 
+function assertSuperAdmin(actor) {
+  if (actor?.isSuperAdmin || actor?.role === 'super_admin') return;
+  throw new BusinessError(403, 'Only super admin can change MFA policy');
+}
+
+function isPolicyForcedAdmin(user, policy) {
+  if (!policy?.enabled) return false;
+  return user?.role === 'admin' || user?.role === 'super_admin';
+}
+
+function applyMfaPolicyToAdminUser(user, policy) {
+  if (!user) return user;
+  const mfa = user.mfa || {};
+  const policyForced = isPolicyForcedAdmin(user, policy);
+  return {
+    ...user,
+    mfa: {
+      ...mfa,
+      accountRequired: Boolean(mfa.required),
+      policyEnabled: policy?.enabled !== false,
+      policyRequired: policyForced,
+      required: Boolean(policy?.enabled !== false && (policyForced || mfa.required || mfa.enabled)),
+    },
+  };
+}
+
 function assertActorCanOperateTarget(actor, target, action) {
   if (!actor?.id) throw new BusinessError(401, '未登录');
   if (actor.isSuperAdmin) return;
@@ -128,7 +154,35 @@ async function listRoles() {
 
 async function listAdminUsers() {
   const rows = await repo.listAdminUsers();
-  return { data: rows };
+  const policy = await mfaRepo.selectMfaPolicy();
+  return { data: rows.map((row) => applyMfaPolicyToAdminUser(row, policy)) };
+}
+
+async function getAdminMfaPolicy() {
+  const policy = await mfaRepo.selectMfaPolicy();
+  return { data: policy };
+}
+
+async function updateAdminMfaPolicy(body, actor, req) {
+  assertSuperAdmin(actor);
+  const before = await mfaRepo.selectMfaPolicy();
+  const after = await mfaRepo.upsertMfaPolicy({ enabled: body?.enabled !== false });
+
+  const { writeAuditLog } = require('../../../utils/auditLog');
+  await writeAuditLog({
+    req,
+    operatorId: actor.id,
+    operatorRole: actor.role,
+    actionType: after.enabled ? 'admin.security.enable_mfa_policy' : 'admin.security.disable_mfa_policy',
+    objectType: 'site_settings',
+    objectId: 'admin_mfa_policy',
+    summary: after.enabled ? 'enable admin MFA policy' : 'disable admin MFA policy',
+    result: 'success',
+    before,
+    after,
+  });
+
+  return { data: after, message: after.enabled ? 'Admin MFA policy enabled' : 'Admin MFA policy disabled' };
 }
 
 async function getUserRoles(userId) {
@@ -370,14 +424,19 @@ async function getAdminUserSecurity(userId, actor) {
   assertActorCanOperateTarget(actor, target, '查看安全设置');
 
   const settings = await mfaRepo.selectMfaSettings(userId);
+  const policy = await mfaRepo.selectMfaPolicy();
   const devices = await mfaRepo.listTrustedDevices(userId);
+  const policyRequired = isPolicyForcedAdmin(target, policy);
   return {
     data: {
-      user: target,
+      user: applyMfaPolicyToAdminUser(target, policy),
+      policy,
       mfa: {
         enabled: Boolean(settings?.enabled),
-        required: target.role === 'super_admin' || Boolean(settings?.required),
-        lockedRequired: target.role === 'super_admin',
+        required: Boolean(policy.enabled && (policyRequired || settings?.required || settings?.enabled)),
+        lockedRequired: Boolean(policyRequired),
+        accountRequired: Boolean(settings?.required),
+        policyRequired,
         enabledAt: settings?.enabled_at || null,
         lastVerifiedAt: settings?.last_verified_at || null,
       },
@@ -514,6 +573,8 @@ module.exports = {
   listPermissions,
   listRoles,
   listAdminUsers,
+  getAdminMfaPolicy,
+  updateAdminMfaPolicy,
   getUserRoles,
   setUserRoles,
   createRole,
@@ -530,5 +591,3 @@ module.exports = {
   revokeAdminTrustedDevice,
   ALL_ADMIN_PERMISSION_CODES,
 };
-
-

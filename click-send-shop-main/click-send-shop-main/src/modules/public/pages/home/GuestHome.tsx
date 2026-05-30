@@ -13,8 +13,7 @@ import GuestMobileFooter from "@/components/GuestMobileFooter";
 import HomeOpsBlocks from "./HomeOpsBlocks";
 import NewArrivalSection from "./NewArrivalOpsSection";
 import FlashSaleSection from "./FlashSaleSection";
-import MarketingCouponCenterSection from "./MarketingCouponCenterSection";
-import MarketingNewUserGiftSection from "./MarketingNewUserGiftSection";
+import MarketingCouponRailSection from "./MarketingCouponRailSection";
 import MarketingFullReductionSection from "./MarketingFullReductionSection";
 import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
 import type { Product } from "@/types/product";
@@ -184,6 +183,8 @@ export default function GuestHome() {
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
   const isMagazineLayout = homeLayout === "magazine";
+  const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "guest");
+  const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "guest");
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription = siteInfo.seoDescription || description;
   const canonical = buildCanonical("/");
@@ -290,12 +291,12 @@ export default function GuestHome() {
           <MarketingFullReductionSection delay={0.111} />
         ) : null}
 
-        {isHomeModuleEnabled(homeModules, "coupon_center", "guest") ? (
-          <MarketingCouponCenterSection delay={0.112} />
-        ) : null}
-
-        {isHomeModuleEnabled(homeModules, "new_user_gift", "guest") ? (
-          <MarketingNewUserGiftSection delay={0.113} />
+        {showCouponCenter || showNewUserGift ? (
+          <MarketingCouponRailSection
+            delay={0.112}
+            showCouponCenter={showCouponCenter}
+            showNewUserGift={showNewUserGift}
+          />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "guest_recommend", "guest") ? (

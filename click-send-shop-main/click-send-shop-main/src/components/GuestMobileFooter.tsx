@@ -8,7 +8,6 @@ import {
   MapPin,
   MessageCircle,
   Phone,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import type { FooterNavItem } from "@/types/content";
@@ -199,7 +198,6 @@ export default function GuestMobileFooter({
                 <p className="max-w-xl text-[13px] leading-7 text-[var(--theme-text-muted)] sm:text-[14px]">{description}</p>
               </div>
               <div className="flex flex-wrap gap-2.5">
-                <FooterPill icon={<ShieldCheck size={14} strokeWidth={1.9} />}>正品保障</FooterPill>
                 <FooterPill icon={<MapPin size={14} strokeWidth={1.9} />}>本地配送</FooterPill>
                 <FooterPill icon={<MessageCircle size={14} strokeWidth={1.9} />}>中文客服</FooterPill>
               </div>

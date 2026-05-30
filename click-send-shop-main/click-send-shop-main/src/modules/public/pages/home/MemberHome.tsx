@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Gift, RefreshCw, ShoppingCart, Star, Ticket } from "lucide-react";
+import { RefreshCw, Star, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -18,8 +18,7 @@ import { AnimatedSection } from "@/modules/micro-interactions";
 import NewArrivalSection from "./NewArrivalOpsSection";
 import HomeHotSalesSection from "./HomeHotSalesSection";
 import FlashSaleSection from "./FlashSaleSection";
-import MarketingCouponCenterSection from "./MarketingCouponCenterSection";
-import MarketingNewUserGiftSection from "./MarketingNewUserGiftSection";
+import MarketingCouponRailSection from "./MarketingCouponRailSection";
 import MarketingFullReductionSection from "./MarketingFullReductionSection";
 import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
 import type { UserCoupon } from "@/types/coupon";
@@ -83,6 +82,8 @@ export default function MemberHome() {
   const isPremiumLayout = homeLayout === "premium";
   const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
+  const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "member");
+  const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "member");
   const siteName = siteInfo.siteName || "官方商城";
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription =
@@ -227,11 +228,12 @@ export default function MemberHome() {
         {isHomeModuleEnabled(homeModules, "full_reduction_notice", "member") ? (
           <MarketingFullReductionSection delay={0.131} />
         ) : null}
-        {isHomeModuleEnabled(homeModules, "coupon_center", "member") ? (
-          <MarketingCouponCenterSection delay={0.132} />
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "new_user_gift", "member") ? (
-          <MarketingNewUserGiftSection delay={0.133} />
+        {showCouponCenter || showNewUserGift ? (
+          <MarketingCouponRailSection
+            delay={0.132}
+            showCouponCenter={showCouponCenter}
+            showNewUserGift={showNewUserGift}
+          />
         ) : null}
         {isHomeModuleEnabled(homeModules, "member_coupons", "member") ? (
         <section>

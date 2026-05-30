@@ -663,6 +663,7 @@ async function selectOrderAnalysisDaily(dateFrom, dateTo, filters = {}) {
 async function selectSimpleCustomerAnalysis(dateFrom, dateTo) {
   const { NET_SALES } = await getReportExprs();
   const orderDateRange = rangeWhere('DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))');
+  const unionUserId = (expr) => `CAST(${expr} AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci`;
 
   const orderStats = await queryOne(
     `SELECT
@@ -699,7 +700,7 @@ async function selectSimpleCustomerAnalysis(dateFrom, dateTo) {
   const behaviorParams = [];
   if (await isAnalyticsUserIdReady()) {
     behaviorUnionParts.push(
-      `SELECT user_id FROM analytics_events
+      `SELECT ${unionUserId('user_id')} AS user_id FROM analytics_events
        WHERE user_id IS NOT NULL AND user_id <> ''
          AND ${rangeWhere('DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))')}`,
     );
@@ -707,21 +708,21 @@ async function selectSimpleCustomerAnalysis(dateFrom, dateTo) {
   }
   if (await isUserLoginAuditsReady()) {
     behaviorUnionParts.push(
-      `SELECT user_id FROM user_login_audits
+      `SELECT ${unionUserId('user_id')} AS user_id FROM user_login_audits
        WHERE ${rangeWhere('DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))')}`,
     );
     behaviorParams.push(dateFrom, dateTo);
   }
   if (await isBrowsingHistoryReady()) {
     behaviorUnionParts.push(
-      `SELECT user_id FROM browsing_history
+      `SELECT ${unionUserId('user_id')} AS user_id FROM browsing_history
        WHERE ${rangeWhere('DATE(DATE_ADD(viewed_at, INTERVAL 8 HOUR))')}`,
     );
     behaviorParams.push(dateFrom, dateTo);
   }
   if (await isUsersLastLoginReady()) {
     behaviorUnionParts.push(
-      `SELECT id AS user_id FROM users
+      `SELECT ${unionUserId('id')} AS user_id FROM users
        WHERE last_login_at IS NOT NULL
          AND ${rangeWhere('DATE(DATE_ADD(last_login_at, INTERVAL 8 HOUR))')}`,
     );
@@ -731,7 +732,7 @@ async function selectSimpleCustomerAnalysis(dateFrom, dateTo) {
   let active_users = null;
   if (behaviorUnionParts.length > 0) {
     behaviorUnionParts.push(
-      `SELECT user_id FROM orders WHERE ${orderDateRange}`,
+      `SELECT ${unionUserId('user_id')} AS user_id FROM orders WHERE ${orderDateRange}`,
     );
     behaviorParams.push(dateFrom, dateTo);
 

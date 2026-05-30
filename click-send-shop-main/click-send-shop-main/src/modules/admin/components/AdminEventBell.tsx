@@ -87,7 +87,7 @@ export default function AdminEventBell() {
 
   const summaryQuery = useQuery({
     queryKey: adminQueryKeys.eventCenterSummary(),
-    queryFn: eventService.fetchAdminEventSummary,
+    queryFn: () => eventService.fetchAdminEventSummary(),
     refetchInterval: mfaStepUpPending ? false : 15000,
   });
   const eventsQuery = useQuery({

@@ -11,7 +11,7 @@ import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 
 function normalizeMfaCode(value: string) {
   return value
-    .replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+    .normalize("NFKC")
     .replace(/\D/g, "")
     .slice(0, 6);
 }

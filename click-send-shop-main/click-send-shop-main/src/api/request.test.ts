@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { extractResponseMessage, post, toQueryString } from "@/api/request";
+import { extractResponseMessage, get, post, toQueryString } from "@/api/request";
 import { clearAdminCsrfToken } from "@/lib/adminCsrf";
+import { clearAdminTokens, clearTokens } from "@/utils/token";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -30,11 +31,15 @@ describe("admin MFA request CSRF handling", () => {
   beforeEach(() => {
     calls.length = 0;
     clearAdminCsrfToken();
+    clearTokens();
+    clearAdminTokens();
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     clearAdminCsrfToken();
+    clearTokens();
+    clearAdminTokens();
   });
 
   test("adds CSRF header when reverifying admin MFA", async () => {
@@ -91,6 +96,47 @@ describe("admin MFA request CSRF handling", () => {
     expect(reverifyCalls).toHaveLength(2);
     expect(reverifyCalls[0].init?.headers).toMatchObject({ "X-CSRF-Token": "csrf-old" });
     expect(reverifyCalls[1].init?.headers).toMatchObject({ "X-CSRF-Token": "csrf-new" });
+  });
+});
+
+describe("session refresh failures", () => {
+  beforeEach(() => {
+    clearTokens();
+    clearAdminTokens();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    clearTokens();
+    clearAdminTokens();
+  });
+
+  test("keeps storefront login hint when refresh is rate limited", async () => {
+    localStorage.setItem("user_authenticated", "1");
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/auth/refresh")) {
+        return jsonResponse({ code: 429, message: "会话刷新过于频繁，请稍后再试" }, 429);
+      }
+      return jsonResponse({ code: 401, message: "Please login first" }, 401);
+    }));
+
+    await expect(get("/user/profile")).rejects.toMatchObject({ code: 429 });
+    expect(localStorage.getItem("user_authenticated")).toBe("1");
+  });
+
+  test("keeps admin login hint when admin refresh is rate limited", async () => {
+    localStorage.setItem("admin_authenticated", "1");
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/admin/auth/refresh")) {
+        return jsonResponse({ code: 429, message: "会话刷新过于频繁，请稍后再试" }, 429);
+      }
+      return jsonResponse({ code: 401, message: "Please login first" }, 401);
+    }));
+
+    await expect(get("/admin/products")).rejects.toMatchObject({ code: 429 });
+    expect(localStorage.getItem("admin_authenticated")).toBe("1");
   });
 });
 

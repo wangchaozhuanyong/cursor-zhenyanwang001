@@ -194,8 +194,9 @@ export function useCheckoutSubmission({
           window.location.assign(intent.redirect_url);
           return;
         }
-        setPostSubmitOnlineNote(sanitizeClientInstructions(intent.client_instructions));
-        toast.success("订单已创建");
+        const note = sanitizeClientInstructions(intent.client_instructions) || "支付单已创建，请按页面指引完成付款";
+        setPostSubmitOnlineNote(note);
+        toast.success(note);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "在线支付发起失败";
         setPostSubmitOnlineError(msg);
@@ -353,8 +354,9 @@ export function useCheckoutSubmission({
         window.location.assign(intent.redirect_url);
         return;
       }
-      setPostSubmitOnlineNote(sanitizeClientInstructions(intent.client_instructions));
-      toast.message(paymentInstructionToastMessage(intent.client_instructions));
+      const note = sanitizeClientInstructions(intent.client_instructions) || paymentInstructionToastMessage(intent.client_instructions);
+      setPostSubmitOnlineNote(note);
+      toast.message(note);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "在线支付发起失败";
       setPostSubmitOnlineError(msg);

@@ -20,7 +20,8 @@ import {
   hasPendingReview,
   isPendingPayment,
 } from "@/utils/orderBuyerStatus";
-import { labelOrderPaymentMethod } from "@/utils/orderPaymentLabels";
+import { labelOrderPaymentMethod, labelPendingPaymentAction } from "@/utils/orderPaymentLabels";
+import { formatDateTime } from "@/utils/formatDateTime";
 import {
   getOrderLogisticsSnapshot,
   openOrderLogisticsExternal,
@@ -380,6 +381,7 @@ export default function OrderDetail() {
 
   const pageTitle = getBuyerOrderStatusText(order);
   const showMobileBar = isMobileSheet;
+  const payActionLabel = labelPendingPaymentAction(order.payment_method, order.order_type);
 
   const mobilePrimary =
     isPendingPayment(order) ? (
@@ -391,7 +393,7 @@ export default function OrderDetail() {
           void payPendingOrder(order, reload);
         }}
       >
-        {paying ? "处理中..." : "去付款"}
+        {paying ? "处理中..." : payActionLabel}
       </button>
     ) : order.status === "shipped" ? (
       <button
@@ -522,7 +524,7 @@ export default function OrderDetail() {
           </div>
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-muted-foreground">下单时间</span>
-            <span>{order.created_at?.replace("T", " ").slice(0, 16)}</span>
+            <span>{formatDateTime(order.created_at)}</span>
           </div>
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-muted-foreground">支付方式</span>
@@ -581,7 +583,7 @@ export default function OrderDetail() {
                 void payPendingOrder(order, reload);
               }}
             >
-              {paying ? "处理中..." : "去付款"}
+              {paying ? "处理中..." : payActionLabel}
             </button>
           ) : null}
           {order.status === "paid" ? (

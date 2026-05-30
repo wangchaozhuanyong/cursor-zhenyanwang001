@@ -77,6 +77,14 @@ let adminRefreshing: Promise<void> | null = null;
 const ADMIN_CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const ADMIN_SESSION_EXPIRED_EVENT = "admin:session-expired";
 
+function isAuthFailureStatus(status: number): boolean {
+  return status === 401 || status === 403;
+}
+
+function isTransientRefreshError(err: unknown): boolean {
+  return err instanceof ApiError && (err.code === 0 || err.code === 408 || err.code === 429 || err.code >= 500);
+}
+
 function isAdminMfaLoginVerifyEndpoint(endpoint: string): boolean {
   return endpoint.startsWith("/admin/auth/mfa/verify");
 }
@@ -142,8 +150,11 @@ async function tryRefreshToken(): Promise<string> {
   }
 
   if (!res.ok) {
-    clearTokens();
-    throw new ApiError(401, "登录已过期，请重新登录");
+    if (isAuthFailureStatus(res.status)) {
+      clearTokens();
+      throw new ApiError(401, "登录已过期，请重新登录");
+    }
+    throw new ApiError(res.status, extractResponseMessage(await safeJson(res), res.status));
   }
 
   const body = (await res.json()) as ApiResponse<{ accessToken: string }>;
@@ -170,8 +181,11 @@ export async function tryRefreshAdminSession(): Promise<void> {
   }
 
   if (!res.ok) {
-    expireAdminSession("refresh-failed", { status: res.status });
-    throw new ApiError(401, "登录已过期，请重新登录");
+    if (isAuthFailureStatus(res.status)) {
+      expireAdminSession("refresh-failed", { status: res.status });
+      throw new ApiError(401, "登录已过期，请重新登录");
+    }
+    throw new ApiError(res.status, extractResponseMessage(await safeJson(res), res.status));
   }
 
   try {
@@ -196,6 +210,14 @@ function redirectToAdminLogin(reason: string): void {
   if (typeof window === "undefined" || window.location.pathname.startsWith("/admin/login")) return;
   expireAdminSession(reason);
   window.location.assign("/admin/login");
+}
+
+async function safeJson(res: Response): Promise<Record<string, unknown>> {
+  try {
+    return (await res.clone().json()) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
 }
 
 async function request<T>(endpoint: string, options: RequestOptions = {}, retry = true): Promise<T> {
@@ -258,7 +280,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
         ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}),
       };
       return request<T>(endpoint, { ...options, headers: retryHeaders }, false);
-    } catch {
+    } catch (err) {
+      if (isTransientRefreshError(err)) {
+        throw err;
+      }
       if (!shouldSuppressAuthExpired(options)) {
         clearTokens();
         notifyAuthExpired();
@@ -277,7 +302,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     try {
       await adminRefreshing;
       return request<T>(endpoint, options, false);
-    } catch {
+    } catch (err) {
+      if (isTransientRefreshError(err)) {
+        throw err;
+      }
       redirectToAdminLogin("refresh-after-401-failed");
       throw new ApiError(401, "登录已过期，请重新登录");
     }

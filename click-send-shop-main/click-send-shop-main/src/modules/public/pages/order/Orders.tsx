@@ -10,7 +10,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useCartStore } from "@/stores/useCartStore";
 import * as orderService from "@/services/orderService";
 import { canApplyAfterSale, canRepurchaseOrder, canUserCancelOrder, getBuyerOrderStatusText, hasPendingReview, isPendingPayment, matchOrderTab, orderInAfterSaleTab } from "@/utils/orderBuyerStatus";
-import { isGiftOrder } from "@/utils/orderPaymentLabels";
+import { isGiftOrder, labelPendingPaymentAction } from "@/utils/orderPaymentLabels";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { LogisticsInfoModal } from "@/components/order/LogisticsInfoModal";
@@ -364,7 +364,7 @@ export default function Orders() {
                           void payPendingOrder(order, () => loadOrders({ page: 1, tab })).finally(() => setActingId(""));
                         }}
                       >
-                        {paying && actingId === order.id ? "处理中..." : "去付款"}
+                        {paying && actingId === order.id ? "处理中..." : labelPendingPaymentAction(order.payment_method, order.order_type)}
                       </button>
                     ) : null}
 

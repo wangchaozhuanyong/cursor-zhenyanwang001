@@ -167,6 +167,9 @@ export async function restoreSessionFromCookie(): Promise<boolean> {
       credentials: "include",
     });
     if (!refreshRes.ok) {
+      if (refreshRes.status === 429 || refreshRes.status >= 500) {
+        return true;
+      }
       clearTokens();
       return false;
     }

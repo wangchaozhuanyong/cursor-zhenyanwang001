@@ -59,6 +59,7 @@ export function CheckoutOrderSuccess({
   const isOnlinePending = isPending && order.payment_method === "online";
   const isWalletPending = isPending && order.payment_method === "reward_wallet";
   const isWhatsappPending = isPending && isWhatsappOrder;
+  const displayOrderNo = String(order.order_no || "").replace(/^#+/, "");
 
   const headerTitle = isPaid
     ? "支付成功"
@@ -144,7 +145,7 @@ export function CheckoutOrderSuccess({
                 </span>
                 <span>
                   订单{" "}
-                  <span className="font-mono font-semibold text-foreground">#{order.order_no}</span>
+                  <span className="font-mono font-semibold text-foreground">#{displayOrderNo}</span>
                 </span>
               </div>
             </div>
@@ -454,5 +455,4 @@ export function CheckoutOrderSuccess({
     </div>
   );
 }
-
 

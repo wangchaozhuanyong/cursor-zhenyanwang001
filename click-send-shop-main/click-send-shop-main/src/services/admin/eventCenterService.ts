@@ -19,8 +19,21 @@ export async function fetchAdminEvents(params?: eventApi.AdminEventListParams): 
 }
 
 export async function fetchAdminEventSummary(params?: Pick<eventApi.AdminEventListParams, "tab" | "category" | "severity" | "unread" | "keyword">) {
-  const res = await eventApi.getAdminEventSummary(params);
+  const cleanParams = pickEventSummaryParams(params);
+  const res = await eventApi.getAdminEventSummary(cleanParams);
   return res.data;
+}
+
+function pickEventSummaryParams(params?: Pick<eventApi.AdminEventListParams, "tab" | "category" | "severity" | "unread" | "keyword">) {
+  if (!params || typeof params !== "object") return undefined;
+  const next: Pick<eventApi.AdminEventListParams, "tab" | "category" | "severity" | "unread" | "keyword"> = {};
+  for (const key of ["tab", "category", "severity", "unread", "keyword"] as const) {
+    const value = params[key];
+    if (value !== undefined && value !== null && value !== "") {
+      next[key] = value as never;
+    }
+  }
+  return Object.keys(next).length > 0 ? next : undefined;
 }
 
 export async function fetchAdminEventBossMetrics() {

@@ -230,7 +230,7 @@ async function payWithRewardWallet(userId, orderId) {
     }
     const balance = await requireUserApi('sumRewardTransactionsBalance')(conn, userId);
     if (balance < payableAmount) {
-      throw new ValidationError(`返现钱包余额不足，当前可用 ?RM ${balance.toFixed(2)}`);
+      throw new ValidationError(`返现钱包余额不足，当前可用 RM ${balance.toFixed(2)}`);
     }
 
     const channel = await payRepo.selectChannelByCode(conn, 'reward_wallet');

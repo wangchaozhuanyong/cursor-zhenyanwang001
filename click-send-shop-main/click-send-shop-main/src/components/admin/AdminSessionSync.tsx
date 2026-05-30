@@ -2,8 +2,9 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { tryRefreshAdminSession } from "@/api/request";
 import { adminLogout, isAdminAuthenticated } from "@/services/admin/accountService";
+import { ApiError } from "@/types/common";
 
-const REFRESH_THROTTLE_MS = 2_000;
+const REFRESH_THROTTLE_MS = 5 * 60_000;
 const ADMIN_SESSION_EXPIRED_EVENT = "admin:session-expired";
 
 /**
@@ -26,9 +27,11 @@ export default function AdminSessionSync() {
 
       try {
         await tryRefreshAdminSession();
-      } catch {
-        await adminLogout();
-        navigate("/admin/login", { replace: true });
+      } catch (err) {
+        if (err instanceof ApiError && (err.code === 401 || err.code === 403)) {
+          await adminLogout();
+          navigate("/admin/login", { replace: true });
+        }
       }
     };
 
@@ -54,4 +57,3 @@ export default function AdminSessionSync() {
 
   return null;
 }
-

@@ -37,6 +37,10 @@ function shouldKeepMfaStepUpOpen(err: unknown, aborted: boolean): boolean {
   return err.code === 403 && /CSRF token invalid/i.test(err.message);
 }
 
+function normalizeMfaCode(value: string): string {
+  return value.normalize("NFKC").replace(/\D/g, "").slice(0, 6);
+}
+
 export default function AdminMfaStepUpHost() {
   const navigate = useNavigate();
   const { locale } = useAdminT();
@@ -113,7 +117,7 @@ export default function AdminMfaStepUpHost() {
   };
 
   const handleSubmit = async () => {
-    const normalized = code.replace(/\D/g, "").slice(0, 6);
+    const normalized = normalizeMfaCode(code);
     if (normalized.length !== 6) {
       const message = isEnglish
         ? "Enter the 6-digit code from your authenticator."
@@ -267,7 +271,7 @@ export default function AdminMfaStepUpHost() {
               autoFocus={typeof window !== "undefined" ? !window.matchMedia("(pointer: coarse)").matches : true}
               value={code}
               onChange={(e) => {
-                setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                setCode(normalizeMfaCode(e.target.value));
                 if (errorText) setErrorText("");
               }}
               placeholder="000000"

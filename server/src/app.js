@@ -295,10 +295,15 @@ const authSensitiveLimiter = rateLimit({
   max: 10,
   message: { code: 429, message: '敏感操作过于频繁，请稍后再试' },
 });
+const authRefreshLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  message: { code: 429, message: '会话刷新过于频繁，请稍后再试' },
+});
 app.use('/api/auth/password-reset/request', authSensitiveLimiter);
 app.use('/api/auth/password-reset/confirm', authSensitiveLimiter);
-app.use('/api/auth/refresh', authSensitiveLimiter);
-app.use('/api/admin/auth/refresh', authSensitiveLimiter);
+app.use('/api/auth/refresh', authRefreshLimiter);
+app.use('/api/admin/auth/refresh', authRefreshLimiter);
 app.use('/api/auth/otp/send', authSensitiveLimiter);
 app.use('/api/auth/otp/login', authLimiter);
 app.use('/api/auth/oauth/exchange', authSensitiveLimiter);

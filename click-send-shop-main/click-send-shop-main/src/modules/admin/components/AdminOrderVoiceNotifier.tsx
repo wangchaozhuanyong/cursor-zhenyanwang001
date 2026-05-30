@@ -17,6 +17,7 @@ import {
   getAdminOrderVoiceSettings,
   updateAdminOrderVoiceSettings,
 } from "@/api/admin/orderVoice";
+import { isAdminAuthenticated } from "@/services/admin/accountService";
 import type { AdminOrderVoiceEvent } from "@/services/admin/orderService";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -243,6 +244,13 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    if (!isAdminAuthenticated()) {
+      applyEnabled(false);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
     (async () => {
       try {
         const res = await getAdminOrderVoiceSettings();
@@ -356,7 +364,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
   }, [playQueue]);
 
   const pollEvents = useCallback(async () => {
-    if (!enabledRef.current || pollingRef.current || isAdminMfaStepUpPending()) return;
+    if (!enabledRef.current || pollingRef.current || isAdminMfaStepUpPending() || !isAdminAuthenticated()) return;
     pollingRef.current = true;
     try {
       const since = readLastCheckedAt();

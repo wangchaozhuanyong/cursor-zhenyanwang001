@@ -181,6 +181,7 @@ function AdminLayoutContent() {
   }, [loggingOut, navigate]);
 
   useEffect(() => {
+    if (!isAdminAuthenticated()) return;
     const title = resolveAdminTabTitle(navItems, location.pathname, t("layout.title"), t, location.search);
     const result = syncAdminWorkTabFromLocation(location.pathname, location.search, title);
     if (result?.ok === false) {

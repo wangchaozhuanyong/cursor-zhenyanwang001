@@ -13,7 +13,7 @@ releases_dir="${DEPLOY_BASE}/releases"
 current_link="${DEPLOY_BASE}/current"
 dist_link="${DEPLOY_BASE}/dist"
 admin_dist_link="${DEPLOY_BASE}/admin-dist"
-KEEP_RELEASES="${KEEP_RELEASES:-5}"
+KEEP_RELEASES="${KEEP_RELEASES:-2}"
 
 preserve_previous_build_artifacts() {
   local target_build_dir="$1"

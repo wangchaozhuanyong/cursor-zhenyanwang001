@@ -10,7 +10,7 @@ set -euo pipefail
 
 DEPLOY_BASE="${DEPLOY_BASE:-/var/www/damatong}"
 REPO_DIR="${REPO_DIR:-${DEPLOY_BASE}/app}"
-KEEP_RELEASES="${KEEP_RELEASES:-5}"
+KEEP_RELEASES="${KEEP_RELEASES:-2}"
 RELEASE_REF="${RELEASE_REF:-origin/main}"
 NODE_ENV="${NODE_ENV:-production}"
 
@@ -188,4 +188,3 @@ if [[ "${KEEP_RELEASES}" =~ ^[0-9]+$ ]] && (( KEEP_RELEASES > 0 )); then
 fi
 
 echo "[deploy] 完成：${release_id}"
-

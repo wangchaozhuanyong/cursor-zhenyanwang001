@@ -11,12 +11,12 @@ set -euo pipefail
 # 可覆盖的环境变量：
 #   DEPLOY_BASE=/var/www/damatong
 #   APP_DIR=/var/www/damatong/app
-#   KEEP_RELEASES=5
+#   KEEP_RELEASES=2
 #   PUBLIC_HOST=13.212.179.213
 
 DEPLOY_BASE="${DEPLOY_BASE:-/var/www/damatong}"
 APP_DIR="${APP_DIR:-${DEPLOY_BASE}/app}"
-KEEP_RELEASES="${KEEP_RELEASES:-5}"
+KEEP_RELEASES="${KEEP_RELEASES:-2}"
 PUBLIC_HOST="${PUBLIC_HOST:-13.212.179.213}"
 
 releases_dir="${DEPLOY_BASE}/releases"
@@ -397,4 +397,3 @@ if [[ "${KEEP_RELEASES}" =~ ^[0-9]+$ ]] && (( KEEP_RELEASES > 0 )); then
 fi
 
 echo "[deploy] 完成：${release_id}"
-

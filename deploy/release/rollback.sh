@@ -2,7 +2,7 @@
 set -euo pipefail
 
 DEPLOY_BASE="${DEPLOY_BASE:-/var/www/damatong}"
-KEEP_RELEASES="${KEEP_RELEASES:-5}"
+KEEP_RELEASES="${KEEP_RELEASES:-2}"
 
 releases_dir="${DEPLOY_BASE}/releases"
 current_link="${DEPLOY_BASE}/current"
@@ -54,4 +54,3 @@ if [[ "${KEEP_RELEASES}" =~ ^[0-9]+$ ]] && (( KEEP_RELEASES > 0 )); then
     done
   fi
 fi
-

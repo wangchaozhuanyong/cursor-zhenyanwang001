@@ -48,7 +48,7 @@ readlink -f /var/www/damatong/current
 
 - `DEPLOY_BASE`：默认 `/var/www/damatong`
 - `REPO_DIR`：默认 `$DEPLOY_BASE/app`（如果你把仓库 clone 在别处，就改这个）
-- `KEEP_RELEASES`：默认 `5`
+- `KEEP_RELEASES`：默认 `2`
 - `RELEASE_REF`：默认 `origin/main`
 - `NODE_ENV`：默认 `production`
 - `PM2_APP_NAME`：可选，指定 PM2 应用名（否则重启 all）
@@ -59,4 +59,3 @@ readlink -f /var/www/damatong/current
 未配置 `CF_API_TOKEN` / `CF_ZONE_ID` 时，脚本**不会**自动清 Cloudflare 边缘缓存。每次前端发版成功后，请按清单执行 **Purge Everything**：
 
 → **[POST-RELEASE-CHECKLIST.md](./POST-RELEASE-CHECKLIST.md)**
-

@@ -17,7 +17,7 @@
 | 商品/分类/轮播服务端内存缓存 | `server/src/modules/product/service/catalog.service.js` | TTL 60 秒，后台商品、分类、活动改动后调用 `clearCatalogCache()`。 |
 | 前端 React Query | `click-send-shop-main/click-send-shop-main/src/lib/queryClient.ts` | 默认 `staleTime` 5 分钟；后台关键页一般单独设置 30-60 秒并在保存后 invalidate。 |
 | PWA 运行时缓存 | `click-send-shop-main/click-send-shop-main/vite.config.ts` | 后台、登录、订单、购物车、支付、上传为 `NetworkOnly`；公开数据按类型设置 1 分钟到 24 小时。 |
-| 静态资源缓存 | `server/src/app.js` | 构建产物 `/assets` 缓存 30 天；上传图片 `/uploads` 缓存 7 天。 |
+| 静态资源缓存 | `server/src/app.js` | SPA/后台 HTML 入口不缓存；构建产物 `/assets` 按 hash 文件名缓存 1 年；上传图片 `/uploads` 缓存 7 天。 |
 
 ## 3. 前台公开数据缓存
 
@@ -61,4 +61,3 @@
 4. 私密数据不能进入公共缓存。
 5. 后台保存后，刷新前台页面能在预期时间内看到新数据。
 6. 缓存服务 Redis 不可用时，接口不能直接崩溃，应降级为查数据库。
-

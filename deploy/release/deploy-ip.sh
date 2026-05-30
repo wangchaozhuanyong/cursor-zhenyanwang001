@@ -230,8 +230,8 @@ fi
 echo "[deploy] 构建前端（storefront + admin）"
 pushd "${release_dir}/click-send-shop-main/click-send-shop-main" >/dev/null
 npm ci
-npm run build
 npm run build:admin
+npm run build
 popd >/dev/null
 
 echo "[deploy] 安装后端依赖"

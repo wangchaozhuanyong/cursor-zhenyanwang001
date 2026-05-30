@@ -100,8 +100,8 @@ function ProductCardInner({
   const isServiceLike = /服务|咨询|办理|申请|装修/.test(String(product.category_name || product.name || ""));
   const cardImageAlt = product.cover_image_alt || (isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`);
   const showNewBadge = isProductNewArrival(product);
-  const imageLoading = index < 4 ? "eager" : "lazy";
-  const imageFetchPriority = index < 2 ? "high" : undefined;
+  const imageLoading = index < 2 ? "eager" : "lazy";
+  const imageFetchPriority = index === 0 ? "high" : undefined;
 
   useEffect(() => {
     const node = impressionRef.current;
@@ -241,7 +241,7 @@ function ProductCardInner({
   return (
     <Reveal
       index={index}
-      className="theme-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu"
+      className="theme-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:320px]"
       onClick={() => openDetail("product_grid")}
     >
       <div

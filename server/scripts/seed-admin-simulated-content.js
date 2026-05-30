@@ -799,12 +799,12 @@ async function seedBannersAndHomeOps() {
   }
 
   const navItems = [
-    { title: '手机数码', target_type: 'category', target_category_id: state.categories['手机数码']?.id, icon_url: imageUrl(), sort_order: 1, enabled: true },
-    { title: '居家生活', target_type: 'category', target_category_id: state.categories['居家生活']?.id, icon_url: imageUrl(), sort_order: 2, enabled: true },
-    { title: '美妆个护', target_type: 'category', target_category_id: state.categories['美妆个护']?.id, icon_url: imageUrl(), sort_order: 3, enabled: true },
-    { title: '企业采购', target_type: 'category', target_category_id: state.categories['企业采购']?.id, icon_url: imageUrl(), sort_order: 4, enabled: true },
-    { title: '全部分类', target_type: 'categories', icon_url: imageUrl(), sort_order: 5, enabled: true },
-    { title: '本地预览说明', target_type: 'url', link_url: '/content/local-preview-guide', icon_url: imageUrl(), sort_order: 6, enabled: true },
+    { title: '手机数码', target_type: 'category', target_category_id: state.categories['手机数码']?.id, icon_url: 'phone', sort_order: 1, enabled: true },
+    { title: '居家生活', target_type: 'category', target_category_id: state.categories['居家生活']?.id, icon_url: 'home', sort_order: 2, enabled: true },
+    { title: '美妆个护', target_type: 'category', target_category_id: state.categories['美妆个护']?.id, icon_url: 'gift', sort_order: 3, enabled: true },
+    { title: '企业采购', target_type: 'category', target_category_id: state.categories['企业采购']?.id, icon_url: 'bag', sort_order: 4, enabled: true },
+    { title: '全部分类', target_type: 'categories', icon_url: 'grid', sort_order: 5, enabled: true },
+    { title: '本地预览说明', target_type: 'url', link_url: '/content/local-preview-guide', icon_url: 'help', sort_order: 6, enabled: true },
   ];
   for (const payload of navItems) {
     await ensureNavItem(payload);

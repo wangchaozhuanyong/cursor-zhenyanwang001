@@ -36,8 +36,8 @@ export function installChunkLoadRecovery(appName: string): void {
   if (typeof window === "undefined") return;
 
   const recover = (reason: unknown) => {
-    if (!isChunkLoadFailure(reason)) return;
-    recoverFromChunkLoadError(appName);
+    if (!isChunkLoadFailure(reason)) return false;
+    return recoverFromChunkLoadError(appName);
   };
 
   window.addEventListener(
@@ -48,11 +48,18 @@ export function installChunkLoadRecovery(appName: string): void {
         target instanceof HTMLScriptElement || target instanceof HTMLLinkElement
           ? target.src || target.href
           : "";
-      recover(event.error || event.message || resourceUrl);
+      const recovered = recover(event.error || event.message || { src: resourceUrl });
+      if (recovered) event.preventDefault();
     },
     true,
   );
-  window.addEventListener("unhandledrejection", (event) => recover(event.reason));
+  window.addEventListener("unhandledrejection", (event) => {
+    if (recover(event.reason)) event.preventDefault();
+  });
+  window.addEventListener("vite:preloadError", (event) => {
+    const preloadEvent = event as Event & { payload?: unknown };
+    if (recover(preloadEvent.payload || preloadEvent)) event.preventDefault();
+  });
 }
 
 export function recoverFromChunkLoadError(appName = "app"): boolean {
@@ -62,7 +69,6 @@ export function recoverFromChunkLoadError(appName = "app"): boolean {
     const now = Date.now();
     const last = readChunkRecoveryState();
     const sameRecoveryWindow =
-      last?.app === appName &&
       typeof last.firstAt === "number" &&
       now - last.firstAt < CHUNK_RECOVERY_AUTO_RELOAD_WINDOW_MS;
     const attempts = sameRecoveryWindow ? Math.max(0, Number(last?.attempts || 0)) : 0;
@@ -115,19 +121,34 @@ function forceReloadWithCacheBuster(): void {
   }
 }
 
-function isChunkLoadFailure(reason: unknown): boolean {
+export function isChunkLoadFailure(reason: unknown): boolean {
   const message = stringifyError(reason);
-  return /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk \d+ failed|dynamically imported module|\/assets\/.+\.(js|css)/i.test(
+  return /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i.test(
     message,
   );
 }
 
 function stringifyError(reason: unknown): string {
   if (typeof reason === "string") return reason;
-  if (reason instanceof Error) return `${reason.name}: ${reason.message}`;
+  if (reason instanceof Error) return `${reason.name}: ${reason.message}\n${reason.stack || ""}`;
   if (reason && typeof reason === "object") {
     const record = reason as Record<string, unknown>;
-    return String(record.message || record.reason || record.type || record.src || record.href || "");
+    const target = record.target as Record<string, unknown> | undefined;
+    return [
+      record.name,
+      record.message,
+      record.reason,
+      record.type,
+      record.src,
+      record.href,
+      record.url,
+      record.filename,
+      target?.src,
+      target?.href,
+      record.payload && record.payload !== reason ? stringifyError(record.payload) : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
   return "";
 }

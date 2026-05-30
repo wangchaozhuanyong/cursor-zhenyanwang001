@@ -241,13 +241,16 @@ else
   export NODE_OPTIONS="--max-old-space-size=${FRONTEND_BUILD_HEAP_MB}"
   export VITE_LEGACY_BUILD="${VITE_LEGACY_BUILD:-1}"
   export VITE_API_BASE_URL
-  node ./node_modules/vite/bin/vite.js build
   npm run build:admin
+  # Keep the public shop build last so dist/index.html cannot be removed by the admin/PWA build.
+  node ./node_modules/vite/bin/vite.js build
 fi
 
-if [[ -d "$FRONTEND_DIR/dist" ]]; then
+if [[ -f "$FRONTEND_DIR/dist/index.html" ]]; then
   echo "📤 同步 dist → $PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
   sync_public_static "$FRONTEND_DIR/dist" "$PUBLIC_FRONTEND"
+elif [[ -d "$FRONTEND_DIR/dist" ]]; then
+  echo "⚠️  跳过同步 dist：缺少 dist/index.html，避免发布半成品前台构建。" | tee -a "$LOG_FILE"
 fi
 
 if [[ -f "$ADMIN_DIST_DIR/admin-index.html" ]]; then

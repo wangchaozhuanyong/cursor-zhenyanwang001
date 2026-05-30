@@ -98,8 +98,8 @@ echo "[deploy] 构建前端（storefront + admin）"
 pushd "${release_dir}/click-send-shop-main/click-send-shop-main" >/dev/null
 # Vite 在 devDependencies；NODE_ENV=production 时 npm ci 会省略 dev 依赖导致 vite: not found
 npm ci --include=dev
-npm run build
 npm run build:admin
+npm run build
 popd >/dev/null
 
 export NODE_ENV="${NODE_ENV:-production}"

@@ -136,8 +136,9 @@ if [[ -n "$FRONTEND_SUB" ]]; then
   cd "$PROJECT_DIR/$FRONTEND_SUB" || exit 1
   npm_install_here
   export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
-  npm run build
   npm run build:admin
+  # Keep the public shop build last so dist/index.html cannot be removed by the admin/PWA build.
+  npm run build
   if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
     echo "🧩 保留上一版 hashed assets，避免已打开页面懒加载旧 chunk 404" | tee -a "$LOG_FILE"
     mkdir -p "$PROJECT_DIR/$FRONTEND_SUB/dist/assets"

@@ -20,7 +20,7 @@ export function isStoreTabPath(pathname: string): boolean {
  */
 export function getStoreFixedBottomOffset(pathname: string): string {
   const safe = "env(safe-area-inset-bottom, 0px)";
-  const nav = "var(--store-bottom-nav-height, 72px)";
+  const nav = "var(--store-bottom-nav-height, 78px)";
   const action = "var(--store-action-bar-height, 4.75rem)";
 
   if (pathname.startsWith("/checkout") || pathname.startsWith("/product/")) {

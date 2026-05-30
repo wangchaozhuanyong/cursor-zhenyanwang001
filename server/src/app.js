@@ -115,6 +115,33 @@ const adminDistIndexHtml = ['index.html', 'admin-index.html']
   .find((filePath) => fs.existsSync(filePath)) || path.join(adminDist, 'admin-index.html');
 const adminDistReady = fs.existsSync(adminDistIndexHtml);
 
+const HTML_NO_STORE_CACHE_CONTROL = 'no-store, no-cache, must-revalidate, proxy-revalidate';
+const HASHED_ASSET_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+const SHORT_STATIC_CACHE_CONTROL = 'public, max-age=300';
+
+function setNoStoreHtmlHeaders(res) {
+  res.setHeader('Cache-Control', HTML_NO_STORE_CACHE_CONTROL);
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+}
+
+function setHashedAssetHeaders(res) {
+  res.setHeader('Cache-Control', HASHED_ASSET_CACHE_CONTROL);
+}
+
+function setSpaStaticHeaders(res, filePath) {
+  if (filePath.endsWith('.html')) {
+    setNoStoreHtmlHeaders(res);
+    return;
+  }
+  if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+    setHashedAssetHeaders(res);
+    return;
+  }
+  res.setHeader('Cache-Control', SHORT_STATIC_CACHE_CONTROL);
+}
+
 /** Extend Helmet CSP for configured image storage, analytics, and Stripe. */
 const helmetCspDefaults = helmet.contentSecurityPolicy.getDefaultDirectives();
 const storageAllowedOrigins = getStorageAllowedOrigins();
@@ -207,8 +234,22 @@ for (const origin of (process.env.ADMIN_ALLOWED_ORIGINS || '').split(',').map((i
 const allowDevAnyOrigin = !isProduction && process.env.ALLOW_DEV_CORS_ANY_ORIGIN === '1';
 
 /** Dev: treat localhost and 127.0.0.1 on the same port as equivalent. */
-function isAllowedCorsOrigin(origin) {
+function isSameHostOrigin(origin, req) {
+  if (!origin || !req) return false;
+  try {
+    const originUrl = new URL(origin);
+    const host = String(req.headers.host || '').trim();
+    return Boolean(host) && originUrl.host === host;
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedCorsOrigin(origin, req) {
   if (!origin || allowedOrigins.includes(origin)) return true;
+  // Module scripts and styles may send an Origin header even for same-host requests.
+  // Same-host assets must not be rejected by the API CORS allowlist.
+  if (isSameHostOrigin(origin, req)) return true;
   if (!isProduction) {
     try {
       const u = new URL(origin);
@@ -228,12 +269,14 @@ function isAllowedCorsOrigin(origin) {
   return allowDevAnyOrigin;
 }
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (isAllowedCorsOrigin(origin)) return callback(null, true);
-    callback(new Error('CORS not allowed'), false);
-  },
-  credentials: true,
+app.use(cors((req, callback) => {
+  callback(null, {
+    origin: (origin, originCallback) => {
+      if (isAllowedCorsOrigin(origin, req)) return originCallback(null, true);
+      originCallback(new Error('CORS not allowed'), false);
+    },
+    credentials: true,
+  });
 }));
 
 app.use(compression());
@@ -351,14 +394,15 @@ if (serveAdminFromAdminDist) {
       express.static(adminAssetsDir, {
         fallthrough: true,
         immutable: true,
-        maxAge: '30d',
+        maxAge: '1y',
+        setHeaders: setHashedAssetHeaders,
       }),
     );
   }
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path !== '/admin' && !req.path.startsWith('/admin/')) return next();
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    setNoStoreHtmlHeaders(res);
     return res.sendFile(adminDistIndexHtml, (err) => next(err));
   });
 }
@@ -374,7 +418,8 @@ if (serveSpa) {
     '/assets',
     express.static(frontendAssetsDir, {
       immutable: true,
-      maxAge: '30d',
+      maxAge: '1y',
+      setHeaders: setHashedAssetHeaders,
     }),
   );
 
@@ -384,15 +429,7 @@ if (serveSpa) {
   // HTML entry should always revalidate to avoid stale chunk references.
   app.use(
     express.static(frontendDist, {
-      setHeaders: (res, filePath) => {
-        if (filePath.endsWith('index.html')) {
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-          return;
-        }
-        if (!filePath.includes(`${path.sep}assets${path.sep}`)) {
-          res.setHeader('Cache-Control', 'public, max-age=300');
-        }
-      },
+      setHeaders: setSpaStaticHeaders,
     }),
   );
   // Express 5 / path-to-regexp does not support app.get('*'); use middleware for SPA fallback.
@@ -413,7 +450,7 @@ if (serveSpa) {
     // Missing hashed chunks must be a real 404; returning index.html makes
     // dynamic import failures harder to diagnose and can cache the wrong MIME.
     if (req.path.startsWith('/assets/')) return next();
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    setNoStoreHtmlHeaders(res);
     res.sendFile(path.join(frontendDist, 'index.html'), (err) => next(err));
   });
   console.log(`Frontend static assets: ${frontendDist}`);
@@ -435,24 +472,21 @@ if (serveAdminFromAdminDist && !serveSpa) {
       '/assets',
       express.static(adminAssetsDir, {
         immutable: true,
-        maxAge: '30d',
+        maxAge: '1y',
+        setHeaders: setHashedAssetHeaders,
       }),
     );
   }
   app.use(
     express.static(adminDist, {
-      setHeaders: (res, filePath) => {
-        if (filePath.endsWith('index.html')) {
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-        }
-      },
+      setHeaders: setSpaStaticHeaders,
     }),
   );
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api')) return next();
     if (req.path.startsWith('/assets/')) return next();
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    setNoStoreHtmlHeaders(res);
     res.sendFile(adminDistIndexHtml, (err) => next(err));
   });
 }

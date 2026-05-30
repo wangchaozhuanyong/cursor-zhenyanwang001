@@ -40,8 +40,8 @@ export default function HomeGridProductCard({
   const showNewBadge = isProductNewArrival(product);
   const isServiceLike = isHomeServiceLikeProduct(product);
   const cardImageAlt = product.cover_image_alt || (isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`);
-  const imageLoading = index < 4 ? "eager" : "lazy";
-  const imageFetchPriority = index < 2 ? "high" : undefined;
+  const imageLoading = index < 2 ? "eager" : "lazy";
+  const imageFetchPriority = index === 0 ? "high" : undefined;
   const priceNum = Number(product.price || 0);
   const formatMoney = (v: number) => v.toFixed(2).replace(/\.00$/, "");
 
@@ -73,7 +73,10 @@ export default function HomeGridProductCard({
       onClick={() => {
         void trackEvent({ event_type: "product_click", module: "hot_sales", product_id: product.id });
       }}
-      className={cn(HOME_PRODUCT_CARD_SHELL, "group min-w-0 transform-gpu")}
+      className={cn(
+        HOME_PRODUCT_CARD_SHELL,
+        "group min-w-0 transform-gpu [content-visibility:auto] [contain-intrinsic-size:280px]",
+      )}
       aria-label={`查看 ${product.name}`}
     >
       <div className={cn(HOME_PRODUCT_CARD_MEDIA, homeProductImageAspectClass(product))}>

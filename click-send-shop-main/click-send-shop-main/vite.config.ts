@@ -53,18 +53,33 @@ function resolveVendorChunkName(id: string): string | undefined {
  * 该 side-effect import 对运行时无实质作用，构建后安全移除。
  */
 function stripImportMetaResolveGuard(): Plugin {
+  const dataUriGuard = /import'data:text\/javascript,[^']+';/g;
+  const typeofResolveGuard = /typeof\s+import\.meta\.resolve\s*===?\s*["']function["']\s*&&[^;]+;/g;
+
+  function stripGuard(code: string) {
+    let next = code.replace(dataUriGuard, "");
+    next = next.replace(typeofResolveGuard, "");
+    return next;
+  }
+
   return {
     name: "strip-import-meta-resolve-guard",
     apply: "build",
     enforce: "post",
     generateBundle(_options, bundle) {
-      const dataUriGuard = /import'data:text\/javascript,[^']+';/g;
-      const typeofResolveGuard = /typeof\s+import\.meta\.resolve\s*===?\s*["']function["']\s*&&[^;]+;/g;
       for (const item of Object.values(bundle)) {
-        if (item.type !== "chunk" || !item.code?.includes("import.meta.resolve")) continue;
-        let next = item.code.replace(dataUriGuard, "");
-        next = next.replace(typeofResolveGuard, "");
-        item.code = next;
+        if (item.type === "chunk" && item.code?.includes("import.meta.resolve")) {
+          item.code = stripGuard(item.code);
+          continue;
+        }
+        if (
+          item.type === "asset"
+          && item.fileName.endsWith(".html")
+          && typeof item.source === "string"
+          && item.source.includes("import.meta.resolve")
+        ) {
+          item.source = stripGuard(item.source);
+        }
       }
     },
   };

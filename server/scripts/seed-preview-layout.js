@@ -35,6 +35,15 @@ const images = [
   '/assets/banner1.jpg',
 ];
 
+const productImages = [
+  '/assets/home-banners/home-hero-01-platform-bg-mobile.webp',
+  '/assets/home-banners/home-hero-02-visa-study-bg-mobile.webp',
+  '/assets/home-banners/home-hero-03-local-goods-bg-mobile.webp',
+  '/assets/home-banners/home-hero-04-renovation-bg-mobile.webp',
+  '/assets/home-banners/home-hero-05-support-bg-mobile.webp',
+  '/assets/banner1.jpg',
+];
+
 const categories = [
   { id: `${PREFIX}-cat-gift`, name: 'Preview Gifts', icon: 'gift', sort: 1 },
   { id: `${PREFIX}-cat-digital`, name: 'Preview Digital', icon: 'digital', sort: 2 },
@@ -103,12 +112,12 @@ function makeProducts() {
   for (let i = 1; i <= 36; i += 1) {
     const category = categories[(i - 1) % categories.length];
     const price = 19 + (i * 7) % 380;
-    const cover = images[(i - 1) % images.length];
+    const cover = productImages[(i - 1) % productImages.length];
     rows.push({
       id: productId(i),
       name: `Preview Product ${String(i).padStart(2, '0')}`,
       cover,
-      imageList: [cover, images[i % images.length], images[(i + 1) % images.length]],
+      imageList: [cover, productImages[i % productImages.length], productImages[(i + 1) % productImages.length]],
       price,
       originalPrice: price + 30 + (i % 5) * 12,
       points: 2 + (i % 40),
@@ -226,6 +235,14 @@ async function seedBanners() {
 
 async function seedHomeNav() {
   if (!(await tableExists('home_nav_items'))) return 0;
+  const [[existingNav]] = await db.query(
+    'SELECT COUNT(*) AS count FROM home_nav_items WHERE id NOT LIKE ? AND enabled = 1',
+    [`${PREFIX}-nav-%`],
+  );
+  if (Number(existingNav?.count || 0) > 0) {
+    await db.query('UPDATE home_nav_items SET enabled = 0 WHERE id LIKE ?', [`${PREFIX}-nav-%`]);
+    return 0;
+  }
   for (const item of navItems) {
     await db.query(
       `INSERT INTO home_nav_items (

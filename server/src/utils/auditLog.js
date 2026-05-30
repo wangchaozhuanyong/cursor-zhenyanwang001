@@ -3,6 +3,16 @@ const { generateId } = require('./helpers');
 
 const MAX_JSON_CHARS = 8000;
 const MAX_OBJECT_ID_CHARS = 191;
+const FRONTEND_CHUNK_LOAD_ERROR_MESSAGE = '前端版本文件加载失败，通常是浏览器缓存旧版本导致。请刷新页面后再试。';
+const FRONTEND_CHUNK_LOAD_ERROR_PATTERN =
+  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
+
+function normalizeAuditErrorMessage(errorMessage) {
+  const raw = String(errorMessage || '').trim();
+  if (!raw) return '';
+  if (FRONTEND_CHUNK_LOAD_ERROR_PATTERN.test(raw)) return FRONTEND_CHUNK_LOAD_ERROR_MESSAGE;
+  return raw;
+}
 
 /**
  * @param {unknown} obj
@@ -105,6 +115,7 @@ async function writeAuditLog(params) {
     const id = generateId();
     const beforeStr = before !== undefined ? truncateJson(before) : null;
     const afterStr = after !== undefined ? truncateJson(after) : null;
+    const normalizedErrorMessage = normalizeAuditErrorMessage(errorMessage);
 
     await auditLogRepo.insertAuditLogRow({
       id,
@@ -122,7 +133,7 @@ async function writeAuditLog(params) {
       path: ctx.path,
       method: ctx.method,
       result: result === 'failure' ? 'failure' : 'success',
-      errorMessage: String(errorMessage || '').slice(0, 500),
+      errorMessage: normalizedErrorMessage.slice(0, 500),
     });
   } catch (e) {
     console.error('[audit_logs] write failed:', e.message);
@@ -133,5 +144,6 @@ module.exports = {
   writeAuditLog,
   getReqContext,
   getOperatorMeta,
+  normalizeAuditErrorMessage,
   truncateJson,
 };

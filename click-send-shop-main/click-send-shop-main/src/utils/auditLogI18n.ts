@@ -7,7 +7,11 @@ import {
 } from "@/constants/statusDictionary";
 import { translateApiErrorMessage } from "@/utils/apiErrorMessage";
 import { DATA_CLEANUP_POLICY_LABELS } from "@/utils/dataRetentionLabels";
-import { formatSystemErrorMessage } from "@/utils/systemErrorMessage";
+import {
+  FRONTEND_CHUNK_LOAD_ERROR_MESSAGE,
+  formatSystemErrorMessage,
+  isFrontendChunkLoadErrorMessage,
+} from "@/utils/systemErrorMessage";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -591,6 +595,7 @@ function translateStatusToken(token: string) {
 export function zhAuditSummary(summary?: string) {
   const raw = String(summary || "").trim();
   if (!raw) return "—";
+  if (isFrontendChunkLoadErrorMessage(raw)) return FRONTEND_CHUNK_LOAD_ERROR_MESSAGE;
   if (SUMMARY_EXACT_ZH[raw]) return SUMMARY_EXACT_ZH[raw];
 
   const reviewPatterns: Array<{ test: RegExp; format: (m: RegExpMatchArray) => string }> = [

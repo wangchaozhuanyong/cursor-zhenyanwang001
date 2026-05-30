@@ -36,6 +36,11 @@ sync_static_preserve_assets() {
 echo "[atomic-deploy] root: $ROOT_DIR"
 cd "$FRONT_DIR"
 
+if [ ! -f admin-dist/admin-index.html ]; then
+  echo "[atomic-deploy] admin-dist/admin-index.html missing; building admin ..."
+  npm run build:admin
+fi
+
 rm -rf dist.__new dist.__old
 
 echo "[atomic-deploy] building frontend to dist.__new (VITE_API_BASE_URL=$VITE_API_BASE_URL) ..."
@@ -56,11 +61,6 @@ rm -rf dist.__old
 rm -f dist/assets/AdminProducts-CY-imU7a.js
 rm -f dist/assets/AdminProductForm-OsdDVNdj.js
 rm -f dist/assets/AdminCoupons-BLsIu_w4.js
-
-if [ ! -f admin-dist/admin-index.html ]; then
-  echo "[atomic-deploy] admin-dist/admin-index.html missing; building admin ..."
-  npm run build:admin
-fi
 
 echo "[atomic-deploy] syncing static roots ..."
 sync_static_preserve_assets dist "$PUBLIC_FRONTEND"

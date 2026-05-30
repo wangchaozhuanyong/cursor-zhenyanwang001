@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
-import { recoverFromChunkLoadError } from "@/lib/browserBoot";
+import { isChunkLoadFailure, recoverFromChunkLoadError } from "@/lib/browserBoot";
 
 interface Props {
   children: ReactNode;
@@ -19,18 +19,17 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(err: Error): State {
     const message = err.message || "未知错误";
-    const isChunkLoadError =
-      /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk \d+ failed|dynamically imported module/i.test(
-        message,
-      );
+    const isChunkLoadError = isChunkLoadFailure(err);
     return { hasError: true, message, isChunkLoadError };
   }
 
   componentDidCatch(err: Error, info: ErrorInfo) {
-    console.error("[ErrorBoundary]", err, info.componentStack);
     if (this.state.isChunkLoadError) {
+      console.warn("[ErrorBoundary] 网站版本文件加载失败，已触发刷新兜底。");
       recoverFromChunkLoadError("error-boundary");
+      return;
     }
+    console.error("[ErrorBoundary]", err, info.componentStack);
   }
 
   componentDidUpdate(prevProps: Props) {

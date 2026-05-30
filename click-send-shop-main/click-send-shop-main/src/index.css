@@ -114,7 +114,7 @@
     --theme-card-foreground: #000000;
     --theme-surface-foreground: #000000;
     --theme-admin-mode: follow_store;
-    --store-bottom-nav-height: 72px;
+    --store-bottom-nav-height: 78px;
     --store-action-bar-height: 4.75rem;
     --store-tab-header-height: 3.5rem;
     --store-brand-logo-size: 2.25rem;
@@ -377,7 +377,7 @@
     color: var(--theme-muted);
   }
   .store-bottom-safe {
-    padding-bottom: calc(var(--store-bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--store-bottom-nav-height, 78px) + env(safe-area-inset-bottom, 0px));
   }
   .store-tab-header-offset {
     padding-top: calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px));
@@ -387,7 +387,7 @@
   }
   .store-bottom-cart-space {
     padding-bottom: calc(
-      var(--store-bottom-nav-height, 72px) + var(--store-action-bar-height, 4.75rem) +
+      var(--store-bottom-nav-height, 78px) + var(--store-action-bar-height, 4.75rem) +
         env(safe-area-inset-bottom, 0px)
     );
   }
@@ -419,7 +419,7 @@
 
   /* 与 store-bottom-safe 等价；保留类名供按需显式使用 */
   .store-floating-nav-space {
-    padding-bottom: calc(var(--store-bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--store-bottom-nav-height, 78px) + env(safe-area-inset-bottom, 0px));
   }
   .z-header { z-index: 40; }
   .z-bottom-nav { z-index: 50; }
@@ -850,12 +850,12 @@ html {
 
 /* 底栏为 fixed：用 scroll-padding 预留空间，避免页面根节点 padding-bottom 在页脚下方形成大块空白 */
 html[data-app-scope="store"] {
-  scroll-padding-bottom: calc(var(--store-bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px));
+  scroll-padding-bottom: calc(var(--store-bottom-nav-height, 78px) + env(safe-area-inset-bottom, 0px));
 }
 
 html[data-app-scope="store"][data-store-tab-route="cart"] {
   scroll-padding-bottom: calc(
-    var(--store-bottom-nav-height, 72px) + var(--store-action-bar-height, 4.75rem) +
+    var(--store-bottom-nav-height, 78px) + var(--store-action-bar-height, 4.75rem) +
       env(safe-area-inset-bottom, 0px)
   );
 }

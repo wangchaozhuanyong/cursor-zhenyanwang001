@@ -1,6 +1,19 @@
 import { translateApiErrorMessage } from "@/utils/apiErrorMessage";
 
+export const FRONTEND_CHUNK_LOAD_ERROR_MESSAGE = "前端版本文件加载失败，通常是浏览器缓存旧版本导致。请刷新页面后再试。";
+
+const FRONTEND_CHUNK_LOAD_ERROR_PATTERN =
+  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
+
+export function isFrontendChunkLoadErrorMessage(msg?: string | null): boolean {
+  return FRONTEND_CHUNK_LOAD_ERROR_PATTERN.test(String(msg ?? ""));
+}
+
 const SYSTEM_ERROR_PATTERNS: Array<{ test: RegExp; message: string }> = [
+  {
+    test: FRONTEND_CHUNK_LOAD_ERROR_PATTERN,
+    message: FRONTEND_CHUNK_LOAD_ERROR_MESSAGE,
+  },
   {
     test: /Illegal mix of collations/i,
     message: "数据库表字符集排序规则不一致，监控/对账 SQL 无法执行。请联系技术人员执行数据库迁移 109 统一校对规则。",

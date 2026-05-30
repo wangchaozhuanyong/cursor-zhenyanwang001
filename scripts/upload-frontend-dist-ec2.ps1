@@ -52,12 +52,13 @@ if ($IdentityFile -and (Test-Path $IdentityFile)) {
 }
 
 if (-not $SkipBuild) {
-  Write-Host "[1/5] Local vite build (VITE_API_BASE_URL=/api) ..."
+  Write-Host "[1/5] Local vite build (admin first, shop last; VITE_API_BASE_URL=/api) ..."
   Push-Location $FrontendDir
   try {
   $env:VITE_API_BASE_URL = "/api"
-  Invoke-Native "npm.cmd" @("run", "build")
   Invoke-Native "npm.cmd" @("run", "build:admin")
+  # Keep the public shop build last. Some PWA/admin build steps can refresh files under dist.
+  Invoke-Native "npm.cmd" @("run", "build")
   } finally {
     Pop-Location
   }

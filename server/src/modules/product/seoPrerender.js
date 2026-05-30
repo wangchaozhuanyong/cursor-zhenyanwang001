@@ -80,6 +80,13 @@ function safeJsonScript(data) {
   return JSON.stringify(data).replace(/<\//g, '<\\/');
 }
 
+function setNoStoreHtmlHeaders(res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+}
+
 function parseJsonArray(value) {
   try {
     const parsed = JSON.parse(String(value || '[]'));
@@ -253,6 +260,7 @@ async function registerSeoPrerender(app, { frontendDist }) {
   if (!fs.existsSync(indexPath)) return;
 
   const render = async (req, res, payloadBuilder) => {
+    setNoStoreHtmlHeaders(res);
     try {
       const baseHtml = fs.readFileSync(indexPath, 'utf8');
       const baseUrl = getBaseUrl(req);
@@ -266,6 +274,7 @@ async function registerSeoPrerender(app, { frontendDist }) {
   };
 
   app.get('/tiktok', (req, res) => {
+    setNoStoreHtmlHeaders(res);
     try {
       const baseHtml = fs.readFileSync(indexPath, 'utf8');
       res.setHeader('X-Robots-Tag', 'noindex, nofollow');

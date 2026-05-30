@@ -65,8 +65,8 @@ ln -sfn "${SHARED_ENV}" "${release_dir}/server/.env"
 echo "[deploy] build frontend"
 cd "${release_dir}/click-send-shop-main/click-send-shop-main"
 npm ci
-npm run build
 npm run build:admin
+npm run build
 
 echo "[deploy] install server deps + migrate"
 cd "${release_dir}/server"

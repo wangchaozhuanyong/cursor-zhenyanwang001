@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, type TouchEvent } from "react
 import { motion, AnimatePresence } from "framer-motion";
 import { supportsColorMix } from "@/utils/cssSupport";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { BANNER_ASPECT_CSS } from "@/constants/bannerAspect";
+import { BANNER_ASPECT_CSS, BANNER_IMAGE_HEIGHT, BANNER_IMAGE_WIDTH } from "@/constants/bannerAspect";
 import { getBannerContainerClassName, getBannerOverlayClassName } from "@/utils/themeVisuals";
 
 interface LoginBanner {
@@ -90,7 +90,11 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
           <img
             src={banners[safeCurrent].image}
             alt={banners[safeCurrent].title}
+            width={BANNER_IMAGE_WIDTH}
+            height={BANNER_IMAGE_HEIGHT}
             className="h-full w-full object-cover object-center"
+            loading="eager"
+            fetchPriority="high"
             decoding="async"
           />
           {bannerOverlayClass ? (

@@ -18,7 +18,7 @@ const PRESETS = {
     primaryTag: 'full',
   },
   banner: { kind: 'single', width: 2560, quality: 92 },
-  thumb: { kind: 'single', width: 800, quality: 85 },
+  thumb: { kind: 'single', width: 256, quality: 84 },
   asset: { kind: 'single', width: 1920, quality: 88 },
 };
 

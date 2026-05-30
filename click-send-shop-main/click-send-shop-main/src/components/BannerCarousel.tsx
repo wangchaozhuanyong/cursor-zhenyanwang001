@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
@@ -20,8 +20,8 @@ interface BannerCarouselProps {
 }
 
 const CROSSFADE_TRANSITION = {
-  opacity: { duration: 0.8, ease: "easeInOut" as const },
-  scale: { duration: 1.2, ease: "easeOut" as const },
+  opacity: { duration: 0.32, ease: "easeOut" as const },
+  scale: { duration: 0.5, ease: "easeOut" as const },
 };
 
 const HERO_TEXT_GRADIENT =
@@ -39,6 +39,14 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   const bannerContainerClass = getBannerContainerClassName(bannerStyle);
   const { enabled: motionEnabled } = useMotionConfig();
   const [current, setCurrent] = useState(0);
+  const safeIndex = banners.length > 0 && current < banners.length ? current : 0;
+  const banner = banners[safeIndex] ?? null;
+  const activeImage = banner?.image?.trim() || "";
+  const nextBannerImage = banners.length > 1
+    ? banners[(safeIndex + 1) % banners.length]?.image?.trim() || ""
+    : "";
+  const [activeImageLoaded, setActiveImageLoaded] = useState(false);
+  const [touchStart, setTouchStart] = useState(0);
   const navigate = useNavigate();
 
   const goTo = useCallback((index: number) => {
@@ -52,13 +60,19 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   }, [banners.length, current]);
 
   useEffect(() => {
-    banners.forEach((banner) => {
-      const src = banner.image?.trim();
-      if (!src) return;
+    setActiveImageLoaded(false);
+  }, [activeImage]);
+
+  useEffect(() => {
+    if (!nextBannerImage || nextBannerImage === activeImage) return;
+    const timer = window.setTimeout(() => {
       const img = new Image();
-      img.src = src;
-    });
-  }, [banners]);
+      img.decoding = "async";
+      (img as HTMLImageElement & { fetchPriority?: "low" }).fetchPriority = "low";
+      img.src = nextBannerImage;
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [activeImage, nextBannerImage]);
 
   useEffect(() => {
     if (!motionEnabled || banners.length <= 1) return;
@@ -68,8 +82,6 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
     return () => window.clearInterval(timer);
   }, [banners.length, motionEnabled]);
 
-  const [touchStart, setTouchStart] = useState(0);
-
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX);
   };
@@ -78,11 +90,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
     if (banners.length <= 1) return;
     const diff = touchStart - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        goTo((current + 1) % banners.length);
-      } else {
-        goTo((current - 1 + banners.length) % banners.length);
-      }
+      goTo(diff > 0 ? (current + 1) % banners.length : (current - 1 + banners.length) % banners.length);
     }
   };
 
@@ -94,13 +102,11 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
         style={{ aspectRatio: BANNER_ASPECT_CSS, borderRadius: "var(--theme-radius)" }}
         aria-busy="true"
       >
-        <div className="absolute inset-0 animate-pulse bg-[linear-gradient(90deg,var(--theme-surface),var(--theme-bg),var(--theme-surface))]" />
+        <div className="absolute inset-0 skeleton-base skeleton-shimmer" />
       </div>
     );
   }
 
-  const safeIndex = current >= banners.length ? 0 : current;
-  const banner = banners[safeIndex];
   if (!banner) return null;
 
   const bannerLink = resolveBannerLink(banner.link);
@@ -135,54 +141,52 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
       onClick={handleOpenBanner}
     >
       <div className="absolute inset-0">
-        {banners.map((item, index) => {
-          const isActive = index === safeIndex;
-          const alt = item.title?.trim() || `首页轮播图 ${index + 1}`;
-          const sharedClass = "absolute inset-0 h-full w-full object-cover object-center";
-
-          if (motionEnabled) {
-            return (
-              <motion.img
-                key={item.id || index}
-                src={item.image}
-                alt={alt}
-                width={BANNER_IMAGE_WIDTH}
-                height={BANNER_IMAGE_HEIGHT}
-                loading={index === 0 ? "eager" : "lazy"}
-                decoding="async"
-                className={sharedClass}
-                animate={{
-                  opacity: isActive ? 1 : 0,
-                  scale: isActive ? 1 : 1.03,
-                }}
-                transition={CROSSFADE_TRANSITION}
-                style={{
-                  zIndex: isActive ? 2 : 1,
-                  pointerEvents: isActive ? "auto" : "none",
-                }}
-              />
-            );
-          }
-
-          return (
-            <img
-              key={item.id || index}
-              src={item.image}
-              alt={alt}
+        <div
+          className={`absolute inset-0 skeleton-base skeleton-shimmer transition-opacity duration-300 ${
+            activeImageLoaded ? "opacity-0" : "opacity-100"
+          }`}
+          aria-hidden
+        />
+        {activeImage && motionEnabled ? (
+          <AnimatePresence initial={false} mode="wait">
+            <motion.img
+              key={banner.id || activeImage || safeIndex}
+              src={activeImage}
+              alt={bannerTitle || `首页轮播图 ${safeIndex + 1}`}
               width={BANNER_IMAGE_WIDTH}
               height={BANNER_IMAGE_HEIGHT}
-              loading={index === 0 ? "eager" : "lazy"}
+              loading="eager"
+              fetchPriority="high"
               decoding="async"
-              className={`${sharedClass} transition-[opacity,transform] duration-700 ease-in-out`}
-              style={{
-                opacity: isActive ? 1 : 0,
-                transform: isActive ? "scale(1)" : "scale(1.03)",
-                zIndex: isActive ? 2 : 1,
-                pointerEvents: isActive ? "auto" : "none",
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              initial={{ opacity: 0, scale: 1.018 }}
+              animate={{
+                opacity: activeImageLoaded ? 1 : 0,
+                scale: activeImageLoaded ? 1 : 1.018,
               }}
+              exit={{ opacity: 0, scale: 1.012 }}
+              transition={CROSSFADE_TRANSITION}
+              onLoad={() => setActiveImageLoaded(true)}
             />
-          );
-        })}
+          </AnimatePresence>
+        ) : activeImage ? (
+          <img
+            key={banner.id || activeImage || safeIndex}
+            src={activeImage}
+            alt={bannerTitle || `首页轮播图 ${safeIndex + 1}`}
+            width={BANNER_IMAGE_WIDTH}
+            height={BANNER_IMAGE_HEIGHT}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-center transition-[opacity,transform] duration-500 ease-out"
+            style={{
+              opacity: activeImageLoaded ? 1 : 0,
+              transform: activeImageLoaded ? "scale(1)" : "scale(1.018)",
+            }}
+            onLoad={() => setActiveImageLoaded(true)}
+          />
+        ) : null}
       </div>
 
       {hasTextLayer ? (

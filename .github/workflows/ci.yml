@@ -38,10 +38,10 @@ jobs:
       - run: npm run typecheck
       - run: npm run typecheck:strict-api
       - run: npm run typecheck:strict-admin
-      - run: npm run build
+      - run: npm run build:admin
         env:
           VITE_API_BASE_URL: /api
-      - run: npm run build:admin
+      - run: npm run build
         env:
           VITE_API_BASE_URL: /api
 

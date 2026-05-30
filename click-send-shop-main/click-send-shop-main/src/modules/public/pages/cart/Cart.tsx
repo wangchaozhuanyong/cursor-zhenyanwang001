@@ -337,7 +337,7 @@ export default function Cart() {
       </main>
       {/* 移动端：底部固定结算栏 */}
       {items.length > 0 && (
-        <div className="fixed bottom-[calc(var(--store-bottom-nav-height,72px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
+        <div className="fixed bottom-[calc(var(--store-bottom-nav-height,78px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
           <div className="mx-auto flex w-full flex-col gap-2 px-[var(--store-page-x)] py-2.5 sm:max-w-lg sm:px-4">
             <SquishButton
               type="button"

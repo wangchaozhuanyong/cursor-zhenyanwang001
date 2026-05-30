@@ -37,16 +37,17 @@ sync_public_static() {
   [[ -d "$src_dir" ]] || return 0
   local src="${src_dir%/}/"
   local dest="${dest_dir%/}"
+  local rsync_flags=(-r --delete)
   if [[ "$dest" == /var/www/* ]] && { [[ ! -e "$dest" ]] || [[ ! -w "$dest" ]]; }; then
     sudo mkdir -p "$dest"
-    sudo rsync -a --delete "$src" "$dest/"
+    sudo rsync "${rsync_flags[@]}" "$src" "$dest/"
     if id www-data &>/dev/null; then
       sudo chown -R www-data:www-data "$dest"
     fi
   else
     mkdir -p "$dest"
     if command -v rsync >/dev/null 2>&1; then
-      rsync -a --delete --no-group --no-owner --no-perms --no-times --omit-dir-times "$src" "$dest/"
+      rsync "${rsync_flags[@]}" "$src" "$dest/"
     else
       rm -rf "${dest:?}/"*
       cp -a "$src." "$dest/"

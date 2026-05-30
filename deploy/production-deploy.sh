@@ -38,7 +38,7 @@ sync_public_static() {
   else
     mkdir -p "$dest"
     if command -v rsync >/dev/null 2>&1; then
-      rsync -a --delete --no-group --no-owner "$src" "$dest/"
+      rsync -a --delete --no-group --no-owner --no-perms --no-times --omit-dir-times "$src" "$dest/"
     else
       rm -rf "${dest:?}/"*
       cp -a "$src." "$dest/"

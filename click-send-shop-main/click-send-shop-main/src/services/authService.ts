@@ -153,6 +153,15 @@ export async function getProfile(options?: { sessionProbe?: boolean }): Promise<
   return mapProfileFromResponse(res.data);
 }
 
+async function canUseExistingSession(): Promise<boolean> {
+  try {
+    await getProfile({ sessionProbe: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * 启动时用 Cookie 刷新会话；无效时清除本地登录标记，且不在无效会话下请求 /user/profile。
  */
@@ -165,9 +174,13 @@ export async function restoreSessionFromCookie(): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
+      body: JSON.stringify({}),
     });
     if (!refreshRes.ok) {
       if (refreshRes.status === 429 || refreshRes.status >= 500) {
+        return true;
+      }
+      if (await canUseExistingSession()) {
         return true;
       }
       clearTokens();
@@ -186,8 +199,7 @@ export async function restoreSessionFromCookie(): Promise<boolean> {
     await getProfile({ sessionProbe: true });
     return true;
   } catch {
-    clearTokens();
-    return false;
+    return true;
   }
 }
 

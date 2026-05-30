@@ -144,6 +144,7 @@ async function tryRefreshToken(): Promise<string> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
+      body: JSON.stringify({}),
     });
   } finally {
     stopGlobalLoading(loadingToken);
@@ -174,6 +175,7 @@ export async function tryRefreshAdminSession(): Promise<void> {
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       signal: controller.signal,
+      body: JSON.stringify({}),
     });
   } finally {
     window.clearTimeout(timeout);

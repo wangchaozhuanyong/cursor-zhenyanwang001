@@ -56,7 +56,7 @@ exports.resetPassword = asyncRoute(async (req, res) => {
 });
 
 exports.refresh = asyncRoute(async (req, res) => {
-  const refreshToken = req.body.refreshToken || getRefreshTokenFromRequest(req);
+  const refreshToken = req.body?.refreshToken || getRefreshTokenFromRequest(req);
   const result = await authService.refresh(refreshToken);
   if (result.data?.accessToken) {
     setAuthCookies(req, res, {

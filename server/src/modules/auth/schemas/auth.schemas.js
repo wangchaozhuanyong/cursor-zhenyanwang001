@@ -89,9 +89,12 @@ const loginBodySchema = withCountryPhoneValidation(
     }),
 );
 
-const refreshBodySchema = z.object({
-  refreshToken: z.string().min(1, 'refreshToken 不能为空').optional(),
-});
+const refreshBodySchema = z.preprocess(
+  (value) => value ?? {},
+  z.object({
+    refreshToken: z.string().min(1, 'refreshToken 不能为空').optional(),
+  }),
+);
 
 const updateProfileBodySchema = withWhatsappPhoneValidation(withCountryPhoneValidation(
   z

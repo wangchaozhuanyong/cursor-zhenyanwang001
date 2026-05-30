@@ -51,6 +51,22 @@ describe('auth API', () => {
     assert.ok(res.body.data?.accessToken);
   });
 
+  test('POST /api/auth/refresh accepts cookie session without request body', async () => {
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ phone, countryCode, password: TEST_PASSWORD })
+      .expect(200);
+    const cookies = login.headers['set-cookie'];
+    assert.ok(cookies?.some((cookie) => cookie.startsWith('refresh_token=')));
+
+    const res = await request(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', cookies)
+      .expect(200);
+    assert.equal(res.body.code, 0);
+    assert.ok(res.body.data?.accessToken);
+  });
+
   test('POST /api/auth/password-reset/request and confirm', async () => {
     const requestReset = await request(app)
       .post('/api/auth/password-reset/request')

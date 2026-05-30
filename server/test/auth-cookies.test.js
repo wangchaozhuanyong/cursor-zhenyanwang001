@@ -7,6 +7,7 @@ const {
   resolveCookieSecure,
   setAuthCookies,
 } = require('../src/utils/authCookies');
+const { refreshBodySchema } = require('../src/modules/auth/schemas/auth.schemas');
 
 function mockReq({ secure = false, protocol = 'http', forwardedProto } = {}) {
   return {
@@ -77,4 +78,10 @@ test('setAuthCookies clears legacy storefront refresh cookie path', () => {
 
   assert.ok(cleared.some((c) => c.name === 'refresh_token' && c.options.path === '/'));
   assert.ok(cookies.some((c) => c.name === 'refresh_token' && c.options.path === '/api/auth/refresh'));
+});
+
+test('refresh body schema accepts missing body for cookie-based refresh', () => {
+  const result = refreshBodySchema.safeParse(undefined);
+  assert.equal(result.success, true);
+  assert.deepEqual(result.data, {});
 });

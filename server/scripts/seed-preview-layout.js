@@ -79,7 +79,7 @@ function makeProducts() {
       points: 2 + (i % 40),
       categoryId: category.id,
       stock: 30 + i * 3,
-      sort: 100 - i,
+      sort: -100 + i,
       sales: i * 11,
       recommended: i % 2 === 0 ? 1 : 0,
       isNew: i % 3 === 0 ? 1 : 0,

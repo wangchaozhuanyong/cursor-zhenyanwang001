@@ -41,6 +41,7 @@
     "seed:policy-paths": "node scripts/seed-policy-paths.js",
     "seed:products": "node scripts/seed-products.js",
     "seed:preview-layout": "node scripts/seed-preview-layout.js",
+    "seed:admin-simulated-content": "node scripts/seed-admin-simulated-content.js",
     "smoke:user-tag-marketing": "node scripts/smoke-user-tag-marketing.js",
     "test": "npm run test:unit",
     "test:redis": "node -r tsx/cjs --test test/redis-standard.test.js",

@@ -78,15 +78,6 @@ function FooterNavButton({ item, onNavigate }: { item: FooterNavItem; onNavigate
   );
 }
 
-function FooterPill({ icon, children }: { icon: ReactNode; children: ReactNode }) {
-  return (
-    <span className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,var(--theme-bg))] px-3 text-[12px] font-semibold text-[var(--theme-text)]">
-      <span className="text-[var(--theme-primary)]">{icon}</span>
-      {children}
-    </span>
-  );
-}
-
 function ContactCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="grid grid-cols-[2.35rem_1fr] gap-3 rounded-[1.1rem] border border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_90%,var(--theme-bg))] p-3.5">
@@ -196,10 +187,6 @@ export default function GuestMobileFooter({
               <div className="space-y-2">
                 <p className="text-[18px] font-semibold leading-snug text-[var(--theme-text)] sm:text-[20px]">{slogan}</p>
                 <p className="max-w-xl text-[13px] leading-7 text-[var(--theme-text-muted)] sm:text-[14px]">{description}</p>
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                <FooterPill icon={<MapPin size={14} strokeWidth={1.9} />}>本地配送</FooterPill>
-                <FooterPill icon={<MessageCircle size={14} strokeWidth={1.9} />}>中文客服</FooterPill>
               </div>
             </section>
 

@@ -13,7 +13,6 @@ import {
   MapPin,
   MessageSquare,
   Package,
-  Palette,
   Settings,
   ShieldCheck,
   Truck,
@@ -28,7 +27,6 @@ import { isLoggedIn } from "@/utils/token";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreAccountNav from "@/components/store/StoreAccountNav";
@@ -521,14 +519,6 @@ export default function Profile() {
                 <p className="mt-1 text-[11px] leading-4">{item.label}</p>
               </button>
             ))}
-            <SkinPickerDialog trigger={(
-              <button type="button" aria-label="主题设置" data-testid="profile-theme-settings" className={`relative min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
-                <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
-                  <Palette size={16} strokeWidth={2} />
-                </span>
-                <p className="mt-1 text-[11px] leading-4">主题设置</p>
-              </button>
-            )} />
           </div>
         </section>
 

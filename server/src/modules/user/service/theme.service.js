@@ -1,6 +1,6 @@
 const repo = require('../repository/theme.repository');
 const { DEFAULT_THEME_CONFIG } = require('../theme.default');
-const { DEFAULT_SKIN_ID, FALLBACK_THEME_SKIN } = require('../theme.presets');
+const { DEFAULT_SKIN_ID, FALLBACK_THEME_SKIN, STOREFRONT_DESIGN_LOCKS } = require('../theme.presets');
 const { writeAuditLog } = require('../../../utils/auditLog');
 
 const ENUMS = {
@@ -103,8 +103,6 @@ function normalizeThemeConfig(rawConfig) {
   const textColor = normalizeHex(raw.textColor, textForBg(bgColor));
   const mutedTextColor = normalizeHex(raw.mutedTextColor, mutedFromText(textColor));
   return {
-    ...base,
-    ...raw,
     skinName: typeof raw.skinName === 'string' && raw.skinName.trim() ? raw.skinName.trim() : base.skinName,
     radius: normalizeRadius(raw.radius, base.radius),
     primaryColor: normalizeHex(raw.primaryColor, base.primaryColor),
@@ -137,7 +135,8 @@ function normalizeThemeConfig(rawConfig) {
     categoryIconStyle: pickEnum(raw.categoryIconStyle, 'categoryIconStyle', base.categoryIconStyle),
     motionLevel: pickEnum(raw.motionLevel, 'motionLevel', base.motionLevel),
     density: pickEnum(raw.density, 'density', base.density),
-    adminThemeMode: pickEnum(raw.adminThemeMode, 'adminThemeMode', 'follow_store'),
+    adminThemeMode: pickEnum(raw.adminThemeMode, 'adminThemeMode', 'fixed'),
+    ...STOREFRONT_DESIGN_LOCKS,
   };
 }
 

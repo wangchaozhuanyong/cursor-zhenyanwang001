@@ -1,19 +1,6 @@
 const DEFAULT_SKIN_ID = 'default_life_green';
 
-const DEFAULT_LIFE_GREEN_CONFIG = {
-  skinName: '???????',
-  bgColor: '#F5F7FA',
-  surfaceColor: '#FFFFFF',
-  primaryColor: '#00B14F',
-  secondaryColor: '#E0F5E9',
-  accentColor: '#FFC107',
-  priceColor: '#FF5722',
-  textColor: '#333333',
-  mutedTextColor: '#888888',
-  borderColor: '#E5E7EB',
-  successColor: '#00A65A',
-  warningColor: '#FF9800',
-  dangerColor: '#F44336',
+const STOREFRONT_DESIGN_LOCKS = {
   radius: '12px',
   fontFamily: "system-ui, -apple-system, 'PingFang SC', sans-serif",
   shadowStyle: 'soft',
@@ -34,7 +21,24 @@ const DEFAULT_LIFE_GREEN_CONFIG = {
   categoryIconStyle: 'soft',
   motionLevel: 'soft',
   density: 'comfortable',
-  adminThemeMode: 'follow_store',
+  adminThemeMode: 'fixed',
+};
+
+const DEFAULT_LIFE_GREEN_CONFIG = {
+  skinName: '???????',
+  bgColor: '#F5F7FA',
+  surfaceColor: '#FFFFFF',
+  primaryColor: '#00B14F',
+  secondaryColor: '#E0F5E9',
+  accentColor: '#FFC107',
+  priceColor: '#FF5722',
+  textColor: '#333333',
+  mutedTextColor: '#888888',
+  borderColor: '#E5E7EB',
+  successColor: '#00A65A',
+  warningColor: '#FF9800',
+  dangerColor: '#F44336',
+  ...STOREFRONT_DESIGN_LOCKS,
 };
 
 /** @deprecated */
@@ -56,6 +60,7 @@ const PROMO_SKIN_ID = 'promo_red_orange';
 
 module.exports = {
   DEFAULT_SKIN_ID,
+  STOREFRONT_DESIGN_LOCKS,
   DEFAULT_LIFE_GREEN_CONFIG,
   CLASSIC_GOLD_BLACK_CONFIG,
   FALLBACK_THEME_SKIN,

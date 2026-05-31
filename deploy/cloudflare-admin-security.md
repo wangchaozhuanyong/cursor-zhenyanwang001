@@ -22,15 +22,13 @@ Protect the whole admin hostname before the application login page:
 - Policy: allow only administrator emails or administrator identity provider groups.
 - Session duration: keep short, for example 8 hours.
 
-Do not create a Cloudflare Access application for `damatong.net` or `www.damatong.net`; the public storefront must remain public while its admin paths are blocked by WAF and origin rules.
+Do not create a Cloudflare Access application for `damatong.net` or `www.damatong.net`; the public storefront must remain public. Its `/admin` UI path can redirect users to `console.damatong.net`, while `/api/admin` remains blocked by WAF and origin rules.
 
 ## WAF Custom Rules
 
-Block admin paths on the public storefront hostname:
+Block admin API paths on the public storefront hostname:
 
 ```text
-(http.host in {"damatong.net" "www.damatong.net"} and starts_with(http.request.uri.path, "/admin"))
-or
 (http.host in {"damatong.net" "www.damatong.net"} and starts_with(http.request.uri.path, "/api/admin/"))
 or
 (http.host in {"damatong.net" "www.damatong.net"} and http.request.uri.path eq "/api/admin")

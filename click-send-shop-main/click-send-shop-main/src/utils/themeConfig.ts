@@ -1,4 +1,5 @@
 import { DEFAULT_LIFE_GREEN_CONFIG, DEFAULT_SKIN_ID, FALLBACK_THEME_SKIN } from "@/constants/themePresets";
+import { applyStorefrontDesignLocks } from "@/constants/themeDesignLocks";
 import type {
   ThemeSceneTag,
   AdminThemeMode,
@@ -121,7 +122,7 @@ export function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefi
   const safeMuted = getMutedTextColor(parseColor(bgColor), textColor);
   const mutedTextColor = normalizeHex(raw.mutedTextColor, safeMuted);
 
-  return {
+  return applyStorefrontDesignLocks({
     skinName: typeof raw.skinName === "string" && raw.skinName.trim() ? raw.skinName.trim() : base.skinName,
     radius: normalizeRadius(raw.radius, base.radius),
     fontFamily: normalizeFontFamily(raw.fontFamily, base.fontFamily),
@@ -164,7 +165,7 @@ export function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefi
     density: pickEnum(raw.density, DENSITY_VALUES, base.density),
 
     adminThemeMode: pickEnum(raw.adminThemeMode, ADMIN_MODE_VALUES, "fixed"),
-  };
+  });
 }
 
 export function mergeThemeConfig(config: Partial<ThemeConfig> | null | undefined): ThemeConfig {

@@ -71,6 +71,7 @@ const colorTabSections: Array<{ title: string; fields: ColorFieldKey[] }> = [
 ];
 
 const THEME_EDITOR_TAB_STORAGE_KEY = "admin-theme-editor-tab";
+const VISIBLE_EDITOR_TABS = EDITOR_TABS.filter((tab) => tab.id === "basic" || tab.id === "colors");
 
 const TAB_PANEL_HINTS: Record<EditorTabId, string> = {
   basic: "皮肤名称、适用场景和前台可见状态",
@@ -82,7 +83,7 @@ const TAB_PANEL_HINTS: Record<EditorTabId, string> = {
 };
 
 function isEditorTabId(value: string): value is EditorTabId {
-  return EDITOR_TABS.some((tab) => tab.id === value);
+  return VISIBLE_EDITOR_TABS.some((tab) => tab.id === value);
 }
 
 function readStoredEditorTab(): EditorTabId {
@@ -96,11 +97,7 @@ function readStoredEditorTab(): EditorTabId {
 }
 
 function mapHealthSectionToTab(sectionId: ThemeHealthFixTarget["sectionId"]): EditorTabId {
-  if (sectionId === "toolbar" || sectionId === "colors" || sectionId === "text" || sectionId === "status") return "colors";
-  if (sectionId === "buttons") return "components";
-  if (sectionId === "card") return "product";
-  if (sectionId === "marketing") return "home";
-  return "advanced";
+  return sectionId === "basic" ? "basic" : "colors";
 }
 
 export default function ThemeEditorPanel({
@@ -173,7 +170,7 @@ export default function ThemeEditorPanel({
           role="tablist"
           aria-label={tText("设置分类")}
         >
-        {EDITOR_TABS.map((tab) => (
+        {VISIBLE_EDITOR_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -275,6 +272,9 @@ export default function ThemeEditorPanel({
               </div>
             </div>
           ))}
+          <div className="rounded-2xl border border-border/80 bg-background/45 p-4">
+            <ThemeHealthCheck config={themeConfig} onGoToFix={goToFix} />
+          </div>
         </div>
       </section>
       ) : null}

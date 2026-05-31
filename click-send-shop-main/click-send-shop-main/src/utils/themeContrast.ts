@@ -1,4 +1,5 @@
 import type { ThemeConfig } from "@/types/theme";
+import { STOREFRONT_DESIGN_LOCKS } from "@/constants/themeDesignLocks";
 
 type RGB = { r: number; g: number; b: number };
 
@@ -504,19 +505,20 @@ function buildStorefrontSurface(colors: {
 }
 
 export function generateThemePalette(adminConfig: ThemeConfig) {
-  const bg = parseColor(adminConfig.bgColor, WHITE);
-  const surface = parseColor(adminConfig.surfaceColor, bg);
-  const primary = parseColor(adminConfig.primaryColor, BLACK);
-  const secondary = parseColor(adminConfig.secondaryColor, primary);
-  const accent = parseColor(adminConfig.accentColor, secondary);
-  const price = parseColor(adminConfig.priceColor, { r: 220, g: 38, b: 38 });
-  const success = parseColor(adminConfig.successColor, { r: 47, g: 133, b: 90 });
-  const warning = parseColor(adminConfig.warningColor, { r: 217, g: 119, b: 6 });
-  const danger = parseColor(adminConfig.dangerColor, price);
+  const config = { ...adminConfig, ...STOREFRONT_DESIGN_LOCKS };
+  const bg = parseColor(config.bgColor, WHITE);
+  const surface = parseColor(config.surfaceColor, bg);
+  const primary = parseColor(config.primaryColor, BLACK);
+  const secondary = parseColor(config.secondaryColor, primary);
+  const accent = parseColor(config.accentColor, secondary);
+  const price = parseColor(config.priceColor, { r: 220, g: 38, b: 38 });
+  const success = parseColor(config.successColor, { r: 47, g: 133, b: 90 });
+  const warning = parseColor(config.warningColor, { r: 217, g: 119, b: 6 });
+  const danger = parseColor(config.dangerColor, price);
   const isDarkBg = isDarkColor(bg);
   const border =
-    adminConfig.borderColor && adminConfig.borderColor !== "auto" && adminConfig.borderColor.trim() !== ""
-      ? parseColor(adminConfig.borderColor, isDarkBg ? mixColors(bg, WHITE, 0.18) : mixColors(bg, BLACK, 0.12))
+    config.borderColor && config.borderColor !== "auto" && config.borderColor.trim() !== ""
+      ? parseColor(config.borderColor, isDarkBg ? mixColors(bg, WHITE, 0.18) : mixColors(bg, BLACK, 0.12))
       : isDarkBg
         ? mixColors(bg, WHITE, 0.18)
         : mixColors(bg, BLACK, 0.12);
@@ -526,10 +528,10 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   const primaryCss = rgbToCss(primary);
   const secondaryCss = rgbToCss(secondary);
   const priceCss = rgbToCss(price);
-  const text = getReadableTextColor(bgCss, adminConfig.textColor);
+  const text = getReadableTextColor(bgCss, config.textColor);
   const surfaceText = getReadableTextColor(surfaceCss, text);
-  const mutedText = adminConfig.mutedTextColor && adminConfig.mutedTextColor !== "auto"
-    ? rgbToCss(parseColor(adminConfig.mutedTextColor))
+  const mutedText = config.mutedTextColor && config.mutedTextColor !== "auto"
+    ? rgbToCss(parseColor(config.mutedTextColor))
     : getMutedTextColor(bg, text);
   const surfaceMutedText = getMutedTextColor(surface, surfaceText);
   let primaryText = getReadableTextColor(primaryCss);
@@ -558,7 +560,7 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   const mutedBg = mixColors(bg, parseColor(text), isDarkBg ? 0.1 : 0.06);
   const accentBg = mixColors(bg, accent, isDarkBg ? 0.28 : 0.14);
   const borderCss = rgbToCss(border);
-  const shadows = getShadowVariables(adminConfig.shadowStyle, isDarkBg);
+  const shadows = getShadowVariables(config.shadowStyle, isDarkBg);
 
   const gradientSurface = paletteForGradientSurface(primary, secondary, 0.5);
   const couponAccentEnd = mixColors(
@@ -568,7 +570,7 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   );
   const couponAccentSurface = paletteForGradientSurface(price, couponAccentEnd, 0.4);
   const couponAccentEndCss = rgbToCss(couponAccentEnd);
-  const memberCardSurface = buildMemberCardSurface(adminConfig.memberCardStyle, {
+  const memberCardSurface = buildMemberCardSurface(config.memberCardStyle, {
     primary,
     secondary,
     price,
@@ -662,34 +664,34 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-muted": mutedText,
     "--theme-text-muted-on-surface": surfaceMutedText,
     "--theme-text-subtle": rgbToCss(mixColors(parseColor(text), bg, 0.78)),
-    "--theme-radius": adminConfig.radius,
-    "--theme-button-radius": adminConfig.buttonStyle === "pill" ? "999px" : adminConfig.buttonStyle === "square" ? "8px" : adminConfig.radius,
-    "--theme-card-radius": adminConfig.radius,
-    "--radius": adminConfig.radius,
-    "--theme-font": getFontFamily(adminConfig.fontFamily),
-    "--theme-font-family": getFontFamily(adminConfig.fontFamily),
-    "--font-display": getFontFamily(adminConfig.fontFamily),
-    "--theme-image-ratio": adminConfig.imageRatio,
-    "--theme-image-fit": adminConfig.imageFit,
-    "--theme-card-align": adminConfig.cardTextAlign,
-    "--theme-button-style": adminConfig.buttonStyle || "rounded",
-    "--theme-nav-style": adminConfig.navStyle || "clean",
-    "--theme-home-layout": adminConfig.homeLayout || "classic",
-    "--theme-product-card-variant": adminConfig.productCardVariant || "standard",
-    "--theme-badge-style": adminConfig.badgeStyle || "soft",
-    "--theme-price-style": adminConfig.priceStyle || "normal",
-    "--theme-motion-level": adminConfig.motionLevel || "soft",
-    "--theme-density": adminConfig.density || "comfortable",
-    "--theme-header-style": adminConfig.headerStyle || "clean",
-    "--theme-banner-style": adminConfig.bannerStyle || "clean",
-    "--theme-coupon-style": adminConfig.couponStyle || "ticket",
-    "--theme-member-card-style": adminConfig.memberCardStyle || "light",
-    "--theme-category-icon-style": adminConfig.categoryIconStyle || "circle",
-    "--theme-admin-mode": adminConfig.adminThemeMode || "follow_store",
-    "--theme-density-gap": adminConfig.density === "compact" ? "0.5rem" : "0.75rem",
-    "--theme-density-pad": adminConfig.density === "compact" ? "0.5rem" : "0.75rem",
-    "--theme-density-row": adminConfig.density === "compact" ? "2.25rem" : "2.75rem",
-    ...getCardShellVariables(adminConfig.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
+    "--theme-radius": config.radius,
+    "--theme-button-radius": config.buttonStyle === "pill" ? "999px" : config.buttonStyle === "square" ? "8px" : config.radius,
+    "--theme-card-radius": config.radius,
+    "--radius": config.radius,
+    "--theme-font": getFontFamily(config.fontFamily),
+    "--theme-font-family": getFontFamily(config.fontFamily),
+    "--font-display": getFontFamily(config.fontFamily),
+    "--theme-image-ratio": config.imageRatio,
+    "--theme-image-fit": config.imageFit,
+    "--theme-card-align": config.cardTextAlign,
+    "--theme-button-style": config.buttonStyle || "rounded",
+    "--theme-nav-style": config.navStyle || "clean",
+    "--theme-home-layout": config.homeLayout || "classic",
+    "--theme-product-card-variant": config.productCardVariant || "standard",
+    "--theme-badge-style": config.badgeStyle || "soft",
+    "--theme-price-style": config.priceStyle || "normal",
+    "--theme-motion-level": config.motionLevel || "soft",
+    "--theme-density": config.density || "comfortable",
+    "--theme-header-style": config.headerStyle || "clean",
+    "--theme-banner-style": config.bannerStyle || "clean",
+    "--theme-coupon-style": config.couponStyle || "ticket",
+    "--theme-member-card-style": config.memberCardStyle || "light",
+    "--theme-category-icon-style": config.categoryIconStyle || "circle",
+    "--theme-admin-mode": config.adminThemeMode || "fixed",
+    "--theme-density-gap": config.density === "compact" ? "0.5rem" : "0.75rem",
+    "--theme-density-pad": config.density === "compact" ? "0.5rem" : "0.75rem",
+    "--theme-density-row": config.density === "compact" ? "2.25rem" : "2.75rem",
+    ...getCardShellVariables(config.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
     ...storefrontSurface,
 
     "--background": rgbToHslChannels(bg),

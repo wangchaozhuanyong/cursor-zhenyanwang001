@@ -52,4 +52,4 @@ STORAGE_PUBLIC_BASE_URL=https://damatong-prod-assets-<account-id>.s3.ap-southeas
 
 ## Cloudflare
 
-商城域名上 `/admin`、`/api/admin` 由 Nginx 返回 404；管理端仅通过 `console.damatong.net` 访问。详见 `deploy/cloudflare-admin-security.md`。
+商城域名上的 `/admin` 会 302 跳转到 `console.damatong.net`，避免误访问时看到死 404；`/api/admin` 仍由 Nginx 返回 404，管理接口只允许在 `console.damatong.net` 使用。详见 `deploy/cloudflare-admin-security.md`。

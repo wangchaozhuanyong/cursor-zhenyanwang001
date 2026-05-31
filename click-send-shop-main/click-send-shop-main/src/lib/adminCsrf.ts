@@ -15,8 +15,9 @@ export function clearAdminCsrfToken(): void {
 export async function getAdminCsrfToken(): Promise<string> {
   if (cachedAdminCsrfToken) return cachedAdminCsrfToken;
   if (!inflightAdminCsrfToken) {
-    inflightAdminCsrfToken = fetch(`${BASE_URL}/admin/auth/csrf`, {
+    inflightAdminCsrfToken = fetch(`${BASE_URL}/admin/auth/csrf?_=${Date.now()}`, {
       method: "GET",
+      cache: "no-store",
       credentials: "include",
     })
       .then(async (res) => {

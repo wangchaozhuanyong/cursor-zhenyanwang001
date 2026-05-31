@@ -10,6 +10,10 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+function isAdminCsrfUrl(url: string): boolean {
+  return url.includes("/admin/auth/csrf");
+}
+
 describe("toQueryString", () => {
   test("returns empty string for empty params", () => {
     expect(toQueryString()).toBe("");
@@ -46,7 +50,7 @@ describe("admin MFA request CSRF handling", () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       calls.push({ url, init });
-      if (url.endsWith("/admin/auth/csrf")) {
+      if (isAdminCsrfUrl(url)) {
         return jsonResponse({ data: { csrfToken: "csrf-one" } });
       }
       return jsonResponse({ data: { ok: true } });
@@ -76,7 +80,7 @@ describe("admin MFA request CSRF handling", () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       calls.push({ url, init });
-      if (url.endsWith("/admin/auth/csrf")) {
+      if (isAdminCsrfUrl(url)) {
         csrfFetchCount += 1;
         return jsonResponse({ data: { csrfToken: csrfFetchCount === 1 ? "csrf-old" : "csrf-new" } });
       }

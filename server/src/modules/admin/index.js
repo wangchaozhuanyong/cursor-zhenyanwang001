@@ -9,6 +9,7 @@ const adminEventBus = require('./service/adminEventBus.service');
 const adminEventRepo = require('./repository/adminEvent.repository');
 const adminSiteSettingsRepo = require('./repository/adminSiteSettings.repository');
 const adminUserSecurityRepo = require('./repository/adminUserSecurity.repository');
+const adminCouponCampaignRepo = require('./repository/adminCouponCampaign.repository');
 
 const router = Router();
 
@@ -26,6 +27,8 @@ const router = Router();
   isUserSecurityIpBlocked: adminUserSecurityRepo.isIpBlocked,
   isUserSecurityDeviceBlocked: adminUserSecurityRepo.isDeviceBlocked,
   insertUserSecurityEvent: adminUserSecurityRepo.insertSecurityEvent,
+  selectPublicCouponCampaignsByPosition: adminCouponCampaignRepo.selectPublicCampaignsByPosition,
+  selectCouponCampaignCouponIds: adminCouponCampaignRepo.selectCouponIdsByCampaignId,
 };
 
 router.use('/admin', require('./routes/admin.routes'));

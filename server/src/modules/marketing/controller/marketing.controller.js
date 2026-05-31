@@ -16,6 +16,11 @@ exports.getCouponCenter = asyncRoute(async (req, res) => {
   res.success(result.data);
 });
 
+exports.getCouponZone = asyncRoute(async (req, res) => {
+  const result = await service.getCouponZone(req.query);
+  res.success(result.data);
+});
+
 exports.getNewUserGift = asyncRoute(async (req, res) => {
   const result = await service.getNewUserGift(req.query);
   res.success(result.data);

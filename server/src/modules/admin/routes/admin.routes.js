@@ -33,6 +33,7 @@ const userCtrl = require('../controller/adminUser.controller');
 const userSecurityCtrl = require('../controller/adminUserSecurity.controller');
 const categoryCtrl = require('../controller/adminCategory.controller');
 const couponCtrl = require('../controller/adminCoupon.controller');
+const couponCampaignCtrl = require('../controller/adminCouponCampaign.controller');
 const returnCtrl = require('../controller/adminReturn.controller');
 const reviewCtrl = require('../controller/adminReview.controller');
 const bannerCtrl = require('../controller/adminBanner.controller');
@@ -550,6 +551,12 @@ router.post('/coupons/:id/disable-use', adminAuth, couponFeature, requirePermiss
 router.post('/coupons/:id/archive', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.archive);
 router.post('/coupons/:id/invalidate-user-coupons', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.invalidateUserCoupons);
 router.post('/coupons/:id/issue-by-tag', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.issueByTag);
+router.get('/coupon-campaigns', adminAuth, couponFeature, requirePermission('coupon.view'), couponCampaignCtrl.list);
+router.post('/coupon-campaigns', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCampaignCtrl.create);
+router.get('/coupon-campaigns/:id', adminAuth, couponFeature, requirePermission('coupon.view'), couponCampaignCtrl.getById);
+router.put('/coupon-campaigns/:id', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCampaignCtrl.update);
+router.patch('/coupon-campaigns/:id/status', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCampaignCtrl.updateStatus);
+router.delete('/coupon-campaigns/:id', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCampaignCtrl.remove);
 router.get('/coupon-records', adminAuth, couponFeature, requirePermission('coupon.view'), couponCtrl.listAllRecords);
 router.get('/coupons/:couponId/records', adminAuth, couponFeature, requirePermission('coupon.view'), couponCtrl.listRecordsByCoupon);
 

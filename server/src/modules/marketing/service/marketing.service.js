@@ -1,6 +1,10 @@
 const repo = require('../repository/marketing.repository');
 const promo = require('../marketingPromo');
 
+function getAdminApi() {
+  return /** @type {any} */ (require('../../admin')).api || {};
+}
+
 function formatFlashSaleResponse(bundle) {
   if (!bundle) return { data: null };
   const { activity, items, scopes } = bundle;
@@ -50,8 +54,25 @@ async function getActivitiesByPosition(query = {}) {
 }
 
 async function getCouponCenter(query = {}) {
-  const position = query.position || 'home_coupon_center';
-  const activities = await repo.selectActivitiesByPosition(position, ['coupon_activity']);
+  const position = 'home_coupon_zone';
+  const adminApi = getAdminApi();
+  const campaigns = await adminApi.selectPublicCouponCampaignsByPosition(position, ['public_claim', 'member', 'seasonal']);
+  const campaign = campaigns[0];
+  if (campaign) {
+    const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
+    const rows = await repo.selectCouponsByIds(couponIds);
+    return {
+      data: {
+        activity: promo.mapCouponCampaignSummary(campaign),
+        campaign: promo.mapCouponCampaignSummary(campaign),
+        campaigns: campaigns.map(promo.mapCouponCampaignSummary),
+        coupons: rows.map(repo.mapPublicCoupon),
+      },
+    };
+  }
+
+  const legacyPosition = query.position || 'home_coupon_center';
+  const activities = await repo.selectActivitiesByPosition(legacyPosition, ['coupon_activity']);
   const activity = activities[0];
   if (!activity) return { data: null };
   const couponIds = Array.isArray(activity.activity_config?.coupon_ids)
@@ -67,8 +88,26 @@ async function getCouponCenter(query = {}) {
 }
 
 async function getNewUserGift(query = {}) {
-  const position = query.position || 'home_new_user_gift';
-  const activities = await repo.selectActivitiesByPosition(position, ['new_user_gift']);
+  const position = 'home_coupon_zone';
+  const adminApi = getAdminApi();
+  const campaigns = await adminApi.selectPublicCouponCampaignsByPosition(position, ['new_user_gift']);
+  const campaign = campaigns[0];
+  if (campaign) {
+    const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
+    const rows = await repo.selectCouponsByIds(couponIds);
+    return {
+      data: {
+        activity: promo.mapCouponCampaignSummary(campaign),
+        campaign: promo.mapCouponCampaignSummary(campaign),
+        campaigns: campaigns.map(promo.mapCouponCampaignSummary),
+        coupons: rows.map(repo.mapPublicCoupon),
+        auto_issue_on_register: true,
+      },
+    };
+  }
+
+  const legacyPosition = query.position || 'home_new_user_gift';
+  const activities = await repo.selectActivitiesByPosition(legacyPosition, ['new_user_gift']);
   const activity = activities[0];
   if (!activity) return { data: null };
   const couponIds = Array.isArray(activity.activity_config?.coupon_ids)
@@ -84,12 +123,50 @@ async function getNewUserGift(query = {}) {
   };
 }
 
+async function getCouponZone(query = {}) {
+  const position = query.position || 'home_coupon_zone';
+  const adminApi = getAdminApi();
+  const campaigns = await adminApi.selectPublicCouponCampaignsByPosition(position, [
+    'public_claim',
+    'new_user_gift',
+    'member',
+    'seasonal',
+  ]);
+  const seen = new Set();
+  const coupons = [];
+  const mappedCampaigns = [];
+  for (const campaign of campaigns) {
+    const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
+    const rows = await repo.selectCouponsByIds(couponIds);
+    const mapped = rows.map(repo.mapPublicCoupon).filter((coupon) => {
+      if (!coupon?.id || seen.has(coupon.id)) return false;
+      seen.add(coupon.id);
+      return true;
+    });
+    mappedCampaigns.push({
+      ...promo.mapCouponCampaignSummary(campaign),
+      campaign_type: campaign.campaign_type,
+      coupons: mapped,
+    });
+    coupons.push(...mapped);
+  }
+  if (!mappedCampaigns.length && !coupons.length) return { data: null };
+  return {
+    data: {
+      activity: mappedCampaigns[0] || null,
+      campaign: mappedCampaigns[0] || null,
+      campaigns: mappedCampaigns,
+      coupons,
+    },
+  };
+}
+
 async function getPositionNotices(query = {}) {
   const position = String(query.position || '').trim();
   if (!position) return { data: [] };
   const types = query.type
     ? [String(query.type)]
-    : ['full_reduction', 'coupon_activity', 'new_user_gift', 'flash_sale'];
+    : ['full_reduction', 'flash_sale'];
   const list = await repo.selectActivitiesByPosition(position, types);
   return {
     data: list.map((a) => ({
@@ -112,4 +189,5 @@ module.exports = {
   getNewUserGift,
   getPositionNotices,
   getFullReductionNotices,
+  getCouponZone,
 };

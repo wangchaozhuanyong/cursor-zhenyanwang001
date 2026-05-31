@@ -44,8 +44,23 @@ function mapActivitySummary(row) {
   };
 }
 
+function mapCouponCampaignSummary(row) {
+  return {
+    id: row.id,
+    type: row.campaign_type || row.type || 'public_claim',
+    title: row.title,
+    subtitle: row.subtitle || '',
+    cover_image: row.cover_image || '',
+    promo_label: row.subtitle || row.title,
+    start_at: row.start_at,
+    end_at: row.end_at,
+    link_url: '/coupons',
+  };
+}
+
 module.exports = {
   parseActivityConfig,
   formatFullReductionLabel,
   mapActivitySummary,
+  mapCouponCampaignSummary,
 };

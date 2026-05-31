@@ -20,9 +20,13 @@ interface BannerCarouselProps {
 }
 
 const CROSSFADE_TRANSITION = {
-  opacity: { duration: 0.32, ease: "easeOut" as const },
-  scale: { duration: 0.5, ease: "easeOut" as const },
+  opacity: { duration: 0.46, ease: "easeOut" as const },
+  scale: { duration: 0.78, ease: "easeOut" as const },
+  y: { duration: 0.58, ease: "easeOut" as const },
 };
+
+const AUTO_ROTATE_MS = 5600;
+const USER_INTERACTION_PAUSE_MS = 7200;
 
 function resolveBannerLink(link: string): string {
   const value = (link || "").trim();
@@ -44,10 +48,14 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
     : "";
   const [activeImageLoaded, setActiveImageLoaded] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
+  const [manualPauseUntil, setManualPauseUntil] = useState(0);
   const navigate = useNavigate();
 
-  const goTo = useCallback((index: number) => {
+  const goTo = useCallback((index: number, userDriven = false) => {
     setCurrent(index);
+    if (userDriven) {
+      setManualPauseUntil(Date.now() + USER_INTERACTION_PAUSE_MS);
+    }
   }, []);
 
   useEffect(() => {
@@ -74,10 +82,11 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   useEffect(() => {
     if (!motionEnabled || banners.length <= 1) return;
     const timer = window.setInterval(() => {
+      if (Date.now() < manualPauseUntil) return;
       setCurrent((prev) => (prev + 1) % banners.length);
-    }, 4000);
+    }, AUTO_ROTATE_MS);
     return () => window.clearInterval(timer);
-  }, [banners.length, motionEnabled]);
+  }, [banners.length, manualPauseUntil, motionEnabled]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX);
@@ -87,7 +96,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
     if (banners.length <= 1) return;
     const diff = touchStart - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
-      goTo(diff > 0 ? (current + 1) % banners.length : (current - 1 + banners.length) % banners.length);
+      goTo(diff > 0 ? (current + 1) % banners.length : (current - 1 + banners.length) % banners.length, true);
     }
   };
 
@@ -124,7 +133,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
 
   return (
     <div
-      className={`relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
+      className={`store-hero-carousel relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
       style={{
@@ -158,12 +167,13 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               className={`absolute inset-0 h-full w-full object-cover ${
                 hasTextLayer ? "store-hero-image-with-copy" : "object-center"
               }`}
-              initial={{ opacity: 0, scale: 1.018 }}
+              initial={{ opacity: 0, scale: 1.024, y: 8 }}
               animate={{
                 opacity: activeImageLoaded ? 1 : 0,
                 scale: activeImageLoaded ? 1 : 1.018,
+                y: activeImageLoaded ? 0 : 8,
               }}
-              exit={{ opacity: 0, scale: 1.012 }}
+              exit={{ opacity: 0, scale: 1.012, y: -5 }}
               transition={CROSSFADE_TRANSITION}
               onLoad={() => setActiveImageLoaded(true)}
             />
@@ -194,7 +204,13 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
         <>
           <div className="store-hero-text-wash pointer-events-none absolute inset-0 z-10" aria-hidden />
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-full items-center px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
-            <div className="store-hero-copy-panel">
+            <motion.div
+              key={`copy-${banner.id || safeIndex}`}
+              className="store-hero-copy-panel"
+              initial={motionEnabled ? { opacity: 0, x: -10 } : false}
+              animate={motionEnabled ? { opacity: 1, x: 0 } : undefined}
+              transition={{ duration: 0.42, ease: "easeOut" }}
+            >
               {bannerTitle ? (
                 <h2 className="store-hero-copy-title line-clamp-2 text-[16px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
                   {bannerTitle}
@@ -205,7 +221,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                   {bannerDescription}
                 </p>
               ) : null}
-            </div>
+            </motion.div>
           </div>
         </>
       ) : null}
@@ -222,7 +238,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  goTo(index);
+                  goTo(index, true);
                 }}
                 className="flex h-3 min-w-3 items-center justify-center rounded-full px-0.5 transition-transform active:scale-95"
                 aria-label={`Banner ${index + 1}`}

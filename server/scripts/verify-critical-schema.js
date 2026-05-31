@@ -10,6 +10,21 @@ const REQUIRED_COLUMNS = [
   { table: 'coupons', column: 'claimed_count' },
   { table: 'user_coupons', column: 'coupon_snapshot' },
   { table: 'user_coupons', column: 'valid_from' },
+  { table: 'analytics_events', column: 'created_at' },
+  { table: 'analytics_events', column: 'event_type' },
+  { table: 'analytics_events', column: 'path' },
+  { table: 'analytics_events', column: 'page' },
+  { table: 'analytics_events', column: 'title' },
+  { table: 'analytics_events', column: 'anonymous_id' },
+  { table: 'analytics_events', column: 'session_id' },
+  { table: 'analytics_events', column: 'ip_hash' },
+  { table: 'analytics_events', column: 'device' },
+  { table: 'analytics_events', column: 'traffic_source' },
+  { table: 'analytics_events', column: 'os' },
+  { table: 'analytics_events', column: 'browser' },
+  { table: 'analytics_events', column: 'browser_language' },
+  { table: 'analytics_events', column: 'duration_ms' },
+  { table: 'analytics_events', column: 'amount' },
 ];
 
 const REQUIRED_COLUMN_LENGTHS = [

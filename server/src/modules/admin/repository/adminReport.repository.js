@@ -1134,6 +1134,15 @@ function pageTypeSql(alias = 'ae') {
   END`;
 }
 
+function trafficFirstSeenJoin(alias = 'ae') {
+  return `LEFT JOIN (
+    SELECT anonymous_id, MIN(created_at) AS first_created_at
+    FROM analytics_events
+    WHERE anonymous_id <> ''
+    GROUP BY anonymous_id
+  ) first_seen ON first_seen.anonymous_id = ${alias}.anonymous_id`;
+}
+
 function buildTrafficWhere(dateFrom, dateTo, filters = {}, alias = 'ae') {
   const range = utcRangeForKlDate(dateFrom, dateTo);
   const where = [
@@ -1154,53 +1163,59 @@ function buildTrafficWhere(dateFrom, dateTo, filters = {}, alias = 'ae') {
     params.push(filters.page_type);
   }
   if (filters.visitor_type === 'new') {
-    where.push(`(
-      SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
+    where.push(`NOT EXISTS (
+      SELECT 1
       FROM analytics_events ae_first
-      WHERE ae_first.anonymous_id = ${alias}.anonymous_id AND ae_first.anonymous_id <> ''
-    ) BETWEEN ? AND ?`);
-    params.push(dateFrom, dateTo);
+      WHERE ae_first.anonymous_id = ${alias}.anonymous_id
+        AND ae_first.anonymous_id <> ''
+        AND ae_first.created_at < ?
+      LIMIT 1
+    )`);
+    params.push(range.start);
   } else if (filters.visitor_type === 'returning') {
-    where.push(`(
-      SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
+    where.push(`EXISTS (
+      SELECT 1
       FROM analytics_events ae_first
-      WHERE ae_first.anonymous_id = ${alias}.anonymous_id AND ae_first.anonymous_id <> ''
-    ) < ?`);
-    params.push(dateFrom);
+      WHERE ae_first.anonymous_id = ${alias}.anonymous_id
+        AND ae_first.anonymous_id <> ''
+        AND ae_first.created_at < ?
+      LIMIT 1
+    )`);
+    params.push(range.start);
   }
   return { where: where.join(' AND '), params };
 }
 
 async function selectTrafficSummary(dateFrom, dateTo, filters = {}) {
+  const range = utcRangeForKlDate(dateFrom, dateTo);
   const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
   return queryOne(
     `SELECT
-      SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS pv,
-      COUNT(DISTINCT NULLIF(anonymous_id,'')) AS uv,
-      COUNT(DISTINCT NULLIF(session_id,'')) AS sessions,
-      COUNT(DISTINCT NULLIF(ip_hash,'')) AS unique_ip_count,
-      COUNT(DISTINCT CASE WHEN (
-        SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
-        FROM analytics_events ae_first
-        WHERE ae_first.anonymous_id = ae.anonymous_id AND ae_first.anonymous_id <> ''
-      ) BETWEEN ? AND ? THEN NULLIF(ae.anonymous_id,'') END) AS new_visitors,
-      COUNT(DISTINCT CASE WHEN (
-        SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
-        FROM analytics_events ae_first
-        WHERE ae_first.anonymous_id = ae.anonymous_id AND ae_first.anonymous_id <> ''
-      ) < ? THEN NULLIF(ae.anonymous_id,'') END) AS returning_visitors,
-      COALESCE(AVG(CASE WHEN event_type='page_leave' THEN duration_ms END),0) AS avg_duration_ms,
-      SUM(CASE WHEN event_type='product_view' THEN 1 ELSE 0 END) AS product_view_count,
-      SUM(CASE WHEN event_type='product_click' THEN 1 ELSE 0 END) AS product_click_count,
-      SUM(CASE WHEN event_type='add_to_cart' THEN 1 ELSE 0 END) AS add_to_cart_count,
-      SUM(CASE WHEN event_type='checkout_start' THEN 1 ELSE 0 END) AS checkout_start_count,
-      SUM(CASE WHEN event_type='order_submit' THEN 1 ELSE 0 END) AS order_submit_count,
-      SUM(CASE WHEN event_type='payment_success' THEN 1 ELSE 0 END) AS payment_success_count,
-      COALESCE(SUM(CASE WHEN event_type='payment_success' THEN COALESCE(amount,0) ELSE 0 END),0) AS paid_amount,
-      COUNT(DISTINCT CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) THEN NULLIF(session_id,'') END) AS online_visitors
+      SUM(CASE WHEN ae.event_type='page_view' THEN 1 ELSE 0 END) AS pv,
+      COUNT(DISTINCT NULLIF(ae.anonymous_id,'')) AS uv,
+      COUNT(DISTINCT NULLIF(ae.session_id,'')) AS sessions,
+      COUNT(DISTINCT NULLIF(ae.ip_hash,'')) AS unique_ip_count,
+      COUNT(DISTINCT CASE
+        WHEN first_seen.first_created_at >= ? AND first_seen.first_created_at < ?
+        THEN NULLIF(ae.anonymous_id,'')
+      END) AS new_visitors,
+      COUNT(DISTINCT CASE
+        WHEN first_seen.first_created_at < ?
+        THEN NULLIF(ae.anonymous_id,'')
+      END) AS returning_visitors,
+      COALESCE(AVG(CASE WHEN ae.event_type='page_leave' THEN ae.duration_ms END),0) AS avg_duration_ms,
+      SUM(CASE WHEN ae.event_type='product_view' THEN 1 ELSE 0 END) AS product_view_count,
+      SUM(CASE WHEN ae.event_type='product_click' THEN 1 ELSE 0 END) AS product_click_count,
+      SUM(CASE WHEN ae.event_type='add_to_cart' THEN 1 ELSE 0 END) AS add_to_cart_count,
+      SUM(CASE WHEN ae.event_type='checkout_start' THEN 1 ELSE 0 END) AS checkout_start_count,
+      SUM(CASE WHEN ae.event_type='order_submit' THEN 1 ELSE 0 END) AS order_submit_count,
+      SUM(CASE WHEN ae.event_type='payment_success' THEN 1 ELSE 0 END) AS payment_success_count,
+      COALESCE(SUM(CASE WHEN ae.event_type='payment_success' THEN COALESCE(ae.amount,0) ELSE 0 END),0) AS paid_amount,
+      COUNT(DISTINCT CASE WHEN ae.created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) THEN NULLIF(ae.session_id,'') END) AS online_visitors
      FROM analytics_events ae
+     ${trafficFirstSeenJoin('ae')}
      WHERE ${where}`,
-    [dateFrom, dateTo, dateFrom, ...params],
+    [range.start, range.endExclusive, range.start, ...params],
   );
 }
 
@@ -1269,17 +1284,17 @@ async function selectTrafficTopPages(dateFrom, dateTo, filters = {}) {
   const range = utcRangeForKlDate(dateFrom, dateTo);
   return queryList(
     `SELECT
-      COALESCE(NULLIF(path,''), page, '/') AS path,
-      COALESCE(NULLIF(MAX(title),''), COALESCE(NULLIF(path,''), page, '/')) AS title,
+      COALESCE(NULLIF(ae.path,''), ae.page, '/') AS path,
+      COALESCE(NULLIF(MAX(ae.title),''), MIN(COALESCE(NULLIF(ae.path,''), ae.page, '/'))) AS title,
       ${pageTypeSql('ae')} AS page_type,
       SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS pv,
       COUNT(DISTINCT NULLIF(anonymous_id,'')) AS uv,
       COALESCE(AVG(CASE WHEN event_type='page_leave' THEN duration_ms END),0) AS avg_duration_ms,
       CASE
-        WHEN COUNT(DISTINCT CASE WHEN session_id <> '' THEN session_id END) > 0
+        WHEN COUNT(DISTINCT CASE WHEN ae.session_id <> '' THEN ae.session_id END) > 0
         THEN ROUND(
-          COUNT(DISTINCT CASE WHEN session_id <> '' AND session_total_page_views <= 1 THEN session_id END)
-          / COUNT(DISTINCT CASE WHEN session_id <> '' THEN session_id END) * 100,
+          COUNT(DISTINCT CASE WHEN ae.session_id <> '' AND session_total_page_views <= 1 THEN ae.session_id END)
+          / COUNT(DISTINCT CASE WHEN ae.session_id <> '' THEN ae.session_id END) * 100,
           2
         )
         ELSE 0
@@ -1297,7 +1312,7 @@ async function selectTrafficTopPages(dateFrom, dateTo, filters = {}) {
        GROUP BY session_id
      ) session_stats ON session_stats.session_id = ae.session_id
      WHERE ${where}
-     GROUP BY COALESCE(NULLIF(path,''), page, '/'), ${pageTypeSql('ae')}
+     GROUP BY COALESCE(NULLIF(ae.path,''), ae.page, '/'), ${pageTypeSql('ae')}
      ORDER BY pv DESC
      LIMIT 100`,
     [range.start, range.endExclusive, ...params],
@@ -1305,26 +1320,27 @@ async function selectTrafficTopPages(dateFrom, dateTo, filters = {}) {
 }
 
 async function selectTrafficSources(dateFrom, dateTo, filters = {}) {
+  const range = utcRangeForKlDate(dateFrom, dateTo);
   const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
   return queryList(
     `SELECT
-      COALESCE(NULLIF(traffic_source,''), 'direct') AS traffic_source,
-      SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS pv,
-      COUNT(DISTINCT NULLIF(anonymous_id,'')) AS uv,
-      COUNT(DISTINCT CASE WHEN (
-        SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
-        FROM analytics_events ae_first
-        WHERE ae_first.anonymous_id = ae.anonymous_id AND ae_first.anonymous_id <> ''
-      ) BETWEEN ? AND ? THEN NULLIF(ae.anonymous_id,'') END) AS new_visitors,
-      SUM(CASE WHEN event_type='order_submit' THEN 1 ELSE 0 END) AS order_submit_count,
-      SUM(CASE WHEN event_type='payment_success' THEN 1 ELSE 0 END) AS payment_success_count,
-      COALESCE(SUM(CASE WHEN event_type='payment_success' THEN COALESCE(amount,0) ELSE 0 END),0) AS paid_amount
+      COALESCE(NULLIF(ae.traffic_source,''), 'direct') AS traffic_source,
+      SUM(CASE WHEN ae.event_type='page_view' THEN 1 ELSE 0 END) AS pv,
+      COUNT(DISTINCT NULLIF(ae.anonymous_id,'')) AS uv,
+      COUNT(DISTINCT CASE
+        WHEN first_seen.first_created_at >= ? AND first_seen.first_created_at < ?
+        THEN NULLIF(ae.anonymous_id,'')
+      END) AS new_visitors,
+      SUM(CASE WHEN ae.event_type='order_submit' THEN 1 ELSE 0 END) AS order_submit_count,
+      SUM(CASE WHEN ae.event_type='payment_success' THEN 1 ELSE 0 END) AS payment_success_count,
+      COALESCE(SUM(CASE WHEN ae.event_type='payment_success' THEN COALESCE(ae.amount,0) ELSE 0 END),0) AS paid_amount
      FROM analytics_events ae
+     ${trafficFirstSeenJoin('ae')}
      WHERE ${where}
-     GROUP BY COALESCE(NULLIF(traffic_source,''), 'direct')
+     GROUP BY COALESCE(NULLIF(ae.traffic_source,''), 'direct')
      ORDER BY pv DESC
      LIMIT 100`,
-    [dateFrom, dateTo, ...params],
+    [range.start, range.endExclusive, ...params],
   );
 }
 

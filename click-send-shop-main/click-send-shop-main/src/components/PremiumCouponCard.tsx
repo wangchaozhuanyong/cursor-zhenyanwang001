@@ -199,7 +199,7 @@ export default function PremiumCouponCard({
       data-theme-coupon-style={skin.couponStyle}
       data-coupon-card-layout={layout}
       className={cn(
-        "relative grid w-full min-w-0 items-stretch gap-0 overflow-hidden rounded-xl border",
+        "store-coupon-card relative grid w-full min-w-0 items-stretch gap-0 overflow-hidden rounded-xl border",
         skin.useThemedMarketingShell ? "border-[var(--theme-coupon-card-shell-border)]" : "border-[var(--theme-border)]",
         skin.cardPadding,
         skin.gridClass,

@@ -8,7 +8,7 @@ import {
 import { THEME_REVISION_KEY } from "@/lib/themeRevision";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { generateThemePalette } from "@/utils/themeContrast";
-import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
+import { normalizeThemeConfig, normalizeThemeSkinsPayload, resolveRuntimeThemeSkinId } from "@/utils/themeConfig";
 import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 
 type ThemeMode = "light" | "dark";
@@ -52,7 +52,11 @@ function resolveThemeConfigForScope(
   return normalizeThemeConfig({ ...config, ...ADMIN_SAFE_THEME_OVERRIDES });
 }
 
-function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig) {
+function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?: ThemeSkin | null) {
+  if (skin?.id) root.setAttribute("data-theme-skin-id", skin.id);
+  else root.removeAttribute("data-theme-skin-id");
+  if (skin?.sceneTag) root.setAttribute("data-theme-scene", skin.sceneTag);
+  else root.removeAttribute("data-theme-scene");
   root.setAttribute("data-theme-button-style", config.buttonStyle);
   root.setAttribute("data-theme-nav-style", config.navStyle);
   root.setAttribute("data-theme-product-card-variant", config.productCardVariant);
@@ -120,6 +124,9 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       const raw = normalizeMediaUrls((body.data ?? {}) as object, base) as {
         defaultSkinId?: string;
         activeSkinId?: string;
+        runtimeSkinId?: string;
+        holidaySkinId?: string;
+        holidayRules?: ReturnType<typeof normalizeThemeSkinsPayload>["holidayRules"];
         skins?: ThemeSkin[];
       };
       const normalized = normalizeThemeSkinsPayload(raw);
@@ -129,7 +136,10 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       }
 
       const inAdmin = isAdminScope();
-      const currentActive = normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID;
+      const runtimeSkinId = normalized.runtimeSkinId || resolveRuntimeThemeSkinId(normalized);
+      const currentActive = inAdmin
+        ? normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID
+        : runtimeSkinId || normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID;
       const lastActive = typeof window !== "undefined" ? localStorage.getItem(LAST_ACTIVE_SKIN_KEY) : null;
       const activeChangedByAdmin = !!lastActive && currentActive !== lastActive;
       if (typeof window !== "undefined") {
@@ -215,10 +225,12 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     [themeConfig, skinId, inAdminScope, adminManualSkinPick],
   );
 
+  const appliedSkin = useMemo(() => skins.find((s) => s.id === skinId) ?? skins[0] ?? null, [skinId, skins]);
+
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove("dark");
-    applyThemeDataAttributes(root, appliedConfig);
+    applyThemeDataAttributes(root, appliedConfig, appliedSkin);
 
     if (typeof window !== "undefined") {
       localStorage.setItem(SKIN_STORAGE_KEY, skinId);
@@ -226,22 +238,23 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
 
     const palette = generateThemePalette(appliedConfig);
     Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [appliedConfig, skinId]);
+  }, [appliedConfig, appliedSkin, skinId]);
 
   useEffect(() => {
     const syncScope = () => {
       const root = document.documentElement;
+      const currentSkin = skins.find((s) => s.id === skinId) ?? skins[0] ?? null;
       const scoped = resolveThemeConfigForScope(themeConfig, skinId, isAdminScope(), {
         adminManualPreview: isAdminScope() && adminManualSkinPick,
       });
       const palette = generateThemePalette(scoped);
       Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-      applyThemeDataAttributes(root, scoped);
+      applyThemeDataAttributes(root, scoped, currentSkin);
     };
     syncScope();
     window.addEventListener("app:scope-changed", syncScope);
     return () => window.removeEventListener("app:scope-changed", syncScope);
-  }, [themeConfig, skinId, adminManualSkinPick]);
+  }, [themeConfig, skinId, skins, adminManualSkinPick]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
@@ -287,7 +300,7 @@ function getInitialThemeState() {
   }
   const saved = inAdmin
     ? localStorage.getItem(SKIN_STORAGE_KEY) || localStorage.getItem(LAST_ACTIVE_SKIN_KEY) || ""
-    : localStorage.getItem(LAST_ACTIVE_SKIN_KEY) || "";
+    : DEFAULT_SKIN_ID;
   const sourceSkins = cachedSkins.length > 0 ? cachedSkins : THEME_PRESETS;
   const active = sourceSkins.find((skin) => skin.id === saved) ?? (cachedSkins.length > 0 ? sourceSkins[0] : null);
 

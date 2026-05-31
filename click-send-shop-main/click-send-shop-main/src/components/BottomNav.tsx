@@ -186,6 +186,7 @@ export default function BottomNav() {
   return (
     <nav
       className={cn(
+        "store-bottom-nav",
         getBottomNavShellClassName(navStyle, "fixed"),
         "lg:hidden transition-transform transition-opacity duration-200 ease-out motion-reduce:transition-none",
         shouldHideByScroll
@@ -199,7 +200,7 @@ export default function BottomNav() {
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div className={getBottomNavInnerClassName(navStyle)} style={{ touchAction: "manipulation" }}>
+      <div className={cn("store-bottom-nav-inner", getBottomNavInnerClassName(navStyle))} style={{ touchAction: "manipulation" }}>
         <div className="grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
           {visibleTabs.map((tab) => {
             const isActive = isTabActive(tab.path);
@@ -215,10 +216,10 @@ export default function BottomNav() {
                 onPointerUp={(event) => finishPointer(event, tab.path)}
                 onPointerCancel={handlePointerCancel}
                 onClick={() => activateTab(tab.path)}
-                className="relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"
+                className="store-bottom-nav-item relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"
               >
                 <span
-                  className={`relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150 ${
+                  className={`store-bottom-nav-icon relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150 ${
                     isActive
                       ? "scale-105 bg-[var(--store-icon-bg)] shadow-[inset_0_0_0_1px_var(--store-icon-border)]"
                       : "bg-transparent"
@@ -240,7 +241,7 @@ export default function BottomNav() {
                   )}
                 </span>
                 <span
-                  className={`text-xs leading-tight ${
+                  className={`store-bottom-nav-label text-xs leading-tight ${
                     isActive
                       ? "font-bold text-[var(--theme-primary)]"
                       : "font-medium text-[var(--theme-text-muted)]"

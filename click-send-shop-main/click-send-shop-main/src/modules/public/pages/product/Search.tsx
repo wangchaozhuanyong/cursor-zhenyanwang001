@@ -174,7 +174,7 @@ export default function Search() {
   const siteName = siteInfo.siteName || "官方商城";
 
   return (
-    <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell store-search-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
         title={`搜索结果｜${siteName}`}
         description={`查看${siteName}站内搜索结果，快速查找相关服务、商品和帮助内容。`}
@@ -183,7 +183,7 @@ export default function Search() {
       />
       <header
         className={cn(
-          "sticky top-0 z-header border-b backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]",
+          "store-search-header sticky top-0 z-header border-b backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]",
           surfaceClass,
         )}
       >
@@ -224,9 +224,9 @@ export default function Search() {
         <div className="md:grid md:grid-cols-[280px,1fr] md:gap-6 lg:grid-cols-[320px,1fr]">
           <aside className="hidden md:block">
             {(history.length > 0 || hotTerms.length > 0) && (
-              <div className="sticky top-[calc(var(--store-tab-header-height)+2.75rem+env(safe-area-inset-top,0px))] space-y-4 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+              <div className="store-discovery-panel sticky top-[calc(var(--store-tab-header-height)+2.75rem+env(safe-area-inset-top,0px))] space-y-4 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
                 {history.length > 0 && (
-                  <section>
+                  <section className="store-discovery-section">
                     <div className="mb-3 flex items-center justify-between">
                       <h3 className="store-section-title flex items-center gap-1.5 text-foreground">
                         <Clock size={14} className="text-muted-foreground" /> 搜索历史
@@ -255,7 +255,7 @@ export default function Search() {
                 )}
 
                 {hotTerms.length > 0 && (
-                  <section>
+                  <section className="store-discovery-section">
                     <h3 className="store-section-title mb-3 flex items-center gap-1.5 text-foreground">
                       <TrendingUp size={14} className="text-theme-price" /> 热门搜索
                     </h3>
@@ -282,7 +282,7 @@ export default function Search() {
             {shouldShowDiscovery && (
               <div className="mb-6 space-y-6 md:hidden">
                 {history.length > 0 && (
-                  <section>
+                  <section className="store-discovery-section">
                     <div className="mb-3 flex items-center justify-between">
                       <h3 className="store-section-title flex items-center gap-1.5 text-foreground">
                         <Clock size={14} className="text-muted-foreground" /> 搜索历史
@@ -321,7 +321,7 @@ export default function Search() {
                 )}
 
                 {hotTerms.length > 0 && (
-                  <section>
+                  <section className="store-discovery-section">
                     <h3 className="store-section-title mb-3 flex items-center gap-1.5 text-foreground">
                       <TrendingUp size={14} className="text-theme-price" /> 热门搜索
                     </h3>
@@ -344,7 +344,7 @@ export default function Search() {
             )}
 
             {shouldShowSuggestions && (
-              <div className="mb-5 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+              <div className="store-suggestion-panel mb-5 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]">
                 {suggestions.map((item) => (
                   <button
                     key={`${item.source}-${item.keyword}`}
@@ -377,7 +377,7 @@ export default function Search() {
                 showFullSkeleton={showFullSkeleton}
                 showSoftRefreshing={showSoftRefreshing}
                 emptyState={
-                  <div className="py-20 text-center text-sm text-muted-foreground">
+                  <div className="store-search-empty py-20 text-center text-sm text-muted-foreground">
                     <p>没有找到相关商品</p>
                     <button
                       type="button"

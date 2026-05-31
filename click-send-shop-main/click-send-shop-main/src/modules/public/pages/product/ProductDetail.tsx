@@ -243,7 +243,7 @@ export default function ProductDetail() {
   const productDescription = truncateText(
     restricted
       ? "本页面包含受年龄、地区或当地法规限制的商品或服务信息，仅面向符合法定年龄并符合当地规定的用户展示。具体适用范围以当地法律法规、平台规则和客服确认为准。"
-      : productDescRaw || `查看 ${product.name} 的详情、价格、库存、规格与服务信息，支持中文客服咨询。`,
+      : productDescRaw || `查看 ${product.name} 的详情、价格、库存状态与客服咨询说明。具体购买或办理信息以下单页面和客服确认为准。`,
     150,
   );
   const seoImage = selectedVariant?.image_url || product.cover_image || product.images?.[0] || siteInfo.defaultOgImageUrl || "/og-default.png";
@@ -403,7 +403,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
+    <div className="store-conversion-page store-product-detail-page store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
       <SeoHead
         title={`${product.name}｜${siteName}`}
         description={productDescription}
@@ -431,9 +431,9 @@ export default function ProductDetail() {
           <ArrowLeft size={16} />
           返回
         </button>
-        <div className="md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-6 lg:gap-12 lg:py-8">
+        <div className="store-detail-layout md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-6 lg:gap-12 lg:py-8">
           <div className={cn("md:sticky md:self-start", STORE_DETAIL_STICKY_TOP_CLASS)}>
-            <div className="relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
+            <div className="store-detail-gallery relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
               <ProductImageGallery
                 images={galleryImages}
                 imageAlts={galleryImageAlts}
@@ -452,7 +452,7 @@ export default function ProductDetail() {
                 aria-hidden
               />
               <div
-                className="px-[var(--store-page-x)] pt-5 md:px-0 md:pt-0"
+                className="store-detail-info-card px-[var(--store-page-x)] pt-5 md:px-0 md:pt-0"
                 style={
                   headerSolid
                     ? { scrollMarginTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px))" }
@@ -520,12 +520,12 @@ export default function ProductDetail() {
             </div>
 
             {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}
-            <div className="mt-6 px-[var(--store-page-x)] md:px-0">
+            <div className="store-trust-card mt-6 px-[var(--store-page-x)] md:px-0">
               <TrustInfo variant="card" />
             </div>
 
             {/* 描述 */}
-            <div className="mt-8 border-t border-[var(--theme-border)] px-[var(--store-page-x)] pt-6 md:mt-10 md:theme-rounded md:border md:bg-[var(--theme-surface)]/40 md:p-6">
+            <div className="store-detail-section mt-8 border-t border-[var(--theme-border)] px-[var(--store-page-x)] pt-6 md:mt-10 md:theme-rounded md:border md:bg-[var(--theme-surface)]/40 md:p-6">
               <h3 className="mb-3 text-sm font-semibold text-foreground md:mb-4">商品详情</h3>
               <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
                 {detailSections.map((section, idx) => (
@@ -543,7 +543,7 @@ export default function ProductDetail() {
 
         {/* 同类推荐 */}
         {relatedProducts.length > 0 && (
-          <div className="border-t border-[var(--theme-border)] px-[var(--store-page-x)] py-8 md:border-0 md:px-0 md:py-12">
+          <div className="store-related-section border-t border-[var(--theme-border)] px-[var(--store-page-x)] py-8 md:border-0 md:px-0 md:py-12">
             <h3 className="mb-4 text-sm font-semibold text-foreground md:mb-5 md:text-lg">
               同类推荐
             </h3>
@@ -556,7 +556,7 @@ export default function ProductDetail() {
         )}
       </main>
       {/* 底部固定操作栏 - 仅移动端 */}
-      <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+      <div className="store-mobile-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto w-full px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
           <DetailPurchaseBar
             soldOut={soldOut}
@@ -649,7 +649,7 @@ function DetailPurchaseBar({
 }) {
   const disabled = soldOut;
   return (
-    <div className="flex items-stretch gap-3">
+    <div className="store-detail-purchase-bar flex items-stretch gap-3">
       <div className="flex shrink-0 items-center gap-4 pr-1">
         <div className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]">
           <FavoriteMotionButton active={isFavorite} onClick={onFavorite} className="h-9 w-9" size={18} />
@@ -700,7 +700,7 @@ function DetailPurchaseBar({
 
 function buildDetailSections(description: string): string[] {
   const raw = (description || "").trim();
-  if (!raw) return ["暂无详情描述"];
+  if (!raw) return ["商品或服务详情正在完善。下单前建议先联系客服确认内容、规格、配送、售后或服务边界。"];
   const parts = raw
     .split(/\n+|[；;。]/g)
     .map((item) => item.trim())

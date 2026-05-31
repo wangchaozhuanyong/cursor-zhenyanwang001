@@ -46,6 +46,7 @@ _deploy_bundle/
 
 # 本地回归/截图产物，不纳入版本库
 **/artifacts/
+**/.codex-artifacts/
 
 # 生产应急操作脚本，仅本地临时使用
 server/scripts/_remote-manual-switch.sh

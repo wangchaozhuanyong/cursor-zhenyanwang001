@@ -228,10 +228,11 @@ export default function ThemeEditorPanel({
           <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
             <input
               type="checkbox"
-              checked={selectedSkin?.clientEnabled !== false}
-              onChange={(e) => onSkinMetaChange({ clientEnabled: e.target.checked })}
+              checked
+              disabled
+              readOnly
             />
-            前台可切换
+            前台可使用
           </label>
           <p className="rounded-xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground md:col-span-2">{statusText}</p>
         </div>

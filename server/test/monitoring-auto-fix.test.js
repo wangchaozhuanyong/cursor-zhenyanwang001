@@ -30,6 +30,8 @@ describe('monitoring autoFix eligibility', () => {
     assert.equal(autoFix.isRuleAutoFixAllowed('PRODUCT_STOCK_MISMATCH'), true);
     assert.equal(autoFix.isRuleAutoFixAllowed('CACHE_STALE_AFTER_ADMIN_UPDATE'), true);
     assert.equal(autoFix.isRuleAutoFixAllowed('USER_STATS_MISMATCH'), true);
+    assert.equal(autoFix.isRuleAutoFixAllowed('PRODUCT_SEARCH_KEYWORDS_MISMATCH'), true);
+    assert.equal(autoFix.isRuleAutoFixAllowed('ANALYTICS_PAYMENT_SUCCESS_MISSING'), true);
     assert.equal(autoFix.isRuleAutoFixAllowed('POINTS_BALANCE_MISMATCH'), false);
     assert.equal(autoFix.isRuleAutoFixAllowed('FILE_OBJECT_MISSING'), false);
   });

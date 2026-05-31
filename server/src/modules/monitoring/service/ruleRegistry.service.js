@@ -6,6 +6,8 @@ const orderStockRules = require('../rules/orderStock.rules');
 const cacheRules = require('../rules/cache.rules');
 const fileRules = require('../rules/file.rules');
 const userStatsRules = require('../rules/userStats.rules');
+const searchIndexRules = require('../rules/searchIndex.rules');
+const analyticsRules = require('../rules/analytics.rules');
 
 const registry = {
   ...productStockRules,
@@ -16,6 +18,8 @@ const registry = {
   ...cacheRules,
   ...fileRules,
   ...userStatsRules,
+  ...searchIndexRules,
+  ...analyticsRules,
 };
 
 function getRuleRunner(code) {

@@ -24,9 +24,6 @@ const CROSSFADE_TRANSITION = {
   scale: { duration: 0.5, ease: "easeOut" as const },
 };
 
-const HERO_TEXT_GRADIENT =
-  "linear-gradient(90deg, var(--store-hero-text-surface) 0%, color-mix(in srgb, var(--store-hero-text-surface) 82%, transparent) 42%, color-mix(in srgb, var(--store-hero-text-surface) 24%, transparent) 68%, transparent 100%)";
-
 function resolveBannerLink(link: string): string {
   const value = (link || "").trim();
   if (!value) return "";
@@ -158,7 +155,9 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               loading="eager"
               fetchPriority="high"
               decoding="async"
-              className="absolute inset-0 h-full w-full object-cover object-center"
+              className={`absolute inset-0 h-full w-full object-cover ${
+                hasTextLayer ? "store-hero-image-with-copy" : "object-center"
+              }`}
               initial={{ opacity: 0, scale: 1.018 }}
               animate={{
                 opacity: activeImageLoaded ? 1 : 0,
@@ -179,7 +178,9 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            className="absolute inset-0 h-full w-full object-cover object-center transition-[opacity,transform] duration-500 ease-out"
+            className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-500 ease-out ${
+              hasTextLayer ? "store-hero-image-with-copy" : "object-center"
+            }`}
             style={{
               opacity: activeImageLoaded ? 1 : 0,
               transform: activeImageLoaded ? "scale(1)" : "scale(1.018)",
@@ -191,18 +192,20 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
 
       {hasTextLayer ? (
         <>
-          <div className="pointer-events-none absolute inset-0 z-10" style={{ background: HERO_TEXT_GRADIENT }} aria-hidden />
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-[58%] max-w-[22rem] flex-col justify-center px-4 py-4 sm:w-[54%] sm:px-6 lg:w-[46%] lg:max-w-[28rem] lg:px-8">
-            {bannerTitle ? (
-              <h2 className="line-clamp-2 text-[17px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
-                {bannerTitle}
-              </h2>
-            ) : null}
-            {bannerDescription ? (
-              <p className="mt-1.5 line-clamp-2 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
-                {bannerDescription}
-              </p>
-            ) : null}
+          <div className="store-hero-text-wash pointer-events-none absolute inset-0 z-10" aria-hidden />
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-full items-center px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
+            <div className="store-hero-copy-panel">
+              {bannerTitle ? (
+                <h2 className="store-hero-copy-title line-clamp-2 text-[16px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
+                  {bannerTitle}
+                </h2>
+              ) : null}
+              {bannerDescription ? (
+                <p className="store-hero-copy-desc mt-1.5 line-clamp-2 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
+                  {bannerDescription}
+                </p>
+              ) : null}
+            </div>
           </div>
         </>
       ) : null}

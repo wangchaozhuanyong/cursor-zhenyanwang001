@@ -45,10 +45,10 @@ export function CheckoutAddressCard({
   };
 
   return (
-    <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
+    <div className="store-checkout-card theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">1</span>
+          <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">1</span>
           <div>
             <h3 className="text-[15px] font-semibold text-foreground">收货信息</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">用于配送员联系和确认送达地址</p>
@@ -70,7 +70,7 @@ export function CheckoutAddressCard({
           <button
             type="button"
             onClick={() => setAddressSheetOpen(true)}
-            className="flex w-full items-center justify-between gap-2 rounded-xl bg-secondary px-4 py-3.5 text-left"
+            className="store-choice-row flex w-full items-center justify-between gap-2 rounded-xl bg-secondary px-4 py-3.5 text-left"
           >
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">收货人</p>
@@ -83,7 +83,7 @@ export function CheckoutAddressCard({
           <button
             type="button"
             onClick={() => setNoteSheetOpen(true)}
-            className="flex w-full items-center justify-between gap-2 rounded-xl bg-secondary px-4 py-3.5 text-left"
+            className="store-choice-row flex w-full items-center justify-between gap-2 rounded-xl bg-secondary px-4 py-3.5 text-left"
           >
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">订单备注</p>

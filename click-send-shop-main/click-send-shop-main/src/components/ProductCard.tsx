@@ -184,7 +184,7 @@ function ProductCardInner({
         <div ref={impressionRef} className={cn("flex", isListRow ? "gap-3 p-3" : "gap-2.5 p-2.5 sm:gap-3 sm:p-3")}>
           <div
             className={cn(
-              "theme-rounded relative shrink-0 overflow-hidden border border-[var(--theme-border)] bg-[var(--store-product-media-bg)]",
+              "store-product-media theme-rounded relative shrink-0 overflow-hidden border border-[var(--theme-border)] bg-[var(--store-product-media-bg)]",
               isListRow ? "h-28 w-28 sm:h-[7.25rem] sm:w-[7.25rem]" : "h-[5.25rem] w-[5.25rem] sm:h-24 sm:w-24",
             )}
           >
@@ -246,7 +246,7 @@ function ProductCardInner({
     >
       <div
         ref={impressionRef}
-        className="theme-rounded relative overflow-hidden bg-[var(--store-product-media-bg)]"
+        className="store-product-media theme-rounded relative overflow-hidden bg-[var(--store-product-media-bg)]"
         style={{ aspectRatio: isPremium ? "1 / 1" : "var(--theme-image-ratio)" }}
       >
         <ProductCoverImage

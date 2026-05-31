@@ -1,6 +1,6 @@
 import * as themeApi from "@/api/admin/theme";
 import { ApiError, type ApiResponse } from "@/types/common";
-import type { ThemeConfig } from "@/types/theme";
+import type { ThemeConfig, ThemeSkinsPayload } from "@/types/theme";
 
 function assertApiSuccess<T>(res: ApiResponse<T>): T {
   if (res.code !== 0) {
@@ -8,12 +8,6 @@ function assertApiSuccess<T>(res: ApiResponse<T>): T {
   }
   return res.data;
 }
-
-export type ThemeSkinsPayload = {
-  defaultSkinId: string;
-  activeSkinId: string;
-  skins: Array<{ id: string; name: string; clientEnabled?: boolean; config: ThemeConfig }>;
-};
 
 export async function fetchActiveThemeConfig() {
   const res = await themeApi.getActiveTheme();

@@ -11,7 +11,7 @@ interface CheckoutSubmitBarProps {
 
 export function CheckoutSubmitBar({ finalTotal, paymentMethod, submitting, onSubmit }: CheckoutSubmitBarProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+    <div className="store-mobile-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
       <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3.5">
         <div>
           <p className="text-xs text-muted-foreground">合计</p>

@@ -72,7 +72,7 @@ export default function PaymentMethodPicker({
         return (
           <div
             key={opt.id}
-            className={`rounded-xl border transition-colors ${
+            className={`store-payment-option rounded-xl border transition-colors ${
               isActive
                 ? "border-gold bg-gold/5"
                 : "border-border hover:border-gold/40"
@@ -125,7 +125,7 @@ export default function PaymentMethodPicker({
                         key={channel.code}
                         type="button"
                         onClick={() => onOnlineChannelChange?.(channel.code)}
-                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                        className={`store-payment-channel flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
                           selected
                             ? "border-gold bg-gold/10 text-foreground"
                             : "border-border bg-background text-muted-foreground"

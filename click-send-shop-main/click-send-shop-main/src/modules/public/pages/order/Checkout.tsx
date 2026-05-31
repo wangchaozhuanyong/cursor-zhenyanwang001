@@ -75,7 +75,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
+    <div className="store-conversion-page store-checkout-page store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
       <PageHeader
         title="确认订单"
         onBack={checkout.goBack}
@@ -145,7 +145,7 @@ export default function Checkout() {
 
             <CheckoutItemsList items={checkout.items} />
 
-            <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 md:hidden theme-shadow">
+            <div className="store-checkout-card store-checkout-summary theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 md:hidden theme-shadow">
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}
@@ -162,7 +162,7 @@ export default function Checkout() {
           </div>
 
           <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
-            <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
+            <div className="store-checkout-card store-checkout-summary theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
               <div className="mb-4 rounded-2xl bg-[var(--theme-bg)] px-4 py-3">
                 <p className="text-xs font-medium text-muted-foreground">确认订单</p>
                 <h3 className="mt-1 text-lg font-extrabold text-foreground">订单摘要</h3>

@@ -1,6 +1,13 @@
 const repo = require('../repository/theme.repository');
 const { DEFAULT_THEME_CONFIG } = require('../theme.default');
-const { DEFAULT_SKIN_ID, FALLBACK_THEME_SKIN, STOREFRONT_DESIGN_LOCKS } = require('../theme.presets');
+const {
+  DEFAULT_SKIN_ID,
+  DEFAULT_HOLIDAY_SKIN_ID,
+  DEFAULT_THEME_HOLIDAY_RULES,
+  FALLBACK_THEME_SKIN,
+  STOREFRONT_DESIGN_LOCKS,
+  THEME_PRESETS,
+} = require('../theme.presets');
 const { writeAuditLog } = require('../../../utils/auditLog');
 
 const ENUMS = {
@@ -30,6 +37,7 @@ const MAX_SKINS = 20;
 const MAX_SKIN_NAME_LEN = 40;
 const MAX_PAYLOAD_BYTES = 512 * 1024;
 const SKIN_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
+const MONTH_DAY_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
 function badRequest(message) {
   const err = /** @type {any} */ (new Error(message));
@@ -48,7 +56,7 @@ function assertThemeSkinsPayload(rawPayload) {
     if (!skin || typeof skin !== 'object') throw badRequest('皮肤格式不正确');
     const id = String(skin.id || '').trim();
     const name = String(skin.name || '').trim();
-    if (!SKIN_ID_RE.test(id)) throw badRequest(`皮肤 ID 格式不合法: ${id || '(空)'}`);
+    if (!SKIN_ID_RE.test(id)) throw badRequest(`皮肤 ID 格式不合法：${id || '(空)'}`);
     if (!name || name.length > MAX_SKIN_NAME_LEN) throw badRequest('皮肤名称长度必须为 1-40 个字符');
   });
 }
@@ -140,54 +148,104 @@ function normalizeThemeConfig(rawConfig) {
   };
 }
 
-function resolveThemeSkinIds(skins, preferredDefaultId, preferredActiveId) {
-  if (!skins.length) {
-    return { defaultSkinId: DEFAULT_SKIN_ID, activeSkinId: DEFAULT_SKIN_ID };
-  }
-  const has = (id) => !!id && skins.some((s) => s.id === id);
-  let defaultSkinId = has(preferredDefaultId) ? preferredDefaultId : skins[0].id;
-  if (skins.length === 1) defaultSkinId = skins[0].id;
-  if (!has(defaultSkinId)) defaultSkinId = skins[0].id;
-  let activeSkinId = has(preferredActiveId) ? preferredActiveId : defaultSkinId;
-  if (!has(activeSkinId)) activeSkinId = defaultSkinId;
-  return { defaultSkinId, activeSkinId };
+function normalizeMonthDay(value, fallback) {
+  if (typeof value !== 'string') return fallback;
+  const raw = value.trim();
+  return MONTH_DAY_RE.test(raw) ? raw : fallback;
+}
+
+function normalizeHolidayRule(rule, fallback) {
+  const base = fallback || DEFAULT_THEME_HOLIDAY_RULES[0];
+  return {
+    id: typeof rule?.id === 'string' && rule.id.trim() ? rule.id.trim() : base.id,
+    name: typeof rule?.name === 'string' && rule.name.trim() ? rule.name.trim() : base.name,
+    enabled: rule?.enabled !== false,
+    start: normalizeMonthDay(rule?.start, base.start),
+    end: normalizeMonthDay(rule?.end, base.end),
+    skinId: typeof rule?.skinId === 'string' && rule.skinId.trim() ? rule.skinId.trim() : base.skinId,
+  };
+}
+
+function normalizeHolidayRules(rawRules) {
+  const incoming = Array.isArray(rawRules) ? rawRules : [];
+  if (!incoming.length) return DEFAULT_THEME_HOLIDAY_RULES.map((rule) => ({ ...rule }));
+  const byId = new Map(DEFAULT_THEME_HOLIDAY_RULES.map((rule) => [rule.id, rule]));
+  return incoming
+    .filter((rule) => rule && typeof rule === 'object')
+    .slice(0, 16)
+    .map((rule) => normalizeHolidayRule(rule, byId.get(String(rule.id || ''))));
+}
+
+function monthDayFromDate(date = new Date()) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${month}-${day}`;
+}
+
+function isMonthDayInRange(value, start, end) {
+  if (start <= end) return value >= start && value <= end;
+  return value >= start || value <= end;
+}
+
+function resolveRuntimeThemeSkinId(payload, date = new Date()) {
+  const today = monthDayFromDate(date);
+  const hasSkin = (id) => !!id && payload.skins.some((skin) => skin.id === id);
+  const rule = payload.holidayRules.find(
+    (item) => item.enabled && isMonthDayInRange(today, item.start, item.end) && hasSkin(item.skinId || payload.holidaySkinId),
+  );
+  const chosen = rule?.skinId || (rule ? payload.holidaySkinId : payload.activeSkinId);
+  return hasSkin(chosen) ? chosen : payload.activeSkinId;
 }
 
 function normalizeThemeSkinsPayload(rawPayload) {
   const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {};
   const incoming = Array.isArray(payload.skins) ? payload.skins : [];
+  const incomingById = new Map();
+  incoming.forEach((skin) => {
+    if (!skin || typeof skin !== 'object') return;
+    const id = String(skin.id || '').trim();
+    if (!id) return;
+    incomingById.set(id, skin);
+  });
 
-  let skins;
-  if (incoming.length > 0) {
-    skins = [];
-    incoming.forEach((skin) => {
-      if (!skin || typeof skin !== 'object') return;
-      const id = String(skin.id || '').trim() || `skin_${Math.random().toString(16).slice(2, 10)}`;
-      const name = String(skin.name || '自定义皮肤').trim();
-      skins.push({
-        id,
-        name,
-        description: typeof skin.description === 'string' ? skin.description.trim() : undefined,
-        sceneTag: skin.sceneTag,
-        clientEnabled: skin.clientEnabled !== false,
-        config: normalizeThemeConfig(skin.config),
-      });
+  const skins = THEME_PRESETS.map((preset) => {
+    const existing = incomingById.get(preset.id);
+    return {
+      ...preset,
+      name: typeof existing?.name === 'string' && existing.name.trim() ? existing.name.trim() : preset.name,
+      description: typeof existing?.description === 'string' && existing.description.trim()
+        ? existing.description.trim()
+        : preset.description,
+      sceneTag: preset.sceneTag,
+      clientEnabled: true,
+      config: normalizeThemeConfig(existing?.config || preset.config),
+    };
+  });
+
+  if (!skins.length) {
+    skins.push({
+      ...FALLBACK_THEME_SKIN,
+      clientEnabled: FALLBACK_THEME_SKIN.clientEnabled !== false,
+      config: normalizeThemeConfig(FALLBACK_THEME_SKIN.config),
     });
-  } else {
-    skins = [
-      {
-        ...FALLBACK_THEME_SKIN,
-        clientEnabled: FALLBACK_THEME_SKIN.clientEnabled !== false,
-        config: normalizeThemeConfig(FALLBACK_THEME_SKIN.config),
-      },
-    ];
   }
 
-  skins = skins.slice(0, MAX_SKINS);
-  const { defaultSkinId, activeSkinId } = resolveThemeSkinIds(skins, payload.defaultSkinId, payload.activeSkinId);
-  return { defaultSkinId, activeSkinId, skins };
+  const systemDefaultSkinId = skins.some((skin) => skin.id === DEFAULT_SKIN_ID) ? DEFAULT_SKIN_ID : skins[0].id;
+  const defaultSkinId = systemDefaultSkinId;
+  const activeSkinId = systemDefaultSkinId;
+  const hasSkin = (id) => !!id && skins.some((skin) => skin.id === id);
+  const holidaySkinId = hasSkin(payload.holidaySkinId)
+    ? String(payload.holidaySkinId)
+    : hasSkin(DEFAULT_HOLIDAY_SKIN_ID)
+      ? DEFAULT_HOLIDAY_SKIN_ID
+      : activeSkinId;
+  const holidayRules = normalizeHolidayRules(payload.holidayRules).map((rule) => ({
+    ...rule,
+    skinId: hasSkin(rule.skinId) ? rule.skinId : holidaySkinId,
+  }));
+  const runtimeSkinId = resolveRuntimeThemeSkinId({ activeSkinId, holidaySkinId, holidayRules, skins });
+  return { defaultSkinId, activeSkinId, runtimeSkinId, holidaySkinId, holidayRules, skins };
 }
-
 async function getThemeSkins() {
   const skinsRaw = await repo.selectThemeSkinsRaw();
   if (skinsRaw) {
@@ -202,13 +260,14 @@ async function getThemeSkins() {
   return normalizeThemeSkinsPayload({
     defaultSkinId: DEFAULT_SKIN_ID,
     activeSkinId: DEFAULT_SKIN_ID,
-    skins: [{ id: DEFAULT_SKIN_ID, name: '默认主题', config: fallbackConfig }],
+    skins: [{ id: DEFAULT_SKIN_ID, name: '日常购物皮肤', config: fallbackConfig }],
   });
 }
 
 async function getActiveThemeConfig() {
   const data = await getThemeSkins();
-  const active = data.skins.find((s) => s.id === data.activeSkinId) || data.skins[0];
+  const runtimeId = data.runtimeSkinId || resolveRuntimeThemeSkinId(data);
+  const active = data.skins.find((s) => s.id === runtimeId) || data.skins[0];
   return active?.config || DEFAULT_THEME_CONFIG;
 }
 
@@ -240,7 +299,8 @@ async function updateThemeSkins(themeSkinsPayload, adminUserId, req) {
   const before = await getThemeSkins();
   const next = normalizeThemeSkinsPayload(themeSkinsPayload);
   await repo.upsertThemeSkins(JSON.stringify(next));
-  const active = next.skins.find((s) => s.id === next.activeSkinId) || next.skins[0];
+  const runtimeId = next.runtimeSkinId || resolveRuntimeThemeSkinId(next);
+  const active = next.skins.find((s) => s.id === runtimeId) || next.skins[0];
   await repo.upsertThemeConfig(JSON.stringify(active?.config || DEFAULT_THEME_CONFIG));
   await writeAuditLog({
     req,
@@ -259,11 +319,10 @@ async function updateThemeSkins(themeSkinsPayload, adminUserId, req) {
 module.exports = {
   normalizeThemeConfig,
   normalizeThemeSkinsPayload,
+  resolveRuntimeThemeSkinId,
   getActiveThemeConfig,
   updateThemeConfig,
   getThemeSkins,
   updateThemeSkins,
 };
-
-
 

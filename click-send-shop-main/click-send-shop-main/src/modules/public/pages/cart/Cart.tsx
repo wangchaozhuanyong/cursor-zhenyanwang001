@@ -80,7 +80,7 @@ export default function Cart() {
   };
 
   return (
-    <div className="store-page-shell store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
+    <div className="store-page-shell store-cart-page store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
       <StorePageHeader
         className={STORE_MOBILE_PAGE_HEADER_CLASS}
         centerTitle
@@ -143,7 +143,7 @@ export default function Cart() {
                 action={{ label: "去逛逛", onClick: () => navigate("/categories") }}
               />
             ) : (
-              <div className="md:theme-rounded md:border md:border-[var(--theme-border)] md:bg-[var(--theme-surface)] md:px-4">
+              <div className="store-cart-list md:theme-rounded md:border md:border-[var(--theme-border)] md:bg-[var(--theme-surface)] md:px-4">
                 {/* 桌面：列表头 + 全选 */}
                 <div className="hidden items-center justify-between border-b border-[var(--theme-border)] py-3 md:flex">
                   <SquishButton
@@ -175,7 +175,7 @@ export default function Cart() {
                       key={cartLineKey(item.product.id, item.variant_id)}
                       layout
                       exit={{ opacity: 0, x: -100 }}
-                      className="flex gap-3 border-b border-[var(--theme-border)] py-4 last:border-b-0"
+                      className="store-cart-item flex gap-3 border-b border-[var(--theme-border)] py-4 last:border-b-0"
                     >
                       <SquishButton
                         type="button"
@@ -193,7 +193,7 @@ export default function Cart() {
                       <button
                         type="button"
                         onClick={() => navigate(`/product/${item.product.id}`)}
-                        className="h-24 w-24 flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 md:h-28 md:w-28"
+                        className="store-cart-media h-24 w-24 flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 md:h-28 md:w-28"
                         aria-label={`查看 ${item.product.name}`}
                       >
                         <ProductCoverImage
@@ -284,7 +284,7 @@ export default function Cart() {
           {/* 桌面右侧结算摘要 */}
           {items.length > 0 && (
             <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
-              <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
+              <div className="store-checkout-summary theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
                 <h3 className="store-section-title mb-4 text-foreground">结算摘要</h3>
                 <div className="space-y-2.5 text-sm">
                   <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
@@ -337,7 +337,7 @@ export default function Cart() {
       </main>
       {/* 移动端：底部固定结算栏 */}
       {items.length > 0 && (
-        <div className="fixed bottom-[calc(var(--store-bottom-nav-height,78px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
+        <div className="store-mobile-submit-bar fixed bottom-[calc(var(--store-bottom-nav-height,78px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
           <div className="mx-auto flex w-full flex-col gap-2 px-[var(--store-page-x)] py-2.5 sm:max-w-lg sm:px-4">
             <SquishButton
               type="button"

@@ -45,7 +45,7 @@ export default function ThemePreviewScope({
   const dataAttrs = toDataAttrs(config);
   return (
     <ThemeRuntimeOverrideProvider config={config}>
-      <div className={className} style={style} {...dataAttrs}>
+      <div className={`theme-preview-store ${className || ""}`} style={style} {...dataAttrs}>
         {children}
       </div>
     </ThemeRuntimeOverrideProvider>

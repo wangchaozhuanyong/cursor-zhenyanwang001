@@ -26,7 +26,8 @@ export type ThemeSceneTag =
   | "visa"
   | "mall"
   | "admin"
-  | "promotion";
+  | "promotion"
+  | "holiday";
 
 export type ThemeConfig = {
   skinName?: string;
@@ -80,4 +81,25 @@ export type ThemeSkin = {
   sceneTag?: ThemeSceneTag;
   clientEnabled?: boolean;
   config: ThemeConfig;
+};
+
+export type ThemeHolidayRule = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  /** MM-DD, yearly recurring */
+  start: string;
+  /** MM-DD, yearly recurring */
+  end: string;
+  /** Usually the festival skin. Kept per rule so later one festival can use a different skin safely. */
+  skinId?: string;
+};
+
+export type ThemeSkinsPayload = {
+  defaultSkinId: string;
+  activeSkinId: string;
+  runtimeSkinId?: string;
+  holidaySkinId?: string;
+  holidayRules: ThemeHolidayRule[];
+  skins: ThemeSkin[];
 };

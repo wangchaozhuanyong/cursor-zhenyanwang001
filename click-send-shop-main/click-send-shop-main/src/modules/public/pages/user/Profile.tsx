@@ -15,6 +15,7 @@ import {
   Package,
   Settings,
   ShieldCheck,
+  Smartphone,
   Truck,
   Wallet,
 } from "lucide-react";
@@ -499,14 +500,13 @@ export default function Profile() {
             {[
               { key: "address", label: "收货地址", icon: MapPin, path: "/address", auth: true },
               { key: "support", label: "客服中心", icon: Headphones, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
+              { key: "install", label: "添加桌面", icon: Smartphone, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=download" : "/help", auth: false },
               { key: "history", label: "浏览记录", icon: Clock3, path: "/history", auth: false },
               { key: "feedback", label: "意见反馈", icon: MessageSquare, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
               { key: "notifications", label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
               { key: "about", label: "关于我们", icon: Info, path: "/about", auth: false },
               { key: "settings", label: "账户设置", icon: Settings, path: "/settings", auth: true },
-            ].filter((item) => (
-              item.key !== "notifications" || loggedIn
-            )).map((item) => (
+            ].map((item) => (
               <button key={item.key} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`relative min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
                 {item.badgeText ? (
                   <span className="absolute right-3 top-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] leading-none text-[var(--theme-danger-foreground)]">

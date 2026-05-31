@@ -41,6 +41,7 @@ export const SCENE_FILTER_OPTIONS: Array<{ id: "all" | ThemeSceneTag; label: str
   { id: "mall", label: "好物商城" },
   { id: "admin", label: "后台管理" },
   { id: "promotion", label: "促销活动" },
+  { id: "holiday", label: "节日皮肤" },
 ];
 
 export const SCENE_TAG_LABELS: Record<ThemeSceneTag, string> = {
@@ -51,6 +52,7 @@ export const SCENE_TAG_LABELS: Record<ThemeSceneTag, string> = {
   mall: "好物商城",
   admin: "后台管理",
   promotion: "促销活动",
+  holiday: "节日皮肤",
 };
 
 export const enumValueLabels: Record<string, string> = {

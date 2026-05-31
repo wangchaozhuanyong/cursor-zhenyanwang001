@@ -13,6 +13,8 @@ const EXECUTABLE_REPAIR_TYPES = new Set([
   'sync_product_stock_from_variants',
   'clear_cache_key',
   'recalculate_user_statistics',
+  'rebuild_product_search_keywords',
+  'backfill_payment_success_analytics_event',
 ]);
 
 async function createRepairTask(anomalyId, operatorId, remark = '') {
@@ -61,6 +63,10 @@ async function executeRepairTask(taskId, operatorId) {
   } else if (task.repair_type === 'recalculate_user_statistics' && task.entity_type === 'user') {
     const real = await repo.recalculateUserStatistics(task.entity_id);
     afterSnapshot = { recalculated: real };
+  } else if (task.repair_type === 'rebuild_product_search_keywords' && task.entity_type === 'product') {
+    afterSnapshot = await repo.rebuildProductSearchKeywords(task.entity_id);
+  } else if (task.repair_type === 'backfill_payment_success_analytics_event' && task.entity_type === 'order') {
+    afterSnapshot = await repo.backfillPaymentSuccessAnalyticsEvent(task.entity_id);
   } else {
     await repo.updateRepairTask(taskId, { repair_status: 'failed', remark: '当前修复类型未开放自动执行' });
     throw new ValidationError('当前修复类型未开放自动执行，请人工确认后处理');

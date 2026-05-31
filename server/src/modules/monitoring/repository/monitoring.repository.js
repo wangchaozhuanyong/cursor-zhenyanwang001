@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const db = require('../../../config/db');
 const { eq } = require('../monitoringSql');
+const { buildSearchKeywords } = require('../../../utils/searchKeywords');
 
 function toJson(value) {
   if (value === undefined) return null;
@@ -39,6 +40,24 @@ function mapRepairTask(row) {
 
 function dedupeHash(ruleCode, entityType, entityId) {
   return crypto.createHash('sha256').update(`${ruleCode}:${entityType}:${entityId}`).digest('hex');
+}
+
+function splitGroupedText(value) {
+  return String(value || '')
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function buildExpectedProductSearchKeywords(row = {}) {
+  return buildSearchKeywords(
+    row.name,
+    row.description,
+    row.category_id,
+    splitGroupedText(row.variant_titles),
+    splitGroupedText(row.sku_codes),
+    splitGroupedText(row.tag_names),
+  );
 }
 
 async function tableExists(tableName) {
@@ -522,6 +541,92 @@ async function selectUserStatsMismatches() {
   return rows;
 }
 
+async function selectProductSearchKeywordRows(options = {}) {
+  const hasProductDeletedAt = await columnExists('products', 'deleted_at');
+  const hasVariants = await tableExists('product_variants');
+  const hasVariantDeletedAt = hasVariants && await columnExists('product_variants', 'deleted_at');
+  const hasVariantEnabled = hasVariants && await columnExists('product_variants', 'enabled');
+  const hasProductTagAssignments = await tableExists('product_tag_assignments');
+  const hasProductTags = await tableExists('product_tags');
+  const hasTagDeletedAt = hasProductTags && await columnExists('product_tags', 'deleted_at');
+  const hasTagEnabled = hasProductTags && await columnExists('product_tags', 'enabled');
+
+  const selects = [
+    'p.id',
+    'p.name',
+    'p.description',
+    'p.category_id',
+    'p.search_keywords',
+  ];
+  const joins = [];
+
+  if (hasVariants) {
+    const variantFilters = [];
+    if (hasVariantDeletedAt) variantFilters.push('v.deleted_at IS NULL');
+    if (hasVariantEnabled) variantFilters.push('(v.enabled IS NULL OR v.enabled = 1)');
+    joins.push(`LEFT JOIN product_variants v ON ${eq('v.product_id', 'p.id')}${variantFilters.length ? ` AND ${variantFilters.join(' AND ')}` : ''}`);
+    selects.push("GROUP_CONCAT(DISTINCT NULLIF(v.title, '') SEPARATOR '\n') AS variant_titles");
+    selects.push("GROUP_CONCAT(DISTINCT NULLIF(v.sku_code, '') SEPARATOR '\n') AS sku_codes");
+  } else {
+    selects.push("'' AS variant_titles");
+    selects.push("'' AS sku_codes");
+  }
+
+  if (hasProductTagAssignments && hasProductTags) {
+    const tagFilters = [];
+    if (hasTagDeletedAt) tagFilters.push('pt.deleted_at IS NULL');
+    if (hasTagEnabled) tagFilters.push('(pt.enabled IS NULL OR pt.enabled = 1)');
+    joins.push(`LEFT JOIN product_tag_assignments pta ON ${eq('pta.product_id', 'p.id')}`);
+    joins.push(`LEFT JOIN product_tags pt ON ${eq('pt.id', 'pta.tag_id')}${tagFilters.length ? ` AND ${tagFilters.join(' AND ')}` : ''}`);
+    selects.push("GROUP_CONCAT(DISTINCT NULLIF(pt.name, '') SEPARATOR '\n') AS tag_names");
+  } else {
+    selects.push("'' AS tag_names");
+  }
+
+  const where = [];
+  const params = [];
+  if (hasProductDeletedAt) where.push('p.deleted_at IS NULL');
+  if (options.productId) {
+    where.push('p.id = ?');
+    params.push(options.productId);
+  }
+
+  const [rows] = await db.query(
+    `SELECT ${selects.join(',\n            ')}
+     FROM products p
+     ${joins.join('\n     ')}
+     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+     GROUP BY p.id, p.name, p.description, p.category_id, p.search_keywords`,
+    params,
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    expected_search_keywords: buildExpectedProductSearchKeywords(row),
+  }));
+}
+
+async function selectPaidOrdersMissingPaymentSuccessEvents() {
+  const hasPaidAmount = await columnExists('orders', 'paid_amount');
+  const amountExpr = hasPaidAmount
+    ? 'COALESCE(NULLIF(o.paid_amount, 0), o.total_amount, 0)'
+    : 'COALESCE(o.total_amount, 0)';
+  const [rows] = await db.query(
+    `SELECT o.id, o.order_no, o.user_id, o.payment_status, o.status,
+            ${amountExpr} AS amount
+     FROM orders o
+     WHERE o.payment_status IN ('paid','partially_refunded','refunded')
+       AND o.status <> 'cancelled'
+       AND NOT EXISTS (
+         SELECT 1
+         FROM analytics_events ae
+         WHERE ${eq('ae.order_id', 'o.id')}
+           AND ae.event_type = 'payment_success'
+       )`,
+  );
+  return rows;
+}
+
 async function hasPendingRepairTask(anomalyId) {
   const [[row]] = await db.query(
     `SELECT id FROM data_repair_tasks WHERE anomaly_id = ? AND repair_status = 'pending' LIMIT 1`,
@@ -579,6 +684,60 @@ async function recalculateUserStatistics(userId) {
   return real;
 }
 
+async function rebuildProductSearchKeywords(productId) {
+  const [row] = await selectProductSearchKeywordRows({ productId });
+  if (!row) return { productId, skipped: true, reason: 'product_not_found' };
+  const before = { productId, search_keywords: row.search_keywords || '' };
+  const expected = row.expected_search_keywords || '';
+  await db.query(
+    `UPDATE products SET search_keywords = ? WHERE id = ?`,
+    [expected, productId],
+  );
+  return {
+    before,
+    after: { productId, search_keywords: expected },
+  };
+}
+
+async function backfillPaymentSuccessAnalyticsEvent(orderId) {
+  const hasPaidAmount = await columnExists('orders', 'paid_amount');
+  const amountExpr = hasPaidAmount
+    ? 'COALESCE(NULLIF(paid_amount, 0), total_amount, 0)'
+    : 'COALESCE(total_amount, 0)';
+  const [[order]] = await db.query(
+    `SELECT id, order_no, user_id, payment_status, status, ${amountExpr} AS amount
+     FROM orders
+     WHERE id = ?`,
+    [orderId],
+  );
+  if (!order) return { orderId, skipped: true, reason: 'order_not_found' };
+  if (!['paid', 'partially_refunded', 'refunded'].includes(String(order.payment_status || '')) || order.status === 'cancelled') {
+    return { orderId, skipped: true, reason: 'order_not_paid' };
+  }
+
+  const dedupeKey = `payment_success:${order.id}`.slice(0, 128);
+  await db.query(
+    `INSERT INTO analytics_events
+      (user_id, anonymous_id, session_id, dedupe_key, event_type, module, page, path, title,
+       order_id, amount, quantity, device, user_agent)
+     VALUES (?, '', '', ?, 'payment_success', 'order', '/checkout', '/checkout', 'Payment success',
+       ?, ?, 1, 'server', 'data-consistency-monitor')
+     ON DUPLICATE KEY UPDATE id = id`,
+    [
+      order.user_id || null,
+      dedupeKey,
+      order.id,
+      Number(order.amount || 0),
+    ],
+  );
+  return {
+    orderId,
+    orderNo: order.order_no,
+    dedupeKey,
+    insertedOrAlreadyExists: true,
+  };
+}
+
 module.exports = {
   db,
   toJson,
@@ -616,8 +775,13 @@ module.exports = {
   selectStaleCacheRecords,
   selectFileReferenceRows,
   selectUserStatsMismatches,
+  selectProductSearchKeywordRows,
+  selectPaidOrdersMissingPaymentSuccessEvents,
   hasPendingRepairTask,
   syncProductStockFromVariants,
   clearCacheKey,
   recalculateUserStatistics,
+  rebuildProductSearchKeywords,
+  backfillPaymentSuccessAnalyticsEvent,
+  buildExpectedProductSearchKeywords,
 };

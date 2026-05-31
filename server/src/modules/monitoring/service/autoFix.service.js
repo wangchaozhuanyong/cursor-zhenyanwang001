@@ -5,12 +5,16 @@ const AUTOMATED_REPAIR_TYPES = new Set([
   'sync_product_stock_from_variants',
   'clear_cache_key',
   'recalculate_user_statistics',
+  'rebuild_product_search_keywords',
+  'backfill_payment_success_analytics_event',
 ]);
 
 const AUTOMATED_RULES = new Set([
   'PRODUCT_STOCK_MISMATCH',
   'CACHE_STALE_AFTER_ADMIN_UPDATE',
   'USER_STATS_MISMATCH',
+  'PRODUCT_SEARCH_KEYWORDS_MISMATCH',
+  'ANALYTICS_PAYMENT_SUCCESS_MISSING',
 ]);
 
 function isRuleAutoFixAllowed(ruleCode) {

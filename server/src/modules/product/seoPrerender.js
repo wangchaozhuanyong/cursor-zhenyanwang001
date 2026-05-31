@@ -96,6 +96,33 @@ function parseJsonArray(value) {
   }
 }
 
+function normalizeCategoryFaq(value) {
+  const raw = Array.isArray(value) ? value : parseJsonArray(value);
+  return raw
+    .map((item) => ({
+      question: String(item?.question || '').trim(),
+      answer: String(item?.answer || '').trim(),
+    }))
+    .filter((item) => item.question && item.answer);
+}
+
+function buildCategoryFaqJsonLd(faq) {
+  const items = Array.isArray(faq) ? faq : [];
+  if (!items.length) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  };
+}
+
 function buildWebsiteJsonLd(baseUrl, siteInfo) {
   const siteName = resolveSiteName(siteInfo);
   const description = truncate(stripHtml(siteInfo.seoDescription || resolveSiteDescription(siteInfo)), 180);
@@ -306,8 +333,12 @@ async function registerSeoPrerender(app, { frontendDist }) {
     const categoryName = String(category?.name || '').trim();
     const categoryTitle = String(category?.seo_title || '').trim();
     const categoryDescription = String(category?.seo_description || category?.description || '').trim();
+    const categoryGuide = String(category?.buying_guide || '').trim();
+    const categoryFaq = normalizeCategoryFaq(category?.faq_json);
+    const categoryFaqJsonLd = buildCategoryFaqJsonLd(categoryFaq);
+    const basePayload = buildHomePayload(baseUrl, siteInfo);
     return {
-      ...buildHomePayload(baseUrl, siteInfo),
+      ...basePayload,
       canonical: categoryName
         ? `${baseUrl}/categories?cat=${encodeURIComponent(category.id)}`
         : `${baseUrl}/categories`,
@@ -316,7 +347,8 @@ async function registerSeoPrerender(app, { frontendDist }) {
         ? truncate(stripHtml(categoryDescription || `浏览${siteName} ${categoryName} 相关商品与服务信息。`), 150)
         : `浏览${siteName}的商品与服务分类信息。`,
       prerenderH1: categoryName || '全部分类',
-      prerenderText: categoryDescription || '',
+      prerenderText: categoryDescription || categoryGuide || '',
+      jsonLd: categoryFaqJsonLd ? [...basePayload.jsonLd, categoryFaqJsonLd] : basePayload.jsonLd,
     };
   }));
   app.get('/help', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
@@ -366,7 +398,7 @@ async function registerSeoPrerender(app, { frontendDist }) {
     const title = `${product.name}｜${resolveSiteName(siteInfo)}`;
     const description = restricted
       ? '本页面包含受年龄、地区或当地法规限制的商品或服务信息，仅面向符合法定年龄并符合当地规定的用户展示。具体适用范围以当地法律法规、平台规则和客服确认为准。'
-      : truncate(stripHtml(product.description || `查看 ${product.name} 的详情、价格、库存、规格与服务信息，支持中文客服咨询。`), 150);
+      : truncate(stripHtml(product.description || `查看 ${product.name} 的详情、价格、库存状态与客服咨询说明。具体购买或办理信息以下单页面和客服确认为准。`), 150);
     const basePayload = buildHomePayload(baseUrl, siteInfo);
     const productJsonLd = buildProductJsonLd(baseUrl, product, description);
     return {

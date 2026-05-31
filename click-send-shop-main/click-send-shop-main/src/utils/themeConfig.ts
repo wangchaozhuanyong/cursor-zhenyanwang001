@@ -1,4 +1,11 @@
-import { DEFAULT_LIFE_GREEN_CONFIG, DEFAULT_SKIN_ID, FALLBACK_THEME_SKIN } from "@/constants/themePresets";
+import {
+  DEFAULT_HOLIDAY_SKIN_ID,
+  DEFAULT_LIFE_GREEN_CONFIG,
+  DEFAULT_SKIN_ID,
+  DEFAULT_THEME_HOLIDAY_RULES,
+  FALLBACK_THEME_SKIN,
+  THEME_PRESETS,
+} from "@/constants/themePresets";
 import { applyStorefrontDesignLocks } from "@/constants/themeDesignLocks";
 import type {
   ThemeSceneTag,
@@ -22,7 +29,9 @@ import type {
   ProductCardVariant,
   ShadowStyle,
   ThemeConfig,
+  ThemeHolidayRule,
   ThemeSkin,
+  ThemeSkinsPayload,
 } from "@/types/theme";
 import { getMutedTextColor, getReadableTextColor, parseColor } from "@/utils/themeContrast";
 
@@ -55,6 +64,7 @@ const SCENE_TAG_VALUES: ThemeSceneTag[] = [
   "mall",
   "admin",
   "promotion",
+  "holiday",
 ];
 
 const PRESET_SCENE_BY_ID: Record<string, ThemeSceneTag> = {
@@ -62,6 +72,7 @@ const PRESET_SCENE_BY_ID: Record<string, ThemeSceneTag> = {
   premium_black_gold: "premium",
   professional_blue: "visa",
   promo_red_orange: "promotion",
+  festive_ruby_gold: "holiday",
   fresh_cyan: "life_service",
   minimalist_grey: "mall",
 };
@@ -192,57 +203,126 @@ export function normalizeThemeSkin(skin: Partial<ThemeSkin> & { id: string; name
   };
 }
 
-/** 仅默认皮肤不可删；至少保留一套。 */
+/** 两套系统皮肤固定保留，避免后台误删后前台质感规则失效。 */
 export function canDeleteThemeSkin(skinId: string, defaultSkinId: string, skinCount: number): { ok: boolean; message?: string } {
+  if (THEME_PRESETS.some((skin) => skin.id === skinId)) {
+    return { ok: false, message: "系统保留的日常皮肤和节日皮肤不能删除" };
+  }
   if (skinCount <= 1) return { ok: false, message: "至少保留一套皮肤" };
   if (skinId === defaultSkinId) return { ok: false, message: "默认皮肤无法删除，请先将其他皮肤设为默认" };
   return { ok: true };
 }
 
-function resolveThemeSkinIds(
-  skins: ThemeSkin[],
-  preferredDefaultId?: string,
-  preferredActiveId?: string,
-): { defaultSkinId: string; activeSkinId: string } {
-  if (skins.length === 0) {
-    return { defaultSkinId: DEFAULT_SKIN_ID, activeSkinId: DEFAULT_SKIN_ID };
-  }
-  const has = (id: string | undefined | null) => !!id && skins.some((s) => s.id === id);
-  let defaultSkinId = has(preferredDefaultId) ? String(preferredDefaultId) : skins[0].id;
-  if (skins.length === 1) defaultSkinId = skins[0].id;
-  if (!has(defaultSkinId)) defaultSkinId = skins[0].id;
-  let activeSkinId = has(preferredActiveId) ? String(preferredActiveId) : defaultSkinId;
-  if (!has(activeSkinId)) activeSkinId = defaultSkinId;
-  return { defaultSkinId, activeSkinId };
+const MONTH_DAY_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+function normalizeMonthDay(value: unknown, fallback: string): string {
+  if (typeof value !== "string") return fallback;
+  const raw = value.trim();
+  return MONTH_DAY_RE.test(raw) ? raw : fallback;
+}
+
+export function normalizeThemeHolidayRule(
+  rule: Partial<ThemeHolidayRule> & { id?: string; name?: string },
+  fallback?: ThemeHolidayRule,
+): ThemeHolidayRule {
+  const base = fallback ?? DEFAULT_THEME_HOLIDAY_RULES[0];
+  const id = typeof rule.id === "string" && rule.id.trim() ? rule.id.trim() : base.id;
+  const name = typeof rule.name === "string" && rule.name.trim() ? rule.name.trim() : base.name;
+  return {
+    id,
+    name,
+    enabled: rule.enabled !== false,
+    start: normalizeMonthDay(rule.start, base.start),
+    end: normalizeMonthDay(rule.end, base.end),
+    skinId: typeof rule.skinId === "string" && rule.skinId.trim() ? rule.skinId.trim() : base.skinId,
+  };
+}
+
+export function normalizeThemeHolidayRules(input: unknown): ThemeHolidayRule[] {
+  const incoming = Array.isArray(input) ? input : [];
+  if (incoming.length === 0) return DEFAULT_THEME_HOLIDAY_RULES.map((rule) => ({ ...rule }));
+  const byId = new Map(DEFAULT_THEME_HOLIDAY_RULES.map((rule) => [rule.id, rule]));
+  return incoming
+    .filter((rule): rule is Partial<ThemeHolidayRule> => !!rule && typeof rule === "object")
+    .slice(0, 16)
+    .map((rule) => normalizeThemeHolidayRule(rule, typeof rule.id === "string" ? byId.get(rule.id) : undefined));
 }
 
 export function normalizeThemeSkinsPayload(payload: {
   defaultSkinId?: string;
   activeSkinId?: string;
+  runtimeSkinId?: string;
+  holidaySkinId?: string;
+  holidayRules?: ThemeHolidayRule[];
   skins?: Array<Partial<ThemeSkin> & { id: string; name: string }>;
 } | null | undefined): {
   defaultSkinId: string;
   activeSkinId: string;
+  runtimeSkinId?: string;
+  holidaySkinId: string;
+  holidayRules: ThemeHolidayRule[];
   skins: ThemeSkin[];
 } {
   const incoming = payload ?? {};
   const normalizedIncoming = Array.isArray(incoming.skins) ? incoming.skins.map(normalizeThemeSkin) : [];
+  const incomingById = new Map(normalizedIncoming.map((skin) => [skin.id, skin]));
+  const skins = THEME_PRESETS.map((preset) => {
+    const existing = incomingById.get(preset.id);
+    return {
+      ...preset,
+      name: existing?.name?.trim() || preset.name,
+      description: existing?.description || preset.description,
+      clientEnabled: true,
+      config: normalizeThemeConfig(existing?.config ?? preset.config),
+    };
+  });
 
-  const skins =
-    normalizedIncoming.length > 0
-      ? normalizedIncoming
-      : [
-          {
-            ...FALLBACK_THEME_SKIN,
-            config: normalizeThemeConfig(FALLBACK_THEME_SKIN.config),
-          },
-        ];
+  if (skins.length === 0) {
+    skins.push({
+      ...FALLBACK_THEME_SKIN,
+      config: normalizeThemeConfig(FALLBACK_THEME_SKIN.config),
+    });
+  }
 
-  const { defaultSkinId, activeSkinId } = resolveThemeSkinIds(
-    skins,
-    incoming.defaultSkinId,
-    incoming.activeSkinId,
+  const systemDefaultSkinId = skins.some((skin) => skin.id === DEFAULT_SKIN_ID) ? DEFAULT_SKIN_ID : skins[0].id;
+  const defaultSkinId = systemDefaultSkinId;
+  const activeSkinId = systemDefaultSkinId;
+
+  const hasSkin = (id: string | undefined | null) => !!id && skins.some((skin) => skin.id === id);
+  const holidaySkinId = hasSkin(incoming.holidaySkinId)
+    ? String(incoming.holidaySkinId)
+    : hasSkin(DEFAULT_HOLIDAY_SKIN_ID)
+      ? DEFAULT_HOLIDAY_SKIN_ID
+      : activeSkinId;
+  const holidayRules = normalizeThemeHolidayRules(incoming.holidayRules).map((rule) => ({
+    ...rule,
+    skinId: hasSkin(rule.skinId) ? rule.skinId : holidaySkinId,
+  }));
+  const runtimeSkinId = hasSkin(incoming.runtimeSkinId) ? String(incoming.runtimeSkinId) : undefined;
+
+  return { defaultSkinId, activeSkinId, runtimeSkinId, holidaySkinId, holidayRules, skins };
+}
+
+function monthDayFromDate(date: Date): string {
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${month}-${day}`;
+}
+
+function isMonthDayInRange(value: string, start: string, end: string): boolean {
+  if (start <= end) return value >= start && value <= end;
+  return value >= start || value <= end;
+}
+
+export function resolveRuntimeThemeSkinId(
+  payload: Pick<ThemeSkinsPayload, "activeSkinId" | "holidaySkinId" | "holidayRules" | "skins">,
+  date = new Date(),
+): string {
+  const today = monthDayFromDate(date);
+  const hasSkin = (id: string | undefined | null) => !!id && payload.skins.some((skin) => skin.id === id);
+  const holidayRule = payload.holidayRules.find(
+    (rule) => rule.enabled && isMonthDayInRange(today, rule.start, rule.end) && hasSkin(rule.skinId || payload.holidaySkinId),
   );
-
-  return { defaultSkinId, activeSkinId, skins };
+  const chosen = holidayRule?.skinId || (holidayRule ? payload.holidaySkinId : payload.activeSkinId);
+  return hasSkin(chosen) ? String(chosen) : payload.activeSkinId;
 }

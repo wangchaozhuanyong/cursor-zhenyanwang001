@@ -5,7 +5,6 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import StoreBadge from "@/components/ui/StoreBadge";
 import { THEME_BADGE_WARNING, THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
 
 export type ThemeStudioHeaderProps = {
   skinName: string;
@@ -23,6 +22,7 @@ export type ThemeStudioHeaderProps = {
   onSetDefault: () => void;
   canDelete?: boolean;
   onDelete: () => void;
+  libraryLocked?: boolean;
 };
 
 export default function ThemeStudioHeader({
@@ -41,11 +41,13 @@ export default function ThemeStudioHeader({
   onSetDefault,
   canDelete = true,
   onDelete,
+  libraryLocked = false,
 }: ThemeStudioHeaderProps) {
   const statusText = useMemo(() => {
     if (dirty) return "有未保存修改";
     return "已同步";
   }, [dirty]);
+  const showMoreMenu = !libraryLocked;
 
   return (
     <header className="relative z-10 mb-4 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur">
@@ -57,7 +59,7 @@ export default function ThemeStudioHeader({
             </span>
             {isDefault ? <StoreBadge type="success"><Tx>默认皮肤</Tx></StoreBadge> : null}
             {clientEnabled ? (
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground"><Tx>前台可切换</Tx></span>
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground"><Tx>前台可使用</Tx></span>
             ) : null}
             {dirty ? (
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${THEME_BADGE_WARNING}`}>{statusText}</span>
@@ -102,44 +104,54 @@ export default function ThemeStudioHeader({
             </LoadingButton>
           </PermissionGate>
 
-          <details className="group relative">
-            <summary className="flex h-9 list-none cursor-pointer items-center gap-1 rounded-xl border border-border px-3 text-xs hover:bg-secondary">
-              <MoreHorizontal size={14} />
-              更多操作
-            </summary>
-            <div className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-border bg-card p-1 shadow-lg">
-              <button type="button" onClick={onAdd} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
-                <Plus size={14} />
-                新建皮肤
-              </button>
-              <button type="button" onClick={onCopy} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
-                <Copy size={14} />
-                复制当前皮肤
-              </button>
-              {onAddStarter ? (
-                <button type="button" onClick={onAddStarter} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
-                  <Sparkles size={14} />
-                  从推荐模板新建
-                </button>
-              ) : null}
-              {!isDefault ? (
-                <button type="button" onClick={onSetDefault} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
-                  <Star size={14} />
-                  设为默认皮肤
-                </button>
-              ) : null}
-              <div className="my-1 h-px bg-border" />
-              <button
-                type="button"
-                onClick={onDelete}
-                disabled={!canDelete}
-                className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs ${canDelete ? THEME_OUTLINE_DANGER : "cursor-not-allowed text-muted-foreground"}`}
-              >
-                <Trash2 size={14} />
-                {canDelete ? "删除皮肤" : "默认皮肤不可删除"}
-              </button>
-            </div>
-          </details>
+          {showMoreMenu ? (
+            <details className="group relative">
+              <summary className="flex h-9 list-none cursor-pointer items-center gap-1 rounded-xl border border-border px-3 text-xs hover:bg-secondary">
+                <MoreHorizontal size={14} />
+                更多操作
+              </summary>
+              <div className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-border bg-card p-1 shadow-lg">
+                {!libraryLocked ? (
+                  <>
+                    <button type="button" onClick={onAdd} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
+                      <Plus size={14} />
+                      新建皮肤
+                    </button>
+                    <button type="button" onClick={onCopy} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
+                      <Copy size={14} />
+                      复制当前皮肤
+                    </button>
+                    {onAddStarter ? (
+                      <button type="button" onClick={onAddStarter} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
+                        <Sparkles size={14} />
+                        从推荐模板新建
+                      </button>
+                    ) : null}
+                  </>
+                ) : null}
+                {!isDefault ? (
+                  <button type="button" onClick={onSetDefault} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
+                    <Star size={14} />
+                    设为默认皮肤
+                  </button>
+                ) : null}
+                {!libraryLocked ? (
+                  <>
+                    <div className="my-1 h-px bg-border" />
+                    <button
+                      type="button"
+                      onClick={onDelete}
+                      disabled={!canDelete}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs ${canDelete ? THEME_OUTLINE_DANGER : "cursor-not-allowed text-muted-foreground"}`}
+                    >
+                      <Trash2 size={14} />
+                      {canDelete ? "删除皮肤" : "默认皮肤不可删除"}
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </details>
+          ) : null}
         </div>
       </div>
     </header>

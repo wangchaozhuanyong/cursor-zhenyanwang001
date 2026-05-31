@@ -10,6 +10,9 @@ async function analyze(anomaly) {
   if (anomaly.ruleCode === 'CACHE_STALE_AFTER_ADMIN_UPDATE') {
     return { code: 'CACHE_STALE', message: '数据库更新时间晚于缓存更新时间。' };
   }
+  if (anomaly.ruleCode === 'PRODUCT_SEARCH_KEYWORDS_MISMATCH' || anomaly.ruleCode === 'ANALYTICS_PAYMENT_SUCCESS_MISSING') {
+    return { code: 'DERIVED_DATA_STALE', message: '主数据已变化，但对应的派生数据没有同步刷新。' };
+  }
   const events = await repo.listDataChangeEvents(anomaly.entityType, anomaly.entityId, 5).catch(() => []);
   if (events.some((event) => event.source === 'admin' || event.actor_type === 'admin')) {
     return { code: 'MANUAL_ADMIN_EDIT', message: '最近存在后台人工修改记录，可能与异常相关。' };

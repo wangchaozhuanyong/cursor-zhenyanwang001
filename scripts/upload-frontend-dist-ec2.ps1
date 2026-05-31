@@ -143,10 +143,17 @@ Invoke-Native ssh ($sshOpts + @(
 ))
 
 try {
-  $prod = Invoke-WebRequest -Uri "https://damatong.net/" -Method Head -TimeoutSec 20 -UseBasicParsing
-  Write-Host "https://damatong.net/ -> $($prod.StatusCode)"
-  $admin = Invoke-WebRequest -Uri "https://console.damatong.net/admin/login" -Method Head -TimeoutSec 20 -UseBasicParsing
-  Write-Host "https://console.damatong.net/admin/login -> $($admin.StatusCode)"
+  $checks = @(
+    "https://damatong.net/",
+    "https://damatong.net/zh",
+    "https://damatong.net/en",
+    "https://console.damatong.net/admin/login"
+  )
+  foreach ($url in $checks) {
+    $resp = Invoke-WebRequest -Uri $url -Method Head -TimeoutSec 20 -UseBasicParsing
+    $cache = $resp.Headers["Cache-Control"]
+    Write-Host "$url -> $($resp.StatusCode) cache-control=$cache"
+  }
 } catch {
   Write-Warning "Public URL check failed: $($_.Exception.Message)"
 }

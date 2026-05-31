@@ -36,15 +36,23 @@ sync_static_preserve_assets() {
 echo "[atomic-deploy] root: $ROOT_DIR"
 cd "$FRONT_DIR"
 
-if [ ! -f admin-dist/admin-index.html ]; then
-  echo "[atomic-deploy] admin-dist/admin-index.html missing; building admin ..."
-  npm run build:admin
-fi
+rm -rf dist.__new dist.__old admin-dist.__new admin-dist.__old
 
-rm -rf dist.__new dist.__old
+echo "[atomic-deploy] building admin to admin-dist.__new ..."
+VITE_BUILD_OUT_DIR=admin-dist.__new npm run build:admin
+
+if [ -d admin-dist ]; then
+  # Keep old admin hashed chunks available until every opened admin tab reloads.
+  if [ -d admin-dist/assets ] && [ -d admin-dist.__new/assets ]; then
+    cp -an admin-dist/assets/. admin-dist.__new/assets/
+  fi
+  mv admin-dist admin-dist.__old
+fi
+mv admin-dist.__new admin-dist
+rm -rf admin-dist.__old
 
 echo "[atomic-deploy] building frontend to dist.__new (VITE_API_BASE_URL=$VITE_API_BASE_URL) ..."
-npm run build -- --outDir dist.__new
+VITE_BUILD_OUT_DIR=dist.__new PWA_DIST_DIR=dist.__new npm run build
 
 if [ -d dist ]; then
   # Keep old hashed chunks available for users who already loaded the previous
@@ -57,10 +65,8 @@ fi
 mv dist.__new dist
 rm -rf dist.__old
 
-# Remove legacy hotfix aliases once index cache policy is corrected.
-rm -f dist/assets/AdminProducts-CY-imU7a.js
-rm -f dist/assets/AdminProductForm-OsdDVNdj.js
-rm -f dist/assets/AdminCoupons-BLsIu_w4.js
+node "$ROOT_DIR/scripts/verify_frontend_dist_assets.js" dist
+node "$ROOT_DIR/scripts/verify_frontend_dist_assets.js" admin-dist
 
 echo "[atomic-deploy] syncing static roots ..."
 sync_static_preserve_assets dist "$PUBLIC_FRONTEND"

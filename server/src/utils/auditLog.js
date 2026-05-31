@@ -3,14 +3,21 @@ const { generateId } = require('./helpers');
 
 const MAX_JSON_CHARS = 8000;
 const MAX_OBJECT_ID_CHARS = 191;
+const FRONTEND_CHUNK_LOAD_ACTION_TYPE = 'frontend.chunk_load_failed';
+const FRONTEND_CHUNK_LOAD_OBJECT_TYPE = 'frontend_asset';
+const FRONTEND_CHUNK_LOAD_SUMMARY = '前端版本文件加载失败';
 const FRONTEND_CHUNK_LOAD_ERROR_MESSAGE = '前端版本文件加载失败，通常是浏览器缓存旧版本导致。请刷新页面后再试。';
 const FRONTEND_CHUNK_LOAD_ERROR_PATTERN =
   /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
 
+function isFrontendChunkLoadError(errorMessage) {
+  return FRONTEND_CHUNK_LOAD_ERROR_PATTERN.test(String(errorMessage || ''));
+}
+
 function normalizeAuditErrorMessage(errorMessage) {
   const raw = String(errorMessage || '').trim();
   if (!raw) return '';
-  if (FRONTEND_CHUNK_LOAD_ERROR_PATTERN.test(raw)) return FRONTEND_CHUNK_LOAD_ERROR_MESSAGE;
+  if (isFrontendChunkLoadError(raw)) return FRONTEND_CHUNK_LOAD_ERROR_MESSAGE;
   return raw;
 }
 
@@ -115,17 +122,27 @@ async function writeAuditLog(params) {
     const id = generateId();
     const beforeStr = before !== undefined ? truncateJson(before) : null;
     const afterStr = after !== undefined ? truncateJson(after) : null;
+    const shouldClassifyAsFrontendChunkLoad = isFrontendChunkLoadError(errorMessage || summary);
     const normalizedErrorMessage = normalizeAuditErrorMessage(errorMessage);
+    const normalizedActionType = shouldClassifyAsFrontendChunkLoad
+      ? FRONTEND_CHUNK_LOAD_ACTION_TYPE
+      : actionType;
+    const normalizedObjectType = shouldClassifyAsFrontendChunkLoad
+      ? FRONTEND_CHUNK_LOAD_OBJECT_TYPE
+      : objectType;
+    const normalizedSummary = shouldClassifyAsFrontendChunkLoad && !summary
+      ? FRONTEND_CHUNK_LOAD_SUMMARY
+      : summary;
 
     await auditLogRepo.insertAuditLogRow({
       id,
       operatorId: operatorId || null,
       operatorName: String(name).slice(0, 100),
       operatorRole: String(role).slice(0, 50),
-      actionType: String(actionType).slice(0, 80),
-      objectType: String(objectType || '').slice(0, 80),
+      actionType: String(normalizedActionType).slice(0, 80),
+      objectType: String(normalizedObjectType || '').slice(0, 80),
       objectId: objectId == null ? null : String(objectId).slice(0, MAX_OBJECT_ID_CHARS),
-      summary: String(summary || '').slice(0, 500),
+      summary: String(normalizedSummary || '').slice(0, 500),
       beforeStr,
       afterStr,
       ip: ctx.ip,
@@ -144,6 +161,7 @@ module.exports = {
   writeAuditLog,
   getReqContext,
   getOperatorMeta,
+  isFrontendChunkLoadError,
   normalizeAuditErrorMessage,
   truncateJson,
 };

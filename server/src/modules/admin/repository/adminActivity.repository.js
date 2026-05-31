@@ -1,12 +1,20 @@
 const db = require('../../../config/db');
 const { generateId } = require('../../../utils/helpers');
 
+const LEGACY_COUPON_ACTIVITY_TYPES = new Set(['coupon_activity', 'new_user_gift']);
+
 function listWhere(query = {}) {
   let where = 'WHERE a.deleted_at IS NULL';
   const params = [];
   if (query.type) {
-    where += ' AND a.type = ?';
-    params.push(query.type);
+    if (LEGACY_COUPON_ACTIVITY_TYPES.has(String(query.type))) {
+      where += ' AND 1 = 0';
+    } else {
+      where += ' AND a.type = ?';
+      params.push(query.type);
+    }
+  } else {
+    where += " AND a.type NOT IN ('coupon_activity', 'new_user_gift')";
   }
   if (query.keyword) {
     where += ' AND a.title LIKE ?';
@@ -275,6 +283,5 @@ module.exports = {
   selectConflictingActivities,
   searchActivityProducts,
 };
-
 
 

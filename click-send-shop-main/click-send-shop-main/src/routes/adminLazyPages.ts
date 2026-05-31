@@ -28,6 +28,8 @@ export const AdminInvites = lazy(() => import("@/modules/admin/pages/user/AdminI
 export const AdminCoupons = lazy(() => import("@/modules/admin/pages/coupon/AdminCoupons"));
 export const AdminCouponForm = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponForm"));
 export const AdminCouponRecords = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponRecords"));
+export const AdminCouponCampaigns = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponCampaigns"));
+export const AdminCouponCampaignForm = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponCampaignForm"));
 export const AdminActivities = lazy(() => import("@/modules/admin/pages/marketing/AdminActivities"));
 export const AdminMarketingDashboard = lazy(() => import("@/modules/admin/pages/marketing/AdminMarketingDashboard"));
 export const AdminActivityForm = lazy(() => import("@/modules/admin/pages/marketing/AdminActivityForm"));

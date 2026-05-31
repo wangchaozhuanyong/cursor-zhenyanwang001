@@ -43,7 +43,7 @@ export default function StorePageHeader({
       className={cn(
         sticky ? "sticky top-0" : "relative",
         "z-header border-b backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]",
-        transparent ? "bg-transparent" : cn(surfaceClass, "bg-[var(--theme-bg)]/92"),
+        transparent ? "bg-transparent" : surfaceClass,
         className,
       )}
     >

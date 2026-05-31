@@ -20,6 +20,8 @@ if [ -n "$backup" ] && [ -d "$backup" ]; then
   cp -an "$backup/." "$PUBLIC/assets/" 2>/dev/null || true
   rm -rf "$backup"
 fi
+node "$ROOT/scripts/verify_frontend_dist_assets.js" "$DIST"
+node "$ROOT/scripts/verify_frontend_dist_assets.js" "$PUBLIC"
 test -f "$PUBLIC/sw.js"
 grep -o 'rel="manifest" href="[^"]*"' "$PUBLIC/index.html" | head -1
 rm -f "$ARCHIVE"

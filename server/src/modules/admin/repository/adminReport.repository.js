@@ -785,7 +785,8 @@ async function selectSimpleActivitiesAnalysis(dateFrom, dateTo, filters = {}) {
         COUNT(DISTINCT ap.product_id) AS product_count
        FROM marketing_activities a
        LEFT JOIN marketing_activity_products ap ON ap.activity_id = a.id
-       WHERE a.deleted_at IS NULL${activityScope.sql}
+       WHERE a.deleted_at IS NULL
+         AND a.type NOT IN ('coupon_activity', 'new_user_gift')${activityScope.sql}
        GROUP BY a.id, a.title, a.type, a.start_at, a.end_at, a.created_at
        ORDER BY a.created_at DESC
        LIMIT 100`,
@@ -859,7 +860,8 @@ async function selectSimpleActivitiesAnalysis(dateFrom, dateTo, filters = {}) {
        GROUP BY oi.activity_id
      ) sales ON BINARY sales.activity_id = BINARY a.id
      ${analyticsJoin}
-     WHERE a.deleted_at IS NULL${activityScope.sql}
+     WHERE a.deleted_at IS NULL
+       AND a.type NOT IN ('coupon_activity', 'new_user_gift')${activityScope.sql}
      GROUP BY a.id, a.title, a.type, a.start_at, a.end_at, a.created_at
      ORDER BY COALESCE(MAX(sales.sales_amount), 0) DESC, a.created_at DESC
      LIMIT 100`,

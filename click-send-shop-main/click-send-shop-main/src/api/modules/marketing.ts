@@ -36,6 +36,10 @@ export function getNewUserGift(position = "home_new_user_gift") {
   return get<unknown>("/marketing/new-user-gift", { position });
 }
 
+export function getCouponZone(position = "home_coupon_zone") {
+  return get<unknown>("/marketing/coupon-zone", { position });
+}
+
 export function getMarketingNotices(position: string) {
   return get<unknown[]>("/marketing/notices", { position });
 }

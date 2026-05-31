@@ -191,7 +191,7 @@ export default function SupportDownload() {
       <main className="mx-auto w-full max-w-lg space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-6 sm:px-4 sm:py-4 md:max-w-screen-xl md:px-6 lg:px-8">
         {availableViews.length > 0 ? (
           <div
-            className="grid gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-1 shadow-[var(--theme-shadow)]"
+            className="store-elevated-card grid gap-2 p-1"
             style={{ gridTemplateColumns: `repeat(${availableViews.length}, minmax(0, 1fr))` }}
           >
             {availableViews.map((view) => (
@@ -218,13 +218,13 @@ export default function SupportDownload() {
         {activeView === "download" && config.download.enabled !== false ? (
           <div className="space-y-3">
             {config.download.description ? (
-              <p className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
+              <p className="store-soft-panel rounded-2xl px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
                 <Smartphone size={14} className="mr-1 inline" />
                 {config.download.description}
               </p>
             ) : null}
             {browserEnv.isInAppBrowser ? (
-              <div className="space-y-3 rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
+              <div className="store-soft-panel space-y-3 rounded-2xl border-dashed px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
                 <p className="font-semibold text-[var(--theme-text)]">当前是在 App 内打开，可能无法直接添加到桌面。</p>
                 <p>请点击右上角“...”并选择在浏览器中打开，然后继续操作。</p>
                 <button type="button" onClick={() => { void copyCurrentLink(); }} className="inline-flex min-h-10 items-center gap-1 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]">
@@ -234,7 +234,7 @@ export default function SupportDownload() {
               </div>
             ) : null}
             {browserEnv.platform === "desktop" ? (
-              <section className="rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center shadow-[var(--theme-shadow)]">
+              <section className="store-elevated-card p-6 text-center">
                 <h2 className="text-lg font-bold text-[var(--theme-text)]">请使用手机打开本页面</h2>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">
                   本功能主要用于手机添加到桌面。请用安卓手机或苹果手机打开本页面。
@@ -259,13 +259,13 @@ export default function SupportDownload() {
         ) : null}
 
         {queryChannelId && !pinnedChannel ? (
-          <section className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[var(--theme-text-muted)]">
+          <section className="store-soft-panel rounded-2xl border-dashed p-6 text-center text-sm text-[var(--theme-text-muted)]">
             所选客服账号不存在或已停用，请返回首页重试或联系站点管理员。
           </section>
         ) : null}
 
         {!activeView && !queryChannelId ? (
-          <section className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[var(--theme-text-muted)]">
+          <section className="store-soft-panel rounded-2xl border-dashed p-6 text-center text-sm text-[var(--theme-text-muted)]">
             暂未配置客服渠道或添加到桌面说明，请稍后再试。
           </section>
         ) : null}

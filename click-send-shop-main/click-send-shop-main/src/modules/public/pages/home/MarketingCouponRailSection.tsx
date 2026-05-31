@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as homeService from "@/services/homeService";
 import * as marketingService from "@/services/marketingService";
-import type { CouponCenterPayload, NewUserGiftPayload } from "@/services/marketingService";
+import type { CouponCenterPayload, CouponZonePayload, NewUserGiftPayload } from "@/services/marketingService";
 import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import {
   buildHomeCouponCardItems,
@@ -25,7 +25,7 @@ import {
   THEME_INVITE_PROMO_SHELL,
 } from "@/utils/themeVisuals";
 
-type CouponSource = "couponCenter" | "newUserGift";
+type CouponSource = "couponCenter" | "newUserGift" | "couponZone";
 type CouponRailItem = HomeCouponCardItem & { source: CouponSource; railKey: string };
 
 export default function MarketingCouponRailSection({
@@ -45,12 +45,16 @@ export default function MarketingCouponRailSection({
   const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const [couponCenter, setCouponCenter] = useState<CouponCenterPayload | null>(null);
   const [newUserGift, setNewUserGift] = useState<NewUserGiftPayload | null>(null);
+  const [couponZone, setCouponZone] = useState<CouponZonePayload | null>(null);
   const [claimingKey, setClaimingKey] = useState<string | null>(null);
   const [couponStateReady, setCouponStateReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const cached = homeService.getCachedHomeBootstrap();
+    if ((showCouponCenter || showNewUserGift) && cached?.marketing?.couponZone) {
+      setCouponZone(cached.marketing.couponZone as CouponZonePayload);
+    }
     if (showCouponCenter && cached?.marketing?.couponCenter) {
       setCouponCenter(cached.marketing.couponCenter as CouponCenterPayload);
     }
@@ -62,14 +66,18 @@ export default function MarketingCouponRailSection({
       const bootstrap = await homeService.fetchHomeBootstrap().catch(() => null);
       if (cancelled) return;
 
-      const nextCouponCenter = showCouponCenter
+      const nextCouponZone = (showCouponCenter || showNewUserGift)
+        ? (bootstrap?.marketing?.couponZone as CouponZonePayload | null) ?? await marketingService.fetchCouponZone().catch(() => null)
+        : null;
+      const nextCouponCenter = showCouponCenter && !nextCouponZone
         ? (bootstrap?.marketing?.couponCenter as CouponCenterPayload | null) ?? await marketingService.fetchCouponCenter().catch(() => null)
         : null;
-      const nextNewUserGift = showNewUserGift
+      const nextNewUserGift = showNewUserGift && !nextCouponZone
         ? (bootstrap?.marketing?.newUserGift as NewUserGiftPayload | null) ?? await marketingService.fetchNewUserGift().catch(() => null)
         : null;
 
       if (cancelled) return;
+      setCouponZone(nextCouponZone);
       setCouponCenter(nextCouponCenter);
       setNewUserGift(nextNewUserGift);
     })();
@@ -110,6 +118,30 @@ export default function MarketingCouponRailSection({
   const couponItems = useMemo<CouponRailItem[]>(() => {
     if (isAuthenticated && !couponStateReady) return [];
     const items: CouponRailItem[] = [];
+    const seen = new Set<string>();
+    if (couponZone?.campaigns?.length) {
+      for (const campaign of couponZone.campaigns) {
+        for (const item of buildHomeCouponCardItems(campaign.coupons || [], coupons, isAuthenticated)) {
+          const key = item.coupon.id || item.coupon.code;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          items.push({
+            ...item,
+            source: campaign.campaign_type === "new_user_gift" ? "newUserGift" : "couponZone",
+            railKey: `zone-${campaign.id}-${item.coupon.id}`,
+          });
+        }
+      }
+      return items;
+    }
+    if (couponZone?.coupons?.length) {
+      items.push(...buildHomeCouponCardItems(couponZone.coupons, coupons, isAuthenticated).map((item) => ({
+        ...item,
+        source: "couponZone" as const,
+        railKey: `zone-${item.coupon.id}`,
+      })));
+      return items;
+    }
     if (couponCenter?.coupons?.length) {
       items.push(...buildHomeCouponCardItems(couponCenter.coupons, coupons, isAuthenticated).map((item) => ({
         ...item,
@@ -125,12 +157,22 @@ export default function MarketingCouponRailSection({
       })));
     }
     return items;
-  }, [couponCenter?.coupons, couponStateReady, coupons, isAuthenticated, newUserGift?.coupons]);
+  }, [couponCenter?.coupons, couponStateReady, coupons, couponZone?.campaigns, couponZone?.coupons, isAuthenticated, newUserGift?.coupons]);
 
   const couponSummary = useMemo(() => summarizeHomeCouponState(coupons), [coupons]);
+  const giftIntroPayload = useMemo<NewUserGiftPayload | null>(() => {
+    const giftCampaign = couponZone?.campaigns?.find((campaign) => campaign.campaign_type === "new_user_gift");
+    if (!giftCampaign) return newUserGift;
+    return {
+      activity: giftCampaign,
+      coupons: giftCampaign.coupons || [],
+      auto_issue_on_register: giftCampaign.issue_mode === "auto_register",
+    };
+  }, [couponZone?.campaigns, newUserGift]);
+  const hasCouponZone = Boolean(couponZone?.coupons?.length || couponZone?.campaigns?.some((campaign) => campaign.coupons?.length));
   const hasCouponCenter = Boolean(couponCenter?.coupons?.length);
-  const hasNewUserGift = Boolean(newUserGift?.coupons?.length);
-  const hasAnyMarketing = hasCouponCenter || hasNewUserGift;
+  const hasNewUserGift = Boolean(giftIntroPayload?.coupons?.length);
+  const hasAnyMarketing = hasCouponZone || hasCouponCenter || hasNewUserGift;
 
   if (!hasAnyMarketing) return null;
 
@@ -164,7 +206,7 @@ export default function MarketingCouponRailSection({
     }
     try {
       setClaimingKey(item.railKey);
-      await claimCoupon(item.coupon.code || item.coupon.id);
+      await claimCoupon(item.coupon.code || item.coupon.id, item.coupon.issue_activity_id);
       toast.success("领取成功，已放入你的券包", toastPresetQuickSuccess);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "领取失败");
@@ -177,7 +219,7 @@ export default function MarketingCouponRailSection({
     void (item.action === "claim" ? handleClaim(item) : goUseCoupon(item));
   };
 
-  const sectionTitle = couponCenter?.activity?.title || "优惠券专区";
+  const sectionTitle = couponZone?.activity?.title || couponCenter?.activity?.title || "优惠券专区";
   const showFallback = isAuthenticated && couponStateReady && couponItems.length === 0;
 
   return (
@@ -211,7 +253,7 @@ export default function MarketingCouponRailSection({
           <div className="no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0">
             {hasNewUserGift ? (
               <GiftIntroCard
-                payload={newUserGift}
+                payload={giftIntroPayload}
                 isAuthenticated={isAuthenticated}
                 onClick={() => navigate(isAuthenticated ? "/coupons" : "/register")}
               />

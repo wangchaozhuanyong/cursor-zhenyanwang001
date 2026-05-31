@@ -20,6 +20,7 @@ export type HomeBootstrap = {
     flashSale: unknown;
     promotionBanners: unknown[];
     fullReductionNotices: unknown[];
+    couponZone: unknown;
     couponCenter: unknown;
     newUserGift: unknown;
   };

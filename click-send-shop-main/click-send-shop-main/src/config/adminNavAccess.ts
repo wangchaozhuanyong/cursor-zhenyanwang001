@@ -36,6 +36,7 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p.startsWith("/admin/recycle-bin"), rule: { kind: "one", permission: "recycle_bin.manage" } },
   { test: (p) => p.startsWith("/admin/coupons"), rule: { kind: "one", permission: "coupon.view" } },
   { test: (p) => p.startsWith("/admin/marketing/activities"), rule: { kind: "one", permission: "activity.manage" } },
+  { test: (p) => p.startsWith("/admin/marketing/coupon-campaigns"), rule: { kind: "one", permission: "coupon.view" } },
   { test: (p) => p.startsWith("/admin/marketing/coupons"), rule: { kind: "one", permission: "coupon.view" } },
   { test: (p) => p.startsWith("/admin/marketing/points"), rule: { kind: "one", permission: "points.manage" } },
   { test: (p) => p.startsWith("/admin/marketing/rewards"), rule: { kind: "one", permission: "referral.manage" } },

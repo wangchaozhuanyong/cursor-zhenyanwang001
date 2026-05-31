@@ -1,4 +1,5 @@
 import type { ActivityListParams } from "@/api/admin/activity";
+import type { CouponCampaignListParams } from "@/api/admin/couponCampaign";
 import type { DataCleanupRunListParams } from "@/api/admin/dataRetention";
 import type { OrderListParams } from "@/types/order";
 import type { ProductListParams } from "@/types/product";
@@ -104,6 +105,9 @@ export const adminQueryKeys = {
   coupons: () => ["admin", "coupons", "list"] as const,
   couponRecordsRoot: () => ["admin", "coupons", "records"] as const,
   couponRecords: () => ["admin", "coupons", "records", "list"] as const,
+  couponCampaignsRoot: () => ["admin", "coupon-campaigns"] as const,
+  couponCampaigns: (filters?: CouponCampaignListParams) => ["admin", "coupon-campaigns", filters ?? {}] as const,
+  couponCampaignDetail: (id: string) => ["admin", "coupon-campaigns", "detail", id] as const,
   activitiesRoot: () => ["admin", "activities"] as const,
   activities: (filters?: ActivityListParams) => ["admin", "activities", filters ?? {}] as const,
   marketingDashboard: () => ["admin", "marketing", "dashboard"] as const,

@@ -19,8 +19,6 @@ import {
   type DisplayPosition,
 } from "@/constants/marketingDisplayPositions";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
-import { fetchCoupons } from "@/services/admin/couponService";
-import type { Coupon } from "@/types/coupon";
 import { adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -52,6 +50,8 @@ function categoryLabel(category: Category | undefined, id: string) {
   return category?.name || `分类 ${id}`;
 }
 
+const LEGACY_COUPON_ACTIVITY_TYPES = new Set<ActivityType>(["coupon_activity", "new_user_gift"]);
+
 export default function AdminActivityForm() {
   const { tText } = useAdminT();
   const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
@@ -62,7 +62,8 @@ export default function AdminActivityForm() {
   const isEdit = !!id;
   const [search] = useSearchParams();
   const copyFromId = !isEdit ? search.get("copy_from") : null;
-  const createType = (search.get("type") as ActivityType) || "flash_sale";
+  const requestedCreateType = (search.get("type") as ActivityType) || "flash_sale";
+  const createType = LEGACY_COUPON_ACTIVITY_TYPES.has(requestedCreateType) ? "flash_sale" : requestedCreateType;
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -87,15 +88,6 @@ export default function AdminActivityForm() {
     staleTime: 60_000,
   });
 
-  const couponsQuery = useQuery({
-    queryKey: adminQueryKeys.activityFormCoupons(),
-    queryFn: () => fetchCoupons({ page: 1, pageSize: 200 }).then((res) => res.list || []),
-    enabled: form.type === "coupon_activity" || form.type === "new_user_gift",
-    staleTime: 60_000,
-  });
-
-  const couponOptions = couponsQuery.data ?? [];
-  const couponsLoading = couponsQuery.isLoading && !couponsQuery.data;
   const selectedScopeIds = useMemo(() => uniqueIds(form.scope_ids), [form.scope_ids]);
   const productScopeEnabled = form.scope_type === "product";
   const categoryScopeEnabled = form.scope_type === "category";
@@ -154,6 +146,12 @@ export default function AdminActivityForm() {
     || (!!copyFromId && copySourceQuery.isLoading && !copySourceQuery.data);
   const [formHydrated, setFormHydrated] = useState(!isEdit && !copyFromId);
   const { markClean } = useAdminFormDirty(form, formHydrated && !activityLoading);
+
+  useEffect(() => {
+    if (isEdit || copyFromId || !LEGACY_COUPON_ACTIVITY_TYPES.has(requestedCreateType)) return;
+    const targetType = requestedCreateType === "new_user_gift" ? "new_user_gift" : "public_claim";
+    navigate(`/admin/marketing/coupon-campaigns/new?type=${targetType}`, { replace: true });
+  }, [copyFromId, isEdit, navigate, requestedCreateType]);
 
   const tabTitle = useMemo(() => {
     if (isEdit && form.title.trim()) return tText(`编辑活动：${form.title.trim()}`);
@@ -237,23 +235,6 @@ export default function AdminActivityForm() {
     setFormHydrated(true);
   }, [copySourceQuery.data, tText]);
 
-  const selectedCouponIds = useMemo(
-    () => (Array.isArray((form.activity_config as { coupon_ids?: string[] })?.coupon_ids)
-      ? (form.activity_config as { coupon_ids: string[] }).coupon_ids
-      : []),
-    [form.activity_config],
-  );
-
-  const toggleCouponId = (couponId: string) => {
-    setForm((prev) => {
-      const cfg = { ...(prev.activity_config || {}) } as { coupon_ids?: string[] };
-      const set = new Set(cfg.coupon_ids || []);
-      if (set.has(couponId)) set.delete(couponId);
-      else set.add(couponId);
-      return { ...prev, activity_config: { ...cfg, coupon_ids: [...set] } };
-    });
-  };
-
   const fullReductionRules = useMemo(
     () => (Array.isArray((form.activity_config as unknown as Record<string, unknown>)?.full_reduction_rules)
       ? (form.activity_config as unknown as Record<string, unknown>).full_reduction_rules as Array<{ threshold_amount: number; discount_amount: number }>
@@ -273,12 +254,11 @@ export default function AdminActivityForm() {
   const localValidate = useCallback(
     () => validateActivityForm({
       form,
-      selectedCouponIds,
       selectedScopeIds,
       invalidDisplayPositions,
       fullReductionRules,
     }),
-    [form, fullReductionRules, invalidDisplayPositions, selectedCouponIds, selectedScopeIds],
+    [form, fullReductionRules, invalidDisplayPositions, selectedScopeIds],
   );
 
   const performSave = useActivitySave({
@@ -412,8 +392,6 @@ export default function AdminActivityForm() {
               {[
                 { k: "flash_sale" as const, t: "限时秒杀", d: "短时低价促销" },
                 { k: "full_reduction" as const, t: "满减活动", d: "按门槛减免" },
-                { k: "coupon_activity" as const, t: "优惠券活动", d: "在首页领券中心展示" },
-                { k: "new_user_gift" as const, t: "新人礼包", d: "注册后自动发券" },
                 { k: "points_bonus" as const, t: "积分多倍活动", d: "下单可获得额外积分倍率" },
               ].map((x) => (
                 <button
@@ -495,33 +473,6 @@ export default function AdminActivityForm() {
                       </tbody>
                   </AdminNativeTable>
                 </>
-              )}
-
-              {(form.type === "coupon_activity" || form.type === "new_user_gift") && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium"><Tx>关联优惠券</Tx><span className="ml-2 text-xs text-muted-foreground">已选 {selectedCouponIds.length} 张</span></p>
-                  {couponsLoading ? (
-                    <p className="text-sm text-muted-foreground"><Tx>加载优惠券列表...</Tx></p>
-                  ) : couponOptions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground"><Tx>暂无可用优惠券，请先在优惠券管理中创建</Tx></p>
-                  ) : (
-                    <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border p-3">
-                      {couponOptions.map((c) => {
-                        const checked = selectedCouponIds.includes(c.id);
-                        return (
-                          <label key={c.id} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm ${checked ? "border-gold bg-gold/5" : "border-border"}`}>
-                            <input type="checkbox" checked={checked} onChange={() => toggleCouponId(c.id)} className="mt-1" />
-                            <span>
-                              <span className="font-medium">{c.title}</span>
-                              <span className="ml-2 text-xs text-muted-foreground">{c.code}</span>
-                              <span className="mt-0.5 block text-xs text-muted-foreground">{c.type === "percentage" ? `${c.value}%` : `RM ${c.value}`}{c.min_amount > 0 ? ` · 满 RM ${c.min_amount}` : ""}</span>
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
               )}
 
               {form.type === "points_bonus" && (

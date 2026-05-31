@@ -118,6 +118,37 @@
     --store-action-bar-height: 4.75rem;
     --store-tab-header-height: 3.5rem;
     --store-brand-logo-size: 2.25rem;
+    --store-page-base: #f7faf8;
+    --store-page-tint: #eef6f1;
+    --store-page-top: #fbfdfb;
+    --store-page-sheen: rgba(216, 239, 224, 0.34);
+    --store-surface: #ffffff;
+    --store-surface-raised: #ffffff;
+    --store-card-bg: #ffffff;
+    --store-card-border: rgba(17, 24, 39, 0.08);
+    --store-border: rgba(17, 24, 39, 0.08);
+    --store-border-strong: rgba(17, 24, 39, 0.14);
+    --store-text: #111827;
+    --store-muted: rgba(17, 24, 39, 0.58);
+    --store-card-radius: 16px;
+    --store-panel-radius: 22px;
+    --store-card-shadow: 0 18px 42px -30px rgba(17, 24, 39, 0.28), 0 2px 12px -10px rgba(17, 24, 39, 0.18);
+    --store-card-shadow-hover: 0 24px 54px -30px rgba(17, 24, 39, 0.34), 0 8px 18px -14px rgba(17, 24, 39, 0.22);
+    --store-soft-shadow: 0 12px 30px -24px rgba(17, 24, 39, 0.24);
+    --store-header-bg: rgba(255, 255, 255, 0.82);
+    --store-header-border: rgba(17, 24, 39, 0.12);
+    --store-header-shadow: 0 10px 30px -26px rgba(17, 24, 39, 0.22);
+    --store-bottom-nav-bg: rgba(255, 255, 255, 0.88);
+    --store-bottom-nav-border: rgba(17, 24, 39, 0.12);
+    --store-icon-bg: rgba(0, 0, 0, 0.06);
+    --store-icon-border: rgba(0, 0, 0, 0.12);
+    --store-product-media-bg: #f3f6f4;
+    --store-hero-border: rgba(17, 24, 39, 0.12);
+    --store-hero-shadow: 0 24px 60px -36px rgba(17, 24, 39, 0.3);
+    --store-hero-text-surface: rgba(255, 255, 255, 0.92);
+    --store-skeleton-a: #f2f5f3;
+    --store-skeleton-b: #e8efeb;
+    --store-price-glow: rgba(220, 38, 38, 0.16);
   }
 
   @media (min-width: 1024px) {
@@ -869,6 +900,123 @@ html[data-app-scope="admin"] .admin-tech-path {
   letter-spacing: 0;
   font-weight: 500;
   word-break: break-all;
+}
+
+html[data-app-scope="store"] {
+  --theme-bg: var(--store-page-base);
+  --theme-surface: var(--store-surface-raised);
+  --theme-card: var(--store-card-bg);
+  --theme-border: var(--store-border);
+  --theme-text: var(--store-text);
+  --theme-text-on-surface: var(--store-text);
+  --theme-text-muted: var(--store-muted);
+  --theme-muted: var(--store-muted);
+  --theme-text-muted-on-surface: var(--store-muted);
+  --theme-card-shell-bg: var(--store-card-bg);
+  --theme-card-shell-border: 1px solid var(--store-card-border);
+  --theme-card-shell-shadow: var(--store-card-shadow);
+  --theme-card-shell-shadow-hover: var(--store-card-shadow-hover);
+  --theme-shadow: var(--store-soft-shadow);
+  --theme-shadow-hover: var(--store-card-shadow-hover);
+}
+
+html[data-app-scope="store"] body {
+  background-color: var(--store-page-base);
+  background-image:
+    linear-gradient(180deg, var(--store-page-top) 0%, var(--store-page-base) 28rem, var(--store-page-tint) 100%),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--store-border) 28%, transparent) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--store-border) 20%, transparent) 0 1px, transparent 1px 28px);
+}
+
+html[data-app-scope="store"] .store-shell {
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, var(--store-page-top) 0%, var(--store-page-base) 38%, var(--store-page-tint) 100%);
+}
+
+html[data-app-scope="store"] .store-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, var(--store-page-sheen) 0%, transparent 34%),
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--store-border) 18%, transparent) 0 1px, transparent 1px 22px);
+  opacity: 0.72;
+}
+
+html[data-app-scope="store"] .store-page,
+html[data-app-scope="store"] .store-page-shell {
+  background: transparent !important;
+}
+
+html[data-app-scope="store"] .store-card,
+html[data-app-scope="store"] .theme-product-card,
+html[data-app-scope="store"] .store-product-card {
+  border: 1px solid var(--store-card-border);
+  background: var(--store-card-bg);
+  box-shadow: var(--store-card-shadow);
+}
+
+html[data-app-scope="store"] .theme-product-card,
+html[data-app-scope="store"] .store-product-card {
+  border-radius: var(--store-card-radius);
+}
+
+html[data-app-scope="store"] .theme-product-card:hover,
+html[data-app-scope="store"] .store-product-card:hover {
+  box-shadow: var(--store-card-shadow-hover);
+}
+
+html[data-app-scope="store"] .theme-product-card img {
+  background-color: var(--store-product-media-bg);
+}
+
+html[data-app-scope="store"] .store-elevated-card {
+  border: 1px solid var(--store-card-border);
+  background: var(--store-card-bg);
+  box-shadow: var(--store-card-shadow);
+  border-radius: var(--store-panel-radius);
+}
+
+html[data-app-scope="store"] .store-soft-panel {
+  border: 1px solid var(--store-border);
+  background: color-mix(in srgb, var(--store-surface) 82%, var(--store-page-base));
+  box-shadow: var(--store-soft-shadow);
+}
+
+html[data-app-scope="store"] .store-glass-surface {
+  border-color: var(--store-header-border);
+  background: var(--store-header-bg);
+  box-shadow: var(--store-header-shadow);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+}
+
+html[data-app-scope="store"] .store-hero-frame {
+  border: 1px solid var(--store-hero-border);
+  box-shadow: var(--store-hero-shadow);
+}
+
+html[data-app-scope="store"] .store-nav-band {
+  border-block: 1px solid color-mix(in srgb, var(--store-border) 84%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--store-surface-raised) 92%, transparent), color-mix(in srgb, var(--store-surface) 84%, var(--store-page-base)));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 54%, transparent);
+}
+
+html[data-app-scope="store"] .store-icon-tile {
+  border: 1px solid var(--store-icon-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 44%, transparent), transparent),
+    var(--store-icon-bg);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 48%, transparent), 0 8px 18px -16px var(--theme-primary);
+}
+
+html[data-app-scope="store"] .skeleton-base {
+  background:
+    linear-gradient(135deg, var(--store-skeleton-a), var(--store-skeleton-b));
 }
 
 /* Global loading skeleton: inherit dynamic skin variables only */

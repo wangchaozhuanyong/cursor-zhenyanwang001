@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /** 首页横滑 / 网格商品卡统一外壳 */
 export const HOME_PRODUCT_CARD_SHELL =
-  "theme-rounded flex flex-col overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)]";
+  "store-product-card flex flex-col overflow-hidden rounded-[var(--store-card-radius)] border border-[var(--store-card-border)] bg-[var(--store-card-bg)] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5";
 
 /** 首页新品横滑单卡宽度（约一屏 3 张） */
 export const HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS =
@@ -11,7 +11,7 @@ export const HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS =
 
 /** 图片区容器 */
 export const HOME_PRODUCT_CARD_MEDIA =
-  "relative w-full shrink-0 overflow-hidden bg-[var(--theme-bg)]";
+  "relative w-full shrink-0 overflow-hidden bg-[var(--store-product-media-bg)]";
 
 export const HOME_PRODUCT_IMAGE_PRODUCT_CLASS = "aspect-square w-full max-h-none";
 export const HOME_PRODUCT_IMAGE_SERVICE_CLASS = HOME_PRODUCT_IMAGE_PRODUCT_CLASS;
@@ -20,7 +20,7 @@ export const HOME_PRODUCT_IMAGE_IMG_CLASS = "h-full w-full object-cover";
 
 /** 图下信息区：与图片明确分界 */
 export const HOME_PRODUCT_INFO_CLASS =
-  "min-w-0 border-t border-[var(--theme-border)] px-2 pb-2 pt-2";
+  "min-w-0 border-t border-[var(--store-border)] px-2 pb-2 pt-2";
 
 export const HOME_PRODUCT_TITLE_CLASS =
   "line-clamp-2 min-h-[2.25rem] break-words text-[13.5px] font-semibold leading-snug text-[var(--theme-text-on-surface)]";

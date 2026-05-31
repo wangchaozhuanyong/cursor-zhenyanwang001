@@ -68,11 +68,12 @@ export function recoverFromChunkLoadError(appName = "app"): boolean {
   try {
     const now = Date.now();
     const last = readChunkRecoveryState();
+    const lastFirstAt = typeof last?.firstAt === "number" ? last.firstAt : undefined;
     const sameRecoveryWindow =
-      typeof last.firstAt === "number" &&
-      now - last.firstAt < CHUNK_RECOVERY_AUTO_RELOAD_WINDOW_MS;
+      typeof lastFirstAt === "number" &&
+      now - lastFirstAt < CHUNK_RECOVERY_AUTO_RELOAD_WINDOW_MS;
     const attempts = sameRecoveryWindow ? Math.max(0, Number(last?.attempts || 0)) : 0;
-    const firstAt = sameRecoveryWindow && typeof last?.firstAt === "number" ? last.firstAt : now;
+    const firstAt = sameRecoveryWindow && typeof lastFirstAt === "number" ? lastFirstAt : now;
     const waitForManualRefresh = attempts >= 1;
 
     writeChunkRecoveryState({
@@ -82,6 +83,7 @@ export function recoverFromChunkLoadError(appName = "app"): boolean {
       attempts: attempts + 1,
     });
 
+    clearChunkRecoveryCaches();
     showChunkRecoveryNotice(waitForManualRefresh);
     if (waitForManualRefresh) return true;
 
@@ -118,6 +120,33 @@ function forceReloadWithCacheBuster(): void {
     window.location.replace(nextUrl.toString());
   } catch {
     window.location.reload();
+  }
+}
+
+function clearChunkRecoveryCaches(): void {
+  try {
+    if ("caches" in window) {
+      void window.caches.keys().then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => /workbox|precache|vite|pwa|app-shell|chunk/i.test(key))
+            .map((key) => window.caches.delete(key)),
+        ),
+      ).catch(() => undefined);
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    if ("serviceWorker" in navigator) {
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.update())))
+        .catch(() => undefined);
+    }
+  } catch {
+    // ignore
   }
 }
 

@@ -30,7 +30,7 @@ import {
   AdminProducts, AdminProductForm, AdminCategories, AdminInventory, AdminProductTags, AdminBanners,
   AdminOrders, AdminCheckoutAbandonments, AdminOrderDetail, AdminReturns, AdminShipping,
   AdminUsers, AdminUserDetail, AdminUserSecurity, AdminMemberLevels, AdminInvites,
-  AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
+  AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminCouponCampaigns, AdminCouponCampaignForm, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
   AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
   AdminRoles, AdminLogs, AdminRecycleBin, AdminDataRetention, AdminBackupCenter,
@@ -109,6 +109,8 @@ function AdminTitleSync() {
       { test: (p) => /^\/admin\/users\/[^/]+$/.test(p), titleKey: "routeTitles.userDetailFull" },
       { test: (p) => /^\/admin\/notifications\/[^/]+$/.test(p), titleKey: "routeTitles.notificationDetailFull" },
       { test: (p) => p === "/admin/marketing/coupons/new", titleKey: "routeTitles.couponNewFull" },
+      { test: (p) => p === "/admin/marketing/coupon-campaigns/new", titleKey: "routeTitles.coupons" },
+      { test: (p) => /^\/admin\/marketing\/coupon-campaigns\/[^/]+$/.test(p), titleKey: "routeTitles.coupons" },
       {
         test: (p) => /^\/admin\/marketing\/coupons\/[^/]+$/.test(p) && p !== "/admin/marketing/coupons/records",
         titleKey: "routeTitles.couponEditFull",
@@ -236,6 +238,9 @@ export function AdminAppRoutes() {
                   <Route path="marketing/coupons/new" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponForm /></CapabilityRoute>} />
                   <Route path="marketing/coupons/:id" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponForm /></CapabilityRoute>} />
                   <Route path="marketing/coupons/records" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponRecords /></CapabilityRoute>} />
+                  <Route path="marketing/coupon-campaigns" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponCampaigns /></CapabilityRoute>} />
+                  <Route path="marketing/coupon-campaigns/new" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponCampaignForm /></CapabilityRoute>} />
+                  <Route path="marketing/coupon-campaigns/:id" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponCampaignForm /></CapabilityRoute>} />
                   <Route path="marketing/points" element={<CapabilityRoute enabled={capabilities.pointsEnabled}><AdminMarketingPoints /></CapabilityRoute>} />
                   <Route path="marketing/rewards" element={<AdminMarketingRewards />} />
                   <Route path="marketing/invites" element={<AdminInvites />} />

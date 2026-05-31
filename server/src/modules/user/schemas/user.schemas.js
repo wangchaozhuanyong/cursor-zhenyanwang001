@@ -75,12 +75,16 @@ const notificationListQuerySchema = paginationQuerySchema.extend({
 });
 
 const claimCouponBodySchema = z
-  .union([
-    z.object({ code: z.string().trim().min(1) }),
-    z.object({ couponId: idParam }),
-  ])
+  .object({
+    code: z.string().trim().min(1).optional(),
+    couponId: idParam.optional(),
+    activity_id: idParam.optional(),
+    campaign_id: idParam.optional(),
+  })
+  .refine((v) => Boolean(v.code || v.couponId), { message: '请提供优惠券码或ID' })
   .transform((v) => ({
-    code: 'code' in v ? v.code : v.couponId,
+    code: v.code || v.couponId,
+    activity_id: v.activity_id || v.campaign_id || null,
   }));
 
 const withdrawBodySchema = z

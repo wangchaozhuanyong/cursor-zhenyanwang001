@@ -95,6 +95,40 @@
     }
   }
 
+  function clearChunkRecoveryCaches() {
+    try {
+      if (global.caches && global.caches.keys) {
+        global.caches.keys().then(function (keys) {
+          return Promise.all(
+            keys
+              .filter(function (key) {
+                return /workbox|precache|vite|pwa|app-shell|chunk/i.test(key);
+              })
+              .map(function (key) {
+                return global.caches.delete(key);
+              })
+          );
+        }).catch(function () {});
+      }
+    } catch (_e5a) {
+      /* ignore */
+    }
+
+    try {
+      if (global.navigator && global.navigator.serviceWorker && global.navigator.serviceWorker.getRegistrations) {
+        global.navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          return Promise.all(
+            registrations.map(function (registration) {
+              return registration.update();
+            })
+          );
+        }).catch(function () {});
+      }
+    } catch (_e5b) {
+      /* ignore */
+    }
+  }
+
   function showChunkRecoveryNotice(waitForManualRefresh) {
     try {
       var old = doc.getElementById("chunk-load-recovery-notice");
@@ -139,6 +173,7 @@
       var firstAt = sameRecoveryWindow ? last.firstAt : now;
       var waitForManualRefresh = attempts >= 1;
       writeChunkRecoveryState({ app: "preboot", firstAt: firstAt, lastAt: now, attempts: attempts + 1 });
+      clearChunkRecoveryCaches();
       showChunkRecoveryNotice(waitForManualRefresh);
       if (!waitForManualRefresh) global.setTimeout(reloadWithCacheBuster, 300);
       return true;

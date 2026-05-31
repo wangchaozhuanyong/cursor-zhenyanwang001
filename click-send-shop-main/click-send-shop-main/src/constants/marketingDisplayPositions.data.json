@@ -26,8 +26,6 @@
   "publishableActivityTypes": [
     "flash_sale",
     "full_reduction",
-    "coupon_activity",
-    "new_user_gift",
     "points_bonus"
   ],
   "wipActivityTypes": [
@@ -37,15 +35,11 @@
   "activityTypeDisplayPositions": {
     "flash_sale": ["home_flash_sale", "product_detail", "promotion_banner"],
     "full_reduction": ["full_reduction_notice", "cart_notice", "checkout_notice", "promotion_banner"],
-    "coupon_activity": ["home_coupon_center", "promotion_banner"],
-    "new_user_gift": ["home_new_user_gift", "profile_center", "promotion_banner"],
     "points_bonus": ["checkout_notice", "profile_center", "product_detail", "promotion_banner"]
   },
   "activityTypeDefaultDisplayPositions": {
     "flash_sale": ["home_flash_sale"],
     "full_reduction": ["full_reduction_notice"],
-    "coupon_activity": ["home_coupon_center"],
-    "new_user_gift": ["home_new_user_gift"],
     "points_bonus": ["checkout_notice"]
   }
 }

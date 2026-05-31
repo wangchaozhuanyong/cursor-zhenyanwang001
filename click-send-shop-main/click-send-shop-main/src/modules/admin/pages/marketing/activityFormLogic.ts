@@ -79,7 +79,6 @@ export function setScopeIds(current: string[] | undefined, id: string, checked: 
 
 export type ActivityFormValidationInput = {
   form: ActivityPayload;
-  selectedCouponIds: string[];
   selectedScopeIds: string[];
   invalidDisplayPositions: string[];
   fullReductionRules: Array<{ threshold_amount: number; discount_amount: number }>;
@@ -87,7 +86,6 @@ export type ActivityFormValidationInput = {
 
 export function validateActivityForm({
   form,
-  selectedCouponIds,
   selectedScopeIds,
   invalidDisplayPositions,
   fullReductionRules,
@@ -96,7 +94,6 @@ export function validateActivityForm({
   if (!form.start_at || !form.end_at) return "开始/结束时间必填";
   if (new Date(form.end_at).getTime() <= new Date(form.start_at).getTime()) return "结束时间必须晚于开始时间";
   if (form.type === "flash_sale" && form.items.length === 0) return "请先选择秒杀商品";
-  if ((form.type === "coupon_activity" || form.type === "new_user_gift") && !selectedCouponIds.length) return "请至少选择一张优惠券";
   if (form.type !== "flash_sale" && form.scope_type === "category" && selectedScopeIds.length === 0) return "请选择活动适用分类";
   if (form.type !== "flash_sale" && form.scope_type === "product" && selectedScopeIds.length === 0) return "请选择活动适用商品";
   if (!normalizeDisplayPositionsForActivity(form.type, form.display_positions).length) return "请至少选择一个当前活动类型允许的展示位置";

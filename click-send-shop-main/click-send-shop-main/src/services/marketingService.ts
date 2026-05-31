@@ -15,6 +15,8 @@ export type MarketingCouponPublic = {
   display_badge: string;
   category_ids: string[];
   category_names?: string[];
+  issue_activity_id?: string;
+  campaign_type?: string;
 };
 
 export type MarketingActivitySummary = {
@@ -31,6 +33,16 @@ export type MarketingActivitySummary = {
 
 export type CouponCenterPayload = {
   activity: MarketingActivitySummary;
+  coupons: MarketingCouponPublic[];
+};
+
+export type CouponZonePayload = {
+  activity: MarketingActivitySummary | null;
+  campaigns: Array<MarketingActivitySummary & {
+    campaign_type?: string;
+    issue_mode?: string;
+    coupons?: MarketingCouponPublic[];
+  }>;
   coupons: MarketingCouponPublic[];
 };
 
@@ -53,6 +65,11 @@ export async function fetchCouponCenter(position = "home_coupon_center") {
 export async function fetchNewUserGift(position = "home_new_user_gift") {
   const res = await marketingApi.getNewUserGift(position);
   return res.data as NewUserGiftPayload | null;
+}
+
+export async function fetchCouponZone(position = "home_coupon_zone") {
+  const res = await marketingApi.getCouponZone(position);
+  return res.data as CouponZonePayload | null;
 }
 
 export async function fetchMarketingNotices(position: string) {

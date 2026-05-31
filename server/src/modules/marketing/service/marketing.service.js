@@ -5,6 +5,14 @@ function getAdminApi() {
   return /** @type {any} */ (require('../../admin')).api || {};
 }
 
+function attachCouponSource(coupons, source) {
+  return coupons.map((coupon) => ({
+    ...coupon,
+    issue_activity_id: source?.id || null,
+    campaign_type: source?.campaign_type || source?.type || null,
+  }));
+}
+
 function formatFlashSaleResponse(bundle) {
   if (!bundle) return { data: null };
   const { activity, items, scopes } = bundle;
@@ -61,12 +69,13 @@ async function getCouponCenter(query = {}) {
   if (campaign) {
     const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
     const rows = await repo.selectCouponsByIds(couponIds);
+    const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), campaign);
     return {
       data: {
         activity: promo.mapCouponCampaignSummary(campaign),
         campaign: promo.mapCouponCampaignSummary(campaign),
         campaigns: campaigns.map(promo.mapCouponCampaignSummary),
-        coupons: rows.map(repo.mapPublicCoupon),
+        coupons,
       },
     };
   }
@@ -79,10 +88,11 @@ async function getCouponCenter(query = {}) {
     ? activity.activity_config.coupon_ids
     : [];
   const rows = await repo.selectCouponsByIds(couponIds);
+  const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), activity);
   return {
     data: {
       activity: promo.mapActivitySummary(activity),
-      coupons: rows.map(repo.mapPublicCoupon),
+      coupons,
     },
   };
 }
@@ -95,12 +105,13 @@ async function getNewUserGift(query = {}) {
   if (campaign) {
     const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
     const rows = await repo.selectCouponsByIds(couponIds);
+    const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), campaign);
     return {
       data: {
         activity: promo.mapCouponCampaignSummary(campaign),
         campaign: promo.mapCouponCampaignSummary(campaign),
         campaigns: campaigns.map(promo.mapCouponCampaignSummary),
-        coupons: rows.map(repo.mapPublicCoupon),
+        coupons,
         auto_issue_on_register: true,
       },
     };
@@ -114,10 +125,11 @@ async function getNewUserGift(query = {}) {
     ? activity.activity_config.coupon_ids
     : [];
   const rows = await repo.selectCouponsByIds(couponIds);
+  const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), activity);
   return {
     data: {
       activity: promo.mapActivitySummary(activity),
-      coupons: rows.map(repo.mapPublicCoupon),
+      coupons,
       auto_issue_on_register: true,
     },
   };
@@ -138,7 +150,7 @@ async function getCouponZone(query = {}) {
   for (const campaign of campaigns) {
     const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
     const rows = await repo.selectCouponsByIds(couponIds);
-    const mapped = rows.map(repo.mapPublicCoupon).filter((coupon) => {
+    const mapped = attachCouponSource(rows.map(repo.mapPublicCoupon), campaign).filter((coupon) => {
       if (!coupon?.id || seen.has(coupon.id)) return false;
       seen.add(coupon.id);
       return true;

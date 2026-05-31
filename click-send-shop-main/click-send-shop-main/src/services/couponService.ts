@@ -10,8 +10,8 @@ export async function fetchUserCoupons(
   return res.data;
 }
 
-export async function claimCoupon(code: string): Promise<UserCoupon> {
-  const res = await couponApi.claimCoupon(code);
+export async function claimCoupon(code: string, activityId?: string): Promise<UserCoupon> {
+  const res = await couponApi.claimCoupon(code, activityId);
   return res.data;
 }
 

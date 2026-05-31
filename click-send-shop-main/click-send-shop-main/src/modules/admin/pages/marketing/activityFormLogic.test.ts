@@ -32,7 +32,6 @@ describe("activityFormLogic", () => {
 
     expect(validateActivityForm({
       form,
-      selectedCouponIds: [],
       selectedScopeIds: [],
       invalidDisplayPositions: [],
       fullReductionRules: [{ threshold_amount: 100, discount_amount: 10 }],
@@ -49,7 +48,6 @@ describe("activityFormLogic", () => {
 
     expect(validateActivityForm({
       form,
-      selectedCouponIds: [],
       selectedScopeIds: ["p1"],
       invalidDisplayPositions: [],
       fullReductionRules: [{ threshold_amount: 100, discount_amount: 10 }],
@@ -57,7 +55,7 @@ describe("activityFormLogic", () => {
   });
 
   it("允许可发布活动选择营销横幅位", () => {
-    for (const type of ["flash_sale", "full_reduction", "coupon_activity", "new_user_gift", "points_bonus"]) {
+    for (const type of ["flash_sale", "full_reduction", "points_bonus"]) {
       expect(getAllowedDisplayPositionsForActivity(type)).toContain("promotion_banner");
     }
   });

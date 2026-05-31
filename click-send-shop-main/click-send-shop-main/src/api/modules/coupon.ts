@@ -13,11 +13,10 @@ export function getUserCoupons(params?: CouponListParams) {
   );
 }
 
-export function claimCoupon(code: string) {
-  return post<UserCoupon>("/coupons/claim", { code }, SILENT_AUTH_OPTIONS);
+export function claimCoupon(code: string, activityId?: string) {
+  return post<UserCoupon>("/coupons/claim", { code, activity_id: activityId || undefined }, SILENT_AUTH_OPTIONS);
 }
 
 export function getAvailableCoupons(orderAmount: number) {
   return get<UserCoupon[]>("/coupons/available", { orderAmount: String(orderAmount) }, SILENT_AUTH_OPTIONS);
 }
-

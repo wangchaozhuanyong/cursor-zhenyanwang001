@@ -184,16 +184,16 @@ export function getBottomNavShellClassName(
     case "floating":
       return `${base} border-0 bg-transparent px-[var(--store-page-x)] pb-2 pt-1 shadow-none`;
     case "glass":
-      return `${base} border-t border-[color-mix(in_srgb,var(--theme-border)_55%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_78%,transparent)] shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-md`;
+      return `${base} border-t border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_rgba(0,0,0,0.3)] backdrop-blur-xl`;
     case "clean":
     default:
-      return `${base} border-t border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_-8px_24px_rgba(0,0,0,0.08)]`;
+      return `${base} border-t border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_rgba(0,0,0,0.28)] backdrop-blur-xl`;
   }
 }
 
 export function getBottomNavInnerClassName(navStyle: ThemeConfig["navStyle"]): string {
   if (navStyle === "floating") {
-    return "w-full overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_8px_32px_rgba(0,0,0,0.14)] md:mx-auto md:max-w-lg";
+    return "w-full overflow-hidden rounded-2xl border border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_16px_42px_-24px_rgba(0,0,0,0.36)] backdrop-blur-xl md:mx-auto md:max-w-lg";
   }
   return "w-full md:mx-auto md:max-w-lg";
 }
@@ -201,16 +201,16 @@ export function getBottomNavInnerClassName(navStyle: ThemeConfig["navStyle"]): s
 export function getBannerContainerClassName(bannerStyle: ThemeConfig["bannerStyle"]): string {
   switch (bannerStyle) {
     case "premium":
-      return "rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.18)]";
+      return "store-hero-frame rounded-2xl";
     case "deal":
-      return "rounded-xl ring-2 ring-[color-mix(in_srgb,var(--theme-price)_55%,transparent)]";
+      return "store-hero-frame rounded-xl ring-2 ring-[color-mix(in_srgb,var(--theme-price)_45%,transparent)]";
     case "dark":
-      return "rounded-xl shadow-inner";
+      return "store-hero-frame rounded-xl shadow-inner";
     case "fresh":
-      return "rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_25%,var(--theme-border))] shadow-[0_8px_24px_rgba(0,0,0,0.06)]";
+      return "store-hero-frame rounded-2xl";
     case "clean":
     default:
-      return "";
+      return "store-hero-frame rounded-2xl";
   }
 }
 

@@ -2,7 +2,7 @@ import { mkdir, readdir, rename } from "node:fs/promises";
 import path from "node:path";
 
 const root = process.cwd();
-const dist = path.join(root, "dist");
+const dist = path.resolve(root, process.env.PWA_DIST_DIR || process.env.VITE_BUILD_OUT_DIR || "dist");
 
 async function moveIfExists(fileName) {
   const from = path.join(root, fileName);

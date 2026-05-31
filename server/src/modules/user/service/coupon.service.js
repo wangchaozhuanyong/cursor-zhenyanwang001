@@ -50,6 +50,7 @@ function mapUserCouponRow(r) {
     issue_channel: r.issue_channel || undefined,
     order_id: r.order_id || undefined,
     order_no: r.order_no || undefined,
+    issue_activity_id: r.issue_activity_id || undefined,
     discount_amount: r.discount_amount == null ? undefined : Number(r.discount_amount),
     invalid_reason: r.invalid_reason || undefined,
     returned_at: r.returned_at || undefined,
@@ -167,6 +168,7 @@ async function assertCouponClaimable(userId, coupon) {
 
 async function claimCoupon(userId, body) {
   const { code } = body;
+  const issueActivityId = String(body.activity_id || '').trim() || null;
   if (!code) return { error: { code: 400, message: '请提供优惠券码或ID' } };
 
   const conn = await repo.getPool().getConnection();
@@ -203,13 +205,14 @@ async function claimCoupon(userId, body) {
       validFrom: lifecycle.mysqlDateTime(validity.validFrom),
       validUntil: lifecycle.mysqlDateTime(validity.validUntil),
       issueChannel: 'self_claim',
+      issueActivityId,
     });
     await lifecycle.insertCouponEvent(conn, {
       couponId: coupon.id,
       userCouponId: id,
       userId,
       eventType: 'claimed',
-      metadata: { validity },
+      metadata: { validity, issue_activity_id: issueActivityId },
     });
     await conn.commit();
 
@@ -221,6 +224,7 @@ async function claimCoupon(userId, body) {
         valid_from: validity.validFrom ? validity.validFrom.toISOString() : undefined,
         valid_until: validity.validUntil ? validity.validUntil.toISOString() : undefined,
         issue_channel: 'self_claim',
+        issue_activity_id: issueActivityId || undefined,
         coupon: lifecycle.buildEffectiveCoupon({ ...coupon, coupon_snapshot: snapshot, coupon_id: coupon.id }),
       },
       message: '领取成功',
@@ -243,7 +247,3 @@ module.exports = {
   claimCoupon,
   expireUserCouponsNow,
 };
-
-
-
-

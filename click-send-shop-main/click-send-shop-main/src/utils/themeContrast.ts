@@ -80,6 +80,11 @@ export function rgbToCss({ r, g, b }: RGB) {
   return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
 }
 
+function rgbToRgba({ r, g, b }: RGB, alpha: number) {
+  const a = Math.min(1, Math.max(0, alpha));
+  return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
+}
+
 export function rgbToHslChannels({ r, g, b }: RGB) {
   const rr = r / 255;
   const gg = g / 255;
@@ -421,6 +426,83 @@ function buildCouponCardLightSurface(
   return { fg: surface.foreground, muted: surface.muted, midCss: surface.midCss };
 }
 
+function buildStorefrontSurface(colors: {
+  bg: RGB;
+  surface: RGB;
+  primary: RGB;
+  secondary: RGB;
+  price: RGB;
+  text: RGB;
+  isDarkBg: boolean;
+}): Record<string, string> {
+  const { bg, surface, primary, secondary, price, text, isDarkBg } = colors;
+  const canvas = isDarkBg
+    ? mixColors(bg, BLACK, 0.14)
+    : mixColors(mixColors(bg, WHITE, 0.72), primary, 0.025);
+  const canvasTint = isDarkBg
+    ? mixColors(canvas, secondary, 0.1)
+    : mixColors(mixColors(canvas, WHITE, 0.42), secondary, 0.035);
+  const surfaceBase = isDarkBg
+    ? mixColors(bg, WHITE, 0.08)
+    : mixColors(surface, WHITE, 0.72);
+  const surfaceRaised = isDarkBg
+    ? mixColors(surfaceBase, WHITE, 0.06)
+    : mixColors(surfaceBase, WHITE, 0.52);
+  const cardBg = isDarkBg
+    ? mixColors(surfaceBase, WHITE, 0.04)
+    : mixColors(surfaceRaised, canvas, 0.1);
+  const border = isDarkBg
+    ? mixColors(surfaceBase, WHITE, 0.16)
+    : mixColors(mixColors(canvas, BLACK, 0.1), primary, 0.055);
+  const borderStrong = isDarkBg
+    ? mixColors(surfaceBase, WHITE, 0.24)
+    : mixColors(mixColors(canvas, BLACK, 0.16), primary, 0.08);
+  const cardShadowTone = isDarkBg ? BLACK : mixColors(primary, BLACK, 0.82);
+  const brandShadowTone = isDarkBg ? primary : mixColors(primary, BLACK, 0.62);
+  const surfaceText = getReadableTextColor(surfaceRaised, rgbToCss(text));
+  const muted = getMutedTextColor(surfaceRaised, surfaceText);
+  const iconBg = isDarkBg
+    ? mixColors(primary, surfaceRaised, 0.78)
+    : mixColors(primary, surfaceRaised, 0.88);
+  const mediaBg = isDarkBg
+    ? mixColors(canvas, surfaceRaised, 0.36)
+    : mixColors(canvas, surfaceRaised, 0.58);
+
+  return {
+    "--store-page-base": rgbToCss(canvas),
+    "--store-page-tint": rgbToCss(canvasTint),
+    "--store-page-top": rgbToCss(mixColors(canvasTint, surfaceRaised, isDarkBg ? 0.16 : 0.36)),
+    "--store-page-sheen": rgbToRgba(mixColors(primary, WHITE, isDarkBg ? 0.18 : 0.84), isDarkBg ? 0.08 : 0.34),
+    "--store-surface": rgbToCss(surfaceBase),
+    "--store-surface-raised": rgbToCss(surfaceRaised),
+    "--store-card-bg": rgbToCss(cardBg),
+    "--store-card-border": rgbToCss(border),
+    "--store-border": rgbToCss(border),
+    "--store-border-strong": rgbToCss(borderStrong),
+    "--store-text": surfaceText,
+    "--store-muted": muted,
+    "--store-card-radius": "16px",
+    "--store-panel-radius": "22px",
+    "--store-card-shadow": `0 18px 42px -30px ${rgbToRgba(cardShadowTone, isDarkBg ? 0.72 : 0.28)}, 0 2px 12px -10px ${rgbToRgba(brandShadowTone, isDarkBg ? 0.42 : 0.18)}`,
+    "--store-card-shadow-hover": `0 24px 54px -30px ${rgbToRgba(cardShadowTone, isDarkBg ? 0.84 : 0.34)}, 0 8px 18px -14px ${rgbToRgba(brandShadowTone, isDarkBg ? 0.52 : 0.22)}`,
+    "--store-soft-shadow": `0 12px 30px -24px ${rgbToRgba(cardShadowTone, isDarkBg ? 0.7 : 0.24)}`,
+    "--store-header-bg": rgbToRgba(surfaceRaised, isDarkBg ? 0.84 : 0.82),
+    "--store-header-border": rgbToRgba(borderStrong, isDarkBg ? 0.64 : 0.72),
+    "--store-header-shadow": `0 10px 30px -26px ${rgbToRgba(cardShadowTone, isDarkBg ? 0.72 : 0.22)}`,
+    "--store-bottom-nav-bg": rgbToRgba(surfaceRaised, isDarkBg ? 0.9 : 0.88),
+    "--store-bottom-nav-border": rgbToRgba(borderStrong, isDarkBg ? 0.68 : 0.76),
+    "--store-icon-bg": rgbToCss(iconBg),
+    "--store-icon-border": rgbToRgba(primary, isDarkBg ? 0.28 : 0.16),
+    "--store-product-media-bg": rgbToCss(mediaBg),
+    "--store-hero-border": rgbToRgba(borderStrong, isDarkBg ? 0.65 : 0.7),
+    "--store-hero-shadow": `0 24px 60px -36px ${rgbToRgba(cardShadowTone, isDarkBg ? 0.8 : 0.3)}`,
+    "--store-hero-text-surface": rgbToRgba(surfaceRaised, isDarkBg ? 0.88 : 0.92),
+    "--store-skeleton-a": rgbToCss(mixColors(mediaBg, surfaceRaised, 0.42)),
+    "--store-skeleton-b": rgbToCss(mixColors(mediaBg, primary, isDarkBg ? 0.16 : 0.06)),
+    "--store-price-glow": rgbToRgba(price, isDarkBg ? 0.28 : 0.16),
+  };
+}
+
 export function generateThemePalette(adminConfig: ThemeConfig) {
   const bg = parseColor(adminConfig.bgColor, WHITE);
   const surface = parseColor(adminConfig.surfaceColor, bg);
@@ -499,6 +581,15 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   const giftBadgeSurface = buildGiftBadgeSurface(price, surface);
   const couponCardPremiumLight = buildCouponCardLightSurface("premium", { primary, secondary, danger, warning });
   const couponCardDealLight = buildCouponCardLightSurface("deal", { primary, secondary, danger, warning });
+  const storefrontSurface = buildStorefrontSurface({
+    bg,
+    surface,
+    primary,
+    secondary,
+    price,
+    text: parseColor(text),
+    isDarkBg,
+  });
 
   return {
     "--theme-primary": primaryCss,
@@ -599,6 +690,7 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-density-pad": adminConfig.density === "compact" ? "0.5rem" : "0.75rem",
     "--theme-density-row": adminConfig.density === "compact" ? "2.25rem" : "2.75rem",
     ...getCardShellVariables(adminConfig.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
+    ...storefrontSurface,
 
     "--background": rgbToHslChannels(bg),
     "--foreground": rgbToHslChannels(parseColor(text)),

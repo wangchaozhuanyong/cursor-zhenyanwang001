@@ -64,6 +64,8 @@ if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
   cp -an "$ASSET_BACKUP/." "$PUBLIC_FRONTEND/assets/" 2>/dev/null || true
   rm -rf "$ASSET_BACKUP"
 fi
+node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$FRONTEND_DIR/dist"
+node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND"
 
 echo "==> Reloading PM2 app $PM2_APP"
 cd "$PROJECT_DIR/server"

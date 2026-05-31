@@ -25,7 +25,7 @@ const CROSSFADE_TRANSITION = {
 };
 
 const HERO_TEXT_GRADIENT =
-  "linear-gradient(90deg, color-mix(in srgb, var(--theme-surface) 96%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 88%, transparent) 38%, color-mix(in srgb, var(--theme-surface) 30%, transparent) 66%, transparent 100%)";
+  "linear-gradient(90deg, var(--store-hero-text-surface) 0%, color-mix(in srgb, var(--store-hero-text-surface) 82%, transparent) 42%, color-mix(in srgb, var(--store-hero-text-surface) 24%, transparent) 68%, transparent 100%)";
 
 function resolveBannerLink(link: string): string {
   const value = (link || "").trim();
@@ -127,7 +127,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
 
   return (
     <div
-      className={`relative w-full overflow-hidden theme-shadow ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
+      className={`relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
       style={{

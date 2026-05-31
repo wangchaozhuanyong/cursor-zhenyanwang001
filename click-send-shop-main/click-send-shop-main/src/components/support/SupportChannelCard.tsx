@@ -95,7 +95,7 @@ export default function SupportChannelCard({ channel }: Props) {
   };
 
   return (
-    <section className="rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 shadow-[var(--theme-shadow)]">
+    <section className="store-elevated-card p-5">
       <div className="text-center">
         <h1 className="text-xl font-extrabold tracking-tight text-[var(--theme-text)]">{title}</h1>
         {description ? (
@@ -104,7 +104,7 @@ export default function SupportChannelCard({ channel }: Props) {
       </div>
 
       {account ? (
-        <div className="mt-5 flex items-center gap-3 rounded-2xl bg-[var(--theme-bg)] px-4 py-3">
+        <div className="store-soft-panel mt-5 flex items-center gap-3 rounded-2xl px-4 py-3">
           <p className="min-w-0 flex-1 text-sm text-[var(--theme-text)]">
             <span className="font-medium text-[var(--theme-text-muted)]">{getAccountLabel(channel)}：</span>
             <span className="break-all font-semibold">{account}</span>

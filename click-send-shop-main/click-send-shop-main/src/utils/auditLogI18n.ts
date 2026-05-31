@@ -48,6 +48,7 @@ const OBJECT_TYPE_ZH: Record<string, string> = {
   inventory: "库存",
   data_cleanup: "数据清理",
   admin_api: "管理端 API",
+  frontend_asset: "前端资源",
   admin_trusted_device: "管理员可信设备",
   rbac: "权限",
   export_task: "导出任务",
@@ -58,6 +59,7 @@ const OBJECT_TYPE_ZH: Record<string, string> = {
 const ACTION_ZH: Record<string, string> = {
   "admin.login": "管理员登录",
   "admin.logout": "管理员退出",
+  "frontend.chunk_load_failed": "前端版本文件加载失败",
   "admin.create_user": "创建管理员",
   "admin.enable_user": "启用管理员",
   "admin.disable_user": "禁用管理员",

@@ -38,7 +38,7 @@ interface CouponState {
   loading: boolean;
   error: string | null;
   loadCoupons: () => Promise<void>;
-  claimCoupon: (code: string) => Promise<UserCoupon>;
+  claimCoupon: (code: string, activityId?: string) => Promise<UserCoupon>;
   clearError: () => void;
 }
 
@@ -96,9 +96,9 @@ export const useCouponStore = create<CouponState>((set, get) => ({
     }
   },
 
-  claimCoupon: async (code) => {
+  claimCoupon: async (code, activityId) => {
     try {
-      const claimed = await couponService.claimCoupon(code);
+      const claimed = await couponService.claimCoupon(code, activityId);
       set((state) => ({
         coupons: [
           claimed,

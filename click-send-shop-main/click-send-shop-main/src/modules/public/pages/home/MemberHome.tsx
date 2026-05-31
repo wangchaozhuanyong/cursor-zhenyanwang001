@@ -84,6 +84,7 @@ export default function MemberHome() {
   const isMagazineLayout = homeLayout === "magazine";
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "member");
   const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "member");
+  const showLegacyMemberCoupons = false;
   const siteName = siteInfo.siteName || "官方商城";
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription =
@@ -235,7 +236,7 @@ export default function MemberHome() {
             showNewUserGift={showNewUserGift}
           />
         ) : null}
-        {isHomeModuleEnabled(homeModules, "member_coupons", "member") ? (
+        {showLegacyMemberCoupons ? (
         <section>
           <Header title="我的优惠券" icon={Ticket} subtitle="已领取且可使用的优惠券" />
           <div className="no-scrollbar -mx-[var(--store-page-x)] flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-[var(--store-page-x)] pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 md:snap-none lg:grid-cols-3 lg:gap-5">

@@ -10,6 +10,9 @@ const {
 } = require('../../../constants/marketingDisplayPositions');
 const repo = require('../repository/adminActivity.repository');
 
+const LEGACY_COUPON_ACTIVITY_TYPES = new Set(['coupon_activity', 'new_user_gift']);
+const COUPON_CAMPAIGN_MIGRATION_MESSAGE = '优惠券活动请到「营销中心 > 优惠券活动」创建和维护';
+
 function parseJsonField(value, fallback) {
   if (value == null || value === '') return fallback;
   if (typeof value === 'object') return value;
@@ -68,6 +71,9 @@ function assertPublishRules(payload) {
   }
   if (WIP_ACTIVITY_TYPES.includes(payload.type)) {
     throw new BusinessError(400, '该活动类型仍在开发中，暂不可发布');
+  }
+  if (LEGACY_COUPON_ACTIVITY_TYPES.has(payload.type)) {
+    throw new BusinessError(400, COUPON_CAMPAIGN_MIGRATION_MESSAGE);
   }
   if (!PUBLISHABLE_ACTIVITY_TYPES.includes(payload.type)) {
     throw new BusinessError(400, '不支持的活动类型');
@@ -190,8 +196,12 @@ function assertDraftDisplayPositions(type, positions) {
 function normalizePayload(body, partial = false) {
   const out = {};
   if (!partial || body.type !== undefined) {
-    const supported = ['flash_sale', 'full_reduction', 'coupon_activity', 'new_user_gift', 'member_activity', 'points_bonus', 'cashback_activity'];
-    out.type = supported.includes(String(body.type)) ? String(body.type) : 'flash_sale';
+    const requestedType = String(body.type || 'flash_sale');
+    if (LEGACY_COUPON_ACTIVITY_TYPES.has(requestedType)) {
+      throw new BusinessError(400, COUPON_CAMPAIGN_MIGRATION_MESSAGE);
+    }
+    const supported = ['flash_sale', 'full_reduction', 'member_activity', 'points_bonus', 'cashback_activity'];
+    out.type = supported.includes(requestedType) ? requestedType : 'flash_sale';
   }
   if (!partial || body.title !== undefined) {
     const title = String(body.title || '').trim();
@@ -470,9 +480,6 @@ module.exports = {
   validateActivityBeforePublish,
   searchActivityProducts,
 };
-
-
-
 
 
 

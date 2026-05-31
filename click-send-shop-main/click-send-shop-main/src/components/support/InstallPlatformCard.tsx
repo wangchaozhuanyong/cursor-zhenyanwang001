@@ -48,9 +48,9 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
   const description = platform.description?.trim() || "";
 
   return (
-    <section className="rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 shadow-[var(--theme-shadow)]">
+    <section className="store-elevated-card p-5">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-surface))] text-[var(--theme-primary)]">
+        <span className="store-icon-tile mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[var(--theme-primary)]">
           <Icon size={20} />
         </span>
         <div className="min-w-0 flex-1">
@@ -75,13 +75,13 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
       ) : null}
 
       {isAndroid && !canOneTap ? (
-        <div className="mt-5 rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
+        <div className="store-soft-panel mt-5 rounded-2xl border-dashed px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
           当前浏览器可能不支持自动添加，请按下方步骤手动添加到桌面。
         </div>
       ) : null}
 
       {showIosSafariHint ? (
-        <div className="mt-5 space-y-3 rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
+        <div className="store-soft-panel mt-5 space-y-3 rounded-2xl border-dashed px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
           <p className="font-semibold text-[var(--theme-text)]">当前浏览器可能无法直接添加到苹果手机桌面。</p>
           <p>请复制链接后，用 Safari 浏览器打开。</p>
           <button type="button" onClick={() => { void copySiteLink("链接已复制，请用 Safari 打开"); }} className="inline-flex min-h-10 items-center gap-1 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]">

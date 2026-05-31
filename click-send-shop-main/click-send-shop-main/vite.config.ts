@@ -153,6 +153,7 @@ const legacyEnabled = process.env.VITE_LEGACY_BUILD !== "0";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
 const isAdminBuild = mode === "admin" || process.env.VITE_APP_TARGET === "admin";
+const buildOutDir = process.env.VITE_BUILD_OUT_DIR || (isAdminBuild ? "admin-dist" : "dist");
 
 return ({
   define: {
@@ -185,7 +186,7 @@ return ({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: false,
-      outDir: isAdminBuild ? "admin-dist" : "dist",
+      outDir: buildOutDir,
       manifest: false,
       includeAssets: [
         "favicon.ico",
@@ -392,7 +393,7 @@ return ({
     stripImportMetaResolveGuard(),
   ],
   build: {
-    outDir: isAdminBuild ? "admin-dist" : "dist",
+    outDir: buildOutDir,
     // 后台只运行在现代浏览器中；提高 target 可消除依赖中的 BigInt 兼容告警
     target: isAdminBuild ? "es2020" : undefined,
     sourcemap: false,

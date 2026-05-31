@@ -20,10 +20,10 @@ export const HOME_HERO_STACK_CLASS = "flex flex-col gap-2.5 sm:gap-3";
 
 /** 金刚区单格：上图下文，无圆形裁切 */
 export const HOME_NAV_ITEM_CLASS =
-  "flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1.5 text-center transition-opacity active:opacity-80";
+  "flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1.5 text-center transition-transform active:scale-[0.98]";
 
 export const HOME_NAV_ICON_FRAME_CLASS =
-  "flex h-12 w-12 shrink-0 items-center justify-center";
+  "store-icon-tile flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-[var(--theme-primary)]";
 
 export const HOME_NAV_LABEL_CLASS =
-  "store-caption w-full truncate px-0.5 font-medium leading-tight text-[var(--theme-text-muted-on-surface)]";
+  "store-caption w-full truncate px-0.5 font-semibold leading-tight text-[var(--theme-text-muted-on-surface)]";

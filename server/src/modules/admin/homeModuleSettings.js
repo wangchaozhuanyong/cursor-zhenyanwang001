@@ -63,6 +63,7 @@ function parseSettings(raw) {
       }
     }
   }
+  modules.member_coupons = false;
   return {
     modules,
     hotBatchSize: clampInt(
@@ -102,6 +103,7 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
       const v = body.modules[key];
       next.modules[key] = !(v === false || v === 0 || v === '0');
     }
+    next.modules.member_coupons = false;
   }
   if (body.hotBatchSize !== undefined) {
     next.hotBatchSize = clampInt(body.hotBatchSize, 2, 12, current.hotBatchSize);
@@ -146,4 +148,3 @@ module.exports = {
   getHomeModuleSettings,
   saveHomeModuleSettings,
 };
-

@@ -13,9 +13,7 @@ type AdminNavTitleChild = {
 const ACTIVITY_CREATE_TYPE_LABEL_KEYS: Record<string, string> = {
   flash_sale: "routeTitles.marketingNewFlashSale",
   full_reduction: "routeTitles.marketingNewFullReduction",
-  coupon_activity: "routeTitles.marketingNewCouponActivity",
   points_bonus: "routeTitles.marketingNewPointsBonus",
-  new_user_gift: "routeTitles.marketingNewUserGift",
   holiday: "routeTitles.marketingNewHoliday",
 };
 
@@ -92,6 +90,12 @@ export function getHiddenAdminHeaderTitle(
 
   if (pathname === "/admin/marketing/coupons/new") {
     return seg("nav.marketingCenter", "nav.coupons", "routeTitles.couponNew");
+  }
+  if (pathname === "/admin/marketing/coupon-campaigns/new") {
+    return `${t("nav.marketingCenter")} / 优惠券活动 / 新建优惠券活动`;
+  }
+  if (/^\/admin\/marketing\/coupon-campaigns\/[^/]+$/.test(pathname)) {
+    return `${t("nav.marketingCenter")} / 优惠券活动 / 编辑优惠券活动${idSuffix(pathname, /^\/admin\/marketing\/coupon-campaigns\/([^/]+)$/)}`;
   }
   if (
     /^\/admin\/marketing\/coupons\/[^/]+$/.test(pathname)

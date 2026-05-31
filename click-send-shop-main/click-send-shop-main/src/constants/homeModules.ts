@@ -163,6 +163,7 @@ export function mergeHomeModuleSettings(
       if (typeof v === "boolean") modules[def.key] = v;
     }
   }
+  modules.member_coupons = false;
   return {
     modules,
     hotBatchSize: clampHomeBatchSize(

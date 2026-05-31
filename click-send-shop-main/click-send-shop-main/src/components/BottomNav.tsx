@@ -220,7 +220,7 @@ export default function BottomNav() {
                 <span
                   className={`relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150 ${
                     isActive
-                      ? "scale-105 bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-surface))]"
+                      ? "scale-105 bg-[var(--store-icon-bg)] shadow-[inset_0_0_0_1px_var(--store-icon-border)]"
                       : "bg-transparent"
                   }`}
                 >

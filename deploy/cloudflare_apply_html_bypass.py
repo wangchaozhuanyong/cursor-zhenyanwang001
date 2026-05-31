@@ -16,6 +16,7 @@ HTML_EXPR = """(http.host in {"damatong.net" "www.damatong.net" "console.damaton
   http.request.uri.path eq "/" or
   http.request.uri.path eq "/index.html" or
   http.request.uri.path eq "/admin-index.html" or
+  http.request.uri.path matches "^/(admin|zh|en)(/.*)?$" or
   http.request.uri.path eq "/sw.js" or
   http.request.uri.path.extension eq "html" or
   http.request.uri.path matches "^/workbox-[a-z0-9]+\\\\.js$"

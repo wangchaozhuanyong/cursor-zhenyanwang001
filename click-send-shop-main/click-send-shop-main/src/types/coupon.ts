@@ -47,6 +47,7 @@ export interface UserCoupon {
   valid_from?: string;
   valid_until?: string;
   issue_channel?: string;
+  issue_activity_id?: string;
   order_id?: string;
   order_no?: string;
   discount_amount?: number;

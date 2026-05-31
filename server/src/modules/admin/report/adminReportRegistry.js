@@ -129,7 +129,7 @@ const REPORT_REGISTRY = [
     capability: 'couponEnabled',
     serviceHandler: 'getCouponsAnalysis',
     filenamePrefix: 'coupon-analysis',
-    csvColumns: ['coupon_title', 'issued_count', 'claimed_count', 'used_count', 'expired_count', 'claim_rate', 'use_rate', 'paid_order_count', 'sales_amount', 'discount_amount', 'net_sales', 'gross_profit_amount', 'roi'],
+    csvColumns: ['coupon_campaign_title', 'coupon_campaign_type', 'coupon_title', 'issued_count', 'claimed_count', 'used_count', 'expired_count', 'claim_rate', 'use_rate', 'paid_order_count', 'sales_amount', 'discount_amount', 'net_sales', 'gross_profit_amount', 'roi'],
   },
   {
     type: 'search_analysis',

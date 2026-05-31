@@ -166,9 +166,27 @@ async function assertCouponClaimable(userId, coupon) {
   return null;
 }
 
+async function resolveCampaignClaim(userId, couponId, issueActivityId) {
+  const adminApi = /** @type {any} */ (require('../../admin')).api || {};
+  if (typeof adminApi.resolveCouponCampaignClaim === 'function') {
+    const resolved = await adminApi.resolveCouponCampaignClaim(issueActivityId, couponId, userId);
+    if (!resolved) {
+      return { error: { code: 403, message: '该优惠券活动不适合当前用户，不能领取' } };
+    }
+    return { issueActivityId: resolved.campaignId || null };
+  }
+  if (!issueActivityId) return { issueActivityId: null };
+  if (typeof adminApi.isCouponCampaignClaimAllowed !== 'function') return null;
+  const allowed = await adminApi.isCouponCampaignClaimAllowed(issueActivityId, couponId, userId);
+  if (!allowed) {
+    return { error: { code: 403, message: '该优惠券活动不适合当前用户，不能领取' } };
+  }
+  return { issueActivityId };
+}
+
 async function claimCoupon(userId, body) {
   const { code } = body;
-  const issueActivityId = String(body.activity_id || '').trim() || null;
+  let issueActivityId = String(body.activity_id || '').trim() || null;
   if (!code) return { error: { code: 400, message: '请提供优惠券码或ID' } };
 
   const conn = await repo.getPool().getConnection();
@@ -180,6 +198,12 @@ async function claimCoupon(userId, body) {
       await conn.rollback();
       return claimErr;
     }
+    const campaignClaim = await resolveCampaignClaim(userId, coupon.id, issueActivityId);
+    if (campaignClaim?.error) {
+      await conn.rollback();
+      return campaignClaim;
+    }
+    issueActivityId = campaignClaim?.issueActivityId || null;
     const perUserLimit = Math.max(1, Number(coupon.per_user_limit || 1));
     const userClaims = await repo.countUserClaimsForCouponInConn(conn, userId, coupon.id);
     if (userClaims >= perUserLimit) {

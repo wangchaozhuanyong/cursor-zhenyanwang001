@@ -28,6 +28,8 @@ const router = Router();
   isUserSecurityDeviceBlocked: adminUserSecurityRepo.isDeviceBlocked,
   insertUserSecurityEvent: adminUserSecurityRepo.insertSecurityEvent,
   selectPublicCouponCampaignsByPosition: adminCouponCampaignRepo.selectPublicCampaignsByPosition,
+  isCouponCampaignClaimAllowed: adminCouponCampaignRepo.isCouponCampaignClaimAllowed,
+  resolveCouponCampaignClaim: adminCouponCampaignRepo.resolveCouponCampaignClaim,
   selectCouponCampaignCouponIds: adminCouponCampaignRepo.selectCouponIdsByCampaignId,
 };
 

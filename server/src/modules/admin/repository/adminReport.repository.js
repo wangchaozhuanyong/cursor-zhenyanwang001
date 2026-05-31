@@ -877,11 +877,17 @@ async function selectCouponsAnalysis(dateFrom, dateTo, filters = {}) {
   const couponScope = filters.coupon_id
     ? { sql: ' AND c.id = ?', params: [filters.coupon_id] }
     : { sql: '', params: [] };
+  const campaignScope = filters.coupon_campaign_id
+    ? { sql: ' AND base.campaign_id = ?', params: [filters.coupon_campaign_id] }
+    : { sql: '', params: [] };
 
   return queryList(
     `SELECT
       c.id AS coupon_id,
       c.title AS coupon_title,
+      base.campaign_id AS coupon_campaign_id,
+      cc.title AS coupon_campaign_title,
+      cc.campaign_type AS coupon_campaign_type,
       COALESCE(c.total_quantity, 0) AS issued_count,
       COALESCE(ucs.claimed_count, 0) AS claimed_count,
       COALESCE(ucs.used_count, 0) AS used_count,
@@ -891,10 +897,20 @@ async function selectCouponsAnalysis(dateFrom, dateTo, filters = {}) {
       COALESCE(ord.discount_amount, 0) AS discount_amount,
       COALESCE(ord.net_sales, 0) AS net_sales,
       COALESCE(ord.gross_profit_amount, 0) AS gross_profit_amount
-     FROM coupons c
+     FROM (
+       SELECT DISTINCT uc.coupon_id, NULLIF(TRIM(uc.issue_activity_id), '') AS campaign_id
+         FROM user_coupons uc
+        WHERE uc.coupon_id IS NOT NULL
+       UNION
+       SELECT DISTINCT c0.id AS coupon_id, NULL AS campaign_id
+         FROM coupons c0
+     ) base
+     INNER JOIN coupons c ON BINARY c.id = BINARY base.coupon_id
+     LEFT JOIN coupon_campaigns cc ON BINARY cc.id = BINARY base.campaign_id AND cc.deleted_at IS NULL
      LEFT JOIN (
        SELECT
          uc.coupon_id,
+         NULLIF(TRIM(uc.issue_activity_id), '') AS campaign_id,
          SUM(CASE
            WHEN uc.claimed_at IS NOT NULL
              AND ${rangeWhere('DATE(DATE_ADD(uc.claimed_at, INTERVAL 8 HOUR))')}
@@ -917,11 +933,12 @@ async function selectCouponsAnalysis(dateFrom, dateTo, filters = {}) {
          END) AS expired_count
        FROM user_coupons uc
        INNER JOIN coupons c2 ON BINARY c2.id = BINARY uc.coupon_id
-       GROUP BY uc.coupon_id
-     ) ucs ON BINARY ucs.coupon_id = BINARY c.id
+       GROUP BY uc.coupon_id, NULLIF(TRIM(uc.issue_activity_id), '')
+     ) ucs ON BINARY ucs.coupon_id = BINARY base.coupon_id AND ucs.campaign_id <=> base.campaign_id
      LEFT JOIN (
        SELECT
          uc.coupon_id,
+         NULLIF(TRIM(uc.issue_activity_id), '') AS campaign_id,
          COUNT(DISTINCT CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.id END) AS paid_order_count,
          COALESCE(SUM(${GROSS_O}), 0) AS sales_amount,
          COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.discount_amount ELSE 0 END), 0) AS discount_amount,
@@ -931,14 +948,14 @@ async function selectCouponsAnalysis(dateFrom, dateTo, filters = {}) {
        INNER JOIN user_coupons uc ON BINARY o.coupon_uc_id = BINARY uc.id
        WHERE o.coupon_uc_id IS NOT NULL AND TRIM(o.coupon_uc_id) <> ''
          AND ${rangeWhere('DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))')}
-       GROUP BY uc.coupon_id
-     ) ord ON BINARY ord.coupon_id = BINARY c.id
+       GROUP BY uc.coupon_id, NULLIF(TRIM(uc.issue_activity_id), '')
+     ) ord ON BINARY ord.coupon_id = BINARY base.coupon_id AND ord.campaign_id <=> base.campaign_id
      WHERE (
        COALESCE(ucs.claimed_count, 0) > 0
        OR COALESCE(ucs.used_count, 0) > 0
        OR COALESCE(ucs.expired_count, 0) > 0
        OR COALESCE(ord.paid_order_count, 0) > 0
-     )${couponScope.sql}
+     )${couponScope.sql}${campaignScope.sql}
      ORDER BY COALESCE(ord.sales_amount, 0) DESC,
               COALESCE(ucs.used_count, 0) DESC,
               COALESCE(ucs.claimed_count, 0) DESC,
@@ -951,6 +968,7 @@ async function selectCouponsAnalysis(dateFrom, dateTo, filters = {}) {
       dateFrom, dateTo,
       dateFrom, dateTo,
       ...couponScope.params,
+      ...campaignScope.params,
     ],
   );
 }

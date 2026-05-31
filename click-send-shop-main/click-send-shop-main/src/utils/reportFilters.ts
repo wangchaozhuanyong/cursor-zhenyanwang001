@@ -8,6 +8,7 @@ export type ReportFilterKey =
   | "productId"
   | "activityId"
   | "couponId"
+  | "couponCampaignId"
   | "orderStatus"
   | "paymentStatus"
   | "paymentMethod"
@@ -23,7 +24,7 @@ const FILTER_KEYS_BY_PROFILE: Record<ReportFilterProfile, ReportFilterKey[]> = {
   dateOrder: ["dateRange", "orderStatus", "paymentStatus", "paymentMethod"],
   dateCustomer: ["dateRange"],
   dateActivity: ["dateRange", "activityId"],
-  dateCoupon: ["dateRange", "couponId"],
+  dateCoupon: ["dateRange", "couponCampaignId", "couponId"],
 };
 
 const URL_KEY_BY_FILTER: Record<ReportFilterKey, string[]> = {
@@ -33,6 +34,7 @@ const URL_KEY_BY_FILTER: Record<ReportFilterKey, string[]> = {
   productId: ["product_id"],
   activityId: ["activity_id"],
   couponId: ["coupon_id"],
+  couponCampaignId: ["coupon_campaign_id"],
   orderStatus: ["order_status"],
   paymentStatus: ["payment_status"],
   paymentMethod: ["payment_method"],

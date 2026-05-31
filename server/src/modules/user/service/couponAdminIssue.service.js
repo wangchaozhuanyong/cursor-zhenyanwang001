@@ -57,6 +57,7 @@ async function issueCouponToUsers(couponId, userIds, options = {}) {
         validFrom: couponLifecycle.mysqlDateTime(validity.validFrom),
         validUntil: couponLifecycle.mysqlDateTime(validity.validUntil),
         issueChannel: options.issueChannel || 'tag',
+        issueActivityId: options.issueActivityId || null,
         sourceAdminId: options.adminUserId,
       });
       await couponLifecycle.insertCouponEvent(conn, {

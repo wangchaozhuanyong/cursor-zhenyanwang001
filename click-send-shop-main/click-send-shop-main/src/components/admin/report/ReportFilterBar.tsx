@@ -62,6 +62,7 @@ export default function ReportFilterBar({
   const categoryId = searchParams.get("category_id") || "";
   const productId = searchParams.get("product_id") || "";
   const activityId = searchParams.get("activity_id") || "";
+  const couponCampaignId = searchParams.get("coupon_campaign_id") || "";
   const couponId = searchParams.get("coupon_id") || "";
   const orderStatus = searchParams.get("order_status") || "";
   const paymentStatus = searchParams.get("payment_status") || "";
@@ -189,6 +190,15 @@ export default function ReportFilterBar({
             onChange={(e) => update({ coupon_id: e.target.value })}
             placeholder={tText("优惠券 ID（可选）")}
             className={`${selectClass} min-w-[10rem]`}
+          />
+        ) : null}
+
+        {isFilterEnabled(enabledFilters, "couponCampaignId") ? (
+          <input
+            value={couponCampaignId}
+            onChange={(e) => update({ coupon_campaign_id: e.target.value })}
+            placeholder={tText("优惠券活动 ID（可选）")}
+            className={`${selectClass} min-w-[11rem]`}
           />
         ) : null}
 

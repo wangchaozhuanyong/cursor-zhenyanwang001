@@ -53,6 +53,7 @@ const CHIP_KEYS_BY_FILTER: Record<ReportFilterKey, string[]> = {
   productId: ["product_id"],
   activityId: ["activity_id"],
   couponId: ["coupon_id"],
+  couponCampaignId: ["coupon_campaign_id"],
   orderStatus: ["order_status"],
   paymentStatus: ["payment_status"],
   paymentMethod: ["payment_method"],
@@ -124,6 +125,9 @@ export function buildReportFilterChips(
   if (allowed.has("coupon_id") && params.get("coupon_id")) {
     chips.push({ key: "coupon_id", label: `优惠券：${params.get("coupon_id")}` });
   }
+  if (allowed.has("coupon_campaign_id") && params.get("coupon_campaign_id")) {
+    chips.push({ key: "coupon_campaign_id", label: `优惠券活动：${params.get("coupon_campaign_id")}` });
+  }
   if (allowed.has("order_status") && params.get("order_status")) {
     const v = params.get("order_status") || "";
     chips.push({ key: "order_status", label: `订单：${ORDER_STATUS_LABELS[v] || v}` });
@@ -164,6 +168,7 @@ export function removeReportFilterChip(
     product_id: null,
     activity_id: null,
     coupon_id: null,
+    coupon_campaign_id: null,
     order_status: null,
     payment_status: null,
     payment_method: null,

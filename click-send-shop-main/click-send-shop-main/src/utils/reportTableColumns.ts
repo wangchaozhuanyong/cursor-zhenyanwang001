@@ -8,6 +8,7 @@ const STICKY_COLUMN_ORDER = [
   "category_path",
   "category_name",
   "activity_title",
+  "coupon_campaign_title",
   "coupon_title",
 ] as const;
 
@@ -18,6 +19,7 @@ const STICKY_WIDTH_REM: Record<string, number> = {
   category_path: 10,
   category_name: 8,
   activity_title: 10,
+  coupon_campaign_title: 10,
   coupon_title: 10,
 };
 
@@ -30,6 +32,7 @@ const HIDDEN_COLUMN_KEYS = new Set([
   "order_id",
   "user_id",
   "activity_id",
+  "coupon_campaign_id",
   "coupon_id",
 ]);
 
@@ -41,6 +44,7 @@ const PREFER_OVER_ID: Array<[string, string]> = [
   ["nickname", "user_id"],
   ["phone", "user_id"],
   ["activity_title", "activity_id"],
+  ["coupon_campaign_title", "coupon_campaign_id"],
   ["coupon_title", "coupon_id"],
 ];
 

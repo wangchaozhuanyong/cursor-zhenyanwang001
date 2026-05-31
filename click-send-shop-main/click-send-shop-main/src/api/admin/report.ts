@@ -10,6 +10,8 @@ export type ReportQuery = {
   product_id?: string;
   activity_id?: string;
   coupon_id?: string;
+  coupon_campaign_id?: string;
+  campaign_id?: string;
   payment_status?: string;
   order_status?: string;
   user_type?: string;

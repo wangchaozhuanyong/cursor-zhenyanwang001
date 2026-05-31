@@ -193,7 +193,105 @@ async function softDeleteCampaign(id, adminUserId) {
   );
 }
 
-async function selectPublicCampaignsByPosition(position, types = []) {
+function normalizeCampaignRow(row) {
+  return {
+    ...row,
+    display_positions: parseJson(row.display_positions, []),
+    audience_config: parseJson(row.audience_config, null),
+  };
+}
+
+async function selectCampaignAudiencesByIds(campaignIds = []) {
+  const ids = [...new Set(campaignIds.map((id) => String(id || '').trim()).filter(Boolean))];
+  if (!ids.length) return new Map();
+  const placeholders = ids.map(() => '?').join(',');
+  const [rows] = await db.query(
+    `SELECT campaign_id, scope_type, scope_id
+       FROM coupon_campaign_audiences
+      WHERE campaign_id IN (${placeholders})`,
+    ids,
+  );
+  const map = new Map();
+  for (const row of rows) {
+    const campaignId = String(row.campaign_id || '');
+    if (!map.has(campaignId)) map.set(campaignId, []);
+    map.get(campaignId).push(row);
+  }
+  return map;
+}
+
+async function selectUserAudienceContext(userId) {
+  const id = String(userId || '').trim();
+  if (!id) {
+    return { authenticated: false, orderCount: 0, memberLevelId: '', tagIds: new Set() };
+  }
+  const [[user]] = await db.query(
+    `SELECT u.id, u.member_level_id,
+            (
+              SELECT COUNT(*)
+                FROM orders o
+               WHERE BINARY o.user_id = BINARY u.id
+                 AND o.deleted_at IS NULL
+                 AND o.status NOT IN ('cancelled')
+            ) AS order_count
+       FROM users u
+      WHERE BINARY u.id = BINARY ?
+        AND u.deleted_at IS NULL
+      LIMIT 1`,
+    [id],
+  );
+  if (!user) {
+    return { authenticated: false, orderCount: 0, memberLevelId: '', tagIds: new Set() };
+  }
+  const [tagRows] = await db.query(
+    'SELECT tag_id FROM user_tag_assignments WHERE BINARY user_id = BINARY ?',
+    [id],
+  );
+  return {
+    authenticated: true,
+    orderCount: Number(user.order_count || 0),
+    memberLevelId: String(user.member_level_id || ''),
+    tagIds: new Set(tagRows.map((row) => String(row.tag_id || '')).filter(Boolean)),
+  };
+}
+
+function audienceScopeIds(campaign, rows = []) {
+  const fromRows = rows.map((row) => String(row.scope_id || '').trim()).filter(Boolean);
+  if (fromRows.length) return fromRows;
+  const config = campaign?.audience_config || {};
+  const keys = ['scope_ids', 'scopeIds', 'member_level_ids', 'memberLevelIds', 'user_tag_ids', 'userTagIds'];
+  const ids = [];
+  for (const key of keys) {
+    if (Array.isArray(config[key])) ids.push(...config[key]);
+  }
+  return [...new Set(ids.map((id) => String(id || '').trim()).filter(Boolean))];
+}
+
+function campaignMatchesAudience(campaign, audienceRows = [], context) {
+  const type = String(campaign?.audience_type || audienceRows[0]?.scope_type || 'all');
+  if (type === 'all') return true;
+  if (type === 'new_user') {
+    // 未登录用户也允许看到新人礼，用它引导注册；真正领取/发放时后端还会校验。
+    return !context.authenticated || context.orderCount <= 0;
+  }
+  if (!context.authenticated) return false;
+  if (type === 'old_user') return context.orderCount > 0;
+  const scopeIds = audienceScopeIds(campaign, audienceRows);
+  if (type === 'member_level') return !!context.memberLevelId && scopeIds.includes(context.memberLevelId);
+  if (type === 'user_tag') return scopeIds.some((id) => context.tagIds.has(id));
+  return false;
+}
+
+async function filterCampaignsForAudience(campaigns = [], userId = null) {
+  if (!campaigns.length) return [];
+  const audienceMap = await selectCampaignAudiencesByIds(campaigns.map((row) => row.id));
+  const context = await selectUserAudienceContext(userId);
+  return campaigns.filter((campaign) => (
+    campaignMatchesAudience(campaign, audienceMap.get(String(campaign.id)) || [], context)
+  ));
+}
+
+async function selectPublicCampaignsByPosition(position, types = [], options = {}) {
   const pos = String(position || 'home_coupon_zone').trim();
   const typeFilter = types.length ? `AND cc.campaign_type IN (${types.map(() => '?').join(',')})` : '';
   const params = [pos, ...types];
@@ -210,11 +308,53 @@ async function selectPublicCampaignsByPosition(position, types = []) {
       ORDER BY cc.sort_order ASC, cc.start_at DESC`,
     params,
   );
-  return rows.map((row) => ({
-    ...row,
-    display_positions: parseJson(row.display_positions, []),
-    audience_config: parseJson(row.audience_config, null),
-  }));
+  const campaigns = rows.map(normalizeCampaignRow);
+  return filterCampaignsForAudience(campaigns, options.userId || null);
+}
+
+async function isCouponCampaignClaimAllowed(campaignId, couponId, userId) {
+  const resolved = await resolveCouponCampaignClaim(campaignId, couponId, userId);
+  return !!resolved;
+}
+
+async function selectActiveCampaignsForCoupon(couponId, campaignId = '', manualOnly = true) {
+  const cid = String(couponId || '').trim();
+  const id = String(campaignId || '').trim();
+  if (!cid) return [];
+  const campaignFilter = id ? 'AND BINARY cc.id = BINARY ?' : '';
+  const issueModeFilter = manualOnly
+    ? "AND COALESCE(cc.issue_mode, 'self_claim') IN ('self_claim','code_redeem')"
+    : '';
+  const params = id ? [cid, id] : [cid];
+  const [rows] = await db.query(
+    `SELECT cc.*
+       FROM coupon_campaigns cc
+       INNER JOIN coupon_campaign_items cci ON BINARY cci.campaign_id = BINARY cc.id
+      WHERE BINARY cci.coupon_id = BINARY ?
+        ${campaignFilter}
+        AND cc.deleted_at IS NULL
+        AND cc.disabled = 0
+        AND cc.status NOT IN ('draft','disabled')
+        AND cc.start_at <= NOW()
+        AND cc.end_at >= NOW()
+        ${issueModeFilter}
+      ORDER BY cc.sort_order ASC, cc.start_at DESC`,
+    params,
+  );
+  return rows.map(normalizeCampaignRow);
+}
+
+async function resolveCouponCampaignClaim(campaignId, couponId, userId) {
+  const cid = String(couponId || '').trim();
+  if (!cid || !userId) return null;
+  const campaigns = await selectActiveCampaignsForCoupon(cid, campaignId, true);
+  if (!campaigns.length) {
+    if (campaignId) return null;
+    const anyActiveCampaigns = await selectActiveCampaignsForCoupon(cid, '', false);
+    return anyActiveCampaigns.length ? null : { campaignId: null };
+  }
+  const [matched] = await filterCampaignsForAudience(campaigns, userId);
+  return matched ? { campaignId: matched.id, campaign: matched } : null;
 }
 
 async function selectCouponIdsByCampaignId(campaignId) {
@@ -241,5 +381,7 @@ module.exports = {
   replaceCampaignAudiences,
   softDeleteCampaign,
   selectPublicCampaignsByPosition,
+  isCouponCampaignClaimAllowed,
+  resolveCouponCampaignClaim,
   selectCouponIdsByCampaignId,
 };

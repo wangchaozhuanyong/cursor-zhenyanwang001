@@ -684,7 +684,12 @@ function normalizeCouponAnalysisRow(row) {
   const grossProfitAmount = safeNumber(row.gross_profit_amount);
 
   const base = {
+    coupon_id: row.coupon_id || '',
     coupon_title: row.coupon_title || '',
+    coupon_campaign_id: row.coupon_campaign_id || '',
+    coupon_campaign_title: row.coupon_campaign_title || '',
+    coupon_campaign_type: row.coupon_campaign_type || '',
+    issued_count: issued,
     claimed_count: claimed,
     used_count: used,
     expired_count: expired,
@@ -1241,7 +1246,6 @@ module.exports = {
   deleteOperatingExpense,
   exportByType,
 };
-
 
 
 

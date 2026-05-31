@@ -14,6 +14,7 @@ function parseReportFilters(query = {}) {
     product_id: cleanId(query.product_id),
     activity_id: cleanId(query.activity_id),
     coupon_id: cleanId(query.coupon_id),
+    coupon_campaign_id: cleanId(query.coupon_campaign_id || query.campaign_id),
     order_status: allowEnum(query.order_status, [
       'pending',
       'paid',

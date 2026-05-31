@@ -61,10 +61,18 @@ async function getActivitiesByPosition(query = {}) {
   return { data: list.map(promo.mapActivitySummary) };
 }
 
-async function getCouponCenter(query = {}) {
+function audienceOptions(context = {}) {
+  return { userId: context.userId || null };
+}
+
+async function getCouponCenter(query = {}, context = {}) {
   const position = 'home_coupon_zone';
   const adminApi = getAdminApi();
-  const campaigns = await adminApi.selectPublicCouponCampaignsByPosition(position, ['public_claim', 'member', 'seasonal']);
+  const campaigns = await adminApi.selectPublicCouponCampaignsByPosition(
+    position,
+    ['public_claim', 'member', 'seasonal'],
+    audienceOptions(context),
+  );
   const campaign = campaigns[0];
   if (campaign) {
     const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
@@ -97,10 +105,14 @@ async function getCouponCenter(query = {}) {
   };
 }
 
-async function getNewUserGift(query = {}) {
+async function getNewUserGift(query = {}, context = {}) {
   const position = 'home_coupon_zone';
   const adminApi = getAdminApi();
-  const campaigns = await adminApi.selectPublicCouponCampaignsByPosition(position, ['new_user_gift']);
+  const campaigns = await adminApi.selectPublicCouponCampaignsByPosition(
+    position,
+    ['new_user_gift'],
+    audienceOptions(context),
+  );
   const campaign = campaigns[0];
   if (campaign) {
     const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
@@ -135,7 +147,7 @@ async function getNewUserGift(query = {}) {
   };
 }
 
-async function getCouponZone(query = {}) {
+async function getCouponZone(query = {}, context = {}) {
   const position = query.position || 'home_coupon_zone';
   const adminApi = getAdminApi();
   const campaigns = await adminApi.selectPublicCouponCampaignsByPosition(position, [
@@ -143,7 +155,7 @@ async function getCouponZone(query = {}) {
     'new_user_gift',
     'member',
     'seasonal',
-  ]);
+  ], audienceOptions(context));
   const seen = new Set();
   const coupons = [];
   const mappedCampaigns = [];

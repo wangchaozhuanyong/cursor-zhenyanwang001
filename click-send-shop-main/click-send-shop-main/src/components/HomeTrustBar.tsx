@@ -17,7 +17,7 @@ export default function HomeTrustBar({ className }: HomeTrustBarProps) {
   return (
     <section
       className={cn(
-        "grid grid-cols-4 gap-0.5 rounded-2xl border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)]",
+        "store-trust-bar grid grid-cols-4 gap-0.5 rounded-2xl border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)]",
         "bg-[color-mix(in_srgb,var(--theme-surface)_96%,var(--theme-bg))] px-1 py-3.5 sm:gap-1 sm:px-2 sm:py-4",
         className,
       )}
@@ -26,10 +26,10 @@ export default function HomeTrustBar({ className }: HomeTrustBarProps) {
       {TRUST_ITEMS.map(({ icon: Icon, label }) => (
         <div
           key={label}
-          className="flex min-w-0 flex-col items-center justify-center gap-1.5 px-0.5 text-center"
+          className="store-trust-item flex min-w-0 flex-col items-center justify-center gap-1.5 px-0.5 text-center"
         >
           <span
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-text)_4%,transparent)]"
+            className="store-trust-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-text)_4%,transparent)]"
             aria-hidden
           >
             <Icon

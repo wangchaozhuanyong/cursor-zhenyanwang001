@@ -224,8 +224,8 @@ export default function MarketingCouponRailSection({
 
   return (
     <AnimatedSection delay={delay}>
-      <section className="w-full">
-        <div className="mb-3 flex items-center justify-between gap-3">
+      <section className="store-coupon-rail-section w-full">
+        <div className="store-section-heading mb-3 flex items-center justify-between gap-3">
           <h2 className="store-section-title flex min-w-0 items-center gap-2 text-[var(--theme-text-on-surface)]">
             <Ticket className="h-5 w-5 shrink-0 text-[var(--theme-primary)]" />
             <span className="truncate">{sectionTitle}</span>
@@ -241,7 +241,7 @@ export default function MarketingCouponRailSection({
         </div>
 
         {isAuthenticated && !couponStateReady ? (
-          <div className="no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0">
+          <div className="store-coupon-rail no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0">
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
@@ -250,7 +250,7 @@ export default function MarketingCouponRailSection({
             ))}
           </div>
         ) : (
-          <div className="no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0">
+          <div className="store-coupon-rail no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0">
             {hasNewUserGift ? (
               <GiftIntroCard
                 payload={giftIntroPayload}
@@ -269,7 +269,7 @@ export default function MarketingCouponRailSection({
               const display = marketingCouponToPremiumDisplay(item.coupon);
               const actionLabel = !isAuthenticated && item.source === "newUserGift" ? "注册领取" : item.actionLabel;
               return (
-                <div key={item.railKey} className="relative w-[min(78vw,300px)] shrink-0 snap-start">
+                <div key={item.railKey} className="store-coupon-rail-card relative w-[min(78vw,300px)] shrink-0 snap-start">
                   <PremiumCouponCard
                     colorScheme="invite"
                     layout="home"
@@ -309,7 +309,7 @@ function GiftIntroCard({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-[6.75rem] w-[min(78vw,300px)] shrink-0 snap-start items-center gap-3 rounded-xl border border-[var(--theme-border)] p-3 text-left ${THEME_INVITE_PROMO_SHELL}`}
+      className={`store-coupon-rail-card flex min-h-[6.75rem] w-[min(78vw,300px)] shrink-0 snap-start items-center gap-3 rounded-xl border border-[var(--theme-border)] p-3 text-left ${THEME_INVITE_PROMO_SHELL}`}
     >
       <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${THEME_GIFT_BADGE_SHELL}`}>
         <Gift size={23} className="text-[var(--theme-gift-badge-foreground)]" />
@@ -340,7 +340,7 @@ function FallbackCard({
   onShopping: () => void;
 }) {
   return (
-    <div className="flex min-h-[6.75rem] w-[min(78vw,300px)] shrink-0 snap-start items-start gap-3 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-3">
+    <div className="store-coupon-rail-card flex min-h-[6.75rem] w-[min(78vw,300px)] shrink-0 snap-start items-start gap-3 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_14%,transparent)] text-[var(--theme-primary)]">
         <BadgeCheck size={20} />
       </div>

@@ -59,8 +59,7 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
       - run: npm ci
-      - run: npm run check:service-layer
-      - run: npm run check:module-boundaries
+      - run: npm run architecture:check
       - run: npm run check:migrations
       - run: npm run check:report-registry
       - run: npm run typecheck

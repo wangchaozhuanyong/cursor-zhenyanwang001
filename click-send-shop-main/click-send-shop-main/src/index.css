@@ -1448,6 +1448,191 @@ html[data-app-scope="store"] .store-coupon-card button:active {
   transform: scale(0.98);
 }
 
+html[data-app-scope="store"] .store-coupon-card--template {
+  --coupon-template-a: var(--theme-primary);
+  --coupon-template-b: var(--theme-price);
+  --coupon-template-c: var(--theme-accent);
+  --coupon-template-paper: color-mix(in srgb, var(--theme-surface) 92%, white);
+  --coupon-template-ink: var(--theme-text-on-surface);
+  --coupon-template-line: color-mix(in srgb, var(--coupon-template-a) 22%, var(--theme-border));
+  min-height: 6.75rem;
+  border-color: var(--coupon-template-line);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 44%, transparent), transparent 38%),
+    linear-gradient(118deg, color-mix(in srgb, var(--coupon-template-a) 14%, transparent) 0%, transparent 34%),
+    linear-gradient(292deg, color-mix(in srgb, var(--coupon-template-b) 12%, transparent) 0%, transparent 38%),
+    var(--coupon-template-paper);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 70%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--coupon-template-c) 10%, transparent),
+    0 18px 44px -30px color-mix(in srgb, var(--coupon-template-a) 58%, transparent);
+  transform: translateZ(0);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    filter 220ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="newcomer"] {
+  --coupon-template-a: #d94683;
+  --coupon-template-b: #f2a23a;
+  --coupon-template-c: #0f9f8f;
+  --coupon-template-paper: color-mix(in srgb, var(--theme-surface) 86%, #fff7ed);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="threshold"] {
+  --coupon-template-a: #0f9f8f;
+  --coupon-template-b: #2563eb;
+  --coupon-template-c: #f59e0b;
+  --coupon-template-paper: color-mix(in srgb, var(--theme-surface) 88%, #ecfeff);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="timer"] {
+  --coupon-template-a: #dc2626;
+  --coupon-template-b: #7c3aed;
+  --coupon-template-c: #f59e0b;
+  --coupon-template-paper: color-mix(in srgb, var(--theme-surface) 88%, #fff1f2);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="soft"] {
+  --coupon-template-a: #2563eb;
+  --coupon-template-b: #14b8a6;
+  --coupon-template-c: #94a3b8;
+  --coupon-template-paper: color-mix(in srgb, var(--theme-surface) 90%, #f8fafc);
+}
+
+html[data-app-scope="store"] .store-coupon-card .store-coupon-card__template-chrome {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template > :not(.store-coupon-card__template-chrome) {
+  position: relative;
+  z-index: 2;
+}
+
+html[data-app-scope="store"] .store-coupon-card__template-sheen {
+  inset: 0;
+  background:
+    linear-gradient(96deg, transparent 0%, color-mix(in srgb, white 28%, transparent) 42%, transparent 64%),
+    repeating-linear-gradient(90deg, transparent 0 13px, color-mix(in srgb, white 18%, transparent) 13px 14px, transparent 14px 28px);
+  opacity: 0.28;
+  transform: translateX(-34%);
+}
+
+html[data-app-scope="store"] .store-coupon-card__template-fiber {
+  inset: 1px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 28%, transparent), transparent 58%),
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--coupon-template-a) 7%, transparent) 0 1px, transparent 1px 7px);
+  opacity: 0.24;
+}
+
+html[data-app-scope="store"] .store-coupon-card__template-edge {
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--store-page-base) 82%, transparent) 0 7px, transparent 7.5px);
+  background-position: center 9px;
+  background-size: 18px 28px;
+  background-repeat: repeat-y;
+  opacity: 0.94;
+}
+
+html[data-app-scope="store"] .store-coupon-card__template-edge--left {
+  left: -9px;
+}
+
+html[data-app-scope="store"] .store-coupon-card__template-edge--right {
+  right: -9px;
+}
+
+html[data-app-scope="store"] .store-coupon-card__state-rail {
+  bottom: 0;
+  left: 1.15rem;
+  right: 1.15rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--coupon-template-a), var(--coupon-template-b), var(--coupon-template-c));
+  opacity: 0.72;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-state="owned"] .store-coupon-card__state-rail {
+  height: 3px;
+  opacity: 0.95;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-state="disabled"] {
+  filter: saturate(0.72) contrast(0.96);
+}
+
+html[data-app-scope="store"] .store-coupon-rail[data-syncing="true"] .store-coupon-card--template {
+  filter: saturate(0.9);
+}
+
+html[data-app-scope="store"] .store-coupon-skeleton-card {
+  position: relative;
+  min-height: 6.75rem;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--theme-border) 72%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 38%, transparent), transparent 42%),
+    color-mix(in srgb, var(--theme-surface) 78%, transparent);
+}
+
+html[data-app-scope="store"] .store-coupon-skeleton-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 0%, color-mix(in srgb, white 40%, transparent) 48%, transparent 72%);
+  transform: translateX(-80%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-app-scope="store"] .store-coupon-card--template:hover {
+    border-color: color-mix(in srgb, var(--coupon-template-a) 34%, var(--theme-border));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 76%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--coupon-template-c) 14%, transparent),
+      0 22px 54px -32px color-mix(in srgb, var(--coupon-template-a) 72%, transparent);
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-app-scope="store"] .store-coupon-card--template[data-coupon-state="loading"] .store-coupon-card__template-sheen,
+  html[data-app-scope="store"] .store-coupon-rail[data-syncing="true"] .store-coupon-card__template-sheen {
+    animation: store-coupon-sheen 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+
+  html[data-app-scope="store"] .store-coupon-skeleton-card::before {
+    animation: store-coupon-skeleton-sweep 1.3s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+}
+
+@keyframes store-coupon-sheen {
+  0% {
+    transform: translateX(-46%);
+    opacity: 0.12;
+  }
+  45% {
+    opacity: 0.32;
+  }
+  100% {
+    transform: translateX(46%);
+    opacity: 0.16;
+  }
+}
+
+@keyframes store-coupon-skeleton-sweep {
+  to {
+    transform: translateX(92%);
+  }
+}
+
 html[data-app-scope="store"] .store-product-grid {
   gap: clamp(0.75rem, 2vw, 1.1rem);
 }

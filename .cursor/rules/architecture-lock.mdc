@@ -1,0 +1,42 @@
+---
+description: 后端模块化单体架构锁定规则
+globs: "server/src/**/*.js,server/scripts/**/*.js"
+alwaysApply: true
+---
+
+# 后端架构锁定规则
+
+本项目后端采用模块化单体架构 + 分层设计。以后新增功能、修改功能、修复问题，都必须先判断模块归属，再判断层级归属。
+
+权威说明文档：
+
+```text
+docs/ARCHITECTURE_LOCK.md
+```
+
+架构检查命令：
+
+```bash
+cd server
+npm run architecture:check
+```
+
+## 固定规则
+
+- 当前后端模块固定为 24 个。
+- 不要随手新增模块；确实需要新增模块时，必须先说明为什么现有模块放不下。
+- 每个模块必须保留 `routes / controller / service / repository` 四层目录。
+- routes 只负责路由绑定。
+- controller 只负责接收参数和返回结果。
+- service 只负责业务逻辑，不直接写 SQL。
+- repository 只负责数据库操作，不写业务判断。
+- 业务 API 必须统一以 `/api` 开头。
+- 管理后台接口必须是 `/api/admin/*`。
+- 健康检查固定为 `/api/health/live` 和 `/api/health/ready`。
+- 禁止跨模块直接调用对方内部 `controller / routes / service / repository` 文件。
+
+## 允许例外
+
+- `/robots.txt`、`/sitemap.xml`、SEO 预渲染页面、前端静态资源路径不是业务 API，可以不走 `/api`。
+- 数据库迁移、备份恢复、部署脚本可以直接操作数据库，但不能把业务规则藏在脚本里长期使用。
+- 如果某个功能不适合现有 24 个模块，必须先列出原因和推荐归属，再决定是否新增模块或新增编排层。

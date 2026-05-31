@@ -1,35 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const { expectedModules, internalLayerDirs } = require('./architecture-rules');
 
 const modulesRoot = path.resolve(__dirname, '..', 'src', 'modules');
 const strict = process.env.STRICT_MODULE_BOUNDARIES === '1';
-const internalDirs = new Set(['controller', 'repository', 'routes', 'service', 'services']);
-const expectedModules = new Set([
-  'admin',
-  'analytics',
-  'auth',
-  'cart',
-  'dataRetention',
-  'health',
-  'home',
-  'logistics',
-  'loyalty',
-  'marketing',
-  'monitoring',
-  'myinvois',
-  'notification',
-  'order',
-  'payment',
-  'privacy',
-  'product',
-  'pwa',
-  'search',
-  'seo',
-  'siteCapabilities',
-  'telegram',
-  'theme',
-  'user',
-]);
+const internalDirs = new Set(internalLayerDirs);
+const expectedModuleSet = new Set(expectedModules);
 
 function walk(dir, acc) {
   if (!fs.existsSync(dir)) return;
@@ -48,7 +24,7 @@ function toPosix(p) {
 function getModuleName(filePath) {
   const rel = path.relative(modulesRoot, filePath);
   const [moduleName] = rel.split(path.sep);
-  return expectedModules.has(moduleName) ? moduleName : null;
+  return expectedModuleSet.has(moduleName) ? moduleName : null;
 }
 
 function getModuleTarget(fromFile, specifier) {
@@ -59,7 +35,7 @@ function getModuleTarget(fromFile, specifier) {
 
   const parts = rel.split(path.sep).filter(Boolean);
   const targetModule = parts[0];
-  if (!expectedModules.has(targetModule)) return null;
+  if (!expectedModuleSet.has(targetModule)) return null;
   return {
     moduleName: targetModule,
     parts,

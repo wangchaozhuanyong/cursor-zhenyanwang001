@@ -43,6 +43,24 @@ interface PremiumCouponCardProps {
   onAction?: () => void;
 }
 
+type CouponTemplate = "cash" | "newcomer" | "threshold" | "timer" | "soft";
+
+function resolveCouponTemplate(input: {
+  title: string;
+  amount: string;
+  minSpendText: string;
+  expireText: string;
+  statusLabel?: string;
+  actionLabel?: string;
+}): CouponTemplate {
+  const text = `${input.title} ${input.amount} ${input.minSpendText} ${input.expireText} ${input.statusLabel ?? ""} ${input.actionLabel ?? ""}`.toLowerCase();
+  if (/限时|倒计时|秒杀|today|timer|expire|过期/.test(text)) return "timer";
+  if (/免邮|shipping|运费/.test(text)) return "soft";
+  if (/new|新人|注册|welcome|gift|礼/.test(text)) return "newcomer";
+  if (/%|折|discount|off|满|spend/.test(text)) return "threshold";
+  return "cash";
+}
+
 function VerticalActionLabel({ label }: { label: string }) {
   const chars = Array.from(label);
   return (
@@ -134,6 +152,15 @@ export default function PremiumCouponCard({
   const expireLabel = expireText.includes("有效期") ? expireText : `有效期至：${expireText}`;
   const displayActionLabel = actionLabel ? formatCouponActionLabel(actionLabel, layout) : "";
   const actionHasStatus = layout === "home" && Boolean(statusLabel && displayActionLabel);
+  const couponTemplate = resolveCouponTemplate({
+    title,
+    amount: leftValue,
+    minSpendText,
+    expireText,
+    statusLabel,
+    actionLabel: displayActionLabel,
+  });
+  const couponState = disabled ? "disabled" : actionLoading ? "loading" : statusLabel ? "owned" : displayActionLabel ? "ready" : "idle";
 
   const infoRows: Array<{ icon: LucideIcon; prominent: boolean; text: string }> = infoFieldOrder === "thresholdFirst"
     ? [
@@ -198,8 +225,10 @@ export default function PremiumCouponCard({
     <div
       data-theme-coupon-style={skin.couponStyle}
       data-coupon-card-layout={layout}
+      data-coupon-template={couponTemplate}
+      data-coupon-state={couponState}
       className={cn(
-        "store-coupon-card relative grid w-full min-w-0 items-stretch gap-0 overflow-hidden rounded-xl border",
+        "store-coupon-card store-coupon-card--template relative grid w-full min-w-0 items-stretch gap-0 overflow-hidden rounded-xl border",
         skin.useThemedMarketingShell ? "border-[var(--theme-coupon-card-shell-border)]" : "border-[var(--theme-border)]",
         skin.cardPadding,
         skin.gridClass,
@@ -209,6 +238,11 @@ export default function PremiumCouponCard({
         className,
       )}
     >
+      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-sheen" />
+      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-fiber" />
+      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-edge store-coupon-card__template-edge--left" />
+      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-edge store-coupon-card__template-edge--right" />
+      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__state-rail" />
       <div className={cn("flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg px-1.5 py-1 text-center", skin.valuePaneClass)}>
         <p className="inline-flex items-baseline font-black tracking-tight text-[var(--theme-price)]">
           {amountRmMatch ? (

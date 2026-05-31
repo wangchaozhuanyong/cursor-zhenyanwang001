@@ -115,13 +115,14 @@ export default function MarketingCouponRailSection({
     };
   }, [isAuthenticated, loadCoupons]);
 
+  const isCouponSyncing = isAuthenticated && !couponStateReady;
+  const couponIdentityReady = !isAuthenticated || couponStateReady;
   const couponItems = useMemo<CouponRailItem[]>(() => {
-    if (isAuthenticated && !couponStateReady) return [];
     const items: CouponRailItem[] = [];
     const seen = new Set<string>();
     if (couponZone?.campaigns?.length) {
       for (const campaign of couponZone.campaigns) {
-        for (const item of buildHomeCouponCardItems(campaign.coupons || [], coupons, isAuthenticated)) {
+        for (const item of buildHomeCouponCardItems(campaign.coupons || [], coupons, couponIdentityReady)) {
           const key = item.coupon.id || item.coupon.code;
           if (seen.has(key)) continue;
           seen.add(key);
@@ -135,7 +136,7 @@ export default function MarketingCouponRailSection({
       return items;
     }
     if (couponZone?.coupons?.length) {
-      items.push(...buildHomeCouponCardItems(couponZone.coupons, coupons, isAuthenticated).map((item) => ({
+      items.push(...buildHomeCouponCardItems(couponZone.coupons, coupons, couponIdentityReady).map((item) => ({
         ...item,
         source: "couponZone" as const,
         railKey: `zone-${item.coupon.id}`,
@@ -143,21 +144,21 @@ export default function MarketingCouponRailSection({
       return items;
     }
     if (couponCenter?.coupons?.length) {
-      items.push(...buildHomeCouponCardItems(couponCenter.coupons, coupons, isAuthenticated).map((item) => ({
+      items.push(...buildHomeCouponCardItems(couponCenter.coupons, coupons, couponIdentityReady).map((item) => ({
         ...item,
         source: "couponCenter" as const,
         railKey: `coupon-${item.coupon.id}`,
       })));
     }
     if (newUserGift?.coupons?.length) {
-      items.push(...buildHomeCouponCardItems(newUserGift.coupons, coupons, isAuthenticated).map((item) => ({
+      items.push(...buildHomeCouponCardItems(newUserGift.coupons, coupons, couponIdentityReady).map((item) => ({
         ...item,
         source: "newUserGift" as const,
         railKey: `gift-${item.coupon.id}`,
       })));
     }
     return items;
-  }, [couponCenter?.coupons, couponStateReady, coupons, couponZone?.campaigns, couponZone?.coupons, isAuthenticated, newUserGift?.coupons]);
+  }, [couponCenter?.coupons, couponIdentityReady, coupons, couponZone?.campaigns, couponZone?.coupons, newUserGift?.coupons]);
 
   const couponSummary = useMemo(() => summarizeHomeCouponState(coupons), [coupons]);
   const giftIntroPayload = useMemo<NewUserGiftPayload | null>(() => {
@@ -240,17 +241,17 @@ export default function MarketingCouponRailSection({
           </button>
         </div>
 
-        {isAuthenticated && !couponStateReady ? (
+        {isCouponSyncing && couponItems.length === 0 ? (
           <div className="store-coupon-rail no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0">
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
-                className="h-[6.75rem] w-[min(78vw,300px)] shrink-0 snap-start animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)]"
+                className="store-coupon-skeleton-card w-[min(78vw,300px)] shrink-0 snap-start"
               />
             ))}
           </div>
         ) : (
-          <div className="store-coupon-rail no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0">
+          <div className="store-coupon-rail no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0" data-syncing={isCouponSyncing ? "true" : undefined}>
             {hasNewUserGift ? (
               <GiftIntroCard
                 payload={giftIntroPayload}
@@ -281,8 +282,8 @@ export default function MarketingCouponRailSection({
                     scopeText={item.source === "newUserGift" && !isAuthenticated ? "新人专享" : display.scopeText}
                     statusLabel={item.statusLabel}
                     actionLabel={actionLabel}
-                    actionLoading={item.action === "claim" && claimingKey === item.railKey}
-                    actionDisabled={item.action === "claim" && claimingKey === item.railKey}
+                    actionLoading={item.action === "claim" && (claimingKey === item.railKey || isCouponSyncing)}
+                    actionDisabled={item.action === "claim" && (claimingKey === item.railKey || isCouponSyncing)}
                     onAction={() => handleCouponAction(item)}
                   />
                 </div>

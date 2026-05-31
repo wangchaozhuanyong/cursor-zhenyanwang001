@@ -82,11 +82,12 @@ export default function MarketingNewUserGiftSection({ delay = 0 }: { delay?: num
     };
   }, [isAuthenticated, loadCoupons]);
 
+  const isCouponSyncing = isAuthenticated && !couponStateReady;
+  const couponIdentityReady = !isAuthenticated || couponStateReady;
   const visibleItems = useMemo<HomeCouponCardItem[]>(() => {
     if (!payload?.coupons?.length) return [];
-    if (isAuthenticated && !couponStateReady) return [];
-    return buildHomeCouponCardItems(payload.coupons, coupons, isAuthenticated);
-  }, [payload?.coupons, coupons, isAuthenticated, couponStateReady]);
+    return buildHomeCouponCardItems(payload.coupons, coupons, couponIdentityReady);
+  }, [payload?.coupons, coupons, couponIdentityReady]);
 
   const couponSummary = useMemo(() => summarizeHomeCouponState(coupons), [coupons]);
 
@@ -162,12 +163,12 @@ export default function MarketingNewUserGiftSection({ delay = 0 }: { delay?: num
           </div>
         </div>
 
-        {isAuthenticated && !couponStateReady ? (
+        {isCouponSyncing && visibleItems.length === 0 ? (
           <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
             {Array.from({ length: Math.min(3, payload.coupons.length || 3) }).map((_, index) => (
               <div
                 key={index}
-                className="h-[6.75rem] w-[min(88vw,320px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)]"
+                className="store-coupon-skeleton-card w-[min(88vw,320px)] shrink-0"
               />
             ))}
           </div>
@@ -207,7 +208,7 @@ export default function MarketingNewUserGiftSection({ delay = 0 }: { delay?: num
             </div>
           </div>
         ) : (
-          <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+          <div className="store-coupon-rail no-scrollbar flex gap-3 overflow-x-auto pb-1" data-syncing={isCouponSyncing ? "true" : undefined}>
             {visibleItems.map((item) => {
               const display = marketingCouponToPremiumDisplay(item.coupon);
               return (
@@ -227,8 +228,8 @@ export default function MarketingNewUserGiftSection({ delay = 0 }: { delay?: num
                     expireText={display.expireText}
                     scopeText={!isAuthenticated ? "新人专享" : display.scopeText}
                     actionLabel={!isAuthenticated ? "注册领" : item.actionLabel}
-                    actionLoading={item.action === "claim" && claimingId === item.coupon.id}
-                    actionDisabled={item.action === "claim" && claimingId === item.coupon.id}
+                    actionLoading={item.action === "claim" && (claimingId === item.coupon.id || isCouponSyncing)}
+                    actionDisabled={item.action === "claim" && (claimingId === item.coupon.id || isCouponSyncing)}
                     onAction={!isAuthenticated ? () => navigate("/register") : () => handleAction(item)}
                   />
                 </div>

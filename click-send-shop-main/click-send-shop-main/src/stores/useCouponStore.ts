@@ -49,13 +49,15 @@ export const useCouponStore = create<CouponState>((set, get) => ({
 
   loadCoupons: async () => {
     const hasCached = get().coupons.length > 0;
+    const previousCoupons = get().coupons;
+    let availableCoupons: UserCoupon[] = [];
     set({ loading: !hasCached, error: null });
     try {
-      const available = await couponService.fetchAvailableCoupons(0);
+      availableCoupons = await couponService.fetchAvailableCoupons(0);
       const hasSessionHint = isLoggedIn() || useAuthStore.getState().isAuthenticated;
 
       if (!hasSessionHint) {
-        set({ coupons: available, loading: false, error: null });
+        set({ coupons: availableCoupons, loading: false, error: null });
         return;
       }
 
@@ -63,12 +65,12 @@ export const useCouponStore = create<CouponState>((set, get) => ({
       if (!sessionReady) {
         clearTokens();
         useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
-        set({ coupons: available, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
+        set({ coupons: availableCoupons, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
         return;
       }
 
       try {
-        set({ coupons: [...available, ...(await fetchOwnedCoupons())], loading: false });
+        set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
         return;
       } catch (err) {
         if (!isAuthError(err)) throw err;
@@ -76,20 +78,25 @@ export const useCouponStore = create<CouponState>((set, get) => ({
         if (!restored) {
           clearTokens();
           useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
-          set({ coupons: available, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
+          set({ coupons: availableCoupons, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
           return;
         }
         useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
-        set({ coupons: [...available, ...(await fetchOwnedCoupons())], loading: false });
+        set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
       }
     } catch (err) {
       if (isAuthError(err)) {
         clearTokens();
         useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
-        set({ coupons: [], loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
+        set({
+          coupons: availableCoupons.length > 0 ? availableCoupons : previousCoupons,
+          loading: false,
+          error: STORE_SESSION_EXPIRED_MESSAGE,
+        });
         return;
       }
       set({
+        coupons: availableCoupons.length > 0 ? availableCoupons : previousCoupons,
         loading: false,
         error: err instanceof Error ? err.message : "加载优惠券失败",
       });

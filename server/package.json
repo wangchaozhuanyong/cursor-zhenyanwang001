@@ -8,6 +8,7 @@
     "dev": "nodemon --exec \"node -r tsx/cjs\" src/index.js",
     "dev:local": "nodemon --exec \"node -r tsx/cjs\" src/index.js",
     "typecheck": "tsc --noEmit",
+    "architecture:check": "node scripts/check-architecture.js",
     "check:service-layer": "node scripts/check-service-layer.js",
     "check:module-structure": "node scripts/check-module-structure.js",
     "audit:module-boundaries": "node scripts/check-module-boundaries.js",

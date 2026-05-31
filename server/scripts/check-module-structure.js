@@ -1,34 +1,8 @@
 ﻿const fs = require('fs');
 const path = require('path');
+const { expectedModules, requiredModuleDirs } = require('./architecture-rules');
 
 const modulesRoot = path.resolve(__dirname, '..', 'src', 'modules');
-const requiredDirs = ['routes', 'controller', 'service', 'repository'];
-const expectedModules = [
-  'admin',
-  'analytics',
-  'auth',
-  'cart',
-  'dataRetention',
-  'health',
-  'home',
-  'logistics',
-  'loyalty',
-  'marketing',
-  'monitoring',
-  'myinvois',
-  'notification',
-  'order',
-  'payment',
-  'privacy',
-  'product',
-  'pwa',
-  'search',
-  'seo',
-  'siteCapabilities',
-  'telegram',
-  'theme',
-  'user',
-];
 
 function isDirectory(p) {
   try {
@@ -67,7 +41,7 @@ function run() {
     if (!fs.existsSync(path.join(modulePath, 'index.js'))) {
       missing.push(`${moduleName}/index.js`);
     }
-    for (const dir of requiredDirs) {
+    for (const dir of requiredModuleDirs) {
       const target = path.join(modulePath, dir);
       if (!isDirectory(target)) {
         missing.push(`${moduleName}/${dir}`);

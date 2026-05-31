@@ -27,7 +27,7 @@ function getCapabilitiesApi() {
 }
 
 async function getHomeBootstrap() {
-  const [siteInfo, siteCapabilities, homeOps, banners, categories, products, flashSale, promotionBanners, fullReductionNotices, couponCenter, newUserGift] = await Promise.all([
+  const [siteInfo, siteCapabilities, homeOps, banners, categories, products, flashSale, promotionBanners, fullReductionNotices, couponZone, couponCenter, newUserGift] = await Promise.all([
     getProductApi().getPublicSiteInfo(),
     getCapabilitiesApi().getSiteCapabilities(),
     getProductApi().getPublicHomeOps(),
@@ -37,6 +37,9 @@ async function getHomeBootstrap() {
     getMarketingApi().getFlashSaleForHome({ position: 'home_flash_sale' }).then((r) => r.data).catch(() => null),
     getMarketingApi().getActivitiesByPosition({ position: 'promotion_banner' }).then((r) => r.data).catch(() => []),
     getMarketingApi().getFullReductionNotices({ position: 'full_reduction_notice' }).then((r) => r.data).catch(() => []),
+    getCapabilitiesApi().isCapabilityEnabled('couponEnabled').then((enabled) => (enabled
+      ? getMarketingApi().getCouponZone({ position: 'home_coupon_zone' }).then((r) => r.data).catch(() => null)
+      : null)),
     getCapabilitiesApi().isCapabilityEnabled('couponEnabled').then((enabled) => (enabled
       ? getMarketingApi().getCouponCenter({ position: 'home_coupon_center' }).then((r) => r.data).catch(() => null)
       : null)),
@@ -72,6 +75,7 @@ async function getHomeBootstrap() {
       flashSale,
       promotionBanners,
       fullReductionNotices,
+      couponZone,
       couponCenter: dedupedCouponCenter,
       newUserGift,
     },
@@ -79,4 +83,3 @@ async function getHomeBootstrap() {
 }
 
 module.exports = { getHomeBootstrap };
-

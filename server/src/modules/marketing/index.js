@@ -11,6 +11,7 @@ router.use('/marketing', marketingRoutes);
   getActivitiesByPosition: marketingService.getActivitiesByPosition,
   getFullReductionNotices: marketingService.getFullReductionNotices,
   getCouponCenter: marketingService.getCouponCenter,
+  getCouponZone: marketingService.getCouponZone,
   getNewUserGift: marketingService.getNewUserGift,
   issueNewUserGiftPack: newUserGiftService.issueNewUserGiftPack,
 };

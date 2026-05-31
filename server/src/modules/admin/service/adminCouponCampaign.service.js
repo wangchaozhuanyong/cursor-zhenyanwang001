@@ -88,6 +88,12 @@ function normalizePayload(body = {}, partial = false) {
   if (body.issue_mode !== undefined || !partial) out.issue_mode = String(body.issue_mode || 'self_claim');
   if (body.sort_order !== undefined || !partial) out.sort_order = Math.trunc(Number(body.sort_order || 0));
   if (body.internal_note !== undefined || !partial) out.internal_note = String(body.internal_note || '').trim();
+  if (out.campaign_type === 'new_user_gift' && (!partial || body.audience_type === undefined)) {
+    out.audience_type = 'new_user';
+  }
+  if (out.campaign_type === 'new_user_gift' && (!partial || body.issue_mode === undefined)) {
+    out.issue_mode = 'auto_register';
+  }
   return out;
 }
 

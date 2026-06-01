@@ -43,6 +43,8 @@ export function AdminFormSheet({
     try {
       await onSubmit();
       onOpenChange(false);
+    } catch {
+      // Keep the sheet open. Callers usually show the concrete error message.
     } finally {
       setBusy(false);
     }

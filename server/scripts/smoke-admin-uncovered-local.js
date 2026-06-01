@@ -563,6 +563,7 @@ async function testBannerWrites() {
   const created = await run('Banner 新增', () => api('POST', '/admin/banners', {
     title: `后台检测临时 Banner ${RUN_ID}`,
     description: '本地 smoke 测试临时 Banner',
+    cta_text: '立即查看',
     image: '/assets/banner1.jpg',
     link: '/products',
     sort_order: 9999,
@@ -577,6 +578,7 @@ async function testBannerWrites() {
   });
   await run('Banner 修改', () => api('PUT', `/admin/banners/${encodeURIComponent(id)}`, {
     title: `后台检测临时 Banner 已修改 ${RUN_ID}`,
+    cta_text: '去看看',
     enabled: false,
     publish_status: 'draft',
   }));

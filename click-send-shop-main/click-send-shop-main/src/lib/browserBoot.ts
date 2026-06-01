@@ -1,14 +1,12 @@
 import { getChinaBrowserCompatHint, isLikelyLegacyChinaBrowserMode } from "@/utils/chinaBrowser";
+import {
+  installAppVersionRecovery,
+  isChunkLoadFailure,
+  markAppVersionReady,
+  recoverFromAppVersionLoadFailure,
+} from "@/lib/appVersionRecovery";
 
-const CHUNK_RECOVERY_STORAGE_KEY = "app:chunk-load-recovery";
-const CHUNK_RECOVERY_AUTO_RELOAD_WINDOW_MS = 10 * 60 * 1000;
-
-type ChunkRecoveryState = {
-  app?: string;
-  firstAt?: number;
-  lastAt?: number;
-  attempts?: number;
-};
+export { isChunkLoadFailure, markAppVersionReady };
 
 /**
  * 国产浏览器 / 旧 WebView 启动兼容：在应用主包执行前安装 shim，避免首屏脚本抛错导致 React 未挂载。
@@ -35,186 +33,11 @@ export function installBrowserCompatShims(): void {
 export function installChunkLoadRecovery(appName: string): void {
   if (typeof window === "undefined") return;
 
-  const recover = (reason: unknown) => {
-    if (!isChunkLoadFailure(reason)) return false;
-    return recoverFromChunkLoadError(appName);
-  };
-
-  window.addEventListener(
-    "error",
-    (event) => {
-      const target = event.target as HTMLElement | null;
-      const resourceUrl =
-        target instanceof HTMLScriptElement || target instanceof HTMLLinkElement
-          ? target.src || target.href
-          : "";
-      const recovered = recover(event.error || event.message || { src: resourceUrl });
-      if (recovered) event.preventDefault();
-    },
-    true,
-  );
-  window.addEventListener("unhandledrejection", (event) => {
-    if (recover(event.reason)) event.preventDefault();
-  });
-  window.addEventListener("vite:preloadError", (event) => {
-    const preloadEvent = event as Event & { payload?: unknown };
-    if (recover(preloadEvent.payload || preloadEvent)) event.preventDefault();
-  });
+  installAppVersionRecovery(appName);
 }
 
-export function recoverFromChunkLoadError(appName = "app"): boolean {
-  if (typeof window === "undefined") return false;
-
-  try {
-    const now = Date.now();
-    const last = readChunkRecoveryState();
-    const lastFirstAt = typeof last?.firstAt === "number" ? last.firstAt : undefined;
-    const sameRecoveryWindow =
-      typeof lastFirstAt === "number" &&
-      now - lastFirstAt < CHUNK_RECOVERY_AUTO_RELOAD_WINDOW_MS;
-    const attempts = sameRecoveryWindow ? Math.max(0, Number(last?.attempts || 0)) : 0;
-    const firstAt = sameRecoveryWindow && typeof lastFirstAt === "number" ? lastFirstAt : now;
-    const waitForManualRefresh = attempts >= 1;
-
-    writeChunkRecoveryState({
-      app: appName,
-      firstAt,
-      lastAt: now,
-      attempts: attempts + 1,
-    });
-
-    clearChunkRecoveryCaches();
-    showChunkRecoveryNotice(waitForManualRefresh);
-    if (waitForManualRefresh) return true;
-
-    window.setTimeout(forceReloadWithCacheBuster, 300);
-    return true;
-  } catch {
-    showChunkRecoveryNotice(true);
-    return true;
-  }
-}
-
-function readChunkRecoveryState(): ChunkRecoveryState | null {
-  try {
-    const raw = window.sessionStorage.getItem(CHUNK_RECOVERY_STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as ChunkRecoveryState;
-  } catch {
-    return null;
-  }
-}
-
-function writeChunkRecoveryState(state: ChunkRecoveryState): void {
-  try {
-    window.sessionStorage.setItem(CHUNK_RECOVERY_STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // ignore
-  }
-}
-
-function forceReloadWithCacheBuster(): void {
-  try {
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.set("__fresh", String(Date.now()));
-    window.location.replace(nextUrl.toString());
-  } catch {
-    window.location.reload();
-  }
-}
-
-function clearChunkRecoveryCaches(): void {
-  try {
-    if ("caches" in window) {
-      void window.caches.keys().then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => /workbox|precache|vite|pwa|app-shell|chunk/i.test(key))
-            .map((key) => window.caches.delete(key)),
-        ),
-      ).catch(() => undefined);
-    }
-  } catch {
-    // ignore
-  }
-
-  try {
-    if ("serviceWorker" in navigator) {
-      void navigator.serviceWorker
-        .getRegistrations()
-        .then((registrations) => Promise.all(registrations.map((registration) => registration.update())))
-        .catch(() => undefined);
-    }
-  } catch {
-    // ignore
-  }
-}
-
-export function isChunkLoadFailure(reason: unknown): boolean {
-  const message = stringifyError(reason);
-  return /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i.test(
-    message,
-  );
-}
-
-function stringifyError(reason: unknown): string {
-  if (typeof reason === "string") return reason;
-  if (reason instanceof Error) return `${reason.name}: ${reason.message}\n${reason.stack || ""}`;
-  if (reason && typeof reason === "object") {
-    const record = reason as Record<string, unknown>;
-    const target = record.target as Record<string, unknown> | undefined;
-    return [
-      record.name,
-      record.message,
-      record.reason,
-      record.type,
-      record.src,
-      record.href,
-      record.url,
-      record.filename,
-      target?.src,
-      target?.href,
-      record.payload && record.payload !== reason ? stringifyError(record.payload) : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-  }
-  return "";
-}
-
-function showChunkRecoveryNotice(waitForManualRefresh: boolean): void {
-  try {
-    document.getElementById("chunk-load-recovery-notice")?.remove();
-
-    const el = document.createElement("div");
-    el.id = "chunk-load-recovery-notice";
-    el.style.cssText = [
-      "position:fixed",
-      "inset:0",
-      "z-index:99999",
-      "display:flex",
-      "align-items:center",
-      "justify-content:center",
-      "background:rgba(15,23,42,.52)",
-      "backdrop-filter:blur(3px)",
-      "font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif",
-    ].join(";");
-    el.innerHTML = `
-      <div style="max-width:360px;margin:16px;padding:20px;border-radius:18px;background:#fff;color:#111827;text-align:center;box-shadow:0 20px 45px rgba(15,23,42,.24)">
-        <div style="font-size:16px;font-weight:700;margin-bottom:8px">网站版本已更新</div>
-        <div style="font-size:13px;line-height:1.7;color:#4b5563;margin-bottom:16px">
-          ${waitForManualRefresh ? "自动刷新后仍未加载成功，请手动刷新页面。" : "正在刷新页面以加载最新版本。"}
-        </div>
-        <button type="button" style="min-height:40px;border:0;border-radius:999px;background:#f97316;color:#fff;padding:0 18px;font-weight:700;cursor:pointer">
-          立即刷新
-        </button>
-      </div>
-    `;
-    el.querySelector("button")?.addEventListener("click", forceReloadWithCacheBuster);
-    document.body.appendChild(el);
-  } catch {
-    // ignore
-  }
+export function recoverFromChunkLoadError(appName = "app", reason?: unknown): boolean {
+  return recoverFromAppVersionLoadFailure(appName, reason);
 }
 
 function polyfillGlobalThis(): void {

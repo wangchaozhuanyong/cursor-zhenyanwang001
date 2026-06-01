@@ -24,7 +24,7 @@ import {
   DEFAULT_FAVICON_PNG,
   DEFAULT_FAVICON_SVG,
 } from "@/constants/siteBrand";
-import { LegacyCouponRedirect } from "@/routes/adminLegacyRedirects";
+import { LegacyCouponRedirect, LegacyDashboardRedirect } from "@/routes/adminLegacyRedirects";
 import { renderAdminReportRoutes } from "@/routes/adminReportRoutes";
 import {
   AdminLogin, AdminAccount, AdminAccounts, Dashboard,
@@ -197,6 +197,7 @@ export function AdminAppRoutes() {
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<Dashboard />} />
+                  <Route path="dashboard" element={<LegacyDashboardRedirect />} />
                   <Route path="products" element={<AdminProducts />} />
                   <Route path="products/:id" element={<AdminProductForm />} />
                   <Route path="categories" element={<AdminCategories />} />

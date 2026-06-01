@@ -35,6 +35,8 @@ import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 
 type ListTabBase = {
   loading: boolean;
+  error?: boolean;
+  onRetry?: () => void;
   page: number;
   total: number;
   onPageChange: (page: number) => void;
@@ -56,6 +58,8 @@ function inventoryTheadRow(labels: string[], aligns: AdminTableAlign[], L: (zh: 
 export function InventoryAlertsTab({
   alerts,
   loading,
+  error,
+  onRetry,
   page,
   total,
   onPageChange,
@@ -72,6 +76,10 @@ export function InventoryAlertsTab({
       <AnimatedTable
         embedded
         loading={loading}
+        error={error}
+        errorTitle={L("补货预警加载失败")}
+        errorDescription={L("补货预警接口暂时没有返回数据，请检查网络或稍后重试。")}
+        onRetry={onRetry}
         rows={alerts}
         rowKey={(row) => row.id}
         skeletonRows={8}
@@ -117,7 +125,9 @@ export function InventoryAlertsTab({
           </>
         )}
       />
-      <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} />
+      {!error ? (
+        <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} showPageSizeSelect={false} />
+      ) : null}
     </>
   );
 }
@@ -125,6 +135,8 @@ export function InventoryAlertsTab({
 export function InventoryPurchaseOrdersTab({
   purchaseOrders,
   loading,
+  error,
+  onRetry,
   page,
   total,
   onPageChange,
@@ -141,6 +153,10 @@ export function InventoryPurchaseOrdersTab({
       <AnimatedTable
         embedded
         loading={loading}
+        error={error}
+        errorTitle={L("采购单加载失败")}
+        errorDescription={L("采购单接口暂时没有返回数据，请检查网络或稍后重试。")}
+        onRetry={onRetry}
         rows={purchaseOrders}
         rowKey={(row) => row.id}
         skeletonRows={8}
@@ -173,7 +189,9 @@ export function InventoryPurchaseOrdersTab({
           </>
         )}
       />
-      <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} />
+      {!error ? (
+        <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} showPageSizeSelect={false} />
+      ) : null}
     </>
   );
 }
@@ -181,6 +199,8 @@ export function InventoryPurchaseOrdersTab({
 export function InventoryRecordsTab({
   records,
   loading,
+  error,
+  onRetry,
   page,
   total,
   onPageChange,
@@ -197,6 +217,10 @@ export function InventoryRecordsTab({
       <AnimatedTable
         embedded
         loading={loading}
+        error={error}
+        errorTitle={L("库存流水加载失败")}
+        errorDescription={L("库存流水接口暂时没有返回数据，请检查网络或稍后重试。")}
+        onRetry={onRetry}
         rows={records}
         rowKey={(row) => row.id}
         skeletonRows={8}
@@ -226,7 +250,9 @@ export function InventoryRecordsTab({
           </>
         )}
       />
-      <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} />
+      {!error ? (
+        <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} showPageSizeSelect={false} />
+      ) : null}
     </>
   );
 }
@@ -234,6 +260,8 @@ export function InventoryRecordsTab({
 export function InventoryRulesTab({
   rules,
   loading,
+  error,
+  onRetry,
   page,
   total,
   onPageChange,
@@ -254,6 +282,10 @@ export function InventoryRulesTab({
       <AnimatedTable
         embedded
         loading={loading}
+        error={error}
+        errorTitle={L("组装拆包规则加载失败")}
+        errorDescription={L("组装拆包规则接口暂时没有返回数据，请检查网络或稍后重试。")}
+        onRetry={onRetry}
         rows={rules}
         rowKey={(row) => row.id}
         skeletonRows={8}
@@ -314,7 +346,9 @@ export function InventoryRulesTab({
           </>
         )}
       />
-      <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} />
+      {!error ? (
+        <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} showPageSizeSelect={false} />
+      ) : null}
     </>
   );
 }
@@ -322,6 +356,8 @@ export function InventoryRulesTab({
 export function InventoryConversionsTab({
   conversions,
   loading,
+  error,
+  onRetry,
   page,
   total,
   onPageChange,
@@ -338,6 +374,10 @@ export function InventoryConversionsTab({
       <AnimatedTable
         embedded
         loading={loading}
+        error={error}
+        errorTitle={L("组装拆包单据加载失败")}
+        errorDescription={L("组装拆包单据接口暂时没有返回数据，请检查网络或稍后重试。")}
+        onRetry={onRetry}
         rows={conversions}
         rowKey={(row) => row.id}
         skeletonRows={8}
@@ -367,7 +407,9 @@ export function InventoryConversionsTab({
           </>
         )}
       />
-      <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} />
+      {!error ? (
+        <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} showPageSizeSelect={false} />
+      ) : null}
     </>
   );
 }

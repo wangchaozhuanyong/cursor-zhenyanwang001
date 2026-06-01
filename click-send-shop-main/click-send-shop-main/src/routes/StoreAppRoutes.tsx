@@ -219,6 +219,8 @@ function RoutePreloadOnIdle() {
       MemberHome.preload?.();
       Categories.preload?.();
       NewArrivals.preload?.();
+      Search.preload?.();
+      SupportDownload.preload?.();
       Cart.preload?.();
       Profile.preload?.();
       if (isLoggedIn()) Orders.preload?.();

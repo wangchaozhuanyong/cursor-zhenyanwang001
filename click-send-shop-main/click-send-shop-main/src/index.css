@@ -11,7 +11,7 @@
     --store-card-x: 12px;
     --store-card-y: 12px;
     --admin-mobile-page-x: 8px;
-    --admin-chrome-toolbar-h: 2.5rem;
+    --admin-chrome-toolbar-h: 3rem;
     --admin-chrome-tabs-h: 2.25rem;
     --admin-chrome-mobile-nav-h: 3.5rem;
     --admin-chrome-sticky-h: calc(var(--admin-chrome-toolbar-h) + var(--admin-chrome-tabs-h));
@@ -502,6 +502,28 @@
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   }
 
+  .auth-login-banner .login-banner-copy-panel {
+    width: min(66%, 19rem);
+    max-height: calc(100% - 0.75rem);
+    padding: 0.7rem 0.85rem;
+    border-radius: clamp(14px, 4vw, 18px);
+  }
+
+  .auth-login-banner .login-banner-copy-panel::before {
+    top: 0.55rem;
+    bottom: 0.55rem;
+  }
+
+  .auth-login-banner .login-banner-copy-title {
+    font-size: clamp(0.95rem, 4.2vw, 1.15rem);
+    line-height: 1.22;
+  }
+
+  .auth-login-banner .login-banner-copy-desc {
+    font-size: clamp(0.72rem, 3.2vw, 0.82rem);
+    line-height: 1.42;
+  }
+
   @media (max-width: 767px) and (max-height: 720px) {
     .auth-page-shell > main.auth-page-main {
       padding-top: 0.5rem;
@@ -514,6 +536,22 @@
 
     .auth-login-banner > div {
       aspect-ratio: 3.18 / 1 !important;
+    }
+
+    .auth-login-banner .login-banner-copy-panel {
+      width: min(69%, 18rem);
+      padding: 0.55rem 0.75rem;
+    }
+
+    .auth-login-banner .login-banner-copy-title {
+      font-size: 1rem;
+      line-height: 1.18;
+    }
+
+    .auth-login-banner .login-banner-copy-desc {
+      -webkit-line-clamp: 1;
+      font-size: 0.74rem;
+      line-height: 1.32;
     }
 
     .auth-login-heading {
@@ -984,7 +1022,10 @@ html[data-app-scope="store"] body {
 html[data-app-scope="store"] .store-shell {
   isolation: isolate;
   background:
-    linear-gradient(180deg, var(--store-page-top) 0%, var(--store-page-base) 38%, var(--store-page-tint) 100%);
+    linear-gradient(180deg, var(--store-page-top) 0%, var(--store-page-base) 38%, var(--store-page-tint) 100%),
+    linear-gradient(118deg, color-mix(in srgb, var(--theme-primary) 5%, transparent), transparent 38%),
+    linear-gradient(242deg, color-mix(in srgb, var(--theme-accent) 6%, transparent), transparent 42%);
+  transform: translateZ(0);
 }
 
 html[data-app-scope="store"] .store-shell::before {
@@ -995,8 +1036,22 @@ html[data-app-scope="store"] .store-shell::before {
   pointer-events: none;
   background:
     linear-gradient(115deg, var(--store-page-sheen) 0%, transparent 34%),
-    repeating-linear-gradient(135deg, color-mix(in srgb, var(--store-border) 18%, transparent) 0 1px, transparent 1px 22px);
-  opacity: 0.72;
+    linear-gradient(180deg, color-mix(in srgb, white 22%, transparent), transparent 34%, color-mix(in srgb, var(--theme-primary) 3%, transparent)),
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--store-border) 16%, transparent) 0 1px, transparent 1px 24px);
+  opacity: 0.76;
+}
+
+html[data-app-scope="store"] .store-shell::after {
+  content: "";
+  position: fixed;
+  inset: auto 0 0;
+  z-index: -1;
+  height: min(42vh, 28rem);
+  pointer-events: none;
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--theme-primary) 5%, transparent), transparent 74%),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--store-border) 14%, transparent) 0 1px, transparent 1px 34px);
+  opacity: 0.42;
 }
 
 html[data-app-scope="store"] .store-page,
@@ -1004,14 +1059,74 @@ html[data-app-scope="store"] .store-page-shell {
   background: transparent !important;
 }
 
+html[data-app-scope="store"] .store-route-transition {
+  min-height: 1px;
+  transform: translateZ(0);
+  will-change: opacity, transform;
+}
+
+html[data-app-scope="store"] .store-tab-route-transition {
+  min-height: calc(100svh - var(--store-bottom-nav-height, 78px));
+}
+
+@supports (height: 100dvh) {
+  html[data-app-scope="store"] .store-tab-route-transition {
+    min-height: calc(100dvh - var(--store-bottom-nav-height, 78px));
+  }
+}
+
+html.store-view-transitioning {
+  pointer-events: none;
+}
+
+@supports (view-transition-name: root) {
+  @media (prefers-reduced-motion: no-preference) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 260ms;
+      animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+      mix-blend-mode: normal;
+    }
+
+    ::view-transition-old(root) {
+      animation-name: store-view-fade-out;
+    }
+
+    ::view-transition-new(root) {
+      animation-name: store-view-fade-in;
+    }
+  }
+}
+
+@keyframes store-view-fade-out {
+  to {
+    opacity: 0.92;
+    transform: translateY(-3px) scale(0.998);
+  }
+}
+
+@keyframes store-view-fade-in {
+  from {
+    opacity: 0.72;
+    transform: translateY(8px) scale(0.996);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 html[data-app-scope="store"] .store-card,
 html[data-app-scope="store"] .theme-product-card,
 html[data-app-scope="store"] .store-product-card {
   border: 1px solid var(--store-card-border);
   background:
-    linear-gradient(180deg, color-mix(in srgb, white 34%, transparent), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, white 42%, transparent), transparent 44%),
+    linear-gradient(124deg, color-mix(in srgb, var(--theme-primary) 4%, transparent), transparent 36%),
     var(--store-card-bg);
-  box-shadow: var(--store-card-shadow);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 64%, transparent),
+    var(--store-card-shadow);
 }
 
 html[data-app-scope="store"] .theme-product-card,
@@ -1062,21 +1177,34 @@ html[data-app-scope="store"] .store-product-media {
 
 html[data-app-scope="store"] .store-elevated-card {
   border: 1px solid var(--store-card-border);
-  background: var(--store-card-bg);
-  box-shadow: var(--store-card-shadow);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 38%, transparent), transparent 46%),
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-accent) 5%, transparent), transparent 44%),
+    var(--store-card-bg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 66%, transparent),
+    var(--store-card-shadow);
   border-radius: var(--store-panel-radius);
 }
 
 html[data-app-scope="store"] .store-soft-panel {
   border: 1px solid var(--store-border);
-  background: color-mix(in srgb, var(--store-surface) 82%, var(--store-page-base));
-  box-shadow: var(--store-soft-shadow);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 34%, transparent), transparent 52%),
+    color-mix(in srgb, var(--store-surface) 84%, var(--store-page-base));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 58%, transparent),
+    var(--store-soft-shadow);
 }
 
 html[data-app-scope="store"] .store-glass-surface {
   border-color: var(--store-header-border);
-  background: var(--store-header-bg);
-  box-shadow: var(--store-header-shadow);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 44%, transparent), transparent 58%),
+    var(--store-header-bg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 64%, transparent),
+    var(--store-header-shadow);
   backdrop-filter: blur(18px) saturate(1.12);
   -webkit-backdrop-filter: blur(18px) saturate(1.12);
 }
@@ -1297,6 +1425,60 @@ html[data-app-scope="store"] .store-bottom-nav-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+html[data-app-scope="store"] .store-header-brand,
+html[data-app-scope="store"] .store-header-nav-link,
+html[data-app-scope="store"] .store-header-icon-button,
+html[data-app-scope="store"] .store-header-account-button,
+html[data-app-scope="store"] .store-header-login-button,
+html[data-app-scope="store"] .store-bottom-nav-item {
+  transform: translateZ(0);
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+html[data-app-scope="store"] .store-header-icon-button,
+html[data-app-scope="store"] .store-header-account-button {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 58%, transparent),
+    0 10px 22px -18px color-mix(in srgb, var(--theme-primary) 42%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-app-scope="store"] .store-header-brand:hover,
+  html[data-app-scope="store"] .store-header-nav-link:hover,
+  html[data-app-scope="store"] .store-header-icon-button:hover,
+  html[data-app-scope="store"] .store-header-account-button:hover,
+  html[data-app-scope="store"] .store-header-login-button:hover {
+    transform: translateY(-1px) translateZ(0);
+    filter: saturate(1.02);
+  }
+
+  html[data-app-scope="store"] .store-header-icon-button:hover,
+  html[data-app-scope="store"] .store-header-account-button:hover {
+    border-color: color-mix(in srgb, var(--theme-primary) 24%, var(--theme-border));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 66%, transparent),
+      0 14px 28px -20px color-mix(in srgb, var(--theme-primary) 56%, transparent);
+  }
+}
+
+html[data-app-scope="store"] .store-header-brand:active,
+html[data-app-scope="store"] .store-header-nav-link:active,
+html[data-app-scope="store"] .store-header-icon-button:active,
+html[data-app-scope="store"] .store-header-account-button:active,
+html[data-app-scope="store"] .store-header-login-button:active {
+  transform: translateY(1px) scale(0.985) translateZ(0);
+}
+
+html[data-app-scope="store"] .store-bottom-nav-item:active .store-bottom-nav-icon {
+  transform: scale(0.94) translateZ(0);
 }
 
 html[data-app-scope="store"] .store-home-main {
@@ -2163,6 +2345,308 @@ html[data-app-scope="store"][data-theme-skin-id="default_life_green"] .store-cou
   --coupon-template-paper: #f4fbf6;
 }
 
+html[data-app-scope="store"] .store-coupon-card--template {
+  --coupon-ticket-red: #b71917;
+  --coupon-ticket-red-dark: #760f0d;
+  --coupon-ticket-red-soft: #dc2e22;
+  --coupon-ticket-gold: #f8d887;
+  --coupon-ticket-gold-bright: #fff1b8;
+  --coupon-ticket-ink: #7a2114;
+  --coupon-ticket-paper: #fff4dc;
+  --coupon-ticket-paper-deep: #f7dfb1;
+  --coupon-template-a: var(--coupon-ticket-red);
+  --coupon-template-b: var(--coupon-ticket-gold);
+  --coupon-template-c: #c58a32;
+  --coupon-template-paper: var(--coupon-ticket-paper);
+  min-height: 7.15rem;
+  border-width: 1px;
+  border-color: color-mix(in srgb, var(--coupon-ticket-gold) 76%, var(--coupon-ticket-red));
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 1px 50%, color-mix(in srgb, var(--store-page-base) 86%, white) 0 10px, transparent 10.5px),
+    radial-gradient(circle at calc(100% - 1px) 50%, color-mix(in srgb, var(--store-page-base) 86%, white) 0 10px, transparent 10.5px),
+    linear-gradient(90deg, var(--coupon-ticket-red-dark) 0%, var(--coupon-ticket-red) 23%, var(--coupon-ticket-paper) 23%, var(--coupon-ticket-paper) calc(100% - 5.35rem), var(--coupon-ticket-red) calc(100% - 5.35rem), var(--coupon-ticket-red-dark) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 48%, transparent),
+    inset 0 0 0 2px color-mix(in srgb, var(--coupon-ticket-gold) 46%, transparent),
+    0 18px 44px -30px color-mix(in srgb, var(--coupon-ticket-red) 72%, transparent);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="home"] {
+  grid-template-columns: minmax(4.9rem, 28%) minmax(0, 1fr) minmax(2.9rem, 3.4rem);
+  min-height: 6.95rem;
+  border-radius: 18px;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="compact"] {
+  grid-template-columns: minmax(6.1rem, 28%) minmax(0, 1fr) minmax(4.2rem, 4.9rem);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="default"] {
+  grid-template-columns: minmax(6.6rem, 29%) minmax(0, 1fr) minmax(4.4rem, 5.2rem);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="newcomer"],
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="threshold"],
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="timer"],
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="soft"] {
+  --coupon-template-a: var(--coupon-ticket-red);
+  --coupon-template-b: var(--coupon-ticket-gold);
+  --coupon-template-c: #c58a32;
+  --coupon-template-paper: var(--coupon-ticket-paper);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="timer"] {
+  --coupon-ticket-red: #a80f17;
+  --coupon-ticket-red-dark: #65090d;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-template="soft"] {
+  --coupon-ticket-paper: #fff8e9;
+  --coupon-ticket-paper-deep: #ecd49f;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__template-sheen {
+  inset: 0;
+  background:
+    linear-gradient(102deg, transparent 0%, color-mix(in srgb, white 26%, transparent) 43%, transparent 60%),
+    radial-gradient(circle at 17% 18%, color-mix(in srgb, var(--coupon-ticket-gold-bright) 38%, transparent) 0 1px, transparent 2px),
+    radial-gradient(circle at 83% 21%, color-mix(in srgb, var(--coupon-ticket-gold) 30%, transparent) 0 1px, transparent 2px);
+  opacity: 0.38;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__template-fiber {
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 12% 80%, color-mix(in srgb, var(--coupon-ticket-gold) 18%, transparent) 0 14%, transparent 30%),
+    radial-gradient(ellipse at 78% 82%, color-mix(in srgb, var(--coupon-ticket-gold) 18%, transparent) 0 12%, transparent 28%),
+    repeating-radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--coupon-ticket-red) 7%, transparent) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(0deg, color-mix(in srgb, white 9%, transparent) 0 1px, transparent 1px 7px);
+  opacity: 0.36;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__template-edge {
+  width: 20px;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--store-page-base) 82%, white) 0 7px, transparent 7.5px);
+  background-size: 20px 30px;
+  opacity: 0.78;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__template-edge--left {
+  left: -10px;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__template-edge--right {
+  right: -10px;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__value-pane {
+  position: relative;
+  align-self: stretch;
+  min-height: 100%;
+  overflow: hidden;
+  border-radius: 16px 8px 8px 16px;
+  border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold) 78%, white);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--coupon-ticket-red-soft) 72%, var(--coupon-ticket-red)), var(--coupon-ticket-red-dark)),
+    var(--coupon-ticket-red) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 22%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--coupon-ticket-red-dark) 54%, transparent),
+    0 12px 24px -18px color-mix(in srgb, var(--coupon-ticket-red-dark) 82%, transparent);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__value-pane::before {
+  content: "";
+  position: absolute;
+  inset: 8px 7px;
+  border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold-bright) 82%, transparent);
+  border-radius: 13px 6px 6px 13px;
+  pointer-events: none;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__value-pane::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 82% 30%, color-mix(in srgb, white 48%, transparent) 0 1px, transparent 2px),
+    repeating-radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--coupon-ticket-gold) 13%, transparent) 0 1px, transparent 1px 7px);
+  opacity: 0.5;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__value-pane p {
+  position: relative;
+  z-index: 1;
+  color: var(--coupon-ticket-gold-bright) !important;
+  text-shadow:
+    0 1px 0 color-mix(in srgb, var(--coupon-ticket-red-dark) 72%, transparent),
+    0 0 10px color-mix(in srgb, var(--coupon-ticket-gold) 34%, transparent);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__value-pane p > span:first-child {
+  color: var(--coupon-ticket-gold-bright);
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-amount-home {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.85rem, 8vw, 2.45rem);
+  font-weight: 900;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-amount-list {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.05rem, 5.2vw, 2.75rem);
+  font-weight: 900;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane {
+  position: relative;
+  align-self: stretch;
+  overflow: hidden;
+  margin-block: 0.12rem;
+  color: var(--coupon-ticket-ink);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 60%, transparent), transparent 48%),
+    radial-gradient(ellipse at 80% 88%, color-mix(in srgb, var(--coupon-ticket-gold) 22%, transparent), transparent 34%),
+    linear-gradient(180deg, var(--coupon-ticket-paper), color-mix(in srgb, var(--coupon-ticket-paper-deep) 42%, var(--coupon-ticket-paper)));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--coupon-ticket-gold) 24%, transparent);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane::before {
+  content: "";
+  position: absolute;
+  inset: 0.46rem 0.55rem;
+  border-top: 1px solid color-mix(in srgb, var(--coupon-ticket-gold) 42%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--coupon-ticket-gold) 32%, transparent);
+  pointer-events: none;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--coupon-ticket-gold) 36%, transparent) 0 1.5px, transparent 2px),
+    radial-gradient(ellipse at 88% 82%, color-mix(in srgb, var(--coupon-ticket-gold) 18%, transparent) 0 16%, transparent 33%),
+    repeating-radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--coupon-ticket-gold) 9%, transparent) 0 1px, transparent 1px 8px);
+  opacity: 0.76;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane > div,
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane .coupon-card-column-rule {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane > div > span {
+  border-color: color-mix(in srgb, var(--coupon-ticket-gold) 62%, var(--coupon-ticket-red));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--coupon-ticket-red-soft) 76%, var(--coupon-ticket-red)), var(--coupon-ticket-red-dark));
+  color: var(--coupon-ticket-gold-bright);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 28%, transparent),
+    0 4px 10px -8px var(--coupon-ticket-red-dark);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane > div > span svg {
+  color: var(--coupon-ticket-gold-bright);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane p {
+  color: var(--coupon-ticket-ink);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane .store-card-title {
+  color: color-mix(in srgb, var(--coupon-ticket-red-dark) 86%, var(--coupon-ticket-ink));
+  font-weight: 900;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .theme-coupon-card-muted {
+  color: color-mix(in srgb, var(--coupon-ticket-ink) 82%, transparent);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .coupon-card-column-rule,
+html[data-app-scope="store"] .store-coupon-card--template .coupon-card-column-rule--themed {
+  width: 10px;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--coupon-ticket-red-dark) 52%, var(--coupon-ticket-gold)) 0 2px, transparent 2.5px)
+    center top / 10px 12px repeat-y;
+  opacity: 0.72;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-pane {
+  align-self: stretch;
+  padding-left: 0.34rem;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-button[data-coupon-action-button] {
+  min-height: 100%;
+  border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold-bright) 86%, var(--coupon-ticket-red));
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--coupon-ticket-red-soft) 72%, var(--coupon-ticket-red)), var(--coupon-ticket-red-dark)) !important;
+  color: var(--coupon-ticket-gold-bright);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 18%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--coupon-ticket-red-dark) 54%, transparent),
+    0 14px 26px -18px color-mix(in srgb, var(--coupon-ticket-red-dark) 82%, transparent);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-button[data-coupon-action-button] > span {
+  gap: 0.08rem;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-button[data-coupon-action-button] span span {
+  color: var(--coupon-ticket-gold-bright);
+  font-size: clamp(0.78rem, 2.4vw, 1rem);
+  font-weight: 900;
+  line-height: 1.06;
+  text-shadow:
+    0 1px 0 color-mix(in srgb, var(--coupon-ticket-red-dark) 78%, transparent),
+    0 0 8px color-mix(in srgb, var(--coupon-ticket-gold) 34%, transparent);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-pane > span:not([aria-hidden]) {
+  border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold) 46%, transparent);
+  background: color-mix(in srgb, var(--coupon-ticket-paper) 82%, white);
+  color: var(--coupon-ticket-red-dark);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__state-rail {
+  left: 1.35rem;
+  right: 1.35rem;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--coupon-ticket-gold), transparent);
+  opacity: 0.82;
+}
+
+@media (max-width: 420px) {
+  html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="default"],
+  html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="compact"] {
+    grid-template-columns: minmax(5.65rem, 30%) minmax(0, 1fr) minmax(3.65rem, 4.35rem);
+  }
+
+  html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane {
+    padding-left: 0.55rem;
+    padding-right: 0.5rem;
+  }
+
+  html[data-app-scope="store"] .store-coupon-card--template .store-coupon-amount-list {
+    font-size: clamp(1.85rem, 9vw, 2.3rem);
+  }
+
+  html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-button[data-coupon-action-button] span span {
+    font-size: 0.78rem;
+  }
+}
+
 html[data-app-scope="store"][data-theme-skin-id="default_life_green"] .store-bottom-nav-inner {
   border-color: color-mix(in srgb, var(--theme-primary) 18%, var(--store-bottom-nav-border));
   background:
@@ -2294,8 +2778,140 @@ html[data-app-scope="store"][data-theme-scene="holiday"] .store-hero-copy-panel 
       135deg,
       color-mix(in srgb, var(--store-hero-text-surface) 60%, transparent),
       color-mix(in srgb, var(--theme-secondary) 18%, transparent)
-    );
+  );
   box-shadow: 0 18px 42px -32px color-mix(in srgb, var(--theme-primary) 58%, transparent);
+}
+
+html[data-app-scope="store"] .store-hero-story-layer,
+.theme-preview-store .store-hero-story-layer {
+  width: min(62%, 34rem);
+  overflow: hidden;
+  border-radius: inherit;
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 58%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 58%, transparent 100%);
+}
+
+html[data-app-scope="store"] .store-hero-story-image,
+.theme-preview-store .store-hero-story-image {
+  position: absolute;
+  inset: -7%;
+  height: 114%;
+  width: 114%;
+  object-fit: cover;
+  object-position: 42% center;
+  opacity: 0.5;
+  filter: blur(6px) saturate(1.08) contrast(1.05);
+  transform: scale(1.04);
+}
+
+html[data-app-scope="store"] .store-hero-story-tint,
+.theme-preview-store .store-hero-story-tint {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--store-hero-text-surface) 46%, transparent), color-mix(in srgb, var(--store-hero-text-surface) 18%, transparent) 58%, transparent),
+    linear-gradient(180deg, color-mix(in srgb, white 16%, transparent), color-mix(in srgb, var(--theme-primary) 8%, transparent));
+}
+
+html[data-app-scope="store"] .store-hero-text-wash,
+.theme-preview-store .store-hero-text-wash {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--store-hero-text-surface) 28%, transparent) 0%,
+      color-mix(in srgb, var(--store-hero-text-surface) 16%, transparent) 30%,
+      color-mix(in srgb, var(--store-hero-text-surface) 5%, transparent) 56%,
+      transparent 82%
+    ),
+    linear-gradient(0deg, color-mix(in srgb, var(--store-page-base) 12%, transparent), transparent 48%);
+}
+
+html[data-app-scope="store"] .store-hero-copy-panel,
+.theme-preview-store .store-hero-copy-panel {
+  isolation: isolate;
+  width: min(50%, 24rem);
+  border-color: color-mix(in srgb, white 50%, var(--store-border));
+  border-radius: clamp(14px, 3vw, 20px);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--store-hero-text-surface) 54%, transparent), color-mix(in srgb, white 24%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, white 18%, transparent), color-mix(in srgb, var(--theme-primary) 5%, transparent));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
+    0 18px 46px -34px rgba(17, 24, 39, 0.4);
+  backdrop-filter: blur(7px) saturate(1.08);
+  -webkit-backdrop-filter: blur(7px) saturate(1.08);
+}
+
+html[data-app-scope="store"] .store-hero-copy-panel::before,
+.theme-preview-store .store-hero-copy-panel::before {
+  width: 2px;
+  opacity: 0.62;
+  background: linear-gradient(180deg, var(--theme-primary), var(--theme-accent));
+  box-shadow: 0 0 0 1px color-mix(in srgb, white 42%, transparent);
+}
+
+html[data-app-scope="store"] .store-hero-copy-panel::after,
+.theme-preview-store .store-hero-copy-panel::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, white 22%, transparent), transparent 46%),
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 5%, transparent), transparent 64%);
+}
+
+html[data-app-scope="store"] .store-hero-copy-cta,
+.theme-preview-store .store-hero-copy-cta {
+  max-width: 100%;
+  min-height: 2.25rem;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, white);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 16%, transparent), transparent),
+    var(--theme-primary);
+  color: var(--theme-primary-foreground);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 24%, transparent),
+    0 12px 26px -18px color-mix(in srgb, var(--theme-primary) 70%, transparent);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+html[data-app-scope="store"] .store-hero-copy-cta:hover,
+.theme-preview-store .store-hero-copy-cta:hover {
+  filter: saturate(1.04) brightness(1.02);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 28%, transparent),
+    0 16px 30px -20px color-mix(in srgb, var(--theme-primary) 76%, transparent);
+}
+
+html[data-app-scope="store"] .store-hero-copy-cta span,
+.theme-preview-store .store-hero-copy-cta span {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"] .store-hero-story-layer,
+  .theme-preview-store .store-hero-story-layer {
+    width: min(84%, 24rem);
+    -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 64%, transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0%, #000 64%, transparent 100%);
+  }
+
+  html[data-app-scope="store"] .store-hero-copy-panel,
+  .theme-preview-store .store-hero-copy-panel {
+    width: min(76%, 18.5rem);
+    padding: 0.8rem 0.85rem;
+    backdrop-filter: blur(6px) saturate(1.04);
+    -webkit-backdrop-filter: blur(6px) saturate(1.04);
+  }
+
+  html[data-app-scope="store"] .store-hero-copy-cta,
+  .theme-preview-store .store-hero-copy-cta {
+    min-height: 2rem;
+  }
 }
 
 html[data-app-scope="store"][data-theme-scene="holiday"] .store-icon-tile {
@@ -2499,10 +3115,14 @@ html[data-app-scope="store"] .store-hero-loading-dots > span:first-child {
   .admin-mobile-main {
     min-width: 0;
     overflow-x: hidden;
-    max-height: calc(
-      100dvh - var(--admin-chrome-sticky-h) - var(--admin-chrome-mobile-nav-h) - env(safe-area-inset-top, 0px)
+    height: calc(
+      100dvh - var(--admin-chrome-sticky-h) - var(--admin-chrome-mobile-nav-h) - env(safe-area-inset-top, 0px) - 2px
     );
-    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+    max-height: calc(
+      100dvh - var(--admin-chrome-sticky-h) - var(--admin-chrome-mobile-nav-h) - env(safe-area-inset-top, 0px) - 2px
+    );
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
 
   [data-admin-shell] .admin-chrome {
@@ -2524,6 +3144,7 @@ html[data-app-scope="store"] .store-hero-loading-dots > span:first-child {
   }
   @media (min-width: 1024px) {
     .admin-mobile-main {
+      height: calc(100dvh - var(--admin-chrome-sticky-h) - env(safe-area-inset-top, 0px));
       max-height: calc(100dvh - var(--admin-chrome-sticky-h) - env(safe-area-inset-top, 0px));
       padding-bottom: 0;
     }
@@ -2801,6 +3422,165 @@ html[data-app-scope="store"] .store-hero-loading-dots > span:first-child {
   [data-admin-shell] .admin-data-grid > .admin-table-align-center.flex,
   [data-admin-shell] .admin-data-grid > .admin-table-align-center .inline-flex {
     justify-content: center;
+  }
+
+  /* 全站体验治理：统一基础交互状态，避免每个页面各写一套焦点、禁用和按压反馈。 */
+  html[data-app-scope] :where(button, a, input, select, textarea, [role="button"]) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html[data-app-scope] :where(button, a, input, select, textarea, [role="button"]):focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--theme-bg) 92%, transparent),
+      0 0 0 5px color-mix(in srgb, var(--theme-primary) 34%, transparent);
+  }
+
+  html[data-app-scope] :where(button, [role="button"]):disabled,
+  html[data-app-scope] :where(button, [role="button"])[aria-disabled="true"] {
+    cursor: not-allowed;
+    filter: grayscale(0.08);
+    opacity: 0.55;
+  }
+
+  html[data-app-scope] :where(input, select, textarea) {
+    min-height: 42px;
+    border-color: color-mix(in srgb, var(--theme-border) 92%, var(--theme-text) 8%);
+    transition:
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      background-color 180ms ease;
+  }
+
+  html[data-app-scope] :where(input, select, textarea)::placeholder {
+    color: color-mix(in srgb, var(--theme-text-muted) 82%, transparent);
+  }
+
+  html[data-app-scope] :where(input, select, textarea):disabled {
+    cursor: not-allowed;
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--theme-bg) 82%, var(--theme-surface)),
+        color-mix(in srgb, var(--theme-surface) 88%, var(--theme-bg))
+      );
+    opacity: 0.68;
+  }
+
+  html[data-app-scope="store"] :where(.store-card, .theme-product-card, .store-product-card, .store-soft-panel, .store-elevated-card) {
+    text-wrap: pretty;
+  }
+
+  html[data-app-scope="store"] .store-card :where(button, a),
+  html[data-app-scope="store"] .theme-product-card :where(button, a),
+  html[data-app-scope="store"] .store-product-card :where(button, a) {
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease,
+      color 180ms ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    html[data-app-scope="store"] .store-card :where(button, a):hover,
+    html[data-app-scope="store"] .theme-product-card :where(button, a):hover,
+    html[data-app-scope="store"] .store-product-card :where(button, a):hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  html[data-app-scope="store"] .store-card :where(button, a):active,
+  html[data-app-scope="store"] .theme-product-card :where(button, a):active,
+  html[data-app-scope="store"] .store-product-card :where(button, a):active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  html[data-app-scope="store"] .store-cart-page .store-cart-list {
+    box-shadow:
+      0 22px 52px -42px color-mix(in srgb, var(--theme-primary) 34%, transparent),
+      inset 0 1px 0 color-mix(in srgb, #fff 72%, transparent);
+  }
+
+  html[data-app-scope="admin"] {
+    --admin-surface: color-mix(in srgb, var(--theme-surface) 94%, var(--theme-bg));
+    --admin-surface-strong: color-mix(in srgb, var(--theme-surface) 98%, var(--theme-bg));
+    --admin-border-soft: color-mix(in srgb, var(--theme-border) 78%, transparent);
+  }
+
+  [data-admin-shell] {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--theme-bg) 96%, #fff), var(--theme-bg) 42%),
+      repeating-linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 5%, transparent) 0 1px, transparent 1px 18px);
+  }
+
+  [data-admin-shell] :where(.bg-card, .admin-native-table-card, .admin-table-mobile-card) {
+    border-color: var(--admin-border-soft);
+    background-color: var(--admin-surface-strong);
+  }
+
+  [data-admin-shell] :where(input, select, textarea) {
+    border-color: var(--admin-border-soft);
+    background-color: color-mix(in srgb, var(--theme-surface) 96%, var(--theme-bg));
+  }
+
+  [data-admin-shell] :where(input, select, textarea):focus-visible {
+    border-color: color-mix(in srgb, var(--theme-primary) 72%, var(--theme-border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 17%, transparent);
+  }
+
+  [data-admin-shell] .admin-table-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--theme-primary) 28%, var(--theme-border)) transparent;
+  }
+
+  [data-admin-shell] .admin-table-scroll::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  [data-admin-shell] .admin-table-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  [data-admin-shell] .admin-table-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-primary) 28%, var(--theme-border));
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table tbody tr {
+    transition:
+      background-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table tbody tr:hover {
+    background-color: color-mix(in srgb, var(--theme-primary) 4%, transparent);
+  }
+
+  @media (max-width: 767px) {
+    html[data-app-scope="store"] .store-page-shell,
+    html[data-app-scope="admin"] [data-admin-shell] {
+      font-size: 15px;
+    }
+
+    html[data-app-scope] :where(button, a, input, select, textarea, [role="button"]) {
+      min-height: 40px;
+    }
+
+    html[data-app-scope] :where([role="dialog"], [data-radix-dialog-content]) {
+      max-width: calc(100vw - 1rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html[data-app-scope] *,
+    html[data-app-scope] *::before,
+    html[data-app-scope] *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 

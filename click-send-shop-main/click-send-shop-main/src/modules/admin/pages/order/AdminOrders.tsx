@@ -124,6 +124,8 @@ export default function AdminOrders() {
     applyQuickStatusFilter,
     orders,
     loading,
+    ordersError,
+    refetchOrders,
     total,
     stats,
     ordersEmptyGuide,
@@ -518,7 +520,7 @@ export default function AdminOrders() {
   };
 
   return (
-    <PermissionGate permission="order.view">
+    <PermissionGate permission="order.view" mode="page">
       <AdminPageShell
         className="min-w-0"
         hint={<Tx>查看与处理订单，支持状态筛选、批量导出及发货操作。</Tx>}
@@ -650,6 +652,10 @@ export default function AdminOrders() {
 
       <AnimatedTable
         loading={loading}
+        error={ordersError}
+        errorTitle={tText("订单加载失败")}
+        errorDescription={tText("订单接口暂时没有返回数据，请检查网络或稍后重试。")}
+        onRetry={() => { void refetchOrders(); }}
         rows={orders}
         rowKey={(o) => o.id}
         skeletonRows={8}

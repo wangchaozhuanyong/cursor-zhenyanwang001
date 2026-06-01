@@ -18,7 +18,8 @@
 
 SEO 关键页（`/product/:id`、`/categories`）需要按 Nginx 示例反代到 Node，由后端读取 Vite `dist/index.html` 并注入公开商品/分类与 `site_settings` SEO 字段；不要让这些路径直接 `try_files` 回静态 `index.html`。
 
-历史兼容（仍指向旧 `/www/wwwroot/...` 未改环境变量时）：
+历史兼容入口已删除：
 
-- `deploy/baota-simple-deploy.sh` → `production-deploy.sh`
-- `deploy/baota-verify-deploy.sh` → `verify-post-deploy.sh`
+- 不再保留 `deploy/baota-simple-deploy.sh`、`deploy/baota-verify-deploy.sh`、`deploy/wwwroot-gc-api-deploy.sh`。
+- 部署统一使用 `deploy/production-deploy.sh` 或 `deploy/ci-deploy.sh`。
+- 部署后验证统一使用 `deploy/verify-post-deploy.sh` 或 `deploy/verify-pm2.sh`。

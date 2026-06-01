@@ -91,9 +91,9 @@ export function getCouponCardPresentation(
     : "coupon-card-column-rule";
 
   const gridByLayout: Record<CouponCardLayout, string> = {
-    home: "grid-cols-[minmax(4.25rem,23%)_minmax(0,1fr)_minmax(2.5rem,3rem)]",
-    compact: "grid-cols-[minmax(4.75rem,24%)_minmax(0,1fr)_minmax(4rem,4.5rem)]",
-    default: "grid-cols-[minmax(5.5rem,26%)_minmax(0,1fr)_minmax(4.25rem,4.75rem)]",
+    home: "grid-cols-[minmax(4.9rem,28%)_minmax(0,1fr)_minmax(2.9rem,3.4rem)]",
+    compact: "grid-cols-[minmax(6.1rem,28%)_minmax(0,1fr)_minmax(4.2rem,4.9rem)]",
+    default: "grid-cols-[minmax(6.6rem,29%)_minmax(0,1fr)_minmax(4.4rem,5.2rem)]",
   };
 
   const amountSizeByLayout: Record<CouponCardLayout, string> = {
@@ -103,7 +103,7 @@ export function getCouponCardPresentation(
   };
 
   /** 操作区统一竖排一字一行（如「使」「用」），贴右侧窄条 */
-  const actionLayout: CouponCardPresentation["actionLayout"] = layout === "home" ? "vertical" : "horizontal";
+  const actionLayout: CouponCardPresentation["actionLayout"] = "vertical";
 
   const actionButtonClass = useThemedMarketingShell
     ? layout === "home"

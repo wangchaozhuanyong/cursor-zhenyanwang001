@@ -15,7 +15,7 @@ export const BindWechatPhone = lazy(() => import("@/modules/public/pages/auth/Bi
 export const Categories = lazyWithPreload(() => import("@/modules/public/pages/product/Categories"));
 export const ProductDetail = lazy(() => import("@/modules/public/pages/product/ProductDetail"));
 export const NewArrivals = lazyWithPreload(() => import("@/modules/public/pages/product/NewArrivals"));
-export const Search = lazy(() => import("@/modules/public/pages/product/Search"));
+export const Search = lazyWithPreload(() => import("@/modules/public/pages/product/Search"));
 
 export const Cart = lazyWithPreload(() => import("@/modules/public/pages/cart/Cart"));
 
@@ -41,7 +41,7 @@ export const Invite = lazy(() => import("@/modules/public/pages/user/Invite"));
 export const Help = lazy(() => import("@/modules/public/pages/content/Help"));
 export const About = lazy(() => import("@/modules/public/pages/content/About"));
 export const ContentCmsPage = lazy(() => import("@/modules/public/pages/content/ContentCmsPage"));
-export const SupportDownload = lazy(() => import("@/modules/public/pages/content/SupportDownload"));
+export const SupportDownload = lazyWithPreload(() => import("@/modules/public/pages/content/SupportDownload"));
 export const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
 
 export const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));

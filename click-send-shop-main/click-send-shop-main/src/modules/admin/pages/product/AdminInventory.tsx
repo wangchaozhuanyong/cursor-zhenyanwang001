@@ -314,7 +314,7 @@ export default function AdminInventory({
   );
 
   return (
-    <PermissionGate permission="inventory.manage">
+    <PermissionGate permission="inventory.manage" mode="page">
       <AdminPageShell
         hint={pageHint || L("按 SKU 管理库存、流水、组装拆包规则和转换单据。")}
         toolbar={(
@@ -408,7 +408,9 @@ export default function AdminInventory({
         {tab === "skus" ? (
           <InventorySkusTab
             skus={skus}
-            loading={skusQuery.isLoading}
+            loading={skusQuery.isLoading && !skusQuery.data}
+            error={skusQuery.isError && !skusQuery.data}
+            onRetry={() => { void skusQuery.refetch(); }}
             page={page}
             onPageChange={setPage}
             total={skusQuery.data?.total || 0}
@@ -455,7 +457,9 @@ export default function AdminInventory({
         {tab === "alerts" ? (
           <InventoryAlertsTab
             alerts={alerts}
-            loading={alertsQuery.isLoading}
+            loading={alertsQuery.isLoading && !alertsQuery.data}
+            error={alertsQuery.isError && !alertsQuery.data}
+            onRetry={() => { void alertsQuery.refetch(); }}
             page={alertsPage}
             total={alertsQuery.data?.total || 0}
             onPageChange={setAlertsPage}
@@ -468,7 +472,9 @@ export default function AdminInventory({
         {tab === "purchaseOrders" ? (
           <InventoryPurchaseOrdersTab
             purchaseOrders={purchaseOrders}
-            loading={purchaseOrdersQuery.isLoading}
+            loading={purchaseOrdersQuery.isLoading && !purchaseOrdersQuery.data}
+            error={purchaseOrdersQuery.isError && !purchaseOrdersQuery.data}
+            onRetry={() => { void purchaseOrdersQuery.refetch(); }}
             page={purchaseOrdersPage}
             total={purchaseOrdersQuery.data?.total || 0}
             onPageChange={setPurchaseOrdersPage}
@@ -481,7 +487,9 @@ export default function AdminInventory({
         {tab === "records" ? (
           <InventoryRecordsTab
             records={records}
-            loading={recordsQuery.isLoading}
+            loading={recordsQuery.isLoading && !recordsQuery.data}
+            error={recordsQuery.isError && !recordsQuery.data}
+            onRetry={() => { void recordsQuery.refetch(); }}
             page={recordsPage}
             total={recordsQuery.data?.total || 0}
             onPageChange={setRecordsPage}
@@ -494,7 +502,9 @@ export default function AdminInventory({
         {tab === "rules" ? (
           <InventoryRulesTab
             rules={rules}
-            loading={rulesQuery.isLoading}
+            loading={rulesQuery.isLoading && !rulesQuery.data}
+            error={rulesQuery.isError && !rulesQuery.data}
+            onRetry={() => { void rulesQuery.refetch(); }}
             page={rulesPage}
             total={rulesQuery.data?.total || 0}
             onPageChange={setRulesPage}
@@ -509,7 +519,9 @@ export default function AdminInventory({
         {tab === "conversions" ? (
           <InventoryConversionsTab
             conversions={conversions}
-            loading={conversionsQuery.isLoading}
+            loading={conversionsQuery.isLoading && !conversionsQuery.data}
+            error={conversionsQuery.isError && !conversionsQuery.data}
+            onRetry={() => { void conversionsQuery.refetch(); }}
             page={conversionsPage}
             total={conversionsQuery.data?.total || 0}
             onPageChange={setConversionsPage}

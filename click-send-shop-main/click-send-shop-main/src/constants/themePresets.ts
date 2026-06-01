@@ -3,6 +3,7 @@ import { STOREFRONT_DESIGN_LOCKS } from "@/constants/themeDesignLocks";
 
 export const DEFAULT_SKIN_ID = "default_life_green";
 export const FESTIVAL_SKIN_ID = "festive_ruby_gold";
+export const PREMIUM_IVORY_JADE_SKIN_ID = "premium_ivory_jade";
 
 export const DEFAULT_LIFE_GREEN_CONFIG: ThemeConfig = {
   skinName: "日常购物皮肤",
@@ -38,6 +39,23 @@ export const FESTIVAL_RUBY_GOLD_CONFIG: ThemeConfig = {
   ...STOREFRONT_DESIGN_LOCKS,
 };
 
+export const PREMIUM_IVORY_JADE_CONFIG: ThemeConfig = {
+  skinName: "象牙翡翠高端皮肤",
+  bgColor: "#F7F4EC",
+  surfaceColor: "#FFFFFF",
+  primaryColor: "#0F5F4C",
+  secondaryColor: "#EAF1E9",
+  accentColor: "#C6A15B",
+  priceColor: "#D84B32",
+  textColor: "#1F2723",
+  mutedTextColor: "#6F7B73",
+  borderColor: "#E3DDD0",
+  successColor: "#168A62",
+  warningColor: "#C0902E",
+  dangerColor: "#C74332",
+  ...STOREFRONT_DESIGN_LOCKS,
+};
+
 export const DAILY_COMMERCE_SKIN: ThemeSkin = {
   id: DEFAULT_SKIN_ID,
   name: "日常购物皮肤",
@@ -54,8 +72,17 @@ export const FESTIVAL_RUBY_GOLD_SKIN: ThemeSkin = {
   config: FESTIVAL_RUBY_GOLD_CONFIG,
 };
 
+export const PREMIUM_IVORY_JADE_SKIN: ThemeSkin = {
+  id: PREMIUM_IVORY_JADE_SKIN_ID,
+  name: "象牙翡翠高端皮肤",
+  description:
+    "适合大马通日常商城长期使用的高端浅色皮肤：象牙白底、翡翠绿品牌主色、香槟金细节和珊瑚朱砂价格色，整体干净、精致、有质感但不压暗图片。",
+  sceneTag: "premium",
+  config: PREMIUM_IVORY_JADE_CONFIG,
+};
+
 export const FALLBACK_THEME_SKIN = DAILY_COMMERCE_SKIN;
-export const THEME_PRESETS: ThemeSkin[] = [DAILY_COMMERCE_SKIN, FESTIVAL_RUBY_GOLD_SKIN];
+export const THEME_PRESETS: ThemeSkin[] = [DAILY_COMMERCE_SKIN, PREMIUM_IVORY_JADE_SKIN, FESTIVAL_RUBY_GOLD_SKIN];
 
 export const DEFAULT_HOLIDAY_SKIN_ID = FESTIVAL_SKIN_ID;
 

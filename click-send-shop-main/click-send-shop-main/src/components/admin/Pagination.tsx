@@ -7,6 +7,7 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   pageSizeOptions?: number[];
+  showPageSizeSelect?: boolean;
 }
 
 export default function Pagination({
@@ -16,11 +17,15 @@ export default function Pagination({
   onPageChange,
   onPageSizeChange,
   pageSizeOptions = [5, 10, 20, 50],
+  showPageSizeSelect = true,
 }: PaginationProps) {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const safeP = Math.min(page, totalPages);
-  const start = (safeP - 1) * pageSize + 1;
-  const end = Math.min(safeP * pageSize, total);
+  const safeTotal = Math.max(0, total);
+  const safePageSize = Math.max(1, pageSize);
+  const totalPages = Math.max(1, Math.ceil(safeTotal / safePageSize));
+  const safeP = Math.min(Math.max(1, page), totalPages);
+  const hasRows = safeTotal > 0;
+  const start = hasRows ? (safeP - 1) * safePageSize + 1 : 0;
+  const end = hasRows ? Math.min(safeP * safePageSize, safeTotal) : 0;
 
   // Generate visible page numbers
   const pages: (number | "...")[] = [];
@@ -37,19 +42,24 @@ export default function Pagination({
   return (
     <div className="flex flex-col gap-3 border-t border-border px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground sm:text-sm">
-        <span>共 {total} 条</span>
+        <span>共 {safeTotal} 条</span>
         <span className="hidden text-border sm:inline">|</span>
-        <span>第 {start}-{end} 条</span>
-        <span className="text-border">|</span>
-        <select
-          value={pageSize}
-          onChange={(e) => { onPageSizeChange(Number(e.target.value)); onPageChange(1); }}
-          className="touch-manipulation min-h-[40px] rounded-lg border border-border bg-transparent px-2 py-1.5 text-sm text-foreground outline-none"
-        >
-          {pageSizeOptions.map((s) => (
-            <option key={s} value={s}>{s} 条/页</option>
-          ))}
-        </select>
+        <span>{hasRows ? `第 ${start}-${end} 条` : "暂无数据"}</span>
+        {showPageSizeSelect ? (
+          <>
+            <span className="text-border">|</span>
+            <select
+              value={pageSize}
+              onChange={(e) => { onPageSizeChange(Number(e.target.value)); onPageChange(1); }}
+              className="touch-manipulation min-h-[40px] rounded-lg border border-border bg-transparent px-2 py-1.5 text-sm text-foreground outline-none"
+              aria-label="每页条数"
+            >
+              {pageSizeOptions.map((s) => (
+                <option key={s} value={s}>{s} 条/页</option>
+              ))}
+            </select>
+          </>
+        ) : null}
       </div>
 
       <div className="flex items-center justify-center gap-1 sm:justify-end">
@@ -57,6 +67,7 @@ export default function Pagination({
           type="button"
           onClick={() => onPageChange(safeP - 1)}
           disabled={safeP <= 1}
+          aria-label="上一页"
           className="touch-manipulation flex h-11 w-11 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30"
         >
           <ChevronLeft size={18} />
@@ -70,6 +81,8 @@ export default function Pagination({
               type="button"
               key={p}
               onClick={() => onPageChange(p)}
+              aria-current={p === safeP ? "page" : undefined}
+              aria-label={`第 ${p} 页`}
               className={`touch-manipulation flex min-h-11 min-w-[44px] items-center justify-center rounded-xl px-2 text-sm font-medium transition-colors ${
                 p === safeP
                   ? "btn-theme-price"
@@ -85,6 +98,7 @@ export default function Pagination({
           type="button"
           onClick={() => onPageChange(safeP + 1)}
           disabled={safeP >= totalPages}
+          aria-label="下一页"
           className="touch-manipulation flex h-11 w-11 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30"
         >
           <ChevronRight size={18} />

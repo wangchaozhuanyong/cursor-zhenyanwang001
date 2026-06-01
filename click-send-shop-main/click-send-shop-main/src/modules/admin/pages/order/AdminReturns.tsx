@@ -27,6 +27,7 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import {
@@ -65,6 +66,7 @@ const TABLE_HEADERS = ["申请", "订单", "类型", "原因", "退款金额", "
 
 export default function AdminReturns() {
   const { tText } = useAdminT();
+  const { confirm } = useAdminConfirm();
   const canHandleReturn = useAdminPermissionStore((s) => s.can("return.handle"));
   const { returnType: labelReturnType } = useAdminDisplayLabel();
   const statusOptionsLocalized = useLocalizedOptions(
@@ -170,6 +172,28 @@ export default function AdminReturns() {
     setReviewBaseline({ refundAmount: nextRefundAmount, adminRemark: "" });
   };
 
+  const confirmSubmitReview = (detail: ReturnDetail) => {
+    if (!reviewMode) return;
+    const approving = reviewMode === "approve";
+    const amount = Number(refundAmount || detail.refund_amount || 0);
+    if (approving && (!Number.isFinite(amount) || amount < 0)) {
+      toast.error(tText("退款金额不正确，请重新填写"));
+      return;
+    }
+    confirm({
+      title: approving ? tText("确认通过售后") : tText("确认拒绝售后"),
+      description: approving
+        ? tText(`确定通过该售后申请并记录退款金额 RM ${amount.toFixed(2)} 吗？审核后订单、售后和仪表盘会刷新。`)
+        : tText("确定拒绝该售后申请吗？请确认处理备注已经填写清楚。"),
+      confirmText: approving ? tText("确认通过") : tText("确认拒绝"),
+      danger: !approving,
+      onConfirm: async () => {
+        if (approving) await approveMutation.mutateAsync(detail);
+        else await rejectMutation.mutateAsync(detail);
+      },
+    });
+  };
+
   const renderMobileCard = (row: ReturnRequest) => (
     <AdminTableMobileCard>
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -198,7 +222,7 @@ export default function AdminReturns() {
   );
 
   return (
-    <PermissionGate anyOf={["return.view", "return.handle"]}>
+    <PermissionGate anyOf={["return.view", "return.handle"]} mode="page">
       <AdminPageShell
           hint={<Tx>售后列表由 Query 缓存管理，审核后刷新订单、售后和仪表盘。</Tx>}
           toolbar={(
@@ -219,7 +243,11 @@ export default function AdminReturns() {
           )}
         >
         <AnimatedTable
-          loading={returnsQuery.isLoading}
+          loading={returnsQuery.isLoading && !returnsQuery.data}
+          error={returnsQuery.isError && !returnsQuery.data}
+          errorTitle={tText("售后列表加载失败")}
+          errorDescription={tText("售后数据暂时没有加载成功，请检查网络或稍后重试。")}
+          onRetry={() => { void returnsQuery.refetch(); }}
           rows={rows}
           rowKey={(row) => row.id}
           skeletonRows={8}
@@ -344,11 +372,11 @@ export default function AdminReturns() {
                         <button type="button" onClick={closeReviewPanel} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
                         <button
                           type="button"
-                          onClick={() => reviewMode === 'approve' ? approveMutation.mutate(detail) : rejectMutation.mutate(detail)}
+                          onClick={() => confirmSubmitReview(detail)}
                           disabled={approveMutation.isPending || rejectMutation.isPending}
                           className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                         >
-                          <Tx>提交处理</Tx>
+                          {approveMutation.isPending || rejectMutation.isPending ? tText("处理中...") : <Tx>提交处理</Tx>}
                         </button>
                       </div>
                     </div>

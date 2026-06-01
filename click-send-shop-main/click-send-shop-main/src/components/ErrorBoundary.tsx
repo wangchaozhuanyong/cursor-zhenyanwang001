@@ -25,8 +25,9 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(err: Error, info: ErrorInfo) {
     if (this.state.isChunkLoadError) {
-      console.warn("[ErrorBoundary] 网站版本文件加载失败，已触发刷新兜底。");
-      recoverFromChunkLoadError("error-boundary");
+      const appName = window.location.pathname.startsWith("/admin") ? "admin" : "storefront";
+      console.warn("[ErrorBoundary] 网站版本文件加载失败，已触发统一版本恢复。");
+      recoverFromChunkLoadError(appName, err);
       return;
     }
     console.error("[ErrorBoundary]", err, info.componentStack);

@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
 import { getBannerContainerClassName } from "@/utils/themeVisuals";
 import { trackEvent } from "@/services/analyticsService";
+import { getBannerCtaText } from "@/utils/bannerCta";
 import {
   BANNER_ASPECT_CSS,
   BANNER_IMAGE_HEIGHT,
@@ -128,7 +130,8 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   const bannerLink = resolveBannerLink(banner.link);
   const bannerTitle = banner.title?.trim() || "";
   const bannerDescription = banner.description?.trim() || "";
-  const hasTextLayer = Boolean(bannerTitle || bannerDescription);
+  const bannerCtaText = getBannerCtaText(banner);
+  const hasTextLayer = Boolean(bannerTitle || bannerDescription || bannerCtaText);
   const showDots = banners.length > 1;
 
   const handleOpenBanner = () => {
@@ -139,6 +142,12 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
       return;
     }
     navigate(bannerLink.startsWith("/") ? bannerLink : `/${bannerLink}`);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!bannerLink || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault();
+    handleOpenBanner();
   };
 
   return (
@@ -155,6 +164,10 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onClick={handleOpenBanner}
+      onKeyDown={handleKeyDown}
+      role={bannerLink ? "button" : undefined}
+      tabIndex={bannerLink ? 0 : undefined}
+      aria-label={bannerLink ? `打开轮播图：${bannerTitle || `首页轮播图 ${safeIndex + 1}`}` : undefined}
     >
       <div className="absolute inset-0">
         <div
@@ -212,6 +225,12 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
 
       {hasTextLayer ? (
         <>
+          {activeImage ? (
+            <div className="store-hero-story-layer pointer-events-none absolute inset-y-0 left-0 z-10" aria-hidden>
+              <img src={activeImage} alt="" className="store-hero-story-image" loading="eager" decoding="async" />
+              <div className="store-hero-story-tint" />
+            </div>
+          ) : null}
           <div className="store-hero-text-wash pointer-events-none absolute inset-0 z-10" aria-hidden />
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-full items-center px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
             <motion.div
@@ -230,6 +249,19 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                 <p className="store-hero-copy-desc mt-1.5 line-clamp-2 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
                   {bannerDescription}
                 </p>
+              ) : null}
+              {bannerCtaText ? (
+                <button
+                  type="button"
+                  className="store-hero-copy-cta pointer-events-auto mt-3 inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold sm:mt-4 sm:px-4 sm:text-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenBanner();
+                  }}
+                >
+                  <span className="truncate">{bannerCtaText}</span>
+                  <ArrowRight size={14} aria-hidden="true" />
+                </button>
               ) : null}
             </motion.div>
           </div>

@@ -179,7 +179,7 @@ export default function AdminUsers() {
   };
 
   return (
-    <PermissionGate permission="user.view">
+    <PermissionGate permission="user.view" mode="page">
       <AdminPageShell
         className="min-w-0"
         hint={<Tx>管理注册用户、标签与风控限制，支持高级筛选与导出。</Tx>}
@@ -548,7 +548,11 @@ export default function AdminUsers() {
       </PermissionGate>
 
       <AnimatedTable
-        loading={usersQuery.isLoading}
+        loading={usersQuery.isLoading && !usersQuery.data}
+        error={usersQuery.isError && !usersQuery.data}
+        errorTitle={L("用户加载失败", "Failed to load users")}
+        errorDescription={L("用户接口暂时没有返回数据，请检查网络或稍后重试。", "The user API did not return data. Please check the network and try again.")}
+        onRetry={() => { void usersQuery.refetch(); }}
         rows={users}
         rowKey={(user) => user.id}
         skeletonRows={8}

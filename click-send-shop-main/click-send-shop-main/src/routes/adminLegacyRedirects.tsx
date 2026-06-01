@@ -1,6 +1,17 @@
 import { Navigate, useParams } from "react-router-dom";
 
-/** 旧路径 /admin/coupons/:id → 营销中心优惠券编辑 */
+/**
+ * @deprecated Compatibility redirect for old /admin/dashboard bookmarks.
+ * The current dashboard route is /admin.
+ */
+export function LegacyDashboardRedirect() {
+  return <Navigate to="/admin" replace />;
+}
+
+/**
+ * @deprecated Compatibility redirect for old /admin/coupons/:id links.
+ * Keep until production access logs show no hits for at least 30 days.
+ */
 export function LegacyCouponRedirect() {
   const { id } = useParams<{ id: string }>();
   const target = id

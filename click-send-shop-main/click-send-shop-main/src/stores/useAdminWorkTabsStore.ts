@@ -20,6 +20,15 @@ export type AdminWorkTabUpsertResult =
   | { ok: true; path: string; activeId: string }
   | { ok: false; path: string; activeId: string; reason: "limit"; max: number };
 
+function findReplacementTabIndex(tabs: AdminWorkTab[]): number {
+  const preferredIndex = ADMIN_WORK_TABS_MAX - 1;
+  if (tabs[preferredIndex] && !tabs[preferredIndex].pinned) return preferredIndex;
+  for (let i = tabs.length - 1; i >= 0; i -= 1) {
+    if (!tabs[i].pinned) return i;
+  }
+  return -1;
+}
+
 type AdminWorkTabsState = {
   tabs: AdminWorkTab[];
   activeTabId: string | null;
@@ -48,7 +57,11 @@ export const useAdminWorkTabsStore = create<AdminWorkTabsState>()(
         const fullPath = normalizeAdminTabPath(pathname, search);
         const id = adminTabPathKey(fullPath);
         const state = get();
-        return Boolean(state.tabs.find((t) => t.id === id)) || state.tabs.length < ADMIN_WORK_TABS_MAX;
+        return (
+          Boolean(state.tabs.find((t) => t.id === id))
+          || state.tabs.length < ADMIN_WORK_TABS_MAX
+          || findReplacementTabIndex(state.tabs) >= 0
+        );
       },
 
       upsertTab: (pathname, search, title) => {
@@ -58,8 +71,25 @@ export const useAdminWorkTabsStore = create<AdminWorkTabsState>()(
         const state = get();
         const existing = state.tabs.find((t) => t.id === id);
         if (!existing && state.tabs.length >= ADMIN_WORK_TABS_MAX) {
-          set({ lastLimitNoticeAt: now });
-          return { ok: false, path: fullPath, activeId: state.activeTabId ?? id, reason: "limit", max: ADMIN_WORK_TABS_MAX };
+          const replacementIndex = findReplacementTabIndex(state.tabs);
+          if (replacementIndex < 0) {
+            set({ lastLimitNoticeAt: now });
+            return { ok: false, path: fullPath, activeId: state.activeTabId ?? id, reason: "limit", max: ADMIN_WORK_TABS_MAX };
+          }
+          const nextTabs = state.tabs.slice();
+          nextTabs[replacementIndex] = {
+            id,
+            path: fullPath,
+            title: title.trim() || fullPath,
+            pinned: false,
+            lastAccessAt: now,
+          };
+          set({
+            tabs: nextTabs,
+            activeTabId: id,
+            lastLimitNoticeAt: null,
+          });
+          return { ok: true, path: fullPath, activeId: id };
         }
 
         const nextTab: AdminWorkTab = existing

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   ADMIN_SAFE_THEME_OVERRIDES,
@@ -166,16 +166,18 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
 
   const appliedSkin = useMemo(() => skins.find((skin) => skin.id === skinId) ?? skins[0] ?? null, [skinId, skins]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
     root.classList.remove("dark");
+    root.setAttribute("data-theme-ready", themeReady ? "true" : "false");
+    root.setAttribute("data-theme-synced", themeSynced ? "true" : "false");
     applyThemeDataAttributes(root, appliedConfig, appliedSkin);
 
     const palette = generateThemePalette(appliedConfig);
     Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [appliedConfig, appliedSkin]);
+  }, [appliedConfig, appliedSkin, themeReady, themeSynced]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const syncScope = () => {
       const root = document.documentElement;
       const scoped = resolveThemeConfigForScope(themeConfig, isAdminScope());

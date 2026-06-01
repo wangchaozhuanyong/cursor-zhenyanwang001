@@ -52,6 +52,7 @@ function getStorageAllowedOrigins() {
   const bucket = (process.env.STORAGE_S3_BUCKET || '').trim();
   const region = (process.env.STORAGE_S3_REGION || '').trim();
   const endpoint = (process.env.STORAGE_S3_ENDPOINT || '').trim();
+  const publicBaseUrl = (process.env.STORAGE_PUBLIC_BASE_URL || '').trim();
 
   if (bucket && region) {
     origins.add(`https://${bucket}.s3.${region}.amazonaws.com`);
@@ -63,6 +64,15 @@ function getStorageAllowedOrigins() {
       origins.add(new URL(normalized).origin);
     } catch {
       // ignore invalid endpoint
+    }
+  }
+
+  if (publicBaseUrl) {
+    try {
+      const normalized = publicBaseUrl.startsWith('http') ? publicBaseUrl : `https://${publicBaseUrl}`;
+      origins.add(new URL(normalized).origin);
+    } catch {
+      // ignore invalid public base URL
     }
   }
 
@@ -152,6 +162,8 @@ const cspDirectives = {
     'blob:',
     // Meta Pixel 可能通过 image beacon 方式上报
     'https://www.facebook.com',
+    // 生产媒体 CDN：商品图、站点 Logo、favicon 等会通过该域名访问
+    'https://cdn.damatong.net',
     ...storageAllowedOrigins,
   ],
   'script-src': [
@@ -312,7 +324,11 @@ app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '1mb' }));
 app.use(adminCsrfGuard);
 
 const uploadsDir = path.join(__dirname, '../public/uploads');
-/** Fall back to full.webp when legacy product card/detail variants are missing. */
+/**
+ * @deprecated Legacy local /uploads compatibility.
+ * Keep until DB URLs and production access logs show no local-upload traffic.
+ * Fall back to full.webp when legacy product card/detail variants are missing.
+ */
 app.use('/uploads', (req, res, next) => {
   const rel = decodeURIComponent(String(req.path || ''));
   const variantMatch = rel.match(/^\/([a-f0-9]{32})-(card|detail)(\.webp)$/i);

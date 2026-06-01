@@ -634,9 +634,10 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground touch-target"
+                aria-label={showPwd ? "隐藏密码" : "显示密码"}
+                className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 touch-target"
               >
-                {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPwd ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               </button>
             </div>
           ) : null}

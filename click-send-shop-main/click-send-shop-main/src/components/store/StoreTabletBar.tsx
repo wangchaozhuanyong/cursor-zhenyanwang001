@@ -1,14 +1,32 @@
 import { Search, ShoppingCart } from "lucide-react";
+import type { MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
+import { Cart, GuestHome, MemberHome, Search as SearchPage } from "@/routes/publicLazyPages";
 import { useCartStore } from "@/stores/useCartStore";
-import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
-import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
+import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 
-/** 平板 Tab 页精简顶栏（768–1023px）；手机仍用各页 StoreTabHeader / StorePageHeader */
+function preloadTabletRoute(path: string) {
+  const base = path.split("?")[0];
+  if (base === "/") {
+    GuestHome.preload?.();
+    MemberHome.preload?.();
+  } else if (base === "/search") {
+    SearchPage.preload?.();
+  } else if (base === "/cart") {
+    Cart.preload?.();
+  }
+}
+
+function isPlainLeftClick(event: MouseEvent<HTMLElement>) {
+  return event.button === 0 && !event.metaKey && !event.altKey && !event.ctrlKey && !event.shiftKey;
+}
+
 export default function StoreTabletBar({ className }: { className?: string }) {
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
@@ -19,17 +37,35 @@ export default function StoreTabletBar({ className }: { className?: string }) {
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
 
+  const openRoute = (path: string) => {
+    preloadTabletRoute(path);
+    navigateWithStoreTransition(navigate, path);
+  };
+
+  const handleHomeClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!isPlainLeftClick(event)) return;
+    event.preventDefault();
+    openRoute("/");
+  };
+
   return (
     <header
       className={cn(
-        "sticky top-0 z-header hidden border-b backdrop-blur-xl md:flex lg:hidden",
+        "store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl md:flex lg:hidden",
         surfaceClass,
         className,
       )}
       style={{ height: "var(--store-tablet-header-height, 3.25rem)" }}
     >
       <div className="mx-auto flex h-full w-full max-w-screen-xl items-center gap-3 px-6">
-        <Link to="/" className="flex shrink-0 items-center gap-2" aria-label={`${siteName} 首页`}>
+        <Link
+          to="/"
+          onClick={handleHomeClick}
+          onMouseEnter={() => preloadTabletRoute("/")}
+          onFocus={() => preloadTabletRoute("/")}
+          className="store-header-brand flex shrink-0 items-center gap-2"
+          aria-label={`${siteName} 首页`}
+        >
           {logoSrc ? (
             <img src={logoSrc} alt={`${siteName} Logo`} width={36} height={36} className="store-brand-logo" />
           ) : null}
@@ -43,8 +79,10 @@ export default function StoreTabletBar({ className }: { className?: string }) {
         {capabilities.mallEnabled ? (
           <button
             type="button"
-            onClick={() => navigate("/search")}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
+            onMouseEnter={() => preloadTabletRoute("/search")}
+            onFocus={() => preloadTabletRoute("/search")}
+            onClick={() => openRoute("/search")}
+            className="store-header-icon-button flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
             aria-label="搜索"
           >
             <Search size={18} />
@@ -54,8 +92,10 @@ export default function StoreTabletBar({ className }: { className?: string }) {
         {capabilities.mallEnabled ? (
           <button
             type="button"
-            onClick={() => navigate("/cart")}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
+            onMouseEnter={() => preloadTabletRoute("/cart")}
+            onFocus={() => preloadTabletRoute("/cart")}
+            onClick={() => openRoute("/cart")}
+            className="store-header-icon-button relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
             aria-label="购物车"
           >
             <ShoppingCart size={18} />

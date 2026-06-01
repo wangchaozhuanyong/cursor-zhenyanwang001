@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -8,18 +9,28 @@ interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
+  className?: string;
 }
 
-export default function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
+export default function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center py-20">
-      <Icon size={40} className="text-muted-foreground" />
-      <p className="mt-3 text-sm font-medium text-foreground">{title}</p>
-      {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+    <div
+      className={cn(
+        "mx-auto flex w-full max-w-md flex-col items-center rounded-[calc(var(--theme-radius)+8px)] border border-[var(--theme-border)] bg-[var(--theme-surface)]/82 px-6 py-12 text-center shadow-[var(--theme-shadow)]",
+        className,
+      )}
+      role="status"
+    >
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-primary)] shadow-sm">
+        <Icon size={30} aria-hidden />
+      </span>
+      <p className="mt-4 text-base font-semibold text-foreground">{title}</p>
+      {description && <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">{description}</p>}
       {action && (
         <button
+          type="button"
           onClick={action.onClick}
-          className="mt-4 rounded-full btn-theme-price px-6 py-2 text-sm font-semibold text-primary-foreground"
+          className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full btn-theme-price px-6 text-sm font-semibold text-primary-foreground transition hover:brightness-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]"
         >
           {action.label}
         </button>

@@ -5,6 +5,7 @@ import type { Product } from "@/types/product";
 export const previewBanner: Banner = {
   id: "preview-banner",
   title: "主题预览轮播（非线上数据）",
+  cta_text: "立即查看",
   image: banner1Image,
   link: "/products",
   sort_order: 1,

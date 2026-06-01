@@ -10,6 +10,8 @@ import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { shouldHideBottomNav } from "./bottomNavVisibility";
 import { useStoreScrollChrome } from "@/contexts/StoreScrollChromeProvider";
+import { Cart, Categories, GuestHome, MemberHome, Profile, SupportDownload } from "@/routes/publicLazyPages";
+import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 
 function isEditableElement(el: Element | null): boolean {
   if (!el || !(el instanceof HTMLElement)) return false;
@@ -36,6 +38,22 @@ type ActivePointer = {
   startTime: number;
   maxMove: number;
 };
+
+function preloadTabRoute(path: string) {
+  const base = path.split("?")[0];
+  if (base === "/") {
+    GuestHome.preload?.();
+    MemberHome.preload?.();
+  } else if (base === "/categories") {
+    Categories.preload?.();
+  } else if (base === "/support-download") {
+    SupportDownload.preload?.();
+  } else if (base === "/cart") {
+    Cart.preload?.();
+  } else if (base === "/profile") {
+    Profile.preload?.();
+  }
+}
 
 export default function BottomNav() {
   const location = useLocation();
@@ -101,10 +119,11 @@ export default function BottomNav() {
       return;
     }
     if (requiresAuth(path) && !isLoggedIn()) {
-      navigate("/login", { state: { from: path } });
+      navigateWithStoreTransition(navigate, "/login", { state: { from: path } });
       return;
     }
-    navigate(path);
+    preloadTabRoute(path);
+    navigateWithStoreTransition(navigate, path);
   }, [location.pathname, location.search, navigate]);
 
   /** 避免 pointerup + click 双触发；兼容不支持 Pointer Events 的浏览器 */
@@ -141,6 +160,7 @@ export default function BottomNav() {
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>, path: string) => {
     if (event.button !== 0) return;
+    preloadTabRoute(path);
     const target = event.currentTarget;
     try {
       target.setPointerCapture(event.pointerId);
@@ -215,6 +235,8 @@ export default function BottomNav() {
                 onPointerMove={handlePointerMove}
                 onPointerUp={(event) => finishPointer(event, tab.path)}
                 onPointerCancel={handlePointerCancel}
+                onMouseEnter={() => preloadTabRoute(tab.path)}
+                onFocus={() => preloadTabRoute(tab.path)}
                 onClick={() => activateTab(tab.path)}
                 className="store-bottom-nav-item relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"
               >

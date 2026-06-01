@@ -1,3 +1,24 @@
+User-agent: TikTokSpider
+Allow: /tiktok
+Allow: /tiktok/
+Allow: /assets/tiktok-
+Allow: /assets/tiktok-logo.jpeg
+Disallow: /
+
+User-agent: TikTokBot
+Allow: /tiktok
+Allow: /tiktok/
+Allow: /assets/tiktok-
+Allow: /assets/tiktok-logo.jpeg
+Disallow: /
+
+User-agent: Bytespider
+Allow: /tiktok
+Allow: /tiktok/
+Allow: /assets/tiktok-
+Allow: /assets/tiktok-logo.jpeg
+Disallow: /
+
 User-agent: *
 Allow: /
 Disallow: /admin

@@ -104,34 +104,33 @@ export default function Cart() {
           <div>
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
             {!isLoggedIn() && (
-              <div className="mb-3 theme-rounded border border-[var(--theme-price)]/30 bg-[var(--theme-price)]/5 px-4 py-3 text-xs text-[var(--theme-text)]">
-                <span className="text-muted-foreground">当前未登录，购物车仅保存在本机；</span>
+              <div className="mb-3 flex flex-col gap-2 theme-rounded border border-[var(--theme-price)]/30 bg-[var(--theme-price)]/5 px-4 py-3 text-xs text-[var(--theme-text)] sm:flex-row sm:flex-wrap sm:items-center">
+                <span className="min-w-0 text-muted-foreground">当前未登录，购物车仅保存在本机；登录后可同步到账号。</span>
                 <button
                   type="button"
                   onClick={() => navigate("/login", { state: { from: "/cart" } })}
-                  className="ml-1 inline-flex min-h-8 items-center rounded-full px-1.5 font-semibold text-[var(--theme-price)]"
+                  className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-full border border-[var(--theme-price)]/25 bg-[var(--theme-surface)] px-3 font-semibold text-[var(--theme-price)] transition hover:border-[var(--theme-price)] hover:bg-[var(--theme-price)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]"
                 >
                   登录
                 </button>
-                <span className="text-muted-foreground">后同步到账号</span>
               </div>
             )}
             {error && (
-              <div className={`mb-3 flex items-center justify-between rounded-lg px-4 py-3 text-sm ${THEME_ALERT_ERROR_SOFT}`}>
-                <span>{error}</span>
+              <div className={`mb-3 flex flex-col gap-3 rounded-lg px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between ${THEME_ALERT_ERROR_SOFT}`} role="alert">
+                <span className="min-w-0">{error}</span>
                 <button
                   onClick={() => {
                     clearError();
                     loadCart();
                   }}
-                  className="ml-3 text-xs underline"
+                  className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-full px-3 text-xs font-semibold underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-danger)] focus-visible:ring-offset-2"
                 >
                   重试
                 </button>
               </div>
             )}
             {loading ? (
-              <div className="flex flex-col items-center py-20 text-muted-foreground">
+              <div className="flex flex-col items-center py-20 text-muted-foreground" role="status" aria-live="polite">
                 <Loader2 size={24} className="animate-spin mb-3" />
                 <p className="text-sm">加载中…</p>
               </div>

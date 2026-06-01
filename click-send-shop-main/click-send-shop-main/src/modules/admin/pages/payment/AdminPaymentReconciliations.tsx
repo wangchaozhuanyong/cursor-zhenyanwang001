@@ -211,7 +211,7 @@ export default function AdminPaymentReconciliations() {
               ))}
             </tr>
           )}
-          footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
+          footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} showPageSizeSelect={false} />}
           emptyIcon={reconciliationsEmptyGuide.icon}
           emptyTitle={reconciliationsEmptyGuide.title}
           emptyDescription={reconciliationsEmptyGuide.description}

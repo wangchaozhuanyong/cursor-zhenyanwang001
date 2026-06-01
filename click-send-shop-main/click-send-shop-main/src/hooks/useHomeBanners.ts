@@ -22,6 +22,7 @@ function normalizeBootstrapBanners(raw: unknown): Banner[] {
       id: String(item?.id || ""),
       title: String(item?.title || ""),
       description: String(item?.description || item?.subtitle || ""),
+      cta_text: String(item?.cta_text || item?.ctaText || ""),
       image: String(item?.image || item?.image_url || ""),
       link: String(item?.link || item?.url || ""),
       sort_order: Number(item?.sort_order || 0),

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import StoreDesktopHeader from "@/components/store/StoreDesktopHeader";
-import StoreTabletBar from "@/components/store/StoreTabletBar";
+import StoreDesktopHeader from "@/components/store/StoreDesktopHeader.tsx";
+import StoreTabletBar from "@/components/store/StoreTabletBar.tsx";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 
 type StoreShellProps = {

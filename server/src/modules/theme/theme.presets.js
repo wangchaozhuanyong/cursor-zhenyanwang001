@@ -1,5 +1,6 @@
 const DEFAULT_SKIN_ID = 'default_life_green';
 const FESTIVAL_SKIN_ID = 'festive_ruby_gold';
+const PREMIUM_IVORY_JADE_SKIN_ID = 'premium_ivory_jade';
 
 const STOREFRONT_DESIGN_LOCKS = {
   radius: '14px',
@@ -59,6 +60,23 @@ const FESTIVAL_RUBY_GOLD_CONFIG = {
   ...STOREFRONT_DESIGN_LOCKS,
 };
 
+const PREMIUM_IVORY_JADE_CONFIG = {
+  skinName: '象牙翡翠高端皮肤',
+  bgColor: '#F7F4EC',
+  surfaceColor: '#FFFFFF',
+  primaryColor: '#0F5F4C',
+  secondaryColor: '#EAF1E9',
+  accentColor: '#C6A15B',
+  priceColor: '#D84B32',
+  textColor: '#1F2723',
+  mutedTextColor: '#6F7B73',
+  borderColor: '#E3DDD0',
+  successColor: '#168A62',
+  warningColor: '#C0902E',
+  dangerColor: '#C74332',
+  ...STOREFRONT_DESIGN_LOCKS,
+};
+
 const DAILY_COMMERCE_SKIN = {
   id: DEFAULT_SKIN_ID,
   name: '日常购物皮肤',
@@ -75,6 +93,14 @@ const FESTIVAL_RUBY_GOLD_SKIN = {
   config: FESTIVAL_RUBY_GOLD_CONFIG,
 };
 
+const PREMIUM_IVORY_JADE_SKIN = {
+  id: PREMIUM_IVORY_JADE_SKIN_ID,
+  name: '象牙翡翠高端皮肤',
+  description: '适合大马通日常商城长期使用的高端浅色皮肤：象牙白底、翡翠绿品牌主色、香槟金细节和珊瑚朱砂价格色，整体干净、精致、有质感但不压暗图片。',
+  sceneTag: 'premium',
+  config: PREMIUM_IVORY_JADE_CONFIG,
+};
+
 const DEFAULT_THEME_HOLIDAY_RULES = [
   { id: 'new_year', name: '元旦 / 新年', enabled: true, start: '01-01', end: '01-03', skinId: FESTIVAL_SKIN_ID },
   { id: 'cny', name: '春节档', enabled: false, start: '02-01', end: '02-17', skinId: FESTIVAL_SKIN_ID },
@@ -86,7 +112,7 @@ const DEFAULT_THEME_HOLIDAY_RULES = [
 ];
 
 const FALLBACK_THEME_SKIN = DAILY_COMMERCE_SKIN;
-const THEME_PRESETS = [DAILY_COMMERCE_SKIN, FESTIVAL_RUBY_GOLD_SKIN];
+const THEME_PRESETS = [DAILY_COMMERCE_SKIN, PREMIUM_IVORY_JADE_SKIN, FESTIVAL_RUBY_GOLD_SKIN];
 const DEFAULT_HOLIDAY_SKIN_ID = FESTIVAL_SKIN_ID;
 
 /** @deprecated */
@@ -97,13 +123,16 @@ const PROMO_SKIN_ID = FESTIVAL_SKIN_ID;
 module.exports = {
   DEFAULT_SKIN_ID,
   FESTIVAL_SKIN_ID,
+  PREMIUM_IVORY_JADE_SKIN_ID,
   DEFAULT_HOLIDAY_SKIN_ID,
   DEFAULT_THEME_HOLIDAY_RULES,
   STOREFRONT_DESIGN_LOCKS,
   DEFAULT_LIFE_GREEN_CONFIG,
   FESTIVAL_RUBY_GOLD_CONFIG,
+  PREMIUM_IVORY_JADE_CONFIG,
   DAILY_COMMERCE_SKIN,
   FESTIVAL_RUBY_GOLD_SKIN,
+  PREMIUM_IVORY_JADE_SKIN,
   CLASSIC_GOLD_BLACK_CONFIG,
   FALLBACK_THEME_SKIN,
   THEME_PRESETS,

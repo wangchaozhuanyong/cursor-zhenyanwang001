@@ -84,6 +84,7 @@ export default function AdminRecycleBin() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [typeFilter, setTypeFilter] = useState("");
+  const [busyActionKey, setBusyActionKey] = useState<string | null>(null);
 
   const queryParams = useMemo(
     () => ({ ...(typeFilter ? { type: typeFilter } : {}), page, pageSize }),
@@ -132,12 +133,48 @@ export default function AdminRecycleBin() {
 
   const restoreMutation = useMutation({
     mutationFn: (item: RecycleBinItem) => restoreRecycleBinItem(item.id, item.type),
+    onMutate: (item) => {
+      setBusyActionKey(`restore:${item.type}:${item.id}`);
+    },
     onSuccess: async (_data, item) => {
       toast.success(tText("已恢复"));
       await invalidateRecycleBin(item.type);
     },
     onError: (e) => toast.error(toastErrorMessage(e, "恢复失败")),
+    onSettled: () => setBusyActionKey(null),
   });
+
+  const permanentDeleteMutation = useMutation({
+    mutationFn: (item: RecycleBinItem) => permanentlyDeleteRecycleBinItem(item.id, item.type),
+    onMutate: (item) => {
+      setBusyActionKey(`delete:${item.type}:${item.id}`);
+    },
+    onSuccess: async (_data, item) => {
+      toast.success(tText("已彻底删除"));
+      await invalidateRecycleBin(item.type);
+    },
+    onError: (e) => toast.error(toastErrorMessage(e, "彻底删除失败")),
+    onSettled: () => setBusyActionKey(null),
+  });
+
+  const itemBusy = (item: RecycleBinItem) => busyActionKey?.endsWith(`:${item.type}:${item.id}`) ?? false;
+
+  const confirmRestore = (item: RecycleBinItem) => {
+    confirm({
+      title: tText("确认恢复"),
+      description: (
+        <>
+          {tText("恢复后，该数据会重新回到对应业务列表。")}
+          <br />
+          {labelRecycleType(item.type, item.type_label)}：{formatRecycleBinItemName(item)}
+        </>
+      ),
+      confirmText: tText("确认恢复"),
+      onConfirm: async () => {
+        await restoreMutation.mutateAsync(item);
+      },
+    });
+  };
 
   const renderMobileCard = (item: RecycleBinItem) => (
     <AdminTableMobileCard className="p-4 shadow-sm">
@@ -157,11 +194,21 @@ export default function AdminRecycleBin() {
           </AdminTableMobileCardField>
           <PermissionGate permission="recycle_bin.manage">
             <div className="flex gap-2 pt-2">
-              <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border border-[var(--theme-border)] py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
-                <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复</Tx>
+              <button
+                type="button"
+                onClick={() => confirmRestore(item)}
+                disabled={itemBusy(item)}
+                className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border border-[var(--theme-border)] py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)] disabled:opacity-60`}
+              >
+                <RotateCcw size={12} className="mr-1 inline" />{busyActionKey === `restore:${item.type}:${item.id}` ? tText("恢复中...") : <Tx>恢复</Tx>}
               </button>
-              <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}>
-                <Trash2 size={12} className="mr-1 inline" /><Tx>彻底删除</Tx>
+              <button
+                type="button"
+                onClick={() => confirmPermanentDelete(item)}
+                disabled={itemBusy(item)}
+                className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER} disabled:opacity-60`}
+              >
+                <Trash2 size={12} className="mr-1 inline" />{busyActionKey === `delete:${item.type}:${item.id}` ? tText("删除中...") : <Tx>彻底删除</Tx>}
               </button>
             </div>
           </PermissionGate>
@@ -182,29 +229,32 @@ export default function AdminRecycleBin() {
       confirmText: "确认删除",
       danger: true,
       onConfirm: async () => {
-        await permanentlyDeleteRecycleBinItem(item.id, item.type);
-        toast.success(tText("已彻底删除"));
-        await invalidateRecycleBin(item.type);
+        await permanentDeleteMutation.mutateAsync(item);
       },
     });
   };
 
   return (
-    <AdminPageShell
-      hint={<Tx>已软删除的数据可恢复或彻底删除。</Tx>}
-      filters={(
-        <div className="space-y-2">
-          <AdminFilterSelect variant="card" value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}>
-            {typeFilterOptions.map((o) => <option key={o.value || "__all"} value={o.value}>{o.label}</option>)}
-          </AdminFilterSelect>
-          <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
-        </div>
-      )}
-    >
+    <PermissionGate permission="recycle_bin.manage" mode="page">
+      <AdminPageShell
+        hint={<Tx>已软删除的数据可恢复或彻底删除。</Tx>}
+        filters={(
+          <div className="space-y-2">
+            <AdminFilterSelect variant="card" value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}>
+              {typeFilterOptions.map((o) => <option key={o.value || "__all"} value={o.value}>{o.label}</option>)}
+            </AdminFilterSelect>
+            <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
+          </div>
+        )}
+      >
       <div className="rounded-xl border border-border bg-card">
         <AnimatedTable
           embedded
           loading={loading}
+          error={listQuery.isError && !listQuery.data}
+          errorTitle={tText("回收站加载失败")}
+          errorDescription={tText("回收站数据暂时没有加载成功，请检查网络或稍后重试。")}
+          onRetry={() => { void listQuery.refetch(); }}
           rows={items}
           rowKey={(item) => `${item.type}-${item.id}`}
           skeletonRows={8}
@@ -245,10 +295,22 @@ export default function AdminRecycleBin() {
               <td className={adminTableCellClass("right")}>
                 <PermissionGate permission="recycle_bin.manage">
                   <div className="flex gap-1">
-                    <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title={tText("恢复")}>
+                    <button
+                      type="button"
+                      onClick={() => confirmRestore(item)}
+                      disabled={itemBusy(item)}
+                      className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)] disabled:opacity-60`}
+                      title={busyActionKey === `restore:${item.type}:${item.id}` ? tText("恢复中...") : tText("恢复")}
+                    >
                       <RotateCcw size={14} />
                     </button>
-                    <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`} title={tText("彻底删除")}>
+                    <button
+                      type="button"
+                      onClick={() => confirmPermanentDelete(item)}
+                      disabled={itemBusy(item)}
+                      className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER} disabled:opacity-60`}
+                      title={busyActionKey === `delete:${item.type}:${item.id}` ? tText("删除中...") : tText("彻底删除")}
+                    >
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -261,6 +323,7 @@ export default function AdminRecycleBin() {
           <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
         )}
       </div>
-    </AdminPageShell>
+      </AdminPageShell>
+    </PermissionGate>
   );
 }

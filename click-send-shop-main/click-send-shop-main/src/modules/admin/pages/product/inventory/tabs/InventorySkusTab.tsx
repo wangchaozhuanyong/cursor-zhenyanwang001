@@ -21,6 +21,8 @@ import type { ReactNode } from "react";
 type Props = {
   skus: InventorySku[];
   loading: boolean;
+  error?: boolean;
+  onRetry?: () => void;
   page: number;
   onPageChange: (page: number) => void;
   total: number;
@@ -38,6 +40,8 @@ type Props = {
 export default function InventorySkusTab({
   skus,
   loading,
+  error,
+  onRetry,
   page,
   onPageChange,
   total,
@@ -66,6 +70,10 @@ export default function InventorySkusTab({
       <AnimatedTable
         embedded
         loading={loading}
+        error={error}
+        errorTitle={L("SKU 库存加载失败")}
+        errorDescription={L("库存接口暂时没有返回数据，请检查网络或稍后重试。")}
+        onRetry={onRetry}
         rows={skus}
         rowKey={(sku) => sku.variant_id}
         skeletonRows={8}
@@ -164,7 +172,9 @@ export default function InventorySkusTab({
           );
         }}
       />
-      <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} />
+      {!error ? (
+        <Pagination total={total} page={page} pageSize={INVENTORY_PAGE_SIZE} onPageChange={onPageChange} onPageSizeChange={() => undefined} showPageSizeSelect={false} />
+      ) : null}
     </>
   );
 }

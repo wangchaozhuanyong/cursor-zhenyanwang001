@@ -258,10 +258,11 @@ export default function AdminLogin() {
             ) : (
               <>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{t("login.accountLabel")}</label>
+                  <label htmlFor="admin-login-account" className="mb-1.5 block text-xs font-medium text-muted-foreground">{t("login.accountLabel")}</label>
                   <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20">
                     <User size={16} className="text-muted-foreground" />
                     <input
+                      id="admin-login-account"
                       type="text"
                       value={account}
                       onChange={(e) => {
@@ -277,10 +278,11 @@ export default function AdminLogin() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{t("login.passwordLabel")}</label>
+                  <label htmlFor="admin-login-password" className="mb-1.5 block text-xs font-medium text-muted-foreground">{t("login.passwordLabel")}</label>
                   <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20">
                     <Lock size={16} className="text-muted-foreground" />
                     <input
+                      id="admin-login-password"
                       type={showPwd ? "text" : "password"}
                       value={password}
                       onChange={(e) => {
@@ -294,9 +296,10 @@ export default function AdminLogin() {
                     <button
                       type="button"
                       onClick={() => setShowPwd(!showPwd)}
-                      className="text-muted-foreground hover:text-foreground"
+                      aria-label={showPwd ? "隐藏密码" : "显示密码"}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
                     >
-                      {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showPwd ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
                     </button>
                   </div>
                   {fieldErrors.password ? <p className="mt-1 text-xs text-destructive">{fieldErrors.password}</p> : null}

@@ -11,7 +11,7 @@ export function AnimatedPage({ children, className }: { children: ReactNode; cla
   const pageMotion = pageTransition(level);
 
   if (!enabled) {
-    return <div className={cn("relative w-full", className)}>{children}</div>;
+    return <div className={cn("store-route-transition relative w-full", className)}>{children}</div>;
   }
 
   // pathname key：仅 query 变化（如分类筛选）不 remount 整页。
@@ -19,10 +19,11 @@ export function AnimatedPage({ children, className }: { children: ReactNode; cla
   return (
     <motion.div
       key={location.pathname}
-      className={cn("relative w-full", className)}
+      className={cn("store-route-transition relative w-full", className)}
       initial={pageMotion.initial}
       animate={pageMotion.animate}
       transition={pageMotion.transition}
+      style={{ backfaceVisibility: "hidden", transformOrigin: "50% 0%" }}
     >
       {children}
     </motion.div>

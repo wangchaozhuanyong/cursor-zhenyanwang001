@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Tx } from "@/components/admin/AdminText";
+import Pagination from "@/components/admin/Pagination";
+import PermissionGate from "@/components/admin/PermissionGate";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
   adminTdClassName,
@@ -25,8 +28,13 @@ import {
   type UserSecurityOverview,
 } from "@/services/admin/userSecurityService";
 import { Badge, formatTime } from "@/modules/admin/pages/monitoring/monitoringUi";
+import { AdminInputSheet } from "@/modules/admin/components/AdminInputSheet";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 type TabKey = "ips" | "devices" | "login" | "events";
+type SecurityActionTarget =
+  | { type: "ip"; row: RiskIp }
+  | { type: "device"; row: RiskDevice };
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "ips", label: "风险 IP" },
@@ -58,7 +66,7 @@ function userLabel(row: { user_id?: string | null; phone?: string | null; nickna
   const label = row.nickname || row.phone || row.user_id || "-";
   if (!row.user_id) return label;
   return (
-    <Link className="font-medium text-blue-600 hover:underline" to={`/admin/users/${row.user_id}`}>
+    <Link className="font-medium text-[var(--theme-primary)] hover:underline" to={`/admin/users/${row.user_id}`}>
       {label}
     </Link>
   );
@@ -87,6 +95,7 @@ export default function AdminUserSecurity() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [actioning, setActioning] = useState("");
+  const [actionTarget, setActionTarget] = useState<SecurityActionTarget | null>(null);
 
   const [riskIps, setRiskIps] = useState<RiskIp[]>([]);
   const [riskDevices, setRiskDevices] = useState<RiskDevice[]>([]);
@@ -134,7 +143,8 @@ export default function AdminUserSecurity() {
         setTotal(res.data.total);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
+      setError("安全数据加载失败，请检查网络或稍后重试。");
+      toast.error(toastErrorMessage(err, "安全数据加载失败"));
     } finally {
       setLoading(false);
     }
@@ -151,33 +161,34 @@ export default function AdminUserSecurity() {
     setSeverity("");
   }
 
-  async function handleIpAction(row: RiskIp) {
-    const isBlocked = row.status === "blocked";
-    const reason = window.prompt(isBlocked ? "请输入解封原因" : "请输入封禁原因", isBlocked ? "管理员确认解封" : "后台安全处理");
-    if (reason === null) return;
-    setActioning(`ip:${row.ip}`);
+  async function submitSecurityAction(reason: string) {
+    if (!actionTarget) return;
+    const isBlocked = actionTarget.row.status === "blocked";
+    const actionKey = actionTarget.type === "ip" ? `ip:${actionTarget.row.ip}` : `device:${actionTarget.row.device_id}`;
+    setActioning(actionKey);
     try {
-      if (isBlocked) await unblockRiskIp(row.ip, reason);
-      else await blockRiskIp(row.ip, reason);
+      if (actionTarget.type === "ip") {
+        if (isBlocked) await unblockRiskIp(actionTarget.row.ip, reason);
+        else await blockRiskIp(actionTarget.row.ip, reason);
+      } else {
+        if (isBlocked) await unblockRiskDevice(actionTarget.row.device_id, reason);
+        else await blockRiskDevice(actionTarget.row.device_id, reason, actionTarget.row.device_label);
+      }
+      setActionTarget(null);
       await load();
+      toast.success(actionTarget.type === "ip"
+        ? (isBlocked ? "IP 已解封" : "IP 已封禁")
+        : (isBlocked ? "设备已解封" : "设备已封禁"));
+    } catch (err) {
+      toast.error(toastErrorMessage(err, isBlocked ? "解封失败" : "封禁失败"));
+      throw err;
     } finally {
       setActioning("");
     }
   }
 
-  async function handleDeviceAction(row: RiskDevice) {
-    const isBlocked = row.status === "blocked";
-    const reason = window.prompt(isBlocked ? "请输入解封原因" : "请输入封禁原因", isBlocked ? "管理员确认解封" : "后台安全处理");
-    if (reason === null) return;
-    setActioning(`device:${row.device_id}`);
-    try {
-      if (isBlocked) await unblockRiskDevice(row.device_id, reason);
-      else await blockRiskDevice(row.device_id, reason, row.device_label);
-      await load();
-    } finally {
-      setActioning("");
-    }
-  }
+  const actionIsUnblock = actionTarget?.row.status === "blocked";
+  const actionObjectLabel = actionTarget?.type === "ip" ? "IP" : "设备";
 
   const filterBar = (
     <div className="space-y-3">
@@ -190,8 +201,8 @@ export default function AdminUserSecurity() {
               onClick={() => changeTab(tab.key)}
               className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-semibold ${
                 activeTab === tab.key
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  ? "border-[var(--theme-price)] btn-theme-price"
+                  : "border-[var(--theme-border)] bg-[var(--theme-card)] text-muted-foreground hover:bg-secondary hover:text-foreground"
               }`}
             >
               {tab.label}
@@ -199,9 +210,9 @@ export default function AdminUserSecurity() {
           ))}
         </div>
       </div>
-      <div className="flex flex-wrap gap-2 rounded border border-slate-200 bg-white p-3">
+      <div className="flex flex-wrap gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] p-3">
         <input
-          className="min-w-56 rounded border px-3 py-2 text-sm"
+          className="min-h-10 min-w-56 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-[var(--theme-price)]"
           value={keyword}
           onChange={(e) => {
             setPage(1);
@@ -211,7 +222,7 @@ export default function AdminUserSecurity() {
         />
         {(activeTab === "ips" || activeTab === "devices") && (
           <select
-            className="rounded border px-3 py-2 text-sm"
+            className="min-h-10 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-foreground outline-none focus:border-[var(--theme-price)]"
             value={status}
             onChange={(e) => {
               setPage(1);
@@ -223,7 +234,7 @@ export default function AdminUserSecurity() {
         )}
         {activeTab === "events" && (
           <select
-            className="rounded border px-3 py-2 text-sm"
+            className="min-h-10 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-foreground outline-none focus:border-[var(--theme-price)]"
             value={severity}
             onChange={(e) => {
               setPage(1);
@@ -233,7 +244,7 @@ export default function AdminUserSecurity() {
             {severityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
         )}
-        <button className="rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white" onClick={() => load()}>
+        <button className="min-h-10 rounded-lg px-4 py-2 text-sm font-semibold btn-theme-price" onClick={() => load()}>
           刷新
         </button>
       </div>
@@ -241,29 +252,37 @@ export default function AdminUserSecurity() {
   );
 
   return (
-    <AdminPageShell
-      hint={<Tx>这里可以查看用户登录记录、安全事件、风险 IP 和风险设备。封禁操作会在后端生效，不只是前端隐藏。</Tx>}
-      filters={filterBar}
-    >
+    <PermissionGate anyOf={["user.view", "event.view", "event.manage"]} mode="page">
+      <AdminPageShell
+        hint={<Tx>这里可以查看用户登录记录、安全事件、风险 IP 和风险设备。封禁操作会在后端生效，不只是前端隐藏。</Tx>}
+        filters={filterBar}
+      >
       <div className="space-y-5">
         <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
           {metrics.map(([label, value]) => (
-            <div key={label} className="rounded border border-slate-200 bg-white p-4">
-              <div className="text-sm text-slate-500">{label}</div>
-              <div className="mt-2 text-2xl font-bold text-slate-900">{value}</div>
+            <div key={label} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-4 shadow-sm">
+              <div className="text-sm text-muted-foreground">{label}</div>
+              <div className="mt-2 text-2xl font-bold text-foreground">{value}</div>
             </div>
           ))}
         </div>
 
         {error && (
-          <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => { void load(); }}
+              className="rounded-lg border border-destructive/30 bg-[var(--theme-card)] px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
+            >
+              重试
+            </button>
           </div>
         )}
 
         {activeTab === "ips" && (
           <AdminNativeTable>
-            <thead className="bg-slate-50 text-slate-500">
+            <thead className="bg-secondary text-muted-foreground">
               <tr>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>IP</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>状态</th>
@@ -277,23 +296,23 @@ export default function AdminUserSecurity() {
             </thead>
             <tbody>
               {riskIps.map((row) => (
-                <tr key={row.ip} className="border-t">
-                  <td className={adminTdClassName("font-mono text-slate-900", "left")}>{row.ip}</td>
+                <tr key={row.ip} className="border-t border-[var(--theme-border)]">
+                  <td className={adminTdClassName("font-mono text-foreground", "left")}>{row.ip}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.status} tone={statusTone(row.status)} /></td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.risk_level} tone={levelTone(row.risk_level)} /></td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.login_count || row.failed_count || 0}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.related_user_count || 0}</td>
-                  <td className={adminTdClassName("text-slate-600", "left")}>{row.reason || "-"}</td>
-                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-600`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
+                  <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
+                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
-                    <button className="text-blue-600 disabled:text-slate-400" disabled={actioning === `ip:${row.ip}`} onClick={() => handleIpAction(row)}>
+                    <button className="text-[var(--theme-primary)] disabled:text-muted-foreground" disabled={actioning === `ip:${row.ip}`} onClick={() => setActionTarget({ type: "ip", row })}>
                       {row.status === "blocked" ? "解封" : "封禁"}
                     </button>
                   </td>
                 </tr>
               ))}
               {!riskIps.length && (
-                <tr><td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={8}>{loading ? "加载中..." : "暂无风险 IP"}</td></tr>
+                <tr><td className={adminTdClassName("py-6 text-center text-muted-foreground")} colSpan={8}>{loading ? "加载中..." : "暂无风险 IP"}</td></tr>
               )}
             </tbody>
           </AdminNativeTable>
@@ -301,7 +320,7 @@ export default function AdminUserSecurity() {
 
         {activeTab === "devices" && (
           <AdminNativeTable>
-            <thead className="bg-slate-50 text-slate-500">
+            <thead className="bg-secondary text-muted-foreground">
               <tr>
                 <th className={adminThClassName(undefined, "left")}>设备</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>状态</th>
@@ -315,23 +334,23 @@ export default function AdminUserSecurity() {
             </thead>
             <tbody>
               {riskDevices.map((row) => (
-                <tr key={row.device_id} className="border-t">
-                  <td className={adminTdClassName("font-mono text-slate-900", "left")} title={row.device_id}>{row.device_label || shortId(row.device_id, 18)}</td>
+                <tr key={row.device_id} className="border-t border-[var(--theme-border)]">
+                  <td className={adminTdClassName("font-mono text-foreground", "left")} title={row.device_id}>{row.device_label || shortId(row.device_id, 18)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.status} tone={statusTone(row.status)} /></td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.risk_level} tone={levelTone(row.risk_level)} /></td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.login_count || 0}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.related_user_count || 0}</td>
-                  <td className={adminTdClassName("text-slate-600", "left")}>{row.reason || "-"}</td>
-                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-600`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
+                  <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
+                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
-                    <button className="text-blue-600 disabled:text-slate-400" disabled={actioning === `device:${row.device_id}`} onClick={() => handleDeviceAction(row)}>
+                    <button className="text-[var(--theme-primary)] disabled:text-muted-foreground" disabled={actioning === `device:${row.device_id}`} onClick={() => setActionTarget({ type: "device", row })}>
                       {row.status === "blocked" ? "解封" : "封禁"}
                     </button>
                   </td>
                 </tr>
               ))}
               {!riskDevices.length && (
-                <tr><td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={8}>{loading ? "加载中..." : "暂无风险设备"}</td></tr>
+                <tr><td className={adminTdClassName("py-6 text-center text-muted-foreground")} colSpan={8}>{loading ? "加载中..." : "暂无风险设备"}</td></tr>
               )}
             </tbody>
           </AdminNativeTable>
@@ -339,7 +358,7 @@ export default function AdminUserSecurity() {
 
         {activeTab === "login" && (
           <AdminNativeTable>
-            <thead className="bg-slate-50 text-slate-500">
+            <thead className="bg-secondary text-muted-foreground">
               <tr>
                 <th className={adminThClassName(undefined, "left")}>用户</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>方式</th>
@@ -350,16 +369,16 @@ export default function AdminUserSecurity() {
             </thead>
             <tbody>
               {loginAttempts.map((row) => (
-                <tr key={row.id} className="border-t">
-                  <td className={adminTdClassName("text-slate-900", "left")}>{userLabel(row)}</td>
+                <tr key={row.id} className="border-t border-[var(--theme-border)]">
+                  <td className={adminTdClassName("text-foreground", "left")}>{userLabel(row)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{row.login_method}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-mono`, "left")}>{row.ip || "-"}</td>
-                  <td className={adminTdClassName("font-mono text-slate-600", "left")} title={row.device_id || undefined}>{shortId(row.device_id, 18)}</td>
-                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-600`, "left")}>{formatTime(row.created_at)}</td>
+                  <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{shortId(row.device_id, 18)}</td>
+                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.created_at)}</td>
                 </tr>
               ))}
               {!loginAttempts.length && (
-                <tr><td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={5}>{loading ? "加载中..." : "暂无登录记录"}</td></tr>
+                <tr><td className={adminTdClassName("py-6 text-center text-muted-foreground")} colSpan={5}>{loading ? "加载中..." : "暂无登录记录"}</td></tr>
               )}
             </tbody>
           </AdminNativeTable>
@@ -367,7 +386,7 @@ export default function AdminUserSecurity() {
 
         {activeTab === "events" && (
           <AdminNativeTable>
-            <thead className="bg-slate-50 text-slate-500">
+            <thead className="bg-secondary text-muted-foreground">
               <tr>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>等级</th>
                 <th className={adminThClassName(undefined, "left")}>事件</th>
@@ -379,34 +398,49 @@ export default function AdminUserSecurity() {
             </thead>
             <tbody>
               {events.map((row) => (
-                <tr key={row.id} className="border-t">
+                <tr key={row.id} className="border-t border-[var(--theme-border)]">
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.severity} tone={levelTone(row.severity)} /></td>
-                  <td className={adminTdClassName("text-slate-900", "left")}>
+                  <td className={adminTdClassName("text-foreground", "left")}>
                     <div className="font-medium">{row.title || row.event_type}</div>
-                    <div className="mt-1 text-xs text-slate-500">{row.description || row.event_type}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{row.description || row.event_type}</div>
                   </td>
-                  <td className={adminTdClassName("text-slate-600", "left")}>{userLabel(row)}</td>
+                  <td className={adminTdClassName("text-muted-foreground", "left")}>{userLabel(row)}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-mono`, "left")}>{row.ip || "-"}</td>
-                  <td className={adminTdClassName("font-mono text-slate-600", "left")} title={row.device_id || undefined}>{shortId(row.device_id, 18)}</td>
-                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-600`, "left")}>{formatTime(row.created_at)}</td>
+                  <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{shortId(row.device_id, 18)}</td>
+                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.created_at)}</td>
                 </tr>
               ))}
               {!events.length && (
-                <tr><td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={6}>{loading ? "加载中..." : "暂无安全事件"}</td></tr>
+                <tr><td className={adminTdClassName("py-6 text-center text-muted-foreground")} colSpan={6}>{loading ? "加载中..." : "暂无安全事件"}</td></tr>
               )}
             </tbody>
           </AdminNativeTable>
         )}
 
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>共 {total} 条</span>
-          <div className="flex gap-2">
-            <button className="rounded border px-3 py-1 disabled:opacity-40" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>上一页</button>
-            <span className="px-2 py-1">{page}</span>
-            <button className="rounded border px-3 py-1 disabled:opacity-40" disabled={page * pageSize >= total} onClick={() => setPage((p) => p + 1)}>下一页</button>
-          </div>
-        </div>
+        <Pagination
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={() => undefined}
+          showPageSizeSelect={false}
+        />
       </div>
-    </AdminPageShell>
+      <AdminInputSheet
+        open={Boolean(actionTarget)}
+        onOpenChange={(open) => {
+          if (!open) setActionTarget(null);
+        }}
+        title={`${actionIsUnblock ? "确认解封" : "确认封禁"}${actionObjectLabel}`}
+        description={actionIsUnblock
+          ? `请填写解封原因，提交后该${actionObjectLabel}会恢复访问。`
+          : `请填写封禁原因，提交后该${actionObjectLabel}会被安全策略拦截。`}
+        placeholder={actionIsUnblock ? "请输入解封原因" : "请输入封禁原因"}
+        defaultValue={actionIsUnblock ? "管理员确认解封" : "后台安全处理"}
+        submitText={actionIsUnblock ? "确认解封" : "确认封禁"}
+        onSubmit={submitSecurityAction}
+      />
+      </AdminPageShell>
+    </PermissionGate>
   );
 }

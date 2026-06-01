@@ -47,16 +47,23 @@ async function selectAllBanners() {
 }
 
 async function insertBanner(params) {
-  const { id, title, description, image, link, sort_order, enabled, publish_status, last_modified_by } = params;
+  const { id, title, description, cta_text, image, link, sort_order, enabled, publish_status, last_modified_by } = params;
   try {
     await db.query(
-      'INSERT INTO banners (id, title, description, image, link, sort_order, enabled, publish_status, last_modified_by, last_modified_at) VALUES (?,?,?,?,?,?,?,?,?,NOW())',
-      [id, title || '', description || '', image, link || '', sort_order || 0, enabled, publish_status || 'published', last_modified_by || null],
+      'INSERT INTO banners (id, title, description, cta_text, image, link, sort_order, enabled, publish_status, last_modified_by, last_modified_at) VALUES (?,?,?,?,?,?,?,?,?,?,NOW())',
+      [id, title || '', description || '', cta_text || '', image, link || '', sort_order || 0, enabled, publish_status || 'published', last_modified_by || null],
     );
   } catch (e) {
     const msg = String(e && e.sqlMessage ? e.sqlMessage : e.message || e);
     if (e && e.code === 'ER_BAD_FIELD_ERROR') {
       // Backward-compatible insert for instances missing newer audit columns.
+      if (/Unknown column.*cta_text/i.test(msg)) {
+        await db.query(
+          'INSERT INTO banners (id, title, description, image, link, sort_order, enabled, publish_status, last_modified_by, last_modified_at) VALUES (?,?,?,?,?,?,?,?,?,NOW())',
+          [id, title || '', description || '', image, link || '', sort_order || 0, enabled, publish_status || 'published', last_modified_by || null],
+        );
+        return;
+      }
       if (/Unknown column.*description/i.test(msg)) {
         await db.query(
           'INSERT INTO banners (id, title, image, link, sort_order, enabled, publish_status, last_modified_by, last_modified_at) VALUES (?,?,?,?,?,?,?,?,NOW())',
@@ -719,4 +726,3 @@ module.exports = {
   selectInventoryRecordsByReturnId,
   selectAuditLogsByReturnId,
 };
-

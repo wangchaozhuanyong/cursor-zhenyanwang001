@@ -38,6 +38,7 @@ const MAX_SKIN_NAME_LEN = 40;
 const MAX_PAYLOAD_BYTES = 512 * 1024;
 const SKIN_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
 const MONTH_DAY_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+const SCENE_TAGS = new Set(['default', 'life_service', 'premium', 'visa', 'mall', 'admin', 'promotion', 'holiday']);
 
 function badRequest(message) {
   const err = /** @type {any} */ (new Error(message));
@@ -176,6 +177,29 @@ function normalizeHolidayRules(rawRules) {
     .map((rule) => normalizeHolidayRule(rule, byId.get(String(rule.id || ''))));
 }
 
+function normalizeSceneTag(value, fallback = 'default') {
+  return typeof value === 'string' && SCENE_TAGS.has(value) ? value : fallback;
+}
+
+function normalizeThemeSkinRecord(skin, fallback) {
+  const base = fallback || FALLBACK_THEME_SKIN;
+  if (!skin || typeof skin !== 'object') return null;
+  const id = String(skin.id || base.id || '').trim();
+  if (!id) return null;
+  const name = typeof skin.name === 'string' && skin.name.trim() ? skin.name.trim() : base.name || id;
+  const description = typeof skin.description === 'string' && skin.description.trim()
+    ? skin.description.trim()
+    : base.description;
+  return {
+    ...base,
+    id,
+    name,
+    description,
+    sceneTag: normalizeSceneTag(skin.sceneTag, base.sceneTag || 'default'),
+    config: normalizeThemeConfig(skin.config || base.config),
+  };
+}
+
 function monthDayFromDate(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -208,7 +232,8 @@ function normalizeThemeSkinsPayload(rawPayload) {
     incomingById.set(id, skin);
   });
 
-  const skins = THEME_PRESETS.map((preset) => {
+  const presetIds = new Set(THEME_PRESETS.map((preset) => preset.id));
+  const presetSkins = THEME_PRESETS.map((preset) => {
     const existing = incomingById.get(preset.id);
     return {
       ...preset,
@@ -220,6 +245,15 @@ function normalizeThemeSkinsPayload(rawPayload) {
       config: normalizeThemeConfig(existing?.config || preset.config),
     };
   });
+  const seenCustomIds = new Set();
+  const customSkins = incoming
+    .map((skin) => normalizeThemeSkinRecord(skin))
+    .filter((skin) => {
+      if (!skin || presetIds.has(skin.id) || seenCustomIds.has(skin.id)) return false;
+      seenCustomIds.add(skin.id);
+      return true;
+    });
+  const skins = [...presetSkins, ...customSkins];
 
   if (!skins.length) {
     skins.push({
@@ -229,9 +263,9 @@ function normalizeThemeSkinsPayload(rawPayload) {
   }
 
   const systemDefaultSkinId = skins.some((skin) => skin.id === DEFAULT_SKIN_ID) ? DEFAULT_SKIN_ID : skins[0].id;
-  const defaultSkinId = systemDefaultSkinId;
-  const activeSkinId = systemDefaultSkinId;
   const hasSkin = (id) => !!id && skins.some((skin) => skin.id === id);
+  const defaultSkinId = hasSkin(payload.defaultSkinId) ? String(payload.defaultSkinId) : systemDefaultSkinId;
+  const activeSkinId = hasSkin(payload.activeSkinId) ? String(payload.activeSkinId) : defaultSkinId;
   const holidaySkinId = hasSkin(payload.holidaySkinId)
     ? String(payload.holidaySkinId)
     : hasSkin(DEFAULT_HOLIDAY_SKIN_ID)

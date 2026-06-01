@@ -10,6 +10,7 @@ type Props = {
   width?: number;
   gap?: number;
   viewportPadding?: number;
+  placement?: "side" | "bottom-end";
   className?: string;
   children: ReactNode;
 };
@@ -28,11 +29,27 @@ function computePosition(args: {
   menuHeight: number;
   gap: number;
   viewportPadding: number;
+  placement: "side" | "bottom-end";
 }): Pos {
-  const { anchor, viewportWidth, viewportHeight, menuWidth, menuHeight, gap, viewportPadding } = args;
+  const { anchor, viewportWidth, viewportHeight, menuWidth, menuHeight, gap, viewportPadding, placement } = args;
 
   const maxLeft = Math.max(viewportPadding, viewportWidth - menuWidth - viewportPadding);
   const maxTop = Math.max(viewportPadding, viewportHeight - menuHeight - viewportPadding);
+
+  if (placement === "bottom-end") {
+    const preferredLeft = anchor.right - menuWidth;
+    const preferredTop = anchor.bottom + gap;
+    const fallbackTop = anchor.top - menuHeight - gap;
+
+    return {
+      x: clamp(preferredLeft, viewportPadding, maxLeft),
+      y: clamp(
+        preferredTop + menuHeight <= viewportHeight - viewportPadding ? preferredTop : fallbackTop,
+        viewportPadding,
+        maxTop,
+      ),
+    };
+  }
 
   const preferredLeft = anchor.right + gap;
   const fallbackLeft = anchor.left - menuWidth - gap;
@@ -61,6 +78,7 @@ export default function AnchoredMenu({
   width = 160,
   gap = 6,
   viewportPadding = 8,
+  placement = "side",
   className,
   children,
 }: Props) {
@@ -83,6 +101,7 @@ export default function AnchoredMenu({
         menuHeight: h,
         gap,
         viewportPadding,
+        placement,
       }),
     );
   };
@@ -91,7 +110,7 @@ export default function AnchoredMenu({
     if (!open) return;
     place();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, width, gap, viewportPadding]);
+  }, [open, width, gap, viewportPadding, placement]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -108,7 +127,12 @@ export default function AnchoredMenu({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    const onDoc = () => onClose();
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target;
+      if (!(target instanceof Node)) return;
+      if (anchorRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      onClose();
+    };
     const onLayoutChange = () => place();
     window.addEventListener("resize", onLayoutChange);
     window.addEventListener("scroll", onLayoutChange, true);
@@ -123,7 +147,7 @@ export default function AnchoredMenu({
       window.removeEventListener("keydown", onKey);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, onClose, width, gap, viewportPadding]);
+  }, [anchorRef, open, onClose, width, gap, viewportPadding, placement]);
 
   useEffect(() => {
     if (!open) {
@@ -157,4 +181,3 @@ export default function AnchoredMenu({
     document.body,
   );
 }
-

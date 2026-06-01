@@ -10,9 +10,9 @@ import { isStoreTabPath } from "@/utils/storeBottomInset";
 export default function FrontPageTransition({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
 
-  if (isStoreTabPath(pathname)) {
-    return <div className="relative w-full">{children}</div>;
-  }
-
-  return <AnimatedPage>{children}</AnimatedPage>;
+  return (
+    <AnimatedPage className={isStoreTabPath(pathname) ? "store-tab-route-transition" : undefined}>
+      {children}
+    </AnimatedPage>
+  );
 }

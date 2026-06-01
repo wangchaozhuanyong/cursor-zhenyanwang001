@@ -1,6 +1,6 @@
 /**
- * 非模块脚本：在任何 ES module 之前执行，用于国产/旧内核浏览器的首屏兜底。
- * 由 index.html / admin-index.html 在 type=module 主包之前引入。
+ * Non-module preboot script. It runs before the React bundle so old browsers
+ * and stale asset failures can show a clear fallback instead of a blank page.
  */
 (function (global) {
   "use strict";
@@ -41,9 +41,29 @@
     return;
   }
 
-  var CHUNK_RECOVERY_STORAGE_KEY = "app:chunk-load-recovery";
-  var CHUNK_RECOVERY_AUTO_RELOAD_WINDOW_MS = 10 * 60 * 1000;
+  var LEGACY_STORAGE_KEY = "app:chunk-load-recovery";
+  var STORAGE_PREFIX = "app:version-recovery:";
+  var RECOVERY_WINDOW_MS = 10 * 60 * 1000;
+  var AUTO_RELOAD_LIMIT = 1;
+  var CLEANUP_TIMEOUT_MS = 4000;
+  var FRESH_QUERY_PARAM = "__fresh";
+  var NOTICE_ID = "chunk-load-recovery-notice";
+  var GLOBAL_RECOVERY_FLAG = "__appVersionRecoveryInProgress__";
   var CHUNK_LOAD_ERROR_RE = /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
+  var APP_CACHE_RE = /workbox|precache|vite|pwa|app-shell|chunk/i;
+
+  function normalizeAppName(appName) {
+    var normalized = String(appName || "app").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
+    return normalized || "app";
+  }
+
+  function getAppName() {
+    return /^\/admin(?:\/|$)/.test(global.location.pathname) ? "admin" : "storefront";
+  }
+
+  function getStorageKey(appName) {
+    return STORAGE_PREFIX + normalizeAppName(appName);
+  }
 
   function stringifyChunkReason(reason) {
     if (!reason) return "";
@@ -68,47 +88,88 @@
     return CHUNK_LOAD_ERROR_RE.test(stringifyChunkReason(reason));
   }
 
-  function readChunkRecoveryState() {
+  function readRecoveryState(appName) {
     try {
-      var raw = global.sessionStorage.getItem(CHUNK_RECOVERY_STORAGE_KEY);
+      var raw = global.sessionStorage.getItem(getStorageKey(appName)) || global.sessionStorage.getItem(LEGACY_STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch (_e3) {
       return null;
     }
   }
 
-  function writeChunkRecoveryState(state) {
+  function writeRecoveryState(appName, state) {
     try {
-      global.sessionStorage.setItem(CHUNK_RECOVERY_STORAGE_KEY, JSON.stringify(state));
+      global.sessionStorage.setItem(getStorageKey(appName), JSON.stringify(state));
+      global.sessionStorage.removeItem(LEGACY_STORAGE_KEY);
     } catch (_e4) {
       /* ignore */
     }
   }
 
+  function resolveRecoveryPlan(appName, reason) {
+    var now = Date.now();
+    var last = readRecoveryState(appName);
+    var sameRecoveryWindow = last && typeof last.firstAt === "number" && now - last.firstAt < RECOVERY_WINDOW_MS;
+    var attempts = sameRecoveryWindow ? Math.max(0, Number(last.attempts || 0)) : 0;
+    var firstAt = sameRecoveryWindow ? last.firstAt : now;
+    var shouldAutoReload = attempts < AUTO_RELOAD_LIMIT;
+    var reasonText = stringifyChunkReason(reason).slice(0, 500);
+    return {
+      shouldAutoReload: shouldAutoReload,
+      isRepeatedFailure: !shouldAutoReload,
+      state: {
+        app: normalizeAppName(appName),
+        firstAt: firstAt,
+        lastAt: now,
+        attempts: attempts + 1,
+        reason: reasonText,
+      },
+    };
+  }
+
   function reloadWithCacheBuster() {
     try {
       var nextUrl = new URL(global.location.href);
-      nextUrl.searchParams.set("__fresh", String(Date.now()));
+      nextUrl.searchParams.set(FRESH_QUERY_PARAM, String(Date.now()));
       global.location.replace(nextUrl.toString());
     } catch (_e5) {
       global.location.reload();
     }
   }
 
-  function clearChunkRecoveryCaches() {
+  function withTimeout(task, timeoutMs) {
+    return new Promise(function (resolve, reject) {
+      var timer = global.setTimeout(function () {
+        resolve();
+      }, timeoutMs);
+      task.then(function (value) {
+        global.clearTimeout(timer);
+        resolve(value);
+      }).catch(function (error) {
+        global.clearTimeout(timer);
+        reject(error);
+      });
+    });
+  }
+
+  function clearRuntimeCaches(hardResetServiceWorker) {
+    var jobs = [];
+
     try {
       if (global.caches && global.caches.keys) {
-        global.caches.keys().then(function (keys) {
-          return Promise.all(
-            keys
-              .filter(function (key) {
-                return /workbox|precache|vite|pwa|app-shell|chunk/i.test(key);
-              })
-              .map(function (key) {
-                return global.caches.delete(key);
-              })
-          );
-        }).catch(function () {});
+        jobs.push(
+          global.caches.keys().then(function (keys) {
+            return Promise.all(
+              keys
+                .filter(function (key) {
+                  return APP_CACHE_RE.test(key);
+                })
+                .map(function (key) {
+                  return global.caches.delete(key);
+                })
+            );
+          })
+        );
       }
     } catch (_e5a) {
       /* ignore */
@@ -116,26 +177,76 @@
 
     try {
       if (global.navigator && global.navigator.serviceWorker && global.navigator.serviceWorker.getRegistrations) {
-        global.navigator.serviceWorker.getRegistrations().then(function (registrations) {
-          return Promise.all(
-            registrations.map(function (registration) {
-              return registration.update();
-            })
-          );
-        }).catch(function () {});
+        jobs.push(
+          global.navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            return Promise.all(
+              registrations.map(function (registration) {
+                var updateTask = Promise.resolve();
+                try {
+                  updateTask = registration.update();
+                } catch (_e5b) {
+                  updateTask = Promise.resolve();
+                }
+
+                return updateTask.then(function () {
+                  try {
+                    if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" });
+                  } catch (_e5c) {
+                    /* ignore */
+                  }
+
+                  if (!hardResetServiceWorker) return undefined;
+                  try {
+                    return registration.unregister();
+                  } catch (_e5d) {
+                    return undefined;
+                  }
+                });
+              })
+            );
+          })
+        );
       }
-    } catch (_e5b) {
+    } catch (_e5e) {
+      /* ignore */
+    }
+
+    return Promise.all(
+      jobs.map(function (job) {
+        return job.catch(function () {
+          return undefined;
+        });
+      })
+    );
+  }
+
+  function removeRecoveryNotice() {
+    try {
+      var old = doc.getElementById(NOTICE_ID);
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+    } catch (_e6a) {
       /* ignore */
     }
   }
 
-  function showChunkRecoveryNotice(waitForManualRefresh) {
+  function retryRecovery(appName) {
+    if (global[GLOBAL_RECOVERY_FLAG]) return;
+    global[GLOBAL_RECOVERY_FLAG] = true;
+    showRecoveryNotice(appName, true);
+    withTimeout(clearRuntimeCaches(true), CLEANUP_TIMEOUT_MS)
+      .then(reloadWithCacheBuster)
+      .catch(function () {
+        global[GLOBAL_RECOVERY_FLAG] = false;
+        showRecoveryNotice(appName, true);
+      });
+  }
+
+  function showRecoveryNotice(appName, waitForManualRefresh) {
     try {
-      var old = doc.getElementById("chunk-load-recovery-notice");
-      if (old && old.parentNode) old.parentNode.removeChild(old);
+      removeRecoveryNotice();
 
       var el = doc.createElement("div");
-      el.id = "chunk-load-recovery-notice";
+      el.id = NOTICE_ID;
       el.style.cssText = [
         "position:fixed",
         "inset:0",
@@ -149,14 +260,20 @@
       ].join(";");
       el.innerHTML =
         '<div style="max-width:360px;margin:16px;padding:20px;border-radius:18px;background:#fff;color:#111827;text-align:center;box-shadow:0 20px 45px rgba(15,23,42,.24)">'
-        + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">网站版本已更新</div>'
-        + '<div style="font-size:13px;line-height:1.7;color:#4b5563;margin-bottom:16px">'
-        + (waitForManualRefresh ? "自动刷新后仍未加载成功，请手动刷新页面。" : "正在刷新页面以加载最新版本。")
+        + '<div style="font-size:16px;font-weight:700;margin-bottom:8px">'
+        + (waitForManualRefresh ? "需要重新加载最新版" : "正在修复网站版本")
         + "</div>"
-        + '<button type="button" style="min-height:40px;border:0;border-radius:999px;background:#f97316;color:#fff;padding:0 18px;font-weight:700;cursor:pointer">立即刷新</button>'
+        + '<div style="font-size:13px;line-height:1.7;color:#4b5563;margin-bottom:16px">'
+        + (waitForManualRefresh ? "自动修复后仍未成功，请点击下方按钮清理旧缓存并重新加载。" : "正在清理旧缓存，稍后会自动重新加载页面。")
+        + "</div>"
+        + '<button type="button" style="min-height:40px;border:0;border-radius:999px;background:#f97316;color:#fff;padding:0 18px;font-weight:700;cursor:pointer">重新加载</button>'
         + "</div>";
       var button = el.querySelector("button");
-      if (button) button.addEventListener("click", reloadWithCacheBuster);
+      if (button) {
+        button.addEventListener("click", function () {
+          retryRecovery(appName);
+        });
+      }
       (doc.body || doc.documentElement).appendChild(el);
     } catch (_e6) {
       /* ignore */
@@ -165,22 +282,28 @@
 
   function recoverFromChunkLoadError(reason) {
     if (!isChunkLoadFailure(reason)) return false;
-    try {
-      var now = Date.now();
-      var last = readChunkRecoveryState();
-      var sameRecoveryWindow = last && typeof last.firstAt === "number" && now - last.firstAt < CHUNK_RECOVERY_AUTO_RELOAD_WINDOW_MS;
-      var attempts = sameRecoveryWindow ? Math.max(0, Number(last.attempts || 0)) : 0;
-      var firstAt = sameRecoveryWindow ? last.firstAt : now;
-      var waitForManualRefresh = attempts >= 1;
-      writeChunkRecoveryState({ app: "preboot", firstAt: firstAt, lastAt: now, attempts: attempts + 1 });
-      clearChunkRecoveryCaches();
-      showChunkRecoveryNotice(waitForManualRefresh);
-      if (!waitForManualRefresh) global.setTimeout(reloadWithCacheBuster, 300);
-      return true;
-    } catch (_e7) {
-      showChunkRecoveryNotice(true);
-      return true;
-    }
+    if (global[GLOBAL_RECOVERY_FLAG]) return true;
+
+    var appName = getAppName();
+    var plan = resolveRecoveryPlan(appName, reason);
+    global[GLOBAL_RECOVERY_FLAG] = true;
+    writeRecoveryState(appName, plan.state);
+    showRecoveryNotice(appName, plan.isRepeatedFailure);
+
+    withTimeout(clearRuntimeCaches(plan.isRepeatedFailure), CLEANUP_TIMEOUT_MS)
+      .then(function () {
+        if (plan.shouldAutoReload) {
+          reloadWithCacheBuster();
+          return;
+        }
+        global[GLOBAL_RECOVERY_FLAG] = false;
+      })
+      .catch(function () {
+        global[GLOBAL_RECOVERY_FLAG] = false;
+        showRecoveryNotice(appName, true);
+      });
+
+    return true;
   }
 
   global.addEventListener("error", function (event) {

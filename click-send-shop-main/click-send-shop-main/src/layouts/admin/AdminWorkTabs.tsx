@@ -164,6 +164,7 @@ export default function AdminWorkTabs() {
   };
 
   const menuTab = menu ? tabs.find((t) => t.id === menu.tabId) : null;
+  const activeTab = tabs.find((tab) => tab.id === activeTabId || tab.id === currentKey) ?? tabs[0];
 
   if (tabs.length === 0) {
     return (
@@ -181,14 +182,14 @@ export default function AdminWorkTabs() {
           aria-label={tText("向左滚动标签")}
           disabled={!canScrollLeft}
           onClick={() => scrollTabs("left")}
-          className="ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-30"
+          className="ml-1 hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-30 sm:flex"
         >
           <ChevronLeft size={16} />
         </button>
 
         <div
           ref={scrollRef}
-          className="admin-work-tabs flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth px-1"
+          className="admin-work-tabs hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth px-1 sm:flex"
           role="tablist"
           aria-label={tText("已打开页面")}
         >
@@ -222,12 +223,17 @@ export default function AdminWorkTabs() {
           })}
         </div>
 
+        <div className="flex min-w-0 flex-1 items-center gap-1 px-2 sm:hidden">
+          {activeTab.pinned ? <Pin size={12} className="shrink-0 text-muted-foreground" /> : null}
+          <span className="truncate text-xs font-semibold text-foreground">{activeTab.title}</span>
+        </div>
+
         <button
           type="button"
           aria-label={tText("向右滚动标签")}
           disabled={!canScrollRight}
           onClick={() => scrollTabs("right")}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-30"
+          className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-30 sm:flex"
         >
           <ChevronRight size={16} />
         </button>
@@ -249,7 +255,7 @@ export default function AdminWorkTabs() {
               <Tx>全部</Tx>
               <ChevronDown size={13} className={cn("shrink-0 transition-transform", listOpen ? "rotate-180" : "")} />
             </button>
-            <AnchoredMenu open={listOpen} onClose={() => setListOpen(false)} anchorRef={listBtnRef} width={224} gap={6}>
+            <AnchoredMenu open={listOpen} onClose={() => setListOpen(false)} anchorRef={listBtnRef} width={224} gap={6} placement="bottom-end">
               <div className="max-h-64 overflow-y-auto py-1 text-sm" onClick={(e) => e.stopPropagation()}>
                 {tabs.map((tab) => {
                   const active = tab.id === activeTabId || tab.id === currentKey;

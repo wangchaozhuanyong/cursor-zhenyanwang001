@@ -7,6 +7,7 @@ export type PathRule =
 
 const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p === "/admin" || p === "/admin/", rule: { kind: "one", permission: "dashboard.view" } },
+  { test: (p) => p.startsWith("/admin/dashboard"), rule: { kind: "one", permission: "dashboard.view" } },
   { test: (p) => p.startsWith("/admin/categories"), rule: { kind: "one", permission: "category.manage" } },
   { test: (p) => p.startsWith("/admin/tags"), rule: { kind: "one", permission: "tag.manage" } },
   { test: (p) => p.startsWith("/admin/products"), rule: { kind: "one", permission: "product.view" } },

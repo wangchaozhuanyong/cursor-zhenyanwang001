@@ -8,6 +8,11 @@ export default tseslint.config(
   {
     ignores: [
       "dist",
+      "dist/**",
+      "admin-dist",
+      "admin-dist/**",
+      "sw.js",
+      "workbox-*.js",
       "**/vite.config.ts.timestamp-*.mjs",
     ],
   },

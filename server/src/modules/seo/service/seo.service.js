@@ -11,6 +11,12 @@ const STATIC_PUBLIC_PATHS = [
   '/about',
 ];
 
+const TIKTOK_CRAWLER_USER_AGENTS = [
+  'TikTokSpider',
+  'TikTokBot',
+  'Bytespider',
+];
+
 const RESTRICTED_KEYWORDS = [
   'tobacco', 'cigarette', 'cigar', 'smoking', 'vape', 'e-cigarette', 'nicotine',
   'alcohol', 'liquor', 'wine', 'beer', 'areca', 'betel',
@@ -52,6 +58,18 @@ function escapeXml(value) {
 
 function buildUrl(baseUrl, path) {
   return `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+function buildTikTokCrawlerRobotsRules() {
+  return TIKTOK_CRAWLER_USER_AGENTS.flatMap((userAgent) => [
+    `User-agent: ${userAgent}`,
+    'Allow: /tiktok',
+    'Allow: /tiktok/',
+    'Allow: /assets/tiktok-',
+    'Allow: /assets/tiktok-logo.jpeg',
+    'Disallow: /',
+    '',
+  ]);
 }
 
 async function selectProductsForSitemap() {
@@ -165,6 +183,7 @@ async function buildSitemapXml(req) {
 function buildRobotsTxt(req) {
   const sitemapUrl = buildUrl(getPublicBaseUrl(req), '/sitemap.xml');
   return [
+    ...buildTikTokCrawlerRobotsRules(),
     'User-agent: *',
     'Allow: /',
     'Disallow: /admin',

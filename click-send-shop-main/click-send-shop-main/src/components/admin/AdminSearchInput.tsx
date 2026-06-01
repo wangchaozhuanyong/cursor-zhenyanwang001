@@ -35,6 +35,7 @@ export default function AdminSearchInput({
         onChange={(e) => onChange(e.target.value)}
         className={cn(
           "min-h-[42px] w-full rounded-lg border border-border bg-background pr-3 text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground",
+          "transition-[border-color,box-shadow,background-color] focus-visible:border-[var(--theme-primary)] focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/20 disabled:cursor-not-allowed disabled:opacity-55",
           showIcon ? "pl-9" : "pl-3",
           className,
         )}

@@ -69,6 +69,7 @@ const SCENE_TAG_VALUES: ThemeSceneTag[] = [
 
 const PRESET_SCENE_BY_ID: Record<string, ThemeSceneTag> = {
   default_life_green: "mall",
+  premium_ivory_jade: "premium",
   premium_black_gold: "premium",
   professional_blue: "visa",
   promo_red_orange: "promotion",
@@ -265,7 +266,8 @@ export function normalizeThemeSkinsPayload(payload: {
   const incoming = payload ?? {};
   const normalizedIncoming = Array.isArray(incoming.skins) ? incoming.skins.map(normalizeThemeSkin) : [];
   const incomingById = new Map(normalizedIncoming.map((skin) => [skin.id, skin]));
-  const skins = THEME_PRESETS.map((preset) => {
+  const presetIds = new Set(THEME_PRESETS.map((skin) => skin.id));
+  const presetSkins = THEME_PRESETS.map((preset) => {
     const existing = incomingById.get(preset.id);
     return {
       ...preset,
@@ -274,6 +276,8 @@ export function normalizeThemeSkinsPayload(payload: {
       config: normalizeThemeConfig(existing?.config ?? preset.config),
     };
   });
+  const customSkins = normalizedIncoming.filter((skin) => !presetIds.has(skin.id));
+  const skins = [...presetSkins, ...customSkins];
 
   if (skins.length === 0) {
     skins.push({
@@ -283,10 +287,9 @@ export function normalizeThemeSkinsPayload(payload: {
   }
 
   const systemDefaultSkinId = skins.some((skin) => skin.id === DEFAULT_SKIN_ID) ? DEFAULT_SKIN_ID : skins[0].id;
-  const defaultSkinId = systemDefaultSkinId;
-  const activeSkinId = systemDefaultSkinId;
-
   const hasSkin = (id: string | undefined | null) => !!id && skins.some((skin) => skin.id === id);
+  const defaultSkinId = hasSkin(incoming.defaultSkinId) ? String(incoming.defaultSkinId) : systemDefaultSkinId;
+  const activeSkinId = hasSkin(incoming.activeSkinId) ? String(incoming.activeSkinId) : defaultSkinId;
   const holidaySkinId = hasSkin(incoming.holidaySkinId)
     ? String(incoming.holidaySkinId)
     : hasSkin(DEFAULT_HOLIDAY_SKIN_ID)

@@ -478,11 +478,12 @@ export default function AdminProductForm() {
   };
 
   const handleSave = async (publish = false) => {
-    if (uploadingCover || uploadingGallery) {
+    if (saving || deleting) return;
+    if (uploadingCover || uploadingGallery || uploadingVariantImageIndex !== null) {
       toast.error(tText("图片仍在上传中，请等待上传完成后再保存商品。"));
       return;
     }
-    if (!form.name) { toast.error(tText("请输入商品名称")); return; }
+    if (!form.name.trim()) { toast.error(tText("请输入商品名称")); return; }
     if (!form.variants.length) { toast.error(tText("至少保留一条规格")); return; }
     setSaving(true);
     try {
@@ -532,7 +533,7 @@ export default function AdminProductForm() {
       const complianceType = (form.compliance_type || "normal").trim();
       const shouldNoindex = form.is_age_restricted || complianceType !== "normal";
       const payload: AdminProductUpsertPayload = {
-        name: form.name,
+        name: form.name.trim(),
         price: mainPrice,
         stock_warning_threshold: mainStockWarningThreshold,
         stock_lower_limit: mainStockLowerLimit,
@@ -592,6 +593,7 @@ export default function AdminProductForm() {
   };
 
   const handleDelete = async () => {
+    if (deleting || saving) return;
     if (isNew || !id) return;
     setDeleting(true);
     try {
@@ -608,6 +610,7 @@ export default function AdminProductForm() {
 
   const categoryOptions = flattenCategories(categories);
   const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
+  const uploadBusy = uploadingCover || uploadingGallery || uploadingVariantImageIndex !== null;
   const enabledStockTotal = form.variants.reduce(
     (sum, row) => sum + (row.enabled === false ? 0 : Number(row.stock || 0)),
     0,
@@ -1240,6 +1243,7 @@ export default function AdminProductForm() {
               variant="gold"
               state={saving ? "loading" : "normal"}
               loadingText="保存中..."
+              disabled={saving || deleting || uploadBusy}
               onClick={() => void handleSave(false)}
               className="w-full rounded-lg px-6 py-3 text-sm font-semibold"
             ><Tx>
@@ -1250,7 +1254,7 @@ export default function AdminProductForm() {
               variant="outline"
               state={saving ? "loading" : "normal"}
               loadingText="保存中..."
-              disabled={saving}
+              disabled={saving || deleting || uploadBusy}
               onClick={() => void handleSave(true)}
               className="w-full rounded-lg border border-gold bg-gold/10 px-6 py-3 text-sm font-semibold text-theme-price"
             ><Tx>
@@ -1262,7 +1266,7 @@ export default function AdminProductForm() {
                 variant="outline"
                 state={deleting ? "loading" : "normal"}
                 loadingText="删除中..."
-                disabled={deleting || saving}
+                disabled={deleting || saving || uploadBusy}
                 onClick={() => setDeleteConfirmOpen(true)}
                 className={`w-full rounded-lg border px-6 py-3 text-sm font-semibold ${THEME_OUTLINE_DANGER}`}
               ><Tx>

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { Home, SearchX } from "lucide-react";
+import { ArrowLeft, Home, SearchX } from "lucide-react";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/services/analyticsService";
 
@@ -12,23 +12,34 @@ export default function NotFound() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="store-page-shell store-bottom-safe flex min-h-screen items-center justify-center bg-[var(--theme-bg)] px-4 py-12 text-[var(--theme-text)]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center"
+        className="store-card w-full max-w-md px-6 py-9 text-center"
       >
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gold-light">
-          <SearchX size={36} className="text-theme-price" />
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-primary)] shadow-sm">
+          <SearchX size={32} aria-hidden />
         </div>
-        <h1 className="font-display text-5xl font-bold text-foreground">404</h1>
-        <p className="mt-3 text-sm text-muted-foreground">抱歉，您访问的页面不存在</p>
-        <button
-          onClick={() => navigate("/")}
-          className="mt-6 inline-flex items-center gap-2 rounded-full btn-theme-price px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.97]"
-        >
-          <Home size={16} /> 返回首页
-        </button>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--theme-text-muted)]">404</p>
+        <h1 className="mt-2 text-2xl font-bold text-foreground">页面不存在</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">这个页面可能已移动、删除，或链接输入有误。你可以返回上一页，或者回到首页继续浏览。</p>
+        <div className="mt-7 grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-bg)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
+          >
+            <ArrowLeft size={16} aria-hidden /> 返回上一页
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full btn-theme-price px-5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2"
+          >
+            <Home size={16} aria-hidden /> 返回首页
+          </button>
+        </div>
       </motion.div>
     </div>
   );

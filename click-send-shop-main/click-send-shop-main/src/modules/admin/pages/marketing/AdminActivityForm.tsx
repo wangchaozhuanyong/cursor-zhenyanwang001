@@ -24,6 +24,7 @@ import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { fetchProducts } from "@/services/admin/productService";
 import { fetchCategories } from "@/services/admin/categoryService";
 import type { Product } from "@/types/product";
@@ -51,9 +52,11 @@ function categoryLabel(category: Category | undefined, id: string) {
 }
 
 const LEGACY_COUPON_ACTIVITY_TYPES = new Set<ActivityType>(["coupon_activity", "new_user_gift"]);
+const EMPTY_PRODUCTS: Product[] = [];
 
 export default function AdminActivityForm() {
   const { tText } = useAdminT();
+  const { confirm } = useAdminConfirm();
   const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
   const { activityType: labelType } = useAdminDisplayLabel();
   const queryClient = useQueryClient();
@@ -126,7 +129,7 @@ export default function AdminActivityForm() {
     if (!keyword) return flatCategories;
     return flatCategories.filter((category) => category.name.toLowerCase().includes(keyword));
   }, [flatCategories, scopeKeyword]);
-  const productOptions = productSearchQuery.data?.list || [];
+  const productOptions = productSearchQuery.data?.list || EMPTY_PRODUCTS;
   const allowedDisplayPositions = useMemo(
     () => getAllowedDisplayPositionsForActivity(form.type),
     [form.type],
@@ -305,21 +308,32 @@ export default function AdminActivityForm() {
     });
   };
 
-  const handleScopeTypeChange = (nextScopeType: ActivityPayload["scope_type"]) => {
-    const currentScopeType = form.scope_type || "product";
-    if (nextScopeType === currentScopeType) return;
-    const shouldClearIds =
-      selectedScopeIds.length > 0
-      && (OBJECT_SCOPE_TYPES.has(currentScopeType) || OBJECT_SCOPE_TYPES.has(nextScopeType));
-    if (shouldClearIds && !window.confirm(tText("切换适用对象后，已选择的商品或分类将清空，是否继续？"))) {
-      return;
-    }
+  const applyScopeTypeChange = (nextScopeType: ActivityPayload["scope_type"]) => {
     setScopeKeyword("");
     setForm((prev) => ({
       ...prev,
       scope_type: nextScopeType,
       scope_ids: OBJECT_SCOPE_TYPES.has(nextScopeType) ? [] : [],
     }));
+  };
+
+  const handleScopeTypeChange = (nextScopeType: ActivityPayload["scope_type"]) => {
+    const currentScopeType = form.scope_type || "product";
+    if (nextScopeType === currentScopeType) return;
+    const shouldClearIds =
+      selectedScopeIds.length > 0
+      && (OBJECT_SCOPE_TYPES.has(currentScopeType) || OBJECT_SCOPE_TYPES.has(nextScopeType));
+    if (shouldClearIds) {
+      confirm({
+        title: tText("确认切换适用对象"),
+        description: tText("切换后，已选择的商品或分类会被清空。请确认是否继续。"),
+        confirmText: tText("继续切换"),
+        danger: true,
+        onConfirm: () => applyScopeTypeChange(nextScopeType),
+      });
+      return;
+    }
+    applyScopeTypeChange(nextScopeType);
   };
 
   const toggleScopeId = (id: string, checked: boolean) => {

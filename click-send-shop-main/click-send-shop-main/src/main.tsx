@@ -4,6 +4,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import { initPwaOfflineNavigation, markStoreSpaReady } from "@/lib/pwaOfflineNavigation";
+import SilkPageLoader from "@/components/motion/SilkPageLoader";
+import AppVersionReadyMarker from "@/components/AppVersionReadyMarker";
 
 const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
 
@@ -17,6 +19,7 @@ const StoreShell = lazy(async () => {
     default: function StoreShellComponent() {
       return (
         <ThemeRuntimeProvider>
+          <AppVersionReadyMarker appName="storefront" onReady={markStoreSpaReady} />
           <StoreApp />
         </ThemeRuntimeProvider>
       );
@@ -33,22 +36,21 @@ if (!isTikTokLanding) {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <Suspense fallback={null}>
+  <Suspense fallback={<SilkPageLoader />}>
     {isTikTokLanding ? (
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <TikTokLanding />
-      </BrowserRouter>
+      <>
+        <AppVersionReadyMarker appName="storefront" />
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <TikTokLanding />
+        </BrowserRouter>
+      </>
     ) : (
       <StoreShell />
     )}
   </Suspense>,
 );
-
-if (!isTikTokLanding) {
-  markStoreSpaReady();
-}

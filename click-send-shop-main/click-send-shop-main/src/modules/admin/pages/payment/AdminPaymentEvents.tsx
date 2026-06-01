@@ -24,6 +24,7 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   adminTableCellClass,
   adminTableTheadRow,
@@ -65,11 +66,13 @@ function relatedBusinessLabel(row: PaymentEventAdminRow, tText: (zh: string) => 
 
 export default function AdminPaymentEvents() {
   const { tText } = useAdminT();
+  const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [provider, setProvider] = useState("");
   const [orderId, setOrderId] = useState("");
+  const [replayingEventId, setReplayingEventId] = useState<string | null>(null);
 
   const tableHeaders = useMemo(() => TABLE_HEADERS.map((h) => tText(h)), [tText]);
   const providerOptions = useMemo(
@@ -98,6 +101,7 @@ export default function AdminPaymentEvents() {
 
   const replayMutation = useMutation({
     mutationFn: (row: PaymentEventAdminRow) => paymentAdmin.replayAdminPaymentEvent(row.id),
+    onMutate: (row) => setReplayingEventId(row.id),
     onSuccess: async () => {
       toast.success(tText("事件已重新处理，支付与订单数据会自动刷新"));
       await Promise.all([
@@ -107,10 +111,30 @@ export default function AdminPaymentEvents() {
       ]);
     },
     onError: (error) => toast.error(toastErrorMessage(error, tText("重放事件失败"))),
+    onSettled: () => setReplayingEventId(null),
   });
 
   const rows = eventsQuery.data?.list || [];
   const total = eventsQuery.data?.total || 0;
+
+  const confirmReplay = (row: PaymentEventAdminRow) => {
+    confirm({
+      title: tText("确认重新处理支付事件"),
+      description: (
+        <>
+          {tText("重新处理会再次触发支付事件的业务处理流程，可能刷新订单、支付和报表状态。请确认该事件确实需要重试。")}
+          <br />
+          {tText("事件")}：{labelEventType(row.event_type)}
+          <br />
+          ID：{row.provider_event_id || row.id}
+        </>
+      ),
+      confirmText: tText("确认重新处理"),
+      onConfirm: async () => {
+        await replayMutation.mutateAsync(row);
+      },
+    });
+  };
 
   const renderMobileCard = (row: PaymentEventAdminRow) => (
     <AdminTableMobileCard>
@@ -137,13 +161,15 @@ export default function AdminPaymentEvents() {
         </AdminTableMobileCardField>
       </div>
       <div className="mt-3 border-t border-border pt-3">
-        <button type="button" onClick={() => replayMutation.mutate(row)} disabled={replayMutation.isPending} className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-60"><Tx>重新处理</Tx></button>
+        <button type="button" onClick={() => confirmReplay(row)} disabled={replayMutation.isPending} className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-60">
+          {replayingEventId === row.id ? tText("处理中...") : <Tx>重新处理</Tx>}
+        </button>
       </div>
     </AdminTableMobileCard>
   );
 
   return (
-    <PermissionGate permission="payment.manage">
+    <PermissionGate permission="payment.manage" mode="page">
       <AdminPageShell
         hint={<Tx>回调事件使用低频轮询兜底，SSE 到达时会精准刷新。</Tx>}
         toolbar={(
@@ -167,7 +193,11 @@ export default function AdminPaymentEvents() {
         )}
       >
         <AnimatedTable
-          loading={eventsQuery.isLoading}
+          loading={eventsQuery.isLoading && !eventsQuery.data}
+          error={eventsQuery.isError && !eventsQuery.data}
+          errorTitle={tText("支付事件加载失败")}
+          errorDescription={tText("支付事件暂时没有加载成功，请检查网络或稍后重试。")}
+          onRetry={() => { void eventsQuery.refetch(); }}
           rows={rows}
           rowKey={(row) => row.id}
           skeletonRows={8}
@@ -206,7 +236,9 @@ export default function AdminPaymentEvents() {
               </td>
               <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(row.created_at)}</td>
               <td className={adminTableCellClass("right")}>
-                <button type="button" onClick={() => replayMutation.mutate(row)} disabled={replayMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60"><Tx>重新处理</Tx></button>
+                <button type="button" onClick={() => confirmReplay(row)} disabled={replayMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">
+                  {replayingEventId === row.id ? tText("处理中...") : <Tx>重新处理</Tx>}
+                </button>
               </td>
             </>
           )}

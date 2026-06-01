@@ -6,7 +6,7 @@ export default function FeatureUnavailable() {
 
   return (
     <div className="store-page-shell store-bottom-safe flex min-h-[60vh] items-center justify-center bg-[var(--theme-bg)] px-4 py-10 text-[var(--theme-text)]">
-      <div className="w-full max-w-md rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-6 py-8 text-center shadow-sm">
+      <div className="store-card w-full max-w-md px-6 py-8 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]">
           <Settings size={26} />
         </div>
@@ -18,7 +18,7 @@ export default function FeatureUnavailable() {
           <button
             type="button"
             onClick={() => navigate("/", { replace: true })}
-            className="inline-flex items-center gap-2 rounded-full btn-theme-price px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full btn-theme-price px-5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2"
           >
             <Home size={15} />
             返回首页
@@ -26,7 +26,7 @@ export default function FeatureUnavailable() {
           <button
             type="button"
             onClick={() => navigate("/support-download?tab=support")}
-            className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--theme-text)]"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-5 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-surface)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
           >
             <Headphones size={15} />
             联系客服

@@ -43,7 +43,9 @@ export default function StoreButton({
     <button
       type="button"
       className={cn(
-        "inline-flex items-center justify-center gap-2 whitespace-nowrap transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center justify-center gap-2 whitespace-nowrap transition-[transform,box-shadow,filter,background-color,border-color,color] duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]",
+        "hover:brightness-[1.02]",
         variantMap[variant],
         sizeMap[size],
         radiusClass,

@@ -6,18 +6,18 @@ export const FESTIVAL_SKIN_ID = "festive_ruby_gold";
 
 export const DEFAULT_LIFE_GREEN_CONFIG: ThemeConfig = {
   skinName: "日常购物皮肤",
-  bgColor: "#F4F7F2",
+  bgColor: "#F5F7F3",
   surfaceColor: "#FFFFFF",
-  primaryColor: "#0F8F54",
-  secondaryColor: "#E4F2EA",
-  accentColor: "#B89755",
-  priceColor: "#D94A2B",
-  textColor: "#17211B",
-  mutedTextColor: "#6F7A72",
-  borderColor: "#DFE7DF",
-  successColor: "#16865A",
-  warningColor: "#C8892F",
-  dangerColor: "#C94940",
+  primaryColor: "#075F4A",
+  secondaryColor: "#E7F0EA",
+  accentColor: "#B98A3D",
+  priceColor: "#C7462F",
+  textColor: "#17211F",
+  mutedTextColor: "#68756F",
+  borderColor: "#DDE7DF",
+  successColor: "#168A62",
+  warningColor: "#C98A2E",
+  dangerColor: "#C7462F",
   ...STOREFRONT_DESIGN_LOCKS,
 };
 
@@ -41,9 +41,8 @@ export const FESTIVAL_RUBY_GOLD_CONFIG: ThemeConfig = {
 export const DAILY_COMMERCE_SKIN: ThemeSkin = {
   id: DEFAULT_SKIN_ID,
   name: "日常购物皮肤",
-  description: "适合全年默认使用，白底、绿色品牌感、橙红价格强调，整体干净耐看。",
+  description: "全年默认使用的高级商城皮肤：象牙白底、孔雀石绿品牌色、香槟金细节和朱砂红价格，干净、整齐、耐看，适合日常购物转化。",
   sceneTag: "mall",
-  clientEnabled: true,
   config: DEFAULT_LIFE_GREEN_CONFIG,
 };
 
@@ -52,7 +51,6 @@ export const FESTIVAL_RUBY_GOLD_SKIN: ThemeSkin = {
   name: "节日促销皮肤",
   description: "适合节日和大促自动启用，暖白底配红金点缀，有氛围但不刺眼。",
   sceneTag: "holiday",
-  clientEnabled: true,
   config: FESTIVAL_RUBY_GOLD_CONFIG,
 };
 

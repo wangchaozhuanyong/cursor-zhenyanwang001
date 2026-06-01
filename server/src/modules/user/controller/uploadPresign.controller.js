@@ -1,6 +1,14 @@
 const presignService = require('../service/uploadPresign.service');
 const { writeAuditLog } = require('../../../utils/auditLog');
 
+function buildUploadContext(req, uploadSource) {
+  const originalUrl = String(req.originalUrl || req.url || '');
+  return {
+    uploaderType: originalUrl.startsWith('/api/admin/') ? 'admin' : 'user',
+    uploadSource,
+  };
+}
+
 exports.createTicket = async (req, res) => {
   try {
     const result = await presignService.createUploadTicket(req.user.id, req.body);
@@ -37,7 +45,11 @@ exports.createTicket = async (req, res) => {
 
 exports.completeUpload = async (req, res) => {
   try {
-    const result = await presignService.completeUpload(req.user.id, req.body);
+    const result = await presignService.completeUpload(
+      req.user.id,
+      req.body,
+      buildUploadContext(req, 'presign_complete'),
+    );
     await writeAuditLog({
       req,
       operatorId: req.user.id,

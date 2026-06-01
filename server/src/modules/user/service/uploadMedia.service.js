@@ -5,6 +5,7 @@ const sharp = require('sharp');
 const { isS3StorageEnabled, uploadBufferToS3 } = require('../../../utils/objectStorage');
 const { normalizeImageMode, optimizeImageFile } = require('../../../utils/imageOptimize');
 const { bufferMatchesDeclaredMime } = require('../../../utils/fileMagic');
+const { safeRecordUploadedAsset } = require('./uploadAsset.service');
 
 const uploadDir = path.join(__dirname, '../../../../public/uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -65,20 +66,35 @@ async function persistBuffer(filename, buffer, contentType = 'image/webp') {
       contentType,
       cacheControl: 'public, max-age=31536000, immutable',
     });
-    return { filename, url: uploaded.url };
+    return {
+      filename,
+      url: uploaded.url,
+      storageProvider: 's3',
+      storageKey: uploaded.key,
+      sizeBytes: buffer.length,
+      contentType,
+    };
   }
   const outPath = path.join(uploadDir, filename);
   await fs.promises.writeFile(outPath, buffer);
-  return { filename, url: `/uploads/${filename}` };
+  return {
+    filename,
+    url: `/uploads/${filename}`,
+    storageProvider: 'local',
+    storageKey: `uploads/${filename}`,
+    sizeBytes: buffer.length,
+    contentType,
+  };
 }
 
-async function writeImageFromFile(file, mode = 'product') {
+async function writeImageFromFile(file, mode = 'product', context = {}) {
   if (file.size > IMAGE_MAX_SIZE) throw badRequest('图片大小不能超过 15MB');
   assertMagicBytes(file);
   await assertImageDimensions(file);
   const traceId = crypto.randomUUID();
   const startedAt = Date.now();
   const normalizedMode = normalizeImageMode(mode);
+  const assetGroupId = context.assetGroupId || crypto.randomUUID();
 
   const sharpStartedAt = Date.now();
   let optimized;
@@ -94,6 +110,33 @@ async function writeImageFromFile(file, mode = 'product') {
     // eslint-disable-next-line no-await-in-loop
     const saved = await persistBuffer(item.filename, item.buffer);
     uploaded.push({ ...saved, tag: item.tag });
+    // eslint-disable-next-line no-await-in-loop
+    await safeRecordUploadedAsset({
+      assetGroupId,
+      uploaderId: context.uploaderId,
+      uploaderType: context.uploaderType,
+      uploadSource: context.uploadSource || 'multipart',
+      purpose: normalizedMode,
+      mediaType: 'image',
+      mimeType: saved.contentType,
+      originalMimeType: file.mimetype,
+      originalFilename: file.originalname,
+      filename: saved.filename,
+      storageProvider: saved.storageProvider,
+      storageKey: saved.storageKey,
+      sourceStorageKey: context.sourceStorageKey,
+      publicUrl: saved.url,
+      variantTag: item.tag || 'full',
+      status: 'ready',
+      sizeBytes: item.buffer.length,
+      buffer: item.buffer,
+      metadata: {
+        mode: normalizedMode,
+        originalSizeBytes: file.size,
+        primary: item.tag === optimized.primaryTag,
+        traceId,
+      },
+    });
   }
 
   const primary =
@@ -114,7 +157,7 @@ async function writeImageFromFile(file, mode = 'product') {
   };
 }
 
-async function writeVideoFromFile(file) {
+async function writeVideoFromFile(file, context = {}) {
   if (file.size > VIDEO_MAX_SIZE) throw badRequest('视频大小不能超过 50MB');
   assertMagicBytes(file);
   const ext = path.extname(file.originalname).toLowerCase();
@@ -133,19 +176,69 @@ async function writeVideoFromFile(file) {
     });
     const s3Cost = Date.now() - s3StartedAt;
     console.info(`[upload] traceId=${traceId} type=${file.mimetype} original=${formatMB(file.size)} optimized=${formatMB(file.size)} sharp=0ms s3=${s3Cost}ms total=${Date.now() - startedAt}ms`);
+    await safeRecordUploadedAsset({
+      assetGroupId: context.assetGroupId,
+      uploaderId: context.uploaderId,
+      uploaderType: context.uploaderType,
+      uploadSource: context.uploadSource || 'multipart',
+      purpose: 'video',
+      mediaType: 'video',
+      mimeType: file.mimetype || 'video/mp4',
+      originalMimeType: file.mimetype,
+      originalFilename: file.originalname,
+      filename,
+      storageProvider: 's3',
+      storageKey: uploaded.key,
+      sourceStorageKey: context.sourceStorageKey,
+      publicUrl: uploaded.url,
+      variantTag: 'original',
+      status: 'ready',
+      sizeBytes: file.size,
+      buffer: file.buffer,
+      metadata: {
+        processing: 'passthrough',
+        transcodeRequired: true,
+        traceId,
+      },
+    });
     return { filename, url: uploaded.url };
   }
 
   const outPath = path.join(uploadDir, filename);
   await fs.promises.writeFile(outPath, file.buffer);
   console.info(`[upload] traceId=${traceId} type=${file.mimetype} original=${formatMB(file.size)} optimized=${formatMB(file.size)} sharp=0ms s3=0ms total=${Date.now() - startedAt}ms`);
+  await safeRecordUploadedAsset({
+    assetGroupId: context.assetGroupId,
+    uploaderId: context.uploaderId,
+    uploaderType: context.uploaderType,
+    uploadSource: context.uploadSource || 'multipart',
+    purpose: 'video',
+    mediaType: 'video',
+    mimeType: file.mimetype || 'video/mp4',
+    originalMimeType: file.mimetype,
+    originalFilename: file.originalname,
+    filename,
+    storageProvider: 'local',
+    storageKey: `uploads/${filename}`,
+    sourceStorageKey: context.sourceStorageKey,
+    publicUrl: `/uploads/${filename}`,
+    variantTag: 'original',
+    status: 'ready',
+    sizeBytes: file.size,
+    buffer: file.buffer,
+    metadata: {
+      processing: 'passthrough',
+      transcodeRequired: true,
+      traceId,
+    },
+  });
   return { filename, url: `/uploads/${filename}` };
 }
 
-async function writeMediaFromFile(file, mode = 'auto') {
-  if (isVideoFile(file)) return writeVideoFromFile(file);
+async function writeMediaFromFile(file, mode = 'auto', context = {}) {
+  if (isVideoFile(file)) return writeVideoFromFile(file, context);
   const imageMode = mode === 'banner' ? 'banner' : normalizeImageMode(mode);
-  return writeImageFromFile(file, imageMode);
+  return writeImageFromFile(file, imageMode, context);
 }
 
 module.exports = {
@@ -158,5 +251,4 @@ module.exports = {
   badRequest,
   writeMediaFromFile,
 };
-
 

@@ -80,6 +80,15 @@ function composeUploadMiddleware(middleware) {
   });
 }
 
+function buildUploadContext(req, uploadSource) {
+  const originalUrl = String(req.originalUrl || req.url || '');
+  return {
+    uploaderId: req.user?.id || null,
+    uploaderType: originalUrl.startsWith('/api/admin/') ? 'admin' : 'user',
+    uploadSource,
+  };
+}
+
 exports.uploadMiddleware = composeUploadMiddleware(uploadSingle.single('file'));
 exports.uploadMultiple = composeUploadMiddleware(uploadBatch.array('files', BATCH_MAX_FILES));
 
@@ -103,7 +112,7 @@ exports.uploadFile = async (req, res) => {
   if (!req.file || !req.file.buffer) return res.fail(400, '请选择要上传的文件');
   try {
     const mode = String(req.body?.mode || req.query?.mode || 'product').toLowerCase();
-    const result = await writeMediaFromFile(req.file, mode);
+    const result = await writeMediaFromFile(req.file, mode, buildUploadContext(req, 'multipart'));
     await auditUpload(req, result);
     return res.success(result);
   } catch (error) {
@@ -122,7 +131,7 @@ exports.uploadFiles = async (req, res) => {
     for (const file of req.files) {
       // Sequential processing keeps peak memory near one file buffer at a time.
       // eslint-disable-next-line no-await-in-loop
-      const uploaded = await writeMediaFromFile(file, mode);
+      const uploaded = await writeMediaFromFile(file, mode, buildUploadContext(req, 'multipart_batch'));
       result.push(uploaded);
     }
     await writeAuditLog({
@@ -144,5 +153,4 @@ exports.uploadFiles = async (req, res) => {
     return res.fail(statusCode, message);
   }
 };
-
 

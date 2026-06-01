@@ -40,10 +40,11 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
     let cancelled = false;
 
     const applyBanners = (next: Banner[]) => {
-      if (cancelled || next.length === 0) return;
+      if (cancelled || next.length === 0) return false;
       setBanners(next);
       writeBannerCache(next);
       setLoading(false);
+      return true;
     };
 
     const cachedBootstrap = homeService.getCachedHomeBootstrap();
@@ -55,21 +56,34 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
     setLoading((prev) => prev && readBannerCache().length === 0);
 
     const loadBanners = async () => {
+      let usedBootstrapBanners = false;
       try {
         const bootstrap = await homeService.fetchHomeBootstrap();
-        applyBanners(normalizeBootstrapBanners(bootstrap?.banners));
+        usedBootstrapBanners = applyBanners(normalizeBootstrapBanners(bootstrap?.banners));
       } catch {
         // Keep going; /api/banners is the authoritative fallback.
       }
 
-      try {
-        const latest = await homeBannerService.fetchActiveBanners({ fresh: true });
-        applyBanners(sanitizeBanners(Array.isArray(latest) ? latest : []));
-      } catch {
-        // keep existing cached banners
-      } finally {
+      const loadLatestBanners = async () => {
+        try {
+          const latest = await homeBannerService.fetchActiveBanners({ fresh: true });
+          applyBanners(sanitizeBanners(Array.isArray(latest) ? latest : []));
+        } catch {
+          // keep existing cached banners
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      };
+
+      if (usedBootstrapBanners || readBannerCache().length > 0) {
         if (!cancelled) setLoading(false);
+        window.setTimeout(() => {
+          if (!cancelled) void loadLatestBanners();
+        }, 2800);
+        return;
       }
+
+      await loadLatestBanners();
     };
 
     void loadBanners();

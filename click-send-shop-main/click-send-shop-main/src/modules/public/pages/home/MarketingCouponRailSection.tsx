@@ -234,7 +234,7 @@ export default function MarketingCouponRailSection({
           <button
             type="button"
             onClick={openAllCoupons}
-            className="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--theme-primary)]"
+            className="inline-flex min-h-9 shrink-0 items-center gap-0.5 rounded-full px-2 text-xs font-semibold text-[var(--theme-primary)]"
           >
             全部优惠券
             <ChevronRight size={13} />

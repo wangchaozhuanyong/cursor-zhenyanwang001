@@ -139,7 +139,7 @@ export default function HomeNavIcon({
         sizes="48px"
         className={cn("h-full w-full object-contain object-center transition-opacity duration-300", imageClassName)}
         loading="lazy"
-        fetchPriority="low"
+        {...({ fetchpriority: "low" } as Record<string, string>)}
         decoding="async"
         onError={() => {
           if (src !== imageSource.fallback) setSrc(imageSource.fallback);

@@ -57,7 +57,7 @@ export type ThemeEditorPanelProps = {
   selectedSkin: ThemeSkin | undefined;
   isDefaultSkin: boolean;
   onConfigChange: <K extends keyof ThemeConfig>(field: K, value: ThemeConfig[K]) => void;
-  onSkinMetaChange: (patch: Partial<Pick<ThemeSkin, "name" | "description" | "sceneTag" | "clientEnabled">>) => void;
+  onSkinMetaChange: (patch: Partial<Pick<ThemeSkin, "name" | "description" | "sceneTag">>) => void;
   onAutoColor: (action: AutoColorAction) => void;
   canUndoOptimize: boolean;
   onUndoOptimize: () => void;
@@ -157,8 +157,8 @@ export default function ThemeEditorPanel({
   );
 
   const statusText = useMemo(() => {
-    if (isDefaultSkin) return tText("当前是默认皮肤。默认皮肤仅影响新用户默认看到的样式。");
-    return tText("当前不是默认皮肤。可在顶部或皮肤卡菜单设为默认。");
+    if (isDefaultSkin) return tText("当前是日常默认皮肤。平时前台统一使用这套样式。");
+    return tText("当前是节日或活动皮肤。只有命中节日规则时才会自动生效。");
   }, [isDefaultSkin, tText]);
 
   return (
@@ -224,15 +224,6 @@ export default function ThemeEditorPanel({
                 <option key={k} value={k}>{tl(label)}</option>
               ))}
             </select>
-          </label>
-          <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
-            <input
-              type="checkbox"
-              checked
-              disabled
-              readOnly
-            />
-            前台可使用
           </label>
           <p className="rounded-xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground md:col-span-2">{statusText}</p>
         </div>

@@ -5,10 +5,12 @@
  */
 import { chromium } from "@playwright/test";
 
-const BASE = process.env.BASE_URL || "http://localhost:8080";
-const API = process.env.API_BASE_URL
-  ? `${process.env.API_BASE_URL.replace(/\/$/, "")}/api`
-  : `${BASE.replace(/\/$/, "")}/api`;
+let BASE = process.env.BASE_URL ? process.env.BASE_URL.replace(/\/$/, "") : "";
+let API = "";
+const FULL_AUDIT = process.argv.includes("--full") || process.env.AUDIT_FULL === "1";
+const NAV_TIMEOUT_MS = Number(process.env.AUDIT_NAV_TIMEOUT_MS || (FULL_AUDIT ? 25000 : 15000));
+const STABLE_WAIT_MS = Number(process.env.AUDIT_STABLE_WAIT_MS || (FULL_AUDIT ? 700 : 250));
+const SCROLL_WAIT_MS = Number(process.env.AUDIT_SCROLL_WAIT_MS || (FULL_AUDIT ? 400 : 150));
 const VIEWPORTS = (process.env.VIEWPORTS || "390x844,375x667,1280x800")
   .split(",")
   .map((s) => {
@@ -16,7 +18,7 @@ const VIEWPORTS = (process.env.VIEWPORTS || "390x844,375x667,1280x800")
     return { width: w, height: h, label: s.trim() };
   });
 const COUPON_STYLES =
-  process.argv.includes("--full") || process.env.COUPON_STYLES_ALL === "1"
+  FULL_AUDIT || process.env.COUPON_STYLES_ALL === "1"
     ? ["ticket", "premium", "deal", "minimal"]
     : ["ticket"];
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
@@ -59,11 +61,46 @@ const ADMIN_ROUTES = [
   { path: "/admin/home-ops", name: "首页运营", needsAdmin: true },
 ];
 
-const SCROLL_MODES = [
+const ALL_SCROLL_MODES = [
   { id: "top", label: "顶部" },
   { id: "middle", label: "中部" },
   { id: "bottom", label: "底部" },
 ];
+
+const SCROLL_MODES = (process.env.SCROLL_MODES || (FULL_AUDIT ? "top,middle,bottom" : "top,bottom"))
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean)
+  .map((id) => ALL_SCROLL_MODES.find((item) => item.id === id) || { id, label: id });
+
+async function pickBaseUrl() {
+  if (BASE) return BASE;
+  for (const candidate of [
+    "http://127.0.0.1:5177",
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+    "http://127.0.0.1:5173",
+  ]) {
+    try {
+      const res = await fetch(`${candidate}/admin/login`, {
+        redirect: "manual",
+        signal: AbortSignal.timeout(1200),
+      });
+      if (!res.ok) continue;
+      const html = await res.text();
+      if (html.includes('id="root"') || html.includes("id='root'")) return candidate;
+    } catch {
+      /* try next candidate */
+    }
+  }
+  return "http://localhost:8080";
+}
+
+function resolveApiBase() {
+  return process.env.API_BASE_URL
+    ? `${process.env.API_BASE_URL.replace(/\/$/, "")}/api`
+    : `${BASE.replace(/\/$/, "")}/api`;
+}
 
 async function jfetch(url, options = {}) {
   const res = await fetch(url, options);
@@ -150,7 +187,7 @@ async function loginFrontend(page, phone, password) {
   const loginBtn = page.locator("button").filter({ hasText: /^登\s*录$/ });
   if ((await loginBtn.count()) === 0) return false;
   await loginBtn.first().click();
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(FULL_AUDIT ? 2000 : 900);
   if (!page.url().includes("/login")) return true;
   await page.goto(`${BASE}/profile`, { waitUntil: "domcontentloaded" });
   await waitStable(page);
@@ -163,7 +200,7 @@ async function loginAdminUi(page) {
   await page.getByPlaceholder("输入账号").fill(ADMIN_PHONE);
   await page.getByPlaceholder("输入密码").fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "登录" }).click();
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(FULL_AUDIT ? 1500 : 800);
   return page.url().includes("/admin") && !page.url().includes("/admin/login");
 }
 
@@ -336,8 +373,8 @@ async function detectPickerBadgeOverlaps(page) {
 }
 
 async function waitStable(page) {
-  await page.waitForLoadState("domcontentloaded");
-  await page.waitForTimeout(700);
+  await page.waitForLoadState("domcontentloaded", { timeout: NAV_TIMEOUT_MS }).catch(() => {});
+  await page.waitForTimeout(STABLE_WAIT_MS);
 }
 
 async function scrollPage(page, mode) {
@@ -347,7 +384,7 @@ async function scrollPage(page, mode) {
     else if (scrollId === "bottom") window.scrollTo(0, max);
     else window.scrollTo(0, Math.floor(max / 2));
   }, mode);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(SCROLL_WAIT_MS);
 }
 
 async function scanPage(page, meta) {
@@ -366,7 +403,7 @@ async function tryProductDetail(page, metaBase) {
   if (!href) return issues;
 
   for (const scroll of SCROLL_MODES) {
-    await page.goto(`${BASE}${href}`, { waitUntil: "domcontentloaded", timeout: 20000 });
+    await page.goto(`${BASE}${href}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
     await waitStable(page);
     await scrollPage(page, scroll.id);
     const hit = await scanPage(page, { ...metaBase, route: "商品详情", path: href, scroll: scroll.label });
@@ -377,14 +414,14 @@ async function tryProductDetail(page, metaBase) {
 
 async function tryCheckoutCouponSheet(page, metaBase) {
   const issues = [];
-  await page.goto(`${BASE}/checkout`, { waitUntil: "domcontentloaded", timeout: 20000 });
+  await page.goto(`${BASE}/checkout`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
   await waitStable(page);
   if (page.url().includes("/login")) return issues;
 
   const trigger = page.getByText(/选择优惠券|优惠券/).first();
   if ((await trigger.count()) === 0) return issues;
   await trigger.click();
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(FULL_AUDIT ? 600 : 250);
 
   const hit = await scanPage(page, { ...metaBase, route: "结算-选券弹层", path: "/checkout", scroll: "弹层打开" });
   if (hit) issues.push(hit);
@@ -396,6 +433,8 @@ function pushIssue(report, issue) {
 }
 
 async function main() {
+  BASE = await pickBaseUrl();
+  API = resolveApiBase();
   const report = [];
   const setupSkips = [];
   const browser = await chromium.launch({ headless: true });
@@ -473,7 +512,7 @@ async function main() {
 
         for (const scroll of SCROLL_MODES) {
           try {
-            await page.goto(`${BASE}${route.path}`, { waitUntil: "domcontentloaded", timeout: 25000 });
+            await page.goto(`${BASE}${route.path}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
             await waitStable(page);
             await scrollPage(page, scroll.id);
             pushIssue(
@@ -516,7 +555,7 @@ async function main() {
       for (const route of ADMIN_ROUTES) {
         if (route.needsAdmin && !adminLoggedIn) continue;
         try {
-          await page.goto(`${BASE}${route.path}`, { waitUntil: "domcontentloaded", timeout: 25000 });
+          await page.goto(`${BASE}${route.path}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
           await waitStable(page);
           await scrollPage(page, "bottom");
           pushIssue(

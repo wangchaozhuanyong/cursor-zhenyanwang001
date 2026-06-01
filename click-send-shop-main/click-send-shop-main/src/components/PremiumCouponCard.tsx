@@ -76,7 +76,7 @@ function VerticalActionLabel({ label }: { label: string }) {
 
 function HorizontalActionLabel({ label }: { label: string }) {
   return (
-    <span className="block max-w-full text-center text-[10px] font-semibold leading-tight sm:text-[11px]">
+    <span className="block max-w-full text-center text-[11px] font-bold leading-tight sm:text-xs">
       {label}
     </span>
   );
@@ -151,7 +151,10 @@ export default function PremiumCouponCard({
   const amountRmMatch = leftValue.match(/^(RM)\s*(.+)$/i);
   const expireLabel = expireText.includes("有效期") ? expireText : `有效期至：${expireText}`;
   const displayActionLabel = actionLabel ? formatCouponActionLabel(actionLabel, layout) : "";
-  const actionHasStatus = layout === "home" && Boolean(statusLabel && displayActionLabel);
+  const normalizedActionLabel = displayActionLabel.replace(/\s+/g, "");
+  const normalizedStatusLabel = (statusLabel ?? "").replace(/\s+/g, "");
+  const isOwnedUseAction = normalizedStatusLabel === "已领取" && normalizedActionLabel === "使用";
+  const actionHasStatus = layout === "home" && Boolean(statusLabel && displayActionLabel && !isOwnedUseAction);
   const couponTemplate = resolveCouponTemplate({
     title,
     amount: leftValue,
@@ -195,10 +198,12 @@ export default function PremiumCouponCard({
           onAction?.();
         }}
         className={cn(
+          "store-coupon-card__action-button",
           skin.actionButtonClass,
           actionHasStatus && "!h-auto !min-h-[2.45rem] flex-1 !rounded-md !py-1",
         )}
         style={{ background: "var(--theme-coupon-card-cta-bg)" }}
+        data-coupon-action-button
       >
         {actionButtonInner}
       </button>
@@ -212,6 +217,7 @@ export default function PremiumCouponCard({
           onAction?.();
         }}
         className={cn(
+          "store-coupon-card__action-button",
           skin.actionButtonClass,
           actionHasStatus && "!h-auto !min-h-[2.45rem] flex-1 !rounded-md !py-1",
         )}
@@ -243,7 +249,7 @@ export default function PremiumCouponCard({
       <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-edge store-coupon-card__template-edge--left" />
       <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-edge store-coupon-card__template-edge--right" />
       <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__state-rail" />
-      <div className={cn("flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg px-1.5 py-1 text-center", skin.valuePaneClass)}>
+      <div className={cn("store-coupon-card__value-pane flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg px-1.5 py-1 text-center", skin.valuePaneClass)}>
         <p className="inline-flex items-baseline font-black tracking-tight text-[var(--theme-price)]">
           {amountRmMatch ? (
             <>
@@ -259,6 +265,7 @@ export default function PremiumCouponCard({
       <div
         className={cn(
           "relative flex min-w-0 flex-col justify-center",
+          "store-coupon-card__info-pane",
           skin.infoGap,
           skin.infoPadding,
         )}
@@ -284,7 +291,7 @@ export default function PremiumCouponCard({
       {actionButton ? (
         <div
           className={cn(
-            "flex w-full min-w-0 items-stretch justify-center",
+            "store-coupon-card__action-pane flex w-full min-w-0 items-stretch justify-center",
             actionHasStatus && "flex-col items-center gap-1 py-0.5",
           )}
         >

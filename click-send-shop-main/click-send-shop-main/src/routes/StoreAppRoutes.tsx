@@ -14,6 +14,7 @@ import LanguageGate from "@/components/LanguageGate";
 import ChinaBrowserCompatNotice from "@/components/ChinaBrowserCompatNotice";
 import PwaUpdateToast from "@/components/PwaUpdateToast";
 import FrontLayout from "@/layouts/FrontLayout";
+import FeatureUnavailable from "@/modules/public/pages/error/FeatureUnavailable";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthSessionSync from "@/components/AuthSessionSync";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -245,7 +246,7 @@ function LoyaltyRouteGuard({ feature, children }: { feature: "points" | "reward"
 }
 
 function CapabilityRoute({ enabled, children }: { enabled: boolean; children: ReactNode }) {
-  if (!enabled) return <Navigate to="/" replace />;
+  if (!enabled) return <FeatureUnavailable />;
   return <>{children}</>;
 }
 

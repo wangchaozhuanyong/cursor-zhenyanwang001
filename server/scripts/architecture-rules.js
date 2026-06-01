@@ -11,6 +11,7 @@ const expectedModules = Object.freeze([
   'logistics',
   'loyalty',
   'marketing',
+  'media',
   'monitoring',
   'myinvois',
   'notification',

@@ -19,7 +19,7 @@ export default function PageHeader({ title, onBack, backFallback, rightSlot }: P
             type="button"
             onClick={onBack ?? goBack}
             aria-label="返回"
-            className="relative flex h-9 shrink-0 items-center justify-center rounded-full p-0 hover:bg-secondary active:scale-95 before:absolute before:-inset-2 before:content-['']"
+            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 hover:bg-secondary active:scale-95"
           >
             <ArrowLeft size={20} strokeWidth={2.25} className="text-foreground" />
           </button>

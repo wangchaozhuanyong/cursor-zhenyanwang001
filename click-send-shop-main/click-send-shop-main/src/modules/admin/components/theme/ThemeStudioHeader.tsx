@@ -1,53 +1,34 @@
-import { Copy, Eye, MoreHorizontal, Plus, Sparkles, Star, Trash2 } from "lucide-react";
+import { Eye } from "lucide-react";
 import { useMemo } from "react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import StoreBadge from "@/components/ui/StoreBadge";
-import { THEME_BADGE_WARNING, THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
+import { THEME_BADGE_WARNING } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
 
 export type ThemeStudioHeaderProps = {
   skinName: string;
   isDefault: boolean;
-  clientEnabled?: boolean;
   dirty: boolean;
   saving: boolean;
   saveDisabled?: boolean;
   onPreview: () => void;
-  onSaveDraft: () => void;
-  onSaveAndApply: () => void;
-  onCopy: () => void;
-  onAdd: () => void;
-  onAddStarter?: () => void;
-  onSetDefault: () => void;
-  canDelete?: boolean;
-  onDelete: () => void;
-  libraryLocked?: boolean;
+  onSave: () => void;
 };
 
 export default function ThemeStudioHeader({
   skinName,
   isDefault,
-  clientEnabled = true,
   dirty,
   saving,
   saveDisabled,
   onPreview,
-  onSaveDraft,
-  onSaveAndApply,
-  onCopy,
-  onAdd,
-  onAddStarter,
-  onSetDefault,
-  canDelete = true,
-  onDelete,
-  libraryLocked = false,
+  onSave,
 }: ThemeStudioHeaderProps) {
   const statusText = useMemo(() => {
     if (dirty) return "有未保存修改";
     return "已同步";
   }, [dirty]);
-  const showMoreMenu = !libraryLocked;
 
   return (
     <header className="relative z-10 mb-4 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur">
@@ -57,16 +38,16 @@ export default function ThemeStudioHeader({
             <span className="max-w-[260px] truncate rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium text-foreground">
               当前编辑：{skinName || "未命名皮肤"}
             </span>
-            {isDefault ? <StoreBadge type="success"><Tx>默认皮肤</Tx></StoreBadge> : null}
-            {clientEnabled ? (
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground"><Tx>前台可使用</Tx></span>
-            ) : null}
+            {isDefault ? <StoreBadge type="success"><Tx>日常默认</Tx></StoreBadge> : null}
             {dirty ? (
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${THEME_BADGE_WARNING}`}>{statusText}</span>
             ) : (
               <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">{statusText}</span>
             )}
           </div>
+          <p className="text-xs text-muted-foreground">
+            前台客户不可手动切换皮肤；这里保存后由系统按日常和节日规则统一生效。
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -82,76 +63,16 @@ export default function ThemeStudioHeader({
           <PermissionGate permission="settings.manage">
             <LoadingButton
               type="button"
-              variant="outline"
+              variant="solid"
               state={saving ? "loading" : "normal"}
               loadingText="保存中..."
               disabled={saveDisabled}
-              onClick={onSaveDraft}
-              className="inline-flex h-9 rounded-xl border border-border px-3 text-xs font-semibold"
-            >
-              保存草稿
-            </LoadingButton>
-            <LoadingButton
-              type="button"
-              variant="solid"
-              state={saving ? "loading" : "normal"}
-              loadingText="应用中..."
-              disabled={saveDisabled}
-              onClick={onSaveAndApply}
+              onClick={onSave}
               className="inline-flex h-9 rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
             >
-              保存并应用
+              保存皮肤配置
             </LoadingButton>
           </PermissionGate>
-
-          {showMoreMenu ? (
-            <details className="group relative">
-              <summary className="flex h-9 list-none cursor-pointer items-center gap-1 rounded-xl border border-border px-3 text-xs hover:bg-secondary">
-                <MoreHorizontal size={14} />
-                更多操作
-              </summary>
-              <div className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-border bg-card p-1 shadow-lg">
-                {!libraryLocked ? (
-                  <>
-                    <button type="button" onClick={onAdd} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
-                      <Plus size={14} />
-                      新建皮肤
-                    </button>
-                    <button type="button" onClick={onCopy} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
-                      <Copy size={14} />
-                      复制当前皮肤
-                    </button>
-                    {onAddStarter ? (
-                      <button type="button" onClick={onAddStarter} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
-                        <Sparkles size={14} />
-                        从推荐模板新建
-                      </button>
-                    ) : null}
-                  </>
-                ) : null}
-                {!isDefault ? (
-                  <button type="button" onClick={onSetDefault} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-secondary">
-                    <Star size={14} />
-                    设为默认皮肤
-                  </button>
-                ) : null}
-                {!libraryLocked ? (
-                  <>
-                    <div className="my-1 h-px bg-border" />
-                    <button
-                      type="button"
-                      onClick={onDelete}
-                      disabled={!canDelete}
-                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs ${canDelete ? THEME_OUTLINE_DANGER : "cursor-not-allowed text-muted-foreground"}`}
-                    >
-                      <Trash2 size={14} />
-                      {canDelete ? "删除皮肤" : "默认皮肤不可删除"}
-                    </button>
-                  </>
-                ) : null}
-              </div>
-            </details>
-          ) : null}
         </div>
       </div>
     </header>

@@ -7,6 +7,7 @@ import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback from "@/components/AppRouteFallback";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AdminLayout from "@/layouts/AdminLayout";
+import AdminRouteFallback from "@/modules/admin/pages/error/AdminRouteFallback";
 import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
 import AdminMfaStepUpHost from "@/components/admin/AdminMfaStepUpHost";
 import ChinaBrowserCompatNotice from "@/components/ChinaBrowserCompatNotice";
@@ -164,7 +165,7 @@ function AdminTitleSync() {
 }
 
 function CapabilityRoute({ enabled, children }: { enabled: boolean; children: ReactNode }) {
-  if (!enabled) return <Navigate to="/admin" replace />;
+  if (!enabled) return <AdminRouteFallback type="feature-disabled" />;
   return <>{children}</>;
 }
 
@@ -264,9 +265,9 @@ export function AdminAppRoutes() {
                   <Route path="backups" element={<AdminBackupCenter />} />
                   <Route path="audit-logs" element={<AdminLogs />} />
                   <Route path="content" element={<AdminContent />} />
-                  <Route path="*" element={<Navigate to="/admin/login" replace />} />
+                  <Route path="*" element={<AdminRouteFallback type="not-found" />} />
                 </Route>
-                <Route path="*" element={<Navigate to="/admin/login" replace />} />
+                <Route path="*" element={<AdminRouteFallback type="not-found" />} />
               </Routes>
             </Suspense>
           </AdminI18nProvider>

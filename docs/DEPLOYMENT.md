@@ -6,7 +6,7 @@
 
 按下面顺序做，多数「推上去才报错」可以避免：
 
-1. **本机（Windows）推送前**（需 Node 20+）：在仓库根执行  
+1. **本机（Windows）推送前**（需 Node 20+，生产服务器使用 Node 22+）：在仓库根执行
    `powershell -ExecutionPolicy Bypass -File scripts/verify-before-push.ps1`  
    通过后再 `git commit` / `push`。若本机已配好 `server/.env` 且 MySQL 可用，可加 `-WithDbTests` 跑 `npm run test:all`。
 2. **GitHub**：`push` 到 `main` 会触发 **CI**（`.github/workflows/ci.yml`：前端 build + 服务端 typecheck，无需数据库）。**自动上架**依赖 **Deploy** workflow，须先配好 Secrets（见下表）。
@@ -53,7 +53,7 @@
 
 ## 推荐上线步骤（简版）
 
-1. **服务器**：安装 Node 20+、MySQL 8+（或使用 `docker compose up -d` 仅起库）。
+1. **服务器**：安装 Node 22+、MySQL 8+（或使用 `docker compose up -d` 仅起库）。
 2. **环境变量**：复制 `server/.env.example` 为 `server/.env`，设置强随机 `JWT_SECRET`、数据库账号、`CORS_ORIGINS`（须包含用户访问前端的完整 Origin，如 `https://你的域名`）。
 3. **数据库**：执行 `npm run db:init`（在 `server` 目录），或导入已有备份。
 4. **一键标准部署（推荐）**：在服务器项目根（含 `.git` 的克隆目录）执行：
@@ -64,7 +64,7 @@
 7. **PM2 进程（生产环境唯一方式）**：`deploy/production-deploy.sh` 已包含 `pm2 reload gc-api`。**首次**部署或机器上尚无进程时再执行：
 
    ```bash
-   cd server
+   cd /var/www/click-send-shop
    pm2 start ecosystem.config.cjs --env production
    pm2 save
    ```
@@ -95,7 +95,7 @@
 | 更新后前台能开，登录/数据全挂 | 前端构建未带 `VITE_API_BASE_URL=/api`（或分域 API 未写入正确完整 URL） | 使用 `deploy/production-deploy.sh`（已默认 `/api`），或手动构建前 `export VITE_API_BASE_URL=/api` |
 | `production-deploy.sh` 一开始就报 git 错 | 服务器目录不是 `git clone` 出来的、没有 `.git` | 改用 `git clone` 到 `/var/www/click-send-shop`，或 `SKIP_GIT=1 bash deploy/production-deploy.sh` 并确保已用 rsync/手工同步最新代码 |
 | `vite build` / `npm run build` 退出 **134**、日志有 **heap out of memory** | 机器内存小，Node 默认堆约 512MB，不够完成前端打包 | 日常用 `scripts/codex-deploy-main.ps1` 在本地构建并上传；服务器端 `production-deploy.sh` 默认 heap 已降为 1024MB，并支持 `SKIP_FRONTEND_BUILD=1` 跳过服务器构建 |
-| `npm ci` / 依赖报错 | Node 版本低于 20、或锁文件与 package.json 不一致 | 升级 Node 20+；在 `server` 与前端目录分别重新 `npm ci` 或对齐锁文件后提交 |
+| `npm ci` / 依赖报错 | Node 版本低于 22、或锁文件与 package.json 不一致 | 生产服务器升级 Node 22+；在 `server` 与前端目录分别重新 `npm ci` 或对齐锁文件后提交 |
 | 迁移失败 | 数据库账号权限、连接串、或 MySQL 未启动 | 看 `server/logs/pm2-error.log`；本地用 `.env` 连库试 `npm run migrate` |
 | `verify-pm2.sh` 不过 | `.env` 占位符未改、`JWT_SECRET` 过短、端口不是 3001、进程入口不是 `src/index.js` | 按脚本输出逐项修改后 `pm2 reload gc-api --update-env` |
 

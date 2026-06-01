@@ -92,7 +92,7 @@ export default function NewArrivalSection({
             trackClick("new_arrivals_page");
             navigate("/new-arrivals");
           }}
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--theme-text-muted)]"
+          className="inline-flex min-h-9 shrink-0 items-center rounded-full px-2 text-xs font-semibold text-[var(--theme-text-muted)]"
         >
           查看更多
           <ChevronRight size={14} />

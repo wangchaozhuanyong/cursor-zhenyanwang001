@@ -144,7 +144,7 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
           <Ticket className="h-5 w-5 text-[var(--theme-primary)]" />
           {payload.activity.title || "领券中心"}
         </h2>
-        <button type="button" onClick={openAllCoupons} className="text-xs font-semibold text-[var(--theme-primary)]">
+        <button type="button" onClick={openAllCoupons} className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-semibold text-[var(--theme-primary)]">
           全部优惠券
         </button>
       </div>

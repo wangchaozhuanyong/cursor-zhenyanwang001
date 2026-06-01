@@ -214,13 +214,17 @@ if (trustProxyRaw === '0' || trustProxyRaw.toLowerCase() === 'false') {
 
 const defaultCorsOrigins = [
   'http://localhost:5173',
+  'http://localhost:5177',
   'http://localhost:4173',
+  'http://localhost:4174',
   'http://localhost:8080',
   'http://localhost:8081',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:5177',
   'http://127.0.0.1:4173',
+  'http://127.0.0.1:4174',
   'http://127.0.0.1:8080',
   'http://127.0.0.1:8081',
 ].join(',');
@@ -228,6 +232,11 @@ const allowedOrigins = (process.env.CORS_ORIGINS || defaultCorsOrigins)
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+if (!isProduction) {
+  for (const origin of defaultCorsOrigins.split(',').map((item) => item.trim()).filter(Boolean)) {
+    if (!allowedOrigins.includes(origin)) allowedOrigins.push(origin);
+  }
+}
 for (const origin of (process.env.ADMIN_ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean)) {
   if (!allowedOrigins.includes(origin)) allowedOrigins.push(origin);
 }

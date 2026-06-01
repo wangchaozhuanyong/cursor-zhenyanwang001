@@ -13,24 +13,17 @@ import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 
 type ThemeMode = "light" | "dark";
 
-const SKIN_STORAGE_KEY = "theme_skin_id";
-const SKIN_MANUAL_KEY = "theme_skin_manual";
-const LAST_ACTIVE_SKIN_KEY = "theme_last_active_skin";
 const SKINS_CACHE_KEY = "theme_cached_skins";
 
 type ThemeContextValue = {
   theme: ThemeMode;
   skinId: string;
   skins: ThemeSkin[];
-  /** 瀹㈡埛绔毊鑲ら€夋嫨鍣細浠?clientEnabled 鐨勭毊鑲?*/
   switchableSkins: ThemeSkin[];
-  /** 鐨偆閫夋嫨鍣ㄥ垪琛紙鍚庡彴鍚叏閮ㄧ毊鑲わ紝鍓嶅彴鍚?switchableSkins锛?*/
   pickerSkins: ThemeSkin[];
   setSkinId: (id: string) => void;
   themeConfig: ThemeConfig;
-  /** 鏈湴缂撳瓨涓婚宸插簲鐢紝鍙覆鏌?UI */
   themeReady: boolean;
-  /** 宸插畬鎴愯嚦灏戜竴娆℃湇鍔＄涓婚鍚屾锛岄伩鍏嶉椤靛竷灞€鍦ㄥ埛鏂版椂浠庣紦瀛橀棯鍒扮嚎涓婇厤缃?*/
   themeSynced: boolean;
 };
 
@@ -40,15 +33,8 @@ function isAdminScope() {
   return typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
 }
 
-function resolveThemeConfigForScope(
-  config: ThemeConfig,
-  _skinId: string,
-  inAdmin: boolean,
-  options?: { adminManualPreview?: boolean },
-): ThemeConfig {
+function resolveThemeConfigForScope(config: ThemeConfig, inAdmin: boolean): ThemeConfig {
   if (!inAdmin) return config;
-  /** 后台手动预览某套皮肤时展示真实配色，不因 safe 覆盖被压成同一套灰白 */
-  if (options?.adminManualPreview) return config;
   return normalizeThemeConfig({ ...config, ...ADMIN_SAFE_THEME_OVERRIDES });
 }
 
@@ -73,6 +59,13 @@ function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?:
   root.setAttribute("data-theme-admin-mode", config.adminThemeMode);
 }
 
+function chooseRuntimeSkin(normalized: ReturnType<typeof normalizeThemeSkinsPayload>) {
+  const runtimeSkinId = normalized.runtimeSkinId || resolveRuntimeThemeSkinId(normalized);
+  const fallbackId = normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID;
+  const chosen = runtimeSkinId || fallbackId;
+  return normalized.skins.some((skin) => skin.id === chosen) ? chosen : fallbackId;
+}
+
 export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const initial = getInitialThemeState();
   const [skins, setSkins] = useState<ThemeSkin[]>(initial.skins);
@@ -81,19 +74,6 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const [themeReady, setThemeReady] = useState(initial.ready);
   const [themeSynced, setThemeSynced] = useState(false);
   const [inAdminScope, setInAdminScope] = useState(() => isAdminScope());
-  const [adminManualSkinPick, setAdminManualSkinPick] = useState(
-    () => typeof window !== "undefined" && isAdminScope() && localStorage.getItem(SKIN_MANUAL_KEY) === "1",
-  );
-
-  const switchableSkins = useMemo(
-    () => (inAdminScope ? skins.filter((skin) => skin.clientEnabled !== false) : []),
-    [inAdminScope, skins],
-  );
-
-  const pickerSkins = useMemo(
-    () => (inAdminScope ? skins : []),
-    [inAdminScope, skins],
-  );
 
   useEffect(() => {
     const syncScope = () => setInAdminScope(isAdminScope());
@@ -130,56 +110,18 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
         skins?: ThemeSkin[];
       };
       const normalized = normalizeThemeSkinsPayload(raw);
+      const chosen = chooseRuntimeSkin(normalized);
+      const active = normalized.skins.find((skin) => skin.id === chosen) ?? normalized.skins[0];
+
       setSkins(normalized.skins);
-      if (typeof window !== "undefined") {
-        localStorage.setItem(SKINS_CACHE_KEY, JSON.stringify(normalized.skins));
-      }
-
-      const inAdmin = isAdminScope();
-      const runtimeSkinId = normalized.runtimeSkinId || resolveRuntimeThemeSkinId(normalized);
-      const currentActive = inAdmin
-        ? normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID
-        : runtimeSkinId || normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID;
-      const lastActive = typeof window !== "undefined" ? localStorage.getItem(LAST_ACTIVE_SKIN_KEY) : null;
-      const activeChangedByAdmin = !!lastActive && currentActive !== lastActive;
-      if (typeof window !== "undefined") {
-        localStorage.setItem(LAST_ACTIVE_SKIN_KEY, currentActive);
-      }
-      const skinExists = (id: string) => normalized.skins.some((s) => s.id === id);
-      let chosen = skinExists(currentActive) ? currentActive : normalized.defaultSkinId;
-
-      if (!inAdmin) {
-        setAdminManualSkinPick(false);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(SKIN_MANUAL_KEY);
-          localStorage.setItem(SKIN_STORAGE_KEY, chosen);
-        }
-      } else {
-        const saved = typeof window !== "undefined" ? localStorage.getItem(SKIN_STORAGE_KEY) : null;
-        const isManual = typeof window !== "undefined" && localStorage.getItem(SKIN_MANUAL_KEY) === "1";
-        if (isManual && saved) {
-          if (!skinExists(saved)) {
-            if (typeof window !== "undefined") localStorage.removeItem(SKIN_MANUAL_KEY);
-            setAdminManualSkinPick(false);
-            chosen = skinExists(currentActive) ? currentActive : normalized.defaultSkinId;
-          } else if (activeChangedByAdmin) {
-            if (typeof window !== "undefined") localStorage.removeItem(SKIN_MANUAL_KEY);
-            setAdminManualSkinPick(false);
-            chosen = currentActive;
-          } else {
-            chosen = saved;
-            setAdminManualSkinPick(true);
-          }
-        } else {
-          setAdminManualSkinPick(false);
-        }
-      }
-
       setSkinIdState(chosen);
-      const active = normalized.skins.find((s) => s.id === chosen) ?? normalized.skins[0];
       setThemeConfig(normalizeThemeConfig(active?.config));
       setThemeReady(true);
       setThemeSynced(true);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(SKINS_CACHE_KEY, JSON.stringify(normalized.skins));
+      }
     } catch (error) {
       const fallback = normalizeThemeSkinsPayload({
         defaultSkinId: DEFAULT_SKIN_ID,
@@ -188,7 +130,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       });
       setSkins(fallback.skins);
       setSkinIdState(DEFAULT_SKIN_ID);
-      setThemeConfig(normalizeThemeConfig(fallback.skins.find((s) => s.id === DEFAULT_SKIN_ID)?.config));
+      setThemeConfig(normalizeThemeConfig(fallback.skins.find((skin) => skin.id === DEFAULT_SKIN_ID)?.config));
       setThemeReady(true);
       setThemeSynced(true);
       console.warn("[theme] failed to sync skins, fallback applied", error);
@@ -213,72 +155,52 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   }, [loadTheme]);
 
   useEffect(() => {
-    const active = skins.find((s) => s.id === skinId) ?? skins[0];
+    const active = skins.find((skin) => skin.id === skinId) ?? skins[0];
     setThemeConfig(normalizeThemeConfig(active?.config));
   }, [skinId, skins]);
 
   const appliedConfig = useMemo(
-    () =>
-      resolveThemeConfigForScope(themeConfig, skinId, inAdminScope, {
-        adminManualPreview: inAdminScope && adminManualSkinPick,
-      }),
-    [themeConfig, skinId, inAdminScope, adminManualSkinPick],
+    () => resolveThemeConfigForScope(themeConfig, inAdminScope),
+    [themeConfig, inAdminScope],
   );
 
-  const appliedSkin = useMemo(() => skins.find((s) => s.id === skinId) ?? skins[0] ?? null, [skinId, skins]);
+  const appliedSkin = useMemo(() => skins.find((skin) => skin.id === skinId) ?? skins[0] ?? null, [skinId, skins]);
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove("dark");
     applyThemeDataAttributes(root, appliedConfig, appliedSkin);
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem(SKIN_STORAGE_KEY, skinId);
-    }
-
     const palette = generateThemePalette(appliedConfig);
     Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [appliedConfig, appliedSkin, skinId]);
+  }, [appliedConfig, appliedSkin]);
 
   useEffect(() => {
     const syncScope = () => {
       const root = document.documentElement;
-      const currentSkin = skins.find((s) => s.id === skinId) ?? skins[0] ?? null;
-      const scoped = resolveThemeConfigForScope(themeConfig, skinId, isAdminScope(), {
-        adminManualPreview: isAdminScope() && adminManualSkinPick,
-      });
+      const scoped = resolveThemeConfigForScope(themeConfig, isAdminScope());
       const palette = generateThemePalette(scoped);
       Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-      applyThemeDataAttributes(root, scoped, currentSkin);
+      applyThemeDataAttributes(root, scoped, appliedSkin);
     };
     syncScope();
     window.addEventListener("app:scope-changed", syncScope);
     return () => window.removeEventListener("app:scope-changed", syncScope);
-  }, [themeConfig, skinId, skins, adminManualSkinPick]);
+  }, [themeConfig, appliedSkin]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme: "light",
       skinId,
       skins,
-      switchableSkins,
-      pickerSkins,
-      setSkinId: (id: string) => {
-        if (!inAdminScope) return;
-        const allowed = skins.some((skin) => skin.id === id);
-        if (!allowed) return;
-        setSkinIdState(id);
-        setAdminManualSkinPick(true);
-        if (typeof window !== "undefined") {
-          localStorage.setItem(SKIN_STORAGE_KEY, id);
-          localStorage.setItem(SKIN_MANUAL_KEY, "1");
-        }
-      },
+      switchableSkins: [],
+      pickerSkins: [],
+      setSkinId: () => {},
       themeConfig,
       themeReady,
       themeSynced,
     }),
-    [skinId, skins, switchableSkins, pickerSkins, inAdminScope, themeConfig, themeReady, themeSynced],
+    [skinId, skins, themeConfig, themeReady, themeSynced],
   );
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;
@@ -293,31 +215,16 @@ function getInitialThemeState() {
       ready: false,
     };
   }
-  const cachedSkins = readCachedSkins();
-  const inAdmin = isAdminScope();
-  if (!inAdmin) {
-    localStorage.removeItem(SKIN_MANUAL_KEY);
-  }
-  const saved = inAdmin
-    ? localStorage.getItem(SKIN_STORAGE_KEY) || localStorage.getItem(LAST_ACTIVE_SKIN_KEY) || ""
-    : DEFAULT_SKIN_ID;
-  const sourceSkins = cachedSkins.length > 0 ? cachedSkins : THEME_PRESETS;
-  const active = sourceSkins.find((skin) => skin.id === saved) ?? (cachedSkins.length > 0 ? sourceSkins[0] : null);
 
-  if (active) {
-    return {
-      skins: sourceSkins,
-      skinId: active.id,
-      themeConfig: normalizeThemeConfig(active.config),
-      ready: true,
-    };
-  }
+  const cachedSkins = readCachedSkins();
+  const sourceSkins = cachedSkins.length > 0 ? cachedSkins : THEME_PRESETS;
+  const active = sourceSkins.find((skin) => skin.id === DEFAULT_SKIN_ID) ?? sourceSkins[0];
 
   return {
-    skins: THEME_PRESETS,
-    skinId: DEFAULT_SKIN_ID,
-    themeConfig: normalizeThemeConfig(THEME_PRESETS[0]?.config),
-    ready: false,
+    skins: sourceSkins,
+    skinId: active?.id ?? DEFAULT_SKIN_ID,
+    themeConfig: normalizeThemeConfig(active?.config),
+    ready: cachedSkins.length > 0,
   };
 }
 

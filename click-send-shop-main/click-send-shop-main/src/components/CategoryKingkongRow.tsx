@@ -50,7 +50,7 @@ export default function CategoryKingkongRow({
   return (
     <section
       className={cn(
-        "border-y border-[color-mix(in_srgb,var(--theme-border)_80%,transparent)] bg-[var(--theme-surface)]",
+        "store-category-rail relative border-y border-[color-mix(in_srgb,var(--theme-border)_80%,transparent)] bg-[var(--theme-surface)]",
         className,
       )}
     >

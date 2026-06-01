@@ -7,6 +7,7 @@ const BLOCKED_SITE_SETTING_KEYS = new Set(LEGACY_IM_KEYS);
 const { invalidatePaymentTimeoutSettingsCache } = require('../../order/orderPaymentDeadline');
 const sharp = require('sharp');
 const { isS3StorageEnabled, uploadBufferToS3 } = require('../../../utils/objectStorage');
+const { bufferMatchesDeclaredMime } = require('../../../utils/fileMagic');
 
 function getSiteCapabilitiesApi() {
   return /** @type {any} */ (require('../../siteCapabilities')).api || {};
@@ -16,7 +17,12 @@ function getTelegramApi() {
   return /** @type {any} */ (require('../../telegram')).api || {};
 }
 
+function getUserApi() {
+  return /** @type {any} */ (require('../../user')).api || {};
+}
+
 const SITE_ASSET_KEYS = new Set(['logoUrl', 'faviconUrl']);
+const SITE_ASSET_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 function rowsToMap(rows) {
   const settings = {};
@@ -144,12 +150,18 @@ async function uploadSiteAsset(file, key, adminUserId, req) {
   if (!file || !file.buffer) {
     return { error: { code: 400, message: '请选择要上传的图片' } };
   }
+  const mime = String(file.mimetype || '').toLowerCase();
+  if (!SITE_ASSET_MIMES.has(mime) || !bufferMatchesDeclaredMime(file.buffer, mime)) {
+    return { error: { code: 400, message: '站点图片仅支持真实的 JPG、PNG、WebP 文件' } };
+  }
 
   const beforeRows = await repo.selectNonShippingSettingsRows();
   const beforeMap = rowsToMap(beforeRows);
 
   const { buffer, contentType, ext } = await processSiteAssetUpload(file, key);
   let finalUrl = `data:${contentType};base64,${buffer.toString('base64')}`;
+  let storageProvider = 'db-inline';
+  let storageKey = '';
   if (isS3StorageEnabled()) {
     const stamp = Date.now();
     const rand = Math.random().toString(36).slice(2, 10);
@@ -160,6 +172,34 @@ async function uploadSiteAsset(file, key, adminUserId, req) {
       cacheControl: 'public, max-age=86400',
     });
     finalUrl = uploaded.url;
+    storageProvider = 's3';
+    storageKey = uploaded.key;
+  }
+
+  const recordUploadedAsset = getUserApi().safeRecordUploadedAsset;
+  if (typeof recordUploadedAsset === 'function') {
+    await recordUploadedAsset({
+      uploaderId: adminUserId,
+      uploaderType: 'admin',
+      uploadSource: 'admin_site_asset',
+      purpose: 'site_asset',
+      mediaType: 'image',
+      mimeType: contentType,
+      originalMimeType: mime,
+      originalFilename: file.originalname,
+      filename: `${key}.${ext}`,
+      storageProvider,
+      storageKey,
+      publicUrl: finalUrl,
+      variantTag: key,
+      status: 'ready',
+      sizeBytes: buffer.length,
+      buffer,
+      metadata: {
+        key,
+        originalSizeBytes: file.size,
+      },
+    });
   }
 
   await repo.upsertSetting(key, finalUrl);
@@ -218,8 +258,6 @@ module.exports = {
   updateSiteSettings,
   uploadSiteAsset,
 };
-
-
 
 
 

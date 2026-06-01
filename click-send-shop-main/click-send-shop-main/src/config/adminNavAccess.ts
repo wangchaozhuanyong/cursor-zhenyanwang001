@@ -60,6 +60,10 @@ export function getPathAccessRule(pathname: string): PathRule | null {
   return hit ? hit.rule : null;
 }
 
+export function hasAdminPathAccessRule(pathname: string): boolean {
+  return getPathAccessRule(pathname) !== null;
+}
+
 /** 侧栏顺序：首个有权限的入口 */
 const FALLBACK_PATHS: { path: string; rule: PathRule }[] = [
   { path: "/admin", rule: { kind: "one", permission: "dashboard.view" } },

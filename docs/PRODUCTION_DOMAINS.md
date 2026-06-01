@@ -40,7 +40,8 @@ CORS_ORIGINS=https://damatong.net,https://www.damatong.net,https://console.damat
 FRONTEND_DIST=/var/www/damatong/dist
 ADMIN_DIST=/var/www/damatong/admin-dist
 STORAGE_S3_BUCKET=damatong-prod-assets-<account-id>
-STORAGE_PUBLIC_BASE_URL=https://damatong-prod-assets-<account-id>.s3.ap-southeast-1.amazonaws.com
+STORAGE_PUBLIC_BASE_URL=https://cdn.damatong.net
+STORAGE_KEY_PREFIX=damatong/prod
 ```
 
 从旧 `flashcast` 前缀/路径迁移见 `deploy/scripts/migrate-flashcast-to-damatong-prod.sh`。

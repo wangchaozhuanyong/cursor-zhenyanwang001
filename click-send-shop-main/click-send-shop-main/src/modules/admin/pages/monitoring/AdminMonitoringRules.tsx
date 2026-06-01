@@ -13,6 +13,12 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 import {
+  monitoringInputClass,
+  monitoringMutedClass,
+  monitoringPrimaryButtonClass,
+  monitoringTableHeadClass,
+} from "./monitoringUi";
+import {
   ADMIN_TABLE_NOWRAP_CLASS,
   ADMIN_TABLE_WRAP_CLASS,
   adminTdClassName,
@@ -58,7 +64,7 @@ export default function AdminMonitoringRules() {
       filters={<MonitoringSubnav />}
     >
       {error ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
-      {loading ? <div className="text-sm text-slate-500"><Tx>加载中...</Tx></div> : null}
+      {loading ? <div className={`text-sm ${monitoringMutedClass}`}><Tx>加载中...</Tx></div> : null}
       <AdminNativeTable tableClassName="admin-table-fixed">
           <colgroup>
             <col style={{ width: "44%" }} />
@@ -69,7 +75,7 @@ export default function AdminMonitoringRules() {
             <col style={{ width: "16rem" }} />
             <col style={{ width: "8rem" }} />
           </colgroup>
-          <thead className="bg-slate-50 text-slate-500">
+          <thead className={monitoringTableHeadClass}>
             <tr>
               <th className={adminThClassName("text-left", "left")}><Tx>规则</Tx></th>
               <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}><Tx>模块</Tx></th>
@@ -89,13 +95,13 @@ export default function AdminMonitoringRules() {
               return (
                 <tr key={rule.code} className="border-t align-top">
                   <td className={adminTdClassName(`${ADMIN_TABLE_WRAP_CLASS} text-left`, "left")}>
-                    <div className="font-medium text-slate-900">{ruleTitle}</div>
-                    <div className="mt-1 text-xs leading-relaxed text-slate-600">{ruleDesc}</div>
+                    <div className="font-medium text-foreground">{ruleTitle}</div>
+                    <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{ruleDesc}</div>
                   </td>
-                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-900`, "left")}>{ml.module(rule.module)}</td>
+                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-foreground`, "left")}>{ml.module(rule.module)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>
                     <select
-                      className="min-w-[6.5rem] rounded border px-2 py-1 text-sm"
+                      className={`${monitoringInputClass} min-w-[6.5rem]`}
                       value={rule.severity}
                       onChange={(e) => void update(rule, { severity: e.target.value as MonitoringSeverity })}
                     >
@@ -129,9 +135,9 @@ export default function AdminMonitoringRules() {
                     </div>
                   </td>
                   <td className={adminTdClassName(undefined, "left")}>
-                    <div className="text-sm font-medium text-slate-800">{scheduleLabel}</div>
+                    <div className="text-sm font-medium text-foreground">{scheduleLabel}</div>
                     <input
-                      className="mt-1.5 w-full rounded border px-2 py-1 text-xs text-slate-600"
+                      className={`${monitoringInputClass} mt-1.5 w-full text-xs`}
                       defaultValue={rule.schedule_cron || ""}
                       placeholder={tText("高级：Cron 表达式")}
                       title={tText("技术人员可编辑 Cron，格式：分 时 日 月 周")}
@@ -141,7 +147,7 @@ export default function AdminMonitoringRules() {
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                     <button
                       type="button"
-                      className="rounded bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white"
+                      className={monitoringPrimaryButtonClass}
                       onClick={() => void runMonitoringRule(rule.code).then(() => load())}
                     >
                       手动执行
@@ -152,14 +158,14 @@ export default function AdminMonitoringRules() {
             })}
             {!loading && !rules.length ? (
               <tr>
-                <td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={7}>
+                <td className={adminTdClassName(`py-6 text-center ${monitoringMutedClass}`, "center")} colSpan={7}>
                   暂无监控规则
                 </td>
               </tr>
             ) : null}
           </tbody>
       </AdminNativeTable>
-      <p className="mt-3 text-xs text-slate-500">
+      <p className={`mt-3 text-xs ${monitoringMutedClass}`}>
         说明：执行频率已转换为中文便于阅读；如需修改调度，可在「执行频率」下方填写 Cron（分 时 日 月 周）。
       </p>
     </AdminPageShell>

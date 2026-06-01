@@ -1,6 +1,7 @@
 import { Tx } from "@/components/admin/AdminText";
 import { NavLink } from "react-router-dom";
 import { useAdminT } from "@/hooks/useAdminT";
+import { monitoringSecondaryButtonClass } from "./monitoringUi";
 
 const tabs = [
   { label: "数据总览", to: "/admin/monitoring" },
@@ -21,10 +22,10 @@ export default function MonitoringSubnav() {
             to={tab.to}
             end={tab.to === "/admin/monitoring"}
             className={({ isActive }) =>
-              `touch-manipulation shrink-0 rounded-lg border px-3 py-2 text-sm font-semibold ${
+              `touch-manipulation shrink-0 px-3 py-2 text-sm ${
                 isActive
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  ? "rounded-lg bg-foreground font-semibold text-background shadow-sm"
+                  : monitoringSecondaryButtonClass
               }`
             }
           >

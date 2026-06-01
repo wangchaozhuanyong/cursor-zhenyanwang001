@@ -1,14 +1,14 @@
 import type { ThemeConfig } from "@/types/theme";
 
 export const STOREFRONT_DESIGN_LOCKS = {
-  radius: "12px",
+  radius: "14px",
   fontFamily: "system-ui, -apple-system, 'PingFang SC', sans-serif",
   shadowStyle: "soft",
-  buttonStyle: "rounded",
-  navStyle: "floating",
+  buttonStyle: "pill",
+  navStyle: "glass",
   badgeStyle: "soft",
-  priceStyle: "bold",
-  productCardVariant: "standard",
+  priceStyle: "luxury",
+  productCardVariant: "premium",
   cardStyle: "elevated",
   cardTextAlign: "left",
   imageRatio: "1 / 1",
@@ -16,10 +16,10 @@ export const STOREFRONT_DESIGN_LOCKS = {
   homeLayout: "classic",
   headerStyle: "clean",
   bannerStyle: "fresh",
-  couponStyle: "ticket",
+  couponStyle: "premium",
   memberCardStyle: "light",
   categoryIconStyle: "soft",
-  motionLevel: "soft",
+  motionLevel: "rich",
   density: "comfortable",
   adminThemeMode: "fixed",
 } satisfies Pick<

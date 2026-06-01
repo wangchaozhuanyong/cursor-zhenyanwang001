@@ -1,5 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "sonner";
 import { AnimatedPage } from "@/modules/micro-interactions";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { AdminOutletFallback } from "@/components/AppRouteFallback";
@@ -12,7 +13,6 @@ import {
   Search,
   ChevronDown,
   Shield,
-  Palette,
   LogOut,
   Languages,
   LayoutGrid,
@@ -23,12 +23,11 @@ import { AdminAccountSettingsProvider } from "@/modules/admin/context/AdminAccou
 import { resolveAdminTabTitle } from "@/config/adminNavTitle";
 import { syncAdminWorkTabFromLocation, useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
 import AdminWorkTabs from "@/layouts/admin/AdminWorkTabs";
-import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { useAdminT } from "@/hooks/useAdminT";
 import type { AdminLocale } from "@/i18n/admin";
 import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services/admin/accountService";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
-import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
+import { canAccessAdminPath, getFirstAllowedAdminPath, hasAdminPathAccessRule } from "@/config/adminNavAccess";
 import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminDirtyGuardProvider } from "@/modules/admin/context/AdminDirtyGuardContext";
 import AdminKeepAliveOutlet from "@/layouts/admin/AdminKeepAliveOutlet";
@@ -71,7 +70,6 @@ function AdminLayoutContent() {
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
-  const [skinPickerOpen, setSkinPickerOpen] = useState(false);
   const [topSearch, setTopSearch] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [securityAlerts, setSecurityAlerts] = useState<SecurityAlertSummary | null>(null);
@@ -104,10 +102,11 @@ function AdminLayoutContent() {
     if (!isAdminAuthenticated()) return;
     if (!permHydrated) return;
     const path = location.pathname;
-    if (!canAccessAdminPath(path, can, canAny)) {
+    if (hasAdminPathAccessRule(path) && !canAccessAdminPath(path, can, canAny)) {
+      toast.error(tText("没有权限访问该后台页面，已为你打开可访问的页面。"));
       navigate(getFirstAllowedAdminPath(can, canAny), { replace: true });
     }
-  }, [location.pathname, can, canAny, navigate, permHydrated]);
+  }, [location.pathname, can, canAny, navigate, permHydrated, tText]);
 
   // 头像菜单 / 安全告警弹层改由 AnchoredMenu 统一关闭逻辑处理（click/contextmenu/ESC/scroll/resize）
 
@@ -146,16 +145,18 @@ function AdminLayoutContent() {
     const lq = q.toLowerCase();
     const findChild = (children?: ResolvedNavChild[]): ResolvedNavChild | undefined => {
       for (const child of children ?? []) {
-        if (child.label.includes(lq)) return child;
+        if (child.label.toLowerCase().includes(lq)) return child;
         const nested = findChild(child.children);
         if (nested) return nested;
       }
       return undefined;
     };
-    const match = navItems.find((n) => n.label.includes(lq) || findChild(n.children));
+    const match = navItems.find((n) => n.label.toLowerCase().includes(lq) || findChild(n.children));
     if (match) {
       const child = findChild(match.children);
       void adminNavigate(child?.path ?? match.path);
+    } else {
+      toast.error(tText("没有找到匹配的后台菜单。"));
     }
     setTopSearch("");
   };
@@ -408,21 +409,10 @@ function AdminLayoutContent() {
                 className="py-1"
               >
                 <motion.div className="w-56">
-                  <button
-                    type="button"
-                    className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
-                    onClick={() => {
-                      setSkinPickerOpen(true);
-                      setAvatarMenuOpen(false);
-                    }}
-                  >
-                    <Palette size={16} />
-                    {t("layout.changeSkin")}
-                  </button>
                   {can("order.view") ? (
                     <>
-                      <div className="mx-3 my-1 h-px bg-border sm:hidden" />
                       <AdminOrderVoiceMenuItems onClose={() => setAvatarMenuOpen(false)} />
+                      <div className="mx-3 my-1 h-px bg-border" />
                     </>
                   ) : null}
                   <div className="px-4 py-2">
@@ -546,16 +536,6 @@ function AdminLayoutContent() {
           </div>
         </nav>
       </div>
-      <SkinPickerDialog
-        open={skinPickerOpen}
-        onOpenChange={setSkinPickerOpen}
-        title={t("skin.titleSystem")}
-        description={t("skin.description")}
-        loadingText={t("skin.loading")}
-        currentSkinHint={t("skin.currentSkin")}
-        switchHint={t("skin.switchHint")}
-        selectedBadge={t("skin.selected")}
-      />
     </div>
     </AdminOrderVoiceProvider>
     </AdminAccountSettingsProvider>

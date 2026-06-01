@@ -94,7 +94,6 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
             height={BANNER_IMAGE_HEIGHT}
             className="h-full w-full object-cover object-center"
             loading="eager"
-            fetchPriority="high"
             decoding="async"
           />
           {bannerOverlayClass ? (
@@ -106,13 +105,13 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
       </AnimatePresence>
 
       {banners.length > 1 && (
-        <div className="absolute bottom-2 right-2 flex rounded-full border border-white/35 bg-black/28 px-1.5 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-sm">
+        <div className="absolute bottom-2 right-2 flex min-h-8 rounded-full border border-white/35 bg-black/28 px-1.5 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-sm">
           {banners.map((_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => goTo(i)}
-              className="flex h-3 min-w-3 items-center justify-center rounded-full px-0.5 transition-transform active:scale-95"
+              className="flex h-8 min-w-8 items-center justify-center rounded-full px-1 transition-transform active:scale-95"
               aria-label={`Banner ${i + 1}`}
               aria-current={i === safeCurrent ? "true" : undefined}
             >

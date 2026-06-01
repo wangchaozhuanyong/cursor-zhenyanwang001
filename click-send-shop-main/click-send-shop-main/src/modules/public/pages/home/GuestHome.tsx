@@ -214,7 +214,7 @@ export default function GuestHome() {
           <button
             type="button"
             onClick={() => navigate(ROUTES.LOGIN, { state: { from: ROUTES.HOME } })}
-            className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+            className="inline-flex min-h-9 shrink-0 items-center rounded-full bg-[var(--theme-primary)] px-4 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
           >
             登录 / 注册
           </button>

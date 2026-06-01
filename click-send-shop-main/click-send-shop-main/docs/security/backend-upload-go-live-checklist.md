@@ -11,6 +11,7 @@
 - [x] Max file size enforced server-side.
 - [x] Max pixel dimensions / megapixels enforced (~25MP).
 - [x] Object key is server-generated UUID (no user filename injection).
+- [x] Uploaded public assets are recorded in `uploaded_assets`.
 - [ ] Raw uploads are private in S3.
 - [ ] Public delivery is through CloudFront only.
 - [ ] App only stores object keys / trusted URLs.
@@ -36,6 +37,7 @@
 - [ ] Alert on upload error spike (4xx/5xx).
 - [ ] Alert on unusual upload traffic bursts.
 - [ ] Upload incidents include trace ID in logs.
+- [ ] Video transcoding runs outside the API request path.
 - [ ] Rollback switch exists to disable uploads quickly.
 
 ## Acceptance Evidence

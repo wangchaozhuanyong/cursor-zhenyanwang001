@@ -5,6 +5,8 @@
 | 文件 | 用途 |
 |------|------|
 | `damatong.prod.conf` | **唯一推荐**：商城 `damatong.net`、管理端 `console.damatong.net` |
+| `damatong-cdn.conf` | 独立媒体 CDN 子域名 `cdn.damatong.net` |
+| `damatong-media-cache.conf` | 媒体反向代理缓存区 |
 | `install-damatong-nginx.sh` | 安装并启用上述配置，禁用旧站 |
 
 ## 静态目录（EC2）

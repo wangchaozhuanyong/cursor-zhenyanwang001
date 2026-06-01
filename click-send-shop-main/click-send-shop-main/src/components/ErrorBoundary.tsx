@@ -40,6 +40,13 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const isAdmin = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+      const homeHref = isAdmin ? "/admin" : "/";
+      const homeLabel = isAdmin ? "返回后台首页" : "返回首页";
+      const message = this.state.isChunkLoadError
+        ? "请刷新页面加载最新版本。"
+        : "系统遇到临时问题，请刷新页面后再试。";
+
       return (
         <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 py-16 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]">
@@ -50,8 +57,13 @@ export default class ErrorBoundary extends Component<Props, State> {
               {this.state.isChunkLoadError ? "网站版本已更新" : "页面出错了"}
             </h1>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground break-words">
-              {this.state.isChunkLoadError ? "请刷新页面加载最新版本。" : this.state.message}
+              {message}
             </p>
+            {!import.meta.env.PROD && !this.state.isChunkLoadError && this.state.message ? (
+              <p className="mt-2 max-w-sm break-words rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                {this.state.message}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap justify-center gap-3">
             <button
@@ -62,10 +74,10 @@ export default class ErrorBoundary extends Component<Props, State> {
               <RefreshCw size={16} /> 刷新页面
             </button>
             <a
-              href="/"
+              href={homeHref}
               className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground"
             >
-              <Home size={16} /> 返回首页
+              <Home size={16} /> {homeLabel}
             </a>
           </div>
         </div>

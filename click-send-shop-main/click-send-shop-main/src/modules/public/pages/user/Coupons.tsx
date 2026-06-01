@@ -1,5 +1,5 @@
 import { useState, useEffect, forwardRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Ticket, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toast } from "sonner";
@@ -108,6 +108,7 @@ function filterByTab(coupons: DisplayCoupon[], tab: Tab): DisplayCoupon[] {
 
 export default function Coupons() {
   const navigate = useNavigate();
+  const location = useLocation() as { state?: { pageView?: PageView } | null };
   const goBack = useGoBack();
   const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -127,28 +128,34 @@ export default function Coupons() {
     }
   }, [authHydrated, canViewOwnedCoupons]);
 
+  useEffect(() => {
+    if (location.state?.pageView === "claimCenter") {
+      setPageView("claimCenter");
+    }
+  }, [location.state?.pageView]);
+
   const coupons = rawCoupons.map((uc) => toDisplayCoupon(uc));
   const available = coupons.filter((c) => c.status === "available");
   const isSessionExpired = error === STORE_SESSION_EXPIRED_MESSAGE;
 
   const handleRetry = useCallback(() => {
     if (isSessionExpired) {
-      navigate("/login", { state: { from: "/coupons" }, replace: true });
+      navigate("/login", { state: { from: "/coupons", fromState: { pageView: pageView === "claimCenter" ? "claimCenter" : "mine" } }, replace: true });
       return;
     }
     void loadCoupons();
-  }, [isSessionExpired, loadCoupons, navigate]);
+  }, [isSessionExpired, loadCoupons, navigate, pageView]);
   const usableCount = coupons.filter((c) => c.status === "claimed").length;
   const list = pageView === "claimCenter" ? available : filterByTab(coupons, tab);
 
   const handleClaim = async (coupon: DisplayCoupon) => {
     if (!canViewOwnedCoupons) {
-      navigate("/login", { state: { from: "/coupons" } });
+      navigate("/login", { state: { from: "/coupons", fromState: { pageView: "claimCenter" } } });
       return;
     }
     const sessionReady = await ensureStoreSession();
     if (!sessionReady) {
-      navigate("/login", { state: { from: "/coupons" } });
+      navigate("/login", { state: { from: "/coupons", fromState: { pageView: "claimCenter" } } });
       return;
     }
     setClaimingId(coupon.id);
@@ -176,7 +183,7 @@ export default function Coupons() {
     ) : (
       <button
         type="button"
-        onClick={() => navigate("/login", { state: { from: "/coupons" } })}
+        onClick={() => navigate("/login", { state: { from: "/coupons", fromState: { pageView: "claimCenter" } } })}
         className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
       >
         登录领取

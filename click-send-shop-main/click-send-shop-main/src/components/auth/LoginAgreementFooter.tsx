@@ -22,7 +22,7 @@ export function LoginAgreementFooter({
   return (
     <footer
       className={cn(
-        "auth-page-footer store-caption shrink-0 border-t border-border/50 bg-background px-[var(--store-page-x)] py-3 text-center leading-relaxed text-muted-foreground",
+        "auth-page-footer auth-login-agreement-footer store-caption shrink-0 border-t border-border/50 bg-background px-[var(--store-page-x)] py-3 text-center leading-relaxed text-muted-foreground",
         hiddenOnKeyboard && "max-md:hidden",
         className,
       )}
@@ -31,7 +31,7 @@ export function LoginAgreementFooter({
       <button
         type="button"
         onClick={() => navigate(termsPath)}
-        className="mx-0.5 text-theme-price hover:underline"
+        className="mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle text-theme-price hover:underline"
       >
         《用户协议》
       </button>
@@ -39,7 +39,7 @@ export function LoginAgreementFooter({
       <button
         type="button"
         onClick={() => navigate(privacyPath)}
-        className="mx-0.5 text-theme-price hover:underline"
+        className="mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle text-theme-price hover:underline"
       >
         《隐私政策》
       </button>

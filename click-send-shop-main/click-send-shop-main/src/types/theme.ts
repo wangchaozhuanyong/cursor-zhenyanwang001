@@ -79,7 +79,6 @@ export type ThemeSkin = {
   name: string;
   description?: string;
   sceneTag?: ThemeSceneTag;
-  clientEnabled?: boolean;
   config: ThemeConfig;
 };
 

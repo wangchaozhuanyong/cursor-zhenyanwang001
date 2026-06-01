@@ -104,11 +104,21 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
     if (!loading) return null;
     return (
       <div
-        className="relative overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)]"
+        className="store-hero-loading-shell relative overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)]"
         style={{ aspectRatio: BANNER_ASPECT_CSS, borderRadius: "var(--theme-radius)" }}
         aria-busy="true"
       >
         <div className="absolute inset-0 skeleton-base skeleton-shimmer" />
+        <div className="store-hero-loading-copy" aria-hidden>
+          <span className="store-hero-loading-kicker" />
+          <span className="store-hero-loading-title" />
+          <span className="store-hero-loading-line" />
+        </div>
+        <div className="store-hero-loading-dots" aria-hidden>
+          <span />
+          <span />
+          <span />
+        </div>
       </div>
     );
   }
@@ -162,7 +172,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               width={BANNER_IMAGE_WIDTH}
               height={BANNER_IMAGE_HEIGHT}
               loading="eager"
-              fetchPriority="high"
+              {...({ fetchpriority: "high" } as Record<string, string>)}
               decoding="async"
               className={`absolute inset-0 h-full w-full object-cover ${
                 hasTextLayer ? "store-hero-image-with-copy" : "object-center"
@@ -186,7 +196,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
             width={BANNER_IMAGE_WIDTH}
             height={BANNER_IMAGE_HEIGHT}
             loading="eager"
-            fetchPriority="high"
+            {...({ fetchpriority: "high" } as Record<string, string>)}
             decoding="async"
             className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-500 ease-out ${
               hasTextLayer ? "store-hero-image-with-copy" : "object-center"
@@ -231,7 +241,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
           className="pointer-events-auto absolute bottom-2 right-2 z-30 rounded-full border border-white/35 bg-[color-mix(in_srgb,var(--theme-surface)_76%,transparent)] px-1.5 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-sm sm:bottom-2.5 sm:right-3"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex h-2 items-center gap-1">
+          <div className="flex min-h-8 items-center gap-0.5">
             {banners.map((_, index) => (
               <button
                 key={index}
@@ -240,7 +250,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                   e.stopPropagation();
                   goTo(index, true);
                 }}
-                className="flex h-3 min-w-3 items-center justify-center rounded-full px-0.5 transition-transform active:scale-95"
+                className="flex h-8 min-w-8 items-center justify-center rounded-full px-1 transition-transform active:scale-95"
                 aria-label={`Banner ${index + 1}`}
                 aria-current={index === safeIndex ? "true" : undefined}
               >

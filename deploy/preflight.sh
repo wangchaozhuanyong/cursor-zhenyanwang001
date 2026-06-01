@@ -13,7 +13,7 @@ PROJECT_DIR="${PROJECT_DIR:-/var/www/click-send-shop}"
 FRONTEND_SUB="${FRONTEND_SUB:-click-send-shop-main/click-send-shop-main}"
 FRONTEND_DIR="$PROJECT_DIR/$FRONTEND_SUB"
 BACKEND_DIR="$PROJECT_DIR/server"
-MIN_NODE_MAJOR="${MIN_NODE_MAJOR:-20}"
+MIN_NODE_MAJOR="${MIN_NODE_MAJOR:-22}"
 
 fail=0
 err() { echo "❌ $1"; fail=1; }

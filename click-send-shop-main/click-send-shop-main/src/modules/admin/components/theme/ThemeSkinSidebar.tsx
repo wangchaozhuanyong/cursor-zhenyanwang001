@@ -1,11 +1,8 @@
-import { MoreHorizontal, Plus, Sparkles } from "lucide-react";
 import type { ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import { SCENE_FILTER_OPTIONS, SCENE_TAG_LABELS } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
-
-type StarterTemplate = { id: string; label: string };
 
 export type ThemeSkinSidebarProps = {
   skins: ThemeSkin[];
@@ -17,24 +14,11 @@ export type ThemeSkinSidebarProps = {
   onSearchChange: (v: string) => void;
   onSceneFilterChange: (v: "all" | ThemeSceneTag) => void;
   onSelect: (id: string) => void;
-  onAdd: () => void;
-  onCopy: (id: string) => void;
-  canDeleteSkin: (id: string) => boolean;
-  onDelete: (id: string) => void;
-  onSetDefault: (id: string) => void;
-  onAddStarter?: (starterId: string) => void;
-  starterQuickAdds?: StarterTemplate[];
-  libraryLocked?: boolean;
 };
 
 function colorDots(config: ThemeSkin["config"]) {
   return [config.primaryColor, config.secondaryColor, config.accentColor, config.bgColor];
 }
-
-/** 单张皮肤卡约 118px（标题、标签、更多按钮）；列表区至少可见 10 张 */
-const SKIN_LIST_VISIBLE_COUNT = 10;
-const SKIN_CARD_ESTIMATE_PX = 118;
-const SKIN_LIST_MIN_HEIGHT_PX = SKIN_CARD_ESTIMATE_PX * SKIN_LIST_VISIBLE_COUNT;
 
 export default function ThemeSkinSidebar({
   skins,
@@ -46,14 +30,6 @@ export default function ThemeSkinSidebar({
   onSearchChange,
   onSceneFilterChange,
   onSelect,
-  onAdd,
-  onCopy,
-  canDeleteSkin,
-  onDelete,
-  onSetDefault,
-  onAddStarter,
-  starterQuickAdds = [],
-  libraryLocked = false,
 }: ThemeSkinSidebarProps) {
   const tl = useThemeStudioLabel();
   const q = search.trim().toLowerCase();
@@ -67,25 +43,13 @@ export default function ThemeSkinSidebar({
       (skin.sceneTag && SCENE_TAG_LABELS[skin.sceneTag].toLowerCase().includes(q));
     return matchScene && matchSearch;
   });
-  const listMinHeight = libraryLocked
-    ? Math.max(260, Math.min(SKIN_LIST_MIN_HEIGHT_PX, skins.length * SKIN_CARD_ESTIMATE_PX + 32))
-    : SKIN_LIST_MIN_HEIGHT_PX;
 
   return (
     <aside className="w-full shrink-0 self-start rounded-2xl border border-border bg-card p-4 shadow-sm 2xl:sticky 2xl:top-24 2xl:w-[320px]">
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-foreground"><Tx>皮肤库</Tx></p>
-          {!libraryLocked ? (
-            <button
-              type="button"
-              onClick={onAdd}
-              className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-xs hover:bg-secondary"
-            >
-              <Plus size={12} />
-              新建
-            </button>
-          ) : null}
+        <div>
+          <p className="text-sm font-semibold text-foreground"><Tx>系统皮肤</Tx></p>
+          <p className="mt-1 text-xs text-muted-foreground">只保留后台统一管理，不提供客户自行切换。</p>
         </div>
 
         <AdminSearchInput
@@ -111,36 +75,11 @@ export default function ThemeSkinSidebar({
           ))}
         </div>
 
-        {!libraryLocked && onAddStarter && starterQuickAdds.length ? (
-          <details className="rounded-xl border border-dashed border-border p-2">
-            <summary className="cursor-pointer list-none text-xs font-medium text-foreground [&::-webkit-details-marker]:hidden">
-              从模板新建（{starterQuickAdds.length}）
-            </summary>
-            <div className="mt-2 grid max-h-[160px] grid-cols-1 gap-1 overflow-y-auto pr-1">
-              {starterQuickAdds.slice(0, 20).map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => onAddStarter(item.id)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-left text-[11px] hover:bg-secondary"
-                >
-                  <Sparkles size={12} />
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </details>
-        ) : null}
-
-        <div
-          className="space-y-2 overflow-y-auto pr-1"
-          style={{ minHeight: listMinHeight }}
-        >
+        <div className="space-y-2 overflow-y-auto pr-1" style={{ minHeight: Math.max(260, skins.length * 104 + 24) }}>
           {filtered.map((skin) => {
             const selected = skin.id === selectedSkinId;
             const isDefault = skin.id === defaultSkinId;
             const isActive = skin.id === activeSkinId;
-            const deletable = canDeleteSkin(skin.id);
             return (
               <article
                 key={skin.id}
@@ -152,65 +91,27 @@ export default function ThemeSkinSidebar({
                   <div className="flex items-start justify-between gap-2">
                     <p className="line-clamp-1 text-sm font-semibold text-foreground">{skin.name}</p>
                     <div className="flex shrink-0 gap-0.5">
-                      {colorDots(skin.config).map((c, idx) => (
+                      {colorDots(skin.config).map((color, index) => (
                         <span
-                          key={`${skin.id}_${idx}`}
+                          key={`${skin.id}_${index}`}
                           className="h-3 w-3 rounded-full border border-black/10"
-                          style={{ background: c }}
-                          title={c}
+                          style={{ background: color }}
+                          title={color}
                         />
                       ))}
                     </div>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {isDefault ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700"><Tx>默认</Tx></span> : null}
+                    {isDefault ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700"><Tx>日常默认</Tx></span> : null}
                     {selected ? (
                       <span className="rounded-full bg-[var(--theme-primary)]/15 px-1.5 py-0.5 text-[10px] text-[var(--theme-primary)]"><Tx>编辑中</Tx></span>
                     ) : null}
                     {isActive ? <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700"><Tx>当前生效</Tx></span> : null}
-                    {skin.clientEnabled !== false ? (
-                      <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"><Tx>前台可使用</Tx></span>
-                    ) : null}
                     {skin.sceneTag ? (
                       <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">{tl(SCENE_TAG_LABELS[skin.sceneTag])}</span>
                     ) : null}
                   </div>
                 </button>
-
-                {libraryLocked ? null : (
-                  <details className="group relative mt-2">
-                    <summary className="flex h-7 w-full list-none cursor-pointer items-center justify-center gap-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:bg-secondary">
-                      <MoreHorizontal size={12} />
-                      更多
-                    </summary>
-                    <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-border bg-card p-1 shadow-lg">
-                      {!libraryLocked ? (
-                        <button type="button" onClick={() => onCopy(skin.id)} className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-secondary">
-                          复制
-                        </button>
-                      ) : null}
-                      {!isDefault ? (
-                        <button
-                          type="button"
-                          onClick={() => onSetDefault(skin.id)}
-                          className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-secondary"
-                        >
-                          设为默认
-                        </button>
-                      ) : null}
-                      {!libraryLocked ? (
-                        <button
-                          type="button"
-                          onClick={() => onDelete(skin.id)}
-                          disabled={!deletable}
-                          className={`w-full rounded-md px-2 py-1.5 text-left text-xs ${deletable ? "text-red-600 hover:bg-red-50" : "text-muted-foreground"}`}
-                        >
-                          {deletable ? "删除" : "默认皮肤不可删除"}
-                        </button>
-                      ) : null}
-                    </div>
-                  </details>
-                )}
               </article>
             );
           })}

@@ -92,8 +92,8 @@ export function getCouponCardPresentation(
 
   const gridByLayout: Record<CouponCardLayout, string> = {
     home: "grid-cols-[minmax(4.25rem,23%)_minmax(0,1fr)_minmax(2.5rem,3rem)]",
-    compact: "grid-cols-[minmax(4.75rem,24%)_minmax(0,1fr)_minmax(2.5rem,3rem)]",
-    default: "grid-cols-[minmax(5.5rem,26%)_minmax(0,1fr)_minmax(2.75rem,3.25rem)]",
+    compact: "grid-cols-[minmax(4.75rem,24%)_minmax(0,1fr)_minmax(4rem,4.5rem)]",
+    default: "grid-cols-[minmax(5.5rem,26%)_minmax(0,1fr)_minmax(4.25rem,4.75rem)]",
   };
 
   const amountSizeByLayout: Record<CouponCardLayout, string> = {
@@ -103,10 +103,12 @@ export function getCouponCardPresentation(
   };
 
   /** 操作区统一竖排一字一行（如「使」「用」），贴右侧窄条 */
-  const actionLayout: CouponCardPresentation["actionLayout"] = "vertical";
+  const actionLayout: CouponCardPresentation["actionLayout"] = layout === "home" ? "vertical" : "horizontal";
 
   const actionButtonClass = useThemedMarketingShell
-    ? "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch rounded-lg px-1 py-1.5 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
+    ? layout === "home"
+      ? "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch rounded-lg px-1 py-1.5 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
+      : "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full items-center justify-center self-stretch rounded-xl px-2 py-2 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
     : "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch !h-auto !px-1 !py-1.5 !rounded-lg";
 
   return {

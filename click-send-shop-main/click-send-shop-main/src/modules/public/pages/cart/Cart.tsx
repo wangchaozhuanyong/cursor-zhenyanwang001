@@ -90,7 +90,7 @@ export default function Cart() {
             <button
               type="button"
               onClick={() => setSelectAll(!allSelected)}
-              className="text-xs font-semibold text-[var(--theme-primary)]"
+              className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-semibold text-[var(--theme-primary)]"
             >
               {allSelected ? "取消全选" : "全选"}
             </button>
@@ -109,7 +109,7 @@ export default function Cart() {
                 <button
                   type="button"
                   onClick={() => navigate("/login", { state: { from: "/cart" } })}
-                  className="font-semibold text-[var(--theme-price)] ml-1"
+                  className="ml-1 inline-flex min-h-8 items-center rounded-full px-1.5 font-semibold text-[var(--theme-price)]"
                 >
                   登录
                 </button>

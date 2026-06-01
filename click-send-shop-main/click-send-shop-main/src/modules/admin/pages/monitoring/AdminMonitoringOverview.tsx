@@ -3,7 +3,17 @@ import { Link } from "react-router-dom";
 import { getMonitoringOverview, type MonitoringOverview } from "@/services/admin/monitoringService";
 import MonitoringSubnav from "./MonitoringSubnav";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
-import { Badge, formatTime, severityClass } from "./monitoringUi";
+import {
+  Badge,
+  formatTime,
+  monitoringActionLinkClass,
+  monitoringHeadingClass,
+  monitoringInsetClass,
+  monitoringMutedClass,
+  monitoringPanelClass,
+  monitoringTableHeadClass,
+  severityClass,
+} from "./monitoringUi";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -42,42 +52,42 @@ export default function AdminMonitoringOverview() {
       hint={<Tx>汇总今日检测、异常与高危项，并可跳转规则、运行记录与修复任务。</Tx>}
       filters={<MonitoringSubnav />}
     >
-      {loading ? <div className="text-sm text-slate-500"><Tx>加载中...</Tx></div> : (
+      {loading ? <div className={`text-sm ${monitoringMutedClass}`}><Tx>加载中...</Tx></div> : (
         <div className="space-y-5">
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
             {metrics.map(([label, value]) => (
-              <div key={label} className="rounded border border-slate-200 bg-white p-4">
-                <div className="text-sm text-slate-500">{label}</div>
-                <div className="mt-2 text-2xl font-bold text-slate-900">{value}</div>
+              <div key={label} className={monitoringPanelClass}>
+                <div className={`text-sm ${monitoringMutedClass}`}>{label}</div>
+                <div className="mt-2 text-2xl font-bold text-foreground">{value}</div>
               </div>
             ))}
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <section className="rounded border border-slate-200 bg-white p-4">
-              <h2 className="mb-3 text-base font-semibold text-slate-900"><Tx>模块异常排行</Tx></h2>
+            <section className={monitoringPanelClass}>
+              <h2 className={`mb-3 ${monitoringHeadingClass}`}><Tx>模块异常排行</Tx></h2>
               <div className="space-y-2">
                 {(data?.moduleCounts || []).map((item) => (
-                  <div key={item.module} className="flex items-center justify-between rounded bg-slate-50 px-3 py-2 text-sm">
+                  <div key={item.module} className={`flex items-center justify-between text-sm ${monitoringInsetClass}`}>
                     <span>{ml.module(item.module)}</span>
                     <strong>{item.count}</strong>
                   </div>
                 ))}
-                {!data?.moduleCounts?.length && <div className="text-sm text-slate-500"><Tx>暂无异常</Tx></div>}
+                {!data?.moduleCounts?.length && <div className={`text-sm ${monitoringMutedClass}`}><Tx>暂无异常</Tx></div>}
               </div>
             </section>
 
-            <section className="rounded border border-slate-200 bg-white p-4">
-              <h2 className="mb-3 text-base font-semibold text-slate-900"><Tx>最近运行记录</Tx></h2>
+            <section className={monitoringPanelClass}>
+              <h2 className={`mb-3 ${monitoringHeadingClass}`}><Tx>最近运行记录</Tx></h2>
               <div className="space-y-2">
                 {(data?.recentRuns || []).map((run) => (
-                  <div key={run.id} className="flex items-center justify-between gap-3 rounded bg-slate-50 px-3 py-2 text-sm">
+                  <div key={run.id} className={`flex items-center justify-between gap-3 text-sm ${monitoringInsetClass}`}>
                     <span className="truncate" title={run.rule_code || run.run_type || undefined}>
                       {run.rule_code
                         ? ml.rule(run.rule_code)
                         : ml.runType(run.run_type)}
                     </span>
-                    <span className="text-slate-500">{run.checked_count}/{run.anomaly_count}</span>
+                    <span className={monitoringMutedClass}>{run.checked_count}/{run.anomaly_count}</span>
                     <Badge value={run.status} />
                   </div>
                 ))}
@@ -85,10 +95,10 @@ export default function AdminMonitoringOverview() {
             </section>
           </div>
 
-          <section className="rounded border border-slate-200 bg-white p-4">
-            <h2 className="mb-3 text-base font-semibold text-slate-900"><Tx>最近高危异常</Tx></h2>
+          <section className={monitoringPanelClass}>
+            <h2 className={`mb-3 ${monitoringHeadingClass}`}><Tx>最近高危异常</Tx></h2>
             <AdminNativeTable stickyFirstColumn={false}>
-                <thead className="bg-slate-50 text-slate-500">
+                <thead className={monitoringTableHeadClass}>
                   <tr>
                     <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>等级</Tx></th>
                     <th className={adminThClassName(undefined, "left")}><Tx>异常</Tx></th>
@@ -101,10 +111,10 @@ export default function AdminMonitoringOverview() {
                   {(data?.recentHighRisk || []).map((item) => (
                     <tr key={item.id} className="border-t">
                       <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={item.severity} tone={severityClass[item.severity]} /></td>
-                      <td className={adminTdClassName("font-medium text-slate-900", "left")}>{item.title}</td>
-                      <td className={adminTdClassName("text-slate-600", "left")}>{ml.entityRef(item.entity_type, item.entity_id)}</td>
-                      <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-slate-600`, "left")}>{formatTime(item.last_seen_at)}</td>
-                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Link className="text-blue-600" to={`/admin/monitoring/anomalies/${item.id}`}><Tx>查看</Tx></Link></td>
+                      <td className={adminTdClassName("font-medium text-foreground", "left")}>{item.title}</td>
+                      <td className={adminTdClassName("text-muted-foreground", "left")}>{ml.entityRef(item.entity_type, item.entity_id)}</td>
+                      <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(item.last_seen_at)}</td>
+                      <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}><Link className={monitoringActionLinkClass} to={`/admin/monitoring/anomalies/${item.id}`}><Tx>查看</Tx></Link></td>
                     </tr>
                   ))}
                 </tbody>

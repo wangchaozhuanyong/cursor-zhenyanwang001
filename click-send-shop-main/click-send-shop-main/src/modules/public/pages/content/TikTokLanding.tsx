@@ -183,7 +183,7 @@ export default function TikTokLanding() {
               }`}
               loading={index === 0 ? "eager" : "lazy"}
               decoding="async"
-              fetchPriority={index === 0 ? "high" : "auto"}
+              {...({ fetchpriority: index === 0 ? "high" : "auto" } as Record<string, string>)}
             />
           ))}
         </div>

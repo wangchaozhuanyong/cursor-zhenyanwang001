@@ -4,7 +4,6 @@
     "name": "活力满分·日落珊瑚",
     "description": "充满活力与现代呼吸感的暖色调皮肤。通过高对比度的珊瑚红主色刺激转化，配合毛玻璃与大圆角设计，适合面向年轻客群的全品类好物商城。",
     "sceneTag": "mall",
-    "clientEnabled": true,
     "config": {
       "skinName": "日落珊瑚",
       "radius": "16px",
@@ -47,7 +46,6 @@
     "name": "高定流白",
     "description": "黑白高级基调配合清晰卡片边界与左对齐商品信息，减弱空泛留白，适合深色商品图的全品类卖货商城。",
     "sceneTag": "premium",
-    "clientEnabled": true,
     "config": {
       "skinName": "高定流白",
       "radius": "8px",
@@ -90,7 +88,6 @@
     "name": "极简美学·画廊叙事",
     "description": "专为深色商品图打造的「画廊级」展示空间。采用极致克制的黑白灰中性色调、锐利的直角边缘与无阴影设计，通过大量留白烘托商品本身的高级感与品质感。",
     "sceneTag": "premium",
-    "clientEnabled": true,
     "config": {
       "skinName": "极简画廊白",
       "radius": "0px",
@@ -133,7 +130,6 @@
     "name": "曜石黑金",
     "description": "为高端深色站点设计的皮肤。通过纯黑背景、极细边框与黑金配色，分割并衬托深色背景的商品图，主页「新品上市」模块展现奢华画廊质感。",
     "sceneTag": "premium",
-    "clientEnabled": true,
     "config": {
       "skinName": "曜石黑金",
       "radius": "8px",
@@ -176,7 +172,6 @@
     "name": "幻夜钛银",
     "description": "告别传统的纯黑，采用深邃的冷调灰蓝与钛银交织。通过冷色调的悬浮卡片自然托起深色商品图，呈现极简、冷峻的先锋高级感，适合主页新品上市展示。",
     "sceneTag": "premium",
-    "clientEnabled": true,
     "config": {
       "skinName": "幻夜钛银",
       "radius": "16px",
@@ -219,7 +214,6 @@
     "name": "瑞红鎏金",
     "description": "专为节日大促定制的高级浅色皮肤。以象牙暖白为底色，红宝石色为促销主心骨，辅以鎏金质感。在热烈喜庆的氛围中，完美包容并衬托深色商品图，主打「高定礼盒」般的奢华购物体验。",
     "sceneTag": "promotion",
-    "clientEnabled": true,
     "config": {
       "skinName": "瑞红鎏金",
       "radius": "12px",
@@ -262,7 +256,6 @@
     "name": "无界谧白·空间建构",
     "description": "干净白底与孔雀石绿主色，1:1 饱满商品图与清晰卡片边界，强调品质感与上新转化，适合全品类卖货商城。",
     "sceneTag": "premium",
-    "clientEnabled": true,
     "config": {
       "skinName": "无界谧白",
       "radius": "14px",
@@ -305,7 +298,6 @@
     "name": "质朴之境·原生砂岩",
     "description": "温润大地色系与清晰商品卡结构，兼顾高级感与价格可读性，适合作为默认全品类卖货商城皮肤。",
     "sceneTag": "mall",
-    "clientEnabled": true,
     "config": {
       "skinName": "质朴砂岩",
       "radius": "14px",

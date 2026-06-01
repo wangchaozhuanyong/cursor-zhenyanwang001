@@ -8,7 +8,8 @@ const memberLevelService = require('./service/memberLevel.service');
 const { UserStatsService } = require('./service/userStats.service');
 const uploadCtrl = require('./controller/upload.controller');
 const uploadPresignCtrl = require('./controller/uploadPresign.controller');
-const themeService = require('./service/theme.service');
+const uploadAssetService = require('./service/uploadAsset.service');
+const uploadAssetRepo = require('./repository/uploadAsset.repository');
 const rewardServiceApi = require('./service/reward.service');
 const couponAdminIssueService = require('./service/couponAdminIssue.service');
 const couponLifecycle = require('./service/couponLifecycle.service');
@@ -30,7 +31,6 @@ router.use('/points', require('./routes/points.routes'));
 router.use('/rewards', require('./routes/rewards.routes'));
 router.use('/invite', require('./routes/invite.routes'));
 router.use('/upload', require('./routes/upload.routes'));
-router.use('/theme', require('./routes/theme.routes'));
 
 // Cross-module public API (do not import internal files directly from other modules)
 /** @type {any} */ (router).api = {
@@ -60,8 +60,13 @@ router.use('/theme', require('./routes/theme.routes'));
   uploadFiles: uploadCtrl.uploadFiles,
   createUploadTicket: uploadPresignCtrl.createTicket,
   completeUpload: uploadPresignCtrl.completeUpload,
-  updateThemeConfig: themeService.updateThemeConfig,
-  updateThemeSkins: themeService.updateThemeSkins,
+  recordUploadedAsset: uploadAssetService.recordUploadedAsset,
+  safeRecordUploadedAsset: uploadAssetService.safeRecordUploadedAsset,
+  selectPendingVideoTranscodeAssets: uploadAssetRepo.selectPendingVideoTranscodeAssets,
+  claimVideoTranscodeAsset: uploadAssetRepo.claimVideoTranscodeAsset,
+  markVideoTranscodeReady: uploadAssetRepo.markVideoTranscodeReady,
+  markVideoTranscodeFailed: uploadAssetRepo.markVideoTranscodeFailed,
+  replaceProductVideoUrl: uploadAssetRepo.replaceProductVideoUrl,
   getAdminRewardRecords: rewardServiceApi.getAdminRecords,
   issueCouponToUsers: couponAdminIssueService.issueCouponToUsers,
   buildEffectiveCoupon: couponLifecycle.buildEffectiveCoupon,
@@ -78,5 +83,3 @@ router.use('/theme', require('./routes/theme.routes'));
 };
 
 module.exports = router;
-
-

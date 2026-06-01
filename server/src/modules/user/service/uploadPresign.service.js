@@ -61,7 +61,7 @@ async function createUploadTicket(userId, body) {
  * @param {string} userId
  * @param {{ objectKey: string, mode?: string, mimeType?: string }} body
  */
-async function completeUpload(userId, body) {
+async function completeUpload(userId, body, context = {}) {
   if (!isS3StorageEnabled()) {
     throw new BusinessError(503, '对象存储未启用');
   }
@@ -90,7 +90,12 @@ async function completeUpload(userId, body) {
   };
 
   const mode = String(body.mode || 'product').toLowerCase();
-  const result = await writeMediaFromFile(file, mode);
+  const result = await writeMediaFromFile(file, mode, {
+    uploaderId: userId,
+    uploaderType: context.uploaderType || 'user',
+    uploadSource: context.uploadSource || 'presign_complete',
+    sourceStorageKey: objectKey,
+  });
 
   try {
     await deleteS3Object(objectKey);
@@ -105,5 +110,4 @@ module.exports = {
   createUploadTicket,
   completeUpload,
 };
-
 

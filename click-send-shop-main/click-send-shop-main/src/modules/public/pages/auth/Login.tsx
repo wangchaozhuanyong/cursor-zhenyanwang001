@@ -469,13 +469,13 @@ export default function Login() {
         </div>
         {banners.length > 0 ? (
           <section
-            className="mb-4 overflow-hidden lg:hidden [transition:none]"
+            className="auth-login-banner mb-4 overflow-hidden lg:hidden [transition:none]"
           >
             <LoginBannerCarousel banners={banners} paused={formCompact} />
           </section>
         ) : null}
 
-        <section className="mb-5 shrink-0">
+        <section className="auth-login-heading mb-5 shrink-0">
           <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
             {mode === "login" ? "欢迎回来" : "创建账号"}
           </h2>
@@ -484,14 +484,17 @@ export default function Login() {
           </p>
         </section>
 
-        <section className="mb-4">
-          <div className="flex rounded-2xl bg-secondary p-1">
+        <section className="auth-login-mode-tabs mb-4">
+          <div className="flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录或注册">
             {(["login", "register"] as AuthMode[]).map((m) => (
               <button
                 key={m}
                 type="button"
+                role="tab"
+                aria-selected={mode === m}
+                aria-label={m === "login" ? "登录" : "注册"}
                 onClick={() => switchAuthMode(m)}
-                className={`relative flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
+                className={`relative min-h-10 flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
                   mode === m
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground"
@@ -511,7 +514,7 @@ export default function Login() {
         ) : null}
 
         {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
-          <section className="mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录方式">
+          <section className="auth-login-credential-tabs mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录方式">
             {(["password", "otp"] as CredentialMode[]).map((c) => (
               <button
                 key={c}
@@ -543,9 +546,9 @@ export default function Login() {
           </div>
         ) : null}
 
-        <FormFieldShake shake={shakeKey} className="space-y-3.5">
+        <FormFieldShake shake={shakeKey} className="auth-login-form-wrap space-y-3.5">
           <form
-            className="flex flex-col gap-3.5"
+            className="auth-login-form flex flex-col gap-3.5"
             autoComplete="on"
             onSubmit={(e) => {
               e.preventDefault();
@@ -671,7 +674,7 @@ export default function Login() {
           ) : null}
 
           {mode === "login" && effectiveCredentialMode === "password" && (
-            <div className="flex items-center justify-between">
+            <div className="auth-login-meta-row flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -684,7 +687,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowReset(true)}
-                className="text-xs text-theme-price font-medium active:opacity-70"
+                className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-medium text-theme-price active:opacity-70"
               >
                 忘记密码？
               </button>
@@ -695,7 +698,7 @@ export default function Login() {
             type="submit"
             disabled={loading}
             aria-busy={loading || undefined}
-            className="w-full min-h-12 rounded-2xl btn-theme-price px-4 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+            className="auth-login-submit w-full min-h-12 rounded-2xl btn-theme-price px-4 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
           >
             {loading ? (
               <span className="flex min-w-0 items-center justify-center gap-2 whitespace-nowrap">

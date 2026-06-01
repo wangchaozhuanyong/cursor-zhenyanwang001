@@ -9,6 +9,7 @@ import {
   resolveMonitoringAnomaly,
   type MonitoringAnomaly,
 } from "@/services/admin/monitoringService";
+import { monitoringSecondaryButtonClass } from "./monitoringUi";
 
 type Props = {
   item: MonitoringAnomaly;
@@ -16,10 +17,10 @@ type Props = {
 };
 
 const actionBtn =
-  "inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50";
+  monitoringSecondaryButtonClass;
 
 const menuItem =
-  "flex w-full items-center rounded-md px-2.5 py-2 text-left text-xs text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40";
+  "flex w-full items-center rounded-md px-2.5 py-2 text-left text-xs text-foreground hover:bg-[var(--theme-bg)] disabled:cursor-not-allowed disabled:opacity-40";
 
 export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
   const menuId = useId();
@@ -86,7 +87,7 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
             <button
               type="button"
               role="menuitem"
-              className={`${menuItem} text-slate-600`}
+              className={`${menuItem} text-muted-foreground`}
               disabled={busy || item.status === "ignored" || item.status === "resolved"}
               onClick={() => void run(() => ignoreMonitoringAnomaly(item.id))}
             >

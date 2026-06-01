@@ -74,6 +74,9 @@ export function ProgressiveImage({
   const showHiRes = hiResLoaded && !loadFailed;
   const showLoadingPlate = !showHiRes && !loadFailed;
   const showFailurePlate = loadFailed && !showHiRes;
+  const fetchPriorityProps = fetchPriority
+    ? ({ fetchpriority: fetchPriority } as Record<string, string>)
+    : {};
 
   return (
     <div className={cn("relative overflow-hidden bg-[var(--theme-bg)]", className)}>
@@ -122,7 +125,7 @@ export function ProgressiveImage({
           sizes={sizes}
           loading={loading}
           decoding="async"
-          {...(fetchPriority ? { fetchPriority } : {})}
+          {...fetchPriorityProps}
           draggable={false}
           onLoad={() => {
             setHiResLoaded(true);

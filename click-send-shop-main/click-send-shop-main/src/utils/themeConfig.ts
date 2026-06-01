@@ -68,7 +68,7 @@ const SCENE_TAG_VALUES: ThemeSceneTag[] = [
 ];
 
 const PRESET_SCENE_BY_ID: Record<string, ThemeSceneTag> = {
-  default_life_green: "life_service",
+  default_life_green: "mall",
   premium_black_gold: "premium",
   professional_blue: "visa",
   promo_red_orange: "promotion",
@@ -198,7 +198,6 @@ export function normalizeThemeSkin(skin: Partial<ThemeSkin> & { id: string; name
     name: skin.name.trim() || skin.id,
     description,
     sceneTag: normalizeSceneTag(skin),
-    clientEnabled: skin.clientEnabled !== false,
     config: normalizeThemeConfig(skin.config),
   };
 }
@@ -272,7 +271,6 @@ export function normalizeThemeSkinsPayload(payload: {
       ...preset,
       name: existing?.name?.trim() || preset.name,
       description: existing?.description || preset.description,
-      clientEnabled: true,
       config: normalizeThemeConfig(existing?.config ?? preset.config),
     };
   });

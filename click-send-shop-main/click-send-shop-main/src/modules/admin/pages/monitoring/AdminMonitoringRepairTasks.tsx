@@ -3,7 +3,16 @@ import { executeRepairTask, getRepairTasks, type MonitoringRepairTask } from "@/
 import MonitoringSubnav from "./MonitoringSubnav";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
-import { Badge, formatTime } from "./monitoringUi";
+import {
+  Badge,
+  formatTime,
+  monitoringInputClass,
+  monitoringMutedClass,
+  monitoringPanelClass,
+  monitoringPrimaryButtonClass,
+  monitoringSecondaryButtonClass,
+  monitoringTableHeadClass,
+} from "./monitoringUi";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -86,9 +95,9 @@ export default function AdminMonitoringRepairTasks() {
       filters={(
         <>
           <MonitoringSubnav />
-          <div className="rounded-xl border border-slate-200 bg-white p-3">
+          <div className={monitoringPanelClass}>
             <select
-              className="w-full rounded border px-3 py-2.5 text-sm sm:w-auto"
+              className={`${monitoringInputClass} w-full sm:w-auto`}
               value={status}
               onChange={(e) => { setPage(1); setStatus(e.target.value); }}
             >
@@ -103,7 +112,7 @@ export default function AdminMonitoringRepairTasks() {
       {error ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
       {actionError ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div> : null}
       <AdminNativeTable>
-          <thead className="bg-slate-50 text-slate-500">
+          <thead className={monitoringTableHeadClass}>
             <tr>
               <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Tx>状态</Tx></th>
               <th className={adminThClassName(undefined, "left")}><Tx>异常标题</Tx></th>
@@ -119,7 +128,7 @@ export default function AdminMonitoringRepairTasks() {
             {list.map((task) => (
               <tr key={task.id} className="border-t align-top">
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={task.repair_status} /></td>
-                <td className={adminTdClassName("font-medium text-slate-900", "left")}>{task.anomaly_title || tText("未命名异常")}</td>
+                <td className={adminTdClassName("font-medium text-foreground", "left")}>{task.anomaly_title || tText("未命名异常")}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>
                   {ml.repairType(task.repair_type)}
                 </td>
@@ -136,7 +145,7 @@ export default function AdminMonitoringRepairTasks() {
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                   <button
                     type="button"
-                    className="rounded bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+                    className={monitoringPrimaryButtonClass}
                     disabled={!canExecuteTask(task) || executingId === task.id}
                     onClick={() => void handleExecute(task.id)}
                     title={!canExecuteTask(task) ? "此类任务需要人工确认处理，不能自动执行" : undefined}
@@ -148,19 +157,19 @@ export default function AdminMonitoringRepairTasks() {
             ))}
             {!list.length && (
               <tr>
-                <td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={8}>
+                <td className={adminTdClassName(`py-6 text-center ${monitoringMutedClass}`, "center")} colSpan={8}>
                   {loading ? "加载中..." : "暂无修复任务"}
                 </td>
               </tr>
             )}
           </tbody>
       </AdminNativeTable>
-      <div className="flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+      <div className={`flex flex-col gap-2 text-sm ${monitoringMutedClass} sm:flex-row sm:items-center sm:justify-between`}>
         <span>共 {total} 条</span>
         <div className="flex gap-2">
-          <button type="button" className="rounded border px-3 py-1 disabled:opacity-40" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><Tx>上一页</Tx></button>
+          <button type="button" className={monitoringSecondaryButtonClass} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><Tx>上一页</Tx></button>
           <span className="px-2 py-1">{page}</span>
-          <button type="button" className="rounded border px-3 py-1 disabled:opacity-40" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></button>
+          <button type="button" className={monitoringSecondaryButtonClass} disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></button>
         </div>
       </div>
     </AdminPageShell>

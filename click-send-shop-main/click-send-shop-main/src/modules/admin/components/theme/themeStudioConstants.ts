@@ -227,7 +227,6 @@ export const FIELD_HELP_TEXTS: Record<string, string> = {
   badgeStyle: "徽标样式。",
   adminThemeMode: "后台主题是否跟随前台。",
   fontFamily: "全局字体族。",
-  clientEnabled: "允许用户在前台切换到此皮肤。",
   isDefaultSkin: "默认皮肤：新用户默认看到。",
   sceneTag: "用于在皮肤库筛选场景。",
 };

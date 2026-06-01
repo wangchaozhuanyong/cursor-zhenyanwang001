@@ -21,7 +21,6 @@ function loadEnvFile(filePath) {
     const idx = line.indexOf('=');
     if (idx <= 0) continue;
     const key = line.slice(0, idx).trim();
-    if (process.env[key] !== undefined) continue;
     let value = line.slice(idx + 1).trim();
     if (
       (value.startsWith('"') && value.endsWith('"'))

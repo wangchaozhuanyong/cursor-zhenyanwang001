@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').join(__dirname, '..', '..', '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '..', '..', '.env'), override: true });
 
 const userModule = require('../modules/user');
 const { processVideoAsset } = require('../modules/media/service/videoTranscode.service');

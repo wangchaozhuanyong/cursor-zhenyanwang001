@@ -215,7 +215,15 @@ async function uploadSiteAsset(file, key, adminUserId, req) {
     result: 'success',
   });
 
-  return { data: { key, url: finalUrl }, message: '图片已保存到设置' };
+  return {
+    data: {
+      key,
+      url: finalUrl,
+      storageProvider,
+      storageKey,
+    },
+    message: '图片已保存到设置',
+  };
 }
 
 async function getSiteCapabilities() {
@@ -258,7 +266,6 @@ module.exports = {
   updateSiteSettings,
   uploadSiteAsset,
 };
-
 
 
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +29,13 @@ const CROSSFADE_TRANSITION = {
 
 const AUTO_ROTATE_MS = 5600;
 const USER_INTERACTION_PAUSE_MS = 7200;
+
+function withViteBase(path: string): string {
+  const base = String(import.meta.env.BASE_URL || "/");
+  return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+}
+
+const HOME_CAROUSEL_LOGO_SRC = withViteBase("/assets/home-carousel-logo.png");
 
 function resolveBannerLink(link: string): string {
   const value = (link || "").trim();
@@ -132,7 +139,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   const bannerDescription = banner.description?.trim() || "";
   const bannerCtaText = getBannerCtaText(banner);
   const hasTextLayer = Boolean(bannerTitle || bannerDescription || bannerCtaText);
-  const showDots = banners.length > 1;
+  const showControls = banners.length > 1;
 
   const handleOpenBanner = () => {
     if (!bannerLink) return;
@@ -150,14 +157,19 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
     handleOpenBanner();
   };
 
+  const stepBanner = (delta: number) => {
+    if (banners.length <= 1) return;
+    goTo((safeIndex + delta + banners.length) % banners.length, true);
+  };
+
   return (
     <div
-      className={`store-hero-carousel relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
+      className={`store-hero-carousel store-hero-carousel--showcase relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
       style={{
         aspectRatio: BANNER_ASPECT_CSS,
-        minHeight: "min(210px, max(180px, calc(100vw * 0.43)))",
+        minHeight: "clamp(13.5rem, 40vw, 24rem)",
         maxHeight: "26rem",
         borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)",
       }}
@@ -240,13 +252,25 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               animate={motionEnabled ? { opacity: 1, x: 0 } : undefined}
               transition={{ duration: 0.42, ease: "easeOut" }}
             >
+              <div className="store-hero-brand-lockup" aria-hidden="true">
+                <span className="store-hero-brand-logo-shell">
+                  <img src={HOME_CAROUSEL_LOGO_SRC} alt="" className="store-hero-brand-logo" loading="eager" decoding="async" />
+                </span>
+                <span className="store-hero-brand-copy">
+                  <span className="store-hero-brand-name">大马通</span>
+                  <span className="store-hero-brand-tagline">连接生活 · 通达马来西亚</span>
+                </span>
+              </div>
               {bannerTitle ? (
-                <h2 className="store-hero-copy-title line-clamp-2 text-[16px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
+                <h2 className="store-hero-copy-title text-[16px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
                   {bannerTitle}
                 </h2>
               ) : null}
+              {bannerTitle && bannerDescription ? (
+                <span className="store-hero-copy-divider" aria-hidden="true" />
+              ) : null}
               {bannerDescription ? (
-                <p className="store-hero-copy-desc mt-1.5 line-clamp-2 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
+                <p className="store-hero-copy-desc mt-1.5 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
                   {bannerDescription}
                 </p>
               ) : null}
@@ -268,12 +292,23 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
         </>
       ) : null}
 
-      {showDots ? (
+      {showControls ? (
         <div
-          className="pointer-events-auto absolute bottom-2 right-2 z-30 rounded-full border border-white/35 bg-[color-mix(in_srgb,var(--theme-surface)_76%,transparent)] px-1.5 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-sm sm:bottom-2.5 sm:right-3"
+          className="store-hero-controls pointer-events-auto absolute z-30"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex min-h-8 items-center gap-0.5">
+          <button
+            type="button"
+            className="store-hero-control-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              stepBanner(-1);
+            }}
+            aria-label="Previous banner"
+          >
+            <ChevronLeft size={18} aria-hidden="true" />
+          </button>
+          <div className="store-hero-dots" aria-label="Banner pagination">
             {banners.map((_, index) => (
               <button
                 key={index}
@@ -282,30 +317,41 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                   e.stopPropagation();
                   goTo(index, true);
                 }}
-                className="flex h-8 min-w-8 items-center justify-center rounded-full px-1 transition-transform active:scale-95"
+                className="store-hero-dot-button"
                 aria-label={`Banner ${index + 1}`}
                 aria-current={index === safeIndex ? "true" : undefined}
               >
                 {motionEnabled ? (
                   <motion.div
-                    className="rounded-full bg-[var(--theme-primary)]"
+                    className="store-hero-dot"
                     animate={{
-                      width: index === safeIndex ? 14 : 4,
+                      width: index === safeIndex ? 16 : 6,
                       height: 4,
-                      opacity: index === safeIndex ? 1 : 0.35,
+                      opacity: index === safeIndex ? 1 : 0.38,
                     }}
                     transition={{ duration: 0.2 }}
                   />
                 ) : (
                   <span
-                    className={`block h-1 rounded-full bg-[var(--theme-primary)] transition-all ${
-                      index === safeIndex ? "w-3.5 opacity-100" : "w-1 opacity-35"
+                    className={`store-hero-dot block h-1 rounded-full transition-all ${
+                      index === safeIndex ? "w-4 opacity-100" : "w-1.5 opacity-40"
                     }`}
                   />
                 )}
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            className="store-hero-control-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              stepBanner(1);
+            }}
+            aria-label="Next banner"
+          >
+            <ChevronRight size={18} aria-hidden="true" />
+          </button>
         </div>
       ) : null}
     </div>

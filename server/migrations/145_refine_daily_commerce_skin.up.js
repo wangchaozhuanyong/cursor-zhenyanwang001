@@ -1,4 +1,4 @@
-const { DEFAULT_SKIN_ID, DAILY_COMMERCE_SKIN } = require('../src/modules/theme/theme.presets');
+const { DAILY_COMMERCE_SKIN } = require('../src/modules/theme/theme.presets');
 const {
   normalizeThemeConfig,
   normalizeThemeSkinsPayload,
@@ -22,7 +22,7 @@ module.exports = {
 
     const normalized = normalizeThemeSkinsPayload(current);
     const nextSkins = normalized.skins.map((skin) => {
-      if (skin.id !== DEFAULT_SKIN_ID) return skin;
+      if (skin.id !== DAILY_COMMERCE_SKIN.id) return skin;
       return {
         ...skin,
         name: DAILY_COMMERCE_SKIN.name,

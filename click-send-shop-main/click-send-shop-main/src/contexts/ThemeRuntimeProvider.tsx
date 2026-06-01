@@ -41,6 +41,8 @@ function resolveThemeConfigForScope(config: ThemeConfig, inAdmin: boolean): Them
 function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?: ThemeSkin | null) {
   if (skin?.id) root.setAttribute("data-theme-skin-id", skin.id);
   else root.removeAttribute("data-theme-skin-id");
+  if (skin?.category) root.setAttribute("data-theme-category", skin.category);
+  else root.removeAttribute("data-theme-category");
   if (skin?.sceneTag) root.setAttribute("data-theme-scene", skin.sceneTag);
   else root.removeAttribute("data-theme-scene");
   root.setAttribute("data-theme-button-style", config.buttonStyle);

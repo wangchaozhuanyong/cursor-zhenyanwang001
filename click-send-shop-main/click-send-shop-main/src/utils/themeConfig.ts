@@ -1,9 +1,9 @@
 import {
   DEFAULT_HOLIDAY_SKIN_ID,
-  DEFAULT_LIFE_GREEN_CONFIG,
   DEFAULT_SKIN_ID,
   DEFAULT_THEME_HOLIDAY_RULES,
   FALLBACK_THEME_SKIN,
+  PREMIUM_IVORY_JADE_CONFIG,
   THEME_PRESETS,
 } from "@/constants/themePresets";
 import { applyStorefrontDesignLocks } from "@/constants/themeDesignLocks";
@@ -56,6 +56,7 @@ const CATEGORY_ICON_VALUES: CategoryIconStyle[] = ["circle", "soft", "solid", "o
 const MOTION_VALUES: MotionLevel[] = ["none", "soft", "rich"];
 const DENSITY_VALUES: Density[] = ["comfortable", "compact"];
 const ADMIN_MODE_VALUES: AdminThemeMode[] = ["fixed", "follow_store"];
+const MAX_HOLIDAY_RULES = 48;
 const SCENE_TAG_VALUES: ThemeSceneTag[] = [
   "default",
   "life_service",
@@ -77,6 +78,23 @@ const PRESET_SCENE_BY_ID: Record<string, ThemeSceneTag> = {
   fresh_cyan: "life_service",
   minimalist_grey: "mall",
 };
+
+const LEGACY_SCENE_CATEGORY_LABELS: Record<ThemeSceneTag, string> = {
+  default: "默认分类",
+  life_service: "生活服务",
+  premium: "高端商城",
+  visa: "签证留学",
+  mall: "日常商城",
+  admin: "后台管理",
+  promotion: "促销活动",
+  holiday: "节日活动",
+};
+
+function normalizeCategory(value: unknown, fallback: string): string {
+  if (typeof value !== "string") return fallback;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, 32) : fallback;
+}
 
 function pickEnum<T extends string>(value: unknown, values: readonly T[], fallback: T): T {
   if (typeof value !== "string") return fallback;
@@ -115,7 +133,7 @@ function normalizeFontFamily(value: unknown, fallback: string): string {
 }
 
 export function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefined): ThemeConfig {
-  const base = DEFAULT_LIFE_GREEN_CONFIG;
+  const base = PREMIUM_IVORY_JADE_CONFIG;
   const raw = (input ?? {}) as Record<string, unknown>;
 
   const bgColor = normalizeHex(raw.bgColor, base.bgColor);
@@ -194,11 +212,13 @@ function normalizeSceneTag(skin: Partial<ThemeSkin>): ThemeSceneTag {
 export function normalizeThemeSkin(skin: Partial<ThemeSkin> & { id: string; name: string }): ThemeSkin {
   const description =
     typeof skin.description === "string" && skin.description.trim() ? skin.description.trim() : undefined;
+  const sceneTag = normalizeSceneTag(skin);
   return {
     id: skin.id,
     name: skin.name.trim() || skin.id,
     description,
-    sceneTag: normalizeSceneTag(skin),
+    category: normalizeCategory(skin.category, LEGACY_SCENE_CATEGORY_LABELS[sceneTag]),
+    sceneTag,
     config: normalizeThemeConfig(skin.config),
   };
 }
@@ -244,7 +264,7 @@ export function normalizeThemeHolidayRules(input: unknown): ThemeHolidayRule[] {
   const byId = new Map(DEFAULT_THEME_HOLIDAY_RULES.map((rule) => [rule.id, rule]));
   return incoming
     .filter((rule): rule is Partial<ThemeHolidayRule> => !!rule && typeof rule === "object")
-    .slice(0, 16)
+    .slice(0, MAX_HOLIDAY_RULES)
     .map((rule) => normalizeThemeHolidayRule(rule, typeof rule.id === "string" ? byId.get(rule.id) : undefined));
 }
 
@@ -273,6 +293,7 @@ export function normalizeThemeSkinsPayload(payload: {
       ...preset,
       name: existing?.name?.trim() || preset.name,
       description: existing?.description || preset.description,
+      category: existing?.category?.trim() || preset.category,
       config: normalizeThemeConfig(existing?.config ?? preset.config),
     };
   });

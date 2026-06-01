@@ -78,6 +78,9 @@ export type ThemeSkin = {
   id: string;
   name: string;
   description?: string;
+  /** 运营可自由编辑的皮肤分类，用于后台筛选和归档。 */
+  category?: string;
+  /** @deprecated 旧版“适合场景”字段，仅用于兼容历史数据。新逻辑使用 category。 */
   sceneTag?: ThemeSceneTag;
   config: ThemeConfig;
 };

@@ -1,7 +1,5 @@
-import type { ThemeSceneTag, ThemeSkin } from "@/types/theme";
-import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
-import { SCENE_FILTER_OPTIONS, SCENE_TAG_LABELS } from "./themeStudioConstants";
-import { Tx } from "@/components/admin/AdminText";
+import type { ThemeSkin } from "@/types/theme";
+import { SCENE_TAG_LABELS } from "./themeStudioConstants";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
 
 export type ThemeSkinSidebarProps = {
@@ -9,10 +7,12 @@ export type ThemeSkinSidebarProps = {
   selectedSkinId: string;
   defaultSkinId: string;
   activeSkinId?: string;
+  holidaySkinId?: string;
+  categoryFilter: string;
+  categoryOptions: string[];
   search: string;
-  sceneFilter: "all" | ThemeSceneTag;
   onSearchChange: (v: string) => void;
-  onSceneFilterChange: (v: "all" | ThemeSceneTag) => void;
+  onCategoryFilterChange: (v: string) => void;
   onSelect: (id: string) => void;
 };
 
@@ -20,57 +20,74 @@ function colorDots(config: ThemeSkin["config"]) {
   return [config.primaryColor, config.secondaryColor, config.accentColor, config.bgColor];
 }
 
+function getSkinCategory(skin: ThemeSkin): string {
+  const category = skin.category?.trim();
+  if (category) return category;
+  if (skin.sceneTag) return SCENE_TAG_LABELS[skin.sceneTag] || skin.sceneTag;
+  return "未分类";
+}
+
 export default function ThemeSkinSidebar({
   skins,
   selectedSkinId,
   defaultSkinId,
   activeSkinId,
+  holidaySkinId,
+  categoryFilter,
+  categoryOptions,
   search,
-  sceneFilter,
   onSearchChange,
-  onSceneFilterChange,
+  onCategoryFilterChange,
   onSelect,
 }: ThemeSkinSidebarProps) {
-  const tl = useThemeStudioLabel();
   const q = search.trim().toLowerCase();
   const filtered = skins.filter((skin) => {
-    const matchScene =
-      sceneFilter === "all" || skin.sceneTag === sceneFilter || (sceneFilter === "default" && skin.id === defaultSkinId);
+    const category = getSkinCategory(skin);
+    const matchCategory = categoryFilter === "all" || category === categoryFilter;
     const matchSearch =
       !q ||
       skin.name.toLowerCase().includes(q) ||
       (skin.description || "").toLowerCase().includes(q) ||
-      (skin.sceneTag && SCENE_TAG_LABELS[skin.sceneTag].toLowerCase().includes(q));
-    return matchScene && matchSearch;
+      category.toLowerCase().includes(q);
+    return matchCategory && matchSearch;
   });
 
   return (
     <aside className="w-full shrink-0 self-start rounded-2xl border border-border bg-card p-4 shadow-sm 2xl:sticky 2xl:top-24 2xl:w-[320px]">
       <div className="flex flex-col gap-3">
         <div>
-          <p className="text-sm font-semibold text-foreground"><Tx>系统皮肤</Tx></p>
-          <p className="mt-1 text-xs text-muted-foreground">只保留后台统一管理，不提供客户自行切换。</p>
+          <p className="text-sm font-semibold text-foreground">皮肤库</p>
+          <p className="mt-1 text-xs text-muted-foreground">分类用于后台管理；客户端使用哪套皮肤由“设为客户端日常皮肤”决定。</p>
         </div>
 
         <AdminSearchInput
           value={search}
           onChange={onSearchChange}
-          placeholder={tl("搜索皮肤")}
+          placeholder="搜索皮肤"
           iconSize={14}
           className="min-h-[36px] rounded-lg border border-border bg-background pl-8 pr-2 text-xs leading-4"
         />
 
         <div className="flex flex-wrap gap-1">
-          {SCENE_FILTER_OPTIONS.map((opt) => (
+          <button
+            type="button"
+            onClick={() => onCategoryFilterChange("all")}
+            className={`rounded-full px-2 py-0.5 text-[10px] ${
+              categoryFilter === "all" ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-secondary text-muted-foreground"
+            }`}
+          >
+            全部
+          </button>
+          {categoryOptions.map((category) => (
             <button
-              key={opt.id}
+              key={category}
               type="button"
-              onClick={() => onSceneFilterChange(opt.id)}
+              onClick={() => onCategoryFilterChange(category)}
               className={`rounded-full px-2 py-0.5 text-[10px] ${
-                sceneFilter === opt.id ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-secondary text-muted-foreground"
+                categoryFilter === category ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-secondary text-muted-foreground"
               }`}
             >
-              {tl(opt.label)}
+              {category}
             </button>
           ))}
         </div>
@@ -80,6 +97,8 @@ export default function ThemeSkinSidebar({
             const selected = skin.id === selectedSkinId;
             const isDefault = skin.id === defaultSkinId;
             const isActive = skin.id === activeSkinId;
+            const isHoliday = skin.id === holidaySkinId;
+            const category = getSkinCategory(skin);
             return (
               <article
                 key={skin.id}
@@ -102,14 +121,13 @@ export default function ThemeSkinSidebar({
                     </div>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {isDefault ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700"><Tx>日常默认</Tx></span> : null}
+                    {isActive ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700">客户端日常</span> : null}
+                    {isHoliday ? <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">节日自动</span> : null}
+                    {isDefault && !isActive ? <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">默认备选</span> : null}
                     {selected ? (
-                      <span className="rounded-full bg-[var(--theme-primary)]/15 px-1.5 py-0.5 text-[10px] text-[var(--theme-primary)]"><Tx>编辑中</Tx></span>
+                      <span className="rounded-full bg-[var(--theme-primary)]/15 px-1.5 py-0.5 text-[10px] text-[var(--theme-primary)]">编辑中</span>
                     ) : null}
-                    {isActive ? <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700"><Tx>当前生效</Tx></span> : null}
-                    {skin.sceneTag ? (
-                      <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">{tl(SCENE_TAG_LABELS[skin.sceneTag])}</span>
-                    ) : null}
+                    <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">{category}</span>
                   </div>
                 </button>
               </article>
@@ -118,12 +136,12 @@ export default function ThemeSkinSidebar({
 
           {filtered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-8 text-center">
-              <p className="text-sm text-muted-foreground"><Tx>没有匹配的皮肤</Tx></p>
+              <p className="text-sm text-muted-foreground">没有匹配的皮肤</p>
               <button
                 type="button"
                 onClick={() => {
                   onSearchChange("");
-                  onSceneFilterChange("all");
+                  onCategoryFilterChange("all");
                 }}
                 className="mt-2 text-xs text-[var(--theme-primary)]"
               >

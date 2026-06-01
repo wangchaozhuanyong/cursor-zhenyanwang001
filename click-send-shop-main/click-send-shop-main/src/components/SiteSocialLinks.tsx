@@ -11,6 +11,7 @@ export type SiteSocialLinksProps = Pick<
   "instagramUrl" | "facebookUrl" | "tiktokUrl" | "xhsUrl"
 > & {
   className?: string;
+  labelMode?: "default" | "zhOnly";
   /** pill：卡片页（关于我们）；footer / profile：主题变量，与页脚、个人中心一致 */
   tone?: "pill" | "footer" | "profile";
 };
@@ -22,41 +23,51 @@ type SocialEntry = {
   wechatAccount?: string;
 };
 
+function getFooterChannelLabel(channel: Parameters<typeof getChannelTitle>[0], labelMode: SiteSocialLinksProps["labelMode"]) {
+  if (labelMode !== "zhOnly") return getChannelTitle(channel);
+  const customName = String(channel.name || "").trim();
+  if (customName && !/[A-Za-z]/.test(customName)) return customName;
+  if (channel.type === "wechat") return "微信客服";
+  if (channel.type === "whatsapp") return "即时客服";
+  return "社群客服";
+}
+
 /**
  * 客服渠道（supportDownloadConfig）+ 纯社交媒体链接。
  */
-export function SiteSocialLinks({ className, tone = "pill", ...social }: SiteSocialLinksProps) {
+export function SiteSocialLinks({ className, labelMode = "default", tone = "pill", ...social }: SiteSocialLinksProps) {
   const { channels } = useSupportRuntime();
 
   const entries = useMemo<SocialEntry[]>(() => {
     const fromChannels: SocialEntry[] = channels
       .map((channel) => {
+        const label = getFooterChannelLabel(channel, labelMode);
         if (channel.type === "whatsapp") {
           const url = buildWhatsAppLink(channel);
-          return url ? { key: channel.id, label: getChannelTitle(channel), url } : null;
+          return url ? { key: channel.id, label, url } : null;
         }
         if (channel.type === "wechat") {
           const account = channel.account?.trim();
           if (!account) return null;
-          return { key: channel.id, label: getChannelTitle(channel), url: "", wechatAccount: account };
+          return { key: channel.id, label, url: "", wechatAccount: account };
         }
         if (channel.type === "telegram") {
           const url = buildTelegramLink(channel);
-          return url ? { key: channel.id, label: getChannelTitle(channel), url } : null;
+          return url ? { key: channel.id, label, url } : null;
         }
         return null;
       })
       .filter((item): item is SocialEntry => Boolean(item));
 
     const media: SocialEntry[] = [
-      { key: "instagram", label: "Instagram", url: (social.instagramUrl || "").trim() },
-      { key: "facebook", label: "Facebook", url: (social.facebookUrl || "").trim() },
-      { key: "tiktok", label: "TikTok", url: (social.tiktokUrl || "").trim() },
+      { key: "instagram", label: labelMode === "zhOnly" ? "图片动态" : "Instagram", url: (social.instagramUrl || "").trim() },
+      { key: "facebook", label: labelMode === "zhOnly" ? "社群主页" : "Facebook", url: (social.facebookUrl || "").trim() },
+      { key: "tiktok", label: labelMode === "zhOnly" ? "短视频" : "TikTok", url: (social.tiktokUrl || "").trim() },
       { key: "xhs", label: "小红书", url: (social.xhsUrl || "").trim() },
     ].filter((s) => s.url);
 
     return [...fromChannels, ...media];
-  }, [channels, social.facebookUrl, social.instagramUrl, social.tiktokUrl, social.xhsUrl]);
+  }, [channels, labelMode, social.facebookUrl, social.instagramUrl, social.tiktokUrl, social.xhsUrl]);
 
   if (entries.length === 0) return null;
 

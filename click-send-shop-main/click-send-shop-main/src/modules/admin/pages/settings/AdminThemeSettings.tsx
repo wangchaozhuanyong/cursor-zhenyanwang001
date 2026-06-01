@@ -13,7 +13,7 @@ import ThemeStudioHeader from "@/modules/admin/components/theme/ThemeStudioHeade
 import type { PreviewDevice, PreviewMode } from "@/modules/admin/components/theme/themeStudioConstants";
 import { notifyGlobalThemeUpdated } from "@/lib/themeRevision";
 import { fetchThemeSkins, saveSystemThemeSkins } from "@/services/admin/themeService";
-import type { ThemeConfig, ThemeHolidayRule, ThemeSceneTag, ThemeSkin } from "@/types/theme";
+import type { ThemeConfig, ThemeHolidayRule, ThemeSkin } from "@/types/theme";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
 import { applyAutoColorAction, type AutoColorAction } from "@/utils/themeStudioAuto";
@@ -70,17 +70,29 @@ export default function AdminThemeSettings() {
   useAdminTabDirty(dirty);
   const [pendingSkinId, setPendingSkinId] = useState<string | null>(null);
   const [skinSearch, setSkinSearch] = useState("");
-  const [sceneFilter, setSceneFilter] = useState<"all" | ThemeSceneTag>("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("home");
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("phone");
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const undoSnapshot = useRef<ThemeConfig | null>(null);
   const skipServerSyncRef = useRef(false);
+  const hasAppliedServerThemeRef = useRef(false);
 
   const selectedSkin = useMemo(() => skins.find((s) => s.id === selectedSkinId), [skins, selectedSkinId]);
+  const activeSkinName = skins.find((skin) => skin.id === activeSkinId)?.name || activeSkinId;
   const defaultSkinName = skins.find((skin) => skin.id === defaultSkinId)?.name || defaultSkinId;
   const holidaySkinName = skins.find((skin) => skin.id === holidaySkinId)?.name || holidaySkinId;
   const runtimeSkinName = runtimeSkinId ? skins.find((skin) => skin.id === runtimeSkinId)?.name || runtimeSkinId : defaultSkinName;
+  const isSelectedClientSkin = selectedSkinId === activeSkinId;
+  const isSelectedHolidaySkin = selectedSkinId === holidaySkinId;
+  const categoryOptions = useMemo(() => {
+    const values = new Set<string>();
+    skins.forEach((skin) => {
+      const category = skin.category?.trim();
+      if (category) values.add(category);
+    });
+    return Array.from(values);
+  }, [skins]);
 
   const themeQuery = useQuery({
     queryKey: adminQueryKeys.themeSkins(),
@@ -116,9 +128,11 @@ export default function AdminThemeSettings() {
       holidayRules: data?.holidayRules,
       skins: Array.isArray(data?.skins) ? data.skins : THEME_PRESETS,
     });
+    const shouldPreserveSelectedSkin = hasAppliedServerThemeRef.current;
     applyThemePayload(normalized, { setSkins, setDefaultSkinId, setActiveSkinId, setRuntimeSkinId, setHolidaySkinId, setHolidayRules, setSelectedSkinId, setThemeConfig }, {
-      selectedSkinId,
+      selectedSkinId: shouldPreserveSelectedSkin ? selectedSkinId : undefined,
     });
+    hasAppliedServerThemeRef.current = true;
   }, [themeQuery.data, themeQuery.isError, themeQuery.error, dirty, selectedSkinId]);
 
   useEffect(() => {
@@ -149,13 +163,15 @@ export default function AdminThemeSettings() {
     nextDefaultSkinId: string,
     nextActiveSkinId: string,
     message: string,
-    options?: { selectedSkinId?: string },
+    options?: { selectedSkinId?: string; nextHolidaySkinId?: string; nextHolidayRules?: ThemeHolidayRule[] },
   ) => {
+    const nextHolidaySkinId = options?.nextHolidaySkinId ?? holidaySkinId;
+    const nextHolidayRules = options?.nextHolidayRules ?? holidayRules;
     const normalized = normalizeThemeSkinsPayload({
       defaultSkinId: nextDefaultSkinId,
       activeSkinId: nextActiveSkinId,
-      holidaySkinId,
-      holidayRules,
+      holidaySkinId: nextHolidaySkinId,
+      holidayRules: nextHolidayRules,
       skins: nextSkins,
     });
     setSaving(true);
@@ -188,7 +204,7 @@ export default function AdminThemeSettings() {
     [themeConfig, selectedSkinId],
   );
 
-  const onSkinMetaChange = (patch: Partial<Pick<ThemeSkin, "name" | "description" | "sceneTag">>) => {
+  const onSkinMetaChange = (patch: Partial<Pick<ThemeSkin, "name" | "description" | "category">>) => {
     setSkins((prev) =>
       prev.map((skin) => (skin.id === selectedSkinId ? { ...skin, ...patch, name: patch.name ?? skin.name } : skin)),
     );
@@ -197,7 +213,7 @@ export default function AdminThemeSettings() {
 
   const onHolidaySkinChange = (id: string) => {
     setHolidaySkinId(id);
-    setHolidayRules((prev) => prev.map((rule) => ({ ...rule, skinId: rule.skinId || id })));
+    setHolidayRules((prev) => prev.map((rule) => ({ ...rule, skinId: id })));
     setDirty(true);
   };
 
@@ -241,6 +257,33 @@ export default function AdminThemeSettings() {
     }
   };
 
+  const onSetClientSkin = async () => {
+    const nextSkins = buildNextSkins();
+    if (!nextSkins) return toast.error(L("皮肤名称不能为空", "Skin name cannot be empty"));
+    try {
+      await persist(nextSkins, selectedSkinId, selectedSkinId, L("已设为客户端日常皮肤", "Set as storefront daily skin"), { selectedSkinId });
+    } catch {
+      // noop
+    }
+  };
+
+  const onSetHolidaySkin = async () => {
+    const nextSkins = buildNextSkins();
+    if (!nextSkins) return toast.error(L("皮肤名称不能为空", "Skin name cannot be empty"));
+    const nextHolidayRules = holidayRules.map((rule) => ({ ...rule, skinId: selectedSkinId }));
+    setHolidaySkinId(selectedSkinId);
+    setHolidayRules(nextHolidayRules);
+    try {
+      await persist(nextSkins, defaultSkinId, activeSkinId, L("已设为节日自动皮肤", "Set as holiday skin"), {
+        selectedSkinId,
+        nextHolidaySkinId: selectedSkinId,
+        nextHolidayRules,
+      });
+    } catch {
+      // noop
+    }
+  };
+
   const onAutoColor = (action: AutoColorAction) => {
     undoSnapshot.current = themeConfig;
     const next = applyAutoColorAction(themeConfig, action);
@@ -259,12 +302,17 @@ export default function AdminThemeSettings() {
         <>
           <ThemeStudioHeader
             skinName={selectedSkin?.name || ""}
-            isDefault={selectedSkinId === defaultSkinId}
+            activeSkinName={activeSkinName}
+            runtimeSkinName={runtimeSkinName}
+            isClientSkin={isSelectedClientSkin}
+            isHolidaySkin={isSelectedHolidaySkin}
             dirty={dirty}
             saving={saving}
             saveDisabled={!selectedSkin?.name?.trim()}
             onPreview={() => setFullscreenOpen(true)}
             onSave={() => void onSaveSettings()}
+            onSetClientSkin={() => void onSetClientSkin()}
+            onSetHolidaySkin={() => void onSetHolidaySkin()}
           />
 
           <section className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -344,17 +392,20 @@ export default function AdminThemeSettings() {
               selectedSkinId={selectedSkinId}
               defaultSkinId={defaultSkinId}
               activeSkinId={activeSkinId}
+              holidaySkinId={holidaySkinId}
               search={skinSearch}
-              sceneFilter={sceneFilter}
+              categoryFilter={categoryFilter}
+              categoryOptions={categoryOptions}
               onSearchChange={setSkinSearch}
-              onSceneFilterChange={setSceneFilter}
+              onCategoryFilterChange={setCategoryFilter}
               onSelect={onSelectSkin}
             />
 
             <ThemeEditorPanel
               themeConfig={themeConfig}
               selectedSkin={selectedSkin}
-              isDefaultSkin={selectedSkinId === defaultSkinId}
+              isClientSkin={isSelectedClientSkin}
+              isHolidaySkin={isSelectedHolidaySkin}
               onConfigChange={updateConfig}
               onSkinMetaChange={onSkinMetaChange}
               onAutoColor={onAutoColor}

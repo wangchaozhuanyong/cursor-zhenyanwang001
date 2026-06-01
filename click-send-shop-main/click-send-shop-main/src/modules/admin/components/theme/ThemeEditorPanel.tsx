@@ -1,6 +1,6 @@
 import { Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ThemeConfig, ThemeSceneTag, ThemeSkin } from "@/types/theme";
+import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 import type { AutoColorAction } from "@/utils/themeStudioAuto";
 import { THEME_OUTLINE_WARNING } from "@/utils/themeVisuals";
 import AdminFieldHint, { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
@@ -13,7 +13,6 @@ import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import {
   EDITOR_TABS,
   FIELD_HELP_TEXTS,
-  SCENE_TAG_LABELS,
   enumOptions,
   enumValueLabels,
   type ColorFieldKey,
@@ -55,9 +54,10 @@ function SelectRow<T extends string>({
 export type ThemeEditorPanelProps = {
   themeConfig: ThemeConfig;
   selectedSkin: ThemeSkin | undefined;
-  isDefaultSkin: boolean;
+  isClientSkin: boolean;
+  isHolidaySkin: boolean;
   onConfigChange: <K extends keyof ThemeConfig>(field: K, value: ThemeConfig[K]) => void;
-  onSkinMetaChange: (patch: Partial<Pick<ThemeSkin, "name" | "description" | "sceneTag">>) => void;
+  onSkinMetaChange: (patch: Partial<Pick<ThemeSkin, "name" | "description" | "category">>) => void;
   onAutoColor: (action: AutoColorAction) => void;
   canUndoOptimize: boolean;
   onUndoOptimize: () => void;
@@ -103,7 +103,8 @@ function mapHealthSectionToTab(sectionId: ThemeHealthFixTarget["sectionId"]): Ed
 export default function ThemeEditorPanel({
   themeConfig,
   selectedSkin,
-  isDefaultSkin,
+  isClientSkin,
+  isHolidaySkin,
   onConfigChange,
   onSkinMetaChange,
   onAutoColor,
@@ -157,9 +158,11 @@ export default function ThemeEditorPanel({
   );
 
   const statusText = useMemo(() => {
-    if (isDefaultSkin) return tText("当前是日常默认皮肤。平时前台统一使用这套样式。");
-    return tText("当前是节日或活动皮肤。只有命中节日规则时才会自动生效。");
-  }, [isDefaultSkin, tText]);
+    if (isClientSkin && isHolidaySkin) return tText("这套皮肤同时作为客户端日常皮肤和节日自动皮肤。");
+    if (isClientSkin) return tText("这套皮肤是客户端日常皮肤，非节日时前台会使用它。");
+    if (isHolidaySkin) return tText("这套皮肤是节日自动皮肤，命中节日规则时前台会使用它。");
+    return tText("这套皮肤目前只是皮肤库方案，保存后不会自动影响客户端，除非设为客户端或节日皮肤。");
+  }, [isClientSkin, isHolidaySkin, tText]);
 
   return (
     <section ref={panelRef} className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -214,16 +217,14 @@ export default function ThemeEditorPanel({
             />
           </label>
           <label className="space-y-1">
-            <span className="text-xs text-muted-foreground"><Tx>适合场景</Tx></span>
-            <select
-              value={selectedSkin?.sceneTag || "default"}
-              onChange={(e) => onSkinMetaChange({ sceneTag: e.target.value as ThemeSceneTag })}
-              className="h-10 w-full rounded-xl border border-border px-2 text-xs"
-            >
-              {Object.entries(SCENE_TAG_LABELS).map(([k, label]) => (
-                <option key={k} value={k}>{tl(label)}</option>
-              ))}
-            </select>
+            <span className="text-xs text-muted-foreground">皮肤分类</span>
+            <input
+              value={selectedSkin?.category || ""}
+              onChange={(e) => onSkinMetaChange({ category: e.target.value })}
+              placeholder="比如：日常商城 / 高端商城 / 节日活动"
+              maxLength={32}
+              className="h-10 w-full rounded-xl border border-border px-3 text-xs"
+            />
           </label>
           <p className="rounded-xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground md:col-span-2">{statusText}</p>
         </div>

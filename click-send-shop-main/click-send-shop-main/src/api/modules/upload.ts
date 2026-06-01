@@ -31,6 +31,12 @@ const S3_HOST_ALLOWLIST =
     .map((s: string) => s.trim().toLowerCase())
     .filter(Boolean) ?? [];
 
+type UploadStoragePayload = {
+  url?: unknown;
+  storageProvider?: unknown;
+  storageKey?: unknown;
+};
+
 export type UploadProgressCallback = (percent: number) => void;
 /** @deprecated 请用 product；服务端会将 image 视为 product */
 export type UploadMode = "product" | "banner" | "thumb" | "asset" | "video" | "auto" | "image";
@@ -71,6 +77,10 @@ function isS3PublicUrl(url: string): boolean {
   }
 }
 
+function isS3StorageProvider(value: unknown): boolean {
+  return String(value || "").trim().toLowerCase() === "s3";
+}
+
 function inAdminContext() {
   return typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
 }
@@ -83,8 +93,10 @@ function extractMessageFromBody(body: Record<string, unknown>): string | undefin
   return undefined;
 }
 
-function ensureS3WhenNeeded(url: string): void {
+function ensureS3WhenNeeded(upload: string | UploadStoragePayload): void {
   if (UPLOAD_STORAGE !== "s3") return;
+  if (typeof upload !== "string" && isS3StorageProvider(upload.storageProvider)) return;
+  const url = typeof upload === "string" ? upload : String(upload.url || "");
   if (!isS3PublicUrl(url)) {
     throw new Error("上传失败：当前环境要求 S3 存储，但返回了非 S3 地址。请检查存储配置。");
   }
@@ -400,10 +412,8 @@ async function doUpload<T>(url: string, formData: FormData, options: UploadReque
   }
 
   const data = unwrapEnvelope<T>(result);
-  const normalized = normalizeMediaUrls(data, BASE_URL) as T & { url?: unknown };
-  if (typeof normalized.url === "string") {
-    ensureS3WhenNeeded(normalized.url);
-  }
+  const normalized = normalizeMediaUrls(data, BASE_URL) as T & UploadStoragePayload;
+  if (typeof normalized.url === "string") ensureS3WhenNeeded(normalized);
   return normalized;
 }
 
@@ -440,26 +450,28 @@ async function uploadFileViaPresign(
   }, { ...options, onProgress: undefined });
 
   const normalized = normalizeMediaUrls(completed, BASE_URL) as UploadFileResult;
-  if (normalized.url) ensureS3WhenNeeded(normalized.url);
+  if (normalized.url) ensureS3WhenNeeded(normalized);
   return normalized;
 }
 
-export function getUploadStorageStatus(url: string): {
+export function getUploadStorageStatus(url: string, storageProvider?: string): {
   host: string;
   isS3: boolean;
   mode: "s3" | "any";
 } {
   try {
     const parsed = new URL(String(url || ""), typeof window !== "undefined" ? window.location.origin : "http://localhost");
-    return { host: parsed.host, isS3: isS3PublicUrl(parsed.href), mode: UPLOAD_STORAGE };
+    return { host: parsed.host, isS3: isS3StorageProvider(storageProvider) || isS3PublicUrl(parsed.href), mode: UPLOAD_STORAGE };
   } catch {
-    return { host: "", isS3: false, mode: UPLOAD_STORAGE };
+    return { host: "", isS3: isS3StorageProvider(storageProvider), mode: UPLOAD_STORAGE };
   }
 }
 
 export type UploadFileResult = {
   url: string;
   filename: string;
+  storageProvider?: string;
+  storageKey?: string;
   variants?: Partial<Record<"card" | "detail" | "full", string>>;
 };
 
@@ -510,7 +522,7 @@ export async function uploadAdminSiteAsset(
   key: "logoUrl" | "faviconUrl",
   file: File,
   options: UploadRequestOptions = {},
-): Promise<{ key: string; url: string }> {
+): Promise<{ key: string; url: string; storageProvider?: string; storageKey?: string }> {
   validateUploadFile(file, "image");
   const formData = new FormData();
   formData.append("file", file, file.name);

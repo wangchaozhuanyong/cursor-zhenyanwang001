@@ -3,6 +3,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const dns = require('dns').promises;
 const net = require('net');
+const path = require('path');
 const sharp = require('sharp');
 const { NEUTRAL_SITE_DESCRIPTION, resolveSiteDescription, resolveSiteName } = require('../../../config/instance');
 
@@ -149,7 +150,16 @@ async function loadImageBuffer(sourceUrl) {
 }
 
 function getFallbackLogoPath() {
-  return null;
+  const explicitPath = String(process.env.PWA_FALLBACK_ICON_PATH || '').trim();
+  const candidates = [
+    explicitPath,
+    path.resolve(__dirname, '../../../../../click-send-shop-main/click-send-shop-main/public/favicon.svg'),
+    path.resolve(__dirname, '../../../../../click-send-shop-main/click-send-shop-main/public/favicon-32x32.png'),
+    path.resolve(__dirname, '../../../../../click-send-shop-main/click-send-shop-main/dist/favicon.svg'),
+    path.resolve(__dirname, '../../../../../click-send-shop-main/click-send-shop-main/dist/favicon-32x32.png'),
+  ].filter(Boolean);
+
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
 async function buildIconBuffer({ logoUrl, size, maskable, fallbackPath }) {

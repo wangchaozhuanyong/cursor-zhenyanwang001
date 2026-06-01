@@ -23,7 +23,7 @@ export default function UploadVerify() {
     setUploading(true);
     try {
       const data = await uploadService.uploadSingle(file);
-      const status = uploadService.getUploadStorageStatus(data.url);
+      const status = uploadService.getUploadStorageStatus(data.url, data.storageProvider);
       const next: VerifyResult = {
         url: data.url,
         host: status.host,

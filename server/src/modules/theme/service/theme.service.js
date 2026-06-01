@@ -34,11 +34,23 @@ const ENUMS = {
 
 const HEX6 = /^#[0-9A-F]{6}$/i;
 const MAX_SKINS = 20;
+const MAX_HOLIDAY_RULES = 48;
 const MAX_SKIN_NAME_LEN = 40;
+const MAX_SKIN_CATEGORY_LEN = 32;
 const MAX_PAYLOAD_BYTES = 512 * 1024;
 const SKIN_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
 const MONTH_DAY_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const SCENE_TAGS = new Set(['default', 'life_service', 'premium', 'visa', 'mall', 'admin', 'promotion', 'holiday']);
+const LEGACY_SCENE_CATEGORY_LABELS = {
+  default: '默认分类',
+  life_service: '生活服务',
+  premium: '高端商城',
+  visa: '签证留学',
+  mall: '日常商城',
+  admin: '后台管理',
+  promotion: '促销活动',
+  holiday: '节日活动',
+};
 
 function badRequest(message) {
   const err = /** @type {any} */ (new Error(message));
@@ -59,6 +71,8 @@ function assertThemeSkinsPayload(rawPayload) {
     const name = String(skin.name || '').trim();
     if (!SKIN_ID_RE.test(id)) throw badRequest(`皮肤 ID 格式不合法：${id || '(空)'}`);
     if (!name || name.length > MAX_SKIN_NAME_LEN) throw badRequest('皮肤名称长度必须为 1-40 个字符');
+    const category = String(skin.category || '').trim();
+    if (category.length > MAX_SKIN_CATEGORY_LEN) throw badRequest(`皮肤分类最多 ${MAX_SKIN_CATEGORY_LEN} 个字符`);
   });
 }
 
@@ -173,12 +187,18 @@ function normalizeHolidayRules(rawRules) {
   const byId = new Map(DEFAULT_THEME_HOLIDAY_RULES.map((rule) => [rule.id, rule]));
   return incoming
     .filter((rule) => rule && typeof rule === 'object')
-    .slice(0, 16)
+    .slice(0, MAX_HOLIDAY_RULES)
     .map((rule) => normalizeHolidayRule(rule, byId.get(String(rule.id || ''))));
 }
 
 function normalizeSceneTag(value, fallback = 'default') {
   return typeof value === 'string' && SCENE_TAGS.has(value) ? value : fallback;
+}
+
+function normalizeCategory(value, fallback) {
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, MAX_SKIN_CATEGORY_LEN) : fallback;
 }
 
 function normalizeThemeSkinRecord(skin, fallback) {
@@ -190,12 +210,14 @@ function normalizeThemeSkinRecord(skin, fallback) {
   const description = typeof skin.description === 'string' && skin.description.trim()
     ? skin.description.trim()
     : base.description;
+  const sceneTag = normalizeSceneTag(skin.sceneTag, base.sceneTag || 'default');
   return {
     ...base,
     id,
     name,
     description,
-    sceneTag: normalizeSceneTag(skin.sceneTag, base.sceneTag || 'default'),
+    category: normalizeCategory(skin.category, base.category || LEGACY_SCENE_CATEGORY_LABELS[sceneTag] || LEGACY_SCENE_CATEGORY_LABELS.default),
+    sceneTag,
     config: normalizeThemeConfig(skin.config || base.config),
   };
 }
@@ -241,6 +263,9 @@ function normalizeThemeSkinsPayload(rawPayload) {
       description: typeof existing?.description === 'string' && existing.description.trim()
         ? existing.description.trim()
         : preset.description,
+      category: typeof existing?.category === 'string' && existing.category.trim()
+        ? existing.category.trim().slice(0, MAX_SKIN_CATEGORY_LEN)
+        : preset.category,
       sceneTag: preset.sceneTag,
       config: normalizeThemeConfig(existing?.config || preset.config),
     };
@@ -292,7 +317,7 @@ async function getThemeSkins() {
   return normalizeThemeSkinsPayload({
     defaultSkinId: DEFAULT_SKIN_ID,
     activeSkinId: DEFAULT_SKIN_ID,
-    skins: [{ id: DEFAULT_SKIN_ID, name: '日常购物皮肤', config: fallbackConfig }],
+    skins: [{ ...FALLBACK_THEME_SKIN, config: fallbackConfig }],
   });
 }
 

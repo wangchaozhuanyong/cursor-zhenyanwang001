@@ -2,10 +2,10 @@ import { Headphones, LifeBuoy, ShieldCheck, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TRUST_ITEMS = [
-  { icon: ShieldCheck, label: "正品保障" },
-  { icon: Truck, label: "本地配送" },
-  { icon: Headphones, label: "中文客服" },
-  { icon: LifeBuoy, label: "售后协助" },
+  { icon: ShieldCheck, label: "正品保障", tone: "assurance" },
+  { icon: Truck, label: "本地配送", tone: "delivery" },
+  { icon: Headphones, label: "中文客服", tone: "support" },
+  { icon: LifeBuoy, label: "售后协助", tone: "aftercare" },
 ] as const;
 
 interface HomeTrustBarProps {
@@ -16,29 +16,26 @@ interface HomeTrustBarProps {
 export default function HomeTrustBar({ className }: HomeTrustBarProps) {
   return (
     <section
-      className={cn(
-        "store-trust-bar grid grid-cols-4 gap-0.5 rounded-2xl border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)]",
-        "bg-[color-mix(in_srgb,var(--theme-surface)_96%,var(--theme-bg))] px-1 py-3.5 sm:gap-1 sm:px-2 sm:py-4",
-        className,
-      )}
+      className={cn("store-trust-bar", className)}
       aria-label="服务保障"
     >
-      {TRUST_ITEMS.map(({ icon: Icon, label }) => (
+      {TRUST_ITEMS.map(({ icon: Icon, label, tone }) => (
         <div
           key={label}
-          className="store-trust-item flex min-w-0 flex-col items-center justify-center gap-1.5 px-0.5 text-center"
+          className="store-trust-item"
+          data-trust-tone={tone}
         >
           <span
-            className="store-trust-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-text)_4%,transparent)]"
+            className="store-trust-icon"
             aria-hidden
           >
             <Icon
-              size={16}
-              strokeWidth={1.75}
-              className="text-[color-mix(in_srgb,var(--theme-text)_58%,var(--theme-text-muted))]"
+              size={17}
+              strokeWidth={2}
+              className="store-trust-icon__glyph"
             />
           </span>
-          <span className="store-caption w-full whitespace-nowrap font-medium leading-none tracking-[0.02em] text-[color-mix(in_srgb,var(--theme-text)_82%,var(--theme-text-muted))]">
+          <span className="store-trust-label">
             {label}
           </span>
         </div>

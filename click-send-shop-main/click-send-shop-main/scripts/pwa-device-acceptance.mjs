@@ -104,8 +104,8 @@ async function runAndroid() {
   record("B", "B1", !isOfflinePage, isOfflinePage ? "仍为离线页" : "客服/APP 页正常渲染");
 
   const hasInstallUi =
-    /一键安装|安装到电脑桌面|立即安装|安装处理中|已安装/.test(dlText)
-    || /请使用 Chrome 打开|请使用 Safari 打开|复制网站链接/.test(dlText);
+    /一键安装|一键添加到桌面|添加到桌面|添加到主屏幕|安装到电脑桌面|立即安装|安装处理中|已安装/.test(dlText)
+    || /当前浏览器可能不支持自动添加|请使用 Chrome 打开|请使用 Safari 打开|复制网站链接|复制当前链接/.test(dlText);
   record("B", "B2", hasInstallUi, hasInstallUi ? "有安装相关 UI" : "未找到安装按钮/说明");
 
   record("B", "B3", null, "需真机：系统安装确认框 Playwright 无法触发");
@@ -237,14 +237,18 @@ async function runOfflineAndSmoke() {
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 90_000 }).catch(() =>
     page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" }),
   );
-  const loginOk = (await page.getByText(/登录|注册|手机号/).count()) > 0;
+  await page.waitForTimeout(1500);
+  const loginText = await page.locator("body").innerText().catch(() => "");
+  const loginOk = /登录|注册|手机号/.test(loginText);
   record("G", "G1", loginOk, "登录页可打开");
 
   await page.goto(`${BASE}/cart`, { waitUntil: "domcontentloaded" });
   record("G", "G2", null, "加购→结算需登录账号，未自动化下单");
 
   await page.goto(`${BASE}/support-download?tab=support`, { waitUntil: "domcontentloaded" });
-  const supportOk = (await page.getByText(/客服|联系|WhatsApp|微信/).count()) > 0;
+  await page.waitForTimeout(1500);
+  const supportText = await page.locator("body").innerText().catch(() => "");
+  const supportOk = /客服|联系|WhatsApp|微信|添加桌面/.test(supportText);
   record("G", "G3", supportOk, "客服 Tab 有入口");
 
   await browser.close();

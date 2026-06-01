@@ -228,5 +228,5 @@ export const FIELD_HELP_TEXTS: Record<string, string> = {
   adminThemeMode: "后台主题是否跟随前台。",
   fontFamily: "全局字体族。",
   isDefaultSkin: "默认皮肤：新用户默认看到。",
-  sceneTag: "用于在皮肤库筛选场景。",
+  category: "用于后台皮肤库分类筛选，可按运营习惯自由填写。",
 };

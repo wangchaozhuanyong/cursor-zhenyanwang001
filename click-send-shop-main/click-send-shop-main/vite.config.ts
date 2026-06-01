@@ -157,6 +157,7 @@ function stripOriginHeaderForDevProxy(proxy: {
 
 const thirdPartyLoginEnabled = process.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
 const legacyEnabled = process.env.VITE_LEGACY_BUILD !== "0";
+const devApiProxyTarget = process.env.VITE_DEV_API_PROXY_TARGET || "http://localhost:3000";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -177,13 +178,13 @@ return ({
     },
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: devApiProxyTarget,
         changeOrigin: true,
         configure: stripOriginHeaderForDevProxy,
       },
       // 上传接口返回的 /uploads/... 静态文件在 Node 上，开发时需同源代理才能预览
       "/uploads": {
-        target: "http://localhost:3000",
+        target: devApiProxyTarget,
         changeOrigin: true,
         configure: stripOriginHeaderForDevProxy,
       },

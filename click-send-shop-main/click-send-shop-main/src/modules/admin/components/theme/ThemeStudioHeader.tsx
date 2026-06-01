@@ -1,29 +1,38 @@
-import { Eye } from "lucide-react";
+import { CheckCircle2, Eye, Gift, MonitorSmartphone } from "lucide-react";
 import { useMemo } from "react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import StoreBadge from "@/components/ui/StoreBadge";
 import { THEME_BADGE_WARNING } from "@/utils/themeVisuals";
-import { Tx } from "@/components/admin/AdminText";
 
 export type ThemeStudioHeaderProps = {
   skinName: string;
-  isDefault: boolean;
+  activeSkinName: string;
+  runtimeSkinName: string;
+  isClientSkin: boolean;
+  isHolidaySkin: boolean;
   dirty: boolean;
   saving: boolean;
   saveDisabled?: boolean;
   onPreview: () => void;
   onSave: () => void;
+  onSetClientSkin: () => void;
+  onSetHolidaySkin: () => void;
 };
 
 export default function ThemeStudioHeader({
   skinName,
-  isDefault,
+  activeSkinName,
+  runtimeSkinName,
+  isClientSkin,
+  isHolidaySkin,
   dirty,
   saving,
   saveDisabled,
   onPreview,
   onSave,
+  onSetClientSkin,
+  onSetHolidaySkin,
 }: ThemeStudioHeaderProps) {
   const statusText = useMemo(() => {
     if (dirty) return "有未保存修改";
@@ -38,15 +47,19 @@ export default function ThemeStudioHeader({
             <span className="max-w-[260px] truncate rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium text-foreground">
               当前编辑：{skinName || "未命名皮肤"}
             </span>
-            {isDefault ? <StoreBadge type="success"><Tx>日常默认</Tx></StoreBadge> : null}
+            {isClientSkin ? <StoreBadge type="success">客户端日常</StoreBadge> : null}
+            {isHolidaySkin ? <StoreBadge type="warning">节日自动</StoreBadge> : null}
             {dirty ? (
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${THEME_BADGE_WARNING}`}>{statusText}</span>
             ) : (
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">{statusText}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">
+                <CheckCircle2 size={12} />
+                {statusText}
+              </span>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            前台客户不可手动切换皮肤；这里保存后由系统按日常和节日规则统一生效。
+            客户端日常：{activeSkinName || "-"}；当前实际生效：{runtimeSkinName || "-"}。节日命中时会优先使用节日自动皮肤。
           </p>
         </div>
 
@@ -61,6 +74,28 @@ export default function ThemeStudioHeader({
           </button>
 
           <PermissionGate permission="settings.manage">
+            <LoadingButton
+              type="button"
+              variant="secondary"
+              state={saving ? "loading" : "normal"}
+              disabled={saveDisabled || isClientSkin}
+              onClick={onSetClientSkin}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-xs font-semibold hover:bg-secondary"
+            >
+              <MonitorSmartphone size={14} />
+              设为客户端日常皮肤
+            </LoadingButton>
+            <LoadingButton
+              type="button"
+              variant="secondary"
+              state={saving ? "loading" : "normal"}
+              disabled={saveDisabled || isHolidaySkin}
+              onClick={onSetHolidaySkin}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-xs font-semibold hover:bg-secondary"
+            >
+              <Gift size={14} />
+              设为节日自动皮肤
+            </LoadingButton>
             <LoadingButton
               type="button"
               variant="solid"

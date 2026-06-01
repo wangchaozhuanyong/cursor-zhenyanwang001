@@ -19,18 +19,34 @@ import { cn } from "@/lib/utils";
 export function GuestFooterBrandMark({ siteName }: { siteName: string }) {
   const base = siteName.trim().replace(/\.\s*$/, "");
   return (
-    <div className="flex items-center gap-3">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_9%,var(--theme-surface))] text-[var(--theme-primary)]">
-        <Sparkles size={18} strokeWidth={1.8} />
+    <div className="flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:text-left">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-[color-mix(in_srgb,var(--theme-price)_42%,var(--theme-border))] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--theme-surface)_92%,white),color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface)))] text-[var(--theme-primary)] shadow-[0_16px_34px_-26px_var(--theme-primary)]">
+        <Sparkles size={19} strokeWidth={1.8} />
       </span>
-      <div className="min-w-0">
-        <h2 className="truncate font-display text-[26px] font-bold leading-none text-[var(--theme-text)] sm:text-[30px]">
+      <div className="min-w-0 max-w-full">
+        <h2 className="max-w-[min(18rem,82vw)] font-display text-[30px] font-bold leading-[1.15] text-[var(--theme-text)] sm:max-w-none sm:text-[31px]">
           {base}
-          <span className="text-[var(--theme-price)]">.</span>
         </h2>
-        <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--theme-text-muted)]">
-          Curated in Malaysia
+        <p className="mt-1 text-[12px] font-medium text-[var(--theme-text-muted)]">
+          官方严选 · 本地服务
         </p>
+      </div>
+    </div>
+  );
+}
+
+function FooterSectionTitle({ eyebrow, title }: { eyebrow?: string; title: string }) {
+  return (
+    <div className="mb-4 text-center">
+      {eyebrow ? (
+        <p className="text-[12px] font-medium text-[var(--theme-text-muted)]">
+          {eyebrow}
+        </p>
+      ) : null}
+      <div className="flex items-center justify-center gap-3">
+        <span className="h-px w-10 bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--theme-price)_62%,transparent))]" />
+        <h3 className="text-[17px] font-semibold text-[var(--theme-text)]">{title}</h3>
+        <span className="h-px w-10 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--theme-price)_62%,transparent),transparent)]" />
       </div>
     </div>
   );
@@ -39,15 +55,15 @@ export function GuestFooterBrandMark({ siteName }: { siteName: string }) {
 function AccordionItem({ title, children }: { title: string; children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="overflow-hidden rounded-[1.15rem] border border-[color-mix(in_srgb,var(--theme-border)_82%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_88%,var(--theme-bg))]">
+    <div className="overflow-hidden rounded-[1.15rem] border border-[color-mix(in_srgb,var(--theme-border)_82%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_90%,var(--theme-bg))]">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="flex min-h-[3.35rem] w-full items-center justify-between gap-3 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/35"
+        className="relative flex min-h-[3.35rem] w-full items-center justify-center px-12 py-3 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/35"
         aria-expanded={isOpen}
       >
         <span className="text-[15px] font-semibold text-[var(--theme-text)]">{title}</span>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-bg)_70%,var(--theme-surface))] text-[var(--theme-text-muted)]">
+        <span className="absolute right-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-bg)_70%,var(--theme-surface))] text-[var(--theme-text-muted)]">
           <ChevronDown
             size={16}
             strokeWidth={1.9}
@@ -70,23 +86,26 @@ function FooterNavButton({ item, onNavigate }: { item: FooterNavItem; onNavigate
     <button
       type="button"
       onClick={() => onNavigate(item.path)}
-      className="group flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-[14px] font-medium text-[var(--theme-text-muted)] transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_7%,transparent)] hover:text-[var(--theme-primary)] active:text-[var(--theme-primary)]"
+      className="group flex min-h-10 w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-[14px] font-medium text-[var(--theme-text-muted)] transition-all hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,transparent)] hover:text-[var(--theme-primary)] active:scale-[0.98] active:text-[var(--theme-primary)]"
     >
       <span className="min-w-0 truncate">{item.label}</span>
-      <ChevronRight size={14} className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
+      <ChevronRight size={14} className="shrink-0 opacity-45 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden />
     </button>
   );
 }
 
 function ContactCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[2.35rem_1fr] gap-3 rounded-[1.1rem] border border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_90%,var(--theme-bg))] p-3.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_9%,transparent)] text-[var(--theme-primary)]">
+    <div className="group relative flex min-h-[4.75rem] items-center gap-3.5 overflow-hidden rounded-[1.05rem] border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-surface)_96%,white)_0%,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-bg))_100%)] px-3.5 py-3 text-left shadow-[0_18px_44px_-38px_var(--theme-primary)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-price)_42%,var(--theme-border))] hover:shadow-[0_20px_48px_-36px_var(--theme-primary)] active:scale-[0.99]">
+      <span className="pointer-events-none absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-price)_72%,transparent),color-mix(in_srgb,var(--theme-primary)_58%,transparent))] opacity-80" />
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-price)_32%,transparent)] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface)),color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface)))] text-[var(--theme-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_22px_-18px_var(--theme-primary)] transition-transform duration-300 group-hover:scale-105">
         {icon}
       </span>
-      <span className="min-w-0">
-        <span className="block text-[12px] font-medium text-[var(--theme-text-muted)]">{label}</span>
-        <span className="mt-0.5 block break-words text-[14px] font-semibold leading-snug text-[var(--theme-text)]">{value}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12px] font-medium leading-none text-[var(--theme-text-muted)]">{label}</span>
+        <span className="mt-1.5 block max-w-full break-words text-[14px] font-semibold leading-snug text-[var(--theme-text)] [overflow-wrap:anywhere] sm:text-[15px]">
+          {value}
+        </span>
       </span>
     </div>
   );
@@ -149,7 +168,7 @@ export default function GuestMobileFooter({
   const contactItems = [
     contactPhone ? { key: "phone", label: "客服电话", value: contactPhone, icon: <Phone size={16} strokeWidth={1.8} /> } : null,
     contactEmail ? { key: "email", label: "电子邮箱", value: contactEmail, icon: <Mail size={16} strokeWidth={1.8} /> } : null,
-    whatsappDisplay ? { key: "whatsapp", label: "WhatsApp", value: whatsappDisplay, icon: <MessageCircle size={16} strokeWidth={1.8} /> } : null,
+    whatsappDisplay ? { key: "whatsapp", label: "在线客服", value: whatsappDisplay, icon: <MessageCircle size={16} strokeWidth={1.8} /> } : null,
     serviceHours ? { key: "hours", label: "服务时间", value: serviceHours, icon: <Clock3 size={16} strokeWidth={1.8} /> } : null,
     address ? { key: "address", label: "公司地址", value: address, icon: <MapPin size={16} strokeWidth={1.8} /> } : null,
   ].filter((item): item is { key: string; label: string; value: string; icon: ReactNode } => Boolean(item));
@@ -176,47 +195,49 @@ export default function GuestMobileFooter({
   );
 
   return (
-    <footer className="relative isolate z-0 w-full max-w-lg touch-pan-y md:mx-auto lg:max-w-none">
-      <div className="relative touch-pan-y border-t border-[color-mix(in_srgb,var(--theme-border)_86%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] px-4 pb-7 pt-8 sm:border sm:px-6 sm:theme-shadow md:pb-9 lg:px-10 lg:pb-10 lg:pt-11">
+    <footer className="relative isolate z-0 w-full touch-pan-y">
+      <div className="relative overflow-hidden touch-pan-y border-t border-[color-mix(in_srgb,var(--theme-border)_86%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-surface)_96%,white)_0%,color-mix(in_srgb,var(--theme-price)_7%,var(--theme-bg))_45%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-bg))_100%)] px-4 pb-8 pt-14 sm:border sm:px-6 sm:pt-14 sm:theme-shadow md:pb-10 lg:px-10 lg:pb-11 lg:pt-16">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--theme-primary)_42%,transparent),color-mix(in_srgb,var(--theme-price)_35%,transparent),transparent)]" />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.2]"
+          style={{
+            backgroundImage:
+              "linear-gradient(135deg, color-mix(in srgb, var(--theme-price) 18%, transparent) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="pointer-events-none absolute -bottom-12 left-1/2 h-24 w-[118%] -translate-x-1/2 rounded-[50%] border-t border-[color-mix(in_srgb,var(--theme-price)_22%,transparent)] opacity-70" />
+        <div className="pointer-events-none absolute -bottom-4 left-1/2 h-14 w-[106%] -translate-x-1/2 rounded-[50%] border-t border-[color-mix(in_srgb,var(--theme-primary)_14%,transparent)] opacity-60" />
 
-        <div className="mx-auto max-w-6xl">
-          <div className="grid gap-8 lg:grid-cols-[1.05fr_1.45fr] lg:gap-12">
-            <section className="space-y-5">
-              <GuestFooterBrandMark siteName={siteName || "站点"} />
-              <div className="space-y-2">
-                <p className="text-[18px] font-semibold leading-snug text-[var(--theme-text)] sm:text-[20px]">{slogan}</p>
-                <p className="max-w-xl text-[13px] leading-7 text-[var(--theme-text-muted)] sm:text-[14px]">{description}</p>
-              </div>
-            </section>
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center text-center">
+          <section className="mx-auto flex max-w-2xl scroll-mt-[calc(var(--store-mobile-header-height,4.5rem)+1rem)] flex-col items-center">
+            <GuestFooterBrandMark siteName={siteName || "站点"} />
+            <div className="mt-5 space-y-2">
+              <p className="text-[18px] font-semibold leading-snug text-[var(--theme-text)] sm:text-[20px]">{slogan}</p>
+              <p className="mx-auto max-w-xl text-[13px] leading-7 text-[var(--theme-text-muted)] sm:text-[14px]">{description}</p>
+            </div>
+          </section>
 
-            <section className="hidden gap-5 lg:grid lg:grid-cols-2">
-              <div className="rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] bg-[color-mix(in_srgb,var(--theme-bg)_35%,transparent)] p-4">
-                <h3 className="mb-2 px-3 text-[13px] font-semibold uppercase tracking-[0.16em] text-[var(--theme-text-muted)]">服务支持</h3>
-                {supportLinks}
-              </div>
-              <div className="rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] bg-[color-mix(in_srgb,var(--theme-bg)_35%,transparent)] p-4">
-                <h3 className="mb-2 px-3 text-[13px] font-semibold uppercase tracking-[0.16em] text-[var(--theme-text-muted)]">政策与说明</h3>
-                {policyLinks}
-              </div>
-            </section>
-          </div>
+          <section className="mt-8 hidden w-full max-w-3xl gap-4 lg:grid lg:grid-cols-2">
+            <div className="rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,transparent)] p-4">
+              <FooterSectionTitle title="服务支持" />
+              {supportLinks}
+            </div>
+            <div className="rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,transparent)] p-4">
+              <FooterSectionTitle title="政策与说明" />
+              {policyLinks}
+            </div>
+          </section>
 
-          <section className="mt-7 space-y-3 lg:hidden">
+          <section className="mt-7 w-full max-w-lg space-y-3 lg:hidden">
             <AccordionItem title="服务支持">{supportLinks}</AccordionItem>
             <AccordionItem title="政策与说明">{policyLinks}</AccordionItem>
           </section>
 
           {hasContactBlock ? (
-            <section className="mt-8 lg:mt-10">
-              <div className="mb-4 flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--theme-text-muted)]">Concierge</p>
-                  <h3 className="mt-1 text-[18px] font-semibold text-[var(--theme-text)]">联系我们</h3>
-                </div>
-                <span className="h-px flex-1 bg-[color-mix(in_srgb,var(--theme-border)_74%,transparent)]" />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <section className="mt-9 w-full lg:mt-10" aria-label="联系方式">
+              <FooterSectionTitle title="联系我们" />
+              <div className="mx-auto grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {contactItems.map((item) => (
                   <ContactCard key={item.key} icon={item.icon} label={item.label} value={item.value} />
                 ))}
@@ -225,15 +246,15 @@ export default function GuestMobileFooter({
           ) : null}
 
           {hasSocial ? (
-            <section className="mt-8 lg:mt-10">
-              <h3 className="mb-4 text-[15px] font-semibold text-[var(--theme-text)]">关注我们</h3>
-              <SiteSocialLinks {...socialProps} tone="footer" className="justify-start" />
+            <section className="mt-9 w-full lg:mt-10">
+              <FooterSectionTitle title="关注我们" />
+              <SiteSocialLinks {...socialProps} tone="footer" labelMode="zhOnly" className="justify-center" />
             </section>
           ) : null}
 
           {hasLegal ? (
-            <section className="mt-8 border-t border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] pt-5">
-              <div className="flex flex-col gap-1 text-[12px] leading-6 text-[var(--theme-text-muted)] sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
+            <section className="mt-9 w-full max-w-4xl border-t border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] pt-5">
+              <div className="flex flex-col items-center justify-center gap-1 text-center text-[12px] leading-6 text-[var(--theme-text-muted)] sm:flex-row sm:flex-wrap sm:gap-x-4">
                 {legalCompany ? <span>{legalCompany}</span> : null}
                 {legalCopyright ? <span>{legalCopyright}</span> : null}
                 {legalIcp ? <span>{legalIcp}</span> : null}

@@ -150,6 +150,8 @@ async function writeImageFromFile(file, mode = 'product', context = {}) {
   return {
     filename: primary.filename,
     url: primary.url,
+    storageProvider: primary.storageProvider,
+    storageKey: primary.storageKey,
     variants: uploaded.reduce((acc, u) => {
       if (u.tag) acc[u.tag] = u.url;
       return acc;
@@ -201,7 +203,12 @@ async function writeVideoFromFile(file, context = {}) {
         traceId,
       },
     });
-    return { filename, url: uploaded.url };
+    return {
+      filename,
+      url: uploaded.url,
+      storageProvider: 's3',
+      storageKey: uploaded.key,
+    };
   }
 
   const outPath = path.join(uploadDir, filename);
@@ -232,7 +239,12 @@ async function writeVideoFromFile(file, context = {}) {
       traceId,
     },
   });
-  return { filename, url: `/uploads/${filename}` };
+  return {
+    filename,
+    url: `/uploads/${filename}`,
+    storageProvider: 'local',
+    storageKey: `uploads/${filename}`,
+  };
 }
 
 async function writeMediaFromFile(file, mode = 'auto', context = {}) {
@@ -251,4 +263,3 @@ module.exports = {
   badRequest,
   writeMediaFromFile,
 };
-

@@ -145,6 +145,10 @@ function setSpaStaticHeaders(res, filePath) {
     setNoStoreHtmlHeaders(res);
     return;
   }
+  if (path.basename(filePath) === 'sw.js') {
+    setNoStoreHtmlHeaders(res);
+    return;
+  }
   if (filePath.includes(`${path.sep}assets${path.sep}`)) {
     setHashedAssetHeaders(res);
     return;

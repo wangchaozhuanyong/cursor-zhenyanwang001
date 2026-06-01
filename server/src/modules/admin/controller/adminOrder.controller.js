@@ -15,6 +15,10 @@ exports.list = asyncRoute(async (req, res) => {
   });
 });
 
+exports.summary = asyncRoute(async (req, res) => {
+  res.success(await svc.getOrdersSummary(req.query));
+});
+
 exports.exportCsv = asyncRoute(async (req, res) => {
   const { csv, filename } = await svc.exportOrdersCsv(req.query);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');

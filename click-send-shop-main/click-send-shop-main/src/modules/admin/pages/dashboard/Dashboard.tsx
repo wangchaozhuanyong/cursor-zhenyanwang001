@@ -72,7 +72,8 @@ export default function Dashboard() {
     queryKey: [...adminQueryKeys.dashboard(), queryParams],
     queryFn: () => dashboardService.fetchDashboardStats(queryParams),
     enabled: rangePreset !== "custom" || customRangeReady,
-    refetchInterval: 90_000,
+    refetchInterval: 120_000,
+    refetchIntervalInBackground: false,
   });
 
   const openCustomRangePanel = () => {

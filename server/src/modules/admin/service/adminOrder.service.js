@@ -4,7 +4,7 @@
  * 职责：管理员对订单的列表/详情/状态变�?发货等业务编排�? * 分层约定�? * - 不直接拼 SQL，所有数据访问通过 `./adminOrder.repository`
  * - 事务由本层控制：`repo.getConnection()` + `beginTransaction()`，并�?`conn` 传给 repository 事务方法
  */
-const { generateId } = require('../../../utils/helpers');
+const { generateId, parseBool } = require('../../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../../errors');
 const { rowsToCsvLocalized } = require('../../../utils/adminCsvLabels');
 const { maskPhone } = require('../../../utils/privacyMask');
@@ -399,18 +399,17 @@ function attachItemsAndAmounts(order, items) {
 async function listOrders(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
+  const includeItems = parseBool(query.includeItems ?? query.include_items) !== false;
+  const includeSummary = parseBool(query.includeSummary ?? query.include_summary) !== false;
   const { where, params } = await buildAdminOrderListWhere(query);
-  const total = await repo.countOrdersAdmin(where, params);
   const offset = (page - 1) * pageSize;
-  const [orders, summaryRows, operationalSummary, financialSummary, globalToday] = await Promise.all([
+  const [total, orders, summary] = await Promise.all([
+    repo.countOrdersAdmin(where, params),
     repo.selectOrdersAdminPage(where, params, pageSize, offset),
-    repo.selectOrderStatusSummary(where, params),
-    repo.selectOrderOperationalSummary(where, params),
-    repo.selectOrderFinancialSummary(where, params),
-    repo.selectOrderGlobalTodaySummary(),
+    includeSummary ? getOrdersSummary(query, { where, params }) : Promise.resolve({}),
   ]);
 
-  if (orders.length > 0) {
+  if (orders.length > 0 && includeItems) {
     const orderIds = orders.map((o) => o.id);
     const allItems = await repo.selectOrderItemsBatch(orderIds);
     const itemsByOrderId = {};
@@ -420,6 +419,10 @@ async function listOrders(query) {
     }
     for (const order of orders) {
       attachItemsAndAmounts(order, itemsByOrderId[order.id] || []);
+    }
+  } else if (orders.length > 0) {
+    for (const order of orders) {
+      attachItemsAndAmounts(order, []);
     }
   }
   for (const order of orders) {
@@ -432,21 +435,33 @@ async function listOrders(query) {
     total,
     page,
     pageSize,
-    summary: {
-      ...normalizeOrderSummary(summaryRows),
-      ...normalizeOperationalSummary(operationalSummary),
-      ...normalizeFinancialSummary(financialSummary),
-      ...Object.fromEntries(
-        [
-          'today_order_count',
-          'today_paid_order_count',
-          'today_paid_amount',
-          'today_refund_amount',
-          'today_gross_profit_amount',
-          'today_net_profit_amount',
-        ].map((key) => [key, Number(normalizeOperationalSummary(globalToday)[key] || 0)]),
-      ),
-    },
+    summary,
+  };
+}
+
+async function getOrdersSummary(query, prebuilt = null) {
+  const { where, params } = prebuilt || await buildAdminOrderListWhere(query);
+  const [summaryRows, operationalSummary, financialSummary, globalToday] = await Promise.all([
+    repo.selectOrderStatusSummary(where, params),
+    repo.selectOrderOperationalSummary(where, params),
+    repo.selectOrderFinancialSummary(where, params),
+    repo.selectOrderGlobalTodaySummary(),
+  ]);
+  const globalTodayNormalized = normalizeOperationalSummary(globalToday);
+  return {
+    ...normalizeOrderSummary(summaryRows),
+    ...normalizeOperationalSummary(operationalSummary),
+    ...normalizeFinancialSummary(financialSummary),
+    ...Object.fromEntries(
+      [
+        'today_order_count',
+        'today_paid_order_count',
+        'today_paid_amount',
+        'today_refund_amount',
+        'today_gross_profit_amount',
+        'today_net_profit_amount',
+      ].map((key) => [key, Number(globalTodayNormalized[key] || 0)]),
+    ),
   };
 }
 
@@ -1465,6 +1480,7 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
 
 module.exports = {
   listOrders,
+  getOrdersSummary,
   getOrderById,
   previewShortageAdjustment,
   applyShortageAdjustment,

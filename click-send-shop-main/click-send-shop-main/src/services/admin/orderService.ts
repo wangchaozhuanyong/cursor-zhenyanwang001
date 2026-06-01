@@ -27,6 +27,11 @@ export async function fetchOrders(params?: OrderListParams): Promise<PaginatedDa
   return { ...page, summary };
 }
 
+export async function fetchOrderSummary(params?: OrderListParams): Promise<AdminOrderSummary> {
+  const res = await orderApi.getOrderSummary(params);
+  return res.data;
+}
+
 export async function fetchOrderById(id: string) {
   const res = await orderApi.getOrderById(id);
   return res.data;

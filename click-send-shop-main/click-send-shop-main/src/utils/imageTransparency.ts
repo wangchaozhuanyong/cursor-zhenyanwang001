@@ -1,4 +1,4 @@
-import { removeBackgroundWithAi, type AiMatteProgress } from "@/utils/aiBackgroundRemoval";
+import type { AiMatteProgress } from "@/utils/aiBackgroundRemoval";
 
 const BG_COLOR_TOLERANCE = 20;
 const MAX_BG_CLUSTERS = 4;
@@ -177,6 +177,7 @@ async function matteWithAiThenEdge(
   onProgress?: AiMatteProgress,
 ): Promise<{ file: File; method: IconMatteMethod }> {
   try {
+    const { removeBackgroundWithAi } = await import("@/utils/aiBackgroundRemoval");
     const aiFile = await removeBackgroundWithAi(file, onProgress);
     if (await hasTransparentPixels(aiFile)) {
       return { file: aiFile, method: "ai" };

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
@@ -7,7 +7,7 @@ import {
   type AdminTableColumnKind,
 } from "@/utils/adminTableColumnPolicy";
 
-function useIsOverflowing(ref: React.RefObject<HTMLElement | null>, deps: unknown[]) {
+function useOverflowCheck(ref: React.RefObject<HTMLElement | null>) {
   const [overflowing, setOverflowing] = useState(false);
   const check = useCallback(() => {
     const el = ref.current;
@@ -15,16 +15,7 @@ function useIsOverflowing(ref: React.RefObject<HTMLElement | null>, deps: unknow
     setOverflowing(el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
   }, [ref]);
 
-  useEffect(() => {
-    check();
-    const el = ref.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [check, deps, ref]);
-
-  return overflowing;
+  return { check, overflowing };
 }
 
 export type AdminTableCellProps = {
@@ -54,10 +45,10 @@ export function AdminTableCell({
   const resolvedKind = kind ?? (columnKey ? getReportColumnKind(columnKey) : "text");
   const preset = getColumnPreset(resolvedKind);
   const ref = useRef<HTMLDivElement>(null);
-  const overflowing = useIsOverflowing(ref, [value, fullText, maxWidth, lines]);
+  const { check, overflowing } = useOverflowCheck(ref);
   const tooltipText = (fullText ?? (typeof value === "string" || typeof value === "number" ? String(value) : "")).trim();
   const width = maxWidth ?? preset.maxWidth;
-  const showTooltip = preset.allowTooltip && overflowing && tooltipText && tooltipText !== "-";
+  const canShowTooltip = preset.allowTooltip && tooltipText && tooltipText !== "-";
 
   const inner = (
     <div
@@ -75,18 +66,20 @@ export function AdminTableCell({
     </div>
   );
 
-  if (!showTooltip) {
+  if (!canShowTooltip) {
     return inner;
   }
 
   return (
     <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>
-        <div className="min-w-0 max-w-full cursor-default">{inner}</div>
+        <div className="min-w-0 max-w-full cursor-default" onPointerEnter={check} onFocus={check}>{inner}</div>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-sm whitespace-pre-wrap break-words text-xs">
-        {tooltipText}
-      </TooltipContent>
+      {overflowing ? (
+        <TooltipContent side="top" className="max-w-sm whitespace-pre-wrap break-words text-xs">
+          {tooltipText}
+        </TooltipContent>
+      ) : null}
     </Tooltip>
   );
 }
@@ -115,8 +108,8 @@ export function AdminTableCellGroup({
   const visible = lines.filter((l) => l.text?.trim());
   const tooltipText = (tooltipLines ?? visible.map((l) => l.text)).filter(Boolean).join("\n");
   const ref = useRef<HTMLDivElement>(null);
-  const overflowing = useIsOverflowing(ref, [lines, tooltipLines, maxWidth]);
-  const showTooltip = overflowing && tooltipText.length > 0;
+  const { check, overflowing } = useOverflowCheck(ref);
+  const canShowTooltip = tooltipText.length > 0;
 
   const inner = (
     <div ref={ref} className={cn("min-w-0 space-y-0.5", className)} style={{ maxWidth }}>
@@ -137,18 +130,20 @@ export function AdminTableCellGroup({
     </div>
   );
 
-  if (!showTooltip) {
+  if (!canShowTooltip) {
     return inner;
   }
 
   return (
     <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>
-        <div className="min-w-0 cursor-default">{inner}</div>
+        <div className="min-w-0 cursor-default" onPointerEnter={check} onFocus={check}>{inner}</div>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs whitespace-pre-wrap break-words text-xs leading-relaxed">
-        {tooltipText}
-      </TooltipContent>
+      {overflowing ? (
+        <TooltipContent side="top" className="max-w-xs whitespace-pre-wrap break-words text-xs leading-relaxed">
+          {tooltipText}
+        </TooltipContent>
+      ) : null}
     </Tooltip>
   );
 }

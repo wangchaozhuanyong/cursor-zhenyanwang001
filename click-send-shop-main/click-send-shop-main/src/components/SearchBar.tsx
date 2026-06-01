@@ -1,5 +1,5 @@
 import { Search, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 interface SearchBarProps {
   placeholder?: string;
@@ -8,15 +8,56 @@ interface SearchBarProps {
   onSearch?: (value: string) => void;
   onFocus?: () => void;
   onSubmit?: () => void;
+  debounceMs?: number;
 }
 
-export default function SearchBar({ placeholder = "搜索商品...", value: controlledValue, onChange, onSearch, onFocus, onSubmit }: SearchBarProps) {
-  const [internal, setInternal] = useState("");
-  const value = controlledValue ?? internal;
-  const setValue = onChange ?? setInternal;
+export default function SearchBar({
+  placeholder = "搜索商品...",
+  value: controlledValue,
+  onChange,
+  onSearch,
+  onFocus,
+  onSubmit,
+  debounceMs = 300,
+}: SearchBarProps) {
+  const [draftValue, setDraftValue] = useState(controlledValue ?? "");
+  const timerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const value = draftValue;
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  useEffect(() => {
+    if (controlledValue !== undefined) {
+      setDraftValue(controlledValue);
+    }
+  }, [controlledValue]);
+
+  useEffect(() => () => {
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+  }, []);
+
+  const emitChange = (nextValue: string, immediate = false) => {
+    if (!onChange) return;
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (immediate || debounceMs <= 0) {
+      onChange(nextValue);
+      return;
+    }
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
+      onChange(nextValue);
+    }, debounceMs);
+  };
+
+  const setValue = (nextValue: string, immediate = false) => {
+    setDraftValue(nextValue);
+    emitChange(nextValue, immediate);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
+      emitChange(value, true);
       onSearch?.(value);
       onSubmit?.();
     }
@@ -34,7 +75,7 @@ export default function SearchBar({ placeholder = "搜索商品...", value: cont
         className="min-h-0 flex-1 bg-transparent text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground"
       />
       {value && (
-        <button type="button" className="touch-manipulation flex h-8 w-8 shrink-0 items-center justify-center rounded-full active:bg-muted" onClick={() => setValue("")} aria-label="清除">
+        <button type="button" className="touch-manipulation flex h-8 w-8 shrink-0 items-center justify-center rounded-full active:bg-muted" onClick={() => setValue("", true)} aria-label="清除">
           <X size={16} className="text-muted-foreground" />
         </button>
       )}

@@ -1,28 +1,108 @@
 const db = require('../../../config/db');
-const { PRODUCT_LIST_FROM, buildProductListQuery } = require('./adminProductListQuery');
+const {
+  PRODUCT_COUNT_FROM,
+  buildProductListQuery,
+  buildProductSalesMetricsRefreshQuery,
+} = require('./adminProductListQuery');
+
+const PRODUCT_SALES_METRICS_LOCK = 'admin_product_sales_metrics_cache_refresh';
+const DEFAULT_PRODUCT_SALES_METRICS_TTL_SECONDS = 300;
+let salesMetricsCacheAvailable;
+let salesMetricsRefreshPromise = null;
 
 async function countProducts(where, params) {
   const [[{ total }]] = await db.query(
-    `SELECT COUNT(*) AS total ${PRODUCT_LIST_FROM} ${where}`,
+    `SELECT COUNT(*) AS total ${PRODUCT_COUNT_FROM} ${where}`,
     params,
   );
   return total;
 }
 
 async function selectProductsPage(where, params, pageSize, offset, sort) {
+  const useSalesMetricsCache = await prepareProductSalesMetricsCache();
   const { sql, params: queryParams } = buildProductListQuery(where, params, {
     pageSize,
     offset,
     sort,
+    useSalesMetricsCache,
   });
   const [rows] = await db.query(sql, queryParams);
   return rows;
 }
 
 async function selectProductsForExport(where, params, sort) {
-  const { sql, params: queryParams } = buildProductListQuery(where, params, { sort });
+  const useSalesMetricsCache = await prepareProductSalesMetricsCache();
+  const { sql, params: queryParams } = buildProductListQuery(where, params, { sort, useSalesMetricsCache });
   const [rows] = await db.query(sql, queryParams);
   return rows;
+}
+
+function productSalesMetricsTtlSeconds() {
+  const raw = Number(process.env.ADMIN_PRODUCT_SALES_METRICS_CACHE_TTL_SECONDS);
+  return Number.isFinite(raw) && raw >= 0 ? raw : DEFAULT_PRODUCT_SALES_METRICS_TTL_SECONDS;
+}
+
+function isMissingProductSalesMetricsTable(error) {
+  return error?.code === 'ER_NO_SUCH_TABLE' || /product_sales_metrics_cache/i.test(String(error?.message || ''));
+}
+
+async function productSalesMetricsCacheState() {
+  const [[row]] = await db.query(`
+    SELECT
+      (SELECT COUNT(*) FROM products WHERE deleted_at IS NULL) AS product_count,
+      COUNT(*) AS cache_count,
+      TIMESTAMPDIFF(SECOND, MIN(computed_at), NOW()) AS max_age_seconds
+    FROM product_sales_metrics_cache
+  `);
+  return {
+    productCount: Number(row?.product_count || 0),
+    cacheCount: Number(row?.cache_count || 0),
+    maxAgeSeconds: row?.max_age_seconds == null ? null : Number(row.max_age_seconds),
+  };
+}
+
+async function refreshProductSalesMetricsCacheIfStale() {
+  if (salesMetricsRefreshPromise) return salesMetricsRefreshPromise;
+  salesMetricsRefreshPromise = (async () => {
+    const ttlSeconds = productSalesMetricsTtlSeconds();
+    const state = await productSalesMetricsCacheState();
+    const freshEnough = state.productCount === 0
+      || (
+        state.cacheCount >= state.productCount
+        && state.maxAgeSeconds != null
+        && state.maxAgeSeconds <= ttlSeconds
+      );
+    if (freshEnough) return true;
+
+    const [[lockRow]] = await db.query('SELECT GET_LOCK(?, 0) AS locked', [PRODUCT_SALES_METRICS_LOCK]);
+    if (Number(lockRow?.locked) !== 1) return state.cacheCount > 0;
+    try {
+      await db.query(buildProductSalesMetricsRefreshQuery());
+      salesMetricsCacheAvailable = true;
+      return true;
+    } finally {
+      await db.query('SELECT RELEASE_LOCK(?)', [PRODUCT_SALES_METRICS_LOCK]).catch(() => {});
+    }
+  })().finally(() => {
+    salesMetricsRefreshPromise = null;
+  });
+  return salesMetricsRefreshPromise;
+}
+
+async function prepareProductSalesMetricsCache() {
+  if (salesMetricsCacheAvailable === false) return false;
+  try {
+    const ready = await refreshProductSalesMetricsCacheIfStale();
+    salesMetricsCacheAvailable = !!ready;
+    return !!ready;
+  } catch (error) {
+    if (isMissingProductSalesMetricsTable(error)) {
+      salesMetricsCacheAvailable = false;
+      return false;
+    }
+    console.warn('[adminProduct] product sales metrics cache unavailable, falling back to dynamic aggregation:', error?.message || error);
+    return salesMetricsCacheAvailable !== false;
+  }
 }
 
 async function selectProductById(id, opts = {}) {
@@ -90,6 +170,7 @@ async function batchUpdateStatus(ids, status, lifecycleStatus) {
 
 module.exports = {
   countProducts,
+  refreshProductSalesMetricsCacheIfStale,
   selectProductsPage,
   selectProductsForExport,
   selectProductById,

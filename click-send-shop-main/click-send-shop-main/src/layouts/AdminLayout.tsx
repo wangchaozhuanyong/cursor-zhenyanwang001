@@ -59,6 +59,9 @@ import {
 import AdminSidebarNav, { AdminNavTab } from "@/layouts/admin/AdminSidebarNav";
 import AnchoredMenu from "@/components/admin/AnchoredMenu";
 
+const SECURITY_ALERT_VISIBLE_POLL_MS = 60_000;
+const SECURITY_ALERT_HIDDEN_POLL_MS = 5 * 60_000;
+
 function AdminLayoutContent() {
   const navigate = useNavigate();
   const adminNavigate = useAdminNavigation();
@@ -127,11 +130,29 @@ function AdminLayoutContent() {
       }
     };
 
+    let timer: ReturnType<typeof window.setTimeout> | null = null;
+    const schedule = () => {
+      if (!alive) return;
+      if (timer) window.clearTimeout(timer);
+      const delay = document.hidden ? SECURITY_ALERT_HIDDEN_POLL_MS : SECURITY_ALERT_VISIBLE_POLL_MS;
+      timer = window.setTimeout(() => {
+        void load().finally(() => {
+          if (alive) schedule();
+        });
+      }, delay);
+    };
+    const handleVisibilityChange = () => {
+      if (!document.hidden) void load();
+      schedule();
+    };
+
     void load();
-    const timer = window.setInterval(load, 60_000);
+    schedule();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       alive = false;
-      window.clearInterval(timer);
+      if (timer) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [canViewSecurityAlerts]);
 
@@ -326,6 +347,7 @@ function AdminLayoutContent() {
                   anchorRef={securityBtnRef}
                   width={352}
                   gap={6}
+                  placement="bottom-end"
                   className="p-2"
                 >
                   <motion.div className="w-[min(92vw,22rem)]">
@@ -394,10 +416,10 @@ function AdminLayoutContent() {
                 ref={avatarBtnRef}
                 type="button"
                 aria-label={t("layout.account")}
-                className="touch-manipulation flex h-9 min-w-[40px] items-center gap-1 rounded-lg px-1 hover:bg-secondary"
-                onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
+                className="touch-manipulation flex h-11 min-w-[56px] items-center gap-1 rounded-xl px-1.5 hover:bg-secondary"
+                onClick={() => setAvatarMenuOpen((open) => !open)}
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--theme-primary)] text-xs font-bold text-[var(--theme-primary-foreground)]">A</div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--theme-primary)] text-xs font-bold text-[var(--theme-primary-foreground)]">A</div>
                 <ChevronDown size={14} className={`hidden text-muted-foreground transition-transform sm:block ${avatarMenuOpen ? "rotate-180" : ""}`} />
               </button>
               <AnchoredMenu
@@ -406,6 +428,7 @@ function AdminLayoutContent() {
                 anchorRef={avatarBtnRef}
                 width={224}
                 gap={6}
+                placement="bottom-end"
                 className="py-1"
               >
                 <motion.div className="w-56">

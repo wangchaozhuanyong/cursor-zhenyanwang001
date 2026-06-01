@@ -26,7 +26,8 @@ const LAST_CHECKED_KEY = "admin_order_voice_last_checked_at";
 const PLAYED_IDS_KEY = "admin_order_voice_played_event_ids";
 const VOLUME_KEY = "admin_order_voice_volume";
 const VISIBLE_POLL_MS = 10_000;
-const HIDDEN_POLL_MS = 30_000;
+const HIDDEN_POLL_MS = 60_000;
+const MAX_FAILURE_BACKOFF_MS = 120_000;
 const MAX_PLAYED_IDS = 100;
 const MAX_LOCAL_SINCE_AGE_MS = 10 * 60 * 1000;
 
@@ -234,6 +235,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
   const volumeRef = useRef(readVolume());
   const enabledRef = useRef(false);
   const pollingRef = useRef(false);
+  const pollFailureCountRef = useRef(0);
   const queueRef = useRef<QueueItem[]>([]);
   const playingRef = useRef(false);
 
@@ -369,6 +371,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
     try {
       const since = readLastCheckedAt();
       const result = await orderService.fetchRecentOrderEvents(since);
+      pollFailureCountRef.current = 0;
       const events = result.events || [];
       const checkedAt = result.checkedAt || new Date().toISOString();
 
@@ -387,6 +390,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
       }
       window.localStorage.setItem(LAST_CHECKED_KEY, checkedAt);
     } catch (error) {
+      pollFailureCountRef.current = Math.min(pollFailureCountRef.current + 1, 4);
       console.warn("[AdminOrderVoiceNotifier] poll failed:", error);
     } finally {
       pollingRef.current = false;
@@ -395,23 +399,33 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!enabled || loading) return;
+    let active = true;
+    let timer: ReturnType<typeof window.setTimeout> | null = null;
     const schedule = () => {
-      const delay = document.hidden ? HIDDEN_POLL_MS : VISIBLE_POLL_MS;
-      return window.setTimeout(async () => {
+      if (!active) return;
+      const baseDelay = document.hidden ? HIDDEN_POLL_MS : VISIBLE_POLL_MS;
+      const failureBackoff = pollFailureCountRef.current
+        ? Math.min(MAX_FAILURE_BACKOFF_MS, VISIBLE_POLL_MS * (2 ** pollFailureCountRef.current))
+        : 0;
+      const delay = Math.max(baseDelay, failureBackoff);
+      timer = window.setTimeout(async () => {
         await pollEvents();
-        timer = schedule();
+        schedule();
       }, delay);
     };
 
-    let timer = schedule();
     const handleVisibilityChange = () => {
       if (!document.hidden) void pollEvents();
+      if (timer) window.clearTimeout(timer);
+      schedule();
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    schedule();
     void pollEvents();
 
     return () => {
-      window.clearTimeout(timer);
+      active = false;
+      if (timer) window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [enabled, loading, pollEvents]);
@@ -431,7 +445,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
     return "beep";
   }, [speakText]);
 
-  const persistEnabled = async (next: boolean) => {
+  const persistEnabled = useCallback(async (next: boolean) => {
     const res = await updateAdminOrderVoiceSettings(next);
     applyEnabled(Boolean(res.data?.enabled));
     if (!next) {
@@ -442,9 +456,9 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
       playingRef.current = false;
       window.localStorage.removeItem(LAST_CHECKED_KEY);
     }
-  };
+  }, [applyEnabled]);
 
-  const handleTestPlay = async () => {
+  const handleTestPlay = useCallback(async () => {
     if (loading || saving || testing) return;
     setTesting(true);
     try {
@@ -462,9 +476,9 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
     } finally {
       setTesting(false);
     }
-  };
+  }, [loading, saving, speakText, testing, tText]);
 
-  const handleToggle = async () => {
+  const handleToggle = useCallback(async () => {
     if (loading || saving || testing) return;
 
     if (enabled) {
@@ -494,7 +508,7 @@ export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
     } finally {
       setSaving(false);
     }
-  };
+  }, [enabled, loading, persistEnabled, saving, testing, tText, verifyPlaybackForEnable]);
 
   const busy = loading || saving || testing;
   const statusLabel = loading || saving ? "处理中" : enabled ? "已开启" : "未开启";

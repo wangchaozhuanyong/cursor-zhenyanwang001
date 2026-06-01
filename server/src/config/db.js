@@ -34,4 +34,53 @@ const pool = mysql.createPool({
   },
 });
 
+function resolveSlowQueryThresholdMs() {
+  const raw = Number(process.env.DB_SLOW_QUERY_MS || process.env.DB_SLOW_QUERY_THRESHOLD_MS || 0);
+  return Number.isFinite(raw) && raw > 0 ? raw : 0;
+}
+
+function compactSql(sql) {
+  return String(sql || '').replace(/\s+/g, ' ').trim().slice(0, 500);
+}
+
+function installSlowQueryLogger(targetPool) {
+  const thresholdMs = resolveSlowQueryThresholdMs();
+  if (!thresholdMs) return;
+
+  const wrapQuery = (queryFn, scope) => async function timedQuery(sql, params) {
+    const startedAt = Date.now();
+    try {
+      return await queryFn(sql, params);
+    } finally {
+      const elapsedMs = Date.now() - startedAt;
+      if (elapsedMs >= thresholdMs) {
+        console.warn('[db.slow_query]', JSON.stringify({
+          scope,
+          elapsed_ms: elapsedMs,
+          threshold_ms: thresholdMs,
+          sql: compactSql(sql),
+        }));
+      }
+    }
+  };
+
+  const originalPoolQuery = targetPool.query.bind(targetPool);
+  targetPool.query = wrapQuery(originalPoolQuery, 'pool');
+
+  const originalGetConnection = targetPool.getConnection.bind(targetPool);
+  targetPool.getConnection = async function getTimedConnection() {
+    const conn = await originalGetConnection();
+    if (!conn.__slowQueryLoggerInstalled) {
+      conn.query = wrapQuery(conn.query.bind(conn), 'connection');
+      Object.defineProperty(conn, '__slowQueryLoggerInstalled', {
+        value: true,
+        enumerable: false,
+      });
+    }
+    return conn;
+  };
+}
+
+installSlowQueryLogger(pool);
+
 module.exports = pool;

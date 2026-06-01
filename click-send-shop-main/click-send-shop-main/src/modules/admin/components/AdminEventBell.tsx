@@ -12,6 +12,9 @@ import { useAdminT } from "@/hooks/useAdminT";
 
 const P0_SOUND_PLAYED_KEY = "admin_event_p0_sound_played_ids";
 const MAX_SOUND_PLAYED_IDS = 300;
+const SUMMARY_POLL_MS = 30_000;
+const EVENT_LIST_POLL_MS = 30_000;
+const P0_SOUND_POLL_MS = 15_000;
 
 const tabs = [
   { key: "all", label: "全部" },
@@ -88,13 +91,15 @@ export default function AdminEventBell() {
   const summaryQuery = useQuery({
     queryKey: adminQueryKeys.eventCenterSummary(),
     queryFn: () => eventService.fetchAdminEventSummary(),
-    refetchInterval: mfaStepUpPending ? false : 15000,
+    refetchInterval: mfaStepUpPending ? false : SUMMARY_POLL_MS,
+    refetchIntervalInBackground: false,
   });
   const eventsQuery = useQuery({
     queryKey: adminQueryKeys.eventCenterEvents({ tab, page: 1, pageSize: 8 }),
     queryFn: () => eventService.fetchAdminEvents({ tab, page: 1, pageSize: 8 }),
     enabled: open,
-    refetchInterval: open && !mfaStepUpPending ? 15000 : false,
+    refetchInterval: open && !mfaStepUpPending ? EVENT_LIST_POLL_MS : false,
+    refetchIntervalInBackground: false,
   });
 
   const refresh = () => {
@@ -119,7 +124,8 @@ export default function AdminEventBell() {
     queryKey: adminQueryKeys.eventCenterEvents({ tab: "urgent", severity: "P0", page: 1, pageSize: 10 }),
     queryFn: () => eventService.fetchAdminEvents({ tab: "urgent", severity: "P0", page: 1, pageSize: 10 }),
     enabled: hasP0,
-    refetchInterval: hasP0 && !mfaStepUpPending ? 15000 : false,
+    refetchInterval: hasP0 && !mfaStepUpPending ? P0_SOUND_POLL_MS : false,
+    refetchIntervalInBackground: false,
   });
 
   const markSoundPlayed = useCallback(async (eventId: string) => {

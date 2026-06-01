@@ -386,6 +386,7 @@ router.post(
 /* ---- Orders ---- */
 router.get('/order-events/recent', adminAuth, requirePermission('order.view'), orderEventCtrl.recent);
 router.get('/orders/export', adminAuth, requirePermission('order.view'), orderCtrl.exportCsv);
+router.get('/orders/summary', adminAuth, requirePermission('order.view'), orderCtrl.summary);
 router.get('/checkout-abandonments/reminders/due', adminAuth, requirePermission('order.view'), checkoutAbandonmentCtrl.listDueReminders);
 router.post('/checkout-abandonments/:id/reminders/sent', adminAuth, requirePermission('order.update'), checkoutAbandonmentCtrl.markReminderSent);
 router.get('/checkout-abandonments', adminAuth, requirePermission('order.view'), checkoutAbandonmentCtrl.list);

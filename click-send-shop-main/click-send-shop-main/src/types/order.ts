@@ -289,6 +289,8 @@ export interface OrderListParams {
   amountMin?: number;
   amountMax?: number;
   ids?: string[];
+  includeItems?: boolean;
+  includeSummary?: boolean;
   page?: number;
   pageSize?: number;
 }

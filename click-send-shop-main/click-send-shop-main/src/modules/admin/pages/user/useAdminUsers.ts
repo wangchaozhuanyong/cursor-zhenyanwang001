@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { AdminFilterChip } from "@/components/admin/AdminFilterSummaryBar";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
-import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
@@ -18,14 +18,9 @@ import type { MemberLevel, UserTag } from "@/types/user";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
 const PAGE_SIZE = 20;
-
-const USER_SORT_OPTIONS = [
-  { value: "", label: "注册时间（默认）" },
-  { value: "total_spent", label: "累计消费" },
-  { value: "valid_order_count", label: "有效订单数" },
-  { value: "last_purchase_at", label: "最近购买" },
-  { value: "refund_rate", label: "退款率" },
-] as const;
+const EMPTY_USERS: UserProfile[] = [];
+const EMPTY_TAGS: UserTag[] = [];
+const EMPTY_MEMBER_LEVELS: MemberLevel[] = [];
 
 function trimOrUndef(value: string) {
   const trimmed = value.trim();
@@ -35,7 +30,7 @@ function trimOrUndef(value: string) {
 export function useAdminUsers() {
   const { locale, tText } = useAdminTOptional();
   const isEn = locale === "en";
-  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const L = useCallback((zh: string, en: string) => (isEn ? en : zh), [isEn]);
   const capabilities = useSiteCapabilities();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -67,13 +62,13 @@ export function useAdminUsers() {
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const [deletingTagId, setDeletingTagId] = useState<string | null>(null);
   const { confirm } = useAdminConfirm();
-  const USER_SORT_OPTIONS = [
+  const userSortOptions = useMemo(() => [
     { value: "", label: L("注册时间（默认）", "Registration time (default)") },
     { value: "total_spent", label: L("累计消费", "Total spent") },
     { value: "valid_order_count", label: L("有效订单数", "Valid orders") },
     { value: "last_purchase_at", label: L("最近购买", "Last purchase") },
     { value: "refund_rate", label: L("退款率", "Refund rate") },
-  ] as const;
+  ] as const, [L]);
 
   const queryParams = useMemo<userService.UserListQuery>(
     () => ({
@@ -132,7 +127,8 @@ export function useAdminUsers() {
     queryKey: [...adminQueryKeys.usersRoot(), "list", queryParams],
     queryFn: () => userService.fetchUsers(queryParams),
     staleTime: 60_000,
-    refetchInterval: 90_000,
+    refetchInterval: 120_000,
+    refetchIntervalInBackground: false,
   });
   const tagsQuery = useQuery({
     queryKey: [...adminQueryKeys.usersRoot(), "tags"],
@@ -186,11 +182,11 @@ export function useAdminUsers() {
     onError: (error) => toast.error(toastErrorMessage(error, L("批量打标失败", "Failed to batch tag"))),
   });
 
-  const users = usersQuery.data?.list || [];
+  const users = usersQuery.data?.list || EMPTY_USERS;
   const total = usersQuery.data?.total || 0;
   const summary = usersQuery.data?.summary || {};
-  const tags = tagsQuery.data || [];
-  const memberLevelsFromApi = memberLevelsQuery.data || [];
+  const tags = tagsQuery.data || EMPTY_TAGS;
+  const memberLevelsFromApi = memberLevelsQuery.data || EMPTY_MEMBER_LEVELS;
   const memberLevelsFromUsers = useMemo(() => {
     const map = new Map<string, MemberLevel>();
     for (const user of users) {
@@ -262,7 +258,7 @@ export function useAdminUsers() {
     if (refundRateMinFilter.trim()) chips.push({ key: "refundRateMin", label: L(`退款率≥${refundRateMinFilter.trim()}`, `Refund rate ≥ ${refundRateMinFilter.trim()}`) });
     if (refundRateMaxFilter.trim()) chips.push({ key: "refundRateMax", label: L(`退款率≤${refundRateMaxFilter.trim()}`, `Refund rate ≤ ${refundRateMaxFilter.trim()}`) });
     if (sortByFilter) {
-      const sortLabel = USER_SORT_OPTIONS.find((o) => o.value === sortByFilter)?.label || sortByFilter;
+      const sortLabel = userSortOptions.find((o) => o.value === sortByFilter)?.label || sortByFilter;
       chips.push({ key: "sortBy", label: L(`排序：${sortLabel}${sortDirFilter === "asc" ? " ↑" : " ↓"}`, `Sort: ${sortLabel}${sortDirFilter === "asc" ? " ↑" : " ↓"}`) });
     }
     return chips;
@@ -287,10 +283,11 @@ export function useAdminUsers() {
     selectedTagName,
     sortByFilter,
     sortDirFilter,
+    L,
+    userSortOptions,
     totalSpentMaxFilter,
     totalSpentMinFilter,
     wechatBoundFilter,
-    tText,
   ]);
 
   const tableHeaders = useMemo(
@@ -458,7 +455,7 @@ export function useAdminUsers() {
     setSortByFilter,
     sortDirFilter,
     setSortDirFilter,
-    userSortOptions: USER_SORT_OPTIONS,
+    userSortOptions,
     selectedUserIds,
     setSelectedUserIds,
     batchTagId,

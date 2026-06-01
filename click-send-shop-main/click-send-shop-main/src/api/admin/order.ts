@@ -1,5 +1,6 @@
 import { get, post, put } from "@/api/request";
 import type {
+  AdminOrderSummary,
   CheckoutAbandonment,
   CheckoutAbandonmentStatus,
   Order,
@@ -27,6 +28,10 @@ export interface AdminOrderVoiceEventsResponse {
 
 export function getOrders(params?: OrderListParams) {
   return get<PaginatedData<Order>>("/admin/orders", params as unknown as Record<string, string>);
+}
+
+export function getOrderSummary(params?: OrderListParams) {
+  return get<AdminOrderSummary>("/admin/orders/summary", params as unknown as Record<string, string>);
 }
 
 export function getOrderById(id: string) {

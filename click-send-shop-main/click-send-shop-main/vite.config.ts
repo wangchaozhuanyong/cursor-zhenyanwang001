@@ -18,7 +18,7 @@ function resolveVendorChunkName(id: string): string | undefined {
   if (normalizedId.includes("qrcode.react")) return "vendor-qrcode";
   if (normalizedId.includes("sonner")) return "vendor-toast";
   if (normalizedId.includes("@imgly/background-removal") || normalizedId.includes("onnxruntime-web")) {
-    return "vendor-imgly-matte";
+    return undefined;
   }
 
   if (
@@ -423,7 +423,7 @@ return ({
     },
   },
   optimizeDeps: {
-    include: ["@imgly/background-removal", "onnxruntime-web"],
+    exclude: ["@imgly/background-removal", "onnxruntime-web"],
   },
   resolve: {
     alias: {

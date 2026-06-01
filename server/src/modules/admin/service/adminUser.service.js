@@ -5,7 +5,7 @@ const auditRepo = require('../repository/auditLog.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { formatUserResponse } = require('../../../utils/formatUserResponse');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
-const { generateId } = require('../../../utils/helpers');
+const { generateId, parseBool } = require('../../../utils/helpers');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
@@ -72,10 +72,13 @@ async function listUsers(query) {
     totalSpentMin, totalSpentMax, orderCountMin, orderCountMax, pointsMin, pointsMax, refundRateMin, refundRateMax,
     orderRestricted, couponRestricted, commentRestricted,
   });
-  const total = await repo.countUsers(where, params);
-  const summary = await repo.selectUserSummaryMetrics(where, params);
+  const includeSummary = parseBool(query.includeSummary ?? query.include_summary) !== false;
   const offset = (page - 1) * pageSize;
-  const list = await repo.selectUsersPage(where, params, pageSize, offset, { sortSql });
+  const [total, summary, list] = await Promise.all([
+    repo.countUsers(where, params),
+    includeSummary ? repo.selectUserSummaryMetrics(where, params) : Promise.resolve({}),
+    repo.selectUsersPage(where, params, pageSize, offset, { sortSql }),
+  ]);
   const tagsByUserId = await repo.selectTagsForUserIds(list.map((u) => u.id));
   return {
     kind: 'paginate',
@@ -467,7 +470,6 @@ module.exports = {
   getUserStatusOverview,
   assertTargetIsNormalUser,
 };
-
 
 
 

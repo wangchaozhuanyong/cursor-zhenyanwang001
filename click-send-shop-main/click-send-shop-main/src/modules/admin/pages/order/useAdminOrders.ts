@@ -173,6 +173,8 @@ export function useAdminOrders() {
     buyerType: buyerType || undefined,
     amountMin: amountMin ? Number(amountMin) : undefined,
     amountMax: amountMax ? Number(amountMax) : undefined,
+    includeItems: false,
+    includeSummary: false,
   }), [
     page,
     pageSize,
@@ -195,17 +197,36 @@ export function useAdminOrders() {
     amountMax,
   ]);
 
+  const summaryParams = useMemo<OrderListParams>(() => {
+    const params = { ...queryParams };
+    delete params.page;
+    delete params.pageSize;
+    delete params.includeItems;
+    delete params.includeSummary;
+    return params;
+  }, [queryParams]);
+
   const ordersQuery = useQuery({
     queryKey: adminQueryKeys.orders(queryParams),
     queryFn: () => orderService.fetchOrders(queryParams),
     placeholderData: (previous) => previous,
-    refetchInterval: 60_000,
+    refetchInterval: 120_000,
+    refetchIntervalInBackground: false,
+  });
+
+  const summaryQuery = useQuery({
+    queryKey: adminQueryKeys.orderSummary(summaryParams),
+    queryFn: () => orderService.fetchOrderSummary(summaryParams),
+    placeholderData: (previous) => previous,
+    refetchInterval: 120_000,
+    refetchIntervalInBackground: false,
   });
 
   const orders = useMemo(() => ordersQuery.data?.list ?? [], [ordersQuery.data?.list]);
   const loading = ordersQuery.isLoading && !ordersQuery.data;
+  const ordersError = ordersQuery.isError && !ordersQuery.data;
   const total = ordersQuery.data?.total ?? 0;
-  const summary = ordersQuery.data?.summary ?? initialSummary;
+  const summary = summaryQuery.data ?? ordersQuery.data?.summary ?? initialSummary;
   const pageOrderIds = useMemo(() => orders.map((order) => order.id), [orders]);
   const allSelectedOnPage = pageOrderIds.length > 0 && pageOrderIds.every((id) => selectedOrderIds.includes(id));
   const someSelectedOnPage = !allSelectedOnPage && pageOrderIds.some((id) => selectedOrderIds.includes(id));
@@ -395,6 +416,8 @@ export function useAdminOrders() {
     applyQuickStatusFilter,
     orders,
     loading,
+    ordersError,
+    refetchOrders: ordersQuery.refetch,
     total,
     stats,
     ordersEmptyGuide,

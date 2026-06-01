@@ -31,6 +31,7 @@ import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminTableSortHeader from "@/components/admin/AdminTableSortHeader";
 import { useAdminT } from "@/hooks/useAdminT";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   DEFAULT_PRODUCT_LIST_SORT,
   PRODUCT_SORT_LABELS,
@@ -90,6 +91,7 @@ function skuPrice(product: Product) {
 
 export default function AdminProducts() {
   const { tText } = useAdminT();
+  const { confirm } = useAdminConfirm();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -119,7 +121,8 @@ export default function AdminProducts() {
     queryFn: () => fetchProducts(queryParams),
     staleTime: 60_000,
     refetchOnMount: true,
-    refetchInterval: mfaStepUpPending ? false : 90_000,
+    refetchInterval: mfaStepUpPending ? false : 120_000,
+    refetchIntervalInBackground: false,
   });
 
   const batchStatusMutation = useMutation({
@@ -243,6 +246,23 @@ export default function AdminProducts() {
     setSelected([]);
   };
 
+  const confirmBatchStatus = (status: ProductStatus) => {
+    if (!selected.length) {
+      toast.warning(tText("请先勾选商品"));
+      return;
+    }
+    const actionLabel = status === "active" ? tText("批量上架") : status === "inactive" ? tText("批量下架") : tText("批量设为草稿");
+    confirm({
+      title: actionLabel,
+      description: tText(`确定对已选 ${selected.length} 个商品执行「${actionLabel}」吗？该操作会影响前台商品展示状态。`),
+      confirmText: actionLabel,
+      danger: status === "inactive",
+      onConfirm: async () => {
+        await batchStatusMutation.mutateAsync(status);
+      },
+    });
+  };
+
   const renderMobileCard = (product: Product) => {
     const meta = statusMeta(product.status, tText);
     const checked = selected.includes(product.id);
@@ -307,7 +327,7 @@ export default function AdminProducts() {
   };
 
   return (
-    <PermissionGate permission="product.view">
+    <PermissionGate permission="product.view" mode="page">
       <AdminPageShell
         hint={<Tx>管理商品上下架、库存与成本，支持导入导出与批量操作。</Tx>}
         toolbar={(
@@ -384,8 +404,8 @@ export default function AdminProducts() {
             <Tx>清空选择</Tx>
           </button>
         ) : null}
-        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{tText("批量上架")} ({selected.length})</button>
-        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{tText("批量下架")} ({selected.length})</button>
+        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量上架")} ({selected.length})</button>
+        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量下架")} ({selected.length})</button>
       </div>
 
       <AdminCsvImportDialog
@@ -409,7 +429,11 @@ export default function AdminProducts() {
       />
 
       <AnimatedTable
-        loading={productsQuery.isLoading}
+        loading={productsQuery.isLoading && !productsQuery.data}
+        error={productsQuery.isError && !productsQuery.data}
+        errorTitle={tText("商品加载失败")}
+        errorDescription={tText("商品接口暂时没有返回数据，请检查网络或稍后重试。")}
+        onRetry={() => { void productsQuery.refetch(); }}
         rows={products}
         rowKey={(product) => product.id}
         skeletonRows={8}
@@ -494,7 +518,7 @@ export default function AdminProducts() {
             <AdminTableSortHeader label={tText("操作")} sortable={false} align="right" />
           </tr>
         )}
-        footer={<Pagination total={total} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} />}
+        footer={<Pagination total={total} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} showPageSizeSelect={false} />}
         renderMobileCard={renderMobileCard}
         renderRow={(product) => {
           const meta = statusMeta(product.status, tText);

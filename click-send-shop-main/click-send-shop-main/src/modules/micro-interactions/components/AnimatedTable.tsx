@@ -1,11 +1,11 @@
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AdminTableScrollContainer } from "@/components/admin/AdminTableScrollContainer";
 import { AdminTableMobileCardSkeleton } from "@/components/admin/AdminTableMobileCard";
 import { adminTableMobileVisibility } from "@/components/admin/adminTableMobileCardUtils";
 import { adminTableClassName, ADMIN_TABLE_STICKY_FIRST_CLASS } from "@/utils/adminTableClasses";
-import type { LucideIcon } from "lucide-react";
+import { AlertTriangle, type LucideIcon } from "lucide-react";
 import { useMotionConfig } from "../hooks/useMotionConfig";
 import { tableRowTransition } from "../motionConfig";
 import { AnimatedEmptyState } from "./AnimatedEmptyState";
@@ -24,6 +24,11 @@ type AnimatedTableProps<T> = {
   thead?: ReactNode;
   theadClassName?: string;
   footer?: ReactNode;
+  error?: boolean;
+  errorTitle?: string;
+  errorDescription?: string;
+  errorAction?: ReactNode;
+  onRetry?: () => void;
   /** 嵌入外层卡片时使用：去掉内层圆角/边框，分页栏在横向滚动区域外渲染 */
   embedded?: boolean;
   /** 移动端/平板冻结首列，便于宽表横滑时定位主键列 */
@@ -86,6 +91,31 @@ function TableFrame({
   );
 }
 
+function mobileCardMediaQuery(from: "md" | "lg") {
+  return from === "md" ? "(max-width: 767px)" : "(max-width: 1023px)";
+}
+
+function useMobileCardViewport(enabled: boolean, from: "md" | "lg") {
+  const query = useMemo(() => mobileCardMediaQuery(from), [from]);
+  const [matches, setMatches] = useState(() => (
+    enabled && typeof window !== "undefined" && window.matchMedia(query).matches
+  ));
+
+  useEffect(() => {
+    if (!enabled || typeof window === "undefined") {
+      setMatches(false);
+      return;
+    }
+    const media = window.matchMedia(query);
+    const sync = () => setMatches(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, [enabled, query]);
+
+  return enabled && matches;
+}
+
 export function AnimatedTable<T>({
   loading,
   rows,
@@ -98,6 +128,11 @@ export function AnimatedTable<T>({
   thead,
   theadClassName,
   footer,
+  error,
+  errorTitle = "加载失败",
+  errorDescription = "数据暂时没有加载成功，请检查网络或稍后重试。",
+  errorAction,
+  onRetry,
   embedded,
   stickyFirstColumn = true,
   emptyIcon,
@@ -109,6 +144,8 @@ export function AnimatedTable<T>({
 }: AnimatedTableProps<T>) {
   const { level, enabled } = useMotionConfig();
   const mobileCards = Boolean(renderMobileCard);
+  const showMobileCards = useMobileCardViewport(mobileCards, mobileCardFrom);
+  const showDesktopTable = !mobileCards || !showMobileCards;
   const { hideDesktop, hideMobile } = adminTableMobileVisibility(mobileCardFrom);
   const resolvedTableClass = adminTableClassName(
     cn(
@@ -131,17 +168,41 @@ export function AnimatedTable<T>({
   if (loading) {
     return (
       <>
-        {mobileCards ? <AdminTableMobileCardSkeleton rows={skeletonRows} from={mobileCardFrom} /> : null}
-        <TableFrame embedded={embedded} className={tableFrameClass} footer={tableFooter}>
-          <table className={loadingTableClass}>
-            {thead ? <thead className={theadClassName}>{thead}</thead> : null}
-            <tbody>
-              <TableSkeleton rows={skeletonRows} cols={skeletonCols} />
-            </tbody>
-          </table>
-        </TableFrame>
+        {showMobileCards ? <AdminTableMobileCardSkeleton rows={skeletonRows} from={mobileCardFrom} /> : null}
+        {showDesktopTable ? (
+          <TableFrame embedded={embedded} className={tableFrameClass} footer={tableFooter}>
+            <table className={loadingTableClass}>
+              {thead ? <thead className={theadClassName}>{thead}</thead> : null}
+              <tbody>
+                <TableSkeleton rows={skeletonRows} cols={skeletonCols} />
+              </tbody>
+            </table>
+          </TableFrame>
+        ) : null}
         {mobileCards ? footer : null}
       </>
+    );
+  }
+
+  if (error && rows.length === 0) {
+    const retryAction = errorAction ?? (onRetry ? (
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground"
+      >
+        重试
+      </button>
+    ) : null);
+
+    return (
+      <AnimatedEmptyState
+        icon={AlertTriangle}
+        title={errorTitle}
+        description={errorDescription}
+        action={retryAction}
+        className={className}
+      />
     );
   }
 
@@ -159,7 +220,7 @@ export function AnimatedTable<T>({
 
   return (
     <>
-      {mobileCards ? (
+      {showMobileCards ? (
         <div className={mobileCardListClass}>
           <AnimatePresence initial={false}>
             {rows.map((row, index) => {
@@ -184,42 +245,44 @@ export function AnimatedTable<T>({
           </AnimatePresence>
         </div>
       ) : null}
-      <TableFrame embedded={embedded} className={tableFrameClass} footer={tableFooter}>
-        <table className={resolvedTableClass}>
-          {thead ? <thead className={theadClassName}>{thead}</thead> : null}
-          <tbody>
-            <AnimatePresence initial={false}>
-              {rows.map((row, index) => {
-                const key = rowKey(row);
-                const motionProps = tableRowTransition(level, index, rows.length);
-                if (!enabled) {
+      {showDesktopTable ? (
+        <TableFrame embedded={embedded} className={tableFrameClass} footer={tableFooter}>
+          <table className={resolvedTableClass}>
+            {thead ? <thead className={theadClassName}>{thead}</thead> : null}
+            <tbody>
+              <AnimatePresence initial={false}>
+                {rows.map((row, index) => {
+                  const key = rowKey(row);
+                  const motionProps = tableRowTransition(level, index, rows.length);
+                  if (!enabled) {
+                    return (
+                      <tr
+                        key={key}
+                        className="border-b border-[var(--theme-border)] transition-colors hover:bg-[var(--theme-bg)]/80"
+                      >
+                        {renderRow(row, index)}
+                      </tr>
+                    );
+                  }
                   return (
-                    <tr
+                    <motion.tr
                       key={key}
+                      layout={false}
+                      initial={motionProps.initial}
+                      animate={motionProps.animate}
+                      exit={motionProps.exit}
+                      transition={motionProps.transition}
                       className="border-b border-[var(--theme-border)] transition-colors hover:bg-[var(--theme-bg)]/80"
                     >
                       {renderRow(row, index)}
-                    </tr>
+                    </motion.tr>
                   );
-                }
-                return (
-                  <motion.tr
-                    key={key}
-                    layout={false}
-                    initial={motionProps.initial}
-                    animate={motionProps.animate}
-                    exit={motionProps.exit}
-                    transition={motionProps.transition}
-                    className="border-b border-[var(--theme-border)] transition-colors hover:bg-[var(--theme-bg)]/80"
-                  >
-                    {renderRow(row, index)}
-                  </motion.tr>
-                );
-              })}
-            </AnimatePresence>
-          </tbody>
-        </table>
-      </TableFrame>
+                })}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </TableFrame>
+      ) : null}
       {mobileCards ? footer : null}
     </>
   );

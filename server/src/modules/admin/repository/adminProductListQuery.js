@@ -5,7 +5,30 @@ const SALES_DATE_EXPR = reportDateExpr('o');
 const LAST_7_START = 'DATE(DATE_SUB(DATE(DATE_ADD(NOW(), INTERVAL 8 HOUR)), INTERVAL 6 DAY))';
 const LAST_30_START = 'DATE(DATE_SUB(DATE(DATE_ADD(NOW(), INTERVAL 8 HOUR)), INTERVAL 29 DAY))';
 
-const PRODUCT_LIST_FROM = `
+const PRODUCT_SALES_METRICS_DYNAMIC_SELECT = `
+  SELECT
+    oi.product_id,
+    SUM(CASE
+      WHEN ${PAID_ORDER_FILTER} AND ${SALES_DATE_EXPR} >= ${LAST_7_START}
+      THEN oi.qty ELSE 0 END) AS sales_qty_7d,
+    SUM(CASE
+      WHEN ${PAID_ORDER_FILTER} AND ${SALES_DATE_EXPR} >= ${LAST_30_START}
+      THEN oi.qty ELSE 0 END) AS sales_qty_30d,
+    SUM(CASE
+      WHEN ${PAID_ORDER_FILTER} AND ${SALES_DATE_EXPR} >= ${LAST_30_START}
+      THEN COALESCE(oi.net_sales_amount, oi.qty * oi.price) ELSE 0 END) AS sales_amount_30d,
+    SUM(CASE
+      WHEN ${PAID_ORDER_FILTER} AND ${SALES_DATE_EXPR} >= ${LAST_30_START}
+      THEN COALESCE(
+        oi.gross_profit_amount,
+        GREATEST(0, COALESCE(oi.net_sales_amount, oi.qty * oi.price) - COALESCE(oi.cost_amount, 0))
+      ) ELSE 0 END) AS gross_profit_30d
+  FROM order_items oi
+  INNER JOIN orders o ON BINARY o.id = BINARY oi.order_id
+  GROUP BY oi.product_id
+`;
+
+const PRODUCT_LIST_FROM_BASE = `
   FROM products p
   LEFT JOIN categories c ON BINARY c.id = BINARY p.category_id
   LEFT JOIN (
@@ -30,29 +53,53 @@ const PRODUCT_LIST_FROM = `
     WHERE v.deleted_at IS NULL
     GROUP BY v.product_id
   ) vagg ON BINARY vagg.product_id = BINARY p.id
+`;
+
+const PRODUCT_SALES_METRICS_CACHE_JOIN = `
+  LEFT JOIN product_sales_metrics_cache pm ON BINARY pm.product_id = BINARY p.id
+`;
+
+const PRODUCT_SALES_METRICS_DYNAMIC_JOIN = `
   LEFT JOIN (
-    SELECT
-      oi.product_id,
-      SUM(CASE
-        WHEN ${PAID_ORDER_FILTER} AND ${SALES_DATE_EXPR} >= ${LAST_7_START}
-        THEN oi.qty ELSE 0 END) AS sales_qty_7d,
-      SUM(CASE
-        WHEN ${PAID_ORDER_FILTER} AND ${SALES_DATE_EXPR} >= ${LAST_30_START}
-        THEN oi.qty ELSE 0 END) AS sales_qty_30d,
-      SUM(CASE
-        WHEN ${PAID_ORDER_FILTER} AND ${SALES_DATE_EXPR} >= ${LAST_30_START}
-        THEN COALESCE(oi.net_sales_amount, oi.qty * oi.price) ELSE 0 END) AS sales_amount_30d,
-      SUM(CASE
-        WHEN ${PAID_ORDER_FILTER} AND ${SALES_DATE_EXPR} >= ${LAST_30_START}
-        THEN COALESCE(
-          oi.gross_profit_amount,
-          GREATEST(0, COALESCE(oi.net_sales_amount, oi.qty * oi.price) - COALESCE(oi.cost_amount, 0))
-        ) ELSE 0 END) AS gross_profit_30d
-    FROM order_items oi
-    INNER JOIN orders o ON BINARY o.id = BINARY oi.order_id
-    GROUP BY oi.product_id
+${PRODUCT_SALES_METRICS_DYNAMIC_SELECT}
   ) pm ON BINARY pm.product_id = BINARY p.id
 `;
+
+function buildProductListFrom(options = {}) {
+  const useSalesMetricsCache = options.useSalesMetricsCache !== false;
+  return `${PRODUCT_LIST_FROM_BASE}${useSalesMetricsCache ? PRODUCT_SALES_METRICS_CACHE_JOIN : PRODUCT_SALES_METRICS_DYNAMIC_JOIN}`;
+}
+
+const PRODUCT_LIST_FROM = buildProductListFrom();
+
+const PRODUCT_COUNT_FROM = `
+  FROM products p
+`;
+
+function buildProductSalesMetricsRefreshQuery() {
+  return `
+    INSERT INTO product_sales_metrics_cache
+      (product_id, sales_qty_7d, sales_qty_30d, sales_amount_30d, gross_profit_30d, computed_at)
+    SELECT
+      p.id AS product_id,
+      COALESCE(pm.sales_qty_7d, 0) AS sales_qty_7d,
+      COALESCE(pm.sales_qty_30d, 0) AS sales_qty_30d,
+      COALESCE(pm.sales_amount_30d, 0) AS sales_amount_30d,
+      COALESCE(pm.gross_profit_30d, 0) AS gross_profit_30d,
+      NOW() AS computed_at
+    FROM products p
+    LEFT JOIN (
+${PRODUCT_SALES_METRICS_DYNAMIC_SELECT}
+    ) pm ON BINARY pm.product_id = BINARY p.id
+    WHERE p.deleted_at IS NULL
+    ON DUPLICATE KEY UPDATE
+      sales_qty_7d = VALUES(sales_qty_7d),
+      sales_qty_30d = VALUES(sales_qty_30d),
+      sales_amount_30d = VALUES(sales_amount_30d),
+      gross_profit_30d = VALUES(gross_profit_30d),
+      computed_at = VALUES(computed_at)
+  `;
+}
 
 const PRODUCT_LIST_SELECT = `
   SELECT
@@ -111,9 +158,9 @@ function resolveProductListOrderBy(sort) {
 }
 
 function buildProductListQuery(where, params, options = {}) {
-  const { pageSize, offset, sort } = options;
+  const { pageSize, offset, sort, useSalesMetricsCache } = options;
   const orderBy = resolveProductListOrderBy(sort);
-  const baseSql = `${PRODUCT_LIST_SELECT} ${PRODUCT_LIST_FROM} ${where}`;
+  const baseSql = `${PRODUCT_LIST_SELECT} ${buildProductListFrom({ useSalesMetricsCache })} ${where}`;
   if (pageSize != null && offset != null) {
     return {
       sql: `${baseSql} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
@@ -128,6 +175,10 @@ function buildProductListQuery(where, params, options = {}) {
 
 module.exports = {
   PRODUCT_LIST_FROM,
+  PRODUCT_COUNT_FROM,
+  PRODUCT_SALES_METRICS_DYNAMIC_SELECT,
+  buildProductSalesMetricsRefreshQuery,
+  buildProductListFrom,
   buildProductListQuery,
   resolveProductListOrderBy,
   SORT_ORDER_SQL,

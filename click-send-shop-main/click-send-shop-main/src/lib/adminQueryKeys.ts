@@ -63,6 +63,7 @@ export const adminQueryKeys = {
   dashboard: () => ["admin", "dashboard"] as const,
   ordersRoot: () => ["admin", "orders"] as const,
   orders: (filters?: OrderListParams) => ["admin", "orders", filters ?? {}] as const,
+  orderSummary: (filters?: OrderListParams) => ["admin", "orders", "summary", filters ?? {}] as const,
   orderDetail: (id: string) => ["admin", "orders", "detail", id] as const,
   checkoutAbandonmentsRoot: () => ["admin", "orders", "checkout-abandonments"] as const,
   checkoutAbandonments: (filters?: CheckoutAbandonmentListParams) =>

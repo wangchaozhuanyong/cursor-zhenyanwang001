@@ -26,9 +26,9 @@ export default function ProductTagList({
 
   return (
     <div className={`flex flex-wrap gap-1.5 ${className}`}>
-      {visibleTags.map((tag) => (
+      {visibleTags.map((tag, index) => (
         <span
-          key={tag.id}
+          key={tag.id || `${tag.name}-${index}`}
           className={`inline-flex max-w-[7rem] items-center rounded-full border font-bold leading-4 shadow-sm backdrop-blur ${sizeClass}`}
           style={productTagInlineStyle(tag)}
           title={tag.name}

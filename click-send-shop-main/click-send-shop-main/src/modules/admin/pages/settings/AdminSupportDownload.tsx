@@ -122,12 +122,11 @@ export default function AdminSupportDownload() {
       const nextPlatforms = ensureMobilePlatforms(prev.download.platforms).map((platform) => (
         platform.id === id ? { ...platform, ...patch } : platform
       ));
-      const legacyDesktop = prev.download.platforms.filter((platform) => platform.type === "desktop").map((platform) => ({ ...platform, enabled: false }));
       return {
         ...prev,
         download: {
           ...prev.download,
-          platforms: [...nextPlatforms, ...legacyDesktop],
+          platforms: nextPlatforms,
         },
       };
     });
@@ -157,7 +156,6 @@ export default function AdminSupportDownload() {
         defaultTab: form.defaultTab || "support",
         support: {
           ...form.support,
-          title: form.support.title || "联系客服",
         },
         download: {
           ...form.download,
@@ -216,7 +214,6 @@ export default function AdminSupportDownload() {
         <section className="rounded-xl border border-border bg-card p-4">
           <h2 className="font-semibold text-foreground"><Tx>客服配置</Tx></h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-medium"><Tx>客服 Tab 标题</Tx><input className={`${inputClass} mt-1`} value={form.support.title} onChange={(e) => setForm((prev) => ({ ...prev, support: { ...prev.support, title: e.target.value } }))} /></label>
             <label className="block text-sm font-medium"><Tx>工作时间</Tx><input className={`${inputClass} mt-1`} value={form.support.workingHours} onChange={(e) => setForm((prev) => ({ ...prev, support: { ...prev.support, workingHours: e.target.value } }))} /></label>
             <label className="block text-sm font-medium md:col-span-2"><Tx>客服说明</Tx><textarea className={`${inputClass} mt-1`} rows={3} value={form.support.description} onChange={(e) => setForm((prev) => ({ ...prev, support: { ...prev.support, description: e.target.value } }))} /></label>
           </div>
@@ -276,9 +273,14 @@ export default function AdminSupportDownload() {
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <input className={inputClass} value={platform.title} onChange={(e) => updatePlatform(platform.id, { title: e.target.value })} placeholder={tText("标题")} />
-                  <input className={inputClass} type="number" value={platform.sortOrder} onChange={(e) => updatePlatform(platform.id, { sortOrder: Number(e.target.value) || 0 })} placeholder={tText("排序")} />
-                  <input className={inputClass} value={platform.buttonText} onChange={(e) => updatePlatform(platform.id, { buttonText: e.target.value })} placeholder={tText("按钮文案")} />
                   <input className={inputClass} value={platform.description} onChange={(e) => updatePlatform(platform.id, { description: e.target.value })} placeholder={tText("说明")} />
+                  <label className="block text-sm font-medium md:col-span-2">
+                    <Tx>按钮文案</Tx>
+                    <input className={`${inputClass} mt-1`} value={platform.buttonText} onChange={(e) => updatePlatform(platform.id, { buttonText: e.target.value })} placeholder={tText("按钮文案")} />
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      {platform.type === "android" ? <Tx>前台支持一键安装时，按钮会使用这里的文案。</Tx> : <Tx>苹果手机不在 Safari 打开时，复制链接按钮会使用这里的文案。</Tx>}
+                    </p>
+                  </label>
                   <label className="block text-sm font-medium md:col-span-2"><Tx>步骤说明（一行一步）</Tx><textarea className={`${inputClass} mt-1`} rows={4} value={platform.instructions.join("\n")} onChange={(e) => updatePlatform(platform.id, updateInstruction(platform, e.target.value))} /></label>
                 </div>
               </div>

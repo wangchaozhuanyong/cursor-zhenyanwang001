@@ -10,13 +10,15 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
   whatsapp: "联系客服下单",
 };
 
+const PAYMENT_TRIGGER_CLASS =
+  "flex w-full items-center justify-between gap-3 rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_55%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_18%,var(--theme-surface))] px-4 py-3.5 text-left shadow-sm ring-1 ring-[color-mix(in_srgb,var(--theme-price)_16%,transparent)] transition-all hover:border-[color-mix(in_srgb,var(--theme-price)_70%,var(--theme-border))] hover:bg-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-surface))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-surface)]";
+
 interface CheckoutPaymentMethodProps {
   paymentMethod: PaymentMethod;
   onPaymentMethodChange: (value: PaymentMethod) => void;
   paymentTimeoutHint?: string | null;
   paymentConfigLoaded: boolean;
   paymentChannels: PublicPaymentChannel[];
-  stripeReady: boolean;
   rewardBalance: number;
   selectedPaymentChannelCode: string;
   onPaymentChannelChange: (value: string) => void;
@@ -30,7 +32,6 @@ export function CheckoutPaymentMethod({
   paymentTimeoutHint,
   paymentConfigLoaded,
   paymentChannels,
-  stripeReady,
   rewardBalance,
   selectedPaymentChannelCode,
   onPaymentChannelChange,
@@ -44,7 +45,7 @@ export function CheckoutPaymentMethod({
     <PaymentMethodPicker
       value={paymentMethod}
       onChange={onPaymentMethodChange}
-      onlineDisabled={paymentConfigLoaded && paymentChannels.length === 0 && !stripeReady}
+      onlineDisabled={paymentConfigLoaded && paymentChannels.length === 0}
       onlineDisabledHint="商户暂未开通在线支付，请选择联系客服下单"
       rewardBalance={rewardBalance}
       onlineChannels={paymentChannels}
@@ -80,13 +81,16 @@ export function CheckoutPaymentMethod({
           <button
             type="button"
             onClick={() => setSheetOpen(true)}
-            className="store-choice-row flex w-full items-center justify-between gap-3 rounded-xl bg-secondary px-4 py-3.5 text-left"
+            className={PAYMENT_TRIGGER_CLASS}
           >
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-foreground">{METHOD_LABELS[paymentMethod]}</p>
+              <p className="text-[11px] font-semibold text-theme-price">已选支付方式</p>
+              <p className="mt-0.5 text-sm font-semibold text-foreground">{METHOD_LABELS[paymentMethod]}</p>
               {channelName ? (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{channelName}</p>
-              ) : null}
+              ) : (
+                <p className="mt-0.5 text-xs text-muted-foreground">点击可切换付款方式</p>
+              )}
             </div>
             <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
           </button>

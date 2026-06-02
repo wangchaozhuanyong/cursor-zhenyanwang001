@@ -105,7 +105,6 @@ export default function Checkout() {
               paymentTimeoutHint={paymentTimeoutHint}
               paymentConfigLoaded={checkout.paymentConfigLoaded}
               paymentChannels={checkout.paymentChannels}
-              stripeReady={checkout.stripeReady}
               rewardBalance={checkout.rewardBalance}
               selectedPaymentChannelCode={checkout.selectedPaymentChannelCode}
               onPaymentChannelChange={checkout.setSelectedPaymentChannelCode}

@@ -27,19 +27,28 @@ MAX_CPU_PERCENT="${MAX_CPU_PERCENT:-85}"
 
 failed=0
 
-ok() { echo "[OK] $*"; }
-warn() { echo "[WARN] $*"; }
-alert() { echo "[ALERT] $*"; failed=1; }
+ok() { echo "[通过] $*"; }
+warn() { echo "[警告] $*"; }
+alert() { echo "[告警] $*"; failed=1; }
+
+format_cn_time() {
+  TZ=Asia/Shanghai date '+%Y年%m月%d日 %H:%M:%S（北京时间）' 2>/dev/null || date '+%Y年%m月%d日 %H:%M:%S'
+}
 
 json_escape() {
-  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+  JSON_ESCAPE_VALUE="$1" node -e "process.stdout.write(JSON.stringify(process.env.JSON_ESCAPE_VALUE || '').slice(1, -1))"
 }
 
 notify_failure() {
   local host now message payload
-  host="$(hostname 2>/dev/null || echo unknown-host)"
-  now="$(date -Is 2>/dev/null || date)"
-  message="ALERT: production health check failed on ${host} at ${now}. API_BASE_URL=${API_BASE_URL}, PM2_APP=${PM2_APP}"
+  host="$(hostname 2>/dev/null || echo 未知服务器)"
+  now="$(format_cn_time)"
+  message="【生产健康检查失败】
+服务器：${host}
+检查时间：${now}
+API 地址（API_BASE_URL）：${API_BASE_URL}
+PM2 进程（PM2_APP）：${PM2_APP}
+处理建议：请检查 /api/health/live、/api/health/ready、PM2 状态、Nginx 日志和服务器资源。"
 
   if [[ -f "${PROJECT_ROOT}/server/.env" && -f "${PROJECT_ROOT}/deploy/send-telegram-health-alert.js" ]]; then
     if (
@@ -49,50 +58,50 @@ notify_failure() {
       set +a
       ALERT_MESSAGE="${message}" node "${PROJECT_ROOT}/deploy/send-telegram-health-alert.js"
     ); then
-      ok "failure alert sent to Telegram"
+      ok "失败告警已发送到 Telegram"
       return 0
     fi
-    warn "failed to send Telegram alert"
+    warn "Telegram 失败告警发送失败"
   fi
 
   if [[ -n "${HEALTH_ALERT_WEBHOOK_URL:-}" ]]; then
     payload="{\"text\":\"$(json_escape "${message}")\"}"
     if curl -fsS -m 8 -H 'Content-Type: application/json' -d "${payload}" "${HEALTH_ALERT_WEBHOOK_URL}" >/dev/null; then
-      ok "failure alert sent to HEALTH_ALERT_WEBHOOK_URL"
+      ok "失败告警已发送到 HEALTH_ALERT_WEBHOOK_URL"
       return 0
     fi
-    warn "failed to send HEALTH_ALERT_WEBHOOK_URL alert"
+    warn "HEALTH_ALERT_WEBHOOK_URL 失败告警发送失败"
     return 0
   fi
 
-  warn "no Telegram config or webhook configured; skip external alert"
+  warn "未配置 Telegram 或 Webhook，跳过外部告警"
 }
 
-echo "== Production Health Check =="
+echo "== 生产健康检查 =="
 echo "API_BASE_URL=${API_BASE_URL}"
 echo "PM2_APP=${PM2_APP}"
 
 if curl -fsS "${API_BASE_URL}/api/health/live" >/dev/null; then
-  ok "API liveness is reachable"
+  ok "API 存活检查可访问"
 else
-  alert "API liveness check failed: ${API_BASE_URL}/api/health/live"
+  alert "API 存活检查失败：${API_BASE_URL}/api/health/live"
 fi
 
 ready_fail=0
 for i in 1 2 3; do
   code="$(curl -s -o /dev/null -w "%{http_code}" "${API_BASE_URL}/api/health/ready" || true)"
   if [[ "${code}" == "200" ]]; then
-    ok "Ready check #${i}: 200"
+    ok "就绪检查 #${i}：200"
   else
-    warn "Ready check #${i}: ${code}"
+    warn "就绪检查 #${i}：${code}"
     ready_fail=$((ready_fail + 1))
   fi
   sleep 1
 done
 if [[ "${ready_fail}" -ge "${READY_FAIL_THRESHOLD}" ]]; then
-  alert "ready endpoint failed ${ready_fail} consecutive times (threshold=${READY_FAIL_THRESHOLD})"
+  alert "就绪接口连续失败 ${ready_fail} 次（阈值=${READY_FAIL_THRESHOLD}）"
 else
-  ok "ready consecutive failure threshold not reached"
+  ok "就绪接口未达到连续失败阈值"
 fi
 
 if command -v pm2 >/dev/null 2>&1; then
@@ -109,20 +118,20 @@ process.stdin.on('end', () => {
 " || true
   )"
   if [[ "${pm2_line}" == "online" ]]; then
-    ok "PM2 app ${PM2_APP} is online"
+    ok "PM2 进程 ${PM2_APP} 在线"
   else
-    alert "PM2 app ${PM2_APP} status is '${pm2_line:-unknown}'"
+    alert "PM2 进程 ${PM2_APP} 状态异常：${pm2_line:-unknown}"
   fi
 else
-  alert "pm2 command not found"
+  alert "未找到 pm2 命令"
 fi
 
 latency="$(curl -s -o /dev/null -w "%{time_total}" "${API_BASE_URL}/api/health/live" || echo "999")"
 latency_over="$(awk -v x="${latency}" -v t="${MAX_API_LATENCY_SEC}" 'BEGIN{if(x>t)print 1; else print 0}')"
 if [[ "${latency_over}" == "1" ]]; then
-  alert "API latency ${latency}s > ${MAX_API_LATENCY_SEC}s"
+  alert "API 响应耗时 ${latency}s > ${MAX_API_LATENCY_SEC}s"
 else
-  ok "API latency ${latency}s <= ${MAX_API_LATENCY_SEC}s"
+  ok "API 响应耗时 ${latency}s <= ${MAX_API_LATENCY_SEC}s"
 fi
 
 if [[ -f "${NGINX_ACCESS_LOG}" ]]; then
@@ -144,44 +153,44 @@ if [[ -f "${NGINX_ACCESS_LOG}" ]]; then
   err_rate="$(echo "${rate_out}" | awk '{print $3}')"
   err_over="$(awk -v x="${err_rate}" -v t="${MAX_5XX_RATE_PERCENT}" 'BEGIN{if(x>t)print 1; else print 0}')"
   if [[ "${err_over}" == "1" ]]; then
-    alert "5xx rate ${err_rate}% > ${MAX_5XX_RATE_PERCENT}% (sample=${total_req}, 5xx=${err_req})"
+    alert "5xx 错误率 ${err_rate}% > ${MAX_5XX_RATE_PERCENT}%（样本=${total_req}，5xx=${err_req}）"
   else
-    ok "5xx rate ${err_rate}% <= ${MAX_5XX_RATE_PERCENT}% (sample=${total_req})"
+    ok "5xx 错误率 ${err_rate}% <= ${MAX_5XX_RATE_PERCENT}%（样本=${total_req}）"
   fi
 else
-  warn "Nginx access log not found at ${NGINX_ACCESS_LOG}; skip 5xx rate check"
+  warn "未找到 Nginx 访问日志：${NGINX_ACCESS_LOG}，跳过 5xx 错误率检查"
 fi
 
 disk_used="$(df -P / | awk 'NR==2{gsub(/%/,"",$5); print $5}')"
 if [[ "${disk_used}" -gt "${MAX_DISK_PERCENT}" ]]; then
-  alert "disk usage ${disk_used}% > ${MAX_DISK_PERCENT}%"
+  alert "磁盘使用率 ${disk_used}% > ${MAX_DISK_PERCENT}%"
 else
-  ok "disk usage ${disk_used}% <= ${MAX_DISK_PERCENT}%"
+  ok "磁盘使用率 ${disk_used}% <= ${MAX_DISK_PERCENT}%"
 fi
 
 mem_used="$(free | awk '/Mem:/ {printf "%.0f", ($3/$2)*100}')"
 if [[ "${mem_used}" -gt "${MAX_MEM_PERCENT}" ]]; then
-  alert "memory usage ${mem_used}% > ${MAX_MEM_PERCENT}%"
+  alert "内存使用率 ${mem_used}% > ${MAX_MEM_PERCENT}%"
 else
-  ok "memory usage ${mem_used}% <= ${MAX_MEM_PERCENT}%"
+  ok "内存使用率 ${mem_used}% <= ${MAX_MEM_PERCENT}%"
 fi
 
 cpu_idle="$(top -bn1 | awk -F',' '/Cpu\(s\)/ {for(i=1;i<=NF;i++){if($i ~ / id/){gsub(/[^0-9.]/,"",$i); print $i; exit}}}')"
 if [[ -n "${cpu_idle}" ]]; then
   cpu_used="$(awk -v idle="${cpu_idle}" 'BEGIN{printf "%.0f", 100-idle}')"
   if [[ "${cpu_used}" -gt "${MAX_CPU_PERCENT}" ]]; then
-    alert "cpu usage ${cpu_used}% > ${MAX_CPU_PERCENT}%"
+    alert "CPU 使用率 ${cpu_used}% > ${MAX_CPU_PERCENT}%"
   else
-    ok "cpu usage ${cpu_used}% <= ${MAX_CPU_PERCENT}%"
+    ok "CPU 使用率 ${cpu_used}% <= ${MAX_CPU_PERCENT}%"
   fi
 else
-  warn "unable to parse CPU usage from top output"
+  warn "无法从 top 输出解析 CPU 使用率"
 fi
 
-echo "== Result =="
+echo "== 检查结果 =="
 if [[ "${failed}" -ne 0 ]]; then
-  echo "Production health check FAILED"
+  echo "生产健康检查失败"
   notify_failure
   exit 2
 fi
-echo "Production health check PASSED"
+echo "生产健康检查通过"

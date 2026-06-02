@@ -3,6 +3,7 @@ import type { PaymentMethod } from "@/components/PaymentMethodPicker";
 import * as paymentService from "@/services/paymentService";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import * as loyaltyService from "@/services/loyaltyService";
+import { filterUsableOnlinePaymentChannels } from "@/utils/checkoutPaymentMethod";
 
 /** 结算页支付方式与渠道配置加载 */
 export function useCheckoutPaymentSetup() {
@@ -22,12 +23,15 @@ export function useCheckoutPaymentSetup() {
       .then(([config, channels]) => {
         if (cancelled) return;
         const ready = !!config?.stripeCheckoutReady;
-        const onlineChannels = channels.filter((channel) => channel.provider !== "internal");
+        const onlineChannels = filterUsableOnlinePaymentChannels(
+          channels.filter((channel) => channel.provider !== "internal"),
+          ready,
+        );
         setStripeReady(ready);
         setPaymentChannels(onlineChannels);
-        setSelectedPaymentChannelCode((current) => current || onlineChannels[0]?.code || (ready ? "stripe_checkout" : ""));
+        setSelectedPaymentChannelCode((current) => current || onlineChannels[0]?.code || "");
         setPaymentConfigLoaded(true);
-        if (!ready && onlineChannels.length === 0) {
+        if (onlineChannels.length === 0) {
           setPaymentMethod("whatsapp");
         }
       })

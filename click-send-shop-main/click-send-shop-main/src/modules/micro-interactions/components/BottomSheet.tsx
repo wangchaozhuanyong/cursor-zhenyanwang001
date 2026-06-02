@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useDragControls, type Transition } from "frame
 import { X } from "lucide-react";
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useOverlayDismiss } from "../hooks/useOverlayDismiss";
 import { useModalLayer } from "../modal/ModalLayerProvider";
 import { prefersReducedMotion } from "../motionConfig";
 import { useMotionConfig } from "../hooks/useMotionConfig";
@@ -60,20 +60,11 @@ export function BottomSheet({
   const [presented, setPresented] = useState(open);
   const { overlayZ, contentZ, isTop } = useModalLayer(presented);
 
-  useBodyScrollLock(presented);
+  useOverlayDismiss({ open: presented, isTop, onClose, lockBody: true, closeOnEscape: open });
 
   useEffect(() => {
     if (open) setPresented(true);
   }, [open]);
-
-  useEffect(() => {
-    if (!open || !isTop) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, isTop, onClose]);
 
   const overlayTransition: Transition = reduced
     ? { duration: 0.12 }

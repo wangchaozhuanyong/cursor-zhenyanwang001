@@ -1317,7 +1317,7 @@ async function handleManualWebhook(provider, body, headerSecret) {
     },
     error_message: '',
   });
-  return { data: { received: true }, message: '????????????????????????' };
+  return { data: { received: true }, message: '手动支付回调已记录' };
 }
 
 async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
@@ -1328,7 +1328,7 @@ async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
   const headerSecret = headers['x-webhook-secret'];
   const headerSignature = headers['x-payment-signature'] || headers['x-signature'];
   if (!expectedSecret) {
-    throw new BusinessError(503, '未配置 ?PAYMENT_MALAYSIA_WEBHOOK_SECRET');
+    throw new BusinessError(503, '未配置 PAYMENT_MALAYSIA_WEBHOOK_SECRET');
   }
   if (headerSecret) {
     if (String(headerSecret) !== expectedSecret) {

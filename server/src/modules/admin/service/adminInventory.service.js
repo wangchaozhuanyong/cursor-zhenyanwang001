@@ -694,7 +694,7 @@ async function batchWarningThreshold(body, adminUserId = null, req = null) {
     actionType: 'inventory.warning_batch_update',
     objectType: 'product_variant',
     objectId: 'batch',
-    summary: `???? SKU ???? ${ids.length} ?`,
+    summary: `批量更新 SKU 预警阈值 ${ids.length} 个`,
     before: { variant_ids: ids, items: beforeRows },
     after: { variant_ids: ids, items: afterRows },
     result: 'success',
@@ -953,14 +953,14 @@ async function convertByRule(type, body, adminUserId, req) {
     let childCostAfter = childCostBefore;
 
     if (type === 'unpack') {
-      if (parentAvailable < inputParentQty) throw new BusinessError(400, `?????????????? ${parentAvailable}`);
+      if (parentAvailable < inputParentQty) throw new BusinessError(400, `父级 SKU 可用库存不足，当前可用 ${parentAvailable}`);
       parentDelta = -inputParentQty;
       childDelta = childTotalQty;
       if (parentCostBefore != null && childTotalQty > 0) {
         childCostAfter = Math.round((parentCostBefore * inputParentQty / childTotalQty) * 100) / 100;
       }
     } else {
-      if (childAvailable < childTotalQty) throw new BusinessError(400, `?????????????? ${childAvailable}`);
+      if (childAvailable < childTotalQty) throw new BusinessError(400, `子级 SKU 可用库存不足，当前可用 ${childAvailable}`);
       parentDelta = inputParentQty;
       childDelta = -childTotalQty;
       if (childCostBefore != null) {
@@ -1119,7 +1119,6 @@ module.exports = {
   listConversions,
   getConversion,
 };
-
 
 
 

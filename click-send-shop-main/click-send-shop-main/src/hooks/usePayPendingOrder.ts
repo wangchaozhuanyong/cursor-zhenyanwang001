@@ -9,7 +9,7 @@ import { generateOrderText } from "@/modules/public/pages/order/utils/checkoutTe
 import { copyToClipboard } from "@/utils/clipboard";
 import { safeOpenExternal } from "@/utils/safeOpen";
 import { paymentInstructionToastMessage } from "@/utils/paymentClientInstructions";
-import { canStartOnlinePayment } from "@/utils/checkoutPaymentMethod";
+import { canStartOnlinePayment, filterUsableOnlinePaymentChannels } from "@/utils/checkoutPaymentMethod";
 
 export function usePayPendingOrder() {
   const capabilities = useSiteCapabilities();
@@ -26,8 +26,18 @@ export function usePayPendingOrder() {
       const method = order.payment_method || "whatsapp";
 
       if (canStartOnlinePayment(method, capabilities.onlinePaymentEnabled)) {
-        const channels = await paymentService.getPaymentChannels();
-        const channelCode = channels[0]?.code || "stripe_checkout";
+        const [config, channels] = await Promise.all([
+          paymentService.getPaymentConfig().catch(() => null),
+          paymentService.getPaymentChannels().catch(() => []),
+        ]);
+        const usableChannels = filterUsableOnlinePaymentChannels(channels, Boolean(config?.stripeCheckoutReady));
+        const channelCode = usableChannels[0]?.code || "";
+        if (!channelCode) {
+          toast.info("商户暂未开通在线支付，请联系客服完成付款");
+          const copied = await copyToClipboard(generateOrderText(order));
+          if (copied) toast.success("订单内容已复制");
+          return;
+        }
         const intent = await paymentService.createPaymentIntent({
           orderId: order.id,
           channelCode,

@@ -1,6 +1,7 @@
 import { Tx } from "@/components/admin/AdminText";
 import { NavLink } from "react-router-dom";
 import { useAdminT } from "@/hooks/useAdminT";
+import { preloadAdminRoute } from "@/routes/adminLazyPages";
 
 const tabs = [
   { to: "/admin/payments/channels", label: "渠道配置" },
@@ -24,6 +25,8 @@ export default function PaymentAdminSubnav() {
                 : "text-muted-foreground hover:bg-secondary"
             }`
           }
+          onPointerEnter={() => { void preloadAdminRoute(tab.to); }}
+          onFocus={() => { void preloadAdminRoute(tab.to); }}
         >
           {tText(tab.label)}
         </NavLink>

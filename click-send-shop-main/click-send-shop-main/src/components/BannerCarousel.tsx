@@ -169,8 +169,6 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
       data-theme-banner-style={bannerStyle}
       style={{
         aspectRatio: BANNER_ASPECT_CSS,
-        minHeight: "clamp(13.5rem, 40vw, 24rem)",
-        maxHeight: "26rem",
         borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)",
       }}
       onTouchStart={handleTouchStart}
@@ -304,11 +302,11 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               e.stopPropagation();
               stepBanner(-1);
             }}
-            aria-label="Previous banner"
+            aria-label="上一张轮播图"
           >
-            <ChevronLeft size={18} aria-hidden="true" />
+            <ChevronLeft size={15} aria-hidden="true" />
           </button>
-          <div className="store-hero-dots" aria-label="Banner pagination">
+          <div className="store-hero-dots" aria-label="轮播图分页">
             {banners.map((_, index) => (
               <button
                 key={index}
@@ -318,16 +316,16 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                   goTo(index, true);
                 }}
                 className="store-hero-dot-button"
-                aria-label={`Banner ${index + 1}`}
+                aria-label={`第 ${index + 1} 张轮播图`}
                 aria-current={index === safeIndex ? "true" : undefined}
               >
                 {motionEnabled ? (
                   <motion.div
                     className="store-hero-dot"
                     animate={{
-                      width: index === safeIndex ? 16 : 6,
-                      height: 4,
-                      opacity: index === safeIndex ? 1 : 0.38,
+                      width: index === safeIndex ? 12 : 5,
+                      height: 3.5,
+                      opacity: index === safeIndex ? 1 : 0.45,
                     }}
                     transition={{ duration: 0.2 }}
                   />
@@ -348,9 +346,9 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               e.stopPropagation();
               stepBanner(1);
             }}
-            aria-label="Next banner"
+            aria-label="下一张轮播图"
           >
-            <ChevronRight size={18} aria-hidden="true" />
+            <ChevronRight size={15} aria-hidden="true" />
           </button>
         </div>
       ) : null}

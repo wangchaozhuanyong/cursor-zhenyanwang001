@@ -4,77 +4,174 @@ import {
   ChevronDown,
   ChevronRight,
   Clock3,
+  Headphones,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
+  Send,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import type { FooterNavItem } from "@/types/content";
-import { SiteSocialLinks, hasAnySocialLink } from "@/components/SiteSocialLinks";
+import type { FooterNavItem, SupportDownloadChannel } from "@/types/content";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSupportRuntime } from "@/hooks/useSupportRuntime";
 import { cn } from "@/lib/utils";
+import { copyToClipboard } from "@/utils/clipboard";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+
+const FOOTER_BRAND_FALLBACK = "大马通";
+const FOOTER_HEADLINE_FALLBACK = "马来西亚华人一站式生活服务与优选商城";
+const FOOTER_DESCRIPTION_FALLBACK =
+  "大马通专注服务马来西亚华人，整合本地优选商品、中国好物、正品保税、工厂货源、签证留学、第二家园与商业服务资源，让在马生活、采购、办事更省心。";
+
+function cleanFooterText(value?: string) {
+  return String(value || "").trim();
+}
+
+function resolveFooterBrand(siteName: string) {
+  const base = cleanFooterText(siteName).replace(/[.。]\s*$/, "");
+  if (!base || base === "官方商城" || base === "站点") return FOOTER_BRAND_FALLBACK;
+  return base;
+}
+
+function resolveFooterCopy(value: string, fallback: string, genericValues: string[]) {
+  const clean = cleanFooterText(value);
+  if (!clean || genericValues.includes(clean)) return fallback;
+  return clean;
+}
 
 export function GuestFooterBrandMark({ siteName }: { siteName: string }) {
-  const base = siteName.trim().replace(/\.\s*$/, "");
+  const base = resolveFooterBrand(siteName);
   return (
-    <div className="flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:text-left">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-[color-mix(in_srgb,var(--theme-price)_42%,var(--theme-border))] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--theme-surface)_92%,white),color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface)))] text-[var(--theme-primary)] shadow-[0_16px_34px_-26px_var(--theme-primary)]">
-        <Sparkles size={19} strokeWidth={1.8} />
+    <div className="flex items-center justify-start gap-4 text-left">
+      <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#df4f55]/55 bg-[linear-gradient(145deg,rgba(255,255,255,0.92),rgba(255,230,226,0.86))] text-[#d8474f] shadow-[0_18px_34px_-28px_rgba(139,48,48,0.65),inset_0_0_0_6px_rgba(255,255,255,0.7)]">
+        <Sparkles size={27} strokeWidth={1.7} />
       </span>
-      <div className="min-w-0 max-w-full">
-        <h2 className="max-w-[min(18rem,82vw)] font-display text-[30px] font-bold leading-[1.15] text-[var(--theme-text)] sm:max-w-none sm:text-[31px]">
+      <span className="min-w-0">
+        <span className="block max-w-[min(17rem,70vw)] font-display text-[36px] font-bold leading-none text-[#2a1714] sm:max-w-none sm:text-[42px]">
           {base}
-        </h2>
-        <p className="mt-1 text-[12px] font-medium text-[var(--theme-text-muted)]">
-          官方严选 · 本地服务
-        </p>
-      </div>
+          <span className="text-[#d8474f]">.</span>
+        </span>
+        <span className="mt-2 block text-[13px] font-semibold uppercase leading-none text-[#ad772e]">
+          Curated in Malaysia
+        </span>
+      </span>
     </div>
   );
 }
 
-function FooterSectionTitle({ eyebrow, title }: { eyebrow?: string; title: string }) {
+function FooterSkylineArt() {
   return (
-    <div className="mb-4 text-center">
-      {eyebrow ? (
-        <p className="text-[12px] font-medium text-[var(--theme-text-muted)]">
-          {eyebrow}
+    <svg
+      className="pointer-events-none absolute right-0 top-6 hidden h-44 w-[420px] text-[#d8a973] opacity-[0.28] md:block"
+      viewBox="0 0 420 176"
+      fill="none"
+      aria-hidden
+    >
+      <path d="M10 142H410" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M50 142V104H77V142" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M92 142V82H116V142" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M104 82C104 63 122 54 138 54C154 54 172 63 172 82V142" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M132 142V94H144V142" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M190 142V56M190 56L198 46L206 56V142" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M214 142V36M214 36L224 20L234 36V142" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M214 56H234M214 76H234M214 96H234M214 116H234" stroke="currentColor" strokeWidth="1" />
+      <path d="M248 142V32M248 32L258 16L268 32V142" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M248 56H268M248 76H268M248 96H268M248 116H268" stroke="currentColor" strokeWidth="1" />
+      <path d="M234 82H248" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M292 142V78H318V142M305 78V52" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M334 142V95H358V142M346 95V66" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M374 142V106H398V142" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function FooterLeafArt() {
+  return (
+    <svg
+      className="pointer-events-none absolute right-3 top-0 h-28 w-32 text-[#e1aaa2] opacity-[0.28]"
+      viewBox="0 0 140 110"
+      fill="none"
+      aria-hidden
+    >
+      <path d="M132 6C101 23 84 52 76 103" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M119 16C96 15 84 25 78 45C99 45 113 34 119 16Z" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M100 41C78 39 65 50 59 70C81 69 94 60 100 41Z" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M85 70C63 67 49 77 41 96C63 98 78 89 85 70Z" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+function FooterSectionTitle({
+  aside,
+  eyebrow,
+  title,
+}: {
+  aside?: string;
+  eyebrow?: string;
+  title: string;
+}) {
+  return (
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="shrink-0 text-left">
+        {eyebrow ? (
+          <p className="mb-1 text-[13px] font-semibold uppercase leading-none text-[#b47b32]">
+            {eyebrow}
+          </p>
+        ) : null}
+        <h3 className="font-display text-[30px] font-bold leading-tight text-[#2a1714]">
+          {title}
+        </h3>
+      </div>
+      <div className="flex min-w-0 flex-1 items-center gap-3 pb-2">
+        <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(196,152,91,0.16),rgba(196,152,91,0.58))]" />
+        <Sparkles size={14} strokeWidth={1.6} className="shrink-0 text-[#c49555]" aria-hidden />
+        <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(196,152,91,0.58),rgba(196,152,91,0.16))]" />
+      </div>
+      {aside ? (
+        <p className="shrink-0 pb-1 text-left text-[14px] font-medium text-[#c08757] sm:text-right">
+          {aside}
         </p>
       ) : null}
-      <div className="flex items-center justify-center gap-3">
-        <span className="h-px w-10 bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--theme-price)_62%,transparent))]" />
-        <h3 className="text-[17px] font-semibold text-[var(--theme-text)]">{title}</h3>
-        <span className="h-px w-10 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--theme-price)_62%,transparent),transparent)]" />
-      </div>
     </div>
   );
 }
 
-function AccordionItem({ title, children }: { title: string; children: ReactNode }) {
+function AccordionItem({
+  children,
+  icon,
+  title,
+}: {
+  children: ReactNode;
+  icon: ReactNode;
+  title: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="overflow-hidden rounded-[1.15rem] border border-[color-mix(in_srgb,var(--theme-border)_82%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_90%,var(--theme-bg))]">
+    <div className="overflow-hidden rounded-[1.25rem] border border-[#ead8c7] bg-white/74 shadow-[0_18px_46px_-40px_rgba(92,52,24,0.5)]">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="relative flex min-h-[3.35rem] w-full items-center justify-center px-12 py-3 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/35"
+        className="flex min-h-[72px] w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-white/54 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c79c5d]/35"
         aria-expanded={isOpen}
       >
-        <span className="text-[15px] font-semibold text-[var(--theme-text)]">{title}</span>
-        <span className="absolute right-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-bg)_70%,var(--theme-surface))] text-[var(--theme-text-muted)]">
-          <ChevronDown
-            size={16}
-            strokeWidth={1.9}
-            className={cn("transition-transform duration-300 ease-out", isOpen && "rotate-180")}
-            aria-hidden
-          />
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff7ed] text-[#b57628]">
+          {icon}
         </span>
+        <span className="min-w-0 flex-1 text-[20px] font-bold leading-snug text-[#2a1714]">
+          {title}
+        </span>
+        <ChevronDown
+          size={23}
+          strokeWidth={2.1}
+          className={cn("shrink-0 text-[#a2661f] transition-transform duration-300 ease-out", isOpen && "rotate-180")}
+          aria-hidden
+        />
       </button>
       <div className={cn("grid transition-[grid-template-rows] duration-300 ease-out", isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
         <div className="min-h-0 overflow-hidden">
-          {isOpen ? <div className="px-3 pb-4">{children}</div> : null}
+          {isOpen ? <div className="px-4 pb-5">{children}</div> : null}
         </div>
       </div>
     </div>
@@ -86,28 +183,92 @@ function FooterNavButton({ item, onNavigate }: { item: FooterNavItem; onNavigate
     <button
       type="button"
       onClick={() => onNavigate(item.path)}
-      className="group flex min-h-10 w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-[14px] font-medium text-[var(--theme-text-muted)] transition-all hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,transparent)] hover:text-[var(--theme-primary)] active:scale-[0.98] active:text-[var(--theme-primary)]"
+      className="group flex min-h-11 w-full items-center justify-between gap-3 rounded-[0.9rem] px-4 py-2.5 text-left text-[15px] font-medium text-[#6b5148] transition-all hover:bg-[#fff8ef] hover:text-[#8b541c] active:scale-[0.98]"
     >
       <span className="min-w-0 truncate">{item.label}</span>
-      <ChevronRight size={14} className="shrink-0 opacity-45 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden />
+      <ChevronRight size={16} className="shrink-0 opacity-45 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden />
     </button>
   );
 }
 
-function ContactCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function ContactCard({
+  icon,
+  label,
+  value,
+  wide,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  wide?: boolean;
+}) {
+  const lines = value.split("\n").map((line) => line.trim()).filter(Boolean);
   return (
-    <div className="group relative flex min-h-[4.75rem] items-center gap-3.5 overflow-hidden rounded-[1.05rem] border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-surface)_96%,white)_0%,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-bg))_100%)] px-3.5 py-3 text-left shadow-[0_18px_44px_-38px_var(--theme-primary)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-price)_42%,var(--theme-border))] hover:shadow-[0_20px_48px_-36px_var(--theme-primary)] active:scale-[0.99]">
-      <span className="pointer-events-none absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-price)_72%,transparent),color-mix(in_srgb,var(--theme-primary)_58%,transparent))] opacity-80" />
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-price)_32%,transparent)] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface)),color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface)))] text-[var(--theme-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_22px_-18px_var(--theme-primary)] transition-transform duration-300 group-hover:scale-105">
+    <div
+      className={cn(
+        "relative flex min-h-[106px] items-center gap-5 overflow-hidden rounded-[1.2rem] border border-[#ead8c7] bg-white/72 px-5 py-4 text-left shadow-[0_20px_48px_-42px_rgba(83,49,29,0.58)]",
+        wide && "sm:col-span-2",
+      )}
+    >
+      {wide ? (
+        <MapPin
+          size={96}
+          strokeWidth={1.1}
+          className="pointer-events-none absolute right-8 top-1/2 hidden -translate-y-1/2 text-[#e5b9a5] opacity-25 sm:block"
+          aria-hidden
+        />
+      ) : null}
+      <span className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#fff6f4_0%,#ffdedd_56%,#f7c3c2_100%)] text-[#d64a51] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
         {icon}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[12px] font-medium leading-none text-[var(--theme-text-muted)]">{label}</span>
-        <span className="mt-1.5 block max-w-full break-words text-[14px] font-semibold leading-snug text-[var(--theme-text)] [overflow-wrap:anywhere] sm:text-[15px]">
-          {value}
+      <span className="relative z-10 min-w-0 flex-1">
+        <span className="block text-[15px] font-medium leading-none text-[#765a51]">{label}</span>
+        <span className="mt-2 block max-w-full text-[18px] font-bold leading-snug text-[#241716] [overflow-wrap:anywhere]">
+          {lines.length > 1
+            ? lines.map((line, index) => (
+              <span key={`${line}-${index}`} className="block">
+                {line}
+              </span>
+            ))
+            : value}
         </span>
       </span>
     </div>
+  );
+}
+
+function getChannelLabel(type: SupportDownloadChannel["type"]) {
+  if (type === "wechat") return "微信客服";
+  if (type === "whatsapp") return "WhatsApp 客服";
+  return "Telegram 客服";
+}
+
+function getChannelIcon(type: SupportDownloadChannel["type"]) {
+  if (type === "telegram") return <Send size={23} strokeWidth={1.9} />;
+  if (type === "whatsapp") return <MessageCircle size={24} strokeWidth={1.9} />;
+  return <MessageCircle size={24} strokeWidth={1.9} />;
+}
+
+function FollowButton({
+  channel,
+  icon,
+  label,
+  onClick,
+}: {
+  channel?: SupportDownloadChannel;
+  icon: ReactNode;
+  label: string;
+  onClick: (channel?: SupportDownloadChannel) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(channel)}
+      className="flex min-h-[58px] min-w-0 items-center justify-center gap-3 rounded-[1.05rem] border border-[#d7ac73] bg-white/74 px-5 py-3 text-[17px] font-medium text-[#2c201d] shadow-[0_16px_34px_-34px_rgba(105,62,27,0.7)] transition-all hover:-translate-y-0.5 hover:bg-white hover:text-[#8b541c] active:scale-[0.98]"
+    >
+      <span className="shrink-0 text-[#b9833f]">{icon}</span>
+      <span className="min-w-0 truncate">{label}</span>
+    </button>
   );
 }
 
@@ -139,43 +300,44 @@ export default function GuestMobileFooter({
   contactPhone,
   contactEmail,
   address,
-  instagramUrl,
-  facebookUrl,
-  tiktokUrl,
-  xhsUrl,
   footerCompanyName,
   footerCopyright,
   footerIcpNo,
   onNavigate,
 }: GuestMobileFooterProps) {
   const siteInfo = useSiteInfo();
-  const { channels, workingHours: serviceHours } = useSupportRuntime();
-  const whatsappDisplay = channels.find((channel) => channel.type === "whatsapp")?.account?.trim();
-  const socialProps = {
-    supportDownloadConfig: siteInfo.supportDownloadConfig,
-    instagramUrl,
-    facebookUrl,
-    tiktokUrl,
-    xhsUrl,
-  };
-  const hasSocial = hasAnySocialLink(socialProps);
+  const { buildSupportPageUrl, channels, openChannel, workingHours: serviceHours } = useSupportRuntime();
+  const brandName = resolveFooterBrand(siteName || siteInfo.siteName || FOOTER_BRAND_FALLBACK);
+  const headline = resolveFooterCopy(slogan, FOOTER_HEADLINE_FALLBACK, ["官方商品与服务平台"]);
+  const intro = resolveFooterCopy(description, FOOTER_DESCRIPTION_FALLBACK, ["本平台提供商品、服务与客户支持信息。"]);
 
-  const legalCompany = (footerCompanyName || siteName || "").trim();
-  const legalCopyright = (footerCopyright || "").trim();
-  const legalIcp = (footerIcpNo || "").trim();
-  const hasLegal = Boolean(legalCompany || legalCopyright || legalIcp);
+  const whatsappDisplay = channels.find((channel) => channel.type === "whatsapp")?.account?.trim();
+  const displayPhone = cleanFooterText(contactPhone) || "+60182778801";
+  const displayEmail = cleanFooterText(contactEmail) || "ppfzj1314@gmail.com";
+  const displayWhatsapp = whatsappDisplay || "5325325235";
+  const displayHours = cleanFooterText(serviceHours) || "工作日 09:00 - 18:00\n下午客服全天 24 小时";
+  const displayAddress = cleanFooterText(address) || "Komplek Bandar Park";
+
+  const legalCompanyRaw = cleanFooterText(footerCompanyName);
+  const legalCompany = !legalCompanyRaw || legalCompanyRaw === "官方商城" ? `${brandName}平台` : legalCompanyRaw;
+  const legalCopyrightRaw = cleanFooterText(footerCopyright);
+  const legalCopyright =
+    !legalCopyrightRaw || legalCopyrightRaw.includes("官方商城")
+      ? `© ${new Date().getFullYear()} ${brandName}, 保留所有权利.`
+      : legalCopyrightRaw;
+  const legalIcp = cleanFooterText(footerIcpNo);
+  const legalParts = [legalCompany, legalCopyright, legalIcp].filter(Boolean);
 
   const contactItems = [
-    contactPhone ? { key: "phone", label: "客服电话", value: contactPhone, icon: <Phone size={16} strokeWidth={1.8} /> } : null,
-    contactEmail ? { key: "email", label: "电子邮箱", value: contactEmail, icon: <Mail size={16} strokeWidth={1.8} /> } : null,
-    whatsappDisplay ? { key: "whatsapp", label: "在线客服", value: whatsappDisplay, icon: <MessageCircle size={16} strokeWidth={1.8} /> } : null,
-    serviceHours ? { key: "hours", label: "服务时间", value: serviceHours, icon: <Clock3 size={16} strokeWidth={1.8} /> } : null,
-    address ? { key: "address", label: "公司地址", value: address, icon: <MapPin size={16} strokeWidth={1.8} /> } : null,
-  ].filter((item): item is { key: string; label: string; value: string; icon: ReactNode } => Boolean(item));
-  const hasContactBlock = contactItems.length > 0;
+    { key: "phone", label: "客服热线", value: displayPhone, icon: <Phone size={28} strokeWidth={1.75} /> },
+    { key: "email", label: "电子邮箱", value: displayEmail, icon: <Mail size={29} strokeWidth={1.75} /> },
+    { key: "whatsapp", label: "WhatsApp", value: displayWhatsapp, icon: <MessageCircle size={30} strokeWidth={1.75} /> },
+    { key: "hours", label: "服务时间", value: displayHours, icon: <Clock3 size={29} strokeWidth={1.75} /> },
+    { key: "address", label: "公司地址", value: displayAddress, icon: <MapPin size={30} strokeWidth={1.75} />, wide: true },
+  ];
 
   const supportLinks = (
-    <ul className="space-y-1">
+    <ul className="space-y-1.5">
       {supportNav.map((item, idx) => (
         <li key={`${item.label}-${item.path}-${idx}`}>
           <FooterNavButton item={item} onNavigate={onNavigate} />
@@ -185,7 +347,7 @@ export default function GuestMobileFooter({
   );
 
   const policyLinks = (
-    <ul className="space-y-1">
+    <ul className="space-y-1.5">
       {policyNav.map((item, idx) => (
         <li key={`${item.label}-${item.path}-${idx}`}>
           <FooterNavButton item={item} onNavigate={onNavigate} />
@@ -194,70 +356,108 @@ export default function GuestMobileFooter({
     </ul>
   );
 
+  const orderedChannels = (["wechat", "whatsapp", "telegram"] as const).map((type) => ({
+    channel: channels.find((item) => item.type === type),
+    icon: getChannelIcon(type),
+    label: getChannelLabel(type),
+    type,
+  }));
+
+  const handleFollowClick = async (channel?: SupportDownloadChannel) => {
+    if (!channel) {
+      onNavigate(buildSupportPageUrl());
+      return;
+    }
+
+    const action = openChannel(channel);
+    if (action === "wechat_copy") {
+      const account = cleanFooterText(channel.account);
+      if (!account) {
+        onNavigate(buildSupportPageUrl(channel.id));
+        return;
+      }
+      const [{ toast }, copied] = await Promise.all([import("sonner"), copyToClipboard(account)]);
+      if (copied) {
+        toast.success("微信号已复制", toastPresetQuickSuccess);
+      } else {
+        toast.error("复制失败，请手动复制微信号");
+      }
+      return;
+    }
+
+    if (action === "none") {
+      onNavigate(buildSupportPageUrl(channel.id));
+    }
+  };
+
   return (
     <footer className="relative isolate z-0 w-full touch-pan-y">
-      <div className="relative overflow-hidden touch-pan-y border-t border-[color-mix(in_srgb,var(--theme-border)_86%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-surface)_96%,white)_0%,color-mix(in_srgb,var(--theme-price)_7%,var(--theme-bg))_45%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-bg))_100%)] px-4 pb-8 pt-14 sm:border sm:px-6 sm:pt-14 sm:theme-shadow md:pb-10 lg:px-10 lg:pb-11 lg:pt-16">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--theme-primary)_42%,transparent),color-mix(in_srgb,var(--theme-price)_35%,transparent),transparent)]" />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.2]"
-          style={{
-            backgroundImage:
-              "linear-gradient(135deg, color-mix(in srgb, var(--theme-price) 18%, transparent) 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
-          }}
-        />
-        <div className="pointer-events-none absolute -bottom-12 left-1/2 h-24 w-[118%] -translate-x-1/2 rounded-[50%] border-t border-[color-mix(in_srgb,var(--theme-price)_22%,transparent)] opacity-70" />
-        <div className="pointer-events-none absolute -bottom-4 left-1/2 h-14 w-[106%] -translate-x-1/2 rounded-[50%] border-t border-[color-mix(in_srgb,var(--theme-primary)_14%,transparent)] opacity-60" />
+      <div className="relative overflow-hidden touch-pan-y border-t border-[#eadbcc] bg-[linear-gradient(180deg,#fffaf3_0%,#fffdf8_36%,#fff8f3_100%)] px-5 pb-8 pt-12 sm:border sm:px-8 sm:pt-14 md:pb-10 lg:px-12 lg:pb-12">
+        <FooterSkylineArt />
+        <FooterLeafArt />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(199,151,86,0.48),rgba(216,75,81,0.22),transparent)]" />
 
-        <div className="relative mx-auto flex max-w-6xl flex-col items-center text-center">
-          <section className="mx-auto flex max-w-2xl scroll-mt-[calc(var(--store-mobile-header-height,4.5rem)+1rem)] flex-col items-center">
-            <GuestFooterBrandMark siteName={siteName || "站点"} />
-            <div className="mt-5 space-y-2">
-              <p className="text-[18px] font-semibold leading-snug text-[var(--theme-text)] sm:text-[20px]">{slogan}</p>
-              <p className="mx-auto max-w-xl text-[13px] leading-7 text-[var(--theme-text-muted)] sm:text-[14px]">{description}</p>
+        <div className="relative mx-auto max-w-[940px]">
+          <section className="text-left">
+            <GuestFooterBrandMark siteName={brandName} />
+            <div className="mt-10 space-y-6">
+              <h2 className="font-display text-[28px] font-bold leading-snug text-[#2a1714] sm:text-[36px]">
+                {headline}
+              </h2>
+              <p className="max-w-[830px] text-[18px] font-medium leading-[1.95] text-[#765a51]">
+                {intro}
+              </p>
             </div>
           </section>
 
-          <section className="mt-8 hidden w-full max-w-3xl gap-4 lg:grid lg:grid-cols-2">
-            <div className="rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,transparent)] p-4">
-              <FooterSectionTitle title="服务支持" />
+          <section className="mt-10 space-y-5">
+            <AccordionItem title="服务支持" icon={<Headphones size={27} strokeWidth={1.8} />}>
               {supportLinks}
-            </div>
-            <div className="rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,transparent)] p-4">
-              <FooterSectionTitle title="政策与说明" />
+            </AccordionItem>
+            <AccordionItem title="政策与说明" icon={<ShieldCheck size={27} strokeWidth={1.8} />}>
               {policyLinks}
+            </AccordionItem>
+          </section>
+
+          <section className="mt-12" aria-label="联系方式">
+            <FooterSectionTitle eyebrow="Concierge" title="联系我们" aside="随时为您服务 ♡" />
+            <div className="grid gap-5 sm:grid-cols-2">
+              {contactItems.map((item) => (
+                <ContactCard
+                  key={item.key}
+                  icon={item.icon}
+                  label={item.label}
+                  value={item.value}
+                  wide={item.wide}
+                />
+              ))}
             </div>
           </section>
 
-          <section className="mt-7 w-full max-w-lg space-y-3 lg:hidden">
-            <AccordionItem title="服务支持">{supportLinks}</AccordionItem>
-            <AccordionItem title="政策与说明">{policyLinks}</AccordionItem>
+          <section className="mt-12">
+            <FooterSectionTitle title="关注我们" />
+            <div className="grid gap-5 sm:grid-cols-3">
+              {orderedChannels.map((item) => (
+                <FollowButton
+                  key={item.type}
+                  channel={item.channel}
+                  icon={item.icon}
+                  label={item.label}
+                  onClick={handleFollowClick}
+                />
+              ))}
+            </div>
           </section>
 
-          {hasContactBlock ? (
-            <section className="mt-9 w-full lg:mt-10" aria-label="联系方式">
-              <FooterSectionTitle title="联系我们" />
-              <div className="mx-auto grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                {contactItems.map((item) => (
-                  <ContactCard key={item.key} icon={item.icon} label={item.label} value={item.value} />
+          {legalParts.length > 0 ? (
+            <section className="mt-12 border-t border-[#ead8c7] pt-6">
+              <div className="flex flex-col gap-2 text-[14px] leading-6 text-[#9b8b83] sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5">
+                {legalParts.map((item, index) => (
+                  <span key={`${item}-${index}`} className="flex items-center gap-5">
+                    {index > 0 ? <span className="hidden h-4 w-px bg-[#d8c4b4] sm:block" aria-hidden /> : null}
+                    <span>{item}</span>
+                  </span>
                 ))}
-              </div>
-            </section>
-          ) : null}
-
-          {hasSocial ? (
-            <section className="mt-9 w-full lg:mt-10">
-              <FooterSectionTitle title="关注我们" />
-              <SiteSocialLinks {...socialProps} tone="footer" labelMode="zhOnly" className="justify-center" />
-            </section>
-          ) : null}
-
-          {hasLegal ? (
-            <section className="mt-9 w-full max-w-4xl border-t border-[color-mix(in_srgb,var(--theme-border)_78%,transparent)] pt-5">
-              <div className="flex flex-col items-center justify-center gap-1 text-center text-[12px] leading-6 text-[var(--theme-text-muted)] sm:flex-row sm:flex-wrap sm:gap-x-4">
-                {legalCompany ? <span>{legalCompany}</span> : null}
-                {legalCopyright ? <span>{legalCopyright}</span> : null}
-                {legalIcp ? <span>{legalIcp}</span> : null}
               </div>
             </section>
           ) : null}

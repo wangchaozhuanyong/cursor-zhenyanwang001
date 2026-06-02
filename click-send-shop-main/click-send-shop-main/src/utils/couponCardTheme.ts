@@ -91,9 +91,9 @@ export function getCouponCardPresentation(
     : "coupon-card-column-rule";
 
   const gridByLayout: Record<CouponCardLayout, string> = {
-    home: "grid-cols-[minmax(4.9rem,28%)_minmax(0,1fr)_minmax(2.9rem,3.4rem)]",
-    compact: "grid-cols-[minmax(6.1rem,28%)_minmax(0,1fr)_minmax(4.2rem,4.9rem)]",
-    default: "grid-cols-[minmax(6.6rem,29%)_minmax(0,1fr)_minmax(4.4rem,5.2rem)]",
+    home: "grid-cols-[5.55rem_minmax(0,1fr)_3.05rem]",
+    compact: "grid-cols-[6.7rem_minmax(0,1fr)_4.35rem]",
+    default: "grid-cols-[7.1rem_minmax(0,1fr)_4.65rem]",
   };
 
   const amountSizeByLayout: Record<CouponCardLayout, string> = {
@@ -107,7 +107,7 @@ export function getCouponCardPresentation(
 
   const actionButtonClass = useThemedMarketingShell
     ? layout === "home"
-      ? "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch rounded-lg px-1 py-1.5 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
+      ? "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch rounded-lg px-0.5 py-1.5 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
       : "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full items-center justify-center self-stretch rounded-xl px-2 py-2 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
     : "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch !h-auto !px-1 !py-1.5 !rounded-lg";
 
@@ -124,8 +124,8 @@ export function getCouponCardPresentation(
     columnRuleClass,
     amountSize: amountSizeByLayout[layout],
     showScope: layout !== "home",
-    infoGap: layout === "home" ? "gap-0.5" : "gap-px",
-    infoPadding: layout === "home" ? "px-1.5 py-1" : layout === "compact" ? "px-2 py-0.5" : "px-2.5 py-1",
+    infoGap: layout === "home" ? "gap-px" : "gap-px",
+    infoPadding: layout === "home" ? "px-1.5 py-0.5" : layout === "compact" ? "px-2 py-0.5" : "px-2.5 py-1",
     actionLayout,
     actionButtonClass,
     cardPadding: layout === "home" ? "p-1.5" : "p-2",

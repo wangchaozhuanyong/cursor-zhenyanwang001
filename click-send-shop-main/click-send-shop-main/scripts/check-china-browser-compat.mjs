@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 国产浏览器兼容性静态检查（CI / 本地 npm run check:china-browser）
+ * 中马常用浏览器兼容性静态检查（CI / 本地 npm run check:browser-compat）
  */
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
@@ -51,7 +51,7 @@ assertNoMatch(
 );
 assertNoMatch("src/components/BottomNav.tsx", /touchAction:\s*["']none["']/, "底栏不应使用 touch-action: none");
 
-// 4. Vite legacy 默认开启（面向国产 Chromium 壳）
+// 4. Vite legacy 默认开启（面向国产 Chromium 壳、旧 Android WebView、Samsung Internet、iOS Safari）
 const viteConfig = read("vite.config.ts");
 if (viteConfig) {
   if (/VITE_LEGACY_BUILD\s*!==\s*["']0["']/.test(viteConfig)) {
@@ -61,9 +61,13 @@ if (viteConfig) {
   } else {
     errors.push("vite.config.ts: 未找到国产浏览器 legacy 默认开启逻辑");
   }
-  if (/!isAdminBuild\s*&&\s*legacyEnabled/.test(viteConfig)) {
+  if (/!isAdminBuild\s*&&\s*legacyEnabled|legacyEnabled\s*&&\s*!isAdminBuild/.test(viteConfig)) {
     errors.push("vite.config.ts: legacy 不应仅作用于商城，管理后台也需兼容");
   }
+  assertMatch("vite.config.ts", /REGIONAL_BROWSER_TARGETS/, "应使用中马常用浏览器目标集合");
+  assertMatch("vite.config.ts", /Samsung\s*>=\s*9/i, "应覆盖 Samsung Internet");
+  assertMatch("vite.config.ts", /Edge\s*>=\s*79/i, "应覆盖 Edge Chromium");
+  assertMatch("vite.config.ts", /Firefox\s*>=\s*78/i, "应覆盖 Firefox ESR 级别浏览器");
 }
 
 // 5. 配置加载超时（避免全屏遮罩挡点击）
@@ -74,6 +78,10 @@ assertMatch("src/index.css", /@supports not \(height: 100dvh\)/, "应包含 100d
 
 // 7. 国产 UA 识别
 assertMatch("src/utils/chinaBrowser.ts", /baidubrowser/i, "应识别百度浏览器 UA");
+assertMatch("src/utils/chinaBrowser.ts", /micromessenger/i, "应识别微信内置浏览器 UA");
+assertMatch("src/utils/chinaBrowser.ts", /mqqbrowser/i, "应识别 QQ 浏览器 UA");
+assertMatch("src/utils/browserEnv.ts", /samsungbrowser/i, "应识别 Samsung Internet UA");
+assertMatch("src/utils/browserEnv.ts", /detectBrowserEnvFromUa/, "浏览器环境识别应可单元测试");
 
 if (warnings.length) {
   console.warn("\n⚠️  兼容性警告:\n");
@@ -86,4 +94,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`✅ 国产浏览器兼容性静态检查通过（${warnings.length} 条警告）`);
+console.log(`✅ 中马常用浏览器兼容性静态检查通过（${warnings.length} 条警告）`);

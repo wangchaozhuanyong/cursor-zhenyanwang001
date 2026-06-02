@@ -18,6 +18,7 @@ import { useCheckoutCouponSelection } from "./useCheckoutCouponSelection";
 import { useCheckoutOrderPreview } from "./useCheckoutOrderPreview";
 import { useCheckoutAbandonment } from "./useCheckoutAbandonment";
 import { useCheckoutSstPreview } from "./useCheckoutSstPreview";
+import { hasUsableOnlinePaymentChannel } from "@/utils/checkoutPaymentMethod";
 
 export function useCheckoutPage() {
   const navigate = useNavigate();
@@ -36,6 +37,15 @@ export function useCheckoutPage() {
     paymentMethod, setPaymentMethod, stripeReady, paymentChannels,
     selectedPaymentChannelCode, setSelectedPaymentChannelCode, paymentConfigLoaded, loyaltyConfig,
   } = useCheckoutPaymentSetup();
+
+  const onlinePaymentFeatureEnabled =
+    capabilities.onlinePaymentEnabled && (loyaltyConfig?.checkout?.onlinePaymentEnabled ?? true);
+  const hasUsableOnlinePayment = hasUsableOnlinePaymentChannel(paymentChannels, stripeReady);
+  const onlinePaymentAvailable = onlinePaymentFeatureEnabled && paymentConfigLoaded && hasUsableOnlinePayment;
+  const showOnline = onlinePaymentFeatureEnabled && (!paymentConfigLoaded || hasUsableOnlinePayment);
+  const showCustomerService = loyaltyConfig?.checkout?.customerServicePaymentEnabled ?? true;
+  const pointsRedeemEnabled = capabilities.pointsEnabled && (loyaltyConfig?.checkout?.pointsRedeemEnabled ?? true);
+  const rewardCashRedeemEnabled = loyaltyConfig?.checkout?.rewardCashRedeemEnabled ?? true;
 
   const [note, setNote] = useState("");
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
@@ -71,7 +81,7 @@ export function useCheckoutPage() {
     weightKg: shipping.weightKg,
     paymentMethod,
     couponEnabled: capabilities.couponEnabled,
-    onlinePaymentEnabled: capabilities.onlinePaymentEnabled,
+    onlinePaymentEnabled: showOnline,
   });
 
   const preview = useCheckoutOrderPreview({
@@ -110,7 +120,7 @@ export function useCheckoutPage() {
     shippingFee: preview.shippingFee,
     finalTotal: preview.finalTotal,
     paymentMethod,
-    onlinePaymentEnabled: capabilities.onlinePaymentEnabled,
+    onlinePaymentEnabled: showOnline,
     name,
     phone,
     submittedOrder,
@@ -183,7 +193,7 @@ export function useCheckoutPage() {
       : null,
     weightKg: shipping.weightKg,
     paymentMethod,
-    onlinePaymentEnabled: capabilities.onlinePaymentEnabled,
+    onlinePaymentEnabled: onlinePaymentAvailable,
     couponEnabled: capabilities.couponEnabled,
     pointsEnabled: capabilities.pointsEnabled,
     usePoints,
@@ -194,6 +204,7 @@ export function useCheckoutPage() {
     shippingQuoteLoading: shipping.shippingQuoteLoading,
     shippingRulesError: shipping.shippingRulesError,
     shippingQuoteError: shipping.shippingQuoteError,
+    paymentConfigLoaded,
     checkoutAbandonmentId,
     checkoutAbandonmentIdRef,
     selectedPaymentChannelCode,
@@ -204,10 +215,11 @@ export function useCheckoutPage() {
     setRewardBalance,
   });
 
-  const showOnline = capabilities.onlinePaymentEnabled && (loyaltyConfig?.checkout?.onlinePaymentEnabled ?? true);
-  const showCustomerService = loyaltyConfig?.checkout?.customerServicePaymentEnabled ?? true;
-  const pointsRedeemEnabled = capabilities.pointsEnabled && (loyaltyConfig?.checkout?.pointsRedeemEnabled ?? true);
-  const rewardCashRedeemEnabled = loyaltyConfig?.checkout?.rewardCashRedeemEnabled ?? true;
+  useEffect(() => {
+    if (paymentConfigLoaded && paymentMethod === "online" && !onlinePaymentAvailable) {
+      setPaymentMethod(showCustomerService ? "whatsapp" : "reward_wallet");
+    }
+  }, [paymentConfigLoaded, paymentMethod, onlinePaymentAvailable, setPaymentMethod, showCustomerService]);
 
   return {
     navigate,
@@ -229,7 +241,7 @@ export function useCheckoutPage() {
     setPaymentMethod,
     showOnline,
     showCustomerService,
-    onlinePaymentEnabled: capabilities.onlinePaymentEnabled,
+    onlinePaymentEnabled: onlinePaymentAvailable,
     pointsRedeemEnabled,
     rewardCashRedeemEnabled,
     stripeReady,

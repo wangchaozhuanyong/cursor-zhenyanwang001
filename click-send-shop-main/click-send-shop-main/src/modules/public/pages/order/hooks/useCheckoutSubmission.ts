@@ -51,6 +51,7 @@ export type UseCheckoutSubmissionParams = {
   shippingQuoteLoading: boolean;
   shippingRulesError: string | null | undefined;
   shippingQuoteError: string | null | undefined;
+  paymentConfigLoaded: boolean;
   checkoutAbandonmentId: string | null;
   checkoutAbandonmentIdRef: MutableRefObject<string | null>;
   selectedPaymentChannelCode: string;
@@ -85,6 +86,7 @@ export function useCheckoutSubmission({
   shippingQuoteLoading,
   shippingRulesError,
   shippingQuoteError,
+  paymentConfigLoaded,
   checkoutAbandonmentId,
   checkoutAbandonmentIdRef,
   selectedPaymentChannelCode,
@@ -104,6 +106,7 @@ export function useCheckoutSubmission({
   const [postSubmitOnlineNote, setPostSubmitOnlineNote] = useState<string | null>(null);
   const [postSubmitWalletError, setPostSubmitWalletError] = useState<string | null>(null);
   const [payingWallet, setPayingWallet] = useState(false);
+  const onlinePaymentUnavailableMessage = "商户暂未开通在线支付，请选择其他方式或联系客服";
 
   const buildSubmitPayload = useCallback((): SubmitOrderParams => {
     const payloadItems = items.map((i) => ({
@@ -183,7 +186,12 @@ export function useCheckoutSubmission({
 
   const handleOnlinePaymentAfterSubmit = useCallback(
     async (order: Order) => {
-      const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "stripe_checkout";
+      const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "";
+      if (!onlinePaymentEnabled || !channelCode) {
+        setPostSubmitOnlineError(onlinePaymentUnavailableMessage);
+        toast.info(onlinePaymentUnavailableMessage);
+        return;
+      }
       try {
         const intent = await paymentService.createPaymentIntent({
           orderId: order.id,
@@ -203,7 +211,7 @@ export function useCheckoutSubmission({
         toast.error(msg);
       }
     },
-    [paymentChannels, selectedPaymentChannelCode],
+    [onlinePaymentEnabled, onlinePaymentUnavailableMessage, paymentChannels, selectedPaymentChannelCode],
   );
 
   const handleRewardWalletPaymentAfterSubmit = useCallback(
@@ -263,6 +271,14 @@ export function useCheckoutSubmission({
       toast.error(validation.message);
       return;
     }
+    if (paymentMethod === "online" && !paymentConfigLoaded) {
+      toast.info("支付配置加载中，请稍后再试");
+      return;
+    }
+    if (paymentMethod === "online" && !onlinePaymentEnabled) {
+      toast.info(onlinePaymentUnavailableMessage);
+      return;
+    }
 
     setPostSubmitOnlineError(null);
     setPostSubmitOnlineNote(null);
@@ -303,6 +319,10 @@ export function useCheckoutSubmission({
     selectedTemplate,
     shippingRulesError,
     shippingQuoteError,
+    paymentConfigLoaded,
+    paymentMethod,
+    onlinePaymentEnabled,
+    onlinePaymentUnavailableMessage,
     buildSubmitPayload,
     submitOrder,
     setOrderFinalizing,
@@ -337,14 +357,14 @@ export function useCheckoutSubmission({
 
   const payOnlineNow = useCallback(async () => {
     if (!submittedOrder) return;
-    if (!onlinePaymentEnabled) {
-      toast.info("在线支付未开启，请联系客服完成付款");
+    const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "";
+    if (!onlinePaymentEnabled || !channelCode) {
+      toast.info(onlinePaymentUnavailableMessage);
       return;
     }
     setPostSubmitOnlineError(null);
     setPostSubmitOnlineNote(null);
     try {
-      const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "stripe_checkout";
       const intent = await paymentService.createPaymentIntent({
         orderId: submittedOrder.id,
         channelCode,
@@ -362,7 +382,7 @@ export function useCheckoutSubmission({
       setPostSubmitOnlineError(msg);
       toast.error(msg);
     }
-  }, [submittedOrder, onlinePaymentEnabled, paymentChannels, selectedPaymentChannelCode]);
+  }, [submittedOrder, onlinePaymentEnabled, onlinePaymentUnavailableMessage, paymentChannels, selectedPaymentChannelCode]);
 
   const refreshSubmittedOrder = useCallback(async () => {
     if (!submittedOrder?.id) return;

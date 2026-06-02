@@ -16,6 +16,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { queryClient } from "@/lib/queryClient";
 import { ModalLayerProvider } from "@/modules/micro-interactions";
+import { getAdminRouteDocumentTitleKey } from "@/config/adminRouteRegistry";
 import { guessFaviconMime, resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import AdminSessionSync from "@/components/admin/AdminSessionSync";
 import {
@@ -98,64 +99,7 @@ function AdminTitleSync() {
   useEffect(() => {
     const rawSiteName = (siteInfo.siteName || "大马通").trim();
     const siteName = locale === "en" && /[\u4e00-\u9fff]/.test(rawSiteName) ? "Official Shop" : rawSiteName;
-    const routeTitleMap: Array<{ test: (path: string) => boolean; titleKey: string }> = [
-      { test: (p) => p === "/admin" || p === "/admin/", titleKey: "routeTitles.admin" },
-      { test: (p) => p === "/admin/account", titleKey: "routeTitles.account" },
-      { test: (p) => p === "/admin/products/new", titleKey: "routeTitles.productNewFull" },
-      { test: (p) => /^\/admin\/products\/[^/]+$/.test(p), titleKey: "routeTitles.productEditFull" },
-      {
-        test: (p) => /^\/admin\/orders\/[^/]+$/.test(p) && !p.startsWith("/admin/orders/unfinished"),
-        titleKey: "routeTitles.orderDetailFull",
-      },
-      { test: (p) => /^\/admin\/users\/[^/]+$/.test(p), titleKey: "routeTitles.userDetailFull" },
-      { test: (p) => /^\/admin\/notifications\/[^/]+$/.test(p), titleKey: "routeTitles.notificationDetailFull" },
-      { test: (p) => p === "/admin/marketing/coupons/new", titleKey: "routeTitles.couponNewFull" },
-      { test: (p) => p === "/admin/marketing/coupon-campaigns/new", titleKey: "routeTitles.coupons" },
-      { test: (p) => /^\/admin\/marketing\/coupon-campaigns\/[^/]+$/.test(p), titleKey: "routeTitles.coupons" },
-      {
-        test: (p) => /^\/admin\/marketing\/coupons\/[^/]+$/.test(p) && p !== "/admin/marketing/coupons/records",
-        titleKey: "routeTitles.couponEditFull",
-      },
-      { test: (p) => p.startsWith("/admin/settings/site"), titleKey: "routeTitles.siteSettings" },
-      { test: (p) => p.startsWith("/admin/settings/features"), titleKey: "routeTitles.siteSettings" },
-      { test: (p) => p.startsWith("/admin/settings/telegram"), titleKey: "routeTitles.telegram" },
-      { test: (p) => p.startsWith("/admin/settings/theme"), titleKey: "routeTitles.theme" },
-      { test: (p) => p.startsWith("/admin/home-ops"), titleKey: "routeTitles.homeOps" },
-      { test: (p) => p.startsWith("/admin/support-download"), titleKey: "routeTitles.supportDownload" },
-      { test: (p) => p.startsWith("/admin/banners"), titleKey: "routeTitles.banners" },
-      { test: (p) => p.startsWith("/admin/content"), titleKey: "routeTitles.content" },
-      { test: (p) => p.startsWith("/admin/payments"), titleKey: "routeTitles.payments" },
-      { test: (p) => p.startsWith("/admin/returns"), titleKey: "routeTitles.returns" },
-      { test: (p) => p.startsWith("/admin/reviews"), titleKey: "routeTitles.reviews" },
-      { test: (p) => p.startsWith("/admin/accounts") || p.startsWith("/admin/settings/roles"), titleKey: "routeTitles.staff" },
-      { test: (p) => p === "/admin/marketing", titleKey: "routeTitles.marketing" },
-      { test: (p) => p === "/admin/marketing/activities/new", titleKey: "routeTitles.marketingNewFull" },
-      { test: (p) => /^\/admin\/marketing\/activities\/[^/]+\/edit$/.test(p), titleKey: "routeTitles.marketingEditFull" },
-      { test: (p) => p.startsWith("/admin/marketing/activities"), titleKey: "routeTitles.marketingActivities" },
-      { test: (p) => p.startsWith("/admin/marketing/coupons/records"), titleKey: "routeTitles.couponRecords" },
-      { test: (p) => p.startsWith("/admin/marketing/coupons"), titleKey: "routeTitles.coupons" },
-      { test: (p) => p.startsWith("/admin/marketing/points"), titleKey: "routeTitles.points" },
-      { test: (p) => p.startsWith("/admin/marketing/rewards"), titleKey: "routeTitles.rewards" },
-      { test: (p) => p.startsWith("/admin/marketing/invites"), titleKey: "routeTitles.invites" },
-      { test: (p) => p.startsWith("/admin/user-security"), titleKey: "routeTitles.users" },
-      { test: (p) => p.startsWith("/admin/users"), titleKey: "routeTitles.users" },
-      { test: (p) => p.startsWith("/admin/member-levels"), titleKey: "routeTitles.memberLevels" },
-      { test: (p) => p.startsWith("/admin/orders/unfinished"), titleKey: "routeTitles.unfinishedOrders" },
-      { test: (p) => p.startsWith("/admin/orders"), titleKey: "routeTitles.orders" },
-      { test: (p) => p.startsWith("/admin/products") || p.startsWith("/admin/categories") || p.startsWith("/admin/inventory") || p.startsWith("/admin/tags"), titleKey: "routeTitles.products" },
-      { test: (p) => p.startsWith("/admin/reports/traffic"), titleKey: "routeTitles.traffic" },
-      { test: (p) => p.startsWith("/admin/reports"), titleKey: "routeTitles.reports" },
-      { test: (p) => p.startsWith("/admin/exports"), titleKey: "routeTitles.exports" },
-      { test: (p) => p.startsWith("/admin/audit-logs"), titleKey: "routeTitles.auditLogs" },
-      { test: (p) => p.startsWith("/admin/data-retention"), titleKey: "routeTitles.dataRetention" },
-      { test: (p) => p.startsWith("/admin/backups"), titleKey: "routeTitles.dataSafety" },
-      { test: (p) => p.startsWith("/admin/recycle-bin"), titleKey: "routeTitles.recycleBin" },
-      { test: (p) => p.startsWith("/admin/notifications"), titleKey: "routeTitles.notifications" },
-      { test: (p) => p.startsWith("/admin/event-center"), titleKey: "routeTitles.eventCenter" },
-      { test: (p) => p.startsWith("/admin/monitoring"), titleKey: "routeTitles.monitoring" },
-    ];
-    const match = routeTitleMap.find((item) => item.test(location.pathname));
-    const rawTitleKey = match?.titleKey ?? "routeTitles.admin";
+    const rawTitleKey = getAdminRouteDocumentTitleKey(location.pathname);
     const translatedTitle = t(rawTitleKey);
     const pageTitle = translatedTitle === rawTitleKey ? "Admin" : translatedTitle;
     document.title = `${pageTitle} | ${siteName}`;

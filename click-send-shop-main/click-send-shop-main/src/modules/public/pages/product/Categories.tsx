@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useLayoutEffect, useRef, type ReactNode } from "react";
-import { useStoreScrollChrome } from "@/contexts/StoreScrollChromeProvider";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -198,46 +197,16 @@ export default function Categories() {
   const activeCategory = useMemo(() => (activeCat === "all" ? null : findCategoryById(categories, activeCat)), [activeCat, categories]);
   const activeCategoryName = activeCategory?.name || "";
   const categoryDescription = activeCategory?.description?.trim() || "";
-  const categoryGuide = activeCategory?.buying_guide?.trim() || "";
-  const categoryFaq = activeCategory?.faq || [];
   const siteName = (siteInfo.siteName || "官方商城").trim();
   const pageHeading = activeCategoryName || "全部分类";
-  const pageIntro = activeCategoryName
-    ? categoryDescription || `浏览${siteName}${activeCategoryName}分类下的相关商品与服务；下单或咨询前可先查看商品详情、库存、配送与售后说明。`
-    : `浏览${siteName}全部商品与服务分类，快速找到需要的商品、服务项目和客服咨询入口。`;
   const title = activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`);
   const description = activeCategory?.seo_description?.trim() || (activeCategoryName
     ? categoryDescription || `查看${siteName}${activeCategoryName}分类，发现更多相关商品和服务。`
     : `查看${siteName}全部分类，快速找到更多商品和服务。`);
   const robots = hasComplexParams ? "noindex,follow" : "index,follow";
   const canonical = activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
-  const categoryFaqJsonLd = categoryFaq.length > 0
-    ? {
-        id: "category-faq",
-        data: {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: categoryFaq.map((item) => ({
-            "@type": "Question",
-            name: item.question,
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: item.answer,
-            },
-          })),
-        },
-      }
-    : null;
   const showFullSkeleton = loading && products.length === 0;
   const showSoftRefreshing = listRefreshing && products.length > 0;
-
-  const barsHidden = useStoreScrollChrome((s) => s.barsHidden);
-  const isAtTop = useStoreScrollChrome((s) => s.isAtTop);
-  const autoHideEnabled = useStoreScrollChrome((s) => s.autoHideEnabled);
-  const [searchFocused, setSearchFocused] = useState(false);
-
-  const shouldHideCategoryChrome =
-    autoHideEnabled && barsHidden && !isAtTop && !searchFocused;
 
   const mobileChromeRef = useRef<HTMLDivElement>(null);
   const [mobileChromeHeight, setMobileChromeHeight] = useState(0);
@@ -341,31 +310,25 @@ export default function Categories() {
         description={description}
         canonical={canonical}
         robots={robots}
-        jsonLd={categoryFaqJsonLd ? [categoryFaqJsonLd] : []}
       />
       <div
         ref={mobileChromeRef}
         className={cn(
           "fixed inset-x-0 top-0 z-header md:hidden",
           "transition-[transform,opacity] duration-200 ease-out will-change-transform motion-reduce:transition-none",
-          shouldHideCategoryChrome
-            ? "pointer-events-none -translate-y-full opacity-0"
-            : "translate-y-0 opacity-100",
+          "translate-y-0 opacity-100",
         )}
-        aria-hidden={shouldHideCategoryChrome}
       >
         <StorePageHeader
           sticky={false}
           className={STORE_MOBILE_PAGE_HEADER_CLASS}
-          title={activeCategoryName || "全部分类"}
+          title={pageHeading}
           titleInlineSlot={
             <StoreSearchField
               mode="filter"
               placeholder="搜索商品..."
               value={query}
               onValueChange={setQuery}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
             />
           }
           bottomSlot={mobileCategoryBottomSlot}
@@ -410,27 +373,6 @@ export default function Categories() {
                   商品列表暂时无法刷新，以下为缓存数据
                 </p>
               ) : null}
-
-              <section className="store-listing-intro mb-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-[var(--theme-text)]">
-                <h1 className="text-base font-semibold md:text-lg">{pageHeading}</h1>
-                {pageIntro ? <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--theme-text)_78%,var(--theme-text-muted))]">{pageIntro}</p> : null}
-                {activeCategoryName && categoryGuide ? (
-                  <div className="mt-3 rounded-lg bg-[var(--theme-bg)] px-3 py-2 text-sm leading-6 text-[color-mix(in_srgb,var(--theme-text)_78%,var(--theme-text-muted))]">
-                    <p className="mb-1 font-medium text-[var(--theme-text)]">选购 / 咨询说明</p>
-                    <p>{categoryGuide}</p>
-                  </div>
-                ) : null}
-                {activeCategoryName && categoryFaq.length > 0 ? (
-                  <div className="mt-3 space-y-2">
-                    {categoryFaq.map((item, index) => (
-                      <details key={`${item.question}-${index}`} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm">
-                        <summary className="cursor-pointer font-medium text-[var(--theme-text)]">{item.question}</summary>
-                        <p className="mt-2 leading-6 text-[color-mix(in_srgb,var(--theme-text)_76%,var(--theme-text-muted))]">{item.answer}</p>
-                      </details>
-                    ))}
-                  </div>
-                ) : null}
-              </section>
 
               <SilkProductGrid
                 products={products}

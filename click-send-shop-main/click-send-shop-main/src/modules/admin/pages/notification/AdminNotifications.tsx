@@ -95,13 +95,13 @@ function buildPayload(form: ManualForm): NotificationPayload {
 function getRowAction(row: Notification): { action: RowAction; label: string; permissions: string[] } | null {
   const status = row.send_status || row.workflow_status;
   if (row.workflow_status === "draft" || status === "draft") {
-    return { action: "deleteDraft", label: "Delete draft", permissions: NOTIFICATION_DRAFT_PERMISSIONS };
+    return { action: "deleteDraft", label: "删除草稿", permissions: NOTIFICATION_DRAFT_PERMISSIONS };
   }
   if (status === "scheduled") {
-    return { action: "cancelScheduled", label: "Cancel schedule", permissions: NOTIFICATION_SEND_PERMISSIONS };
+    return { action: "cancelScheduled", label: "取消定时", permissions: NOTIFICATION_SEND_PERMISSIONS };
   }
   if (status === "sent") {
-    return { action: "revokeSent", label: "Revoke", permissions: NOTIFICATION_REVOKE_PERMISSIONS };
+    return { action: "revokeSent", label: "撤回", permissions: NOTIFICATION_REVOKE_PERMISSIONS };
   }
   return null;
 }

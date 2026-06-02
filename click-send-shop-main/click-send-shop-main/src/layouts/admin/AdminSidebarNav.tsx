@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { BarChart3, ChevronRight, LogOut, X } from "lucide-react";
@@ -14,6 +14,7 @@ function AdminSidebarNav({
   navItems,
   pathname,
   onNavigate,
+  onPreload,
   onLogout,
   onClose,
   loggingOut = false,
@@ -25,6 +26,7 @@ function AdminSidebarNav({
   navItems: ResolvedNavItem[];
   pathname: string;
   onNavigate: (path: string) => void;
+  onPreload?: (path: string) => void;
   onLogout: () => void;
   onClose?: () => void;
   loggingOut?: boolean;
@@ -38,6 +40,25 @@ function AdminSidebarNav({
     const ownPath = child.path ? currentPath === child.path || currentPath.startsWith(child.path) : false;
     return ownPath || Boolean(child.children?.some((nested) => childMatchesPath(nested, currentPath)));
   }, []);
+  const preloadChildren = useCallback(
+    (children?: ResolvedNavChild[]) => {
+      const stack = [...(children ?? [])];
+      while (stack.length > 0) {
+        const child = stack.shift();
+        if (!child) continue;
+        if (child.path) onPreload?.(child.path);
+        if (child.children?.length) stack.push(...child.children);
+      }
+    },
+    [onPreload],
+  );
+  const preloadItem = useCallback(
+    (path?: string, children?: ResolvedNavChild[]) => {
+      if (path) onPreload?.(path);
+      preloadChildren(children);
+    },
+    [onPreload, preloadChildren],
+  );
 
   useEffect(() => {
     const activeGroup = navItems.find((item) => {
@@ -60,7 +81,7 @@ function AdminSidebarNav({
         scrollMode === "overlay" ? "h-full max-h-[100dvh] min-h-0 flex-1" : "h-full min-h-0"
       }`}
     >
-      <div className="safe-area-pt flex shrink-0 items-center gap-2 border-b border-border px-5 py-4">
+      <div className="admin-sidebar-brand safe-area-pt flex h-[var(--admin-chrome-toolbar-h)] min-h-[var(--admin-chrome-toolbar-h)] shrink-0 items-center gap-2 border-b border-border px-5">
         <AdminSiteLogo size="sm" />
         <span className="min-w-0 flex-1 truncate font-display text-lg font-bold text-foreground">{layoutTitle}</span>
         {scrollMode === "overlay" && onClose ? (
@@ -84,6 +105,8 @@ function AdminSidebarNav({
             <div key={item.path}>
               <button
                 type="button"
+                onPointerEnter={() => preloadItem(item.path, item.children)}
+                onFocus={() => preloadItem(item.path, item.children)}
                 onClick={() => {
                   if (item.children?.length) {
                     setExpandedPath((prev) => (prev === item.path ? null : item.path));
@@ -129,6 +152,8 @@ function AdminSidebarNav({
                                 <button
                                   type="button"
                                   key={nested.path ?? nested.label}
+                                  onPointerEnter={() => preloadItem(nested.path, nested.children)}
+                                  onFocus={() => preloadItem(nested.path, nested.children)}
                                   onClick={() => nested.path && onNavigate(nested.path)}
                                   className={`flex min-h-[40px] w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors active:bg-secondary/80 ${
                                     nestedActive ? "font-semibold text-[var(--theme-primary)]" : "text-muted-foreground hover:text-foreground"
@@ -147,6 +172,8 @@ function AdminSidebarNav({
                       <button
                         type="button"
                         key={child.path ?? child.label}
+                        onPointerEnter={() => preloadItem(child.path, child.children)}
+                        onFocus={() => preloadItem(child.path, child.children)}
                         onClick={() => child.path && onNavigate(child.path)}
                         className={`flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-sm transition-colors active:bg-secondary/80 ${
                           cActive ? "font-semibold text-[var(--theme-primary)]" : "text-muted-foreground hover:text-foreground"
@@ -189,7 +216,7 @@ export function AdminNavTab({
   icon: LucideIcon;
   label: string;
   active: boolean;
-  onClick: () => void;
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
     <button

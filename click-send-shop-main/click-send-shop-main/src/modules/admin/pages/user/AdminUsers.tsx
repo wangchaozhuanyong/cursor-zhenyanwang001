@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Download, Plus, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import {
@@ -29,6 +29,7 @@ import {
   adminTableAlignClass,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import AdminUserDetailDrawer from "@/modules/admin/pages/user/AdminUserDetailDrawer";
 
 const USER_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left",
@@ -44,7 +45,7 @@ const USER_COLUMN_ALIGNS: AdminTableAlign[] = [
 ];
 
 export default function AdminUsers() {
-  const navigate = useNavigate();
+  const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const { locale } = useAdminTOptional();
   const isEn = locale === "en";
   const L = (zh: string, en: string) => (isEn ? en : zh);
@@ -129,6 +130,10 @@ export default function AdminUsers() {
     applyBatchTag,
   } = useAdminUsers();
 
+  const openUserDetail = (userId: string) => {
+    setDetailUserId(userId);
+  };
+
   const renderMobileCard = (user: UserProfile) => {
     const checked = isUserSelected(user.id);
     return (
@@ -149,7 +154,7 @@ export default function AdminUsers() {
               </div>
               <button
                 type="button"
-                onClick={() => navigate(`/admin/users/${user.id}`)}
+                onClick={() => openUserDetail(user.id)}
                 className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
               >
                 {L("详情", "Details")}
@@ -616,12 +621,22 @@ export default function AdminUsers() {
               {user.created_at ? formatDateTime(user.created_at) : "-"}
             </td>
             <td className={`px-4 py-3 ${adminTableAlignClass("right")}`}>
-              <button type="button" onClick={() => navigate(`/admin/users/${user.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">
+              <button type="button" onClick={() => openUserDetail(user.id)} className="text-xs text-[var(--theme-price)] hover:underline">
                 {L("详情", "Details")}
               </button>
             </td>
           </>
         )}
+      />
+      <AdminUserDetailDrawer
+        open={Boolean(detailUserId)}
+        userId={detailUserId}
+        onOpenChange={(open) => {
+          if (!open) setDetailUserId(null);
+        }}
+        onUpdated={async () => {
+          await usersQuery.refetch();
+        }}
       />
       </AdminPageShell>
     </PermissionGate>

@@ -245,7 +245,7 @@ async function sendMessage(chatId, text, options = {}) {
     });
     const data = /** @type {any} */ (await response.json().catch(() => ({})));
     if (!response.ok || data.ok === false) {
-      const detail = data.description || `Telegram API error: ${response.status}`;
+      const detail = data.description || `Telegram 接口错误：${response.status}`;
       throw new BusinessError(400, detail);
     }
     return data.result?.message_id ? String(data.result.message_id) : '';

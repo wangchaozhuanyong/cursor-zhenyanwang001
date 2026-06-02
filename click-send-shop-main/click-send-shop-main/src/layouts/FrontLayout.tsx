@@ -12,7 +12,7 @@ import StoreShell from "@/layouts/StoreShell";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 
 function shouldAutoHideBottomNav(pathname: string): boolean {
-  return pathname === "/categories" || pathname === "/search" || pathname === "/new-arrivals";
+  return pathname === "/search" || pathname === "/new-arrivals";
 }
 
 function StoreScrollChromeRouteSync({ pathname }: { pathname: string }) {

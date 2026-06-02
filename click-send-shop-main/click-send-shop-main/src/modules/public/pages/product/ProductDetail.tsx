@@ -652,7 +652,12 @@ function DetailPurchaseBar({
     <div className="store-detail-purchase-bar flex items-stretch gap-3">
       <div className="flex shrink-0 items-center gap-4 pr-1">
         <div className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]">
-          <FavoriteMotionButton active={isFavorite} onClick={onFavorite} className="h-9 w-9" size={18} />
+          <FavoriteMotionButton
+            active={isFavorite}
+            onClick={onFavorite}
+            className="store-detail-mini-action-icon !h-9 !w-9"
+            size={18}
+          />
           <span className="text-[10px]">{isFavorite ? "已收藏" : "收藏"}</span>
         </div>
         <button
@@ -661,8 +666,8 @@ function DetailPurchaseBar({
           className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]"
           aria-label="联系客服"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)]">
-            <Headphones size={18} strokeWidth={2} />
+          <span className="store-detail-mini-action-icon flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+            <Headphones size={18} strokeWidth={2} aria-hidden="true" />
           </span>
           <span className="text-[10px]">客服</span>
         </button>

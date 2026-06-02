@@ -24,8 +24,21 @@ function formatDateTime(value) {
   if (!value) return '-';
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return '-';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  /** @type {Record<string, string>} */
+  const parts = {};
+  for (const part of new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(d)) {
+    if (part.type !== 'literal') parts[part.type] = part.value;
+  }
+  return `${parts.year}年${parts.month}月${parts.day}日 ${parts.hour}:${parts.minute}:${parts.second}（北京时间）`;
 }
 
 function maskPhoneLast5(phone) {

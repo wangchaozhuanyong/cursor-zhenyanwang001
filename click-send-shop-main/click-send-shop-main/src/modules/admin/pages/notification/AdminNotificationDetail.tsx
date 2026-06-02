@@ -154,7 +154,7 @@ export default function AdminNotificationDetail() {
         <div><div className="text-xs text-muted-foreground"><Tx>接收人数</Tx></div><div>{data.recipient_count}</div></div>
         <div><div className="text-xs text-muted-foreground"><Tx>已读人数</Tx></div><div>{data.read_count}</div></div>
         <div><div className="text-xs text-muted-foreground"><Tx>已读率</Tx></div><div>{(data.read_rate * 100).toFixed(2)}%</div></div>
-        <div><div className="text-xs text-muted-foreground"><Tx>定时/发送</Tx></div><div>{data.scheduled_at || data.sent_at || "-"}</div></div>
+        <div><div className="text-xs text-muted-foreground"><Tx>定时/发送</Tx></div><div>{formatDateTime(data.scheduled_at || data.sent_at)}</div></div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-4">

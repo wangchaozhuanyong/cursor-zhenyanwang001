@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -39,6 +39,62 @@ const emptyDraft: Draft = {
 };
 
 const EMPTY_DRAFT_SERIALIZED = JSON.stringify(emptyDraft);
+
+const compactFieldShell =
+  "flex h-9 min-w-0 items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)]/70 px-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.42)] transition focus-within:border-[var(--theme-primary)]/60 focus-within:ring-2 focus-within:ring-[var(--theme-primary)]/12";
+
+const compactInputClass =
+  "min-w-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground/55 disabled:cursor-not-allowed disabled:opacity-60";
+
+function CompactInlineField({
+  label,
+  hint,
+  children,
+  className = "",
+}: {
+  label: ReactNode;
+  hint?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <label className={`${compactFieldShell} ${className}`}>
+      <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+        <span className="whitespace-nowrap">{label}</span>
+        {hint ? <AdminFieldHint text={hint} className="-mr-0.5" /> : null}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function CompactToggle({
+  label,
+  hint,
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  label: ReactNode;
+  hint?: ReactNode;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="inline-flex h-8 min-w-0 items-center gap-1.5 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)]/70 px-2 text-[11px] font-medium text-foreground transition hover:border-[var(--theme-primary)]/35">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-3.5 w-3.5 shrink-0 accent-[var(--theme-primary)]"
+      />
+      <span className="whitespace-nowrap">{label}</span>
+      {hint ? <AdminFieldHint text={hint} /> : null}
+    </label>
+  );
+}
 
 function coerceNumberOrDefault(value: unknown, defaultValue: number) {
   if (value === "" || value === null || value === undefined) return defaultValue;
@@ -335,95 +391,130 @@ export default function AdminMemberLevels() {
         <div>{L("加载中...", "Loading...")}</div>
       ) : (
         levels.map((level) => (
-          <div key={level.id} className="theme-rounded space-y-2 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-            <div className="grid gap-2 md:grid-cols-4">
-              <div>
-                <AdminLabelWithHint label={L("等级名称", "Tier name")} hint={hints.name} />
-                <input value={level.name || ""} onChange={(e) => updateLocal(level.id, { name: e.target.value })} className="w-full rounded border px-2 py-1" />
+          <div key={level.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow">
+            <div className="grid gap-2 xl:grid-cols-[minmax(9rem,0.9fr)_minmax(13rem,1.35fr)_minmax(18rem,1.1fr)_auto]">
+              <CompactInlineField label={L("等级", "Tier")} hint={hints.name}>
+                <input
+                  value={level.name || ""}
+                  onChange={(e) => updateLocal(level.id, { name: e.target.value })}
+                  className={compactInputClass}
+                />
+              </CompactInlineField>
+              <CompactInlineField label={L("描述", "Description")} hint={hints.description}>
+                <input
+                  value={level.description || ""}
+                  onChange={(e) => updateLocal(level.id, { description: e.target.value })}
+                  className={compactInputClass}
+                />
+              </CompactInlineField>
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <CompactToggle
+                  label={L("免邮", "Free shipping")}
+                  hint={hints.free_shipping_enabled}
+                  checked={!!level.free_shipping_enabled}
+                  onChange={(checked) => updateLocal(level.id, { free_shipping_enabled: checked })}
+                />
+                <CompactToggle
+                  label={L("启用", "Enabled")}
+                  hint={hints.enabled}
+                  checked={level.enabled !== false}
+                  onChange={(checked) => updateLocal(level.id, { enabled: checked, is_default: checked ? level.is_default : false })}
+                />
+                <CompactToggle
+                  label={L("默认", "Default")}
+                  hint={hints.is_default}
+                  checked={!!level.is_default}
+                  onChange={(checked) => updateLocal(level.id, { is_default: checked, enabled: checked ? true : level.enabled })}
+                />
               </div>
-              <div>
-                <AdminLabelWithHint label={L("描述", "Description")} hint={hints.description} />
-                <input value={level.description || ""} onChange={(e) => updateLocal(level.id, { description: e.target.value })} className="w-full rounded border px-2 py-1" />
-              </div>
-              <div>
-                <AdminLabelWithHint label={L("累计消费", "Total spent")} hint={hints.min_spent} />
-                <input type="number" value={level.min_spent ?? ""} onChange={(e) => updateLocal(level.id, { min_spent: e.target.value })} className="w-full rounded border px-2 py-1" />
-              </div>
-              <div>
-                <AdminLabelWithHint label={L("累计订单", "Total orders")} hint={hints.min_orders} />
-                <input type="number" value={level.min_orders ?? ""} onChange={(e) => updateLocal(level.id, { min_orders: e.target.value })} className="w-full rounded border px-2 py-1" />
-              </div>
-              <div>
-                <AdminLabelWithHint label={L("折扣率", "Discount rate")} hint={hints.discount_rate} />
-                <input type="number" step="0.01" value={level.discount_rate ?? ""} onChange={(e) => updateLocal(level.id, { discount_rate: e.target.value })} className="w-full rounded border px-2 py-1" />
-              </div>
-              <div>
-                <AdminLabelWithHint label={L("积分倍率", "Points multiplier")} hint={hints.points_multiplier} />
-                <input type="number" step="0.01" value={level.points_multiplier ?? ""} onChange={(e) => updateLocal(level.id, { points_multiplier: e.target.value })} className="w-full rounded border px-2 py-1" />
-              </div>
-              <div>
-                <AdminLabelWithHint label={L("排序", "Sort order")} hint={hints.sort_order} />
-                <input type="number" step="1" value={level.sort_order ?? ""} onChange={(e) => updateLocal(level.id, { sort_order: e.target.value })} className="w-full rounded border px-2 py-1" />
-              </div>
-              <div className="flex flex-col justify-end gap-2 pt-5">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={!!level.free_shipping_enabled} onChange={(e) => updateLocal(level.id, { free_shipping_enabled: e.target.checked })} />
-                  {L("免邮", "Free shipping")}
-                  <AdminFieldHint text={hints.free_shipping_enabled} />
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={level.enabled !== false} onChange={(e) => updateLocal(level.id, { enabled: e.target.checked, is_default: e.target.checked ? level.is_default : false })} />
-                  {L("启用", "Enabled")}
-                  <AdminFieldHint text={hints.enabled} />
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={!!level.is_default} onChange={(e) => updateLocal(level.id, { is_default: e.target.checked, enabled: e.target.checked ? true : level.enabled })} />
-                  {L("默认等级", "Default tier")}
-                  <AdminFieldHint text={hints.is_default} />
-                </label>
+              <div className="flex min-w-0 justify-end">
+                <AdminRowActionsMenu
+                  primary={(
+                    <LoadingButton
+                      type="button"
+                      variant="outline"
+                      className="h-9 px-3 text-xs"
+                      state={savingId === level.id ? "loading" : "normal"}
+                      onClick={async () => {
+                        const err = validateDraft(level);
+                        if (err) {
+                          toast.error(err);
+                          return;
+                        }
+                        setSavingId(level.id);
+                        try {
+                          await userService.updateMemberLevel(level.id, toPayload(level));
+                          await invalidateLevels();
+                          toast.success(L("已保存", "Saved"));
+                        } catch (e) {
+                          toast.error(toastErrorMessage(e, L("保存失败", "Save failed")));
+                        } finally {
+                          setSavingId(null);
+                        }
+                      }}
+                    >
+                      {L("保存", "Save")}
+                    </LoadingButton>
+                  )}
+                  moreLabel={L("更多", "More")}
+                  menuDisabled={savingId === level.id}
+                  items={[
+                    {
+                      key: "delete",
+                      label: L("删除", "Delete"),
+                      icon: <Trash2 size={14} aria-hidden />,
+                      danger: true,
+                      disabled: level.is_default === true || savingId === level.id,
+                      onClick: () => setDeleteTarget(level),
+                    },
+                  ]}
+                />
               </div>
             </div>
-            <div className="flex justify-end">
-              <AdminRowActionsMenu
-                primary={(
-                  <LoadingButton
-                    type="button"
-                    variant="outline"
-                    state={savingId === level.id ? "loading" : "normal"}
-                    onClick={async () => {
-                      const err = validateDraft(level);
-                      if (err) {
-                        toast.error(err);
-                        return;
-                      }
-                      setSavingId(level.id);
-                      try {
-                        await userService.updateMemberLevel(level.id, toPayload(level));
-                        await invalidateLevels();
-                        toast.success(L("已保存", "Saved"));
-                      } catch (e) {
-                        toast.error(toastErrorMessage(e, L("保存失败", "Save failed")));
-                      } finally {
-                        setSavingId(null);
-                      }
-                    }}
-                  >
-                    {L("保存", "Save")}
-                  </LoadingButton>
-                )}
-                moreLabel={L("更多", "More")}
-                menuDisabled={savingId === level.id}
-                items={[
-                  {
-                    key: "delete",
-                    label: L("删除", "Delete"),
-                    icon: <Trash2 size={14} aria-hidden />,
-                    danger: true,
-                    disabled: level.is_default === true || savingId === level.id,
-                    onClick: () => setDeleteTarget(level),
-                  },
-                ]}
-              />
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+              <CompactInlineField label={L("消费", "Spent")} hint={hints.min_spent}>
+                <input
+                  type="number"
+                  value={level.min_spent ?? ""}
+                  onChange={(e) => updateLocal(level.id, { min_spent: e.target.value })}
+                  className={compactInputClass}
+                />
+              </CompactInlineField>
+              <CompactInlineField label={L("订单", "Orders")} hint={hints.min_orders}>
+                <input
+                  type="number"
+                  value={level.min_orders ?? ""}
+                  onChange={(e) => updateLocal(level.id, { min_orders: e.target.value })}
+                  className={compactInputClass}
+                />
+              </CompactInlineField>
+              <CompactInlineField label={L("折扣", "Discount")} hint={hints.discount_rate}>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={level.discount_rate ?? ""}
+                  onChange={(e) => updateLocal(level.id, { discount_rate: e.target.value })}
+                  className={compactInputClass}
+                />
+              </CompactInlineField>
+              <CompactInlineField label={L("积分", "Points")} hint={hints.points_multiplier}>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={level.points_multiplier ?? ""}
+                  onChange={(e) => updateLocal(level.id, { points_multiplier: e.target.value })}
+                  className={compactInputClass}
+                />
+              </CompactInlineField>
+              <CompactInlineField label={L("排序", "Sort")} hint={hints.sort_order}>
+                <input
+                  type="number"
+                  step="1"
+                  value={level.sort_order ?? ""}
+                  onChange={(e) => updateLocal(level.id, { sort_order: e.target.value })}
+                  className={compactInputClass}
+                />
+              </CompactInlineField>
             </div>
           </div>
         ))

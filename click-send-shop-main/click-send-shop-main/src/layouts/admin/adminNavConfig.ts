@@ -379,7 +379,9 @@ export function filterNav(
 }
 
 /** 底部主导航四入口 +「更多」侧栏，与移动端拇指热区一致 */
-export function mobileBottomTab(pathname: string): "dash" | "products" | "orders" | "notifications" | "more" {
+export type AdminMobileTabKey = "dash" | "products" | "orders" | "notifications" | "more";
+
+export function mobileBottomTab(pathname: string): AdminMobileTabKey {
   if (pathname === "/admin" || pathname === "/admin/") return "dash";
   if (
     pathname.startsWith("/admin/products") ||

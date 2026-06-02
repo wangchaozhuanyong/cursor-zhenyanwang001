@@ -70,8 +70,8 @@ function hasAccessRule(pathname, matchers) {
 }
 
 const adminRoutes = read("src/routes/AdminAppRoutes.tsx");
-const navAccess = read("src/config/adminNavAccess.ts");
-const matchers = buildAccessMatchers(navAccess);
+const routeRegistry = read("src/config/adminRouteRegistry.ts");
+const matchers = buildAccessMatchers(routeRegistry);
 
 const relativePaths = new Set([
   ...extractRelativeAdminPaths(adminRoutes),
@@ -87,9 +87,9 @@ for (const rel of relativePaths) {
 }
 
 if (uncovered.length) {
-  console.error("[check-admin-route-access] 以下后台路径未在 adminNavAccess.ts 登记:\n");
+  console.error("[check-admin-route-access] 以下后台路径未在 adminRouteRegistry.ts 登记:\n");
   for (const path of uncovered.sort()) console.error(`  - ${path}`);
-  console.error("\n请在 src/config/adminNavAccess.ts 的 RULES 中补充对应权限。");
+  console.error("\n请在 src/config/adminRouteRegistry.ts 的 ADMIN_ROUTE_ACCESS_RULES 中补充对应权限。");
   process.exit(1);
 }
 

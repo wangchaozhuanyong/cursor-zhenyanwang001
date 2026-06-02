@@ -1,8 +1,8 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
-import { useEffect, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useOverlayDismiss } from "../hooks/useOverlayDismiss";
 import { useModalLayer } from "../modal/ModalLayerProvider";
 
 export type ModalDialogProps = {
@@ -28,20 +28,11 @@ export function ModalDialog({
   hasDescription = true,
 }: ModalDialogProps) {
   const { overlayZ, contentZ, isTop } = useModalLayer(open);
-  useBodyScrollLock(open);
+  useOverlayDismiss({ open, isTop, onClose, lockBody: true });
   const contentAccessibilityProps = {
     ...(hasTitle ? {} : { "aria-labelledby": undefined }),
     ...(hasDescription ? {} : { "aria-describedby": undefined }),
   };
-
-  useEffect(() => {
-    if (!open || !isTop) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, isTop, onClose]);
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(v) => !v && onClose()}>

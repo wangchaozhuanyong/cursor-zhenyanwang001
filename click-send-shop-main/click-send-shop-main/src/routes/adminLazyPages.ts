@@ -1,86 +1,215 @@
-import { lazy } from "react";
+import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 
-export const AdminLogin = lazy(() => import("@/modules/admin/pages/auth/AdminLogin"));
-export const AdminAccount = lazy(() => import("@/modules/admin/pages/auth/AdminAccount"));
-export const AdminAccounts = lazy(() => import("@/modules/admin/pages/auth/AdminAccounts"));
+type PreloadableAdminLazy<T extends ComponentType<any>> = LazyExoticComponent<T> & {
+  preload?: () => Promise<unknown>;
+};
+type AdminLazyComponent = PreloadableAdminLazy<ComponentType<any>>;
 
-export const Dashboard = lazy(() => import("@/modules/admin/pages/dashboard/Dashboard"));
+function lazyWithPreload<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>) {
+  const Component = lazy(factory) as PreloadableAdminLazy<T>;
+  Component.preload = factory;
+  return Component;
+}
 
-export const AdminProducts = lazy(() => import("@/modules/admin/pages/product/AdminProducts"));
-export const AdminProductForm = lazy(() => import("@/modules/admin/pages/product/AdminProductForm"));
-export const AdminCategories = lazy(() => import("@/modules/admin/pages/product/AdminCategories"));
-export const AdminInventory = lazy(() => import("@/modules/admin/pages/product/AdminInventory"));
-export const AdminProductTags = lazy(() => import("@/modules/admin/pages/product/AdminProductTags"));
-export const AdminBanners = lazy(() => import("@/modules/admin/pages/product/AdminBanners"));
+function normalizeAdminRoutePath(to: string) {
+  try {
+    const url = new URL(to, window.location.origin);
+    return url.pathname.replace(/\/+$/, "") || "/admin";
+  } catch {
+    return to.split("?")[0].replace(/\/+$/, "") || "/admin";
+  }
+}
 
-export const AdminOrders = lazy(() => import("@/modules/admin/pages/order/AdminOrders"));
-export const AdminCheckoutAbandonments = lazy(() => import("@/modules/admin/pages/order/AdminCheckoutAbandonments"));
-export const AdminOrderDetail = lazy(() => import("@/modules/admin/pages/order/AdminOrderDetail"));
-export const AdminReturns = lazy(() => import("@/modules/admin/pages/order/AdminReturns"));
-export const AdminShipping = lazy(() => import("@/modules/admin/pages/order/AdminShipping"));
+function preloadComponent(component: AdminLazyComponent | undefined) {
+  return component?.preload?.();
+}
 
-export const AdminUsers = lazy(() => import("@/modules/admin/pages/user/AdminUsers"));
-export const AdminUserDetail = lazy(() => import("@/modules/admin/pages/user/AdminUserDetail"));
-export const AdminUserSecurity = lazy(() => import("@/modules/admin/pages/user/AdminUserSecurity"));
-export const AdminMemberLevels = lazy(() => import("@/modules/admin/pages/user/AdminMemberLevels"));
-export const AdminInvites = lazy(() => import("@/modules/admin/pages/user/AdminInvites"));
+export const AdminLogin = lazyWithPreload(() => import("@/modules/admin/pages/auth/AdminLogin"));
+export const AdminAccount = lazyWithPreload(() => import("@/modules/admin/pages/auth/AdminAccount"));
+export const AdminAccounts = lazyWithPreload(() => import("@/modules/admin/pages/auth/AdminAccounts"));
 
-export const AdminCoupons = lazy(() => import("@/modules/admin/pages/coupon/AdminCoupons"));
-export const AdminCouponForm = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponForm"));
-export const AdminCouponRecords = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponRecords"));
-export const AdminCouponCampaigns = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponCampaigns"));
-export const AdminCouponCampaignForm = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponCampaignForm"));
-export const AdminActivities = lazy(() => import("@/modules/admin/pages/marketing/AdminActivities"));
-export const AdminMarketingDashboard = lazy(() => import("@/modules/admin/pages/marketing/AdminMarketingDashboard"));
-export const AdminActivityForm = lazy(() => import("@/modules/admin/pages/marketing/AdminActivityForm"));
-export const AdminMarketingPoints = lazy(() => import("@/modules/admin/pages/marketing/AdminMarketingPoints"));
-export const AdminMarketingRewards = lazy(() => import("@/modules/admin/pages/marketing/AdminMarketingRewards"));
+export const Dashboard = lazyWithPreload(() => import("@/modules/admin/pages/dashboard/Dashboard"));
 
-export const AdminReviews = lazy(() => import("@/modules/admin/pages/review/AdminReviews"));
-export const AdminNotifications = lazy(() => import("@/modules/admin/pages/notification/AdminNotifications"));
-export const AdminNotificationDetail = lazy(() => import("@/modules/admin/pages/notification/AdminNotificationDetail"));
-export const AdminEventCenter = lazy(() => import("@/modules/admin/pages/event/AdminEventCenter"));
+export const AdminProducts = lazyWithPreload(() => import("@/modules/admin/pages/product/AdminProducts"));
+export const AdminProductForm = lazyWithPreload(() => import("@/modules/admin/pages/product/AdminProductForm"));
+export const AdminCategories = lazyWithPreload(() => import("@/modules/admin/pages/product/AdminCategories"));
+export const AdminInventory = lazyWithPreload(() => import("@/modules/admin/pages/product/AdminInventory"));
+export const AdminProductTags = lazyWithPreload(() => import("@/modules/admin/pages/product/AdminProductTags"));
+export const AdminBanners = lazyWithPreload(() => import("@/modules/admin/pages/product/AdminBanners"));
 
-export const AdminReports = lazy(() => import("@/modules/admin/pages/report/AdminReports"));
-export const AdminReportOverview = lazy(() => import("@/modules/admin/pages/report/AdminReportOverview"));
-export const AdminSalesDailyReport = lazy(() => import("@/modules/admin/pages/report/AdminSalesDailyReport"));
-export const AdminSalesMonthlyReport = lazy(() => import("@/modules/admin/pages/report/AdminSalesMonthlyReport"));
-export const AdminProfitDailyReport = lazy(() => import("@/modules/admin/pages/report/AdminProfitDailyReport"));
-export const AdminOperatingExpenses = lazy(() => import("@/modules/admin/pages/report/AdminOperatingExpenses"));
-export const AdminProductAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminProductAnalysisReport"));
-export const AdminCategoryAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminCategoryAnalysisReport"));
-export const AdminOrderAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminOrderAnalysisReport"));
-export const AdminCustomerAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminCustomerAnalysisReport"));
-export const AdminActivityAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminActivityAnalysisReport"));
-export const AdminCouponAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminCouponAnalysisReport"));
-export const AdminInventoryAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminInventoryAnalysisReport"));
-export const AdminSearchAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminSearchAnalysisReport"));
-export const AdminTrafficAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminTrafficAnalysisReport"));
-export const AdminExportCenter = lazy(() => import("@/modules/admin/pages/report/AdminExportCenter"));
+export const AdminOrders = lazyWithPreload(() => import("@/modules/admin/pages/order/AdminOrders"));
+export const AdminCheckoutAbandonments = lazyWithPreload(() => import("@/modules/admin/pages/order/AdminCheckoutAbandonments"));
+export const AdminOrderDetail = lazyWithPreload(() => import("@/modules/admin/pages/order/AdminOrderDetail"));
+export const AdminReturns = lazyWithPreload(() => import("@/modules/admin/pages/order/AdminReturns"));
+export const AdminShipping = lazyWithPreload(() => import("@/modules/admin/pages/order/AdminShipping"));
 
-export const AdminSiteSettings = lazy(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
-export const AdminFeatureSettings = lazy(() => import("@/modules/admin/pages/settings/AdminFeatureSettings"));
-export const AdminSupportDownload = lazy(() => import("@/modules/admin/pages/settings/AdminSupportDownload"));
-export const AdminTelegramSettings = lazy(() => import("@/modules/admin/pages/settings/AdminTelegramSettings"));
-export const AdminThemeSettings = lazy(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
-export const AdminContent = lazy(() => import("@/modules/admin/pages/settings/AdminContent"));
-export const AdminHomeOps = lazy(() => import("@/modules/admin/pages/settings/AdminHomeOps"));
+export const AdminUsers = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUsers"));
+export const AdminUserDetail = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUserDetail"));
+export const AdminUserSecurity = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUserSecurity"));
+export const AdminMemberLevels = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminMemberLevels"));
+export const AdminInvites = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminInvites"));
 
-export const AdminRoles = lazy(() => import("@/modules/admin/pages/rbac/AdminRoles"));
+export const AdminCoupons = lazyWithPreload(() => import("@/modules/admin/pages/coupon/AdminCoupons"));
+export const AdminCouponForm = lazyWithPreload(() => import("@/modules/admin/pages/coupon/AdminCouponForm"));
+export const AdminCouponRecords = lazyWithPreload(() => import("@/modules/admin/pages/coupon/AdminCouponRecords"));
+export const AdminCouponCampaigns = lazyWithPreload(() => import("@/modules/admin/pages/coupon/AdminCouponCampaigns"));
+export const AdminCouponCampaignForm = lazyWithPreload(() => import("@/modules/admin/pages/coupon/AdminCouponCampaignForm"));
+export const AdminActivities = lazyWithPreload(() => import("@/modules/admin/pages/marketing/AdminActivities"));
+export const AdminMarketingDashboard = lazyWithPreload(() => import("@/modules/admin/pages/marketing/AdminMarketingDashboard"));
+export const AdminActivityForm = lazyWithPreload(() => import("@/modules/admin/pages/marketing/AdminActivityForm"));
+export const AdminMarketingPoints = lazyWithPreload(() => import("@/modules/admin/pages/marketing/AdminMarketingPoints"));
+export const AdminMarketingRewards = lazyWithPreload(() => import("@/modules/admin/pages/marketing/AdminMarketingRewards"));
 
-export const AdminLogs = lazy(() => import("@/modules/admin/pages/system/AdminLogs"));
-export const AdminRecycleBin = lazy(() => import("@/modules/admin/pages/system/AdminRecycleBin"));
-export const AdminDataRetention = lazy(() => import("@/modules/admin/pages/system/AdminDataRetention"));
-export const AdminBackupCenter = lazy(() => import("@/modules/admin/pages/system/AdminBackupCenter"));
+export const AdminReviews = lazyWithPreload(() => import("@/modules/admin/pages/review/AdminReviews"));
+export const AdminNotifications = lazyWithPreload(() => import("@/modules/admin/pages/notification/AdminNotifications"));
+export const AdminNotificationDetail = lazyWithPreload(() => import("@/modules/admin/pages/notification/AdminNotificationDetail"));
+export const AdminEventCenter = lazyWithPreload(() => import("@/modules/admin/pages/event/AdminEventCenter"));
 
-export const AdminPaymentChannels = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentChannels"));
-export const AdminPaymentOrders = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentOrders"));
-export const AdminPaymentEvents = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentEvents"));
-export const AdminPaymentReconciliations = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentReconciliations"));
+export const AdminReports = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminReports"));
+export const AdminReportOverview = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminReportOverview"));
+export const AdminSalesDailyReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminSalesDailyReport"));
+export const AdminSalesMonthlyReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminSalesMonthlyReport"));
+export const AdminProfitDailyReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminProfitDailyReport"));
+export const AdminOperatingExpenses = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminOperatingExpenses"));
+export const AdminProductAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminProductAnalysisReport"));
+export const AdminCategoryAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminCategoryAnalysisReport"));
+export const AdminOrderAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminOrderAnalysisReport"));
+export const AdminCustomerAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminCustomerAnalysisReport"));
+export const AdminActivityAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminActivityAnalysisReport"));
+export const AdminCouponAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminCouponAnalysisReport"));
+export const AdminInventoryAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminInventoryAnalysisReport"));
+export const AdminSearchAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminSearchAnalysisReport"));
+export const AdminTrafficAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminTrafficAnalysisReport"));
+export const AdminExportCenter = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminExportCenter"));
 
-export const AdminMonitoringOverview = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringOverview"));
-export const AdminMonitoringAnomalies = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringAnomalies"));
-export const AdminMonitoringAnomalyDetail = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringAnomalyDetail"));
-export const AdminMonitoringRepairTasks = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringRepairTasks"));
-export const AdminMonitoringRules = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringRules"));
-export const AdminMonitoringRuns = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringRuns"));
+export const AdminSiteSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
+export const AdminFeatureSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminFeatureSettings"));
+export const AdminSupportDownload = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminSupportDownload"));
+export const AdminTelegramSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminTelegramSettings"));
+export const AdminThemeSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
+export const AdminContent = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminContent"));
+export const AdminHomeOps = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminHomeOps"));
+
+export const AdminRoles = lazyWithPreload(() => import("@/modules/admin/pages/rbac/AdminRoles"));
+
+export const AdminLogs = lazyWithPreload(() => import("@/modules/admin/pages/system/AdminLogs"));
+export const AdminRecycleBin = lazyWithPreload(() => import("@/modules/admin/pages/system/AdminRecycleBin"));
+export const AdminDataRetention = lazyWithPreload(() => import("@/modules/admin/pages/system/AdminDataRetention"));
+export const AdminBackupCenter = lazyWithPreload(() => import("@/modules/admin/pages/system/AdminBackupCenter"));
+
+export const AdminPaymentChannels = lazyWithPreload(() => import("@/modules/admin/pages/payment/AdminPaymentChannels"));
+export const AdminPaymentOrders = lazyWithPreload(() => import("@/modules/admin/pages/payment/AdminPaymentOrders"));
+export const AdminPaymentEvents = lazyWithPreload(() => import("@/modules/admin/pages/payment/AdminPaymentEvents"));
+export const AdminPaymentReconciliations = lazyWithPreload(() => import("@/modules/admin/pages/payment/AdminPaymentReconciliations"));
+
+export const AdminMonitoringOverview = lazyWithPreload(() => import("@/modules/admin/pages/monitoring/AdminMonitoringOverview"));
+export const AdminMonitoringAnomalies = lazyWithPreload(() => import("@/modules/admin/pages/monitoring/AdminMonitoringAnomalies"));
+export const AdminMonitoringAnomalyDetail = lazyWithPreload(() => import("@/modules/admin/pages/monitoring/AdminMonitoringAnomalyDetail"));
+export const AdminMonitoringRepairTasks = lazyWithPreload(() => import("@/modules/admin/pages/monitoring/AdminMonitoringRepairTasks"));
+export const AdminMonitoringRules = lazyWithPreload(() => import("@/modules/admin/pages/monitoring/AdminMonitoringRules"));
+export const AdminMonitoringRuns = lazyWithPreload(() => import("@/modules/admin/pages/monitoring/AdminMonitoringRuns"));
+
+const ADMIN_EXACT_ROUTE_PRELOADERS = new Map<string, AdminLazyComponent>([
+  ["/admin/login", AdminLogin],
+  ["/admin", Dashboard],
+  ["/admin/dashboard", Dashboard],
+  ["/admin/account", AdminAccount],
+  ["/admin/products", AdminProducts],
+  ["/admin/products/new", AdminProductForm],
+  ["/admin/categories", AdminCategories],
+  ["/admin/inventory", AdminInventory],
+  ["/admin/replenishment", AdminInventory],
+  ["/admin/tags", AdminProductTags],
+  ["/admin/orders", AdminOrders],
+  ["/admin/orders/unfinished", AdminCheckoutAbandonments],
+  ["/admin/payments/channels", AdminPaymentChannels],
+  ["/admin/payments/orders", AdminPaymentOrders],
+  ["/admin/payments/events", AdminPaymentEvents],
+  ["/admin/payments/reconciliations", AdminPaymentReconciliations],
+  ["/admin/users", AdminUsers],
+  ["/admin/user-security", AdminUserSecurity],
+  ["/admin/member-levels", AdminMemberLevels],
+  ["/admin/settings/site", AdminSiteSettings],
+  ["/admin/settings/features", AdminFeatureSettings],
+  ["/admin/settings/telegram", AdminTelegramSettings],
+  ["/admin/support-download", AdminSupportDownload],
+  ["/admin/settings/theme", AdminThemeSettings],
+  ["/admin/home-ops", AdminHomeOps],
+  ["/admin/settings/shipping", AdminShipping],
+  ["/admin/settings/roles", AdminRoles],
+  ["/admin/marketing", AdminMarketingDashboard],
+  ["/admin/marketing/activities", AdminActivities],
+  ["/admin/marketing/activities/new", AdminActivityForm],
+  ["/admin/marketing/coupons", AdminCoupons],
+  ["/admin/marketing/coupons/new", AdminCouponForm],
+  ["/admin/marketing/coupons/records", AdminCouponRecords],
+  ["/admin/marketing/coupon-campaigns", AdminCouponCampaigns],
+  ["/admin/marketing/coupon-campaigns/new", AdminCouponCampaignForm],
+  ["/admin/marketing/points", AdminMarketingPoints],
+  ["/admin/marketing/rewards", AdminMarketingRewards],
+  ["/admin/marketing/invites", AdminInvites],
+  ["/admin/reviews", AdminReviews],
+  ["/admin/returns", AdminReturns],
+  ["/admin/event-center", AdminEventCenter],
+  ["/admin/notifications", AdminNotifications],
+  ["/admin/monitoring", AdminMonitoringOverview],
+  ["/admin/monitoring/anomalies", AdminMonitoringAnomalies],
+  ["/admin/monitoring/repair-tasks", AdminMonitoringRepairTasks],
+  ["/admin/monitoring/rules", AdminMonitoringRules],
+  ["/admin/monitoring/runs", AdminMonitoringRuns],
+  ["/admin/banners", AdminBanners],
+  ["/admin/accounts", AdminAccounts],
+  ["/admin/reports", AdminReports],
+  ["/admin/reports/overview", AdminReportOverview],
+  ["/admin/reports/daily", AdminSalesDailyReport],
+  ["/admin/reports/monthly", AdminSalesMonthlyReport],
+  ["/admin/reports/profit", AdminProfitDailyReport],
+  ["/admin/reports/profit/daily", AdminProfitDailyReport],
+  ["/admin/reports/profit/monthly", AdminProfitDailyReport],
+  ["/admin/reports/expenses", AdminOperatingExpenses],
+  ["/admin/reports/products", AdminProductAnalysisReport],
+  ["/admin/reports/categories", AdminCategoryAnalysisReport],
+  ["/admin/reports/inventory", AdminInventoryAnalysisReport],
+  ["/admin/reports/orders", AdminOrderAnalysisReport],
+  ["/admin/reports/customers", AdminCustomerAnalysisReport],
+  ["/admin/reports/activities", AdminActivityAnalysisReport],
+  ["/admin/reports/coupons", AdminCouponAnalysisReport],
+  ["/admin/reports/search", AdminSearchAnalysisReport],
+  ["/admin/reports/traffic", AdminTrafficAnalysisReport],
+  ["/admin/exports", AdminExportCenter],
+  ["/admin/recycle-bin", AdminRecycleBin],
+  ["/admin/data-retention", AdminDataRetention],
+  ["/admin/backups", AdminBackupCenter],
+  ["/admin/audit-logs", AdminLogs],
+  ["/admin/content", AdminContent],
+]);
+
+const ADMIN_PATTERN_ROUTE_PRELOADERS: Array<[RegExp, AdminLazyComponent]> = [
+  [/^\/admin\/products\/[^/]+$/, AdminProductForm],
+  [/^\/admin\/orders\/[^/]+$/, AdminOrderDetail],
+  [/^\/admin\/users\/[^/]+$/, AdminUserDetail],
+  [/^\/admin\/notifications\/[^/]+$/, AdminNotificationDetail],
+  [/^\/admin\/marketing\/activities\/[^/]+\/edit$/, AdminActivityForm],
+  [/^\/admin\/marketing\/coupons\/[^/]+$/, AdminCouponForm],
+  [/^\/admin\/marketing\/coupon-campaigns\/[^/]+$/, AdminCouponCampaignForm],
+  [/^\/admin\/monitoring\/anomalies\/[^/]+$/, AdminMonitoringAnomalyDetail],
+];
+
+const adminRoutePreloadCache = new Map<string, Promise<unknown>>();
+
+export function preloadAdminRoute(to: string): Promise<unknown> | undefined {
+  const pathname = normalizeAdminRoutePath(to);
+  const component =
+    ADMIN_EXACT_ROUTE_PRELOADERS.get(pathname)
+    ?? ADMIN_PATTERN_ROUTE_PRELOADERS.find(([pattern]) => pattern.test(pathname))?.[1];
+  if (!component?.preload) return undefined;
+
+  const cached = adminRoutePreloadCache.get(pathname);
+  if (cached) return cached;
+
+  const preload = preloadComponent(component)
+    ?.catch(() => undefined)
+    ?? Promise.resolve(undefined);
+  adminRoutePreloadCache.set(pathname, preload);
+  return preload;
+}

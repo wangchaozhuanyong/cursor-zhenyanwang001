@@ -1,87 +1,92 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
-import { AnimatedPage } from "@/modules/micro-interactions";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AdminOutletFallback } from "@/components/AppRouteFallback";
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  Menu,
-  Bell,
-  Search,
-  ChevronDown,
-  Shield,
-  LogOut,
-  Languages,
-  LayoutGrid,
-  AlertTriangle,
-} from "lucide-react";
-import AdminAccountSettingsTrigger from "@/components/admin/AdminAccountSettingsTrigger";
-import { AdminAccountSettingsProvider } from "@/modules/admin/context/AdminAccountSettingsContext";
-import { resolveAdminTabTitle } from "@/config/adminNavTitle";
-import { syncAdminWorkTabFromLocation, useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
-import AdminWorkTabs from "@/layouts/admin/AdminWorkTabs";
-import { useAdminT } from "@/hooks/useAdminT";
-import type { AdminLocale } from "@/i18n/admin";
-import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services/admin/accountService";
-import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
-import { canAccessAdminPath, getFirstAllowedAdminPath, hasAdminPathAccessRule } from "@/config/adminNavAccess";
-import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
-import { AdminDirtyGuardProvider } from "@/modules/admin/context/AdminDirtyGuardContext";
-import AdminKeepAliveOutlet from "@/layouts/admin/AdminKeepAliveOutlet";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
-import {
-  AdminOrderVoiceMenuItems,
-  AdminOrderVoiceProvider,
-  AdminOrderVoiceToolbar,
-} from "@/modules/admin/components/AdminOrderVoiceNotifier";
-import AdminEventBell from "@/modules/admin/components/AdminEventBell";
-import { isAdminMfaStepUpPending } from "@/lib/adminMfaStepUp";
-import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { canAccessAdminPath, getFirstAllowedAdminPath, hasAdminPathAccessRule } from "@/config/adminNavAccess";
+import { resolveAdminTabTitle } from "@/config/adminNavTitle";
 import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
 import { useAdminNavigation } from "@/hooks/useAdminNavigation";
-import { getSecurityAlerts, type SecurityAlertSummary } from "@/api/admin/audit";
-import { Tx } from "@/components/admin/AdminText";
-import {
-  applyAdminTextTranslation,
-  localizedAuditSummary,
-  zhActionType,
-} from "@/utils/auditLogI18n";
+import { useAdminT } from "@/hooks/useAdminT";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import AdminKeepAliveOutlet from "@/layouts/admin/AdminKeepAliveOutlet";
+import AdminMobileBottomNav from "@/layouts/admin/AdminMobileBottomNav";
+import AdminMobileSidebarDrawer from "@/layouts/admin/AdminMobileSidebarDrawer";
+import AdminSidebarNav from "@/layouts/admin/AdminSidebarNav";
+import AdminTopbar from "@/layouts/admin/AdminTopbar";
 import {
   filterNav,
   mobileBottomTab,
   navItemsRaw,
   resolveNavLabels,
   type ResolvedNavChild,
+  type ResolvedNavItem,
 } from "@/layouts/admin/adminNavConfig";
-import AdminSidebarNav, { AdminNavTab } from "@/layouts/admin/AdminSidebarNav";
-import AnchoredMenu from "@/components/admin/AnchoredMenu";
+import AdminWorkTabs from "@/layouts/admin/AdminWorkTabs";
+import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
+import { AdminDirtyGuardProvider } from "@/modules/admin/context/AdminDirtyGuardContext";
+import { AdminAccountSettingsProvider } from "@/modules/admin/context/AdminAccountSettingsContext";
+import { AdminOrderVoiceProvider } from "@/modules/admin/components/AdminOrderVoiceNotifier";
+import { AnimatedPage } from "@/modules/micro-interactions";
+import { preloadAdminRoute } from "@/routes/adminLazyPages";
+import { adminLogout, fetchAdminProfile, isAdminAuthenticated } from "@/services/admin/accountService";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
+import { syncAdminWorkTabFromLocation, useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
 
-const SECURITY_ALERT_VISIBLE_POLL_MS = 60_000;
-const SECURITY_ALERT_HIDDEN_POLL_MS = 5 * 60_000;
+const ADMIN_NAV_PRELOAD_START_DELAY_MS = 900;
+const ADMIN_NAV_PRELOAD_GAP_MS = 120;
+
+function collectAdminNavPreloadPaths(items: ResolvedNavItem[]) {
+  const paths: string[] = [];
+  const seen = new Set<string>();
+  const pushPath = (path?: string) => {
+    if (path && !seen.has(path)) {
+      seen.add(path);
+      paths.push(path);
+    }
+  };
+  const visitChildren = (children?: ResolvedNavChild[]) => {
+    for (const child of children ?? []) {
+      pushPath(child.path);
+      visitChildren(child.children);
+    }
+  };
+
+  for (const item of items) {
+    pushPath(item.path);
+    visitChildren(item.children);
+  }
+  return paths;
+}
+
+function childMatchesAdminPath(child: ResolvedNavChild, pathname: string): boolean {
+  const ownPath = child.path ? pathname === child.path || pathname.startsWith(`${child.path}/`) : false;
+  return ownPath || Boolean(child.children?.some((nested) => childMatchesAdminPath(nested, pathname)));
+}
+
+function collectActiveAdminGroupPreloadPaths(items: ResolvedNavItem[], pathname: string) {
+  const activeGroup = items.find((item) => {
+    const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(`${item.path}/`));
+    const childActive = item.children?.some((child) => childMatchesAdminPath(child, pathname));
+    return active || childActive;
+  });
+  return activeGroup ? collectAdminNavPreloadPaths([activeGroup]) : [];
+}
+
+function shouldSkipAdminIdlePreload() {
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  return Boolean(connection?.saveData);
+}
 
 function AdminLayoutContent() {
   const navigate = useNavigate();
   const adminNavigate = useAdminNavigation();
   const location = useLocation();
-  const { t, locale, setLocale, tText } = useAdminT();
-  const labelize = useCallback(
-    (zh: string) => applyAdminTextTranslation(zh, tText),
-    [tText],
-  );
+  const { t, tText } = useAdminT();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
-  const [topSearch, setTopSearch] = useState("");
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [securityAlerts, setSecurityAlerts] = useState<SecurityAlertSummary | null>(null);
-  const [securityAlertsOpen, setSecurityAlertsOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const avatarRef = useRef<HTMLDivElement>(null);
-  const securityAlertsRef = useRef<HTMLDivElement>(null);
-  const avatarBtnRef = useRef<HTMLButtonElement>(null);
-  const securityBtnRef = useRef<HTMLButtonElement>(null);
+  const sidebarReturnFocusRef = useRef<HTMLElement | null>(null);
+  const preloadedNavSignatureRef = useRef("");
 
   const can = useAdminPermissionStore((s) => s.can);
   const canAny = useAdminPermissionStore((s) => s.canAny);
@@ -89,7 +94,6 @@ function AdminLayoutContent() {
   const permHydrated = useAdminPermissionStore((s) => s.hydrated);
   const capabilities = useSiteCapabilities();
   useAdminEvents(true);
-  const canViewSecurityAlerts = isSuperAdmin || can("audit.view");
 
   const navItems = useMemo(
     () => resolveNavLabels(filterNav(navItemsRaw, can, canAny, capabilities), t),
@@ -97,13 +101,49 @@ function AdminLayoutContent() {
   );
 
   useEffect(() => {
+    if (!isAdminAuthenticated() || shouldSkipAdminIdlePreload()) return;
+    const paths = collectAdminNavPreloadPaths(navItems);
+    const signature = paths.join("|");
+    if (!paths.length || signature === preloadedNavSignatureRef.current) return;
+    preloadedNavSignatureRef.current = signature;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof window.setTimeout> | null = null;
+
+    const schedule = (cb: () => void, delay = ADMIN_NAV_PRELOAD_GAP_MS) => {
+      timer = window.setTimeout(() => {
+        if (cancelled) return;
+        cb();
+      }, delay);
+    };
+
+    const run = (index: number) => {
+      if (cancelled || index >= paths.length) return;
+      void preloadAdminRoute(paths[index]);
+      schedule(() => run(index + 1));
+    };
+
+    schedule(() => run(0), ADMIN_NAV_PRELOAD_START_DELAY_MS);
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [navItems]);
+
+  useEffect(() => {
+    if (!isAdminAuthenticated()) return;
+    for (const path of collectActiveAdminGroupPreloadPaths(navItems, location.pathname)) {
+      void preloadAdminRoute(path);
+    }
+  }, [navItems, location.pathname]);
+
+  useEffect(() => {
     if (!isAdminAuthenticated()) return;
     fetchAdminProfile().catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!isAdminAuthenticated()) return;
-    if (!permHydrated) return;
+    if (!isAdminAuthenticated() || !permHydrated) return;
     const path = location.pathname;
     if (hasAdminPathAccessRule(path) && !canAccessAdminPath(path, can, canAny)) {
       toast.error(tText("没有权限访问该后台页面，已为你打开可访问的页面。"));
@@ -111,81 +151,35 @@ function AdminLayoutContent() {
     }
   }, [location.pathname, can, canAny, navigate, permHydrated, tText]);
 
-  // 头像菜单 / 安全告警弹层改由 AnchoredMenu 统一关闭逻辑处理（click/contextmenu/ESC/scroll/resize）
-
-  useEffect(() => {
-    if (!isAdminAuthenticated() || !canViewSecurityAlerts) {
-      setSecurityAlerts(null);
-      return;
-    }
-
-    let alive = true;
-    const load = async () => {
-      if (isAdminMfaStepUpPending()) return;
-      try {
-        const data = await getSecurityAlerts({ limit: 5, sinceHours: 24 });
-        if (alive) setSecurityAlerts(data);
-      } catch {
-        if (alive) setSecurityAlerts(null);
-      }
-    };
-
-    let timer: ReturnType<typeof window.setTimeout> | null = null;
-    const schedule = () => {
-      if (!alive) return;
-      if (timer) window.clearTimeout(timer);
-      const delay = document.hidden ? SECURITY_ALERT_HIDDEN_POLL_MS : SECURITY_ALERT_VISIBLE_POLL_MS;
-      timer = window.setTimeout(() => {
-        void load().finally(() => {
-          if (alive) schedule();
-        });
-      }, delay);
-    };
-    const handleVisibilityChange = () => {
-      if (!document.hidden) void load();
-      schedule();
-    };
-
-    void load();
-    schedule();
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      alive = false;
-      if (timer) window.clearTimeout(timer);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [canViewSecurityAlerts]);
-
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
-  const handleTopSearch = () => {
-    const q = topSearch.trim();
-    if (!q) return;
-    const lq = q.toLowerCase();
-    const findChild = (children?: ResolvedNavChild[]): ResolvedNavChild | undefined => {
-      for (const child of children ?? []) {
-        if (child.label.toLowerCase().includes(lq)) return child;
-        const nested = findChild(child.children);
-        if (nested) return nested;
-      }
-      return undefined;
-    };
-    const match = navItems.find((n) => n.label.toLowerCase().includes(lq) || findChild(n.children));
-    if (match) {
-      const child = findChild(match.children);
-      void adminNavigate(child?.path ?? match.path);
-    } else {
-      toast.error(tText("没有找到匹配的后台菜单。"));
-    }
-    setTopSearch("");
-  };
-
   const handleSidebarNavigate = useCallback(
     (path: string) => {
+      void preloadAdminRoute(path);
       void adminNavigate(path);
       setSidebarOpen(false);
+    },
+    [adminNavigate],
+  );
+
+  const handleSidebarPreload = useCallback((path: string) => {
+    void preloadAdminRoute(path);
+  }, []);
+
+  const handleOpenMobileSidebar = useCallback((trigger?: HTMLElement | null) => {
+    if (trigger) sidebarReturnFocusRef.current = trigger;
+    setSidebarOpen(true);
+  }, []);
+
+  const handleCloseMobileSidebar = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
+  const handleBottomNavigate = useCallback(
+    (path: string) => {
+      void adminNavigate(path);
     },
     [adminNavigate],
   );
@@ -193,7 +187,6 @@ function AdminLayoutContent() {
   const handleAdminLogout = useCallback(async () => {
     if (loggingOut) return;
     setLoggingOut(true);
-    setAvatarMenuOpen(false);
     setSidebarOpen(false);
     try {
       await adminLogout();
@@ -217,12 +210,12 @@ function AdminLayoutContent() {
   }, [navItems, location.pathname, location.search, navigate, t]);
 
   const tab = mobileBottomTab(location.pathname);
-
   const showNotifTab = can("notification.manage") || can("notification.view");
+  const canViewSecurityAlerts = isSuperAdmin || can("audit.view");
+  const canUseOrderVoice = can("order.view");
   const showMobileDashboard = canAccessAdminPath("/admin", can, canAny);
   const showMobileProducts = canAccessAdminPath("/admin/products", can, canAny);
   const showMobileOrders = canAccessAdminPath("/admin/orders", can, canAny);
-  const securityAlertCount = securityAlerts?.total ?? 0;
 
   if (!isAdminAuthenticated()) {
     return <Navigate to="/admin/login" replace />;
@@ -230,340 +223,85 @@ function AdminLayoutContent() {
 
   return (
     <DownloadConfirmProvider>
-    <AdminConfirmProvider>
-    <AdminDirtyGuardProvider>
-    <AdminAccountSettingsProvider>
-    <AdminOrderVoiceProvider>
-    <div data-admin-shell className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
-      <aside className="hidden w-[260px] shrink-0 self-start border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:flex-col">
-        <AdminSidebarNav
-          scrollMode="inline"
-          navItems={navItems}
-          pathname={location.pathname}
-          onNavigate={handleSidebarNavigate}
-          onLogout={() => { void handleAdminLogout(); }}
-          loggingOut={loggingOut}
-          layoutTitle={t("layout.title")}
-          logoutLabel={t("layout.logout")}
-        />
-      </aside>
+      <AdminConfirmProvider>
+        <AdminDirtyGuardProvider>
+          <AdminAccountSettingsProvider>
+            <AdminOrderVoiceProvider>
+              <div data-admin-shell className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
+                <aside className="hidden w-[260px] shrink-0 self-start border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:flex-col">
+                  <AdminSidebarNav
+                    scrollMode="inline"
+                    navItems={navItems}
+                    pathname={location.pathname}
+                    onNavigate={handleSidebarNavigate}
+                    onPreload={handleSidebarPreload}
+                    onLogout={() => { void handleAdminLogout(); }}
+                    loggingOut={loggingOut}
+                    layoutTitle={t("layout.title")}
+                    logoutLabel={t("layout.logout")}
+                  />
+                </aside>
 
-      <AnimatePresence>
-        {sidebarOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <motion.button
-            type="button"
-            aria-label={t("layout.closeMenu")}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <motion.aside
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 380, damping: 36 }}
-            className="safe-area-pl absolute left-0 top-0 flex h-full w-[min(88vw,20rem)] max-w-sm flex-col overflow-hidden bg-[var(--theme-card)] shadow-2xl"
-          >
-            <AdminSidebarNav
-              scrollMode="overlay"
-              navItems={navItems}
-              pathname={location.pathname}
-              onNavigate={handleSidebarNavigate}
-              onLogout={() => { void handleAdminLogout(); }}
-              loggingOut={loggingOut}
-              onClose={() => setSidebarOpen(false)}
-              layoutTitle={t("layout.title")}
-              logoutLabel={t("layout.logout")}
-              closeLabel={t("layout.closeMenu")}
-            />
-          </motion.aside>
-        </div>
-        ) : null}
-      </AnimatePresence>
-
-      <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="admin-chrome safe-area-pt sticky top-0 z-30 flex shrink-0 flex-col border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
-          <div className="admin-chrome-toolbar flex h-[var(--admin-chrome-toolbar-h)] min-h-[var(--admin-chrome-toolbar-h)] items-center gap-2 px-[var(--admin-mobile-page-x)] sm:px-4 lg:px-6">
-            <button
-              type="button"
-              aria-label={t("layout.openMenu")}
-              className="touch-manipulation flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground hover:bg-secondary lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu size={20} />
-            </button>
-            <div className="min-w-0 flex-1" aria-hidden />
-            <div className="flex shrink-0 flex-nowrap items-center gap-1 sm:gap-1.5">
-            <button
-              type="button"
-              aria-label={t("layout.searchMenu")}
-              className="touch-manipulation flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary md:hidden"
-              onClick={() => setMobileSearchOpen((v) => !v)}
-            >
-              <Search size={18} />
-            </button>
-            <div className="hidden items-center gap-2 rounded-lg bg-secondary px-3 py-1.5 md:flex">
-              <Search size={16} className="shrink-0 text-muted-foreground" />
-              <input
-                placeholder={t("layout.searchMenu")}
-                value={topSearch}
-                onChange={(e) => setTopSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleTopSearch()}
-                className="w-36 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground lg:w-40"
-              />
-            </div>
-            <AdminEventBell />
-            {(showNotifTab || canViewSecurityAlerts) && (
-              <div ref={securityAlertsRef} className="relative shrink-0">
-                <button
-                  ref={securityBtnRef}
-                  type="button"
-                  aria-label={canViewSecurityAlerts ? "安全告警" : t("layout.notifications")}
-                  title={canViewSecurityAlerts ? "安全告警" : "通知中心"}
-                  className="touch-manipulation relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary"
-                  onClick={() => {
-                    if (canViewSecurityAlerts) {
-                      setSecurityAlertsOpen((v) => !v);
-                      return;
-                    }
-                    void adminNavigate("/admin/notifications");
-                  }}
-                >
-                  <Bell size={20} />
-                  {securityAlertCount > 0 ? (
-                    <span className="absolute right-1.5 top-1.5 flex min-h-[16px] min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-white">
-                      {securityAlertCount > 99 ? "99+" : securityAlertCount}
-                    </span>
-                  ) : showNotifTab ? (
-                    <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
-                  ) : null}
-                </button>
-                <AnchoredMenu
-                  open={securityAlertsOpen && canViewSecurityAlerts}
-                  onClose={() => setSecurityAlertsOpen(false)}
-                  anchorRef={securityBtnRef}
-                  width={352}
-                  gap={6}
-                  placement="bottom-end"
-                  className="p-2"
-                >
-                  <motion.div className="w-[min(92vw,22rem)]">
-                    <div className="flex items-center justify-between px-2 py-2">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <Shield size={16} className="shrink-0 text-destructive" />
-                        <p className="truncate text-sm font-semibold text-foreground"><Tx>安全监控</Tx></p>
-                      </div>
-                      <button
-                        type="button"
-                        className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
-                        onClick={() => {
-                          setSecurityAlertsOpen(false);
-                          void adminNavigate("/admin/audit-logs?keyword=security");
-                        }}
-                      >
-                        <Tx>审计日志</Tx>
-                      </button>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto">
-                      {securityAlerts?.list?.length ? (
-                        securityAlerts.list.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            className="flex w-full gap-2 rounded-lg px-2 py-2 text-left hover:bg-secondary"
-                            onClick={() => {
-                              setSecurityAlertsOpen(false);
-                              void adminNavigate(`/admin/audit-logs?actionType=${encodeURIComponent(item.action_type)}`);
-                            }}
-                          >
-                            <AlertTriangle size={15} className={`mt-0.5 shrink-0 ${item.result === "failure" ? "text-destructive" : "text-[var(--theme-primary)]"}`} />
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-xs font-medium text-foreground">
-                                {item.summary
-                                  ? localizedAuditSummary(item.summary, tText)
-                                  : labelize(zhActionType(item.action_type))}
-                              </span>
-                              <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{item.ip || "-"} · {new Date(item.created_at).toLocaleString()}</span>
-                            </span>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-2 py-6 text-center text-xs text-muted-foreground"><Tx>近 24 小时暂无安全告警</Tx></div>
-                      )}
-                    </div>
-                    {showNotifTab ? (
-                      <button
-                        type="button"
-                        className="mt-1 flex min-h-[40px] w-full items-center justify-center rounded-lg border border-border text-sm text-foreground hover:bg-secondary"
-                        onClick={() => {
-                          setSecurityAlertsOpen(false);
-                          void adminNavigate("/admin/notifications");
-                        }}
-                      >
-                        打开通知中心
-                      </button>
-                    ) : null}
-                  </motion.div>
-                </AnchoredMenu>
-              </div>
-            )}
-            {can("order.view") ? <AdminOrderVoiceToolbar /> : null}
-            <div ref={avatarRef} className="relative shrink-0">
-              <button
-                ref={avatarBtnRef}
-                type="button"
-                aria-label={t("layout.account")}
-                className="touch-manipulation flex h-11 min-w-[56px] items-center gap-1 rounded-xl px-1.5 hover:bg-secondary"
-                onClick={() => setAvatarMenuOpen((open) => !open)}
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--theme-primary)] text-xs font-bold text-[var(--theme-primary-foreground)]">A</div>
-                <ChevronDown size={14} className={`hidden text-muted-foreground transition-transform sm:block ${avatarMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-              <AnchoredMenu
-                open={avatarMenuOpen}
-                onClose={() => setAvatarMenuOpen(false)}
-                anchorRef={avatarBtnRef}
-                width={224}
-                gap={6}
-                placement="bottom-end"
-                className="py-1"
-              >
-                <motion.div className="w-56">
-                  {can("order.view") ? (
-                    <>
-                      <AdminOrderVoiceMenuItems onClose={() => setAvatarMenuOpen(false)} />
-                      <div className="mx-3 my-1 h-px bg-border" />
-                    </>
-                  ) : null}
-                  <div className="px-4 py-2">
-                    <p className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Languages size={14} />
-                      {t("layout.language")}
-                    </p>
-                    <div className="flex gap-2">
-                      {(["zh", "en"] as AdminLocale[]).map((loc) => (
-                        <button
-                          key={loc}
-                          type="button"
-                          onClick={() => {
-                            setLocale(loc);
-                            setAvatarMenuOpen(false);
-                          }}
-                          className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
-                            locale === loc
-                              ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-                              : "bg-secondary text-foreground hover:opacity-90"
-                          }`}
-                        >
-                          {loc === "zh" ? t("layout.languageZh") : t("layout.languageEn")}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="mx-3 my-1 h-px bg-border" />
-                  <AdminAccountSettingsTrigger tab="profile" onBeforeOpen={() => setAvatarMenuOpen(false)} />
-                  <AdminAccountSettingsTrigger tab="password" onBeforeOpen={() => setAvatarMenuOpen(false)} />
-                  <div className="mx-3 my-1 h-px bg-border" />
-                  <button
-                    type="button"
-                    onClick={() => { void handleAdminLogout(); }}
-                    disabled={loggingOut}
-                    className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-destructive hover:bg-secondary disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    <LogOut size={16} />
-                    {t("layout.logout")}
-                  </button>
-                </motion.div>
-              </AnchoredMenu>
-            </div>
-            </div>
-          </div>
-
-          {mobileSearchOpen ? (
-            <div className="border-t border-[var(--theme-border)] px-3 py-2 md:hidden">
-              <div className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
-                <Search size={16} className="shrink-0 text-muted-foreground" />
-                <input
-                  placeholder={t("layout.searchMenu")}
-                  value={topSearch}
-                  onChange={(e) => setTopSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleTopSearch();
-                      setMobileSearchOpen(false);
-                    }
-                  }}
-                  className="min-h-[36px] flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                <AdminMobileSidebarDrawer
+                  open={sidebarOpen}
+                  navItems={navItems}
+                  pathname={location.pathname}
+                  onClose={handleCloseMobileSidebar}
+                  onNavigate={handleSidebarNavigate}
+                  onPreload={handleSidebarPreload}
+                  onLogout={() => { void handleAdminLogout(); }}
+                  loggingOut={loggingOut}
+                  layoutTitle={t("layout.title")}
+                  logoutLabel={t("layout.logout")}
+                  closeLabel={t("layout.closeMenu")}
+                  returnFocusRef={sidebarReturnFocusRef}
                 />
+
+                <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col overflow-hidden">
+                  <header className="admin-chrome safe-area-pt sticky top-0 z-30 flex shrink-0 flex-col border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
+                    <AdminTopbar
+                      navItems={navItems}
+                      showNotificationsTab={showNotifTab}
+                      canViewSecurityAlerts={canViewSecurityAlerts}
+                      canUseOrderVoice={canUseOrderVoice}
+                      loggingOut={loggingOut}
+                      onLogout={() => { void handleAdminLogout(); }}
+                      onOpenMobileSidebar={handleOpenMobileSidebar}
+                    />
+                    <AdminWorkTabs />
+                  </header>
+
+                  <main className="admin-mobile-main admin-table-scope min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
+                    <Suspense fallback={<AdminOutletFallback />}>
+                      <AnimatedPage>
+                        <AdminKeepAliveOutlet />
+                      </AnimatedPage>
+                    </Suspense>
+                  </main>
+
+                  <AdminMobileBottomNav
+                    tab={tab}
+                    showDashboard={showMobileDashboard}
+                    showProducts={showMobileProducts}
+                    showOrders={showMobileOrders}
+                    showNotifications={showNotifTab}
+                    labels={{
+                      mainNav: t("layout.mainNav"),
+                      home: t("layout.mobileHome"),
+                      products: t("layout.mobileProducts"),
+                      orders: t("layout.mobileOrders"),
+                      notifications: t("layout.mobileNotifications"),
+                      more: t("layout.mobileMore"),
+                    }}
+                    onNavigate={handleBottomNavigate}
+                    onOpenMore={handleOpenMobileSidebar}
+                  />
+                </div>
               </div>
-            </div>
-          ) : null}
-
-          <AdminWorkTabs />
-        </header>
-
-        <main className="admin-mobile-main admin-table-scope min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
-          <Suspense fallback={<AdminOutletFallback />}>
-            <AnimatedPage>
-              <AdminKeepAliveOutlet />
-            </AnimatedPage>
-          </Suspense>
-        </main>
-
-        <nav
-          className="safe-area-pb fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--theme-border)] bg-[var(--theme-card)]/95 backdrop-blur-md lg:hidden"
-          aria-label={t("layout.mainNav")}
-        >
-          <div className="flex h-14 w-full items-stretch justify-between px-1 md:mx-auto md:max-w-lg">
-            {showMobileDashboard ? (
-              <AdminNavTab
-                icon={LayoutDashboard}
-                label={t("layout.mobileHome")}
-                active={tab === "dash"}
-                onClick={() => void adminNavigate("/admin")}
-              />
-            ) : null}
-            {showMobileProducts ? (
-              <AdminNavTab
-                icon={Package}
-                label={t("layout.mobileProducts")}
-                active={tab === "products"}
-                onClick={() => void adminNavigate("/admin/products")}
-              />
-            ) : null}
-            {showMobileOrders ? (
-              <AdminNavTab
-                icon={ShoppingCart}
-                label={t("layout.mobileOrders")}
-                active={tab === "orders"}
-                onClick={() => void adminNavigate("/admin/orders")}
-              />
-            ) : null}
-            {showNotifTab ? (
-              <AdminNavTab
-                icon={Bell}
-                label={t("layout.mobileNotifications")}
-                active={tab === "notifications"}
-                onClick={() => void adminNavigate("/admin/notifications")}
-              />
-            ) : null}
-            <AdminNavTab
-              icon={LayoutGrid}
-              label={t("layout.mobileMore")}
-              active={tab === "more"}
-              onClick={() => setSidebarOpen(true)}
-            />
-          </div>
-        </nav>
-      </div>
-    </div>
-    </AdminOrderVoiceProvider>
-    </AdminAccountSettingsProvider>
-    </AdminDirtyGuardProvider>
-    </AdminConfirmProvider>
+            </AdminOrderVoiceProvider>
+          </AdminAccountSettingsProvider>
+        </AdminDirtyGuardProvider>
+      </AdminConfirmProvider>
     </DownloadConfirmProvider>
   );
 }

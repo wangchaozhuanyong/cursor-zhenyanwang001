@@ -22,12 +22,12 @@ async function getNotifications(userId, query) {
 
 async function markAsRead(userId, id) {
   await repo.markRead(userId, id);
-  return { message: '??????' };
+  return { message: '已标记为已读' };
 }
 
 async function markAllAsRead(userId) {
   await repo.markAllRead(userId);
-  return { message: '????????' };
+  return { message: '全部消息已标记为已读' };
 }
 
 async function getUnreadCount(userId) {
@@ -35,7 +35,7 @@ async function getUnreadCount(userId) {
   return { count };
 }
 
-/** ??/????????????????????? */
+/** 订单/支付等业务模块复用的用户通知写入入口 */
 async function insertUserNotification({ id, userId, type, title, content }) {
   await repo.insertNotification({
     id,

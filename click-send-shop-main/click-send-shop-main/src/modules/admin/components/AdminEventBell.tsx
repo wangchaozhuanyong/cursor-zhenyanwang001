@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Bell, CheckCircle2, Eye, Shield, Siren, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import AnchoredMenu from "@/components/admin/AnchoredMenu";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminMfaStepUpPending } from "@/hooks/useAdminMfaStepUpPending";
 import * as eventService from "@/services/admin/eventCenterService";
@@ -83,7 +84,7 @@ export default function AdminEventBell() {
   const { tText } = useAdminT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const anchorRef = useRef<HTMLDivElement | null>(null);
+  const anchorRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("pending");
   const mfaStepUpPending = useAdminMfaStepUpPending();
@@ -160,22 +161,31 @@ export default function AdminEventBell() {
   ], [summary, tText]);
 
   return (
-    <div ref={anchorRef} className="relative shrink-0">
+    <div className="relative shrink-0">
       <button
+        ref={anchorRef}
         type="button"
         aria-label={tText("后台事件中心")}
-        className={`touch-manipulation relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl hover:bg-secondary ${hasP0 ? "text-red-600" : "text-muted-foreground"}`}
+        className={`touch-manipulation relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg hover:bg-secondary ${hasP0 ? "text-red-600" : "text-muted-foreground"}`}
         onClick={() => setOpen((v) => !v)}
       >
-        {hasP0 ? <Siren size={20} /> : <Bell size={20} />}
+        {hasP0 ? <Siren size={18} /> : <Bell size={18} />}
         {badge > 0 ? (
-          <span className="absolute right-1.5 top-1.5 flex min-h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white">
+          <span className="absolute right-0.5 top-0.5 flex min-h-[15px] min-w-[15px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white">
             {badge > 99 ? "99+" : badge}
           </span>
         ) : null}
       </button>
-      {open ? (
-        <div className="absolute right-0 top-full z-50 mt-1 w-[min(94vw,28rem)] rounded-xl border border-border bg-card p-3 shadow-lg">
+      <AnchoredMenu
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={anchorRef}
+        width={360}
+        gap={6}
+        placement="bottom-end"
+        className="p-3"
+      >
+        <div className="w-full">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <AlertTriangle size={17} className={hasP0 ? "text-red-600" : "text-muted-foreground"} />
@@ -245,7 +255,7 @@ export default function AdminEventBell() {
             )}
           </div>
         </div>
-      ) : null}
+      </AnchoredMenu>
     </div>
   );
 }

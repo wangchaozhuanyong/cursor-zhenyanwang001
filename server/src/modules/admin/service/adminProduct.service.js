@@ -24,7 +24,7 @@ function getProductApi() {
 function requireProductApi(name) {
   const fn = getProductApi()[name];
   if (typeof fn === 'undefined') {
-    throw new Error(`Product ?? API ??????${name}`);
+    throw new Error(`Product 模块 API 缺少方法：${name}`);
   }
   return fn;
 }

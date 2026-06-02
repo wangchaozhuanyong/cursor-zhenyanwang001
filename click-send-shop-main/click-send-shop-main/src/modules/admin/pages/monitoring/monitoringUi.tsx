@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import type { MonitoringSeverity } from "@/services/admin/monitoringService";
 import { useAdminT } from "@/hooks/useAdminT";
+import { formatDateTime } from "@/utils/formatDateTime";
 import {
   formatMonitoringSeverityLabel,
   formatMonitoringStatusLabel,
@@ -71,7 +72,7 @@ export function formatTime(value?: string | null) {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleString();
+  return formatDateTime(date);
 }
 
 export function JsonBlock({ data }: { data: unknown }) {

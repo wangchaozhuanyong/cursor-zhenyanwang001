@@ -23,14 +23,11 @@ function money(v: number) {
   return v.toFixed(2);
 }
 
-function PointsInfoItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-[var(--theme-bg)] px-3.5 py-3">
-      <p className="text-[11px] leading-none text-muted-foreground">{label}</p>
-      <p className="mt-1.5 text-sm font-bold text-foreground">{value}</p>
-    </div>
-  );
-}
+const REDEEM_PANEL_CLASS =
+  "rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))] px-4 py-3.5 shadow-sm";
+
+const FORM_CONTROL_CLASS =
+  "w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-[var(--theme-primary)]";
 
 export function CheckoutLoyaltySection({
   pointsRedeemEnabled,
@@ -55,6 +52,7 @@ export function CheckoutLoyaltySection({
   const pointsDiscount = toNum(orderPreview?.points_discount_amount, 0);
   const availablePointsDiscount = availablePoints * pointValue;
   const orderMaxPointsDiscount = maxPoints * pointValue;
+  const displayRedeemPoints = usePoints ? actualPointsUsed : maxPoints;
   const disabledReason = orderPreview?.disabled_reason || (maxPoints <= 0 ? "当前订单暂无可用积分抵扣" : "");
   const availableReward = Math.max(0, toNum(orderPreview?.available_reward_balance));
   const maxReward = Math.max(0, toNum(orderPreview?.max_usable_reward_cash));
@@ -74,17 +72,21 @@ export function CheckoutLoyaltySection({
       </div>
 
       {pointsRedeemEnabled ? (
-        <div className="rounded-2xl border border-[var(--theme-border)] p-3.5">
-          <label className="flex items-center justify-between text-sm font-medium">
-            <span>积分抵扣</span>
+        <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5">
+          <label className={`${REDEEM_PANEL_CLASS} flex items-start justify-between gap-3`}>
+            <span className="min-w-0 flex-1">
+              <span className="text-[11px] font-medium text-muted-foreground">抵扣积分</span>
+              <span className="mt-1 flex items-end gap-1 text-foreground">
+                <strong className="text-xl leading-none">{displayRedeemPoints}</strong>
+                <span className="text-xs font-semibold">积分</span>
+              </span>
+              <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
+                你的积分可抵扣 RM {money(availablePointsDiscount)}，本单最多可抵扣 RM {money(orderMaxPointsDiscount)}
+              </span>
+            </span>
             <input type="checkbox" checked={usePoints} onChange={(e) => onUsePointsChange(e.target.checked)} />
           </label>
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            <PointsInfoItem label="你有积分" value={`${availablePoints} 积分`} />
-            <PointsInfoItem label="最多可抵扣" value={`RM ${money(availablePointsDiscount)}`} />
-            <PointsInfoItem label="本单最多可抵扣" value={`RM ${money(orderMaxPointsDiscount)}`} />
-          </div>
-          {disabledReason && maxPoints <= 0 ? <p className="mt-1 text-xs text-[var(--theme-danger)]">{disabledReason}</p> : null}
+          {disabledReason && maxPoints <= 0 ? <p className="mt-2 text-xs text-[var(--theme-danger)]">{disabledReason}</p> : null}
           {usePoints ? (
             <div className="mt-3 space-y-2">
               <input
@@ -98,7 +100,7 @@ export function CheckoutLoyaltySection({
               />
               <div className="flex items-center gap-2">
                 <input
-                  className="w-full rounded-lg border border-[var(--theme-border)] bg-transparent px-3 py-2 text-sm"
+                  className={FORM_CONTROL_CLASS}
                   type="number"
                   min={0}
                   max={maxPoints}
@@ -106,7 +108,7 @@ export function CheckoutLoyaltySection({
                   value={pointsToUse}
                   onChange={(e) => onPointsToUseChange(normalizePointsInput(Number(e.target.value || 0)))}
                 />
-                <button type="button" className="rounded-lg border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => onPointsToUseChange(maxPoints)}>
+                <button type="button" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onPointsToUseChange(maxPoints)}>
                   全部
                 </button>
               </div>
@@ -117,14 +119,16 @@ export function CheckoutLoyaltySection({
       ) : null}
 
       {rewardCashRedeemEnabled ? (
-        <div className="rounded-2xl border border-[var(--theme-border)] p-3.5">
-          <label className="flex items-center justify-between text-sm font-medium">
-            <span>返现余额抵扣</span>
+        <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5">
+          <label className="flex items-start justify-between gap-3 rounded-2xl bg-[var(--theme-bg)] px-4 py-3.5 text-sm font-medium">
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-foreground">返现余额抵扣</span>
+              <span className="mt-1 block text-xs font-normal leading-relaxed text-muted-foreground">可用 RM {availableReward.toFixed(2)}，本单最多 RM {maxReward.toFixed(2)}</span>
+            </span>
             <input type="checkbox" checked={useRewardCash} onChange={(e) => onUseRewardCashChange(e.target.checked)} />
           </label>
-          <p className="mt-1 text-xs text-muted-foreground">可用 RM {availableReward.toFixed(2)}，本单最多 RM {maxReward.toFixed(2)}</p>
           {useRewardCash ? (
-            <div className="mt-2 space-y-2">
+            <div className="mt-3 space-y-2">
               <input
                 className="w-full"
                 type="range"
@@ -136,7 +140,7 @@ export function CheckoutLoyaltySection({
               />
               <div className="flex items-center gap-2">
                 <input
-                  className="w-full rounded-lg border border-[var(--theme-border)] bg-transparent px-3 py-2 text-sm"
+                  className={FORM_CONTROL_CLASS}
                   type="number"
                   min={0}
                   max={maxReward}
@@ -144,7 +148,7 @@ export function CheckoutLoyaltySection({
                   value={rewardCashAmount}
                   onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
                 />
-                <button type="button" className="rounded-lg border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => onRewardCashAmountChange(maxReward)}>
+                <button type="button" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onRewardCashAmountChange(maxReward)}>
                   全部
                 </button>
               </div>

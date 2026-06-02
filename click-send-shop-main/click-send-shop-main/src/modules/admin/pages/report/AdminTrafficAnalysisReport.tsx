@@ -16,6 +16,7 @@ import { Tx } from "@/components/admin/AdminText";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
+import { formatDateTime } from "@/utils/formatDateTime";
 
 type Summary = {
   pv: number;
@@ -322,7 +323,7 @@ export default function AdminTrafficAnalysisReport() {
       hint={(
         <Tx>
           最后更新：
-          {payload?.last_updated_at ? new Date(payload.last_updated_at).toLocaleString("zh-CN") : "-"}
+          {formatDateTime(payload?.last_updated_at)}
         </Tx>
       )}
       toolbar={(

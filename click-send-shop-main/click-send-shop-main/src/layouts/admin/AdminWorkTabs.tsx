@@ -12,6 +12,7 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useAdminDirtyGuard } from "@/modules/admin/context/AdminDirtyGuardContext";
 import AnchoredMenu from "@/components/admin/AnchoredMenu";
 import { useAdminNavigation } from "@/hooks/useAdminNavigation";
+import { preloadAdminRoute } from "@/routes/adminLazyPages";
 
 type TabMenuState = {
   tabId: string;
@@ -107,6 +108,7 @@ export default function AdminWorkTabs() {
     (tab: AdminWorkTab) => {
       setActiveTab(tab.id);
       if (`${location.pathname}${location.search}` !== tab.path) {
+        void preloadAdminRoute(tab.path);
         void adminNavigate(tab.path);
       }
     },
@@ -212,6 +214,8 @@ export default function AdminWorkTabs() {
                 <button
                   type="button"
                   className="flex min-w-0 flex-1 items-center gap-1 truncate text-left"
+                  onPointerEnter={() => { void preloadAdminRoute(tab.path); }}
+                  onFocus={() => { void preloadAdminRoute(tab.path); }}
                   onClick={() => activateTab(tab)}
                   title={tab.title}
                 >
@@ -267,6 +271,8 @@ export default function AdminWorkTabs() {
                         "flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary",
                         active ? "font-semibold text-foreground" : "text-muted-foreground",
                       )}
+                      onPointerEnter={() => { void preloadAdminRoute(tab.path); }}
+                      onFocus={() => { void preloadAdminRoute(tab.path); }}
                       onClick={() => {
                         activateTab(tab);
                         setListOpen(false);

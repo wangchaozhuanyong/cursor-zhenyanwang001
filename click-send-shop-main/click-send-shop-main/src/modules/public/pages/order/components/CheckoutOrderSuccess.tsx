@@ -60,10 +60,11 @@ export function CheckoutOrderSuccess({
   const isWalletPending = isPending && order.payment_method === "reward_wallet";
   const isWhatsappPending = isPending && isWhatsappOrder;
   const displayOrderNo = String(order.order_no || "").replace(/^#+/, "");
+  const onlinePaymentUnavailableText = "当前商户暂未开通在线支付，请联系人工客服协助。";
 
   const headerTitle = isPaid
     ? "支付成功"
-    : isOnlinePending
+    : isOnlinePending && onlinePaymentEnabled
       ? "请完成支付"
       : isWalletPending && postSubmitWalletError
         ? "待付款"
@@ -71,8 +72,10 @@ export function CheckoutOrderSuccess({
 
   const mainHeading = isPaid
     ? "支付成功！"
-    : isOnlinePending
+    : isOnlinePending && onlinePaymentEnabled
       ? "请完成支付"
+      : isOnlinePending
+        ? "在线支付不可用"
       : isWalletPending && postSubmitWalletError
         ? "钱包余额不足"
         : isWalletPending
@@ -84,16 +87,24 @@ export function CheckoutOrderSuccess({
       return "支付已完成，我们会尽快为您安排发货，可在“我的订单”中实时查看进度。";
     }
     if (isOnlinePending) {
-      return "已按结算页所选渠道发起支付。若未自动跳转，请点击下方“继续支付”或“重新支付”；也可在订单详情中继续付款。";
+      return onlinePaymentEnabled
+        ? "已按结算页所选渠道发起支付。若未自动跳转，请点击下方“继续支付”或“重新支付”；也可在订单详情中继续付款。"
+        : onlinePaymentUnavailableText;
     }
     if (isWalletPending && postSubmitWalletError) {
-      return `${postSubmitWalletError} 建议改用在线支付完成付款，或联系人工客服协助。`;
+      return onlinePaymentEnabled
+        ? `${postSubmitWalletError} 建议改用在线支付完成付款，或联系人工客服协助。`
+        : `${postSubmitWalletError} ${onlinePaymentUnavailableText}`;
     }
     if (isWalletPending) {
-      return `返现钱包可用 RM ${rewardBalance.toFixed(2)}。请点击下方完成钱包扣款，或改用在线支付。`;
+      return onlinePaymentEnabled
+        ? `返现钱包可用 RM ${rewardBalance.toFixed(2)}。请点击下方完成钱包扣款，或改用在线支付。`
+        : `返现钱包可用 RM ${rewardBalance.toFixed(2)}。请点击下方完成钱包扣款，或联系人工客服协助。`;
     }
     if (isWhatsappPending) {
-      return "请将订单内容发送给客服完成对接。如需在线支付或钱包支付，可展开“更多方式”。";
+      return onlinePaymentEnabled
+        ? "请将订单内容发送给客服完成对接。如需在线支付或钱包支付，可展开“更多方式”。"
+        : "请将订单内容发送给客服完成对接。如需钱包支付，可展开“更多方式”。";
     }
     if (isPending) {
       return "订单待付款，可在订单详情中继续付款。";
@@ -216,7 +227,7 @@ export function CheckoutOrderSuccess({
                 onClick={onViewOrderDetail}
                 className="w-full rounded-full border-2 border-border py-3 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
-                在订单详情里继续付款
+                {onlinePaymentEnabled ? "在订单详情里继续付款" : "查看订单详情"}
               </button>
               <button
                 type="button"
@@ -455,4 +466,3 @@ export function CheckoutOrderSuccess({
     </div>
   );
 }
-

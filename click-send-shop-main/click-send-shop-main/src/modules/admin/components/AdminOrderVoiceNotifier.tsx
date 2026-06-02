@@ -535,14 +535,14 @@ export function AdminOrderVoiceToolbar() {
   const { busy, statusLabel, testLabel, handleTestPlay, handleToggle, enabled } = useAdminOrderVoice();
 
   return (
-    <div className="hidden shrink-0 items-center gap-1 sm:flex">
+    <div className="admin-order-voice-toolbar hidden shrink-0 items-center gap-1 sm:flex">
       <button
         type="button"
         disabled={busy}
         onClick={handleTestPlay}
         title={tText("播放一条示例订单语音，用于检查浏览器与系统音量")}
         aria-label={tText("测试播放订单语音提醒")}
-        className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-3 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60"
+        className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary px-2.5 text-[12px] font-medium leading-none text-muted-foreground hover:bg-muted disabled:opacity-60"
       >
         {testLabel}
       </button>
@@ -555,8 +555,8 @@ export function AdminOrderVoiceToolbar() {
         aria-label={enabled ? "订单语音提醒已开启，点击关闭" : "订单语音提醒未开启，点击开启"}
         className={
           enabled
-            ? "inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)] px-3 text-xs font-medium text-[var(--theme-primary-foreground)] hover:opacity-90 disabled:opacity-60"
-            : "inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-3 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60"
+            ? "inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-[var(--theme-primary)] px-3 text-[12px] font-medium leading-none text-[var(--theme-primary-foreground)] hover:opacity-90 disabled:opacity-60"
+            : "inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary px-3 text-[12px] font-medium leading-none text-muted-foreground hover:bg-muted disabled:opacity-60"
         }
       >
         {statusLabel}

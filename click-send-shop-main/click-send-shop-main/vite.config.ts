@@ -85,10 +85,12 @@ function stripImportMetaResolveGuard(): Plugin {
   };
 }
 
-/** 面向中国常用 Chromium 壳 / 旧 Android WebView；默认开启，仅当 VITE_LEGACY_BUILD=0 时关闭 */
-const CHINA_BROWSER_TARGETS = [
+/** 面向中马常用浏览器：国产 Chromium 壳 / 旧 Android WebView / Samsung Internet / Safari；默认开启，仅当 VITE_LEGACY_BUILD=0 时关闭 */
+const REGIONAL_BROWSER_TARGETS = [
   "Chrome >= 64",
   "ChromeAndroid >= 64",
+  "Edge >= 79",
+  "Firefox >= 78",
   "Safari >= 12",
   "iOS >= 12",
   "Android >= 7",
@@ -391,10 +393,10 @@ return ({
         enabled: false,
       },
     }),
-    ...(legacyEnabled && !isAdminBuild
+    ...(legacyEnabled
       ? [
           legacy({
-            targets: [...CHINA_BROWSER_TARGETS],
+            targets: [...REGIONAL_BROWSER_TARGETS],
             modernPolyfills: true,
             renderLegacyChunks: true,
           }),
@@ -404,8 +406,6 @@ return ({
   ],
   build: {
     outDir: buildOutDir,
-    // 后台只运行在现代浏览器中；提高 target 可消除依赖中的 BigInt 兼容告警
-    target: isAdminBuild ? "es2020" : undefined,
     sourcemap: false,
     cssTarget: ["chrome64", "safari12"],
     chunkSizeWarningLimit: 900,

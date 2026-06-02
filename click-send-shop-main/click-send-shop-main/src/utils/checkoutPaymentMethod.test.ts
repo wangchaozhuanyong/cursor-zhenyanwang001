@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { canStartOnlinePayment, resolveEffectivePaymentMethod } from "./checkoutPaymentMethod";
+import {
+  canStartOnlinePayment,
+  filterUsableOnlinePaymentChannels,
+  hasUsableOnlinePaymentChannel,
+  resolveEffectivePaymentMethod,
+} from "./checkoutPaymentMethod";
 
 describe("resolveEffectivePaymentMethod", () => {
   it("keeps reward_wallet when online payment is disabled", () => {
@@ -25,5 +30,26 @@ describe("canStartOnlinePayment", () => {
     expect(canStartOnlinePayment("points_plus_cash", true)).toBe(true);
     expect(canStartOnlinePayment("online", false)).toBe(false);
     expect(canStartOnlinePayment("reward_wallet", true)).toBe(false);
+  });
+});
+
+describe("online payment channel availability", () => {
+  const channels = [
+    { code: "reward_wallet", provider: "internal" },
+    { code: "stripe_checkout", provider: "stripe" },
+    { code: "fpx", provider: "malaysia_local" },
+  ];
+
+  it("requires Stripe checkout readiness for Stripe channels", () => {
+    expect(filterUsableOnlinePaymentChannels(channels, false).map((channel) => channel.code)).toEqual(["fpx"]);
+    expect(filterUsableOnlinePaymentChannels(channels, true).map((channel) => channel.code)).toEqual([
+      "stripe_checkout",
+      "fpx",
+    ]);
+  });
+
+  it("treats empty or internal-only channels as unavailable", () => {
+    expect(hasUsableOnlinePaymentChannel([], true)).toBe(false);
+    expect(hasUsableOnlinePaymentChannel([{ provider: "internal" }], true)).toBe(false);
   });
 });

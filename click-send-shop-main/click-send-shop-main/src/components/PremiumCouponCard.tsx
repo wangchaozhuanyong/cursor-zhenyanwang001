@@ -82,6 +82,44 @@ function HorizontalActionLabel({ label }: { label: string }) {
   );
 }
 
+function CouponValueFace({
+  leftValue,
+  amountRmMatch,
+  amountSize,
+  layout,
+}: {
+  leftValue: string;
+  amountRmMatch: RegExpMatchArray | null;
+  amountSize: string;
+  layout: CouponCardLayout;
+}) {
+  const percentMatch = leftValue.match(/^(\d+(?:\.\d+)?)%$/);
+  const kicker = percentMatch ? "折扣券" : amountRmMatch ? "现金券" : "专属券";
+  const note = layout === "home" ? (percentMatch ? "DISCOUNT" : "COUPON") : percentMatch ? "专属折扣" : "购物优惠";
+
+  return (
+    <div className="store-coupon-card__value-face" aria-label={leftValue}>
+      <span className="store-coupon-card__value-kicker">{kicker}</span>
+      <p className="store-coupon-card__value-main">
+        {percentMatch ? (
+          <>
+            <span className={cn("store-coupon-card__value-number", amountSize)}>{percentMatch[1]}</span>
+            <span className="store-coupon-card__value-unit">%</span>
+          </>
+        ) : amountRmMatch ? (
+          <>
+            <span className="store-coupon-card__value-currency">{amountRmMatch[1].toUpperCase()}</span>
+            <span className={cn("store-coupon-card__value-number", amountSize)}>{amountRmMatch[2]}</span>
+          </>
+        ) : (
+          <span className={cn("store-coupon-card__value-number", amountSize)}>{leftValue}</span>
+        )}
+      </p>
+      <span className="store-coupon-card__value-note">{note}</span>
+    </div>
+  );
+}
+
 function CouponInfoRow({
   icon: Icon,
   children,
@@ -250,16 +288,12 @@ export default function PremiumCouponCard({
       <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-edge store-coupon-card__template-edge--right" />
       <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__state-rail" />
       <div className={cn("store-coupon-card__value-pane flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg px-1.5 py-1 text-center", skin.valuePaneClass)}>
-        <p className="inline-flex items-baseline font-black tracking-tight text-[var(--theme-price)]">
-          {amountRmMatch ? (
-            <>
-              <span className="mr-0.5 text-[11px] font-bold leading-none sm:text-xs">{amountRmMatch[1]}</span>
-              <span className={skin.amountSize}>{amountRmMatch[2]}</span>
-            </>
-          ) : (
-            <span className={skin.amountSize}>{leftValue}</span>
-          )}
-        </p>
+        <CouponValueFace
+          leftValue={leftValue}
+          amountRmMatch={amountRmMatch}
+          amountSize={skin.amountSize}
+          layout={layout}
+        />
       </div>
 
       <div

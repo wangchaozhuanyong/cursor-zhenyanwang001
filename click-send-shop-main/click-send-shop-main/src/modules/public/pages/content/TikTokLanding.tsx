@@ -7,12 +7,14 @@ import {
   Building2,
   CheckCircle2,
   ClipboardList,
+  Flame,
   GraduationCap,
   Home,
   Mail,
   MapPin,
   Menu,
   MessageCircle,
+  Quote,
   Search,
   ShieldCheck,
   Sparkles,
@@ -51,6 +53,7 @@ type ServiceCard = {
   text: string;
   icon: LucideIcon;
   tone: string;
+  softTone: string;
   label: string;
 };
 
@@ -62,19 +65,26 @@ type AudienceCard = {
   tone: string;
 };
 
+type StatCard = {
+  value: string;
+  label: string;
+  icon: LucideIcon;
+  tone: string;
+};
+
 const navItems: NavItem[] = [
   { label: "首页", target: "services" },
   { label: "服务分类", target: "services" },
-  { label: "适合人群", target: "audiences" },
+  { label: "热门城市", target: "audiences" },
   { label: "使用流程", target: "flow" },
   { label: "联系我们", target: "contact" },
 ];
 
-const stats = [
-  { value: "6+", label: "热门服务分类", icon: Sparkles, tone: "text-[#008775] bg-[#e4f7f1]" },
-  { value: "10+", label: "覆盖热门城市", icon: Building2, tone: "text-[#c47a08] bg-[#fff3df]" },
-  { value: "100+", label: "生活办事场景", icon: ClipboardList, tone: "text-[#007f6d] bg-[#e8f8f4]" },
-  { value: "华人用户", label: "常用入口", icon: Users, tone: "text-[#b76d00] bg-[#fff1da]" },
+const stats: StatCard[] = [
+  { value: "6+", label: "服务分类", icon: Sparkles, tone: "text-[#008775] bg-[#e5f7f1]" },
+  { value: "10+", label: "热门城市", icon: Building2, tone: "text-[#c87806] bg-[#fff2dc]" },
+  { value: "100+", label: "服务场景", icon: ClipboardList, tone: "text-[#007f6d] bg-[#e8f8f4]" },
+  { value: "华人用户", label: "常用入口", icon: Users, tone: "text-[#ba7100] bg-[#fff1da]" },
 ];
 
 const serviceCards: ServiceCard[] = [
@@ -82,21 +92,24 @@ const serviceCards: ServiceCard[] = [
     title: "找房安家",
     text: "租房、购房、家具家电、入住支持",
     icon: Home,
-    tone: "bg-[#e6f7ed] text-[#078a58]",
+    tone: "bg-[#dff6eb] text-[#068255]",
+    softTone: "bg-[#f3fbf7]",
     label: "1",
   },
   {
     title: "留学陪读",
     text: "学校申请、住宿安排、家属陪读信息",
     icon: GraduationCap,
-    tone: "bg-[#eaf3ff] text-[#1d73c9]",
+    tone: "bg-[#e7f2ff] text-[#1d72c9]",
+    softTone: "bg-[#f6faff]",
     label: "2",
   },
   {
     title: "签证咨询",
     text: "长期签、材料准备、常见问题整理",
     icon: ShieldCheck,
-    tone: "bg-[#f0eafe] text-[#7251bd]",
+    tone: "bg-[#efe8ff] text-[#7052bd]",
+    softTone: "bg-[#faf8ff]",
     label: "3",
   },
   {
@@ -104,13 +117,15 @@ const serviceCards: ServiceCard[] = [
     text: "电话卡、缴费、交通、生活指南",
     icon: ClipboardList,
     tone: "bg-[#fff0dc] text-[#c97700]",
+    softTone: "bg-[#fffaf3]",
     label: "4",
   },
   {
     title: "维修搬家",
     text: "维修、安装、清洁、搬运等上门服务",
     icon: Wrench,
-    tone: "bg-[#e3f6f2] text-[#008775]",
+    tone: "bg-[#e2f6f2] text-[#008775]",
+    softTone: "bg-[#f4fbf9]",
     label: "5",
   },
   {
@@ -118,6 +133,7 @@ const serviceCards: ServiceCard[] = [
     text: "店铺、办公室、供应链、本地合作资源",
     icon: BriefcaseBusiness,
     tone: "bg-[#fff2d9] text-[#b96d00]",
+    softTone: "bg-[#fffaf0]",
     label: "6",
   },
 ];
@@ -160,10 +176,12 @@ const flowSteps = [
 ];
 
 const testimonials = [
-  { text: "不用再到处问人，入口更清晰，省了很多时间。", name: "留学生家长", city: "吉隆坡" },
+  { text: "不用再到处问人，入口更清晰，省了很多时间！", name: "留学生家长", city: "吉隆坡" },
   { text: "信息很全，服务分类清楚，第一次来马也不慌了。", name: "兼职创业", city: "上海" },
-  { text: "找房、办卡、缴费都在这里，很方便，推荐给朋友了。", name: "长住居民", city: "槟城" },
+  { text: "找房、办卡、缴费都在这里，很方便，推荐给朋友了！", name: "长住居民", city: "槟城" },
 ];
+
+const featureChips = ["中文沟通", "本地资源", "真实信息", "高频服务入口"];
 
 function readHeadMeta(selector: string): string {
   if (typeof document === "undefined") return "";
@@ -227,7 +245,7 @@ function syncTikTokHead(brandLogoSrc: string) {
   upsertMeta("meta[name='description']", { name: "description", content: description });
   upsertMeta("meta[name='keywords']", {
     name: "keywords",
-    content: "大马通,TikTok,马来西亚生活服务,马来西亚找房,马来西亚留学,马来西亚签证",
+    content: "大马通 TikTok,马来西亚生活服务,马来西亚找房,马来西亚留学,马来西亚签证",
   });
   upsertMeta("meta[property='og:title']", { property: "og:title", content: title });
   upsertMeta("meta[property='og:description']", { property: "og:description", content: description });
@@ -259,24 +277,24 @@ function BrandMark({ brandLogoSrc, compact = false }: { brandLogoSrc: string; co
     <div className="flex min-w-0 items-center gap-3" aria-label="大马通">
       <span
         className={`grid shrink-0 place-items-center overflow-hidden rounded-lg border border-[#d9ece8] bg-white shadow-sm ${
-          compact ? "h-9 w-9" : "h-11 w-11"
+          compact ? "h-8 w-8" : "h-10 w-10 sm:h-11 sm:w-11"
         }`}
       >
         <img
           src={brandLogoSrc}
           alt="大马通"
-          width={compact ? 36 : 44}
-          height={compact ? 36 : 44}
+          width={compact ? 32 : 44}
+          height={compact ? 32 : 44}
           className="h-full w-full object-contain"
           loading="eager"
           decoding="async"
         />
       </span>
       <span className="min-w-0">
-        <span className={`${compact ? "text-sm" : "text-xl"} block truncate font-bold leading-tight text-[#075f57]`}>
+        <span className={`${compact ? "text-sm" : "text-xl sm:text-2xl"} block truncate font-black leading-tight text-[#075f57]`}>
           大马通
         </span>
-        <span className={`${compact ? "text-[10px]" : "text-xs"} block truncate font-semibold leading-tight text-[#0b7c70]`}>
+        <span className={`${compact ? "text-[10px]" : "text-[11px] sm:text-xs"} block truncate font-bold leading-tight text-[#0b7c70]`}>
           Damatong.net
         </span>
       </span>
@@ -294,12 +312,94 @@ function SectionTitle({
   subtitle?: string;
 }) {
   return (
-    <div className="mx-auto mb-6 max-w-3xl text-center">
+    <div className="mx-auto mb-5 max-w-3xl text-center sm:mb-7">
       <div className="inline-flex items-center justify-center gap-2 text-[#008775]">
-        {Icon ? <Icon size={22} strokeWidth={2.2} /> : null}
-        <h2 className="text-2xl font-bold text-[#121816] sm:text-3xl">{title}</h2>
+        {Icon ? <Icon size={21} strokeWidth={2.4} /> : null}
+        <h2 className="text-[22px] font-black leading-tight text-[#111816] sm:text-3xl">{title}</h2>
       </div>
-      {subtitle ? <p className="mt-2 text-sm leading-6 text-[#62706c] sm:text-base">{subtitle}</p> : null}
+      {subtitle ? <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-[#62706c] sm:text-base">{subtitle}</p> : null}
+    </div>
+  );
+}
+
+function TikTokBadge() {
+  return (
+    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#bf811e] bg-white px-3.5 py-2 text-[13px] font-bold text-[#80500b] shadow-[0_8px_24px_rgba(112,78,23,0.08)] sm:px-4 sm:text-sm">
+      <span className="grid h-6 w-6 place-items-center rounded-full bg-[#111] text-[13px] font-black text-white">♪</span>
+      TikTok 用户专属入口
+    </div>
+  );
+}
+
+function PlatformPreview({ brandLogoSrc }: { brandLogoSrc: string }) {
+  return (
+    <div className="relative mx-auto w-full max-w-[360px] sm:max-w-[430px] lg:max-w-[660px]">
+      <div className="absolute -right-9 top-16 hidden h-56 w-56 rounded-full bg-[#9bd2c8] opacity-80 sm:block lg:-right-16 lg:top-28 lg:h-72 lg:w-72" />
+      <div className="relative rounded-[28px] border border-[#e9efee] bg-white p-2.5 shadow-[0_22px_60px_rgba(24,67,61,0.14)] sm:p-3 lg:rounded-[24px] lg:p-4">
+        <div className="rounded-[22px] border border-[#e7efec] bg-[#fbfefd] p-3 lg:rounded-lg lg:p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <BrandMark brandLogoSrc={brandLogoSrc} compact />
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#dfe9e6] bg-white text-[#64716e] lg:hidden">
+              <Search size={18} />
+            </div>
+            <div className="hidden h-9 flex-1 items-center gap-2 rounded-full border border-[#dfe9e6] bg-white px-3 text-xs text-[#84918e] lg:flex">
+              <Search size={15} />
+              搜索服务、城市或关键词
+            </div>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[116px_1fr] lg:gap-4">
+            <div className="hidden space-y-2 lg:block">
+              {["首页", "服务分类", "热门城市", "我的收藏", "消息中心", "个人中心"].map((item, index) => (
+                <div
+                  key={item}
+                  className={`rounded-lg px-3 py-2.5 text-sm font-bold ${
+                    index === 0 ? "bg-[#e8f7f3] text-[#007f6d]" : "text-[#64716e]"
+                  }`}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-3">
+              <div className="relative min-h-[145px] overflow-hidden rounded-lg bg-[#007f6d] sm:min-h-[175px] lg:min-h-[210px]">
+                <img
+                  src={HERO_IMAGE}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover object-right opacity-90"
+                  loading="eager"
+                  decoding="async"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,111,97,0.9),rgba(0,111,97,0.12))]" />
+                <div className="relative max-w-[250px] p-4 text-white sm:p-5 lg:max-w-[330px] lg:p-7">
+                  <p className="text-xl font-black leading-snug sm:text-2xl">在马来西亚的生活更简单，更安心</p>
+                  <button
+                    type="button"
+                    className="mt-4 rounded-full bg-[#008775] px-4 py-2 text-xs font-black text-white shadow-[0_10px_22px_rgba(0,91,78,0.24)] sm:text-sm"
+                  >
+                    探索服务
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {serviceCards.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.title} className="min-h-[72px] rounded-lg border border-[#e6eeeb] bg-white p-2 shadow-sm sm:min-h-[84px] sm:p-3">
+                      <span className={`mx-auto mb-1.5 grid h-9 w-9 place-items-center rounded-lg ${item.tone} sm:h-10 sm:w-10`}>
+                        <Icon size={20} />
+                      </span>
+                      <p className="truncate text-center text-[11px] font-black text-[#121816] sm:text-xs">{item.title}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -326,9 +426,9 @@ export default function TikTokLanding() {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7fbfa] text-[#121816]">
-      <header className="border-b border-[#dfe9e6] bg-white/95">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-8">
+    <main className="min-h-screen overflow-x-hidden bg-[#f8fbfa] text-[#121816]">
+      <header className="border-b border-[#e0ebe8] bg-white/95">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6 lg:h-20 lg:px-8">
           <BrandMark brandLogoSrc={brandLogoSrc} />
 
           <nav className="hidden items-center gap-8 lg:flex" aria-label="TikTok 页面导航">
@@ -337,7 +437,7 @@ export default function TikTokLanding() {
                 key={item.label}
                 type="button"
                 onClick={() => scrollToSection(item.target)}
-                className={`text-sm font-semibold transition hover:text-[#007f6d] ${
+                className={`text-sm font-bold transition hover:text-[#007f6d] ${
                   index === 0 ? "border-b-2 border-[#007f6d] pb-1 text-[#007f6d]" : "text-[#44514e]"
                 }`}
               >
@@ -350,7 +450,7 @@ export default function TikTokLanding() {
             <button
               type="button"
               onClick={openSupport}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#008775] bg-white px-5 text-sm font-bold text-[#007f6d] transition hover:bg-[#effaf7]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#008775] bg-white px-5 text-sm font-black text-[#007f6d] transition hover:bg-[#effaf7]"
             >
               <MessageCircle size={17} />
               客服咨询
@@ -358,7 +458,7 @@ export default function TikTokLanding() {
             <button
               type="button"
               onClick={enterOfficialSite}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#007f6d] px-5 text-sm font-bold text-white shadow-[0_14px_28px_rgba(0,127,109,0.22)] transition hover:bg-[#006c5d]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#007f6d] px-5 text-sm font-black text-white shadow-[0_14px_28px_rgba(0,127,109,0.22)] transition hover:bg-[#006c5d]"
             >
               立即进入大马通
               <ArrowRight size={17} />
@@ -368,23 +468,23 @@ export default function TikTokLanding() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen((open) => !open)}
-            className="grid h-11 w-11 place-items-center rounded-lg border border-[#dfe9e6] bg-white text-[#121816] lg:hidden"
+            className="grid h-11 w-11 place-items-center rounded-lg bg-white text-[#101614] lg:hidden"
             aria-expanded={mobileMenuOpen}
             aria-label="打开导航菜单"
           >
-            <Menu size={27} />
+            <Menu size={30} strokeWidth={2.6} />
           </button>
         </div>
 
         {mobileMenuOpen ? (
-          <div className="border-t border-[#dfe9e6] bg-white px-4 py-3 lg:hidden">
+          <div className="border-t border-[#e0ebe8] bg-white px-4 py-3 lg:hidden">
             <div className="mx-auto grid max-w-7xl grid-cols-2 gap-2">
               {navItems.slice(1).map((item) => (
                 <button
                   key={item.label}
                   type="button"
                   onClick={() => scrollToSection(item.target)}
-                  className="h-10 rounded-lg border border-[#dfe9e6] bg-[#f7fbfa] text-sm font-semibold text-[#34413e]"
+                  className="h-10 rounded-lg border border-[#dfe9e6] bg-[#f7fbfa] text-sm font-bold text-[#34413e]"
                 >
                   {item.label}
                 </button>
@@ -394,129 +494,71 @@ export default function TikTokLanding() {
         ) : null}
       </header>
 
-      <section className="relative overflow-hidden border-b border-[#dfe9e6] bg-white">
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.9)_42%,rgba(255,255,255,0.34)_100%)]" />
-        <img
-          src={HERO_IMAGE}
-          alt=""
-          className="absolute inset-y-0 right-0 h-full w-full object-cover object-right opacity-70"
-          loading="eager"
-          decoding="async"
-          {...({ fetchpriority: "high" } as Record<string, string>)}
-        />
-        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 sm:py-12 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-14">
-          <div className="flex min-h-[520px] flex-col justify-center lg:min-h-[620px]">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#c88a21] bg-white/86 px-4 py-2 text-sm font-semibold text-[#80500b] shadow-sm">
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#111] text-xs font-bold text-white">T</span>
-              TikTok 用户专属入口
-            </div>
+      <section className="relative overflow-hidden border-b border-[#e0ebe8] bg-white">
+        <div className="absolute -left-32 top-28 h-64 w-64 rounded-full border border-[#d8efea] bg-[#effaf7]" />
+        <div className="absolute -right-36 top-48 h-80 w-80 rounded-full bg-[#9bd2c8] opacity-80 sm:-right-24 lg:top-44 lg:h-[420px] lg:w-[420px]" />
 
-            <h1 className="mt-6 max-w-3xl text-4xl font-black text-[#050907] sm:text-5xl lg:text-6xl" style={{ lineHeight: 1.18 }}>
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-5 pb-8 pt-8 sm:px-6 sm:pb-10 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 lg:px-8 lg:py-14">
+          <div className="flex min-h-[360px] flex-col justify-center sm:min-h-[420px] lg:min-h-[620px]">
+            <TikTokBadge />
+
+            <h1 className="mt-5 max-w-[680px] text-[40px] font-black tracking-normal text-[#050907] sm:text-5xl lg:text-6xl" style={{ lineHeight: 1.1 }}>
               来马来西亚，
               <br />
               生活办事<span className="text-[#007f6d]">不用到处问</span>
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-8 text-[#3f4c49] sm:text-lg">
+            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#3f4c49] sm:text-lg sm:leading-8">
               找房安家、留学陪读、签证咨询、本地服务、商务资源，一站式集中查看。
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 grid grid-cols-[1fr_0.9fr] gap-3 sm:flex sm:flex-wrap">
               <button
                 type="button"
                 onClick={enterOfficialSite}
-                className="inline-flex h-14 items-center justify-center gap-3 rounded-full bg-[#008775] px-7 text-base font-bold text-white shadow-[0_18px_32px_rgba(0,127,109,0.25)] transition hover:bg-[#006f61]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#008775] px-4 text-sm font-black text-white shadow-[0_16px_30px_rgba(0,127,109,0.26)] transition hover:bg-[#006f61] sm:min-w-[220px] sm:px-7 sm:text-base"
               >
                 立即进入大马通
-                <ArrowRight size={21} />
+                <ArrowRight size={18} />
               </button>
               <button
                 type="button"
                 onClick={openSupport}
-                className="inline-flex h-14 items-center justify-center gap-3 rounded-full border border-[#008775] bg-white px-7 text-base font-bold text-[#007f6d] transition hover:bg-[#effaf7]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#008775] bg-white px-4 text-sm font-black text-[#007f6d] transition hover:bg-[#effaf7] sm:min-w-[180px] sm:px-7 sm:text-base"
               >
-                <MessageCircle size={21} />
+                <MessageCircle size={18} />
                 联系客服
               </button>
             </div>
 
-            <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {["中文沟通", "本地资源", "真实信息", "高频服务入口"].map((item) => (
-                <div key={item} className="flex items-center gap-2 rounded-full border border-[#dfe9e6] bg-white/88 px-3 py-2 text-sm font-semibold text-[#34413e] shadow-sm">
-                  <CheckCircle2 size={17} className="shrink-0 text-[#008775]" />
-                  <span>{item}</span>
+            <div className="mt-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+              {featureChips.map((item) => (
+                <div key={item} className="flex min-h-9 items-center justify-center gap-2 rounded-full border border-[#dfe9e6] bg-white/90 px-3 text-xs font-bold text-[#34413e] shadow-sm sm:text-sm">
+                  <CheckCircle2 size={16} className="shrink-0 text-[#008775]" />
+                  <span className="truncate">{item}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="hidden items-center justify-end lg:flex">
-            <div className="w-full max-w-[660px] rounded-lg border border-[#dfe9e6] bg-white p-4 shadow-[0_28px_80px_rgba(21,67,61,0.16)]">
-              <div className="rounded-lg border border-[#e5eeeb] bg-[#f9fcfb] p-4">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <BrandMark brandLogoSrc={brandLogoSrc} compact />
-                  <div className="flex h-9 flex-1 items-center gap-2 rounded-full border border-[#dfe9e6] bg-white px-3 text-xs text-[#84918e]">
-                    <Search size={15} />
-                    搜索服务、城市或关键词
-                  </div>
-                </div>
-                <div className="grid gap-4 lg:grid-cols-[120px_1fr]">
-                  <div className="space-y-2">
-                    {["首页", "服务分类", "热门城市", "消息中心", "个人中心"].map((item, index) => (
-                      <div
-                        key={item}
-                        className={`rounded-lg px-3 py-3 text-sm font-semibold ${
-                          index === 0 ? "bg-[#e8f7f3] text-[#007f6d]" : "text-[#64716e]"
-                        }`}
-                      >
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="grid gap-4">
-                    <div className="relative min-h-[210px] overflow-hidden rounded-lg bg-[#007f6d]">
-                      <img src={HERO_IMAGE} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" loading="eager" decoding="async" />
-                      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,111,97,0.88),rgba(0,111,97,0.12))]" />
-                      <div className="relative max-w-[310px] p-7 text-white">
-                        <p className="text-2xl font-black leading-tight">在马来西亚的生活更简单，更安心</p>
-                        <button type="button" onClick={() => scrollToSection("services")} className="mt-5 rounded-full bg-[#008775] px-5 py-2 text-sm font-bold text-white">
-                          探索服务
-                        </button>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      {serviceCards.slice(0, 6).map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <div key={item.title} className="rounded-lg border border-[#e5eeeb] bg-white p-3">
-                            <span className={`mb-2 grid h-9 w-9 place-items-center rounded-lg ${item.tone}`}>
-                              <Icon size={20} />
-                            </span>
-                            <p className="text-sm font-bold text-[#121816]">{item.title}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center justify-center lg:justify-end">
+            <PlatformPreview brandLogoSrc={brandLogoSrc} />
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-3 rounded-lg border border-[#dfe9e6] bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+      <section className="px-5 py-5 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px overflow-hidden rounded-lg border border-[#dfe9e6] bg-[#dfe9e6] shadow-[0_14px_40px_rgba(22,64,58,0.08)] sm:grid-cols-4">
           {stats.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.label} className="flex items-center gap-4 border-[#dfe9e6] px-2 py-2 lg:border-r last:lg:border-r-0">
-                <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-lg ${item.tone}`}>
-                  <Icon size={28} />
+              <div key={item.label} className="flex min-h-[92px] items-center gap-3 bg-white px-4 py-4 sm:min-h-[104px] sm:justify-center sm:gap-4">
+                <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg ${item.tone} sm:h-14 sm:w-14`}>
+                  <Icon size={26} />
                 </span>
-                <div>
-                  <p className="text-3xl font-black leading-tight text-[#121816]">{item.value}</p>
-                  <p className="mt-1 text-sm font-medium leading-5 text-[#64716e]">{item.label}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-2xl font-black leading-tight text-[#121816] sm:text-3xl">{item.value}</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-[#64716e] sm:text-sm">{item.label}</p>
                 </div>
               </div>
             );
@@ -524,22 +566,25 @@ export default function TikTokLanding() {
         </div>
       </section>
 
-      <section id={sectionIds.services} className="px-4 py-8 sm:px-6 lg:px-8">
+      <section id={sectionIds.services} className="px-5 py-7 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <SectionTitle icon={Sparkles} title="服务分类" subtitle="把高频问题拆成清晰入口，新用户不用到处问。" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <SectionTitle icon={Flame} title="热门服务分类" subtitle="把高频问题拆成清晰入口，新用户不用到处问。" />
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 lg:gap-4">
             {serviceCards.map((item) => {
               const Icon = item.icon;
               return (
-                <article key={item.title} className="grid min-h-[132px] grid-cols-[72px_1fr] items-center gap-4 rounded-lg border border-[#dfe9e6] bg-white p-5 shadow-sm">
-                  <span className={`grid h-16 w-16 place-items-center rounded-lg ${item.tone}`}>
-                    <Icon size={34} />
+                <article
+                  key={item.title}
+                  className={`grid min-h-[116px] grid-cols-[64px_1fr] items-center gap-4 rounded-lg border border-[#dfe9e6] ${item.softTone} p-4 shadow-sm sm:min-h-[132px] sm:grid-cols-[76px_1fr] sm:p-5`}
+                >
+                  <span className={`grid h-14 w-14 place-items-center rounded-full ${item.tone} sm:h-16 sm:w-16`}>
+                    <Icon size={31} />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="text-lg font-black text-[#121816]">
+                    <h3 className="text-base font-black text-[#121816] sm:text-lg">
                       {item.label}. {item.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-6 text-[#4f5d59]">{item.text}</p>
+                    <p className="mt-1.5 text-sm leading-6 text-[#4f5d59]">{item.text}</p>
                   </div>
                 </article>
               );
@@ -548,23 +593,23 @@ export default function TikTokLanding() {
         </div>
       </section>
 
-      <section id={sectionIds.audiences} className="px-4 py-8 sm:px-6 lg:px-8">
+      <section id={sectionIds.audiences} className="px-5 py-7 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <SectionTitle icon={Users} title="适合这样的你" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
             {audiences.map((item) => {
               const Icon = item.icon;
               return (
                 <article key={item.title} className="overflow-hidden rounded-lg border border-[#dfe9e6] bg-white shadow-sm">
-                  <div className="aspect-[16/9] overflow-hidden">
+                  <div className="aspect-[16/8.5] overflow-hidden">
                     <img src={item.image} alt={item.title} className="h-full w-full object-cover object-right" loading="lazy" decoding="async" />
                   </div>
-                  <div className="flex min-h-[116px] gap-3 p-4">
-                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg ${item.tone}`}>
+                  <div className="flex min-h-[108px] gap-3 p-4">
+                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${item.tone}`}>
                       <Icon size={24} />
                     </span>
                     <div>
-                      <h3 className="text-lg font-black text-[#007f6d]">{item.title}</h3>
+                      <h3 className="text-base font-black text-[#007f6d] sm:text-lg">{item.title}</h3>
                       <p className="mt-1 text-sm leading-6 text-[#4f5d59]">{item.text}</p>
                     </div>
                   </div>
@@ -575,12 +620,12 @@ export default function TikTokLanding() {
         </div>
       </section>
 
-      <section id={sectionIds.flow} className="px-4 py-8 sm:px-6 lg:px-8">
+      <section id={sectionIds.flow} className="px-5 py-7 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <SectionTitle title="使用流程" />
-          <div className="grid gap-4 rounded-lg border border-[#dfe9e6] bg-white p-4 shadow-sm md:grid-cols-3">
+          <SectionTitle title="3 步开始使用" />
+          <div className="grid gap-3 rounded-lg border border-[#dfe9e6] bg-white p-3 shadow-sm md:grid-cols-3 md:gap-0">
             {flowSteps.map((step, index) => (
-              <article key={step.title} className="flex min-h-[118px] items-center gap-4 rounded-lg bg-[#f7fbfa] p-4">
+              <article key={step.title} className="relative flex min-h-[106px] items-center gap-4 rounded-lg bg-[#f4fbf9] p-4 md:rounded-none md:bg-white">
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#008775] text-xl font-black text-white">
                   {index + 1}
                 </span>
@@ -588,25 +633,29 @@ export default function TikTokLanding() {
                   <h3 className="text-base font-black text-[#007f6d]">{step.title}</h3>
                   <p className="mt-1 text-sm leading-6 text-[#4f5d59]">{step.text}</p>
                 </div>
+                {index < flowSteps.length - 1 ? (
+                  <ArrowRight className="absolute right-4 top-1/2 hidden -translate-y-1/2 text-[#a5b2af] md:block" size={26} />
+                ) : null}
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-8 sm:px-6 lg:px-8">
+      <section className="px-5 py-7 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <SectionTitle title="真实用户的声音" />
-          <div className="grid gap-4 md:grid-cols-3">
+          <SectionTitle title="真实用户反馈" />
+          <div className="grid gap-3 md:grid-cols-3 lg:gap-4">
             {testimonials.map((item) => (
               <article key={item.name} className="rounded-lg border border-[#dfe9e6] bg-white p-5 shadow-sm">
-                <div className="mb-3 flex gap-1 text-[#f4a51c]" aria-label="五星评价">
+                <Quote className="mb-3 text-[#008775]" size={24} fill="currentColor" />
+                <p className="text-sm leading-7 text-[#26322f]">{item.text}</p>
+                <div className="mt-4 flex gap-1 text-[#f4a51c]" aria-label="五星评价">
                   {Array.from({ length: 5 }).map((_, index) => (
-                    <Star key={index} size={16} fill="currentColor" />
+                    <Star key={index} size={15} fill="currentColor" />
                   ))}
                 </div>
-                <p className="text-sm leading-7 text-[#26322f]">“{item.text}”</p>
-                <p className="mt-4 text-sm font-semibold text-[#64716e]">
+                <p className="mt-3 text-sm font-semibold text-[#64716e]">
                   {item.name} · {item.city}
                 </p>
               </article>
@@ -615,21 +664,21 @@ export default function TikTokLanding() {
         </div>
       </section>
 
-      <section id={sectionIds.contact} className="px-4 pb-8 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl overflow-hidden rounded-lg border border-[#008775] bg-[#e9f8f4] md:grid-cols-[280px_1fr]">
+      <section id={sectionIds.contact} className="px-5 pb-8 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl overflow-hidden rounded-lg border border-[#008775] bg-[#e9f8f4] shadow-[0_18px_44px_rgba(0,127,109,0.12)] md:grid-cols-[280px_1fr]">
           <img src={HERO_IMAGE} alt="" className="hidden h-full min-h-[190px] w-full object-cover md:block" loading="lazy" decoding="async" />
-          <div className="flex flex-col items-center justify-between gap-5 p-6 text-center md:flex-row md:text-left lg:p-8">
+          <div className="flex flex-col items-center justify-between gap-5 p-5 text-center sm:p-6 md:flex-row md:text-left lg:p-8">
             <div>
-              <h2 className="text-3xl font-black leading-tight text-[#007064] sm:text-4xl">把高频问题，变成清晰入口</h2>
-              <p className="mt-3 text-base leading-7 text-[#34413e]">
+              <h2 className="text-[28px] font-black leading-tight text-[#007064] sm:text-4xl">把高频问题，变成清晰入口</h2>
+              <p className="mt-3 text-sm leading-7 text-[#34413e] sm:text-base">
                 现在进入大马通，快速查看适合你的马来西亚生活服务。
               </p>
             </div>
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-2">
               <button
                 type="button"
                 onClick={enterOfficialSite}
-                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#008775] px-7 py-3 text-base font-bold text-white shadow-[0_18px_32px_rgba(0,127,109,0.25)] transition hover:bg-[#006f61]"
+                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#008775] px-6 py-3 text-sm font-black text-white shadow-[0_18px_32px_rgba(0,127,109,0.25)] transition hover:bg-[#006f61] sm:text-base"
               >
                 立即进入大马通
                 <ArrowRight size={20} />
@@ -637,17 +686,17 @@ export default function TikTokLanding() {
               <button
                 type="button"
                 onClick={openSupport}
-                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-[#008775] bg-white px-7 py-3 text-base font-bold text-[#007f6d] transition hover:bg-[#effaf7]"
+                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-[#008775] bg-white px-6 py-3 text-sm font-black text-[#007f6d] transition hover:bg-[#effaf7] sm:text-base"
               >
                 <MessageCircle size={20} />
-                客服咨询
+                WhatsApp 咨询
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-[#dfe9e6] bg-white px-4 py-8 sm:px-6 lg:px-8">
+      <footer className="border-t border-[#dfe9e6] bg-white px-5 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[1.15fr_0.85fr_0.85fr_1fr]">
           <div>
             <BrandMark brandLogoSrc={brandLogoSrc} />

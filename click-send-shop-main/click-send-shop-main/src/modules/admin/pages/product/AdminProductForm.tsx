@@ -13,7 +13,6 @@ import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/const
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { flattenCategories, type FlatCategory } from "@/utils/categoryTree";
 import type { Category } from "@/types/category";
-import type { Product, ProductSpecGroup, ProductSpecValue, ProductTag } from "@/types/product";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminLabelWithHint, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { AnimatedConfirmDialog, LoadingButton, UploadDropZone } from "@/modules/micro-interactions";
@@ -30,12 +29,8 @@ import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
-import {
-  DEFAULT_VARIANT_TITLE,
-  tempVariantId,
-} from "@/utils/productFormVariantUtils";
-import { resolveStockLimitsFromProduct } from "@/utils/inventoryStockFields";
-import type { AdminSpecGroup, AdminVariantForm, ProductFormPayloadSlice } from "@/modules/admin/pages/product/productFormTypes";
+import { tempVariantId } from "@/utils/productFormVariantUtils";
+import type { AdminVariantForm, ProductFormPayloadSlice } from "@/modules/admin/pages/product/productFormTypes";
 import ProductVariantMatrixTable from "@/modules/admin/pages/product/ProductVariantMatrixTable";
 import ProductSpecGroupsSection from "@/modules/admin/pages/product/ProductSpecGroupsSection";
 import {
@@ -45,7 +40,9 @@ import {
   defaultCoverImageAlt,
   defaultGalleryImageAlt,
 } from "@/modules/admin/pages/product/productFormPresentation";
+import { createEmptyProductForm } from "@/modules/admin/pages/product/productFormInitialState";
 import { buildAdminProductUpsertPayload } from "@/modules/admin/pages/product/productFormPayload";
+import { buildProductFormFromProduct } from "@/modules/admin/pages/product/productFormHydration";
 import { useProductMediaUploads } from "@/modules/admin/pages/product/useProductMediaUploads";
 import { useProductSkuMatrix } from "@/modules/admin/pages/product/useProductSkuMatrix";
 
@@ -75,40 +72,7 @@ export default function AdminProductForm() {
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [showDefaultSkuAdvanced, setShowDefaultSkuAdvanced] = useState(false);
-  const [form, setForm] = useState<ProductFormPayloadSlice>({
-    name: "",
-    price: "",
-    original_price: "",
-    cost_price: "",
-    sales_count: "",
-    stock: "",
-    stock_warning_threshold: "",
-    stock_lower_limit: "",
-    stock_upper_limit: "",
-    category_id: "",
-    sort_order: "",
-    description: "",
-    cover_image: "",
-    cover_image_alt: "",
-    video_url: "",
-    images: [] as string[],
-    image_alts: [] as string[],
-    status: "active" as "draft" | "active" | "inactive",
-    is_hot: false,
-    is_new: false,
-    is_recommended: false,
-    is_age_restricted: false,
-    minimum_age: "",
-    compliance_type: "normal",
-    region_notice: "",
-    compliance_notice: "",
-    allow_index: true,
-    tag_ids: [] as string[],
-    spec_groups: [] as AdminSpecGroup[],
-    variants: [
-      { title: DEFAULT_VARIANT_TITLE, sku_code: "", price: "", stock: "", sort_order: 0, is_default: true },
-    ] as AdminVariantForm[],
-  });
+  const [form, setForm] = useState<ProductFormPayloadSlice>(createEmptyProductForm);
   const {
     uploadingCover,
     uploadingGallery,
@@ -159,104 +123,8 @@ export default function AdminProductForm() {
   useEffect(() => {
     const data = productQuery.data;
     if (!data) return;
-            const st = data.status === "draft" || data.status === "inactive" ? data.status : "active";
-            const vlist =
-              data.variants?.length ?
-                data.variants.map((v, i) => ({
-                  id: v.id,
-                  title: v.title || (v.is_default ? DEFAULT_VARIANT_TITLE : ""),
-                  sku_code: (v.sku_code as string) || "",
-                  price: String(v.price ?? ""),
-                  original_price: v.original_price != null ? String(v.original_price) : "",
-                  cost_price: v.cost_price != null ? String(v.cost_price) : "",
-                  stock: String(v.stock ?? ""),
-                  stock_warning_threshold: v.stock_warning_threshold != null ? String(v.stock_warning_threshold) : "",
-                  stock_lower_limit: v.stock_lower_limit != null ? String(v.stock_lower_limit) : "",
-                  stock_upper_limit: v.stock_upper_limit != null ? String(v.stock_upper_limit) : "",
-                  barcode: v.barcode || "",
-                  image_url: v.image_url || "",
-                  weight: v.weight != null ? String(v.weight) : "",
-                  enabled: v.enabled !== false,
-                  sort_order: v.sort_order ?? i,
-                  is_default: !!v.is_default,
-                  spec_value_ids: Array.isArray(v.spec_value_ids) ? v.spec_value_ids : [],
-                })) :
-                [
-                  {
-                    title: DEFAULT_VARIANT_TITLE,
-                    sku_code: "",
-                    price: data.price?.toString() || "",
-                    stock: data.stock?.toString() || "",
-                    stock_warning_threshold:
-                      data.stock_warning_threshold != null
-                        ? String(data.stock_warning_threshold)
-                        : (data.default_variant?.stock_warning_threshold != null
-                          ? String(data.default_variant.stock_warning_threshold)
-                          : ""),
-                    stock_lower_limit:
-                      data.stock_lower_limit != null
-                        ? String(data.stock_lower_limit)
-                        : (data.default_variant?.stock_lower_limit != null ? String(data.default_variant.stock_lower_limit) : ""),
-                    stock_upper_limit:
-                      data.stock_upper_limit != null
-                        ? String(data.stock_upper_limit)
-                        : (data.default_variant?.stock_upper_limit != null ? String(data.default_variant.stock_upper_limit) : ""),
-                    sort_order: 0,
-                    is_default: true,
-                    enabled: true,
-                  },
-                ];
-            const mainStockLimits = resolveStockLimitsFromProduct(data);
-            const productImages = Array.isArray(data.images) ? data.images : [];
-            const productImageAlts = Array.isArray(data.image_alts) ? data.image_alts : [];
-            setForm({
-              name: data.name || "",
-              price: data.price?.toString() || "",
-              original_price:
-                data.original_price != null ? data.original_price.toString() : "",
-              cost_price: (vlist.find((variant) => variant.is_default)?.cost_price ?? "") || "",
-              sales_count: data.sales_count != null ? String(data.sales_count) : "0",
-              stock: data.stock?.toString() || "",
-              stock_warning_threshold: mainStockLimits.warning,
-              stock_lower_limit: mainStockLimits.lower,
-              stock_upper_limit: mainStockLimits.upper,
-              category_id: data.category_id || "",
-              sort_order: data.sort_order?.toString() || "",
-              description: data.description || "",
-              cover_image: data.cover_image || "",
-              cover_image_alt: data.cover_image_alt || "",
-              video_url: data.video_url || "",
-              images: productImages,
-              image_alts: productImages.map((_, index) => productImageAlts[index] || ""),
-              status: st,
-              is_hot: !!data.is_hot,
-              is_new: !!data.is_new,
-              is_recommended: !!data.is_recommended,
-              is_age_restricted: !!data.is_age_restricted,
-              minimum_age: data.minimum_age != null ? String(data.minimum_age) : "",
-              compliance_type: data.compliance_type || "normal",
-              region_notice: data.region_notice || "",
-              compliance_notice: data.compliance_notice || "",
-              allow_index: data.allow_index == null ? true : Number(data.allow_index) === 1,
-              tag_ids: Array.isArray(data.tags) ? data.tags.map((t: { id: string }) => t.id) : [],
-              spec_groups: Array.isArray(data.spec_groups)
-                ? data.spec_groups.map((g: ProductSpecGroup, gi: number) => ({
-                  id: g.id,
-                  name: g.name || "",
-                  sort_order: g.sort_order ?? gi,
-                  values: Array.isArray(g.values)
-                    ? g.values.map((v: ProductSpecValue, vi: number) => ({
-                      id: v.id,
-                      value: v.value || "",
-                      image_url: v.image_url || "",
-                      sort_order: v.sort_order ?? vi,
-                    }))
-                    : [],
-                }))
-                : [],
-              variants: vlist,
-            });
-            setFormHydrated(true);
+    setForm(buildProductFormFromProduct(data));
+    setFormHydrated(true);
   }, [productQuery.data]);
 
   useEffect(() => {

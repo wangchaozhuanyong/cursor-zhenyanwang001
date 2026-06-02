@@ -440,7 +440,7 @@ export default function GuestMobileFooter({
           <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
             <div className="min-w-0">
               <p className="text-[13px] font-semibold text-[#078437]">一站式在马生活服务</p>
-              <h2 className="mt-3 font-display text-[30px] font-bold leading-tight text-[#08632f] sm:text-[40px]">
+              <h2 className="mt-3 font-display text-[28px] font-bold leading-tight text-[#08632f] sm:text-[40px]">
                 还没找到你需要的服务？
               </h2>
               <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[#415146]">

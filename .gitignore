@@ -13,6 +13,7 @@ server/.env
 node_modules/
 **/dist/
 **/admin-dist/
+**/.build-admin-dist-backup-*/
 **/dist-ssr/
 # PWA build artifacts accidentally emitted beside package root
 click-send-shop-main/click-send-shop-main/sw.js

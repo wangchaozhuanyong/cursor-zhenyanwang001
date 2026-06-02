@@ -11,6 +11,8 @@ export default tseslint.config(
       "dist/**",
       "admin-dist",
       "admin-dist/**",
+      ".build-admin-dist-backup-*",
+      ".build-admin-dist-backup-*/**",
       "sw.js",
       "workbox-*.js",
       "**/vite.config.ts.timestamp-*.mjs",

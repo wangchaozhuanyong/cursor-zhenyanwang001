@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 /**
- * 中马常用浏览器兼容性静态检查（CI / 本地 npm run check:browser-compat）
+ * Static browser-compatibility guard for the China/Malaysia storefront.
+ *
+ * Default production builds now target modern browsers. Legacy chunks for old
+ * Chromium shells, old Android WebView, Samsung Internet 9, and Safari 12 are
+ * still available through VITE_LEGACY_BUILD=1.
  */
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,7 +17,7 @@ const warnings = [];
 function read(relPath) {
   const abs = path.join(root, relPath);
   if (!existsSync(abs)) {
-    errors.push(`缺少文件: ${relPath}`);
+    errors.push(`Missing file: ${relPath}`);
     return "";
   }
   return readFileSync(abs, "utf8");
@@ -31,67 +35,67 @@ function assertMatch(relPath, pattern, message) {
   if (!pattern.test(src)) errors.push(`${relPath}: ${message}`);
 }
 
-// 1. 首屏 preboot
-assertMatch("public/browser-preboot.js", /showUnsupported/, "应包含浏览器不支持提示");
+// 1. First-screen preboot fallback.
+assertMatch("public/browser-preboot.js", /showUnsupported/, "should include unsupported-browser fallback");
 for (const html of ["index.html", "admin-index.html"]) {
-  assertMatch(html, /browser-preboot\.js/, "应引入 browser-preboot.js");
-  assertMatch(html, /import\.meta\.resolve/, "应包含 import.meta.resolve 兜底");
+  assertMatch(html, /browser-preboot\.js/, "should load browser-preboot.js");
+  assertMatch(html, /import\.meta\.resolve/, "should keep import.meta.resolve guard");
 }
 
-// 2. 应用内 shim
-assertMatch("src/main.tsx", /installBrowserCompatShims/, "main.tsx 应安装 browser shims");
-assertMatch("src/admin-main.tsx", /installBrowserCompatShims/, "admin-main.tsx 应安装 browser shims");
-assertMatch("src/lib/browserBoot.ts", /polyfillArrayAt/, "browserBoot 应包含 Array.at polyfill");
+// 2. Runtime browser shims.
+assertMatch("src/main.tsx", /installBrowserCompatShims/, "main.tsx should install browser shims");
+assertMatch("src/admin-main.tsx", /installBrowserCompatShims/, "admin-main.tsx should install browser shims");
+assertMatch("src/lib/browserBoot.ts", /polyfillArrayAt/, "browserBoot should include Array.at polyfill");
 
-// 3. 底栏触摸（百度等点击无响应高发）
+// 3. Bottom navigation touch behavior.
 assertNoMatch(
   "src/components/BottomNav.tsx",
   /pointerType\s*===\s*["']touch["'][\s\S]*preventDefault/,
-  "底栏不应拦截 touch 合成的 click",
+  "bottom nav should not block synthetic click after touch",
 );
-assertNoMatch("src/components/BottomNav.tsx", /touchAction:\s*["']none["']/, "底栏不应使用 touch-action: none");
+assertNoMatch("src/components/BottomNav.tsx", /touchAction:\s*["']none["']/, "bottom nav should not use touch-action: none");
 
-// 4. Vite legacy 默认开启（面向国产 Chromium 壳、旧 Android WebView、Samsung Internet、iOS Safari）
+// 4. Modern default build plus opt-in legacy build.
 const viteConfig = read("vite.config.ts");
 if (viteConfig) {
   if (/VITE_LEGACY_BUILD\s*!==\s*["']0["']/.test(viteConfig)) {
-    // ok: default on
-  } else if (/VITE_LEGACY_BUILD\s*===\s*["']1["']/.test(viteConfig)) {
-    warnings.push("vite.config.ts: legacy 仍为 opt-in(VITE_LEGACY_BUILD=1)，建议默认开启");
-  } else {
-    errors.push("vite.config.ts: 未找到国产浏览器 legacy 默认开启逻辑");
+    errors.push("vite.config.ts: legacy should not be enabled by default; use VITE_LEGACY_BUILD=1 for old-browser builds");
+  }
+  if (!/legacyEnabled\s*=\s*isEnabledFlag\(env\.VITE_LEGACY_BUILD\)/.test(viteConfig)) {
+    errors.push("vite.config.ts: missing opt-in legacy flag logic");
   }
   if (/!isAdminBuild\s*&&\s*legacyEnabled|legacyEnabled\s*&&\s*!isAdminBuild/.test(viteConfig)) {
-    errors.push("vite.config.ts: legacy 不应仅作用于商城，管理后台也需兼容");
+    errors.push("vite.config.ts: legacy should not be limited to the storefront only");
   }
-  assertMatch("vite.config.ts", /REGIONAL_BROWSER_TARGETS/, "应使用中马常用浏览器目标集合");
-  assertMatch("vite.config.ts", /Samsung\s*>=\s*9/i, "应覆盖 Samsung Internet");
-  assertMatch("vite.config.ts", /Edge\s*>=\s*79/i, "应覆盖 Edge Chromium");
-  assertMatch("vite.config.ts", /Firefox\s*>=\s*78/i, "应覆盖 Firefox ESR 级别浏览器");
+  assertMatch("vite.config.ts", /MODERN_BUILD_TARGETS/, "should declare modern build targets");
+  assertMatch("vite.config.ts", /REGIONAL_BROWSER_TARGETS/, "should keep old-browser legacy target set");
+  assertMatch("vite.config.ts", /Samsung\s*>=\s*9/i, "legacy targets should cover Samsung Internet");
+  assertMatch("vite.config.ts", /Edge\s*>=\s*79/i, "legacy targets should cover Edge Chromium");
+  assertMatch("vite.config.ts", /Firefox\s*>=\s*78/i, "legacy targets should cover Firefox ESR-level browsers");
 }
 
-// 5. 配置加载超时（避免全屏遮罩挡点击）
-assertMatch("src/hooks/useSiteCapabilities.ts", /CAPABILITIES_READY_TIMEOUT_MS/, "站点能力加载应有超时兜底");
+// 5. Config loading timeout to avoid a full-screen blocker.
+assertMatch("src/hooks/useSiteCapabilities.ts", /CAPABILITIES_READY_TIMEOUT_MS/, "site capabilities should have a timeout fallback");
 
-// 6. CSS 回退
-assertMatch("src/index.css", /@supports not \(height: 100dvh\)/, "应包含 100dvh 回退");
+// 6. CSS fallbacks.
+assertMatch("src/index.css", /@supports not \(height: 100dvh\)/, "should include 100dvh fallback");
 
-// 7. 国产 UA 识别
-assertMatch("src/utils/chinaBrowser.ts", /baidubrowser/i, "应识别百度浏览器 UA");
-assertMatch("src/utils/chinaBrowser.ts", /micromessenger/i, "应识别微信内置浏览器 UA");
-assertMatch("src/utils/chinaBrowser.ts", /mqqbrowser/i, "应识别 QQ 浏览器 UA");
-assertMatch("src/utils/browserEnv.ts", /samsungbrowser/i, "应识别 Samsung Internet UA");
-assertMatch("src/utils/browserEnv.ts", /detectBrowserEnvFromUa/, "浏览器环境识别应可单元测试");
+// 7. Regional browser UA detection.
+assertMatch("src/utils/chinaBrowser.ts", /baidubrowser/i, "should detect Baidu Browser UA");
+assertMatch("src/utils/chinaBrowser.ts", /micromessenger/i, "should detect WeChat embedded browser UA");
+assertMatch("src/utils/chinaBrowser.ts", /mqqbrowser/i, "should detect QQ Browser UA");
+assertMatch("src/utils/browserEnv.ts", /samsungbrowser/i, "should detect Samsung Internet UA");
+assertMatch("src/utils/browserEnv.ts", /detectBrowserEnvFromUa/, "browser environment detection should be unit-testable");
 
 if (warnings.length) {
-  console.warn("\n⚠️  兼容性警告:\n");
-  warnings.forEach((w) => console.warn(`  - ${w}`));
+  console.warn("\nBrowser compatibility warnings\n");
+  warnings.forEach((warning) => console.warn(`  - ${warning}`));
 }
 
 if (errors.length) {
-  console.error("\n❌ 国产浏览器兼容性检查失败:\n");
-  errors.forEach((e) => console.error(`  - ${e}`));
+  console.error("\nBrowser compatibility check failed\n");
+  errors.forEach((error) => console.error(`  - ${error}`));
   process.exit(1);
 }
 
-console.log(`✅ 中马常用浏览器兼容性静态检查通过（${warnings.length} 条警告）`);
+console.log(`Browser compatibility check passed (${warnings.length} warning(s))`);

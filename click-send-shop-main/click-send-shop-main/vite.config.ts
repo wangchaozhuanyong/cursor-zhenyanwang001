@@ -85,7 +85,10 @@ function stripImportMetaResolveGuard(): Plugin {
   };
 }
 
-/** 面向中马常用浏览器：国产 Chromium 壳 / 旧 Android WebView / Samsung Internet / Safari；默认开启，仅当 VITE_LEGACY_BUILD=0 时关闭 */
+const MODERN_BUILD_TARGETS = ["chrome107", "edge107", "firefox104", "safari16"] as const;
+const MODERN_CSS_TARGETS = ["chrome107", "safari16"] as const;
+
+/** Legacy chunks are opt-in for old Chromium shells / old Android WebView / Safari 12. */
 const REGIONAL_BROWSER_TARGETS = [
   "Chrome >= 64",
   "ChromeAndroid >= 64",
@@ -97,6 +100,10 @@ const REGIONAL_BROWSER_TARGETS = [
   "Samsung >= 9",
   "not IE 11",
 ] as const;
+
+function isEnabledFlag(value: string | undefined) {
+  return /^(1|true|yes)$/i.test(value || "");
+}
 
 /**
  * Vite 8（Rolldown dev）在部分环境下会漏替换 @vite/client 里的内部占位符，
@@ -167,7 +174,7 @@ export default defineConfig(({ mode, command }) => {
     env.VITE_API_BASE_URL = fileEnv.VITE_API_BASE_URL;
   }
   const thirdPartyLoginEnabled = env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
-  const legacyEnabled = env.VITE_LEGACY_BUILD !== "0";
+  const legacyEnabled = isEnabledFlag(env.VITE_LEGACY_BUILD);
   const apiBaseUrl = env.VITE_API_BASE_URL || "/api";
   const devApiProxyTarget = env.VITE_DEV_API_PROXY_TARGET || DEFAULT_DEV_API_PROXY_TARGET;
   const isAdminBuild = mode === "admin" || env.VITE_APP_TARGET === "admin";
@@ -431,7 +438,8 @@ export default defineConfig(({ mode, command }) => {
   build: {
     outDir: buildOutDir,
     sourcemap: false,
-    cssTarget: ["chrome64", "safari12"],
+    target: [...MODERN_BUILD_TARGETS],
+    cssTarget: [...MODERN_CSS_TARGETS],
     chunkSizeWarningLimit: 900,
     rolldownOptions: {
       input: isAdminBuild

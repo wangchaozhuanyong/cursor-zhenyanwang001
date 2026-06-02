@@ -203,11 +203,15 @@ export default function Cart() {
                 title="暂无商品"
                 description="快去挑选心仪的商品吧"
                 action={{ label: "去逛逛", onClick: () => navigate("/categories") }}
+                className="max-w-none !rounded-none !border-0 !bg-transparent px-4 py-20 !shadow-none"
               />
             ) : (
-              <div className="store-cart-list md:theme-rounded md:border md:border-[var(--theme-border)] md:bg-[var(--theme-surface)] md:px-4">
+              <div
+                className="store-cart-list"
+                style={{ border: 0, borderRadius: 0, background: "transparent", boxShadow: "none" }}
+              >
                 {/* 桌面：列表头 + 全选 */}
-                <div className="hidden items-center justify-between border-b border-[var(--theme-border)] py-3 md:flex">
+                <div className="hidden items-center justify-between border-b border-[var(--theme-border)] px-1 py-3 md:flex">
                   <SquishButton
                     type="button"
                     variant="ghost"
@@ -232,17 +236,18 @@ export default function Cart() {
                   </SquishButton>
                 </div>
                 <AnimatePresence>
-                  {items.map((item) => {
+                  {items.map((item, index) => {
                     const lineKey = cartLineKey(item.product.id, item.variant_id);
                     const selected = isSelected(item.product.id, item.variant_id);
                     const actionsOpen = openActionKey === lineKey;
+                    const isLastItem = index === items.length - 1;
 
                     return (
                     <motion.div
                       key={lineKey}
                       layout
                       exit={{ opacity: 0, x: -100 }}
-                      className="store-cart-item flex min-w-0 gap-2.5 border-b border-[var(--theme-border)] py-4 last:border-b-0 sm:gap-3"
+                      className="store-cart-item relative flex min-w-0 gap-2.5 py-4 sm:gap-3 md:py-5"
                     >
                       <SquishButton
                         type="button"
@@ -264,9 +269,11 @@ export default function Cart() {
                           {selected && <Check size={15} strokeWidth={3} />}
                         </span>
                       </SquishButton>
-                      <div className="relative min-w-0 flex-1 overflow-hidden rounded-[22px]">
+                      <div className="relative min-w-0 flex-1 overflow-hidden">
                         <div
-                          className="absolute inset-y-0 right-0 flex overflow-hidden rounded-[22px] border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,var(--theme-bg))]"
+                          className={`absolute inset-y-1 right-0 flex overflow-hidden rounded-r-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,var(--theme-bg))] transition-opacity ${
+                            actionsOpen ? "opacity-100" : "opacity-0"
+                          }`}
                           style={{ width: CART_ACTION_WIDTH }}
                           aria-hidden={!actionsOpen}
                         >
@@ -327,7 +334,7 @@ export default function Cart() {
                           }}
                           animate={{ x: actionsOpen ? -CART_ACTION_WIDTH : 0 }}
                           transition={{ type: "spring", stiffness: 420, damping: 36 }}
-                          className="relative z-10 flex min-w-0 gap-2.5 bg-[var(--theme-surface)] py-0.5 sm:gap-3"
+                          className="relative z-10 flex min-w-0 gap-2.5 bg-transparent py-0.5 sm:gap-3"
                         >
                           <button
                             type="button"
@@ -404,6 +411,13 @@ export default function Cart() {
                           </div>
                         </motion.div>
                       </div>
+                      {!isLastItem && (
+                        <span
+                          aria-hidden="true"
+                          className="pointer-events-none absolute bottom-0 left-10 right-0 h-px opacity-80"
+                          style={{ background: "linear-gradient(90deg, transparent, var(--theme-border), transparent)" }}
+                        />
+                      )}
                     </motion.div>
                     );
                   })}

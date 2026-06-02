@@ -51,7 +51,6 @@ function getOpenUrl(channel: SupportDownloadChannel) {
 
 export default function SupportChannelCard({ channel }: Props) {
   const account = cleanSupportText(channel.account);
-  const description = cleanSupportText(channel.description);
   const qrUrl = cleanSupportText(channel.qrUrl);
   const openUrl = getOpenUrl(channel);
   const title = getChannelTitle(channel);
@@ -96,15 +95,6 @@ export default function SupportChannelCard({ channel }: Props) {
 
   return (
     <section className={`support-channel-card support-channel-card--${channel.type}`}>
-      <div className="support-channel-title">
-        <span className="support-channel-flourish" aria-hidden="true" />
-        <h1>{title}</h1>
-        <span className="support-channel-flourish" aria-hidden="true" />
-        {description ? (
-          <p>{description}</p>
-        ) : null}
-      </div>
-
       {account ? (
         <div className="support-account-panel">
           <span className="support-account-icon" aria-hidden="true">

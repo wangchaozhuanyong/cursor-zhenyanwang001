@@ -19,6 +19,8 @@ import {
   updateUserRestrictions,
   unlockUserMemberLevel,
 } from "@/services/admin/userService";
+import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
+import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
 import PermissionGate from "@/components/admin/PermissionGate";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
@@ -409,8 +411,8 @@ export default function AdminUserDetailPanel({
           </div>
         )}
 
-        {tab === "订单记录" && <DataList title={tText("最近订单")} rows={user.related?.recent_orders} onAll={() => navigate(`/admin/orders?userId=${user.id}`)} />}
-        {tab === "地址信息" && <DataList title={tText("地址列表")} rows={user.related?.addresses} />}
+        {tab === "订单记录" && <OrderRecordList title={tText("最近订单")} rows={user.related?.recent_orders} onAll={() => navigate(`/admin/orders?userId=${user.id}`)} />}
+        {tab === "地址信息" && <AddressRecordList title={tText("地址列表")} rows={user.related?.addresses} />}
         {tab === "积分/优惠券" && (
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -553,16 +555,118 @@ function InfoCard({ title, value }: { title: string; value: string }) {
   );
 }
 
-function DataList({ title, rows, onAll }: { title: string; rows?: Record<string, unknown>[]; onAll?: () => void }) {
-  const list = Array.isArray(rows) ? rows : [];
+function OrderRecordList({ title, rows, onAll }: { title: string; rows?: unknown; onAll?: () => void }) {
+  const list = toRecordList(rows);
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold">{title}</h4>
-        {onAll ? <button type="button" className="text-xs text-[var(--theme-price)] hover:underline" onClick={onAll}><Tx>查看全部</Tx></button> : null}
-      </div>
+      <ListHeader title={title} onAll={onAll} />
       {list.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-background p-4 text-sm text-muted-foreground"><Tx>暂无数据</Tx></div>
+        <EmptyList />
+      ) : (
+        <div className="space-y-2">
+          {list.slice(0, 8).map((row, i) => (
+            <OrderRecordCard key={String(row.id ?? row.order_no ?? i)} row={row} />
+          ))}
+          {list.length > 8 ? <ListLimitHint /> : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OrderRecordCard({ row }: { row: Record<string, unknown> }) {
+  const { tText } = useAdminT();
+  const orderNo = readText(row, ["order_no", "orderNo", "no"]) || "-";
+  const orderStatus = readText(row, ["status", "order_status"]) || "pending";
+  const paymentStatus = readText(row, ["payment_status", "paymentStatus"]) || "pending";
+  const amount = readMoney(row, ["payable_amount", "total_amount", "amount", "paid_amount"]);
+  const createdAt = formatDateValue(row.created_at);
+  const paidAt = formatDateValue(row.payment_time ?? row.paid_at);
+  const contactName = readText(row, ["contact_name", "shipping_name", "recipient_name", "name"]);
+  const contactPhone = readText(row, ["contact_phone", "shipping_phone", "phone"]);
+  const itemSummary = readText(row, ["items_summary", "title", "product_name", "summary"]);
+  const note = readText(row, ["note", "remark"]);
+
+  return (
+    <article className="rounded-xl border border-border bg-background p-3 text-sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[11px] text-muted-foreground"><Tx>订单号</Tx></p>
+          <p className="mt-0.5 break-all font-mono text-sm font-semibold text-foreground">#{orderNo}</p>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <OrderStatusBadge status={orderStatus} />
+          <PaymentStatusBadge status={paymentStatus} />
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <MiniField label={tText("应付金额")} value={`RM ${amount}`} strong />
+        <MiniField label={tText("下单时间")} value={createdAt} />
+        <MiniField label={tText("支付时间")} value={paidAt} />
+        <MiniField label={tText("收货联系")} value={joinReadable([contactName, contactPhone])} />
+      </div>
+
+      {itemSummary || note ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {itemSummary ? <MiniField label={tText("商品摘要")} value={itemSummary} /> : null}
+          {note ? <MiniField label={tText("备注")} value={note} /> : null}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function AddressRecordList({ title, rows }: { title: string; rows?: unknown }) {
+  const list = toRecordList(rows);
+  return (
+    <div className="space-y-2">
+      <ListHeader title={title} />
+      {list.length === 0 ? (
+        <EmptyList />
+      ) : (
+        <div className="space-y-2">
+          {list.slice(0, 8).map((row, i) => (
+            <AddressRecordCard key={String(row.id ?? i)} row={row} />
+          ))}
+          {list.length > 8 ? <ListLimitHint /> : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddressRecordCard({ row }: { row: Record<string, unknown> }) {
+  const { tText } = useAdminT();
+  const address = normalizeAddressRecord(row);
+  return (
+    <article className="rounded-xl border border-border bg-background p-3 text-sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold text-foreground">{address.name || tText("未填写收货人")}</p>
+            {address.isDefault ? <span className="rounded-full bg-[var(--theme-primary)]/10 px-2 py-0.5 text-[11px] text-[var(--theme-primary)]"><Tx>默认地址</Tx></span> : null}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">{address.phone || tText("未填写电话")}</p>
+        </div>
+        <p className="text-xs text-muted-foreground">{address.createdAt}</p>
+      </div>
+
+      <div className="mt-3 rounded-lg border border-border/70 bg-secondary/30 p-3">
+        <p className="text-[11px] text-muted-foreground"><Tx>完整地址</Tx></p>
+        <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-foreground">{address.fullAddress || tText("未填写地址")}</p>
+      </div>
+    </article>
+  );
+}
+
+function DataList({ title, rows, onAll }: { title: string; rows?: unknown; onAll?: () => void }) {
+  const list = toRecordList(rows);
+  return (
+    <div className="space-y-2">
+      <ListHeader title={title} onAll={onAll} />
+      {list.length === 0 ? (
+        <EmptyList />
       ) : (
         <div className="space-y-2">
           {list.slice(0, 8).map((row, i) => (
@@ -570,9 +674,35 @@ function DataList({ title, rows, onAll }: { title: string; rows?: Record<string,
               <p className="break-all">{toReadableText(row)}</p>
             </article>
           ))}
-          {list.length > 8 ? <p className="text-xs text-muted-foreground"><Tx>仅展示前 8 条，请点击“查看全部”</Tx></p> : null}
+          {list.length > 8 ? <ListLimitHint /> : null}
         </div>
       )}
+    </div>
+  );
+}
+
+function ListHeader({ title, onAll }: { title: string; onAll?: () => void }) {
+  return (
+    <div className="flex items-center justify-between">
+      <h4 className="text-sm font-semibold">{title}</h4>
+      {onAll ? <button type="button" className="text-xs text-[var(--theme-price)] hover:underline" onClick={onAll}><Tx>查看全部</Tx></button> : null}
+    </div>
+  );
+}
+
+function EmptyList() {
+  return <div className="rounded-lg border border-dashed border-border bg-background p-4 text-sm text-muted-foreground"><Tx>暂无数据</Tx></div>;
+}
+
+function ListLimitHint() {
+  return <p className="text-xs text-muted-foreground"><Tx>仅展示前 8 条，请点击“查看全部”</Tx></p>;
+}
+
+function MiniField({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="rounded-lg bg-secondary/35 px-3 py-2">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className={`mt-0.5 break-words text-sm ${strong ? "font-semibold text-[var(--theme-price)]" : "text-foreground"}`}>{value || "-"}</p>
     </div>
   );
 }
@@ -597,6 +727,86 @@ function formatCell(v: unknown) {
   if (v == null || v === "") return "-";
   if (typeof v === "object") return JSON.stringify(v);
   return String(v);
+}
+
+function toRecordList(rows: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(rows)) return [];
+  return rows.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object" && !Array.isArray(row));
+}
+
+function readText(row: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return "";
+}
+
+function readMoney(row: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const raw = row[key];
+    if (raw === null || raw === undefined || raw === "") continue;
+    const value = Number(raw);
+    if (Number.isFinite(value)) return value.toFixed(2);
+  }
+  return "0.00";
+}
+
+function formatDateValue(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return "-";
+  return formatDateTime(value);
+}
+
+function joinReadable(parts: Array<string | undefined>): string {
+  const text = parts.map((item) => item?.trim()).filter(Boolean);
+  return text.length ? text.join(" · ") : "-";
+}
+
+function joinAddressParts(parts: Array<string | undefined>): string {
+  return parts.map((item) => item?.trim()).filter(Boolean).join(" · ");
+}
+
+function normalizeAddressRecord(row: Record<string, unknown>) {
+  const payload = parseAddressPayload(row.address);
+  const source = { ...payload, ...row };
+  const line1 = readText(source, ["line1", "address_line1"]);
+  const line2 = readText(source, ["line2", "address_line2"]);
+  const city = readText(source, ["city"]);
+  const state = readText(source, ["state"]);
+  const postcode = readText(source, ["postcode", "postal_code", "zip"]);
+  const country = readText(source, ["country"]);
+  const plainAddress = typeof row.address === "string" && !row.address.startsWith("__MYADDR_V1__") ? row.address.trim() : "";
+  const fullAddress = joinAddressParts([line1, line2, joinAddressParts([postcode, city]), state, country]) || plainAddress;
+
+  return {
+    name: readText(source, ["recipient_name", "name", "receiver_name", "contact_name"]),
+    phone: readText(source, ["phone", "recipient_phone", "contact_phone"]),
+    fullAddress,
+    createdAt: formatDateValue(row.created_at),
+    isDefault: readBool(source, ["is_default", "isDefault"]),
+  };
+}
+
+function parseAddressPayload(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (typeof value !== "string") return {};
+  const raw = value.trim();
+  if (!raw.startsWith("__MYADDR_V1__")) return {};
+  try {
+    const parsed = JSON.parse(raw.slice("__MYADDR_V1__".length));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
+}
+
+function readBool(row: Record<string, unknown>, keys: string[]): boolean {
+  for (const key of keys) {
+    const value = row[key];
+    if (value === true || value === 1 || value === "1" || value === "true") return true;
+  }
+  return false;
 }
 
 function normalizeCouponStats(stats: unknown) {

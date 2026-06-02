@@ -209,6 +209,14 @@ export default defineConfig(({ mode }) => {
       ],
       workbox: {
         swDest: "sw.js",
+        globPatterns: [
+          "index.html",
+          "admin-index.html",
+          "offline.html",
+          "browser-preboot.js",
+          "favicon*.{ico,png,svg,webp}",
+          "robots.txt",
+        ],
         globIgnores: ["**/*.wasm", "**/ort*.mjs", "**/vendor-imgly-matte*.js"],
         navigateFallback: undefined,
         navigateFallbackDenylist: [
@@ -222,6 +230,19 @@ export default defineConfig(({ mode }) => {
         clientsClaim: true,
         skipWaiting: true,
         runtimeCaching: [
+          {
+            urlPattern: ({ url, request }) =>
+              url.pathname.startsWith("/assets/")
+              && ["script", "style", "worker", "font"].includes(request.destination),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "static-asset-cache",
+              expiration: {
+                maxEntries: 160,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
           {
             urlPattern: ({ url }) =>
               /^\/api\/(admin|auth|user|orders|cart|checkout|payment|upload)(\/|$)/.test(url.pathname),

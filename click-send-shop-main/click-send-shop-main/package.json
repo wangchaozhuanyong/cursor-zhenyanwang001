@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:shop": "vite build",
-    "build:admin": "vite build --mode admin",
+    "build:admin": "vite build --mode admin && node scripts/fix-pwa-sw-location.mjs --dist=admin-dist",
     "postbuild": "node scripts/fix-pwa-sw-location.mjs",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

@@ -14,6 +14,18 @@ function isAdminCsrfUrl(url: string): boolean {
   return url.includes("/admin/auth/csrf");
 }
 
+function pendingAbortableFetch() {
+  return vi.fn((_input: RequestInfo | URL, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+    init?.signal?.addEventListener(
+      "abort",
+      () => {
+        reject(new DOMException("Aborted", "AbortError"));
+      },
+      { once: true },
+    );
+  }));
+}
+
 describe("toQueryString", () => {
   test("returns empty string for empty params", () => {
     expect(toQueryString()).toBe("");
@@ -26,6 +38,40 @@ describe("toQueryString", () => {
 
   test("skips null and undefined", () => {
     expect(toQueryString({ a: null, b: undefined, c: "ok" })).toBe("?c=ok");
+  });
+});
+
+describe("request timeout and cancellation", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    clearTokens();
+    clearAdminTokens();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    clearTokens();
+    clearAdminTokens();
+  });
+
+  test("converts request timeout into ApiError 408", async () => {
+    vi.stubGlobal("fetch", pendingAbortableFetch());
+
+    const assertion = expect(get("/slow", undefined, { timeoutMs: 25 })).rejects.toMatchObject({ code: 408 });
+    await vi.advanceTimersByTimeAsync(25);
+
+    await assertion;
+  });
+
+  test("keeps caller cancellation as AbortError", async () => {
+    const controller = new AbortController();
+    vi.stubGlobal("fetch", pendingAbortableFetch());
+
+    const assertion = expect(get("/slow", undefined, { signal: controller.signal, timeoutMs: 1_000 })).rejects.toMatchObject({ name: "AbortError" });
+    controller.abort();
+
+    await assertion;
   });
 });
 

@@ -338,6 +338,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     });
   } catch (err) {
     if (err instanceof ApiError) throw err;
+    if (isAbortError(err)) throw err;
     throw new ApiError(0, "网络连接失败，请检查网络设置", err);
   } finally {
     if (loadingToken) stopGlobalLoading(loadingToken);
@@ -455,11 +456,13 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
 export function get<T>(
   endpoint: string,
   params?: Record<string, unknown>,
-  options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "skipAuthRetry" | "suppressAuthExpired">,
+  options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal" | "timeoutMs" | "skipAuthRetry" | "suppressAuthExpired">,
 ) {
   return request<ApiResponse<T>>(`${endpoint}${toQueryString(params)}`, {
     skipGlobalLoading: options?.skipGlobalLoading ?? true,
     loadingMode: options?.loadingMode ?? "silent",
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs,
     skipAuthRetry: options?.skipAuthRetry,
     suppressAuthExpired: options?.suppressAuthExpired,
   });
@@ -468,7 +471,7 @@ export function get<T>(
 export function post<T>(
   endpoint: string,
   body?: unknown,
-  options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal" | "skipAuthRetry" | "suppressAuthExpired">,
+  options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal" | "timeoutMs" | "skipAuthRetry" | "suppressAuthExpired">,
 ) {
   return request<ApiResponse<T>>(endpoint, {
     method: "POST",
@@ -476,33 +479,40 @@ export function post<T>(
     skipGlobalLoading: options?.skipGlobalLoading,
     loadingMode: options?.loadingMode,
     signal: options?.signal,
+    timeoutMs: options?.timeoutMs,
     skipAuthRetry: options?.skipAuthRetry,
     suppressAuthExpired: options?.suppressAuthExpired,
   });
 }
 
-export function put<T>(endpoint: string, body?: unknown, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
+export function put<T>(endpoint: string, body?: unknown, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal" | "timeoutMs">) {
   return request<ApiResponse<T>>(endpoint, {
     method: "PUT",
     body: body ? JSON.stringify(body) : undefined,
     skipGlobalLoading: options?.skipGlobalLoading,
     loadingMode: options?.loadingMode,
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs,
   });
 }
 
-export function patch<T>(endpoint: string, body?: unknown, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
+export function patch<T>(endpoint: string, body?: unknown, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal" | "timeoutMs">) {
   return request<ApiResponse<T>>(endpoint, {
     method: "PATCH",
     body: body ? JSON.stringify(body) : undefined,
     skipGlobalLoading: options?.skipGlobalLoading,
     loadingMode: options?.loadingMode,
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs,
   });
 }
 
-export function del<T>(endpoint: string, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
+export function del<T>(endpoint: string, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal" | "timeoutMs">) {
   return request<ApiResponse<T>>(endpoint, {
     method: "DELETE",
     skipGlobalLoading: options?.skipGlobalLoading,
     loadingMode: options?.loadingMode,
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs,
   });
 }

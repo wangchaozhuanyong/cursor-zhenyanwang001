@@ -2,7 +2,13 @@ import { mkdir, readdir, rename } from "node:fs/promises";
 import path from "node:path";
 
 const root = process.cwd();
-const dist = path.resolve(root, process.env.PWA_DIST_DIR || process.env.VITE_BUILD_OUT_DIR || "dist");
+
+function readDistArg() {
+  const distArg = process.argv.find((arg) => arg.startsWith("--dist="));
+  return distArg ? distArg.slice("--dist=".length) : "";
+}
+
+const dist = path.resolve(root, readDistArg() || process.env.PWA_DIST_DIR || process.env.VITE_BUILD_OUT_DIR || "dist");
 
 async function moveIfExists(fileName) {
   const from = path.join(root, fileName);

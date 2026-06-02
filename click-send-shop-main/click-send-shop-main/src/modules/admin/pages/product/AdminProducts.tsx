@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Eye, FileDown, Loader2, Pencil, PackageSearch, Upload } from "lucide-react";
+import { Download, FileDown, Loader2, Pencil, PackageSearch, Upload } from "lucide-react";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -263,10 +263,6 @@ export default function AdminProducts() {
     });
   };
 
-  const openProductDetail = (productId: string) => {
-    window.open(`/product/${encodeURIComponent(productId)}`, "_blank", "noopener,noreferrer");
-  };
-
   const renderMobileCard = (product: Product) => {
     const meta = statusMeta(product.status, tText);
     const checked = selected.includes(product.id);
@@ -317,14 +313,6 @@ export default function AdminProducts() {
         </div>
 
         <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => openProductDetail(product.id)}
-            className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary sm:flex-1"
-          >
-            <Eye size={13} />
-            <Tx>详情</Tx>
-          </button>
           <PermissionGate permission="product.manage">
           <button
             type="button"
@@ -588,7 +576,6 @@ export default function AdminProducts() {
               </td>
               <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                 <div className="inline-flex max-w-full flex-nowrap items-center justify-end gap-1.5">
-                  <button type="button" onClick={() => openProductDetail(product.id)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Eye size={13} /><Tx>详情</Tx></button>
                   <PermissionGate permission="product.manage">
                     <button type="button" onClick={() => navigate(`/admin/products/${product.id}`)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></button>
                   </PermissionGate>

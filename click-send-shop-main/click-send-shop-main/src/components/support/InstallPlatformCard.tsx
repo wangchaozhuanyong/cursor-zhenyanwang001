@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import type { DownloadPlatform } from "@/types/content";
 import type { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { copyToClipboard } from "@/utils/clipboard";
-import { type BrowserEnv, getPublicSiteUrl } from "@/utils/browserEnv";
+import { type BrowserEnv } from "@/utils/browserEnv";
 import { trackEvent } from "@/services/analyticsService";
 
 type PwaState = ReturnType<typeof usePwaInstallPrompt>;
@@ -13,28 +13,12 @@ type Props = {
   browser: BrowserEnv;
   pwa: PwaState;
   recommended: boolean;
+  installUrl: string;
 };
 
-const IOS_SAFARI_GUIDE_STEPS = [
-  {
-    icon: "share",
-    title: "点击分享按钮",
-    description: "在 Safari 底部工具栏点击分享图标。",
-  },
-  {
-    icon: "plus",
-    title: "选择添加到主屏幕",
-    description: "在菜单里向下滑动，点击“添加到主屏幕”。",
-  },
-  {
-    icon: "done",
-    title: "确认添加",
-    description: "点击右上角“添加”，之后从桌面图标进入。",
-  },
-] as const;
+const IOS_STEP_ICONS = ["share", "plus", "done"] as const;
 
-async function copySiteLink(successMessage = "当前链接已复制") {
-  const url = getPublicSiteUrl();
+async function copySiteLink(url: string, successMessage = "当前链接已复制") {
   if (!url) {
     toast.error("无法获取当前链接");
     return;
@@ -48,15 +32,13 @@ function getPreferredAndroidBrowserText() {
   return "请用 Android Chrome、Samsung Internet 或 Edge 打开本页。";
 }
 
-function IosGuideIcon({ icon }: { icon: (typeof IOS_SAFARI_GUIDE_STEPS)[number]["icon"] }) {
+function IosGuideIcon({ icon }: { icon: (typeof IOS_STEP_ICONS)[number] }) {
   if (icon === "share") return <Share2 size={18} aria-hidden="true" />;
   if (icon === "plus") return <PlusSquare size={18} aria-hidden="true" />;
   return <CheckCircle2 size={18} aria-hidden="true" />;
 }
 
-export default function InstallPlatformCard({ platform, browser, pwa, recommended }: Props) {
-  if (platform.type === "desktop") return null;
-
+export default function InstallPlatformCard({ platform, browser, pwa, recommended, installUrl }: Props) {
   const isAndroid = platform.type === "android";
   const isIos = platform.type === "ios";
   const Icon = isIos ? Apple : Smartphone;
@@ -82,6 +64,10 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
 
   const title = platform.title?.trim() || (isAndroid ? "安卓手机添加到桌面" : "苹果手机添加到桌面");
   const description = platform.description?.trim() || "";
+  const actionText = platform.buttonText?.trim() || (isAndroid ? "一键添加到桌面" : "复制链接，用 Safari 打开");
+  const instructions = (platform.instructions || [])
+    .map((step) => step.trim())
+    .filter(Boolean);
 
   return (
     <section className="support-install-card">
@@ -107,7 +93,7 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
       {isAndroidDevice && (canOneTap || pwa.installed) ? (
         <button type="button" onClick={() => { void onInstall(); }} disabled={pwa.installing || pwa.installed} className="support-primary-action">
           {pwa.installed ? <CheckCircle2 size={18} aria-hidden="true" /> : <Smartphone size={18} aria-hidden="true" />}
-          <span>{pwa.installed ? "已添加到桌面" : pwa.installing ? "正在处理..." : "一键添加到桌面"}</span>
+          <span>{pwa.installed ? "已添加到桌面" : pwa.installing ? "正在处理..." : actionText}</span>
         </button>
       ) : null}
 
@@ -128,7 +114,7 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
         <div className="support-notice-panel">
           <p className="font-semibold">当前是在 App 内打开，通常不会弹出安装确认框。</p>
           <p>{getPreferredAndroidBrowserText()}</p>
-          <button type="button" onClick={() => { void copySiteLink("链接已复制，请用手机浏览器打开"); }} className="support-outline-action">
+          <button type="button" onClick={() => { void copySiteLink(installUrl, "链接已复制，请用手机浏览器打开"); }} className="support-outline-action">
             <Copy size={15} aria-hidden="true" />
             <span>复制链接，换浏览器打开</span>
           </button>
@@ -146,10 +132,10 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
       {showIosSafariHint ? (
         <div className="support-notice-panel">
           <p className="font-semibold">苹果手机需要用 Safari 添加到主屏幕。</p>
-          <p>请先复制链接，用 Safari 打开后再按下面 3 步操作。</p>
-          <button type="button" onClick={() => { void copySiteLink("链接已复制，请用 Safari 打开"); }} className="support-outline-action">
+          <p>请先复制链接，用 Safari 打开后再按下面 {instructions.length} 步操作。</p>
+          <button type="button" onClick={() => { void copySiteLink(installUrl, "链接已复制，请用 Safari 打开"); }} className="support-outline-action">
             <Copy size={15} aria-hidden="true" />
-            <span>复制链接，用 Safari 打开</span>
+            <span>{actionText}</span>
           </button>
         </div>
       ) : null}
@@ -171,19 +157,18 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
           {browser.isSafari ? (
             <p className="support-inline-hint">
               <Share2 size={15} aria-hidden="true" />
-              <span>请按这 3 步添加，添加后可像 App 一样打开。</span>
+              <span>请按下面 {instructions.length} 步添加，添加后可像 App 一样打开。</span>
             </p>
           ) : null}
           <div className="support-ios-step-grid">
-            {IOS_SAFARI_GUIDE_STEPS.map((step, index) => (
-              <div key={step.title} className="support-ios-step-card">
+            {instructions.map((step, index) => (
+              <div key={`${platform.id}-${index}-${step}`} className="support-ios-step-card">
                 <span className="support-ios-step-number">{index + 1}</span>
                 <span className="support-ios-step-icon">
-                  <IosGuideIcon icon={step.icon} />
+                  <IosGuideIcon icon={IOS_STEP_ICONS[index] || "done"} />
                 </span>
                 <div>
-                  <p>{step.title}</p>
-                  <span>{step.description}</span>
+                  <p>{step}</p>
                 </div>
               </div>
             ))}
@@ -193,14 +178,14 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
 
       {showDefaultInstructions ? (
         <ol className="support-install-steps">
-          {(platform.instructions || []).map((step, index) => (
+          {instructions.map((step, index) => (
             <li key={`${platform.id}-${index}`}>{step}</li>
           ))}
         </ol>
       ) : null}
 
       {showBottomCopyButton ? (
-        <button type="button" onClick={() => { void copySiteLink(); }} className="support-outline-action">
+        <button type="button" onClick={() => { void copySiteLink(installUrl); }} className="support-outline-action">
           <Copy size={15} aria-hidden="true" />
           <span>复制当前链接</span>
         </button>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Copy, MessageCircle, PlusSquare, Send, Smartphone } from "lucide-react";
+import { Clock, Copy, MessageCircle, PlusSquare, Send, Smartphone } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import SupportChannelCard from "@/components/support/SupportChannelCard";
@@ -8,7 +9,7 @@ import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { buildCanonical } from "@/utils/seo";
 import { trackEvent } from "@/services/analyticsService";
-import { detectBrowserEnv, getPublicSiteUrl } from "@/utils/browserEnv";
+import { detectBrowserEnv } from "@/utils/browserEnv";
 import { copyToClipboard } from "@/utils/clipboard";
 import {
   getEnabledDownloadPlatforms,
@@ -22,20 +23,14 @@ import type { SupportChannelType, SupportDownloadChannel } from "@/types/content
 
 type SupportDownloadView = SupportChannelType | "download";
 
-const CHANNEL_LABELS: Record<SupportChannelType, string> = {
-  wechat: "WeChat",
-  whatsapp: "WhatsApp",
-  telegram: "Telegram",
-};
-
 const CHANNEL_ORDER: SupportChannelType[] = ["wechat", "whatsapp", "telegram"];
 
 function trackPwaEvent(eventType: AnalyticsEventPayload["event_type"]) {
   void trackEvent({ event_type: eventType, module: "pwa", page: "/support-download" });
 }
 
-async function copyCurrentLink() {
-  const ok = await copyToClipboard(getPublicSiteUrl());
+async function copyCurrentLink(url: string) {
+  const ok = await copyToClipboard(url);
   if (ok) toast.success("当前链接已复制");
   else toast.error("复制失败，请手动复制地址栏链接");
 }
@@ -70,10 +65,6 @@ function SupportTabIcon({ view }: { view: SupportDownloadView }) {
   if (view === "download") return <PlusSquare size={19} aria-hidden="true" />;
   if (view === "whatsapp") return <MessageCircle size={19} aria-hidden="true" />;
   return <MessageCircle size={19} aria-hidden="true" />;
-}
-
-function getViewLabel(view: SupportDownloadView) {
-  return view === "download" ? "添加桌面" : CHANNEL_LABELS[view];
 }
 
 export default function SupportDownload() {
@@ -128,9 +119,9 @@ export default function SupportDownload() {
         if (channelByType[type]) views.push(type);
       });
     }
-    if (config.download.enabled !== false) views.push("download");
+    if (config.download.enabled !== false && platforms.length > 0) views.push("download");
     return views;
-  }, [channelByType, config.download.enabled, config.support.enabled]);
+  }, [channelByType, config.download.enabled, config.support.enabled, platforms.length]);
 
   const queryTab = searchParams.get("tab");
   const requestedView = resolveQueryView(queryTab);
@@ -185,13 +176,16 @@ export default function SupportDownload() {
   const recommendedPlatform = browserEnv.platform;
   const visiblePlatforms = useMemo(() => {
     if (recommendedPlatform === "android" || recommendedPlatform === "ios") {
-      const matched = platforms.filter((platform) => platform.type === recommendedPlatform);
-      if (matched.length > 0) return matched;
+      return platforms.filter((platform) => platform.type === recommendedPlatform);
     }
     return platforms;
   }, [platforms, recommendedPlatform]);
   const pageTitle = config.title?.trim() || "客服与安装";
   const pageSubtitle = config.subtitle?.trim();
+  const supportDescription = config.support.description?.trim();
+  const supportWorkingHours = config.support.workingHours?.trim();
+  const downloadTabTitle = config.download.title?.trim() || "添加桌面";
+  const installPageUrl = useMemo(() => buildCanonical("/support-download", "tab=download"), []);
 
   if (!config.enabled) {
     return (
@@ -239,7 +233,7 @@ export default function SupportDownload() {
                   aria-pressed={active}
                 >
                   <SupportTabIcon view={view} />
-                  <span>{getViewLabel(view)}</span>
+                  <span>{view === "download" ? downloadTabTitle : getChannelTitle(channelByType[view]!)}</span>
                 </button>
               );
             })}
@@ -252,7 +246,20 @@ export default function SupportDownload() {
           ) : null}
 
           {activeChannel ? (
-            <SupportChannelCard channel={{ ...activeChannel, name: getChannelTitle(activeChannel) }} />
+            <>
+              {supportDescription || supportWorkingHours ? (
+                <section className="support-context-panel">
+                  {supportDescription ? <p>{supportDescription}</p> : null}
+                  {supportWorkingHours ? (
+                    <p className="support-context-time">
+                      <Clock size={15} aria-hidden="true" />
+                      <span>服务时间：{supportWorkingHours}</span>
+                    </p>
+                  ) : null}
+                </section>
+              ) : null}
+              <SupportChannelCard channel={{ ...activeChannel, name: getChannelTitle(activeChannel) }} />
+            </>
           ) : null}
 
           {activeView === "download" && config.download.enabled !== false ? (
@@ -267,7 +274,7 @@ export default function SupportDownload() {
                 <div className="support-notice-panel">
                   <p className="font-semibold">当前是在 App 内打开，可能无法直接添加到桌面。</p>
                   <p>请点击右上角“...”并选择在浏览器中打开，然后继续操作。</p>
-                  <button type="button" onClick={() => { void copyCurrentLink(); }} className="support-outline-action">
+                  <button type="button" onClick={() => { void copyCurrentLink(installPageUrl); }} className="support-outline-action">
                     <Copy size={15} aria-hidden="true" />
                     <span>复制当前链接</span>
                   </button>
@@ -275,17 +282,25 @@ export default function SupportDownload() {
               ) : null}
               {browserEnv.platform === "desktop" ? (
                 <section className="support-install-desktop-card">
-                  <div className="support-install-desktop-icon">
-                    <Smartphone size={30} aria-hidden="true" />
+                  <div className="support-install-desktop-head">
+                    <div className="support-install-desktop-icon">
+                      <Smartphone size={30} aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h2>请用手机扫码打开</h2>
+                      <p>添加到桌面需要在手机浏览器里完成，电脑端可先扫码进入本页。</p>
+                    </div>
                   </div>
-                  <h2>请使用手机打开本页面</h2>
-                  <p>本功能主要用于手机添加到桌面。请用安卓手机或苹果手机打开本页面。</p>
-                  <button type="button" onClick={() => { void copyCurrentLink(); }} className="support-outline-action">
+                  <div className="support-install-desktop-qr" aria-label="扫码用手机打开添加桌面页面">
+                    <QRCodeCanvas value={installPageUrl} size={172} level="H" marginSize={1} fgColor="#2c201d" bgColor="#fffdf7" />
+                  </div>
+                  <p className="support-install-desktop-hint">安卓手机可尝试一键添加；苹果手机请用 Safari 打开后添加到主屏幕。</p>
+                  <button type="button" onClick={() => { void copyCurrentLink(installPageUrl); }} className="support-outline-action">
                     <Copy size={15} aria-hidden="true" />
                     <span>复制当前链接</span>
                   </button>
                 </section>
-              ) : (
+              ) : visiblePlatforms.length > 0 ? (
                 visiblePlatforms.map((platform) => (
                   <InstallPlatformCard
                     key={platform.id}
@@ -293,8 +308,13 @@ export default function SupportDownload() {
                     browser={browserEnv}
                     pwa={pwa}
                     recommended={platform.type === recommendedPlatform}
+                    installUrl={installPageUrl}
                   />
                 ))
+              ) : (
+                <section className="support-empty-panel">
+                  当前设备的添加到桌面说明未启用，请联系站点管理员。
+                </section>
               )}
             </div>
           ) : null}

@@ -24,11 +24,42 @@
     <meta name="twitter:description" content="本平台提供商品、服务与客户支持信息。" />
     <meta name="twitter:image" content="/og-default.png" />
 
-    <!-- 浏览器标签使用透明背景 favicon；PWA 安装图标仍由后端按品牌动态生成。 -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- 浏览器标签优先使用后台配置的动态透明 favicon；PWA 安装图标同样由后端按品牌动态生成。 -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/api/pwa/icon-192x192.png" />
+    <link rel="shortcut icon" type="image/png" href="/api/pwa/icon-192x192.png" />
+    <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="/apple-touch-icon.png" />
+    <script>
+      (function () {
+        try {
+          var key = "site:brand:favicon";
+          var raw = window.localStorage && window.localStorage.getItem(key);
+          if (!raw) return;
+          var payload = JSON.parse(raw);
+          var href = typeof payload.href === "string" ? payload.href.trim() : "";
+          var savedAt = Number(payload.savedAt || 0);
+          var maxAge = 7 * 24 * 60 * 60 * 1000;
+          if (!href || !savedAt || Date.now() - savedAt > maxAge) {
+            window.localStorage.removeItem(key);
+            return;
+          }
+          document
+            .querySelectorAll("link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']")
+            .forEach(function (el) {
+              el.parentNode && el.parentNode.removeChild(el);
+            });
+          [
+            { rel: "icon", href: href },
+            { rel: "shortcut icon", href: href },
+            { rel: "apple-touch-icon", href: href },
+          ].forEach(function (item) {
+            var link = document.createElement("link");
+            link.rel = item.rel;
+            link.href = item.href;
+            document.head.appendChild(link);
+          });
+        } catch (_e) {}
+      })();
+    </script>
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>
   <body>

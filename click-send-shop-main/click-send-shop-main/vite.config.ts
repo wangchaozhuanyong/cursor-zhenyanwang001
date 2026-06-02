@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import legacy from "@vitejs/plugin-legacy";
 import { VitePWA } from "vite-plugin-pwa";
@@ -157,16 +157,18 @@ function stripOriginHeaderForDevProxy(proxy: {
   });
 }
 
-const thirdPartyLoginEnabled = process.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
-const legacyEnabled = process.env.VITE_LEGACY_BUILD !== "0";
-const devApiProxyTarget = process.env.VITE_DEV_API_PROXY_TARGET || "http://localhost:3000";
+const DEFAULT_DEV_API_PROXY_TARGET = "http://localhost:3000";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-const isAdminBuild = mode === "admin" || process.env.VITE_APP_TARGET === "admin";
-const buildOutDir = process.env.VITE_BUILD_OUT_DIR || (isAdminBuild ? "admin-dist" : "dist");
+  const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
+  const thirdPartyLoginEnabled = env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
+  const legacyEnabled = env.VITE_LEGACY_BUILD !== "0";
+  const devApiProxyTarget = env.VITE_DEV_API_PROXY_TARGET || DEFAULT_DEV_API_PROXY_TARGET;
+  const isAdminBuild = mode === "admin" || env.VITE_APP_TARGET === "admin";
+  const buildOutDir = env.VITE_BUILD_OUT_DIR || (isAdminBuild ? "admin-dist" : "dist");
 
-return ({
+  return ({
   define: {
     "import.meta.env.VITE_THIRD_PARTY_LOGIN_ENABLED": JSON.stringify(
       thirdPartyLoginEnabled ? "true" : "false",
@@ -202,10 +204,6 @@ return ({
       outDir: buildOutDir,
       manifest: false,
       includeAssets: [
-        "favicon.ico",
-        "favicon.svg",
-        "favicon-32x32.png",
-        "favicon.webp",
         "offline.html",
         "browser-preboot.js",
       ],
@@ -376,8 +374,12 @@ return ({
           },
           {
             urlPattern: ({ url }) =>
-              url.pathname === "/offline.html"
-              || url.pathname.includes("favicon"),
+              /^\/favicon(?:-[\w-]+)?\.(?:ico|png|svg|webp)$/.test(url.pathname),
+            handler: "NetworkOnly",
+          },
+          {
+            urlPattern: ({ url }) =>
+              url.pathname === "/offline.html",
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "pwa-shell-cache",

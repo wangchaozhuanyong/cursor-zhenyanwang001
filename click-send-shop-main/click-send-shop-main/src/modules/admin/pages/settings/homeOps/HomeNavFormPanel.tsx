@@ -29,6 +29,11 @@ type Props = {
   nextSortOrder: number;
 };
 
+const fieldClassName = "flex min-w-0 flex-col gap-1";
+const fieldLabelClassName = "flex h-5 items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground";
+const controlClassName = "h-11 w-full min-w-0 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold";
+const readonlyControlClassName = "flex h-11 w-full min-w-0 items-center rounded-xl border border-dashed border-border bg-background/40 px-3 text-sm text-muted-foreground";
+
 export default function HomeNavFormPanel({
   navForm,
   setNavForm,
@@ -79,13 +84,100 @@ export default function HomeNavFormPanel({
     }
   };
 
+  const targetValueLabel =
+    navForm.target_type === "category"
+      ? L("目标分类", "Target category")
+      : navForm.target_type === "support"
+        ? L("客服账号", "Support account")
+        : navForm.target_type === "categories"
+          ? L("跳转内容", "Destination")
+          : L("跳转地址", "链接地址（URL）");
+  const targetValueHint =
+    navForm.target_type === "categories"
+      ? L("将跳转到分类 Tab 的全部分类列表（/categories）", "Will go to the full category list tab (/categories)")
+      : navForm.target_type === "category"
+        ? L("将自动跳转到对应分类页", "Will automatically jump to the matching category page")
+        : navForm.target_type === "support"
+          ? supportNavEnabled
+            ? L(
+                "账号在「页面装修 → 客服与安装」中维护，仅显示已启用账号",
+                'Accounts are managed in "Page Design → Support & Install" and only enabled accounts are shown',
+              )
+            : L("请先在站点能力中开启「客服/APP 页」", 'Please enable the "Support/App Page" capability first')
+          : L("支持站内路径和完整 URL", "Supports internal paths and full URLs");
+  const targetValueControl =
+    navForm.target_type === "category" ? (
+      <select
+        className={controlClassName}
+        value={navForm.target_category_id || ""}
+        onChange={(e) => {
+          const id = e.target.value || null;
+          setNavForm((prev) => ({
+            ...prev,
+            target_category_id: id,
+            link_url: id ? `/categories?cat=${id}` : prev.link_url,
+          }));
+        }}
+      >
+        <option value="">{L("请选择分类", "Select a category")}</option>
+        {categoryOptions.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+    ) : navForm.target_type === "support" ? (
+      <select
+        className={controlClassName}
+        value={navForm.target_support_channel_id || ""}
+        onChange={(e) => {
+          const id = e.target.value || null;
+          setNavForm((prev) => ({
+            ...prev,
+            target_support_channel_id: id,
+            link_url: id ? buildSupportNavLink(id) : "",
+          }));
+        }}
+      >
+        <option value="">{L("请选择客服账号", "Select a support account")}</option>
+        {supportChannels.map((channel) => (
+          <option key={channel.id} value={channel.id}>
+            {channel.name}
+            {channel.account ? ` · ${channel.account}` : ""}
+            {` (${supportTypeLabels[channel.type] || channel.type})`}
+          </option>
+        ))}
+      </select>
+    ) : navForm.target_type === "categories" ? (
+      <div className={readonlyControlClassName}>
+        <span className="truncate">{L("全部分类（/categories）", "All categories (/categories)")}</span>
+      </div>
+    ) : (
+      <input
+        className={controlClassName}
+        placeholder={L("/categories 或 https://...", "/categories or https://...")}
+        value={navForm.link_url}
+        onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })}
+      />
+    );
+
   return (
-    <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_1fr_1.4fr_minmax(7rem,1fr)_auto_auto]">
-      <label className="flex min-w-0 flex-col gap-1 md:col-span-1">
-        <span className="text-[11px] font-medium text-muted-foreground">{L("图标", "Icon")}</span>
-        <div className="flex flex-wrap items-stretch gap-2">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(12rem,1.2fr)_minmax(9rem,.75fr)_minmax(11rem,.9fr)_minmax(13rem,1fr)_minmax(6rem,.55fr)_minmax(5.75rem,.5fr)_minmax(5rem,auto)] xl:items-start">
+      <label className={`${fieldClassName} md:col-span-2 xl:col-span-1`}>
+        <span className={fieldLabelClassName}>
+          <span>{L("图标", "Icon")}</span>
+          <AdminFieldHint
+            contentClassName="max-w-sm"
+            text={
+              <>
+                {IMAGE_UPLOAD_HINT_HOME_NAV_ICON} {IMAGE_UPLOAD_HINT_API}
+              </>
+            }
+          />
+        </span>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_2.75rem] items-stretch gap-2">
           <input
-            className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+            className={controlClassName}
             placeholder={L("支持图片 URL、站内路径或 Emoji", "链接地址（URL）")}
             value={navForm.icon_url}
             onChange={(e) => setNavForm({ ...navForm, icon_url: e.target.value })}
@@ -101,44 +193,38 @@ export default function HomeNavFormPanel({
             type="button"
             disabled={saving || navIconUploading}
             onClick={() => navIconFileRef.current?.click()}
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary/80 disabled:opacity-50"
+            className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary px-3 text-xs font-medium text-foreground hover:bg-secondary/80 disabled:opacity-50"
           >
             {navIconUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             {L("上传", "Upload")}
           </button>
           <div
-            className="flex shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background/50 px-1 py-1"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background/50"
             title={L("图标预览", "Icon preview")}
           >
-            <HomeNavIconPreview value={navForm.icon_url} />
+            <HomeNavIconPreview value={navForm.icon_url} compact />
           </div>
-        </div>
-        <div className="flex justify-end">
-          <AdminFieldHint
-            contentClassName="max-w-sm"
-            text={
-              <>
-                {IMAGE_UPLOAD_HINT_HOME_NAV_ICON} {IMAGE_UPLOAD_HINT_API}
-              </>
-            }
-          />
         </div>
       </label>
 
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-medium text-muted-foreground">{L("标题", "Title")}</span>
+      <label className={fieldClassName}>
+        <span className={fieldLabelClassName}>
+          <span>{L("标题", "Title")}</span>
+        </span>
         <input
-          className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+          className={controlClassName}
           placeholder={L("导航标题", "Navigation title")}
           value={navForm.title}
           onChange={(e) => setNavForm({ ...navForm, title: e.target.value })}
         />
       </label>
 
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-medium text-muted-foreground">{L("跳转方式", "Link type")}</span>
+      <label className={fieldClassName}>
+        <span className={fieldLabelClassName}>
+          <span>{L("跳转方式", "Link type")}</span>
+        </span>
         <select
-          className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+          className={controlClassName}
           value={navForm.target_type || "url"}
           onChange={(e) => {
             const raw = e.target.value;
@@ -166,102 +252,42 @@ export default function HomeNavFormPanel({
             {L("联系客服", "Contact support")}
           </option>
         </select>
-        {navForm.target_type === "category" ? (
-          <select
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-            value={navForm.target_category_id || ""}
-            onChange={(e) => {
-              const id = e.target.value || null;
-              setNavForm((prev) => ({
-                ...prev,
-                target_category_id: id,
-                link_url: id ? `/categories?cat=${id}` : prev.link_url,
-              }));
-            }}
-          >
-            <option value="">{L("请选择分类", "Select a category")}</option>
-            {categoryOptions.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        ) : null}
-        {navForm.target_type === "support" ? (
-          <select
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-            value={navForm.target_support_channel_id || ""}
-            onChange={(e) => {
-              const id = e.target.value || null;
-              setNavForm((prev) => ({
-                ...prev,
-                target_support_channel_id: id,
-                link_url: id ? buildSupportNavLink(id) : "",
-              }));
-            }}
-          >
-            <option value="">{L("请选择客服账号", "Select a support account")}</option>
-            {supportChannels.map((channel) => (
-              <option key={channel.id} value={channel.id}>
-                {channel.name}
-                {channel.account ? ` · ${channel.account}` : ""}
-                {` (${supportTypeLabels[channel.type] || channel.type})`}
-              </option>
-            ))}
-          </select>
-        ) : null}
-        {navForm.target_type === "url" ? (
-          <input
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-            placeholder={L("/categories 或 https://...", "/categories or https://...")}
-            value={navForm.link_url}
-            onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })}
-          />
-        ) : null}
-        <div className="flex justify-end">
-          <AdminFieldHint
-            text={
-              navForm.target_type === "categories"
-                ? L("将跳转到分类 Tab 的全部分类列表（/categories）", "Will go to the full category list tab (/categories)")
-                : navForm.target_type === "category"
-                  ? L("将自动跳转到对应分类页", "Will automatically jump to the matching category page")
-                  : navForm.target_type === "support"
-                    ? supportNavEnabled
-                      ? L(
-                          "账号在「页面装修 → 客服与安装」中维护，仅显示已启用账号",
-                          'Accounts are managed in "Page Design → Support & Install" and only enabled accounts are shown',
-                        )
-                      : L("请先在站点能力中开启「客服/APP 页」", 'Please enable the "Support/App Page" capability first')
-                    : L("支持站内路径和完整 URL", "Supports internal paths and full URLs")
-            }
-          />
-        </div>
       </label>
 
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-medium text-muted-foreground">{L("排序", "Sort order")}</span>
+      <label className={`${fieldClassName} md:col-span-2 xl:col-span-1`}>
+        <span className={fieldLabelClassName}>
+          <span>{targetValueLabel}</span>
+          <AdminFieldHint text={targetValueHint} />
+        </span>
+        {targetValueControl}
+      </label>
+
+      <label className={fieldClassName}>
+        <span className={fieldLabelClassName}>
+          <span>{L("排序", "Sort order")}</span>
+          <AdminFieldHint text={L("列表可拖拽或点击序号调整顺序", "Drag items or click the number to change the order")} />
+        </span>
         {editingNavId ? (
           <input
             type="number"
             min={1}
             title={L("排序值越小越靠前", "Smaller numbers appear first")}
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+            className={controlClassName}
             value={navForm.sort_order}
             onChange={(e) => setNavForm({ ...navForm, sort_order: Math.max(1, Number(e.target.value) || 1) })}
           />
         ) : (
-          <div className="flex min-h-[42px] items-center rounded-xl border border-dashed border-border bg-background/40 px-3 text-sm text-muted-foreground">
-            {L(`新增后排在第 ${nextSortOrder} 位`, `New item will be placed at position ${nextSortOrder}`)}
+          <div className={readonlyControlClassName}>
+            <span className="truncate">{L(`新增后排在第 ${nextSortOrder} 位`, `New item will be placed at position ${nextSortOrder}`)}</span>
           </div>
         )}
-        <div className="flex justify-end">
-          <AdminFieldHint text={L("列表可拖拽或点击序号调整顺序", "Drag items or click the number to change the order")} />
-        </div>
       </label>
 
-      <label className="flex cursor-pointer flex-col justify-end gap-1 pb-0.5">
-        <span className="text-[11px] font-medium text-muted-foreground">{L("状态", "Status")}</span>
-        <span className="flex min-h-[42px] items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground">
+      <label className={`${fieldClassName} cursor-pointer`}>
+        <span className={fieldLabelClassName}>
+          <span>{L("状态", "Status")}</span>
+        </span>
+        <span className="flex h-11 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm text-foreground">
           <input
             type="checkbox"
             className="accent-gold"
@@ -272,8 +298,8 @@ export default function HomeNavFormPanel({
         </span>
       </label>
 
-      <div className="flex flex-col justify-end gap-1">
-        <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none">{L("操作", "Actions")}</span>
+      <div className={fieldClassName}>
+        <span className={`${fieldLabelClassName} opacity-0 select-none`}>{L("操作", "Actions")}</span>
         <PermissionGate permission="home_ops.manage">
           <LoadingButton
             type="button"
@@ -281,7 +307,7 @@ export default function HomeNavFormPanel({
             state={saving ? "loading" : "normal"}
             loadingText={L("保存中...", "Saving...")}
             onClick={() => adminConfirmSave(confirm, editingNavId ? L("保存导航修改", "Save navigation changes") : L("新增导航", "Add navigation item"), () => onSave())}
-            className="inline-flex h-[42px] rounded-xl px-4 text-sm font-bold"
+            className="inline-flex h-11 w-full min-w-[5rem] justify-center rounded-xl px-4 text-sm font-bold"
           >
             {editingNavId ? L("保存", "Save") : L("新增", "Add")}
           </LoadingButton>

@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { cn } from "@/lib/utils";
 
 interface SearchBarProps {
   placeholder?: string;
@@ -9,6 +10,7 @@ interface SearchBarProps {
   onFocus?: () => void;
   onSubmit?: () => void;
   debounceMs?: number;
+  className?: string;
 }
 
 export default function SearchBar({
@@ -19,6 +21,7 @@ export default function SearchBar({
   onFocus,
   onSubmit,
   debounceMs = 300,
+  className,
 }: SearchBarProps) {
   const [draftValue, setDraftValue] = useState(controlledValue ?? "");
   const timerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
@@ -64,18 +67,24 @@ export default function SearchBar({
   };
 
   return (
-    <div className="flex min-h-[42px] items-center gap-1.5 rounded-full bg-secondary px-3.5 py-1.5">
-      <Search size={16} className="shrink-0 text-muted-foreground" />
+    <div
+      className={cn(
+        "app-search-bar flex min-h-[44px] items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-2 shadow-sm transition-[border-color,box-shadow,background-color]",
+        "focus-within:border-[var(--theme-primary)] focus-within:ring-2 focus-within:ring-[var(--theme-primary)]/20",
+        className,
+      )}
+    >
+      <Search size={16} className="app-search-bar__icon shrink-0 text-muted-foreground" />
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         onFocus={onFocus}
         placeholder={placeholder}
-        className="min-h-0 flex-1 bg-transparent text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground"
+        className="app-search-bar__input min-h-0 flex-1 bg-transparent text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground"
       />
       {value && (
-        <button type="button" className="touch-manipulation flex h-8 w-8 shrink-0 items-center justify-center rounded-full active:bg-muted" onClick={() => setValue("", true)} aria-label="清除">
+        <button type="button" className="app-search-bar__clear touch-manipulation flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary active:bg-muted" onClick={() => setValue("", true)} aria-label="清除">
           <X size={16} className="text-muted-foreground" />
         </button>
       )}

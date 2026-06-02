@@ -30,6 +30,7 @@ const HOME_DATA_TTL_MS = 300_000;
 const PRODUCT_LIST_TTL_MS = 300_000;
 const PRODUCT_DETAIL_TTL_MS = 600_000;
 const CATEGORY_TTL_MS = 1_800_000;
+const CATEGORY_CACHE_KEY = "store_categories_cache_v1";
 const PRODUCT_LIST_CACHE_MAX = 24;
 const PRODUCT_DETAIL_CACHE_MAX = 48;
 let productListRequestSeq = 0;
@@ -68,6 +69,47 @@ function buildProductListCacheKey(params: ProductListParams) {
 function isFresh(cachedAt: number, ttl: number) {
   return cachedAt > 0 && Date.now() - cachedAt < ttl;
 }
+
+function sanitizeCategoryCache(value: unknown): Category[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is Category => (
+    Boolean(item)
+    && typeof item === "object"
+    && typeof (item as Category).id === "string"
+    && typeof (item as Category).name === "string"
+  ));
+}
+
+function readCategoryCache(): { items: Category[]; cachedAt: number } {
+  if (typeof window === "undefined") return { items: [], cachedAt: 0 };
+  try {
+    const parsed = JSON.parse(window.sessionStorage.getItem(CATEGORY_CACHE_KEY) || "null");
+    if (!parsed || typeof parsed !== "object") return { items: [], cachedAt: 0 };
+    const cachedAt = Number((parsed as { cachedAt?: unknown }).cachedAt || 0);
+    if (!isFresh(cachedAt, CATEGORY_TTL_MS)) return { items: [], cachedAt: 0 };
+    return {
+      items: sanitizeCategoryCache((parsed as { items?: unknown }).items),
+      cachedAt,
+    };
+  } catch {
+    return { items: [], cachedAt: 0 };
+  }
+}
+
+function writeCategoryCache(items: Category[]) {
+  if (typeof window === "undefined" || items.length === 0) return;
+  try {
+    window.sessionStorage.setItem(CATEGORY_CACHE_KEY, JSON.stringify({
+      cachedAt: Date.now(),
+      items,
+    }));
+  } catch {
+    // ignore storage quota/privacy failures
+  }
+}
+
+const initialCategoryCache = readCategoryCache();
+categoriesCachedAt = initialCategoryCache.cachedAt;
 
 interface ProductState {
   products: Product[];
@@ -114,7 +156,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
   recommendedProducts: [],
   homeDataLoadedAt: 0,
 
-  categories: [],
+  categories: initialCategoryCache.items,
 
   currentListCacheKey: null,
 
@@ -294,6 +336,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
         homeDataLoadedAt: Date.now(),
         loading: false,
       });
+      if (cats.length > 0) {
+        categoriesCachedAt = Date.now();
+        writeCategoryCache(cats);
+      }
     } catch (err) {
       set({
         loading: false,
@@ -308,6 +354,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       const cats = await productService.fetchCategories();
       categoriesCachedAt = Date.now();
+      writeCategoryCache(cats);
       set({ categories: cats });
     } catch {
       // 分类加载失败不阻断商品列表；保留已有分类缓存
@@ -329,4 +376,3 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 }));
-

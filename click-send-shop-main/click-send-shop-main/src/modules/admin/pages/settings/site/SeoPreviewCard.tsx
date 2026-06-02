@@ -9,7 +9,7 @@ type Props = {
 export default function SeoPreviewCard({ settings }: Props) {
   const title = String(settings.seoTitle || settings.siteName || "站点名称").trim() || "站点名称";
   const desc = String(settings.seoDescription || settings.siteDescription || "").trim() || "站点描述将显示在搜索结果摘要中。";
-  const og = String(settings.ogImageUrl || settings.defaultOgImageUrl || settings.logoUrl || "").trim();
+  const og = String(settings.ogImageUrl || settings.logoUrl || "").trim();
 
   return (
     <div className="space-y-3 text-xs">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useLayoutEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -31,6 +31,9 @@ import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPane
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { renderBrandTitle } from "@/utils/brand";
+
+const MOBILE_CHROME_HIDE_START = 96;
+const MOBILE_CHROME_HIDE_DELTA = 14;
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -213,6 +216,31 @@ export default function Categories() {
 
   const mobileChromeRef = useRef<HTMLDivElement>(null);
   const [mobileChromeHeight, setMobileChromeHeight] = useState(0);
+  const [mobileChromeHidden, setMobileChromeHidden] = useState(false);
+  const mobileChromeHiddenRef = useRef(false);
+  const lastScrollYRef = useRef(0);
+  const scrollTickingRef = useRef(false);
+  const layoutScrollGuardUntilRef = useRef(0);
+  const touchStartYRef = useRef(0);
+
+  const setMobileChromeVisibility = useCallback((hidden: boolean) => {
+    if (mobileChromeHiddenRef.current === hidden) {
+      return;
+    }
+
+    mobileChromeHiddenRef.current = hidden;
+    setMobileChromeHidden(hidden);
+  }, []);
+
+  const hideMobileChrome = useCallback(() => {
+    layoutScrollGuardUntilRef.current = window.performance.now() + 340;
+    setMobileChromeVisibility(true);
+  }, [setMobileChromeVisibility]);
+
+  const revealMobileChrome = useCallback(() => {
+    layoutScrollGuardUntilRef.current = 0;
+    setMobileChromeVisibility(false);
+  }, [setMobileChromeVisibility]);
 
   useLayoutEffect(() => {
     const node = mobileChromeRef.current;
@@ -233,6 +261,126 @@ export default function Categories() {
       window.removeEventListener("resize", update);
     };
   }, [categories.length, subCategories.length, activeFilterCount, viewMode, loading]);
+
+  useEffect(() => {
+    const getScrollY = () => window.scrollY || document.documentElement.scrollTop || 0;
+
+    const updateChromeVisibility = () => {
+      scrollTickingRef.current = false;
+
+      const currentY = getScrollY();
+      const delta = currentY - lastScrollYRef.current;
+      lastScrollYRef.current = currentY;
+
+      if (window.performance.now() < layoutScrollGuardUntilRef.current) {
+        return;
+      }
+
+      if (currentY <= 16) {
+        revealMobileChrome();
+        return;
+      }
+
+      if (Math.abs(delta) < MOBILE_CHROME_HIDE_DELTA) {
+        return;
+      }
+
+      if (delta > 0 && currentY > MOBILE_CHROME_HIDE_START) {
+        hideMobileChrome();
+        return;
+      }
+
+      if (delta < 0) {
+        revealMobileChrome();
+      }
+    };
+
+    const handleScroll = () => {
+      if (scrollTickingRef.current) {
+        return;
+      }
+
+      scrollTickingRef.current = true;
+      window.requestAnimationFrame(updateChromeVisibility);
+    };
+
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < MOBILE_CHROME_HIDE_DELTA) {
+        return;
+      }
+
+      lastScrollYRef.current = getScrollY();
+
+      if (event.deltaY > 0 && lastScrollYRef.current > 16) {
+        hideMobileChrome();
+        return;
+      }
+
+      if (event.deltaY < 0) {
+        revealMobileChrome();
+      }
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      touchStartYRef.current = event.touches[0]?.clientY ?? 0;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const currentTouchY = event.touches[0]?.clientY;
+      if (currentTouchY === undefined) {
+        return;
+      }
+
+      const gestureDelta = touchStartYRef.current - currentTouchY;
+      if (Math.abs(gestureDelta) < 24) {
+        return;
+      }
+
+      lastScrollYRef.current = getScrollY();
+      touchStartYRef.current = currentTouchY;
+
+      if (gestureDelta > 0 && lastScrollYRef.current > 16) {
+        hideMobileChrome();
+        return;
+      }
+
+      if (gestureDelta < 0) {
+        revealMobileChrome();
+      }
+    };
+
+    const revealChrome = () => {
+      lastScrollYRef.current = getScrollY();
+      revealMobileChrome();
+    };
+
+    lastScrollYRef.current = getScrollY();
+    if (lastScrollYRef.current > MOBILE_CHROME_HIDE_START) {
+      hideMobileChrome();
+    } else {
+      revealMobileChrome();
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("focusin", revealChrome);
+    window.addEventListener("resize", revealChrome);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("focusin", revealChrome);
+      window.removeEventListener("resize", revealChrome);
+    };
+  }, [hideMobileChrome, revealMobileChrome]);
+
+  useEffect(() => {
+    revealMobileChrome();
+  }, [activeCat, activeTagId, sort, viewMode, activeFilterCount, query, revealMobileChrome]);
 
   const filterDrawer = (
     <ProductFilterDrawer
@@ -290,7 +438,7 @@ export default function Categories() {
 
   const mobileCategoryBottomSlot = (
     <>
-      <div className="space-y-2 pb-2">
+      <div className="store-category-mobile-tabs space-y-2 pb-1">
         <CategoryKingkongRow
           items={rootKingkongItems}
           scrollKey={scrollTabKey}
@@ -315,7 +463,7 @@ export default function Categories() {
           </div>
         ) : null}
       </div>
-      <div className="flex items-center gap-2 border-t border-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] pb-2.5 pt-2">
+      <div className="store-category-mobile-tools flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <ProductSortBar value={sort} onChange={setSort} />
         </div>
@@ -335,11 +483,14 @@ export default function Categories() {
       />
       <div
         ref={mobileChromeRef}
+        data-hidden={mobileChromeHidden ? "true" : "false"}
         className={cn(
-          "fixed inset-x-0 top-0 z-header md:hidden",
-          "transition-[transform,opacity] duration-200 ease-out will-change-transform motion-reduce:transition-none",
-          "translate-y-0 opacity-100",
+          "store-category-mobile-chrome fixed inset-x-0 top-0 z-header md:hidden",
+          mobileChromeHidden ? "is-hidden pointer-events-none" : "is-visible",
         )}
+        style={{
+          "--store-category-mobile-chrome-height": `${mobileChromeHeight || 0}px`,
+        } as CSSProperties}
       >
         <StorePageHeader
           sticky={false}
@@ -358,8 +509,8 @@ export default function Categories() {
         />
       </div>
       <div
-        className="md:hidden"
-        style={{ height: mobileChromeHeight > 0 ? mobileChromeHeight : undefined }}
+        className="store-category-mobile-spacer md:hidden"
+        style={{ height: mobileChromeHidden ? 0 : mobileChromeHeight > 0 ? mobileChromeHeight : undefined }}
         aria-hidden
       />
 

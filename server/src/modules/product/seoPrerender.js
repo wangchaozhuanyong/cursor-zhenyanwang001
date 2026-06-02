@@ -246,7 +246,7 @@ function buildHomePayload(baseUrl, siteInfo) {
   const siteName = resolveSiteName(siteInfo);
   const description = siteInfo.seoDescription || resolveSiteDescription(siteInfo);
   const title = siteInfo.seoTitle || siteName;
-  const image = toAbsolute(baseUrl, siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || '/og-default.png');
+  const image = toAbsolute(baseUrl, siteInfo.ogImageUrl || siteInfo.logoUrl || '/og-default.png');
   return {
     title,
     description,
@@ -394,7 +394,7 @@ async function registerSeoPrerender(app, { frontendDist }) {
       description,
       canonical: `${baseUrl}/product/${encodeURIComponent(product.id)}`,
       ogType: 'product',
-      ogImage: toAbsolute(baseUrl, product.cover_image || (Array.isArray(product.images) ? product.images[0] : '') || siteInfo.defaultOgImageUrl || '/og-default.png'),
+      ogImage: toAbsolute(baseUrl, product.cover_image || (Array.isArray(product.images) ? product.images[0] : '') || siteInfo.ogImageUrl || '/og-default.png'),
       robots: restricted ? 'noindex,follow' : 'index,follow',
       prerenderH1: product.name,
       prerenderText: description,

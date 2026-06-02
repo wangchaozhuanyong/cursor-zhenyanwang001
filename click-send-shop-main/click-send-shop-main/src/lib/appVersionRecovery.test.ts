@@ -2,14 +2,18 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   clearAppVersionRecoveryState,
   getAppVersionRecoveryStorageKey,
+  installAppVersionRecovery,
+  isAppVersionRecoverySuppressed,
   isChunkLoadFailure,
   markAppVersionReady,
   resolveAppVersionRecoveryPlan,
+  suppressAppVersionRecovery,
 } from "@/lib/appVersionRecovery";
 
 describe("appVersionRecovery", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
+    window.__appVersionRecoverySuppressedUntil__ = 0;
     document.body.innerHTML = "";
     window.history.replaceState(null, "", "/?__fresh=123&keep=1");
   });
@@ -52,6 +56,35 @@ describe("appVersionRecovery", () => {
     expect(isChunkLoadFailure("Failed to fetch dynamically imported module: /assets/order.js")).toBe(true);
     expect(isChunkLoadFailure({ message: "Unable to preload CSS for /assets/page.css" })).toBe(true);
     expect(isChunkLoadFailure({ message: "Request failed with status code 404 /api/coupons" })).toBe(false);
+  });
+
+  it("can suppress automatic recovery while admin routes are only being preloaded", () => {
+    expect(isAppVersionRecoverySuppressed(1000)).toBe(false);
+
+    window.__appVersionRecoverySuppressedUntil__ = 1_500;
+    expect(isAppVersionRecoverySuppressed(1_499)).toBe(true);
+    expect(isAppVersionRecoverySuppressed(1_500)).toBe(false);
+
+    suppressAppVersionRecovery(1_000);
+    expect(isAppVersionRecoverySuppressed()).toBe(true);
+  });
+
+  it("ignores suppressed Vite preload failures from admin route preloading", () => {
+    const dispose = installAppVersionRecovery("admin");
+
+    try {
+      suppressAppVersionRecovery(1_000);
+      const event = new Event("vite:preloadError") as Event & { payload?: unknown };
+      event.payload = { message: "Failed to fetch dynamically imported module: /assets/AdminOrders.js" };
+
+      window.dispatchEvent(event);
+
+      expect(window.__appVersionRecoveryInProgress__).not.toBe(true);
+      expect(window.sessionStorage.getItem(getAppVersionRecoveryStorageKey("admin"))).toBeNull();
+    } finally {
+      dispose();
+      window.__appVersionRecoveryInProgress__ = false;
+    }
   });
 
   it("clears old recovery markers once the app is ready", () => {

@@ -12,7 +12,7 @@ import * as marketingService from "@/services/marketingService";
 import * as homeService from "@/services/homeService";
 import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import {
-  buildHomeCouponCardItems,
+  buildVisibleHomeCouponCardItems,
   summarizeHomeCouponState,
   type HomeCouponCardItem,
 } from "@/utils/homeCouponPresentation";
@@ -78,11 +78,13 @@ export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { de
   }, [isAuthenticated, loadCoupons]);
 
   const isCouponSyncing = isAuthenticated && !couponStateReady;
-  const couponIdentityReady = !isAuthenticated || couponStateReady;
   const visibleItems = useMemo<HomeCouponCardItem[]>(() => {
     if (!payload?.coupons?.length) return [];
-    return buildHomeCouponCardItems(payload.coupons, coupons, couponIdentityReady);
-  }, [payload?.coupons, coupons, couponIdentityReady]);
+    return buildVisibleHomeCouponCardItems(payload.coupons, coupons, {
+      isAuthenticated,
+      couponStateReady,
+    });
+  }, [payload?.coupons, coupons, isAuthenticated, couponStateReady]);
 
   const couponSummary = useMemo(() => summarizeHomeCouponState(coupons), [coupons]);
 

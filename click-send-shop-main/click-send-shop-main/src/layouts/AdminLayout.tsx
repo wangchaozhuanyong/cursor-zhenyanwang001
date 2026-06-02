@@ -157,7 +157,6 @@ function AdminLayoutContent() {
 
   const handleSidebarNavigate = useCallback(
     (path: string) => {
-      void preloadAdminRoute(path);
       void adminNavigate(path);
       setSidebarOpen(false);
     },

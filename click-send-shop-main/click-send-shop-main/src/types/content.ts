@@ -51,7 +51,6 @@ export interface SiteInfo {
   seoKeywords?: string;
   ogImageUrl?: string;
   googleSiteVerification?: string;
-  defaultOgImageUrl?: string;
   complianceNotice?: string;
   ageGateEnabled?: string;
   minimumAge?: string;

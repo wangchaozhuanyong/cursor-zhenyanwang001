@@ -40,6 +40,11 @@ function looksLikeMojibake(value: string): boolean {
 
 function sanitizeSiteInfo(data: SiteInfo): SiteInfo {
   const next = { ...data };
+  const legacyOg = next as SiteInfo & { defaultOgImageUrl?: string };
+  if (!String(next.ogImageUrl ?? "").trim() && String(legacyOg.defaultOgImageUrl ?? "").trim()) {
+    next.ogImageUrl = legacyOg.defaultOgImageUrl;
+  }
+  delete legacyOg.defaultOgImageUrl;
   const fallbackTextKeys: Array<keyof SiteInfo> = [
     "siteName",
     "siteDescription",
@@ -126,6 +131,26 @@ export function useSiteInfo(): SiteInfo {
   return info;
 }
 
+export function useSiteInfoLoaded(): boolean {
+  const [loaded, setLoaded] = useState(Boolean(cachedInfo));
+
+  useEffect(() => {
+    if (cachedInfo) {
+      setLoaded(true);
+      return;
+    }
+
+    let mounted = true;
+    loadOnce().finally(() => {
+      if (mounted) setLoaded(true);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return loaded;
+}
+
 export const SITE_INFO_FALLBACK = FALLBACK;
-
-

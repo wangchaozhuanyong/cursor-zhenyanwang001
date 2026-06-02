@@ -24,7 +24,7 @@ function LoadingSlots({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="store-category-tile-skeleton flex h-[6.25rem] w-[5.25rem] shrink-0 animate-pulse flex-col items-center justify-center gap-1.5 rounded-[1.25rem]"
+          className="store-category-tile-skeleton flex h-[5.35rem] w-[5.35rem] shrink-0 animate-pulse flex-col items-center justify-center gap-1.5 rounded-[1.15rem]"
           aria-hidden
         />
       ))}
@@ -40,12 +40,22 @@ export default function CategoryKingkongRow({
   loadingSlots = 6,
 }: CategoryKingkongRowProps) {
   const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const railRef = useRef<HTMLDivElement>(null);
+  const firstItemId = items[0]?.id;
 
   useEffect(() => {
     if (!scrollKey) return;
+    const rail = railRef.current;
     const btn = itemRefs.current.get(scrollKey);
+    if (!rail || !btn) return;
+
+    if (scrollKey === firstItemId) {
+      rail.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
+
     btn?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [scrollKey, items.length]);
+  }, [firstItemId, scrollKey, items.length]);
 
   return (
     <section
@@ -55,7 +65,8 @@ export default function CategoryKingkongRow({
       )}
     >
       <div
-        className="store-category-rail-scroll no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden scroll-smooth px-3 py-3.5 [-webkit-overflow-scrolling:touch] sm:justify-around sm:gap-3 sm:overflow-x-visible sm:px-4"
+        ref={railRef}
+        className="store-category-rail-scroll no-scrollbar flex snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden scroll-smooth px-3 py-3 [-webkit-overflow-scrolling:touch] sm:justify-around sm:gap-3 sm:overflow-x-visible sm:px-4"
         role="tablist"
         aria-label="商品分类"
       >

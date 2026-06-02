@@ -246,7 +246,7 @@ export default function ProductDetail() {
       : productDescRaw || `查看 ${product.name} 的详情、价格、库存状态与客服咨询说明。具体购买或办理信息以下单页面和客服确认为准。`,
     150,
   );
-  const seoImage = selectedVariant?.image_url || product.cover_image || product.images?.[0] || siteInfo.defaultOgImageUrl || "/og-default.png";
+  const seoImage = selectedVariant?.image_url || product.cover_image || product.images?.[0] || siteInfo.ogImageUrl || "/og-default.png";
   const productJsonLd = canIndex ? buildProductJsonLd(product) : null;
   const galleryImages = Array.from(new Set([...(selectedVariant?.image_url ? [selectedVariant.image_url] : []), ...(Array.isArray(product.images) && product.images.length ? product.images : []), ...(product.cover_image ? [product.cover_image] : [])].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
   const galleryImageAlts = galleryImages.map((url, index) => {

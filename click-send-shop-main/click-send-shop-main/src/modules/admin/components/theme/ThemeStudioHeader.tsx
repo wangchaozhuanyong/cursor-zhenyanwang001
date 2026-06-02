@@ -83,7 +83,7 @@ export default function ThemeStudioHeader({
               className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-xs font-semibold hover:bg-secondary"
             >
               <MonitorSmartphone size={14} />
-              设为客户端日常皮肤
+              设为默认
             </LoadingButton>
             <LoadingButton
               type="button"
@@ -94,7 +94,7 @@ export default function ThemeStudioHeader({
               className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-xs font-semibold hover:bg-secondary"
             >
               <Gift size={14} />
-              设为节日自动皮肤
+              设为节日
             </LoadingButton>
             <LoadingButton
               type="button"
@@ -105,7 +105,7 @@ export default function ThemeStudioHeader({
               onClick={onSave}
               className="inline-flex h-9 rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
             >
-              保存皮肤配置
+              保存配置
             </LoadingButton>
           </PermissionGate>
         </div>

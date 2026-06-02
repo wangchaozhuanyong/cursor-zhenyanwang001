@@ -6,9 +6,39 @@
     <title>管理后台</title>
     <meta name="robots" content="noindex,nofollow" />
     <meta name="theme-color" content="#ffffff" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/api/pwa/icon-192x192.png" />
+    <link rel="shortcut icon" type="image/png" href="/api/pwa/icon-192x192.png" />
+    <script>
+      (function () {
+        try {
+          var key = "site:brand:favicon";
+          var raw = window.localStorage && window.localStorage.getItem(key);
+          if (!raw) return;
+          var payload = JSON.parse(raw);
+          var href = typeof payload.href === "string" ? payload.href.trim() : "";
+          var savedAt = Number(payload.savedAt || 0);
+          var maxAge = 7 * 24 * 60 * 60 * 1000;
+          if (!href || !savedAt || Date.now() - savedAt > maxAge) {
+            window.localStorage.removeItem(key);
+            return;
+          }
+          document
+            .querySelectorAll("link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']")
+            .forEach(function (el) {
+              el.parentNode && el.parentNode.removeChild(el);
+            });
+          [
+            { rel: "icon", href: href },
+            { rel: "shortcut icon", href: href },
+          ].forEach(function (item) {
+            var link = document.createElement("link");
+            link.rel = item.rel;
+            link.href = item.href;
+            document.head.appendChild(link);
+          });
+        } catch (_e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

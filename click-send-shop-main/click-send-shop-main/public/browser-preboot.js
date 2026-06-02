@@ -49,6 +49,7 @@
   var FRESH_QUERY_PARAM = "__fresh";
   var NOTICE_ID = "chunk-load-recovery-notice";
   var GLOBAL_RECOVERY_FLAG = "__appVersionRecoveryInProgress__";
+  var GLOBAL_RECOVERY_SUPPRESSED_UNTIL_FLAG = "__appVersionRecoverySuppressedUntil__";
   var CHUNK_LOAD_ERROR_RE = /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
   var APP_CACHE_RE = /workbox|precache|vite|pwa|app-shell|chunk/i;
 
@@ -282,6 +283,7 @@
 
   function recoverFromChunkLoadError(reason) {
     if (!isChunkLoadFailure(reason)) return false;
+    if (isRecoverySuppressed()) return false;
     if (global[GLOBAL_RECOVERY_FLAG]) return true;
 
     var appName = getAppName();
@@ -304,6 +306,10 @@
       });
 
     return true;
+  }
+
+  function isRecoverySuppressed() {
+    return Number(global[GLOBAL_RECOVERY_SUPPRESSED_UNTIL_FLAG] || 0) > Date.now();
   }
 
   global.addEventListener("error", function (event) {

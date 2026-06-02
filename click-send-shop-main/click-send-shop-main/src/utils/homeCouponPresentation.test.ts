@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { MarketingCouponPublic } from "@/services/marketingService";
 import type { UserCoupon } from "@/types/coupon";
-import { buildHomeCouponCardItems, summarizeHomeCouponState } from "./homeCouponPresentation";
+import { buildHomeCouponCardItems, buildVisibleHomeCouponCardItems, summarizeHomeCouponState } from "./homeCouponPresentation";
 
 function publicCoupon(id: string): MarketingCouponPublic {
   return {
@@ -74,5 +74,31 @@ describe("首页优惠券展示状态", () => {
       userCoupon("c", "used"),
     ]);
     expect(summary).toEqual({ claimableCount: 1, usableCount: 1, completedCount: 1 });
+  });
+
+  it("首页访客状态准备好后也展示领取入口", () => {
+    const items = buildVisibleHomeCouponCardItems([publicCoupon("a")], [], {
+      isAuthenticated: false,
+      couponStateReady: true,
+    });
+    expect(items).toHaveLength(1);
+    expect(items[0].action).toBe("claim");
+  });
+
+  it("首页已登录但券包未同步时先不展示错误状态", () => {
+    const items = buildVisibleHomeCouponCardItems([publicCoupon("a")], [], {
+      isAuthenticated: true,
+      couponStateReady: false,
+    });
+    expect(items).toHaveLength(0);
+  });
+
+  it("首页已登录且券包同步后展示用户可用券", () => {
+    const items = buildVisibleHomeCouponCardItems([publicCoupon("a")], [userCoupon("a", "available")], {
+      isAuthenticated: true,
+      couponStateReady: true,
+    });
+    expect(items).toHaveLength(1);
+    expect(items[0].action).toBe("use");
   });
 });

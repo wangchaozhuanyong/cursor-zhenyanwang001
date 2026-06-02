@@ -21,8 +21,23 @@ function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
 }
 
+const LEGACY_DEFAULT_OG_IMAGE_KEY = 'defaultOgImageUrl';
 const SITE_ASSET_KEYS = new Set(['logoUrl', 'faviconUrl']);
 const SITE_ASSET_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+async function trimTransparentIconPadding(inputBuffer) {
+  try {
+    return await sharp(inputBuffer)
+      .rotate()
+      .trim({
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+        threshold: 12,
+      })
+      .toBuffer();
+  } catch {
+    return sharp(inputBuffer).rotate().toBuffer();
+  }
+}
 
 function rowsToMap(rows) {
   const settings = {};
@@ -33,6 +48,26 @@ function rowsToMap(rows) {
   });
   settings.version = version;
   return settings;
+}
+
+function normalizeMergedOgImageSetting(settings) {
+  const legacyValue = String(settings[LEGACY_DEFAULT_OG_IMAGE_KEY] || '').trim();
+  if (!String(settings.ogImageUrl || '').trim() && legacyValue) {
+    settings.ogImageUrl = legacyValue;
+  }
+  delete settings[LEGACY_DEFAULT_OG_IMAGE_KEY];
+  return settings;
+}
+
+function normalizeSiteSettingsPayload(body) {
+  const normalized = { ...body };
+  if (Object.prototype.hasOwnProperty.call(normalized, LEGACY_DEFAULT_OG_IMAGE_KEY)) {
+    if (!Object.prototype.hasOwnProperty.call(normalized, 'ogImageUrl')) {
+      normalized.ogImageUrl = normalized[LEGACY_DEFAULT_OG_IMAGE_KEY];
+    }
+    delete normalized[LEGACY_DEFAULT_OG_IMAGE_KEY];
+  }
+  return normalized;
 }
 
 function omitBrandAssetsForAudit(value) {
@@ -65,13 +100,13 @@ async function updateShippingSettings(body, adminUserId, req) {
 
 async function getSiteSettings() {
   const rows = await repo.selectNonShippingSettingsRows();
-  return { data: rowsToMap(rows) };
+  return { data: normalizeMergedOgImageSetting(rowsToMap(rows)) };
 }
 
 async function updateSiteSettings(body, adminUserId, req) {
   const beforeRows = await repo.selectNonShippingSettingsRows();
-  const beforeMap = rowsToMap(beforeRows);
-  const normalizedBody = { ...body };
+  const beforeMap = normalizeMergedOgImageSetting(rowsToMap(beforeRows));
+  const normalizedBody = normalizeSiteSettingsPayload(body);
   try {
     const expectedVersion = normalizedBody.version === undefined || normalizedBody.version === null || normalizedBody.version === ''
       ? null
@@ -88,6 +123,9 @@ async function updateSiteSettings(body, adminUserId, req) {
         continue;
       }
       await repo.upsertSetting(key, value);
+      if (key === 'ogImageUrl') {
+        await repo.upsertSetting(LEGACY_DEFAULT_OG_IMAGE_KEY, value);
+      }
     }
     if (
       Object.prototype.hasOwnProperty.call(normalizedBody, 'orderPaymentTimeoutEnabled')
@@ -124,19 +162,20 @@ async function updateSiteSettings(body, adminUserId, req) {
 }
 
 async function processSiteAssetUpload(file, key) {
-  const rotated = sharp(file.buffer).rotate();
   if (key === 'faviconUrl') {
-    const pngBuffer = await rotated
+    const trimmed = await trimTransparentIconPadding(file.buffer);
+    const pngBuffer = await sharp(trimmed)
       .resize(192, 192, {
         fit: 'contain',
-        background: { r: 255, g: 255, b: 255, alpha: 1 },
+        background: { r: 255, g: 255, b: 255, alpha: 0 },
+        withoutEnlargement: false,
       })
-      .flatten({ background: { r: 255, g: 255, b: 255 } })
       .png({ compressionLevel: 9 })
       .toBuffer();
     return { buffer: pngBuffer, contentType: 'image/png', ext: 'png' };
   }
-  const webpBuffer = await rotated
+  const webpBuffer = await sharp(file.buffer)
+    .rotate()
     .resize({ width: 512, height: 512, fit: 'inside', withoutEnlargement: true })
     .webp({ quality: 90, alphaQuality: 100 })
     .toBuffer();
@@ -266,7 +305,4 @@ module.exports = {
   updateSiteSettings,
   uploadSiteAsset,
 };
-
-
-
 

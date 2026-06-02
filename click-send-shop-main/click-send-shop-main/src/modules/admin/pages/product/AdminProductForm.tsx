@@ -47,6 +47,15 @@ import ProductSpecGroupsSection from "@/modules/admin/pages/product/ProductSpecG
 
 const tempId = tempVariantId;
 
+const ADMIN_PRODUCT_FORM_CONTROL_CLASS =
+  "admin-product-form-control w-full rounded-xl border border-[var(--admin-field-border,var(--theme-border))] bg-[var(--admin-field-bg,var(--theme-surface))] px-4 py-3 text-sm text-foreground shadow-sm outline-none transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground focus-visible:border-[var(--admin-field-focus,var(--theme-primary))] focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/20 disabled:cursor-not-allowed disabled:opacity-70";
+
+const ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS =
+  "admin-product-form-control w-full rounded-xl border border-[var(--admin-field-border,var(--theme-border))] bg-[var(--admin-field-bg,var(--theme-surface))] px-3 py-2 text-sm text-foreground shadow-sm outline-none transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground focus-visible:border-[var(--admin-field-focus,var(--theme-primary))] focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/20 disabled:cursor-not-allowed disabled:opacity-70";
+
+const ADMIN_PRODUCT_FORM_MEDIUM_CONTROL_CLASS =
+  "admin-product-form-control w-full rounded-xl border border-[var(--admin-field-border,var(--theme-border))] bg-[var(--admin-field-bg,var(--theme-surface))] px-3 py-2.5 text-sm text-foreground shadow-sm outline-none transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground focus-visible:border-[var(--admin-field-focus,var(--theme-primary))] focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/20 disabled:cursor-not-allowed disabled:opacity-70";
+
 const imageAltBaseName = (name?: string) => (name || "").trim() || "商品";
 const defaultCoverImageAlt = (name?: string) => `${imageAltBaseName(name)} 封面图`;
 const defaultGalleryImageAlt = (name: string | undefined, index: number) => `${imageAltBaseName(name)} 详情图 ${index + 1}`;
@@ -693,7 +702,7 @@ export default function AdminProductForm() {
                       onChange={(e) => setForm((f) => ({ ...f, cover_image_alt: e.target.value }))}
                       maxLength={255}
                       placeholder={defaultCoverImageAlt(form.name)}
-                      className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                      className={ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS}
                     />
                     <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
                       用来给搜索引擎和读屏工具理解图片，不会显示在商品详情正文里。
@@ -744,7 +753,7 @@ export default function AdminProductForm() {
                             })}
                             maxLength={255}
                             placeholder={defaultGalleryImageAlt(form.name, i)}
-                            className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                            className={ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS}
                           />
                         </div>
                       ))}
@@ -786,7 +795,7 @@ export default function AdminProductForm() {
                     value={form.video_url}
                     onChange={(e) => setForm({ ...form, video_url: e.target.value })}
                     placeholder={tText("填写视频 URL，或点击右侧上传")}
-                    className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                    className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
                   />
                   <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:border-gold/50 hover:bg-secondary">
                     <Video size={16} /><Tx>
@@ -821,7 +830,7 @@ export default function AdminProductForm() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>商品名称</Tx></label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tText("输入商品名称")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tText("输入商品名称")} className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -843,7 +852,7 @@ export default function AdminProductForm() {
                     });
                   }}
                   placeholder="5"
-                  className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                  className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
                 />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>库存低于或等于此值时会提示有可能补货。空值时默认按 5。</Tx>} />
@@ -851,7 +860,7 @@ export default function AdminProductForm() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>默认展示售价 (RM)</Tx></label>
-                <input value={form.price} onChange={(e) => updateDefaultVariantField("price", e.target.value)} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input value={form.price} onChange={(e) => updateDefaultVariantField("price", e.target.value)} placeholder="0.00" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>保存时与默认 SKU 售价保持一致；多规格商品以前台默认 SKU 作为展示价。</Tx>} />
                 </div>
@@ -866,7 +875,7 @@ export default function AdminProductForm() {
                     if (defaultIdx >= 0) variants[defaultIdx] = { ...variants[defaultIdx], original_price: t };
                     return { ...f, original_price: t, variants };
                   });
-                }} placeholder={tText("留空则不展示")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                }} placeholder={tText("留空则不展示")} className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint
                     text={
@@ -886,7 +895,7 @@ export default function AdminProductForm() {
                   onChange={(e) => updateDefaultVariantField("stock", e.target.value)}
                   disabled={!isSingleDefaultSku}
                   placeholder="0"
-                  className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-70"
+                  className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
                 />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</Tx>} />
@@ -894,21 +903,21 @@ export default function AdminProductForm() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>成本价 (RM)</Tx></label>
-                <input value={form.cost_price} onChange={(e) => updateDefaultVariantField("cost_price", e.target.value)} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input value={form.cost_price} onChange={(e) => updateDefaultVariantField("cost_price", e.target.value)} placeholder="0.00" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>成本价只用于后台毛利核算，保存时同步默认 SKU。</Tx>} />
                 </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>库存下限</Tx></label>
-                <input type="number" min={0} value={form.stock_lower_limit} onChange={(e) => updateDefaultVariantField("stock_lower_limit", e.target.value)} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input type="number" min={0} value={form.stock_lower_limit} onChange={(e) => updateDefaultVariantField("stock_lower_limit", e.target.value)} placeholder="0" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>下限用于触发补货提醒，保存时同步默认 SKU。</Tx>} />
                 </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>库存上限</Tx></label>
-                <input type="number" min={0} value={form.stock_upper_limit} onChange={(e) => updateDefaultVariantField("stock_upper_limit", e.target.value)} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input type="number" min={0} value={form.stock_upper_limit} onChange={(e) => updateDefaultVariantField("stock_upper_limit", e.target.value)} placeholder="0" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>上限是建议补到的目标库存，保存时同步默认 SKU。</Tx>} />
                 </div>
@@ -920,7 +929,7 @@ export default function AdminProductForm() {
                   value={form.sales_count}
                   onChange={(e) => setForm({ ...form, sales_count: e.target.value })}
                   placeholder="0"
-                  className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                  className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
                 />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>订单付款后由系统自动累加；可手动修正起步销量。</Tx>} />
@@ -928,7 +937,7 @@ export default function AdminProductForm() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类</Tx></label>
-                <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none">
+                <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}>
                   <option value=""><Tx>选择分类</Tx></option>
                   {categoryOptions.map((c: FlatCategory) => (
                     <option key={c.id} value={c.id}>
@@ -940,7 +949,7 @@ export default function AdminProductForm() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>排序</Tx></label>
-                <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} placeholder="0" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
               </div>
             </div>
           </div>
@@ -1076,7 +1085,7 @@ export default function AdminProductForm() {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder={tText("简短商品描述...")}
-              className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
             />
           </div>
         </div>
@@ -1094,7 +1103,7 @@ export default function AdminProductForm() {
                 onChange={(e) =>
                   setForm({ ...form, status: e.target.value as "draft" | "active" | "inactive" })
                 }
-                className="w-full rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
+                className={ADMIN_PRODUCT_FORM_MEDIUM_CONTROL_CLASS}
               >
                 <option value="draft"><Tx>草稿（前台不可见）</Tx></option>
                 <option value="active"><Tx>上架</Tx></option>
@@ -1128,7 +1137,7 @@ export default function AdminProductForm() {
                     min={0}
                     value={form.minimum_age}
                     onChange={(e) => setForm((prev) => ({ ...prev, minimum_age: e.target.value }))}
-                    className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
+                    className={ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS}
                     placeholder={tText("例如 18")}
                   />
                 </div>
@@ -1144,7 +1153,7 @@ export default function AdminProductForm() {
                         allow_index: value === "normal" && !prev.is_age_restricted ? prev.allow_index : false,
                       }));
                     }}
-                    className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
+                    className={ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS}
                   >
                     {form.compliance_type && !COMPLIANCE_TYPE_LABELS[form.compliance_type] ? (
                       <option value={form.compliance_type}>{labelComplianceType(form.compliance_type)}</option>
@@ -1161,14 +1170,14 @@ export default function AdminProductForm() {
                 value={form.region_notice}
                 onChange={(e) => setForm((prev) => ({ ...prev, region_notice: e.target.value }))}
                 placeholder={tText("地区适用说明")}
-                className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
+                className={ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS}
               />
               <textarea
                 rows={2}
                 value={form.compliance_notice}
                 onChange={(e) => setForm((prev) => ({ ...prev, compliance_notice: e.target.value }))}
                 placeholder={tText("合规说明")}
-                className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
+                className={ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS}
               />
               <label className="flex items-center justify-between">
                 <span className="text-sm text-foreground"><Tx>允许搜索引擎收录</Tx></span>

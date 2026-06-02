@@ -17,6 +17,11 @@ export interface HomeCouponSummary {
   completedCount: number;
 }
 
+export interface HomeCouponVisibilityOptions {
+  isAuthenticated: boolean;
+  couponStateReady: boolean;
+}
+
 type UserCouponWithCouponId = UserCoupon & { coupon_id?: string };
 
 const ACTIONABLE_USER_STATUSES = new Set(["available", "pending", "locked"]);
@@ -123,4 +128,14 @@ export function buildHomeCouponCardItems(
   }
 
   return items;
+}
+
+export function buildVisibleHomeCouponCardItems(
+  publicCoupons: MarketingCouponPublic[],
+  userCoupons: UserCoupon[],
+  options: HomeCouponVisibilityOptions,
+): HomeCouponCardItem[] {
+  if (!Array.isArray(publicCoupons) || publicCoupons.length === 0) return [];
+  if (options.isAuthenticated && !options.couponStateReady) return [];
+  return buildHomeCouponCardItems(publicCoupons, userCoupons, options.isAuthenticated);
 }

@@ -6,6 +6,7 @@ const CLEANUP_TIMEOUT_MS = 4_000;
 const FRESH_QUERY_PARAM = "__fresh";
 const RECOVERY_NOTICE_ID = "chunk-load-recovery-notice";
 const GLOBAL_RECOVERY_FLAG = "__appVersionRecoveryInProgress__";
+const GLOBAL_RECOVERY_SUPPRESSED_UNTIL_FLAG = "__appVersionRecoverySuppressedUntil__";
 
 const CHUNK_LOAD_ERROR_RE =
   /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
@@ -29,6 +30,7 @@ export type AppVersionRecoveryPlan = {
 declare global {
   interface Window {
     __appVersionRecoveryInProgress__?: boolean;
+    __appVersionRecoverySuppressedUntil__?: number;
   }
 }
 
@@ -37,6 +39,7 @@ export function installAppVersionRecovery(appName: string): () => void {
 
   const recover = (reason: unknown) => {
     if (!isChunkLoadFailure(reason)) return false;
+    if (isAppVersionRecoverySuppressed()) return false;
     return recoverFromAppVersionLoadFailure(appName, reason);
   };
 
@@ -121,6 +124,19 @@ export function clearAppVersionRecoveryState(_appName = "app"): void {
 
 export function isChunkLoadFailure(reason: unknown): boolean {
   return CHUNK_LOAD_ERROR_RE.test(stringifyError(reason));
+}
+
+export function suppressAppVersionRecovery(ms = 2_500): void {
+  if (typeof window === "undefined") return;
+
+  const nextUntil = Date.now() + Math.max(0, ms);
+  const currentUntil = Number(window[GLOBAL_RECOVERY_SUPPRESSED_UNTIL_FLAG] || 0);
+  window[GLOBAL_RECOVERY_SUPPRESSED_UNTIL_FLAG] = Math.max(currentUntil, nextUntil);
+}
+
+export function isAppVersionRecoverySuppressed(now = Date.now()): boolean {
+  if (typeof window === "undefined") return false;
+  return Number(window[GLOBAL_RECOVERY_SUPPRESSED_UNTIL_FLAG] || 0) > now;
 }
 
 export function getAppVersionRecoveryStorageKey(appName = "app"): string {

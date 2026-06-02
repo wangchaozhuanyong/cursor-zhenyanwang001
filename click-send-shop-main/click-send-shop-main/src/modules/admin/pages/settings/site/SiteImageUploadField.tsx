@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import { Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
 import {
@@ -35,6 +35,15 @@ export default function SiteImageUploadField({
   const isLogo = fieldKey === "logoUrl";
   const isFavicon = fieldKey === "faviconUrl";
   const isSiteAsset = isLogo || isFavicon;
+  const transparencyPreviewStyle: CSSProperties | undefined = isSiteAsset
+    ? {
+        backgroundColor: "#fff",
+        backgroundImage:
+          "linear-gradient(45deg, rgba(148, 163, 184, .18) 25%, transparent 25%), linear-gradient(-45deg, rgba(148, 163, 184, .18) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, .18) 75%), linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, .18) 75%)",
+        backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0",
+        backgroundSize: "16px 16px",
+      }
+    : undefined;
   const imageHint = (
     <>
       {isLogo ? IMAGE_UPLOAD_HINT_SITE_LOGO : null}
@@ -52,12 +61,17 @@ export default function SiteImageUploadField({
       <AdminLabelWithHint label={label} hint={imageHint} />
       <div className="flex items-center gap-3">
         <div
-          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-secondary ${
-            isFavicon ? "h-14 w-14" : "h-20 w-20"
+          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/80 bg-secondary ${
+            isFavicon ? "h-20 w-20" : "h-20 w-20"
           }`}
+          style={transparencyPreviewStyle}
         >
           {value ? (
-            <img src={value} alt={label} className="h-full w-full object-contain" />
+            <img
+              src={value}
+              alt={label}
+              className={`${isFavicon ? "h-[72px] w-[72px]" : "h-full w-full"} object-contain p-1`}
+            />
           ) : (
             <ImageIcon size={20} className="text-muted-foreground" />
           )}

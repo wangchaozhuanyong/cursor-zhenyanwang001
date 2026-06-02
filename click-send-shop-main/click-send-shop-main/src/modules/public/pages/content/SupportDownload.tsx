@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import SupportChannelCard from "@/components/support/SupportChannelCard";
 import InstallPlatformCard from "@/components/support/InstallPlatformCard";
-import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { buildCanonical } from "@/utils/seo";
 import { trackEvent } from "@/services/analyticsService";
@@ -78,6 +78,7 @@ function getViewLabel(view: SupportDownloadView) {
 
 export default function SupportDownload() {
   const siteInfo = useSiteInfo();
+  const siteInfoLoaded = useSiteInfoLoaded();
   const [searchParams, setSearchParams] = useSearchParams();
   const config = useMemo(
     () => parseSupportDownloadConfig(siteInfo.supportDownloadConfig),
@@ -132,20 +133,24 @@ export default function SupportDownload() {
   }, [channelByType, config.download.enabled, config.support.enabled]);
 
   const queryTab = searchParams.get("tab");
+  const requestedView = resolveQueryView(queryTab);
   const queryChannelId = searchParams.get("channelId")?.trim() || "";
   const pinnedChannel = useMemo(
     () => (queryChannelId ? channels.find((channel) => channel.id === queryChannelId) : undefined),
     [channels, queryChannelId],
   );
+  const waitingForConfiguredView = !siteInfoLoaded && Boolean((requestedView && requestedView !== "download") || queryChannelId);
 
   const activeView = useMemo(() => {
+    if (waitingForConfiguredView) return requestedView;
     if (pinnedChannel && availableViews.includes(pinnedChannel.type)) {
       return pinnedChannel.type;
     }
     return getDefaultView(queryTab, availableViews, config.defaultTab);
-  }, [availableViews, config.defaultTab, pinnedChannel, queryTab]);
+  }, [availableViews, config.defaultTab, pinnedChannel, queryTab, requestedView, waitingForConfiguredView]);
 
   useEffect(() => {
+    if (waitingForConfiguredView) return;
     if (!activeView) return;
     const next = new URLSearchParams(searchParams);
     let changed = false;
@@ -163,7 +168,7 @@ export default function SupportDownload() {
       changed = true;
     }
     if (changed) setSearchParams(next, { replace: true });
-  }, [activeView, pinnedChannel, queryChannelId, searchParams, setSearchParams]);
+  }, [activeView, pinnedChannel, queryChannelId, searchParams, setSearchParams, waitingForConfiguredView]);
 
   const setActiveView = (view: SupportDownloadView) => {
     const next = new URLSearchParams(searchParams);
@@ -210,7 +215,7 @@ export default function SupportDownload() {
           {pageSubtitle ? <p className="support-download-subtitle">{pageSubtitle}</p> : null}
         </header>
 
-        {availableViews.length > 0 ? (
+        {!waitingForConfiguredView && availableViews.length > 0 ? (
           <nav
             className="support-download-tabs"
             aria-label="客服与安装入口"
@@ -235,6 +240,10 @@ export default function SupportDownload() {
         ) : null}
 
         <div className="support-download-content">
+          {waitingForConfiguredView ? (
+            <div className="support-empty-panel">正在加载客服信息...</div>
+          ) : null}
+
           {activeChannel ? (
             <SupportChannelCard channel={{ ...activeChannel, name: getChannelTitle(activeChannel) }} />
           ) : null}

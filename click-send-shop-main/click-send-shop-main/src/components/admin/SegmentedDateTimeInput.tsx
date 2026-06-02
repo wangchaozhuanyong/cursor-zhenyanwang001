@@ -186,7 +186,7 @@ export default function SegmentedDateTimeInput({
   return (
     <div className={`relative ${className}`}>
       <div
-        className={`flex min-h-[44px] w-full flex-wrap items-center gap-x-1 gap-y-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground ${controlClassName}`}
+        className={`admin-segmented-control flex min-h-[44px] w-full flex-wrap items-center gap-x-1 gap-y-1 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-foreground ${controlClassName}`}
         onBlur={handleBlurContainer}
       >
         <input

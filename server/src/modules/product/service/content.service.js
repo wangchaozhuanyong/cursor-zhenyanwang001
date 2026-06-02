@@ -41,7 +41,7 @@ const PUBLIC_SITE_KEYS = [
   'sstCustomerNote',
   // SEO
   'seoTitle', 'seoDescription', 'seoKeywords', 'ogImageUrl',
-  'googleSiteVerification', 'defaultOgImageUrl', 'complianceNotice',
+  'googleSiteVerification', 'complianceNotice',
   'ageGateEnabled', 'minimumAge', 'restrictedProductNoindexEnabled',
   // 页脚
   'footerCompanyName', 'footerCopyright', 'footerIcpNo',
@@ -63,11 +63,23 @@ const PUBLIC_SITE_KEYS = [
 
 exports.PUBLIC_SITE_KEYS = PUBLIC_SITE_KEYS;
 
+const LEGACY_DEFAULT_OG_IMAGE_KEY = 'defaultOgImageUrl';
+const PUBLIC_SITE_QUERY_KEYS = [...PUBLIC_SITE_KEYS, LEGACY_DEFAULT_OG_IMAGE_KEY];
+
+function normalizePublicSiteInfo(info) {
+  const legacyOgImageUrl = String(info[LEGACY_DEFAULT_OG_IMAGE_KEY] || '').trim();
+  if (!String(info.ogImageUrl || '').trim() && legacyOgImageUrl) {
+    info.ogImageUrl = legacyOgImageUrl;
+  }
+  delete info[LEGACY_DEFAULT_OG_IMAGE_KEY];
+  return info;
+}
+
 exports.getPublicSiteInfo = async () => {
-  const [rows] = await contentRepo.getSiteSettingsByKeys(PUBLIC_SITE_KEYS);
+  const [rows] = await contentRepo.getSiteSettingsByKeys(PUBLIC_SITE_QUERY_KEYS);
   const info = {};
   rows.forEach((r) => { info[r.setting_key] = r.setting_value; });
-  return info;
+  return normalizePublicSiteInfo(info);
 };
 
 exports.getContentPageBySlug = async (slug) => {
@@ -76,4 +88,3 @@ exports.getContentPageBySlug = async (slug) => {
 };
 
 exports.getPublicHomeOps = async () => requireAdminApi('getPublicHomeOps')();
-

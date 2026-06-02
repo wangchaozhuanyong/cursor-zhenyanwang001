@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -18,6 +18,9 @@ import type { ThemeConfig } from "@/types/theme";
 interface BannerCarouselProps {
   banners: Banner[];
   loading?: boolean;
+  paused?: boolean;
+  trackingModule?: string;
+  ariaLabelPrefix?: string;
   themeConfigOverride?: ThemeConfig;
 }
 
@@ -36,7 +39,31 @@ function resolveBannerLink(link: string): string {
   return value;
 }
 
-export default function BannerCarousel({ banners, loading = false, themeConfigOverride }: BannerCarouselProps) {
+function splitBannerDescription(description: string): { subtitle: string; body: string } {
+  const value = description.trim();
+  if (!value) return { subtitle: "", body: "" };
+  const lines = value
+    .split(/\r?\n|[|｜]/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length > 1) {
+    return { subtitle: lines[0], body: lines.slice(1).join(" ") };
+  }
+  const match = value.match(/^(.{6,26}?[。；;，,])(.+)$/);
+  if (match) {
+    return { subtitle: match[1].replace(/[。；;，,]$/, ""), body: match[2].trim() };
+  }
+  return { subtitle: "", body: value };
+}
+
+export default function BannerCarousel({
+  banners,
+  loading = false,
+  paused = false,
+  trackingModule = "home_banner",
+  ariaLabelPrefix = "首页轮播图",
+  themeConfigOverride,
+}: BannerCarouselProps) {
   const { themeConfig: runtimeConfig } = useThemeRuntime();
   const bannerStyle = themeConfigOverride?.bannerStyle ?? runtimeConfig.bannerStyle;
   const bannerContainerClass = getBannerContainerClassName(bannerStyle);
@@ -49,6 +76,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
     ? banners[(safeIndex + 1) % banners.length]?.image?.trim() || ""
     : "";
   const [activeImageLoaded, setActiveImageLoaded] = useState(false);
+  const imageLoadSeqRef = useRef(0);
   const [touchStart, setTouchStart] = useState(0);
   const [manualPauseUntil, setManualPauseUntil] = useState(0);
   const navigate = useNavigate();
@@ -67,7 +95,33 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   }, [banners.length, current]);
 
   useEffect(() => {
+    const seq = imageLoadSeqRef.current + 1;
+    imageLoadSeqRef.current = seq;
     setActiveImageLoaded(false);
+    if (!activeImage) return;
+
+    const markLoaded = () => {
+      if (imageLoadSeqRef.current === seq) {
+        setActiveImageLoaded(true);
+      }
+    };
+
+    const img = new Image();
+    img.decoding = "async";
+    (img as HTMLImageElement & { fetchPriority?: "high" }).fetchPriority = "high";
+    img.onload = markLoaded;
+    img.src = activeImage;
+
+    if (img.complete && img.naturalWidth > 0) {
+      markLoaded();
+      return;
+    }
+
+    if (typeof img.decode === "function") {
+      void img.decode().then(markLoaded).catch(() => {
+        if (img.complete && img.naturalWidth > 0) markLoaded();
+      });
+    }
   }, [activeImage]);
 
   useEffect(() => {
@@ -82,13 +136,13 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   }, [activeImage, nextBannerImage]);
 
   useEffect(() => {
-    if (!motionEnabled || banners.length <= 1) return;
+    if (paused || !motionEnabled || banners.length <= 1) return;
     const timer = window.setInterval(() => {
       if (Date.now() < manualPauseUntil) return;
       setCurrent((prev) => (prev + 1) % banners.length);
     }, AUTO_ROTATE_MS);
     return () => window.clearInterval(timer);
-  }, [banners.length, manualPauseUntil, motionEnabled]);
+  }, [banners.length, manualPauseUntil, motionEnabled, paused]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX);
@@ -130,13 +184,15 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   const bannerLink = resolveBannerLink(banner.link);
   const bannerTitle = banner.title?.trim() || "";
   const bannerDescription = banner.description?.trim() || "";
+  const bannerCopy = splitBannerDescription(bannerDescription);
   const bannerCtaText = getBannerCtaText(banner);
   const hasTextLayer = Boolean(bannerTitle || bannerDescription || bannerCtaText);
   const showControls = banners.length > 1;
+  const fallbackLabel = `${ariaLabelPrefix} ${safeIndex + 1}`;
 
   const handleOpenBanner = () => {
     if (!bannerLink) return;
-    void trackEvent({ event_type: "banner_click", module: "home_banner", activity_id: banner.id });
+    void trackEvent({ event_type: "banner_click", module: trackingModule, activity_id: banner.id });
     if (/^https?:\/\//i.test(bannerLink)) {
       window.open(bannerLink, "_blank", "noopener,noreferrer");
       return;
@@ -170,7 +226,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
       onKeyDown={handleKeyDown}
       role={bannerLink ? "button" : undefined}
       tabIndex={bannerLink ? 0 : undefined}
-      aria-label={bannerLink ? `打开轮播图：${bannerTitle || `首页轮播图 ${safeIndex + 1}`}` : undefined}
+      aria-label={bannerLink ? `打开轮播图：${bannerTitle || fallbackLabel}` : undefined}
     >
       <div className="absolute inset-0">
         <div
@@ -180,11 +236,11 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
           aria-hidden
         />
         {activeImage && motionEnabled ? (
-          <AnimatePresence initial={false} mode="wait">
+          <AnimatePresence initial={false}>
             <motion.img
               key={banner.id || activeImage || safeIndex}
               src={activeImage}
-              alt={bannerTitle || `首页轮播图 ${safeIndex + 1}`}
+              alt={bannerTitle || fallbackLabel}
               width={BANNER_IMAGE_WIDTH}
               height={BANNER_IMAGE_HEIGHT}
               loading="eager"
@@ -201,14 +257,16 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               }}
               exit={{ opacity: 0, scale: 1.012, y: -5 }}
               transition={CROSSFADE_TRANSITION}
-              onLoad={() => setActiveImageLoaded(true)}
+              onLoad={(event) => {
+                if (event.currentTarget.naturalWidth > 0) setActiveImageLoaded(true);
+              }}
             />
           </AnimatePresence>
         ) : activeImage ? (
           <img
             key={banner.id || activeImage || safeIndex}
             src={activeImage}
-            alt={bannerTitle || `首页轮播图 ${safeIndex + 1}`}
+            alt={bannerTitle || fallbackLabel}
             width={BANNER_IMAGE_WIDTH}
             height={BANNER_IMAGE_HEIGHT}
             loading="eager"
@@ -221,7 +279,9 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               opacity: activeImageLoaded ? 1 : 0,
               transform: activeImageLoaded ? "scale(1)" : "scale(1.018)",
             }}
-            onLoad={() => setActiveImageLoaded(true)}
+            onLoad={(event) => {
+              if (event.currentTarget.naturalWidth > 0) setActiveImageLoaded(true);
+            }}
           />
         ) : null}
       </div>
@@ -248,12 +308,17 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
                   {bannerTitle}
                 </h2>
               ) : null}
-              {bannerTitle && bannerDescription ? (
+              {bannerTitle && (bannerCopy.subtitle || bannerCopy.body) ? (
                 <span className="store-hero-copy-divider" aria-hidden="true" />
               ) : null}
-              {bannerDescription ? (
-                <p className="store-hero-copy-desc mt-1.5 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
-                  {bannerDescription}
+              {bannerCopy.subtitle ? (
+                <p className="store-hero-copy-subtitle mt-1.5 text-[12px] font-semibold leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-base sm:leading-6 lg:text-xl lg:leading-8">
+                  {bannerCopy.subtitle}
+                </p>
+              ) : null}
+              {bannerCopy.body ? (
+                <p className="store-hero-copy-desc mt-1 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-1.5 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
+                  {bannerCopy.body}
                 </p>
               ) : null}
               {bannerCtaText ? (

@@ -109,7 +109,10 @@ function AdminSidebarNav({
                 onFocus={() => preloadItem(item.path, item.children)}
                 onClick={() => {
                   if (item.children?.length) {
-                    setExpandedPath((prev) => (prev === item.path ? null : item.path));
+                    setExpandedPath(item.path);
+                    if (pathname !== item.path) {
+                      onNavigate(item.path);
+                    }
                     return;
                   }
                   onNavigate(item.path);

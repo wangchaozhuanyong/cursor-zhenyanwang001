@@ -19,7 +19,6 @@ export const EMPTY_SITE_SETTINGS: SiteSettings = {
   seoKeywords: "",
   ogImageUrl: "",
   googleSiteVerification: "",
-  defaultOgImageUrl: "",
   complianceNotice: "",
   ageGateEnabled: "0",
   minimumAge: "18",

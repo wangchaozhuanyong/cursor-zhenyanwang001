@@ -26,7 +26,7 @@ import {
   DEFAULT_FAVICON_PNG,
   DEFAULT_FAVICON_SVG,
 } from "@/constants/siteBrand";
-import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
@@ -36,7 +36,7 @@ import { ModalLayerProvider } from "@/modules/micro-interactions";
 import { setTrafficAnalyticsEnabled, trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
-import { guessFaviconMime, resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
+import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
@@ -50,28 +50,17 @@ const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "store-card-equal-mobile-fix";
 
 function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
+  const siteInfoLoaded = useSiteInfoLoaded();
 
   useLayoutEffect(() => {
-    const raw = resolveSiteFaviconUrl(siteInfo);
-    const custom = raw && !/lovable/i.test(raw) ? raw : "";
-    const faviconType = custom ? guessFaviconMime(custom) : undefined;
-    // 部分浏览器不会把 WebP 当作 favicon（即使能下载也可能不显示），这里用后端动态生成的 PNG 作为兜底。
-    const needsPngFallback = faviconType === "image/webp";
-    const pwaPngFallback = "/api/pwa/icon-192x192.png";
-    const iconTargets: Array<{ rel: string; href: string; type?: string; sizes?: string }> = custom
-      ? [
-          ...(needsPngFallback
-            ? [{ rel: "icon", href: pwaPngFallback, type: "image/png", sizes: "192x192" }]
-            : []),
-          { rel: "icon", href: custom, type: faviconType, sizes: faviconType === "image/png" ? "192x192" : undefined },
-          { rel: "apple-touch-icon", href: custom, type: faviconType },
-        ]
-      : [
-          { rel: "icon", href: DEFAULT_FAVICON_SVG, type: "image/svg+xml" },
-          { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "32x32" },
-          { rel: "shortcut icon", href: DEFAULT_FAVICON_ICO },
-          { rel: "apple-touch-icon", href: DEFAULT_APPLE_TOUCH_ICON },
-        ];
+    if (!siteInfoLoaded) return;
+    const iconTargets = buildSiteFaviconLinkTargets(siteInfo, {
+      svg: DEFAULT_FAVICON_SVG,
+      png: DEFAULT_FAVICON_PNG,
+      ico: DEFAULT_FAVICON_ICO,
+      appleTouchIcon: DEFAULT_APPLE_TOUCH_ICON,
+    });
+    rememberSiteFaviconUrl(siteInfo);
 
     document
       .querySelectorAll<HTMLLinkElement>("link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']")
@@ -85,7 +74,7 @@ function SiteIdentitySync() {
       if (sizes) link.sizes = sizes;
       document.head.appendChild(link);
     });
-  }, [siteInfo]);
+  }, [siteInfo, siteInfoLoaded]);
 
   return null;
 }

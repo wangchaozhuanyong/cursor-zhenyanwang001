@@ -14,7 +14,7 @@ import * as marketingService from "@/services/marketingService";
 import type { CouponCenterPayload, CouponZonePayload, NewUserGiftPayload } from "@/services/marketingService";
 import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import {
-  buildHomeCouponCardItems,
+  buildVisibleHomeCouponCardItems,
   summarizeHomeCouponState,
   type HomeCouponCardItem,
 } from "@/utils/homeCouponPresentation";
@@ -116,13 +116,15 @@ export default function MarketingCouponRailSection({
   }, [isAuthenticated, loadCoupons]);
 
   const isCouponSyncing = isAuthenticated && !couponStateReady;
-  const couponIdentityReady = !isAuthenticated || couponStateReady;
   const couponItems = useMemo<CouponRailItem[]>(() => {
     const items: CouponRailItem[] = [];
     const seen = new Set<string>();
     if (couponZone?.campaigns?.length) {
       for (const campaign of couponZone.campaigns) {
-        for (const item of buildHomeCouponCardItems(campaign.coupons || [], coupons, couponIdentityReady)) {
+        for (const item of buildVisibleHomeCouponCardItems(campaign.coupons || [], coupons, {
+          isAuthenticated,
+          couponStateReady,
+        })) {
           const key = item.coupon.id || item.coupon.code;
           if (seen.has(key)) continue;
           seen.add(key);
@@ -136,7 +138,10 @@ export default function MarketingCouponRailSection({
       return items;
     }
     if (couponZone?.coupons?.length) {
-      items.push(...buildHomeCouponCardItems(couponZone.coupons, coupons, couponIdentityReady).map((item) => ({
+      items.push(...buildVisibleHomeCouponCardItems(couponZone.coupons, coupons, {
+        isAuthenticated,
+        couponStateReady,
+      }).map((item) => ({
         ...item,
         source: "couponZone" as const,
         railKey: `zone-${item.coupon.id}`,
@@ -144,21 +149,27 @@ export default function MarketingCouponRailSection({
       return items;
     }
     if (couponCenter?.coupons?.length) {
-      items.push(...buildHomeCouponCardItems(couponCenter.coupons, coupons, couponIdentityReady).map((item) => ({
+      items.push(...buildVisibleHomeCouponCardItems(couponCenter.coupons, coupons, {
+        isAuthenticated,
+        couponStateReady,
+      }).map((item) => ({
         ...item,
         source: "couponCenter" as const,
         railKey: `coupon-${item.coupon.id}`,
       })));
     }
     if (newUserGift?.coupons?.length) {
-      items.push(...buildHomeCouponCardItems(newUserGift.coupons, coupons, couponIdentityReady).map((item) => ({
+      items.push(...buildVisibleHomeCouponCardItems(newUserGift.coupons, coupons, {
+        isAuthenticated,
+        couponStateReady,
+      }).map((item) => ({
         ...item,
         source: "newUserGift" as const,
         railKey: `gift-${item.coupon.id}`,
       })));
     }
     return items;
-  }, [couponCenter?.coupons, couponIdentityReady, coupons, couponZone?.campaigns, couponZone?.coupons, newUserGift?.coupons]);
+  }, [couponCenter?.coupons, couponStateReady, coupons, couponZone?.campaigns, couponZone?.coupons, isAuthenticated, newUserGift?.coupons]);
 
   const couponSummary = useMemo(() => summarizeHomeCouponState(coupons), [coupons]);
   const giftIntroPayload = useMemo<NewUserGiftPayload | null>(() => {

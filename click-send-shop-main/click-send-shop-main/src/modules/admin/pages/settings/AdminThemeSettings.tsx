@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Settings2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DEFAULT_HOLIDAY_SKIN_ID, DEFAULT_SKIN_ID, DEFAULT_THEME_HOLIDAY_RULES, THEME_PRESETS } from "@/constants/themePresets";
@@ -11,6 +11,7 @@ import ThemePreviewDock from "@/modules/admin/components/theme/ThemePreviewDock"
 import ThemeSkinSidebar from "@/modules/admin/components/theme/ThemeSkinSidebar";
 import ThemeStudioHeader from "@/modules/admin/components/theme/ThemeStudioHeader";
 import type { PreviewDevice, PreviewMode } from "@/modules/admin/components/theme/themeStudioConstants";
+import { AdminSideDrawer } from "@/modules/admin/components/AdminSideDrawer";
 import { notifyGlobalThemeUpdated } from "@/lib/themeRevision";
 import { fetchThemeSkins, saveSystemThemeSkins } from "@/services/admin/themeService";
 import type { ThemeConfig, ThemeHolidayRule, ThemeSkin } from "@/types/theme";
@@ -74,6 +75,7 @@ export default function AdminThemeSettings() {
   const [previewMode, setPreviewMode] = useState<PreviewMode>("home");
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("phone");
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const [holidayDrawerOpen, setHolidayDrawerOpen] = useState(false);
   const undoSnapshot = useRef<ThemeConfig | null>(null);
   const skipServerSyncRef = useRef(false);
   const hasAppliedServerThemeRef = useRef(false);
@@ -93,6 +95,10 @@ export default function AdminThemeSettings() {
     });
     return Array.from(values);
   }, [skins]);
+  const enabledHolidayRuleCount = useMemo(
+    () => holidayRules.filter((rule) => rule.enabled).length,
+    [holidayRules],
+  );
 
   const themeQuery = useQuery({
     queryKey: adminQueryKeys.themeSkins(),
@@ -316,75 +322,124 @@ export default function AdminThemeSettings() {
           />
 
           <section className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]">
-                    <CalendarDays size={18} />
+                <div className="flex items-start gap-3">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]">
+                    <CalendarDays size={19} />
                   </span>
-                  <div>
-                    <h2 className="text-base font-semibold text-foreground">节日自动皮肤</h2>
-                    <p className="text-xs text-muted-foreground">
-                      平时使用「{defaultSkinName}」，命中下面节日日期时自动使用「{holidaySkinName}」。当前前台实际生效：{runtimeSkinName}。
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-base font-semibold text-foreground">节日自动皮肤</h2>
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                        已启用 {enabledHolidayRuleCount}/{holidayRules.length} 条规则
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      平时使用「{defaultSkinName}」，节日命中时使用「{holidaySkinName}」。当前前台实际生效：{runtimeSkinName}。
                     </p>
                   </div>
                 </div>
               </div>
-              <label className="min-w-[220px] space-y-1">
-                <span className="text-xs text-muted-foreground">节日统一使用皮肤</span>
-                <select
-                  value={holidaySkinId}
-                  onChange={(e) => onHolidaySkinChange(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs"
-                >
-                  {skins.map((skin) => (
-                    <option key={skin.id} value={skin.id}>{skin.name}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {holidayRules.map((rule) => (
-                <article key={rule.id} className="rounded-xl border border-border bg-background/60 p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">{rule.name}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{rule.start} 到 {rule.end}</p>
-                    </div>
-                    <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        checked={rule.enabled}
-                        onChange={(e) => onHolidayRuleChange(rule.id, { enabled: e.target.checked })}
-                      />
-                      启用
-                    </label>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <label className="space-y-1">
-                      <span className="text-[11px] text-muted-foreground">开始</span>
-                      <input
-                        value={rule.start}
-                        onChange={(e) => onHolidayRuleChange(rule.id, { start: e.target.value })}
-                        placeholder="MM-DD"
-                        className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs"
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-[11px] text-muted-foreground">结束</span>
-                      <input
-                        value={rule.end}
-                        onChange={(e) => onHolidayRuleChange(rule.id, { end: e.target.value })}
-                        placeholder="MM-DD"
-                        className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs"
-                      />
-                    </label>
-                  </div>
-                </article>
-              ))}
+              <button
+                type="button"
+                onClick={() => setHolidayDrawerOpen(true)}
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[var(--theme-primary)]/25 bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition hover:opacity-90 lg:w-auto"
+              >
+                <Settings2 size={16} />
+                配置节日自动皮肤
+              </button>
             </div>
           </section>
+
+          <AdminSideDrawer
+            open={holidayDrawerOpen}
+            onOpenChange={setHolidayDrawerOpen}
+            title="节日自动皮肤"
+            description={`当前节日皮肤：${holidaySkinName}；已启用 ${enabledHolidayRuleCount}/${holidayRules.length} 条规则。`}
+            className="lg:w-[min(620px,calc(100vw-2rem))] xl:w-[min(680px,calc(100vw-2rem))]"
+            bodyClassName="bg-muted/20"
+            footer={(
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setHolidayDrawerOpen(false)}
+                  className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-secondary"
+                >
+                  关闭
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onSaveSettings()}
+                  disabled={saving || !selectedSkin?.name?.trim()}
+                  className="inline-flex h-10 items-center justify-center rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  {saving ? "保存中..." : "保存配置"}
+                </button>
+              </div>
+            )}
+          >
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground">节日统一使用皮肤</span>
+                  <select
+                    value={holidaySkinId}
+                    onChange={(e) => onHolidaySkinChange(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs"
+                  >
+                    {skins.map((skin) => (
+                      <option key={skin.id} value={skin.id}>{skin.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  这里只决定节日期间自动切换哪套皮肤，不会改动日常客户端皮肤。修改后请点击保存配置。
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {holidayRules.map((rule) => (
+                  <article key={rule.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">{rule.name}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{rule.start} 到 {rule.end}</p>
+                      </div>
+                      <label className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={rule.enabled}
+                          onChange={(e) => onHolidayRuleChange(rule.id, { enabled: e.target.checked })}
+                        />
+                        启用
+                      </label>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <label className="space-y-1">
+                        <span className="text-[11px] text-muted-foreground">开始</span>
+                        <input
+                          value={rule.start}
+                          onChange={(e) => onHolidayRuleChange(rule.id, { start: e.target.value })}
+                          placeholder="MM-DD"
+                          className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[11px] text-muted-foreground">结束</span>
+                        <input
+                          value={rule.end}
+                          onChange={(e) => onHolidayRuleChange(rule.id, { end: e.target.value })}
+                          placeholder="MM-DD"
+                          className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs"
+                        />
+                      </label>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </AdminSideDrawer>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(430px,28vw,540px)]">
             <ThemeSkinSidebar

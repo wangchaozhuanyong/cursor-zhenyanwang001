@@ -100,6 +100,19 @@ function withFallbackNavItems(
   return next;
 }
 
+function HomeNavLoadingSlots({ count = 5 }: { count?: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index} className={`${HOME_NAV_ITEM_CLASS} w-full min-w-0`} aria-hidden>
+          <span className={`${HOME_NAV_ICON_FRAME_CLASS} skeleton-base skeleton-shimmer`} />
+          <span className="skeleton-base skeleton-shimmer mt-1 h-3 w-12 rounded-full" />
+        </div>
+      ))}
+    </>
+  );
+}
+
 export default function HomeOpsBlocks() {
   const { settings: homeModules, navItems, ready } = useHomeModuleSettings();
   const capabilities = useSiteCapabilities();
@@ -119,7 +132,15 @@ export default function HomeOpsBlocks() {
   }, [navItems, allowedFallbacks, capabilities]);
 
   if (homeModules.modules.nav_grid === false) return null;
-  if (!ready) return null;
+  if (!ready) {
+    return (
+      <section className="store-nav-band" aria-busy="true" aria-label="快捷入口加载中">
+        <div className="store-home-nav-grid grid grid-cols-5 gap-x-1 gap-y-3 px-3 py-3.5 sm:grid-cols-6 sm:px-4 md:grid-cols-6 lg:grid-cols-8 lg:gap-x-2 lg:px-6">
+          <HomeNavLoadingSlots />
+        </div>
+      </section>
+    );
+  }
   if (!navSource.length) return null;
 
   return (

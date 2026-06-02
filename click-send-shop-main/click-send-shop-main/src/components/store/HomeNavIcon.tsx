@@ -24,10 +24,9 @@ import {
   Ticket,
   Wine,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ensureMediaUrl } from "@/utils/mediaUrl";
-import { pickUploadImageVariant } from "@/utils/uploadImageVariant";
 
 const ICON_TOKENS = {
   all: Grid3X3,
@@ -82,40 +81,52 @@ const ICON_TOKENS = {
   migration: Landmark,
 } as const;
 
+type HomeNavIconProps = {
+  value: string;
+  className?: string;
+  imageClassName?: string;
+  loading?: "eager" | "lazy";
+  fetchPriority?: "high" | "low" | "auto";
+};
+
 export function isHomeNavImageIcon(value: string): boolean {
   const v = value.trim();
   return v.startsWith("http") || v.startsWith("/") || v.startsWith("data:image/");
 }
 
-function resolveIconImageSrc(value: string): { preferred: string; fallback: string } {
-  const fallback = ensureMediaUrl(value);
-  if (!fallback || fallback.startsWith("data:image/")) return { preferred: fallback, fallback };
-  return {
-    preferred: pickUploadImageVariant(fallback, "card") || fallback,
-    fallback,
-  };
+function resolveIconImageSrc(value: string): string {
+  return ensureMediaUrl(value);
 }
 
 export default function HomeNavIcon({
   value,
   className,
   imageClassName,
-}: {
-  value: string;
-  className?: string;
-  imageClassName?: string;
-}) {
+  loading = "eager",
+  fetchPriority = "auto",
+}: HomeNavIconProps) {
   const iconValue = value.trim();
   const token = iconValue.toLowerCase() as keyof typeof ICON_TOKENS;
   const TokenIcon = ICON_TOKENS[token];
-  const imageSource = useMemo(() => (
-    isHomeNavImageIcon(iconValue) ? resolveIconImageSrc(iconValue) : null
-  ), [iconValue]);
-  const [src, setSrc] = useState(imageSource?.preferred || "");
+  const imageSource = useMemo(
+    () => (isHomeNavImageIcon(iconValue) ? resolveIconImageSrc(iconValue) : null),
+    [iconValue],
+  );
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const [src, setSrc] = useState(imageSource || "");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setSrc(imageSource?.preferred || "");
+    setSrc(imageSource || "");
+    setLoaded(false);
   }, [imageSource]);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, [src]);
 
   if (!iconValue) {
     return <span className={cn("text-sm font-semibold text-[var(--theme-text-muted)]", className)}>·</span>;
@@ -131,20 +142,35 @@ export default function HomeNavIcon({
 
   if (imageSource && src) {
     return (
-      <img
-        src={src}
-        alt="首页导航图标"
-        width={48}
-        height={48}
-        sizes="48px"
-        className={cn("h-full w-full object-contain object-center transition-opacity duration-300", imageClassName)}
-        loading="lazy"
-        {...({ fetchpriority: "low" } as Record<string, string>)}
-        decoding="async"
-        onError={() => {
-          if (src !== imageSource.fallback) setSrc(imageSource.fallback);
-        }}
-      />
+      <span className={cn("relative flex h-full w-full items-center justify-center", className)}>
+        <span
+          className={cn(
+            "absolute inset-1 rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] transition-opacity duration-150",
+            loaded ? "opacity-0" : "opacity-100",
+          )}
+          aria-hidden
+        />
+        <img
+          ref={imgRef}
+          src={src}
+          alt="首页导航图标"
+          width={48}
+          height={48}
+          sizes="48px"
+          className={cn(
+            "relative z-10 h-full w-full object-contain object-center transition-opacity duration-150",
+            loaded ? "opacity-100" : "opacity-0",
+            imageClassName,
+          )}
+          loading={loading}
+          {...({ fetchpriority: fetchPriority } as Record<string, string>)}
+          decoding={loading === "eager" ? "sync" : "async"}
+          onLoad={(event) => {
+            if (event.currentTarget.naturalWidth > 0) setLoaded(true);
+          }}
+          onError={() => setLoaded(false)}
+        />
+      </span>
     );
   }
 

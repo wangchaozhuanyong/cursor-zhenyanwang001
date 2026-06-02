@@ -38,6 +38,20 @@ function Invoke-Native {
   }
 }
 
+function Assert-FileExists {
+  param(
+    [Parameter(Mandatory = $true)][string]$Path,
+    [Parameter(Mandatory = $true)][string]$Message
+  )
+
+  for ($i = 0; $i -lt 10; $i++) {
+    if (Test-Path $Path) { return }
+    Start-Sleep -Milliseconds 500
+  }
+
+  throw $Message
+}
+
 $sshOpts = @(
   "-o", "StrictHostKeyChecking=accept-new",
   "-o", "BatchMode=yes",
@@ -52,13 +66,13 @@ if ($IdentityFile -and (Test-Path $IdentityFile)) {
 }
 
 if (-not $SkipBuild) {
-  Write-Host "[1/5] Local vite build (admin first, shop last; VITE_API_BASE_URL=/api) ..."
+  Write-Host "[1/5] Local vite build (shop first, admin last; VITE_API_BASE_URL=/api) ..."
   Push-Location $FrontendDir
   try {
   $env:VITE_API_BASE_URL = "/api"
-  Invoke-Native "npm.cmd" @("run", "build:admin")
-  # Keep the public shop build last. Some PWA/admin build steps can refresh files under dist.
+  # Keep the admin build last. The public shop build can refresh output roots during PWA generation.
   Invoke-Native "npm.cmd" @("run", "build")
+  Invoke-Native "npm.cmd" @("run", "build:admin")
   } finally {
     Pop-Location
   }
@@ -66,12 +80,8 @@ if (-not $SkipBuild) {
   Write-Host "[1/5] Skip build (-SkipBuild)"
 }
 
-if (-not (Test-Path (Join-Path $DistDir "index.html"))) {
-  throw "dist/index.html missing. Run build first."
-}
-if (-not (Test-Path (Join-Path $AdminDistDir "admin-index.html"))) {
-  throw "admin-dist/admin-index.html missing. Run build:admin first."
-}
+Assert-FileExists (Join-Path $DistDir "index.html") "dist/index.html missing. Run build first."
+Assert-FileExists (Join-Path $AdminDistDir "admin-index.html") "admin-dist/admin-index.html missing. Run build:admin first."
 
 Write-Host "[2/5] Verify dist assets ..."
 Invoke-Native "node" @(

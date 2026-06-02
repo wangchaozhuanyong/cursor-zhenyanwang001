@@ -162,6 +162,20 @@ function getFallbackLogoPath() {
   return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
+async function trimTransparentIconPadding(sourceBuffer) {
+  try {
+    return await sharp(sourceBuffer)
+      .rotate()
+      .trim({
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+        threshold: 12,
+      })
+      .toBuffer();
+  } catch {
+    return sharp(sourceBuffer).rotate().toBuffer();
+  }
+}
+
 async function buildIconBuffer({ logoUrl, size, maskable, fallbackPath }) {
   const cacheKey = `${logoUrl}|${size}|${maskable ? 'maskable' : 'standard'}`;
   const cachedBuffer = getFreshIconCacheEntry(cacheKey);
@@ -189,9 +203,9 @@ async function buildIconBuffer({ logoUrl, size, maskable, fallbackPath }) {
     }).png().toBuffer();
   }
 
-  const safeLogoSize = maskable ? Math.round(size * 0.66) : size;
-  const logo = await sharp(sourceBuffer)
-    .rotate()
+  const safeLogoSize = maskable ? Math.round(size * 0.72) : Math.round(size * 0.94);
+  const trimmedBuffer = await trimTransparentIconPadding(sourceBuffer);
+  const logo = await sharp(trimmedBuffer)
     .resize(safeLogoSize, safeLogoSize, {
       fit: 'contain',
       background: { r: 255, g: 255, b: 255, alpha: 0 },

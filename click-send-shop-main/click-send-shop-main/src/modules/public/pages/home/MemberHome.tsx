@@ -91,7 +91,7 @@ export default function MemberHome() {
     siteInfo.seoDescription ||
     siteInfo.siteDescription ||
     "本平台提供商品、服务与客户支持信息。";
-  const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || resolveSiteLogoUrl(siteInfo) || "/og-default.png";
+  const seoImage = siteInfo.ogImageUrl || resolveSiteLogoUrl(siteInfo) || "/og-default.png";
 
   useEffect(() => {
     const state = useProductStore.getState();

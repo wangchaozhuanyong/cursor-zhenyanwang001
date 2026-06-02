@@ -1,5 +1,14 @@
 import { useEffect, useMemo } from "react";
-import { Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  GraduationCap,
+  Home,
+  RefreshCw,
+  ShoppingBag,
+  Sparkles,
+  Wrench,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -33,7 +42,6 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
-import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
@@ -82,6 +90,91 @@ function dedupeFooterNav(items: FooterNavItem[]): FooterNavItem[] {
     seen.add(key);
     return true;
   });
+}
+
+const guestRecommendFallbackItems = [
+  {
+    title: "找房安家",
+    description: "租房、搬家、家具家电和入住事项。",
+    path: "/categories?keyword=%E6%89%BE%E6%88%BF",
+    icon: Home,
+  },
+  {
+    title: "留学生活",
+    description: "住宿、陪读、学校生活和日常支持。",
+    path: "/categories?keyword=%E7%95%99%E5%AD%A6",
+    icon: GraduationCap,
+  },
+  {
+    title: "本地服务",
+    description: "维修、清洁、安装、缴费等常用入口。",
+    path: "/categories?keyword=%E6%9C%AC%E5%9C%B0%E6%9C%8D%E5%8A%A1",
+    icon: Wrench,
+  },
+  {
+    title: "商务资源",
+    description: "商铺办公室、供应链和本地推广对接。",
+    path: "/categories?keyword=%E5%95%86%E5%8A%A1",
+    icon: BriefcaseBusiness,
+  },
+];
+
+function GuestRecommendFallback({
+  onNavigate,
+  onRetry,
+}: {
+  onNavigate: (path: string) => void;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
+      <div className="border-b border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] px-4 py-4 sm:px-5">
+        <div className="flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm">
+            <ShoppingBag size={19} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[var(--theme-text)]">商品数据正在同步</p>
+            <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
+              先从常用服务入口继续浏览，商品接口恢复后点击刷新即可展示真实爆款内容。
+            </p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+            >
+              <RefreshCw size={13} />
+              刷新商品
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+        {guestRecommendFallbackItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.title}
+              type="button"
+              onClick={() => onNavigate(item.path)}
+              className="group flex min-h-24 items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[var(--theme-primary)] hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))]"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-bg))] text-[var(--theme-primary)]">
+                <Icon size={20} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-[var(--theme-text)]">{item.title}</span>
+                <span className="mt-1 line-clamp-2 block text-xs leading-5 text-[var(--theme-text-muted)]">
+                  {item.description}
+                </span>
+              </span>
+              <ArrowRight className="shrink-0 text-[var(--theme-text-muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--theme-primary)]" size={17} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function GuestHome() {
@@ -187,7 +280,7 @@ export default function GuestHome() {
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription = siteInfo.seoDescription || description;
   const canonical = buildCanonical("/");
-  const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || logoSrc || "/og-default.png";
+  const seoImage = siteInfo.ogImageUrl || logoSrc || "/og-default.png";
   return (
     <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
       <SeoHead
@@ -299,12 +392,10 @@ export default function GuestHome() {
             全网爆款
           </h2>
           {homeError && gridProducts.length === 0 ? (
-            <div className="mt-4">
-              <StorefrontLoadErrorPanel
-                message={homeError}
-                onRetry={() => void loadHomeData({ force: true })}
-              />
-            </div>
+            <GuestRecommendFallback
+              onNavigate={navigate}
+              onRetry={() => void loadHomeData({ force: true })}
+            />
           ) : null}
           {homeError && gridProducts.length > 0 ? (
             <p className="mb-3 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-center text-xs text-[var(--theme-text-muted)]">

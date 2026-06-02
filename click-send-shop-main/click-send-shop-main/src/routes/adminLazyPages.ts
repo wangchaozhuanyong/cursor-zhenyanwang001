@@ -1,4 +1,7 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
+import { suppressAppVersionRecovery } from "@/lib/appVersionRecovery";
+
+const ADMIN_PRELOAD_RECOVERY_SUPPRESS_MS = 2_500;
 
 type PreloadableAdminLazy<T extends ComponentType<any>> = LazyExoticComponent<T> & {
   preload?: () => Promise<unknown>;
@@ -21,7 +24,10 @@ function normalizeAdminRoutePath(to: string) {
 }
 
 function preloadComponent(component: AdminLazyComponent | undefined) {
-  return component?.preload?.();
+  if (!component?.preload) return undefined;
+
+  suppressAppVersionRecovery(ADMIN_PRELOAD_RECOVERY_SUPPRESS_MS);
+  return component.preload();
 }
 
 export const AdminLogin = lazyWithPreload(() => import("@/modules/admin/pages/auth/AdminLogin"));
@@ -208,7 +214,10 @@ export function preloadAdminRoute(to: string): Promise<unknown> | undefined {
   if (cached) return cached;
 
   const preload = preloadComponent(component)
-    ?.catch(() => undefined)
+    ?.catch(() => {
+      adminRoutePreloadCache.delete(pathname);
+      return undefined;
+    })
     ?? Promise.resolve(undefined);
   adminRoutePreloadCache.set(pathname, preload);
   return preload;

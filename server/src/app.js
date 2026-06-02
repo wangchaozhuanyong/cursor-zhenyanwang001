@@ -109,7 +109,6 @@ const defaultFrontendDist = path.join(
 );
 const frontendDist = process.env.FRONTEND_DIST || defaultFrontendDist;
 const frontendIndexHtml = path.join(frontendDist, 'index.html');
-const viteInlineScriptHashes = getInlineScriptHashesFromHtml(frontendIndexHtml);
 
 const defaultAdminDist = path.join(
   __dirname,
@@ -124,6 +123,10 @@ const adminDistIndexHtml = ['index.html', 'admin-index.html']
   .map((name) => path.join(adminDist, name))
   .find((filePath) => fs.existsSync(filePath)) || path.join(adminDist, 'admin-index.html');
 const adminDistReady = fs.existsSync(adminDistIndexHtml);
+const viteInlineScriptHashes = Array.from(new Set([
+  ...getInlineScriptHashesFromHtml(frontendIndexHtml),
+  ...getInlineScriptHashesFromHtml(adminDistIndexHtml),
+]));
 
 const HTML_NO_STORE_CACHE_CONTROL = 'no-store, no-cache, must-revalidate, proxy-revalidate';
 const HASHED_ASSET_CACHE_CONTROL = 'public, max-age=31536000, immutable';

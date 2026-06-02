@@ -21,15 +21,23 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const ADMIN_SENSITIVE_ACTION_HEADER = "X-Admin-Sensitive-Action-Token";
+const DEFAULT_READ_TIMEOUT_MS = 15_000;
+const DEFAULT_WRITE_TIMEOUT_MS = 30_000;
+const SESSION_REFRESH_TIMEOUT_MS = 12_000;
 
 type LoadingMode = "global" | "silent";
 export type RequestOptions = RequestInit & {
   skipGlobalLoading?: boolean;
   loadingMode?: LoadingMode;
+  timeoutMs?: number;
   /** 401 时不尝试 refresh 重试，避免无效会话下重复请求（如购物车静默拉取） */
   skipAuthRetry?: boolean;
   /** 401 时不触发全局登出副作用（会话探测、公开页静默请求） */
   suppressAuthExpired?: boolean;
+};
+
+type TimedFetchInit = RequestInit & {
+  timeoutMs?: number;
 };
 
 function gatewayErrorMessage(status: number): string | null {
@@ -83,6 +91,62 @@ function isAuthFailureStatus(status: number): boolean {
 
 function isTransientRefreshError(err: unknown): boolean {
   return err instanceof ApiError && (err.code === 0 || err.code === 408 || err.code === 429 || err.code >= 500);
+}
+
+function isAbortError(err: unknown): boolean {
+  if (typeof DOMException !== "undefined" && err instanceof DOMException && err.name === "AbortError") return true;
+  if (err instanceof Error && err.name === "AbortError") return true;
+  return false;
+}
+
+function defaultTimeoutMs(method?: string): number {
+  const normalized = String(method || "GET").toUpperCase();
+  return normalized === "GET" || normalized === "HEAD" ? DEFAULT_READ_TIMEOUT_MS : DEFAULT_WRITE_TIMEOUT_MS;
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: TimedFetchInit = {}): Promise<Response> {
+  const {
+    timeoutMs = defaultTimeoutMs(init.method),
+    signal: externalSignal,
+    ...fetchInit
+  } = init;
+
+  if ((!timeoutMs || timeoutMs <= 0) && !externalSignal) {
+    return fetch(input, fetchInit);
+  }
+
+  const controller = new AbortController();
+  let timedOut = false;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const abortFromExternalSignal = () => controller.abort();
+  if (externalSignal?.aborted) {
+    controller.abort();
+  } else {
+    externalSignal?.addEventListener("abort", abortFromExternalSignal, { once: true });
+  }
+
+  if (timeoutMs && timeoutMs > 0) {
+    timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
+  }
+
+  try {
+    return await fetch(input, {
+      ...fetchInit,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (timedOut && isAbortError(err)) {
+      throw new ApiError(408, "请求超时，请稍后重试", err);
+    }
+    throw err;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+    externalSignal?.removeEventListener("abort", abortFromExternalSignal);
+  }
 }
 
 function isAdminMfaLoginVerifyEndpoint(endpoint: string): boolean {
@@ -140,10 +204,11 @@ async function tryRefreshToken(): Promise<string> {
   const loadingToken = startGlobalLoadingDeferred();
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}/auth/refresh`, {
+    res = await fetchWithTimeout(`${BASE_URL}/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
+      timeoutMs: SESSION_REFRESH_TIMEOUT_MS,
       body: JSON.stringify({}),
     });
   } finally {
@@ -166,19 +231,16 @@ async function tryRefreshToken(): Promise<string> {
 
 export async function tryRefreshAdminSession(): Promise<void> {
   const loadingToken = startGlobalLoadingDeferred();
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 12_000);
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}/admin/auth/refresh`, {
+    res = await fetchWithTimeout(`${BASE_URL}/admin/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      signal: controller.signal,
+      timeoutMs: SESSION_REFRESH_TIMEOUT_MS,
       body: JSON.stringify({}),
     });
   } finally {
-    window.clearTimeout(timeout);
     stopGlobalLoading(loadingToken);
   }
 
@@ -262,12 +324,20 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
 
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}${endpoint}`, {
-      ...options,
+    const {
+      skipGlobalLoading: _skipGlobalLoading,
+      loadingMode: _loadingMode,
+      skipAuthRetry: _skipAuthRetry,
+      suppressAuthExpired: _suppressAuthExpired,
+      ...fetchOptions
+    } = options;
+    res = await fetchWithTimeout(`${BASE_URL}${endpoint}`, {
+      ...fetchOptions,
       headers,
       credentials: "include",
     });
   } catch (err) {
+    if (err instanceof ApiError) throw err;
     throw new ApiError(0, "网络连接失败，请检查网络设置", err);
   } finally {
     if (loadingToken) stopGlobalLoading(loadingToken);

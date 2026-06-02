@@ -29,6 +29,8 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
+import { renderBrandTitle } from "@/utils/brand";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -198,6 +200,7 @@ export default function Categories() {
   const activeCategoryName = activeCategory?.name || "";
   const categoryDescription = activeCategory?.description?.trim() || "";
   const siteName = (siteInfo.siteName || "官方商城").trim();
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
   const pageHeading = activeCategoryName || "全部分类";
   const title = activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`);
   const description = activeCategory?.seo_description?.trim() || (activeCategoryName
@@ -249,13 +252,13 @@ export default function Categories() {
         <div>
           <p className="mb-1 text-xs font-semibold text-[var(--theme-text)]">价格区间</p>
           <div className="grid grid-cols-2 gap-2">
-            <input value={minPrice} onChange={(e) => setMinPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最低价" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs text-[var(--theme-text)]" />
-            <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最高价" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs text-[var(--theme-text)]" />
+            <input value={minPrice} onChange={(e) => setMinPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最低价" className="store-category-filter-input rounded-xl border px-3 py-2 text-xs" />
+            <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最高价" className="store-category-filter-input rounded-xl border px-3 py-2 text-xs" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {[{ k: inStock, t: "只看有库存", f: setInStock }, { k: isNew, t: "新品", f: setIsNew }, { k: isHot, t: "热销", f: setIsHot }, { k: isRecommended, t: "推荐", f: setIsRecommended }].map((it) => (
-            <button key={it.t} type="button" onClick={() => it.f(!it.k)} className={`rounded-xl border px-3 py-2 text-xs ${it.k ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]/10 text-[var(--theme-text)]" : "border-[var(--theme-border)] text-[var(--theme-text)]"}`}>{it.t}</button>
+            <button key={it.t} type="button" onClick={() => it.f(!it.k)} className={cn("store-category-filter-chip rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-[0.98]", it.k && "is-active")}>{it.t}</button>
           ))}
         </div>
         <div>
@@ -266,6 +269,27 @@ export default function Categories() {
     </ProductFilterDrawer>
   );
 
+  const categoryHeaderTitle = (
+    <span className="store-category-brand">
+      {logoSrc ? (
+        <img
+          src={logoSrc}
+          alt={`${siteName} Logo`}
+          width={38}
+          height={38}
+          className="store-category-brand-logo"
+          loading="eager"
+          decoding="async"
+        />
+      ) : (
+        <span className="store-category-brand-logo store-category-brand-logo--fallback" aria-hidden>
+          {siteName.slice(0, 1)}
+        </span>
+      )}
+      <span className="store-category-brand-name">{renderBrandTitle(siteName)}</span>
+    </span>
+  );
+
   const mobileCategoryBottomSlot = (
     <>
       <div className="space-y-2 pb-2">
@@ -273,10 +297,10 @@ export default function Categories() {
           items={rootKingkongItems}
           scrollKey={scrollTabKey}
           loading={loading && categories.length === 0}
-          className="-mx-1 rounded-none border-x-0"
+          className="store-category-showcase -mx-[var(--store-page-x)] rounded-none border-x-0"
         />
         {subCategories.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="store-category-subtabs flex flex-wrap gap-1.5">
             {subCategories.map((child) => (
               <CategoryTabButton
                 key={child.id}
@@ -285,7 +309,7 @@ export default function Categories() {
                 layoutId="category-sub-tab"
                 activeClassName="bg-[var(--theme-price)]"
                 activeTextClass="text-[var(--theme-price-foreground)]"
-                className="px-3"
+                className="store-category-subtab px-3"
               >
                 {child.name}
               </CategoryTabButton>
@@ -304,7 +328,7 @@ export default function Categories() {
   );
 
   return (
-    <div className="store-page-shell store-listing-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
         title={title}
         description={description}
@@ -321,14 +345,15 @@ export default function Categories() {
       >
         <StorePageHeader
           sticky={false}
-          className={STORE_MOBILE_PAGE_HEADER_CLASS}
-          title={pageHeading}
+          className={cn(STORE_MOBILE_PAGE_HEADER_CLASS, "store-category-mobile-header")}
+          title={categoryHeaderTitle}
           titleInlineSlot={
             <StoreSearchField
               mode="filter"
               placeholder="搜索商品..."
               value={query}
               onValueChange={setQuery}
+              className="store-category-search-field"
             />
           }
           bottomSlot={mobileCategoryBottomSlot}
@@ -340,12 +365,20 @@ export default function Categories() {
         aria-hidden
       />
 
-      <main className="mx-auto max-w-screen-xl">
+      <main className="store-category-main mx-auto max-w-screen-xl">
         <div className="px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6">
           <div className="md:grid md:grid-cols-[260px,1fr] md:gap-6 lg:grid-cols-[288px,1fr]">
             <CategorySideTree categories={categories} activeCat={activeCat} onSelectAll={handleSelectAll} onRootClick={handleRootCategoryClick} onChildClick={handleSelectChild} />
-            <section>
-              <div className="mb-3 hidden items-center gap-2 md:flex">
+            <section className="store-category-content min-w-0">
+              <div className="store-category-desktop-title mb-4 hidden rounded-3xl border px-5 py-4 md:block">
+                <p className="text-xs font-semibold tracking-[0.22em] text-[var(--theme-text-muted)]">分类目录</p>
+                <h1 className="mt-1 text-2xl font-black tracking-tight text-[var(--theme-text)]">{pageHeading}</h1>
+                {categoryDescription ? (
+                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{categoryDescription}</p>
+                ) : null}
+              </div>
+
+              <div className="store-category-toolbar mb-3 hidden items-center gap-2 md:flex">
                 <div className="min-w-0 flex-1">
                   <ProductSortBar value={sort} onChange={setSort} />
                 </div>

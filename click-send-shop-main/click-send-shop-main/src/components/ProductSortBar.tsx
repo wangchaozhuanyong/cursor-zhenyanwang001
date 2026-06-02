@@ -37,11 +37,11 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
   return (
     <div
       className={cn(
-        "no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-1.5 sm:gap-2 sm:px-2.5 sm:py-2",
+        "store-category-sortbar no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto rounded-full border px-1.5 py-1.5 sm:gap-1.5 sm:px-2",
         className,
       )}
     >
-      <SlidersHorizontal size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+      <SlidersHorizontal size={16} className="store-category-sortbar-icon shrink-0" aria-hidden />
       {sortItems.map((item) => (
         <button
           key={item.value}
@@ -78,9 +78,9 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
 
 function sortPillClass(active: boolean) {
   return cn(
-    "inline-flex shrink-0 items-center gap-0.5 rounded-full px-2.5 py-1 text-xs transition-colors",
+    "store-category-sort-pill inline-flex min-h-8 shrink-0 items-center justify-center gap-0.5 rounded-full px-3 py-1 text-xs font-semibold transition duration-200",
     active
-      ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-      : "text-muted-foreground hover:text-foreground",
+      ? "is-active"
+      : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]",
   );
 }

@@ -131,7 +131,7 @@ function ProductCardInner({
   const nameRow = (
     <h3
       className={cn(
-        "line-clamp-2 text-[13.5px] font-semibold leading-snug text-[var(--theme-text)]",
+        "store-product-card-title line-clamp-2 text-[13.5px] font-semibold leading-snug text-[var(--theme-text)]",
         cardCenter && "text-center",
       )}
     >
@@ -149,7 +149,7 @@ function ProductCardInner({
   const originalPriceNum = Number(product.max_original_price ?? product.original_price ?? 0);
   const showOriginal = Number.isFinite(originalPriceNum) && originalPriceNum > (hasPriceRange ? maxPrice : Number(product.price || 0));
   const metaRow = (
-    <div className={cn("w-full min-w-0", cardCenter && !isHorizontal ? "text-center" : "")}>
+    <div className={cn("store-product-card-meta w-full min-w-0", cardCenter && !isHorizontal ? "text-center" : "")}>
       {isHorizontal ? (
         <StorePriceAmount
           amount={priceDisplay}
@@ -178,7 +178,7 @@ function ProductCardInner({
     return (
       <Reveal
         index={index}
-        className="theme-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:128px]"
+        className="theme-product-card store-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:128px]"
         onClick={() => openDetail("categories")}
       >
         <div ref={impressionRef} className={cn("flex", isListRow ? "gap-3 p-3" : "gap-2.5 p-2.5 sm:gap-3 sm:p-3")}>
@@ -241,7 +241,7 @@ function ProductCardInner({
   return (
     <Reveal
       index={index}
-      className="theme-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:320px]"
+      className="theme-product-card store-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:320px]"
       onClick={() => openDetail("product_grid")}
     >
       <div
@@ -285,7 +285,7 @@ function ProductCardInner({
           </span>
         ) : null}
       </div>
-      <div className={`flex flex-col gap-2 p-3 ${isPremium ? "gap-2.5 p-3.5" : ""}`}>
+      <div className={`store-product-card-body flex flex-col gap-2 p-3 ${isPremium ? "gap-2.5 p-3.5" : ""}`}>
         {nameRow}
         {metaRow}
       </div>

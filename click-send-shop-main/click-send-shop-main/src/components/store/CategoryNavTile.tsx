@@ -1,10 +1,5 @@
 import type { Ref } from "react";
 import HomeNavIcon from "@/components/store/HomeNavIcon";
-import {
-  HOME_NAV_ICON_FRAME_CLASS,
-  HOME_NAV_ITEM_CLASS,
-  HOME_NAV_LABEL_CLASS,
-} from "@/constants/homeLayout";
 import { cn } from "@/lib/utils";
 
 type CategoryNavTileProps = {
@@ -32,19 +27,19 @@ export default function CategoryNavTile({
       onClick={onClick}
       aria-current={active ? "true" : undefined}
       className={cn(
-        HOME_NAV_ITEM_CLASS,
-        "sm:flex-1 sm:max-w-[5.5rem]",
-        active ? "opacity-100" : "opacity-90",
+        "store-category-tile group flex h-[6.25rem] w-[5.25rem] shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-[1.25rem] border text-center transition duration-200 active:scale-[0.98]",
+        "sm:flex-1 sm:max-w-[6.2rem]",
+        active ? "is-active" : "opacity-95",
         className,
       )}
     >
-      <span className={HOME_NAV_ICON_FRAME_CLASS}>
+      <span className="store-category-tile-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
         <HomeNavIcon value={iconValue} />
       </span>
       <span
         className={cn(
-          HOME_NAV_LABEL_CLASS,
-          active && "font-semibold text-[var(--theme-text-on-surface)]",
+          "store-category-tile-label w-full truncate px-1 text-[12.5px] font-semibold leading-tight",
+          active && "font-bold",
         )}
       >
         {label}

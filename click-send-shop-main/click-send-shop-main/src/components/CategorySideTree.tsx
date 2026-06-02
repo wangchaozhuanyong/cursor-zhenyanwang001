@@ -75,15 +75,15 @@ export default function CategorySideTree({
   };
 
   return (
-    <aside className="hidden md:block md:w-64 lg:w-72">
-      <div className="sticky top-20 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
+    <aside className="store-category-side hidden md:block md:w-64 lg:w-72">
+      <div className="store-category-side-panel sticky top-20 rounded-3xl border p-3">
         <SideNavButton
           active={activeCat === "all"}
           onClick={onSelectAll}
           layoutId="category-side-nav"
-          activeClassName="bg-[var(--theme-primary)]"
-          activeTextClass="font-semibold text-[var(--theme-primary-foreground)]"
-          className="mb-2 rounded-xl px-3 py-2 text-sm"
+          activeClassName="store-category-side-indicator-primary"
+          activeTextClass="font-semibold text-[var(--theme-text)]"
+          className="store-category-side-button mb-2 rounded-2xl px-3 py-2.5 text-sm"
         >
           全部分类
         </SideNavButton>
@@ -94,14 +94,14 @@ export default function CategorySideTree({
             const isActive = isCategoryOrDescendantActive(category, activeCat);
 
             return (
-              <div key={category.id} className="rounded-xl border border-transparent">
+              <div key={category.id} className="rounded-2xl border border-transparent">
                 <SideNavButton
                   active={isActive}
                   onClick={() => onRootClick(category)}
                   layoutId="category-side-nav"
-                  activeClassName="bg-[var(--theme-primary)]/12"
+                  activeClassName="store-category-side-indicator-soft"
                   activeTextClass="font-medium text-[var(--theme-text)]"
-                  className="rounded-xl px-3 py-2 text-sm"
+                  className="store-category-side-button rounded-2xl px-3 py-2 text-sm"
                 >
                   <span className="truncate">
                     {renderCategoryMark(category)}
@@ -117,9 +117,9 @@ export default function CategorySideTree({
                         active={activeCat === child.id}
                         onClick={() => onChildClick(child.id)}
                         layoutId="category-side-subnav"
-                        activeClassName="bg-[var(--theme-price)]/12"
-                        activeTextClass="text-xs font-medium text-[var(--theme-price)]"
-                        className="rounded-lg px-3 py-1.5"
+                        activeClassName="store-category-side-indicator-child"
+                        activeTextClass="text-xs font-medium text-[var(--store-category-gold-dark,var(--theme-price))]"
+                        className="store-category-side-subbutton rounded-xl px-3 py-1.5"
                       >
                         {renderCategoryMark(child)}
                         {child.name}

@@ -18,8 +18,8 @@ export default function ProductListViewToggle({ value, onChange, className }: Pr
       aria-label={isList ? "当前为列表展示，点击切换为网格" : "当前为网格展示，点击切换为列表"}
       onClick={() => onChange(isList ? "grid" : "list")}
       className={cn(
-        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] transition-colors",
-        "hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] active:scale-[0.97]",
+        "store-category-tool-icon inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-[var(--theme-text)] transition duration-200",
+        "hover:-translate-y-0.5 active:scale-[0.97]",
         className,
       )}
     >

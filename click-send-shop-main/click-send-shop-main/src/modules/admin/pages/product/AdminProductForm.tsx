@@ -6,8 +6,6 @@ import { toast } from "sonner";
 import { fetchProductById, createProduct, updateProduct, deleteProduct, fetchProductTags } from "@/services/admin/productService";
 import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
-import * as uploadService from "@/services/uploadService";
-import { validateUploadFile } from "@/services/uploadService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
@@ -16,7 +14,6 @@ import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect
 import { flattenCategories, type FlatCategory } from "@/utils/categoryTree";
 import type { Category } from "@/types/category";
 import type { Product, ProductSpecGroup, ProductSpecValue, ProductTag } from "@/types/product";
-import type { AdminProductUpsertPayload } from "@/services/admin/productService";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminLabelWithHint, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { AnimatedConfirmDialog, LoadingButton, UploadDropZone } from "@/modules/micro-interactions";
@@ -34,31 +31,25 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import {
-  cartesianSpecValues,
   DEFAULT_VARIANT_TITLE,
-  MAX_SKU_MATRIX_SIZE,
-  specComboKey,
   tempVariantId,
 } from "@/utils/productFormVariantUtils";
 import { resolveStockLimitsFromProduct } from "@/utils/inventoryStockFields";
-import type { AdminSpecGroup, AdminVariantForm } from "@/modules/admin/pages/product/productFormTypes";
+import type { AdminSpecGroup, AdminVariantForm, ProductFormPayloadSlice } from "@/modules/admin/pages/product/productFormTypes";
 import ProductVariantMatrixTable from "@/modules/admin/pages/product/ProductVariantMatrixTable";
 import ProductSpecGroupsSection from "@/modules/admin/pages/product/ProductSpecGroupsSection";
+import {
+  ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS,
+  ADMIN_PRODUCT_FORM_CONTROL_CLASS,
+  ADMIN_PRODUCT_FORM_MEDIUM_CONTROL_CLASS,
+  defaultCoverImageAlt,
+  defaultGalleryImageAlt,
+} from "@/modules/admin/pages/product/productFormPresentation";
+import { buildAdminProductUpsertPayload } from "@/modules/admin/pages/product/productFormPayload";
+import { useProductMediaUploads } from "@/modules/admin/pages/product/useProductMediaUploads";
+import { useProductSkuMatrix } from "@/modules/admin/pages/product/useProductSkuMatrix";
 
 const tempId = tempVariantId;
-
-const ADMIN_PRODUCT_FORM_CONTROL_CLASS =
-  "admin-product-form-control w-full rounded-xl border border-[var(--admin-field-border,var(--theme-border))] bg-[var(--admin-field-bg,var(--theme-surface))] px-4 py-3 text-sm text-foreground shadow-sm outline-none transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground focus-visible:border-[var(--admin-field-focus,var(--theme-primary))] focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/20 disabled:cursor-not-allowed disabled:opacity-70";
-
-const ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS =
-  "admin-product-form-control w-full rounded-xl border border-[var(--admin-field-border,var(--theme-border))] bg-[var(--admin-field-bg,var(--theme-surface))] px-3 py-2 text-sm text-foreground shadow-sm outline-none transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground focus-visible:border-[var(--admin-field-focus,var(--theme-primary))] focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/20 disabled:cursor-not-allowed disabled:opacity-70";
-
-const ADMIN_PRODUCT_FORM_MEDIUM_CONTROL_CLASS =
-  "admin-product-form-control w-full rounded-xl border border-[var(--admin-field-border,var(--theme-border))] bg-[var(--admin-field-bg,var(--theme-surface))] px-3 py-2.5 text-sm text-foreground shadow-sm outline-none transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground focus-visible:border-[var(--admin-field-focus,var(--theme-primary))] focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/20 disabled:cursor-not-allowed disabled:opacity-70";
-
-const imageAltBaseName = (name?: string) => (name || "").trim() || "商品";
-const defaultCoverImageAlt = (name?: string) => `${imageAltBaseName(name)} 封面图`;
-const defaultGalleryImageAlt = (name: string | undefined, index: number) => `${imageAltBaseName(name)} 详情图 ${index + 1}`;
 
 export default function AdminProductForm() {
   const { tText } = useAdminT();
@@ -83,13 +74,8 @@ export default function AdminProductForm() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
-  const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [uploadingVariantImageIndex, setUploadingVariantImageIndex] = useState<number | null>(null);
-  const [variantUploadProgress, setVariantUploadProgress] = useState<number | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [showDefaultSkuAdvanced, setShowDefaultSkuAdvanced] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProductFormPayloadSlice>({
     name: "",
     price: "",
     original_price: "",
@@ -123,6 +109,18 @@ export default function AdminProductForm() {
       { title: DEFAULT_VARIANT_TITLE, sku_code: "", price: "", stock: "", sort_order: 0, is_default: true },
     ] as AdminVariantForm[],
   });
+  const {
+    uploadingCover,
+    uploadingGallery,
+    uploadingVariantImageIndex,
+    variantUploadProgress,
+    uploadProgress,
+    uploadImageFile,
+    handleImageUpload,
+    handleVariantImageUpload,
+    handleVideoUpload,
+  } = useProductMediaUploads({ setForm, tText });
+  const { updateSpecGroups, convertToMatrixMode } = useProductSkuMatrix({ setForm });
 
   const categoriesQuery = useQuery({
     queryKey: adminQueryKeys.categories(),
@@ -266,226 +264,6 @@ export default function AdminProductForm() {
     toast.error(toastErrorMessage(productQuery.error, "加载商品信息失败"));
   }, [productQuery.error, productQuery.isError]);
 
-  const validateImageBeforeUpload = (file: File) => {
-    const type = file.type.toLowerCase();
-    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
-    if (!allowed.includes(type)) {
-      throw new Error("仅支持 JPG、PNG、WebP 图片");
-    }
-    if (file.size > 15 * 1024 * 1024) {
-      throw new Error("图片大小不能超过 15MB");
-    }
-    if (type === "image/gif") {
-      toast.warning(tText("GIF 上传后可能转为静态图"));
-    }
-  };
-
-  const uploadImageFile = async (file: File, field: "cover" | "gallery") => {
-    if (field === "cover" && uploadingCover) return;
-    if (field === "gallery" && uploadingGallery) return;
-    try {
-      validateImageBeforeUpload(file);
-      if (field === "cover") setUploadingCover(true);
-      else setUploadingGallery(true);
-      setUploadProgress(0);
-      validateUploadFile(file, "product");
-      const res = await uploadService.uploadSingleWithProgress(file, {
-        mode: "product",
-        timeoutMs: 45_000,
-        onProgress: (percent) => setUploadProgress(percent),
-      });
-      const url = res.url || "";
-      if (!url) {
-        toast.error(tText("服务器未返回图片地址，请检查存储配置或稍后重试"));
-        return;
-      }
-      if (field === "cover") {
-        setForm((f) => ({
-          ...f,
-          cover_image: url,
-          cover_image_alt: f.cover_image_alt || defaultCoverImageAlt(f.name),
-        }));
-      } else {
-        setForm((f) => ({
-          ...f,
-          images: [...f.images, url],
-          image_alts: [...f.image_alts, defaultGalleryImageAlt(f.name, f.images.length)],
-        }));
-      }
-      toast.success(tText("图片已上传"));
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "图片上传失败"));
-    } finally {
-      setUploadProgress(null);
-      setUploadingCover(false);
-      setUploadingGallery(false);
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "cover" | "gallery") => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    await uploadImageFile(file, field);
-  };
-
-  const uploadVariantImageFile = async (file: File, variantIndex: number) => {
-    if (uploadingVariantImageIndex !== null) return;
-    try {
-      validateImageBeforeUpload(file);
-      validateUploadFile(file, "product");
-      setUploadingVariantImageIndex(variantIndex);
-      setVariantUploadProgress(0);
-      const res = await uploadService.uploadSingleWithProgress(file, {
-        mode: "product",
-        timeoutMs: 45_000,
-        onProgress: (percent) => setVariantUploadProgress(percent),
-      });
-      const url = String(res.url || "").trim();
-      if (!url) {
-        toast.error(tText("服务器未返回图片地址，请检查存储配置或稍后重试"));
-        return;
-      }
-      setForm((f) => {
-        const nv = [...f.variants];
-        nv[variantIndex] = { ...nv[variantIndex], image_url: url };
-        return { ...f, variants: nv };
-      });
-      toast.success(tText("SKU 图片已上传"));
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "SKU 图片上传失败"));
-    } finally {
-      setUploadingVariantImageIndex(null);
-      setVariantUploadProgress(null);
-    }
-  };
-
-  const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    await uploadVariantImageFile(file, variantIndex);
-  };
-
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    const allowed = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"];
-    if (!allowed.includes(file.type)) {
-      toast.error(tText("视频仅支持 MP4、WebM、MOV 格式"));
-      return;
-    }
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error(tText("视频大小不能超过 50MB"));
-      return;
-    }
-    try {
-      const res = await uploadService.uploadSingle(file, { mode: "video" });
-      const url = res.url || "";
-      if (!url) {
-        toast.error(tText("服务器未返回视频地址，请检查存储配置或稍后重试"));
-        return;
-      }
-      setForm((f) => ({ ...f, video_url: url }));
-      toast.success(tText("视频已上传"));
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "视频上传失败"));
-    }
-  };
-
-  const regenerateSkuMatrix = (nextGroups: AdminSpecGroup[]) => {
-    const combos = cartesianSpecValues(nextGroups);
-    if (!combos.length) {
-      setForm((f) => ({ ...f, spec_groups: nextGroups }));
-      return;
-    }
-    if (combos.length > MAX_SKU_MATRIX_SIZE) {
-      toast.error(`SKU 组合不能超过 ${MAX_SKU_MATRIX_SIZE} 个`);
-      return;
-    }
-    setForm((f) => {
-      const existingByKey = new Map(
-        f.variants
-          .filter((variant) => (variant.spec_value_ids ?? []).length > 0)
-          .map((variant) => [specComboKey(variant.spec_value_ids ?? []), variant]),
-      );
-      const nextVariants = combos.map((combo, index) => {
-        const ids = combo.map((item) => item.value.id || "").filter(Boolean);
-        const title = combo.map((item) => item.value.value.trim()).join(" / ");
-        const old = existingByKey.get(specComboKey(ids));
-        return {
-          id: old?.id,
-          title,
-          sku_code: old?.sku_code || "",
-          price: old?.price || f.price || "0",
-          original_price: old?.original_price || "",
-          cost_price: old?.cost_price || "",
-          stock: old?.stock || "0",
-          stock_warning_threshold:
-            old?.stock_warning_threshold || (index === 0 ? f.stock_warning_threshold || "5" : "5"),
-          stock_lower_limit: old?.stock_lower_limit || (index === 0 ? f.stock_lower_limit || "" : ""),
-          stock_upper_limit: old?.stock_upper_limit || (index === 0 ? f.stock_upper_limit || "" : ""),
-          barcode: old?.barcode || "",
-          image_url: old?.image_url || "",
-          weight: old?.weight || "",
-          enabled: old?.enabled !== false,
-          sort_order: index,
-          is_default: old?.is_default || index === 0,
-          spec_value_ids: ids,
-        };
-      });
-      if (!nextVariants.some((variant) => variant.is_default) && nextVariants[0]) {
-        nextVariants[0].is_default = true;
-      }
-      let seenDefault = false;
-      return {
-        ...f,
-        spec_groups: nextGroups,
-        variants: nextVariants.map((variant) => {
-          if (variant.is_default && !seenDefault) {
-            seenDefault = true;
-            return variant;
-          }
-          return { ...variant, is_default: false };
-        }),
-      };
-    });
-  };
-
-  const updateSpecGroups = (updater: (groups: AdminSpecGroup[]) => AdminSpecGroup[]) => {
-    setForm((f) => {
-      const next = updater(f.spec_groups);
-      window.setTimeout(() => regenerateSkuMatrix(next), 0);
-      return { ...f, spec_groups: next };
-    });
-  };
-
-  const convertToMatrixMode = () => {
-    const firstVariant = form.variants[0];
-    const valueId = tempId();
-    const group: AdminSpecGroup = {
-      id: tempId(),
-      name: "规格",
-      sort_order: 0,
-      values: [{ id: valueId, value: firstVariant?.title || "默认规格", image_url: "", sort_order: 0 }],
-    };
-    setForm((f) => ({
-      ...f,
-      spec_groups: [group],
-      variants: f.variants.slice(0, 1).map((variant) => ({
-        ...variant,
-        title: variant.title || "默认规格",
-        spec_value_ids: [valueId],
-        enabled: variant.enabled !== false,
-        is_default: true,
-        stock_warning_threshold: variant.stock_warning_threshold || f.stock_warning_threshold || "5",
-        stock_lower_limit: variant.stock_lower_limit || f.stock_lower_limit || "",
-        stock_upper_limit: variant.stock_upper_limit || f.stock_upper_limit || "",
-      })),
-    }));
-  };
-
   const handleSave = async (publish = false) => {
     if (saving || deleting) return;
     if (uploadingCover || uploadingGallery || uploadingVariantImageIndex !== null) {
@@ -496,95 +274,8 @@ export default function AdminProductForm() {
     if (!form.variants.length) { toast.error(tText("至少保留一条规格")); return; }
     setSaving(true);
     try {
-      const opNum = parseFloat(form.original_price);
-      const costNum = parseFloat(form.cost_price);
-      const scNum = parseInt(form.sales_count, 10);
-      const mainPrice = parseFloat(form.price) || 0;
-      const mainStock = parseInt(form.stock, 10) || 0;
-      const mainStockWarningThreshold = form.stock_warning_threshold
-        ? parseInt(form.stock_warning_threshold, 10) || 0
-        : 5;
-      const mainStockLowerLimit = form.stock_lower_limit ? parseInt(form.stock_lower_limit, 10) || 0 : null;
-      const mainStockUpperLimit = form.stock_upper_limit ? parseInt(form.stock_upper_limit, 10) || 0 : null;
-      const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
-      const variantsPayload = form.variants.map((v, i) => ({
-        id: v.id,
-        title: (v.title || (isSingleDefaultSku && v.is_default ? DEFAULT_VARIANT_TITLE : "")).trim(),
-        sku_code: v.sku_code.trim() || null,
-        price: parseFloat(v.price) || 0,
-        original_price: v.original_price ? parseFloat(v.original_price) : null,
-        cost_price: v.cost_price ? parseFloat(v.cost_price) : null,
-        stock: parseInt(v.stock, 10) || 0,
-        stock_warning_threshold: v.stock_warning_threshold ? parseInt(v.stock_warning_threshold, 10) || 0 : 5,
-        stock_lower_limit: v.stock_lower_limit ? parseInt(v.stock_lower_limit, 10) || 0 : null,
-        stock_upper_limit: v.stock_upper_limit ? parseInt(v.stock_upper_limit, 10) || 0 : null,
-        barcode: v.barcode?.trim() || null,
-        image_url: v.image_url?.trim() || null,
-        weight: v.weight ? parseFloat(v.weight) : null,
-        enabled: v.enabled !== false,
-        sort_order: v.sort_order ?? i,
-        is_default: v.is_default,
-        spec_value_ids: v.spec_value_ids ?? [],
-      }));
-      const defIdx = variantsPayload.findIndex((x) => x.is_default);
-      if (defIdx >= 0) {
-        variantsPayload[defIdx] = {
-          ...variantsPayload[defIdx],
-          price: mainPrice,
-          original_price: form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
-          cost_price: form.cost_price === "" || !Number.isFinite(costNum) ? variantsPayload[defIdx].cost_price : costNum,
-          stock: isSingleDefaultSku ? mainStock : variantsPayload[defIdx].stock,
-          stock_warning_threshold: mainStockWarningThreshold,
-          stock_lower_limit: mainStockLowerLimit,
-          stock_upper_limit: mainStockUpperLimit,
-        };
-      }
-      const complianceType = (form.compliance_type || "normal").trim();
-      const shouldNoindex = form.is_age_restricted || complianceType !== "normal";
-      const payload: AdminProductUpsertPayload = {
-        name: form.name.trim(),
-        price: mainPrice,
-        stock_warning_threshold: mainStockWarningThreshold,
-        stock_lower_limit: mainStockLowerLimit,
-        stock_upper_limit: mainStockUpperLimit,
-        original_price:
-          form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
-        sales_count: Number.isFinite(scNum) ? scNum : 0,
-        category_id: form.category_id || "",
-        sort_order: parseInt(form.sort_order, 10) || 0,
-        description: form.description,
-        cover_image: form.cover_image,
-        cover_image_alt: form.cover_image_alt.trim(),
-        video_url: form.video_url.trim(),
-        images: form.images,
-        image_alts: form.images.map((_, index) => (form.image_alts[index] || "").trim()),
-        status: publish ? "active" : form.status,
-        is_hot: form.is_hot,
-        is_new: form.is_new,
-        isNewArrival: form.is_new,
-        is_recommended: form.is_recommended,
-        is_age_restricted: form.is_age_restricted,
-        minimum_age: form.minimum_age ? Number(form.minimum_age) : null,
-        compliance_type: complianceType,
-        region_notice: form.region_notice?.trim() || null,
-        compliance_notice: form.compliance_notice?.trim() || null,
-        allow_index: shouldNoindex ? false : form.allow_index,
-        spec_groups: form.spec_groups.map((group, gi) => ({
-          id: group.id,
-          name: group.name,
-          sort_order: group.sort_order ?? gi,
-          values: group.values.map((value, vi) => ({
-            id: value.id,
-            value: value.value,
-            image_url: value.image_url || null,
-            sort_order: value.sort_order ?? vi,
-          })),
-        })),
-        variants: variantsPayload,
-        tag_ids: form.tag_ids,
-      };
+      const payload = buildAdminProductUpsertPayload(form, { publish, includeStock: isNew });
       if (isNew) {
-        payload.stock = mainStock;
         await createProduct(payload);
         toast.success(tText("商品创建成功"));
       } else {

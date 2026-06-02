@@ -5,7 +5,7 @@ set -euo pipefail
 # 可通过环境变量覆盖：
 # - HEALTHCHECK_URLS：以空格分隔的一组 URL
 
-HEALTHCHECK_URLS=${HEALTHCHECK_URLS:-"https://damatong.net/ https://damatong.net/zh https://damatong.net/en https://console.damatong.net/admin/login"}
+HEALTHCHECK_URLS=${HEALTHCHECK_URLS:-"https://damatong.net/ https://console.damatong.net/admin/login"}
 
 echo "[healthcheck] 开始检查..."
 for url in ${HEALTHCHECK_URLS}; do

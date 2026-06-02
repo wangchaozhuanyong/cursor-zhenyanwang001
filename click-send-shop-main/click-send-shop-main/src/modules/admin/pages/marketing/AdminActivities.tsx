@@ -10,7 +10,7 @@ import * as activityService from "@/services/admin/activityService";
 import type { ActivityStatus, ActivityType, MarketingActivity } from "@/types/activity";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { formatAdminDateTime } from "@/utils/formatDateTime";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
@@ -168,7 +168,7 @@ export default function AdminActivities() {
       </div>
       <div className="space-y-2">
         <AdminTableMobileCardField label={tText("活动时间")}>
-          <span className="text-xs text-muted-foreground">{formatAdminDateTime(activity.start_at)} — {formatAdminDateTime(activity.end_at)}</span>
+          <span className="text-xs text-muted-foreground">{formatDateTime(activity.start_at)} — {formatDateTime(activity.end_at)}</span>
         </AdminTableMobileCardField>
         <AdminTableMobileCardField label={tText("商品/库存")}>
           <span className="text-xs">{tText("商品")} {activity.product_count || 0} · {tText("库存")} {activity.activity_stock_total || 0} · {tText("已售")} {activity.sold_count_total || 0}</span>
@@ -250,9 +250,9 @@ export default function AdminActivities() {
               <td className={adminTableCellClass("left")}>{labelActivityType(activity.type)}</td>
               <td className={adminTableCellClass("center", "text-xs")}>{activity.status_label ? tText(activity.status_label) : "-"}</td>
               <td className={adminTableCellClass("left", "whitespace-nowrap text-xs text-muted-foreground")}>
-                {formatAdminDateTime(activity.start_at)}
+                {formatDateTime(activity.start_at)}
                 <br />
-                {formatAdminDateTime(activity.end_at)}
+                {formatDateTime(activity.end_at)}
               </td>
               <td className={adminTableCellClass("right", "text-xs text-muted-foreground")}>
                 {tText("商品")} {activity.product_count || 0}

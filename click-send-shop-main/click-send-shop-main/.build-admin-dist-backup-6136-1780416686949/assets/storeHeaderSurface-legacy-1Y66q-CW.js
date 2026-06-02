@@ -1,0 +1,1 @@
+System.register([],function(r,e){return r("t",function(r){var e=r.headerStyle;return"dark"===e?"bg-[color-mix(in_srgb,var(--theme-primary)_88%,black)] text-[var(--theme-primary-foreground)] border-transparent shadow-[var(--store-header-shadow)]":"transparent"===e?"bg-transparent border-transparent":"store-glass-surface"}),{setters:[],execute:function(){}}});

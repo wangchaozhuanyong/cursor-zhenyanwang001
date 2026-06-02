@@ -28,14 +28,14 @@ export default function SiteSettingsLayout({
       {header}
 
       {/* Mobile tabs */}
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+      <div className="site-settings-mobile-tabs mb-4 flex flex-wrap gap-2 pb-1 lg:hidden">
         {SITE_SETTINGS_SECTIONS.map((s) => (
           <button
             key={s.id}
             type="button"
             onClick={() => onSectionChange(s.id)}
             className={cn(
-              "shrink-0 rounded-full border px-3 py-1.5 text-xs whitespace-nowrap",
+              "min-w-0 rounded-full border px-3 py-1.5 text-xs",
               s.id === activeSectionId
                 ? "border-gold bg-theme-price/15 font-medium text-foreground"
                 : "border-border text-muted-foreground",

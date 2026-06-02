@@ -58,7 +58,6 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
         layout="home"
         title={tText("中秋9.5折")}
         amount="95%"
-        amountPrefix=""
         minSpendText="满 RM 100 可用"
         expireText="2027-05-09"
         scopeText="适用范围：全场商品"

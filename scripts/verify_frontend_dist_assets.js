@@ -39,13 +39,14 @@ if (!fs.existsSync(indexPath)) {
 const files = walk(distDir).filter((p) => /\.(html|js|css)$/i.test(p));
 const references = new Set();
 const assetRefRe = /(?:^|["'(`\s])\/?(assets\/[^"'`\s)]+)/g;
+const assetFileRefRe = /\.(?:css|js|mjs|map|png|jpe?g|webp|avif|gif|svg|ico|json|txt|woff2?|ttf|otf|eot|wasm|mp4|webm|mp3|wav|ogg)$/i;
 
 for (const file of files) {
   const text = fs.readFileSync(file, 'utf8');
   let match;
   while ((match = assetRefRe.exec(text))) {
     const ref = match[1].replace(/[?#].*$/, '');
-    if (ref && !ref.endsWith('/')) references.add(ref);
+    if (ref && !ref.endsWith('/') && assetFileRefRe.test(ref)) references.add(ref);
   }
 }
 

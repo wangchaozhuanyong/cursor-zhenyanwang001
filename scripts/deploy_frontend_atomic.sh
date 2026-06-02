@@ -11,25 +11,27 @@ export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 sync_static_preserve_assets() {
   local src_dir="$1"
   local dest_dir="$2"
-  local backup=""
-
-  if [ -d "$dest_dir/assets" ]; then
-    backup="$(mktemp -d)"
-    cp -a "$dest_dir/assets/." "$backup/" 2>/dev/null || true
-  fi
 
   mkdir -p "$dest_dir"
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "${src_dir%/}/" "${dest_dir%/}/"
+    if [ -d "${src_dir%/}/assets" ]; then
+      mkdir -p "${dest_dir%/}/assets"
+      rsync -a "${src_dir%/}/assets/" "${dest_dir%/}/assets/"
+    fi
+    for file in "${src_dir%/}"/workbox-*.js; do
+      [ -f "$file" ] && cp -a "$file" "${dest_dir%/}/"
+    done
+    rsync -a --delete --exclude='/assets/' --exclude='/workbox-*.js' "${src_dir%/}/" "${dest_dir%/}/"
   else
-    rm -rf "${dest_dir:?}/"*
+    if [ -d "${src_dir%/}/assets" ]; then
+      mkdir -p "${dest_dir%/}/assets"
+      cp -a "${src_dir%/}/assets/." "${dest_dir%/}/assets/"
+    fi
+    for file in "${src_dir%/}"/workbox-*.js; do
+      [ -f "$file" ] && cp -a "$file" "${dest_dir%/}/"
+    done
+    find "${dest_dir%/}" -mindepth 1 -maxdepth 1 ! -name assets ! -name 'workbox-*.js' -exec rm -rf {} +
     cp -a "${src_dir%/}/." "$dest_dir/"
-  fi
-
-  if [ -n "$backup" ] && [ -d "$backup" ]; then
-    mkdir -p "$dest_dir/assets"
-    cp -an "$backup/." "$dest_dir/assets/" 2>/dev/null || true
-    rm -rf "$backup"
   fi
 }
 

@@ -1,16 +1,21 @@
 export default function SilkPageLoader() {
   return (
-    <div className="space-y-4 p-[var(--store-page-x)]" aria-label="页面加载中">
-      <div className="skeleton-base skeleton-shimmer h-40 w-full theme-rounded" />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="space-y-2">
-            <div className="skeleton-base skeleton-shimmer aspect-square w-full theme-rounded" />
-            <div className="skeleton-base skeleton-shimmer h-3 w-4/5" />
-            <div className="skeleton-base skeleton-shimmer h-5 w-2/5" />
-          </div>
-        ))}
-      </div>
+    <div className="preboot-shell" aria-busy="true" aria-label="页面加载中">
+      <header className="preboot-topbar">
+        <div className="preboot-topbar-inner">
+          <div className="preboot-logo preboot-skeleton" />
+          <div className="preboot-search preboot-skeleton" />
+          <div className="preboot-action preboot-skeleton" />
+        </div>
+      </header>
+      <main className="preboot-main">
+        <section className="preboot-hero preboot-skeleton" />
+        <div className="preboot-grid">
+          {[0, 1, 2, 3].map((index) => (
+            <div key={index} className="preboot-card preboot-skeleton" />
+          ))}
+        </div>
+      </main>
     </div>
   );
 }

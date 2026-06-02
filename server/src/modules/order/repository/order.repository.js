@@ -173,11 +173,6 @@ async function selectFlashSaleActivityItemsRead(q, productIds) {
   return rows;
 }
 
-/** @deprecated ?? selectFlashSaleActivityItemsForUpdate */
-async function selectActiveActivityItemsForUpdate(q, productIds) {
-  return selectFlashSaleActivityItemsForUpdate(q, productIds);
-}
-
 async function loadActivityScopes(q, activityIds) {
   if (!activityIds.length) return new Map();
   const [rows] = await q.query(
@@ -1403,7 +1398,6 @@ module.exports = {
   selectDefaultVariantsForProducts,
   selectDefaultVariantsForProductsRead,
   selectVariantSpecValuesByVariantIds,
-  selectActiveActivityItemsForUpdate,
   selectFlashSaleActivityItemsForUpdate,
   selectFlashSaleActivityItemsRead,
   selectActiveFullReductionActivitiesForUpdate,

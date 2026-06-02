@@ -52,18 +52,15 @@ npm ci
 npm run build
 
 echo "==> Syncing frontend dist"
-ASSET_BACKUP=""
-if [[ -d "$PUBLIC_FRONTEND/assets" ]]; then
-  ASSET_BACKUP="$(mktemp -d)"
-  cp -a "$PUBLIC_FRONTEND/assets/." "$ASSET_BACKUP/" 2>/dev/null || true
-fi
 mkdir -p "$PUBLIC_FRONTEND"
-rsync -a --delete "$FRONTEND_DIR/dist/" "$PUBLIC_FRONTEND/"
-if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
+if [[ -d "$FRONTEND_DIR/dist/assets" ]]; then
   mkdir -p "$PUBLIC_FRONTEND/assets"
-  cp -an "$ASSET_BACKUP/." "$PUBLIC_FRONTEND/assets/" 2>/dev/null || true
-  rm -rf "$ASSET_BACKUP"
+  rsync -a "$FRONTEND_DIR/dist/assets/" "$PUBLIC_FRONTEND/assets/"
 fi
+for file in "$FRONTEND_DIR"/dist/workbox-*.js; do
+  [[ -f "$file" ]] && cp -a "$file" "$PUBLIC_FRONTEND/"
+done
+rsync -a --delete --exclude='/assets/' --exclude='/workbox-*.js' "$FRONTEND_DIR/dist/" "$PUBLIC_FRONTEND/"
 node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$FRONTEND_DIR/dist"
 node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND"
 

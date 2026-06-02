@@ -116,7 +116,7 @@ export default function AdminShipping() {
       )}
       toolbar={(
         <PermissionGate permission="shipping.manage">
-          <button onClick={() => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">
+          <button type="button" onClick={() => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">
             <Plus size={16} /><Tx>新建模板</Tx>
           </button>
         </PermissionGate>
@@ -166,7 +166,7 @@ export default function AdminShipping() {
             </div>
             <PermissionGate permission="shipping.manage">
               <div className="mt-4 flex gap-2">
-                <button onClick={() => openEdit(t)} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-secondary">
+                <button type="button" onClick={() => openEdit(t)} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-secondary">
                   <Edit2 size={12} /><Tx> 编辑
                 </Tx></button>
                 <button
@@ -217,8 +217,8 @@ export default function AdminShipping() {
         size="sm"
       >
         <div className="space-y-4">
-          <input placeholder={tText("模板名称")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-          <input placeholder={tText("适用区域（如：雪兰莪、吉隆坡）")} value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <input aria-label={tText("模板名称")} placeholder={tText("模板名称")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <input aria-label={tText("适用区域")} placeholder={tText("适用区域（如：雪兰莪、吉隆坡）")} value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
           <div className="grid grid-cols-3 gap-3">
             <label className="block"><span className="text-xs text-muted-foreground"><Tx>基础运费</Tx></span><input type="number" value={form.baseFee} onChange={(e) => setForm({ ...form, baseFee: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
             <label className="block"><span className="text-xs text-muted-foreground"><Tx>包邮门槛</Tx></span><input type="number" value={form.freeAbove} onChange={(e) => setForm({ ...form, freeAbove: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>

@@ -486,7 +486,7 @@ async function selectCancelledOrdersWithoutStockRestore() {
      FROM orders o
      LEFT JOIN inventory_stock_records r
        ON (${eq('r.source_no', 'o.order_no')} OR ${eq('r.order_no_snapshot', 'o.order_no')})
-      AND r.change_type IN ('restore','cancel_restore','order_cancel','refund')
+      AND r.change_type IN ('restore','cancel_restore','order_cancel','refund','order_release')
      WHERE o.status = 'cancelled'
        AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
      GROUP BY o.id, o.order_no, o.updated_at
@@ -519,8 +519,8 @@ async function selectUserStatsMismatches() {
     `SELECT u.id AS user_id, u.phone, u.nickname,
             COALESCE(us.total_spent, 0) AS stat_total_spent,
             COALESCE(us.valid_order_count, 0) AS stat_valid_order_count,
-            COALESCE(real.total_spent, 0) AS real_total_spent,
-            COALESCE(real.valid_order_count, 0) AS real_valid_order_count
+            COALESCE(real_stats.total_spent, 0) AS real_total_spent,
+            COALESCE(real_stats.valid_order_count, 0) AS real_valid_order_count
      FROM users u
      LEFT JOIN user_statistics us ON ${eq('us.user_id', 'u.id')}
      LEFT JOIN (
@@ -531,11 +531,11 @@ async function selectUserStatsMismatches() {
        WHERE payment_status IN ('paid','partially_refunded','refunded')
          AND status <> 'cancelled'
        GROUP BY user_id
-     ) real ON ${eq('real.user_id', 'u.id')}
+     ) real_stats ON ${eq('real_stats.user_id', 'u.id')}
      WHERE u.deleted_at IS NULL
        AND (
-         ABS(COALESCE(us.total_spent, 0) - COALESCE(real.total_spent, 0)) > 0.01
-         OR COALESCE(us.valid_order_count, 0) <> COALESCE(real.valid_order_count, 0)
+         ABS(COALESCE(us.total_spent, 0) - COALESCE(real_stats.total_spent, 0)) > 0.01
+         OR COALESCE(us.valid_order_count, 0) <> COALESCE(real_stats.valid_order_count, 0)
        )`,
   );
   return rows;
@@ -613,15 +613,36 @@ async function selectPaidOrdersMissingPaymentSuccessEvents() {
     : 'COALESCE(o.total_amount, 0)';
   const [rows] = await db.query(
     `SELECT o.id, o.order_no, o.user_id, o.payment_status, o.status,
-            ${amountExpr} AS amount
+            ${amountExpr} AS amount,
+            submit.keyword AS expected_keyword,
+            success.id AS payment_success_event_id,
+            success.keyword AS payment_success_keyword
      FROM orders o
+     LEFT JOIN (
+       SELECT order_id,
+              SUBSTRING_INDEX(
+                GROUP_CONCAT(NULLIF(keyword, '') ORDER BY created_at DESC SEPARATOR '\n'),
+                '\n',
+                1
+              ) AS keyword
+       FROM analytics_events
+       WHERE event_type = 'order_submit'
+         AND NULLIF(keyword, '') IS NOT NULL
+       GROUP BY order_id
+     ) submit ON ${eq('submit.order_id', 'o.id')}
+     LEFT JOIN (
+       SELECT order_id,
+              MIN(id) AS id,
+              MAX(NULLIF(keyword, '')) AS keyword
+       FROM analytics_events
+       WHERE event_type = 'payment_success'
+       GROUP BY order_id
+     ) success ON ${eq('success.order_id', 'o.id')}
      WHERE o.payment_status IN ('paid','partially_refunded','refunded')
        AND o.status <> 'cancelled'
-       AND NOT EXISTS (
-         SELECT 1
-         FROM analytics_events ae
-         WHERE ${eq('ae.order_id', 'o.id')}
-           AND ae.event_type = 'payment_success'
+       AND (
+         success.id IS NULL
+         OR (NULLIF(submit.keyword, '') IS NOT NULL AND NULLIF(success.keyword, '') IS NULL)
        )`,
   );
   return rows;
@@ -705,7 +726,24 @@ async function backfillPaymentSuccessAnalyticsEvent(orderId) {
     ? 'COALESCE(NULLIF(paid_amount, 0), total_amount, 0)'
     : 'COALESCE(total_amount, 0)';
   const [[order]] = await db.query(
-    `SELECT id, order_no, user_id, payment_status, status, ${amountExpr} AS amount
+    `SELECT id, order_no, user_id, payment_status, status, ${amountExpr} AS amount,
+            (
+              SELECT ae.keyword
+              FROM analytics_events ae
+              WHERE ae.order_id = orders.id
+                AND ae.event_type = 'order_submit'
+                AND NULLIF(ae.keyword, '') IS NOT NULL
+              ORDER BY ae.created_at DESC
+              LIMIT 1
+            ) AS expected_keyword,
+            (
+              SELECT ae.id
+              FROM analytics_events ae
+              WHERE ae.order_id = orders.id
+                AND ae.event_type = 'payment_success'
+              ORDER BY ae.created_at ASC
+              LIMIT 1
+            ) AS payment_success_event_id
      FROM orders
      WHERE id = ?`,
     [orderId],
@@ -716,16 +754,54 @@ async function backfillPaymentSuccessAnalyticsEvent(orderId) {
   }
 
   const dedupeKey = `payment_success:${order.id}`.slice(0, 128);
+  const keyword = String(order.expected_keyword || '').trim();
+  if (order.payment_success_event_id) {
+    await db.query(
+      `UPDATE analytics_events
+       SET keyword = CASE
+             WHEN NULLIF(keyword, '') IS NULL AND ? <> '' THEN ?
+             ELSE keyword
+           END,
+           amount = COALESCE(amount, ?),
+           quantity = COALESCE(quantity, 1),
+           module = CASE WHEN NULLIF(module, '') IS NULL THEN 'order' ELSE module END,
+           page = CASE WHEN NULLIF(page, '') IS NULL THEN '/checkout' ELSE page END,
+           device = CASE WHEN NULLIF(device, '') IS NULL THEN 'server' ELSE device END,
+           user_agent = CASE WHEN NULLIF(user_agent, '') IS NULL THEN 'data-consistency-monitor' ELSE user_agent END
+       WHERE id = ?`,
+      [
+        keyword,
+        keyword,
+        Number(order.amount || 0),
+        order.payment_success_event_id,
+      ],
+    );
+    return {
+      orderId,
+      orderNo: order.order_no,
+      dedupeKey,
+      keyword,
+      updatedExistingEventId: order.payment_success_event_id,
+    };
+  }
+
   await db.query(
     `INSERT INTO analytics_events
       (user_id, anonymous_id, session_id, dedupe_key, event_type, module, page, path, title,
-       order_id, amount, quantity, device, user_agent)
+       keyword, order_id, amount, quantity, device, user_agent)
      VALUES (?, '', '', ?, 'payment_success', 'order', '/checkout', '/checkout', 'Payment success',
-       ?, ?, 1, 'server', 'data-consistency-monitor')
-     ON DUPLICATE KEY UPDATE id = id`,
+       ?, ?, ?, 1, 'server', 'data-consistency-monitor')
+     ON DUPLICATE KEY UPDATE
+       keyword = CASE
+         WHEN NULLIF(keyword, '') IS NULL AND VALUES(keyword) <> '' THEN VALUES(keyword)
+         ELSE keyword
+       END,
+       amount = COALESCE(amount, VALUES(amount)),
+       quantity = COALESCE(quantity, VALUES(quantity))`,
     [
       order.user_id || null,
       dedupeKey,
+      keyword,
       order.id,
       Number(order.amount || 0),
     ],
@@ -734,6 +810,7 @@ async function backfillPaymentSuccessAnalyticsEvent(orderId) {
     orderId,
     orderNo: order.order_no,
     dedupeKey,
+    keyword,
     insertedOrAlreadyExists: true,
   };
 }

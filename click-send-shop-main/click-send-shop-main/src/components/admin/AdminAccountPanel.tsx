@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Fingerprint, Lock, Mail, Phone, User } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons";
@@ -23,7 +23,7 @@ interface AdminAccountPanelProps {
 export default function AdminAccountPanel({ initialTab = "profile", embedded = false }: AdminAccountPanelProps) {
   const { locale } = useAdminTOptional();
   const isEn = locale === "en";
-  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const L = useCallback((zh: string, en: string) => (isEn ? en : zh), [isEn]);
   const [activeTab, setActiveTab] = useState<AdminAccountTab>(initialTab);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -47,7 +47,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
       })
       .catch((e) => toast.error(toastErrorMessage(e, L("加载账号信息失败", "Failed to load account information"))))
       .finally(() => setLoading(false));
-  }, []);
+  }, [L]);
 
   const handleSaveProfile = async () => {
     setSaving(true);

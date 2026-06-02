@@ -55,7 +55,6 @@ export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
   if (type === "percentage") {
     return {
       title: c.title,
-      amountPrefix: "",
       amount: `${c.value}%`,
       minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
       expireText: formatCouponExpireText(c.end_date),
@@ -66,7 +65,6 @@ export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
   if (type === "shipping" && c.value <= 0) {
     return {
       title: c.title,
-      amountPrefix: "",
       amount: "免运",
       minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
       expireText: formatCouponExpireText(c.end_date),
@@ -76,7 +74,6 @@ export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
   }
   return {
     title: c.title,
-    amountPrefix: "",
     amount: `RM ${c.value}`,
     minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
     expireText: formatCouponExpireText(c.end_date),
@@ -92,7 +89,6 @@ export function userCouponToPremiumDisplay(uc: UserCoupon) {
 
   return {
     title: c.title,
-    amountPrefix: "",
     amount: formatCouponLeftAmount(c),
     minSpendText,
     scopeText,

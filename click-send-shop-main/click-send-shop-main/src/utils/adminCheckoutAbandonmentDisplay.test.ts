@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CheckoutAbandonment } from "@/types/order";
 import {
-  formatCheckoutAbandonmentDisplayLabel,
   formatCheckoutAbandonmentNumber,
   formatMergedSnapshotsLabel,
   getCheckoutAbandonmentActionLabel,
@@ -60,18 +59,6 @@ describe("adminCheckoutAbandonmentDisplay", () => {
         order_no: "",
       }),
     ).toBe("#12345678");
-  });
-
-  it("formats combined display label for legacy callers", () => {
-    expect(formatCheckoutAbandonmentDisplayLabel(baseRow)).toBe("订单 #NO1001");
-    expect(
-      formatCheckoutAbandonmentDisplayLabel({
-        ...baseRow,
-        display_type: "checkout",
-        display_id: "12345678",
-        order_no: "",
-      }),
-    ).toBe("快照 #12345678");
   });
 
   it("keeps items_preview short for table rendering", () => {

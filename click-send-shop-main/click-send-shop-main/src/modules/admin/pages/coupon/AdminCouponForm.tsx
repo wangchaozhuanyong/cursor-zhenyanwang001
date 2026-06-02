@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -39,7 +39,7 @@ const PAGE_SIZE = 50;
 export default function AdminCouponForm() {
   const { locale } = useAdminTOptional();
   const isEn = locale === "en";
-  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const L = useCallback((zh: string, en: string) => (isEn ? en : zh), [isEn]);
 
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();

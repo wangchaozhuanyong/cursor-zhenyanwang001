@@ -1,13 +1,14 @@
 /**
  * UI overlap audit (extended).
  * Usage: node scripts/audit-ui-overlap.mjs
- * Env: BASE_URL, API_BASE_URL, VIEWPORTS (e.g. "390x844,375x667"), COUPON_STYLES_ALL=1, SKIP_AUTH=1, SKIP_ADMIN=1
+ * Env: BASE_URL, API_BASE_URL, VIEWPORTS (e.g. "390x844,375x667"), COUPON_STYLES_ALL=1, SKIP_AUTH=1, SKIP_ADMIN=1, AUDIT_READ_ONLY=1
  */
 import { chromium } from "@playwright/test";
 
 let BASE = process.env.BASE_URL ? process.env.BASE_URL.replace(/\/$/, "") : "";
 let API = "";
 const FULL_AUDIT = process.argv.includes("--full") || process.env.AUDIT_FULL === "1";
+const READ_ONLY_AUDIT = process.argv.includes("--read-only") || process.env.AUDIT_READ_ONLY === "1";
 const NAV_TIMEOUT_MS = Number(process.env.AUDIT_NAV_TIMEOUT_MS || (FULL_AUDIT ? 25000 : 15000));
 const STABLE_WAIT_MS = Number(process.env.AUDIT_STABLE_WAIT_MS || (FULL_AUDIT ? 700 : 250));
 const SCROLL_WAIT_MS = Number(process.env.AUDIT_SCROLL_WAIT_MS || (FULL_AUDIT ? 400 : 150));
@@ -23,8 +24,8 @@ const COUPON_STYLES =
     : ["ticket"];
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin123456";
-const SKIP_AUTH = process.env.SKIP_AUTH === "1";
-const SKIP_ADMIN = process.env.SKIP_ADMIN === "1";
+const SKIP_AUTH = READ_ONLY_AUDIT || process.env.SKIP_AUTH === "1";
+const SKIP_ADMIN = READ_ONLY_AUDIT || process.env.SKIP_ADMIN === "1";
 
 const PUBLIC_ROUTES = [
   { path: "/", name: "首页" },
@@ -377,6 +378,17 @@ async function waitStable(page) {
   await page.waitForTimeout(STABLE_WAIT_MS);
 }
 
+async function configureReadOnlyContext(context) {
+  if (!READ_ONLY_AUDIT) return;
+  await context.route("**/api/**", (route) => {
+    const method = route.request().method().toUpperCase();
+    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+      return route.abort("blockedbyclient");
+    }
+    return route.continue();
+  });
+}
+
 async function scrollPage(page, mode) {
   await page.evaluate((scrollId) => {
     const max = Math.max(document.documentElement.scrollHeight - innerHeight, 0);
@@ -483,6 +495,7 @@ async function main() {
       viewport: { width: vp.width, height: vp.height },
       locale: "zh-CN",
     });
+    await configureReadOnlyContext(context);
 
     const page = await context.newPage();
     let userLoggedIn = false;
@@ -579,7 +592,7 @@ async function main() {
           });
         }
       }
-    } else if (adminApiOk) {
+    } else if (adminApiOk || READ_ONLY_AUDIT) {
       try {
         await page.goto(`${BASE}/admin/login`, { waitUntil: "domcontentloaded" });
         await waitStable(page);
@@ -608,6 +621,7 @@ async function main() {
 
   const summary = {
     base: BASE,
+    readOnly: READ_ONLY_AUDIT,
     viewports: VIEWPORTS.map((v) => v.label),
     couponStyles: COUPON_STYLES,
     auth: Boolean(userCreds),

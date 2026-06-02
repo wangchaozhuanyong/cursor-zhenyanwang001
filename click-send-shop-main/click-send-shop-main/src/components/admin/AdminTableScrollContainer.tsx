@@ -52,7 +52,7 @@ export function AdminTableScrollContainer({
 
   return (
     <div
-      className="admin-table-scroll-wrap relative"
+      className="admin-table-scroll-wrap relative min-w-0 max-w-full"
       data-scroll-left={canScrollLeft || undefined}
       data-scroll-right={canScrollRight || undefined}
     >
@@ -69,7 +69,7 @@ export function AdminTableScrollContainer({
       <div
         ref={scrollRef}
         className={cn(
-          "admin-table-scroll -mx-[var(--admin-mobile-page-x)] px-[var(--admin-mobile-page-x)] sm:mx-0 sm:px-0",
+          "admin-table-scroll -mx-[var(--admin-mobile-page-x)] w-auto max-w-none px-[var(--admin-mobile-page-x)] sm:mx-0 sm:w-full sm:max-w-full sm:px-0",
           "overflow-x-auto overscroll-x-contain touch-pan-x",
           className,
         )}

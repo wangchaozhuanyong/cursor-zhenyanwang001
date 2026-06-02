@@ -56,7 +56,7 @@ function applyThemePayload(
 export default function AdminThemeSettings() {
   const { locale, tText } = useAdminTOptional();
   const isEn = locale === "en";
-  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const L = useCallback((zh: string, en: string) => (isEn ? en : zh), [isEn]);
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [skins, setSkins] = useState<ThemeSkin[]>([]);
@@ -139,7 +139,7 @@ export default function AdminThemeSettings() {
       selectedSkinId: shouldPreserveSelectedSkin ? selectedSkinId : undefined,
     });
     hasAppliedServerThemeRef.current = true;
-  }, [themeQuery.data, themeQuery.isError, themeQuery.error, dirty, selectedSkinId]);
+  }, [themeQuery.data, themeQuery.isError, themeQuery.error, dirty, selectedSkinId, L]);
 
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {

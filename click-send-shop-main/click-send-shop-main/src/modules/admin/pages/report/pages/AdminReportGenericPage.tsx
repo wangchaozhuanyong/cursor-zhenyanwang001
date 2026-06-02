@@ -45,7 +45,7 @@ import {
   sanitizeReportSearchParams,
 } from "@/utils/reportFilters";
 import { exportProfitDailyCsv, exportReportCsv } from "@/services/admin/reportService";
-import { formatAdminDate, formatAdminDateTimeAuto } from "@/utils/formatDateTime";
+import { formatDate, formatDateTimeAuto } from "@/utils/formatDateTime";
 
 type Props = {
   config: ReportPageConfig;
@@ -92,7 +92,7 @@ export default function AdminReportGenericPage({
     (key: string, value: unknown) => {
       if (value === null || value === undefined || value === "") return "-";
       if (key === "month" && typeof value === "string") return value;
-      if (key === "date") return formatAdminDate(String(value));
+      if (key === "date") return formatDate(String(value));
       if (
         key.endsWith("_at")
         || key.endsWith("_date")
@@ -101,7 +101,7 @@ export default function AdminReportGenericPage({
         || key === "start_at"
         || key === "end_at"
       ) {
-        return formatAdminDateTimeAuto(value);
+        return formatDateTimeAuto(value);
       }
       return labelReportCell(key, value);
     },

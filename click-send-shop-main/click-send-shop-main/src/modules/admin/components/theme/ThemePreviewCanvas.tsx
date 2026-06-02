@@ -9,7 +9,7 @@ import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
 import { DEVICE_WIDTH } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
 import InvitePromoCard from "@/components/store/InvitePromoCard";
-import { getMemberCardClassName, THEME_MEMBER_CARD_MUTED } from "@/utils/themeVisuals";
+import { THEME_MEMBER_CARD_MUTED, THEME_MEMBER_CARD_SHELL } from "@/utils/themeVisuals";
 import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
@@ -30,7 +30,7 @@ function MobileProfilePreview({ config }: { config: ThemeConfig }) {
         <InvitePromoCard loggedIn inviteCount={0} rewardBalance={0} />
       </div>
       <div
-        className={`store-card rounded-xl p-3 ${getMemberCardClassName(config.memberCardStyle)}`}
+        className={`store-card rounded-xl p-3 ${THEME_MEMBER_CARD_SHELL}`}
         data-theme-member-card-style={config.memberCardStyle}
       >
         <p className="text-sm font-semibold"><Tx>会员卡 · 金卡会员</Tx></p>
@@ -102,4 +102,3 @@ export default function ThemePreviewCanvas({ config, mode, device, skinKey }: Pr
     </AnimatePresence>
   );
 }
-

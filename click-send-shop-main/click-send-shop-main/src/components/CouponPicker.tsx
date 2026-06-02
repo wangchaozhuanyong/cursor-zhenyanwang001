@@ -25,9 +25,9 @@ function useCouponHelpers(totalAmount: number, shippingFee: number) {
   };
   const isUsable = (c: CheckoutPickerCoupon) => c.usable !== false && totalAmount >= c.condition && (c.discountType !== "shipping" || shippingFee > 0);
   const getAmountParts = (c: CheckoutPickerCoupon) => {
-    if (c.discountType === "percentage") return { amountPrefix: "", amount: `${c.discount}%` };
-    if (c.discountType === "shipping" && c.discount <= 0) return { amountPrefix: "", amount: "免运" };
-    return { amountPrefix: "", amount: `RM ${c.discount}` };
+    if (c.discountType === "percentage") return `${c.discount}%`;
+    if (c.discountType === "shipping" && c.discount <= 0) return "免运";
+    return `RM ${c.discount}`;
   };
   const getMinSpendText = (c: CheckoutPickerCoupon) => {
     if (c.discountType === "shipping") return c.condition > 0 ? `满 RM ${c.condition} 包邮` : "无门槛运费券";
@@ -45,7 +45,7 @@ function CouponListBody(props: {
   onClose: () => void;
   getDiscountAmount: (c: CheckoutPickerCoupon) => number;
   isUsable: (c: CheckoutPickerCoupon) => boolean;
-  getAmountParts: (c: CheckoutPickerCoupon) => { amountPrefix: string; amount: string };
+  getAmountParts: (c: CheckoutPickerCoupon) => string;
   getMinSpendText: (c: CheckoutPickerCoupon) => string;
 }) {
   const { coupons, selectedCouponId, selected, totalAmount, onSelect, onClose, getDiscountAmount, isUsable, getAmountParts, getMinSpendText } = props;
@@ -66,14 +66,13 @@ function CouponListBody(props: {
       {coupons.map((coupon) => {
         const usable = isUsable(coupon);
         const isSelected = selectedCouponId === coupon.id;
-        const { amountPrefix, amount } = getAmountParts(coupon);
+        const amount = getAmountParts(coupon);
         return (
           <motion.div key={coupon.id} whileTap={usable ? { scale: 0.98 } : undefined} className="relative">
             <PremiumCouponCard
               colorScheme="invite"
               layout="compact"
               title={coupon.title}
-              amountPrefix={amountPrefix}
               amount={amount}
               minSpendText={getMinSpendText(coupon)}
               expireText={formatCouponExpireText(coupon.expire)}

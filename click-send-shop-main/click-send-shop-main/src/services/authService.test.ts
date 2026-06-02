@@ -47,6 +47,35 @@ describe("restoreSessionFromCookie", () => {
     expect(calls.some((url) => url.endsWith("/user/profile"))).toBe(true);
   });
 
+  test("reuses the same inflight session restore request", async () => {
+    localStorage.setItem("user_authenticated", "1");
+    let resolveRefresh!: (value: Response) => void;
+    const refreshGate = new Promise<Response>((resolve) => {
+      resolveRefresh = resolve;
+    });
+    const calls: string[] = [];
+
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.endsWith("/auth/refresh")) {
+        return refreshGate;
+      }
+      if (url.endsWith("/user/profile")) {
+        return Promise.resolve(jsonResponse({ code: 0, data: profilePayload }));
+      }
+      return Promise.resolve(jsonResponse({}, 404));
+    }));
+
+    const first = restoreSessionFromCookie();
+    const second = restoreSessionFromCookie();
+    expect(calls.filter((url) => url.endsWith("/auth/refresh"))).toHaveLength(1);
+
+    resolveRefresh(jsonResponse({ code: 0, data: { accessToken: "next-token" } }));
+    await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
+    expect(calls.filter((url) => url.endsWith("/user/profile"))).toHaveLength(1);
+  });
+
   test("clears login only when refresh and profile probe both fail", async () => {
     localStorage.setItem("user_authenticated", "1");
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {

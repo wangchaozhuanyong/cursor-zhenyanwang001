@@ -5,19 +5,18 @@ const MAX_JSON_CHARS = 8000;
 const MAX_OBJECT_ID_CHARS = 191;
 const FRONTEND_CHUNK_LOAD_ACTION_TYPE = 'frontend.chunk_load_failed';
 const FRONTEND_CHUNK_LOAD_OBJECT_TYPE = 'frontend_asset';
-const FRONTEND_CHUNK_LOAD_SUMMARY = '前端版本文件加载失败';
-const FRONTEND_CHUNK_LOAD_ERROR_MESSAGE = '前端版本文件加载失败，通常是浏览器缓存旧版本导致。请刷新页面后再试。';
-const FRONTEND_CHUNK_LOAD_ERROR_PATTERN =
-  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
-
+const FRONTEND_CACHE_INCONSISTENCY_SUMMARY = '前端缓存不一致';
+const FRONTEND_CACHE_INCONSISTENCY_ERROR_MESSAGE = '前端版本文件加载失败，通常是旧入口 HTML 引用了已删除的 hashed chunk。请刷新页面或清理 CDN/浏览器 HTML 缓存后再试。';
+const FRONTEND_CACHE_INCONSISTENCY_ERROR_PATTERN =
+  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|Expected a JavaScript module script|disallowed MIME type|MIME type ["']?text\/html|net::ERR_(?:ABORTED|FAILED)|404(?: \(Not Found\))?.*\/assets\/|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
 function isFrontendChunkLoadError(errorMessage) {
-  return FRONTEND_CHUNK_LOAD_ERROR_PATTERN.test(String(errorMessage || ''));
+  return FRONTEND_CACHE_INCONSISTENCY_ERROR_PATTERN.test(String(errorMessage || ''));
 }
 
 function normalizeAuditErrorMessage(errorMessage) {
   const raw = String(errorMessage || '').trim();
   if (!raw) return '';
-  if (isFrontendChunkLoadError(raw)) return FRONTEND_CHUNK_LOAD_ERROR_MESSAGE;
+  if (isFrontendChunkLoadError(raw)) return FRONTEND_CACHE_INCONSISTENCY_ERROR_MESSAGE;
   return raw;
 }
 
@@ -131,7 +130,7 @@ async function writeAuditLog(params) {
       ? FRONTEND_CHUNK_LOAD_OBJECT_TYPE
       : objectType;
     const normalizedSummary = shouldClassifyAsFrontendChunkLoad && !summary
-      ? FRONTEND_CHUNK_LOAD_SUMMARY
+      ? FRONTEND_CACHE_INCONSISTENCY_SUMMARY
       : summary;
 
     await auditLogRepo.insertAuditLogRow({

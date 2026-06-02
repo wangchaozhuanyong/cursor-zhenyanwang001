@@ -1,0 +1,1 @@
+var e={duration:2e3};export{e as t};

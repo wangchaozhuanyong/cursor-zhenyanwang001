@@ -1,0 +1,1 @@
+function e(){return typeof window>`u`?!1:window.matchMedia(`(display-mode: standalone)`).matches||window.navigator.standalone===!0}export{e as t};

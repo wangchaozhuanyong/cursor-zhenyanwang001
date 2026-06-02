@@ -20,6 +20,7 @@ export type AdminResponsiveSheetProps = {
   footer?: ReactNode;
   size?: AdminResponsiveSheetSize;
   height?: BottomSheetHeight;
+  className?: string;
   stickyFooter?: boolean;
   showCloseButton?: boolean;
   closeOnOverlay?: boolean;
@@ -37,6 +38,7 @@ export function AdminResponsiveSheet({
   footer,
   size = "md",
   height = "auto",
+  className,
   stickyFooter,
   showCloseButton = true,
   closeOnOverlay = true,
@@ -54,9 +56,12 @@ export function AdminResponsiveSheet({
       stickyFooter={stickyFooter ?? Boolean(footer)}
       showCloseButton={showCloseButton}
       closeOnOverlay={closeOnOverlay}
+      className={cn("admin-responsive-sheet", className)}
       dialogClassName={cn(
+        "admin-responsive-sheet",
         SIZE_CLASS[size],
         "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]",
+        className,
       )}
     >
       {children}

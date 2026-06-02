@@ -1,8 +1,14 @@
-import { trackAnalyticsEvent, type AnalyticsEventPayload } from "@/api/modules/analytics";
+import {
+  trackAnalyticsEvent,
+  trackAnalyticsEventsBatch,
+  type AnalyticsEventPayload,
+} from "@/api/modules/analytics";
 import { isAdminLoggedIn } from "@/utils/token";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+const ANALYTICS_BATCH_DELAY_MS = 150;
+const ANALYTICS_BATCH_MAX_SIZE = 20;
 const SEARCH_ATTRIBUTION_KEY = "analytics_search_attribution";
 const SEARCH_ATTRIBUTION_TTL_MS = 30 * 60 * 1000;
 const SEARCH_ATTRIBUTABLE_EVENTS = new Set([
@@ -15,6 +21,19 @@ const SEARCH_ATTRIBUTABLE_EVENTS = new Set([
 ]);
 
 let trafficAnalyticsEnabled = true;
+const BATCHABLE_EVENT_TYPES = new Set<AnalyticsEventPayload["event_type"]>([
+  "session_start",
+  "page_view",
+  "product_impression",
+]);
+
+type QueuedAnalyticsEvent = {
+  payload: AnalyticsEventPayload;
+  resolve: () => void;
+};
+
+let analyticsBatchTimer: ReturnType<typeof window.setTimeout> | null = null;
+let analyticsBatchQueue: QueuedAnalyticsEvent[] = [];
 
 export function setTrafficAnalyticsEnabled(enabled: boolean) {
   trafficAnalyticsEnabled = enabled;
@@ -172,6 +191,54 @@ function sendBeaconPayload(payload: AnalyticsEventPayload) {
   return navigator.sendBeacon(`${API_BASE}/analytics/events`, blob);
 }
 
+function shouldBatchEvent(payload: AnalyticsEventPayload, options?: { beacon?: boolean }) {
+  return !options?.beacon && BATCHABLE_EVENT_TYPES.has(payload.event_type);
+}
+
+function clearAnalyticsBatchTimer() {
+  if (analyticsBatchTimer) {
+    window.clearTimeout(analyticsBatchTimer);
+    analyticsBatchTimer = null;
+  }
+}
+
+async function flushAnalyticsBatch() {
+  clearAnalyticsBatchTimer();
+  const batch = analyticsBatchQueue;
+  analyticsBatchQueue = [];
+  if (batch.length === 0) return;
+
+  const payloads = batch.map((item) => item.payload);
+  try {
+    if (payloads.length === 1) {
+      await trackAnalyticsEvent(payloads[0]);
+    } else {
+      await trackAnalyticsEventsBatch(payloads);
+    }
+  } catch {
+    await Promise.all(payloads.map((payload) => trackAnalyticsEvent(payload).catch(() => undefined)));
+  } finally {
+    batch.forEach((item) => item.resolve());
+  }
+}
+
+function enqueueAnalyticsBatch(payload: AnalyticsEventPayload) {
+  return new Promise<void>((resolve) => {
+    analyticsBatchQueue.push({ payload, resolve });
+
+    if (analyticsBatchQueue.length >= ANALYTICS_BATCH_MAX_SIZE) {
+      void flushAnalyticsBatch();
+      return;
+    }
+
+    if (!analyticsBatchTimer) {
+      analyticsBatchTimer = window.setTimeout(() => {
+        void flushAnalyticsBatch();
+      }, ANALYTICS_BATCH_DELAY_MS);
+    }
+  });
+}
+
 export type { AnalyticsEventPayload };
 
 export async function trackEvent(payload: AnalyticsEventPayload, options?: { beacon?: boolean }): Promise<void> {
@@ -179,6 +246,10 @@ export async function trackEvent(payload: AnalyticsEventPayload, options?: { bea
   if (!enriched) return;
   try {
     if (options?.beacon && sendBeaconPayload(enriched)) return;
+    if (shouldBatchEvent(enriched, options)) {
+      await enqueueAnalyticsBatch(enriched);
+      return;
+    }
     await trackAnalyticsEvent(enriched);
   } catch {
     // keep analytics non-blocking

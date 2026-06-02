@@ -110,6 +110,7 @@ export default function BindWechatPhone() {
             onCountryCodeChange={setCountryCode}
             phone={phone}
             onPhoneChange={setPhone}
+            phoneInputId="bind-wechat-phone"
             phoneAutoComplete="tel"
           />
 
@@ -122,6 +123,7 @@ export default function BindWechatPhone() {
               placeholder="6 位验证码"
               value={otpCode}
               maxLength={6}
+              aria-label="6 位验证码"
               onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest")}
             />

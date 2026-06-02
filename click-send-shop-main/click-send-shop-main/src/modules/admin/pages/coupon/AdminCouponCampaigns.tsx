@@ -11,7 +11,7 @@ import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactio
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { adminTableTheadRow, type AdminTableAlign } from "@/utils/adminTableClasses";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
-import { formatAdminDateRange } from "@/utils/formatDateTime";
+import { formatDateRange } from "@/utils/formatDateTime";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import * as campaignService from "@/services/admin/couponCampaignService";
 import type { CouponCampaign, CouponCampaignStatus, CouponCampaignType } from "@/types/couponCampaign";
@@ -144,7 +144,7 @@ export default function AdminCouponCampaigns() {
               <AdminTableCell align="center">{renderStatus(campaign)}</AdminTableCell>
               <AdminTableCell align="center">{campaign.coupon_count || 0}</AdminTableCell>
               <AdminTableCell align="right">{campaign.claimed_count || 0} / {campaign.used_count || 0}</AdminTableCell>
-              <AdminTableCell>{formatAdminDateRange(campaign.start_at, campaign.end_at)}</AdminTableCell>
+              <AdminTableCell>{formatDateRange(campaign.start_at, campaign.end_at)}</AdminTableCell>
               <AdminTableCell align="right">
                 <div className="flex justify-end gap-2">
                   <button type="button" onClick={() => navigate(`/admin/marketing/coupon-campaigns/${campaign.id}`)} className="rounded-lg border border-border px-2 py-1 text-xs"><Pencil size={13} className="mr-1 inline" />编辑</button>

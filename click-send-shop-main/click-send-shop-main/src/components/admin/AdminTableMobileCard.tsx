@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { adminTableMobileVisibility } from "./adminTableMobileCardUtils";
 
@@ -10,6 +10,19 @@ type AdminTableMobileCardProps = {
 
 /** 管理端宽表在 md/lg 以下使用的行卡片外壳 */
 export function AdminTableMobileCard({ children, className, onClick }: AdminTableMobileCardProps) {
+  const handleKeyDown = onClick
+    ? (e: KeyboardEvent<HTMLElement>) => {
+        if (e.key === "Enter") {
+          onClick();
+          return;
+        }
+        if (e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }
+    : undefined;
+
   return (
     <article
       className={cn(
@@ -18,7 +31,7 @@ export function AdminTableMobileCard({ children, className, onClick }: AdminTabl
         className,
       )}
       onClick={onClick}
-      onKeyDown={onClick ? (e) => e.key === "Enter" && onClick() : undefined}
+      onKeyDown={handleKeyDown}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
@@ -35,9 +48,9 @@ type AdminTableMobileCardFieldProps = {
 
 export function AdminTableMobileCardField({ label, children, className }: AdminTableMobileCardFieldProps) {
   return (
-    <div className={cn("flex min-w-0 items-start justify-between gap-3 text-sm", className)}>
-      <span className="shrink-0 text-xs text-muted-foreground">{label}</span>
-      <div className="min-w-0 flex-1 text-right">{children}</div>
+    <div className={cn("admin-table-mobile-card-field flex min-w-0 flex-col gap-1 text-sm sm:flex-row sm:items-start sm:justify-between sm:gap-3", className)}>
+      <span className="min-w-0 text-xs text-muted-foreground sm:shrink-0">{label}</span>
+      <div className="min-w-0 flex-1 break-words sm:text-right">{children}</div>
     </div>
   );
 }

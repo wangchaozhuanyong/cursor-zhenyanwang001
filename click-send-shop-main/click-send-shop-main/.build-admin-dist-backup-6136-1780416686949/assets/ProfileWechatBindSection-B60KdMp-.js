@@ -1,0 +1,1 @@
+import{t as e}from"./vendor-react-loeraB5Z.js";import"./vendor-icons-CGXA05qe.js";import"./WeChatIcon-BaGSkN-h.js";e();function t({wechatLogin:e,onNavigateSettings:t,cardClass:n,menuTapClass:r}){return null}export{t as default};

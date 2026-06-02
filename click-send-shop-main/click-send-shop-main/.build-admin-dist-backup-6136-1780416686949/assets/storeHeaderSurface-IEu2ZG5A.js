@@ -1,0 +1,1 @@
+function e(e){let t=e.headerStyle;return t===`dark`?`bg-[color-mix(in_srgb,var(--theme-primary)_88%,black)] text-[var(--theme-primary-foreground)] border-transparent shadow-[var(--store-header-shadow)]`:t===`transparent`?`bg-transparent border-transparent`:`store-glass-surface`}export{e as t};

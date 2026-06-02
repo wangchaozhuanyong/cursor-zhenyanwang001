@@ -1,0 +1,1 @@
+function e(e,t,n){return e===`points`?t.pointsEnabled&&(n?.points?.displayEnabled??!0):e===`reward`?n?.reward?.displayEnabled??!0:n?.reward?.referralEnabled??!0}export{e as t};

@@ -542,9 +542,9 @@ export default function AdminAccounts() {
         onSubmit={handleCreate}
         size="sm"
       >
-        <input placeholder={tText("手机号 *")} value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
-        <input placeholder={tText("密码 *（至少8位，含大小写和数字）")} type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
-        <input placeholder={tText("昵称（可选）")} value={createForm.nickname} onChange={(e) => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
+        <input aria-label={tText("手机号")} placeholder={tText("手机号 *")} value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
+        <input aria-label={tText("密码")} placeholder={tText("密码 *（至少8位，含大小写和数字）")} type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
+        <input aria-label={tText("昵称")} placeholder={tText("昵称（可选）")} value={createForm.nickname} onChange={(e) => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
         <div>
           <div className="mb-2 flex items-center gap-1.5">
             <span className="text-xs font-medium text-muted-foreground"><Tx>初始角色</Tx></span>
@@ -575,7 +575,7 @@ export default function AdminAccounts() {
         onSubmit={handleReset}
         size="sm"
       >
-        <input placeholder={tText("新密码（至少8位，含大小写和数字）")} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+        <input aria-label={tText("新密码")} placeholder={tText("新密码（至少8位，含大小写和数字）")} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
       </AdminFormSheet>
 
       {securityTarget ? (

@@ -30,7 +30,6 @@ type DisplayStatus = "available" | "claimed" | "pending" | "used" | "expired" | 
 interface DisplayCoupon {
   id: string;
   title: string;
-  amountPrefix: string;
   amount: string;
   minSpendText: string;
   scopeText: string;
@@ -54,7 +53,6 @@ function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
   return {
     id: uc.id,
     title: d.title,
-    amountPrefix: d.amountPrefix,
     amount: d.amount,
     minSpendText: d.minSpendText,
     scopeText: d.scopeText,
@@ -420,7 +418,6 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
       <PremiumCouponCard
         colorScheme="invite"
         title={coupon.title}
-        amountPrefix={coupon.amountPrefix}
         amount={coupon.amount}
         minSpendText={coupon.minSpendText}
         expireText={coupon.expire}

@@ -35,10 +35,12 @@ server/src/
     marketing/              # 优惠券、可与订单协作
     fulfillment/          # 地址、运费模板（或并入 order，按团队习惯）
     admin/                  # 管理端，可再分子目录
-    notification/
+    media/                  # 媒体上传、转码、资源处理
     returns/
     content/
 ```
+
+> 当前后端固定模块清单里不再保留独立 `notification` 模块；用户通知读取归属 `user`，后台通知管理归属 `admin`。
 
 ---
 
@@ -53,7 +55,8 @@ server/src/
 | marketing | 优惠券模板与用户券、与下单协作 | coupons, user_coupons |
 | fulfillment | 收货地址、运费模板、运费计算 | addresses, shipping_templates 等 |
 | admin | 后台 CRUD、统计 | 多表 |
-| notification | 通知 | notifications |
+| user/admin 通知能力 | 用户通知读取、后台通知管理 | notifications, notification_batches |
+| media | 媒体上传、转码、资源处理 | upload_assets 等 |
 | returns | 售后 | return_requests 等 |
 | content | 静态页内容 | content_pages |
 

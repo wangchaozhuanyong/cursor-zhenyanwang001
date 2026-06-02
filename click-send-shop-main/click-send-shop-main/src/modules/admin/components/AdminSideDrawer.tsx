@@ -43,7 +43,7 @@ export function AdminSideDrawer({
         />
         <DialogPrimitive.Content
           className={cn(
-            "fixed inset-y-0 right-0 flex w-full max-w-full flex-col overflow-hidden border-l border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] shadow-[var(--theme-shadow-hover)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:w-[92vw] lg:w-[min(76vw,1080px)] xl:w-[min(70vw,1120px)]",
+            "admin-side-drawer fixed inset-y-0 right-0 flex w-full max-w-full flex-col overflow-hidden border-l border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] shadow-[var(--theme-shadow-hover)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:w-[92vw] lg:w-[min(76vw,1080px)] xl:w-[min(70vw,1120px)]",
             className,
           )}
           style={{ zIndex: contentZ }}
@@ -56,7 +56,7 @@ export function AdminSideDrawer({
           }}
         >
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--theme-border)] px-4 py-3 sm:px-5 sm:py-4">
+            <div className="admin-side-drawer-header safe-area-pt flex shrink-0 items-start justify-between gap-3 border-b border-[var(--theme-border)] px-4 py-3 sm:px-5 sm:py-4">
               <div className="min-w-0 flex-1">
                 <DialogPrimitive.Title className="truncate text-base font-semibold text-[var(--theme-text)]">
                   {title}
@@ -76,11 +76,11 @@ export function AdminSideDrawer({
                 </DialogPrimitive.Close>
               ) : null}
             </div>
-            <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-4", bodyClassName)}>
+            <div className={cn("admin-side-drawer-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-4", bodyClassName)}>
               {children}
             </div>
             {footer ? (
-              <div className="shrink-0 border-t border-[var(--theme-border)] px-4 py-3 sm:px-5">{footer}</div>
+              <div className="admin-side-drawer-footer safe-area-pb shrink-0 border-t border-[var(--theme-border)] px-4 py-3 sm:px-5">{footer}</div>
             ) : null}
           </div>
         </DialogPrimitive.Content>

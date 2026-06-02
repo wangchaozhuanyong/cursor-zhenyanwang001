@@ -32,6 +32,7 @@ export type AnalyticsEventPayload = {
     | "pwa_update_accepted"
     | "language_check"
     | "non_chinese_blocked"
+    | "frontend_chunk_load_failed"
     | "error_404";
   module?: string;
   page?: string;
@@ -73,4 +74,6 @@ export function trackAnalyticsEvent(payload: AnalyticsEventPayload) {
   return post<null>("/analytics/events", payload, { loadingMode: "silent" });
 }
 
-
+export function trackAnalyticsEventsBatch(payloads: AnalyticsEventPayload[]) {
+  return post<null>("/analytics/events/batch", { events: payloads }, { loadingMode: "silent" });
+}

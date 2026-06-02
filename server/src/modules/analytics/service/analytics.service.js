@@ -31,10 +31,13 @@ const ALLOWED_EVENT_TYPES = new Set([
   'pwa_update_accepted',
   'language_check',
   'non_chinese_blocked',
+  'frontend_chunk_load_failed',
   'error_404',
 ]);
 
 const NON_REPEATABLE_EVENT_TYPES = new Set(['order_submit', 'payment_success']);
+const FRONTEND_RUNTIME_EVENT_TYPES = new Set(['frontend_chunk_load_failed']);
+const MAX_BATCH_EVENTS = 30;
 
 function safeText(value, max = 255) {
   const text = String(value || '').trim();
@@ -163,9 +166,20 @@ async function trackEvent(payload, req) {
   const normalized = normalizeEvent(payload);
   if (!normalized) return { data: null, message: 'ignored' };
   const path = normalized.path || normalized.page || '';
-  if (path.startsWith('/admin')) return { data: null, message: 'ignored_admin_path' };
+  const isFrontendRuntimeEvent = FRONTEND_RUNTIME_EVENT_TYPES.has(normalized.event_type);
+  if (isFrontendRuntimeEvent) {
+    console.warn('[前端缓存不一致] chunk 加载失败，可能是旧 HTML 引用了已删除的 hashed assets', {
+      eventType: normalized.event_type,
+      path,
+      asset: normalized.keyword,
+      recovery: normalized.traffic_source,
+    });
+  }
+  if (!isFrontendRuntimeEvent && path.startsWith('/admin')) return { data: null, message: 'ignored_admin_path' };
   const userRole = safeText(req?.user?.role || req?.user?.role_code || '', 64).toLowerCase();
-  if (userRole.includes('admin') || req?.user?.is_admin) return { data: null, message: 'ignored_admin_user' };
+  if (!isFrontendRuntimeEvent && (userRole.includes('admin') || req?.user?.is_admin)) {
+    return { data: null, message: 'ignored_admin_user' };
+  }
   const userAgent = safeText(req?.headers?.['user-agent'] || '', 255);
   const referrer = normalized.referrer || safeText(req?.headers?.referer || '', 1024);
   const referrerDomain = normalized.referrer_domain || getHostname(referrer);
@@ -188,6 +202,31 @@ async function trackEvent(payload, req) {
   return { data: null, message: 'ok' };
 }
 
+async function trackEvents(payloads, req) {
+  const list = Array.isArray(payloads) ? payloads.slice(0, MAX_BATCH_EVENTS) : [];
+  let accepted = 0;
+  let ignored = 0;
+
+  for (const payload of list) {
+    const result = await trackEvent(payload, req);
+    if (result.message === 'ok') {
+      accepted += 1;
+    } else {
+      ignored += 1;
+    }
+  }
+
+  return {
+    data: {
+      accepted,
+      ignored,
+      truncated: Array.isArray(payloads) && payloads.length > MAX_BATCH_EVENTS,
+    },
+    message: 'ok',
+  };
+}
+
 module.exports = {
   trackEvent,
+  trackEvents,
 };

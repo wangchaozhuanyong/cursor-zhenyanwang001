@@ -52,20 +52,17 @@ export function ModalLayerProvider({ children }: { children: ReactNode }) {
     if (changed) setVersion((v) => v + 1);
   }, []);
 
-  const getLayer = useCallback(
-    (id: string): ModalLayerInfo => {
-      const stack = stackRef.current;
-      const index = stack.indexOf(id);
-      if (index === -1) return defaultLayer;
-      const overlayZ = MODAL_BASE_Z + index * MODAL_Z_STEP;
-      return {
-        overlayZ,
-        contentZ: overlayZ + 1,
-        isTop: index === stack.length - 1,
-      };
-    },
-    [version],
-  );
+  const getLayer = useCallback((id: string): ModalLayerInfo => {
+    const stack = stackRef.current;
+    const index = stack.indexOf(id);
+    if (index === -1) return defaultLayer;
+    const overlayZ = MODAL_BASE_Z + index * MODAL_Z_STEP;
+    return {
+      overlayZ,
+      contentZ: overlayZ + 1,
+      isTop: index === stack.length - 1,
+    };
+  }, []);
 
   const value = useMemo(
     () => ({ register, getLayer, stackDepth: stackRef.current.length, version }),

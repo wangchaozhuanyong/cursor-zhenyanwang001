@@ -7,34 +7,23 @@ import StoreButton from "@/components/ui/StoreButton";
 import {
   formatCouponActionLabel,
   getCouponCardPresentation,
-  resolveCouponCardLayout,
   type CouponCardLayout,
 } from "@/utils/couponCardTheme";
 
 interface PremiumCouponCardProps {
   title: string;
-  /** @deprecated 请使用 amount */
-  amountPrefix?: string;
   amount: string;
-  /** @deprecated 请使用 minSpendText */
-  conditionText?: string;
   minSpendText?: string;
   expireText: string;
   scopeText?: string;
-  /** @deprecated 未使用 */
-  badge?: string;
   statusLabel?: string;
   actionLabel?: string;
   actionLoading?: boolean;
   actionDisabled?: boolean;
   disabled?: boolean;
   selected?: boolean;
-  /** 展示密度；优先于 compact / homeCompact */
+  /** 展示密度 */
   layout?: CouponCardLayout;
-  /** @deprecated 请使用 layout="compact" */
-  compact?: boolean;
-  /** @deprecated 请使用 layout="home" */
-  homeCompact?: boolean;
   colorScheme?: "auto" | "invite";
   /** 右侧信息区字段顺序：默认名称在前；thresholdFirst 为门槛在前 */
   infoFieldOrder?: "titleFirst" | "thresholdFirst";
@@ -179,9 +168,7 @@ function CouponInfoRow({
 
 export default function PremiumCouponCard({
   title,
-  amountPrefix = "",
   amount,
-  conditionText,
   minSpendText: minSpendTextProp,
   expireText,
   scopeText = "适用范围：全场商品",
@@ -192,8 +179,6 @@ export default function PremiumCouponCard({
   disabled = false,
   selected = false,
   layout: layoutProp,
-  compact = false,
-  homeCompact = false,
   colorScheme = "auto",
   infoFieldOrder = "titleFirst",
   className = "",
@@ -201,11 +186,11 @@ export default function PremiumCouponCard({
   onAction,
 }: PremiumCouponCardProps) {
   const { themeConfig } = useThemeRuntime();
-  const layout = resolveCouponCardLayout({ layout: layoutProp, compact, homeCompact });
+  const layout = layoutProp ?? "default";
   const skin = getCouponCardPresentation(themeConfig.couponStyle, layout, colorScheme === "invite");
 
-  const minSpendText = minSpendTextProp ?? conditionText ?? "无门槛可用";
-  const leftValue = `${amountPrefix}${amount}`.trim();
+  const minSpendText = minSpendTextProp ?? "无门槛可用";
+  const leftValue = amount.trim();
   const amountRmMatch = leftValue.match(/^(RM)\s*(.+)$/i);
   const expireLabel = expireText.includes("有效期") ? expireText : `有效期至：${expireText}`;
   const displayActionLabel = actionLabel ? formatCouponActionLabel(actionLabel, layout) : "";

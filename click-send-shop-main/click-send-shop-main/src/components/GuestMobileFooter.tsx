@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import {
+  ArrowRight,
   ChevronDown,
   ChevronRight,
   Clock3,
@@ -12,6 +13,7 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import type { FooterNavItem, SupportDownloadChannel } from "@/types/content";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -19,6 +21,7 @@ import { useSupportRuntime } from "@/hooks/useSupportRuntime";
 import { cn } from "@/lib/utils";
 import { copyToClipboard } from "@/utils/clipboard";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
+import { buildWhatsAppLink } from "@/utils/supportChannels";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 
 const FOOTER_BRAND_FALLBACK = "大马通";
@@ -42,6 +45,16 @@ function resolveFooterCopy(value: string, fallback: string, genericValues: strin
   return clean;
 }
 
+function buildTelHref(phone: string) {
+  const normalized = cleanFooterText(phone).replace(/[^\d+]/g, "");
+  return normalized ? `tel:${normalized}` : undefined;
+}
+
+function buildMailHref(email: string) {
+  const normalized = cleanFooterText(email);
+  return normalized ? `mailto:${normalized}` : undefined;
+}
+
 export function GuestFooterBrandMark({ siteName, logoSrc }: { siteName: string; logoSrc?: string }) {
   const base = resolveFooterBrand(siteName);
   const [failedLogoSrc, setFailedLogoSrc] = useState<string | null>(null);
@@ -49,26 +62,28 @@ export function GuestFooterBrandMark({ siteName, logoSrc }: { siteName: string; 
   const showLogo = Boolean(cleanLogoSrc && failedLogoSrc !== cleanLogoSrc);
 
   return (
-    <div className="flex items-center justify-center gap-3 text-center">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#df4f55]/55 bg-[linear-gradient(145deg,rgba(255,255,255,0.92),rgba(255,230,226,0.86))] text-[#d8474f] shadow-[0_18px_34px_-28px_rgba(139,48,48,0.65),inset_0_0_0_5px_rgba(255,255,255,0.7)] sm:h-14 sm:w-14">
+    <div className="flex min-w-0 items-center gap-3">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-[#bfe9ce] bg-white text-[#078437] shadow-[0_18px_34px_-28px_rgba(7,132,55,0.55)] sm:h-14 sm:w-14">
         {showLogo ? (
           <img
             src={cleanLogoSrc}
             alt=""
-            className="h-8 w-8 rounded-full object-contain sm:h-9 sm:w-9"
+            className="h-9 w-9 object-contain sm:h-10 sm:w-10"
             loading="eager"
             decoding="async"
             aria-hidden="true"
             onError={() => setFailedLogoSrc(cleanLogoSrc)}
           />
         ) : (
-          <Sparkles size={22} strokeWidth={1.7} />
+          <Sparkles size={24} strokeWidth={1.8} />
         )}
       </span>
       <span className="min-w-0">
-        <span className="block max-w-[min(17rem,70vw)] font-display text-[26px] font-bold leading-none text-[#2a1714] sm:max-w-none sm:text-[32px]">
+        <span className="block truncate font-display text-[28px] font-bold leading-none text-[#17231c] sm:text-[34px]">
           {base}
-          <span className="text-[#d8474f]">.</span>
+        </span>
+        <span className="mt-1 block text-[12px] font-semibold leading-none text-[#5f6f65]">
+          Damatong.net
         </span>
       </span>
     </div>
@@ -78,7 +93,7 @@ export function GuestFooterBrandMark({ siteName, logoSrc }: { siteName: string; 
 function FooterSkylineArt() {
   return (
     <svg
-      className="pointer-events-none absolute right-0 top-6 hidden h-44 w-[420px] text-[#d8a973] opacity-[0.28] md:block"
+      className="pointer-events-none absolute bottom-0 right-0 hidden h-44 w-[430px] text-[#078437] opacity-[0.16] md:block"
       viewBox="0 0 420 176"
       fill="none"
       aria-hidden
@@ -104,7 +119,7 @@ function FooterSkylineArt() {
 function FooterLeafArt() {
   return (
     <svg
-      className="pointer-events-none absolute right-3 top-0 h-28 w-32 text-[#e1aaa2] opacity-[0.28]"
+      className="pointer-events-none absolute bottom-0 right-4 h-28 w-32 text-[#0b8f43] opacity-[0.18] md:right-12 md:h-36 md:w-40"
       viewBox="0 0 140 110"
       fill="none"
       aria-hidden
@@ -117,44 +132,31 @@ function FooterLeafArt() {
   );
 }
 
-function FooterSectionTitle({
-  align = "left",
-  aside,
-  asideAlign = align,
-  eyebrow,
+function TrustPill({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-2 text-[13px] font-semibold text-[#254232]">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#078437] shadow-[0_12px_28px_-22px_rgba(7,132,55,0.7)]">
+        {icon}
+      </span>
+      <span className="whitespace-nowrap">{label}</span>
+    </span>
+  );
+}
+
+function FooterColumn({
+  children,
+  className,
   title,
 }: {
-  align?: "left" | "center";
-  aside?: string;
-  asideAlign?: "left" | "center";
-  eyebrow?: string;
+  children: ReactNode;
+  className?: string;
   title: string;
 }) {
-  const centered = align === "center";
-  const asideCentered = asideAlign === "center";
   return (
-    <div className={cn("mb-4 flex flex-col gap-2", centered ? "items-center text-center" : "sm:flex-row sm:items-end")}>
-      <div className={cn("shrink-0", centered ? "text-center" : "text-left")}>
-        {eyebrow ? (
-          <p className="mb-1 text-[11px] font-semibold uppercase leading-none text-[#b47b32]">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h3 className="font-display text-[22px] font-bold leading-tight text-[#2a1714] sm:text-[24px]">
-          {title}
-        </h3>
-      </div>
-      <div className={cn("flex min-w-0 items-center gap-3 pb-2", centered ? "w-full max-w-[18rem]" : "flex-1")}>
-        <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(196,152,91,0.16),rgba(196,152,91,0.58))]" />
-        <Sparkles size={14} strokeWidth={1.6} className="shrink-0 text-[#c49555]" aria-hidden />
-        <span className="h-px flex-1 bg-[linear-gradient(90deg,rgba(196,152,91,0.58),rgba(196,152,91,0.16))]" />
-      </div>
-      {aside ? (
-        <p className={cn("shrink-0 pb-1 text-[12px] font-medium text-[#c08757]", asideCentered ? "w-full text-center" : "text-left sm:text-right")}>
-          {aside}
-        </p>
-      ) : null}
-    </div>
+    <section className={cn("min-w-0", className)}>
+      <h3 className="text-[17px] font-bold leading-none text-[#151f19]">{title}</h3>
+      <div className="mt-5">{children}</div>
+    </section>
   );
 }
 
@@ -169,23 +171,23 @@ function AccordionItem({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="overflow-hidden rounded-[1rem] border border-[#ead8c7] bg-white/74 shadow-[0_18px_46px_-40px_rgba(92,52,24,0.5)]">
+    <div className="overflow-hidden rounded-lg border border-[#dce9e1] bg-white shadow-[0_18px_42px_-34px_rgba(20,70,41,0.34)]">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="flex min-h-[58px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/54 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c79c5d]/35"
+        className="flex min-h-[58px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#f7fbf8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#078437]/25"
         aria-expanded={isOpen}
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fff7ed] text-[#b57628]">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eef9f1] text-[#078437]">
           {icon}
         </span>
-        <span className="min-w-0 flex-1 text-[16px] font-bold leading-snug text-[#2a1714]">
+        <span className="min-w-0 flex-1 text-[16px] font-bold leading-snug text-[#17231c]">
           {title}
         </span>
         <ChevronDown
           size={19}
           strokeWidth={2.1}
-          className={cn("shrink-0 text-[#a2661f] transition-transform duration-300 ease-out", isOpen && "rotate-180")}
+          className={cn("shrink-0 text-[#078437] transition-transform duration-300 ease-out", isOpen && "rotate-180")}
           aria-hidden
         />
       </button>
@@ -203,48 +205,37 @@ function FooterNavButton({ item, onNavigate }: { item: FooterNavItem; onNavigate
     <button
       type="button"
       onClick={() => onNavigate(item.path)}
-      className="group flex min-h-10 w-full items-center justify-between gap-3 rounded-[0.85rem] px-3.5 py-2 text-left text-[13px] font-medium text-[#6b5148] transition-all hover:bg-[#fff8ef] hover:text-[#8b541c] active:scale-[0.98]"
+      className="group flex min-h-9 w-full items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-[14px] font-medium text-[#526157] transition-all hover:bg-[#eef9f1] hover:text-[#078437] active:scale-[0.99]"
     >
       <span className="min-w-0 truncate">{item.label}</span>
-      <ChevronRight size={16} className="shrink-0 opacity-45 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden />
+      <ChevronRight size={15} className="shrink-0 opacity-45 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden />
     </button>
   );
 }
 
-function ContactCard({
+function ContactLine({
   icon,
   label,
   value,
-  wide,
+  href,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
-  wide?: boolean;
+  href?: string;
 }) {
   const lines = value.split("\n").map((line) => line.trim()).filter(Boolean);
   const accessibleValue = lines.join(" ") || value;
-  return (
-    <div
-      className={cn(
-        "relative flex min-h-[86px] items-center justify-between gap-4 overflow-hidden rounded-[1rem] border border-[#ead8c7] bg-white/72 px-4 py-3 text-right shadow-[0_20px_48px_-42px_rgba(83,49,29,0.58)]",
-        wide && "sm:col-span-2",
-      )}
-      aria-label={`${label} ${accessibleValue}`}
-    >
-      {wide ? (
-        <MapPin
-          size={96}
-          strokeWidth={1.1}
-          className="pointer-events-none absolute right-8 top-1/2 hidden -translate-y-1/2 text-[#e5b9a5] opacity-25 sm:block"
-          aria-hidden
-        />
-      ) : null}
-      <span className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#fff6f4_0%,#ffdedd_56%,#f7c3c2_100%)] text-[#d64a51] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+  const className =
+    "group flex min-h-[62px] items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[#f4fbf6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#078437]/25";
+  const content = (
+    <>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eef9f1] text-[#078437]">
         {icon}
       </span>
-      <span className="relative z-10 ml-auto min-w-0 flex-1 text-right">
-        <span className="block max-w-full text-[15px] font-bold leading-snug text-[#241716] [overflow-wrap:anywhere]">
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13px] font-semibold leading-none text-[#151f19]">{label}</span>
+        <span className="mt-1.5 block max-w-full text-[13px] leading-5 text-[#607066] [overflow-wrap:anywhere]">
           {lines.length > 1
             ? lines.map((line, index) => (
               <span key={`${line}-${index}`} className="block">
@@ -254,20 +245,42 @@ function ContactCard({
             : value}
         </span>
       </span>
+      {href ? <ChevronRight size={16} className="shrink-0 text-[#9aa9a0] transition group-hover:translate-x-0.5 group-hover:text-[#078437]" aria-hidden /> : null}
+    </>
+  );
+
+  if (href) {
+    const external = /^https?:\/\//i.test(href);
+    return (
+      <a
+        href={href}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
+        className={className}
+        aria-label={`${label} ${accessibleValue}`}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <div className={className} aria-label={`${label} ${accessibleValue}`}>
+      {content}
     </div>
   );
 }
 
 function getChannelLabel(type: SupportDownloadChannel["type"]) {
-  if (type === "wechat") return "微信客服";
-  if (type === "whatsapp") return "WhatsApp 客服";
-  return "Telegram 客服";
+  if (type === "wechat") return "微信咨询";
+  if (type === "whatsapp") return "WhatsApp 咨询";
+  return "Telegram 咨询";
 }
 
 function getChannelIcon(type: SupportDownloadChannel["type"]) {
-  if (type === "telegram") return <Send size={20} strokeWidth={1.9} />;
-  if (type === "whatsapp") return <MessageCircle size={20} strokeWidth={1.9} />;
-  return <MessageCircle size={20} strokeWidth={1.9} />;
+  if (type === "telegram") return <Send size={18} strokeWidth={1.9} />;
+  if (type === "whatsapp") return <MessageCircle size={18} strokeWidth={1.9} />;
+  return <MessageCircle size={18} strokeWidth={1.9} />;
 }
 
 function FollowButton({
@@ -285,9 +298,9 @@ function FollowButton({
     <button
       type="button"
       onClick={() => onClick(channel)}
-      className="flex min-h-[46px] min-w-0 items-center justify-center gap-2.5 rounded-[0.95rem] border border-[#d7ac73] bg-white/74 px-4 py-2.5 text-[14px] font-medium text-[#2c201d] shadow-[0_16px_34px_-34px_rgba(105,62,27,0.7)] transition-all hover:-translate-y-0.5 hover:bg-white hover:text-[#8b541c] active:scale-[0.98]"
+      className="flex min-h-[42px] min-w-0 items-center justify-center gap-2 rounded-lg border border-[#bfe9ce] bg-white px-3 py-2 text-[13px] font-semibold text-[#234130] shadow-[0_16px_34px_-32px_rgba(7,132,55,0.7)] transition-all hover:-translate-y-0.5 hover:border-[#078437] hover:text-[#078437] active:scale-[0.99]"
     >
-      <span className="shrink-0 text-[#b9833f]">{icon}</span>
+      <span className="shrink-0 text-[#078437]">{icon}</span>
       <span className="min-w-0 truncate">{label}</span>
     </button>
   );
@@ -335,10 +348,14 @@ export default function GuestMobileFooter({
   const headline = resolveFooterCopy(slogan, FOOTER_HEADLINE_FALLBACK, ["官方商品与服务平台"]);
   const intro = resolveFooterCopy(description, FOOTER_DESCRIPTION_FALLBACK, ["本平台提供商品、服务与客户支持信息。"]);
 
-  const whatsappDisplay = channels.find((channel) => channel.type === "whatsapp")?.account?.trim();
+  const whatsappChannel = channels.find((channel) => channel.type === "whatsapp");
+  const whatsappDisplay = whatsappChannel?.account?.trim();
   const displayPhone = cleanFooterText(contactPhone) || "+60182778801";
   const displayEmail = cleanFooterText(contactEmail) || "ppfzj1314@gmail.com";
   const displayWhatsapp = whatsappDisplay || "5325325235";
+  const whatsappHref = whatsappChannel
+    ? buildWhatsAppLink(whatsappChannel)
+    : buildWhatsAppLink({ account: displayWhatsapp, linkUrl: "" });
   const displayHours = cleanFooterText(serviceHours) || "工作日 09:00 - 18:00\n下午客服全天 24 小时";
   const displayAddress = cleanFooterText(address) || "Komplek Bandar Park";
 
@@ -353,15 +370,15 @@ export default function GuestMobileFooter({
   const legalParts = [legalCompany, legalCopyright, legalIcp].filter(Boolean);
 
   const contactItems = [
-    { key: "phone", label: "客服热线", value: displayPhone, icon: <Phone size={23} strokeWidth={1.75} /> },
-    { key: "email", label: "电子邮箱", value: displayEmail, icon: <Mail size={23} strokeWidth={1.75} /> },
-    { key: "whatsapp", label: "WhatsApp", value: displayWhatsapp, icon: <MessageCircle size={24} strokeWidth={1.75} /> },
-    { key: "hours", label: "服务时间", value: displayHours, icon: <Clock3 size={23} strokeWidth={1.75} /> },
-    { key: "address", label: "公司地址", value: displayAddress, icon: <MapPin size={24} strokeWidth={1.75} />, wide: true },
+    { key: "whatsapp", label: "WhatsApp", value: displayWhatsapp, href: whatsappHref, icon: <MessageCircle size={20} strokeWidth={1.8} /> },
+    { key: "phone", label: "电话", value: displayPhone, href: buildTelHref(displayPhone), icon: <Phone size={19} strokeWidth={1.8} /> },
+    { key: "email", label: "邮箱", value: displayEmail, href: buildMailHref(displayEmail), icon: <Mail size={19} strokeWidth={1.8} /> },
+    { key: "hours", label: "服务时间", value: displayHours, icon: <Clock3 size={19} strokeWidth={1.8} /> },
+    { key: "address", label: "地址", value: displayAddress, icon: <MapPin size={20} strokeWidth={1.8} /> },
   ];
 
   const supportLinks = (
-    <ul className="space-y-1.5">
+    <ul className="space-y-1">
       {supportNav.map((item, idx) => (
         <li key={`${item.label}-${item.path}-${idx}`}>
           <FooterNavButton item={item} onNavigate={onNavigate} />
@@ -371,7 +388,7 @@ export default function GuestMobileFooter({
   );
 
   const policyLinks = (
-    <ul className="space-y-1.5">
+    <ul className="space-y-1">
       {policyNav.map((item, idx) => (
         <li key={`${item.label}-${item.path}-${idx}`}>
           <FooterNavButton item={item} onNavigate={onNavigate} />
@@ -416,51 +433,136 @@ export default function GuestMobileFooter({
 
   return (
     <footer className="relative isolate z-0 w-full touch-pan-y">
-      <div className="relative overflow-hidden touch-pan-y border-t border-[#eadbcc] bg-[linear-gradient(180deg,#fffaf3_0%,#fffdf8_36%,#fff8f3_100%)] px-5 pb-7 pt-9 sm:border sm:px-8 sm:pt-10 md:pb-9 lg:px-12 lg:pb-10">
-        <FooterSkylineArt />
-        <FooterLeafArt />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(199,151,86,0.48),rgba(216,75,81,0.22),transparent)]" />
-
-        <div className="relative mx-auto max-w-[940px]">
-          <section className="text-center">
-            <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} />
-            <div className="mt-6 space-y-3.5">
-              <h2 className="font-display text-[20px] font-bold leading-snug text-[#2a1714] sm:text-[26px]">
-                {headline}
+      <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pb-7 pt-2 md:px-6 lg:px-8">
+        <section className="relative overflow-hidden rounded-lg border border-[#cdebd7] bg-[linear-gradient(120deg,#f4fff7_0%,#fbfffc_46%,#e9f8ef_100%)] px-5 py-8 shadow-[0_22px_60px_-42px_rgba(7,132,55,0.48)] md:px-10 md:py-10" aria-label="页脚服务入口">
+          <FooterSkylineArt />
+          <FooterLeafArt />
+          <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-[#078437]">一站式在马生活服务</p>
+              <h2 className="mt-3 font-display text-[30px] font-bold leading-tight text-[#08632f] sm:text-[40px]">
+                还没找到你需要的服务？
               </h2>
-              <p className="mx-auto max-w-[830px] text-[14px] font-medium leading-[1.75] text-[#765a51] sm:text-[15px]">
-                {intro}
+              <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[#415146]">
+                在{brandName}，找房、留学、签证、本地办事和生活服务，一站式查看。
               </p>
+              <div className="mt-6 grid gap-3 sm:max-w-xl sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => onNavigate("/categories")}
+                  className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg bg-[#078437] px-5 text-[16px] font-bold text-white shadow-[0_18px_34px_-26px_rgba(7,132,55,0.76)] transition hover:bg-[#046d2d] active:scale-[0.99]"
+                >
+                  浏览全部服务
+                  <ArrowRight size={20} strokeWidth={2.2} />
+                </button>
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg border border-[#078437] bg-white px-5 text-[16px] font-bold text-[#078437] transition hover:bg-[#f4fbf6] active:scale-[0.99]"
+                >
+                  <MessageCircle size={20} strokeWidth={2.1} />
+                  WhatsApp 咨询
+                </a>
+              </div>
+              <div className="mt-7 grid grid-cols-2 gap-4 border-t border-[#d7ebde] pt-5 sm:flex sm:flex-wrap sm:items-center sm:gap-7">
+                <TrustPill icon={<MessageCircle size={18} strokeWidth={1.9} />} label="中文沟通" />
+                <TrustPill icon={<MapPin size={18} strokeWidth={1.9} />} label="本地资源" />
+                <TrustPill icon={<ShieldCheck size={18} strokeWidth={1.9} />} label="真实信息" />
+                <TrustPill icon={<Zap size={18} strokeWidth={1.9} />} label="高频服务入口" />
+              </div>
             </div>
-          </section>
+            <div className="relative hidden min-h-[210px] lg:block" aria-hidden>
+              <div className="absolute bottom-0 right-0 h-48 w-72 rounded-full bg-[#b7edc8]/40 blur-3xl" />
+              <div className="absolute bottom-0 right-6 h-24 w-32 rounded-lg border border-[#9ad7ad] bg-white/70 shadow-[0_24px_50px_-36px_rgba(7,132,55,0.58)]" />
+              <div className="absolute bottom-7 right-36 h-16 w-24 rounded-lg border border-[#bfe9ce] bg-white/80 shadow-[0_20px_44px_-34px_rgba(7,132,55,0.5)]" />
+            </div>
+          </div>
+        </section>
 
-          <section className="mt-8 space-y-3.5">
-            <AccordionItem title="服务支持" icon={<Headphones size={22} strokeWidth={1.8} />}>
-              {supportLinks}
-            </AccordionItem>
-            <AccordionItem title="政策与说明" icon={<ShieldCheck size={22} strokeWidth={1.8} />}>
-              {policyLinks}
-            </AccordionItem>
-          </section>
+        <div className="mt-8 hidden grid-cols-[1.3fr_0.7fr_0.8fr_1fr] gap-8 border-b border-[#dde7e0] pb-9 md:grid lg:gap-12">
+          <FooterColumn title={brandName}>
+            <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} />
+            <p className="mt-5 max-w-[25rem] text-[14px] leading-7 text-[#607066]">
+              {intro}
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3 text-center">
+              <TrustPill icon={<ShieldCheck size={17} strokeWidth={1.9} />} label="安全可靠" />
+              <TrustPill icon={<MapPin size={17} strokeWidth={1.9} />} label="本地资源" />
+              <TrustPill icon={<MessageCircle size={17} strokeWidth={1.9} />} label="中文支持" />
+              <TrustPill icon={<Zap size={17} strokeWidth={1.9} />} label="高效便捷" />
+            </div>
+          </FooterColumn>
 
-          <section className="mt-9" aria-label="联系方式">
-            <FooterSectionTitle title="联系我们" align="center" aside="随时为您服务 ♡" asideAlign="center" />
-            <div className="grid gap-3.5 sm:grid-cols-2">
-              {contactItems.map((item) => (
-                <ContactCard
+          <FooterColumn title="平台服务">
+            {supportLinks}
+          </FooterColumn>
+
+          <FooterColumn title="帮助与政策">
+            {policyLinks}
+          </FooterColumn>
+
+          <FooterColumn title="联系我们">
+            <div className="space-y-1">
+              {contactItems.slice(0, 4).map((item) => (
+                <ContactLine
                   key={item.key}
                   icon={item.icon}
                   label={item.label}
                   value={item.value}
-                  wide={item.wide}
+                  href={item.href}
                 />
               ))}
             </div>
+            <div className="mt-4 grid gap-2">
+              {orderedChannels.map((item) => (
+                <FollowButton
+                  key={item.type}
+                  channel={item.channel}
+                  icon={item.icon}
+                  label={item.label}
+                  onClick={handleFollowClick}
+                />
+              ))}
+            </div>
+          </FooterColumn>
+        </div>
+
+        <div className="mt-5 space-y-3 md:hidden">
+          <section className="rounded-lg border border-[#dce9e1] bg-white px-4 py-5 shadow-[0_18px_42px_-34px_rgba(20,70,41,0.34)]">
+            <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} />
+            <p className="mt-4 text-[14px] leading-7 text-[#607066]">
+              {intro}
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <TrustPill icon={<ShieldCheck size={17} strokeWidth={1.9} />} label="安全可靠" />
+              <TrustPill icon={<MapPin size={17} strokeWidth={1.9} />} label="本地资源" />
+              <TrustPill icon={<MessageCircle size={17} strokeWidth={1.9} />} label="中文支持" />
+              <TrustPill icon={<Zap size={17} strokeWidth={1.9} />} label="高效便捷" />
+            </div>
           </section>
 
-          <section className="mt-9">
-            <FooterSectionTitle title="关注我们" align="center" />
-            <div className="grid gap-3.5 sm:grid-cols-3">
+          <AccordionItem title="平台服务" icon={<Headphones size={21} strokeWidth={1.8} />}>
+            {supportLinks}
+          </AccordionItem>
+          <AccordionItem title="帮助与政策" icon={<ShieldCheck size={21} strokeWidth={1.8} />}>
+            {policyLinks}
+          </AccordionItem>
+
+          <section className="rounded-lg border border-[#dce9e1] bg-white px-4 py-5 shadow-[0_18px_42px_-34px_rgba(20,70,41,0.34)]" aria-label="联系我们">
+            <h3 className="text-[18px] font-bold leading-none text-[#151f19]">联系我们</h3>
+            <div className="mt-4 space-y-1">
+              {contactItems.map((item) => (
+                <ContactLine
+                  key={item.key}
+                  icon={item.icon}
+                  label={item.label}
+                  value={item.value}
+                  href={item.href}
+                />
+              ))}
+            </div>
+            <div className="mt-4 grid gap-2">
               {orderedChannels.map((item) => (
                 <FollowButton
                   key={item.type}
@@ -472,20 +574,35 @@ export default function GuestMobileFooter({
               ))}
             </div>
           </section>
+        </div>
 
-          {legalParts.length > 0 ? (
-            <section className="mt-9 border-t border-[#ead8c7] pt-5">
-              <div className="flex flex-col items-center justify-center gap-1.5 text-center text-[12px] leading-5 text-[#9b8b83] sm:flex-row sm:flex-wrap sm:gap-x-4">
+        {legalParts.length > 0 ? (
+          <section className="border-t border-[#dde7e0] pt-5 md:border-t-0" aria-label="版权信息">
+            <div className="flex flex-col items-center justify-between gap-3 text-center text-[12px] leading-5 text-[#718077] md:flex-row md:text-left">
+              <div className="flex flex-col gap-1 md:flex-row md:flex-wrap md:items-center md:gap-x-4">
                 {legalParts.map((item, index) => (
-                  <span key={`${item}-${index}`} className="flex items-center justify-center gap-5">
-                    {index > 0 ? <span className="hidden h-4 w-px bg-[#d8c4b4] sm:block" aria-hidden /> : null}
+                  <span key={`${item}-${index}`} className="inline-flex items-center justify-center gap-4">
+                    {index > 0 ? <span className="hidden h-4 w-px bg-[#ccd9d1] md:block" aria-hidden /> : null}
                     <span>{item}</span>
                   </span>
                 ))}
               </div>
-            </section>
-          ) : null}
-        </div>
+              <div className="flex items-center justify-center gap-4">
+                {policyNav.slice(0, 2).map((item, index) => (
+                  <button
+                    key={`${item.label}-${item.path}`}
+                    type="button"
+                    onClick={() => onNavigate(item.path)}
+                    className="text-[12px] font-medium text-[#526157] transition hover:text-[#078437]"
+                  >
+                    {index > 0 ? <span className="mr-4 text-[#c9d5cd]" aria-hidden>|</span> : null}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
       </div>
     </footer>
   );

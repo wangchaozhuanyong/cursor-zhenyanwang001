@@ -1,0 +1,1 @@
+var e=117/50,t=`117 / 50`;[`1200×512`,`1170×500`,`1600×684`,`750×320`].join(` / `);var n=1200,r=Math.round(n/e),i=`h-[calc((100vw-2rem)*50/117)] max-h-52 min-h-32`;export{i,r as n,n as r,t};

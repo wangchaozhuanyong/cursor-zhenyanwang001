@@ -108,7 +108,7 @@ export default function AdminEventCenter() {
   const listTotal = eventsQuery.data?.total ?? 0;
   const totalPages = Math.max(1, eventsQuery.data?.totalPages || Math.ceil(listTotal / pageSize) || 1);
   const summary = summaryQuery.data;
-  const categoryCounts = summaryQuery.data?.categoryCounts || {};
+  const categoryCounts = useMemo(() => summaryQuery.data?.categoryCounts || {}, [summaryQuery.data?.categoryCounts]);
   const categoryOptions = useMemo(() => {
     const keys = new Set([...Object.keys(ADMIN_EVENT_CATEGORY_LABELS), ...Object.keys(categoryCounts)]);
     return [...keys].map((key) => ({

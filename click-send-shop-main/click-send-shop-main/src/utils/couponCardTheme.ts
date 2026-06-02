@@ -17,17 +17,6 @@ const HOME_ACTION_LABELS: Record<string, string> = {
   使用: "立即使用",
 };
 
-export function resolveCouponCardLayout(props: {
-  layout?: CouponCardLayout;
-  compact?: boolean;
-  homeCompact?: boolean;
-}): CouponCardLayout {
-  if (props.layout) return props.layout;
-  if (props.homeCompact) return "home";
-  if (props.compact) return "compact";
-  return "default";
-}
-
 /** 首页横滑等窄位：缩短按钮文案，避免挤压重叠 */
 export function formatCouponActionLabel(label: string, layout: CouponCardLayout): string {
   const text = label.trim();

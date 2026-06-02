@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Loader2, RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
@@ -76,7 +76,7 @@ function normalizeReferralRules(data: ReferralRule[], localeIsEn: boolean): Refe
 export default function AdminRewardRecords({ embedded = false }: { embedded?: boolean }) {
   const { locale } = useAdminTOptional();
   const isEn = locale === "en";
-  const L = (zh: string, en: string) => (isEn ? en : zh);
+  const L = useCallback((zh: string, en: string) => (isEn ? en : zh), [isEn]);
   const { rewardStatus: labelRewardStatus } = useAdminDisplayLabel();
   const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState("");

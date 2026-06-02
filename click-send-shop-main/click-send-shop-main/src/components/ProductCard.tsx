@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
-import Reveal from "@/components/Reveal";
+import { AnimatedSection } from "@/modules/micro-interactions";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -102,6 +102,7 @@ function ProductCardInner({
   const showNewBadge = isProductNewArrival(product);
   const imageLoading = index < 2 ? "eager" : "lazy";
   const imageFetchPriority = index === 0 ? "high" : undefined;
+  const revealDelay = Math.min(index, 11) * 0.035;
 
   useEffect(() => {
     const node = impressionRef.current;
@@ -176,8 +177,9 @@ function ProductCardInner({
 
   if (isHorizontal) {
     return (
-      <Reveal
-        index={index}
+      <AnimatedSection
+        as="div"
+        delay={revealDelay}
         className="theme-product-card store-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:128px]"
         onClick={() => openDetail("categories")}
       >
@@ -232,15 +234,16 @@ function ProductCardInner({
             <div className="mt-auto w-full">{metaRow}</div>
           </div>
         </div>
-      </Reveal>
+      </AnimatedSection>
     );
   }
 
   const isPremium = cardVariant === "premium";
 
   return (
-    <Reveal
-      index={index}
+    <AnimatedSection
+      as="div"
+      delay={revealDelay}
       className="theme-product-card store-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:320px]"
       onClick={() => openDetail("product_grid")}
     >
@@ -289,6 +292,6 @@ function ProductCardInner({
         {nameRow}
         {metaRow}
       </div>
-    </Reveal>
+    </AnimatedSection>
   );
 }

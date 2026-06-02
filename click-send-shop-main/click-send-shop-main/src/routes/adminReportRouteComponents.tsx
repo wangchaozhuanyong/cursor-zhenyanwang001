@@ -26,6 +26,10 @@ export function ReportCapabilityRoute({
   return <>{children}</>;
 }
 
+/**
+ * @deprecated Compatibility redirect for old /admin/reports/profit links.
+ * Keep until production access logs show no hits for at least 30 days.
+ */
 export function ProfitLegacyRedirect() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -37,6 +41,10 @@ export function ProfitLegacyRedirect() {
   return <Navigate to={`${target}${query ? `?${query}` : ""}`} replace />;
 }
 
+/**
+ * @deprecated Compatibility redirect for legacy report URLs declared in reportRegistry.
+ * Keep until production access logs show no hits for at least 30 days.
+ */
 export function LegacyReportRedirect({ to }: { to: string }) {
   const location = useLocation();
   return <Navigate to={`${to}${location.search || ""}`} replace />;

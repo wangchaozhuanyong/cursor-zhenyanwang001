@@ -26,6 +26,20 @@ function extractPaths(value) {
   return out;
 }
 
+function getLocalPublicRoots() {
+  const defaultRoots = [
+    path.resolve(__dirname, '../../../../public'),
+    path.resolve(__dirname, '../../../public'),
+    path.resolve(__dirname, '../../../../../click-send-shop-main/click-send-shop-main/public'),
+  ];
+  const configuredRoots = String(process.env.FILE_MONITOR_PUBLIC_ROOTS || '')
+    .split(path.delimiter)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => path.resolve(item));
+  return [...new Set([...defaultRoots, ...configuredRoots])];
+}
+
 async function storagePathExists(urlPath) {
   if (!urlPath || /^https?:\/\//i.test(urlPath) || urlPath.startsWith('data:')) return true;
   if (isS3StorageEnabled()) {
@@ -42,10 +56,10 @@ async function storagePathExists(urlPath) {
     }
   }
   const rel = decodeURIComponent(urlPath).replace(/^\/+/, '');
-  const candidates = [
-    path.join(__dirname, '../../../public', rel),
-    path.join(__dirname, '../../../public/uploads', rel.replace(/^uploads[\\/]/, '')),
-  ];
+  const candidates = getLocalPublicRoots().flatMap((root) => [
+    path.join(root, rel),
+    path.join(root, 'uploads', rel.replace(/^uploads[\\/]/, '')),
+  ]);
   return candidates.some((p) => fs.existsSync(p));
 }
 

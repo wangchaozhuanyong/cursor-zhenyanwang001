@@ -452,12 +452,12 @@ export default function InventoryFormSheets({
       >
         {adjusting ? (
           <div className="space-y-3">
-            <input type="number" min={adjusting.change_type === "adjust" ? 0 : 1} value={adjusting.quantity} onChange={(e) => setAdjusting({ ...adjusting, quantity: e.target.value })} placeholder={adjusting.change_type === "adjust" ? L("盘点后实际库存") : L("数量")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-            <input value={adjusting.reason} onChange={(e) => setAdjusting({ ...adjusting, reason: e.target.value })} placeholder={tText("原因（必填）")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-            <input value={adjusting.remark} onChange={(e) => setAdjusting({ ...adjusting, remark: e.target.value })} placeholder={tText("备注（可选）")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            <input aria-label={adjusting.change_type === "adjust" ? L("盘点后实际库存") : L("数量")} type="number" min={adjusting.change_type === "adjust" ? 0 : 1} value={adjusting.quantity} onChange={(e) => setAdjusting({ ...adjusting, quantity: e.target.value })} placeholder={adjusting.change_type === "adjust" ? L("盘点后实际库存") : L("数量")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            <input aria-label={tText("原因")} value={adjusting.reason} onChange={(e) => setAdjusting({ ...adjusting, reason: e.target.value })} placeholder={tText("原因（必填）")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            <input aria-label={tText("备注")} value={adjusting.remark} onChange={(e) => setAdjusting({ ...adjusting, remark: e.target.value })} placeholder={tText("备注（可选）")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
             <div className="grid grid-cols-2 gap-2">
-              <input value={adjusting.source_no} onChange={(e) => setAdjusting({ ...adjusting, source_no: e.target.value })} placeholder={tText("来源单号")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-              <input type="number" value={adjusting.cost_price} onChange={(e) => setAdjusting({ ...adjusting, cost_price: e.target.value })} placeholder={tText("成本价")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <input aria-label={tText("来源单号")} value={adjusting.source_no} onChange={(e) => setAdjusting({ ...adjusting, source_no: e.target.value })} placeholder={tText("来源单号")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <input aria-label={tText("成本价")} type="number" value={adjusting.cost_price} onChange={(e) => setAdjusting({ ...adjusting, cost_price: e.target.value })} placeholder={tText("成本价")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
             </div>
           </div>
         ) : null}
@@ -501,7 +501,7 @@ export default function InventoryFormSheets({
                 </label>
               ))}
             </div>
-            <textarea value={ruleForm.remark || ""} onChange={(e) => setRuleForm({ ...ruleForm, remark: e.target.value })} placeholder={tText("备注")} className="min-h-20 w-full rounded-lg bg-secondary px-3 py-2.5 text-sm" />
+            <textarea aria-label={tText("备注")} value={ruleForm.remark || ""} onChange={(e) => setRuleForm({ ...ruleForm, remark: e.target.value })} placeholder={tText("备注")} className="min-h-20 w-full rounded-lg bg-secondary px-3 py-2.5 text-sm" />
           </>
         ) : null}
       </AdminFormSheet>
@@ -522,8 +522,8 @@ export default function InventoryFormSheets({
               <p className="mt-1">{L("大包装当前库存")}：{convertForm.rule.parent_stock}</p>
               <p>{L("小包装当前库存")}：{convertForm.rule.child_stock}</p>
             </div>
-            <input type="number" min={1} value={convertForm.parent_qty} onChange={(e) => setConvertForm({ ...convertForm, parent_qty: e.target.value })} placeholder={tText("大包装数量")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-            <input value={convertForm.remark} onChange={(e) => setConvertForm({ ...convertForm, remark: e.target.value })} placeholder={tText("备注")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            <input aria-label={tText("大包装数量")} type="number" min={1} value={convertForm.parent_qty} onChange={(e) => setConvertForm({ ...convertForm, parent_qty: e.target.value })} placeholder={tText("大包装数量")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            <input aria-label={tText("备注")} value={convertForm.remark} onChange={(e) => setConvertForm({ ...convertForm, remark: e.target.value })} placeholder={tText("备注")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
           </>
         ) : null}
       </AdminFormSheet>

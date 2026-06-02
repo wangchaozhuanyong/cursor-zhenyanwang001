@@ -5,7 +5,10 @@ const express = require('express');
 const request = require('supertest');
 const app = require('../src/app');
 const apiTimeout = require('../src/middleware/apiTimeout');
+const accessLogger = require('../src/middleware/accessLogger');
 const requestContext = require('../src/middleware/requestContext');
+const analyticsService = require('../src/modules/analytics/service/analytics.service');
+const analyticsRepo = require('../src/modules/analytics/repository/analytics.repository');
 const {
   REDACTED,
   redactString,
@@ -67,5 +70,92 @@ describe('API observability guardrails', () => {
     assert.equal(res.body.data, null);
     assert.equal(res.body.traceId, 'test-trace-timeout');
     assert.equal(res.headers['x-trace-id'], 'test-trace-timeout');
+  });
+
+  test('missing hashed frontend chunks are classified as cache inconsistency in Chinese logs', () => {
+    const classification = accessLogger._private.classifyAccessLog(
+      { originalUrl: '/assets/AdminOrders-oldhash.js?from=stale-html' },
+      { statusCode: 404 },
+    );
+
+    assert.equal(classification.categoryCode, 'FRONTEND_STALE_HTML_MISSING_CHUNK');
+    assert.equal(classification.category, '前端缓存不一致');
+    assert.match(classification.message, /旧 SPA 入口 HTML/);
+  });
+
+  test('frontend chunk failure analytics is accepted even on admin pages', async () => {
+    const originalInsertEvent = analyticsRepo.insertEvent;
+    let inserted = null;
+    analyticsRepo.insertEvent = async (row) => {
+      inserted = row;
+    };
+
+    try {
+      const result = await analyticsService.trackEvent(
+        {
+          event_type: 'frontend_chunk_load_failed',
+          path: '/admin/orders',
+          page: '/admin/orders',
+          keyword: '/assets/AdminOrders-oldhash.js',
+          traffic_source: 'auto_recovery',
+        },
+        {
+          headers: { 'user-agent': 'Test Browser' },
+          user: { role: 'admin', is_admin: true },
+          ip: '127.0.0.1',
+        },
+      );
+
+      assert.equal(result.message, 'ok');
+      assert.equal(inserted.event_type, 'frontend_chunk_load_failed');
+      assert.equal(inserted.path, '/admin/orders');
+      assert.equal(inserted.keyword, '/assets/AdminOrders-oldhash.js');
+    } finally {
+      analyticsRepo.insertEvent = originalInsertEvent;
+    }
+  });
+
+  test('analytics batch accepts valid events and ignores invalid payloads', async () => {
+    const originalInsertEvent = analyticsRepo.insertEvent;
+    const inserted = [];
+    analyticsRepo.insertEvent = async (row) => {
+      inserted.push(row);
+    };
+
+    try {
+      const result = await analyticsService.trackEvents(
+        [
+          {
+            event_type: 'session_start',
+            page: '/',
+            path: '/',
+            anonymous_id: 'anon-1',
+            session_id: 'session-1',
+          },
+          {
+            event_type: 'page_view',
+            page: '/',
+            path: '/',
+            anonymous_id: 'anon-1',
+            session_id: 'session-1',
+          },
+          {
+            event_type: 'not_allowed',
+            page: '/',
+          },
+        ],
+        {
+          headers: { 'user-agent': 'Test Browser' },
+          ip: '127.0.0.1',
+        },
+      );
+
+      assert.equal(result.message, 'ok');
+      assert.equal(result.data.accepted, 2);
+      assert.equal(result.data.ignored, 1);
+      assert.deepEqual(inserted.map((row) => row.event_type), ['session_start', 'page_view']);
+    } finally {
+      analyticsRepo.insertEvent = originalInsertEvent;
+    }
   });
 });

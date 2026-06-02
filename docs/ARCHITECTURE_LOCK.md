@@ -28,9 +28,9 @@ home
 logistics
 loyalty
 marketing
+media
 monitoring
 myinvois
-notification
 order
 payment
 privacy

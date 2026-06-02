@@ -139,14 +139,6 @@ export function formatDateTimeAuto(value: unknown): string {
   return formatDateTime(raw);
 }
 
-/** @deprecated 使用 formatDate */
-export const formatAdminDate = formatDate;
 
-/** @deprecated 使用 formatDateTime */
-export const formatAdminDateTime = formatDateTime;
 
-/** @deprecated 使用 formatDateRange */
-export const formatAdminDateRange = formatDateRange;
 
-/** @deprecated 使用 formatDateTimeAuto */
-export const formatAdminDateTimeAuto = formatDateTimeAuto;

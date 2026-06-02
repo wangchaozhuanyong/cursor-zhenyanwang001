@@ -20,6 +20,8 @@ export type ResponsiveSheetProps = Omit<BottomSheetProps, "desktopMaxWidthClass"
   tier?: AppModalTier;
   /** sheet | dialog | auto */
   presentation?: ModalPresentation;
+  /** 没有可见标题时使用的无障碍名称 */
+  ariaLabel?: string;
 };
 
 /**
@@ -42,6 +44,7 @@ export function ResponsiveSheet({
   dialogClassName,
   tier = "standard",
   presentation = "auto",
+  ariaLabel,
 }: ResponsiveSheetProps) {
   const preferSheet = usePreferBottomSheet(tier);
   const useSheet =
@@ -69,6 +72,7 @@ export function ResponsiveSheet({
         closeOnOverlay={closeOnOverlay}
         stickyFooter={stickyFooter}
         className={className}
+        ariaLabel={ariaLabel}
       >
         {children}
       </BottomSheet>
@@ -83,6 +87,7 @@ export function ResponsiveSheet({
       showCloseButton={showCloseButton}
       hasTitle={Boolean(title)}
       hasDescription={Boolean(description)}
+      ariaLabel={ariaLabel}
       className={cn(
         "max-h-[min(85vh,720px)]",
         tier === "light" ? "max-w-sm" : "sm:max-w-lg",

@@ -60,22 +60,26 @@ else
   npm install --no-audit --fund=false
   npm run build
   cd "$PROJECT_DIR"
-  ASSET_BACKUP=""
-  if [[ -d "$PROJECT_DIR/public-frontend/assets" ]]; then
-    ASSET_BACKUP="$(mktemp -d)"
-    cp -a "$PROJECT_DIR/public-frontend/assets/." "$ASSET_BACKUP/" 2>/dev/null || true
-  fi
   mkdir -p "$PROJECT_DIR/public-frontend"
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "$PROJECT_DIR/$FRONTEND_SUB/dist/" "$PROJECT_DIR/public-frontend/"
+    if [[ -d "$PROJECT_DIR/$FRONTEND_SUB/dist/assets" ]]; then
+      mkdir -p "$PROJECT_DIR/public-frontend/assets"
+      rsync -a "$PROJECT_DIR/$FRONTEND_SUB/dist/assets/" "$PROJECT_DIR/public-frontend/assets/"
+    fi
+    for file in "$PROJECT_DIR/$FRONTEND_SUB"/dist/workbox-*.js; do
+      [[ -f "$file" ]] && cp -a "$file" "$PROJECT_DIR/public-frontend/"
+    done
+    rsync -a --delete --exclude='/assets/' --exclude='/workbox-*.js' "$PROJECT_DIR/$FRONTEND_SUB/dist/" "$PROJECT_DIR/public-frontend/"
   else
-    rm -rf "${PROJECT_DIR:?}/public-frontend/"*
+    if [[ -d "$PROJECT_DIR/$FRONTEND_SUB/dist/assets" ]]; then
+      mkdir -p "$PROJECT_DIR/public-frontend/assets"
+      cp -a "$PROJECT_DIR/$FRONTEND_SUB/dist/assets/." "$PROJECT_DIR/public-frontend/assets/"
+    fi
+    for file in "$PROJECT_DIR/$FRONTEND_SUB"/dist/workbox-*.js; do
+      [[ -f "$file" ]] && cp -a "$file" "$PROJECT_DIR/public-frontend/"
+    done
+    find "$PROJECT_DIR/public-frontend" -mindepth 1 -maxdepth 1 ! -name assets ! -name 'workbox-*.js' -exec rm -rf {} +
     cp -a "$PROJECT_DIR/$FRONTEND_SUB/dist/." "$PROJECT_DIR/public-frontend/"
-  fi
-  if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
-    mkdir -p "$PROJECT_DIR/public-frontend/assets"
-    cp -an "$ASSET_BACKUP/." "$PROJECT_DIR/public-frontend/assets/" 2>/dev/null || true
-    rm -rf "$ASSET_BACKUP"
   fi
   echo "public-frontend synced."
 fi

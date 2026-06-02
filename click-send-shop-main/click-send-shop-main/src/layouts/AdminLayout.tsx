@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AdminOutletFallback } from "@/components/AppRouteFallback";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
+import AdminOfflineBanner from "@/components/admin/AdminOfflineBanner";
 import { canAccessAdminPath, getFirstAllowedAdminPath, hasAdminPathAccessRule } from "@/config/adminNavAccess";
 import { resolveAdminTabTitle } from "@/config/adminNavTitle";
 import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
@@ -226,7 +227,7 @@ function AdminLayoutContent() {
         <AdminDirtyGuardProvider>
           <AdminAccountSettingsProvider>
             <AdminOrderVoiceProvider>
-              <div data-admin-shell className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
+              <div data-admin-shell className="flex min-h-[100dvh] w-full overflow-x-hidden bg-[var(--theme-bg)] text-[var(--theme-text)]">
                 <aside className="hidden w-[260px] shrink-0 self-start border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:flex-col">
                   <AdminSidebarNav
                     scrollMode="inline"
@@ -256,7 +257,7 @@ function AdminLayoutContent() {
                   returnFocusRef={sidebarReturnFocusRef}
                 />
 
-                <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col overflow-hidden">
+                <div className="flex min-h-[100dvh] min-w-0 max-w-full flex-1 flex-col overflow-hidden">
                   <header className="admin-chrome safe-area-pt sticky top-0 z-30 flex shrink-0 flex-col border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
                     <AdminTopbar
                       navItems={navItems}
@@ -268,9 +269,10 @@ function AdminLayoutContent() {
                       onOpenMobileSidebar={handleOpenMobileSidebar}
                     />
                     <AdminWorkTabs />
+                    <AdminOfflineBanner />
                   </header>
 
-                  <main className="admin-mobile-main admin-table-scope min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
+                  <main className="admin-mobile-main admin-table-scope min-h-0 w-full max-w-full flex-1 overflow-y-auto overflow-x-hidden p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
                     <Suspense fallback={<AdminOutletFallback />}>
                       <AnimatedPage>
                         <AdminKeepAliveOutlet />

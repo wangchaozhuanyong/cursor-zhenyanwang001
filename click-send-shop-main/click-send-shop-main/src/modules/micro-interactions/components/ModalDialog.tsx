@@ -1,6 +1,6 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
-import { type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { useEffect, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useOverlayDismiss } from "../hooks/useOverlayDismiss";
 import { useModalLayer } from "../modal/ModalLayerProvider";
@@ -14,6 +14,7 @@ export type ModalDialogProps = {
   showCloseButton?: boolean;
   hasTitle?: boolean;
   hasDescription?: boolean;
+  ariaLabel?: string;
 };
 
 /** 居中 Dialog，接入全局弹层 z-index 栈，仅栈顶响应 Escape */
@@ -26,13 +27,21 @@ export function ModalDialog({
   showCloseButton = true,
   hasTitle = true,
   hasDescription = true,
+  ariaLabel,
 }: ModalDialogProps) {
   const { overlayZ, contentZ, isTop } = useModalLayer(open);
   useOverlayDismiss({ open, isTop, onClose, lockBody: true });
+  const resolvedAriaLabel = !hasTitle ? (ariaLabel || "弹窗") : undefined;
   const contentAccessibilityProps = {
-    ...(hasTitle ? {} : { "aria-labelledby": undefined }),
+    ...(hasTitle ? {} : { "aria-labelledby": undefined, "aria-label": resolvedAriaLabel }),
     ...(hasDescription ? {} : { "aria-describedby": undefined }),
   };
+
+  useEffect(() => {
+    if (!open || hasTitle || ariaLabel || !import.meta.env.DEV) return;
+    // 开发期提醒即可，避免为了可访问性保护破坏现有弹窗调用方。
+    console.warn("[ModalDialog] 缺少标题或 ariaLabel，请为弹窗补充可访问名称。");
+  }, [ariaLabel, hasTitle, open]);
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(v) => !v && onClose()}>
@@ -60,6 +69,7 @@ export function ModalDialog({
           {children}
           {showCloseButton ? (
             <DialogPrimitive.Close
+              type="button"
               className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)]"
               aria-label="关闭"
             >

@@ -13,7 +13,7 @@ const {
   refundedAmountExpr,
   orderNetRatioExpr,
 } = require('../../../utils/orderRevenueSql');
-const { getDashboardSchema } = require('./adminDashboard.schema');
+const { loadSchemaCapabilities } = require('../../../db/schemaContract');
 
 const ORDER_KL_DATE = klDateSql('created_at');
 const USER_KL_DATE = klDateSql('users.created_at');
@@ -45,7 +45,7 @@ function withMaxExecutionTime(sql, timeoutMs = DASHBOARD_ANALYTICS_TIMEOUT_MS) {
 }
 
 async function getSqlContext() {
-  const schema = await getDashboardSchema();
+  const schema = await loadSchemaCapabilities();
   const revenueOpts = { includeRefundedAmount: schema.ordersRefundedAmount };
   return {
     schema,

@@ -126,7 +126,7 @@ export default function AddressManage() {
           <div className={`${CARD} flex flex-col items-center py-12`}>
             <MapPin size={40} className="text-[var(--theme-muted)]" />
             <p className="mt-3 text-sm text-[var(--theme-muted)]">暂无收货地址</p>
-            <button onClick={openAdd} className="mt-4 rounded-full bg-[var(--theme-primary)] px-6 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]">添加地址</button>
+            <button type="button" onClick={openAdd} className="mt-4 rounded-full bg-[var(--theme-primary)] px-6 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]">添加地址</button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -143,15 +143,16 @@ export default function AddressManage() {
                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-[var(--theme-border)] pt-3">
-                  <button onClick={() => setDefaultAddress(addr.id)} className="flex items-center gap-1 text-xs text-[var(--theme-muted)]">
+                  <button type="button" onClick={() => setDefaultAddress(addr.id)} className="flex items-center gap-1 text-xs text-[var(--theme-muted)]">
                     <div className={`flex h-4 w-4 items-center justify-center rounded-full border ${addr.isDefault ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]" : "border-[var(--theme-border)]"}`}>
                       {addr.isDefault && <Check size={10} className="text-[var(--theme-primary-foreground)]" />}
                     </div>
                     设为默认
                   </button>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => openEdit(addr)} className="text-xs text-[var(--theme-muted)]">编辑</button>
+                    <button type="button" onClick={() => openEdit(addr)} className="text-xs text-[var(--theme-muted)]">编辑</button>
                     <button
+                      type="button"
                       onClick={async () => {
                         try {
                           await removeAddress(addr.id);
@@ -183,15 +184,15 @@ export default function AddressManage() {
         height="90vh"
       >
         <div className="space-y-3">
-          <input value={form.recipient_name} onChange={(e) => setForm((f) => ({ ...f, recipient_name: e.target.value }))} placeholder="收货人姓名" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-          <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="手机号（如 0123456789）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-          <input value={form.line1} onChange={(e) => setForm((f) => ({ ...f, line1: e.target.value }))} placeholder="地址行 1（门牌号、街道）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-          <input value={form.line2} onChange={(e) => setForm((f) => ({ ...f, line2: e.target.value }))} placeholder="地址行 2（可选）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+          <input aria-label="收货人姓名" value={form.recipient_name} onChange={(e) => setForm((f) => ({ ...f, recipient_name: e.target.value }))} placeholder="收货人姓名" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+          <input aria-label="手机号" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="手机号（如 0123456789）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+          <input aria-label="地址行 1" value={form.line1} onChange={(e) => setForm((f) => ({ ...f, line1: e.target.value }))} placeholder="地址行 1（门牌号、街道）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+          <input aria-label="地址行 2" value={form.line2} onChange={(e) => setForm((f) => ({ ...f, line2: e.target.value }))} placeholder="地址行 2（可选）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
           <div className="grid grid-cols-2 gap-2">
-            <input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="城市" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-            <input value={form.postcode} onChange={(e) => setForm((f) => ({ ...f, postcode: e.target.value }))} placeholder="邮编（5 位）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+            <input aria-label="城市" value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="城市" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+            <input aria-label="邮编" value={form.postcode} onChange={(e) => setForm((f) => ({ ...f, postcode: e.target.value }))} placeholder="邮编（5 位）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
           </div>
-          <select value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none">
+          <select aria-label="州属" value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none">
             {MALAYSIA_STATES.map((state) => (
               <option key={state} value={state}>
                 {state}

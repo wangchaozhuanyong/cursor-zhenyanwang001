@@ -15,12 +15,6 @@ export function formatCheckoutAbandonmentNumber(
   return `#${row.display_id}`;
 }
 
-/** @deprecated 合并展示用；表格已拆为「记录类型 + 编号」两列 */
-export function formatCheckoutAbandonmentDisplayLabel(row: Pick<CheckoutAbandonment, "display_type" | "display_id" | "order_no">): string {
-  const typeLabel = getCheckoutAbandonmentRecordTypeLabel(row);
-  return `${typeLabel} ${formatCheckoutAbandonmentNumber(row)}`;
-}
-
 export function getCheckoutAbandonmentActionLabel(row: Pick<CheckoutAbandonment, "action_type" | "order_id">): string {
   if (row.action_type === "view_order" || row.order_id) return "查看订单";
   return "仅记录";

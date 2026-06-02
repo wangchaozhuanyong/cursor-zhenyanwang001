@@ -2,6 +2,7 @@ import { installBrowserCompatShims, installChunkLoadRecovery } from "@/lib/brows
 import { createRoot } from "react-dom/client";
 import AdminApp from "./AdminApp.tsx";
 import "./index.css";
+import "@/styles/admin.css";
 import { ThemeRuntimeProvider } from "@/contexts/ThemeRuntimeProvider";
 import AppVersionReadyMarker from "@/components/AppVersionReadyMarker";
 

@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, Star, Ticket } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { RefreshCw, Star } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
-import { useCouponStore } from "@/stores/useCouponStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
@@ -21,14 +19,9 @@ import FlashSaleSection from "./FlashSaleSection";
 import MarketingCouponRailSection from "./MarketingCouponRailSection";
 import MarketingFullReductionSection from "./MarketingFullReductionSection";
 import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
-import type { UserCoupon } from "@/types/coupon";
-import PremiumCouponCard from "@/components/PremiumCouponCard";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
-import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
-import { toast } from "sonner";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
-import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
 import { isLoggedIn } from "@/utils/token";
 import * as authService from "@/services/authService";
@@ -40,31 +33,13 @@ import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
-import * as homeService from "@/services/homeService";
-
-function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
-  return (
-    <div className="mb-3 md:mb-4">
-      <h2 className="flex items-center gap-2 store-section-title tracking-widest text-[var(--theme-text-on-surface)]">
-        {Icon && <Icon className="h-5 w-5 text-[var(--theme-price)]" />}
-        {title}
-      </h2>
-      {subtitle && <p className="mt-1 text-xs tracking-wider text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">{subtitle}</p>}
-    </div>
-  );
-}
 
 export default function MemberHome() {
   useDocumentTitle(undefined);
-  const navigate = useNavigate();
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
   const siteInfo = useSiteInfo();
-  const couponLoading = useCouponStore((s) => s.loading);
-  const coupons = useCouponStore((s) => s.coupons);
-  const claimCoupon = useCouponStore((s) => s.claimCoupon);
-  const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const cartItems = useCartStore((s) => s.items);
   const loadCart = useCartStore((s) => s.loadCart);
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
@@ -74,8 +49,6 @@ export default function MemberHome() {
   const loadHistory = useHistoryStore((s) => s.loadHistory);
   const orders = useOrderStore((s) => s.orders);
   const loadOrders = useOrderStore((s) => s.loadOrders);
-  const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
-  const [homeMarketingCouponIds, setHomeMarketingCouponIds] = useState<Set<string>>(() => new Set());
   const { banners, loading: bannersLoading } = useHomeBanners();
   const { settings: homeModules } = useHomeModuleSettings();
   const homeLayout = themeConfig.homeLayout ?? "classic";
@@ -84,7 +57,6 @@ export default function MemberHome() {
   const isMagazineLayout = homeLayout === "magazine";
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "member");
   const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "member");
-  const showLegacyMemberCoupons = false;
   const siteName = siteInfo.siteName || "官方商城";
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription =
@@ -104,7 +76,6 @@ export default function MemberHome() {
     void authService.restoreSessionFromCookie().then((ok) => {
       if (!ok) return;
       useNotificationStore.getState().fetchUnreadCount();
-      useCouponStore.getState().loadCoupons();
       void loadHistory().catch(() => {});
       void loadFavorites().catch(() => {});
       void loadCart().catch(() => {});
@@ -112,36 +83,6 @@ export default function MemberHome() {
     });
   }, [loadHistory, loadFavorites, loadCart, loadOrders]);
 
-  useEffect(() => {
-    let cancelled = false;
-    homeService.fetchHomeBootstrap().then((bootstrap) => {
-      if (cancelled) return;
-      const ids = new Set<string>();
-      for (const coupon of bootstrap?.marketing?.newUserGift?.coupons || []) {
-        if (coupon?.id) ids.add(String(coupon.id));
-      }
-      for (const coupon of bootstrap?.marketing?.couponCenter?.coupons || []) {
-        if (coupon?.id) ids.add(String(coupon.id));
-      }
-      setHomeMarketingCouponIds(ids);
-    }).catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const couponTop = useMemo(
-    () =>
-      coupons
-        // 这里的「会员专属礼包」只展示“我的券”里可用的券（已领取可使用）。
-        // 「可领取券」由下面的「首页领券中心」负责展示，避免重复。
-        .filter((uc) => uc.status === "available" && Boolean(uc.claimed_at))
-        .filter((uc) => !homeMarketingCouponIds.has(String(uc.coupon?.id || uc.coupon_id || uc.id)))
-        .slice()
-        .sort((a, b) => Number(b.coupon?.value || 0) - Number(a.coupon?.value || 0))
-        .slice(0, 4),
-    [coupons, homeMarketingCouponIds],
-  );
   const [hotBatchIndex, setHotBatchIndex] = useState(0);
   const [recBatchIndex, setRecBatchIndex] = useState(0);
   const HOT_BATCH_SIZE = homeModules.hotBatchSize;
@@ -235,69 +176,6 @@ export default function MemberHome() {
             showCouponCenter={showCouponCenter}
             showNewUserGift={showNewUserGift}
           />
-        ) : null}
-        {showLegacyMemberCoupons ? (
-        <section>
-          <Header title="我的优惠券" icon={Ticket} subtitle="已领取且可使用的优惠券" />
-          <div className="no-scrollbar -mx-[var(--store-page-x)] flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-[var(--store-page-x)] pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 md:snap-none lg:grid-cols-3 lg:gap-5">
-            {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
-              if (couponLoading || typeof c === "number") {
-                return (
-                  <div
-                    key={i}
-                    className="snap-center min-h-[6.75rem] w-[min(88vw,360px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)] md:w-full"
-                  />
-                );
-              }
-
-              const display = userCouponToPremiumDisplay(c);
-              const isClaimed = Boolean(c.claimed_at);
-              return (
-                <div
-                  key={c.id}
-                  className="snap-center w-[min(88vw,360px)] shrink-0 md:w-full"
-                >
-                  <PremiumCouponCard
-                    colorScheme="invite"
-                    layout="home"
-                    title={display.title}
-                    amountPrefix={display.amountPrefix}
-                    amount={display.amount}
-                    minSpendText={display.minSpendText}
-                    expireText={display.expireText}
-                    scopeText={display.scopeText}
-                    actionLabel={isClaimed ? "使用" : "领取"}
-                    actionLoading={!isClaimed && claimingCouponId === c.id}
-                    actionDisabled={!isClaimed && claimingCouponId === c.id}
-                    onAction={() => {
-                      if (isClaimed) {
-                        if (selectedCartCount > 0) navigate(`/checkout?coupon_id=${c.id}`);
-                        else navigate("/cart", { state: { coupon_id: c.id } });
-                        return;
-                      }
-                      void (async () => {
-                        try {
-                          setClaimingCouponId(c.id);
-                          await claimCoupon(display.code || c.coupon?.id || c.id);
-                          toast.success("领取成功！已添加到我的优惠券", toastPresetQuickSuccess);
-                        } catch (e) {
-                          toast.error(e instanceof Error ? e.message : "领取失败");
-                        } finally {
-                          setClaimingCouponId(null);
-                        }
-                      })();
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          {!couponLoading && couponTop.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-8 text-center text-sm text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
-              暂无可用优惠券
-            </div>
-          ) : null}
-        </section>
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
         <AnimatedSection delay={0.14}>

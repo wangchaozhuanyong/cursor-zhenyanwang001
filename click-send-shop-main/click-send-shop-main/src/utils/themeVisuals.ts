@@ -153,11 +153,6 @@ export const THEME_INVITE_PROMO_MUTED = "theme-invite-promo-muted";
 export const THEME_INVITE_PROMO_CTA = "theme-invite-promo-cta text-xs font-semibold shadow-md";
 export const THEME_GIFT_BADGE_SHELL = "bg-theme-gift-badge ring-1";
 
-/** @deprecated 使用 THEME_MEMBER_CARD_SHELL */
-export function getMemberCardClassName(_style: ThemeConfig["memberCardStyle"]): string {
-  return THEME_MEMBER_CARD_SHELL;
-}
-
 export function getCategoryIconShellClassName(style: ThemeConfig["categoryIconStyle"]): string {
   const base = "flex h-10 w-10 items-center justify-center text-xs font-semibold";
   switch (style) {

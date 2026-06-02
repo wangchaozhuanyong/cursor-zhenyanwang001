@@ -8,6 +8,8 @@ import { restoreSessionFromCookie } from "@/services/authService";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 const COUPON_PAGE_SIZE = 50;
+let couponLoadInflight: Promise<void> | null = null;
+
 function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && err.code === 401;
 }
@@ -48,59 +50,67 @@ export const useCouponStore = create<CouponState>((set, get) => ({
   error: null,
 
   loadCoupons: async () => {
-    const hasCached = get().coupons.length > 0;
-    const previousCoupons = get().coupons;
-    let availableCoupons: UserCoupon[] = [];
-    set({ loading: !hasCached, error: null });
-    try {
-      availableCoupons = await couponService.fetchAvailableCoupons(0);
-      const hasSessionHint = isLoggedIn() || useAuthStore.getState().isAuthenticated;
+    if (couponLoadInflight) return couponLoadInflight;
 
-      if (!hasSessionHint) {
-        set({ coupons: availableCoupons, loading: false, error: null });
-        return;
-      }
-
-      const sessionReady = await ensureStoreSession();
-      if (!sessionReady) {
-        clearTokens();
-        useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
-        set({ coupons: availableCoupons, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
-        return;
-      }
-
+    couponLoadInflight = (async () => {
+      const hasCached = get().coupons.length > 0;
+      const previousCoupons = get().coupons;
+      let availableCoupons: UserCoupon[] = [];
+      set({ loading: !hasCached, error: null });
       try {
-        set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
-        return;
-      } catch (err) {
-        if (!isAuthError(err)) throw err;
-        const restored = await restoreSessionFromCookie();
-        if (!restored) {
+        availableCoupons = await couponService.fetchAvailableCoupons(0);
+        const hasSessionHint = isLoggedIn() || useAuthStore.getState().isAuthenticated;
+
+        if (!hasSessionHint) {
+          set({ coupons: availableCoupons, loading: false, error: null });
+          return;
+        }
+
+        const sessionReady = await ensureStoreSession();
+        if (!sessionReady) {
           clearTokens();
           useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
           set({ coupons: availableCoupons, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
           return;
         }
-        useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
-        set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
-      }
-    } catch (err) {
-      if (isAuthError(err)) {
-        clearTokens();
-        useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
+
+        try {
+          set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
+          return;
+        } catch (err) {
+          if (!isAuthError(err)) throw err;
+          const restored = await restoreSessionFromCookie();
+          if (!restored) {
+            clearTokens();
+            useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
+            set({ coupons: availableCoupons, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
+            return;
+          }
+          useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
+          set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
+        }
+      } catch (err) {
+        if (isAuthError(err)) {
+          clearTokens();
+          useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
+          set({
+            coupons: availableCoupons.length > 0 ? availableCoupons : previousCoupons,
+            loading: false,
+            error: STORE_SESSION_EXPIRED_MESSAGE,
+          });
+          return;
+        }
         set({
           coupons: availableCoupons.length > 0 ? availableCoupons : previousCoupons,
           loading: false,
-          error: STORE_SESSION_EXPIRED_MESSAGE,
+          error: err instanceof Error ? err.message : "加载优惠券失败",
         });
-        return;
       }
-      set({
-        coupons: availableCoupons.length > 0 ? availableCoupons : previousCoupons,
-        loading: false,
-        error: err instanceof Error ? err.message : "加载优惠券失败",
-      });
-    }
+    })().finally(() => {
+      couponLoadInflight = null;
+    });
+
+    return couponLoadInflight;
   },
 
   claimCoupon: async (code, activityId) => {

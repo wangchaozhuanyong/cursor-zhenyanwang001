@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, Clock, Search as SearchIcon, TrendingUp, X } from "lucide-react";
 import CategoryTabs from "@/components/CategoryTabs";
 import StoreSearchField from "@/components/store/StoreSearchField";
@@ -36,6 +37,7 @@ function saveHistory(list: string[]) {
 
 export default function Search() {
   const goBack = useGoBack("/");
+  const [searchParams, setSearchParams] = useSearchParams();
   const { themeConfig } = useThemeRuntime();
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
@@ -48,11 +50,12 @@ export default function Search() {
     }),
     [siteCapabilities.restrictedProductComplianceEnabled, siteInfo],
   );
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const initialKeyword = searchParams.get("keyword")?.trim() || "";
+  const [query, setQuery] = useState(initialKeyword);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialKeyword);
   const [activeCat, setActiveCat] = useState("all");
   const [history, setHistory] = useState<string[]>(getHistory);
-  const [showHistory, setShowHistory] = useState(true);
+  const [showHistory, setShowHistory] = useState(!initialKeyword);
   const [hotTerms, setHotTerms] = useState<HotSearchTerm[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -73,6 +76,14 @@ export default function Search() {
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
+
+  useEffect(() => {
+    const keyword = searchParams.get("keyword")?.trim() || "";
+    setQuery(keyword);
+    setDebouncedQuery(keyword);
+    setShowHistory(!keyword);
+    if (keyword) setSearchAttribution(keyword);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchHotSearchTerms(10)
@@ -128,6 +139,9 @@ export default function Search() {
   const commitSearch = useCallback((term: string) => {
     const trimmed = term.trim();
     if (!trimmed) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("keyword", trimmed);
+    setSearchParams(nextParams);
     setQuery(trimmed);
     setDebouncedQuery(trimmed);
     setShowHistory(false);
@@ -135,14 +149,17 @@ export default function Search() {
     addToHistory(trimmed);
     setSearchAttribution(trimmed);
     trackSearchKeyword(trimmed).catch(() => {});
-  }, [addToHistory]);
+  }, [addToHistory, searchParams, setSearchParams]);
 
   const handleSearch = useCallback((val: string) => {
     setQuery(val);
     if (!val.trim()) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("keyword");
+      setSearchParams(nextParams, { replace: true });
       setShowHistory(true);
     }
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   const handleSubmit = useCallback(() => {
     if (query.trim()) {
@@ -382,6 +399,9 @@ export default function Search() {
                     <button
                       type="button"
                       onClick={() => {
+                        const nextParams = new URLSearchParams(searchParams);
+                        nextParams.delete("keyword");
+                        setSearchParams(nextParams, { replace: true });
                         setQuery("");
                         setDebouncedQuery("");
                         setShowHistory(true);

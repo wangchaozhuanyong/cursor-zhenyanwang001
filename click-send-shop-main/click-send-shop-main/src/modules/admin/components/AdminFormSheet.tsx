@@ -51,7 +51,7 @@ export function AdminFormSheet({
   };
 
   const footer = (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="admin-sheet-footer-actions grid grid-cols-2 gap-2">
       <button
         type="button"
         disabled={loading}
@@ -90,7 +90,7 @@ export function AdminFormSheet({
       height="70vh"
       stickyFooter
     >
-      <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
+      <form className="admin-form-sheet-form space-y-3" onSubmit={(e) => void handleSubmit(e)}>
         {children}
       </form>
     </AdminResponsiveSheet>

@@ -40,8 +40,8 @@ export default function Pagination({
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t border-border px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+    <div className="admin-pagination flex min-w-0 flex-col gap-3 border-t border-border px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
+      <div className="admin-pagination-summary flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground sm:text-sm">
         <span>共 {safeTotal} 条</span>
         <span className="hidden text-border sm:inline">|</span>
         <span>{hasRows ? `第 ${start}-${end} 条` : "暂无数据"}</span>
@@ -62,7 +62,7 @@ export default function Pagination({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-center gap-1 sm:justify-end">
+      <div className="admin-pagination-controls -mx-1 flex min-w-0 items-center justify-start gap-1 overflow-x-auto px-1 pb-1 sm:mx-0 sm:justify-end sm:overflow-visible sm:px-0 sm:pb-0">
         <button
           type="button"
           onClick={() => onPageChange(safeP - 1)}
@@ -83,7 +83,7 @@ export default function Pagination({
               onClick={() => onPageChange(p)}
               aria-current={p === safeP ? "page" : undefined}
               aria-label={`第 ${p} 页`}
-              className={`touch-manipulation flex min-h-11 min-w-[44px] items-center justify-center rounded-xl px-2 text-sm font-medium transition-colors ${
+              className={`admin-pagination-page touch-manipulation flex min-h-11 min-w-[44px] items-center justify-center rounded-xl px-2 text-sm font-medium transition-colors ${
                 p === safeP
                   ? "btn-theme-price"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"

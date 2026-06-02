@@ -12,7 +12,7 @@ import * as userService from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { formatAdminDateRange } from "@/utils/formatDateTime";
+import { formatDateRange } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
@@ -193,7 +193,7 @@ export default function AdminCoupons() {
             <span className="text-xs text-muted-foreground">{coupon.value} · {L("门槛", "Min.")} {coupon.min_amount}</span>
           </AdminTableMobileCardField>
           <AdminTableMobileCardField label={L("有效期", "Validity")}>
-            <span className="text-xs text-muted-foreground">{formatAdminDateRange(coupon.start_date, coupon.end_date)}</span>
+            <span className="text-xs text-muted-foreground">{formatDateRange(coupon.start_date, coupon.end_date)}</span>
           </AdminTableMobileCardField>
         </div>
         <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
@@ -254,7 +254,7 @@ export default function AdminCoupons() {
               <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{coupon.code}</td>
               <td className={adminTableCellClass("right")}>{coupon.value}</td>
               <td className={adminTableCellClass("right")}>{coupon.min_amount}</td>
-              <td className={adminTableCellClass("left", "text-xs whitespace-nowrap text-muted-foreground")}>{formatAdminDateRange(coupon.start_date, coupon.end_date)}</td>
+              <td className={adminTableCellClass("left", "text-xs whitespace-nowrap text-muted-foreground")}>{formatDateRange(coupon.start_date, coupon.end_date)}</td>
               <td className={adminTableCellClass("center")}><span className={`rounded-full px-2 py-0.5 text-xs ${status.color}`}>{isEn ? status.en : status.zh}</span></td>
               <td className={adminTableCellClass("right")}>
                 <AdminRowActionsMenu

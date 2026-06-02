@@ -60,9 +60,9 @@ export default function AdminHomeNavEditor({ onDirtyChange }: Props) {
     staleTime: 60_000,
   });
 
-  const navItems = homeOpsQuery.data?.nav ?? [];
-  const categories = homeOpsQuery.data?.categories ?? [];
-  const supportChannels = homeOpsQuery.data?.supportChannels ?? [];
+  const navItems = useMemo(() => homeOpsQuery.data?.nav ?? [], [homeOpsQuery.data?.nav]);
+  const categories = useMemo(() => homeOpsQuery.data?.categories ?? [], [homeOpsQuery.data?.categories]);
+  const supportChannels = useMemo(() => homeOpsQuery.data?.supportChannels ?? [], [homeOpsQuery.data?.supportChannels]);
   const loading = homeOpsQuery.isLoading && !homeOpsQuery.data;
   const nextSortOrder = navItems.length + 1;
 

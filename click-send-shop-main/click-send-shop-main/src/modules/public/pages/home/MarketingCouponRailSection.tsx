@@ -286,7 +286,6 @@ export default function MarketingCouponRailSection({
                     colorScheme="invite"
                     layout="home"
                     title={display.title}
-                    amountPrefix={display.amountPrefix}
                     amount={display.amount}
                     minSpendText={display.minSpendText}
                     expireText={display.expireText}

@@ -277,6 +277,9 @@ function MainStoreRoutes() {
           <StoreCardOverlapFix />
           <Suspense fallback={<AppRouteFallback />}>
             <Routes>
+              <Route path="/zh" element={<Navigate to="/" replace />} />
+              <Route path="/en" element={<Navigate to="/" replace />} />
+
               <Route element={<FrontLayout />}>
                 <Route path="/" element={<HomeRoute />} />
                 <Route path="/categories" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Categories /></CapabilityRoute>} />

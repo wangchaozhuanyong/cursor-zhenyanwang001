@@ -37,12 +37,7 @@ sync_public_static() {
   [[ -d "$src_dir" ]] || return 0
   local src="${src_dir%/}/"
   local dest="${dest_dir%/}"
-  local rsync_flags=(-r --delete)
-  local asset_backup=""
-  if [[ -d "$dest/assets" ]]; then
-    asset_backup="$(mktemp -d)"
-    cp -a "$dest/assets/." "$asset_backup/" 2>/dev/null || true
-  fi
+  local rsync_flags=(-r --delete --exclude='/assets/' --exclude='/workbox-*.js')
 
   local needs_sudo=0
   if [[ "$dest" == /var/www/* ]] && { [[ ! -e "$dest" ]] || [[ ! -w "$dest" ]]; }; then
@@ -51,6 +46,13 @@ sync_public_static() {
 
   if [[ "$needs_sudo" == "1" ]]; then
     sudo mkdir -p "$dest"
+    if [[ -d "$src_dir/assets" ]]; then
+      sudo mkdir -p "$dest/assets"
+      sudo rsync -r "$src_dir/assets/" "$dest/assets/"
+    fi
+    for file in "$src_dir"/workbox-*.js; do
+      [[ -f "$file" ]] && sudo cp -a "$file" "$dest/"
+    done
     sudo rsync "${rsync_flags[@]}" "$src" "$dest/"
     if id www-data &>/dev/null; then
       sudo chown -R www-data:www-data "$dest"
@@ -58,25 +60,25 @@ sync_public_static() {
   else
     mkdir -p "$dest"
     if command -v rsync >/dev/null 2>&1; then
+      if [[ -d "$src_dir/assets" ]]; then
+        mkdir -p "$dest/assets"
+        rsync -r "$src_dir/assets/" "$dest/assets/"
+      fi
+      for file in "$src_dir"/workbox-*.js; do
+        [[ -f "$file" ]] && cp -a "$file" "$dest/"
+      done
       rsync "${rsync_flags[@]}" "$src" "$dest/"
     else
-      rm -rf "${dest:?}/"*
+      if [[ -d "$src_dir/assets" ]]; then
+        mkdir -p "$dest/assets"
+        cp -a "$src_dir/assets/." "$dest/assets/"
+      fi
+      for file in "$src_dir"/workbox-*.js; do
+        [[ -f "$file" ]] && cp -a "$file" "$dest/"
+      done
+      find "$dest" -mindepth 1 -maxdepth 1 ! -name assets ! -name 'workbox-*.js' -exec rm -rf {} +
       cp -a "$src." "$dest/"
     fi
-  fi
-
-  if [[ -n "$asset_backup" && -d "$asset_backup" ]]; then
-    if [[ "$needs_sudo" == "1" ]]; then
-      sudo mkdir -p "$dest/assets"
-      sudo cp -an "$asset_backup/." "$dest/assets/" 2>/dev/null || true
-      if id www-data &>/dev/null; then
-        sudo chown -R www-data:www-data "$dest/assets"
-      fi
-    else
-      mkdir -p "$dest/assets"
-      cp -an "$asset_backup/." "$dest/assets/" 2>/dev/null || true
-    fi
-    rm -rf "$asset_backup"
   fi
 }
 

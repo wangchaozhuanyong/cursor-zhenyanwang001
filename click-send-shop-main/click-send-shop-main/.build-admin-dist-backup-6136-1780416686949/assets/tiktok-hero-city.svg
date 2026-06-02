@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="City service illustration">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080704"/>
+      <stop offset="0.5" stop-color="#161006"/>
+      <stop offset="1" stop-color="#030303"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="42%" cy="20%" r="55%">
+      <stop offset="0" stop-color="#f2c76d" stop-opacity="0.42"/>
+      <stop offset="0.52" stop-color="#9f6f22" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8d783"/>
+      <stop offset="1" stop-color="#7f571f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+  <path d="M0 655 C220 590 330 650 520 610 C780 555 970 595 1160 548 C1370 496 1480 530 1600 490 L1600 900 L0 900Z" fill="#070604"/>
+  <g opacity="0.94">
+    <rect x="120" y="495" width="88" height="340" rx="8" fill="#11100c"/>
+    <rect x="250" y="420" width="112" height="415" rx="10" fill="#0e0c08"/>
+    <rect x="420" y="360" width="86" height="475" rx="9" fill="#151006"/>
+    <rect x="560" y="280" width="118" height="555" rx="16" fill="#100d08"/>
+    <path d="M720 835 L720 350 C720 288 764 235 820 224 C876 235 920 288 920 350 L920 835Z" fill="#141109"/>
+    <rect x="972" y="405" width="98" height="430" rx="10" fill="#0f0d09"/>
+    <rect x="1115" y="320" width="125" height="515" rx="12" fill="#151006"/>
+    <rect x="1290" y="460" width="95" height="375" rx="10" fill="#0f0c07"/>
+    <rect x="1430" y="520" width="70" height="315" rx="8" fill="#12100b"/>
+  </g>
+  <g fill="url(#gold)" opacity="0.75">
+    <rect x="148" y="540" width="16" height="54" rx="2"/>
+    <rect x="188" y="610" width="16" height="64" rx="2"/>
+    <rect x="282" y="470" width="18" height="72" rx="2"/>
+    <rect x="324" y="570" width="18" height="90" rx="2"/>
+    <rect x="450" y="430" width="15" height="80" rx="2"/>
+    <rect x="600" y="350" width="18" height="96" rx="2"/>
+    <rect x="644" y="520" width="18" height="86" rx="2"/>
+    <rect x="790" y="330" width="20" height="145" rx="3"/>
+    <rect x="850" y="410" width="20" height="120" rx="3"/>
+    <rect x="1004" y="462" width="18" height="78" rx="2"/>
+    <rect x="1154" y="386" width="18" height="96" rx="2"/>
+    <rect x="1202" y="518" width="18" height="86" rx="2"/>
+    <rect x="1324" y="520" width="16" height="78" rx="2"/>
+  </g>
+  <path d="M178 760 C408 704 576 746 787 700 C1016 650 1205 674 1428 600" fill="none" stroke="#f1c66e" stroke-opacity="0.38" stroke-width="2"/>
+  <path d="M0 0 H1600 V900 H0Z" fill="#000" opacity="0.18"/>
+</svg>

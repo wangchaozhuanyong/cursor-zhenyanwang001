@@ -11,7 +11,7 @@ import {
   cleanSupportText,
 } from "@/utils/supportChannels";
 
-export type CustomerServiceAction = "whatsapp" | "wechat_copy" | "telegram" | "support_page";
+export type CustomerServiceAction = "whatsapp" | "wechat" | "wechat_copy" | "telegram" | "support_page";
 
 export type CustomerServiceResult = {
   action: CustomerServiceAction;
@@ -43,7 +43,7 @@ export function openSupportChannel(channel: SupportDownloadChannel): CustomerSer
     const link = buildWeChatLink(channel);
     if (link) {
       window.open(link, "_blank", "noopener,noreferrer");
-      return "telegram";
+      return "wechat";
     }
     if (account) return "wechat_copy";
     return "none";
@@ -75,10 +75,9 @@ export function openCustomerService(siteInfo: CustomerServiceSiteInfo): Customer
   for (const channel of channels) {
     if (channel.type !== "wechat") continue;
     const account = cleanSupportText(channel.account);
-    const link = buildWeChatLink(channel);
-    if (link) {
-      window.open(link, "_blank", "noopener,noreferrer");
-      return { action: "whatsapp", channelId: channel.id };
+    const opened = openSupportChannel(channel);
+    if (opened === "wechat") {
+      return { action: "wechat", channelId: channel.id };
     }
     if (account) {
       return { action: "wechat_copy", wechatId: account, channelId: channel.id };

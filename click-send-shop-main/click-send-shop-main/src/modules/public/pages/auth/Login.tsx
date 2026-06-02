@@ -563,13 +563,16 @@ export default function Login() {
                 type="text"
                 placeholder="昵称"
                 value={nickname}
+                aria-label="昵称"
                 aria-invalid={Boolean(fieldErrors.nickname) || undefined}
+                aria-describedby={fieldErrors.nickname ? "auth-nickname-error" : undefined}
                 onChange={(e) => {
                   setNickname(e.target.value);
                   clearFieldError("nickname");
                 }}
                 className={cn(INPUT_CLASS, "pl-12 pr-4", fieldErrors.nickname && INPUT_ERROR_CLASS)}
               />
+              {fieldErrors.nickname ? <p id="auth-nickname-error" className="sr-only">{fieldErrors.nickname}</p> : null}
             </div>
           )}
           {mode === "register" && (
@@ -579,6 +582,7 @@ export default function Login() {
                 type="text"
                 placeholder={hasLockedInviteCode ? "邀请码（已锁定）" : "邀请码（选填）"}
                 value={inviteCode}
+                aria-label={hasLockedInviteCode ? "邀请码，已锁定" : "邀请码，可选"}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 readOnly={hasLockedInviteCode}
                 className={cn(
@@ -624,7 +628,9 @@ export default function Login() {
                 autoCorrect="off"
                 autoCapitalize="none"
                 enterKeyHint={mode === "login" ? "go" : "done"}
+                aria-label="密码"
                 aria-invalid={Boolean(fieldErrors.password) || undefined}
+                aria-describedby={fieldErrors.password ? "auth-password-error" : undefined}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   clearFieldError("password");
@@ -639,6 +645,7 @@ export default function Login() {
               >
                 {showPwd ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               </button>
+              {fieldErrors.password ? <p id="auth-password-error" className="sr-only">{fieldErrors.password}</p> : null}
             </div>
           ) : null}
 
@@ -655,13 +662,16 @@ export default function Login() {
                   enterKeyHint="go"
                   value={otpCode}
                   maxLength={6}
+                  aria-label="6 位验证码"
                   aria-invalid={Boolean(fieldErrors.otp) || undefined}
+                  aria-describedby={fieldErrors.otp ? "auth-otp-error" : undefined}
                   onChange={(e) => {
                     setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
                     clearFieldError("otp");
                   }}
                   className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest", fieldErrors.otp && INPUT_ERROR_CLASS)}
                 />
+                {fieldErrors.otp ? <p id="auth-otp-error" className="sr-only">{fieldErrors.otp}</p> : null}
               </div>
               <button
                 type="button"

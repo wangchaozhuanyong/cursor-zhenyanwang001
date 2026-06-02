@@ -267,15 +267,46 @@ function buildHomePayload(baseUrl, siteInfo) {
   };
 }
 
+function resolveTikTokOgImage(baseUrl, siteInfo) {
+  const fallback = toAbsolute(baseUrl, '/assets/tiktok-logo.jpeg');
+  const candidate = String(siteInfo.logoUrl || siteInfo.faviconUrl || '').trim();
+  if (!candidate) return fallback;
+
+  try {
+    const baseHost = new URL(baseUrl).hostname;
+    const imageUrl = new URL(candidate, baseUrl);
+    if (imageUrl.protocol === 'http:' || imageUrl.protocol === 'https:') {
+      return imageUrl.hostname === baseHost ? fallback : imageUrl.href;
+    }
+  } catch {
+    return fallback;
+  }
+
+  return fallback;
+}
+
 function buildTikTokPayload(baseUrl, siteInfo) {
   const basePayload = buildHomePayload(baseUrl, siteInfo);
   const landingUrl = `${baseUrl}/tiktok`;
+  const siteName = resolveSiteName(siteInfo);
+  const image = resolveTikTokOgImage(baseUrl, siteInfo);
+  const description = `${siteName}为 TikTok 用户提供马来西亚找房安家、留学陪读、签证咨询、本地办事、维修搬家和商务资源入口。`;
   return {
     ...basePayload,
-    title: `${resolveSiteName(siteInfo)} | TikTok`,
+    title: `${siteName} TikTok 用户入口 | 马来西亚生活服务导航`,
+    description,
+    keywords: `${siteName},TikTok,马来西亚生活服务,马来西亚找房,马来西亚留学,马来西亚签证`,
+    ogTitle: `${siteName} TikTok 用户入口`,
+    ogDescription: description,
+    ogImage: image,
+    twitterImage: image,
     canonical: landingUrl,
     ogUrl: landingUrl,
-    robots: 'index,follow',
+    robots: 'index,nofollow',
+    googleSiteVerification: '',
+    prerenderH1: `${siteName} TikTok 用户入口`,
+    prerenderText: description,
+    jsonLd: [],
   };
 }
 

@@ -278,17 +278,6 @@ async function selectRewardUsageSettings() {
   return rows[0] || null;
 }
 
-async function countRecordsLegacy(userId, status) {
-  let where = 'WHERE user_id = ?';
-  const params = [userId];
-  if (status) {
-    where += ' AND status = ?';
-    params.push(status);
-  }
-  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM reward_records ${where}`, params);
-  return total;
-}
-
 async function selectRecordsPage(userId, status, pageSize, offset) {
   let where = 'WHERE user_id = ?';
   const params = [userId];
@@ -337,7 +326,6 @@ module.exports = {
   selectTransactionsByRewardRecord,
   markRewardRecordReversed,
   sumUserRewardTransactions,
-  countRecordsLegacy,
   selectRecordsPage,
   sumAvailableForWithdraw,
   insertWithdrawRecord,
@@ -345,6 +333,5 @@ module.exports = {
   selectRewardUsageSettings,
   buildTransactionCategoryFilter,
 };
-
 
 

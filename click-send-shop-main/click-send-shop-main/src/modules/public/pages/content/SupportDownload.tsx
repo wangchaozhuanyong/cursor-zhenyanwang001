@@ -17,6 +17,7 @@ import {
 } from "@/utils/supportDownloadConfig";
 import { getChannelTitle } from "@/utils/supportChannels";
 import { toast } from "sonner";
+import "@/styles/support-download.css";
 import type { AnalyticsEventPayload } from "@/services/analyticsService";
 import type { SupportChannelType, SupportDownloadChannel } from "@/types/content";
 

@@ -58,23 +58,6 @@ async function loadConfig() {
   return configCache;
 }
 
-/** @deprecated 使用 loadConfig；保留给旧调用方 */
-function readConfig() {
-  if (configCache) {
-    const c = configCache;
-    return {
-      enabled: c.enabled,
-      botToken: c.botToken,
-      adminChatId: c.adminChatId,
-      parseMode: c.parseMode,
-      includeItems: c.includeItems,
-      maxMessageLength: c.maxMessageLength,
-      adminFrontendUrl: c.adminFrontendUrl,
-    };
-  }
-  return readEnvTelegramConfig();
-}
-
 async function getStatus() {
   const config = await loadConfig();
   return {
@@ -465,7 +448,6 @@ module.exports = {
   BOT_TOKEN_UNCHANGED,
   invalidateConfigCache,
   loadConfig,
-  readConfig,
   getStatus,
   getAdminSettings,
   saveAdminSettings,

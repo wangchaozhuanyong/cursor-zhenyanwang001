@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  buildAppVersionRecoveryEventPayload,
   clearAppVersionRecoveryState,
   getAppVersionRecoveryStorageKey,
   installAppVersionRecovery,
@@ -14,6 +15,7 @@ describe("appVersionRecovery", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
     window.__appVersionRecoverySuppressedUntil__ = 0;
+    window.__appVersionRecoveryInProgress__ = false;
     document.body.innerHTML = "";
     window.history.replaceState(null, "", "/?__fresh=123&keep=1");
   });
@@ -55,7 +57,33 @@ describe("appVersionRecovery", () => {
   it("detects chunk and preload failures without treating API failures as version updates", () => {
     expect(isChunkLoadFailure("Failed to fetch dynamically imported module: /assets/order.js")).toBe(true);
     expect(isChunkLoadFailure({ message: "Unable to preload CSS for /assets/page.css" })).toBe(true);
+    expect(isChunkLoadFailure("net::ERR_ABORTED 404 (Not Found) https://example.com/assets/page-old.js")).toBe(true);
+    expect(isChunkLoadFailure("Expected a JavaScript module script but the server responded with a MIME type of \"text/html\"")).toBe(true);
     expect(isChunkLoadFailure({ message: "Request failed with status code 404 /api/coupons" })).toBe(false);
+  });
+
+  it("builds a backend report payload for frontend cache inconsistency", () => {
+    window.history.replaceState(null, "", "/admin/orders?tab=paid");
+
+    const payload = buildAppVersionRecoveryEventPayload(
+      "admin",
+      {
+        app: "admin",
+        firstAt: 120_000,
+        lastAt: 120_000,
+        attempts: 2,
+        assetUrl: "/assets/AdminOrders-old.js",
+      },
+      true,
+    );
+
+    expect(payload?.event_type).toBe("frontend_chunk_load_failed");
+    expect(payload?.module).toBe("frontend_cache");
+    expect(payload?.path).toBe("/admin/orders");
+    expect(payload?.title).toBe("前端缓存不一致：chunk 加载失败");
+    expect(payload?.keyword).toBe("/assets/AdminOrders-old.js");
+    expect(payload?.traffic_source).toBe("manual_recovery");
+    expect(payload?.dedupe_key).toContain("frontend_chunk_load_failed:admin:");
   });
 
   it("can suppress automatic recovery while admin routes are only being preloaded", () => {

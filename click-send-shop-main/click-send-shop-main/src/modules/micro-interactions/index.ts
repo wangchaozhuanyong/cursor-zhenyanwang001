@@ -6,7 +6,6 @@ export { AppModal, type AppModalProps } from "./components/AppModal";
 export { ModalDialog } from "./components/ModalDialog";
 export { BottomSheetConfirm } from "./components/BottomSheetConfirm";
 export { BottomSheetForm } from "./components/BottomSheetForm";
-export { useMediaSheetMode } from "./hooks/useMediaSheetMode";
 export { useAppBreakpoint } from "./modal/useAppBreakpoint";
 export { usePreferBottomSheet } from "./modal/usePreferBottomSheet";
 export { ModalLayerProvider } from "./modal/ModalLayerProvider";

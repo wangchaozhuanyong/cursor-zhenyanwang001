@@ -1,8 +1,7 @@
-const { CLASSIC_GOLD_BLACK_CONFIG } = require('./theme.presets');
+const { DEFAULT_LIFE_GREEN_CONFIG } = require('./theme.presets');
 
-const DEFAULT_THEME_CONFIG = { ...CLASSIC_GOLD_BLACK_CONFIG };
+const DEFAULT_THEME_CONFIG = { ...DEFAULT_LIFE_GREEN_CONFIG };
 
 module.exports = {
   DEFAULT_THEME_CONFIG,
 };
-

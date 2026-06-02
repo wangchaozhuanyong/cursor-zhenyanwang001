@@ -16,9 +16,6 @@ export const IMAGE_UPLOAD_HINT_SITE_LOGO =
 export const IMAGE_UPLOAD_HINT_SITE_FAVICON =
   "格式：PNG/WebP/JPG；≤5MB。上传后生成 192×192 透明底 PNG，并自动裁掉多余透明边，只用于浏览器标签，与网站 Logo 分开保存。";
 
-/** @deprecated 请使用 IMAGE_UPLOAD_HINT_SITE_LOGO / IMAGE_UPLOAD_HINT_SITE_FAVICON */
-export const IMAGE_UPLOAD_HINT_SITE_ASSET = IMAGE_UPLOAD_HINT_SITE_LOGO;
-
 export const IMAGE_UPLOAD_HINT_HOME_NAV_ICON =
   "建议正方形清晰源图，192×192px 及以上；上传后会转成 256px WebP 小图。也可以直接填写内置图标词（如 phone、home、gift、coupon、support）、图片 URL、站内路径或 Emoji。";
 

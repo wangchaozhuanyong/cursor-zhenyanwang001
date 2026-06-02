@@ -60,6 +60,9 @@ export default tseslint.config(
       "src/modules/admin/context/**/*.{ts,tsx}",
       "src/components/SiteSocialLinks.tsx",
       "src/components/store/HomeNavIcon.tsx",
+      "src/modules/admin/pages/product/inventory/inventoryDisplayUtils.tsx",
+      "src/modules/admin/pages/user/userListDisplay.tsx",
+      "src/modules/micro-interactions/modal/ModalLayerProvider.tsx",
     ],
     rules: {
       "react-refresh/only-export-components": "off",

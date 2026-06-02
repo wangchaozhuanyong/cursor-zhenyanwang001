@@ -25,18 +25,17 @@ The current fixed module list is the actual directory list under `server/src/mod
 11. `media`
 12. `monitoring`
 13. `myinvois`
-14. `notification`
-15. `order`
-16. `payment`
-17. `privacy`
-18. `product`
-19. `pwa`
-20. `search`
-21. `seo`
-22. `siteCapabilities`
-23. `telegram`
-24. `theme`
-25. `user`
+14. `order`
+15. `payment`
+16. `privacy`
+17. `product`
+18. `pwa`
+19. `search`
+20. `seo`
+21. `siteCapabilities`
+22. `telegram`
+23. `theme`
+24. `user`
 
 ## Required Module Structure
 

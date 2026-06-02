@@ -60,25 +60,25 @@ export default function AdminPageShell({
   const useCompactHeader = !showTitle && Boolean(hint) && Boolean(toolbar);
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("admin-page-shell min-w-0 space-y-4", className)}>
       {(showTitle && title) || (toolbar && !useCompactHeader) ? (
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="admin-page-header flex min-w-0 flex-wrap items-start justify-between gap-3">
           {showTitle && title ? (
             <AdminPageTitle title={title} hint={hint} hintContentClassName={hintContentClassName} className="text-lg" />
           ) : null}
-          {toolbar ? <div className="flex flex-wrap items-center gap-2">{toolbar}</div> : null}
+          {toolbar ? <div className="admin-page-toolbar flex min-w-0 flex-wrap items-center gap-2">{toolbar}</div> : null}
         </div>
       ) : null}
       {useCompactHeader ? (
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="admin-page-header flex min-w-0 flex-wrap items-start justify-between gap-3">
           <AdminPageHintCollapse hint={hint} className="min-w-0 flex-1" />
-          <div className="flex shrink-0 flex-wrap items-center gap-2">{toolbar}</div>
+          <div className="admin-page-toolbar flex min-w-0 shrink-0 flex-wrap items-center gap-2">{toolbar}</div>
         </div>
       ) : null}
       {!showTitle && hint && !useCompactHeader ? (
         <AdminPageHintCollapse hint={hint} />
       ) : null}
-      {filters}
+      {filters ? <div className="admin-page-filters min-w-0">{filters}</div> : null}
       {children}
     </div>
   );

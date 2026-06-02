@@ -7,9 +7,11 @@ const FRESH_QUERY_PARAM = "__fresh";
 const RECOVERY_NOTICE_ID = "chunk-load-recovery-notice";
 const GLOBAL_RECOVERY_FLAG = "__appVersionRecoveryInProgress__";
 const GLOBAL_RECOVERY_SUPPRESSED_UNTIL_FLAG = "__appVersionRecoverySuppressedUntil__";
+const FRONTEND_CACHE_EVENT_TYPE = "frontend_chunk_load_failed";
+const FRONTEND_CACHE_EVENT_MODULE = "frontend_cache";
 
 const CHUNK_LOAD_ERROR_RE =
-  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
+  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|Importing module from .* was blocked|module script failed|Expected a JavaScript module script|disallowed MIME type|MIME type ["']?text\/html|net::ERR_(?:ABORTED|FAILED)|404(?: \(Not Found\))?.*\/assets\/|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
 const APP_CACHE_RE = /workbox|precache|vite|pwa|app-shell|chunk/i;
 
 export type AppVersionRecoveryState = {
@@ -25,6 +27,23 @@ export type AppVersionRecoveryPlan = {
   state: AppVersionRecoveryState;
   shouldAutoReload: boolean;
   isRepeatedFailure: boolean;
+};
+
+export type AppVersionRecoveryEventPayload = {
+  event_type: typeof FRONTEND_CACHE_EVENT_TYPE;
+  module: typeof FRONTEND_CACHE_EVENT_MODULE;
+  page: string;
+  path: string;
+  url: string;
+  title: string;
+  keyword?: string;
+  dedupe_key: string;
+  traffic_source: "auto_recovery" | "manual_recovery";
+  browser_language?: string;
+  screen_width?: number;
+  screen_height?: number;
+  viewport_width?: number;
+  viewport_height?: number;
 };
 
 declare global {
@@ -183,6 +202,7 @@ async function runRecovery(appName: string, reason?: unknown): Promise<void> {
     );
 
     writeAppVersionRecoveryState(normalizedAppName, plan.state);
+    reportAppVersionRecovery(normalizedAppName, plan.state, plan.isRepeatedFailure);
     showRecoveryNotice(normalizedAppName, plan.isRepeatedFailure);
 
     await withTimeout(
@@ -201,6 +221,72 @@ async function runRecovery(appName: string, reason?: unknown): Promise<void> {
   } catch {
     window[GLOBAL_RECOVERY_FLAG] = false;
     showRecoveryNotice(normalizedAppName, true);
+  }
+}
+
+export function buildAppVersionRecoveryEventPayload(
+  appName: string,
+  state: AppVersionRecoveryState,
+  isRepeatedFailure: boolean,
+): AppVersionRecoveryEventPayload | null {
+  if (typeof window === "undefined") return null;
+
+  const path = window.location.pathname || "/";
+  const assetOrReason = (state.assetUrl || state.reason || "chunk_load_failed").slice(0, 100);
+
+  return {
+    event_type: FRONTEND_CACHE_EVENT_TYPE,
+    module: FRONTEND_CACHE_EVENT_MODULE,
+    page: path,
+    path,
+    url: window.location.href,
+    title: "前端缓存不一致：chunk 加载失败",
+    keyword: assetOrReason,
+    dedupe_key: [
+      FRONTEND_CACHE_EVENT_TYPE,
+      normalizeAppName(appName),
+      Math.floor(Number(state.firstAt || Date.now()) / 60_000),
+      assetOrReason,
+    ].join(":").slice(0, 128),
+    traffic_source: isRepeatedFailure ? "manual_recovery" : "auto_recovery",
+    browser_language: navigator.language,
+    screen_width: window.screen?.width,
+    screen_height: window.screen?.height,
+    viewport_width: window.innerWidth,
+    viewport_height: window.innerHeight,
+  };
+}
+
+function reportAppVersionRecovery(
+  appName: string,
+  state: AppVersionRecoveryState,
+  isRepeatedFailure: boolean,
+): void {
+  const payload = buildAppVersionRecoveryEventPayload(appName, state, isRepeatedFailure);
+  if (!payload || typeof navigator === "undefined") return;
+
+  const body = JSON.stringify(payload);
+  const endpoint = `${getApiBaseUrl()}/analytics/events`;
+
+  try {
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      if (navigator.sendBeacon(endpoint, blob)) return;
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    void fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      credentials: "include",
+      keepalive: true,
+    }).catch(() => undefined);
+  } catch {
+    // ignore
   }
 }
 
@@ -323,7 +409,20 @@ function showRecoveryNotice(appName: string, waitForManualRefresh: boolean): voi
         </button>
       </div>
     `;
-    el.querySelector("button")?.addEventListener("click", () => retryAppVersionRecovery(appName));
+    const card = el.firstElementChild;
+    const titleEl = card?.children.item(0);
+    const descriptionEl = card?.children.item(1);
+    const buttonEl = el.querySelector("button");
+    if (titleEl) {
+      titleEl.textContent = waitForManualRefresh ? "需要重新加载最新版本" : "正在修复网站版本";
+    }
+    if (descriptionEl) {
+      descriptionEl.textContent = waitForManualRefresh
+        ? "自动修复后仍未成功，请点击下方按钮清理旧缓存并重新加载。"
+        : "正在清理旧缓存，稍后会自动重新加载页面。";
+    }
+    if (buttonEl) buttonEl.textContent = "重新加载";
+    buttonEl?.addEventListener("click", () => retryAppVersionRecovery(appName));
     (document.body || document.documentElement).appendChild(el);
   } catch {
     // ignore
@@ -377,8 +476,13 @@ function withTimeout<T>(task: Promise<T>, timeoutMs: number): Promise<T | undefi
       .catch((error) => {
         window.clearTimeout(timer);
         reject(error);
-      });
+    });
   });
+}
+
+function getApiBaseUrl(): string {
+  const base = String(import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/+$/, "");
+  return base || "/api";
 }
 
 function stringifyError(reason: unknown): string {

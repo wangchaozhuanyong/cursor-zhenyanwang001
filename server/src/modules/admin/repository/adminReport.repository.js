@@ -973,11 +973,6 @@ async function selectCouponsAnalysis(dateFrom, dateTo, filters = {}) {
   );
 }
 
-/** @deprecated 使用 selectCouponsAnalysis */
-async function selectSimpleCouponsAnalysis(dateFrom, dateTo) {
-  return selectCouponsAnalysis(dateFrom, dateTo);
-}
-
 async function selectInventoryAnalysis() {
   const paidOrderFilter = isEffectiveOrderExpr('o');
   const salesDateExpr = 'DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))';
@@ -1010,11 +1005,6 @@ async function selectInventoryAnalysis() {
      ORDER BY COALESCE(sales.sales_30d, 0) DESC, p.stock ASC
      LIMIT 500`,
   );
-}
-
-/** @deprecated 使用 selectInventoryAnalysis */
-async function selectSimpleInventoryAnalysis() {
-  return selectInventoryAnalysis();
 }
 
 function searchAnalysisOrderBy(sortBy, sortOrder, analyticsReady) {
@@ -1393,9 +1383,7 @@ module.exports = {
   selectSimpleCustomerAnalysis,
   selectSimpleActivitiesAnalysis,
   selectCouponsAnalysis,
-  selectSimpleCouponsAnalysis,
   selectInventoryAnalysis,
-  selectSimpleInventoryAnalysis,
   selectSimpleSearchAnalysis,
   selectOverviewBehaviorSummary,
   selectTrafficSummary,

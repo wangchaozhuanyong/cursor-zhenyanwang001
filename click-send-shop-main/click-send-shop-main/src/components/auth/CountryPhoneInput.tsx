@@ -1,5 +1,5 @@
 import { Phone } from "lucide-react";
-import type { KeyboardEventHandler } from "react";
+import { useId, type KeyboardEventHandler } from "react";
 import { cn } from "@/lib/utils";
 import {
   COUNTRY_CODE_OPTIONS,
@@ -28,6 +28,7 @@ type CountryPhoneInputProps = {
   className?: string;
   phoneClassName?: string;
   selectAriaLabel?: string;
+  phoneAriaLabel?: string;
   hasError?: boolean;
   showErrorText?: boolean;
 };
@@ -49,13 +50,17 @@ export default function CountryPhoneInput({
   className,
   phoneClassName,
   selectAriaLabel = "国家或地区代码",
+  phoneAriaLabel = "手机号",
   hasError,
   showErrorText = true,
 }: CountryPhoneInputProps) {
+  const generatedId = useId();
   const resolvedPhonePlaceholder =
     phonePlaceholder ?? (countryCode === "+60" ? "手机号，例如 0123456789" : "手机号，例如 13800138000");
   const phoneMaxLength = 11;
   const invalid = hasError ?? Boolean(errorText);
+  const errorId = phoneInputId ? `${phoneInputId}-error` : `country-phone-error-${generatedId}`;
+  const describedBy = errorText ? errorId : undefined;
 
   return (
     <div className={cn(showErrorText && "space-y-2", className)}>
@@ -64,6 +69,7 @@ export default function CountryPhoneInput({
           value={countryCode}
           onChange={(e) => onCountryCodeChange(e.target.value as SupportedCountryCode)}
           aria-label={selectAriaLabel}
+          aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
           disabled={disabled || readOnly}
           className={cn(
@@ -91,6 +97,8 @@ export default function CountryPhoneInput({
             spellCheck={false}
             enterKeyHint={enterKeyHint}
             placeholder={resolvedPhonePlaceholder}
+            aria-label={phoneAriaLabel}
+            aria-describedby={describedBy}
             value={phone}
             maxLength={phoneMaxLength}
             readOnly={readOnly}
@@ -109,8 +117,12 @@ export default function CountryPhoneInput({
         </div>
       </div>
       {showErrorText ? (
-        <p className={cn("min-h-[1.125rem] text-xs leading-snug", errorText ? "text-destructive" : "invisible")}>
+        <p id={errorId} className={cn("min-h-[1.125rem] text-xs leading-snug", errorText ? "text-destructive" : "invisible")}>
           {errorText || "\u00a0"}
+        </p>
+      ) : errorText ? (
+        <p id={errorId} className="sr-only">
+          {errorText}
         </p>
       ) : null}
     </div>

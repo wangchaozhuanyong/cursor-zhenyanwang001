@@ -120,25 +120,21 @@ Invoke-Native ssh ($sshOpts + @("${ServerUser}@${ServerHost}", $extractCmd))
 Write-Host "[4b] Sync dist/admin-dist -> $RemoteStaticRoot ..."
 $syncCmd = @"
 set -euo pipefail
-tmp_assets="`$(mktemp -d)"
-trap 'rm -rf "`$tmp_assets"' EXIT
 preserve_assets_sync() {
   local src="`$1"
   local dest="`$2"
-  local backup="`$3"
   sudo mkdir -p "`$dest"
-  if [ -d "`$dest/assets" ]; then
-    mkdir -p "`$backup"
-    sudo cp -a "`$dest/assets/." "`$backup/" 2>/dev/null || true
-  fi
-  sudo rsync -a --delete "`$src/" "`$dest/"
-  if [ -d "`$backup" ]; then
+  if [ -d "`$src/assets" ]; then
     sudo mkdir -p "`$dest/assets"
-    sudo cp -an "`$backup/." "`$dest/assets/" 2>/dev/null || true
+    sudo rsync -a "`$src/assets/" "`$dest/assets/"
   fi
+  for file in "`$src"/workbox-*.js; do
+    [ -f "`$file" ] && sudo cp -a "`$file" "`$dest/"
+  done
+  sudo rsync -a --delete --exclude='/assets/' --exclude='/workbox-*.js' "`$src/" "`$dest/"
 }
-preserve_assets_sync '$RemoteDist' '$RemotePublicDist' "`$tmp_assets/store"
-preserve_assets_sync '$RemoteAdminDist' '$RemotePublicAdminDist' "`$tmp_assets/admin"
+preserve_assets_sync '$RemoteDist' '$RemotePublicDist'
+preserve_assets_sync '$RemoteAdminDist' '$RemotePublicAdminDist'
 test -f '$RemotePublicDist/index.html'
 test -f '$RemotePublicAdminDist/admin-index.html'
 "@
@@ -155,8 +151,6 @@ Invoke-Native ssh ($sshOpts + @(
 try {
   $checks = @(
     "https://damatong.net/",
-    "https://damatong.net/zh",
-    "https://damatong.net/en",
     "https://console.damatong.net/admin/login"
   )
   foreach ($url in $checks) {

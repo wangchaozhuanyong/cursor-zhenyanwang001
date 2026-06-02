@@ -115,11 +115,6 @@ async function selectUserManualLock(q, userId) {
   return row || null;
 }
 
-async function selectAllUserIdsLegacy(q) {
-  const [rows] = await q.query('SELECT id FROM users WHERE deleted_at IS NULL');
-  return rows.map((r) => r.id);
-}
-
 async function updateUserLevelManual(q, userId, levelId, reason) {
   const [r] = await q.query(
     `UPDATE users
@@ -159,11 +154,9 @@ module.exports = {
   deleteLevel,
   reassignUsersToLevel,
   selectAllUserIds,
-  selectAllUserIdsLegacy,
   selectUserManualLock,
   updateUserLevelManual,
   unlockUserLevelManual,
 };
-
 
 

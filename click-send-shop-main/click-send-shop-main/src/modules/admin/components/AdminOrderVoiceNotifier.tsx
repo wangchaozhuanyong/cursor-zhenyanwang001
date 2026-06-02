@@ -614,11 +614,3 @@ export function AdminOrderVoiceMenuItems({ onClose }: { onClose?: () => void }) 
   );
 }
 
-/** @deprecated 请使用 AdminOrderVoiceProvider + AdminOrderVoiceToolbar */
-export default function AdminOrderVoiceNotifier() {
-  return (
-    <AdminOrderVoiceProvider>
-      <AdminOrderVoiceToolbar />
-    </AdminOrderVoiceProvider>
-  );
-}

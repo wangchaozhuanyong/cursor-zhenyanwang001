@@ -13,6 +13,8 @@ import type { UserProfile } from "@/types/user";
 import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birthday";
 
 const COOKIE_SESSION_ERROR = "登录凭证未生效，请检查 HTTPS、Cookie、域名或 CORS 配置";
+const SESSION_RESTORE_TIMEOUT_MS = 12_000;
+let restoreSessionInflight: Promise<boolean> | null = null;
 
 /** 登录/注册写入本地标记后，用 Cookie 会话拉取资料，确认浏览器已保存并携带 HttpOnly Cookie */
 export async function assertCookieSessionReady(): Promise<void> {
@@ -162,20 +164,29 @@ async function canUseExistingSession(): Promise<boolean> {
   }
 }
 
-/**
- * 启动时用 Cookie 刷新会话；无效时清除本地登录标记，且不在无效会话下请求 /user/profile。
- */
-export async function restoreSessionFromCookie(): Promise<boolean> {
-  if (!isLoggedIn()) return false;
-
-  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
+async function refreshSessionToken(baseUrl: string): Promise<Response> {
+  const controller = new AbortController();
+  const timer = globalThis.setTimeout(() => controller.abort(), SESSION_RESTORE_TIMEOUT_MS);
   try {
-    const refreshRes = await fetch(`${baseUrl}/auth/refresh`, {
+    return await fetch(`${baseUrl}/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
+      signal: controller.signal,
       body: JSON.stringify({}),
     });
+  } finally {
+    globalThis.clearTimeout(timer);
+  }
+}
+
+/**
+ * 启动时用 Cookie 刷新会话；无效时清除本地登录标记，且不在无效会话下请求 /user/profile。
+ */
+async function restoreSessionFromCookieOnce(): Promise<boolean> {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
+  try {
+    const refreshRes = await refreshSessionToken(baseUrl);
     if (!refreshRes.ok) {
       if (refreshRes.status === 429 || refreshRes.status >= 500) {
         return true;
@@ -201,6 +212,16 @@ export async function restoreSessionFromCookie(): Promise<boolean> {
   } catch {
     return true;
   }
+}
+
+export async function restoreSessionFromCookie(): Promise<boolean> {
+  if (!isLoggedIn()) return false;
+  if (restoreSessionInflight) return restoreSessionInflight;
+
+  restoreSessionInflight = restoreSessionFromCookieOnce().finally(() => {
+    restoreSessionInflight = null;
+  });
+  return restoreSessionInflight;
 }
 
 export function isAuthenticated(): boolean {

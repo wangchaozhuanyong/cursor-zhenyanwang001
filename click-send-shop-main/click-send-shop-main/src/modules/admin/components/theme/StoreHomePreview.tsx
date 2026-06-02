@@ -14,7 +14,7 @@ import {
 import {
   getBottomNavInnerClassName,
   getBottomNavShellClassName,
-  getMemberCardClassName,
+  THEME_MEMBER_CARD_SHELL,
 } from "@/utils/themeVisuals";
 import { previewBanner, previewProduct } from "./themePreviewData";
 import { getProductGridClassName } from "@/utils/productGridClasses";
@@ -47,14 +47,13 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
         layout="home"
         title={tText("中秋9.5折")}
         amount="95%"
-        amountPrefix=""
         minSpendText="满 RM 100 可用"
         expireText="2027-05-09"
         scopeText="适用范围：全场商品"
         actionLabel="立即领取"
       />
       <div
-        className={`store-card rounded-xl p-3 ${getMemberCardClassName(config.memberCardStyle)}`}
+        className={`store-card rounded-xl p-3 ${THEME_MEMBER_CARD_SHELL}`}
         data-theme-member-card-style={config.memberCardStyle}
       >
         <p className="text-sm font-semibold"><Tx>会员卡 · 金卡会员</Tx></p>

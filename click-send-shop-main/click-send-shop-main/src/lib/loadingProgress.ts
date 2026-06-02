@@ -108,9 +108,6 @@ export function startGlobalLoadingDeferred(delayMs: number = DEFERRED_SHOW_MS) {
   return token;
 }
 
-/** @deprecated 语义上等价于 startGlobalLoadingDeferred，请在新代码中二选一显式调用 */
-export const startGlobalLoading = startGlobalLoadingDeferred;
-
 export function stopGlobalLoading(token: symbol | null | undefined) {
   if (!token) return;
   activeTokens.delete(token);

@@ -46,3 +46,27 @@ export type ProductVariantMatrixFormSlice = {
   stock_lower_limit: string;
   stock_upper_limit: string;
 };
+
+export type ProductFormPayloadSlice = ProductVariantMatrixFormSlice & {
+  name: string;
+  sales_count: string;
+  category_id: string;
+  sort_order: string;
+  description: string;
+  cover_image: string;
+  cover_image_alt: string;
+  video_url: string;
+  images: string[];
+  image_alts: string[];
+  status: "draft" | "active" | "inactive";
+  is_hot: boolean;
+  is_new: boolean;
+  is_recommended: boolean;
+  is_age_restricted: boolean;
+  minimum_age: string;
+  compliance_type: string;
+  region_notice: string;
+  compliance_notice: string;
+  allow_index: boolean;
+  tag_ids: string[];
+};

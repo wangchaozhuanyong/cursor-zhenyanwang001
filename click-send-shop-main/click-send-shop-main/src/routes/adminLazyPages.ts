@@ -88,7 +88,7 @@ export const AdminSearchAnalysisReport = lazyWithPreload(() => import("@/modules
 export const AdminTrafficAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminTrafficAnalysisReport"));
 export const AdminExportCenter = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminExportCenter"));
 
-export const AdminSiteSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
+export const AdminSiteSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/site/SiteSettingsPage"));
 export const AdminFeatureSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminFeatureSettings"));
 export const AdminSupportDownload = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminSupportDownload"));
 export const AdminTelegramSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminTelegramSettings"));

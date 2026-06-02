@@ -5,21 +5,17 @@ DIST="$ROOT/click-send-shop-main/click-send-shop-main/dist"
 PUBLIC="$ROOT/public-frontend"
 ARCHIVE=/tmp/frontend_dist_deploy.tgz
 
-backup=""
-if [ -d "$PUBLIC/assets" ]; then
-  backup="$(mktemp -d)"
-  cp -a "$PUBLIC/assets/." "$backup/" 2>/dev/null || true
-fi
-
 mkdir -p "$DIST" "$PUBLIC"
 tar -xzf "$ARCHIVE" -C "$ROOT/click-send-shop-main/click-send-shop-main"
 test -f "$DIST/index.html"
-rsync -a --delete "$DIST/" "$PUBLIC/"
-if [ -n "$backup" ] && [ -d "$backup" ]; then
+if [ -d "$DIST/assets" ]; then
   mkdir -p "$PUBLIC/assets"
-  cp -an "$backup/." "$PUBLIC/assets/" 2>/dev/null || true
-  rm -rf "$backup"
+  rsync -a "$DIST/assets/" "$PUBLIC/assets/"
 fi
+for file in "$DIST"/workbox-*.js; do
+  [ -f "$file" ] && cp -a "$file" "$PUBLIC/"
+done
+rsync -a --delete --exclude='/assets/' --exclude='/workbox-*.js' "$DIST/" "$PUBLIC/"
 node "$ROOT/scripts/verify_frontend_dist_assets.js" "$DIST"
 node "$ROOT/scripts/verify_frontend_dist_assets.js" "$PUBLIC"
 test -f "$PUBLIC/sw.js"

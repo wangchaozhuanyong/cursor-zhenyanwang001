@@ -23,6 +23,7 @@ export type BottomSheetProps = {
   closeOnOverlay?: boolean;
   stickyFooter?: boolean;
   className?: string;
+  ariaLabel?: string;
   /** 桌面贴底居中最大宽度 */
   desktopMaxWidthClass?: string;
 };
@@ -50,6 +51,7 @@ export function BottomSheet({
   closeOnOverlay = true,
   stickyFooter = Boolean(footer),
   className,
+  ariaLabel,
   desktopMaxWidthClass = "md:max-w-[520px] md:mx-auto md:left-0 md:right-0",
 }: BottomSheetProps) {
   const dragControls = useDragControls();
@@ -65,6 +67,12 @@ export function BottomSheet({
   useEffect(() => {
     if (open) setPresented(true);
   }, [open]);
+
+  useEffect(() => {
+    if (!open || title || ariaLabel || !import.meta.env.DEV) return;
+    // 开发期提醒即可，避免为了可访问性保护破坏现有弹层调用方。
+    console.warn("[BottomSheet] 缺少标题或 ariaLabel，请为弹层补充可访问名称。");
+  }, [ariaLabel, open, title]);
 
   const overlayTransition: Transition = reduced
     ? { duration: 0.12 }
@@ -107,6 +115,7 @@ export function BottomSheet({
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? titleId : undefined}
+            aria-label={!title ? (ariaLabel || "弹窗") : undefined}
             aria-describedby={description ? descId : undefined}
             className={cn(
               "absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-[22px] border border-b-0 border-[var(--theme-border)]",

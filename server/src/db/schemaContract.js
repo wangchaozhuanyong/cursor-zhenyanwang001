@@ -244,16 +244,6 @@ async function getOrderRevenueExprs() {
   };
 }
 
-/** @deprecated 使用 getOrderRevenueExprs().schema */
-async function getDashboardSchema() {
-  return loadSchemaCapabilities();
-}
-
-/** @deprecated 使用 getOrderRevenueExprs */
-async function getReportExprs() {
-  return getOrderRevenueExprs();
-}
-
 /** 已支付订单按列汇总：列不存在时返回 0 */
 function orderPaidSum(columnExpr, alias) {
   if (!columnExpr || columnExpr === '0') return `0 AS ${alias}`;
@@ -329,8 +319,6 @@ module.exports = {
   getPendingCriticalMigrations,
   getPendingMigrations,
   getOrderRevenueExprs,
-  getDashboardSchema,
-  getReportExprs,
   orderEffectivePayableSql,
   orderEffectivePaidSql,
   orderEffectiveActivityDiscountSql,

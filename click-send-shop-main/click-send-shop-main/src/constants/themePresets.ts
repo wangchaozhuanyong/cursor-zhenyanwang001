@@ -125,12 +125,6 @@ export const DEFAULT_THEME_HOLIDAY_RULES: ThemeHolidayRule[] = [
   { id: "christmas_year_end", name: "圣诞 / 年末礼遇", enabled: true, start: "12-20", end: "12-27", skinId: FESTIVAL_SKIN_ID },
 ];
 
-/** @deprecated Use DEFAULT_LIFE_GREEN_CONFIG. */
-export const CLASSIC_GOLD_BLACK_CONFIG = DEFAULT_LIFE_GREEN_CONFIG;
-
-/** @deprecated Kept only for old callers. */
-export const PROMO_SKIN_ID = FESTIVAL_SKIN_ID;
-
 export const PROMO_ADMIN_BG_OVERRIDES: Pick<ThemeConfig, "bgColor" | "surfaceColor" | "borderColor"> = {
   bgColor: "#F5F7FA",
   surfaceColor: "#FFFFFF",

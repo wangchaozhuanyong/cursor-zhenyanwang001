@@ -118,37 +118,37 @@
     --store-action-bar-height: 4.75rem;
     --store-tab-header-height: 3.5rem;
     --store-brand-logo-size: 2.25rem;
-    --store-page-base: #f7faf8;
-    --store-page-tint: #eef6f1;
-    --store-page-top: #fbfdfb;
-    --store-page-sheen: rgba(216, 239, 224, 0.34);
+    --store-page-base: #f7f4ed;
+    --store-page-tint: #eef1e9;
+    --store-page-top: #fffdf8;
+    --store-page-sheen: rgba(224, 236, 226, 0.34);
     --store-surface: #ffffff;
-    --store-surface-raised: #ffffff;
-    --store-card-bg: #ffffff;
-    --store-card-border: rgba(17, 24, 39, 0.08);
-    --store-border: rgba(17, 24, 39, 0.08);
-    --store-border-strong: rgba(17, 24, 39, 0.14);
-    --store-text: #111827;
-    --store-muted: rgba(17, 24, 39, 0.58);
+    --store-surface-raised: #fffefa;
+    --store-card-bg: #fffefa;
+    --store-card-border: rgba(75, 64, 43, 0.115);
+    --store-border: rgba(75, 64, 43, 0.1);
+    --store-border-strong: rgba(75, 64, 43, 0.18);
+    --store-text: #17211d;
+    --store-muted: rgba(23, 33, 29, 0.62);
     --store-card-radius: 16px;
     --store-panel-radius: 22px;
-    --store-card-shadow: 0 18px 42px -30px rgba(17, 24, 39, 0.28), 0 2px 12px -10px rgba(17, 24, 39, 0.18);
-    --store-card-shadow-hover: 0 24px 54px -30px rgba(17, 24, 39, 0.34), 0 8px 18px -14px rgba(17, 24, 39, 0.22);
-    --store-soft-shadow: 0 12px 30px -24px rgba(17, 24, 39, 0.24);
-    --store-header-bg: rgba(255, 255, 255, 0.82);
-    --store-header-border: rgba(17, 24, 39, 0.12);
-    --store-header-shadow: 0 10px 30px -26px rgba(17, 24, 39, 0.22);
-    --store-bottom-nav-bg: rgba(255, 255, 255, 0.88);
-    --store-bottom-nav-border: rgba(17, 24, 39, 0.12);
-    --store-icon-bg: rgba(0, 0, 0, 0.06);
-    --store-icon-border: rgba(0, 0, 0, 0.12);
-    --store-product-media-bg: #f3f6f4;
-    --store-hero-border: rgba(17, 24, 39, 0.12);
-    --store-hero-shadow: 0 24px 60px -36px rgba(17, 24, 39, 0.3);
+    --store-card-shadow: 0 24px 58px -42px rgba(31, 39, 35, 0.42), 0 8px 24px -22px rgba(107, 88, 50, 0.22);
+    --store-card-shadow-hover: 0 30px 68px -44px rgba(31, 39, 35, 0.5), 0 14px 30px -24px rgba(107, 88, 50, 0.28);
+    --store-soft-shadow: 0 16px 36px -28px rgba(31, 39, 35, 0.28);
+    --store-header-bg: rgba(255, 253, 248, 0.84);
+    --store-header-border: rgba(107, 88, 50, 0.14);
+    --store-header-shadow: 0 14px 34px -28px rgba(31, 39, 35, 0.3);
+    --store-bottom-nav-bg: rgba(255, 253, 248, 0.92);
+    --store-bottom-nav-border: rgba(107, 88, 50, 0.16);
+    --store-icon-bg: rgba(15, 95, 76, 0.075);
+    --store-icon-border: rgba(15, 95, 76, 0.16);
+    --store-product-media-bg: #f4f1e9;
+    --store-hero-border: rgba(107, 88, 50, 0.16);
+    --store-hero-shadow: 0 34px 82px -52px rgba(31, 39, 35, 0.38), 0 12px 30px -24px rgba(198, 161, 91, 0.28);
     --store-hero-text-surface: rgba(255, 255, 255, 0.92);
-    --store-skeleton-a: #f2f5f3;
-    --store-skeleton-b: #e8efeb;
-    --store-price-glow: rgba(220, 38, 38, 0.16);
+    --store-skeleton-a: #f3efe6;
+    --store-skeleton-b: #e8eadf;
+    --store-price-glow: rgba(216, 75, 50, 0.18);
   }
 
   @media (min-width: 1024px) {
@@ -1011,6 +1011,7 @@ html[data-app-scope="store"] {
   --theme-card-shell-shadow-hover: var(--store-card-shadow-hover);
   --theme-shadow: var(--store-soft-shadow);
   --theme-shadow-hover: var(--store-card-shadow-hover);
+  color-scheme: light;
 }
 
 html[data-app-scope="store"] body {
@@ -1022,6 +1023,8 @@ html[data-app-scope="store"] body {
     repeating-linear-gradient(0deg, color-mix(in srgb, var(--store-border) 8%, transparent) 0 1px, transparent 1px 58px),
     repeating-linear-gradient(90deg, color-mix(in srgb, white 12%, transparent) 0 1px, transparent 1px 66px);
   background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
 }
 
 html[data-app-scope="store"] .store-shell {
@@ -1044,6 +1047,7 @@ html[data-app-scope="store"] .store-shell::before {
     repeating-linear-gradient(0deg, color-mix(in srgb, var(--theme-primary) 4%, transparent) 0 1px, transparent 1px 52px),
     repeating-linear-gradient(90deg, color-mix(in srgb, var(--theme-accent) 4%, transparent) 0 1px, transparent 1px 60px);
   opacity: 0.48;
+  mix-blend-mode: multiply;
 }
 
 html[data-app-scope="store"] .store-shell::after {
@@ -1057,6 +1061,12 @@ html[data-app-scope="store"] .store-shell::after {
     linear-gradient(0deg, color-mix(in srgb, var(--theme-primary) 4%, transparent), transparent 74%),
     linear-gradient(90deg, color-mix(in srgb, white 14%, transparent), transparent 24%, transparent 78%, color-mix(in srgb, var(--store-page-tint) 18%, transparent));
   opacity: 0.34;
+}
+
+@supports not (mix-blend-mode: multiply) {
+  html[data-app-scope="store"] .store-shell::before {
+    opacity: 0.28;
+  }
 }
 
 html[data-app-scope="store"] .store-page,
@@ -1125,11 +1135,13 @@ html[data-app-scope="store"] .theme-product-card,
 html[data-app-scope="store"] .store-product-card {
   border: 1px solid var(--store-card-border);
   background:
-    linear-gradient(180deg, color-mix(in srgb, white 42%, transparent), transparent 44%),
-    linear-gradient(124deg, color-mix(in srgb, var(--theme-primary) 4%, transparent), transparent 36%),
+    linear-gradient(180deg, color-mix(in srgb, white 64%, transparent), color-mix(in srgb, var(--store-card-bg) 36%, transparent) 46%, transparent 100%),
+    linear-gradient(124deg, color-mix(in srgb, var(--theme-primary) 5%, transparent), transparent 36%),
+    linear-gradient(304deg, color-mix(in srgb, var(--theme-accent) 5%, transparent), transparent 40%),
     var(--store-card-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 64%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 9%, transparent),
     var(--store-card-shadow);
 }
 
@@ -1153,9 +1165,9 @@ html[data-app-scope="store"] .store-product-card::before {
   pointer-events: none;
   border-radius: inherit;
   background:
-    linear-gradient(180deg, color-mix(in srgb, white 48%, transparent) 0%, transparent 28%),
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 9%, transparent), transparent 42%);
-  opacity: 0.55;
+    linear-gradient(180deg, color-mix(in srgb, white 56%, transparent) 0%, transparent 26%),
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 8%, transparent), transparent 38%, color-mix(in srgb, var(--theme-accent) 4%, transparent));
+  opacity: 0.5;
 }
 
 html[data-app-scope="store"] .theme-product-card:hover,
@@ -1166,17 +1178,19 @@ html[data-app-scope="store"] .store-product-card:hover {
 
 html[data-app-scope="store"] .theme-product-card img {
   background-color: var(--store-product-media-bg);
-  filter: saturate(1.03) contrast(1.01);
+  filter: saturate(1.04) contrast(1.015);
+  transition: filter 220ms ease, transform 220ms ease;
 }
 
 html[data-app-scope="store"] .store-product-media {
   border-color: color-mix(in srgb, var(--store-border) 78%, transparent);
   background:
-    linear-gradient(145deg, color-mix(in srgb, white 36%, transparent), transparent 48%),
+    linear-gradient(145deg, color-mix(in srgb, white 48%, transparent), transparent 46%),
+    linear-gradient(315deg, color-mix(in srgb, var(--theme-accent) 6%, transparent), transparent 42%),
     var(--store-product-media-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 52%, transparent),
-    inset 0 -18px 32px -30px color-mix(in srgb, var(--theme-primary) 34%, transparent);
+    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
+    inset 0 -18px 32px -30px color-mix(in srgb, var(--theme-primary) 36%, transparent);
 }
 
 html[data-app-scope="store"] .store-elevated-card {
@@ -1186,9 +1200,29 @@ html[data-app-scope="store"] .store-elevated-card {
     linear-gradient(135deg, color-mix(in srgb, var(--theme-accent) 5%, transparent), transparent 44%),
     var(--store-card-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 66%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 10%, transparent),
     var(--store-card-shadow);
   border-radius: var(--store-panel-radius);
+}
+
+html[data-app-scope="store"] .store-price-card,
+html[data-app-scope="store"] .store-price-detail,
+html[data-app-scope="store"] .store-price {
+  text-shadow: 0 8px 18px var(--store-price-glow);
+}
+
+html[data-app-scope="store"] .store-badge {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
+    0 8px 16px -14px color-mix(in srgb, var(--theme-primary) 38%, transparent);
+}
+
+html[data-app-scope="store"] .store-badge--on-media {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
+    0 8px 18px -12px color-mix(in srgb, var(--theme-text) 46%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--theme-surface) 40%, transparent);
 }
 
 html[data-app-scope="store"] .store-soft-panel {
@@ -1563,6 +1597,22 @@ html[data-app-scope="store"] .support-primary-action {
   box-shadow: 0 12px 26px -20px rgba(99, 61, 18, 0.58);
 }
 
+html[data-app-scope="store"] .support-primary-action {
+  border-color: color-mix(in srgb, white 20%, var(--support-red));
+  background: linear-gradient(180deg, color-mix(in srgb, white 10%, var(--support-red)), var(--support-red));
+  color: white;
+  box-shadow: 0 16px 32px -22px var(--support-red-deep);
+}
+
+html[data-app-scope="store"] .support-primary-action:disabled {
+  cursor: default;
+  border-color: color-mix(in srgb, var(--support-gold) 42%, white);
+  background: linear-gradient(180deg, #fffaf0, #f3e4ca);
+  color: #6d4f2d;
+  opacity: 0.82;
+  box-shadow: none;
+}
+
 html[data-app-scope="store"] .support-open-channel-button {
   border: 1px solid color-mix(in srgb, white 20%, var(--support-red));
   background: linear-gradient(180deg, color-mix(in srgb, white 10%, var(--support-red)), var(--support-red));
@@ -1610,6 +1660,11 @@ html[data-app-scope="store"] .support-notice-panel {
 
 html[data-app-scope="store"] .support-notice-panel p {
   margin: 0;
+}
+
+html[data-app-scope="store"] .support-notice-panel .support-outline-action {
+  align-self: flex-start;
+  margin-top: 0.1rem;
 }
 
 html[data-app-scope="store"] .support-install-card,
@@ -1688,6 +1743,111 @@ html[data-app-scope="store"] .support-inline-hint {
   font-size: 0.82rem;
 }
 
+html[data-app-scope="store"] .support-installed-panel {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  border: 1px solid color-mix(in srgb, #0f766e 28%, white);
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgba(240, 253, 250, 0.88), rgba(255, 253, 247, 0.72));
+  padding: 0.9rem 1rem;
+  color: #0f766e;
+}
+
+html[data-app-scope="store"] .support-installed-icon {
+  display: inline-flex;
+  width: 2.7rem;
+  height: 2.7rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.12);
+}
+
+html[data-app-scope="store"] .support-installed-panel p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.48;
+}
+
+html[data-app-scope="store"] .support-installed-panel p:first-child {
+  color: #115e59;
+  font-size: 1rem;
+}
+
+html[data-app-scope="store"] .support-ios-guide {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+html[data-app-scope="store"] .support-ios-guide .support-inline-hint {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0;
+  border-style: solid;
+  border-radius: 1rem;
+  text-align: center;
+}
+
+html[data-app-scope="store"] .support-ios-step-grid {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+}
+
+html[data-app-scope="store"] .support-ios-step-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.45rem minmax(0, 1fr);
+  gap: 0.72rem;
+  min-height: 4.65rem;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--support-gold) 24%, white);
+  border-radius: 1.05rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 249, 238, 0.74));
+  padding: 0.82rem 2.15rem 0.82rem 0.82rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+html[data-app-scope="store"] .support-ios-step-number {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.72rem;
+  color: color-mix(in srgb, var(--support-gold) 80%, #6d4f2d);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+html[data-app-scope="store"] .support-ios-step-icon {
+  display: inline-flex;
+  width: 2.42rem;
+  height: 2.42rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--support-red) 10%, white);
+  color: var(--support-red);
+}
+
+html[data-app-scope="store"] .support-ios-step-card p {
+  margin: 0;
+  color: var(--support-ink);
+  font-size: 0.96rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+html[data-app-scope="store"] .support-ios-step-card span:last-child {
+  display: block;
+  margin-top: 0.24rem;
+  color: var(--support-muted);
+  font-size: 0.82rem;
+  line-height: 1.42;
+}
+
 html[data-app-scope="store"] .support-install-steps {
   margin: 1.15rem 0 0;
   padding-left: 1.2rem;
@@ -1729,6 +1889,24 @@ html[data-app-scope="store"] .support-install-desktop-card .support-outline-acti
 @media (min-width: 768px) {
   html[data-app-scope="store"] .support-download-shell {
     width: min(100%, 54rem);
+  }
+
+  html[data-app-scope="store"] .support-ios-step-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  html[data-app-scope="store"] .support-ios-step-card {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    align-content: start;
+    min-height: 9.2rem;
+    padding: 1.1rem 0.85rem 0.95rem;
+    text-align: center;
+  }
+
+  html[data-app-scope="store"] .support-ios-step-number {
+    top: 0.65rem;
+    right: 0.85rem;
   }
 
   html[data-app-scope="store"] .support-channel-card {
@@ -1826,13 +2004,14 @@ html[data-app-scope="store"] .support-install-desktop-card .support-outline-acti
 html[data-app-scope="store"] .store-glass-surface {
   border-color: var(--store-header-border);
   background:
-    linear-gradient(180deg, color-mix(in srgb, white 44%, transparent), transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, white 62%, transparent), color-mix(in srgb, var(--theme-secondary) 12%, transparent) 100%),
     var(--store-header-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 64%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 82%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 10%, transparent),
     var(--store-header-shadow);
-  backdrop-filter: blur(18px) saturate(1.12);
-  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  backdrop-filter: blur(20px) saturate(1.14);
+  -webkit-backdrop-filter: blur(20px) saturate(1.14);
 }
 
 html[data-app-scope="store"] .store-hero-frame {
@@ -1944,16 +2123,21 @@ html[data-app-scope="store"] .store-hero-copy-desc {
 html[data-app-scope="store"] .store-nav-band {
   border-block: 1px solid color-mix(in srgb, var(--store-border) 84%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--store-surface-raised) 92%, transparent), color-mix(in srgb, var(--store-surface) 84%, var(--store-page-base)));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 54%, transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--store-surface-raised) 96%, transparent), color-mix(in srgb, var(--store-surface) 88%, var(--store-page-base)));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    0 12px 28px -26px color-mix(in srgb, var(--theme-primary) 28%, transparent);
 }
 
 html[data-app-scope="store"] .store-icon-tile {
   border: 1px solid var(--store-icon-border);
   background:
-    linear-gradient(180deg, color-mix(in srgb, white 44%, transparent), transparent),
+    linear-gradient(180deg, color-mix(in srgb, white 58%, transparent), transparent),
     var(--store-icon-bg);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 48%, transparent), 0 8px 18px -16px var(--theme-primary);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 10%, transparent),
+    0 10px 22px -18px var(--theme-primary);
 }
 
 html[data-app-scope="store"] .store-coupon-card {
@@ -2012,10 +2196,15 @@ html[data-app-scope="store"] .store-coupon-card button {
 html[data-app-scope="store"] .store-bottom-nav-inner {
   position: relative;
   overflow: hidden;
+  border-color: var(--store-bottom-nav-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 68%, transparent), color-mix(in srgb, var(--theme-secondary) 12%, transparent)),
+    var(--store-bottom-nav-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
-    0 18px 44px -28px color-mix(in srgb, var(--theme-primary) 36%, transparent),
-    0 10px 26px -24px rgba(15, 23, 42, 0.28);
+    inset 0 1px 0 color-mix(in srgb, white 82%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 12%, transparent),
+    0 20px 48px -30px color-mix(in srgb, var(--theme-primary) 38%, transparent),
+    0 10px 26px -24px rgba(15, 23, 42, 0.3);
 }
 
 html[data-app-scope="store"] .store-bottom-nav-inner::before {
@@ -2024,9 +2213,9 @@ html[data-app-scope="store"] .store-bottom-nav-inner::before {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, color-mix(in srgb, white 40%, transparent), transparent 42%),
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 7%, transparent), transparent 38%, color-mix(in srgb, var(--theme-accent) 5%, transparent));
-  opacity: 0.6;
+    linear-gradient(180deg, color-mix(in srgb, white 48%, transparent), transparent 42%),
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 7%, transparent), transparent 38%, color-mix(in srgb, var(--theme-accent) 6%, transparent));
+  opacity: 0.56;
 }
 
 html[data-app-scope="store"] .store-bottom-nav-item {
@@ -2046,12 +2235,13 @@ html[data-app-scope="store"] .store-bottom-nav-icon {
 
 html[data-app-scope="store"] .store-bottom-nav-item[aria-current="page"] .store-bottom-nav-icon {
   background:
-    linear-gradient(180deg, color-mix(in srgb, white 52%, transparent), transparent),
+    linear-gradient(180deg, color-mix(in srgb, white 64%, transparent), transparent),
     var(--store-icon-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 62%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 76%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 14%, transparent),
     inset 0 0 0 1px var(--store-icon-border),
-    0 8px 18px -14px color-mix(in srgb, var(--theme-primary) 70%, transparent);
+    0 9px 20px -14px color-mix(in srgb, var(--theme-primary) 74%, transparent);
 }
 
 html[data-app-scope="store"] .store-bottom-nav-label {
@@ -2080,8 +2270,23 @@ html[data-app-scope="store"] .store-bottom-nav-item {
 html[data-app-scope="store"] .store-header-icon-button,
 html[data-app-scope="store"] .store-header-account-button {
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 58%, transparent),
-    0 10px 22px -18px color-mix(in srgb, var(--theme-primary) 42%, transparent);
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 9%, transparent),
+    0 10px 22px -18px color-mix(in srgb, var(--theme-primary) 48%, transparent);
+}
+
+html[data-app-scope="store"] .store-header-login-button {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 30%, transparent),
+    0 14px 28px -20px color-mix(in srgb, var(--theme-primary) 68%, transparent);
+}
+
+html[data-app-scope="store"] .store-button,
+html[data-app-scope="store"] button[class*="bg-[var(--theme-primary)]"],
+html[data-app-scope="store"] button[class*="bg-[var(--theme-price)]"] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 28%, transparent),
+    0 12px 24px -18px color-mix(in srgb, var(--theme-primary) 52%, transparent);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2098,8 +2303,23 @@ html[data-app-scope="store"] .store-header-account-button {
   html[data-app-scope="store"] .store-header-account-button:hover {
     border-color: color-mix(in srgb, var(--theme-primary) 24%, var(--theme-border));
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 66%, transparent),
-      0 14px 28px -20px color-mix(in srgb, var(--theme-primary) 56%, transparent);
+      inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 12%, transparent),
+      0 14px 28px -20px color-mix(in srgb, var(--theme-primary) 58%, transparent);
+  }
+
+  html[data-app-scope="store"] .theme-product-card:hover img,
+  html[data-app-scope="store"] .store-product-card:hover img {
+    filter: saturate(1.07) contrast(1.025);
+    transform: scale(1.012);
+  }
+
+  html[data-app-scope="store"] .store-button:hover,
+  html[data-app-scope="store"] button[class*="bg-[var(--theme-primary)]"]:hover,
+  html[data-app-scope="store"] button[class*="bg-[var(--theme-price)]"]:hover {
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
+      0 16px 30px -20px color-mix(in srgb, var(--theme-primary) 66%, transparent);
   }
 }
 
@@ -4732,79 +4952,85 @@ html[data-app-scope="store"][data-theme-skin-id="default_life_green"] .store-cou
 
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] body {
   background-image:
-    linear-gradient(180deg, #fbf8f1 0%, #f7f4ec 24rem, #f0ece1 100%),
-    linear-gradient(118deg, rgba(15, 95, 76, 0.035) 0%, transparent 46%),
-    linear-gradient(240deg, rgba(198, 161, 91, 0.048) 0%, transparent 52%),
-    repeating-linear-gradient(0deg, rgba(198, 161, 91, 0.035) 0 1px, transparent 1px 58px),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 66px);
+    linear-gradient(180deg, #fffdf8 0%, #f7f4ec 23rem, #eff1e7 100%),
+    linear-gradient(118deg, rgba(15, 95, 76, 0.032) 0%, transparent 44%),
+    linear-gradient(240deg, rgba(198, 161, 91, 0.04) 0%, transparent 50%),
+    repeating-linear-gradient(0deg, rgba(198, 161, 91, 0.026) 0 1px, transparent 1px 62px),
+    repeating-linear-gradient(90deg, rgba(15, 95, 76, 0.018) 0 1px, transparent 1px 72px);
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-shell::before {
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0%, transparent 24%, transparent 78%, rgba(240, 236, 225, 0.4) 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 38%, rgba(15, 95, 76, 0.024)),
-    repeating-linear-gradient(0deg, rgba(15, 95, 76, 0.024) 0 1px, transparent 1px 54px),
-    repeating-linear-gradient(90deg, rgba(198, 161, 91, 0.03) 0 1px, transparent 1px 62px);
-  opacity: 0.46;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, transparent 24%, transparent 78%, rgba(239, 241, 231, 0.34) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 38%, rgba(15, 95, 76, 0.02)),
+    repeating-linear-gradient(0deg, rgba(15, 95, 76, 0.018) 0 1px, transparent 1px 58px),
+    repeating-linear-gradient(90deg, rgba(198, 161, 91, 0.024) 0 1px, transparent 1px 68px);
+  opacity: 0.34;
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-card,
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .theme-product-card,
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-product-card,
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-elevated-card {
-  border-color: color-mix(in srgb, var(--theme-accent) 16%, var(--store-card-border));
+  border-color: color-mix(in srgb, var(--theme-accent) 18%, var(--store-card-border));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.3) 42%, transparent 100%),
-    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--theme-primary) 4%, transparent), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.34) 42%, transparent 100%),
+    linear-gradient(128deg, color-mix(in srgb, var(--theme-primary) 4%, transparent), transparent 34%),
+    linear-gradient(306deg, color-mix(in srgb, var(--theme-accent) 6%, transparent), transparent 38%),
     var(--store-card-bg);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 22px 52px -38px color-mix(in srgb, var(--theme-primary) 34%, transparent),
-    0 10px 28px -24px rgba(31, 39, 35, 0.24);
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 12%, transparent),
+    0 24px 58px -42px color-mix(in srgb, var(--theme-primary) 36%, transparent),
+    0 10px 28px -24px rgba(31, 39, 35, 0.28);
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-glass-surface,
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-home-hero-stack .store-nav-band,
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-trust-bar {
-  border-color: color-mix(in srgb, var(--theme-accent) 18%, var(--store-border));
+  border-color: color-mix(in srgb, var(--theme-accent) 20%, var(--store-border));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78), color-mix(in srgb, var(--theme-secondary) 18%, transparent)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), color-mix(in srgb, var(--theme-secondary) 16%, transparent)),
     color-mix(in srgb, var(--store-surface-raised) 90%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 18px 42px -34px color-mix(in srgb, var(--theme-primary) 32%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 10%, transparent),
+    0 18px 42px -34px color-mix(in srgb, var(--theme-primary) 34%, transparent);
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-hero-frame {
-  border-color: color-mix(in srgb, var(--theme-accent) 24%, var(--store-hero-border));
+  border-color: color-mix(in srgb, var(--theme-accent) 26%, var(--store-hero-border));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.56), transparent 38%),
     linear-gradient(125deg, color-mix(in srgb, var(--theme-primary) 6%, transparent), transparent 42%),
-    linear-gradient(315deg, color-mix(in srgb, var(--theme-accent) 11%, transparent), transparent 38%),
+    linear-gradient(315deg, color-mix(in srgb, var(--theme-accent) 9%, transparent), transparent 38%),
     color-mix(in srgb, var(--store-surface) 92%, var(--store-page-base));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.84),
-    0 32px 78px -48px rgba(31, 39, 35, 0.36),
-    0 12px 30px -24px color-mix(in srgb, var(--theme-accent) 42%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 12%, transparent),
+    0 34px 82px -52px rgba(31, 39, 35, 0.4),
+    0 12px 30px -24px color-mix(in srgb, var(--theme-accent) 44%, transparent);
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-hero-copy-panel {
-  border-color: color-mix(in srgb, var(--theme-accent) 24%, white);
+  border-color: color-mix(in srgb, var(--theme-accent) 28%, white);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.78), color-mix(in srgb, var(--store-hero-text-surface) 30%, transparent)),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-primary) 5%, transparent), transparent 68%);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86), color-mix(in srgb, var(--store-hero-text-surface) 34%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-primary) 4%, transparent), transparent 68%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.84),
-    0 20px 46px -34px color-mix(in srgb, var(--theme-primary) 42%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 10%, transparent),
+    0 20px 46px -34px color-mix(in srgb, var(--theme-primary) 44%, transparent);
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-icon-tile {
   border-color: color-mix(in srgb, var(--theme-accent) 18%, var(--store-icon-border));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), color-mix(in srgb, var(--theme-secondary) 25%, transparent)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), color-mix(in srgb, var(--theme-secondary) 22%, transparent)),
     var(--store-icon-bg);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 10%, transparent),
     0 10px 22px -18px color-mix(in srgb, var(--theme-primary) 58%, transparent);
 }
 
@@ -4869,7 +5095,7 @@ html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-cou
 html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .store-bottom-nav-inner {
   border-color: color-mix(in srgb, var(--theme-accent) 20%, var(--store-bottom-nav-border));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.76), color-mix(in srgb, var(--theme-secondary) 13%, transparent)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), color-mix(in srgb, var(--theme-secondary) 12%, transparent)),
     var(--store-bottom-nav-bg);
 }
 
@@ -4883,7 +5109,7 @@ html[data-app-scope="store"] .store-coupon-card--template {
   --coupon-ticket-paper: #fff2d3;
   --coupon-ticket-paper-deep: #f2d49a;
   --coupon-ticket-left-width: 7.1rem;
-  --coupon-ticket-action-width: 4.65rem;
+  --coupon-ticket-action-width: 5.15rem;
   --coupon-template-a: var(--coupon-ticket-red);
   --coupon-template-b: var(--coupon-ticket-gold);
   --coupon-template-c: #c58a32;
@@ -4942,7 +5168,7 @@ html[data-app-scope="store"][data-theme-skin-id] .store-coupon-card--template {
 
 html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="home"] {
   --coupon-ticket-left-width: 5.55rem;
-  --coupon-ticket-action-width: 3.05rem;
+  --coupon-ticket-action-width: 3.42rem;
   grid-template-columns: 5.55rem minmax(0, 1fr) 3.05rem;
   min-height: 5.95rem;
   border-radius: 17px;
@@ -4950,13 +5176,13 @@ html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layou
 
 html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="compact"] {
   --coupon-ticket-left-width: 6.7rem;
-  --coupon-ticket-action-width: 4.35rem;
+  --coupon-ticket-action-width: 4.85rem;
   grid-template-columns: 6.7rem minmax(0, 1fr) 4.35rem;
 }
 
 html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="default"] {
   --coupon-ticket-left-width: 7.1rem;
-  --coupon-ticket-action-width: 4.65rem;
+  --coupon-ticket-action-width: 5.15rem;
   grid-template-columns: 7.1rem minmax(0, 1fr) 4.65rem;
 }
 
@@ -5147,7 +5373,9 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__in
   background: transparent;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 30%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--coupon-ticket-gold) 12%, transparent);
+    inset 0 -1px 0 color-mix(in srgb, var(--coupon-ticket-gold) 12%, transparent),
+    inset -1px 0 0 color-mix(in srgb, var(--coupon-ticket-gold) 32%, transparent),
+    inset -16px 0 18px -22px color-mix(in srgb, var(--coupon-ticket-gold) 48%, transparent);
 }
 
 html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane::before {
@@ -5168,10 +5396,10 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__in
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--coupon-ticket-gold) 36%, transparent) 0 1.5px, transparent 2px),
-    radial-gradient(ellipse at 88% 82%, color-mix(in srgb, var(--coupon-ticket-gold) 14%, transparent) 0 16%, transparent 33%),
-    linear-gradient(90deg, color-mix(in srgb, var(--coupon-ticket-gold) 11%, transparent), transparent 18%, transparent 82%, color-mix(in srgb, var(--coupon-ticket-gold) 11%, transparent));
-  opacity: 0.56;
+    linear-gradient(90deg, transparent 0%, transparent 70%, color-mix(in srgb, var(--coupon-ticket-gold) 12%, transparent) 100%),
+    radial-gradient(circle at 90% 18%, color-mix(in srgb, var(--coupon-ticket-gold) 24%, transparent) 0 1.5px, transparent 2px),
+    radial-gradient(ellipse at 86% 82%, color-mix(in srgb, var(--coupon-ticket-gold) 10%, transparent) 0 14%, transparent 31%);
+  opacity: 0.48;
 }
 
 html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane > div,
@@ -5198,6 +5426,44 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__in
   color: var(--coupon-ticket-ink);
 }
 
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane {
+  gap: 0 !important;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-row {
+  gap: 0.28rem;
+  min-height: 1.04rem;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-row--title {
+  margin-bottom: 0.16rem;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-row--meta + .store-coupon-card__info-row--meta {
+  margin-top: 0.02rem;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-row--meta .store-coupon-card__info-icon {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-row--title .store-coupon-card__info-text {
+  font-size: 0.98rem;
+  line-height: 1.05;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-row--meta .store-coupon-card__info-text {
+  font-size: 0.72rem;
+  line-height: 1.08;
+}
+
 html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__info-pane .store-card-title {
   color: color-mix(in srgb, var(--coupon-ticket-red-dark) 86%, var(--coupon-ticket-ink));
   font-weight: 900;
@@ -5216,6 +5482,7 @@ html[data-app-scope="store"] .store-coupon-card--template .coupon-card-column-ru
 html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-pane {
   position: relative;
   align-self: stretch;
+  overflow: hidden;
   padding-left: 0;
   border-left: 1px solid color-mix(in srgb, var(--coupon-ticket-gold) 52%, transparent);
 }
@@ -5223,11 +5490,11 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__ac
 html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-pane::before {
   content: "";
   position: absolute;
-  inset: 0.44rem 0.38rem;
+  inset: 0.44rem 0.44rem 0.44rem 0.62rem;
   pointer-events: none;
   border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold-bright) 72%, transparent);
-  border-left-color: color-mix(in srgb, var(--coupon-ticket-gold) 34%, transparent);
-  border-radius: 4px 13px 13px 4px;
+  border-left-color: color-mix(in srgb, var(--coupon-ticket-gold) 24%, transparent);
+  border-radius: 8px 13px 13px 8px;
   opacity: 0.72;
 }
 
@@ -5399,7 +5666,7 @@ html[data-app-scope="store"] .store-coupon-card--template[data-coupon-state="dis
   html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="default"],
   html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="compact"] {
     --coupon-ticket-left-width: 30%;
-    --coupon-ticket-action-width: 4.1rem;
+    --coupon-ticket-action-width: 4.85rem;
     grid-template-columns: minmax(5.65rem, 30%) minmax(0, 1fr) minmax(3.65rem, 4.35rem);
   }
 

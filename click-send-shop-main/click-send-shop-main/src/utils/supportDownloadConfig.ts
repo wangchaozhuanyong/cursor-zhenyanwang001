@@ -17,7 +17,7 @@ export type LegacySupportDownloadConfig = Partial<SupportDownloadConfig> & {
 };
 
 export const CHANNEL_TYPES: SupportChannelType[] = ["wechat", "whatsapp", "telegram"];
-export const PLATFORM_TYPES: DownloadPlatformType[] = ["desktop", "android", "ios"];
+export const PLATFORM_TYPES: DownloadPlatformType[] = ["android", "ios"];
 
 export const DEFAULT_PLATFORMS: DownloadPlatform[] = [
   {
@@ -42,23 +42,11 @@ export const DEFAULT_PLATFORMS: DownloadPlatform[] = [
     description: "请使用 Safari 浏览器将商城添加到主屏幕。",
     buttonText: "复制链接，用 Safari 打开",
     instructions: [
-      "用 Safari 打开本页面",
-      "点击底部中间的“分享”按钮",
+      "点击 Safari 底部工具栏的“分享”按钮",
       "向下滑动，选择“添加到主屏幕”",
-      "点击右上角“添加”",
-      "回到手机桌面打开",
+      "点击右上角“添加”，之后从桌面图标进入",
     ],
     sortOrder: 2,
-  },
-  {
-    id: "desktop",
-    type: "desktop",
-    enabled: false,
-    title: "电脑端",
-    description: "仅为兼容旧配置保留，前台不展示。",
-    buttonText: "",
-    instructions: [],
-    sortOrder: 99,
   },
 ];
 
@@ -69,7 +57,6 @@ export const DEFAULT_SUPPORT_DOWNLOAD_CONFIG: SupportDownloadConfig = {
   defaultTab: "support",
   support: {
     enabled: true,
-    title: "联系客服",
     description: "请选择下方官方客服渠道咨询商品、订单、售后或使用问题。",
     workingHours: "",
     channels: [],
@@ -136,11 +123,10 @@ export function normalizePlatform(
     : null;
   if (!type) return null;
   const fallback = DEFAULT_PLATFORMS.find((item) => item.type === type) || DEFAULT_PLATFORMS[0];
-  const enabled = type === "desktop" ? false : platform.enabled !== false;
   return {
     id: trim(platform.id) || type,
     type,
-    enabled,
+    enabled: platform.enabled !== false,
     title: trim(platform.title) || fallback.title,
     description: resolveOptionalConfigText(platform.description, fallback.description),
     buttonText: trim(platform.buttonText) || fallback.buttonText,
@@ -172,7 +158,6 @@ export function normalizeSupportDownloadConfig(config: LegacySupportDownloadConf
     defaultTab: config.defaultTab === "download" ? "download" : "support",
     support: {
       enabled: config.support?.enabled !== false,
-      title: resolveOptionalConfigText(config.support?.title, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.title),
       description: resolveFromSources(
         [config.support?.description, config.supportDescription],
         DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.description,
@@ -224,7 +209,7 @@ export function getEnabledSupportChannels(config: SupportDownloadConfig): Suppor
 
 export function getEnabledDownloadPlatforms(config: SupportDownloadConfig): DownloadPlatform[] {
   return (config.download.platforms || DEFAULT_PLATFORMS)
-    .filter((p) => p.enabled !== false && p.type !== "desktop")
+    .filter((p) => p.enabled !== false)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 

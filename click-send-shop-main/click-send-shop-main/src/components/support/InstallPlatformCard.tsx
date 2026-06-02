@@ -1,4 +1,4 @@
-import { Apple, Copy, Share2, Smartphone } from "lucide-react";
+import { Apple, CheckCircle2, Copy, Info, PlusSquare, Share2, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import type { DownloadPlatform } from "@/types/content";
 import type { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
@@ -15,6 +15,24 @@ type Props = {
   recommended: boolean;
 };
 
+const IOS_SAFARI_GUIDE_STEPS = [
+  {
+    icon: "share",
+    title: "点击分享按钮",
+    description: "在 Safari 底部工具栏点击分享图标。",
+  },
+  {
+    icon: "plus",
+    title: "选择添加到主屏幕",
+    description: "在菜单里向下滑动，点击“添加到主屏幕”。",
+  },
+  {
+    icon: "done",
+    title: "确认添加",
+    description: "点击右上角“添加”，之后从桌面图标进入。",
+  },
+] as const;
+
 async function copySiteLink(successMessage = "当前链接已复制") {
   const url = getPublicSiteUrl();
   if (!url) {
@@ -26,18 +44,36 @@ async function copySiteLink(successMessage = "当前链接已复制") {
   else toast.error("复制失败，请手动复制地址栏链接");
 }
 
+function getPreferredAndroidBrowserText() {
+  return "请用 Android Chrome、Samsung Internet 或 Edge 打开本页。";
+}
+
+function IosGuideIcon({ icon }: { icon: (typeof IOS_SAFARI_GUIDE_STEPS)[number]["icon"] }) {
+  if (icon === "share") return <Share2 size={18} aria-hidden="true" />;
+  if (icon === "plus") return <PlusSquare size={18} aria-hidden="true" />;
+  return <CheckCircle2 size={18} aria-hidden="true" />;
+}
+
 export default function InstallPlatformCard({ platform, browser, pwa, recommended }: Props) {
   if (platform.type === "desktop") return null;
 
   const isAndroid = platform.type === "android";
   const isIos = platform.type === "ios";
   const Icon = isIos ? Apple : Smartphone;
-  const canOneTap = isAndroid && browser.isAndroid && !browser.isInAppBrowser && pwa.canInstall;
-  const showIosSafariHint = isIos && browser.isIOS && !browser.isSafari;
+  const isAndroidDevice = isAndroid && browser.isAndroid;
+  const isIosDevice = isIos && browser.isIOS;
+  const canOneTap = isAndroidDevice && !browser.isInAppBrowser && pwa.canInstall;
+  const isCheckingOneTap = isAndroidDevice && !browser.isInAppBrowser && !pwa.installPromptChecked && !pwa.installed;
+  const showAndroidFallback = isAndroidDevice && !canOneTap && !isCheckingOneTap && !pwa.installed;
+  const isIosStandalone = isIosDevice && pwa.installed;
+  const showIosSafariHint = isIosDevice && !browser.isSafari && !pwa.installed;
+  const showIosSafariGuide = isIosDevice && !pwa.installed;
+  const showDefaultInstructions = !isIosDevice;
+  const showBottomCopyButton = !isIosDevice;
 
   const onInstall = async () => {
-    void trackEvent({ event_type: "pwa_install_button_clicked", module: "pwa", page: "/support-download" });
     if (!canOneTap) return;
+    void trackEvent({ event_type: "pwa_install_button_clicked", module: "pwa", page: "/support-download" });
     const result = await pwa.install();
     if (result === "accepted") toast.success("已添加到桌面，可从手机桌面打开");
     else if (result === "dismissed") toast.message("已取消，可稍后再试");
@@ -68,22 +104,49 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
         </div>
       </div>
 
-      {isAndroid && canOneTap ? (
+      {isAndroidDevice && (canOneTap || pwa.installed) ? (
         <button type="button" onClick={() => { void onInstall(); }} disabled={pwa.installing || pwa.installed} className="support-primary-action">
-          {pwa.installed ? "已添加到桌面" : pwa.installing ? "正在处理..." : "一键添加到桌面"}
+          {pwa.installed ? <CheckCircle2 size={18} aria-hidden="true" /> : <Smartphone size={18} aria-hidden="true" />}
+          <span>{pwa.installed ? "已添加到桌面" : pwa.installing ? "正在处理..." : "一键添加到桌面"}</span>
         </button>
       ) : null}
 
-      {isAndroid && !canOneTap ? (
+      {isAndroidDevice && canOneTap ? (
+        <p className="support-inline-hint">
+          <Info size={15} aria-hidden="true" />
+          <span>点击后请在浏览器确认框里选择安装，确认后桌面会生成入口。</span>
+        </p>
+      ) : null}
+
+      {isAndroidDevice && isCheckingOneTap ? (
         <div className="support-notice-panel">
-          当前浏览器可能不支持自动添加，请按下方步骤手动添加到桌面。
+          正在检测当前浏览器是否支持一键添加到桌面，请稍等。
+        </div>
+      ) : null}
+
+      {showAndroidFallback && browser.isInAppBrowser ? (
+        <div className="support-notice-panel">
+          <p className="font-semibold">当前是在 App 内打开，通常不会弹出安装确认框。</p>
+          <p>{getPreferredAndroidBrowserText()}</p>
+          <button type="button" onClick={() => { void copySiteLink("链接已复制，请用手机浏览器打开"); }} className="support-outline-action">
+            <Copy size={15} aria-hidden="true" />
+            <span>复制链接，换浏览器打开</span>
+          </button>
+        </div>
+      ) : null}
+
+      {showAndroidFallback && !browser.isInAppBrowser ? (
+        <div className="support-notice-panel">
+          <p className="font-semibold">当前浏览器没有提供一键安装确认框。</p>
+          <p>请点浏览器右上角菜单，选择“添加到桌面 / 添加到主屏幕 / 发送到桌面”。</p>
+          <p>{getPreferredAndroidBrowserText()}</p>
         </div>
       ) : null}
 
       {showIosSafariHint ? (
         <div className="support-notice-panel">
-          <p className="font-semibold">当前浏览器可能无法直接添加到苹果手机桌面。</p>
-          <p>请复制链接后，用 Safari 浏览器打开。</p>
+          <p className="font-semibold">苹果手机需要用 Safari 添加到主屏幕。</p>
+          <p>请先复制链接，用 Safari 打开后再按下面 3 步操作。</p>
           <button type="button" onClick={() => { void copySiteLink("链接已复制，请用 Safari 打开"); }} className="support-outline-action">
             <Copy size={15} aria-hidden="true" />
             <span>复制链接，用 Safari 打开</span>
@@ -91,23 +154,57 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
         </div>
       ) : null}
 
-      {isIos && browser.isIOS && browser.isSafari ? (
-        <p className="support-inline-hint">
-          <Share2 size={15} aria-hidden="true" />
-          <span>请按下方步骤添加到主屏幕。</span>
-        </p>
+      {isIosStandalone ? (
+        <div className="support-installed-panel">
+          <span className="support-installed-icon" aria-hidden="true">
+            <CheckCircle2 size={22} />
+          </span>
+          <div>
+            <p className="font-semibold">已从桌面 App 打开</p>
+            <p>以后可以直接从 iPhone 主屏幕图标进入。</p>
+          </div>
+        </div>
       ) : null}
 
-      <ol className="support-install-steps">
-        {(platform.instructions || []).map((step, index) => (
-          <li key={`${platform.id}-${index}`}>{step}</li>
-        ))}
-      </ol>
+      {showIosSafariGuide ? (
+        <div className="support-ios-guide" aria-label="苹果手机添加到主屏幕步骤">
+          {browser.isSafari ? (
+            <p className="support-inline-hint">
+              <Share2 size={15} aria-hidden="true" />
+              <span>请按这 3 步添加，添加后可像 App 一样打开。</span>
+            </p>
+          ) : null}
+          <div className="support-ios-step-grid">
+            {IOS_SAFARI_GUIDE_STEPS.map((step, index) => (
+              <div key={step.title} className="support-ios-step-card">
+                <span className="support-ios-step-number">{index + 1}</span>
+                <span className="support-ios-step-icon">
+                  <IosGuideIcon icon={step.icon} />
+                </span>
+                <div>
+                  <p>{step.title}</p>
+                  <span>{step.description}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
-      <button type="button" onClick={() => { void copySiteLink(); }} className="support-outline-action">
-        <Copy size={15} aria-hidden="true" />
-        <span>复制当前链接</span>
-      </button>
+      {showDefaultInstructions ? (
+        <ol className="support-install-steps">
+          {(platform.instructions || []).map((step, index) => (
+            <li key={`${platform.id}-${index}`}>{step}</li>
+          ))}
+        </ol>
+      ) : null}
+
+      {showBottomCopyButton ? (
+        <button type="button" onClick={() => { void copySiteLink(); }} className="support-outline-action">
+          <Copy size={15} aria-hidden="true" />
+          <span>复制当前链接</span>
+        </button>
+      ) : null}
     </section>
   );
 }

@@ -151,16 +151,21 @@ function CouponInfoRow({
   titleClass?: string;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-1">
+    <div
+      className={cn(
+        "store-coupon-card__info-row flex min-w-0 items-center gap-1",
+        prominent ? "store-coupon-card__info-row--title" : "store-coupon-card__info-row--meta",
+      )}
+    >
       <span
-        className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-[var(--theme-border)] bg-[var(--theme-bg)]"
+        className="store-coupon-card__info-icon flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-[var(--theme-border)] bg-[var(--theme-bg)]"
         aria-hidden
       >
         <Icon size={10} className={iconClass} strokeWidth={1.75} />
       </span>
       <p
         className={cn(
-          "min-w-0 flex-1 leading-snug",
+          "store-coupon-card__info-text min-w-0 flex-1 leading-snug",
           prominent
             ? cn("store-card-title line-clamp-2 font-bold", titleClass)
             : cn("store-micro truncate", mutedClass),

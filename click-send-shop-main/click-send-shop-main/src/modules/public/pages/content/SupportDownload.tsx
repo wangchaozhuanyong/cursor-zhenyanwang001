@@ -183,6 +183,13 @@ export default function SupportDownload() {
     return undefined;
   }, [activeView, channelByType, pinnedChannel]);
   const recommendedPlatform = browserEnv.platform;
+  const visiblePlatforms = useMemo(() => {
+    if (recommendedPlatform === "android" || recommendedPlatform === "ios") {
+      const matched = platforms.filter((platform) => platform.type === recommendedPlatform);
+      if (matched.length > 0) return matched;
+    }
+    return platforms;
+  }, [platforms, recommendedPlatform]);
   const pageTitle = config.title?.trim() || "客服与安装";
   const pageSubtitle = config.subtitle?.trim();
 
@@ -279,7 +286,7 @@ export default function SupportDownload() {
                   </button>
                 </section>
               ) : (
-                platforms.map((platform) => (
+                visiblePlatforms.map((platform) => (
                   <InstallPlatformCard
                     key={platform.id}
                     platform={platform}

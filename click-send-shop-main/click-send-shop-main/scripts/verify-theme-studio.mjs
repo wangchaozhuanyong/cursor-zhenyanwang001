@@ -94,15 +94,9 @@ async function openEditorSection(page, sectionTitle) {
   if (expanded !== "true") await btn.click();
 }
 
-async function selectThemeOption(page, sectionTitle, labelText, value) {
-  if (sectionTitle) await openEditorSection(page, sectionTitle);
-  const label = page.locator("label").filter({ has: page.locator("span", { hasText: labelText }) });
-  await label.locator("select").selectOption(value);
-}
-
 async function main() {
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
   await installApiMocks(context, BASE);
   await context.addInitScript(() => {
     localStorage.setItem("admin_authenticated", "1");
@@ -125,23 +119,39 @@ async function main() {
   }
   await page.goto(`${BASE}/admin/settings/theme`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page
-    .getByRole("heading", { name: /Theme Studio|皮肤设计工作台/i })
+    .getByText(/Theme Studio|皮肤设计工作台|皮肤设置/i)
+    .first()
     .waitFor({ timeout: 45000 });
 
-  const preview = page.locator('[aria-label="实时预览"]');
-  const themeScope = preview.locator("[data-theme-admin-mode]").first();
+  const preview = page.locator("aside").filter({ has: page.getByText("实时预览", { exact: true }) }).first();
+  await preview.waitFor({ state: "visible", timeout: 15000 });
+  const themeScope = preview.locator(".theme-preview-store[data-theme-admin-mode]").first();
+  await themeScope.waitFor({ state: "visible", timeout: 15000 });
+
+  const editorTabs = await page.locator("[data-theme-editor-tab]").evaluateAll((tabs) =>
+    tabs.map((tab) => tab.getAttribute("data-theme-editor-tab")),
+  );
+  const editorTabsLocked = editorTabs.join(",") === "basic,colors";
+  const legacyEditorSectionsAbsent =
+    (await page.locator("#theme-section-components, #theme-section-product, #theme-section-home, #theme-section-advanced").count()) === 0;
+  const designLockSummaryOk = await page.getByTestId("theme-design-lock-summary").isVisible();
+  const lockedFieldCount = await page.locator("[data-theme-lock-field]").count();
+  const designLocksApplied = await themeScope.evaluate((el) => ({
+    navStyle: el.getAttribute("data-theme-nav-style"),
+    productCardVariant: el.getAttribute("data-theme-product-card-variant"),
+    couponStyle: el.getAttribute("data-theme-coupon-style"),
+    adminMode: el.getAttribute("data-theme-admin-mode"),
+  }));
 
   const sticky = await preview.evaluate((el) => {
     const style = getComputedStyle(el);
     return { position: style.position, top: style.top };
   });
 
-  await openEditorSection(page, "基础颜色");
+  await openEditorSection(page, "颜色");
   const primaryHex = page
-    .locator("div.rounded-lg.border")
-    .filter({ has: page.getByText("主色", { exact: true }) })
-    .locator("input.font-mono")
-    .first();
+    .locator("#theme-field-primaryColor input")
+    .nth(1);
   await primaryHex.scrollIntoViewIfNeeded();
   await primaryHex.fill("#2563EB");
   await page.waitForTimeout(400);
@@ -153,23 +163,8 @@ async function main() {
   await page.getByRole("button", { name: "前台首页" }).click().catch(() => page.getByRole("button", { name: "首页" }).click());
   await page.waitForTimeout(300);
 
-  const couponCard = preview.locator('[data-theme-coupon-style].grid').first();
-  const couponBefore = await couponCard.getAttribute("data-theme-coupon-style");
-  await selectThemeOption(page, "首页营销模块", "优惠券", "deal");
-  await page.waitForTimeout(400);
-  const couponAfter = await couponCard.getAttribute("data-theme-coupon-style");
-  const couponDealBg = await couponCard.evaluate((el) => getComputedStyle(el).backgroundImage);
-  const couponStyleOk = couponBefore !== couponAfter && couponAfter === "deal" && couponDealBg.includes("gradient");
-
-  const productVariantBefore = await themeScope.getAttribute("data-theme-product-card-variant");
-  await selectThemeOption(page, "商品卡", "商品卡变体", "compact");
-  await page.waitForTimeout(400);
-  const productVariantAfter = await themeScope.getAttribute("data-theme-product-card-variant");
-  const productCardCompact = await preview.locator(".theme-product-card .flex.gap-3").count();
-
-  await selectThemeOption(page, "按钮与导航", "底部导航", "floating");
-  await page.waitForTimeout(300);
-  const navFloating = await preview.locator('[data-theme-nav-style="floating"]').count();
+  const healthSummaryOk = await page.getByText(/健康检查|Theme health/i).first().isVisible();
+  const homePreviewVisible = await preview.getByText(/热门推荐|Hot picks/i).first().isVisible();
 
   await page.getByRole("button", { name: "商品详情" }).click();
   await page.waitForTimeout(300);
@@ -177,32 +172,14 @@ async function main() {
   const actionBar = preview.locator('[data-testid="product-detail-preview-action-bar"]');
   const actionBarPosition = await actionBar.evaluate((el) => getComputedStyle(el).position);
   const actionBarInPreview = await actionBar.evaluate((bar) => {
-    const previewRoot = bar.closest('[aria-label="实时预览"]');
+    const previewRoot = bar.closest(".theme-preview-store");
     if (!previewRoot) return false;
     const barRect = bar.getBoundingClientRect();
     const rootRect = previewRoot.getBoundingClientRect();
     return barRect.bottom <= rootRect.bottom + 2 && barRect.top >= rootRect.top;
   });
 
-  await selectThemeOption(page, "首页营销模块", "标签风格", "outline");
-  await page.waitForTimeout(400);
-  const badgeOutline = await preview.locator("span").filter({ hasText: "热销" }).first().evaluate((el) => {
-    const style = getComputedStyle(el);
-    return style.backgroundColor === "transparent" || style.backgroundColor === "rgba(0, 0, 0, 0)";
-  });
-
-  await selectThemeOption(page, "商品卡", "图片填充", "contain");
-  await page.waitForTimeout(300);
-  const imageFit = await preview.locator(".aspect-square img").first().evaluate((img) => getComputedStyle(img).objectFit);
-
-  await selectThemeOption(page, "高级设置", "后台主题模式", "fixed");
-  await page.waitForTimeout(300);
-  const adminModeAttr = await themeScope.getAttribute("data-theme-admin-mode");
-  const adminModeVar = await themeScope.evaluate((el) =>
-    getComputedStyle(el).getPropertyValue("--theme-admin-mode").trim(),
-  );
-
-  await page.getByRole("button", { name: "全屏预览" }).click();
+  await page.getByTitle("全屏预览").click();
   const fullscreenDialog = page.getByRole("dialog", { name: /全屏预览/i });
   await fullscreenDialog.waitFor({ state: "visible", timeout: 5000 });
   const fullscreenOk = await fullscreenDialog.isVisible();
@@ -214,32 +191,33 @@ async function main() {
       (previewPrimary.toLowerCase().includes("2563eb") ||
         previewPrimary.includes("37") ||
         previewPrimary.includes("99")) &&
+      editorTabsLocked &&
+      legacyEditorSectionsAbsent &&
+      designLockSummaryOk &&
+      lockedFieldCount >= 8 &&
+      designLocksApplied.navStyle === "glass" &&
+      designLocksApplied.productCardVariant === "premium" &&
+      designLocksApplied.couponStyle === "premium" &&
+      designLocksApplied.adminMode === "fixed" &&
+      homePreviewVisible &&
+      healthSummaryOk &&
       productVisible &&
-      couponStyleOk &&
-      productVariantAfter === "compact" &&
-      productCardCompact > 0 &&
-      badgeOutline &&
-      navFloating > 0 &&
       actionBarPosition === "sticky" &&
       actionBarInPreview &&
-      imageFit === "contain" &&
-      adminModeAttr === "fixed" &&
-      adminModeVar === "fixed" &&
       fullscreenOk,
     sticky,
     previewPrimary,
+    editorTabs,
+    editorTabsLocked,
+    legacyEditorSectionsAbsent,
+    designLockSummaryOk,
+    lockedFieldCount,
+    designLocksApplied,
+    homePreviewVisible,
+    healthSummaryOk,
     productVisible,
-    couponStyleOk,
-    productVariantBefore,
-    productVariantAfter,
-    productCardCompact,
-    badgeOutline,
-    navFloating,
     actionBarPosition,
     actionBarInPreview,
-    imageFit,
-    adminModeAttr,
-    adminModeVar,
     fullscreenOk,
     url: page.url(),
   };

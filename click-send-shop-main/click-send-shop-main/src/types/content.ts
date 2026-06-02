@@ -98,7 +98,7 @@ export interface SiteInfo {
 }
 
 export type SupportChannelType = "wechat" | "whatsapp" | "telegram";
-export type DownloadPlatformType = "desktop" | "android" | "ios";
+export type DownloadPlatformType = "android" | "ios";
 export type SupportDownloadTab = "support" | "download";
 
 export interface SupportDownloadChannel {
@@ -131,7 +131,6 @@ export interface SupportDownloadConfig {
   defaultTab: SupportDownloadTab;
   support: {
     enabled: boolean;
-    title: string;
     description: string;
     workingHours: string;
     channels: SupportDownloadChannel[];

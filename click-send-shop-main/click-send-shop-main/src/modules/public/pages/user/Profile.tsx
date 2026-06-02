@@ -44,6 +44,7 @@ import * as uploadService from "@/services/uploadService";
 import type { OrderSummary } from "@/types/order";
 import { hasPendingReview } from "@/utils/orderBuyerStatus";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
+import { detectBrowserEnv } from "@/utils/browserEnv";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import {
   PROFILE_CARD_CLASS,
@@ -97,7 +98,12 @@ export default function Profile() {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [inviteCodeVisible, setInviteCodeVisible] = useState(false);
   const [activeReturnCount, setActiveReturnCount] = useState(0);
+  const [browserEnv, setBrowserEnv] = useState(() => detectBrowserEnv());
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setBrowserEnv(detectBrowserEnv());
+  }, []);
 
   useEffect(() => {
     if (!loggedIn) return;
@@ -212,16 +218,22 @@ export default function Profile() {
   }, [afterSaleCount, capabilities.reviewEnabled, loggedIn, orderPending, orderReceiving, orderShipping, orderSummary, pendingReviewCount]);
 
   const notificationBadgeText = formatUnreadBadge(unreadCount);
-  const serviceItems = useMemo<ProfileServiceItem[]>(() => [
-    { key: "address", label: "收货地址", icon: MapPin, path: "/address", auth: true },
-    { key: "support", label: "客服中心", icon: Headphones, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
-    { key: "install", label: "添加桌面", icon: Smartphone, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=download" : "/help", auth: false },
-    { key: "history", label: "浏览记录", icon: Clock3, path: "/history", auth: false },
-    { key: "feedback", label: "意见反馈", icon: MessageSquare, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
-    { key: "notifications", label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
-    { key: "about", label: "关于我们", icon: Info, path: "/about", auth: false },
-    { key: "settings", label: "账户设置", icon: Settings, path: "/settings", auth: true },
-  ], [capabilities.customerServiceDownloadEnabled, notificationBadgeText]);
+  const showInstallShortcut = browserEnv.platform !== "desktop";
+  const serviceItems = useMemo<ProfileServiceItem[]>(() => {
+    const items: ProfileServiceItem[] = [
+      { key: "address", label: "收货地址", icon: MapPin, path: "/address", auth: true },
+      { key: "support", label: "客服中心", icon: Headphones, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
+      { key: "history", label: "浏览记录", icon: Clock3, path: "/history", auth: false },
+      { key: "feedback", label: "意见反馈", icon: MessageSquare, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
+      { key: "notifications", label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
+      { key: "about", label: "关于我们", icon: Info, path: "/about", auth: false },
+      { key: "settings", label: "账户设置", icon: Settings, path: "/settings", auth: true },
+    ];
+    if (showInstallShortcut) {
+      items.splice(2, 0, { key: "install", label: "添加桌面", icon: Smartphone, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=download" : "/help", auth: false });
+    }
+    return items;
+  }, [capabilities.customerServiceDownloadEnabled, notificationBadgeText, showInstallShortcut]);
 
   const trustItems = useMemo<ProfileTrustItem[]>(() => [
     { title: "正品保障", desc: "100% 正品保证", icon: ShieldCheck },

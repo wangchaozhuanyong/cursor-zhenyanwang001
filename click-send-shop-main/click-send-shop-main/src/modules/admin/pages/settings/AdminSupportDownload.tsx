@@ -258,6 +258,9 @@ export default function AdminSupportDownload() {
 
         <section className="rounded-xl border border-border bg-card p-4">
           <h2 className="font-semibold text-foreground"><Tx>手机添加到桌面说明</Tx></h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            <Tx>此配置只影响手机端前台；电脑端客服页不会显示添加桌面入口。</Tx>
+          </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium"><Tx>添加到桌面 Tab 是否启用</Tx><select className={`${inputClass} mt-1`} value={form.download.enabled ? "1" : "0"} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, enabled: e.target.value === "1" } }))}><option value="1"><Tx>启用</Tx></option><option value="0"><Tx>关闭</Tx></option></select></label>
             <label className="block text-sm font-medium"><Tx>添加到桌面 Tab 标题</Tx><input className={`${inputClass} mt-1`} value={form.download.title} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, title: e.target.value } }))} /></label>

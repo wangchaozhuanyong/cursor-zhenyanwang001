@@ -1392,7 +1392,6 @@ html[data-app-scope="store"] .support-download-content {
 
 html[data-app-scope="store"] .support-channel-card,
 html[data-app-scope="store"] .support-install-card,
-html[data-app-scope="store"] .support-install-desktop-card,
 html[data-app-scope="store"] .support-empty-panel {
   position: relative;
   overflow: hidden;
@@ -1703,8 +1702,7 @@ html[data-app-scope="store"] .support-notice-panel .support-outline-action {
   margin-top: 0.1rem;
 }
 
-html[data-app-scope="store"] .support-install-card,
-html[data-app-scope="store"] .support-install-desktop-card {
+html[data-app-scope="store"] .support-install-card {
   width: 100%;
   padding: clamp(1.1rem, 4vw, 1.8rem);
 }
@@ -1715,8 +1713,7 @@ html[data-app-scope="store"] .support-install-card-head {
   gap: 0.85rem;
 }
 
-html[data-app-scope="store"] .support-install-icon,
-html[data-app-scope="store"] .support-install-desktop-icon {
+html[data-app-scope="store"] .support-install-icon {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -1741,8 +1738,7 @@ html[data-app-scope="store"] .support-install-title-row {
   gap: 0.45rem;
 }
 
-html[data-app-scope="store"] .support-install-title-row h2,
-html[data-app-scope="store"] .support-install-desktop-card h2 {
+html[data-app-scope="store"] .support-install-title-row h2 {
   margin: 0;
   color: var(--support-ink);
   font-size: 1.08rem;
@@ -1759,8 +1755,7 @@ html[data-app-scope="store"] .support-install-title-row span {
   font-weight: 850;
 }
 
-html[data-app-scope="store"] .support-install-card-head p,
-html[data-app-scope="store"] .support-install-desktop-card p {
+html[data-app-scope="store"] .support-install-card-head p {
   margin: 0.38rem 0 0;
   color: var(--support-muted);
   font-size: 0.9rem;
@@ -1901,63 +1896,6 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
   margin-top: 1.15rem;
 }
 
-html[data-app-scope="store"] .support-install-desktop-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-html[data-app-scope="store"] .support-install-desktop-head {
-  display: flex;
-  width: 100%;
-  max-width: 28rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.9rem;
-  text-align: left;
-}
-
-html[data-app-scope="store"] .support-install-desktop-icon {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 1.35rem;
-}
-
-html[data-app-scope="store"] .support-install-desktop-card h2 {
-  margin-top: 0;
-}
-
-html[data-app-scope="store"] .support-install-desktop-qr {
-  display: flex;
-  width: min(100%, 13.5rem);
-  aspect-ratio: 1;
-  align-items: center;
-  justify-content: center;
-  margin-top: 1.15rem;
-  border: 1px solid color-mix(in srgb, var(--support-gold) 58%, white);
-  border-radius: 1.35rem;
-  background:
-    linear-gradient(180deg, rgba(255, 253, 247, 0.96), rgba(255, 248, 235, 0.88));
-  padding: 0.9rem;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 16px 30px -24px rgba(87, 57, 24, 0.45);
-}
-
-html[data-app-scope="store"] .support-install-desktop-qr canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-html[data-app-scope="store"] .support-install-desktop-hint {
-  max-width: 25rem;
-}
-
-html[data-app-scope="store"] .support-install-desktop-card .support-outline-action {
-  margin-top: 1rem;
-}
-
 @media (min-width: 768px) {
   html[data-app-scope="store"] .support-download-shell {
     width: min(100%, 54rem);
@@ -2014,17 +1952,6 @@ html[data-app-scope="store"] .support-install-desktop-card .support-outline-acti
 
   html[data-app-scope="store"] .support-channel-card {
     padding: 1.12rem 0.88rem 1.45rem;
-  }
-
-  html[data-app-scope="store"] .support-install-desktop-head {
-    flex-direction: column;
-    gap: 0.68rem;
-    text-align: center;
-  }
-
-  html[data-app-scope="store"] .support-install-desktop-qr {
-    width: min(100%, 12rem);
-    padding: 0.72rem;
   }
 
   html[data-app-scope="store"] .support-account-panel {

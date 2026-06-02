@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Clock, Copy, MessageCircle, PlusSquare, Send, Smartphone } from "lucide-react";
-import { QRCodeCanvas } from "qrcode.react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import SupportChannelCard from "@/components/support/SupportChannelCard";
@@ -92,6 +91,7 @@ export default function SupportDownload() {
 
   const pwa = usePwaInstallPrompt(handleInstalled);
   const installShownTrackedRef = useRef(false);
+  const canShowInstallView = browserEnv.platform !== "desktop";
 
   useEffect(() => {
     if (installShownTrackedRef.current) return;
@@ -119,9 +119,9 @@ export default function SupportDownload() {
         if (channelByType[type]) views.push(type);
       });
     }
-    if (config.download.enabled !== false && platforms.length > 0) views.push("download");
+    if (canShowInstallView && config.download.enabled !== false && platforms.length > 0) views.push("download");
     return views;
-  }, [channelByType, config.download.enabled, config.support.enabled, platforms.length]);
+  }, [canShowInstallView, channelByType, config.download.enabled, config.support.enabled, platforms.length]);
 
   const queryTab = searchParams.get("tab");
   const requestedView = resolveQueryView(queryTab);
@@ -280,27 +280,7 @@ export default function SupportDownload() {
                   </button>
                 </div>
               ) : null}
-              {browserEnv.platform === "desktop" ? (
-                <section className="support-install-desktop-card">
-                  <div className="support-install-desktop-head">
-                    <div className="support-install-desktop-icon">
-                      <Smartphone size={30} aria-hidden="true" />
-                    </div>
-                    <div>
-                      <h2>请用手机扫码打开</h2>
-                      <p>添加到桌面需要在手机浏览器里完成，电脑端可先扫码进入本页。</p>
-                    </div>
-                  </div>
-                  <div className="support-install-desktop-qr" aria-label="扫码用手机打开添加桌面页面">
-                    <QRCodeCanvas value={installPageUrl} size={172} level="H" marginSize={1} fgColor="#2c201d" bgColor="#fffdf7" />
-                  </div>
-                  <p className="support-install-desktop-hint">安卓手机可尝试一键添加；苹果手机请用 Safari 打开后添加到主屏幕。</p>
-                  <button type="button" onClick={() => { void copyCurrentLink(installPageUrl); }} className="support-outline-action">
-                    <Copy size={15} aria-hidden="true" />
-                    <span>复制当前链接</span>
-                  </button>
-                </section>
-              ) : visiblePlatforms.length > 0 ? (
+              {visiblePlatforms.length > 0 ? (
                 visiblePlatforms.map((platform) => (
                   <InstallPlatformCard
                     key={platform.id}

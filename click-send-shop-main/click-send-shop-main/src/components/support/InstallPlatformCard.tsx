@@ -48,65 +48,65 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
   const description = platform.description?.trim() || "";
 
   return (
-    <section className="store-elevated-card p-5">
-      <div className="flex items-start gap-3">
-        <span className="store-icon-tile mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[var(--theme-primary)]">
+    <section className="support-install-card">
+      <div className="support-install-card-head">
+        <span className="support-install-icon" aria-hidden="true">
           <Icon size={20} />
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-base font-bold text-[var(--theme-text)]">{title}</h2>
+        <div>
+          <div className="support-install-title-row">
+            <h2>{title}</h2>
             {recommended ? (
-              <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-surface))] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-primary)]">
+              <span>
                 当前设备
               </span>
             ) : null}
           </div>
           {description ? (
-            <p className="mt-1 text-sm leading-relaxed text-[var(--theme-text-muted)]">{description}</p>
+            <p>{description}</p>
           ) : null}
         </div>
       </div>
 
       {isAndroid && canOneTap ? (
-        <button type="button" onClick={() => { void onInstall(); }} disabled={pwa.installing || pwa.installed} className="mt-5 w-full rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
+        <button type="button" onClick={() => { void onInstall(); }} disabled={pwa.installing || pwa.installed} className="support-primary-action">
           {pwa.installed ? "已添加到桌面" : pwa.installing ? "正在处理..." : "一键添加到桌面"}
         </button>
       ) : null}
 
       {isAndroid && !canOneTap ? (
-        <div className="store-soft-panel mt-5 rounded-2xl border-dashed px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
+        <div className="support-notice-panel">
           当前浏览器可能不支持自动添加，请按下方步骤手动添加到桌面。
         </div>
       ) : null}
 
       {showIosSafariHint ? (
-        <div className="store-soft-panel mt-5 space-y-3 rounded-2xl border-dashed px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
-          <p className="font-semibold text-[var(--theme-text)]">当前浏览器可能无法直接添加到苹果手机桌面。</p>
+        <div className="support-notice-panel">
+          <p className="font-semibold">当前浏览器可能无法直接添加到苹果手机桌面。</p>
           <p>请复制链接后，用 Safari 浏览器打开。</p>
-          <button type="button" onClick={() => { void copySiteLink("链接已复制，请用 Safari 打开"); }} className="inline-flex min-h-10 items-center gap-1 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]">
-            <Copy size={14} />
-            复制链接，用 Safari 打开
+          <button type="button" onClick={() => { void copySiteLink("链接已复制，请用 Safari 打开"); }} className="support-outline-action">
+            <Copy size={15} aria-hidden="true" />
+            <span>复制链接，用 Safari 打开</span>
           </button>
         </div>
       ) : null}
 
       {isIos && browser.isIOS && browser.isSafari ? (
-        <p className="mt-4 inline-flex items-center gap-1 rounded-2xl border border-dashed border-[var(--theme-border)] px-3 py-2 text-xs leading-relaxed text-[var(--theme-text-muted)]">
-          <Share2 size={13} />
-          请按下方步骤添加到主屏幕。
+        <p className="support-inline-hint">
+          <Share2 size={15} aria-hidden="true" />
+          <span>请按下方步骤添加到主屏幕。</span>
         </p>
       ) : null}
 
-      <ol className="mt-5 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[var(--theme-text-muted)]">
+      <ol className="support-install-steps">
         {(platform.instructions || []).map((step, index) => (
           <li key={`${platform.id}-${index}`}>{step}</li>
         ))}
       </ol>
 
-      <button type="button" onClick={() => { void copySiteLink(); }} className="mt-5 inline-flex min-h-10 items-center gap-1 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]">
-        <Copy size={14} />
-        复制当前链接
+      <button type="button" onClick={() => { void copySiteLink(); }} className="support-outline-action">
+        <Copy size={15} aria-hidden="true" />
+        <span>复制当前链接</span>
       </button>
     </section>
   );

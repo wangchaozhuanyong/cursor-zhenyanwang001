@@ -30,13 +30,6 @@ const CROSSFADE_TRANSITION = {
 const AUTO_ROTATE_MS = 5600;
 const USER_INTERACTION_PAUSE_MS = 7200;
 
-function withViteBase(path: string): string {
-  const base = String(import.meta.env.BASE_URL || "/");
-  return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
-}
-
-const HOME_CAROUSEL_LOGO_SRC = withViteBase("/assets/home-carousel-logo.png");
-
 function resolveBannerLink(link: string): string {
   const value = (link || "").trim();
   if (!value) return "";
@@ -250,15 +243,6 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
               animate={motionEnabled ? { opacity: 1, x: 0 } : undefined}
               transition={{ duration: 0.42, ease: "easeOut" }}
             >
-              <div className="store-hero-brand-lockup" aria-hidden="true">
-                <span className="store-hero-brand-logo-shell">
-                  <img src={HOME_CAROUSEL_LOGO_SRC} alt="" className="store-hero-brand-logo" loading="eager" decoding="async" />
-                </span>
-                <span className="store-hero-brand-copy">
-                  <span className="store-hero-brand-name">大马通</span>
-                  <span className="store-hero-brand-tagline">连接生活 · 通达马来西亚</span>
-                </span>
-              </div>
               {bannerTitle ? (
                 <h2 className="store-hero-copy-title text-[16px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
                   {bannerTitle}

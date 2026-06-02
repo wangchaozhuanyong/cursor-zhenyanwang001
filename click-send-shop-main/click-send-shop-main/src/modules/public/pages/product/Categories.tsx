@@ -282,9 +282,7 @@ export default function Categories() {
           decoding="async"
         />
       ) : (
-        <span className="store-category-brand-logo store-category-brand-logo--fallback" aria-hidden>
-          {siteName.slice(0, 1)}
-        </span>
+        <span className="store-category-brand-logo store-category-brand-logo--fallback" aria-hidden />
       )}
       <span className="store-category-brand-name">{renderBrandTitle(siteName)}</span>
     </span>

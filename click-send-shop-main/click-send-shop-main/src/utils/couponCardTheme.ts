@@ -9,12 +9,12 @@ import {
 export type CouponCardLayout = "default" | "compact" | "home";
 
 const HOME_ACTION_LABELS: Record<string, string> = {
-  立即领取: "领取",
-  去使用: "使用",
-  注册领取: "领取",
-  注册领: "领取",
-  领取: "领取",
-  使用: "使用",
+  立即领取: "立即领取",
+  去使用: "立即使用",
+  注册领取: "立即领取",
+  注册领: "立即领取",
+  领取: "立即领取",
+  使用: "立即使用",
 };
 
 export function resolveCouponCardLayout(props: {
@@ -107,7 +107,7 @@ export function getCouponCardPresentation(
 
   const actionButtonClass = useThemedMarketingShell
     ? layout === "home"
-      ? "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch rounded-lg px-0.5 py-1.5 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
+      ? "flex h-11 w-11 min-w-0 shrink-0 items-center justify-center self-center rounded-full px-0 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
       : "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full items-center justify-center self-stretch rounded-xl px-2 py-2 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
     : "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch !h-auto !px-1 !py-1.5 !rounded-lg";
 

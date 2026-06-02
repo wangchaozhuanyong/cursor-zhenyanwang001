@@ -82,6 +82,21 @@ function HorizontalActionLabel({ label }: { label: string }) {
   );
 }
 
+function RoundActionLabel({ label }: { label: string }) {
+  const text = label.trim();
+  const lines = text.length > 2 && text.length <= 4
+    ? [text.slice(0, 2), text.slice(2)]
+    : [text];
+
+  return (
+    <span className="store-coupon-card__round-action-label">
+      {lines.map((line, index) => (
+        <span key={`${line}-${index}`}>{line}</span>
+      ))}
+    </span>
+  );
+}
+
 function CouponValueFace({
   leftValue,
   amountRmMatch,
@@ -220,6 +235,8 @@ export default function PremiumCouponCard({
 
   const actionButtonInner = actionLoading ? (
     <Loader2 size={layout === "home" ? 14 : 16} className="animate-spin shrink-0" />
+  ) : layout === "home" ? (
+    <RoundActionLabel label={displayActionLabel} />
   ) : skin.actionLayout === "vertical" ? (
     <VerticalActionLabel label={displayActionLabel} />
   ) : (

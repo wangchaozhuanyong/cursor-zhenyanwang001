@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, Download, ExternalLink, Loader2 } from "lucide-react";
+import { Copy, Download, ExternalLink, Loader2, ScanLine, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import type { SupportDownloadChannel } from "@/types/content";
 import { copyToClipboard } from "@/utils/clipboard";
@@ -95,60 +95,86 @@ export default function SupportChannelCard({ channel }: Props) {
   };
 
   return (
-    <section className="store-elevated-card p-5">
-      <div className="text-center">
-        <h1 className="text-xl font-extrabold tracking-tight text-[var(--theme-text)]">{title}</h1>
+    <section className={`support-channel-card support-channel-card--${channel.type}`}>
+      <div className="support-channel-title">
+        <span className="support-channel-flourish" aria-hidden="true" />
+        <h1>{title}</h1>
+        <span className="support-channel-flourish" aria-hidden="true" />
         {description ? (
-          <p className="mt-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{description}</p>
+          <p>{description}</p>
         ) : null}
       </div>
 
       {account ? (
-        <div className="store-soft-panel mt-5 flex items-center gap-3 rounded-2xl px-4 py-3">
-          <p className="min-w-0 flex-1 text-sm text-[var(--theme-text)]">
-            <span className="font-medium text-[var(--theme-text-muted)]">{getAccountLabel(channel)}：</span>
-            <span className="break-all font-semibold">{account}</span>
+        <div className="support-account-panel">
+          <span className="support-account-icon" aria-hidden="true">
+            <UserRound size={22} />
+          </span>
+          <p>
+            <span>{getAccountLabel(channel)}：</span>
+            <strong>{account}</strong>
           </p>
           <button
             type="button"
             onClick={() => { void onCopyAccount(); }}
-            className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-text)]"
+            className="support-copy-button"
           >
-            <Copy size={13} />
-            复制
+            <Copy size={17} aria-hidden="true" />
+            <span>复制</span>
           </button>
         </div>
       ) : null}
 
-      {qrUrl ? (
-        <div className="mt-5 flex flex-col items-center gap-3">
-          <img
-            src={qrUrl}
-            alt={`${title}二维码`}
-            className="h-[min(72vw,260px)] w-[min(72vw,260px)] rounded-2xl object-contain"
-          />
-          <p className="text-xs font-medium text-[var(--theme-text-muted)]">长按二维码可保存或识别</p>
-          <button
-            type="button"
-            onClick={() => { void onDownloadQr(); }}
-            disabled={downloadingQr}
-            className="inline-flex min-h-10 items-center justify-center gap-1 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)] disabled:opacity-60"
-          >
-            {downloadingQr ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-            下载二维码
-          </button>
+      <div className="support-qr-block">
+        <div className="support-qr-stage">
+          <div className="support-qr-frame">
+            {qrUrl ? (
+              <img
+                src={qrUrl}
+                alt={`${title}二维码`}
+                className="support-qr-image"
+              />
+            ) : (
+              <div className="support-qr-placeholder">暂未配置二维码</div>
+            )}
+          </div>
         </div>
-      ) : null}
 
-      {openUrl ? (
-        <button
-          type="button"
-          onClick={onOpenLink}
-          className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-full bg-[var(--theme-primary)] px-5 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]"
-        >
-          <ExternalLink size={15} />
-          {getOpenLabel(channel)}
-        </button>
+        {qrUrl ? (
+          <p className="support-qr-hint">
+            <ScanLine size={18} aria-hidden="true" />
+            <span>长按二维码保存或识别</span>
+          </p>
+        ) : null}
+
+        <div className="support-channel-actions">
+          {qrUrl ? (
+            <button
+              type="button"
+              onClick={() => { void onDownloadQr(); }}
+              disabled={downloadingQr}
+              className="support-download-qr-button"
+            >
+              {downloadingQr ? <Loader2 size={20} className="animate-spin" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
+              <span>下载二维码</span>
+            </button>
+          ) : null}
+
+          {openUrl ? (
+            <button
+              type="button"
+              onClick={onOpenLink}
+              className="support-open-channel-button"
+            >
+              <ExternalLink size={18} aria-hidden="true" />
+              <span>{getOpenLabel(channel)}</span>
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {!account && !qrUrl && !openUrl ? (
+        <div className="support-channel-empty">当前客服渠道暂未配置联系方式。</div>
       ) : null}
     </section>
   );

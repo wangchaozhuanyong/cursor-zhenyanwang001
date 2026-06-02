@@ -64,7 +64,7 @@ export const DEFAULT_PLATFORMS: DownloadPlatform[] = [
 
 export const DEFAULT_SUPPORT_DOWNLOAD_CONFIG: SupportDownloadConfig = {
   enabled: true,
-  title: "客服中心",
+  title: "客服与安装",
   subtitle: "如需咨询商品、订单、售后或使用问题，请联系官方客服；也可查看添加到桌面的使用指引。",
   defaultTab: "support",
   support: {

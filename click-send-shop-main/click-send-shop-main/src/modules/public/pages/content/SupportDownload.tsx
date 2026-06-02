@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Copy, Smartphone } from "lucide-react";
+import { Copy, MessageCircle, PlusSquare, Send, Smartphone } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import StorePageHeader from "@/components/store/StorePageHeader";
-import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import SeoHead from "@/components/SeoHead";
 import SupportChannelCard from "@/components/support/SupportChannelCard";
 import InstallPlatformCard from "@/components/support/InstallPlatformCard";
@@ -65,6 +63,17 @@ function getDefaultView(
 
 function firstChannelByType(channels: SupportDownloadChannel[], type: SupportChannelType) {
   return channels.find((channel) => channel.type === type);
+}
+
+function SupportTabIcon({ view }: { view: SupportDownloadView }) {
+  if (view === "telegram") return <Send size={19} aria-hidden="true" />;
+  if (view === "download") return <PlusSquare size={19} aria-hidden="true" />;
+  if (view === "whatsapp") return <MessageCircle size={19} aria-hidden="true" />;
+  return <MessageCircle size={19} aria-hidden="true" />;
+}
+
+function getViewLabel(view: SupportDownloadView) {
+  return view === "download" ? "添加桌面" : CHANNEL_LABELS[view];
 }
 
 export default function SupportDownload() {
@@ -169,106 +178,123 @@ export default function SupportDownload() {
     return undefined;
   }, [activeView, channelByType, pinnedChannel]);
   const recommendedPlatform = browserEnv.platform;
+  const pageTitle = config.title?.trim() || "客服与安装";
+  const pageSubtitle = config.subtitle?.trim();
 
   if (!config.enabled) {
     return (
-      <div className="store-page-shell bg-[var(--theme-bg)] px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm text-[var(--theme-text-muted)]">
-        客服中心暂未开放。
+      <div className="store-page-shell support-download-page support-download-page--empty px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm">
+        <div className="support-empty-panel">客服中心暂未开放。</div>
       </div>
     );
   }
 
   return (
-    <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell store-bottom-safe support-download-page text-[var(--theme-text)]">
       <SeoHead
-        title={`${config.title} - ${siteInfo.siteName || "官方商城"}`}
+        title={`${pageTitle} - ${siteInfo.siteName || "官方商城"}`}
         description={config.subtitle}
         canonical={buildCanonical("/support-download")}
         robots="index,follow"
       />
-      <StorePageHeader className={STORE_MOBILE_PAGE_HEADER_CLASS} title={config.title} centerTitle />
 
-      <main className="mx-auto w-full max-w-lg space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-6 sm:px-4 sm:py-4 md:max-w-screen-xl md:px-6 lg:px-8">
+      <main className="support-download-shell">
+        <header className="support-download-hero">
+          <div className="support-title-row">
+            <span className="support-title-line" aria-hidden="true" />
+            <span className="support-title-diamond" aria-hidden="true" />
+            <h1>{pageTitle}</h1>
+            <span className="support-title-diamond" aria-hidden="true" />
+            <span className="support-title-line" aria-hidden="true" />
+          </div>
+          {pageSubtitle ? <p className="support-download-subtitle">{pageSubtitle}</p> : null}
+        </header>
+
         {availableViews.length > 0 ? (
-          <div
-            className="store-elevated-card grid gap-2 p-1"
+          <nav
+            className="support-download-tabs"
+            aria-label="客服与安装入口"
             style={{ gridTemplateColumns: `repeat(${availableViews.length}, minmax(0, 1fr))` }}
           >
-            {availableViews.map((view) => (
-              <button
-                key={view}
-                type="button"
-                onClick={() => setActiveView(view)}
-                className={`min-h-11 rounded-xl px-2 py-2 text-xs font-bold transition sm:text-sm ${
-                  activeView === view
-                    ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-                    : "text-[var(--theme-text-muted)]"
-                }`}
-              >
-                {view === "download" ? "添加桌面" : CHANNEL_LABELS[view]}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
-        {activeChannel ? (
-          <SupportChannelCard channel={{ ...activeChannel, name: getChannelTitle(activeChannel) }} />
-        ) : null}
-
-        {activeView === "download" && config.download.enabled !== false ? (
-          <div className="space-y-3">
-            {config.download.description ? (
-              <p className="store-soft-panel rounded-2xl px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
-                <Smartphone size={14} className="mr-1 inline" />
-                {config.download.description}
-              </p>
-            ) : null}
-            {browserEnv.isInAppBrowser ? (
-              <div className="store-soft-panel space-y-3 rounded-2xl border-dashed px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
-                <p className="font-semibold text-[var(--theme-text)]">当前是在 App 内打开，可能无法直接添加到桌面。</p>
-                <p>请点击右上角“...”并选择在浏览器中打开，然后继续操作。</p>
-                <button type="button" onClick={() => { void copyCurrentLink(); }} className="inline-flex min-h-10 items-center gap-1 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]">
-                  <Copy size={14} />
-                  复制当前链接
+            {availableViews.map((view) => {
+              const active = activeView === view;
+              return (
+                <button
+                  key={view}
+                  type="button"
+                  onClick={() => setActiveView(view)}
+                  className={`support-download-tab${active ? " is-active" : ""}`}
+                  aria-pressed={active}
+                >
+                  <SupportTabIcon view={view} />
+                  <span>{getViewLabel(view)}</span>
                 </button>
-              </div>
-            ) : null}
-            {browserEnv.platform === "desktop" ? (
-              <section className="store-elevated-card p-6 text-center">
-                <h2 className="text-lg font-bold text-[var(--theme-text)]">请使用手机打开本页面</h2>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">
-                  本功能主要用于手机添加到桌面。请用安卓手机或苹果手机打开本页面。
+              );
+            })}
+          </nav>
+        ) : null}
+
+        <div className="support-download-content">
+          {activeChannel ? (
+            <SupportChannelCard channel={{ ...activeChannel, name: getChannelTitle(activeChannel) }} />
+          ) : null}
+
+          {activeView === "download" && config.download.enabled !== false ? (
+            <div className="support-install-stack">
+              {config.download.description ? (
+                <p className="support-install-intro">
+                  <Smartphone size={16} aria-hidden="true" />
+                  <span>{config.download.description}</span>
                 </p>
-                <button type="button" onClick={() => { void copyCurrentLink(); }} className="mt-4 inline-flex min-h-10 items-center gap-1 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]">
-                  <Copy size={14} />
-                  复制当前链接
-                </button>
-              </section>
-            ) : (
-              platforms.map((platform) => (
-                <InstallPlatformCard
-                  key={platform.id}
-                  platform={platform}
-                  browser={browserEnv}
-                  pwa={pwa}
-                  recommended={platform.type === recommendedPlatform}
-                />
-              ))
-            )}
-          </div>
-        ) : null}
+              ) : null}
+              {browserEnv.isInAppBrowser ? (
+                <div className="support-notice-panel">
+                  <p className="font-semibold">当前是在 App 内打开，可能无法直接添加到桌面。</p>
+                  <p>请点击右上角“...”并选择在浏览器中打开，然后继续操作。</p>
+                  <button type="button" onClick={() => { void copyCurrentLink(); }} className="support-outline-action">
+                    <Copy size={15} aria-hidden="true" />
+                    <span>复制当前链接</span>
+                  </button>
+                </div>
+              ) : null}
+              {browserEnv.platform === "desktop" ? (
+                <section className="support-install-desktop-card">
+                  <div className="support-install-desktop-icon">
+                    <Smartphone size={30} aria-hidden="true" />
+                  </div>
+                  <h2>请使用手机打开本页面</h2>
+                  <p>本功能主要用于手机添加到桌面。请用安卓手机或苹果手机打开本页面。</p>
+                  <button type="button" onClick={() => { void copyCurrentLink(); }} className="support-outline-action">
+                    <Copy size={15} aria-hidden="true" />
+                    <span>复制当前链接</span>
+                  </button>
+                </section>
+              ) : (
+                platforms.map((platform) => (
+                  <InstallPlatformCard
+                    key={platform.id}
+                    platform={platform}
+                    browser={browserEnv}
+                    pwa={pwa}
+                    recommended={platform.type === recommendedPlatform}
+                  />
+                ))
+              )}
+            </div>
+          ) : null}
 
-        {queryChannelId && !pinnedChannel ? (
-          <section className="store-soft-panel rounded-2xl border-dashed p-6 text-center text-sm text-[var(--theme-text-muted)]">
-            所选客服账号不存在或已停用，请返回首页重试或联系站点管理员。
-          </section>
-        ) : null}
+          {queryChannelId && !pinnedChannel ? (
+            <section className="support-empty-panel">
+              所选客服账号不存在或已停用，请返回首页重试或联系站点管理员。
+            </section>
+          ) : null}
 
-        {!activeView && !queryChannelId ? (
-          <section className="store-soft-panel rounded-2xl border-dashed p-6 text-center text-sm text-[var(--theme-text-muted)]">
-            暂未配置客服渠道或添加到桌面说明，请稍后再试。
-          </section>
-        ) : null}
+          {!activeView && !queryChannelId ? (
+            <section className="support-empty-panel">
+              暂未配置客服渠道或添加到桌面说明，请稍后再试。
+            </section>
+          ) : null}
+        </div>
       </main>
     </div>
   );

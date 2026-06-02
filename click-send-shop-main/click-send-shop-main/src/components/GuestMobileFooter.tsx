@@ -18,6 +18,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSupportRuntime } from "@/hooks/useSupportRuntime";
 import { cn } from "@/lib/utils";
 import { copyToClipboard } from "@/utils/clipboard";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 
 const FOOTER_BRAND_FALLBACK = "大马通";
@@ -41,12 +42,28 @@ function resolveFooterCopy(value: string, fallback: string, genericValues: strin
   return clean;
 }
 
-export function GuestFooterBrandMark({ siteName }: { siteName: string }) {
+export function GuestFooterBrandMark({ siteName, logoSrc }: { siteName: string; logoSrc?: string }) {
   const base = resolveFooterBrand(siteName);
+  const [failedLogoSrc, setFailedLogoSrc] = useState<string | null>(null);
+  const cleanLogoSrc = cleanFooterText(logoSrc);
+  const showLogo = Boolean(cleanLogoSrc && failedLogoSrc !== cleanLogoSrc);
+
   return (
     <div className="flex items-center justify-start gap-4 text-left">
       <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#df4f55]/55 bg-[linear-gradient(145deg,rgba(255,255,255,0.92),rgba(255,230,226,0.86))] text-[#d8474f] shadow-[0_18px_34px_-28px_rgba(139,48,48,0.65),inset_0_0_0_6px_rgba(255,255,255,0.7)]">
-        <Sparkles size={27} strokeWidth={1.7} />
+        {showLogo ? (
+          <img
+            src={cleanLogoSrc}
+            alt=""
+            className="h-11 w-11 rounded-full object-contain"
+            loading="eager"
+            decoding="async"
+            aria-hidden="true"
+            onError={() => setFailedLogoSrc(cleanLogoSrc)}
+          />
+        ) : (
+          <Sparkles size={27} strokeWidth={1.7} />
+        )}
       </span>
       <span className="min-w-0">
         <span className="block max-w-[min(17rem,70vw)] font-display text-[36px] font-bold leading-none text-[#2a1714] sm:max-w-none sm:text-[42px]">
@@ -276,6 +293,7 @@ type GuestMobileFooterProps = {
   slogan: string;
   description: string;
   siteName: string;
+  logoSrc?: string;
   supportNav: FooterNavItem[];
   policyNav: FooterNavItem[];
   contactPhone?: string;
@@ -293,6 +311,7 @@ type GuestMobileFooterProps = {
 
 export default function GuestMobileFooter({
   siteName,
+  logoSrc,
   slogan,
   description,
   supportNav,
@@ -308,6 +327,7 @@ export default function GuestMobileFooter({
   const siteInfo = useSiteInfo();
   const { buildSupportPageUrl, channels, openChannel, workingHours: serviceHours } = useSupportRuntime();
   const brandName = resolveFooterBrand(siteName || siteInfo.siteName || FOOTER_BRAND_FALLBACK);
+  const footerLogoSrc = cleanFooterText(logoSrc) || resolveSiteLogoUrl(siteInfo);
   const headline = resolveFooterCopy(slogan, FOOTER_HEADLINE_FALLBACK, ["官方商品与服务平台"]);
   const intro = resolveFooterCopy(description, FOOTER_DESCRIPTION_FALLBACK, ["本平台提供商品、服务与客户支持信息。"]);
 
@@ -399,7 +419,7 @@ export default function GuestMobileFooter({
 
         <div className="relative mx-auto max-w-[940px]">
           <section className="text-left">
-            <GuestFooterBrandMark siteName={brandName} />
+            <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} />
             <div className="mt-10 space-y-6">
               <h2 className="font-display text-[28px] font-bold leading-snug text-[#2a1714] sm:text-[36px]">
                 {headline}

@@ -14,23 +14,39 @@ const SERVICES_SECTION_ID = "malaysia-services";
 const heroSlides = [
   {
     image: withViteBase("/assets/tiktok-hero-city.svg"),
+    eyebrow: "落地城市导航",
     title: "吉隆坡城市服务",
     subtitle: "从落地安顿到本地资源，帮你更快进入马来西亚生活节奏。",
+    visualTitle: "从机场到城市生活",
+    visualText: "住宿、交通、办事、同城服务集中整理，新用户不用到处找入口。",
+    facts: ["热门城市", "本地办事", "中文沟通", "落地安顿"],
   },
   {
     image: withViteBase("/assets/tiktok-hero-home.svg"),
+    eyebrow: "安家生活包",
     title: "安家与日常生活",
     subtitle: "找房、搬家、维修、生活缴费，用中文找到可靠服务。",
+    visualTitle: "租房、搬家、维修一条线",
+    visualText: "把高频生活需求做成清晰入口，减少来回询问和踩坑成本。",
+    facts: ["租房找房", "搬家安装", "水电网络", "上门维修"],
   },
   {
     image: withViteBase("/assets/tiktok-hero-study.svg"),
+    eyebrow: "学习身份规划",
     title: "留学与身份规划",
     subtitle: "围绕学习、居住、签证和长期发展，整理清晰服务入口。",
+    visualTitle: "留学家庭也能快速上手",
+    visualText: "覆盖入学、住宿、陪读、签证咨询等常见问题，先把方向理清楚。",
+    facts: ["学校生活", "陪读家庭", "签证咨询", "长期规划"],
   },
   {
     image: withViteBase("/assets/tiktok-hero-business.svg"),
+    eyebrow: "商务资源入口",
     title: "商务与资源对接",
     subtitle: "连接商业空间、本地渠道和华人圈资源，降低沟通成本。",
+    visualTitle: "空间、渠道、人脉一起对接",
+    visualText: "面向商家、创业者和跨境团队，整理可沟通、可执行的本地资源入口。",
+    facts: ["商铺办公室", "供应链资源", "本地推广", "华人圈对接"],
   },
 ];
 
@@ -268,7 +284,42 @@ export default function TikTokLanding() {
 
             <div className="rounded-[2rem] border border-white/12 bg-black/34 p-5 shadow-[0_30px_120px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm sm:p-7">
               <div className="overflow-hidden rounded-[1.5rem] border border-[#f2c76d]/16 bg-[#100d08]/85">
-                <img src={activeSlide.image} alt={activeSlide.title} className="h-56 w-full object-cover sm:h-72" />
+                <div
+                  className="relative min-h-64 overflow-hidden bg-[#110d07] bg-cover bg-center p-5 sm:min-h-80 sm:p-6"
+                  style={{
+                    backgroundImage: `linear-gradient(145deg, rgba(7, 5, 4, 0.5), rgba(7, 5, 4, 0.9) 72%), url(${activeSlide.image})`,
+                  }}
+                >
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(242,199,109,0.26),transparent_34%),linear-gradient(180deg,transparent,rgba(7,5,4,0.52))]" />
+                  <div className="relative flex min-h-56 flex-col justify-between sm:min-h-[17rem]">
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="rounded-full border border-[#f2c76d]/30 bg-black/40 px-3 py-1.5 text-xs font-semibold text-[#ffe4a0] backdrop-blur-sm">
+                        {activeSlide.eyebrow}
+                      </span>
+                      <span className="rounded-full bg-[#f2c76d] px-3 py-1.5 text-xs font-bold text-[#171006] shadow-[0_10px_28px_rgba(242,199,109,0.24)]">
+                        0{activeIndex + 1}
+                      </span>
+                    </div>
+
+                    <div className="mt-10 max-w-sm">
+                      <h3 className="text-2xl font-semibold leading-tight text-white sm:text-3xl">
+                        {activeSlide.visualTitle}
+                      </h3>
+                      <p className="mt-3 text-sm leading-7 text-[#eadfc4]">{activeSlide.visualText}</p>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-2">
+                      {activeSlide.facts.map((fact) => (
+                        <span
+                          key={fact}
+                          className="rounded-2xl border border-white/12 bg-black/38 px-3 py-2 text-xs font-semibold text-[#fff8e6] backdrop-blur-sm"
+                        >
+                          {fact}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
                 <div className="p-5">
                   <p className="text-sm font-semibold text-[#f2c76d]">当前推荐入口</p>
                   <h2 className="mt-2 text-2xl font-semibold text-white">{activeSlide.title}</h2>

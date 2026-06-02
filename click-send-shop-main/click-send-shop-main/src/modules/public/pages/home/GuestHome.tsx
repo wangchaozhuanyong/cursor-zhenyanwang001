@@ -18,7 +18,6 @@ import MarketingFullReductionSection from "./MarketingFullReductionSection";
 import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
 import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
-import { ROUTES } from "@/constants/routes";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
 import { AnimatedSection } from "@/modules/micro-interactions";
@@ -208,17 +207,10 @@ export default function GuestHome() {
         ]}
       />
       <StoreTabHeader
-        searchMode="none"
+        searchMode="navigate"
+        searchPlaceholder="搜索商品或品牌..."
         showSiteNameMobile
-        rightSlot={(
-          <button
-            type="button"
-            onClick={() => navigate(ROUTES.LOGIN, { state: { from: ROUTES.HOME } })}
-            className="inline-flex min-h-9 shrink-0 items-center rounded-full bg-[var(--theme-primary)] px-4 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
-          >
-            登录 / 注册
-          </button>
-        )}
+        className="store-home-topbar"
       />
 
       <main
@@ -358,6 +350,7 @@ export default function GuestHome() {
         <div className={HOME_GUEST_FOOTER_WRAP_CLASS}>
           <GuestMobileFooter
             siteName={siteName}
+            logoSrc={logoSrc}
             slogan={slogan}
             description={description}
             supportNav={supportNav}

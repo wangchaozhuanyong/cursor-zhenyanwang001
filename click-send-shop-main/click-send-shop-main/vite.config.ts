@@ -210,12 +210,7 @@ export default defineConfig(({ mode, command }) => {
       injectRegister: false,
       outDir: buildOutDir,
       manifest: false,
-      includeAssets: [
-        "offline.html",
-        "browser-preboot.js",
-      ],
       workbox: {
-        swDest: "sw.js",
         globPatterns: [
           pwaHtmlEntry,
           "offline.html",

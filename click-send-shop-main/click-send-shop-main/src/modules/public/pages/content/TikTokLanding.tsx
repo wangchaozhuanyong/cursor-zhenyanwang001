@@ -184,6 +184,13 @@ const testimonials = [
 
 const featureChips = ["中文沟通", "本地资源", "真实信息", "高频服务入口"];
 
+const footerServices = [
+  { label: "找房安家", icon: Home, tone: "bg-[#dff6eb] text-[#067a55]" },
+  { label: "留学陪读", icon: GraduationCap, tone: "bg-[#e7f2ff] text-[#1d72c9]" },
+  { label: "签证咨询", icon: ShieldCheck, tone: "bg-[#efe8ff] text-[#7052bd]" },
+  { label: "本地办事", icon: ClipboardList, tone: "bg-[#fff0dc] text-[#c97700]" },
+];
+
 function readHeadMeta(selector: string): string {
   if (typeof document === "undefined") return "";
   return document.head.querySelector<HTMLMetaElement>(selector)?.content?.trim() || "";
@@ -699,52 +706,91 @@ export default function TikTokLanding() {
         </div>
       </section>
 
-      <footer className="border-t border-[#dfe9e6] bg-white px-5 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[1.15fr_0.85fr_0.85fr_1fr]">
-          <div>
-            <BrandMark brandLogoSrc={brandLogoSrc} />
-            <p className="mt-4 max-w-sm text-sm leading-7 text-[#64716e]">
-              面向在马来西亚生活、留学、工作和创业的中文用户，集中整理常用服务入口。
-            </p>
-          </div>
-          <div>
-            <h3 className="text-sm font-black text-[#121816]">平台服务</h3>
-            <div className="mt-3 grid gap-2 text-sm text-[#64716e]">
-              <span>服务分类</span>
-              <span>热门城市</span>
-              <span>使用流程</span>
-              <span>帮助中心</span>
+      <footer className="relative overflow-hidden bg-[#062f2b] px-5 pb-6 pt-8 text-white sm:px-6 lg:px-8 lg:pt-10">
+        <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(176,214,207,0.75),transparent)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(140deg,rgba(17,133,115,0.2)_0%,rgba(6,47,43,0)_40%,rgba(211,145,34,0.12)_100%)]" />
+        <div className="relative mx-auto max-w-7xl">
+          <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
+            <div className="rounded-lg border border-white/12 bg-white/[0.06] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.2)] backdrop-blur sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="rounded-lg border border-white/70 bg-white px-3 py-2 shadow-[0_12px_34px_rgba(0,0,0,0.18)]">
+                  <BrandMark brandLogoSrc={brandLogoSrc} />
+                </div>
+                <span className="rounded-full border border-[#d9aa58]/45 bg-[#d9aa58]/12 px-3 py-1 text-[11px] font-black text-[#f3d79e]">
+                  TikTok 专属
+                </span>
+              </div>
+              <p className="mt-4 text-[15px] leading-7 text-[#d7e7e3]">
+                把找房、留学、签证、本地办事和商务资源整理成一个清晰入口，来到马来西亚不用从零开始问。
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <UnifiedButton
+                  type="button"
+                  onClick={enterOfficialSite}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-3 text-[13px] font-black text-[#007f6d] shadow-[0_16px_38px_rgba(0,0,0,0.22)] transition hover:bg-[#f0faf7] min-[390px]:text-sm"
+                >
+                  进入大马通
+                  <ArrowRight size={17} />
+                </UnifiedButton>
+                <UnifiedButton
+                  type="button"
+                  onClick={openSupport}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/35 bg-white/10 px-3 text-[13px] font-black text-white transition hover:bg-white/16 min-[390px]:text-sm"
+                >
+                  <MessageCircle size={17} />
+                  联系客服
+                </UnifiedButton>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
+              <div className="rounded-lg border border-white/12 bg-white/[0.045] p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-base font-black text-white">核心服务</h3>
+                  <Sparkles size={18} className="text-[#f3d79e]" />
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2.5">
+                  {footerServices.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.label} className="flex min-h-12 items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.075] px-3">
+                        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${item.tone}`}>
+                          <Icon size={17} />
+                        </span>
+                        <span className="truncate text-sm font-black text-[#f6fffd]">{item.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-white/12 bg-white/[0.045] p-5">
+                <h3 className="text-base font-black text-white">联系与说明</h3>
+                <div className="mt-4 grid gap-3 text-sm text-[#d7e7e3]">
+                  <UnifiedButton type="button" onClick={openSupport} className="flex min-h-10 items-center gap-3 rounded-lg bg-white/[0.075] px-3 text-left font-bold text-[#f6fffd]">
+                    <MessageCircle size={18} className="shrink-0 text-[#7dd8c5]" />
+                    官方客服入口
+                  </UnifiedButton>
+                  <span className="flex min-h-10 items-center gap-3 rounded-lg bg-white/[0.055] px-3">
+                    <Mail size={18} className="shrink-0 text-[#f3d79e]" />
+                    邮箱与服务时间以客服页为准
+                  </span>
+                  <span className="flex min-h-10 items-center gap-3 rounded-lg bg-white/[0.055] px-3">
+                    <BadgeCheck size={18} className="shrink-0 text-[#7dd8c5]" />
+                    当前入口仅用于 TikTok 落地页
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <div>
-            <h3 className="text-sm font-black text-[#121816]">热门分类</h3>
-            <div className="mt-3 grid gap-2 text-sm text-[#64716e]">
-              <span>找房安家</span>
-              <span>留学陪读</span>
-              <span>签证咨询</span>
-              <span>商务资源</span>
-            </div>
+
+          <div className="mt-5 flex flex-col gap-3 border-t border-white/12 pt-5 text-xs text-[#abc6c0] sm:flex-row sm:items-center sm:justify-between">
+            <span>© 2025 大马通 Damatong.net · 保留所有权利</span>
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-3 py-1.5">
+              <CheckCircle2 size={14} className="text-[#7dd8c5]" />
+              TikTok 独立入口 · nofollow
+            </span>
           </div>
-          <div>
-            <h3 className="text-sm font-black text-[#121816]">联系方式</h3>
-            <div className="mt-3 grid gap-3 text-sm text-[#64716e]">
-              <UnifiedButton type="button" onClick={openSupport} className="flex items-center gap-2 text-left font-semibold text-[#007f6d]">
-                <MessageCircle size={18} />
-                官方客服入口
-              </UnifiedButton>
-              <span className="flex items-center gap-2">
-                <Mail size={18} />
-                邮箱与服务时间以客服页为准
-              </span>
-              <span className="flex items-center gap-2">
-                <BadgeCheck size={18} />
-                当前入口仅用于 TikTok 落地页
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="mx-auto mt-8 max-w-7xl border-t border-[#dfe9e6] pt-5 text-center text-xs text-[#84918e]">
-          © 2025 大马通 Damatong.net · 保留所有权利
         </div>
       </footer>
     </main>

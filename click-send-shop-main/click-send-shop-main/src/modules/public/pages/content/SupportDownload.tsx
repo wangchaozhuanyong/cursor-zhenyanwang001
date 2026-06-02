@@ -59,6 +59,13 @@ function firstChannelByType(channels: SupportDownloadChannel[], type: SupportCha
   return channels.find((channel) => channel.type === type);
 }
 
+function getDesktopSafeSubtitle(subtitle: string) {
+  return subtitle
+    .replace(/；?也可查看添加到桌面的使用指引。?/g, "")
+    .replace(/；?可查看添加到桌面的使用指引。?/g, "")
+    .trim();
+}
+
 function SupportTabIcon({ view }: { view: SupportDownloadView }) {
   if (view === "telegram") return <Send size={19} aria-hidden="true" />;
   if (view === "download") return <PlusSquare size={19} aria-hidden="true" />;
@@ -181,7 +188,8 @@ export default function SupportDownload() {
     return platforms;
   }, [platforms, recommendedPlatform]);
   const pageTitle = config.title?.trim() || "客服与安装";
-  const pageSubtitle = config.subtitle?.trim();
+  const rawPageSubtitle = config.subtitle?.trim();
+  const pageSubtitle = canShowInstallView ? rawPageSubtitle : getDesktopSafeSubtitle(rawPageSubtitle);
   const supportDescription = config.support.description?.trim();
   const supportWorkingHours = config.support.workingHours?.trim();
   const downloadTabTitle = config.download.title?.trim() || "添加桌面";
@@ -199,7 +207,7 @@ export default function SupportDownload() {
     <div className="store-page-shell store-bottom-safe support-download-page text-[var(--theme-text)]">
       <SeoHead
         title={`${pageTitle} - ${siteInfo.siteName || "官方商城"}`}
-        description={config.subtitle}
+        description={pageSubtitle || config.subtitle}
         canonical={buildCanonical("/support-download")}
         robots="index,follow"
       />
@@ -307,7 +315,7 @@ export default function SupportDownload() {
 
           {!activeView && !queryChannelId ? (
             <section className="support-empty-panel">
-              暂未配置客服渠道或添加到桌面说明，请稍后再试。
+              {canShowInstallView ? "暂未配置客服渠道或添加到桌面说明，请稍后再试。" : "暂未配置客服渠道，请稍后再试。"}
             </section>
           ) : null}
         </div>

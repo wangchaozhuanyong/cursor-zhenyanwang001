@@ -40,7 +40,6 @@ async function main() {
     "reviews\\/pending|points|rewards|invite",
     "/api/home/bootstrap",
     '"GET"',
-    "new s.NetworkOnly",
   ];
   const forbiddenSnippets = [
     "networkOnlyApiPattern",
@@ -50,6 +49,10 @@ async function main() {
   requiredSnippets.forEach((snippet) => {
     assert(sw.includes(snippet), `sw.js missing required rule fragment: ${snippet}`);
   });
+  assert(
+    sw.includes("new s.NetworkOnly") || sw.includes("new workbox.NetworkOnly"),
+    "sw.js missing required NetworkOnly runtime caching handler",
+  );
   forbiddenSnippets.forEach((snippet) => {
     assert(!sw.includes(snippet), `sw.js must not reference unresolved symbol: ${snippet}`);
   });

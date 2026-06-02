@@ -31,6 +31,7 @@ import {
 } from "@/utils/themeVisuals";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { AppModal } from "@/modules/micro-interactions";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   order: { icon: Package, color: THEME_BADGE_PRIMARY },
@@ -81,12 +82,12 @@ export default function Notifications() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
         <p className="text-sm text-[var(--theme-danger)]">{error}</p>
-        <button
+        <UnifiedButton
           onClick={() => loadNotifications()}
           className="rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-primary-foreground"
         >
           重试
-        </button>
+        </UnifiedButton>
       </div>
     );
   }
@@ -109,9 +110,9 @@ export default function Notifications() {
         onBack={goBack}
         rightSlot={
           unreadCount > 0 ? (
-            <button type="button" onClick={markAllAsRead} className="flex items-center gap-1 text-xs text-theme-price active:opacity-70">
+            <UnifiedButton type="button" onClick={markAllAsRead} className="flex items-center gap-1 text-xs text-theme-price active:opacity-70">
               <Check size={14} /> 全部已读
-            </button>
+            </UnifiedButton>
           ) : undefined
         }
         mainClassName="sm:px-4 lg:py-6"

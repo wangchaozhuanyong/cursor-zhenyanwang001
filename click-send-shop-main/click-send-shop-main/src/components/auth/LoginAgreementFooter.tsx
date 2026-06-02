@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type LoginAgreementFooterProps = {
   mode: "login" | "register";
@@ -28,21 +29,21 @@ export function LoginAgreementFooter({
       )}
     >
       {mode === "login" ? "登录" : "注册"}即代表您同意
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => navigate(termsPath)}
         className="mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle text-theme-price hover:underline"
       >
         《用户协议》
-      </button>
+      </UnifiedButton>
       和
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => navigate(privacyPath)}
         className="mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle text-theme-price hover:underline"
       >
         《隐私政策》
-      </button>
+      </UnifiedButton>
     </footer>
   );
 }

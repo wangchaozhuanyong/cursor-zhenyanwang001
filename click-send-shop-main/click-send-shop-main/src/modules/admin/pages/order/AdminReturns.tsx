@@ -35,6 +35,7 @@ import {
   adminTableTheadRow,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "left", "left", "right", "center", "left", "right",
@@ -210,11 +211,11 @@ export default function AdminReturns() {
         <AdminTableMobileCardField label={tText("时间")}><span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span></AdminTableMobileCardField>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-        <button type="button" onClick={() => setSelectedId(row.id)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>详情</Tx></button>
+        <UnifiedButton type="button" onClick={() => setSelectedId(row.id)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>详情</Tx></UnifiedButton>
         {canHandleReturn ? (
           <>
-            <button type="button" onClick={() => openReview("approve", row)} className="touch-manipulation rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>通过</Tx></button>
-            <button type="button" onClick={() => openReview("reject", row)} className="touch-manipulation rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>拒绝</Tx></button>
+            <UnifiedButton type="button" onClick={() => openReview("approve", row)} className="touch-manipulation rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>通过</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => openReview("reject", row)} className="touch-manipulation rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>拒绝</Tx></UnifiedButton>
           </>
         ) : null}
       </div>
@@ -226,10 +227,10 @@ export default function AdminReturns() {
       <AdminPageShell
           hint={<Tx>售后列表由 Query 缓存管理，审核后刷新订单、售后和仪表盘。</Tx>}
           toolbar={(
-            <button type="button" onClick={() => void returnsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
+            <UnifiedButton type="button" onClick={() => void returnsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
               <RefreshCw size={16} className={returnsQuery.isFetching ? "animate-spin" : ""} />
               <Tx>刷新</Tx>
-            </button>
+            </UnifiedButton>
           )}
           filters={(
         <div className="grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_1fr_auto]">
@@ -283,13 +284,13 @@ export default function AdminReturns() {
               <td className={adminTableCellClass("right")}>
                 <AdminRowActionsMenu
                   primary={(
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => setSelectedId(row.id)}
                       className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
                     >
                       <Tx>详情</Tx>
-                    </button>
+                    </UnifiedButton>
                   )}
                   moreLabel={<Tx>更多</Tx>}
                   items={[
@@ -369,15 +370,15 @@ export default function AdminReturns() {
                         <textarea value={adminRemark} onChange={(e) => setAdminRemark(e.target.value)} rows={4} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
                       </label>
                       <div className="mt-4 flex justify-end gap-2">
-                        <button type="button" onClick={closeReviewPanel} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-                        <button
+                        <UnifiedButton type="button" onClick={closeReviewPanel} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>取消</Tx></UnifiedButton>
+                        <UnifiedButton
                           type="button"
                           onClick={() => confirmSubmitReview(detail)}
                           disabled={approveMutation.isPending || rejectMutation.isPending}
                           className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                         >
                           {approveMutation.isPending || rejectMutation.isPending ? tText("处理中...") : <Tx>提交处理</Tx>}
-                        </button>
+                        </UnifiedButton>
                       </div>
                     </div>
                   ) : null}

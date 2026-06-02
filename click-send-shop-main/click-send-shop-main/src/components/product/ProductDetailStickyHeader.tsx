@@ -5,6 +5,7 @@ import StoreSearchField from "@/components/store/StoreSearchField";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type ProductDetailStickyHeaderProps = {
   /** 吸顶实底：主图滚出顶区后为 true；沉浸透明为 false */
@@ -24,14 +25,14 @@ function ImmersiveIconButton({
   children: ReactNode;
 }) {
   return (
-    <button
+    <UnifiedButton
       type="button"
       onClick={onClick}
       aria-label={label}
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/60 text-white shadow-sm [text-shadow:0_1px_2px_rgba(0,0,0,0.55)] backdrop-blur-md transition active:scale-95 touch-target"
     >
       {children}
-    </button>
+    </UnifiedButton>
   );
 }
 
@@ -45,14 +46,14 @@ function SolidIconButton({
   children: ReactNode;
 }) {
   return (
-    <button
+    <UnifiedButton
       type="button"
       onClick={onClick}
       aria-label={label}
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-text)] transition active:scale-95 touch-target"
     >
       {children}
-    </button>
+    </UnifiedButton>
   );
 }
 

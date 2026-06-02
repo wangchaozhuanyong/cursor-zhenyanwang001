@@ -4,6 +4,7 @@ import type { Address } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { AppModal } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   open: boolean;
@@ -22,7 +23,7 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
   };
 
   const footer = (
-    <button
+    <UnifiedButton
       type="button"
       className="flex min-h-12 w-full items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-sm font-semibold text-[var(--theme-text)]"
       onClick={() => {
@@ -31,7 +32,7 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
       }}
     >
       管理收货地址
-    </button>
+    </UnifiedButton>
   );
 
   return (
@@ -53,7 +54,7 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
             const selected = addr.id === selectedId;
             return (
               <li key={addr.id}>
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => pick(addr)}
                   className={cn(
@@ -82,7 +83,7 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
                       <Check size={14} strokeWidth={3} />
                     </span>
                   ) : null}
-                </button>
+                </UnifiedButton>
               </li>
             );
           })}

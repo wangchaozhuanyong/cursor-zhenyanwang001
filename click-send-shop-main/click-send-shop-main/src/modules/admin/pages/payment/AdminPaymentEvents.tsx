@@ -30,6 +30,7 @@ import {
   adminTableTheadRow,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "left", "center", "center", "left", "left", "right",
@@ -161,9 +162,9 @@ export default function AdminPaymentEvents() {
         </AdminTableMobileCardField>
       </div>
       <div className="mt-3 border-t border-border pt-3">
-        <button type="button" onClick={() => confirmReplay(row)} disabled={replayMutation.isPending} className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-60">
+        <UnifiedButton type="button" onClick={() => confirmReplay(row)} disabled={replayMutation.isPending} className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-60">
           {replayingEventId === row.id ? tText("处理中...") : <Tx>重新处理</Tx>}
-        </button>
+        </UnifiedButton>
       </div>
     </AdminTableMobileCard>
   );
@@ -173,10 +174,10 @@ export default function AdminPaymentEvents() {
       <AdminPageShell
         hint={<Tx>回调事件使用低频轮询兜底，SSE 到达时会精准刷新。</Tx>}
         toolbar={(
-          <button type="button" onClick={() => void eventsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
+          <UnifiedButton type="button" onClick={() => void eventsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
             <RefreshCw size={16} className={eventsQuery.isFetching ? "animate-spin" : ""} />
             <Tx>刷新</Tx>
-          </button>
+          </UnifiedButton>
         )}
         filters={(
           <>
@@ -236,9 +237,9 @@ export default function AdminPaymentEvents() {
               </td>
               <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{formatDateTime(row.created_at)}</td>
               <td className={adminTableCellClass("right")}>
-                <button type="button" onClick={() => confirmReplay(row)} disabled={replayMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">
+                <UnifiedButton type="button" onClick={() => confirmReplay(row)} disabled={replayMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">
                   {replayingEventId === row.id ? tText("处理中...") : <Tx>重新处理</Tx>}
-                </button>
+                </UnifiedButton>
               </td>
             </>
           )}

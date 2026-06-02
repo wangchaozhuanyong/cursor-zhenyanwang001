@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import type { SiteSettingsSectionId } from "./siteSettingsSections";
 import { SITE_SETTINGS_SECTIONS } from "./siteSettingsSections";
 import SiteSettingsSidebar from "./SiteSettingsSidebar";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   activeSectionId: SiteSettingsSectionId;
@@ -30,7 +31,7 @@ export default function SiteSettingsLayout({
       {/* Mobile tabs */}
       <div className="site-settings-mobile-tabs mb-4 flex flex-wrap gap-2 pb-1 lg:hidden">
         {SITE_SETTINGS_SECTIONS.map((s) => (
-          <button
+          <UnifiedButton
             key={s.id}
             type="button"
             onClick={() => onSectionChange(s.id)}
@@ -43,7 +44,7 @@ export default function SiteSettingsLayout({
           >
             {s.title}
             {dirtyMap[s.id] ? " ●" : ""}
-          </button>
+          </UnifiedButton>
         ))}
       </div>
 

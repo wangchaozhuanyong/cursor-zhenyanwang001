@@ -33,6 +33,7 @@ import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function MemberHome() {
   useDocumentTitle(undefined);
@@ -199,13 +200,13 @@ export default function MemberHome() {
               </h2>
             </div>
             {recBatches.length > 1 ? (
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => setRecBatchIndex((prev) => (prev + 1) % recBatches.length)}
                 className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)]"
               >
                 <RefreshCw size={12} />
-                换一批              </button>
+                换一批              </UnifiedButton>
             ) : null}
           </div>
           <SilkProductGrid

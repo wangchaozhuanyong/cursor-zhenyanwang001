@@ -12,6 +12,7 @@ import {
 import { toastErrorMessage } from "@/utils/errorMessage";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminTOptional } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type AdminAccountTab = "profile" | "password" | "security";
 
@@ -113,7 +114,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
     <>
       <div className="flex gap-1 rounded-2xl bg-secondary p-1">
         {tabs.map((t) => (
-          <button
+          <UnifiedButton
             key={t.key}
             type="button"
             onClick={() => setActiveTab(t.key)}
@@ -122,7 +123,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
             }`}
           >
             <t.icon size={16} /> {t.label}
-          </button>
+          </UnifiedButton>
         ))}
       </div>
 

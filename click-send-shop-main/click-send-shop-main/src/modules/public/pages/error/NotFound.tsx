@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { ArrowLeft, Home, SearchX } from "lucide-react";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/services/analyticsService";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -25,20 +26,20 @@ export default function NotFound() {
         <h1 className="mt-2 text-2xl font-bold text-foreground">页面不存在</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">这个页面可能已移动、删除，或链接输入有误。你可以返回上一页，或者回到首页继续浏览。</p>
         <div className="mt-7 grid gap-2 sm:grid-cols-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => navigate(-1)}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-bg)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
           >
             <ArrowLeft size={16} aria-hidden /> 返回上一页
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             onClick={() => navigate("/")}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full btn-theme-price px-5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2"
           >
             <Home size={16} aria-hidden /> 返回首页
-          </button>
+          </UnifiedButton>
         </div>
       </motion.div>
     </div>

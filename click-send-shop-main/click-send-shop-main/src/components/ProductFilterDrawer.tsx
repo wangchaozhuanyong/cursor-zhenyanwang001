@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Filter } from "lucide-react";
 import { AppModal } from "@/modules/micro-interactions";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface ProductFilterDrawerProps {
   activeFilterCount: number;
@@ -14,14 +15,14 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
 
   const footer = (
     <div className="grid grid-cols-2 gap-2">
-      <button
+      <UnifiedButton
         type="button"
         onClick={onReset}
         className="store-filter-reset-button w-full rounded-xl border px-3 py-3 text-sm font-semibold transition active:scale-[0.98]"
       >
         清空筛选
-      </button>
-      <button
+      </UnifiedButton>
+      <UnifiedButton
         type="button"
         onClick={() => {
           const ok = onConfirm?.();
@@ -31,13 +32,13 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
         className="store-filter-confirm-button w-full rounded-xl px-3 py-3 text-sm font-semibold transition active:scale-[0.98]"
       >
         确认筛选
-      </button>
+      </UnifiedButton>
     </div>
   );
 
   return (
     <>
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => setOpen(true)}
         className="store-category-filter-button inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold transition duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
@@ -49,7 +50,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
             {activeFilterCount}
           </span>
         ) : null}
-      </button>
+      </UnifiedButton>
 
       <AppModal
         tier="standard"

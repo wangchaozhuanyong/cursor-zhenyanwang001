@@ -39,6 +39,7 @@ import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "邀请/返现", "售后记录", "评论记录", "操作日志"] as const;
 type TabType = (typeof tabs)[number];
@@ -257,7 +258,7 @@ export default function AdminUserDetailPanel({
       <div className={cn("space-y-3 p-4", !embedded && "p-6", className)}>
         <p className="text-sm text-[var(--theme-danger)]">{loadError}</p>
         {!embedded && onBack ? (
-          <button type="button" className="rounded border px-3 py-1.5 text-xs" onClick={onBack}><Tx>返回用户列表</Tx></button>
+          <UnifiedButton type="button" className="rounded border px-3 py-1.5 text-xs" onClick={onBack}><Tx>返回用户列表</Tx></UnifiedButton>
         ) : null}
       </div>
     );
@@ -291,9 +292,9 @@ export default function AdminUserDetailPanel({
       {!embedded ? (
         <div className="flex items-center gap-3">
           {onBack ? (
-            <button type="button" onClick={onBack} className="rounded-md border border-border p-1.5 hover:bg-secondary">
+            <UnifiedButton type="button" onClick={onBack} className="rounded-md border border-border p-1.5 hover:bg-secondary">
               <ArrowLeft size={16} />
-            </button>
+            </UnifiedButton>
           ) : null}
           <h2 className="text-lg font-semibold"><Tx>用户详情</Tx></h2>
         </div>
@@ -318,10 +319,10 @@ export default function AdminUserDetailPanel({
           </div>
 
           <div className="flex flex-col items-start gap-2 lg:items-end">
-            <button type="button" onClick={() => void copyUserId()} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground hover:bg-secondary">
+            <UnifiedButton type="button" onClick={() => void copyUserId()} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground hover:bg-secondary">
               <Copy size={12} />
               <Tx>复制用户ID</Tx>
-            </button>
+            </UnifiedButton>
             <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 text-xs text-foreground">
               <span><Tx>操作提示</Tx></span>
               <AdminFieldHint text={tText("建议优先核对手机号、会员等级、积分余额与账号状态，再处理限制类操作")} />
@@ -362,14 +363,14 @@ export default function AdminUserDetailPanel({
       <div className="overflow-x-auto">
         <div className="inline-flex min-w-full gap-2 rounded-xl border border-border bg-card p-2">
           {tabs.map((t) => (
-            <button
+            <UnifiedButton
               key={t}
               type="button"
               className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors ${tab === t ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/60"}`}
               onClick={() => setTab(t)}
             >
               {tText(t)}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
       </div>
@@ -438,7 +439,7 @@ export default function AdminUserDetailPanel({
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold"><ShieldAlert size={15} /><Tx>用户标签</Tx></h3>
         <div className="flex flex-wrap gap-2">
           {allTags.map((tag) => (
-            <button
+            <UnifiedButton
               key={tag.id}
               type="button"
               className={`rounded-full border px-3 py-1 text-xs transition-colors ${userTagIds.has(tag.id) ? "border-transparent bg-secondary text-foreground" : "border-border text-muted-foreground hover:bg-secondary/40"}`}
@@ -450,7 +451,7 @@ export default function AdminUserDetailPanel({
               }}
             >
               {tag.name}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
       </section>
@@ -531,14 +532,14 @@ export default function AdminUserDetailPanel({
 
 function ActionBtn({ label, onClick, danger = false, disabled = false }: { label: string; onClick: () => void | Promise<void>; danger?: boolean; disabled?: boolean }) {
   return (
-    <button
+    <UnifiedButton
       type="button"
       disabled={disabled}
       onClick={() => void onClick()}
       className={`rounded-lg border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${danger ? "border-[var(--theme-danger)] text-[var(--theme-danger)] hover:bg-[var(--theme-danger)]/10" : "border-border text-foreground hover:bg-secondary"}`}
     >
       {label}
-    </button>
+    </UnifiedButton>
   );
 }
 
@@ -685,7 +686,7 @@ function ListHeader({ title, onAll }: { title: string; onAll?: () => void }) {
   return (
     <div className="flex items-center justify-between">
       <h4 className="text-sm font-semibold">{title}</h4>
-      {onAll ? <button type="button" className="text-xs text-[var(--theme-price)] hover:underline" onClick={onAll}><Tx>查看全部</Tx></button> : null}
+      {onAll ? <UnifiedButton type="button" className="text-xs text-[var(--theme-price)] hover:underline" onClick={onAll}><Tx>查看全部</Tx></UnifiedButton> : null}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { useOverlayDismiss } from "../hooks/useOverlayDismiss";
 import { useModalLayer } from "../modal/ModalLayerProvider";
 import { prefersReducedMotion } from "../motionConfig";
 import { useMotionConfig } from "../hooks/useMotionConfig";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type BottomSheetHeight = "auto" | "50vh" | "70vh" | "90vh" | "full";
 
@@ -150,14 +151,14 @@ export function BottomSheet({
               }}
             >
               {showHandle ? (
-                <button
+                <UnifiedButton
                   type="button"
                   className="flex w-full shrink-0 flex-col items-center pb-1 pt-3 outline-none"
                   aria-label="向下拖动关闭"
                   onPointerDown={(e) => dragControls.start(e)}
                 >
                   <span className="h-1 w-10 rounded-full bg-[var(--theme-border)]" />
-                </button>
+                </UnifiedButton>
               ) : null}
 
               {(title || showCloseButton) && (
@@ -178,14 +179,14 @@ export function BottomSheet({
                     ) : null}
                   </motion.div>
                   {showCloseButton ? (
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={onClose}
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)]"
                       aria-label="关闭"
                     >
                       <X size={18} />
-                    </button>
+                    </UnifiedButton>
                   ) : null}
                 </motion.div>
               )}

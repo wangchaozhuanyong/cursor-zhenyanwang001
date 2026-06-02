@@ -1,6 +1,7 @@
 import { Building2, CreditCard, MessageSquare, Smartphone, Wallet } from "lucide-react";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { shouldShowPaymentOption } from "@/utils/checkoutPaymentMethod";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type PaymentMethod = "online" | "reward_wallet" | "whatsapp";
 
@@ -78,7 +79,7 @@ export default function PaymentMethodPicker({
                 : "border-border hover:border-gold/40"
             } ${isDisabled ? "opacity-50" : ""}`}
           >
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => !isDisabled && onChange(opt.id)}
               disabled={isDisabled}
@@ -110,7 +111,7 @@ export default function PaymentMethodPicker({
                   isActive ? "border-gold bg-gold" : "border-muted-foreground"
                 }`}
               />
-            </button>
+            </UnifiedButton>
             {showChannels ? (
               <div className="border-t border-border/70 px-3.5 pb-3.5 pt-2">
                 <p className="mb-2 text-[11px] font-semibold text-muted-foreground">选择支付渠道</p>
@@ -121,7 +122,7 @@ export default function PaymentMethodPicker({
                       ? channel.code === "fpx" ? Building2 : Smartphone
                       : CreditCard;
                     return (
-                      <button
+                      <UnifiedButton
                         key={channel.code}
                         type="button"
                         onClick={() => onOnlineChannelChange?.(channel.code)}
@@ -133,7 +134,7 @@ export default function PaymentMethodPicker({
                       >
                         <Icon size={15} className={selected ? "text-theme-price" : "text-muted-foreground"} />
                         <span className="min-w-0 flex-1 truncate font-semibold">{channel.name}</span>
-                      </button>
+                      </UnifiedButton>
                     );
                   })}
                 </div>

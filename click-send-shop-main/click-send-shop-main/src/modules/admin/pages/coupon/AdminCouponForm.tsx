@@ -21,6 +21,7 @@ import type { CouponUpsertPayload } from "@/types/coupon";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type CouponType = "fixed" | "percentage" | "shipping";
 type ScopeType = "all" | "category";
@@ -281,9 +282,9 @@ export default function AdminCouponForm() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button type="button" onClick={goBack} aria-label={L("返回", "Back")}>
+        <UnifiedButton type="button" onClick={goBack} aria-label={L("返回", "Back")}>
           <ArrowLeft size={20} className="text-foreground" />
-        </button>
+        </UnifiedButton>
         <h2 className="text-lg font-semibold text-foreground">{isNew ? L("新建优惠券", "Create coupon") : L("编辑优惠券", "Edit coupon")}</h2>
       </div>
 
@@ -445,8 +446,8 @@ export default function AdminCouponForm() {
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">{L(`已选 ${form.usable_category_ids.length} 项`, `${form.usable_category_ids.length} selected`)}</span>
                   <div className="flex gap-2">
-                    <button type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: categoryOptions.map((x) => x.id) }))}>{L("全选", "Select all")}</button>
-                    <button type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: [] }))}>{L("清空", "Clear")}</button>
+                    <UnifiedButton type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: categoryOptions.map((x) => x.id) }))}>{L("全选", "Select all")}</UnifiedButton>
+                    <UnifiedButton type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: [] }))}>{L("清空", "Clear")}</UnifiedButton>
                   </div>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -486,27 +487,27 @@ export default function AdminCouponForm() {
                   <span className="whitespace-nowrap text-xs text-muted-foreground">{L(`已选 ${form.usable_product_ids.length}`, `${form.usable_product_ids.length} selected`)}</span>
                 </div>
                 <div className="flex gap-2 text-xs">
-                  <button
+                  <UnifiedButton
                     type="button"
                     className="rounded border border-border px-2 py-1"
                     onClick={() => setForm((prev) => ({ ...prev, usable_product_ids: [...new Set([...prev.usable_product_ids, ...products.map((p) => p.id)])] }))}
                   >
                     {L("本页全选", "Select current page")}
-                  </button>
-                  <button
+                  </UnifiedButton>
+                  <UnifiedButton
                     type="button"
                     className="rounded border border-border px-2 py-1"
                     onClick={() => setForm((prev) => ({ ...prev, usable_product_ids: prev.usable_product_ids.filter((item) => !products.some((p) => p.id === item)) }))}
                   >
                     {L("清空本页", "Clear current page")}
-                  </button>
-                  <button
+                  </UnifiedButton>
+                  <UnifiedButton
                     type="button"
                     className="rounded border border-border px-2 py-1"
                     onClick={() => setForm((prev) => ({ ...prev, usable_product_ids: [] }))}
                   >
                     {L("全部清空", "Clear all")}
-                  </button>
+                  </UnifiedButton>
                 </div>
                 <div className="max-h-56 space-y-2 overflow-auto">
                   {productLoading ? <p className="text-xs text-muted-foreground">{L("商品加载中...", "Loading products...")}</p> : null}
@@ -534,8 +535,8 @@ export default function AdminCouponForm() {
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{L(`第 ${productPage} 页 · 共 ${Math.max(1, Math.ceil(productTotal / PAGE_SIZE))} 页`, `Page ${productPage} of ${Math.max(1, Math.ceil(productTotal / PAGE_SIZE))}`)}</span>
                   <div className="flex gap-2">
-                    <button type="button" disabled={productPage <= 1 || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => Math.max(1, p - 1))}>{L("上一页", "Previous")}</button>
-                    <button type="button" disabled={productPage >= Math.max(1, Math.ceil(productTotal / PAGE_SIZE)) || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => p + 1)}>{L("下一页", "Next")}</button>
+                    <UnifiedButton type="button" disabled={productPage <= 1 || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => Math.max(1, p - 1))}>{L("上一页", "Previous")}</UnifiedButton>
+                    <UnifiedButton type="button" disabled={productPage >= Math.max(1, Math.ceil(productTotal / PAGE_SIZE)) || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => p + 1)}>{L("下一页", "Next")}</UnifiedButton>
                   </div>
                 </div>
               </div>
@@ -578,7 +579,7 @@ export default function AdminCouponForm() {
                 {L("保存", "Save")}
               </LoadingButton>
             </PermissionGate>
-            <button type="button" onClick={goBack} className="rounded-lg border border-border px-6 py-2.5 text-sm text-muted-foreground">{L("取消", "Cancel")}</button>
+            <UnifiedButton type="button" onClick={goBack} className="rounded-lg border border-border px-6 py-2.5 text-sm text-muted-foreground">{L("取消", "Cancel")}</UnifiedButton>
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AdminFieldHintProps = {
   text: React.ReactNode;
@@ -37,7 +38,7 @@ export default function AdminFieldHint({
       disableHoverableContent={false}
     >
       <TooltipTrigger asChild>
-        <button
+        <UnifiedButton
           type="button"
           aria-label={tText("查看说明")}
           aria-expanded={open}
@@ -54,7 +55,7 @@ export default function AdminFieldHint({
           }}
         >
           <CircleHelp size={iconSize} strokeWidth={2} />
-        </button>
+        </UnifiedButton>
       </TooltipTrigger>
       <TooltipContent
         side={side}

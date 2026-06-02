@@ -15,6 +15,7 @@ import {
   handleYearSegmentPaste,
   segmentDigits,
 } from "./segmentedDateField";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function parseDateTimeLocal(v: string): { y: string; m: string; d: string; h: string; mi: string } {
   if (!v || !v.trim()) return { y: "", m: "", d: "", h: "", mi: "" };
@@ -342,7 +343,7 @@ export default function SegmentedDateTimeInput({
           }}
         />
 
-        <button
+        <UnifiedButton
           type="button"
           disabled={disabled || readOnly}
           title={tText("打开日期与时间")}
@@ -356,7 +357,7 @@ export default function SegmentedDateTimeInput({
           }}
         >
           <CalendarClock size={16} />
-        </button>
+        </UnifiedButton>
       </div>
       <input
         ref={hiddenPickerRef}

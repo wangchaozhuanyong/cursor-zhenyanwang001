@@ -3,6 +3,7 @@ import { Fingerprint, Lock, User } from "lucide-react";
 import { useAdminT } from "@/hooks/useAdminT";
 import type { AdminAccountTab } from "@/components/admin/AdminAccountPanel";
 import { useAdminAccountSettings } from "@/modules/admin/context/AdminAccountSettingsContext";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Variant = "menu" | "inline";
 
@@ -39,7 +40,7 @@ export default function AdminAccountSettingsTrigger({
 
   if (variant === "inline") {
     return (
-      <button
+      <UnifiedButton
         type="button"
         onClick={handleClick}
         title={label}
@@ -50,12 +51,12 @@ export default function AdminAccountSettingsTrigger({
       >
         <Icon size={14} />
         <span>{label}</span>
-      </button>
+      </UnifiedButton>
     );
   }
 
   return (
-    <button
+    <UnifiedButton
       type="button"
       onClick={handleClick}
       className={
@@ -65,6 +66,6 @@ export default function AdminAccountSettingsTrigger({
     >
       <Icon size={16} />
       {label}
-    </button>
+    </UnifiedButton>
   );
 }

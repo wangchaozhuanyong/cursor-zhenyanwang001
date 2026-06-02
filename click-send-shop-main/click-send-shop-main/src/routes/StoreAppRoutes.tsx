@@ -201,28 +201,68 @@ function HomeRoute() {
   return isAuthenticated ? <MemberHome /> : <GuestHome />;
 }
 
+type NetworkInformationLike = {
+  effectiveType?: string;
+  saveData?: boolean;
+};
+
+function getNetworkInformation(): NetworkInformationLike | undefined {
+  if (typeof navigator === "undefined") return undefined;
+  const nav = navigator as Navigator & {
+    connection?: NetworkInformationLike;
+    mozConnection?: NetworkInformationLike;
+    webkitConnection?: NetworkInformationLike;
+  };
+  return nav.connection || nav.mozConnection || nav.webkitConnection;
+}
+
+function shouldSkipLowPriorityRoutePreload() {
+  const connection = getNetworkInformation();
+  if (!connection) return false;
+  if (connection.saveData) return true;
+  return /^(slow-2g|2g)$/i.test(connection.effectiveType || "");
+}
+
+function scheduleIdle(callback: () => void, timeout = 1200) {
+  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+    const idleWindow = window as Window & {
+      requestIdleCallback: (cb: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const id = idleWindow.requestIdleCallback(callback, { timeout });
+    return () => idleWindow.cancelIdleCallback?.(id);
+  }
+  const timer = window.setTimeout(callback, timeout);
+  return () => window.clearTimeout(timer);
+}
+
 function RoutePreloadOnIdle() {
   useEffect(() => {
-    const run = () => {
+    const preloadPrimaryRoutes = () => {
       GuestHome.preload?.();
       MemberHome.preload?.();
       Categories.preload?.();
       NewArrivals.preload?.();
       Search.preload?.();
-      SupportDownload.preload?.();
+    };
+    const preloadLowPriorityRoutes = () => {
+      if (shouldSkipLowPriorityRoutePreload()) return;
       Cart.preload?.();
       Profile.preload?.();
       if (isLoggedIn()) Orders.preload?.();
     };
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const id = (window as Window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(run);
-      return () => {
-        const cancel = (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
-        if (cancel) cancel(id);
-      };
-    }
-    const timer = window.setTimeout(run, 300);
-    return () => window.clearTimeout(timer);
+
+    const cleanupPrimary = scheduleIdle(preloadPrimaryRoutes, 1200);
+    let cleanupLowPriority: (() => void) | undefined;
+    const lowPriorityTimer = window.setTimeout(() => {
+      cleanupLowPriority = scheduleIdle(preloadLowPriorityRoutes, 3000);
+    }, 5000);
+
+    return () => {
+      cleanupPrimary();
+      window.clearTimeout(lowPriorityTimer);
+      cleanupLowPriority?.();
+    };
   }, []);
   return null;
 }

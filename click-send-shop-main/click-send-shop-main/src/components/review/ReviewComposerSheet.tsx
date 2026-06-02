@@ -3,6 +3,7 @@ import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { AppModal, LoadingButton } from "@/modules/micro-interactions";
 import * as reviewService from "@/services/reviewService";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface ReviewComposerSheetProps {
   open: boolean;
@@ -96,12 +97,12 @@ export default function ReviewComposerSheet({
       <div className="space-y-4 pb-2">
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((s) => (
-            <button key={s} type="button" onClick={() => setRating(s)} aria-label={`${s} 星`}>
+            <UnifiedButton key={s} type="button" onClick={() => setRating(s)} aria-label={`${s} 星`}>
               <Star
                 size={22}
                 className={s <= rating ? "fill-[var(--theme-price)] text-[var(--theme-price)]" : "text-muted-foreground"}
               />
-            </button>
+            </UnifiedButton>
           ))}
         </div>
         <textarea
@@ -112,13 +113,13 @@ export default function ReviewComposerSheet({
           className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-3 text-sm text-[var(--theme-text)] outline-none ring-[var(--theme-primary)] focus:ring-2"
         />
         <div className="flex items-center justify-between">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => inputRef.current?.click()}
             className="text-xs text-[var(--theme-text-muted)]"
           >
             上传图片 ({images.length}/5)
-          </button>
+          </UnifiedButton>
           <input
             ref={inputRef}
             type="file"

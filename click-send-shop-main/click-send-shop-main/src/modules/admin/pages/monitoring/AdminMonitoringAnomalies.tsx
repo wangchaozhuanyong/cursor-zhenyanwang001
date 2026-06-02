@@ -24,6 +24,7 @@ import {
   adminThClassName,
 } from "@/utils/adminTableClasses";
 import { MONITORING_ANOMALY_STATUS_LABELS } from "./monitoringLabels";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const statuses = ["", "open", "investigating", "repair_pending", "repaired", "resolved", "ignored"];
 const severities = ["", "P0", "P1", "P2", "P3", "INFO"];
@@ -78,7 +79,7 @@ export default function AdminMonitoringAnomalies() {
               ))}
             </select>
             <input className={`${monitoringInputClass} min-w-56`} value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={tText("关键词 / 对象 / 原因")} />
-            <button className={monitoringPrimaryButtonClass} onClick={() => { setPage(1); load(); }}><Tx>筛选</Tx></button>
+            <UnifiedButton className={monitoringPrimaryButtonClass} onClick={() => { setPage(1); load(); }}><Tx>筛选</Tx></UnifiedButton>
           </div>
         </>
       )}
@@ -129,9 +130,9 @@ export default function AdminMonitoringAnomalies() {
       <div className={`mt-4 flex items-center justify-between text-sm ${monitoringMutedClass}`}>
         <span>共 {total} 条</span>
         <div className="flex gap-2">
-          <button className={monitoringSecondaryButtonClass} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><Tx>上一页</Tx></button>
+          <UnifiedButton className={monitoringSecondaryButtonClass} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><Tx>上一页</Tx></UnifiedButton>
           <span className="px-2 py-1">{page}</span>
-          <button className={monitoringSecondaryButtonClass} disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></button>
+          <UnifiedButton className={monitoringSecondaryButtonClass} disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></UnifiedButton>
         </div>
       </div>
     </AdminPageShell>

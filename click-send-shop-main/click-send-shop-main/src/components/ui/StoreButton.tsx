@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { UnifiedButton } from "./UnifiedButton";
 
 type StoreButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "price";
 type StoreButtonSize = "sm" | "md" | "lg";
@@ -40,7 +41,7 @@ export default function StoreButton({
         : "";
 
   return (
-    <button
+    <UnifiedButton
       type="button"
       className={cn(
         "inline-flex items-center justify-center gap-2 whitespace-nowrap transition-[transform,box-shadow,filter,background-color,border-color,color] duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55",
@@ -55,6 +56,6 @@ export default function StoreButton({
       {...props}
     >
       {children}
-    </button>
+    </UnifiedButton>
   );
 }

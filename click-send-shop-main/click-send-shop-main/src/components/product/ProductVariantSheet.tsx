@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import type { Product, ProductVariant } from "@/types/product";
 import { AppModal, SquishButton } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type PurchaseIntent = "cart" | "buy";
 
@@ -177,7 +178,7 @@ export default function ProductVariantSheet({
                     const disabled = !isValueAvailable(group.id, value.id);
                     const outOfStock = disabled && isValueOutOfStock(group.id, value.id);
                     return (
-                      <button
+                      <UnifiedButton
                         key={value.id}
                         type="button"
                         disabled={disabled}
@@ -195,7 +196,7 @@ export default function ProductVariantSheet({
                             缺货
                           </span>
                         ) : null}
-                      </button>
+                      </UnifiedButton>
                     );
                   })}
                 </div>
@@ -215,7 +216,7 @@ export default function ProductVariantSheet({
                 const active = variant.id === selectedVariantId;
                 const disabled = variant.enabled === false || variant.stock <= 0;
                 return (
-                  <button
+                  <UnifiedButton
                     key={variant.id}
                     type="button"
                     disabled={disabled}
@@ -236,7 +237,7 @@ export default function ProductVariantSheet({
                         缺货
                       </span>
                     ) : null}
-                  </button>
+                  </UnifiedButton>
                 );
               })}
             </div>
@@ -246,7 +247,7 @@ export default function ProductVariantSheet({
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">数量</span>
           <div className="flex items-center gap-2 rounded-full border border-[var(--theme-border)]">
-            <button
+            <UnifiedButton
               type="button"
               disabled={qty <= 1 || soldOut}
               onClick={() => tryChangeQty(qty - 1, "minus")}
@@ -254,7 +255,7 @@ export default function ProductVariantSheet({
               aria-label="减少"
             >
               <Minus size={16} />
-            </button>
+            </UnifiedButton>
             <input
               type="text"
               inputMode="numeric"
@@ -280,7 +281,7 @@ export default function ProductVariantSheet({
               className="h-9 min-w-[2.25rem] bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none"
               aria-label="数量"
             />
-            <button
+            <UnifiedButton
               type="button"
               disabled={soldOut || qty >= maxQty}
               onClick={() => tryChangeQty(qty + 1, "plus")}
@@ -288,7 +289,7 @@ export default function ProductVariantSheet({
               aria-label="增加"
             >
               <Plus size={16} />
-            </button>
+            </UnifiedButton>
           </div>
         </div>
       </div>

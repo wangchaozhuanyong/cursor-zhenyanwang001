@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, SlidersHorizontal } from "lucide-react";
 import type { ProductSortType } from "@/types/product";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type SortItem = {
   value: ProductSortType;
@@ -43,16 +44,16 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
     >
       <SlidersHorizontal size={16} className="store-category-sortbar-icon shrink-0" aria-hidden />
       {sortItems.map((item) => (
-        <button
+        <UnifiedButton
           key={item.value}
           type="button"
           onClick={() => onChange(item.value)}
           className={sortPillClass(value === item.value)}
         >
           {item.label}
-        </button>
+        </UnifiedButton>
       ))}
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => onChange(cyclePriceSort(value))}
         className={sortPillClass(isPriceActive)}
@@ -71,7 +72,7 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
             <ArrowDown size={10} />
           </span>
         )}
-      </button>
+      </UnifiedButton>
     </div>
   );
 }

@@ -1,1 +1,0 @@
-System.register(["./vendor-react-legacy-Dh92em78.js","./vendor-icons-legacy-DhZGMrk1.js","./WeChatIcon-legacy-DcH9p0yZ.js"],function(n,t){var e;return n("default",function(n){return n.wechatLogin,n.onNavigateSettings,n.cardClass,n.menuTapClass,null}),{setters:[function(n){e=n.t},function(n){n.jt},function(n){n.t}],execute:function(){e()}}});

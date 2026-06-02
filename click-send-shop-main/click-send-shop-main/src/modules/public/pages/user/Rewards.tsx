@@ -24,6 +24,7 @@ import {
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { cn } from "@/lib/utils";
 import { formatRewardTransactionLabel, groupRewardRecordsByMonth } from "@/utils/rewardDisplayLabels";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const PAGE_SIZE = 20;
 const DEFAULT_BALANCE_LABEL = "购物可用返现";
@@ -161,23 +162,23 @@ export default function Rewards() {
             </div>
             <p className={`mt-4 text-xs leading-relaxed ${THEME_ACCENT_HERO_SUBTLE}`}>{usageNotice}</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => navigate("/")}
                 className={cn("inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold", THEME_BTN_PRICE)}
               >
                 <ShoppingBag size={14} />
                 去购物
-              </button>
+              </UnifiedButton>
               {inviteEnabled ? (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => navigate("/invite")}
                   className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_35%,transparent)] px-4 py-2 text-xs font-semibold text-[var(--theme-coupon-accent-foreground)]"
                 >
                   <Users size={14} />
                   邀请好友赚返现
-                </button>
+                </UnifiedButton>
               ) : null}
             </div>
           </div>
@@ -189,7 +190,7 @@ export default function Rewards() {
 
       <div className="mt-5 flex rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] p-1 ring-1 ring-[var(--theme-border)]">
         {TABS.map((item) => (
-          <button
+          <UnifiedButton
             key={item.key}
             type="button"
             onClick={() => void handleTabChange(item.key)}
@@ -201,7 +202,7 @@ export default function Rewards() {
             )}
           >
             {item.label}
-          </button>
+          </UnifiedButton>
         ))}
       </div>
 
@@ -214,9 +215,9 @@ export default function Rewards() {
         ) : error ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-10 text-center">
             <p className="text-sm text-muted-foreground">{error}</p>
-            <button type="button" onClick={() => void loadInitial()} className={cn("rounded-full px-5 py-2 text-sm font-semibold", THEME_BTN_PRICE)}>
+            <UnifiedButton type="button" onClick={() => void loadInitial()} className={cn("rounded-full px-5 py-2 text-sm font-semibold", THEME_BTN_PRICE)}>
               重试
-            </button>
+            </UnifiedButton>
           </div>
         ) : records.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-8 text-center">
@@ -224,13 +225,13 @@ export default function Rewards() {
             <p className="mt-2 text-xs text-muted-foreground">邀请好友付款成功或购物使用返现余额后，会在这里显示明细。</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {inviteEnabled ? (
-                <button type="button" onClick={() => navigate("/invite")} className={cn("rounded-full px-4 py-2 text-xs font-semibold", THEME_BTN_PRICE)}>
+                <UnifiedButton type="button" onClick={() => navigate("/invite")} className={cn("rounded-full px-4 py-2 text-xs font-semibold", THEME_BTN_PRICE)}>
                   去邀请好友
-                </button>
+                </UnifiedButton>
               ) : null}
-              <button type="button" onClick={() => navigate("/")} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground">
+              <UnifiedButton type="button" onClick={() => navigate("/")} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground">
                 去购物
-              </button>
+              </UnifiedButton>
             </div>
           </div>
         ) : (
@@ -243,7 +244,7 @@ export default function Rewards() {
                     const positive = Number(record.amount) >= 0;
                     const orderPath = record.order_id ? `/orders/${record.order_id}` : null;
                     return (
-                      <button
+                      <UnifiedButton
                         key={record.id}
                         type="button"
                         disabled={!orderPath}
@@ -269,21 +270,21 @@ export default function Rewards() {
                           {Number(record.amount) > 0 ? "+" : ""}
                           {money(record.amount)}
                         </span>
-                      </button>
+                      </UnifiedButton>
                     );
                   })}
                 </div>
               </div>
             ))}
             {hasMore ? (
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => void loadMore()}
                 disabled={loadingMore}
                 className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-60"
               >
                 {loadingMore ? "加载中..." : "加载更多"}
-              </button>
+              </UnifiedButton>
             ) : null}
           </div>
         )}

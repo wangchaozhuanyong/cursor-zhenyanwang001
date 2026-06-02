@@ -47,6 +47,7 @@ import {
   adminTdClassName,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const AUDIT_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "left", "left", "left", "center", "center",
@@ -181,9 +182,9 @@ export default function AdminLogs() {
           <span className="text-xs text-foreground line-clamp-3">{localizedAuditSummary(row.summary, tText)}</span>
         </AdminTableMobileCardField>
       </div>
-      <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]">
+      <UnifiedButton type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]">
         <Tx>详情</Tx><ChevronRight size={16} />
-      </button>
+      </UnifiedButton>
     </AdminTableMobileCard>
   );
 
@@ -350,11 +351,11 @@ export default function AdminLogs() {
                 className="w-full [&>div]:theme-rounded [&>div]:border-[var(--theme-border)] [&>div]:bg-[var(--theme-surface)]"
               />
             </div>
-            <button
+            <UnifiedButton
               type="button"
               onClick={handleAuditSearch}
               className="min-h-[44px] theme-rounded px-5 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
-            ><Tx>查询</Tx></button>
+            ><Tx>查询</Tx></UnifiedButton>
             {!isSuperAdmin ? (
               <div className="min-w-[16rem] rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs text-muted-foreground">
                 <Tx>内部编号筛选仅对超级管理员开放；普通管理员可通过关键词、对象类型、动作和日期定位日志。</Tx>
@@ -431,9 +432,9 @@ export default function AdminLogs() {
                 </span>
               </td>
               <td className={adminTdClassName("px-3 py-2", "center")}>
-                <button type="button" onClick={() => setDetail(row)} className="text-[var(--theme-price)] hover:underline">
+                <UnifiedButton type="button" onClick={() => setDetail(row)} className="text-[var(--theme-price)] hover:underline">
                   <ChevronRight size={16} />
-                </button>
+                </UnifiedButton>
               </td>
             </>
           )}

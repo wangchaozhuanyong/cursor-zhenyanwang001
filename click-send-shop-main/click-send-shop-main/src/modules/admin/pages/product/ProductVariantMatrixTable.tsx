@@ -6,6 +6,7 @@ import { THEME_HOVER_TEXT_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals
 import { adminThClassName } from "@/utils/adminTableClasses";
 import { DEFAULT_VARIANT_TITLE } from "@/utils/productFormVariantUtils";
 import type { ProductVariantMatrixFormSlice } from "@/modules/admin/pages/product/productFormTypes";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props<T extends ProductVariantMatrixFormSlice> = {
   form: T;
@@ -303,7 +304,7 @@ export default function ProductVariantMatrixTable<T extends ProductVariantMatrix
                     />
                   </label>
                   {!!v.image_url && (
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => {
                         setForm((f) => {
@@ -315,7 +316,7 @@ export default function ProductVariantMatrixTable<T extends ProductVariantMatrix
                       className={`text-[11px] ${THEME_HOVER_TEXT_DANGER}`}
                     >
                       清除
-                    </button>
+                    </UnifiedButton>
                   )}
                 </div>
                 {uploadingVariantImageIndex === idx && variantUploadProgress !== null ? (
@@ -354,7 +355,7 @@ export default function ProductVariantMatrixTable<T extends ProductVariantMatrix
               />
             </td>
             <td className="py-2 align-middle">
-              <button
+              <UnifiedButton
                 type="button"
                 disabled={form.variants.length <= 1}
                 onClick={() => {
@@ -369,7 +370,7 @@ export default function ProductVariantMatrixTable<T extends ProductVariantMatrix
                 title={tText("删除此行")}
               >
                 <Trash2 size={14} />
-              </button>
+              </UnifiedButton>
             </td>
           </tr>
         ))}

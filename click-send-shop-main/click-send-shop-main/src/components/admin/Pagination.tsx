@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface PaginationProps {
   total: number;
@@ -63,7 +64,7 @@ export default function Pagination({
       </div>
 
       <div className="admin-pagination-controls -mx-1 flex min-w-0 items-center justify-start gap-1 overflow-x-auto px-1 pb-1 sm:mx-0 sm:justify-end sm:overflow-visible sm:px-0 sm:pb-0">
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => onPageChange(safeP - 1)}
           disabled={safeP <= 1}
@@ -71,13 +72,13 @@ export default function Pagination({
           className="touch-manipulation flex h-11 w-11 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30"
         >
           <ChevronLeft size={18} />
-        </button>
+        </UnifiedButton>
 
         {pages.map((p, i) =>
           p === "..." ? (
             <span key={`e${i}`} className="px-1.5 text-sm text-muted-foreground">…</span>
           ) : (
-            <button
+            <UnifiedButton
               type="button"
               key={p}
               onClick={() => onPageChange(p)}
@@ -90,11 +91,11 @@ export default function Pagination({
               }`}
             >
               {p}
-            </button>
+            </UnifiedButton>
           )
         )}
 
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => onPageChange(safeP + 1)}
           disabled={safeP >= totalPages}
@@ -102,7 +103,7 @@ export default function Pagination({
           className="touch-manipulation flex h-11 w-11 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30"
         >
           <ChevronRight size={18} />
-        </button>
+        </UnifiedButton>
       </div>
     </div>
   );

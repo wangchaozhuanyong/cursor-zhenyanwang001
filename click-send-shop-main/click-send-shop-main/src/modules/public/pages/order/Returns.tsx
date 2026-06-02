@@ -7,6 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import { getReturnStatusBadgeClass, getReturnStatusLabel } from "@/constants/statusDictionary";
 import { formatDateTime } from "@/utils/formatDateTime";
 import ReturnApplySheet from "./ReturnApplySheet";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function Returns() {
   const goBack = useGoBack();
@@ -50,13 +51,13 @@ export default function Returns() {
     <div className="min-h-screen bg-[var(--theme-bg)] pb-8 text-[var(--theme-text)]">
       <PageHeader title="售后申请" onBack={goBack} />
       <main className="mx-auto w-full max-w-xl space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm sm:p-4">
-        <button
+        <UnifiedButton
           type="button"
           className="w-full rounded-xl border border-[var(--theme-primary)] bg-[var(--theme-primary)] py-2.5 text-sm font-medium text-[var(--theme-primary-foreground)]"
           onClick={() => setApplyOpen(true)}
         >
           发起售后申请
-        </button>
+        </UnifiedButton>
 
         {loading ? <p className="text-muted-foreground">加载中...</p> : null}
         {!loading && list.length === 0 ? (

@@ -5,6 +5,7 @@ import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 import { formatCouponExpireText } from "@/utils/couponDisplay";
 import { AppModal, usePreferBottomSheet } from "@/modules/micro-interactions";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface CouponPickerProps {
   totalAmount: number;
@@ -51,7 +52,7 @@ function CouponListBody(props: {
   const { coupons, selectedCouponId, selected, totalAmount, onSelect, onClose, getDiscountAmount, isUsable, getAmountParts, getMinSpendText } = props;
   return (
     <div className="space-y-2">
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => {
           onSelect(null);
@@ -61,7 +62,7 @@ function CouponListBody(props: {
       >
         <span className="text-sm text-[var(--theme-text-on-surface)]">不使用优惠券</span>
         {!selectedCouponId && <Check size={16} className="text-theme-price" />}
-      </button>
+      </UnifiedButton>
 
       {coupons.map((coupon) => {
         const usable = isUsable(coupon);
@@ -118,7 +119,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
 
   return (
     <div className={embedded ? "" : "store-card overflow-hidden rounded-2xl border border-[var(--theme-border)]"}>
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => (isMobileSheet ? setOpen(true) : setOpen((v) => !v))}
         className={embedded ? "flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] px-4 py-3.5 text-left" : "flex w-full items-center justify-between p-5"}
@@ -153,7 +154,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
             </div>
           </>
         )}
-      </button>
+      </UnifiedButton>
 
       {isMobileSheet ? (
         <AppModal tier="standard" open={open} onClose={close} title="选择优惠券" height="90vh">

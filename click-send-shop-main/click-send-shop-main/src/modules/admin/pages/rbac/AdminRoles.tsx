@@ -22,6 +22,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Tab = "assign" | "manage";
 const PRIVILEGED_ROLE_CODES = new Set(["super_admin", "admin_manager"]);
@@ -193,8 +194,8 @@ export default function AdminRoles() {
       hint={<Tx>为管理员分配 RBAC 角色；超级管理员可维护角色与权限点。</Tx>}
       filters={(
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setTab("assign")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "assign" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>用户角色分配</Tx></button>
-          {isSuperAdminViewer && <button onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>角色管理</Tx></button>}
+          <UnifiedButton onClick={() => setTab("assign")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "assign" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>用户角色分配</Tx></UnifiedButton>
+          {isSuperAdminViewer && <UnifiedButton onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>角色管理</Tx></UnifiedButton>}
         </div>
       )}
     >
@@ -259,9 +260,9 @@ export default function AdminRoles() {
               <AdminFieldHint text={<Tx>管理角色定义和权限配置。系统内置角色不可删除。</Tx>} />
             </div>
             {isSuperAdminViewer && (
-              <button onClick={openRoleCreate} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium btn-theme-gradient">
+              <UnifiedButton onClick={openRoleCreate} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium btn-theme-gradient">
                 <Plus size={14} /><Tx> 新建角色
-              </Tx></button>
+              </Tx></UnifiedButton>
             )}
           </div>
           <div className="space-y-3">
@@ -276,14 +277,14 @@ export default function AdminRoles() {
                   {isSuperAdminViewer && (
                     <AdminRowActionsMenu
                       primary={(
-                        <button
+                        <UnifiedButton
                           type="button"
                           onClick={() => openRoleEdit(r)}
                           className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 text-xs font-medium text-foreground hover:bg-[var(--theme-bg)]"
                         >
                           <Pencil size={14} className="mr-1 inline" />
                           <Tx>编辑</Tx>
-                        </button>
+                        </UnifiedButton>
                       )}
                       moreLabel={<Tx>更多</Tx>}
                       items={[

@@ -12,6 +12,7 @@ import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { isLoggedIn } from "@/utils/token";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type NavItem = { path: string; label: string; icon: typeof Home; enabled?: boolean };
 
@@ -136,7 +137,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
 
         <div className="flex shrink-0 items-center gap-2">
           {capabilities.mallEnabled ? (
-            <button
+            <UnifiedButton
               type="button"
               onMouseEnter={() => preloadHeaderRoute("/cart")}
               onFocus={() => preloadHeaderRoute("/cart")}
@@ -150,11 +151,11 @@ export default function StoreDesktopHeader({ className }: { className?: string }
                   {totalItems > 99 ? "99+" : totalItems}
                 </span>
               ) : null}
-            </button>
+            </UnifiedButton>
           ) : null}
 
           {loggedIn ? (
-            <button
+            <UnifiedButton
               type="button"
               onMouseEnter={() => preloadHeaderRoute("/profile")}
               onFocus={() => preloadHeaderRoute("/profile")}
@@ -168,15 +169,15 @@ export default function StoreDesktopHeader({ className }: { className?: string }
             >
               <User size={16} />
               我的
-            </button>
+            </UnifiedButton>
           ) : (
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => navigateWithStoreTransition(navigate, "/login", { state: { from: location.pathname } })}
               className="store-header-login-button rounded-full bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
             >
               登录 / 注册
-            </button>
+            </UnifiedButton>
           )}
         </div>
       </div>

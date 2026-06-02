@@ -1,1 +1,0 @@
-import{n as e}from"./request-CniSumBJ.js";function t(t){return e(`/rewards/transactions`,t)}function n(){return e(`/rewards/balance`)}function r(){return e(`/rewards/config`)}async function i(e){return(await t(e)).data}async function a(){return(await n()).data}async function o(){return(await r()).data}export{o as n,i as r,a as t};

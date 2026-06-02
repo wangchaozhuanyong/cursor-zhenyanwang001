@@ -15,6 +15,7 @@ import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsive
 import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const EMPTY_FORM = { name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 };
 
@@ -116,9 +117,9 @@ export default function AdminShipping() {
       )}
       toolbar={(
         <PermissionGate permission="shipping.manage">
-          <button type="button" onClick={() => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">
+          <UnifiedButton type="button" onClick={() => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">
             <Plus size={16} /><Tx>新建模板</Tx>
-          </button>
+          </UnifiedButton>
         </PermissionGate>
       )}
     >
@@ -166,18 +167,18 @@ export default function AdminShipping() {
             </div>
             <PermissionGate permission="shipping.manage">
               <div className="mt-4 flex gap-2">
-                <button type="button" onClick={() => openEdit(t)} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-secondary">
+                <UnifiedButton type="button" onClick={() => openEdit(t)} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-secondary">
                   <Edit2 size={12} /><Tx> 编辑
-                </Tx></button>
-                <button
+                </Tx></UnifiedButton>
+                <UnifiedButton
                   type="button"
                   onClick={() => adminConfirmDelete(confirm, t.name, () => handleDelete(t.id))}
                   className={`flex items-center justify-center rounded-xl border border-border px-3 py-2 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-secondary`}
                 >
                   <Trash2 size={12} />
-                </button>
+                </UnifiedButton>
                 {!t.isDefault ? (
-                  <button
+                  <UnifiedButton
                     type="button"
                     onClick={() =>
                       confirm({ title: tText("设为默认生效"),
@@ -189,7 +190,7 @@ export default function AdminShipping() {
                     className="flex-1 rounded-xl border border-gold/40 bg-gold/10 py-2 text-xs font-semibold text-theme-price hover:bg-gold/20"
                   >
                     <Tx>设为默认生效</Tx>
-                  </button>
+                  </UnifiedButton>
                 ) : (
                   <span className="flex flex-1 items-center justify-center rounded-xl border border-border bg-secondary/50 py-2 text-xs text-muted-foreground">
                     <Tx>当前默认</Tx>

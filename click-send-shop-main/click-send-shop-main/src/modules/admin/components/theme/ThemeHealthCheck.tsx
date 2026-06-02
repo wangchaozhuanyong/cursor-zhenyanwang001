@@ -5,6 +5,7 @@ import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { getThemeHealthFixHint, getThemeHealthFixTarget, type ThemeHealthFixTarget } from "./themeHealthFixMeta";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const statusIcon: Record<ThemeHealthStatus, typeof CheckCircle2> = {
   pass: CheckCircle2,
@@ -55,14 +56,14 @@ export default function ThemeHealthCheck({ config, onGoToFix }: Props) {
                 </div>
                 {item.message ? <p className="mt-0.5 text-muted-foreground">{item.message}</p> : null}
                 {item.status !== "pass" && onGoToFix && target ? (
-                  <button
+                  <UnifiedButton
                     type="button"
                     onClick={() => onGoToFix(target)}
                     className="mt-2 inline-flex items-center gap-1 rounded-md border border-[var(--theme-primary)]/40 bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] px-2 py-1 text-[11px] font-medium text-[var(--theme-primary)] hover:bg-[color-mix(in_srgb,var(--theme-primary)_16%,transparent)]"
                   >
                     定位修改
                     <ArrowRight size={12} />
-                  </button>
+                  </UnifiedButton>
                 ) : null}
               </div>
             </li>

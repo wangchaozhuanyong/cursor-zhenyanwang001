@@ -5,6 +5,7 @@ import * as homeService from "@/services/homeService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { trackEvent } from "@/services/analyticsService";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?:
   return (
     <AnimatedSection delay={delay}>
     <section className="w-full">
-      <button
+      <UnifiedButton
         type="button"
         onClick={openBanner}
         className="relative block w-full overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-left theme-shadow"
@@ -55,7 +56,7 @@ export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?:
           <p className="text-sm font-bold text-white">{banner.title}</p>
           {banner.promo_label ? <p className="text-xs text-white/85">{banner.promo_label}</p> : null}
         </div>
-      </button>
+      </UnifiedButton>
     </section>
     </AnimatedSection>
   );

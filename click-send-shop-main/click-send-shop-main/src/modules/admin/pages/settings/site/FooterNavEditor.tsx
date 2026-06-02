@@ -9,6 +9,7 @@ import {
   parseFooterNavJson,
   serializeFooterNavForSave,
 } from "./footerNavUtils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   value: string;
@@ -66,14 +67,14 @@ export default function FooterNavEditor({ value, onChange }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground"><Tx>可视化编辑页脚导航；保存分组后写入 footerNav。</Tx></p>
         <div className="flex flex-wrap gap-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => commitItems([...DEFAULT_FOOTER_NAV_ITEMS])}
             className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-secondary"
           >
             <Tx>恢复默认</Tx>
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             onClick={() =>
               commitItems([
@@ -84,14 +85,14 @@ export default function FooterNavEditor({ value, onChange }: Props) {
             className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs hover:bg-secondary"
           >
             <Plus size={12} /><Tx>新增</Tx>
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             onClick={() => setShowJson((v) => !v)}
             className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-secondary"
           >
             {showJson ? <Tx>收起 JSON</Tx> : <Tx>高级 JSON</Tx>}
-          </button>
+          </UnifiedButton>
         </div>
       </div>
 
@@ -135,29 +136,29 @@ export default function FooterNavEditor({ value, onChange }: Props) {
                 <Tx>启用</Tx>
               </label>
               <div className="flex gap-1">
-                <button
+                <UnifiedButton
                   type="button"
                   disabled={idx === 0}
                   onClick={() => reorder(idx, idx - 1)}
                   className="rounded-lg border border-border p-1.5 disabled:opacity-40"
                 >
                   <ArrowUp size={14} />
-                </button>
-                <button
+                </UnifiedButton>
+                <UnifiedButton
                   type="button"
                   disabled={idx === sorted.length - 1}
                   onClick={() => reorder(idx, idx + 1)}
                   className="rounded-lg border border-border p-1.5 disabled:opacity-40"
                 >
                   <ArrowDown size={14} />
-                </button>
-                <button
+                </UnifiedButton>
+                <UnifiedButton
                   type="button"
                   onClick={() => commitItems(sorted.filter((_, i) => i !== idx))}
                   className={`rounded-lg border border-border p-1.5 ${THEME_TEXT_DANGER}`}
                 >
                   <Trash2 size={14} />
-                </button>
+                </UnifiedButton>
               </div>
             </div>
           </div>
@@ -175,7 +176,7 @@ export default function FooterNavEditor({ value, onChange }: Props) {
             onChange={(e) => setJsonDraft(e.target.value)}
             className="w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-xs outline-none focus:border-gold"
           />
-          <button
+          <UnifiedButton
             type="button"
             className="mt-2 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"
             onClick={() => {
@@ -189,10 +190,10 @@ export default function FooterNavEditor({ value, onChange }: Props) {
             }}
           >
             <Tx>从 JSON 导入</Tx>
-          </button>
+          </UnifiedButton>
         </div>
       ) : (
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => {
             setJsonDraft(serializeFooterNavForSave(sorted));
@@ -201,7 +202,7 @@ export default function FooterNavEditor({ value, onChange }: Props) {
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
           <ChevronRight size={14} /><Tx>展开高级 JSON 编辑</Tx>
-        </button>
+        </UnifiedButton>
       )}
     </div>
   );

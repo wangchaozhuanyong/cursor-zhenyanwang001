@@ -6,6 +6,7 @@ import {
   THEME_INVITE_PROMO_MUTED,
   THEME_INVITE_PROMO_SHELL,
 } from "@/utils/themeVisuals";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type InvitePromoCardProps = {
   loggedIn?: boolean;
@@ -49,14 +50,14 @@ export default function InvitePromoCard({
         </div>
         <div className="flex w-[5.25rem] shrink-0 flex-col items-center justify-center gap-2">
           <InviteGiftBadge />
-          <button
+          <UnifiedButton
             type="button"
             onClick={onAction}
             className={`w-full whitespace-nowrap rounded-full px-2 py-2 text-center text-xs font-semibold ${THEME_INVITE_PROMO_CTA}`}
             style={{ background: "var(--theme-invite-promo-cta-bg)", color: "var(--theme-invite-promo-cta-fg)" }}
           >
             {loggedIn ? "立即邀请" : "去登录"}
-          </button>
+          </UnifiedButton>
         </div>
       </div>
     </div>

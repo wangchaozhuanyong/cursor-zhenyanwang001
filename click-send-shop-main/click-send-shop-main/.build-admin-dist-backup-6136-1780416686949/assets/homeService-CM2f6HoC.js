@@ -1,1 +1,0 @@
-import{n as e}from"./request-CniSumBJ.js";function t(){return e(`/home/bootstrap`)}var n=3e5,r=null,i=0,a=null;function o(){return!r||Date.now()-i>n?null:r}async function s(e){return(e?.force===!0?null:o())||a||(a=t().then(e=>(r=e.data,i=Date.now(),e.data)).finally(()=>{a=null}),a)}export{o as n,s as t};

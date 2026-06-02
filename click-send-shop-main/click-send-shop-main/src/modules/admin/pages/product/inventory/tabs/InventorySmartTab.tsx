@@ -9,6 +9,7 @@ import {
   adminTableHeadCellClass,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const SMART_TABLE_HEADERS = [
   "SKU", "库存", "在途", "销量/天", "当前下限/上限", "建议下限", "建议上限", "建议补货", "建议动作", "置信度", "原因",
@@ -79,14 +80,14 @@ export default function InventorySmartTab({
             ["purchase", "采购计划"],
             ["rules", "补货规则设置"],
           ] as const).map(([key, label]) => (
-            <button
+            <UnifiedButton
               key={key}
               type="button"
               onClick={() => setSmartView(key)}
               className={`rounded-lg px-3 py-2 text-sm font-semibold ${smartView === key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
             >
               {L(label)}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
       </div>
@@ -114,8 +115,8 @@ export default function InventorySmartTab({
               {L("当前版本按可用库存、在途库存、销量快照、库存上下限生成预览；低销量和新品只给观察建议；小包装缺货时会先判断大包装可拆库存，再决定拆包或采购。")}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={() => setSmartView("limits")} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{L("去计算上下限")}</button>
-              <button type="button" onClick={() => setSmartView("suggestions")} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold">{L("查看补货建议")}</button>
+              <UnifiedButton type="button" onClick={() => setSmartView("limits")} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{L("去计算上下限")}</UnifiedButton>
+              <UnifiedButton type="button" onClick={() => setSmartView("suggestions")} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold">{L("查看补货建议")}</UnifiedButton>
             </div>
           </div>
         </>
@@ -131,21 +132,21 @@ export default function InventorySmartTab({
             </p>
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={() => smartPreviewMutation.mutate()} disabled={smartPreviewMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+            <UnifiedButton type="button" onClick={() => smartPreviewMutation.mutate()} disabled={smartPreviewMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
               {smartPreviewMutation.isPending ? L("智能计算中...") : L("智能计算")}
-            </button>
-            <button type="button" onClick={() => dailySnapshotMutation.mutate()} disabled={dailySnapshotMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={() => dailySnapshotMutation.mutate()} disabled={dailySnapshotMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
               {dailySnapshotMutation.isPending ? L("生成中...") : L("生成今日快照")}
-            </button>
-            <button type="button" onClick={() => smartApplyMutation.mutate()} disabled={!smartPreview || smartApplyMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={() => smartApplyMutation.mutate()} disabled={!smartPreview || smartApplyMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
               {smartApplyMutation.isPending ? L("应用中...") : L("批量应用")}
-            </button>
-            <button type="button" onClick={() => smartCreatePoMutation.mutate()} disabled={!smartPreview || smartPurchaseableCount <= 0 || smartCreatePoMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={() => smartCreatePoMutation.mutate()} disabled={!smartPreview || smartPurchaseableCount <= 0 || smartCreatePoMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
               {smartCreatePoMutation.isPending ? L("生成中...") : L("生成采购单")}
-            </button>
-            <button type="button" onClick={() => smartUnpackMutation.mutate(smartUnpackableItemIds)} disabled={!smartPreview || smartUnpackableItemIds.length <= 0 || smartUnpackMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={() => smartUnpackMutation.mutate(smartUnpackableItemIds)} disabled={!smartPreview || smartUnpackableItemIds.length <= 0 || smartUnpackMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
               {smartUnpackMutation.isPending ? L("拆包中...") : L("批量执行拆包")}
-            </button>
+            </UnifiedButton>
           </div>
         </div>
         <div className="grid gap-3 md:grid-cols-4 lg:grid-cols-7">
@@ -197,9 +198,9 @@ export default function InventorySmartTab({
                 {L("只会把建议动作为采购、且建议数量大于 0 的 SKU 生成采购单。拆包和观察建议不会进入采购单。")}
               </p>
             </div>
-            <button type="button" onClick={() => smartCreatePoMutation.mutate()} disabled={!smartPreview || smartPurchaseableCount <= 0 || smartCreatePoMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+            <UnifiedButton type="button" onClick={() => smartCreatePoMutation.mutate()} disabled={!smartPreview || smartPurchaseableCount <= 0 || smartCreatePoMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
               {smartCreatePoMutation.isPending ? L("生成中...") : `${L("生成采购单")} (${smartPurchaseableCount})`}
-            </button>
+            </UnifiedButton>
           </div>
         </div>
       ) : null}
@@ -214,15 +215,15 @@ export default function InventorySmartTab({
                 {L("批次")} {smartPreview.id} · {L("共")} {smartPreview.items.length} {L("条")}
               </p>
             </div>
-            <button type="button" onClick={() => smartApplyMutation.mutate()} disabled={smartApplyMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+            <UnifiedButton type="button" onClick={() => smartApplyMutation.mutate()} disabled={smartApplyMutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
               {smartApplyMutation.isPending ? L("应用中...") : L("确认批量应用")}
-            </button>
-            <button type="button" onClick={() => smartCreatePoMutation.mutate()} disabled={smartPurchaseableCount <= 0 || smartCreatePoMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={() => smartCreatePoMutation.mutate()} disabled={smartPurchaseableCount <= 0 || smartCreatePoMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
               {smartCreatePoMutation.isPending ? L("生成中...") : L("生成采购单")}
-            </button>
-            <button type="button" onClick={() => smartUnpackMutation.mutate(smartUnpackableItemIds)} disabled={smartUnpackableItemIds.length <= 0 || smartUnpackMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={() => smartUnpackMutation.mutate(smartUnpackableItemIds)} disabled={smartUnpackableItemIds.length <= 0 || smartUnpackMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
               {smartUnpackMutation.isPending ? L("拆包中...") : L("批量执行拆包")}
-            </button>
+            </UnifiedButton>
           </div>
           <div className="overflow-x-auto">
             <table className={adminTableClassName("w-full min-w-[1280px] text-sm")}>
@@ -262,14 +263,14 @@ export default function InventorySmartTab({
                             {item.suggestion_type === "unpack" ? L("拆包") : item.suggestion_type === "watch" ? L("观察") : L("采购")}
                           </span>
                           {item.suggestion_type === "unpack" ? (
-                            <button
+                            <UnifiedButton
                               type="button"
                               onClick={() => smartUnpackMutation.mutate([item.id])}
                               disabled={smartUnpackMutation.isPending || item.apply_status === "unpacked"}
                               className="rounded-lg border border-border px-2 py-1 text-xs disabled:opacity-50"
                             >
                               {item.apply_status === "unpacked" ? <Tx>已拆包</Tx> : <Tx>执行拆包</Tx>}
-                            </button>
+                            </UnifiedButton>
                           ) : null}
                         </div>
                       </td>
@@ -316,16 +317,16 @@ export default function InventorySmartTab({
             ))}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" onClick={() => setSmartView("limits")} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"><Tx>去计算上下限</Tx></button>
-            <button type="button" onClick={() => smartProfileLoadMutation.mutate()} disabled={selectedCount !== 1 || smartProfileLoadMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            <UnifiedButton type="button" onClick={() => setSmartView("limits")} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"><Tx>去计算上下限</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => smartProfileLoadMutation.mutate()} disabled={selectedCount !== 1 || smartProfileLoadMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
               {smartProfileLoadMutation.isPending ? <Tx>加载中...</Tx> : <Tx>加载当前 SKU 规则</Tx>}
-            </button>
-            <button type="button" onClick={() => smartProfileMutation.mutate()} disabled={selectedCount <= 0 || smartProfileMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={() => smartProfileMutation.mutate()} disabled={selectedCount <= 0 || smartProfileMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
               {smartProfileMutation.isPending ? <Tx>保存中...</Tx> : <><Tx>保存到已选 SKU</Tx> ({selectedCount})</>}
-            </button>
-            <button type="button" onClick={() => dailySnapshotMutation.mutate()} disabled={dailySnapshotMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={() => dailySnapshotMutation.mutate()} disabled={dailySnapshotMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50">
               {dailySnapshotMutation.isPending ? <Tx>生成中...</Tx> : <Tx>生成今日快照</Tx>}
-            </button>
+            </UnifiedButton>
           </div>
         </div>
       ) : null}

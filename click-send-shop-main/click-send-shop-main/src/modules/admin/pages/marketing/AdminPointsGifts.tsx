@@ -20,6 +20,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAdminT } from "@/hooks/useAdminT";
 import { cn } from "@/lib/utils";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const inputCls = "rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground w-full";
 
@@ -194,7 +195,7 @@ export default function AdminPointsGifts() {
           </div>
         ) : null}
         <div className="flex gap-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => {
               if (!form.product_id) {
@@ -207,11 +208,11 @@ export default function AdminPointsGifts() {
             className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
           >
             <Tx>{editingId ? "保存" : "创建"}</Tx>
-          </button>
+          </UnifiedButton>
           {editingId ? (
-            <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm); }} className="rounded-lg border border-border px-4 py-2 text-sm">
+            <UnifiedButton type="button" onClick={() => { setEditingId(null); setForm(emptyForm); }} className="rounded-lg border border-border px-4 py-2 text-sm">
               <Tx>取消</Tx>
-            </button>
+            </UnifiedButton>
           ) : null}
         </div>
       </div>
@@ -228,8 +229,8 @@ export default function AdminPointsGifts() {
                     <p className="text-xs text-muted-foreground">{item.required_points} 积分 · 已兑 {item.redeemed_count ?? 0}</p>
                   </div>
                   <div className="flex gap-1">
-                    <button type="button" className="text-xs text-primary" onClick={() => { setEditingId(item.id!); setForm({ ...emptyForm, ...item }); }}><Tx>编辑</Tx></button>
-                    <button type="button" className="text-destructive" onClick={() => item.id && deleteMutation.mutate(item.id)}><Trash2 size={14} /></button>
+                    <UnifiedButton type="button" className="text-xs text-primary" onClick={() => { setEditingId(item.id!); setForm({ ...emptyForm, ...item }); }}><Tx>编辑</Tx></UnifiedButton>
+                    <UnifiedButton type="button" className="text-destructive" onClick={() => item.id && deleteMutation.mutate(item.id)}><Trash2 size={14} /></UnifiedButton>
                   </div>
                 </li>
               ))}

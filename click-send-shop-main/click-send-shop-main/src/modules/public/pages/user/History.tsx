@@ -6,6 +6,7 @@ import { isLoggedIn } from "@/utils/token";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function History() {
   const navigate = useNavigate();
@@ -20,9 +21,9 @@ export default function History() {
       title="浏览历史"
       rightSlot={
         history.length > 0 ? (
-          <button type="button" onClick={clearHistory} className="flex items-center gap-1 text-xs text-[var(--theme-danger)] active:opacity-70">
+          <UnifiedButton type="button" onClick={clearHistory} className="flex items-center gap-1 text-xs text-[var(--theme-danger)] active:opacity-70">
             <Trash2 size={14} /> 清空
-          </button>
+          </UnifiedButton>
         ) : undefined
       }
       className="pb-6"
@@ -31,13 +32,13 @@ export default function History() {
         {!isLoggedIn() && (
           <div className="mb-3 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-xs text-foreground">
             <span className="text-muted-foreground">未登录时仅在本机记录浏览；</span>
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => navigate("/login", { state: { from: "/history" } })}
               className="ml-1 font-semibold text-theme-price"
             >
               登录
-            </button>
+            </UnifiedButton>
             <span className="text-muted-foreground">后多端同步</span>
           </div>
         )}

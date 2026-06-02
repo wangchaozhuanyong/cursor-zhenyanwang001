@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronRight, MapPin } from "lucide-react";
 import type { Address } from "@/types/address";
 import { AppModal, SquishButton, usePreferBottomSheet } from "@/modules/micro-interactions";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface CheckoutAddressCardProps {
   name: string;
@@ -55,19 +56,19 @@ export function CheckoutAddressCard({
           </div>
         </div>
         {!isMobileSheet ? (
-          <button
+          <UnifiedButton
             type="button"
             onClick={onChooseAddress}
             className="flex items-center gap-1 rounded-full bg-[var(--theme-bg)] px-3 py-1.5 text-xs font-medium text-[var(--theme-price)]"
           >
             <MapPin size={12} /> 选择地址
-          </button>
+          </UnifiedButton>
         ) : null}
       </div>
 
       {isMobileSheet ? (
         <div className="space-y-3">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setAddressSheetOpen(true)}
             className="store-choice-row flex w-full items-center justify-between gap-2 rounded-xl bg-secondary px-4 py-3.5 text-left"
@@ -78,9 +79,9 @@ export function CheckoutAddressCard({
               <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{addressLine}</p>
             </div>
             <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
-          </button>
+          </UnifiedButton>
 
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setNoteSheetOpen(true)}
             className="store-choice-row flex w-full items-center justify-between gap-2 rounded-xl bg-secondary px-4 py-3.5 text-left"
@@ -92,7 +93,7 @@ export function CheckoutAddressCard({
               </p>
             </div>
             <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
-          </button>
+          </UnifiedButton>
 
           <AppModal
             tier="form"
@@ -103,13 +104,13 @@ export function CheckoutAddressCard({
             stickyFooter
             footer={
               <div className="grid grid-cols-2 gap-2">
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={openAddressBook}
                   className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm font-semibold text-[var(--theme-text)]"
                 >
                   地址簿
-                </button>
+                </UnifiedButton>
                 <SquishButton
                   type="button"
                   variant="gold"

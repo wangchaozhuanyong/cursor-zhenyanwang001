@@ -4,6 +4,7 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import StoreBadge from "@/components/ui/StoreBadge";
 import { THEME_BADGE_WARNING } from "@/utils/themeVisuals";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type ThemeStudioHeaderProps = {
   skinName: string;
@@ -64,14 +65,14 @@ export default function ThemeStudioHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={onPreview}
             className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border px-3 text-xs hover:bg-secondary"
           >
             <Eye size={14} />
             预览
-          </button>
+          </UnifiedButton>
 
           <PermissionGate permission="settings.manage">
             <LoadingButton

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight, Tag } from "lucide-react";
 import * as marketingService from "@/services/marketingService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   position: "cart_notice" | "checkout_notice" | "profile_center";
@@ -33,7 +34,7 @@ export default function MarketingPositionNotices({ position, className = "" }: P
   return (
     <div className={`space-y-2 ${className}`}>
       {notices.map((n) => (
-        <button
+        <UnifiedButton
           key={n.id}
           type="button"
           onClick={() => navigate(n.link_url || "/categories")}
@@ -47,7 +48,7 @@ export default function MarketingPositionNotices({ position, className = "" }: P
             <p className="truncate text-xs text-[var(--theme-text-muted)]">{n.promo_label}</p>
           </div>
           <ChevronRight size={16} className="shrink-0 text-[var(--theme-text-muted)]" />
-        </button>
+        </UnifiedButton>
       ))}
     </div>
   );

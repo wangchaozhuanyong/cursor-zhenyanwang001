@@ -24,6 +24,7 @@ import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsive
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface ContentItem {
   id: string;
@@ -236,13 +237,13 @@ export default function AdminContent() {
       }
       toolbar={(
         <PermissionGate permission="content.manage">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setShowCreateForm(true)}
             className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"
           >
             <Plus size={14} /> 新增内容页
-          </button>
+          </UnifiedButton>
         </PermissionGate>
       )}
     >
@@ -279,9 +280,9 @@ export default function AdminContent() {
             <div className="mt-2 flex flex-wrap gap-2">
               {termsPage ? (
                 <PermissionGate permission="content.manage">
-                  <button type="button" onClick={() => openEdit(termsPage)} className="rounded-lg border border-border px-2 py-1 hover:bg-secondary">
+                  <UnifiedButton type="button" onClick={() => openEdit(termsPage)} className="rounded-lg border border-border px-2 py-1 hover:bg-secondary">
                     <Tx>编辑正文</Tx>
-                  </button>
+                  </UnifiedButton>
                 </PermissionGate>
               ) : (
                 <span className="text-muted-foreground"><Tx>列表中暂无该页，请执行迁移或新增内容页</Tx></span>
@@ -316,9 +317,9 @@ export default function AdminContent() {
             <div className="mt-2 flex flex-wrap gap-2">
               {privacyPage ? (
                 <PermissionGate permission="content.manage">
-                  <button type="button" onClick={() => openEdit(privacyPage)} className="rounded-lg border border-border px-2 py-1 hover:bg-secondary">
+                  <UnifiedButton type="button" onClick={() => openEdit(privacyPage)} className="rounded-lg border border-border px-2 py-1 hover:bg-secondary">
                     <Tx>编辑正文</Tx>
-                  </button>
+                  </UnifiedButton>
                 </PermissionGate>
               ) : (
                 <span className="text-muted-foreground"><Tx>列表中暂无该页，请执行迁移或新增内容页</Tx></span>
@@ -359,9 +360,9 @@ export default function AdminContent() {
             <div className="mb-2 flex items-center justify-between">
               <h4 className="text-sm font-semibold"><Tx>FAQ 分类</Tx></h4>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => ({ ...x, enabled: true })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部启用</Tx></button>
-                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => ({ ...x, enabled: false })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部禁用</Tx></button>
-                <button
+                <UnifiedButton type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => ({ ...x, enabled: true })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部启用</Tx></UnifiedButton>
+                <UnifiedButton type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => ({ ...x, enabled: false })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部禁用</Tx></UnifiedButton>
+                <UnifiedButton
                   type="button"
                   onClick={() => setHelpForm((prev) => ({
                     ...prev,
@@ -370,18 +371,18 @@ export default function AdminContent() {
                   className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs"
                 >
                   <Plus size={12} /><Tx> 新增分类
-                </Tx></button>
+                </Tx></UnifiedButton>
               </div>
             </div>
             <div className="space-y-2">
               {categories.map((cat) => (
                 <div key={cat.id} draggable onDragStart={() => setDragCatId(cat.id)} onDragOver={(e) => e.preventDefault()} onDrop={() => { reorderCategories(dragCatId, cat.id); setDragCatId(""); }} className="grid gap-2 rounded-lg border border-border bg-background p-2 md:grid-cols-[32px,1fr,56px,56px,80px,56px]">
-                  <button type="button" onClick={() => setCollapsedCategoryIds((prev) => ({ ...prev, [cat.id]: !prev[cat.id] }))} className="inline-flex items-center justify-center rounded-lg border border-border bg-card">{collapsedCategoryIds[cat.id] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}</button>
+                  <UnifiedButton type="button" onClick={() => setCollapsedCategoryIds((prev) => ({ ...prev, [cat.id]: !prev[cat.id] }))} className="inline-flex items-center justify-center rounded-lg border border-border bg-card">{collapsedCategoryIds[cat.id] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}</UnifiedButton>
                   <input value={cat.name} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, name: e.target.value } : x) }))} placeholder={tText("分类名称")} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold" />
-                  <button type="button" onClick={() => reorderCategories(cat.id, categories[Math.max(0, categories.findIndex((c) => c.id === cat.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></button>
-                  <button type="button" onClick={() => reorderCategories(cat.id, categories[Math.min(categories.length - 1, categories.findIndex((c) => c.id === cat.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></button>
+                  <UnifiedButton type="button" onClick={() => reorderCategories(cat.id, categories[Math.max(0, categories.findIndex((c) => c.id === cat.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></UnifiedButton>
+                  <UnifiedButton type="button" onClick={() => reorderCategories(cat.id, categories[Math.min(categories.length - 1, categories.findIndex((c) => c.id === cat.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></UnifiedButton>
                   <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={cat.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
-                  <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.filter((x) => x.id !== cat.id), faqs: prev.faqs.filter((f) => f.categoryId !== cat.id) }))} className={`inline-flex items-center justify-center rounded-lg border border-border bg-card ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>
+                  <UnifiedButton type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.filter((x) => x.id !== cat.id), faqs: prev.faqs.filter((f) => f.categoryId !== cat.id) }))} className={`inline-flex items-center justify-center rounded-lg border border-border bg-card ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></UnifiedButton>
                 </div>
               ))}
               {categories.length === 0 ? <p className="text-xs text-muted-foreground"><Tx>暂无分类，请先新增分类。</Tx></p> : null}
@@ -392,9 +393,9 @@ export default function AdminContent() {
             <div className="mb-2 flex items-center justify-between">
               <h4 className="text-sm font-semibold"><Tx>FAQ 列表</Tx></h4>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => ({ ...x, enabled: true })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部启用</Tx></button>
-                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => ({ ...x, enabled: false })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部禁用</Tx></button>
-                <button
+                <UnifiedButton type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => ({ ...x, enabled: true })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部启用</Tx></UnifiedButton>
+                <UnifiedButton type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => ({ ...x, enabled: false })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部禁用</Tx></UnifiedButton>
+                <UnifiedButton
                   type="button"
                   onClick={() => setHelpForm((prev) => ({
                     ...prev,
@@ -403,7 +404,7 @@ export default function AdminContent() {
                   className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs"
                 >
                   <Plus size={12} /><Tx> 新增问题
-                </Tx></button>
+                </Tx></UnifiedButton>
               </div>
             </div>
             <div className="space-y-2">
@@ -415,10 +416,10 @@ export default function AdminContent() {
                       <option value=""><Tx>未分类</Tx></option>
                       {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name || "未命名分类"}</option>)}
                     </select>
-                    <button type="button" onClick={() => reorderFaqs(faq.id, faqs[Math.max(0, faqs.findIndex((f) => f.id === faq.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></button>
-                    <button type="button" onClick={() => reorderFaqs(faq.id, faqs[Math.min(faqs.length - 1, faqs.findIndex((f) => f.id === faq.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></button>
+                    <UnifiedButton type="button" onClick={() => reorderFaqs(faq.id, faqs[Math.max(0, faqs.findIndex((f) => f.id === faq.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></UnifiedButton>
+                    <UnifiedButton type="button" onClick={() => reorderFaqs(faq.id, faqs[Math.min(faqs.length - 1, faqs.findIndex((f) => f.id === faq.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></UnifiedButton>
                     <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={faq.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
-                    <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.filter((x) => x.id !== faq.id) }))} className={`inline-flex items-center justify-center rounded-lg border border-border bg-card ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>
+                    <UnifiedButton type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.filter((x) => x.id !== faq.id) }))} className={`inline-flex items-center justify-center rounded-lg border border-border bg-card ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></UnifiedButton>
                   </div>
                   {!collapsedCategoryIds[faq.categoryId] ? <textarea value={faq.answer} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, answer: e.target.value } : x) }))} rows={3} placeholder={tText("答案")} className="w-full rounded-lg border border-border bg-card px-2 py-2 text-xs outline-none focus:border-gold" /> : null}
                 </div>
@@ -431,14 +432,14 @@ export default function AdminContent() {
             <div className="mb-2 text-xs font-semibold text-muted-foreground"><Tx>数据预览 / 导入（可选）</Tx></div>
             <textarea value={helpJson} onChange={(e) => setHelpJson(e.target.value)} rows={8} className="w-full rounded-xl border border-border bg-background px-3 py-3 font-mono text-xs outline-none focus:border-gold" />
             <div className="mt-2 flex gap-2">
-              <button type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpCenterConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从表单生成数据</Tx></button>
-              <button type="button" onClick={() => { try { const parsed = normalizeHelpCenterConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success(tText("已导入到表单")); } catch (e) { toast.error(e instanceof Error ? e.message : "数据格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从数据导入表单</Tx></button>
+              <UnifiedButton type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpCenterConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从表单生成数据</Tx></UnifiedButton>
+              <UnifiedButton type="button" onClick={() => { try { const parsed = normalizeHelpCenterConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success(tText("已导入到表单")); } catch (e) { toast.error(e instanceof Error ? e.message : "数据格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从数据导入表单</Tx></UnifiedButton>
             </div>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <PermissionGate permission="content.manage">
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => {
                 confirm({ title: tText("恢复默认 FAQ"),
@@ -456,7 +457,7 @@ export default function AdminContent() {
               className="rounded-xl border border-border px-4 py-2 text-sm hover:bg-secondary"
             >
               <Tx>恢复默认 FAQ</Tx>
-            </button>
+            </UnifiedButton>
             <LoadingButton
               type="button"
               variant="gold"
@@ -501,7 +502,7 @@ export default function AdminContent() {
                 )}
               </p>
             </div>
-            <PermissionGate permission="content.manage"><button onClick={() => openEdit(item)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><Edit2 size={14} /></button></PermissionGate>
+            <PermissionGate permission="content.manage"><UnifiedButton onClick={() => openEdit(item)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><Edit2 size={14} /></UnifiedButton></PermissionGate>
           </div>
         ))}
       </div>

@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type AdminFilterChip = {
   key: string;
@@ -28,24 +29,24 @@ export default function AdminFilterSummaryBar({ chips, onClearAll, onRemove }: P
         >
           <span className="truncate">{chip.label}</span>
           {onRemove ? (
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => onRemove(chip.key)}
               className="rounded-full p-0.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
               aria-label={`移除筛选 ${chip.label}`}
             >
               <X size={12} />
-            </button>
+            </UnifiedButton>
           ) : null}
         </span>
       ))}
-      <button
+      <UnifiedButton
         type="button"
         onClick={onClearAll}
         className="ml-auto text-xs font-semibold text-[var(--theme-price)] hover:underline"
       >
         <Tx>清空筛选</Tx>
-      </button>
+      </UnifiedButton>
     </div>
   );
 }

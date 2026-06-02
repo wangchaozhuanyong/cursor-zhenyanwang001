@@ -1,4 +1,5 @@
 import { AppModal, LoadingButton } from "@/modules/micro-interactions";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const RESET_INPUT_CLASS =
   "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20";
@@ -52,14 +53,14 @@ export function LoginPasswordResetSheet({
       }
     >
       <div className="space-y-3 pb-2">
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => void onRequestReset()}
           disabled={resetLoading}
           className="w-full rounded-xl border border-gold/30 bg-gold/10 py-2.5 text-xs font-semibold text-theme-price disabled:opacity-60"
         >
           {resetLoading ? "处理中..." : "发送重置令牌"}
-        </button>
+        </UnifiedButton>
 
         {devResetToken ? (
           <p className="break-all rounded-xl bg-secondary p-2 text-[11px] leading-relaxed text-muted-foreground">

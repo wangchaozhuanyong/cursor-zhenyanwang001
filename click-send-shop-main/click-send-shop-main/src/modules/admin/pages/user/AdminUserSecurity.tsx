@@ -30,6 +30,7 @@ import {
 import { Badge, formatTime } from "@/modules/admin/pages/monitoring/monitoringUi";
 import { AdminInputSheet } from "@/modules/admin/components/AdminInputSheet";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type TabKey = "ips" | "devices" | "login" | "events";
 type SecurityActionTarget =
@@ -195,7 +196,7 @@ export default function AdminUserSecurity() {
       <div className="-mx-1 overflow-x-auto pb-1">
         <div className="flex w-max min-w-full gap-2 px-1 sm:w-auto sm:flex-wrap">
           {tabs.map((tab) => (
-            <button
+            <UnifiedButton
               key={tab.key}
               type="button"
               onClick={() => changeTab(tab.key)}
@@ -206,7 +207,7 @@ export default function AdminUserSecurity() {
               }`}
             >
               {tab.label}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
       </div>
@@ -244,9 +245,9 @@ export default function AdminUserSecurity() {
             {severityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
         )}
-        <button className="min-h-10 rounded-lg px-4 py-2 text-sm font-semibold btn-theme-price" onClick={() => load()}>
+        <UnifiedButton className="min-h-10 rounded-lg px-4 py-2 text-sm font-semibold btn-theme-price" onClick={() => load()}>
           刷新
-        </button>
+        </UnifiedButton>
       </div>
     </div>
   );
@@ -270,13 +271,13 @@ export default function AdminUserSecurity() {
         {error && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             <span>{error}</span>
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => { void load(); }}
               className="rounded-lg border border-destructive/30 bg-[var(--theme-card)] px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
             >
               重试
-            </button>
+            </UnifiedButton>
           </div>
         )}
 
@@ -305,9 +306,9 @@ export default function AdminUserSecurity() {
                   <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
-                    <button className="text-[var(--theme-primary)] disabled:text-muted-foreground" disabled={actioning === `ip:${row.ip}`} onClick={() => setActionTarget({ type: "ip", row })}>
+                    <UnifiedButton className="text-[var(--theme-primary)] disabled:text-muted-foreground" disabled={actioning === `ip:${row.ip}`} onClick={() => setActionTarget({ type: "ip", row })}>
                       {row.status === "blocked" ? "解封" : "封禁"}
-                    </button>
+                    </UnifiedButton>
                   </td>
                 </tr>
               ))}
@@ -343,9 +344,9 @@ export default function AdminUserSecurity() {
                   <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
-                    <button className="text-[var(--theme-primary)] disabled:text-muted-foreground" disabled={actioning === `device:${row.device_id}`} onClick={() => setActionTarget({ type: "device", row })}>
+                    <UnifiedButton className="text-[var(--theme-primary)] disabled:text-muted-foreground" disabled={actioning === `device:${row.device_id}`} onClick={() => setActionTarget({ type: "device", row })}>
                       {row.status === "blocked" ? "解封" : "封禁"}
-                    </button>
+                    </UnifiedButton>
                   </td>
                 </tr>
               ))}

@@ -16,6 +16,7 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useGoBack } from "@/hooks/useGoBack";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function NewArrivals() {
   const { themeConfig } = useThemeRuntime();
@@ -62,14 +63,14 @@ export default function NewArrivals() {
       <StorePageHeader
         title="新品上市"
         leftSlot={(
-          <button
+          <UnifiedButton
             type="button"
             onClick={goBack}
             aria-label="返回"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] transition active:scale-95 touch-target"
           >
             <ArrowLeft size={20} strokeWidth={2.25} />
-          </button>
+          </UnifiedButton>
         )}
         titleInlineSlot={(
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
@@ -106,13 +107,13 @@ export default function NewArrivals() {
                   <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">
                     更多新品正在准备中，请稍后再来看看。
                   </p>
-                  <button
+                  <UnifiedButton
                     type="button"
                     onClick={() => navigate("/categories")}
                     className="mt-5 rounded-full bg-[var(--theme-primary)] px-5 py-2 text-xs font-bold text-[var(--theme-primary-foreground)]"
                   >
                     查看全部分类
-                  </button>
+                  </UnifiedButton>
                 </div>
               ) : null
             }

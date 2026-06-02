@@ -13,6 +13,7 @@ import { useAdminDirtyGuard } from "@/modules/admin/context/AdminDirtyGuardConte
 import AnchoredMenu from "@/components/admin/AnchoredMenu";
 import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 import { preloadAdminRoute } from "@/routes/adminLazyPages";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type TabMenuState = {
   tabId: string;
@@ -179,7 +180,7 @@ export default function AdminWorkTabs() {
   return (
     <>
       <div className="flex h-[var(--admin-chrome-tabs-h)] shrink-0 items-center border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/90">
-        <button
+        <UnifiedButton
           type="button"
           aria-label={tText("向左滚动标签")}
           disabled={!canScrollLeft}
@@ -187,7 +188,7 @@ export default function AdminWorkTabs() {
           className="ml-1 hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-30 sm:flex"
         >
           <ChevronLeft size={16} />
-        </button>
+        </UnifiedButton>
 
         <div
           ref={scrollRef}
@@ -211,7 +212,7 @@ export default function AdminWorkTabs() {
                     : "border-transparent bg-transparent text-muted-foreground hover:border-[color-mix(in_srgb,var(--theme-price)_28%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-price)_8%,var(--theme-surface))] hover:text-foreground",
                 )}
               >
-                <button
+                <UnifiedButton
                   type="button"
                   className="flex min-w-0 flex-1 items-center gap-1 truncate text-left"
                   onPointerEnter={() => { void preloadAdminRoute(tab.path); }}
@@ -221,7 +222,7 @@ export default function AdminWorkTabs() {
                 >
                   {tab.pinned ? <Pin size={11} className="shrink-0 opacity-70" /> : null}
                   <span className="truncate">{tab.title}</span>
-                </button>
+                </UnifiedButton>
               </div>
             );
           })}
@@ -232,7 +233,7 @@ export default function AdminWorkTabs() {
           <span className="truncate text-xs font-semibold text-foreground">{activeTab.title}</span>
         </div>
 
-        <button
+        <UnifiedButton
           type="button"
           aria-label={tText("向右滚动标签")}
           disabled={!canScrollRight}
@@ -240,11 +241,11 @@ export default function AdminWorkTabs() {
           className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-30 sm:flex"
         >
           <ChevronRight size={16} />
-        </button>
+        </UnifiedButton>
 
         <div className="flex h-full shrink-0 items-center gap-1.5 border-l border-[var(--theme-border)]/70 pl-1.5 pr-2">
           <div ref={listRef} className="relative shrink-0">
-            <button
+            <UnifiedButton
               ref={listBtnRef}
               type="button"
               aria-label={tText("全部标签")}
@@ -258,13 +259,13 @@ export default function AdminWorkTabs() {
             >
               <Tx>全部</Tx>
               <ChevronDown size={13} className={cn("shrink-0 transition-transform", listOpen ? "rotate-180" : "")} />
-            </button>
+            </UnifiedButton>
             <AnchoredMenu open={listOpen} onClose={() => setListOpen(false)} anchorRef={listBtnRef} width={224} gap={6} placement="bottom-end">
               <div className="max-h-64 overflow-y-auto py-1 text-sm" onClick={(e) => e.stopPropagation()}>
                 {tabs.map((tab) => {
                   const active = tab.id === activeTabId || tab.id === currentKey;
                   return (
-                    <button
+                    <UnifiedButton
                       key={tab.id}
                       type="button"
                       className={cn(
@@ -280,7 +281,7 @@ export default function AdminWorkTabs() {
                     >
                       {tab.pinned ? <Pin size={12} className="shrink-0 opacity-70" /> : <span className="w-3 shrink-0" />}
                       <span className="min-w-0 flex-1 truncate">{tab.title}</span>
-                    </button>
+                    </UnifiedButton>
                   );
                 })}
               </div>
@@ -309,7 +310,7 @@ export default function AdminWorkTabs() {
       >
         {menuTab ? (
           <>
-            <button
+            <UnifiedButton
               type="button"
               className="flex w-full px-3 py-2 text-left hover:bg-secondary disabled:opacity-50"
               disabled={menuTab.pinned}
@@ -319,8 +320,8 @@ export default function AdminWorkTabs() {
               }}
             >
               <Tx>关闭</Tx>
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               className="flex w-full px-3 py-2 text-left hover:bg-secondary"
               onClick={() => {
@@ -336,8 +337,8 @@ export default function AdminWorkTabs() {
               }}
             >
               <Tx>关闭其他</Tx>
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               className="flex w-full px-3 py-2 text-left hover:bg-secondary"
               onClick={() => {
@@ -354,8 +355,8 @@ export default function AdminWorkTabs() {
               }}
             >
               <Tx>关闭右侧</Tx>
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               className="flex w-full px-3 py-2 text-left hover:bg-secondary"
               onClick={() => {
@@ -364,7 +365,7 @@ export default function AdminWorkTabs() {
               }}
             >
               {menuTab.pinned ? <Tx>取消固定</Tx> : <Tx>固定标签</Tx>}
-            </button>
+            </UnifiedButton>
           </>
         ) : null}
       </AnchoredMenu>

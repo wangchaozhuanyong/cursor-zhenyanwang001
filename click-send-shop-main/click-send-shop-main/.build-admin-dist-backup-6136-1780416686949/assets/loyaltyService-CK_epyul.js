@@ -1,1 +1,0 @@
-import{n as e}from"./request-CniSumBJ.js";async function t(){return(await e(`/loyalty/config`)).data}export{t};

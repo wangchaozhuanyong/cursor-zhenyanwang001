@@ -9,6 +9,7 @@ import {
   type TrackingConsentPreferences,
 } from "@/utils/trackingConsent";
 import { getStoreFixedBottomOffset } from "@/utils/storeBottomInset";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function enabled(value: unknown) {
   return value === "1" || value === "true" || value === true || value === "enabled";
@@ -81,15 +82,15 @@ export default function CookieConsentBanner() {
             </p>
           </div>
           <div className="flex flex-shrink-0 flex-wrap gap-2 md:justify-end">
-            <button type="button" onClick={rejectOptional} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary">
+            <UnifiedButton type="button" onClick={rejectOptional} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary">
               仅必要
-            </button>
-            <button type="button" onClick={() => setExpanded((v) => !v)} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={() => setExpanded((v) => !v)} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary">
               自定义
-            </button>
-            <button type="button" onClick={acceptAll} className="rounded-full btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground shadow-lg shadow-gold/20">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={acceptAll} className="rounded-full btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground shadow-lg shadow-gold/20">
               接受全部
-            </button>
+            </UnifiedButton>
           </div>
         </div>
 
@@ -112,9 +113,9 @@ export default function CookieConsentBanner() {
               ))}
             </div>
             <div className="mt-3 flex justify-end">
-              <button type="button" onClick={saveCustom} className="rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background">
+              <UnifiedButton type="button" onClick={saveCustom} className="rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background">
                 保存选择
-              </button>
+              </UnifiedButton>
             </div>
           </div>
         )}

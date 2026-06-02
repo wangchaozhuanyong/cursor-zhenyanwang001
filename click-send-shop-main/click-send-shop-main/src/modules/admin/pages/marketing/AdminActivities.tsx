@@ -25,6 +25,7 @@ import {
   adminTableTheadRow,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const ACTIVITY_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "center", "left", "right", "left", "left", "right",
@@ -175,8 +176,8 @@ export default function AdminActivities() {
         </AdminTableMobileCardField>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-        <button type="button" onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>编辑</Tx></button>
-        <button type="button" onClick={() => navigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>查看数据</Tx></button>
+        <UnifiedButton type="button" onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>编辑</Tx></UnifiedButton>
+        <UnifiedButton type="button" onClick={() => navigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>查看数据</Tx></UnifiedButton>
       </div>
     </AdminTableMobileCard>
   );
@@ -186,18 +187,18 @@ export default function AdminActivities() {
       hint={<Tx>活动列表与运营动作入口。</Tx>}
       toolbar={(
         <PermissionGate permission="activity.manage">
-          <button type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><PlusCircle className="mr-1 inline h-4 w-4" /><Tx>新建活动</Tx></button>
+          <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><PlusCircle className="mr-1 inline h-4 w-4" /><Tx>新建活动</Tx></UnifiedButton>
         </PermissionGate>
       )}
       filters={(
         <>
-          <div className="flex flex-wrap gap-2">{quickButtons.map((button) => <button key={button.label} onClick={() => navigate(button.to)} className="rounded-lg border border-border px-3 py-1.5 text-sm">{button.label}</button>)}</div>
-          <div className="flex flex-wrap gap-2">{tabsLocalized.map((tab) => <button key={String(tab.value)} type="button" onClick={() => { setStatus(tab.value); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === tab.value ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tab.label}</button>)}</div>
+          <div className="flex flex-wrap gap-2">{quickButtons.map((button) => <UnifiedButton key={button.label} onClick={() => navigate(button.to)} className="rounded-lg border border-border px-3 py-1.5 text-sm">{button.label}</UnifiedButton>)}</div>
+          <div className="flex flex-wrap gap-2">{tabsLocalized.map((tab) => <UnifiedButton key={String(tab.value)} type="button" onClick={() => { setStatus(tab.value); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === tab.value ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tab.label}</UnifiedButton>)}</div>
           <div className="space-y-2">
             <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
               <SearchBar placeholder={tText("搜索活动名称")} value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} />
               <select value={type} onChange={(e) => { setType(e.target.value as ActivityType | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm"><option value=""><Tx>全部类型</Tx></option><option value="flash_sale"><Tx>限时秒杀</Tx></option><option value="full_reduction"><Tx>满减活动</Tx></option><option value="points_bonus"><Tx>积分活动</Tx></option></select>
-              <button type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>查询</Tx></button>
+              <UnifiedButton type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>查询</Tx></UnifiedButton>
             </div>
             <AdminFilterSummaryBar
               chips={filterChips}
@@ -271,13 +272,13 @@ export default function AdminActivities() {
               <td className={adminTableCellClass("right")}>
                 <AdminRowActionsMenu
                   primary={(
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)}
                       className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
                     >
                       <Tx>编辑</Tx>
-                    </button>
+                    </UnifiedButton>
                   )}
                   menuDisabled={toggleDisabledMutation.isPending}
                   moreLabel={<Tx>更多</Tx>}

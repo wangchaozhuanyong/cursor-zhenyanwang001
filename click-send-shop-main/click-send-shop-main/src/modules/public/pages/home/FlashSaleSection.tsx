@@ -4,6 +4,7 @@ import { Clock } from "lucide-react";
 import * as homeService from "@/services/homeService";
 import { fetchFlashSaleHome, type FlashSaleHomeActivity } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function formatCountdown(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
@@ -81,7 +82,7 @@ export default function FlashSaleSection({ delay = 0 }: { delay?: number }) {
       </div>
       <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
         {activity.items.map((item) => (
-          <button
+          <UnifiedButton
             key={item.product_id}
             type="button"
             onClick={() => navigate(`/product/${item.product_id}`)}
@@ -97,7 +98,7 @@ export default function FlashSaleSection({ delay = 0 }: { delay?: number }) {
                 立即购买
               </span>
             </div>
-          </button>
+          </UnifiedButton>
         ))}
       </div>
     </section>

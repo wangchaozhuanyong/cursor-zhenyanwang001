@@ -3,6 +3,7 @@ import AnchoredPopover from "@/components/admin/AnchoredPopover";
 import type { RefObject } from "react";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   open: boolean;
@@ -34,20 +35,20 @@ export default function DashboardCustomRangePanel({
         <SegmentedDateInput value={draftTo} onChange={onDraftToChange} className="min-w-[10.5rem]" />
       </div>
       <div className="mt-4 flex justify-end gap-2">
-        <button
+        <UnifiedButton
           type="button"
           onClick={onClose}
           className="rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-[var(--theme-bg)]"
         >
           取消
-        </button>
-        <button
+        </UnifiedButton>
+        <UnifiedButton
           type="button"
           onClick={onApply}
           className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
         >
           确定
-        </button>
+        </UnifiedButton>
       </div>
     </AnchoredPopover>
   );

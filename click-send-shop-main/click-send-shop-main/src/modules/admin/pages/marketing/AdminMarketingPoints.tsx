@@ -13,6 +13,7 @@ import {
   adminThClassName,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const RULE_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left",
@@ -238,8 +239,8 @@ export default function AdminMarketingPoints() {
         </AdminTableMobileCardField>
       </div>
       <div className="mt-3 flex gap-2 border-t border-border pt-3">
-        <button type="button" onClick={() => editRule(r)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs text-theme-price hover:bg-secondary"><Tx>编辑</Tx></button>
-        <button type="button" onClick={() => r.id && deleteRuleMutation.mutate(r.id)} className="touch-manipulation rounded-lg border border-border px-3 py-2 text-xs text-destructive hover:bg-secondary"><Trash2 className="inline h-4 w-4" /></button>
+        <UnifiedButton type="button" onClick={() => editRule(r)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs text-theme-price hover:bg-secondary"><Tx>编辑</Tx></UnifiedButton>
+        <UnifiedButton type="button" onClick={() => r.id && deleteRuleMutation.mutate(r.id)} className="touch-manipulation rounded-lg border border-border px-3 py-2 text-xs text-destructive hover:bg-secondary"><Trash2 className="inline h-4 w-4" /></UnifiedButton>
       </div>
     </AdminTableMobileCard>
   );
@@ -248,12 +249,12 @@ export default function AdminMarketingPoints() {
     <AdminPageShell
       hint={<Tx>订单积分、商品规则、抵扣比例和积分流水统一在这里维护。</Tx>}
       toolbar={(
-        <button type="button" onClick={() => void invalidatePoints()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground" disabled={loading}><RefreshCw className="h-4 w-4" /><Tx>刷新</Tx></button>
+        <UnifiedButton type="button" onClick={() => void invalidatePoints()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground" disabled={loading}><RefreshCw className="h-4 w-4" /><Tx>刷新</Tx></UnifiedButton>
       )}
       filters={(
       <div className="flex flex-wrap gap-2">
         {visibleTabs.map((t) => (
-          <button
+          <UnifiedButton
             key={t}
             type="button"
             onClick={() => setTab(t)}
@@ -264,7 +265,7 @@ export default function AdminMarketingPoints() {
           >
             {tText(t)}
             {POINTS_TAB_HINTS[t] ? <AdminFieldHint text={POINTS_TAB_HINTS[t]} /> : null}
-          </button>
+          </UnifiedButton>
         ))}
       </div>
       )}
@@ -320,7 +321,7 @@ export default function AdminMarketingPoints() {
               <AdminToggleRow label={tText("允许积分抵扣")} hint={POINTS_PRODUCT_RULE_HINTS.redeem_enabled} checked={!!ruleForm.redeem_enabled} onChange={(v) => setRuleForm((s) => ({ ...s, redeem_enabled: v }))} />
               <AdminToggleRow label={tText("启用")} hint={POINTS_PRODUCT_RULE_HINTS.enabled} checked={!!ruleForm.enabled} onChange={(v) => setRuleForm((s) => ({ ...s, enabled: v }))} />
             </div>
-            <button type="button" onClick={() => saveRuleMutation.mutate()} disabled={saveRuleMutation.isPending} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"><Plus className="h-4 w-4" />{ruleForm.id ? "保存规则" : "新增规则"}</button>
+            <UnifiedButton type="button" onClick={() => saveRuleMutation.mutate()} disabled={saveRuleMutation.isPending} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"><Plus className="h-4 w-4" />{ruleForm.id ? "保存规则" : "新增规则"}</UnifiedButton>
           </div>
           <AnimatedTable
             embedded
@@ -355,8 +356,8 @@ export default function AdminMarketingPoints() {
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{r.priority}</td>
                 <td className={adminTdClassName(undefined, "center")}>{r.enabled ? "启用" : "停用"}</td>
                 <td className={adminTdClassName(undefined, "right")}>
-                  <button type="button" onClick={() => editRule(r)} className="mr-2 text-theme-price"><Tx>编辑</Tx></button>
-                  <button type="button" onClick={() => r.id && deleteRuleMutation.mutate(r.id)} className="inline-flex items-center text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  <UnifiedButton type="button" onClick={() => editRule(r)} className="mr-2 text-theme-price"><Tx>编辑</Tx></UnifiedButton>
+                  <UnifiedButton type="button" onClick={() => r.id && deleteRuleMutation.mutate(r.id)} className="inline-flex items-center text-destructive"><Trash2 className="h-4 w-4" /></UnifiedButton>
                 </td>
               </>
             )}

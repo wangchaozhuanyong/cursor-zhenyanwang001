@@ -14,6 +14,7 @@ import {
   zhActionType,
 } from "@/utils/auditLogI18n";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const SECURITY_ALERT_VISIBLE_POLL_MS = 60_000;
 const SECURITY_ALERT_HIDDEN_POLL_MS = 5 * 60_000;
@@ -85,7 +86,7 @@ export default function AdminSecurityAlertsButton({
 
   return (
     <div className="relative shrink-0">
-      <button
+      <UnifiedButton
         ref={securityBtnRef}
         type="button"
         aria-label={canViewSecurityAlerts ? "安全告警" : t("layout.notifications")}
@@ -107,7 +108,7 @@ export default function AdminSecurityAlertsButton({
         ) : showNotificationsTab ? (
           <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-destructive" />
         ) : null}
-      </button>
+      </UnifiedButton>
       <AnchoredMenu
         open={securityAlertsOpen && canViewSecurityAlerts}
         onClose={() => setSecurityAlertsOpen(false)}
@@ -123,7 +124,7 @@ export default function AdminSecurityAlertsButton({
               <Shield size={16} className="shrink-0 text-destructive" />
               <p className="truncate text-sm font-semibold text-foreground"><Tx>安全监控</Tx></p>
             </div>
-            <button
+            <UnifiedButton
               type="button"
               className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
               onClick={() => {
@@ -132,12 +133,12 @@ export default function AdminSecurityAlertsButton({
               }}
             >
               <Tx>审计日志</Tx>
-            </button>
+            </UnifiedButton>
           </div>
           <div className="max-h-72 overflow-y-auto">
             {securityAlerts?.list?.length ? (
               securityAlerts.list.map((item) => (
-                <button
+                <UnifiedButton
                   key={item.id}
                   type="button"
                   className="flex w-full gap-2 rounded-lg px-2 py-2 text-left hover:bg-secondary"
@@ -155,14 +156,14 @@ export default function AdminSecurityAlertsButton({
                     </span>
                     <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{item.ip || "-"} · {formatDateTime(item.created_at)}</span>
                   </span>
-                </button>
+                </UnifiedButton>
               ))
             ) : (
               <div className="px-2 py-6 text-center text-xs text-muted-foreground"><Tx>近 24 小时暂无安全告警</Tx></div>
             )}
           </div>
           {showNotificationsTab ? (
-            <button
+            <UnifiedButton
               type="button"
               className="mt-1 flex min-h-[40px] w-full items-center justify-center rounded-lg border border-border text-sm text-foreground hover:bg-secondary"
               onClick={() => {
@@ -171,7 +172,7 @@ export default function AdminSecurityAlertsButton({
               }}
             >
               打开通知中心
-            </button>
+            </UnifiedButton>
           ) : null}
         </motion.div>
       </AnchoredMenu>

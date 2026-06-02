@@ -15,6 +15,7 @@ import { shortId } from "@/utils/shortId";
 import { Tx } from "@/components/admin/AdminText";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function localizeSnapshotRows(
   rows: AuditSnapshotRow[],
@@ -172,9 +173,9 @@ export default function AuditLogDetailPanel({ detail, onClose, embedded = false 
       ) : null}
 
       {!embedded ? (
-        <button type="button" onClick={onClose} className="mt-4 w-full theme-rounded border border-[var(--theme-border)] py-2 text-sm">
+        <UnifiedButton type="button" onClick={onClose} className="mt-4 w-full theme-rounded border border-[var(--theme-border)] py-2 text-sm">
           <Tx>关闭</Tx>
-        </button>
+        </UnifiedButton>
       ) : null}
     </div>
   );

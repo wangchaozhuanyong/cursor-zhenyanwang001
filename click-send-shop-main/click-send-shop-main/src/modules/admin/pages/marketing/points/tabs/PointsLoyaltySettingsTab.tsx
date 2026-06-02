@@ -12,6 +12,7 @@ import {
 } from "@/modules/admin/pages/marketing/adminPointsHints";
 import type { LoyaltyPointsSettings } from "@/services/admin/pointsService";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   settings: LoyaltyPointsSettings;
@@ -104,7 +105,7 @@ export default function PointsLoyaltySettingsTab({ settings, setSetting, onSave,
       </AdminSettingsSection>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-        <button
+        <UnifiedButton
           type="button"
           onClick={onSave}
           disabled={saving}
@@ -112,7 +113,7 @@ export default function PointsLoyaltySettingsTab({ settings, setSetting, onSave,
         >
           <Save className="h-4 w-4" />
           <Tx>保存全局积分设置</Tx>
-        </button>
+        </UnifiedButton>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, MoreHorizontal } from "lucide-react";
 import AnchoredMenu from "@/components/admin/AnchoredMenu";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type AdminRowActionItem = {
   key: string;
@@ -52,7 +53,7 @@ export default function AdminRowActionsMenu({
 
       {hasMenu ? (
         <div className="relative">
-          <button
+          <UnifiedButton
             ref={menuBtnRef}
             type="button"
             className={`${actionBtn} gap-1 pr-2`}
@@ -65,7 +66,7 @@ export default function AdminRowActionsMenu({
             <MoreHorizontal className="h-3.5 w-3.5 shrink-0" aria-hidden />
             {moreLabel}
             <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
-          </button>
+          </UnifiedButton>
 
           <AnchoredMenu open={open} onClose={() => setOpen(false)} anchorRef={menuBtnRef} width={menuWidth} gap={4}>
             <div id={menuId} role="menu">
@@ -73,7 +74,7 @@ export default function AdminRowActionsMenu({
                 {normalized.map((item) => (
                   <div key={item.key}>
                     {item.separatorBefore ? <div className="my-1 h-px bg-border" /> : null}
-                    <button
+                    <UnifiedButton
                       type="button"
                       role="menuitem"
                       className={`${menuItemBase} ${item.danger ? "text-destructive" : ""}`}
@@ -88,7 +89,7 @@ export default function AdminRowActionsMenu({
                         <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">{item.icon}</span>
                       ) : null}
                       {item.label}
-                    </button>
+                    </UnifiedButton>
                   </div>
                 ))}
               </div>

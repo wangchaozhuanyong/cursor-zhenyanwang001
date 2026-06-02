@@ -13,6 +13,7 @@ import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const NOTIFICATION_STATUS_LABELS: Record<string, string> = {
   draft: "草稿",
@@ -110,13 +111,13 @@ export default function AdminNotificationDetail() {
             ? tText("该通知可能已被删除，或当前链接已失效。")
             : tText("请稍后重试；若持续出现，请联系技术人员并说明操作时间。")}
         </p>
-        <button
+        <UnifiedButton
           type="button"
           className="rounded-lg border px-3 py-1.5 text-xs font-medium"
           onClick={() => navigate("/admin/notifications")}
         >
           <Tx>返回通知列表</Tx>
-        </button>
+        </UnifiedButton>
       </div>
     );
   }
@@ -129,10 +130,10 @@ export default function AdminNotificationDetail() {
     <AdminPageShell
       toolbar={(
         <>
-          <button type="button" className="rounded-lg border px-2 py-1 text-xs" onClick={() => navigate("/admin/notifications")} aria-label={tText("返回通知列表")}>
+          <UnifiedButton type="button" className="rounded-lg border px-2 py-1 text-xs" onClick={() => navigate("/admin/notifications")} aria-label={tText("返回通知列表")}>
             <ArrowLeft size={14} />
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             className="rounded-lg border px-3 py-1.5 text-xs"
             onClick={() =>
@@ -142,7 +143,7 @@ export default function AdminNotificationDetail() {
             }
           >
             <Tx>导出接收用户 CSV</Tx>
-          </button>
+          </UnifiedButton>
         </>
       )}
     >
@@ -166,9 +167,9 @@ export default function AdminNotificationDetail() {
         <div className="flex items-center justify-between">
           <h3 className="font-semibold"><Tx>接收用户</Tx></h3>
           <div className="flex gap-2">
-            <button className={`rounded-lg border px-2 py-1 text-xs ${readFilter === "" ? "bg-secondary" : ""}`} onClick={() => { setReadFilter(""); setPage(1); }}><Tx>全部</Tx></button>
-            <button className={`rounded-lg border px-2 py-1 text-xs ${readFilter === "read" ? "bg-secondary" : ""}`} onClick={() => { setReadFilter("read"); setPage(1); }}><Tx>已读</Tx></button>
-            <button className={`rounded-lg border px-2 py-1 text-xs ${readFilter === "unread" ? "bg-secondary" : ""}`} onClick={() => { setReadFilter("unread"); setPage(1); }}><Tx>未读</Tx></button>
+            <UnifiedButton className={`rounded-lg border px-2 py-1 text-xs ${readFilter === "" ? "bg-secondary" : ""}`} onClick={() => { setReadFilter(""); setPage(1); }}><Tx>全部</Tx></UnifiedButton>
+            <UnifiedButton className={`rounded-lg border px-2 py-1 text-xs ${readFilter === "read" ? "bg-secondary" : ""}`} onClick={() => { setReadFilter("read"); setPage(1); }}><Tx>已读</Tx></UnifiedButton>
+            <UnifiedButton className={`rounded-lg border px-2 py-1 text-xs ${readFilter === "unread" ? "bg-secondary" : ""}`} onClick={() => { setReadFilter("unread"); setPage(1); }}><Tx>未读</Tx></UnifiedButton>
           </div>
         </div>
         <AdminNativeTable stickyFirstColumn={false}>
@@ -207,15 +208,15 @@ export default function AdminNotificationDetail() {
               <option value={20}><Tx>20/页</Tx></option>
               <option value={50}><Tx>50/页</Tx></option>
             </select>
-            <button className="rounded border px-2 py-1 disabled:opacity-50" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Tx>上一页</Tx></button>
+            <UnifiedButton className="rounded border px-2 py-1 disabled:opacity-50" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Tx>上一页</Tx></UnifiedButton>
             <span>第 {data.recipients.page} 页</span>
-            <button
+            <UnifiedButton
               className="rounded border px-2 py-1 disabled:opacity-50"
               disabled={data.recipients.page * data.recipients.pageSize >= data.recipients.total}
               onClick={() => setPage((p) => p + 1)}
             >
               <Tx>下一页</Tx>
-            </button>
+            </UnifiedButton>
           </div>
         </div>
       </div>

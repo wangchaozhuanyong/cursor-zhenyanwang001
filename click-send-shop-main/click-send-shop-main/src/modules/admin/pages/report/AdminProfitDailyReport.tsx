@@ -6,6 +6,7 @@ import { fetchProfitDailyReport, fetchProfitMonthlyReport } from "@/services/adm
 import AdminReportGenericPage from "./pages/AdminReportGenericPage";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type ProfitPeriod = "daily" | "monthly";
 
@@ -52,7 +53,7 @@ export default function AdminProfitDailyReport() {
             { id: "monthly" as const, label: tText("按月") },
           ] as const
         ).map((item) => (
-          <button
+          <UnifiedButton
             key={item.id}
             type="button"
             onClick={() => setPeriod(item.id)}
@@ -64,7 +65,7 @@ export default function AdminProfitDailyReport() {
             )}
           >
             {item.label}
-          </button>
+          </UnifiedButton>
         ))}
       </div>
     </div>

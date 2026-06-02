@@ -6,6 +6,7 @@ import AnchoredMenu from "@/components/admin/AnchoredMenu";
 import { AdminOrderVoiceMenuItems } from "@/modules/admin/components/AdminOrderVoiceNotifier";
 import { useAdminT } from "@/hooks/useAdminT";
 import type { AdminLocale } from "@/i18n/admin";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AdminAccountMenuProps = {
   canUseOrderVoice: boolean;
@@ -26,7 +27,7 @@ export default function AdminAccountMenu({
 
   return (
     <div className="relative shrink-0">
-      <button
+      <UnifiedButton
         ref={avatarBtnRef}
         type="button"
         aria-label={t("layout.account")}
@@ -35,7 +36,7 @@ export default function AdminAccountMenu({
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--theme-primary)] text-xs font-bold text-[var(--theme-primary-foreground)]">A</div>
         <ChevronDown size={13} className={`hidden text-muted-foreground transition-transform sm:block ${avatarMenuOpen ? "rotate-180" : ""}`} />
-      </button>
+      </UnifiedButton>
       <AnchoredMenu
         open={avatarMenuOpen}
         onClose={closeMenu}
@@ -59,7 +60,7 @@ export default function AdminAccountMenu({
             </p>
             <div className="flex gap-2">
               {(["zh", "en"] as AdminLocale[]).map((loc) => (
-                <button
+                <UnifiedButton
                   key={loc}
                   type="button"
                   onClick={() => {
@@ -73,7 +74,7 @@ export default function AdminAccountMenu({
                   }`}
                 >
                   {loc === "zh" ? t("layout.languageZh") : t("layout.languageEn")}
-                </button>
+                </UnifiedButton>
               ))}
             </div>
           </div>
@@ -81,7 +82,7 @@ export default function AdminAccountMenu({
           <AdminAccountSettingsTrigger tab="profile" onBeforeOpen={closeMenu} />
           <AdminAccountSettingsTrigger tab="password" onBeforeOpen={closeMenu} />
           <div className="mx-3 my-1 h-px bg-border" />
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => {
               closeMenu();
@@ -92,7 +93,7 @@ export default function AdminAccountMenu({
           >
             <LogOut size={16} />
             {t("layout.logout")}
-          </button>
+          </UnifiedButton>
         </motion.div>
       </AnchoredMenu>
     </div>

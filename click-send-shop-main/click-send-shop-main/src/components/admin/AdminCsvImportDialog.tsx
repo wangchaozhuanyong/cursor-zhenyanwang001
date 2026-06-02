@@ -3,6 +3,7 @@ import { Loader2, Upload } from "lucide-react";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import type { ProductImportResult } from "@/types/product";
 import { useAdminTOptional } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   open: boolean;
@@ -67,15 +68,15 @@ export default function AdminCsvImportDialog({
 
   const footer = (
     <div className="grid grid-cols-2 gap-2">
-      <button
+      <UnifiedButton
         type="button"
         disabled={importing}
         onClick={() => handleOpenChange(false)}
         className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-secondary disabled:opacity-60"
       >
         {lastResult ? L("关闭", "Close") : L("取消", "Cancel")}
-      </button>
-      <button
+      </UnifiedButton>
+      <UnifiedButton
         type="button"
         disabled={importing || !file}
         onClick={() => void handleImport()}
@@ -83,7 +84,7 @@ export default function AdminCsvImportDialog({
       >
         {importing ? <Loader2 size={14} className="animate-spin" /> : null}
         {importing ? L("导入中…", "Importing...") : L("开始导入", "Start import")}
-      </button>
+      </UnifiedButton>
     </div>
   );
 

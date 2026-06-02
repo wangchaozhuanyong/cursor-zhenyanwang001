@@ -10,6 +10,7 @@ import type { AdminEventRecord } from "@/services/admin/eventCenterService";
 import { formatAdminEventSubtitle, formatAdminEventTitle, labelAdminEventSeverity } from "@/utils/adminEventLabels";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const P0_SOUND_PLAYED_KEY = "admin_event_p0_sound_played_ids";
 const MAX_SOUND_PLAYED_IDS = 300;
@@ -162,7 +163,7 @@ export default function AdminEventBell() {
 
   return (
     <div className="relative shrink-0">
-      <button
+      <UnifiedButton
         ref={anchorRef}
         type="button"
         aria-label={tText("后台事件中心")}
@@ -175,7 +176,7 @@ export default function AdminEventBell() {
             {badge > 99 ? "99+" : badge}
           </span>
         ) : null}
-      </button>
+      </UnifiedButton>
       <AnchoredMenu
         open={open}
         onClose={() => setOpen(false)}
@@ -191,7 +192,7 @@ export default function AdminEventBell() {
               <AlertTriangle size={17} className={hasP0 ? "text-red-600" : "text-muted-foreground"} />
               <p className="truncate text-sm font-semibold text-foreground"><Tx>后台事件监控</Tx></p>
             </div>
-            <button
+            <UnifiedButton
               type="button"
               className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
               onClick={() => {
@@ -200,7 +201,7 @@ export default function AdminEventBell() {
               }}
             >
               事件中心
-            </button>
+            </UnifiedButton>
           </div>
           <div className="mt-3 grid grid-cols-4 gap-2">
             {counts.map((item) => (
@@ -212,20 +213,20 @@ export default function AdminEventBell() {
           </div>
           <div className="mt-3 flex gap-1 overflow-x-auto">
             {tabs.map((item) => (
-              <button
+              <UnifiedButton
                 key={item.key}
                 type="button"
                 className={`shrink-0 rounded-lg px-2.5 py-1.5 text-xs ${tab === item.key ? "bg-foreground text-background" : "text-muted-foreground hover:bg-secondary"}`}
                 onClick={() => setTab(item.key)}
               >
                 {item.label}
-              </button>
+              </UnifiedButton>
             ))}
           </div>
           <div className="mt-2 max-h-80 overflow-y-auto">
             {rows.length ? rows.map((item) => (
               <div key={item.id} className="border-b border-border py-2 last:border-b-0">
-                <button
+                <UnifiedButton
                   type="button"
                   className="flex w-full gap-2 rounded-lg p-1 text-left hover:bg-secondary"
                   onClick={() => {
@@ -241,13 +242,13 @@ export default function AdminEventBell() {
                     </span>
                     <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{tText(formatAdminEventSubtitle(item.message, item.eventType, item.category, item.title))}</span>
                   </span>
-                </button>
+                </UnifiedButton>
                 <div className="mt-1 flex flex-wrap gap-1 pl-7">
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={12} className="mr-1 inline" /><Tx>已读</Tx></button>
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}><Tx>确认</Tx></button>
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}><Tx>处理中</Tx></button>
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={12} className="mr-1 inline" /><Tx>完成</Tx></button>
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={12} className="mr-1 inline" /><Tx>忽略</Tx></button>
+                  <UnifiedButton type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={12} className="mr-1 inline" /><Tx>已读</Tx></UnifiedButton>
+                  <UnifiedButton type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}><Tx>确认</Tx></UnifiedButton>
+                  <UnifiedButton type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}><Tx>处理中</Tx></UnifiedButton>
+                  <UnifiedButton type="button" className="rounded px-2 py-1 text-[11px] text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={12} className="mr-1 inline" /><Tx>完成</Tx></UnifiedButton>
+                  <UnifiedButton type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={12} className="mr-1 inline" /><Tx>忽略</Tx></UnifiedButton>
                 </div>
               </div>
             )) : (

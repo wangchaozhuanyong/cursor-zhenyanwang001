@@ -20,6 +20,7 @@ import { parseSstEnabled } from "@/utils/sstTax";
 import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
@@ -150,13 +151,13 @@ export default function Cart() {
         title={headerTitle}
         rightSlot={
           !isEmptyCart && items.length > 0 ? (
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => setSelectAll(!allSelected)}
               className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-semibold text-[var(--theme-primary)]"
             >
               {allSelected ? "取消全选" : "全选"}
-            </button>
+            </UnifiedButton>
           ) : null
         }
       />
@@ -169,19 +170,19 @@ export default function Cart() {
             {!isLoggedIn() && (
               <div className="mb-3 flex flex-col gap-2 theme-rounded border border-[var(--theme-price)]/30 bg-[var(--theme-price)]/5 px-4 py-3 text-xs text-[var(--theme-text)] sm:flex-row sm:flex-wrap sm:items-center">
                 <span className="min-w-0 text-muted-foreground">当前未登录，购物车仅保存在本机；登录后可同步到账号。</span>
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => navigate("/login", { state: { from: "/cart" } })}
                   className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-full border border-[var(--theme-price)]/25 bg-[var(--theme-surface)] px-3 font-semibold text-[var(--theme-price)] transition hover:border-[var(--theme-price)] hover:bg-[var(--theme-price)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]"
                 >
                   登录
-                </button>
+                </UnifiedButton>
               </div>
             )}
             {error && (
               <div className={`mb-3 flex flex-col gap-3 rounded-lg px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between ${THEME_ALERT_ERROR_SOFT}`} role="alert">
                 <span className="min-w-0">{error}</span>
-                <button
+                <UnifiedButton
                   onClick={() => {
                     clearError();
                     loadCart();
@@ -189,7 +190,7 @@ export default function Cart() {
                   className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-full px-3 text-xs font-semibold underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-danger)] focus-visible:ring-offset-2"
                 >
                   重试
-                </button>
+                </UnifiedButton>
               </div>
             )}
             {loading ? (
@@ -277,7 +278,7 @@ export default function Cart() {
                           style={{ width: CART_ACTION_WIDTH }}
                           aria-hidden={!actionsOpen}
                         >
-                          <button
+                          <UnifiedButton
                             type="button"
                             tabIndex={actionsOpen ? 0 : -1}
                             onClick={() => handlePinToTop(item)}
@@ -285,8 +286,8 @@ export default function Cart() {
                           >
                             <Pin size={15} />
                             <span>置顶</span>
-                          </button>
-                          <button
+                          </UnifiedButton>
+                          <UnifiedButton
                             type="button"
                             tabIndex={actionsOpen ? 0 : -1}
                             onClick={() => handleMoveToFavorite(item)}
@@ -294,8 +295,8 @@ export default function Cart() {
                           >
                             <Heart size={15} />
                             <span>移入收藏</span>
-                          </button>
-                          <button
+                          </UnifiedButton>
+                          <UnifiedButton
                             type="button"
                             tabIndex={actionsOpen ? 0 : -1}
                             onClick={() => handleShareProduct(item)}
@@ -303,8 +304,8 @@ export default function Cart() {
                           >
                             <Share2 size={15} />
                             <span>分享</span>
-                          </button>
-                          <button
+                          </UnifiedButton>
+                          <UnifiedButton
                             type="button"
                             tabIndex={actionsOpen ? 0 : -1}
                             onClick={() => {
@@ -319,7 +320,7 @@ export default function Cart() {
                           >
                             <Trash2 size={15} />
                             <span>删除</span>
-                          </button>
+                          </UnifiedButton>
                         </div>
                         <motion.div
                           drag="x"
@@ -336,7 +337,7 @@ export default function Cart() {
                           transition={{ type: "spring", stiffness: 420, damping: 36 }}
                           className="relative z-10 flex min-w-0 gap-2.5 bg-transparent py-0.5 sm:gap-3"
                         >
-                          <button
+                          <UnifiedButton
                             type="button"
                             onClick={() => {
                               closeItemActions();
@@ -353,7 +354,7 @@ export default function Cart() {
                               loading="eager"
                               fetchPriority="high"
                             />
-                          </button>
+                          </UnifiedButton>
                           <div className="flex min-w-0 flex-1 flex-col justify-between">
                             <div className="min-w-0">
                               <h3
@@ -434,13 +435,13 @@ export default function Cart() {
                 <div className="space-y-2.5 text-sm">
                   <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
                     <span className="text-muted-foreground">下单前可先领券，结算页自动匹配最优优惠</span>
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => navigate("/coupons")}
                       className="font-semibold text-[var(--theme-price)]"
                     >
                       去领券
-                    </button>
+                    </UnifiedButton>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>已选商品</span>

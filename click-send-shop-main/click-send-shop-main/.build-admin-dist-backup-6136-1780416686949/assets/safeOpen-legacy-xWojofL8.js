@@ -1,1 +1,0 @@
-System.register([],function(e,n){return e("t",function(e){var n=window.open(e,"_blank","noopener,noreferrer");n&&(n.opener=null)}),{setters:[],execute:function(){}}});

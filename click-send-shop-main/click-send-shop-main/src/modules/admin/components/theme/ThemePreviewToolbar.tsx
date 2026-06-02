@@ -1,6 +1,7 @@
 import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
 import { PREVIEW_DEVICE_LABELS, PREVIEW_MODE_LABELS } from "./themeStudioConstants";
 import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   mode: PreviewMode;
@@ -15,7 +16,7 @@ export default function ThemePreviewToolbar({ mode, device, onModeChange, onDevi
     <div className="shrink-0 space-y-2 border-b border-border p-3">
       <div className="flex flex-wrap gap-1">
         {(Object.keys(PREVIEW_MODE_LABELS) as PreviewMode[]).map((m) => (
-          <button
+          <UnifiedButton
             key={m}
             type="button"
             onClick={() => onModeChange(m)}
@@ -24,19 +25,19 @@ export default function ThemePreviewToolbar({ mode, device, onModeChange, onDevi
             }`}
           >
             {tl(PREVIEW_MODE_LABELS[m])}
-          </button>
+          </UnifiedButton>
         ))}
       </div>
       <div className="grid grid-cols-3 gap-1">
         {(Object.keys(PREVIEW_DEVICE_LABELS) as PreviewDevice[]).map((d) => (
-          <button
+          <UnifiedButton
             key={d}
             type="button"
             onClick={() => onDeviceChange(d)}
             className={`rounded-lg py-1 text-[10px] ${device === d ? "bg-secondary font-semibold text-foreground" : "text-muted-foreground"}`}
           >
             {tl(PREVIEW_DEVICE_LABELS[d])}
-          </button>
+          </UnifiedButton>
         ))}
       </div>
     </div>

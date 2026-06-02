@@ -1,6 +1,7 @@
 import { LayoutGrid, List } from "lucide-react";
 import type { CategoryListViewMode } from "@/hooks/useCategoryListView";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface ProductListViewToggleProps {
   value: CategoryListViewMode;
@@ -13,7 +14,7 @@ export default function ProductListViewToggle({ value, onChange, className }: Pr
   const isList = value === "list";
 
   return (
-    <button
+    <UnifiedButton
       type="button"
       aria-label={isList ? "当前为列表展示，点击切换为网格" : "当前为网格展示，点击切换为列表"}
       onClick={() => onChange(isList ? "grid" : "list")}
@@ -24,6 +25,6 @@ export default function ProductListViewToggle({ value, onChange, className }: Pr
       )}
     >
       {isList ? <List size={16} aria-hidden /> : <LayoutGrid size={16} aria-hidden />}
-    </button>
+    </UnifiedButton>
   );
 }

@@ -20,6 +20,7 @@ import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { setSearchAttribution } from "@/services/analyticsService";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -206,14 +207,14 @@ export default function Search() {
       >
         <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] sm:px-4 md:px-6">
           <div className="flex h-[var(--store-tab-header-height)] items-center gap-2">
-            <button
+            <UnifiedButton
               type="button"
               onClick={goBack}
               aria-label="返回"
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-text)] transition active:scale-95 touch-target"
             >
               <ArrowLeft size={20} strokeWidth={2.25} />
-            </button>
+            </UnifiedButton>
             <StoreSearchField
               mode="filter"
               autoFocus
@@ -248,24 +249,24 @@ export default function Search() {
                       <h3 className="store-section-title flex items-center gap-1.5 text-foreground">
                         <Clock size={14} className="text-muted-foreground" /> 搜索历史
                       </h3>
-                      <button
+                      <UnifiedButton
                         type="button"
                         onClick={clearHistory}
                         className="text-xs text-muted-foreground hover:text-[var(--theme-danger)]"
                       >
                         清空
-                      </button>
+                      </UnifiedButton>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {history.map((term) => (
-                        <button
+                        <UnifiedButton
                           key={`desk-${term}`}
                           type="button"
                           onClick={() => selectHistory(term)}
                           className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-1.5 text-xs text-[var(--theme-text)]"
                         >
                           {term}
-                        </button>
+                        </UnifiedButton>
                       ))}
                     </div>
                   </section>
@@ -278,7 +279,7 @@ export default function Search() {
                     </h3>
                     <div className="space-y-2">
                       {hotTerms.slice(0, 8).map((term, idx) => (
-                        <button
+                        <UnifiedButton
                           key={`desk-hot-${term.keyword}`}
                           type="button"
                           onClick={() => commitSearch(term.keyword)}
@@ -286,7 +287,7 @@ export default function Search() {
                         >
                           <span className="truncate">{idx + 1}. {term.keyword}</span>
                           <span className="text-[10px] text-muted-foreground">{term.search_count}</span>
-                        </button>
+                        </UnifiedButton>
                       ))}
                     </div>
                   </section>
@@ -304,17 +305,17 @@ export default function Search() {
                       <h3 className="store-section-title flex items-center gap-1.5 text-foreground">
                         <Clock size={14} className="text-muted-foreground" /> 搜索历史
                       </h3>
-                      <button
+                      <UnifiedButton
                         type="button"
                         onClick={clearHistory}
                         className="text-xs text-muted-foreground hover:text-[var(--theme-danger)]"
                       >
                         清空
-                      </button>
+                      </UnifiedButton>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {history.map((term) => (
-                        <button
+                        <UnifiedButton
                           key={term}
                           type="button"
                           onClick={() => selectHistory(term)}
@@ -331,7 +332,7 @@ export default function Search() {
                               setHistory(newList);
                             }}
                           />
-                        </button>
+                        </UnifiedButton>
                       ))}
                     </div>
                   </section>
@@ -344,7 +345,7 @@ export default function Search() {
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {hotTerms.map((term) => (
-                        <button
+                        <UnifiedButton
                           key={term.keyword}
                           type="button"
                           onClick={() => commitSearch(term.keyword)}
@@ -352,7 +353,7 @@ export default function Search() {
                         >
                           {term.keyword}
                           <span className="ml-1 text-[10px] text-muted-foreground">{term.search_count}</span>
-                        </button>
+                        </UnifiedButton>
                       ))}
                     </div>
                   </section>
@@ -363,7 +364,7 @@ export default function Search() {
             {shouldShowSuggestions && (
               <div className="store-suggestion-panel mb-5 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]">
                 {suggestions.map((item) => (
-                  <button
+                  <UnifiedButton
                     key={`${item.source}-${item.keyword}`}
                     type="button"
                     onClick={() => commitSearch(item.keyword)}
@@ -374,7 +375,7 @@ export default function Search() {
                     <span className="text-[10px] text-muted-foreground">
                       {item.source === "term" ? "热搜" : "商品"}
                     </span>
-                  </button>
+                  </UnifiedButton>
                 ))}
               </div>
             )}
@@ -396,7 +397,7 @@ export default function Search() {
                 emptyState={
                   <div className="store-search-empty py-20 text-center text-sm text-muted-foreground">
                     <p>没有找到相关商品</p>
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => {
                         const nextParams = new URLSearchParams(searchParams);
@@ -409,7 +410,7 @@ export default function Search() {
                       className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-1.5 text-xs text-[var(--theme-text)]"
                     >
                       清空搜索重新查看
-                    </button>
+                    </UnifiedButton>
                   </div>
                 }
               />

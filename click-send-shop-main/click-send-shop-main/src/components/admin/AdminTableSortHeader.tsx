@@ -4,6 +4,7 @@ import {
   adminTableAlignClass,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AdminTableSortHeaderProps = {
   label: string;
@@ -46,7 +47,7 @@ export default function AdminTableSortHeader({
 
   return (
     <th className={cn("px-4 py-3 whitespace-nowrap", alignClass, className)}>
-      <button
+      <UnifiedButton
         type="button"
         onClick={onSort}
         className={cn(
@@ -64,7 +65,7 @@ export default function AdminTableSortHeader({
       >
         <span>{label}</span>
         <Icon size={14} className={cn("shrink-0", !active && "opacity-55")} aria-hidden />
-      </button>
+      </UnifiedButton>
     </th>
   );
 }

@@ -12,6 +12,7 @@ import { shouldHideBottomNav } from "./bottomNavVisibility";
 import { useStoreScrollChrome } from "@/contexts/StoreScrollChromeProvider";
 import { Cart, Categories, GuestHome, MemberHome, Profile, SupportDownload } from "@/routes/publicLazyPages";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function isEditableElement(el: Element | null): boolean {
   if (!el || !(el instanceof HTMLElement)) return false;
@@ -226,7 +227,7 @@ export default function BottomNav() {
             const isActive = isTabActive(tab.path);
             const Icon = tab.icon;
             return (
-              <button
+              <UnifiedButton
                 key={tab.path}
                 type="button"
                 aria-current={isActive ? "page" : undefined}
@@ -271,7 +272,7 @@ export default function BottomNav() {
                 >
                   {tab.label}
                 </span>
-              </button>
+              </UnifiedButton>
             );
           })}
         </div>

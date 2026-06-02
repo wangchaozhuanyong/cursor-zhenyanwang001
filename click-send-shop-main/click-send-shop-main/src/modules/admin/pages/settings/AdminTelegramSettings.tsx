@@ -41,6 +41,7 @@ import {
   telegramLogSendStatusClass,
 } from "@/utils/telegramLogLabels";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]";
@@ -171,7 +172,7 @@ export default function AdminTelegramSettings() {
         )}
         toolbar={(
           <div className="flex flex-wrap gap-2">
-            <button
+            <UnifiedButton
               type="button"
               onClick={reload}
               disabled={loading}
@@ -179,8 +180,8 @@ export default function AdminTelegramSettings() {
             >
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
               <Tx>刷新</Tx>
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               onClick={() => loadPreview(form)}
               disabled={previewing || loading}
@@ -188,8 +189,8 @@ export default function AdminTelegramSettings() {
             >
               {previewing ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} />}
               <Tx>刷新预览</Tx>
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               onClick={save}
               disabled={saving || loading}
@@ -197,8 +198,8 @@ export default function AdminTelegramSettings() {
             >
               {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
               <Tx>保存设置</Tx>
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               onClick={testSend}
               disabled={testing || loading || saving}
@@ -206,7 +207,7 @@ export default function AdminTelegramSettings() {
             >
               {testing ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
               <Tx>测试发送</Tx>
-            </button>
+            </UnifiedButton>
           </div>
         )}
       >
@@ -395,7 +396,7 @@ export default function AdminTelegramSettings() {
                 {previewMessages.length > 1 && (
                   <div className="flex flex-wrap gap-1">
                     {previewMessages.map((_, idx) => (
-                      <button
+                      <UnifiedButton
                         key={idx}
                         type="button"
                         onClick={() => setPreviewIndex(idx)}
@@ -406,7 +407,7 @@ export default function AdminTelegramSettings() {
                         }`}
                       >
                         第 {idx + 1} 条
-                      </button>
+                      </UnifiedButton>
                     ))}
                   </div>
                 )}

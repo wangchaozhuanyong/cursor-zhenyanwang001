@@ -13,6 +13,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type FeatureItem = {
   key: keyof SiteCapabilities;
@@ -159,7 +160,7 @@ export default function AdminFeatureSettings() {
         </Tx>
       )}
       toolbar={(
-        <button
+        <UnifiedButton
           type="button"
           onClick={save}
           disabled={saving || loading || !dirty}
@@ -168,7 +169,7 @@ export default function AdminFeatureSettings() {
           }`}
         >
           {saving ? tText("保存中...") : dirty ? tText("保存") : tText("已保存")}
-        </button>
+        </UnifiedButton>
       )}
     >
       <section className="rounded-2xl border border-border bg-card">

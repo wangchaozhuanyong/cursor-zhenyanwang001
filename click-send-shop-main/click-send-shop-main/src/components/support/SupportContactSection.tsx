@@ -8,6 +8,7 @@ import { getChannelTitle } from "@/utils/supportChannels";
 import { copyToClipboard } from "@/utils/clipboard";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import type { SupportChannelType } from "@/types/content";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type SupportContactSectionProps = {
   className?: string;
@@ -87,7 +88,7 @@ export default function SupportContactSection({ className }: SupportContactSecti
       {channels.length > 0 ? (
         <div className={`mt-4 grid ${channelGridCols} gap-2`}>
           {channels.map((channel, index) => (
-            <button
+            <UnifiedButton
               key={channel.id}
               type="button"
               onClick={() => { void handleChannelClick(channel.id); }}
@@ -102,7 +103,7 @@ export default function SupportContactSection({ className }: SupportContactSecti
                 </span>
                 <span className="mt-0.5 block text-[10px] text-muted-foreground">点击联系</span>
               </span>
-            </button>
+            </UnifiedButton>
           ))}
         </div>
       ) : null}

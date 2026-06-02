@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getChinaBrowserCompatHint } from "@/utils/chinaBrowser";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const DISMISS_KEY = "china-browser-compat-hint-dismissed";
 
@@ -37,13 +38,13 @@ export default function ChinaBrowserCompatNotice() {
     >
       <div className="mx-auto flex max-w-screen-xl items-start gap-2 rounded-lg border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950 shadow-sm dark:bg-amber-950/90 dark:text-amber-50">
         <p className="min-w-0 flex-1">{hint}</p>
-        <button
+        <UnifiedButton
           type="button"
           onClick={dismiss}
           className="shrink-0 rounded px-2 py-0.5 font-medium text-amber-900/80 hover:bg-amber-200/60 dark:text-amber-100 dark:hover:bg-amber-900"
         >
           知道了
-        </button>
+        </UnifiedButton>
       </div>
     </div>
   );

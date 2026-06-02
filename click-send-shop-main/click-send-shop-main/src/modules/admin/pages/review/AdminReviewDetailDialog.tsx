@@ -4,6 +4,7 @@ import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsive
 import type { ReviewDetailPayload } from "@/services/admin/reviewService";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   detail: ReviewDetailPayload | null;
@@ -57,14 +58,14 @@ export default function AdminReviewDetailDialog({
           {r.images?.length ? (
             <div className="flex flex-wrap gap-2">
               {r.images.map((url, i) => (
-                <button
+                <UnifiedButton
                   key={url}
                   type="button"
                   onClick={() => previewImage(url)}
                   className="overflow-hidden rounded-lg border border-border"
                 >
                   <img src={url} alt={`${r.product_name || "商品"} 评价图片 ${i + 1}`} className="h-20 w-20 object-cover" />
-                </button>
+                </UnifiedButton>
               ))}
             </div>
           ) : null}

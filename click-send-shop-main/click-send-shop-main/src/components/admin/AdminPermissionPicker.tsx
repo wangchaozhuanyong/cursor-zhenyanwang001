@@ -4,6 +4,7 @@ import SearchBar from "@/components/SearchBar";
 import { groupAdminPermissions, type AdminPermissionRow } from "@/utils/adminPermissionGroups";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AdminPermissionPickerProps = {
   permissions: AdminPermissionRow[];
@@ -64,24 +65,24 @@ export default function AdminPermissionPicker({
             return (
               <div key={group.key} className="rounded-lg border border-border bg-secondary/20">
                 <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
-                  <button
+                  <UnifiedButton
                     type="button"
                     className="rounded p-0.5 text-muted-foreground hover:bg-secondary"
                     onClick={() => setCollapsed((prev) => ({ ...prev, [group.key]: !collapsedGroup }))}
                     aria-expanded={!collapsedGroup}
                   >
                     {collapsedGroup ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                  </button>
+                  </UnifiedButton>
                   <span className="flex-1 text-xs font-semibold text-foreground">{group.label}</span>
                   <span className="text-[10px] text-muted-foreground">{group.items.length} 项</span>
-                  <button
+                  <UnifiedButton
                     type="button"
                     disabled={disabled}
                     className="rounded border border-border px-2 py-0.5 text-[10px] font-medium hover:bg-secondary disabled:opacity-50"
                     onClick={() => toggleGroup(group.key, group.items, !allChecked)}
                   >
                     {allChecked ? "取消全选" : someChecked ? "全选" : "全选"}
-                  </button>
+                  </UnifiedButton>
                 </div>
                 {!collapsedGroup ? (
                   <ul className="grid gap-1 p-2 sm:grid-cols-2">

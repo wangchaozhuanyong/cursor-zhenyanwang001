@@ -12,6 +12,7 @@ import {
   HOME_NAV_LABEL_CLASS,
 } from "@/constants/homeLayout";
 import { filterVisibleHomeNavItems, isHomeNavItemVisible } from "@/utils/homeNavCapabilities";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function openTarget(navigate: ReturnType<typeof useNavigate>, url: string) {
   const target = url.trim();
@@ -147,7 +148,7 @@ export default function HomeOpsBlocks() {
     <section className="store-nav-band">
       <div className="store-home-nav-grid grid grid-cols-5 gap-x-1 gap-y-3 px-3 py-3.5 sm:grid-cols-6 sm:px-4 md:grid-cols-6 lg:grid-cols-8 lg:gap-x-2 lg:px-6" role="navigation" aria-label="快捷入口">
         {navSource.slice(0, 12).map((item) => (
-          <button
+          <UnifiedButton
             key={item.id}
             type="button"
             onClick={() => openHomeNavTarget(navigate, item, capabilities)}
@@ -157,7 +158,7 @@ export default function HomeOpsBlocks() {
               <HomeNavIcon value={item.icon_url} />
             </span>
             <span className={HOME_NAV_LABEL_CLASS}>{normalizeText(item.title, "分类")}</span>
-          </button>
+          </UnifiedButton>
         ))}
       </div>
     </section>

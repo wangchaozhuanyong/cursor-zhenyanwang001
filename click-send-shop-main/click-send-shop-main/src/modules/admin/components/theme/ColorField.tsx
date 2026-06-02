@@ -6,6 +6,7 @@ import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { COLOR_FIELD_META, type ColorFieldKey } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type ColorFieldProps = {
   field: ColorFieldKey;
@@ -78,14 +79,14 @@ export default function ColorField({ field, value, config, onChange, highlighted
           className={`h-8 min-w-0 flex-1 rounded-md border bg-background px-2 font-mono text-xs outline-none focus:ring-1 focus:ring-[var(--theme-primary)] ${isValidHex ? "border-border" : "border-red-400"}`}
           spellCheck={false}
         />
-        <button type="button" onClick={() => void onCopy()} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border hover:bg-secondary" aria-label={tText("复制颜色")}>
+        <UnifiedButton type="button" onClick={() => void onCopy()} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border hover:bg-secondary" aria-label={tText("复制颜色")}>
           <Copy size={14} />
-        </button>
+        </UnifiedButton>
       </div>
       {!isValidHex ? <p className="mt-1 text-[10px] text-red-600"><Tx>HEX 格式无效，请使用 `#RRGGBB`。</Tx></p> : null}
       <div className="mt-1.5 flex flex-wrap gap-1">
         {COMMON_COLORS.map((item) => (
-          <button key={item} type="button" onClick={() => onChange(item)} title={`使用 ${item}`} className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: item }} />
+          <UnifiedButton key={item} type="button" onClick={() => onChange(item)} title={`使用 ${item}`} className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: item }} />
         ))}
       </div>
     </div>

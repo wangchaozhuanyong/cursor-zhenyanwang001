@@ -31,6 +31,7 @@ import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPane
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { renderBrandTitle } from "@/utils/brand";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const MOBILE_CHROME_HIDE_START = 96;
 const MOBILE_CHROME_HIDE_DELTA = 14;
@@ -406,12 +407,12 @@ export default function Categories() {
         </div>
         <div className="grid grid-cols-2 gap-2">
           {[{ k: inStock, t: "只看有库存", f: setInStock }, { k: isNew, t: "新品", f: setIsNew }, { k: isHot, t: "热销", f: setIsHot }, { k: isRecommended, t: "推荐", f: setIsRecommended }].map((it) => (
-            <button key={it.t} type="button" onClick={() => it.f(!it.k)} className={cn("store-category-filter-chip rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-[0.98]", it.k && "is-active")}>{it.t}</button>
+            <UnifiedButton key={it.t} type="button" onClick={() => it.f(!it.k)} className={cn("store-category-filter-chip rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-[0.98]", it.k && "is-active")}>{it.t}</UnifiedButton>
           ))}
         </div>
         <div>
           <p className="mb-1 text-xs font-semibold text-[var(--theme-text)]">商品标签</p>
-          {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <button key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "#92400E" : "var(--theme-text)" }}>{tag.name}</button>; })}</div> : <p className="text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">暂无可用标签，请先在后台给商品绑定标签</p>}
+          {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <UnifiedButton key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "#92400E" : "var(--theme-text)" }}>{tag.name}</UnifiedButton>; })}</div> : <p className="text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">暂无可用标签，请先在后台给商品绑定标签</p>}
         </div>
       </div>
     </ProductFilterDrawer>
@@ -575,9 +576,9 @@ export default function Categories() {
                           : "暂无商品上架"}
                     </p>
                     {(activeFilterCount > 0 || debouncedQuery) ? (
-                      <button type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">
+                      <UnifiedButton type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">
                         清空筛选
-                      </button>
+                      </UnifiedButton>
                     ) : null}
                   </div>
                   ) : null
@@ -614,7 +615,7 @@ function CategoryTabButton({
 }) {
   const { enabled } = useMotionConfig();
   return (
-    <button
+    <UnifiedButton
       ref={btnRef}
       type="button"
       onClick={onClick}
@@ -636,7 +637,7 @@ function CategoryTabButton({
         )
       ) : null}
       <span className={cn("relative z-10", active ? activeTextClass : "text-[var(--theme-text)]")}>{children}</span>
-    </button>
+    </UnifiedButton>
   );
 }
 

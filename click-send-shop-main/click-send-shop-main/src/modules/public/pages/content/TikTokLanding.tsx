@@ -22,6 +22,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function withViteBase(path: string): string {
   const base = String(import.meta.env.BASE_URL || "/");
@@ -374,12 +375,12 @@ function PlatformPreview({ brandLogoSrc }: { brandLogoSrc: string }) {
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,111,97,0.9),rgba(0,111,97,0.12))]" />
                 <div className="relative max-w-[250px] p-4 text-white sm:p-5 lg:max-w-[330px] lg:p-7">
                   <p className="text-xl font-black leading-snug sm:text-2xl">在马来西亚的生活更简单，更安心</p>
-                  <button
+                  <UnifiedButton
                     type="button"
                     className="mt-4 rounded-full bg-[#008775] px-4 py-2 text-xs font-black text-white shadow-[0_10px_22px_rgba(0,91,78,0.24)] sm:text-sm"
                   >
                     探索服务
-                  </button>
+                  </UnifiedButton>
                 </div>
               </div>
 
@@ -433,7 +434,7 @@ export default function TikTokLanding() {
 
           <nav className="hidden items-center gap-8 lg:flex" aria-label="TikTok 页面导航">
             {navItems.map((item, index) => (
-              <button
+              <UnifiedButton
                 key={item.label}
                 type="button"
                 onClick={() => scrollToSection(item.target)}
@@ -442,30 +443,30 @@ export default function TikTokLanding() {
                 }`}
               >
                 {item.label}
-              </button>
+              </UnifiedButton>
             ))}
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <button
+            <UnifiedButton
               type="button"
               onClick={openSupport}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#008775] bg-white px-5 text-sm font-black text-[#007f6d] transition hover:bg-[#effaf7]"
             >
               <MessageCircle size={17} />
               客服咨询
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               onClick={enterOfficialSite}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#007f6d] px-5 text-sm font-black text-white shadow-[0_14px_28px_rgba(0,127,109,0.22)] transition hover:bg-[#006c5d]"
             >
               立即进入大马通
               <ArrowRight size={17} />
-            </button>
+            </UnifiedButton>
           </div>
 
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setMobileMenuOpen((open) => !open)}
             className="grid h-11 w-11 place-items-center rounded-lg bg-white text-[#101614] lg:hidden"
@@ -473,21 +474,21 @@ export default function TikTokLanding() {
             aria-label="打开导航菜单"
           >
             <Menu size={30} strokeWidth={2.6} />
-          </button>
+          </UnifiedButton>
         </div>
 
         {mobileMenuOpen ? (
           <div className="border-t border-[#e0ebe8] bg-white px-4 py-3 lg:hidden">
             <div className="mx-auto grid max-w-7xl grid-cols-2 gap-2">
               {navItems.slice(1).map((item) => (
-                <button
+                <UnifiedButton
                   key={item.label}
                   type="button"
                   onClick={() => scrollToSection(item.target)}
                   className="h-10 rounded-lg border border-[#dfe9e6] bg-[#f7fbfa] text-sm font-bold text-[#34413e]"
                 >
                   {item.label}
-                </button>
+                </UnifiedButton>
               ))}
             </div>
           </div>
@@ -502,7 +503,7 @@ export default function TikTokLanding() {
           <div className="flex min-h-[360px] flex-col justify-center sm:min-h-[420px] lg:min-h-[620px]">
             <TikTokBadge />
 
-            <h1 className="mt-5 max-w-[680px] text-[40px] font-black tracking-normal text-[#050907] sm:text-5xl lg:text-6xl" style={{ lineHeight: 1.1 }}>
+            <h1 className="mt-5 max-w-[680px] text-[34px] font-black tracking-normal text-[#050907] min-[390px]:text-[36px] sm:text-5xl lg:text-6xl" style={{ lineHeight: 1.1 }}>
               来马来西亚，
               <br />
               生活办事<span className="text-[#007f6d]">不用到处问</span>
@@ -513,22 +514,22 @@ export default function TikTokLanding() {
             </p>
 
             <div className="mt-6 grid grid-cols-[1fr_0.9fr] gap-3 sm:flex sm:flex-wrap">
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={enterOfficialSite}
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#008775] px-4 text-sm font-black text-white shadow-[0_16px_30px_rgba(0,127,109,0.26)] transition hover:bg-[#006f61] sm:min-w-[220px] sm:px-7 sm:text-base"
               >
                 立即进入大马通
                 <ArrowRight size={18} />
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 onClick={openSupport}
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#008775] bg-white px-4 text-sm font-black text-[#007f6d] transition hover:bg-[#effaf7] sm:min-w-[180px] sm:px-7 sm:text-base"
               >
                 <MessageCircle size={18} />
                 联系客服
-              </button>
+              </UnifiedButton>
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
@@ -675,22 +676,22 @@ export default function TikTokLanding() {
               </p>
             </div>
             <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-2">
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={enterOfficialSite}
                 className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#008775] px-6 py-3 text-sm font-black text-white shadow-[0_18px_32px_rgba(0,127,109,0.25)] transition hover:bg-[#006f61] sm:text-base"
               >
                 立即进入大马通
                 <ArrowRight size={20} />
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 onClick={openSupport}
                 className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-[#008775] bg-white px-6 py-3 text-sm font-black text-[#007f6d] transition hover:bg-[#effaf7] sm:text-base"
               >
                 <MessageCircle size={20} />
                 WhatsApp 咨询
-              </button>
+              </UnifiedButton>
             </div>
           </div>
         </div>
@@ -725,10 +726,10 @@ export default function TikTokLanding() {
           <div>
             <h3 className="text-sm font-black text-[#121816]">联系方式</h3>
             <div className="mt-3 grid gap-3 text-sm text-[#64716e]">
-              <button type="button" onClick={openSupport} className="flex items-center gap-2 text-left font-semibold text-[#007f6d]">
+              <UnifiedButton type="button" onClick={openSupport} className="flex items-center gap-2 text-left font-semibold text-[#007f6d]">
                 <MessageCircle size={18} />
                 官方客服入口
-              </button>
+              </UnifiedButton>
               <span className="flex items-center gap-2">
                 <Mail size={18} />
                 邮箱与服务时间以客服页为准

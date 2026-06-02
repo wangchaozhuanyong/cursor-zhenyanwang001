@@ -7,6 +7,7 @@ import type { HomeNavItem } from "@/types/content";
 import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import HomeNavIconPreview from "./HomeNavIconPreview";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   item: HomeNavItem;
@@ -107,7 +108,7 @@ export default function HomeNavSortRow({
             onBlur={() => void commitSort()}
           />
         ) : (
-          <button
+          <UnifiedButton
             type="button"
             disabled={!canManage || savingOrder || savingSort}
             onClick={() => canManage && setEditingSort(true)}
@@ -115,7 +116,7 @@ export default function HomeNavSortRow({
             title={canManage ? "点击修改排序" : undefined}
           >
             {savingSort ? <Loader2 size={14} className="animate-spin text-muted-foreground" /> : displayIndex}
-          </button>
+          </UnifiedButton>
         )}
         <span className="text-[10px] text-muted-foreground"><Tx>排序</Tx></span>
       </div>
@@ -140,22 +141,22 @@ export default function HomeNavSortRow({
 
       <PermissionGate permission="home_ops.manage">
         <div className="flex shrink-0 items-center gap-0.5">
-          <button
+          <UnifiedButton
             type="button"
             className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-theme-price"
             onClick={onEdit}
             title={tText("编辑")}
           >
             <Pencil size={15} />
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             className={`rounded-lg p-2 text-muted-foreground hover:bg-secondary ${THEME_HOVER_TEXT_DANGER}`}
             onClick={onDelete}
             title={tText("删除")}
           >
             <Trash2 size={15} />
-          </button>
+          </UnifiedButton>
         </div>
       </PermissionGate>
     </div>

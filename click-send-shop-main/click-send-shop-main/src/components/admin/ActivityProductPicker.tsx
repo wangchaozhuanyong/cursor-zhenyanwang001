@@ -7,6 +7,7 @@ import * as activityService from "@/services/admin/activityService";
 import { getProducts } from "@/api/admin/product";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { useAdminTOptional } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   open: boolean;
@@ -134,8 +135,8 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
       height="90vh"
       footer={(
         <div className="flex gap-2">
-          <button type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation flex-1 rounded-lg bg-gold px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{L("加入活动", "Add to promotion")}</button>
-          <button type="button" onClick={onClose} className="touch-manipulation rounded-lg border border-border px-3 py-2.5 text-sm">{L("取消", "Cancel")}</button>
+          <UnifiedButton type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation flex-1 rounded-lg bg-gold px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{L("加入活动", "Add to promotion")}</UnifiedButton>
+          <UnifiedButton type="button" onClick={onClose} className="touch-manipulation rounded-lg border border-border px-3 py-2.5 text-sm">{L("取消", "Cancel")}</UnifiedButton>
         </div>
       )}
       stickyFooter
@@ -158,7 +159,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
               {filtered.map((p) => {
                 const checked = !!selected[p.id];
                 return (
-                  <button
+                  <UnifiedButton
                     key={p.id}
                     type="button"
                     onClick={() => toggle(p)}
@@ -170,7 +171,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
                       <div className="truncate text-sm font-medium">{p.name}</div>
                       <div className="text-xs text-muted-foreground">{L("库存", "Stock")} {p.stock} · {L("原价", "Original")} RM {p.price}</div>
                     </div>
-                  </button>
+                  </UnifiedButton>
                 );
               })}
             </div>
@@ -180,7 +181,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
         <div className="flex min-h-0 flex-col rounded-lg border border-border p-3">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold">{L("已选商品", "Selected products")}（{selectedList.length}）</h3>
-            <button type="button" onClick={() => setSelected({})} className="text-xs text-muted-foreground">{L("清空", "Clear")}</button>
+            <UnifiedButton type="button" onClick={() => setSelected({})} className="text-xs text-muted-foreground">{L("清空", "Clear")}</UnifiedButton>
           </div>
           <div className="grid gap-2">
             <input value={batchDiscount} onChange={(e) => setBatchDiscount(e.target.value)} placeholder={L("批量折扣系数（如 0.8）", "Bulk discount factor (e.g. 0.8)")} className="rounded-lg bg-secondary px-3 py-2 text-sm" />
@@ -191,7 +192,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
             {selectedList.map((p) => (
               <div key={p.id} className="flex items-center justify-between rounded border border-border p-2 text-xs">
                 <span className="truncate">{p.name}</span>
-                <button type="button" onClick={() => toggle(p)} className="text-muted-foreground"><X className="h-3 w-3" /></button>
+                <UnifiedButton type="button" onClick={() => toggle(p)} className="text-muted-foreground"><X className="h-3 w-3" /></UnifiedButton>
               </div>
             ))}
           </div>

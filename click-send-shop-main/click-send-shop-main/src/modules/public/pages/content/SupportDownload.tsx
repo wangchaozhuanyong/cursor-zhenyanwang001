@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import "@/styles/support-download.css";
 import type { AnalyticsEventPayload } from "@/services/analyticsService";
 import type { SupportChannelType, SupportDownloadChannel } from "@/types/content";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type SupportDownloadView = SupportChannelType | "download";
 
@@ -234,7 +235,7 @@ export default function SupportDownload() {
             {availableViews.map((view) => {
               const active = activeView === view;
               return (
-                <button
+                <UnifiedButton
                   key={view}
                   type="button"
                   onClick={() => setActiveView(view)}
@@ -243,7 +244,7 @@ export default function SupportDownload() {
                 >
                   <SupportTabIcon view={view} />
                   <span>{view === "download" ? downloadTabTitle : getChannelTitle(channelByType[view]!)}</span>
-                </button>
+                </UnifiedButton>
               );
             })}
           </nav>
@@ -283,10 +284,10 @@ export default function SupportDownload() {
                 <div className="support-notice-panel">
                   <p className="font-semibold">当前是在 App 内打开，可能无法直接添加到桌面。</p>
                   <p>请点击右上角“...”并选择在浏览器中打开，然后继续操作。</p>
-                  <button type="button" onClick={() => { void copyCurrentLink(installPageUrl); }} className="support-outline-action">
+                  <UnifiedButton type="button" onClick={() => { void copyCurrentLink(installPageUrl); }} className="support-outline-action">
                     <Copy size={15} aria-hidden="true" />
                     <span>复制当前链接</span>
-                  </button>
+                  </UnifiedButton>
                 </div>
               ) : null}
               {visiblePlatforms.length > 0 ? (

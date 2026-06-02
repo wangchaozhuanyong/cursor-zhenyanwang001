@@ -44,6 +44,7 @@ import {
   adminTdClassName,
   ADMIN_TABLE_NOWRAP_CLASS,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const PAGE_SIZE = 20;
 
@@ -314,14 +315,14 @@ export default function AdminProducts() {
 
         <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row">
           <PermissionGate permission="product.manage">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => navigate(`/admin/products/${product.id}`)}
             className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary sm:flex-1"
           >
             <Pencil size={13} />
             <Tx>编辑</Tx>
-          </button>
+          </UnifiedButton>
           </PermissionGate>
         </div>
       </AdminTableMobileCard>
@@ -392,7 +393,7 @@ export default function AdminProducts() {
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">{tText("已选")} {selected.length} {tText("件")}</span>
-        <button
+        <UnifiedButton
           type="button"
           disabled={selected.length === 0 || exportingScope !== null}
           onClick={handleExportSelected}
@@ -400,14 +401,14 @@ export default function AdminProducts() {
         >
           {exportingScope === "selected" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
           {tText("批量导出")} ({selected.length})
-        </button>
+        </UnifiedButton>
         {selected.length > 0 ? (
-          <button type="button" onClick={() => setSelected([])} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary">
+          <UnifiedButton type="button" onClick={() => setSelected([])} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary">
             <Tx>清空选择</Tx>
-          </button>
+          </UnifiedButton>
         ) : null}
-        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量上架")} ({selected.length})</button>
-        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量下架")} ({selected.length})</button>
+        <UnifiedButton type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量上架")} ({selected.length})</UnifiedButton>
+        <UnifiedButton type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量下架")} ({selected.length})</UnifiedButton>
       </div>
 
       <AdminCsvImportDialog
@@ -577,7 +578,7 @@ export default function AdminProducts() {
               <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                 <div className="inline-flex max-w-full flex-nowrap items-center justify-end gap-1.5">
                   <PermissionGate permission="product.manage">
-                    <button type="button" onClick={() => navigate(`/admin/products/${product.id}`)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></button>
+                    <UnifiedButton type="button" onClick={() => navigate(`/admin/products/${product.id}`)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></UnifiedButton>
                   </PermissionGate>
                 </div>
               </td>

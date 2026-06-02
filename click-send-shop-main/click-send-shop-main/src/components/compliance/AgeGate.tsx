@@ -8,6 +8,7 @@ import {
   isAgeGateEnabled,
   writeAgeGateConfirmation,
 } from "@/utils/ageGate";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function isAgeGateExemptPath(pathname: string): boolean {
   return pathname === "/admin" || pathname.startsWith("/admin/");
@@ -86,20 +87,20 @@ export default function AgeGate() {
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{complianceText}</p>
         ) : null}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <button
+          <UnifiedButton
             type="button"
             onClick={handleDecline}
             className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary"
           >
             离开网站
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             onClick={handleConfirm}
             className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"
           >
             我已满 {minimumAge} 岁
-          </button>
+          </UnifiedButton>
         </div>
       </div>
     </div>

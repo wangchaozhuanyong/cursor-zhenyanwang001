@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useModalStackSignal } from "@/modules/micro-interactions/modal/ModalLayerProvider";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type PanelPosition = {
   top: number;
@@ -114,7 +115,7 @@ export default function AnchoredPopover({
 
   return createPortal(
     <div className={cn("fixed inset-0 z-[70]", className)} role="presentation">
-      <button
+      <UnifiedButton
         type="button"
         aria-label={tText("关闭")}
         className="absolute inset-0 cursor-default bg-black/20"

@@ -1,3 +1,4 @@
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 /**
  * 「我的」页微信绑定入口（THIRD_PARTY_LOGIN_ENABLED 为 true 时由 Profile 挂载）
  */
@@ -23,7 +24,7 @@ export default function ProfileWechatBindSection({
 
   if (!wechatLogin?.bound) {
     return (
-      <button
+      <UnifiedButton
         type="button"
         onClick={onNavigateSettings}
         className={`${cardClass} flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left ${menuTapClass}`}
@@ -33,7 +34,7 @@ export default function ProfileWechatBindSection({
           绑定微信，扫码快捷登录
         </span>
         <ChevronRight size={16} className="text-[var(--theme-text-muted-on-surface)]" />
-      </button>
+      </UnifiedButton>
     );
   }
 

@@ -22,6 +22,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { useAdminTOptional } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function applyThemePayload(
   normalized: ReturnType<typeof normalizeThemeSkinsPayload>,
@@ -341,14 +342,14 @@ export default function AdminThemeSettings() {
                   </div>
                 </div>
               </div>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => setHolidayDrawerOpen(true)}
                 className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[var(--theme-primary)]/25 bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition hover:opacity-90 lg:w-auto"
               >
                 <Settings2 size={16} />
                 配置节日自动皮肤
-              </button>
+              </UnifiedButton>
             </div>
           </section>
 
@@ -361,21 +362,21 @@ export default function AdminThemeSettings() {
             bodyClassName="bg-muted/20"
             footer={(
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => setHolidayDrawerOpen(false)}
                   className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-secondary"
                 >
                   关闭
-                </button>
-                <button
+                </UnifiedButton>
+                <UnifiedButton
                   type="button"
                   onClick={() => void onSaveSettings()}
                   disabled={saving || !selectedSkin?.name?.trim()}
                   className="inline-flex h-10 items-center justify-center rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:cursor-not-allowed disabled:opacity-55"
                 >
                   {saving ? "保存中..." : "保存配置"}
-                </button>
+                </UnifiedButton>
               </div>
             )}
           >

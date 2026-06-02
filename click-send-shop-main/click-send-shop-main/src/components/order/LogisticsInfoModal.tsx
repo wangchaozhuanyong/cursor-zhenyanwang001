@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { AppModal } from "@/modules/micro-interactions";
 import { copyToClipboard } from "@/utils/clipboard";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type LogisticsInfoModalProps = {
   open: boolean;
@@ -25,7 +26,7 @@ export function LogisticsInfoModal({ open, onClose, carrier, trackingNo }: Logis
       stickyFooter
       footer={
         hasTracking ? (
-          <button
+          <UnifiedButton
             type="button"
             className="flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] text-sm font-semibold text-[var(--theme-primary-foreground)]"
             onClick={async () => {
@@ -39,7 +40,7 @@ export function LogisticsInfoModal({ open, onClose, carrier, trackingNo }: Logis
             }}
           >
             复制物流单号
-          </button>
+          </UnifiedButton>
         ) : undefined
       }
     >

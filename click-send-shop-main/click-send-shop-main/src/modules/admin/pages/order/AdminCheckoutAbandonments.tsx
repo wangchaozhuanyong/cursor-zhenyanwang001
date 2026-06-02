@@ -43,6 +43,7 @@ import {
   adminTableTheadRow,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const CHECKOUT_COLUMN_ALIGNS: AdminTableAlign[] = [
   "center", "left", "left", "left", "left", "left", "right", "left", "left", "right",
@@ -93,13 +94,13 @@ function CheckoutAbandonmentNumberCell({
   if (row.display_type === "order" && row.order_id) {
     return (
       <div className="flex min-w-0 max-w-[11rem] items-center gap-1.5 whitespace-nowrap">
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => onViewOrder(row.order_id!)}
           className="truncate font-mono text-xs text-[var(--theme-price)] hover:underline"
         >
           {numberLabel}
-        </button>
+        </UnifiedButton>
         {merged}
       </div>
     );
@@ -220,13 +221,13 @@ export default function AdminCheckoutAbandonments() {
     const label = tText(getCheckoutAbandonmentActionLabel(row));
     if (row.order_id) {
       return (
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => handleViewOrder(row.order_id!)}
           className="text-xs text-[var(--theme-price)] hover:underline"
         >
           {label}
-        </button>
+        </UnifiedButton>
       );
     }
     return <span className="text-xs text-muted-foreground">{label}</span>;

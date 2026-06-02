@@ -1,5 +1,6 @@
 import { Bell } from "lucide-react";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type NotificationIconButtonProps = {
   unreadCount?: number;
@@ -15,7 +16,7 @@ export default function NotificationIconButton({
   const badgeText = formatUnreadBadge(unreadCount);
 
   return (
-    <button
+    <UnifiedButton
       type="button"
       className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 ${className}`}
       onClick={onClick}
@@ -30,6 +31,6 @@ export default function NotificationIconButton({
           {badgeText}
         </span>
       ) : null}
-    </button>
+    </UnifiedButton>
   );
 }

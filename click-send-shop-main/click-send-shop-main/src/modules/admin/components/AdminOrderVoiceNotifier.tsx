@@ -21,6 +21,7 @@ import { isAdminAuthenticated } from "@/services/admin/accountService";
 import type { AdminOrderVoiceEvent } from "@/services/admin/orderService";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const LAST_CHECKED_KEY = "admin_order_voice_last_checked_at";
 const PLAYED_IDS_KEY = "admin_order_voice_played_event_ids";
@@ -536,7 +537,7 @@ export function AdminOrderVoiceToolbar() {
 
   return (
     <div className="admin-order-voice-toolbar hidden shrink-0 items-center gap-1 sm:flex">
-      <button
+      <UnifiedButton
         type="button"
         disabled={busy}
         onClick={handleTestPlay}
@@ -545,8 +546,8 @@ export function AdminOrderVoiceToolbar() {
         className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary px-2.5 text-[12px] font-medium leading-none text-muted-foreground hover:bg-muted disabled:opacity-60"
       >
         {testLabel}
-      </button>
-      <button
+      </UnifiedButton>
+      <UnifiedButton
         type="button"
         disabled={busy}
         onClick={handleToggle}
@@ -560,7 +561,7 @@ export function AdminOrderVoiceToolbar() {
         }
       >
         {statusLabel}
-      </button>
+      </UnifiedButton>
     </div>
   );
 }
@@ -576,7 +577,7 @@ export function AdminOrderVoiceMenuItems({ onClose }: { onClose?: () => void }) 
 
   return (
     <div className="sm:hidden">
-      <button
+      <UnifiedButton
         type="button"
         disabled={busy}
         onClick={() => runAndClose(handleTestPlay)}
@@ -587,8 +588,8 @@ export function AdminOrderVoiceMenuItems({ onClose }: { onClose?: () => void }) 
           <Tx>测试播放</Tx>
         </span>
         <span className="text-xs text-muted-foreground">{testLabel}</span>
-      </button>
-      <button
+      </UnifiedButton>
+      <UnifiedButton
         type="button"
         disabled={busy}
         onClick={() => runAndClose(handleToggle)}
@@ -609,7 +610,7 @@ export function AdminOrderVoiceMenuItems({ onClose }: { onClose?: () => void }) 
         >
           {statusLabel}
         </span>
-      </button>
+      </UnifiedButton>
     </div>
   );
 }

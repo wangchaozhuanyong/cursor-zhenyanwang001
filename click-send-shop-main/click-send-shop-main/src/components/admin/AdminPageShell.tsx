@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AdminPageShellProps = {
   children: ReactNode;
@@ -28,7 +29,7 @@ function AdminPageHintCollapse({
   const [open, setOpen] = useState(false);
   return (
     <div className={cn("rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)]", className)}>
-      <button
+      <UnifiedButton
         type="button"
         className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs text-muted-foreground hover:text-foreground"
         onClick={() => setOpen((v) => !v)}
@@ -36,7 +37,7 @@ function AdminPageHintCollapse({
       >
         <span><Tx>页面说明</Tx></span>
         <ChevronDown size={14} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
-      </button>
+      </UnifiedButton>
       {open ? (
         <div className="border-t border-[var(--theme-border)] px-3 py-2 text-xs leading-relaxed text-muted-foreground">
           {hint}

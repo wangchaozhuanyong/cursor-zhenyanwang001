@@ -11,6 +11,7 @@ import ColorField from "./ColorField";
 import ThemeHealthCheck from "./ThemeHealthCheck";
 import type { ThemeHealthFixTarget } from "./themeHealthFixMeta";
 import type { ColorFieldKey } from "./themeStudioConstants";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type ThemeEditorPanelProps = {
   themeConfig: ThemeConfig;
@@ -133,7 +134,7 @@ export default function ThemeEditorPanel({
           aria-label={tText("设置分类")}
         >
           {EDITOR_TABS.map((tab) => (
-            <button
+            <UnifiedButton
               key={tab.id}
               type="button"
               role="tab"
@@ -146,7 +147,7 @@ export default function ThemeEditorPanel({
               }`}
             >
               {tl(tab.label)}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">{tl(TAB_PANEL_HINTS[activeTab])}</p>
@@ -227,13 +228,13 @@ export default function ThemeEditorPanel({
             </div>
             <div className="space-y-4">
               <div id="theme-auto-toolbar" className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => onAutoColor("secondary")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("自动生成辅色")}</button>
-                <button type="button" onClick={() => onAutoColor("accent")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("自动生成强调色")}</button>
-                <button type="button" onClick={() => onAutoColor("border")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("自动生成边框色")}</button>
-                <button type="button" onClick={() => onAutoColor("textContrast")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("优化文字对比度")}</button>
-                <button type="button" onClick={() => onAutoColor("foreground")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("生成前景色变量")}</button>
+                <UnifiedButton type="button" onClick={() => onAutoColor("secondary")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("自动生成辅色")}</UnifiedButton>
+                <UnifiedButton type="button" onClick={() => onAutoColor("accent")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("自动生成强调色")}</UnifiedButton>
+                <UnifiedButton type="button" onClick={() => onAutoColor("border")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("自动生成边框色")}</UnifiedButton>
+                <UnifiedButton type="button" onClick={() => onAutoColor("textContrast")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("优化文字对比度")}</UnifiedButton>
+                <UnifiedButton type="button" onClick={() => onAutoColor("foreground")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />{tText("生成前景色变量")}</UnifiedButton>
                 {canUndoOptimize ? (
-                  <button type="button" onClick={onUndoOptimize} className={`inline-flex h-8 items-center gap-1 rounded-lg px-2 text-[11px] ${THEME_OUTLINE_WARNING}`}><Undo2 size={12} />{tText("撤销优化")}</button>
+                  <UnifiedButton type="button" onClick={onUndoOptimize} className={`inline-flex h-8 items-center gap-1 rounded-lg px-2 text-[11px] ${THEME_OUTLINE_WARNING}`}><Undo2 size={12} />{tText("撤销优化")}</UnifiedButton>
                 ) : null}
               </div>
 

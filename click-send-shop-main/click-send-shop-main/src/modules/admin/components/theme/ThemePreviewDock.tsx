@@ -8,6 +8,7 @@ import ThemePreviewToolbar from "./ThemePreviewToolbar";
 import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type ThemePreviewDockProps = {
   config: ThemeConfig;
@@ -45,14 +46,14 @@ export default function ThemePreviewDock({
 
   if (collapsed) {
     return (
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => setCollapsed(false)}
         className="fixed bottom-6 right-4 z-20 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs shadow-md 2xl:hidden"
       >
         <PanelRightOpen size={14} />
         打开预览
-      </button>
+      </UnifiedButton>
     );
   }
 
@@ -62,13 +63,13 @@ export default function ThemePreviewDock({
         <p className="text-sm font-semibold text-foreground"><Tx>实时预览</Tx></p>
         <div className="flex items-center gap-1">
           {onFullscreen ? (
-            <button type="button" onClick={onFullscreen} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={tText("全屏预览")}>
+            <UnifiedButton type="button" onClick={onFullscreen} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={tText("全屏预览")}>
               <Maximize2 size={14} />
-            </button>
+            </UnifiedButton>
           ) : null}
-          <button type="button" onClick={() => setCollapsed(true)} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={tText("收起预览")}>
+          <UnifiedButton type="button" onClick={() => setCollapsed(true)} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={tText("收起预览")}>
             <PanelRightClose size={14} />
-          </button>
+          </UnifiedButton>
         </div>
       </div>
 

@@ -11,6 +11,7 @@ import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown"
 import { THEME_ALERT_ERROR_BOX } from "@/utils/themeVisuals";
 import { sanitizeClientInstructions } from "@/utils/paymentClientInstructions";
 import PageHeader from "@/components/PageHeader";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 /* ----- Order Success Page ----- */
 export function CheckoutOrderSuccess({
@@ -214,48 +215,48 @@ export function CheckoutOrderSuccess({
           {isOnlinePending && (
             <>
               {onlinePaymentEnabled ? (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={onPayOnline}
                   className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
                 >
                   {postSubmitOnlineError ? "重新支付" : "继续支付"}
-                </button>
+                </UnifiedButton>
               ) : null}
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={onViewOrderDetail}
                 className="w-full rounded-full border-2 border-border py-3 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
                 {onlinePaymentEnabled ? "在订单详情里继续付款" : "查看订单详情"}
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 onClick={() => setAlternatePayOpen((o) => !o)}
                 className="flex w-full items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
               >
                 更换支付方式
                 {alternatePayOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
+              </UnifiedButton>
               {alternatePayOpen && (
                 <div className="space-y-2 rounded-xl border border-border bg-card p-3">
                   <p className="px-1 text-center text-[11px] text-muted-foreground">以下为备选支付方式，与结算页不一致时请谨慎操作</p>
-                  <button
+                  <UnifiedButton
                     type="button"
                     onClick={onPayRewardWallet}
                     disabled={payingWallet}
                     className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-[var(--theme-price)] py-3 text-sm font-semibold text-[var(--theme-price)] transition-all disabled:opacity-60"
                   >
                     {payingWallet ? "支付中…" : `尝试返现钱包（可用 RM ${rewardBalance.toFixed(2)}）`}
-                  </button>
-                  <button
+                  </UnifiedButton>
+                  <UnifiedButton
                     type="button"
                     onClick={onWhatsApp}
                     className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--theme-gradient-foreground)] theme-shadow"
                    
                   >
                     <Phone size={16} /> 联系客服下单
-                  </button>
+                  </UnifiedButton>
                 </div>
               )}
             </>
@@ -264,104 +265,104 @@ export function CheckoutOrderSuccess({
           {isWalletPending && postSubmitWalletError && (
             <>
               {onlinePaymentEnabled ? (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={onPayOnline}
                   className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
                 >
                   改用在线支付
-                </button>
+                </UnifiedButton>
               ) : null}
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={onWhatsApp}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
                 <Phone size={18} /> 联系客服
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 onClick={onViewOrderDetail}
                 className="w-full rounded-full py-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground"
               >
                 查看订单详情
-              </button>
+              </UnifiedButton>
             </>
           )}
 
           {isWalletPending && !postSubmitWalletError && (
             <>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={onPayRewardWallet}
                 disabled={payingWallet}
                 className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-60 ${primaryActionClass}`}
               >
                 {payingWallet ? "支付中…" : `使用返现钱包支付（可用 RM ${rewardBalance.toFixed(2)}）`}
-              </button>
+              </UnifiedButton>
               {onlinePaymentEnabled ? (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={onPayOnline}
                   className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
                 >
                   改用在线支付
-                </button>
+                </UnifiedButton>
               ) : null}
             </>
           )}
 
           {isWhatsappPending && (
             <>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={onWhatsApp}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
                
               >
                 <Phone size={18} /> 发送到 WhatsApp
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 onClick={onWeChat}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--theme-price)] py-4 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow transition-all active:scale-[0.98]"
               >
                 <MessageCircle size={18} /> 发送到微信
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 onClick={onCopy}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
                 <Copy size={18} /> 复制订单内容
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 onClick={() => setMoreWaysOpen((o) => !o)}
                 className="flex w-full items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
               >
                 更多方式
                 {moreWaysOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
+              </UnifiedButton>
               {moreWaysOpen && (
                 <div className="space-y-2 rounded-xl border border-border bg-card p-3">
                   {onlinePaymentEnabled ? (
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={onPayOnline}
                       className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary"
                     >
                       在线支付
-                    </button>
+                    </UnifiedButton>
                   ) : null}
-                  <button
+                  <UnifiedButton
                     type="button"
                     onClick={onPayRewardWallet}
                     disabled={payingWallet}
                     className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary disabled:opacity-60"
                   >
                     {payingWallet ? "支付中…" : `返现钱包（可用 RM ${rewardBalance.toFixed(2)}）`}
-                  </button>
+                  </UnifiedButton>
                 </div>
               )}
             </>
@@ -369,41 +370,41 @@ export function CheckoutOrderSuccess({
 
           {isPending && !isOnlinePending && !isWalletPending && !isWhatsappPending && onlinePaymentEnabled && (
             <>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={onPayOnline}
                 className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
               >
                 继续支付
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 onClick={onViewOrderDetail}
                 className="w-full rounded-full border-2 border-border py-3 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
                 查看订单详情
-              </button>
+              </UnifiedButton>
             </>
           )}
 
           {!isPending && (
-            <button
+            <UnifiedButton
               type="button"
               onClick={onViewOrderDetail}
               className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
             >
               查看订单详情
-            </button>
+            </UnifiedButton>
           )}
 
           {!isWhatsappPending && (
-            <button
+            <UnifiedButton
               type="button"
               onClick={onCopy}
               className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
             >
               <Copy size={18} /> 复制订单内容
-            </button>
+            </UnifiedButton>
           )}
         </div>
 
@@ -449,18 +450,18 @@ export function CheckoutOrderSuccess({
         </div>
 
         <div className="space-y-2.5 pt-1">
-          <button
+          <UnifiedButton
             onClick={onViewOrders}
             className="w-full rounded-full border-2 border-border py-3.5 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
           >
             查看我的订单
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             onClick={onHome}
             className="w-full rounded-full py-3 text-center text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
           >
             继续逛逛
-          </button>
+          </UnifiedButton>
         </div>
       </motion.main>
     </div>

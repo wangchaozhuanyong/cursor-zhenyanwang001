@@ -25,6 +25,7 @@ import {
   adminTableTheadRow,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const RECYCLE_COLUMN_ALIGNS: AdminTableAlign[] = ["center", "left", "left", "right"];
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
@@ -194,22 +195,22 @@ export default function AdminRecycleBin() {
           </AdminTableMobileCardField>
           <PermissionGate permission="recycle_bin.manage">
             <div className="flex gap-2 pt-2">
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => confirmRestore(item)}
                 disabled={itemBusy(item)}
                 className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border border-[var(--theme-border)] py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)] disabled:opacity-60`}
               >
                 <RotateCcw size={12} className="mr-1 inline" />{busyActionKey === `restore:${item.type}:${item.id}` ? tText("恢复中...") : <Tx>恢复</Tx>}
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 onClick={() => confirmPermanentDelete(item)}
                 disabled={itemBusy(item)}
                 className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER} disabled:opacity-60`}
               >
                 <Trash2 size={12} className="mr-1 inline" />{busyActionKey === `delete:${item.type}:${item.id}` ? tText("删除中...") : <Tx>彻底删除</Tx>}
-              </button>
+              </UnifiedButton>
             </div>
           </PermissionGate>
         </div>
@@ -295,7 +296,7 @@ export default function AdminRecycleBin() {
               <td className={adminTableCellClass("right")}>
                 <PermissionGate permission="recycle_bin.manage">
                   <div className="flex gap-1">
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => confirmRestore(item)}
                       disabled={itemBusy(item)}
@@ -303,8 +304,8 @@ export default function AdminRecycleBin() {
                       title={busyActionKey === `restore:${item.type}:${item.id}` ? tText("恢复中...") : tText("恢复")}
                     >
                       <RotateCcw size={14} />
-                    </button>
-                    <button
+                    </UnifiedButton>
+                    <UnifiedButton
                       type="button"
                       onClick={() => confirmPermanentDelete(item)}
                       disabled={itemBusy(item)}
@@ -312,7 +313,7 @@ export default function AdminRecycleBin() {
                       title={busyActionKey === `delete:${item.type}:${item.id}` ? tText("删除中...") : tText("彻底删除")}
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </UnifiedButton>
                   </div>
                 </PermissionGate>
               </td>

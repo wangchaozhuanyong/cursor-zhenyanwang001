@@ -17,6 +17,7 @@ import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Summary = {
   pv: number;
@@ -327,7 +328,7 @@ export default function AdminTrafficAnalysisReport() {
         </Tx>
       )}
       toolbar={(
-        <button
+        <UnifiedButton
           type="button"
           onClick={handleExport}
           disabled={exporting}
@@ -335,7 +336,7 @@ export default function AdminTrafficAnalysisReport() {
         >
           <Download size={16} />
           {exporting ? tText("导出中...") : tText("导出 CSV")}
-        </button>
+        </UnifiedButton>
       )}
       filters={(
         <>

@@ -19,6 +19,7 @@ import {
   THEME_ACCENT_HERO_SHELL,
   THEME_ACCENT_HERO_VALUE,
 } from "@/utils/themeVisuals";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function GiftCard({
   gift,
@@ -61,14 +62,14 @@ function GiftCard({
           ) : null}
           {cashHint ? <p className="text-xs leading-4 text-muted-foreground">{cashHint}</p> : null}
         </div>
-        <button
+        <UnifiedButton
           type="button"
           disabled={disabled}
           onClick={() => onRedeem(gift)}
           className="self-start rounded-full btn-theme-price px-4 py-1.5 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           {redeeming ? "兑换中…" : blockReason || "立即兑换"}
-        </button>
+        </UnifiedButton>
       </div>
     </article>
   );

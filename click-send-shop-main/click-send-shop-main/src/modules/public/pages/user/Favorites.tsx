@@ -7,6 +7,7 @@ import { isLoggedIn } from "@/utils/token";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function Favorites() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function Favorites() {
         {!isLoggedIn() && (
           <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-warning)_10%,var(--theme-surface))] px-4 py-3 text-xs text-[var(--theme-text)]">
             未登录时收藏仅保存在本机，登录后可云端同步。
-            <button type="button" onClick={() => navigate("/login", { state: { from: "/favorites" } })} className="ml-1 font-semibold text-[var(--theme-primary)]">立即登录</button>
+            <UnifiedButton type="button" onClick={() => navigate("/login", { state: { from: "/favorites" } })} className="ml-1 font-semibold text-[var(--theme-primary)]">立即登录</UnifiedButton>
           </div>
         )}
 
@@ -36,7 +37,7 @@ export default function Favorites() {
           <div className="flex flex-col items-center py-20 text-muted-foreground">
             <Heart size={48} className="mb-3 opacity-20" />
             <p className="text-sm">收藏夹还是空的</p>
-            <button onClick={() => navigate("/categories")} className="mt-4 rounded-full bg-[var(--theme-primary)] px-6 py-2.5 text-sm font-bold text-[var(--theme-primary-foreground)]">去逛逛</button>
+            <UnifiedButton onClick={() => navigate("/categories")} className="mt-4 rounded-full bg-[var(--theme-primary)] px-6 py-2.5 text-sm font-bold text-[var(--theme-primary-foreground)]">去逛逛</UnifiedButton>
           </div>
         ) : (
           <div className="space-y-3">
@@ -56,8 +57,8 @@ export default function Favorites() {
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  <button type="button" onClick={() => navigate(`/product/${p.id}`)} className="rounded-xl border border-[var(--theme-border)] px-2 py-2 text-xs">查看商品</button>
-                  <button
+                  <UnifiedButton type="button" onClick={() => navigate(`/product/${p.id}`)} className="rounded-xl border border-[var(--theme-border)] px-2 py-2 text-xs">查看商品</UnifiedButton>
+                  <UnifiedButton
                     type="button"
                     onClick={async () => {
                       try {
@@ -73,8 +74,8 @@ export default function Favorites() {
                     className="inline-flex items-center justify-center gap-1 rounded-xl border border-[var(--theme-border)] px-2 py-2 text-xs text-[var(--theme-danger)]"
                   >
                     <Trash2 size={12} /> 取消收藏
-                  </button>
-                  <button
+                  </UnifiedButton>
+                  <UnifiedButton
                     type="button"
                     onClick={async () => {
                       try {
@@ -87,7 +88,7 @@ export default function Favorites() {
                     className="inline-flex items-center justify-center gap-1 rounded-xl bg-[var(--theme-primary)] px-2 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
                   >
                     <ShoppingCart size={12} /> 加入购物车
-                  </button>
+                  </UnifiedButton>
                 </div>
               </div>
             ))}

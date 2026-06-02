@@ -2,6 +2,7 @@ import { RefreshCw, Headphones, Grid3X3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { storefrontErrorHint } from "@/utils/storefrontError";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   message: string;
@@ -37,34 +38,34 @@ export default function StorefrontLoadErrorPanel({
       ) : null}
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
         {onRetry ? (
-          <button
+          <UnifiedButton
             type="button"
             onClick={onRetry}
             className="inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
           >
             <RefreshCw size={14} />
             重试
-          </button>
+          </UnifiedButton>
         ) : null}
         {showBrowseCategories ? (
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => navigate("/categories")}
             className="inline-flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
           >
             <Grid3X3 size={14} />
             浏览分类
-          </button>
+          </UnifiedButton>
         ) : null}
         {showContactSupport ? (
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => navigate("/support-download?tab=support")}
             className="inline-flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
           >
             <Headphones size={14} />
             联系客服
-          </button>
+          </UnifiedButton>
         ) : null}
       </div>
     </div>

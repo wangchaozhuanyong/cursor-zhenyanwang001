@@ -3,6 +3,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { AdminResponsiveSheet, type AdminResponsiveSheetSize } from "./AdminResponsiveSheet";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type AdminFormSheetProps = {
   open: boolean;
@@ -52,14 +53,14 @@ export function AdminFormSheet({
 
   const footer = (
     <div className="admin-sheet-footer-actions grid grid-cols-2 gap-2">
-      <button
+      <UnifiedButton
         type="button"
         disabled={loading}
         onClick={() => onOpenChange(false)}
         className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
       >
         {cancelText}
-      </button>
+      </UnifiedButton>
       <LoadingButton
         type="button"
         state={loading ? "loading" : "normal"}

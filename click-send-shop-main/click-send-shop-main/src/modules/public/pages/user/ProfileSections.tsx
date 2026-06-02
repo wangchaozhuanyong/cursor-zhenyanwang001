@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export const PROFILE_CARD_CLASS = "store-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
 export const PROFILE_MENU_TAP = "store-profile-tap transition-transform active:scale-[0.98]";
@@ -68,10 +69,10 @@ function ProfileSectionTitle({
     <div className="profile-section-title">
       <h3>{title}</h3>
       {rightLabel ? (
-        <button type="button" onClick={onRightClick} className="profile-section-more">
+        <UnifiedButton type="button" onClick={onRightClick} className="profile-section-more">
           {rightLabel}
           <ChevronRight size={15} />
-        </button>
+        </UnifiedButton>
       ) : null}
     </div>
   );
@@ -104,7 +105,7 @@ export function ProfileHeroCard({
     <section className="store-profile-vip-card">
       <span className="profile-vip-watermark" aria-hidden="true">VIP</span>
       <div className="profile-vip-header">
-        <button type="button" onClick={onAvatarClick} className="profile-avatar-button" aria-label="更换头像">
+        <UnifiedButton type="button" onClick={onAvatarClick} className="profile-avatar-button" aria-label="更换头像">
           <span className="profile-avatar-ring">
             {avatar || logoSrc ? (
               <img src={avatar || logoSrc} alt={userName} className="h-full w-full rounded-full object-cover" />
@@ -115,20 +116,20 @@ export function ProfileHeroCard({
           <span className="profile-avatar-camera">
             <Camera size={11} />
           </span>
-        </button>
+        </UnifiedButton>
 
         <div className="profile-vip-copy">
           <div className="profile-vip-name-row">
             <p className="profile-vip-name">{userName}</p>
-            <button type="button" onClick={onMemberLevelClick} className="profile-vip-badge">
+            <UnifiedButton type="button" onClick={onMemberLevelClick} className="profile-vip-badge">
               <Crown size={13} />
               <span>{memberLevelName}</span>
-            </button>
+            </UnifiedButton>
           </div>
-          <button type="button" onClick={onViewAllBenefits} className="profile-vip-benefit-link">
+          <UnifiedButton type="button" onClick={onViewAllBenefits} className="profile-vip-benefit-link">
             欢迎回来，尊享专属权益
             <ChevronRight size={15} />
-          </button>
+          </UnifiedButton>
         </div>
 
         <div className="profile-vip-message">
@@ -141,14 +142,14 @@ export function ProfileHeroCard({
       </div>
 
       <div className="profile-vip-actions">
-        <button type="button" onClick={onProfileClick} className="profile-vip-action profile-vip-action--ghost">
+        <UnifiedButton type="button" onClick={onProfileClick} className="profile-vip-action profile-vip-action--ghost">
           <User size={19} />
           <span>个人资料</span>
-        </button>
-        <button type="button" onClick={onViewAllBenefits} className="profile-vip-action profile-vip-action--gold">
+        </UnifiedButton>
+        <UnifiedButton type="button" onClick={onViewAllBenefits} className="profile-vip-action profile-vip-action--gold">
           <Crown size={19} />
           <span>会员权益</span>
-        </button>
+        </UnifiedButton>
       </div>
     </section>
   );
@@ -180,9 +181,9 @@ export function ProfileGuestCard({
         </div>
       </div>
       <div className="profile-vip-actions">
-        <button type="button" onClick={onLogin} className="profile-vip-action profile-vip-action--gold">
+        <UnifiedButton type="button" onClick={onLogin} className="profile-vip-action profile-vip-action--gold">
           登录 / 注册
-        </button>
+        </UnifiedButton>
       </div>
     </section>
   );
@@ -204,7 +205,7 @@ export function ProfileOrderPanel({
         {items.map((item) => {
           const badge = formatCount(item.count);
           return (
-            <button
+            <UnifiedButton
               key={item.label}
               type="button"
               onClick={() => onNavigate(item)}
@@ -215,7 +216,7 @@ export function ProfileOrderPanel({
                 {badge ? <span className="profile-count-badge">{badge}</span> : null}
               </span>
               <span className="profile-order-label">{item.label}</span>
-            </button>
+            </UnifiedButton>
           );
         })}
       </div>
@@ -237,7 +238,7 @@ export function ProfileAssetPanel({
       <ProfileSectionTitle title="我的资产" />
       <div className="profile-asset-grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((item) => (
-          <button
+          <UnifiedButton
             key={item.key}
             type="button"
             onClick={() => onNavigate(item)}
@@ -248,7 +249,7 @@ export function ProfileAssetPanel({
             </span>
             <span className="profile-asset-value">{item.value}</span>
             <span className="profile-asset-label">{item.label}</span>
-          </button>
+          </UnifiedButton>
         ))}
       </div>
     </section>
@@ -304,28 +305,28 @@ export function ProfileInviteRewardCard({
           <p>
             邀请码：<span>{inviteCode}</span>
           </p>
-          <button type="button" onClick={onCopyInviteCode} disabled={inviteCode === "暂无"}>
+          <UnifiedButton type="button" onClick={onCopyInviteCode} disabled={inviteCode === "暂无"}>
             <Copy size={13} />
             复制
-          </button>
+          </UnifiedButton>
         </div>
       ) : null}
 
       <div className={cn("profile-invite-actions", loggedIn ? "profile-invite-actions--triple" : "profile-invite-actions--single")}>
-        <button type="button" onClick={onPrimaryClick} className="profile-invite-btn profile-invite-btn--primary">
+        <UnifiedButton type="button" onClick={onPrimaryClick} className="profile-invite-btn profile-invite-btn--primary">
           <Send size={16} />
           {loggedIn ? "立即邀请" : "去登录"}
-        </button>
+        </UnifiedButton>
         {loggedIn ? (
           <>
-            <button type="button" onClick={onToggleInviteCode} className="profile-invite-btn profile-invite-btn--secondary">
+            <UnifiedButton type="button" onClick={onToggleInviteCode} className="profile-invite-btn profile-invite-btn--secondary">
               <FileText size={16} />
               {inviteCodeVisible ? "隐藏邀请码" : "查看邀请码"}
-            </button>
-            <button type="button" onClick={onRecordClick} className="profile-invite-btn profile-invite-btn--secondary">
+            </UnifiedButton>
+            <UnifiedButton type="button" onClick={onRecordClick} className="profile-invite-btn profile-invite-btn--secondary">
               <FileText size={16} />
               邀请记录
-            </button>
+            </UnifiedButton>
           </>
         ) : null}
       </div>
@@ -345,7 +346,7 @@ export function ProfileServiceGrid({
       <ProfileSectionTitle title="我的服务" />
       <div className="profile-service-grid">
         {items.map((item) => (
-          <button
+          <UnifiedButton
             key={item.key}
             type="button"
             onClick={() => onNavigate(item)}
@@ -356,7 +357,7 @@ export function ProfileServiceGrid({
               <item.icon size={18} strokeWidth={2.1} />
             </span>
             <span className="profile-service-label">{item.label}</span>
-          </button>
+          </UnifiedButton>
         ))}
       </div>
     </section>
@@ -383,9 +384,9 @@ export function ProfileTrustStrip({ items }: { items: ProfileTrustItem[] }) {
 
 export function ProfileLogoutButton({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="profile-logout-button">
+    <UnifiedButton type="button" onClick={onClick} className="profile-logout-button">
       <LogOut size={19} />
       退出登录
-    </button>
+    </UnifiedButton>
   );
 }

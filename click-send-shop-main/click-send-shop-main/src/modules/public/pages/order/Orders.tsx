@@ -23,6 +23,7 @@ import {
 } from "@/utils/orderLogistics";
 import { AppModal, BottomSheetConfirm } from "@/modules/micro-interactions";
 import ReturnApplySheet from "./ReturnApplySheet";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
   { key: "all", label: "全部" },
@@ -244,7 +245,7 @@ export default function Orders() {
               const active = t.key === tab;
               const count = tabCount(currentSummary, t.key);
               return (
-                <button
+                <UnifiedButton
                   key={t.key}
                   ref={(el) => {
                     if (el) tabButtonRefs.current.set(t.key, el);
@@ -257,7 +258,7 @@ export default function Orders() {
                   onClick={() => switchTab(t.key)}
                 >
                   {t.label}{count && count > 0 ? ` ${count}` : ""}
-                </button>
+                </UnifiedButton>
               );
             })}
             </div>
@@ -331,7 +332,7 @@ export default function Orders() {
                 </div>
 
                 <div className="mt-3 flex items-center justify-between gap-2">
-                  <button
+                  <UnifiedButton
                     type="button"
                     className={actionBtn}
                     onClick={(e) => {
@@ -340,10 +341,10 @@ export default function Orders() {
                     }}
                   >
                     更多
-                  </button>
+                  </UnifiedButton>
                   <div className="flex min-w-0 flex-1 flex-wrap justify-end gap-2">
                     {canUserCancelOrder(order) ? (
-                      <button
+                      <UnifiedButton
                         className={actionBtn}
                         disabled={actingId === order.id}
                         onClick={(e) => {
@@ -352,10 +353,10 @@ export default function Orders() {
                         }}
                       >
                         取消订单
-                      </button>
+                      </UnifiedButton>
                     ) : null}
                     {isPendingPayment(order) ? (
-                      <button
+                      <UnifiedButton
                         className={primaryActionBtn}
                         disabled={actingId === order.id || paying}
                         onClick={(e) => {
@@ -365,17 +366,17 @@ export default function Orders() {
                         }}
                       >
                         {paying && actingId === order.id ? "处理中..." : labelPendingPaymentAction(order.payment_method, order.order_type)}
-                      </button>
+                      </UnifiedButton>
                     ) : null}
 
                     {order.status === "paid" ? (
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(SUPPORT_PAGE_PATH); }}>联系客服</button>
+                      <UnifiedButton className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(SUPPORT_PAGE_PATH); }}>联系客服</UnifiedButton>
                     ) : null}
 
                     {order.status === "shipped" ? (
                       <>
                         {canApplyAfterSale(order) ? (
-                          <button
+                          <UnifiedButton
                             className={actionBtn}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -383,9 +384,9 @@ export default function Orders() {
                             }}
                           >
                             申请售后
-                          </button>
+                          </UnifiedButton>
                         ) : null}
-                        <button
+                        <UnifiedButton
                           className={primaryActionBtn}
                           disabled={actingId === order.id}
                           onClick={(e) => {
@@ -394,14 +395,14 @@ export default function Orders() {
                           }}
                         >
                           确认收货
-                        </button>
+                        </UnifiedButton>
                       </>
                     ) : null}
 
                     {order.status === "completed" ? (
                       <>
                         {canApplyAfterSale(order) ? (
-                          <button
+                          <UnifiedButton
                             className={actionBtn}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -409,10 +410,10 @@ export default function Orders() {
                             }}
                           >
                             申请售后
-                          </button>
+                          </UnifiedButton>
                         ) : null}
                         {canRepurchaseOrder(order) ? (
-                          <button
+                          <UnifiedButton
                             className={primaryActionBtn}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -420,13 +421,13 @@ export default function Orders() {
                             }}
                           >
                             再买一单
-                          </button>
+                          </UnifiedButton>
                         ) : null}
                       </>
                     ) : null}
 
                     {canRepurchaseOrder(order) && order.status === "cancelled" ? (
-                      <button
+                      <UnifiedButton
                         className={primaryActionBtn}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -434,11 +435,11 @@ export default function Orders() {
                         }}
                       >
                         再买一单
-                      </button>
+                      </UnifiedButton>
                     ) : null}
 
                     {orderInAfterSaleTab(order) ? (
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>查看售后</button>
+                      <UnifiedButton className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>查看售后</UnifiedButton>
                     ) : null}
                   </div>
                 </div>
@@ -456,7 +457,7 @@ export default function Orders() {
           {moreOrder ? (
             <div className="space-y-2">
               {capabilities.reviewEnabled && hasPendingReview(moreOrder) ? (
-                <button
+                <UnifiedButton
                   type="button"
                   className={moreActionBtn}
                   onClick={() => {
@@ -467,10 +468,10 @@ export default function Orders() {
                 >
                   <span>评价</span>
                   <span className="text-xs font-normal text-[var(--theme-text-muted)]">去订单详情评价</span>
-                </button>
+                </UnifiedButton>
               ) : null}
               {canApplyAfterSale(moreOrder) && (moreOrder.status === "shipped" || moreOrder.status === "completed") ? (
-                <button
+                <UnifiedButton
                   type="button"
                   className={moreActionBtn}
                   onClick={() => {
@@ -480,10 +481,10 @@ export default function Orders() {
                   }}
                 >
                   <span>申请售后</span>
-                </button>
+                </UnifiedButton>
               ) : null}
               {canViewLogistics(moreOrder) ? (
-                <button
+                <UnifiedButton
                   type="button"
                   className={moreActionBtn}
                   onClick={() => {
@@ -493,10 +494,10 @@ export default function Orders() {
                   }}
                 >
                   <span>查看物流</span>
-                </button>
+                </UnifiedButton>
               ) : null}
               {canRepurchaseOrder(moreOrder) ? (
-                <button
+                <UnifiedButton
                   type="button"
                   className={moreActionBtn}
                   onClick={() => {
@@ -507,10 +508,10 @@ export default function Orders() {
                 >
                   <span>再买一单</span>
                   <span className="text-xs font-normal text-[var(--theme-text-muted)]">重新加入购物车并结算</span>
-                </button>
+                </UnifiedButton>
               ) : null}
               {canBuyerDeleteOrder(moreOrder) ? (
-                <button
+                <UnifiedButton
                   type="button"
                   className={`${moreActionBtn} text-[var(--theme-danger)]`}
                   onClick={() => {
@@ -520,7 +521,7 @@ export default function Orders() {
                 >
                   <span>删除订单</span>
                   <span className="text-xs font-normal text-[var(--theme-text-muted)]">仅从我的订单隐藏</span>
-                </button>
+                </UnifiedButton>
               ) : null}
               {!(
                 (capabilities.reviewEnabled && hasPendingReview(moreOrder))

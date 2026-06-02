@@ -17,6 +17,7 @@ import { useAdminTOptional } from "@/hooks/useAdminT";
 import { formatTimezoneLabel } from "@/utils/formatTimezoneLabel";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type TrendMetric = "sales" | "order_count" | "paid_order_count" | "refund_amount" | "avg_order_value";
 
@@ -156,7 +157,7 @@ export default function Dashboard() {
       toolbar={(
         <div className="flex max-w-full items-center gap-1.5 overflow-x-auto sm:gap-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {RANGE_OPTIONS.map((opt) => (
-            <button
+            <UnifiedButton
               key={opt.value}
               ref={opt.value === "custom" ? customButtonRef : undefined}
               type="button"
@@ -168,15 +169,15 @@ export default function Dashboard() {
               }`}
             >
               {isEn ? opt.en : opt.zh}
-            </button>
+            </UnifiedButton>
           ))}
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => void dashboardQuery.refetch()}
             className="shrink-0 rounded-full border border-[var(--theme-border)] px-3 py-1.5 text-xs font-semibold whitespace-nowrap"
           >
             <Tx>刷新</Tx>
-          </button>
+          </UnifiedButton>
         </div>
       )}
     >
@@ -194,7 +195,7 @@ export default function Dashboard() {
       {error ? (
         <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--theme-danger)]/30 bg-[color-mix(in_srgb,var(--theme-danger)_8%,transparent)] px-3 py-2 text-xs text-[var(--theme-danger)]">
           <span>{error}</span>
-          <button type="button" onClick={() => void dashboardQuery.refetch()} className="font-semibold underline"><Tx>重试</Tx></button>
+          <UnifiedButton type="button" onClick={() => void dashboardQuery.refetch()} className="font-semibold underline"><Tx>重试</Tx></UnifiedButton>
         </div>
       ) : null}
 
@@ -222,10 +223,10 @@ export default function Dashboard() {
             { label: L("低库存", "Low stock"), value: todos.lowStock ?? 0, path: "/admin/inventory" },
             { label: L("缺货商品", "Out of stock"), value: todos.outOfStock ?? 0, path: "/admin/inventory" },
           ].map((item) => (
-            <button key={item.label} type="button" onClick={() => navigate(item.path)} className="touch-manipulation rounded-xl border border-[var(--theme-border)] p-3 text-left transition hover:bg-[var(--theme-bg)]">
+            <UnifiedButton key={item.label} type="button" onClick={() => navigate(item.path)} className="touch-manipulation rounded-xl border border-[var(--theme-border)] p-3 text-left transition hover:bg-[var(--theme-bg)]">
               <p className="text-[11px] text-muted-foreground">{item.label}</p>
               <p className="mt-1 text-xl font-bold tabular-nums text-foreground">{item.value}</p>
-            </button>
+            </UnifiedButton>
           ))}
         </div>
       </section>
@@ -236,14 +237,14 @@ export default function Dashboard() {
             <h3 className="text-sm font-semibold text-foreground"><Tx>经营趋势</Tx></h3>
             <div className="flex flex-wrap gap-1">
               {TREND_METRICS.map((metric) => (
-                <button
+                <UnifiedButton
                   key={metric.key}
                   type="button"
                   onClick={() => setTrendMetric(metric.key)}
                   className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${trendMetric === metric.key ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "border border-[var(--theme-border)] text-muted-foreground"}`}
                 >
                   {isEn ? metric.en : metric.zh}
-                </button>
+                </UnifiedButton>
               ))}
             </div>
           </div>
@@ -277,12 +278,12 @@ export default function Dashboard() {
         <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-5 theme-shadow">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-foreground"><Tx>最近订单</Tx></h3>
-            <button type="button" onClick={() => navigate("/admin/orders")} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>查看全部</Tx></button>
+            <UnifiedButton type="button" onClick={() => navigate("/admin/orders")} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>查看全部</Tx></UnifiedButton>
           </div>
           {(stats?.recentOrders ?? []).length > 0 ? (
             <div className="divide-y divide-[var(--theme-border)]">
               {(stats?.recentOrders ?? []).map((o: any) => (
-                <button key={o.id} type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="flex w-full items-center justify-between gap-3 py-3 text-left">
+                <UnifiedButton key={o.id} type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="flex w-full items-center justify-between gap-3 py-3 text-left">
                   <div>
                     <p className="font-mono text-xs text-foreground">{o.order_no}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(o.created_at)}</p>
@@ -291,7 +292,7 @@ export default function Dashboard() {
                     <p className="text-sm font-semibold text-foreground">{money(o.total_amount)}</p>
                     <span className="mt-1 inline-flex"><OrderStatusBadge status={o.status} /></span>
                   </div>
-                </button>
+                </UnifiedButton>
               ))}
             </div>
           ) : <p className="py-4 text-center text-sm text-muted-foreground"><Tx>暂无订单</Tx></p>}

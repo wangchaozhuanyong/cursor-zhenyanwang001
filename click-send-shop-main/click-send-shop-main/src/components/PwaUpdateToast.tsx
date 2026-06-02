@@ -10,6 +10,7 @@ import {
   isCurrentUpdateDismissed,
   setDismissedSwToken,
 } from "@/lib/pwaUpdateDismiss";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 /** 等待 SW 激活的最长时间，超时后仍强制刷新页面 */
 const SW_UPDATE_TIMEOUT_MS = 2000;
@@ -179,15 +180,15 @@ export default function PwaUpdateToast() {
         点击刷新后将更新到最新内容。建议先确认当前操作已完成。
       </p>
       <div className="mt-3 flex items-center justify-end gap-2">
-        <button
+        <UnifiedButton
           type="button"
           disabled={refreshing}
           onClick={handleDismiss}
           className="rounded-full border border-[var(--theme-border)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)] disabled:opacity-50"
         >
           稍后
-        </button>
-        <button
+        </UnifiedButton>
+        <UnifiedButton
           type="button"
           disabled={refreshing}
           onClick={() => {
@@ -196,7 +197,7 @@ export default function PwaUpdateToast() {
           className="rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-70"
         >
           {refreshing ? "正在刷新…" : "刷新更新"}
-        </button>
+        </UnifiedButton>
       </div>
     </div>
   );

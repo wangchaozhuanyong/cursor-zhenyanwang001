@@ -4,6 +4,7 @@ import type { Category } from "@/types/category";
 import { isCategoryOrDescendantActive } from "@/utils/categoryTree";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type CategorySideTreeProps = {
   categories: Category[];
@@ -34,7 +35,7 @@ function SideNavButton({
 }) {
   const { enabled } = useMotionConfig();
   return (
-    <button
+    <UnifiedButton
       type="button"
       onClick={onClick}
       className={cn(
@@ -55,7 +56,7 @@ function SideNavButton({
         )
       ) : null}
       <span className={cn("relative z-10 block", active && activeTextClass)}>{children}</span>
-    </button>
+    </UnifiedButton>
   );
 }
 

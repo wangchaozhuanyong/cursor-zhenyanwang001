@@ -10,6 +10,7 @@ import {
   ADMIN_FILTER_THEME_BUTTON_CLASS,
   ADMIN_FILTER_THEME_CONTROL_CLASS,
 } from "@/utils/adminFilterControlClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AdminFilterVariant = "default" | "card" | "theme" | "themeBg";
 
@@ -68,8 +69,8 @@ export function AdminFilterButton({
   ...props
 }: AdminFilterButtonProps) {
   return (
-    <button {...props} type={type} className={cn(BUTTON_CLASS_MAP[variant], className)}>
+    <UnifiedButton {...props} type={type} className={cn(BUTTON_CLASS_MAP[variant], className)}>
       {children}
-    </button>
+    </UnifiedButton>
   );
 }

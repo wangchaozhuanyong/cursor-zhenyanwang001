@@ -7,6 +7,7 @@ import { useHomeTrackingSessionId } from "@/hooks/useHomeTrackingSessionId";
 import { trackEvent } from "@/services/analyticsService";
 import HomeGridProductCard from "./HomeGridProductCard";
 import HomeGridProductCardSkeleton from "./HomeGridProductCardSkeleton";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface HomeHotSalesSectionProps {
   products: Product[];
@@ -58,14 +59,14 @@ export default function HomeHotSalesSection({
           今日热销
         </h2>
         {showRotate ? (
-          <button
+          <UnifiedButton
             type="button"
             onClick={onRotate}
             className="flex shrink-0 items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)]"
           >
             <RefreshCw size={12} />
             换一批
-          </button>
+          </UnifiedButton>
         ) : null}
       </div>
       <div className={HOME_PRODUCT_GRID_CLASS}>

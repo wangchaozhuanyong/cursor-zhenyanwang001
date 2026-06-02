@@ -5,6 +5,7 @@ import type { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { copyToClipboard } from "@/utils/clipboard";
 import { type BrowserEnv } from "@/utils/browserEnv";
 import { trackEvent } from "@/services/analyticsService";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type PwaState = ReturnType<typeof usePwaInstallPrompt>;
 
@@ -91,10 +92,10 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
       </div>
 
       {isAndroidDevice && (canOneTap || pwa.installed) ? (
-        <button type="button" onClick={() => { void onInstall(); }} disabled={pwa.installing || pwa.installed} className="support-primary-action">
+        <UnifiedButton type="button" onClick={() => { void onInstall(); }} disabled={pwa.installing || pwa.installed} className="support-primary-action">
           {pwa.installed ? <CheckCircle2 size={18} aria-hidden="true" /> : <Smartphone size={18} aria-hidden="true" />}
           <span>{pwa.installed ? "已添加到桌面" : pwa.installing ? "正在处理..." : actionText}</span>
-        </button>
+        </UnifiedButton>
       ) : null}
 
       {isAndroidDevice && canOneTap ? (
@@ -114,10 +115,10 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
         <div className="support-notice-panel">
           <p className="font-semibold">当前是在 App 内打开，通常不会弹出安装确认框。</p>
           <p>{getPreferredAndroidBrowserText()}</p>
-          <button type="button" onClick={() => { void copySiteLink(installUrl, "链接已复制，请用手机浏览器打开"); }} className="support-outline-action">
+          <UnifiedButton type="button" onClick={() => { void copySiteLink(installUrl, "链接已复制，请用手机浏览器打开"); }} className="support-outline-action">
             <Copy size={15} aria-hidden="true" />
             <span>复制链接，换浏览器打开</span>
-          </button>
+          </UnifiedButton>
         </div>
       ) : null}
 
@@ -133,10 +134,10 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
         <div className="support-notice-panel">
           <p className="font-semibold">苹果手机需要用 Safari 添加到主屏幕。</p>
           <p>请先复制链接，用 Safari 打开后再按下面 {instructions.length} 步操作。</p>
-          <button type="button" onClick={() => { void copySiteLink(installUrl, "链接已复制，请用 Safari 打开"); }} className="support-outline-action">
+          <UnifiedButton type="button" onClick={() => { void copySiteLink(installUrl, "链接已复制，请用 Safari 打开"); }} className="support-outline-action">
             <Copy size={15} aria-hidden="true" />
             <span>{actionText}</span>
-          </button>
+          </UnifiedButton>
         </div>
       ) : null}
 
@@ -185,10 +186,10 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
       ) : null}
 
       {showBottomCopyButton ? (
-        <button type="button" onClick={() => { void copySiteLink(installUrl); }} className="support-outline-action">
+        <UnifiedButton type="button" onClick={() => { void copySiteLink(installUrl); }} className="support-outline-action">
           <Copy size={15} aria-hidden="true" />
           <span>复制当前链接</span>
-        </button>
+        </UnifiedButton>
       ) : null}
     </section>
   );

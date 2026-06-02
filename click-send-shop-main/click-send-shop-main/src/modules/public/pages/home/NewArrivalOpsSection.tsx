@@ -15,6 +15,7 @@ import {
   HOME_PRODUCT_IMAGE_PRODUCT_CLASS,
   HOME_PRODUCT_INFO_CLASS,
 } from "@/constants/homeProductCard";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface NewArrivalSectionProps {
   products: Product[];
@@ -86,7 +87,7 @@ export default function NewArrivalSection({
         <div className="min-w-0">
           <h2 className="store-section-title tracking-wide text-[var(--theme-text-on-surface)]">{normalizedTitle}</h2>
         </div>
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => {
             trackClick("new_arrivals_page");
@@ -96,7 +97,7 @@ export default function NewArrivalSection({
         >
           查看更多
           <ChevronRight size={14} />
-        </button>
+        </UnifiedButton>
       </div>
 
       <div className="no-scrollbar flex items-start snap-x snap-mandatory gap-2 overflow-x-auto px-2 pb-1">

@@ -13,6 +13,7 @@ import {
 } from "@/utils/supportChannels";
 import { safeOpenExternal } from "@/utils/safeOpen";
 import { trackEvent } from "@/services/analyticsService";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   channel: SupportDownloadChannel;
@@ -105,14 +106,14 @@ export default function SupportChannelCard({ channel }: Props) {
             <span>{getAccountLabel(channel)}：</span>
             <strong>{account}</strong>
           </p>
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => { void onCopyAccount(); }}
             className="support-copy-button"
           >
             <Copy size={17} aria-hidden="true" />
             <span>复制</span>
-          </button>
+          </UnifiedButton>
         </div>
       ) : null}
 
@@ -144,7 +145,7 @@ export default function SupportChannelCard({ channel }: Props) {
 
         <div className="support-channel-actions">
           {qrUrl ? (
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => { void onDownloadQr(); }}
               disabled={downloadingQr}
@@ -152,18 +153,18 @@ export default function SupportChannelCard({ channel }: Props) {
             >
               {downloadingQr ? <Loader2 size={20} className="animate-spin" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
               <span>下载二维码</span>
-            </button>
+            </UnifiedButton>
           ) : null}
 
           {openUrl ? (
-            <button
+            <UnifiedButton
               type="button"
               onClick={onOpenLink}
               className="support-open-channel-button"
             >
               <ExternalLink size={18} aria-hidden="true" />
               <span>{getOpenLabel(channel)}</span>
-            </button>
+            </UnifiedButton>
           ) : null}
         </div>
       </div>

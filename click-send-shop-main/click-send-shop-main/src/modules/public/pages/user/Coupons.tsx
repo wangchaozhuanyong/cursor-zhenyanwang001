@@ -24,6 +24,7 @@ import {
   THEME_ACCENT_HERO_VALUE,
   THEME_BTN_PRICE,
 } from "@/utils/themeVisuals";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type DisplayStatus = "available" | "claimed" | "pending" | "used" | "expired" | "invalidated";
 
@@ -196,24 +197,24 @@ export default function Coupons() {
 
   const headerRightSlot = pageView === "claimCenter" ? (
     canViewOwnedCoupons ? (
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => setPageView("mine")}
         className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
       >
         我的优惠券
-      </button>
+      </UnifiedButton>
     ) : (
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => navigate("/login", { state: { from: "/coupons", fromState: { pageView: "claimCenter" } } })}
         className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
       >
         登录领取
-      </button>
+      </UnifiedButton>
     )
   ) : (
-    <button
+    <UnifiedButton
       type="button"
       onClick={() => setPageView("claimCenter")}
       className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
@@ -224,7 +225,7 @@ export default function Coupons() {
           {available.length}
         </span>
       ) : null}
-    </button>
+    </UnifiedButton>
   );
 
   if (loading && rawCoupons.length === 0) {
@@ -239,13 +240,13 @@ export default function Coupons() {
     return (
       <div className="store-page flex min-h-screen flex-col items-center justify-center gap-3 px-[var(--store-page-x)] sm:px-4">
         <p className="text-sm text-[var(--theme-danger)]">{error}</p>
-        <button
+        <UnifiedButton
           type="button"
           onClick={handleRetry}
           className={cn("rounded-full px-6 py-2.5 text-sm font-bold", THEME_BTN_PRICE)}
         >
           {isSessionExpired ? "去登录" : "重试"}
-        </button>
+        </UnifiedButton>
       </div>
     );
   }
@@ -260,7 +261,7 @@ export default function Coupons() {
     >
       {pageView === "mine" ? (
         <div className="mb-4 hidden items-center justify-end lg:flex">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setPageView("claimCenter")}
             className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
@@ -271,17 +272,17 @@ export default function Coupons() {
                 {available.length}
               </span>
             ) : null}
-          </button>
+          </UnifiedButton>
         </div>
       ) : (
         <div className="mb-4 hidden items-center justify-end lg:flex">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setPageView("mine")}
             className="inline-flex items-center rounded-full px-4 py-2 text-sm font-medium text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
           >
             返回我的优惠券
-          </button>
+          </UnifiedButton>
         </div>
       )}
 
@@ -310,7 +311,7 @@ export default function Coupons() {
             {TAB_ITEMS.map((t) => {
               const count = t.badge ? usableCount : 0;
               return (
-                <button
+                <UnifiedButton
                   key={t.key}
                   type="button"
                   role="tab"
@@ -336,7 +337,7 @@ export default function Coupons() {
                       {count}
                     </span>
                   ) : null}
-                </button>
+                </UnifiedButton>
               );
             })}
           </div>

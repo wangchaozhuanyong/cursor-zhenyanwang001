@@ -43,6 +43,7 @@ import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();
@@ -138,14 +139,14 @@ function GuestRecommendFallback({
             <p className="mt-1 text-xs leading-5 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
               先从常用服务入口继续浏览，商品接口恢复后点击刷新即可展示真实爆款内容。
             </p>
-            <button
+            <UnifiedButton
               type="button"
               onClick={onRetry}
               className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
             >
               <RefreshCw size={13} />
               刷新商品
-            </button>
+            </UnifiedButton>
           </div>
         </div>
       </div>
@@ -153,7 +154,7 @@ function GuestRecommendFallback({
         {guestRecommendFallbackItems.map((item) => {
           const Icon = item.icon;
           return (
-            <button
+            <UnifiedButton
               key={item.title}
               type="button"
               onClick={() => onNavigate(item.path)}
@@ -169,7 +170,7 @@ function GuestRecommendFallback({
                 </span>
               </span>
               <ArrowRight className="shrink-0 text-[var(--theme-text-muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--theme-primary)]" size={17} />
-            </button>
+            </UnifiedButton>
           );
         })}
       </div>
@@ -415,20 +416,20 @@ export default function GuestHome() {
               <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">
                 请先浏览分类或登录查看；商家上架商品后，这里会自动展示。              </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => navigate("/categories")}
                   className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
                 >
                   全部分类
-                </button>
-                <button
+                </UnifiedButton>
+                <UnifiedButton
                   type="button"
                   onClick={() => navigate("/login", { state: { from: "/" } })}
                   className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
                 >
                   登录 / 注册
-                </button>
+                </UnifiedButton>
               </div>
                 </div>
               ) : null

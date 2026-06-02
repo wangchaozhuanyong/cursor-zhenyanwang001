@@ -19,6 +19,7 @@ import type {
   CouponCampaignStatus,
   CouponCampaignType,
 } from "@/types/couponCampaign";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type FormState = Omit<CouponCampaignPayload, "coupon_ids"> & { coupon_ids: string[] };
 
@@ -223,9 +224,9 @@ export default function AdminCouponCampaignForm() {
       title={title}
       hint="先选已有优惠券，再设置活动时间、人群和发放方式。优惠券内容本身不在这里重复维护。"
       toolbar={(
-        <button type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns")} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm">
+        <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns")} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm">
           <ArrowLeft size={15} /> 返回列表
-        </button>
+        </UnifiedButton>
       )}
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as userService from "@/services/userService";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 const INPUT =
@@ -39,7 +40,7 @@ function SecurityActionRow({
 
   return (
     <div className="border-t border-[var(--theme-border)] first:border-t-0">
-      <button
+      <UnifiedButton
         type="button"
         id={`${rowId}-trigger`}
         aria-expanded={expanded}
@@ -80,7 +81,7 @@ function SecurityActionRow({
           }`}
           aria-hidden
         />
-      </button>
+      </UnifiedButton>
 
       {expanded && children ? (
         <div
@@ -222,13 +223,13 @@ export default function SettingsSecuritySection() {
               disabled={panelBusy}
               className={`${INPUT} focus:ring-[var(--theme-primary)]`}
             />
-            <button
+            <UnifiedButton
               type="submit"
               disabled={panelBusy}
               className="w-full rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60"
             >
               {panelBusy ? "修改中..." : "确认修改密码"}
-            </button>
+            </UnifiedButton>
           </form>
         </SecurityActionRow>
 
@@ -253,13 +254,13 @@ export default function SettingsSecuritySection() {
               disabled={panelBusy}
               className={`${INPUT} focus:ring-[var(--theme-danger)]`}
             />
-            <button
+            <UnifiedButton
               type="submit"
               disabled={panelBusy}
               className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
               {panelBusy ? "注销中..." : "确认注销账号"}
-            </button>
+            </UnifiedButton>
           </form>
         </SecurityActionRow>
       </div>

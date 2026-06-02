@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { BarChart3, ChevronRight, LogOut, X } from "lucide-react";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 import type { ResolvedNavChild, ResolvedNavItem } from "./adminNavConfig";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 /**
  * 侧栏滚动策略：
@@ -85,14 +86,14 @@ function AdminSidebarNav({
         <AdminSiteLogo size="sm" />
         <span className="min-w-0 flex-1 truncate font-display text-lg font-bold text-foreground">{layoutTitle}</span>
         {scrollMode === "overlay" && onClose ? (
-          <button
+          <UnifiedButton
             type="button"
             aria-label={closeLabel ?? "关闭菜单"}
             onClick={onClose}
             className="touch-manipulation flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground active:bg-secondary/80"
           >
             <X size={20} />
-          </button>
+          </UnifiedButton>
         ) : null}
       </div>
 
@@ -103,7 +104,7 @@ function AdminSidebarNav({
           const isExpanded = expandedPath === item.path;
           return (
             <div key={item.path}>
-              <button
+              <UnifiedButton
                 type="button"
                 onPointerEnter={() => preloadItem(item.path, item.children)}
                 onFocus={() => preloadItem(item.path, item.children)}
@@ -126,7 +127,7 @@ function AdminSidebarNav({
                 <item.icon size={20} strokeWidth={2} />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.children && <ChevronRight size={18} className={`shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />}
-              </button>
+              </UnifiedButton>
               <AnimatePresence initial={false}>
                 {item.children && isExpanded ? (
                 <motion.div
@@ -152,7 +153,7 @@ function AdminSidebarNav({
                               const nestedActive = childMatchesPath(nested, pathname);
                               const NestedIcon = nested.icon ?? BarChart3;
                               return (
-                                <button
+                                <UnifiedButton
                                   type="button"
                                   key={nested.path ?? nested.label}
                                   onPointerEnter={() => preloadItem(nested.path, nested.children)}
@@ -164,7 +165,7 @@ function AdminSidebarNav({
                                 >
                                   <NestedIcon size={16} />
                                   {nested.label}
-                                </button>
+                                </UnifiedButton>
                               );
                             })}
                           </div>
@@ -172,7 +173,7 @@ function AdminSidebarNav({
                       );
                     }
                     return (
-                      <button
+                      <UnifiedButton
                         type="button"
                         key={child.path ?? child.label}
                         onPointerEnter={() => preloadItem(child.path, child.children)}
@@ -184,7 +185,7 @@ function AdminSidebarNav({
                       >
                         <ChildIcon size={18} />
                         {child.label}
-                      </button>
+                      </UnifiedButton>
                     );
                   })}
                 </motion.div>
@@ -196,7 +197,7 @@ function AdminSidebarNav({
       </div>
 
       <div className="safe-area-pb shrink-0 border-t border-border px-2 py-3">
-        <button
+        <UnifiedButton
           type="button"
           onClick={onLogout}
           disabled={loggingOut}
@@ -204,7 +205,7 @@ function AdminSidebarNav({
         >
           <LogOut size={20} />
           {logoutLabel}
-        </button>
+        </UnifiedButton>
       </div>
     </nav>
   );
@@ -222,7 +223,7 @@ export function AdminNavTab({
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
-    <button
+    <UnifiedButton
       type="button"
       onClick={onClick}
       className={`touch-manipulation flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 active:opacity-80 ${
@@ -231,7 +232,7 @@ export function AdminNavTab({
     >
       <Icon size={22} strokeWidth={active ? 2.25 : 2} className="shrink-0" />
       <span className="max-w-full truncate text-[10px] font-medium leading-tight">{label}</span>
-    </button>
+    </UnifiedButton>
   );
 }
 

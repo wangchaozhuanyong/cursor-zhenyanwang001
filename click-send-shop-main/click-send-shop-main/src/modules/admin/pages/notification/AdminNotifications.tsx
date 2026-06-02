@@ -32,6 +32,7 @@ import {
   adminTableTheadRow,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const NOTIFICATION_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "left", "center", "right", "left", "right",
@@ -309,14 +310,14 @@ export default function AdminNotifications() {
           </AdminTableMobileCardField>
         </div>
         <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-          <button type="button" onClick={() => navigate(`/admin/notifications/${row.id}`)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+          <UnifiedButton type="button" onClick={() => navigate(`/admin/notifications/${row.id}`)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
             {L("详情", "Details")}
-          </button>
+          </UnifiedButton>
           {rowAction ? (
             <PermissionGate anyOf={rowAction.permissions}>
-              <button type="button" onClick={() => deleteMutation.mutate(row)} disabled={deleteMutation.isPending} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">
+              <UnifiedButton type="button" onClick={() => deleteMutation.mutate(row)} disabled={deleteMutation.isPending} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">
                 {rowAction.label}
-              </button>
+              </UnifiedButton>
             </PermissionGate>
           ) : null}
         </div>
@@ -331,24 +332,24 @@ export default function AdminNotifications() {
         filters={(
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--theme-border)] pb-3">
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => setTab("list")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "list" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
+              <UnifiedButton type="button" onClick={() => setTab("list")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "list" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
                 {L("通知列表", "Notifications")}
-              </button>
+              </UnifiedButton>
               <PermissionGate anyOf={NOTIFICATION_COMPOSE_PERMISSIONS}>
-                <button type="button" onClick={() => setTab("manual")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "manual" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
+                <UnifiedButton type="button" onClick={() => setTab("manual")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "manual" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
                   {L("手动发送", "Send manually")}
-                </button>
+                </UnifiedButton>
               </PermissionGate>
               <PermissionGate anyOf={NOTIFICATION_TRIGGER_PERMISSIONS}>
-                <button type="button" onClick={() => setTab("settings")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "settings" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
+                <UnifiedButton type="button" onClick={() => setTab("settings")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "settings" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
                   {L("触发设置", "Trigger settings")}
-                </button>
+                </UnifiedButton>
               </PermissionGate>
             </div>
-            <button type="button" onClick={handleRefresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
+            <UnifiedButton type="button" onClick={handleRefresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
               <RefreshCw size={16} className={(tab === "settings" ? rulesQuery.isFetching : notificationsQuery.isFetching) ? "animate-spin" : ""} />
               {L("刷新", "Refresh")}
-            </button>
+            </UnifiedButton>
           </div>
         )}
       >
@@ -407,13 +408,13 @@ export default function AdminNotifications() {
                   <td className={adminTableCellClass("right")}>
                     <AdminRowActionsMenu
                       primary={(
-                        <button
+                        <UnifiedButton
                           type="button"
                           onClick={() => navigate(`/admin/notifications/${row.id}`)}
                           className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
                         >
                           {L("详情", "Details")}
-                        </button>
+                        </UnifiedButton>
                       )}
                       moreLabel={L("更多", "More")}
                       menuDisabled={deleteMutation.isPending}
@@ -471,13 +472,13 @@ export default function AdminNotifications() {
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <PermissionGate anyOf={NOTIFICATION_DRAFT_PERMISSIONS}>
-                <button type="button" onClick={() => sendMutation.mutate("draft")} disabled={sendMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60">{L("保存草稿", "Save draft")}</button>
+                <UnifiedButton type="button" onClick={() => sendMutation.mutate("draft")} disabled={sendMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60">{L("保存草稿", "Save draft")}</UnifiedButton>
               </PermissionGate>
               <PermissionGate anyOf={NOTIFICATION_SEND_PERMISSIONS}>
-                <button type="button" onClick={() => sendMutation.mutate("send")} disabled={sendMutation.isPending} className="inline-flex items-center gap-2 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                <UnifiedButton type="button" onClick={() => sendMutation.mutate("send")} disabled={sendMutation.isPending} className="inline-flex items-center gap-2 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
                   <Send size={16} />
                   {L("立即发送", "Send now")}
-                </button>
+                </UnifiedButton>
               </PermissionGate>
             </div>
           </div>
@@ -532,7 +533,7 @@ export default function AdminNotifications() {
               </div>
             ))}
             <div className="flex justify-end">
-              <button type="button" onClick={() => saveRulesMutation.mutate()} disabled={saveRulesMutation.isPending} className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{L("保存触发设置", "Save trigger settings")}</button>
+              <UnifiedButton type="button" onClick={() => saveRulesMutation.mutate()} disabled={saveRulesMutation.isPending} className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{L("保存触发设置", "Save trigger settings")}</UnifiedButton>
             </div>
           </div>
           </PermissionGate>

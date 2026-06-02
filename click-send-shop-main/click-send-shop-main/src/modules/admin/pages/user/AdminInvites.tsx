@@ -29,6 +29,7 @@ import {
   adminTableTheadRow,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const INVITE_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "left", "left", "left", "right",
@@ -104,13 +105,13 @@ export default function AdminInvites() {
           <p className="mt-0.5 text-xs text-muted-foreground">{inv.phone || "-"}</p>
         </div>
         <PermissionGate permission="user.view" fallback={null}>
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => navigate(`/admin/users/${inv.id}`)}
             className="shrink-0 text-xs text-theme-price hover:underline"
           >
             {L("查看用户", "View user")}
-          </button>
+          </UnifiedButton>
         </PermissionGate>
       </div>
       <div className="mt-3 space-y-2">
@@ -193,13 +194,13 @@ export default function AdminInvites() {
             <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{inv.created_at ? formatDateTime(inv.created_at) : "-"}</td>
             <td className={adminTableCellClass("right")}>
               <PermissionGate permission="user.view" fallback={<span className="text-xs text-muted-foreground">-</span>}>
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => navigate(`/admin/users/${inv.id}`)}
                   className="text-xs text-theme-price hover:underline"
                 >
                   {L("查看用户", "View user")}
-                </button>
+                </UnifiedButton>
               </PermissionGate>
             </td>
           </>

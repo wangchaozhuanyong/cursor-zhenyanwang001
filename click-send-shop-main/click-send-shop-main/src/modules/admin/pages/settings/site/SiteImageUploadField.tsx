@@ -10,6 +10,7 @@ import { THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
 import type { SiteSettings } from "@/types/admin";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   fieldKey: keyof SiteSettings;
@@ -85,7 +86,7 @@ export default function SiteImageUploadField({
             className="w-full rounded-lg bg-secondary px-4 py-2 text-xs text-foreground outline-none placeholder:text-muted-foreground"
           />
           <div className="flex flex-wrap gap-2">
-            <button
+            <UnifiedButton
               type="button"
               disabled={isUploading}
               onClick={() => inputRef.current?.click()}
@@ -93,15 +94,15 @@ export default function SiteImageUploadField({
             >
               {isUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
               {isUploading ? "上传中…" : "上传图片"}
-            </button>
+            </UnifiedButton>
             {value ? (
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => onChange("")}
                 className={`inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground ${THEME_HOVER_TEXT_DANGER}`}
               >
                 <X size={12} /><Tx>清除</Tx>
-              </button>
+              </UnifiedButton>
             ) : null}
           </div>
         </div>

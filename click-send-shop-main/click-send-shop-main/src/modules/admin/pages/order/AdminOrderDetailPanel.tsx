@@ -12,6 +12,7 @@ import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
 import { cn } from "@/lib/utils";
 import type { Order, ShortageAdjustmentPreview, ShortageAdjustmentRequest } from "@/types/order";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function toMoney(value: unknown) {
   return `RM ${Number(value || 0).toFixed(2)}`;
@@ -212,13 +213,13 @@ export default function AdminOrderDetailPanel({
     <InfoCard
       title={L("商品信息", "Items")}
       action={canAdjustShortage(order) ? (
-        <button
+        <UnifiedButton
           type="button"
           className="inline-flex min-h-9 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 text-xs font-medium text-amber-800 transition hover:bg-amber-100"
           onClick={openShortageDialog}
         >
           {L("缺货处理", "Handle shortage")}
-        </button>
+        </UnifiedButton>
       ) : null}
     >
       <div className="space-y-2">
@@ -363,9 +364,9 @@ export default function AdminOrderDetailPanel({
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">{L("订单详情", "Order details")}</h2>
           {onBack ? (
-            <button className="rounded-lg border border-border px-3 py-1.5 text-sm transition hover:bg-secondary" onClick={onBack}>
+            <UnifiedButton className="rounded-lg border border-border px-3 py-1.5 text-sm transition hover:bg-secondary" onClick={onBack}>
               {L("返回列表", "Back to list")}
-            </button>
+            </UnifiedButton>
           ) : null}
         </div>
       ) : null}
@@ -396,7 +397,7 @@ export default function AdminOrderDetailPanel({
       <div className="sticky top-0 z-10 bg-[var(--theme-surface)]/95 py-2 backdrop-blur">
         <div className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1">
           {tabs.map((tab) => (
-            <button
+            <UnifiedButton
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
@@ -408,7 +409,7 @@ export default function AdminOrderDetailPanel({
               )}
             >
               {tab.label}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
       </div>
@@ -570,7 +571,7 @@ function ShortageAdjustmentDialog({
             <h3 className="text-base font-semibold">{L("缺货处理 / 修改订单商品", "Handle shortage / edit items")}</h3>
             <p className="mt-1 text-xs text-muted-foreground">{L("只允许删除或减少商品数量，不会回补库存。", "Only deleting or reducing quantities is allowed. No stock will be restored.")}</p>
           </div>
-          <button type="button" className="rounded-lg border border-border px-3 py-1.5 text-xs transition hover:bg-secondary" onClick={onClose}>{L("关闭", "Close")}</button>
+          <UnifiedButton type="button" className="rounded-lg border border-border px-3 py-1.5 text-xs transition hover:bg-secondary" onClick={onClose}>{L("关闭", "Close")}</UnifiedButton>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -635,7 +636,7 @@ function ShortageAdjustmentDialog({
                       }}
                       className="w-full rounded-lg border border-border bg-background px-2 py-1.5"
                     />
-                    <button
+                    <UnifiedButton
                       type="button"
                       className="mt-1 text-xs text-red-600 underline"
                       onClick={() => {
@@ -644,7 +645,7 @@ function ShortageAdjustmentDialog({
                       }}
                     >
                       {L("删除该商品", "Remove this item")}
-                    </button>
+                    </UnifiedButton>
                   </label>
                   <label className="text-xs">
                     <span className="mb-1 block text-muted-foreground">{L("缺货原因", "Shortage reason")}</span>
@@ -688,22 +689,22 @@ function ShortageAdjustmentDialog({
         </div>
 
         <div className="flex shrink-0 justify-end gap-2 border-t border-border p-4">
-          <button
+          <UnifiedButton
             type="button"
             className="rounded-lg border border-border px-3 py-1.5 text-sm transition hover:bg-secondary"
             disabled={previewing}
             onClick={onPreview}
           >
             {previewing ? L("预览中...", "Previewing...") : L("预览最新金额", "Preview latest amount")}
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             className="rounded-lg bg-[var(--theme-price)] px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
             disabled={applying}
             onClick={onApply}
           >
             {applying ? L("生成中...", "Generating...") : L("生成最新订单", "Generate latest order")}
-          </button>
+          </UnifiedButton>
         </div>
       </div>
     </div>

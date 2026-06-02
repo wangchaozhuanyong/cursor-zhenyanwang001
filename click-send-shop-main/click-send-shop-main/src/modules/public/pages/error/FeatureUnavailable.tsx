@@ -1,5 +1,6 @@
 import { Headphones, Home, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function FeatureUnavailable() {
   const navigate = useNavigate();
@@ -15,22 +16,22 @@ export default function FeatureUnavailable() {
           当前功能暂时不可用，可能是商城模块、支付模块或相关服务还未开启。您可以先返回首页，或联系客服确认。
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => navigate("/", { replace: true })}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full btn-theme-price px-5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2"
           >
             <Home size={15} />
             返回首页
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             onClick={() => navigate("/support-download?tab=support")}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-5 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-surface)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
           >
             <Headphones size={15} />
             联系客服
-          </button>
+          </UnifiedButton>
         </div>
       </div>
     </div>

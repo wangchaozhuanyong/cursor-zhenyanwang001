@@ -2,6 +2,7 @@ import { Download, Loader2 } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   title: string;
@@ -21,7 +22,7 @@ export function ReportExportButton({
   const { tText } = useAdminT();
   return (
     <PermissionGate permission="report.export">
-      <button
+      <UnifiedButton
         type="button"
         disabled={exporting}
         onClick={onExport}
@@ -29,7 +30,7 @@ export function ReportExportButton({
       >
         {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
         <Tx>{exportLabel}</Tx>
-      </button>
+      </UnifiedButton>
     </PermissionGate>
   );
 }

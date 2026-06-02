@@ -39,6 +39,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "pending", label: "待支付" },
@@ -172,22 +173,22 @@ export default function AdminPaymentOrders() {
         </div>
         <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
           {row.order_id ? (
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => navigate(`/admin/orders/${row.order_id}`)}
               className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"
             >
               <Tx>查看订单</Tx>
-            </button>
+            </UnifiedButton>
           ) : null}
-          <button
+          <UnifiedButton
             type="button"
             disabled={row.status === "paid"}
             onClick={() => setMarkingRow(row)}
             className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Tx>人工确认</Tx>
-          </button>
+          </UnifiedButton>
         </div>
       </AdminTableMobileCard>
     );
@@ -255,13 +256,13 @@ export default function AdminPaymentOrders() {
         <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5`, "right")}>
           <AdminRowActionsMenu
             primary={row.order_id ? (
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => navigate(`/admin/orders/${row.order_id}`)}
                 className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
               >
                 <Tx>订单</Tx>
-              </button>
+              </UnifiedButton>
             ) : (
               <span className="text-xs text-muted-foreground">-</span>
             )}
@@ -285,14 +286,14 @@ export default function AdminPaymentOrders() {
       <AdminPageShell
         hint={<Tx>使用 Query 缓存和 SSE 自动刷新，人工补记后会同步订单与仪表盘。</Tx>}
         toolbar={(
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => void ordersQuery.refetch()}
             className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"
           >
             <RefreshCw size={16} className={ordersQuery.isFetching ? "animate-spin" : ""} />
             <Tx>刷新</Tx>
-          </button>
+          </UnifiedButton>
         )}
         filters={(
           <>

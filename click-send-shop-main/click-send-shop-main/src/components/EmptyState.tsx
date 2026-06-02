@@ -1,5 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -27,13 +28,13 @@ export default function EmptyState({ icon: Icon, title, description, action, cla
       <p className="mt-4 text-base font-semibold text-foreground">{title}</p>
       {description && <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">{description}</p>}
       {action && (
-        <button
+        <UnifiedButton
           type="button"
           onClick={action.onClick}
           className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full btn-theme-price px-6 text-sm font-semibold text-primary-foreground transition hover:brightness-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]"
         >
           {action.label}
-        </button>
+        </UnifiedButton>
       )}
     </div>
   );

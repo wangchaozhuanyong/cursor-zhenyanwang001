@@ -6,6 +6,7 @@ import type { ThemeConfig } from "@/types/theme";
 import { previewProduct } from "./themePreviewData";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function Btn({ label, variant = "primary" }: { label: string; variant?: "primary" | "secondary" | "danger" | "ghost" | "success" }) {
   const styles: Record<string, string> = {
@@ -16,9 +17,9 @@ function Btn({ label, variant = "primary" }: { label: string; variant?: "primary
     ghost: "border border-[var(--theme-border)] text-[var(--theme-text)] opacity-50",
   };
   return (
-    <button type="button" disabled={variant === "ghost" && label.includes("禁用")} className={`rounded-[var(--theme-button-radius)] px-3 py-1.5 text-xs font-medium ${styles[variant]}`}>
+    <UnifiedButton type="button" disabled={variant === "ghost" && label.includes("禁用")} className={`rounded-[var(--theme-button-radius)] px-3 py-1.5 text-xs font-medium ${styles[variant]}`}>
       {label}
-    </button>
+    </UnifiedButton>
   );
 }
 

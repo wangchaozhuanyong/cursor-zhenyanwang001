@@ -5,6 +5,7 @@ import * as marketingService from "@/services/marketingService";
 import * as homeService from "@/services/homeService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function MarketingFullReductionSection({ delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
@@ -42,14 +43,14 @@ export default function MarketingFullReductionSection({ delay = 0 }: { delay?: n
       </h2>
       <div className="flex flex-wrap gap-2">
         {list.map((item) => (
-          <button
+          <UnifiedButton
             key={item.id}
             type="button"
             onClick={() => navigate("/categories")}
             className="rounded-full border border-[var(--theme-primary)]/30 bg-[var(--theme-primary)]/10 px-3 py-1.5 text-xs font-medium text-[var(--theme-primary)]"
           >
             {item.promo_label}
-          </button>
+          </UnifiedButton>
         ))}
       </div>
     </section>

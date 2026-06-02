@@ -1,1 +1,0 @@
-function e(e,t){if(typeof document>`u`)return;let n=document.createElement(`a`);n.href=e,n.download=t,n.rel=`noopener`,document.body.appendChild(n),n.click(),n.remove()}async function t(t,n){let r=URL.createObjectURL(t);try{e(r,n)}finally{URL.revokeObjectURL(r)}}export{e as n,t};

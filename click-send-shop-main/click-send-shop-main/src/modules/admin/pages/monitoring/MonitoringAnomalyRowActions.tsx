@@ -10,6 +10,7 @@ import {
   type MonitoringAnomaly,
 } from "@/services/admin/monitoringService";
 import { monitoringSecondaryButtonClass } from "./monitoringUi";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   item: MonitoringAnomaly;
@@ -48,7 +49,7 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
       </Link>
 
       <div className="relative">
-        <button
+        <UnifiedButton
           ref={menuBtnRef}
           type="button"
           className={`${actionBtn} gap-1 pr-2`}
@@ -61,11 +62,11 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
           <MoreHorizontal className="h-3.5 w-3.5 shrink-0" aria-hidden />
           更多
           <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
-        </button>
+        </UnifiedButton>
 
         <AnchoredMenu open={open} onClose={() => setOpen(false)} anchorRef={menuBtnRef} width={120} gap={4}>
           <div id={menuId} role="menu" className="min-w-[7.5rem]">
-            <button
+            <UnifiedButton
               type="button"
               role="menuitem"
               className={menuItem}
@@ -73,8 +74,8 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
               onClick={() => void run(() => rescanMonitoringAnomaly(item.id))}
             >
               复查
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               role="menuitem"
               className={menuItem}
@@ -83,8 +84,8 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
               onClick={() => void run(() => createRepairTask(item.id))}
             >
               建任务
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               role="menuitem"
               className={`${menuItem} text-muted-foreground`}
@@ -92,8 +93,8 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
               onClick={() => void run(() => ignoreMonitoringAnomaly(item.id))}
             >
               忽略
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               role="menuitem"
               className={`${menuItem} text-emerald-700`}
@@ -101,7 +102,7 @@ export default function MonitoringAnomalyRowActions({ item, onAction }: Props) {
               onClick={() => void run(() => resolveMonitoringAnomaly(item.id))}
             >
               解决
-            </button>
+            </UnifiedButton>
           </div>
         </AnchoredMenu>
       </div>

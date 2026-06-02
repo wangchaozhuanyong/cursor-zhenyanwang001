@@ -16,6 +16,7 @@ import type { NavForm } from "./homeNavUtils";
 import { buildSupportNavLink } from "./homeNavUtils";
 import HomeNavIconPreview from "./HomeNavIconPreview";
 import { useAdminTOptional } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   navForm: NavForm;
@@ -189,7 +190,7 @@ export default function HomeNavFormPanel({
             className="sr-only"
             onChange={(ev) => void onNavIconFileChange(ev)}
           />
-          <button
+          <UnifiedButton
             type="button"
             disabled={saving || navIconUploading}
             onClick={() => navIconFileRef.current?.click()}
@@ -197,7 +198,7 @@ export default function HomeNavFormPanel({
           >
             {navIconUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             {L("上传", "Upload")}
-          </button>
+          </UnifiedButton>
           <div
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background/50"
             title={L("图标预览", "Icon preview")}

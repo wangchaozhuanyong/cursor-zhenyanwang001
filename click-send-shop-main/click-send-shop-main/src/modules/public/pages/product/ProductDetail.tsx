@@ -49,6 +49,7 @@ import {
   shouldShowRegulatedNotice,
 } from "@/utils/regulatedProductNotice";
 import { isRestrictedProduct } from "@/utils/restrictedProduct";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -172,12 +173,12 @@ export default function ProductDetail() {
           }}
         >
           <p>{error ?? "商品不存在"}</p>
-          <button
+          <UnifiedButton
             onClick={() => id && loadProductDetail(id)}
             className="mt-4 rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-primary-foreground"
           >
             重试
-          </button>
+          </UnifiedButton>
         </div>
       </div>
     );
@@ -423,14 +424,14 @@ export default function ProductDetail() {
         onCart={() => navigate("/cart")}
       />
       <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6 lg:px-8">
-        <button
+        <UnifiedButton
           type="button"
           onClick={goBack}
           className="mb-4 hidden items-center gap-1.5 px-[var(--store-page-x)] text-sm font-medium text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] lg:inline-flex lg:px-0"
         >
           <ArrowLeft size={16} />
           返回
-        </button>
+        </UnifiedButton>
         <div className="store-detail-layout md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-6 lg:gap-12 lg:py-8">
           <div className={cn("md:sticky md:self-start", STORE_DETAIL_STICKY_TOP_CLASS)}>
             <div className="store-detail-gallery relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
@@ -608,7 +609,7 @@ export default function ProductDetail() {
         stickyFooter
         showHandle={false}
         footer={
-          <button
+          <UnifiedButton
             type="button"
             className="flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] text-sm font-semibold text-[var(--theme-primary-foreground)]"
             onClick={async () => {
@@ -620,7 +621,7 @@ export default function ProductDetail() {
             }}
           >
             复制分享文案
-          </button>
+          </UnifiedButton>
         }
       >
         <p className="whitespace-pre-wrap text-sm text-[var(--theme-text-muted)]">{shareText}</p>
@@ -660,7 +661,7 @@ function DetailPurchaseBar({
           />
           <span className="text-[10px]">{isFavorite ? "已收藏" : "收藏"}</span>
         </div>
-        <button
+        <UnifiedButton
           type="button"
           onClick={onCustomerService}
           className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]"
@@ -670,11 +671,11 @@ function DetailPurchaseBar({
             <Headphones size={18} strokeWidth={2} aria-hidden="true" />
           </span>
           <span className="text-[10px]">客服</span>
-        </button>
+        </UnifiedButton>
       </div>
       <div className="w-px shrink-0 self-stretch bg-[var(--theme-border)]" aria-hidden />
       <div className="flex min-w-0 flex-1 overflow-hidden rounded-full shadow-sm">
-        <button
+        <UnifiedButton
           type="button"
           disabled={disabled}
           onClick={onAddToCart}
@@ -685,8 +686,8 @@ function DetailPurchaseBar({
           )}
         >
           加入购物车
-        </button>
-        <button
+        </UnifiedButton>
+        <UnifiedButton
           type="button"
           disabled={disabled}
           onClick={onBuyNow}
@@ -697,7 +698,7 @@ function DetailPurchaseBar({
           )}
         >
           {soldOut ? "已售罄" : purchaseBlocked ? "确认年龄并购买" : "立即购买"}
-        </button>
+        </UnifiedButton>
       </div>
     </div>
   );

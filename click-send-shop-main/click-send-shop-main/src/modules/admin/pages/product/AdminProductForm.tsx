@@ -41,10 +41,12 @@ import {
   defaultGalleryImageAlt,
 } from "@/modules/admin/pages/product/productFormPresentation";
 import { createEmptyProductForm } from "@/modules/admin/pages/product/productFormInitialState";
-import { buildAdminProductUpsertPayload } from "@/modules/admin/pages/product/productFormPayload";
+import { deleteAdminProduct, submitAdminProductForm } from "@/modules/admin/pages/product/productFormActions";
 import { buildProductFormFromProduct } from "@/modules/admin/pages/product/productFormHydration";
+import { getProductFormSaveBlockMessage } from "@/modules/admin/pages/product/productFormValidation";
 import { useProductMediaUploads } from "@/modules/admin/pages/product/useProductMediaUploads";
 import { useProductSkuMatrix } from "@/modules/admin/pages/product/useProductSkuMatrix";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const tempId = tempVariantId;
 
@@ -132,24 +134,23 @@ export default function AdminProductForm() {
     toast.error(toastErrorMessage(productQuery.error, "加载商品信息失败"));
   }, [productQuery.error, productQuery.isError]);
 
+  const uploadBusy = uploadingCover || uploadingGallery || uploadingVariantImageIndex !== null;
+
   const handleSave = async (publish = false) => {
     if (saving || deleting) return;
-    if (uploadingCover || uploadingGallery || uploadingVariantImageIndex !== null) {
-      toast.error(tText("图片仍在上传中，请等待上传完成后再保存商品。"));
-      return;
-    }
-    if (!form.name.trim()) { toast.error(tText("请输入商品名称")); return; }
-    if (!form.variants.length) { toast.error(tText("至少保留一条规格")); return; }
+    const blockMessage = getProductFormSaveBlockMessage({ form, uploadBusy, isNew, productId: id });
+    if (blockMessage) { toast.error(tText(blockMessage)); return; }
     setSaving(true);
     try {
-      const payload = buildAdminProductUpsertPayload(form, { publish, includeStock: isNew });
-      if (isNew) {
-        await createProduct(payload);
-        toast.success(tText("商品创建成功"));
-      } else {
-        await updateProduct(id!, payload);
-        toast.success(tText("商品更新成功"));
-      }
+      const result = await submitAdminProductForm({
+        form,
+        publish,
+        isNew,
+        productId: id,
+        createProduct,
+        updateProduct,
+      });
+      toast.success(tText(result === "created" ? "商品创建成功" : "商品更新成功"));
       await invalidateProductCaches();
       markClean();
       navigate("/admin/products");
@@ -165,7 +166,7 @@ export default function AdminProductForm() {
     if (isNew || !id) return;
     setDeleting(true);
     try {
-      await deleteProduct(id);
+      await deleteAdminProduct({ productId: id, deleteProduct });
       toast.success(tText("已删除"));
       await invalidateProductCaches();
       navigate("/admin/products");
@@ -178,7 +179,6 @@ export default function AdminProductForm() {
 
   const categoryOptions = flattenCategories(categories);
   const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
-  const uploadBusy = uploadingCover || uploadingGallery || uploadingVariantImageIndex !== null;
   const enabledStockTotal = form.variants.reduce(
     (sum, row) => sum + (row.enabled === false ? 0 : Number(row.stock || 0)),
     0,
@@ -197,9 +197,9 @@ export default function AdminProductForm() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={goBack}>
+        <UnifiedButton onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
-        </button>
+        </UnifiedButton>
         <h2 className="text-lg font-semibold text-foreground">{isNew ? "新增商品" : "编辑商品"}</h2>
       </div>
 
@@ -274,7 +274,7 @@ export default function AdminProductForm() {
                     {form.images.map((img, i) => (
                       <div key={i} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border">
                         <img src={img} alt={form.image_alts[i] || `${form.name || "商品"} 详情图 ${i + 1}`} className="h-full w-full object-cover" />
-                        <button onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i), image_alts: f.image_alts.filter((_, idx) => idx !== i) }))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</button>
+                        <UnifiedButton onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i), image_alts: f.image_alts.filter((_, idx) => idx !== i) }))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</UnifiedButton>
                       </div>
                     ))}
                     {uploadingGallery && (
@@ -340,13 +340,13 @@ export default function AdminProductForm() {
                     />
                   </div>
                   {form.video_url && (
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, video_url: "" }))}
                       className={`shrink-0 text-xs hover:underline ${THEME_TEXT_DANGER}`}
                     ><Tx>
                       清除
-                    </Tx></button>
+                    </Tx></UnifiedButton>
                   )}
                 </div>
                 <div className="grid gap-3 md:grid-cols-[1fr_auto]">
@@ -519,7 +519,7 @@ export default function AdminProductForm() {
                 {form.spec_groups.length === 0 && form.variants.length === 1 ? <Tx>默认 SKU 设置</Tx> : <Tx>规格 / SKU</Tx>}
               </h3>
               {!isSingleDefaultSku ? (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() =>
                     setForm((f) => ({
@@ -543,7 +543,7 @@ export default function AdminProductForm() {
                   className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
                 >
                   <Plus size={14} /><Tx> 添加 SKU 行
-                </Tx></button>
+                </Tx></UnifiedButton>
               ) : null}
             </div>
             <div className="flex justify-end">
@@ -555,13 +555,13 @@ export default function AdminProductForm() {
               <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 text-xs leading-5 text-muted-foreground">
                 <p className="font-medium text-foreground"><Tx>当前商品未启用多规格，系统将使用“默认规格 / 默认 SKU”管理库存、成本、条码和预警。</Tx></p>
                 <p className="mt-1"><Tx>如果商品有颜色、尺码、口味等差异，可以转为矩阵规格，为每个规格组合单独维护 SKU。</Tx></p>
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => setShowDefaultSkuAdvanced((v) => !v)}
                   className="mt-3 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground"
                 >
                   {showDefaultSkuAdvanced ? tText("收起默认 SKU 高级设置") : tText("展开默认 SKU 高级设置")}
-                </button>
+                </UnifiedButton>
               </div>
             ) : null}
             {form.spec_groups.length > 0 || form.variants.length > 1 ? (
@@ -610,7 +610,7 @@ export default function AdminProductForm() {
                 {allTags.map((t) => {
                   const on = form.tag_ids.includes(t.id);
                   return (
-                    <button
+                    <UnifiedButton
                       key={t.id}
                       type="button"
                       onClick={() =>
@@ -630,7 +630,7 @@ export default function AdminProductForm() {
                     } : undefined}
                     >
                       {t.name}
-                    </button>
+                    </UnifiedButton>
                   );
                 })}
               </div>
@@ -841,7 +841,7 @@ export default function AdminProductForm() {
                 删除商品
               </Tx></LoadingButton>
             )}
-            <button onClick={goBack} className="w-full rounded-lg border border-border px-6 py-3 text-sm text-muted-foreground"><Tx>取消</Tx></button>
+            <UnifiedButton onClick={goBack} className="w-full rounded-lg border border-border px-6 py-3 text-sm text-muted-foreground"><Tx>取消</Tx></UnifiedButton>
           </div>
         </div>
       </div>

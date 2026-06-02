@@ -51,6 +51,7 @@ import {
   adminTableTheadRow,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const ACCOUNT_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "center", "left", "left", "right",
@@ -278,16 +279,16 @@ export default function AdminAccounts() {
           {!targetLocked ? (
             <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
               {a.role !== "super_admin" ? (
-                <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary">
+                <UnifiedButton type="button" onClick={() => handleToggle(a)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary">
                   {a.role === "disabled" ? tText("启用") : tText("禁用")}
-                </button>
+                </UnifiedButton>
               ) : null}
               {(isSuperAdminViewer || !hasPrivilegedRole(a)) ? (
-                <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>重置密码</Tx></button>
+                <UnifiedButton type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>重置密码</Tx></UnifiedButton>
               ) : null}
-              <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>安全</Tx></button>
+              <UnifiedButton type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>安全</Tx></UnifiedButton>
               {a.role !== "super_admin" ? (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() =>
                     adminConfirmDelete(askConfirm, a.nickname || a.phone, async () => {
@@ -299,7 +300,7 @@ export default function AdminAccounts() {
                   className={`touch-manipulation rounded-lg border border-border px-3 py-2 text-xs ${THEME_TEXT_DANGER}`}
                 >
                   <Tx>删除</Tx>
-                </button>
+                </UnifiedButton>
               ) : null}
             </div>
           ) : targetLocked ? (
@@ -315,9 +316,9 @@ export default function AdminAccounts() {
       hint={<Tx>管理后台登录账号、角色分配、MFA 与密码安全；超级管理员可通过页面说明中的命令行恢复权限。</Tx>}
       toolbar={(
         <PermissionGate permission="role.manage">
-          <button type="button" onClick={() => setShowCreate(true)} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient active:opacity-90">
+          <UnifiedButton type="button" onClick={() => setShowCreate(true)} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient active:opacity-90">
             <Plus size={16} /><Tx>创建管理员</Tx>
-          </button>
+          </UnifiedButton>
         </PermissionGate>
       )}
       filters={(
@@ -342,7 +343,7 @@ export default function AdminAccounts() {
                     <Tx>关闭后，后台登录和高风险操作不再强制验证 MFA；原有绑定会保留，重新开启后继续生效。</Tx>
                   </p>
                 </div>
-                <button
+                <UnifiedButton
                   type="button"
                   disabled={mfaPolicyQuery.isLoading || mfaPolicyMutation.isPending}
                   onClick={() => mfaPolicyMutation.mutate(mfaPolicyQuery.data?.enabled === false)}
@@ -357,7 +358,7 @@ export default function AdminAccounts() {
                     : mfaPolicyQuery.data?.enabled === false
                       ? tText("开启强制 MFA")
                       : tText("关闭强制 MFA")}
-                </button>
+                </UnifiedButton>
               </div>
             </div>
           ) : null}
@@ -373,13 +374,13 @@ export default function AdminAccounts() {
             )}
           />
         </div>
-        <button
+        <UnifiedButton
           type="button"
           className="mt-2 rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary"
           onClick={() => setShowOpsHelp((v) => !v)}
         >
           {showOpsHelp ? tText("收起命令") : tText("展开命令")}
-        </button>
+        </UnifiedButton>
         {showOpsHelp ? (
           <div className="mt-2 space-y-2 rounded-lg border border-border bg-background/60 p-2">
             {HELP_COMMANDS.map((item) => (
@@ -387,7 +388,7 @@ export default function AdminAccounts() {
                 <p className="text-[11px] text-muted-foreground">{tText(item.label)}</p>
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <code className="min-w-0 truncate rounded bg-muted px-1.5 py-0.5 text-[11px]">{item.command}</code>
-                  <button
+                  <UnifiedButton
                     type="button"
                     className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[11px] hover:bg-secondary"
                     onClick={() => {
@@ -397,7 +398,7 @@ export default function AdminAccounts() {
                   >
                     <Copy size={12} />
                     <Tx>复制</Tx>
-                  </button>
+                  </UnifiedButton>
                 </div>
               </div>
             ))}
@@ -425,13 +426,13 @@ export default function AdminAccounts() {
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             {!filtersActive ? (
               <PermissionGate permission="role.manage">
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => setShowCreate(true)}
                   className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground"
                 >
                   <Tx>新建管理员</Tx>
-                </button>
+                </UnifiedButton>
               </PermissionGate>
             ) : null}
             <AdminEmptyGuideActions
@@ -471,7 +472,7 @@ export default function AdminAccounts() {
                   {!targetLocked ? (
                     <AdminRowActionsMenu
                       primary={(
-                        <button
+                        <UnifiedButton
                           type="button"
                           onClick={() => setSecurityTarget(a)}
                           className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 text-xs font-medium text-foreground hover:bg-[var(--theme-bg)]"
@@ -479,7 +480,7 @@ export default function AdminAccounts() {
                         >
                           <ShieldCheck size={14} className="mr-1 inline" />
                           <Tx>安全</Tx>
-                        </button>
+                        </UnifiedButton>
                       )}
                       moreLabel={<Tx>更多</Tx>}
                       items={[
@@ -719,23 +720,23 @@ function AdminSecurityDialog({
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
+                  <UnifiedButton
                     type="button"
                     disabled={busy || security?.mfa.lockedRequired || security?.mfa.required}
                     onClick={() => setMfaRequiredMutation.mutate(true)}
                     className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                   >
                     <Tx>要求 MFA</Tx>
-                  </button>
-                  <button
+                  </UnifiedButton>
+                  <UnifiedButton
                     type="button"
                     disabled={busy || security?.mfa.lockedRequired || !security?.mfa.required}
                     onClick={() => setMfaRequiredMutation.mutate(false)}
                     className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                   >
                     <Tx>关闭要求</Tx>
-                  </button>
-                  <button
+                  </UnifiedButton>
+                  <UnifiedButton
                     type="button"
                     disabled={busy}
                     onClick={confirmResetMfa}
@@ -743,7 +744,7 @@ function AdminSecurityDialog({
                   >
                     <RotateCcw size={13} />
                     <Tx>重置身份验证器（MFA）</Tx>
-                  </button>
+                  </UnifiedButton>
                 </div>
               </div>
               {security?.mfa.lockedRequired ? (
@@ -757,14 +758,14 @@ function AdminSecurityDialog({
                   <p className="text-sm font-semibold text-foreground"><Tx>可信设备</Tx></p>
                   <p className="mt-1 text-xs text-muted-foreground"><Tx>撤销后，该员工下次登录需要重新完成 MFA 验证。</Tx></p>
                 </div>
-                <button
+                <UnifiedButton
                   type="button"
                   disabled={busy || activeDevices.length === 0}
                   onClick={() => revokeAllDevicesMutation.mutate()}
                   className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                 >
                   <Tx>撤销全部设备</Tx>
-                </button>
+                </UnifiedButton>
               </div>
 
               <div className="mt-3 divide-y divide-border rounded-lg border border-border">
@@ -781,14 +782,14 @@ function AdminSecurityDialog({
                         <p className="mt-1">{tText("最近使用")}：{device.lastSeenAt ? formatDateTime(device.lastSeenAt) : "-"}</p>
                         <p>{tText("到期时间")}：{device.expiresAt ? formatDateTime(device.expiresAt) : "-"}</p>
                       </div>
-                      <button
+                      <UnifiedButton
                         type="button"
                         disabled={busy || !device.active}
                         onClick={() => revokeDeviceMutation.mutate(device.id)}
                         className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
                       >
                         <Tx>撤销</Tx>
-                      </button>
+                      </UnifiedButton>
                     </div>
                   ))
                 )}

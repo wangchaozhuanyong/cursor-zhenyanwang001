@@ -8,6 +8,7 @@ import { adminLoginErrorMessage } from "@/utils/storefrontError";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import { useAdminT } from "@/hooks/useAdminT";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function normalizeMfaCode(value: string) {
   return value
@@ -172,7 +173,7 @@ export default function AdminLogin() {
 
                 {passkeyAvailable ? (
                   <>
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={handleVerifyPasskey}
                       disabled={loading || passkeyLoading}
@@ -180,7 +181,7 @@ export default function AdminLogin() {
                     >
                       <Fingerprint size={16} />
                       {passkeyLoading ? tText("正在验证 Passkey...") : tText("使用 Passkey 登录")}
-                    </button>
+                    </UnifiedButton>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="h-px flex-1 bg-border" />
                       <span>{tText("或输入验证码")}</span>
@@ -222,7 +223,7 @@ export default function AdminLogin() {
                   {trustDevice ? (
                     <div className="mt-3 grid grid-cols-3 gap-2">
                       {([7, 14, 30] as const).map((days) => (
-                        <button
+                        <UnifiedButton
                           key={days}
                           type="button"
                           onClick={() => setTrustDays(days)}
@@ -233,27 +234,27 @@ export default function AdminLogin() {
                           }`}
                         >
                           {locale === "en" ? `${days} days` : `${days} 天`}
-                        </button>
+                        </UnifiedButton>
                       ))}
                     </div>
                   ) : null}
                 </div>
 
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={handleVerifyMfa}
                   disabled={loading || passkeyLoading || mfaCode.length !== 6}
                   className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
                 >
                   {loading ? t("login.mfaVerifying") : t("login.mfaVerifySubmit")}
-                </button>
-                <button
+                </UnifiedButton>
+                <UnifiedButton
                   type="button"
                   onClick={() => setMfaState(null)}
                   className="w-full text-xs text-muted-foreground hover:text-foreground"
                 >
                   {t("login.mfaBackToPassword")}
-                </button>
+                </UnifiedButton>
               </>
             ) : (
               <>
@@ -293,34 +294,34 @@ export default function AdminLogin() {
                       className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
                       onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                     />
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => setShowPwd(!showPwd)}
                       aria-label={showPwd ? "隐藏密码" : "显示密码"}
                       className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
                     >
                       {showPwd ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
-                    </button>
+                    </UnifiedButton>
                   </div>
                   {fieldErrors.password ? <p className="mt-1 text-xs text-destructive">{fieldErrors.password}</p> : null}
                 </div>
 
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={handleLogin}
                   disabled={loading}
                   className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
                 >
                   {loading ? t("login.submitting") : t("login.submit")}
-                </button>
+                </UnifiedButton>
               </>
             )}
           </FormFieldShake>
 
           <div className="mt-6 text-center">
-            <button type="button" onClick={() => navigate("/")} className="text-xs text-muted-foreground hover:text-foreground">
+            <UnifiedButton type="button" onClick={() => navigate("/")} className="text-xs text-muted-foreground hover:text-foreground">
               {t("login.backToStore")}
-            </button>
+            </UnifiedButton>
           </div>
         </div>
       </div>

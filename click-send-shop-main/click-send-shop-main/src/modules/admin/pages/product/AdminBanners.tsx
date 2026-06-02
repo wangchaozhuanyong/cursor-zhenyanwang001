@@ -26,6 +26,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { invalidateHomeBannersCache } from "@/hooks/useHomeBanners";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const BANNER_RATIO_LABEL = `${BANNER_ASPECT_RATIO.toFixed(2)}:1`;
 const EMPTY_FORM = { title: "", description: "", cta_text: "", link: "", image: "" };
@@ -185,7 +186,7 @@ export default function AdminBanners() {
       hint={<Tx>{`管理首页顶部 Banner（${BANNER_RATIO_LABEL}）`}</Tx>}
       toolbar={(
         <PermissionGate permission="banner.manage">
-          <button
+          <UnifiedButton
             onClick={() => {
               setEditingId(null);
               setForm(EMPTY_FORM);
@@ -195,7 +196,7 @@ export default function AdminBanners() {
             className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground"
           >
             <Plus size={16} /><Tx>添加 Banner</Tx>
-          </button>
+          </UnifiedButton>
         </PermissionGate>
       )}
     >
@@ -214,13 +215,13 @@ export default function AdminBanners() {
             )}
           />
         </div>
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => void handleCopyBannerPresets()}
           className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs text-foreground hover:bg-secondary"
         >
           复制推荐尺寸
-        </button>
+        </UnifiedButton>
       </div>
 
       <div className="space-y-2">
@@ -262,10 +263,10 @@ export default function AdminBanners() {
             </div>
             <PermissionGate permission="banner.manage">
               <div className="flex flex-shrink-0 items-center gap-2">
-                <button onClick={() => openEdit(b)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-theme-price" title={tText("编辑")}>
+                <UnifiedButton onClick={() => openEdit(b)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-theme-price" title={tText("编辑")}>
                   <Pencil size={16} />
-                </button>
-                <button
+                </UnifiedButton>
+                <UnifiedButton
                   type="button"
                   onClick={() =>
                     confirm({
@@ -278,14 +279,14 @@ export default function AdminBanners() {
                   className={`rounded-lg p-2 transition-colors ${b.enabled ? `${THEME_TEXT_SUCCESS_SOFT} hover:bg-[color-mix(in_srgb,var(--theme-success)_8%,var(--theme-surface))]` : "text-muted-foreground hover:bg-secondary"}`}
                 >
                   {b.enabled ? <Eye size={16} /> : <EyeOff size={16} />}
-                </button>
-                <button
+                </UnifiedButton>
+                <UnifiedButton
                   type="button"
                   onClick={() => adminConfirmDelete(confirm, b.title || b.id, () => handleDelete(b.id))}
                   className={`rounded-lg p-2 text-muted-foreground hover:bg-secondary ${THEME_HOVER_TEXT_DANGER}`}
                 >
                   <Trash2 size={16} />
-                </button>
+                </UnifiedButton>
               </div>
             </PermissionGate>
           </div>

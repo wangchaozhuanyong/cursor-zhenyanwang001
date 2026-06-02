@@ -14,6 +14,7 @@ import {
 } from "@/constants/bannerAspect";
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface BannerCarouselProps {
   banners: Banner[];
@@ -322,7 +323,7 @@ export default function BannerCarousel({
                 </p>
               ) : null}
               {bannerCtaText ? (
-                <button
+                <UnifiedButton
                   type="button"
                   className="store-hero-copy-cta pointer-events-auto mt-3 inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold sm:mt-4 sm:px-4 sm:text-sm"
                   onClick={(e) => {
@@ -332,7 +333,7 @@ export default function BannerCarousel({
                 >
                   <span className="truncate">{bannerCtaText}</span>
                   <ArrowRight size={14} aria-hidden="true" />
-                </button>
+                </UnifiedButton>
               ) : null}
             </motion.div>
           </div>
@@ -344,7 +345,7 @@ export default function BannerCarousel({
           className="store-hero-controls pointer-events-auto absolute z-30"
           onClick={(e) => e.stopPropagation()}
         >
-          <button
+          <UnifiedButton
             type="button"
             className="store-hero-control-button"
             onClick={(e) => {
@@ -354,10 +355,10 @@ export default function BannerCarousel({
             aria-label="上一张轮播图"
           >
             <ChevronLeft size={15} aria-hidden="true" />
-          </button>
+          </UnifiedButton>
           <div className="store-hero-dots" aria-label="轮播图分页">
             {banners.map((_, index) => (
-              <button
+              <UnifiedButton
                 key={index}
                 type="button"
                 onClick={(e) => {
@@ -385,10 +386,10 @@ export default function BannerCarousel({
                     }`}
                   />
                 )}
-              </button>
+              </UnifiedButton>
             ))}
           </div>
-          <button
+          <UnifiedButton
             type="button"
             className="store-hero-control-button"
             onClick={(e) => {
@@ -398,7 +399,7 @@ export default function BannerCarousel({
             aria-label="下一张轮播图"
           >
             <ChevronRight size={15} aria-hidden="true" />
-          </button>
+          </UnifiedButton>
         </div>
       ) : null}
     </div>

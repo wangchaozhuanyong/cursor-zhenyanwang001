@@ -6,6 +6,7 @@ import type { UserTag } from "@/types/user";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const TAG_COLORS = ["红色", "绿色", "蓝色", "金色"] as const;
 
@@ -50,13 +51,13 @@ export default function UserTagManageDialog({
   };
 
   const footer = (
-    <button
+    <UnifiedButton
       type="button"
       onClick={() => onOpenChange(false)}
       className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[var(--theme-border)] px-4 py-2 text-sm font-medium hover:bg-secondary"
     >
       关闭
-    </button>
+    </UnifiedButton>
   );
 
   return (
@@ -92,14 +93,14 @@ export default function UserTagManageDialog({
                 </option>
               ))}
             </select>
-            <button
+            <UnifiedButton
               type="button"
               disabled={creating || !name.trim()}
               onClick={handleCreate}
               className="min-h-[40px] rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
               {creating ? <Loader2 size={16} className="animate-spin" /> : "创建"}
-            </button>
+            </UnifiedButton>
           </div>
         </div>
 
@@ -112,7 +113,7 @@ export default function UserTagManageDialog({
                   key={tag.id}
                   className="flex items-center justify-between gap-2 rounded-lg border border-[var(--theme-border)] px-3 py-2"
                 >
-                  <button
+                  <UnifiedButton
                     type="button"
                     className={`inline-flex min-w-0 flex-1 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}
                     onClick={() => {
@@ -123,8 +124,8 @@ export default function UserTagManageDialog({
                   >
                     <span className="truncate">{tag.name}</span>
                     <span className="shrink-0 opacity-70">({tag.count ?? 0})</span>
-                  </button>
-                  <button
+                  </UnifiedButton>
+                  <UnifiedButton
                     type="button"
                     disabled={deletingId === tag.id}
                     onClick={() => onDelete(tag)}
@@ -136,7 +137,7 @@ export default function UserTagManageDialog({
                     ) : (
                       <Trash2 size={14} />
                     )}
-                  </button>
+                  </UnifiedButton>
                 </li>
               ))}
             </ul>

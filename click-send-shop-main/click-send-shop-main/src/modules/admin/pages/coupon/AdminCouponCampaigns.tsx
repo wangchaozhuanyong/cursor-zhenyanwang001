@@ -15,6 +15,7 @@ import { formatDateRange } from "@/utils/formatDateTime";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import * as campaignService from "@/services/admin/couponCampaignService";
 import type { CouponCampaign, CouponCampaignStatus, CouponCampaignType } from "@/types/couponCampaign";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const columnAligns: AdminTableAlign[] = ["left", "center", "center", "center", "right", "left", "right"];
 
@@ -97,13 +98,13 @@ export default function AdminCouponCampaigns() {
       hint="优惠券活动只负责“展示和发放规则”，真正的券仍然在优惠券管理里维护。这样不会再出现营销活动里重复建券的问题。"
       toolbar={(
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate("/admin/marketing/coupons")} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm">
+          <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons")} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm">
             <ClipboardList size={15} /> 优惠券管理
-          </button>
+          </UnifiedButton>
           <PermissionGate permission="coupon.manage">
-            <button type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns/new")} className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground">
+            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns/new")} className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground">
               <Plus size={16} /> 新建优惠券活动
-            </button>
+            </UnifiedButton>
           </PermissionGate>
         </div>
       )}
@@ -118,7 +119,7 @@ export default function AdminCouponCampaigns() {
             <option value="">全部状态</option>
             {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
-          <button type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm">查询</button>
+          <UnifiedButton type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm">查询</UnifiedButton>
         </div>
       )}
     >
@@ -147,9 +148,9 @@ export default function AdminCouponCampaigns() {
               <AdminTableCell>{formatDateRange(campaign.start_at, campaign.end_at)}</AdminTableCell>
               <AdminTableCell align="right">
                 <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => navigate(`/admin/marketing/coupon-campaigns/${campaign.id}`)} className="rounded-lg border border-border px-2 py-1 text-xs"><Pencil size={13} className="mr-1 inline" />编辑</button>
+                  <UnifiedButton type="button" onClick={() => navigate(`/admin/marketing/coupon-campaigns/${campaign.id}`)} className="rounded-lg border border-border px-2 py-1 text-xs"><Pencil size={13} className="mr-1 inline" />编辑</UnifiedButton>
                   <PermissionGate permission="coupon.manage">
-                    <button type="button" onClick={() => setDeleteId(campaign.id)} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700"><Trash2 size={13} className="mr-1 inline" />删除</button>
+                    <UnifiedButton type="button" onClick={() => setDeleteId(campaign.id)} className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700"><Trash2 size={13} className="mr-1 inline" />删除</UnifiedButton>
                   </PermissionGate>
                 </div>
               </AdminTableCell>

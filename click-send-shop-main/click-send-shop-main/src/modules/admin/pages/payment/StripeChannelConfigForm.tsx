@@ -7,6 +7,7 @@ import {
   CHECKOUT_MODE_LABELS,
   formatPaymentConfigSummary,
 } from "@/utils/paymentAdminLabels";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function parseDraft(raw: string): Record<string, unknown> {
   const trimmed = raw.trim();
@@ -108,14 +109,14 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
           onChange={(e) => onDraftChange(e.target.value)}
         />
       </details>
-      <button
+      <UnifiedButton
         type="button"
         onClick={onSave}
         className="mt-2 inline-flex items-center gap-1 rounded-full bg-[var(--theme-price)]/15 px-3 py-1.5 text-xs font-medium text-[var(--theme-price)]"
       >
         <Save size={14} />
         <Tx>保存配置</Tx>
-      </button>
+      </UnifiedButton>
     </div>
   );
 }

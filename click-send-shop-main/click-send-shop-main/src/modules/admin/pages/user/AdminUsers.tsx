@@ -30,6 +30,7 @@ import {
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
 import AdminUserDetailDrawer from "@/modules/admin/pages/user/AdminUserDetailDrawer";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const USER_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left",
@@ -152,13 +153,13 @@ export default function AdminUsers() {
                 <p className="truncate text-sm font-semibold">{user.nickname || user.phone || user.id}</p>
                 <p className="text-xs text-muted-foreground">{user.phone || "-"}</p>
               </div>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => openUserDetail(user.id)}
                 className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
               >
                 {L("详情", "Details")}
-              </button>
+              </UnifiedButton>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               {user.member_level_name || user.memberLevel?.name || L("普通会员", "Regular member")} · {L("积分", "Points")} {user.points_balance ?? user.pointsBalance ?? 0}
@@ -190,14 +191,14 @@ export default function AdminUsers() {
         hint={<Tx>管理注册用户、标签与风控限制，支持高级筛选与导出。</Tx>}
         toolbar={(
           <PermissionGate permission="user.update">
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => setTagDialogOpen(true)}
               className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-3 py-2 text-sm font-medium hover:bg-secondary"
             >
               <Plus size={16} />
               <Tx>添加标签</Tx>
-            </button>
+            </UnifiedButton>
           </PermissionGate>
         )}
       filters={(
@@ -218,14 +219,14 @@ export default function AdminUsers() {
 
       <div className="space-y-2">
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setAdvancedFiltersOpen((v) => !v)}
             className="w-full text-left text-sm font-medium text-foreground"
             aria-expanded={advancedFiltersOpen}
           >
             {advancedFiltersOpen ? L("收起高级筛选", "Collapse advanced filters") : L("展开高级筛选", "Expand advanced filters")}
-          </button>
+          </UnifiedButton>
           {advancedFiltersOpen ? (
             <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 border-t border-[var(--theme-border)] pt-3 sm:grid-cols-2 lg:grid-cols-3">
               <AdminFilterSelect
@@ -487,14 +488,14 @@ export default function AdminUsers() {
                   </option>
                 ))}
               </select>
-              <button
+              <UnifiedButton
                 type="button"
                 disabled={batchTagMutation.isPending}
                 onClick={applyBatchTag}
                 className="min-h-[40px] rounded-lg bg-[var(--theme-price)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {L("批量打标", "Batch tag")}
-              </button>
+              </UnifiedButton>
             </div>
           </PermissionGate>
 
@@ -518,7 +519,7 @@ export default function AdminUsers() {
           {tags.map((tag) => {
             const active = selectedTagId === tag.id;
             return (
-              <button
+              <UnifiedButton
                 key={tag.id}
                 type="button"
                 onClick={() => toggleTagFilter(tag.id)}
@@ -530,7 +531,7 @@ export default function AdminUsers() {
               >
                 {tag.name}
                 <span className="opacity-70">({tag.count ?? 0})</span>
-              </button>
+              </UnifiedButton>
             );
           })}
         </div>
@@ -621,9 +622,9 @@ export default function AdminUsers() {
               {user.created_at ? formatDateTime(user.created_at) : "-"}
             </td>
             <td className={`px-4 py-3 ${adminTableAlignClass("right")}`}>
-              <button type="button" onClick={() => openUserDetail(user.id)} className="text-xs text-[var(--theme-price)] hover:underline">
+              <UnifiedButton type="button" onClick={() => openUserDetail(user.id)} className="text-xs text-[var(--theme-price)] hover:underline">
                 {L("详情", "Details")}
-              </button>
+              </UnifiedButton>
             </td>
           </>
         )}

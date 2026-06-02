@@ -1,6 +1,7 @@
 import type { ThemeSkin } from "@/types/theme";
 import { SCENE_TAG_LABELS } from "./themeStudioConstants";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type ThemeSkinSidebarProps = {
   skins: ThemeSkin[];
@@ -69,7 +70,7 @@ export default function ThemeSkinSidebar({
         />
 
         <div className="flex flex-wrap gap-1">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => onCategoryFilterChange("all")}
             className={`rounded-full px-2 py-0.5 text-[10px] ${
@@ -77,9 +78,9 @@ export default function ThemeSkinSidebar({
             }`}
           >
             全部
-          </button>
+          </UnifiedButton>
           {categoryOptions.map((category) => (
-            <button
+            <UnifiedButton
               key={category}
               type="button"
               onClick={() => onCategoryFilterChange(category)}
@@ -88,7 +89,7 @@ export default function ThemeSkinSidebar({
               }`}
             >
               {category}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
 
@@ -106,7 +107,7 @@ export default function ThemeSkinSidebar({
                   selected ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]/5 shadow-sm" : "border-border bg-background/60"
                 }`}
               >
-                <button type="button" className="w-full text-left" onClick={() => onSelect(skin.id)}>
+                <UnifiedButton type="button" className="w-full text-left" onClick={() => onSelect(skin.id)}>
                   <div className="flex items-start justify-between gap-2">
                     <p className="line-clamp-1 text-sm font-semibold text-foreground">{skin.name}</p>
                     <div className="flex shrink-0 gap-0.5">
@@ -129,7 +130,7 @@ export default function ThemeSkinSidebar({
                     ) : null}
                     <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">{category}</span>
                   </div>
-                </button>
+                </UnifiedButton>
               </article>
             );
           })}
@@ -137,7 +138,7 @@ export default function ThemeSkinSidebar({
           {filtered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-8 text-center">
               <p className="text-sm text-muted-foreground">没有匹配的皮肤</p>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => {
                   onSearchChange("");
@@ -146,7 +147,7 @@ export default function ThemeSkinSidebar({
                 className="mt-2 text-xs text-[var(--theme-primary)]"
               >
                 清空筛选
-              </button>
+              </UnifiedButton>
             </div>
           ) : null}
         </div>

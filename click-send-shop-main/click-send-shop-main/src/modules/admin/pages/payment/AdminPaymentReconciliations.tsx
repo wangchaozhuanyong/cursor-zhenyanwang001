@@ -34,6 +34,7 @@ import {
   adminTdClassName,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const RECONCILIATION_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "left", "right", "right", "right", "center",
@@ -178,7 +179,7 @@ export default function AdminPaymentReconciliations() {
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             />
           </label>
-          <button
+          <UnifiedButton
             type="button"
             onClick={() =>
               confirm({ title: tText("确认创建"),
@@ -190,7 +191,7 @@ export default function AdminPaymentReconciliations() {
             className="mt-4 inline-flex items-center gap-2 rounded-full bg-[var(--theme-price)] px-5 py-2.5 text-sm font-semibold btn-theme-gradient"
           >
             <Plus size={16} /><Tx> 创建草稿
-          </Tx></button>
+          </Tx></UnifiedButton>
         </div>
 
         <AnimatedTable

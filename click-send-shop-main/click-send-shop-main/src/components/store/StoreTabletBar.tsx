@@ -10,6 +10,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function preloadTabletRoute(path: string) {
   const base = path.split("?")[0];
@@ -77,7 +78,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
         <div className="min-w-0 flex-1" />
 
         {capabilities.mallEnabled ? (
-          <button
+          <UnifiedButton
             type="button"
             onMouseEnter={() => preloadTabletRoute("/search")}
             onFocus={() => preloadTabletRoute("/search")}
@@ -86,11 +87,11 @@ export default function StoreTabletBar({ className }: { className?: string }) {
             aria-label="搜索"
           >
             <Search size={18} />
-          </button>
+          </UnifiedButton>
         ) : null}
 
         {capabilities.mallEnabled ? (
-          <button
+          <UnifiedButton
             type="button"
             onMouseEnter={() => preloadTabletRoute("/cart")}
             onFocus={() => preloadTabletRoute("/cart")}
@@ -104,7 +105,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
                 {totalItems > 99 ? "99+" : totalItems}
               </span>
             ) : null}
-          </button>
+          </UnifiedButton>
         ) : null}
       </div>
     </header>

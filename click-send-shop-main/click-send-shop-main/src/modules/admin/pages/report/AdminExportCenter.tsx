@@ -28,6 +28,7 @@ import {
   adminTableTheadRow,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const EXPORT_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left", "left", "center", "right", "left", "left", "right",
@@ -146,7 +147,7 @@ export default function AdminExportCenter() {
       </div>
       {task.status === EXPORT_TASK_STATUS.SUCCESS ? (
         <div className="mt-3 border-t border-border pt-3">
-          <button type="button" onClick={() => handleDownload(task)} className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs text-theme-price hover:bg-secondary"><Tx>下载</Tx></button>
+          <UnifiedButton type="button" onClick={() => handleDownload(task)} className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs text-theme-price hover:bg-secondary"><Tx>下载</Tx></UnifiedButton>
         </div>
       ) : null}
     </AdminTableMobileCard>
@@ -156,9 +157,9 @@ export default function AdminExportCenter() {
     <AdminPageShell
       hint={<Tx>支持按报表类型与日期范围创建导出任务</Tx>}
       toolbar={(
-        <button type="button" onClick={() => void tasksQuery.refetch()} className="touch-manipulation rounded-xl border border-border p-2.5 text-muted-foreground hover:bg-secondary" title={tText("刷新")}>
+        <UnifiedButton type="button" onClick={() => void tasksQuery.refetch()} className="touch-manipulation rounded-xl border border-border p-2.5 text-muted-foreground hover:bg-secondary" title={tText("刷新")}>
           <RefreshCw size={16} />
-        </button>
+        </UnifiedButton>
       )}
     >
       <PermissionGate permission="report.export">
@@ -216,9 +217,9 @@ export default function AdminExportCenter() {
             <td className={adminTableCellClass("left", "text-xs text-muted-foreground whitespace-nowrap")}>{t.finished_at ? formatDateTime(t.finished_at) : "-"}</td>
             <td className={adminTableCellClass("right")}>
               {t.status === EXPORT_TASK_STATUS.SUCCESS ? (
-                <button type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-theme-price hover:bg-secondary" title={tText("下载")}>
+                <UnifiedButton type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-theme-price hover:bg-secondary" title={tText("下载")}>
                   <Download size={14} />
-                </button>
+                </UnifiedButton>
               ) : t.status === EXPORT_TASK_STATUS.PENDING ? <Loader2 size={14} className="animate-spin text-muted-foreground" /> : <span className="text-xs text-muted-foreground">-</span>}
             </td>
           </>

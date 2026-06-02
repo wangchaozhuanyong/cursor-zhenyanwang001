@@ -1,1 +1,0 @@
-import{n as e}from"./request-CniSumBJ.js";import{n as t}from"./responseNormalize-DuTzfQNf.js";function n(t=1){return e(`/invite/records`,{page:String(t)})}function r(){return e(`/invite/stats`)}async function i(){return(await r()).data}async function a(e=1){return t((await n(e)).data)}export{i as n,a as t};

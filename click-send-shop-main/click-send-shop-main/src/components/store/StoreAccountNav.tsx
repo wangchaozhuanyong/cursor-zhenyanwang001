@@ -5,6 +5,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { isLoggedIn } from "@/utils/token";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function isNavActive(pathname: string, path: string): boolean {
   const base = path.split("?")[0];
@@ -44,7 +45,7 @@ export default function StoreAccountNav({ className }: { className?: string }) {
       {items.map((item) => {
         const active = isNavActive(location.pathname, item.path);
         return (
-          <button
+          <UnifiedButton
             key={item.path}
             type="button"
             onClick={() => go(item.path, item.requireAuth)}
@@ -56,17 +57,17 @@ export default function StoreAccountNav({ className }: { className?: string }) {
             )}
           >
             {item.label}
-          </button>
+          </UnifiedButton>
         );
       })}
       {!loggedIn ? (
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => navigate("/login", { state: { from: "/profile" } })}
           className="mt-2 w-full rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]"
         >
           登录 / 注册
-        </button>
+        </UnifiedButton>
       ) : null}
     </nav>
   );

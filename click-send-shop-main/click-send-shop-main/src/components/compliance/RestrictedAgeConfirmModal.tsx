@@ -1,5 +1,6 @@
 import { AppModal } from "@/modules/micro-interactions";
 import { writeAgeGateConfirmation } from "@/utils/ageGate";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   open: boolean;
@@ -20,7 +21,7 @@ export default function RestrictedAgeConfirmModal({ open, requiredAge, onClose, 
       showHandle={false}
       stickyFooter
       footer={
-        <button
+        <UnifiedButton
           type="button"
           className="flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] text-sm font-semibold text-[var(--theme-primary-foreground)]"
           onClick={() => {
@@ -29,7 +30,7 @@ export default function RestrictedAgeConfirmModal({ open, requiredAge, onClose, 
           }}
         >
           确认我已满 {requiredAge} 岁
-        </button>
+        </UnifiedButton>
       }
     >
       <p className="text-sm leading-relaxed text-[var(--theme-text-muted)]">

@@ -32,6 +32,7 @@ import { THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals
 import { History, Package, SplitSquareHorizontal } from "lucide-react";
 import type { ReactNode } from "react";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type ListTabBase = {
   loading: boolean;
@@ -107,7 +108,7 @@ export function InventoryAlertsTab({
             <td className={adminTableCellClass("left", "text-xs text-muted-foreground")}>{row.expected_arrival_date || "-"}</td>
             <td className={adminTableCellClass("right")}>
               {row.alert_status !== "resolved" ? (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => onCreatePo({
                     alert: row,
@@ -119,7 +120,7 @@ export function InventoryAlertsTab({
                   className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
                 >
                   <Tx>生成采购单</Tx>
-                </button>
+                </UnifiedButton>
               ) : <span className="text-xs text-muted-foreground">-</span>}
             </td>
           </>
@@ -183,7 +184,7 @@ export function InventoryPurchaseOrdersTab({
             <td className={adminTableCellClass("right")}>RM {Number(row.total_amount || 0).toFixed(2)}</td>
             <td className={adminTableCellClass("right")}>
               {!["received", "cancelled"].includes(row.status) ? (
-                <button type="button" onClick={() => onReceive(row)} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>确认到货入库</Tx></button>
+                <UnifiedButton type="button" onClick={() => onReceive(row)} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>确认到货入库</Tx></UnifiedButton>
               ) : <span className="text-xs text-muted-foreground">-</span>}
             </td>
           </>
@@ -313,13 +314,13 @@ export function InventoryRulesTab({
             <td className={adminTableCellClass("right")}>
               <AdminRowActionsMenu
                 primary={(
-                  <button
+                  <UnifiedButton
                     type="button"
                     onClick={() => onEdit(row)}
                     className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-secondary px-2.5 text-xs font-medium text-foreground hover:bg-secondary/80"
                   >
                     <Tx>编辑</Tx>
-                  </button>
+                  </UnifiedButton>
                 )}
                 moreLabel={<Tx>更多</Tx>}
                 items={[

@@ -23,6 +23,7 @@ import {
   adminThClassName,
 } from "@/utils/adminTableClasses";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const statuses = ["", "pending", "approved", "executed", "failed", "cancelled"];
 const executableRepairTypes = new Set([
@@ -143,7 +144,7 @@ export default function AdminMonitoringRepairTasks() {
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatTime(task.created_at)}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatTime(task.executed_at)}</td>
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
-                  <button
+                  <UnifiedButton
                     type="button"
                     className={monitoringPrimaryButtonClass}
                     disabled={!canExecuteTask(task) || executingId === task.id}
@@ -151,7 +152,7 @@ export default function AdminMonitoringRepairTasks() {
                     title={!canExecuteTask(task) ? "此类任务需要人工确认处理，不能自动执行" : undefined}
                   >
                     {executeButtonLabel(task, executingId === task.id)}
-                  </button>
+                  </UnifiedButton>
                 </td>
               </tr>
             ))}
@@ -167,9 +168,9 @@ export default function AdminMonitoringRepairTasks() {
       <div className={`flex flex-col gap-2 text-sm ${monitoringMutedClass} sm:flex-row sm:items-center sm:justify-between`}>
         <span>共 {total} 条</span>
         <div className="flex gap-2">
-          <button type="button" className={monitoringSecondaryButtonClass} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><Tx>上一页</Tx></button>
+          <UnifiedButton type="button" className={monitoringSecondaryButtonClass} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><Tx>上一页</Tx></UnifiedButton>
           <span className="px-2 py-1">{page}</span>
-          <button type="button" className={monitoringSecondaryButtonClass} disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></button>
+          <UnifiedButton type="button" className={monitoringSecondaryButtonClass} disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></UnifiedButton>
         </div>
       </div>
     </AdminPageShell>

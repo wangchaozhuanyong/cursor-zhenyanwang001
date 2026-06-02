@@ -50,6 +50,7 @@ import {
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import AdminOrderDetailDrawer from "@/modules/admin/pages/order/AdminOrderDetailDrawer";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const ORDER_COLUMN_ALIGNS: AdminTableAlign[] = [
   "left",
@@ -227,20 +228,20 @@ export default function AdminOrders() {
     const buttons: React.ReactNode[] = [];
 
     buttons.push(
-      <button
+      <UnifiedButton
         key="detail"
         type="button"
         onClick={() => openOrderDetail(o.id)}
         className={`${baseBtn} border border-[var(--theme-border)] bg-[var(--theme-surface)] text-foreground hover:bg-[var(--theme-bg)]`}
       >
         <Tx>详情</Tx>
-      </button>,
+      </UnifiedButton>,
     );
 
     if (o.status === ORDER_STATUS.PENDING) {
       if (can("payment.manage")) {
         buttons.push(
-          <button
+          <UnifiedButton
             key="confirmPaid"
             type="button"
             onClick={() => confirmStatusChange(
@@ -253,12 +254,12 @@ export default function AdminOrders() {
             className={`${baseBtn} ${THEME_OUTLINE_SUCCESS}`}
           >
             <Tx>确认收款</Tx>
-          </button>,
+          </UnifiedButton>,
         );
       }
       if (can("order.update")) {
         buttons.push(
-          <button
+          <UnifiedButton
             key="cancel"
             type="button"
             onClick={() => confirmStatusChange(
@@ -272,13 +273,13 @@ export default function AdminOrders() {
             className={`${baseBtn} ${THEME_OUTLINE_DANGER}`}
           >
             <Tx>取消订单</Tx>
-          </button>,
+          </UnifiedButton>,
         );
       }
     } else if (o.status === ORDER_STATUS.PAID) {
       if (can("order.ship")) {
         buttons.push(
-          <button
+          <UnifiedButton
             key="ship"
             type="button"
             onClick={() => setShipTarget({ id: o.id, orderNo: o.order_no })}
@@ -286,13 +287,13 @@ export default function AdminOrders() {
           >
             <Truck size={14} aria-hidden />
             <Tx>发货</Tx>
-          </button>,
+          </UnifiedButton>,
         );
       }
     } else if (o.status === ORDER_STATUS.SHIPPED) {
       if (can("order.update")) {
         buttons.push(
-          <button
+          <UnifiedButton
             key="complete"
             type="button"
             onClick={() => confirmStatusChange(
@@ -305,13 +306,13 @@ export default function AdminOrders() {
             className={`${baseBtn} ${THEME_OUTLINE_SUCCESS}`}
           >
             <Tx>标记完成</Tx>
-          </button>,
+          </UnifiedButton>,
         );
       }
     }
 
     buttons.push(
-      <button
+      <UnifiedButton
         key="copyOrderNo"
         type="button"
         onClick={() => {
@@ -323,7 +324,7 @@ export default function AdminOrders() {
       >
         <Copy size={14} aria-hidden />
         <Tx>复制</Tx>
-      </button>,
+      </UnifiedButton>,
     );
 
     return buttons;
@@ -372,14 +373,14 @@ export default function AdminOrders() {
           />
         </td>
         <td className={`max-w-[10rem] whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("left")}`}>
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => openOrderDetail(o.id)}
             title={`${tText("订单号")}：${o.order_no}`}
             className="block min-w-0 max-w-[9.5rem] truncate text-left font-mono text-xs font-semibold text-[var(--theme-price)] hover:underline"
           >
             {o.order_no}
-          </button>
+          </UnifiedButton>
         </td>
         <td className={`max-w-[9rem] whitespace-nowrap px-4 py-2.5 align-middle text-xs text-muted-foreground ${adminTableAlignClass("left")}`}>
           <AdminTableCell value={formatDateTime(o.created_at)} columnKey="created_at" maxWidth="8.5rem" />
@@ -438,13 +439,13 @@ export default function AdminOrders() {
         <td className={`whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("right")}`}>
           <AdminRowActionsMenu
             primary={(
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => openOrderDetail(o.id)}
                 className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 text-xs font-medium text-foreground hover:bg-[var(--theme-bg)]"
               >
                 <Tx>详情</Tx>
-              </button>
+              </UnifiedButton>
             )}
             moreLabel={<Tx>更多</Tx>}
             items={buildOrderActionItems(o)}
@@ -480,13 +481,13 @@ export default function AdminOrders() {
                 <p className="truncate font-mono text-sm font-semibold">{o.order_no}</p>
                 <p className="text-xs text-muted-foreground">{formatDateTime(o.created_at)}</p>
               </div>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => openOrderDetail(o.id)}
                 className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
               >
                 <Tx>详情</Tx>
-              </button>
+              </UnifiedButton>
             </div>
           </div>
         </div>
@@ -535,7 +536,7 @@ export default function AdminOrders() {
         {stats.map((stat) => {
           const active = statusFilter === stat.status && !!stat.status;
           return (
-            <button
+            <UnifiedButton
               key={stat.label}
               type="button"
               onClick={() => applyQuickStatusFilter(stat.status)}
@@ -547,7 +548,7 @@ export default function AdminOrders() {
             >
               <p className="truncate text-sm font-bold text-foreground">{stat.value}</p>
               <p className="truncate text-[10px] text-muted-foreground">{stat.label}</p>
-            </button>
+            </UnifiedButton>
           );
         })}
       </div>
@@ -556,14 +557,14 @@ export default function AdminOrders() {
         <SearchBar placeholder={tText("搜索订单号、昵称、收货人、手机号、物流单号")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
         <AdminFilterSummaryBar chips={filterChips} onClearAll={() => clearFilters()} onRemove={handleRemoveFilterChip} />
         <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setAdvancedFiltersOpen((v) => !v)}
             className="w-full text-left text-sm font-medium text-foreground"
             aria-expanded={advancedFiltersOpen}
           >
             {advancedFiltersOpen ? tText("收起高级筛选") : tText("展开高级筛选")}
-          </button>
+          </UnifiedButton>
           {advancedFiltersOpen ? (
             <div className="mt-3 space-y-2 border-t border-[var(--theme-border)] pt-3">
               <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
@@ -635,7 +636,7 @@ export default function AdminOrders() {
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">{tText(`已选 ${selectedOrderIds.length} 单`)}</span>
-        <button
+        <UnifiedButton
           type="button"
           disabled={selectedOrderIds.length === 0 || exportingScope !== null}
           onClick={handleExportSelectedCsv}
@@ -643,15 +644,15 @@ export default function AdminOrders() {
         >
           {exportingScope === "selected" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
           {tText(`批量导出 (${selectedOrderIds.length})`)}
-        </button>
+        </UnifiedButton>
         {selectedOrderIds.length > 0 ? (
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setSelectedOrderIds([])}
             className="min-h-[36px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs font-medium transition hover:bg-[var(--theme-bg)]"
           >
             <Tx>清空选择</Tx>
-          </button>
+          </UnifiedButton>
         ) : null}
       </div>
 

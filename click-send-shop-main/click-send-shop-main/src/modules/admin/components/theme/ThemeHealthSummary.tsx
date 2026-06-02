@@ -3,6 +3,7 @@ import type { ThemeConfig } from "@/types/theme";
 import { getThemeHealthChecks } from "@/utils/themeContrast";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   config: ThemeConfig;
@@ -35,14 +36,14 @@ export default function ThemeHealthSummary({ config, onOptimizeTextContrast, onT
       </div>
       <div className="mt-2 flex flex-wrap gap-2">
         {onOptimizeTextContrast ? (
-          <button type="button" onClick={onOptimizeTextContrast} className="rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
+          <UnifiedButton type="button" onClick={onOptimizeTextContrast} className="rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
             一键优化文字对比度
-          </button>
+          </UnifiedButton>
         ) : null}
         {onToggleDetail ? (
-          <button type="button" onClick={onToggleDetail} className="rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
+          <UnifiedButton type="button" onClick={onToggleDetail} className="rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
             {detailOpen ? "收起详情" : "查看详情"}
-          </button>
+          </UnifiedButton>
         ) : null}
       </div>
     </div>

@@ -2,6 +2,7 @@ import { LayoutDashboard, Package, Settings } from "lucide-react";
 import type { ThemeConfig } from "@/types/theme";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const rows = [
   { id: "1001", name: "精选商品 A", status: "在售", amount: "RM 88.00" },
@@ -30,9 +31,9 @@ export default function AdminDashboardPreview({ config: _config }: { config: The
       <div className="min-w-0 flex-1 p-3">
         <div className="mb-3 flex items-center justify-between border-b border-[var(--theme-border)] pb-2">
           <span className="text-xs font-semibold"><Tx>商品列表</Tx></span>
-          <button type="button" className="rounded-md bg-[var(--theme-primary)] px-2 py-1 text-[10px] text-[var(--theme-primary-foreground)]"><Tx>
+          <UnifiedButton type="button" className="rounded-md bg-[var(--theme-primary)] px-2 py-1 text-[10px] text-[var(--theme-primary-foreground)]"><Tx>
             新建
-          </Tx></button>
+          </Tx></UnifiedButton>
         </div>
         <div className="mb-3 grid grid-cols-3 gap-2">
           {["今日订单", "销售额", "访客"].map((label) => (
@@ -47,9 +48,9 @@ export default function AdminDashboardPreview({ config: _config }: { config: The
             placeholder={tText("筛选商品...")}
             className="h-8 flex-1 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 text-[10px] outline-none"
           />
-          <button type="button" className="h-8 rounded-md border border-[var(--theme-border)] px-2 text-[10px]"><Tx>
+          <UnifiedButton type="button" className="h-8 rounded-md border border-[var(--theme-border)] px-2 text-[10px]"><Tx>
             筛选
-          </Tx></button>
+          </Tx></UnifiedButton>
         </div>
         <table className="admin-table-fixed w-full border-collapse text-[10px]">
           <thead>
@@ -84,12 +85,12 @@ export default function AdminDashboardPreview({ config: _config }: { config: The
           </tbody>
         </table>
         <div className="mt-3 flex gap-2">
-          <button type="button" className="rounded-md bg-[var(--theme-primary)] px-3 py-1.5 text-[10px] text-[var(--theme-primary-foreground)]"><Tx>
+          <UnifiedButton type="button" className="rounded-md bg-[var(--theme-primary)] px-3 py-1.5 text-[10px] text-[var(--theme-primary-foreground)]"><Tx>
             保存
-          </Tx></button>
-          <button type="button" className="rounded-md bg-[var(--theme-danger)] px-3 py-1.5 text-[10px] text-[var(--theme-danger-foreground)]"><Tx>
+          </Tx></UnifiedButton>
+          <UnifiedButton type="button" className="rounded-md bg-[var(--theme-danger)] px-3 py-1.5 text-[10px] text-[var(--theme-danger-foreground)]"><Tx>
             删除
-          </Tx></button>
+          </Tx></UnifiedButton>
         </div>
         <div className="mt-3 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2">
           <p className="text-[10px] font-medium"><Tx>弹窗示例</Tx></p>

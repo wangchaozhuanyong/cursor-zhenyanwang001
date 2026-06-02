@@ -22,6 +22,7 @@ import {
   adminThClassName,
 } from "@/utils/adminTableClasses";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function AdminMonitoringRuns() {
   const { tText } = useAdminT();
@@ -116,9 +117,9 @@ export default function AdminMonitoringRuns() {
       <div className={`flex flex-col gap-2 text-sm ${monitoringMutedClass} sm:flex-row sm:items-center sm:justify-between`}>
         <span>共 {total} 条</span>
         <div className="flex gap-2">
-          <button type="button" className={monitoringSecondaryButtonClass} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><Tx>上一页</Tx></button>
+          <UnifiedButton type="button" className={monitoringSecondaryButtonClass} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><Tx>上一页</Tx></UnifiedButton>
           <span className="px-2 py-1">{page}</span>
-          <button type="button" className={monitoringSecondaryButtonClass} disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></button>
+          <UnifiedButton type="button" className={monitoringSecondaryButtonClass} disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></UnifiedButton>
         </div>
       </div>
     </AdminPageShell>

@@ -4,6 +4,7 @@ import { Tx } from "@/components/admin/AdminText";
 import { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { adminFormInputCls, AdminInlineField } from "@/components/admin/forms/AdminFormFields";
 import { POINTS_ADJUST_FIELD_HINTS, POINTS_TAB_HINTS } from "@/modules/admin/pages/marketing/adminPointsHints";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   adjustForm: { userId: string; points: string; reason: string };
@@ -28,10 +29,10 @@ export default function PointsManualAdjustTab({ adjustForm, setAdjustForm, onSub
           <input className={adminFormInputCls} value={adjustForm.reason} onChange={(e) => setAdjustForm((s) => ({ ...s, reason: e.target.value }))} />
         </AdminInlineField>
       </div>
-      <button type="button" onClick={onSubmit} disabled={submitting} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground">
+      <UnifiedButton type="button" onClick={onSubmit} disabled={submitting} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground">
         <Save className="h-4 w-4" />
         <Tx>提交调整</Tx>
-      </button>
+      </UnifiedButton>
     </div>
   );
 }

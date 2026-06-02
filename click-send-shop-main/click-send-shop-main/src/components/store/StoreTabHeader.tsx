@@ -8,6 +8,7 @@ import { useNotificationStore } from "@/stores/useNotificationStore";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type StoreTabHeaderSearchMode = "navigate" | "filter" | "none";
 
@@ -65,7 +66,7 @@ export default function StoreTabHeader({
       )}
     >
       <div className="mx-auto flex h-[var(--store-tab-header-height)] w-full max-w-screen-xl items-center gap-3 px-[var(--store-page-x)] sm:px-4 md:px-6">
-        <button
+        <UnifiedButton
           type="button"
           className="flex shrink-0 cursor-pointer items-center gap-2 border-0 bg-transparent p-0"
           onClick={() => navigate("/")}
@@ -83,7 +84,7 @@ export default function StoreTabHeader({
             />
           ) : null}
           {showSiteName ? <span className={nameClass}>{siteName}</span> : null}
-        </button>
+        </UnifiedButton>
 
         {searchMode === "navigate" ? (
           <StoreSearchField

@@ -24,6 +24,7 @@ import {
   THEME_INVITE_PROMO_MUTED,
   THEME_INVITE_PROMO_SHELL,
 } from "@/utils/themeVisuals";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type CouponSource = "couponCenter" | "newUserGift" | "couponZone";
 type CouponRailItem = HomeCouponCardItem & { source: CouponSource; railKey: string };
@@ -242,14 +243,14 @@ export default function MarketingCouponRailSection({
             <Ticket className="h-5 w-5 shrink-0 text-[var(--theme-primary)]" />
             <span className="truncate">{sectionTitle}</span>
           </h2>
-          <button
+          <UnifiedButton
             type="button"
             onClick={openAllCoupons}
             className="inline-flex min-h-9 shrink-0 items-center gap-0.5 rounded-full px-2 text-xs font-semibold text-[var(--theme-primary)]"
           >
             全部优惠券
             <ChevronRight size={13} />
-          </button>
+          </UnifiedButton>
         </div>
 
         {isCouponSyncing && couponItems.length === 0 ? (
@@ -317,7 +318,7 @@ function GiftIntroCard({
 }) {
   if (!payload) return null;
   return (
-    <button
+    <UnifiedButton
       type="button"
       onClick={onClick}
       className={`store-coupon-rail-card flex min-h-[6.75rem] w-[min(78vw,300px)] shrink-0 snap-start items-center gap-3 rounded-xl border border-[var(--theme-border)] p-3 text-left ${THEME_INVITE_PROMO_SHELL}`}
@@ -337,7 +338,7 @@ function GiftIntroCard({
           <ChevronRight size={13} />
         </span>
       </span>
-    </button>
+    </UnifiedButton>
   );
 }
 
@@ -363,21 +364,21 @@ function FallbackCard({
           {usableCount > 0 ? "已领取的券可以下单时使用。" : "有新活动时这里会继续展示。"}
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={onCoupons}
             className="rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
           >
             查看券包
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             onClick={onShopping}
             className="inline-flex items-center gap-1 rounded-full border border-[var(--theme-border)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-text-on-surface)]"
           >
             <ShoppingBag size={13} />
             去逛逛
-          </button>
+          </UnifiedButton>
         </div>
       </div>
     </div>

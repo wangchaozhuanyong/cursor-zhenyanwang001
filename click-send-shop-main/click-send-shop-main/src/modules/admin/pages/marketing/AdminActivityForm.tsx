@@ -42,6 +42,7 @@ import {
   useActivitySave,
   validateActivityForm,
 } from "./activityFormLogic";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function productLabel(product: Product | undefined, id: string) {
   return product?.name || `商品 ${id}`;
@@ -370,13 +371,13 @@ export default function AdminActivityForm() {
     <AdminPageShell
       hint={<Tx>状态：{tText(statusLabel)}</Tx>}
       toolbar={(
-        <button type="button" onClick={() => navigate(-1)} className="text-sm text-muted-foreground"><Tx>返回</Tx></button>
+        <UnifiedButton type="button" onClick={() => navigate(-1)} className="text-sm text-muted-foreground"><Tx>返回</Tx></UnifiedButton>
       )}
       filters={(
       <div className="-mx-1 overflow-x-auto pb-1 lg:hidden">
         <div className="flex w-max gap-2 px-1">
           {ACTIVITY_FORM_STEPS.map((s, i) => (
-            <button
+            <UnifiedButton
               key={s}
               type="button"
               onClick={() => setStep(i)}
@@ -385,7 +386,7 @@ export default function AdminActivityForm() {
               }`}
             >
               {i + 1}. {tText(getStepLabel(i, form.type))}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
       </div>
@@ -394,9 +395,9 @@ export default function AdminActivityForm() {
       <div className="grid gap-4 lg:grid-cols-[220px_1fr_340px]">
         <div className="hidden rounded-xl border border-border bg-card p-3 lg:block">
           {ACTIVITY_FORM_STEPS.map((s, i) => (
-            <button key={s} onClick={() => setStep(i)} className={`mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm ${i === step ? "bg-gold/15 text-theme-price" : "text-muted-foreground hover:bg-secondary"}`}>
+            <UnifiedButton key={s} onClick={() => setStep(i)} className={`mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm ${i === step ? "bg-gold/15 text-theme-price" : "text-muted-foreground hover:bg-secondary"}`}>
               {i + 1}. {tText(getStepLabel(i, form.type))}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
 
@@ -408,7 +409,7 @@ export default function AdminActivityForm() {
                 { k: "full_reduction" as const, t: "满减活动", d: "按门槛减免" },
                 { k: "points_bonus" as const, t: "积分多倍活动", d: "下单可获得额外积分倍率" },
               ].map((x) => (
-                <button
+                <UnifiedButton
                   key={x.k}
                   type="button"
                   onClick={() =>
@@ -435,7 +436,7 @@ export default function AdminActivityForm() {
                 >
                   <p className="font-semibold">{tText(x.t)}</p>
                   <p className="text-xs text-muted-foreground">{tText(x.d)}</p>
-                </button>
+                </UnifiedButton>
               ))}
             </div>
           )}
@@ -458,7 +459,7 @@ export default function AdminActivityForm() {
                 <>
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-muted-foreground"><Tx>活动商品配置</Tx></p>
-                    <button type="button" onClick={() => setPickerOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-sm"><Tx>选择商品</Tx></button>
+                    <UnifiedButton type="button" onClick={() => setPickerOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-sm"><Tx>选择商品</Tx></UnifiedButton>
                   </div>
                   <AdminNativeTable tableClassName="min-w-[720px] text-sm">
                       <thead className="bg-secondary/60">
@@ -481,7 +482,7 @@ export default function AdminActivityForm() {
                             <td className={adminTdClassName(undefined, "right")}>{it.product_stock ?? "-"}</td>
                             <td className={adminTdClassName(undefined, "right")}><input type="number" value={it.activity_stock} onChange={(e) => updateItem(idx, { activity_stock: Number(e.target.value) })} className="ml-auto block w-24 rounded bg-secondary px-2 py-1 text-right" /></td>
                             <td className={adminTdClassName(undefined, "right")}><input type="number" value={it.limit_per_user} onChange={(e) => updateItem(idx, { limit_per_user: Number(e.target.value) })} className="ml-auto block w-20 rounded bg-secondary px-2 py-1 text-right" /></td>
-                            <td className={adminTdClassName(undefined, "right")}><button type="button" onClick={() => setForm((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))} className="text-xs text-muted-foreground"><Tx>删除</Tx></button></td>
+                            <td className={adminTdClassName(undefined, "right")}><UnifiedButton type="button" onClick={() => setForm((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))} className="text-xs text-muted-foreground"><Tx>删除</Tx></UnifiedButton></td>
                           </tr>
                         ))}
                       </tbody>
@@ -557,10 +558,10 @@ export default function AdminActivityForm() {
                     <div key={idx} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
                       <label className="text-sm"><Tx>满减门槛</Tx><input type="number" value={r.threshold_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, threshold_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
                       <label className="text-sm"><Tx>减免金额</Tx><input type="number" value={r.discount_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, discount_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-                      <button type="button" onClick={() => setFullReductionRules(fullReductionRules.filter((_, i) => i !== idx))} className="mt-7 rounded border border-border px-2 py-1 text-xs"><Tx>删除</Tx></button>
+                      <UnifiedButton type="button" onClick={() => setFullReductionRules(fullReductionRules.filter((_, i) => i !== idx))} className="mt-7 rounded border border-border px-2 py-1 text-xs"><Tx>删除</Tx></UnifiedButton>
                     </div>
                   ))}
-                  <button type="button" onClick={() => setFullReductionRules([...fullReductionRules, { threshold_amount: 0, discount_amount: 0 }])} className="rounded border border-border px-3 py-1 text-sm"><Tx>新增一档</Tx></button>
+                  <UnifiedButton type="button" onClick={() => setFullReductionRules([...fullReductionRules, { threshold_amount: 0, discount_amount: 0 }])} className="rounded border border-border px-3 py-1 text-sm"><Tx>新增一档</Tx></UnifiedButton>
                 </div>
               )}
 
@@ -599,7 +600,7 @@ export default function AdminActivityForm() {
                   ].map((option) => {
                     const active = (form.scope_type || "product") === option.value;
                     return (
-                      <button
+                      <UnifiedButton
                         key={option.value}
                         type="button"
                         onClick={() => handleScopeTypeChange(option.value)}
@@ -607,7 +608,7 @@ export default function AdminActivityForm() {
                       >
                         <span className="block text-sm font-semibold">{tText(option.title)}</span>
                         <span className="mt-1 block text-xs text-muted-foreground">{tText(option.desc)}</span>
-                      </button>
+                      </UnifiedButton>
                     );
                   })}
                 </div>
@@ -620,7 +621,7 @@ export default function AdminActivityForm() {
                       <p className="text-sm font-medium"><Tx>选择分类</Tx></p>
                       <p className="mt-1 text-xs text-muted-foreground"><Tx>可按分类名称搜索，勾选后自动加入活动范围。</Tx></p>
                     </div>
-                    <button type="button" onClick={clearScopeIds} disabled={!selectedScopeIds.length} className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-50"><Tx>清空已选</Tx></button>
+                    <UnifiedButton type="button" onClick={clearScopeIds} disabled={!selectedScopeIds.length} className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-50"><Tx>清空已选</Tx></UnifiedButton>
                   </div>
                   <AdminSearchInput
                     value={scopeKeyword}
@@ -653,7 +654,7 @@ export default function AdminActivityForm() {
                       <p className="text-sm font-medium"><Tx>选择商品</Tx></p>
                       <p className="mt-1 text-xs text-muted-foreground"><Tx>可按商品名称搜索，勾选后自动加入活动范围。</Tx></p>
                     </div>
-                    <button type="button" onClick={clearScopeIds} disabled={!selectedScopeIds.length} className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-50"><Tx>清空已选</Tx></button>
+                    <UnifiedButton type="button" onClick={clearScopeIds} disabled={!selectedScopeIds.length} className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-50"><Tx>清空已选</Tx></UnifiedButton>
                   </div>
                   <AdminSearchInput
                     value={scopeKeyword}
@@ -700,7 +701,7 @@ export default function AdminActivityForm() {
                         ? categoryLabel(categoryById.get(id), id)
                         : productLabel(productById.get(id), id);
                       return (
-                        <button
+                        <UnifiedButton
                           key={id}
                           type="button"
                           onClick={() => toggleScopeId(id, false)}
@@ -708,7 +709,7 @@ export default function AdminActivityForm() {
                           title={tText("点击移除")}
                         >
                           {label} ×
-                        </button>
+                        </UnifiedButton>
                       );
                     })}
                     {selectedScopeIds.length > 12 ? <span className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground">还有 {selectedScopeIds.length - 12} 项</span> : null}
@@ -743,14 +744,14 @@ export default function AdminActivityForm() {
                 {invalidDisplayPositions.length ? (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {invalidDisplayPositions.map((position) => (
-                      <button
+                      <UnifiedButton
                         key={position}
                         type="button"
                         onClick={() => setForm((p) => ({ ...p, display_positions: (p.display_positions || []).filter((item) => item !== position) }))}
                         className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs text-destructive"
                       >
                         {tText(DISPLAY_POSITION_LABELS[position as DisplayPosition] || position)} ×
-                      </button>
+                      </UnifiedButton>
                     ))}
                   </div>
                 ) : null}
@@ -780,11 +781,11 @@ export default function AdminActivityForm() {
       </div>
 
       <div className={`${pickerOpen ? "hidden" : "flex"} sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 flex-wrap justify-end gap-2 rounded-xl border border-border bg-card/95 p-3 backdrop-blur-md lg:bottom-0`}>
-        <button onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>上一步</Tx></button>
+        <UnifiedButton onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>上一步</Tx></UnifiedButton>
         <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm"><Tx>保存草稿</Tx></LoadingButton>
-        <button onClick={() => setStep((s) => Math.min(ACTIVITY_FORM_STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>下一步</Tx></button>
+        <UnifiedButton onClick={() => setStep((s) => Math.min(ACTIVITY_FORM_STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>下一步</Tx></UnifiedButton>
         <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="发布中..." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold"><Tx>发布活动</Tx></LoadingButton>
-        <button onClick={() => navigate("/admin/marketing/activities")} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>取消</Tx></button>
+        <UnifiedButton onClick={() => navigate("/admin/marketing/activities")} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>取消</Tx></UnifiedButton>
       </div>
 
       <AnimatedConfirmDialog

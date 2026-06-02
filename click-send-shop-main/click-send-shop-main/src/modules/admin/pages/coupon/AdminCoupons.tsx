@@ -27,6 +27,7 @@ import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 import { adminTableCellClass, adminTableTheadRow, type AdminTableAlign } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const COUPON_COLUMN_ALIGNS: AdminTableAlign[] = ["left", "center", "left", "right", "right", "left", "center", "right"];
 
@@ -197,12 +198,12 @@ export default function AdminCoupons() {
           </AdminTableMobileCardField>
         </div>
         <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-          <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>编辑</Tx></button>
+          <UnifiedButton type="button" onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>编辑</Tx></UnifiedButton>
           <PermissionGate permission="coupon.manage">
-            <button type="button" onClick={() => setIssueCouponId(coupon.id)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>发券</Tx></button>
-            <button type="button" onClick={() => setOperation({ coupon, type: "pause-claim" })} className="touch-manipulation rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><PauseCircle size={13} className="mr-1 inline" /><Tx>暂停领取</Tx></button>
-            <button type="button" onClick={() => setOperation({ coupon, type: "disable-use" })} className={`touch-manipulation rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_DANGER}`}><Ban size={13} className="mr-1 inline" /><Tx>停止使用</Tx></button>
-            <button type="button" onClick={() => setDeleteId(coupon.id)} className={`touch-manipulation rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_DANGER}`}><Trash2 size={13} className="inline" /></button>
+            <UnifiedButton type="button" onClick={() => setIssueCouponId(coupon.id)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>发券</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => setOperation({ coupon, type: "pause-claim" })} className="touch-manipulation rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><PauseCircle size={13} className="mr-1 inline" /><Tx>暂停领取</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => setOperation({ coupon, type: "disable-use" })} className={`touch-manipulation rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_DANGER}`}><Ban size={13} className="mr-1 inline" /><Tx>停止使用</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => setDeleteId(coupon.id)} className={`touch-manipulation rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_DANGER}`}><Trash2 size={13} className="inline" /></UnifiedButton>
           </PermissionGate>
         </div>
       </AdminTableMobileCard>
@@ -214,9 +215,9 @@ export default function AdminCoupons() {
       hint={<Tx>管理优惠券、发放与有效期。</Tx>}
       toolbar={(
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></button>
+          <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></UnifiedButton>
           <PermissionGate permission="coupon.manage">
-            <button type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={16} /><Tx>新建优惠券</Tx></button>
+            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={16} /><Tx>新建优惠券</Tx></UnifiedButton>
           </PermissionGate>
         </div>
       )}
@@ -259,7 +260,7 @@ export default function AdminCoupons() {
               <td className={adminTableCellClass("right")}>
                 <AdminRowActionsMenu
                   primary={(
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)}
                       className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
@@ -267,7 +268,7 @@ export default function AdminCoupons() {
                     >
                       <Pencil size={13} className="mr-1 inline" />
                       <Tx>编辑</Tx>
-                    </button>
+                    </UnifiedButton>
                   )}
                   moreLabel={<Tx>更多</Tx>}
                   items={[

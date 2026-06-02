@@ -56,6 +56,7 @@ import {
   adminTableHeadCellClass,
   type AdminTableAlign,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const REVIEW_TABLE_HEADERS = [
   "用户", "星级", "评论内容", "商品", "状态", "官方回复", "时间", "操作",
@@ -416,7 +417,7 @@ export default function AdminReviews() {
                       {r.is_verified_purchase && (
                         <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_SUCCESS}`}>已购评价{r.order_id ? ` · ${r.order_id.slice(-8)}` : ""}</span>
                       )}
-                      <button type="button" onClick={() => openDetail(r.id)} className="block w-full text-left text-sm text-foreground leading-relaxed hover:text-theme-price">{r.content}</button>
+                      <UnifiedButton type="button" onClick={() => openDetail(r.id)} className="block w-full text-left text-sm text-foreground leading-relaxed hover:text-theme-price">{r.content}</UnifiedButton>
                       {r.images?.length > 0 && (
                         <div className="flex gap-1.5 overflow-x-auto">
                           {r.images.map((img, i) => <img key={i} src={img} alt={`${r.product_name || "商品"} 评价图片 ${i + 1}`} className="h-14 w-14 rounded-lg object-cover" />)}
@@ -430,68 +431,68 @@ export default function AdminReviews() {
                         </div>
                       )}
                       <div className="flex flex-wrap gap-2 pt-1">
-                        <button type="button" onClick={() => openDetail(r.id)} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                        <UnifiedButton type="button" onClick={() => openDetail(r.id)} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
                           <Info size={12} className="mr-1 inline" /><Tx>详情</Tx>
-                        </button>
+                        </UnifiedButton>
                         {r.status === "pending" && (
                           <PermissionGate anyOf={REVIEW_MODERATE}>
-                            <button type="button" onClick={() => handleApprove(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg px-3 py-1.5 text-xs ${THEME_OUTLINE_SUCCESS}`}>
+                            <UnifiedButton type="button" onClick={() => handleApprove(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg px-3 py-1.5 text-xs ${THEME_OUTLINE_SUCCESS}`}>
                               <Check size={12} className="mr-1 inline" /><Tx>通过</Tx>
-                            </button>
-                            <button type="button" onClick={() => handleReject(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg px-3 py-1.5 text-xs ${THEME_OUTLINE_WARNING}`}>
+                            </UnifiedButton>
+                            <UnifiedButton type="button" onClick={() => handleReject(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg px-3 py-1.5 text-xs ${THEME_OUTLINE_WARNING}`}>
                               <XCircle size={12} className="mr-1 inline" /><Tx>拒绝</Tx>
-                            </button>
+                            </UnifiedButton>
                           </PermissionGate>
                         )}
                         {r.status === "rejected" && (
                           <>
                             <PermissionGate anyOf={REVIEW_REPLY}>
-                              <button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                              <UnifiedButton type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
                                 <MessageSquare size={12} className="mr-1 inline" /><Tx>回复</Tx>
-                              </button>
+                              </UnifiedButton>
                             </PermissionGate>
                             <PermissionGate anyOf={REVIEW_DELETE}>
-                              <button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
+                              <UnifiedButton type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
                                 <Trash2 size={12} className="mr-1 inline" /><Tx>删除</Tx>
-                              </button>
+                              </UnifiedButton>
                             </PermissionGate>
                           </>
                         )}
                         {r.status !== "deleted" && r.status !== "pending" && r.status !== "rejected" && (
                           <>
                             <PermissionGate anyOf={REVIEW_FEATURE}>
-                              <button type="button" onClick={() => confirm({ title: tText("确认操作"), description: "确定切换该评论的精选状态？", onConfirm: () => handleToggleFeatured(r.id) })} className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-theme-price" : "border-border"}`}>
+                              <UnifiedButton type="button" onClick={() => confirm({ title: tText("确认操作"), description: "确定切换该评论的精选状态？", onConfirm: () => handleToggleFeatured(r.id) })} className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-theme-price" : "border-border"}`}>
                                 <Sparkles size={12} className="mr-1 inline" />{r.is_featured ? "已精选" : "设精选"}
-                              </button>
+                              </UnifiedButton>
                             </PermissionGate>
                             <PermissionGate anyOf={REVIEW_MODERATE}>
-                              <button type="button" onClick={() => confirm({ title: tText("确认操作"), description: "确定切换该评论的显示状态？", onConfirm: () => handleToggle(r.id) })} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                              <UnifiedButton type="button" onClick={() => confirm({ title: tText("确认操作"), description: "确定切换该评论的显示状态？", onConfirm: () => handleToggle(r.id) })} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
                                 {r.status === "hidden" ? <><Eye size={12} className="mr-1 inline" /><Tx>显示</Tx></> : <><EyeOff size={12} className="mr-1 inline" /><Tx>隐藏</Tx></>}
-                              </button>
+                              </UnifiedButton>
                             </PermissionGate>
                             <PermissionGate anyOf={REVIEW_REPLY}>
-                              <button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                              <UnifiedButton type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
                                 <MessageSquare size={12} className="mr-1 inline" /><Tx>回复</Tx>
-                              </button>
+                              </UnifiedButton>
                             </PermissionGate>
                             {r.rating <= 2 && (
                               <PermissionGate anyOf={REVIEW_MODERATE}>
-                                <button type="button" onClick={() => { setComplaintTarget(r); setComplaintForm({ status: (r.complaint_status as ComplaintStatus) || "pending", note: r.complaint_note || "" }); }} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"><Tx>差评</Tx></button>
+                                <UnifiedButton type="button" onClick={() => { setComplaintTarget(r); setComplaintForm({ status: (r.complaint_status as ComplaintStatus) || "pending", note: r.complaint_note || "" }); }} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"><Tx>差评</Tx></UnifiedButton>
                               </PermissionGate>
                             )}
                             <PermissionGate anyOf={REVIEW_DELETE}>
-                              <button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
+                              <UnifiedButton type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
                                 <Trash2 size={12} className="mr-1 inline" /><Tx>删除</Tx>
-                              </button>
+                              </UnifiedButton>
                             </PermissionGate>
                           </>
                         )}
                         {r.status === "deleted" && (
                           <PermissionGate anyOf={REVIEW_DELETE}>
-                            <button type="button" onClick={() => handleRestore(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg border border-[var(--theme-border)] px-3 py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
+                            <UnifiedButton type="button" onClick={() => handleRestore(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg border border-[var(--theme-border)] px-3 py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
                               <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复</Tx>
-                            </button>
-                            <button type="button" onClick={() => confirmPermanentDelete(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}><Tx>彻底删除</Tx></button>
+                            </UnifiedButton>
+                            <UnifiedButton type="button" onClick={() => confirmPermanentDelete(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}><Tx>彻底删除</Tx></UnifiedButton>
                           </PermissionGate>
                         )}
                       </div>
@@ -507,7 +508,7 @@ export default function AdminReviews() {
       <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
         <AlertTriangle size={32} />
         <p>{error}</p>
-        <button type="button" onClick={() => void listQuery.refetch()} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>重试</Tx></button>
+        <UnifiedButton type="button" onClick={() => void listQuery.refetch()} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>重试</Tx></UnifiedButton>
       </div>
     );
   }
@@ -604,14 +605,14 @@ export default function AdminReviews() {
           <span className="text-sm font-medium text-foreground">已选 {selected.length} 项</span>
           <span className="h-4 w-px bg-border" />
           <PermissionGate anyOf={REVIEW_MODERATE}>
-            <button type="button" onClick={() => confirm({ title: tText("确认批量隐藏"), description: `确定隐藏选中的 ${selected.length} 条评论？`, confirmText: "隐藏", onConfirm: () => handleBatchHide() })} className="touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:bg-secondary">
+            <UnifiedButton type="button" onClick={() => confirm({ title: tText("确认批量隐藏"), description: `确定隐藏选中的 ${selected.length} 条评论？`, confirmText: "隐藏", onConfirm: () => handleBatchHide() })} className="touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:bg-secondary">
               <EyeOff size={14} /><Tx>批量隐藏</Tx>
-            </button>
+            </UnifiedButton>
           </PermissionGate>
           <PermissionGate anyOf={REVIEW_DELETE}>
-            <button type="button" onClick={() => confirm({ title: tText("确认批量删除"), description: `确定删除选中的 ${selected.length} 条评论？`, confirmText: "删除", danger: true, onConfirm: () => handleBatchDelete() })} className={`touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
+            <UnifiedButton type="button" onClick={() => confirm({ title: tText("确认批量删除"), description: `确定删除选中的 ${selected.length} 条评论？`, confirmText: "删除", danger: true, onConfirm: () => handleBatchDelete() })} className={`touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
               <Trash2 size={14} /><Tx>批量删除</Tx>
-            </button>
+            </UnifiedButton>
           </PermissionGate>
         </div>
       )}
@@ -665,9 +666,9 @@ export default function AdminReviews() {
                 </td>
                 <td className={adminTableCellClass("center", "px-3 py-3")}><StarRating rating={r.rating} /></td>
                 <td className={adminTableCellClass("left", "max-w-[12rem] px-3 py-3")}>
-                  <button type="button" onClick={() => openDetail(r.id)} className="block w-full min-w-0 text-left">
+                  <UnifiedButton type="button" onClick={() => openDetail(r.id)} className="block w-full min-w-0 text-left">
                     <AdminTableCell value={r.content} fullText={r.content} maxWidth="11rem" />
-                  </button>
+                  </UnifiedButton>
                   {r.is_verified_purchase && <p className={`mt-0.5 text-[10px] ${THEME_TEXT_SUCCESS_SOFT}`}><Tx>已购</Tx></p>}
                   {r.images?.length > 0 && (
                     <div className="mt-1 flex gap-1">
@@ -690,7 +691,7 @@ export default function AdminReviews() {
                 <td className={adminTableCellClass("right", "px-3 py-3")}>
                   <AdminRowActionsMenu
                     primary={(
-                      <button
+                      <UnifiedButton
                         type="button"
                         onClick={() => openDetail(r.id)}
                         className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
@@ -698,7 +699,7 @@ export default function AdminReviews() {
                       >
                         <Info size={14} className="mr-1 inline" />
                         <Tx>详情</Tx>
-                      </button>
+                      </UnifiedButton>
                     )}
                     moreLabel={<Tx>更多</Tx>}
                     items={[

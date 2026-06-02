@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 import { isChunkLoadFailure, recoverFromChunkLoadError } from "@/lib/browserBoot";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface Props {
   children: ReactNode;
@@ -67,13 +68,13 @@ export default class ErrorBoundary extends Component<Props, State> {
             ) : null}
           </div>
           <div className="flex flex-wrap justify-center gap-3">
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => window.location.reload()}
               className="inline-flex items-center gap-2 rounded-full btn-theme-price px-6 py-3 text-sm font-bold text-primary-foreground"
             >
               <RefreshCw size={16} /> 刷新页面
-            </button>
+            </UnifiedButton>
             <a
               href={homeHref}
               className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground"

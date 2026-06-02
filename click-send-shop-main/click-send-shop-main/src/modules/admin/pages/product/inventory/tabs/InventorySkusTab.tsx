@@ -17,6 +17,7 @@ import { Package } from "lucide-react";
 import { THEME_BADGE_SUCCESS, THEME_BADGE_WARNING, THEME_TEXT_DANGER, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
 import type { UseMutationResult } from "@tanstack/react-query";
 import type { ReactNode } from "react";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   skus: InventorySku[];
@@ -163,9 +164,9 @@ export default function InventorySkusTab({
               </td>
               <td className={inventorySkuTd()}>
                 <div className="inline-flex flex-nowrap items-center justify-end gap-1.5">
-                  <button type="button" onClick={() => onAdjust(emptyAdjust(sku, "in"))} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>入库</Tx></button>
-                  <button type="button" onClick={() => onAdjust(emptyAdjust(sku, "out"))} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>出库</Tx></button>
-                  <button type="button" onClick={() => onAdjust(emptyAdjust(sku, "adjust", String(sku.stock)))} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></button>
+                  <UnifiedButton type="button" onClick={() => onAdjust(emptyAdjust(sku, "in"))} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>入库</Tx></UnifiedButton>
+                  <UnifiedButton type="button" onClick={() => onAdjust(emptyAdjust(sku, "out"))} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>出库</Tx></UnifiedButton>
+                  <UnifiedButton type="button" onClick={() => onAdjust(emptyAdjust(sku, "adjust", String(sku.stock)))} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></UnifiedButton>
                 </div>
               </td>
             </>

@@ -5,6 +5,7 @@ import type { ThemeConfig } from "@/types/theme";
 import { previewProduct } from "./themePreviewData";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function PreviewBtn({
   children,
@@ -20,12 +21,12 @@ function PreviewBtn({
     ghost: "border border-[var(--theme-border)] text-[var(--theme-text)] bg-transparent",
   };
   return (
-    <button
+    <UnifiedButton
       type="button"
       className={`inline-flex h-9 flex-1 items-center justify-center rounded-[var(--theme-button-radius)] px-3 text-xs font-semibold ${map[variant]}`}
     >
       {children}
-    </button>
+    </UnifiedButton>
   );
 }
 
@@ -58,7 +59,7 @@ export default function ProductDetailPreview({ config }: { config: ThemeConfig }
           <p className="text-xs font-medium text-[var(--theme-text)]"><Tx>规格</Tx></p>
           <div className="flex flex-wrap gap-2">
             {["标准装", "家庭装"].map((s, i) => (
-              <button
+              <UnifiedButton
                 key={s}
                 type="button"
                 className={`rounded-[var(--theme-radius)] border px-3 py-1 text-xs ${
@@ -68,32 +69,32 @@ export default function ProductDetailPreview({ config }: { config: ThemeConfig }
                 }`}
               >
                 {s}
-              </button>
+              </UnifiedButton>
             ))}
           </div>
           <p className="text-xs font-medium text-[var(--theme-text)]"><Tx>数量</Tx></p>
           <div className="flex items-center gap-3">
-            <button
+            <UnifiedButton
               type="button"
               className="flex h-8 w-8 items-center justify-center rounded border border-[var(--theme-border)]"
             >
               <Minus size={14} />
-            </button>
+            </UnifiedButton>
             <span className="text-sm">1</span>
-            <button
+            <UnifiedButton
               type="button"
               className="flex h-8 w-8 items-center justify-center rounded border border-[var(--theme-border)]"
             >
               <Plus size={14} />
-            </button>
+            </UnifiedButton>
           </div>
         </div>
-        <button
+        <UnifiedButton
           type="button"
           className="flex w-full items-center justify-center gap-1 rounded-lg border border-[var(--theme-border)] py-2 text-xs text-[var(--theme-text-muted)]"
         >
           <Heart size={14} /><Tx> 收藏
-        </Tx></button>
+        </Tx></UnifiedButton>
       </div>
       <div
         className="sticky bottom-0 left-0 right-0 z-10 flex gap-2 border-t border-[var(--theme-border)] bg-[var(--theme-surface)] p-3"

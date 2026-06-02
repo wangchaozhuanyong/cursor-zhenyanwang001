@@ -1,1 +1,0 @@
-System.register([],function(e,t){return{setters:[],execute:function(){e("t","117 / 50"),["1200×512","1170×500","1600×684","750×320"].join(" / "),e("r",1200),e("n",Math.round(1200/2.34)),e("i","h-[calc((100vw-2rem)*50/117)] max-h-52 min-h-32")}}});

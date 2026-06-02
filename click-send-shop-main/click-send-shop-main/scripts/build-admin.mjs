@@ -28,8 +28,8 @@ function runNodeScript(args, env = process.env) {
 }
 
 async function restoreStorefrontDist(hasProtectedDist) {
-  await rm(storefrontDist, { recursive: true, force: true });
-  if (hasProtectedDist) {
+  if (hasProtectedDist && existsSync(protectedStorefrontDist)) {
+    await rm(storefrontDist, { recursive: true, force: true });
     await cp(protectedStorefrontDist, storefrontDist, { recursive: true });
     await rm(protectedStorefrontDist, { recursive: true, force: true });
   }

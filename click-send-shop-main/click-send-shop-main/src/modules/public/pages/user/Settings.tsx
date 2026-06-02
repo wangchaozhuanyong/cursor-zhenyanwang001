@@ -24,6 +24,7 @@ import {
   type SupportedCountryCode,
 } from "@/utils/authValidation";
 import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birthday";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
@@ -185,7 +186,7 @@ export default function Settings() {
               </div>
             )}
 
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={profileSaving}
@@ -194,7 +195,7 @@ export default function Settings() {
             >
               <Camera size={16} />
               {profileSaving ? "保存中..." : "更换头像"}
-            </button>
+            </UnifiedButton>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
           </div>
         </section>
@@ -224,16 +225,16 @@ export default function Settings() {
             ) : null}
             <div className="mt-4">
               {wechatBinding.bound ? (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={handleUnbindWechat}
                   disabled={wechatActionLoading}
                   className="w-full rounded-xl border border-[color-mix(in_srgb,var(--theme-danger)_35%,transparent)] py-2.5 text-sm font-medium text-[var(--theme-danger)] disabled:opacity-60"
                 >
                   {wechatActionLoading ? "处理中..." : "解绑微信"}
-                </button>
+                </UnifiedButton>
               ) : (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={handleBindWechat}
                   disabled={wechatActionLoading}
@@ -241,7 +242,7 @@ export default function Settings() {
                 >
                   <WeChatIcon size={20} />
                   {wechatActionLoading ? "跳转中..." : "绑定微信"}
-                </button>
+                </UnifiedButton>
               )}
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-[var(--theme-muted)]">
@@ -315,9 +316,9 @@ export default function Settings() {
 
         <SettingsSecuritySection />
 
-        <button onClick={handleSave} disabled={profileSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
+        <UnifiedButton onClick={handleSave} disabled={profileSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
           {profileSaving ? "保存中..." : "保存修改"}
-        </button>
+        </UnifiedButton>
     </StoreAccountLayout>
   );
 }

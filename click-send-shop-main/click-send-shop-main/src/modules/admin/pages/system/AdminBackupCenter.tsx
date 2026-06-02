@@ -30,6 +30,7 @@ import {
   formatRestoreTempDatabase,
   formatRestoreType,
 } from "@/utils/backupLabels";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function fmt(value?: string | null) {
   if (!value) return "-";
@@ -273,23 +274,23 @@ export default function AdminBackupCenter() {
         <div className="flex justify-end">
           <AdminRowActionsMenu
             primary={canApproveRestoreJob(job) ? (
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => confirmApproveRestoreJob(job)}
                 disabled={approveRestoreMutation.isPending || !can("backup.restore.approve")}
                 className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-amber-400/60 bg-white px-2.5 text-xs font-semibold text-amber-950 hover:bg-amber-100 disabled:opacity-60 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-50 dark:hover:bg-amber-900/50"
               >
                 <Tx>确认恢复</Tx>
-              </button>
+              </UnifiedButton>
             ) : canSwitchRestoreJob(job) ? (
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => confirmSwitchRestoreJob(job)}
                 disabled={switchRestoreMutation.isPending || !can("backup.restore.approve")}
                 className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-red-400 bg-red-600 px-2.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
                 <Tx>生产切换</Tx>
-              </button>
+              </UnifiedButton>
             ) : (
               <span className="text-xs text-muted-foreground">-</span>
             )}
@@ -336,7 +337,7 @@ export default function AdminBackupCenter() {
       toolbar={(
         <PermissionGate permission="backup.create">
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => fullBackupMutation.mutate()}
               disabled={fullBackupMutation.isPending || Boolean(fullBackupBlockedReason)}
@@ -345,8 +346,8 @@ export default function AdminBackupCenter() {
             >
               <DatabaseBackup size={16} />
               <Tx>全量备份</Tx>
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               onClick={() => configBackupMutation.mutate()}
               disabled={configBackupMutation.isPending}
@@ -354,8 +355,8 @@ export default function AdminBackupCenter() {
             >
               <Settings size={16} />
               <Tx>配置备份</Tx>
-            </button>
-            <button
+            </UnifiedButton>
+            <UnifiedButton
               type="button"
               onClick={() => uploadsBackupMutation.mutate()}
               disabled={uploadsBackupMutation.isPending}
@@ -363,7 +364,7 @@ export default function AdminBackupCenter() {
             >
               <Upload size={16} />
               <Tx>上传文件备份</Tx>
-            </button>
+            </UnifiedButton>
           </div>
         </PermissionGate>
       )}
@@ -547,7 +548,7 @@ export default function AdminBackupCenter() {
                 </label>
               ) : null}
               <PermissionGate permission="backup.restore.request">
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={handleCreateRestoreJob}
                   disabled={restoreMutation.isPending || Boolean(restoreBlockedReason)}
@@ -556,7 +557,7 @@ export default function AdminBackupCenter() {
                 >
                   <Play size={16} />
                   <Tx>创建恢复任务</Tx>
-                </button>
+                </UnifiedButton>
               </PermissionGate>
             </div>
           ) : (

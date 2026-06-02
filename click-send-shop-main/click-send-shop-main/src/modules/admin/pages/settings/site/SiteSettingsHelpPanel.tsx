@@ -8,6 +8,7 @@ import { SECTION_HELP } from "./siteSettingsSections";
 import TaxPreviewCard from "./TaxPreviewCard";
 import SeoPreviewCard from "./SeoPreviewCard";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type SiteSettingsHelpPanelProps = {
   sectionId: SiteSettingsSectionId;
@@ -77,14 +78,14 @@ export function SiteSettingsHelpPanelMobile(props: SiteSettingsHelpPanelProps) {
   const [open, setOpen] = useState(false);
   return (
     <div className="xl:hidden">
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground"
       >
         <Tx>说明与预览</Tx>
         {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-      </button>
+      </UnifiedButton>
       {open ? (
         <div className="mt-2 space-y-4 rounded-2xl border border-border bg-card p-4">
           <HelpPanelContent {...props} />

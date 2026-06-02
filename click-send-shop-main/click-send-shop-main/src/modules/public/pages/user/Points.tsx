@@ -24,6 +24,7 @@ import {
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const POINTS_ERROR_LABELS: Record<string, string> = {
   "Already signed in today": "今天已经签到过了",
@@ -78,7 +79,7 @@ function PointsHeroCard({
       </p>
 
       <div className="mt-4 flex justify-center">
-        <button
+        <UnifiedButton
           type="button"
           onClick={onSignIn}
           disabled={signingIn || !signInEnabled}
@@ -86,7 +87,7 @@ function PointsHeroCard({
         >
           <CalendarCheck size={16} aria-hidden />
           {signInLabel}
-        </button>
+        </UnifiedButton>
       </div>
     </section>
   );
@@ -214,13 +215,13 @@ export default function Points() {
           ) : error ? (
             <div className="space-y-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-8 text-center">
               <p className="text-sm text-[var(--theme-danger)]">{error}</p>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => void bootstrap()}
                 className="rounded-full border border-border px-5 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
               >
                 重试
-              </button>
+              </UnifiedButton>
             </div>
           ) : records.length === 0 ? (
             <div className="rounded-xl border border-border bg-card p-10 text-center text-sm text-muted-foreground">
@@ -241,14 +242,14 @@ export default function Points() {
                 <p className="px-1 text-center text-xs text-[var(--theme-danger)]">{loadMoreError}</p>
               ) : null}
               {hasMore ? (
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => void loadMore()}
                   disabled={loadingMore}
                   className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loadingMore ? "加载中..." : "加载更多"}
-                </button>
+                </UnifiedButton>
               ) : null}
             </div>
           )}

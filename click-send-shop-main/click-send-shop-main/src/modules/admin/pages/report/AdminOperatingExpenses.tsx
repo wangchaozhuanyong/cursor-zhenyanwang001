@@ -28,6 +28,7 @@ import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type FormState = {
   expense_date: string;
@@ -209,12 +210,12 @@ export default function AdminOperatingExpenses() {
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <button disabled={saving} onClick={() => void handleSubmit()} className="inline-flex items-center gap-1 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+          <UnifiedButton disabled={saving} onClick={() => void handleSubmit()} className="inline-flex items-center gap-1 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             {editingId ? "保存修改" : "新增支出"}
-          </button>
+          </UnifiedButton>
           {editingId ? (
-            <button onClick={resetForm} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>取消编辑</Tx></button>
+            <UnifiedButton onClick={resetForm} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>取消编辑</Tx></UnifiedButton>
           ) : null}
         </div>
           </div>
@@ -270,12 +271,12 @@ export default function AdminOperatingExpenses() {
                     <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatDateTime(row.created_at)}</td>
                     <td className={adminTdClassName(undefined, "right")}>
                       <div className="inline-flex gap-1">
-                        <button onClick={() => startEdit(row)} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                        <UnifiedButton onClick={() => startEdit(row)} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
                           <Pencil size={14} />
-                        </button>
-                        <button onClick={() => void handleDelete(row.id, row.title || row.id)} className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600">
+                        </UnifiedButton>
+                        <UnifiedButton onClick={() => void handleDelete(row.id, row.title || row.id)} className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600">
                           <Trash2 size={14} />
-                        </button>
+                        </UnifiedButton>
                       </div>
                     </td>
                   </tr>

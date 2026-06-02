@@ -32,6 +32,7 @@ import {
 } from "@/utils/authValidation";
 import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { useSupportRuntime } from "@/hooks/useSupportRuntime";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
@@ -487,7 +488,7 @@ export default function Login() {
         <section className="auth-login-mode-tabs mb-4">
           <div className="flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录或注册">
             {(["login", "register"] as AuthMode[]).map((m) => (
-              <button
+              <UnifiedButton
                 key={m}
                 type="button"
                 role="tab"
@@ -501,7 +502,7 @@ export default function Login() {
                 }`}
               >
                 {m === "login" ? "登 录" : "注 册"}
-              </button>
+              </UnifiedButton>
             ))}
           </div>
         </section>
@@ -516,7 +517,7 @@ export default function Login() {
         {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
           <section className="auth-login-credential-tabs mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录方式">
             {(["password", "otp"] as CredentialMode[]).map((c) => (
-              <button
+              <UnifiedButton
                 key={c}
                 type="button"
                 role="tab"
@@ -534,7 +535,7 @@ export default function Login() {
                 }`}
               >
                 {c === "password" ? "密码登录" : "验证码登录"}
-              </button>
+              </UnifiedButton>
             ))}
           </section>
         ) : null}
@@ -637,14 +638,14 @@ export default function Login() {
                 }}
                 className={cn(INPUT_CLASS, "pl-12 pr-12", fieldErrors.password && INPUT_ERROR_CLASS)}
               />
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
                 aria-label={showPwd ? "隐藏密码" : "显示密码"}
                 className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 touch-target"
               >
                 {showPwd ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
-              </button>
+              </UnifiedButton>
               {fieldErrors.password ? <p id="auth-password-error" className="sr-only">{fieldErrors.password}</p> : null}
             </div>
           ) : null}
@@ -673,14 +674,14 @@ export default function Login() {
                 />
                 {fieldErrors.otp ? <p id="auth-otp-error" className="sr-only">{fieldErrors.otp}</p> : null}
               </div>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={handleSendOtp}
                 disabled={otpSending || otpCooldown > 0 || !authFeaturesReady}
                 className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-theme-price disabled:opacity-50"
               >
                 {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "发送验证码"}
-              </button>
+              </UnifiedButton>
             </>
           ) : null}
 
@@ -695,17 +696,17 @@ export default function Login() {
                 />
                 <span className="text-xs text-muted-foreground">记住账号</span>
               </label>
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => setShowReset(true)}
                 className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-medium text-theme-price active:opacity-70"
               >
                 忘记密码？
-              </button>
+              </UnifiedButton>
             </div>
           )}
 
-          <button
+          <UnifiedButton
             type="submit"
             disabled={loading}
             aria-busy={loading || undefined}
@@ -720,7 +721,7 @@ export default function Login() {
                 {submitLoadingLabel}
               </span>
             ) : submitLabel}
-          </button>
+          </UnifiedButton>
           </form>
         </FormFieldShake>
 

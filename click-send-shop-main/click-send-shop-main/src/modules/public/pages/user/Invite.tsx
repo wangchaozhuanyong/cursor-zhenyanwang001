@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import PageHeader from "@/components/PageHeader";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function readThemeCssVar(name: string, fallback: string): string {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -171,8 +172,8 @@ export default function Invite() {
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <button onClick={copyLink} className="rounded-full bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]">复制邀请链接</button>
-            <button onClick={handleShare} className="rounded-full border border-[var(--theme-border)] py-2.5 text-sm font-semibold">分享邀请</button>
+            <UnifiedButton onClick={copyLink} className="rounded-full bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]">复制邀请链接</UnifiedButton>
+            <UnifiedButton onClick={handleShare} className="rounded-full border border-[var(--theme-border)] py-2.5 text-sm font-semibold">分享邀请</UnifiedButton>
           </div>
         </div>
 
@@ -201,8 +202,8 @@ export default function Invite() {
             <p className="mt-2 text-[11px] text-[var(--theme-text-muted)]">规则：邀请好友消费后可获积分/返现</p>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button onClick={downloadQR} className="inline-flex items-center justify-center gap-1 rounded-xl border border-[var(--theme-border)] py-2 text-xs"><Download size={12} /> 下载二维码</button>
-            <button onClick={downloadPoster} className="inline-flex items-center justify-center gap-1 rounded-xl bg-[var(--theme-primary)] py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"><Download size={12} /> 下载海报</button>
+            <UnifiedButton onClick={downloadQR} className="inline-flex items-center justify-center gap-1 rounded-xl border border-[var(--theme-border)] py-2 text-xs"><Download size={12} /> 下载二维码</UnifiedButton>
+            <UnifiedButton onClick={downloadPoster} className="inline-flex items-center justify-center gap-1 rounded-xl bg-[var(--theme-primary)] py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"><Download size={12} /> 下载海报</UnifiedButton>
           </div>
         </div>
 

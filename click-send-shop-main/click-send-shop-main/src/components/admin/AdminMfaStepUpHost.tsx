@@ -13,6 +13,7 @@ import {
 import { fetchAdminProfile, reverifyAdminMfa, reverifyAdminPasskey } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const MFA_REVERIFY_TIMEOUT_MS = 15_000;
 
@@ -243,7 +244,7 @@ export default function AdminMfaStepUpHost() {
           <>
             {passkeyAvailable ? (
               <>
-                <button
+                <UnifiedButton
                   type="button"
                   className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background disabled:opacity-50"
                   disabled={loading || passkeyLoading}
@@ -253,7 +254,7 @@ export default function AdminMfaStepUpHost() {
                   {passkeyLoading
                     ? isEnglish ? "Verifying Passkey..." : "正在验证 Passkey..."
                     : isEnglish ? "Verify with Passkey" : "使用 Passkey 验证"}
-                </button>
+                </UnifiedButton>
                 <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="h-px flex-1 bg-border" />
                   <span>{isEnglish ? "or" : "或"}</span>
@@ -283,15 +284,15 @@ export default function AdminMfaStepUpHost() {
         ) : null}
 
         <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <button
+          <UnifiedButton
             type="button"
             className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-secondary"
             onClick={handleClose}
           >
             {isEnglish ? "Cancel" : "取消"}
-          </button>
+          </UnifiedButton>
           {mfaEnabled === false ? (
-            <button
+            <UnifiedButton
               type="button"
               className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
               onClick={() => {
@@ -300,16 +301,16 @@ export default function AdminMfaStepUpHost() {
               }}
             >
               {isEnglish ? "Back to login" : "前往登录页"}
-            </button>
+            </UnifiedButton>
           ) : (
-            <button
+            <UnifiedButton
               type="button"
               className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
               disabled={loading || passkeyLoading}
               onClick={() => void handleSubmit()}
             >
               {loading ? (isEnglish ? "Verifying..." : "验证中...") : (isEnglish ? "Confirm verification" : "确认验证")}
-            </button>
+            </UnifiedButton>
           )}
         </div>
       </div>

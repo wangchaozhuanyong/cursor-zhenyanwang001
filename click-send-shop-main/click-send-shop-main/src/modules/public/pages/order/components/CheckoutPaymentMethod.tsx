@@ -3,6 +3,7 @@ import { ChevronRight, ShieldCheck } from "lucide-react";
 import PaymentMethodPicker, { type PaymentMethod } from "@/components/PaymentMethodPicker";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { AppModal, usePreferBottomSheet } from "@/modules/micro-interactions";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   online: "在线支付",
@@ -78,7 +79,7 @@ export function CheckoutPaymentMethod({
 
       {isMobileSheet ? (
         <>
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setSheetOpen(true)}
             className={PAYMENT_TRIGGER_CLASS}
@@ -93,7 +94,7 @@ export function CheckoutPaymentMethod({
               )}
             </div>
             <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
-          </button>
+          </UnifiedButton>
           <AppModal tier="standard" open={sheetOpen} onClose={() => setSheetOpen(false)} title="选择支付方式" height="auto">
             <div className="pb-2">{picker}</div>
           </AppModal>

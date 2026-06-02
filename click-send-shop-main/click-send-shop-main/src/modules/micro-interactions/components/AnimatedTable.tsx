@@ -9,6 +9,7 @@ import { AlertTriangle, type LucideIcon } from "lucide-react";
 import { useMotionConfig } from "../hooks/useMotionConfig";
 import { tableRowTransition } from "../motionConfig";
 import { AnimatedEmptyState } from "./AnimatedEmptyState";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AnimatedTableProps<T> = {
   loading?: boolean;
@@ -186,13 +187,13 @@ export function AnimatedTable<T>({
 
   if (error && rows.length === 0) {
     const retryAction = errorAction ?? (onRetry ? (
-      <button
+      <UnifiedButton
         type="button"
         onClick={onRetry}
         className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground"
       >
         重试
-      </button>
+      </UnifiedButton>
     ) : null);
 
     return (

@@ -4,6 +4,7 @@ import { Tx } from "@/components/admin/AdminText";
 import type { AdminSpecGroup } from "@/modules/admin/pages/product/productFormTypes";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { MAX_SPEC_GROUPS, MAX_SPEC_VALUES_PER_GROUP } from "@/utils/productFormVariantUtils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   specGroups: AdminSpecGroup[];
@@ -35,15 +36,15 @@ export default function ProductSpecGroupsSection({
         </div>
         <div className="flex gap-2">
           {specGroups.length === 0 ? (
-            <button
+            <UnifiedButton
               type="button"
               onClick={convertToMatrixMode}
               className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
             >
               启用多规格
-            </button>
+            </UnifiedButton>
           ) : null}
-          <button
+          <UnifiedButton
             type="button"
             disabled={specGroups.length >= MAX_SPEC_GROUPS}
             onClick={() =>
@@ -55,7 +56,7 @@ export default function ProductSpecGroupsSection({
             className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-40"
           >
             添加规格组
-          </button>
+          </UnifiedButton>
         </div>
       </div>
       {specGroups.map((group, groupIdx) => (
@@ -72,14 +73,14 @@ export default function ProductSpecGroupsSection({
               placeholder={tText("如：颜色")}
               className="min-w-0 flex-1 rounded-md bg-secondary px-2 py-1.5 text-xs outline-none"
             />
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => updateSpecGroups((groups) => groups.filter((_, i) => i !== groupIdx))}
               className={THEME_TEXT_DANGER}
               title={tText("删除规格组")}
             >
               <Trash2 size={14} />
-            </button>
+            </UnifiedButton>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {group.values.map((value, valueIdx) => (
@@ -107,7 +108,7 @@ export default function ProductSpecGroupsSection({
                   placeholder={tText("规格值")}
                   className="w-20 bg-transparent text-xs outline-none"
                 />
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() =>
                     updateSpecGroups((groups) =>
@@ -122,10 +123,10 @@ export default function ProductSpecGroupsSection({
                   title={tText("删除规格值")}
                 >
                   ×
-                </button>
+                </UnifiedButton>
               </div>
             ))}
-            <button
+            <UnifiedButton
               type="button"
               disabled={group.values.length >= MAX_SPEC_VALUES_PER_GROUP}
               onClick={() =>
@@ -146,7 +147,7 @@ export default function ProductSpecGroupsSection({
               className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:border-gold/50 disabled:opacity-40"
             >
               + 规格值
-            </button>
+            </UnifiedButton>
           </div>
         </div>
       ))}

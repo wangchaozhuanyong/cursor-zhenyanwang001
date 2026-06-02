@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import * as reviewService from "@/services/reviewService";
 import type { PendingReviewItem } from "@/types/review";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function PendingReviews() {
   const navigate = useNavigate();
@@ -55,13 +56,13 @@ export default function PendingReviews() {
                   <p className="truncate text-sm">{it.product_name}</p>
                   <p className="text-xs text-muted-foreground">{it.variant_name || it.sku_code || "默认规格"}</p>
                 </div>
-                <button
+                <UnifiedButton
                   type="button"
                   className="rounded-full border px-3 py-1 text-xs"
                   onClick={() => setOrderItemId(it.order_item_id)}
                 >
                   写评价
-                </button>
+                </UnifiedButton>
               </div>
             ))}
           </div>

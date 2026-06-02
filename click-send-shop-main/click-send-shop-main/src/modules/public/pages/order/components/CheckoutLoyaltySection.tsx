@@ -1,4 +1,5 @@
 import type { OrderPreviewResult } from "@/types/orderPreview";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   pointsRedeemEnabled: boolean;
@@ -108,9 +109,9 @@ export function CheckoutLoyaltySection({
                   value={pointsToUse}
                   onChange={(e) => onPointsToUseChange(normalizePointsInput(Number(e.target.value || 0)))}
                 />
-                <button type="button" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onPointsToUseChange(maxPoints)}>
+                <UnifiedButton type="button" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onPointsToUseChange(maxPoints)}>
                   全部
-                </button>
+                </UnifiedButton>
               </div>
               <p className="text-xs text-muted-foreground">本次将使用 {actualPointsUsed} 积分，抵扣 RM {money(pointsDiscount)}{orderPreview?.adjusted ? "（已按规则自动调整）" : ""}</p>
             </div>
@@ -148,9 +149,9 @@ export function CheckoutLoyaltySection({
                   value={rewardCashAmount}
                   onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
                 />
-                <button type="button" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onRewardCashAmountChange(maxReward)}>
+                <UnifiedButton type="button" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onRewardCashAmountChange(maxReward)}>
                   全部
-                </button>
+                </UnifiedButton>
               </div>
             </div>
           ) : null}

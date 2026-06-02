@@ -19,6 +19,7 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import type { AdminEventRecord } from "@/services/admin/eventCenterService";
 import { adminDataGridClassName } from "@/utils/adminTableClasses";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const tabs = [
   { key: "all", label: "全部" },
@@ -171,10 +172,10 @@ export default function AdminEventCenter() {
               ))}
             </div>
             <div className="flex shrink-0 items-start xl:items-center">
-              <button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
+              <UnifiedButton type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
                 <RefreshCw size={16} className={eventsQuery.isFetching || summaryQuery.isFetching || metricsQuery.isFetching ? "animate-spin" : ""} />
                 <Tx>刷新全部数据</Tx>
-              </button>
+              </UnifiedButton>
             </div>
           </div>
 
@@ -182,14 +183,14 @@ export default function AdminEventCenter() {
             {tabs.map((item) => {
               const tabCount = summary?.tabCounts?.[item.key] ?? 0;
               return (
-                <button
+                <UnifiedButton
                   key={item.key}
                   type="button"
                   className={`rounded-lg px-3 py-2 text-sm ${tab === item.key ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-secondary"}`}
                   onClick={() => changeTab(item.key)}
                 >
                   {tText(`${item.label} (${tabCount})`)}
-                </button>
+                </UnifiedButton>
               );
             })}
             <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -264,31 +265,31 @@ export default function AdminEventCenter() {
                   <div className="mt-1">{tText(diagnosis?.nextAction || "查看关联业务数据，处理根因后再关闭。")}</div>
                   {diagnosis?.closeHint ? <div className="mt-1 opacity-80">{tText(diagnosis.closeHint)}</div> : null}
                   {diagnosis?.linkUrl ? (
-                    <button
+                    <UnifiedButton
                       type="button"
                       className="mt-2 inline-flex items-center gap-1 rounded border border-current px-2 py-1 font-medium"
                       onClick={() => navigate(diagnosis.linkUrl || "/admin/event-center")}
                     >
                       <ExternalLink size={12} />
                       {tText(diagnosis.linkText || "查看")}
-                    </button>
+                    </UnifiedButton>
                   ) : null}
                 </div>
                 <div className="whitespace-nowrap text-xs text-muted-foreground" title={occurredAt}>{occurredAt}</div>
                 <div className="whitespace-nowrap text-xs font-medium text-foreground">{tText(labelAdminEventStatus(item.status))}</div>
                 <div className="flex flex-wrap items-center justify-end gap-1">
                   <PermissionGate anyOf={EVENT_VIEW_PERMISSIONS}>
-                    <button type="button" className="inline-flex shrink-0 items-center rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1" /><Tx>已读</Tx></button>
+                    <UnifiedButton type="button" className="inline-flex shrink-0 items-center rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1" /><Tx>已读</Tx></UnifiedButton>
                   </PermissionGate>
                   <PermissionGate anyOf={EVENT_MANAGE_PERMISSIONS}>
                     {!TERMINAL_EVENT_STATUSES.has(item.status) ? (
                       <>
-                        <button type="button" className="shrink-0 rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}><Tx>确认</Tx></button>
-                        <button type="button" className="shrink-0 rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}><Tx>处理中</Tx></button>
-                        <button type="button" className="shrink-0 rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={13} className="mr-1 inline" /><Tx>忽略</Tx></button>
+                        <UnifiedButton type="button" className="shrink-0 rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}><Tx>确认</Tx></UnifiedButton>
+                        <UnifiedButton type="button" className="shrink-0 rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}><Tx>处理中</Tx></UnifiedButton>
+                        <UnifiedButton type="button" className="shrink-0 rounded border border-border px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={13} className="mr-1 inline" /><Tx>忽略</Tx></UnifiedButton>
                       </>
                     ) : null}
-                    <button type="button" className="inline-flex shrink-0 items-center rounded border border-border px-2 py-1 text-xs text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={13} className="mr-1" /><Tx>完成</Tx></button>
+                    <UnifiedButton type="button" className="inline-flex shrink-0 items-center rounded border border-border px-2 py-1 text-xs text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={13} className="mr-1" /><Tx>完成</Tx></UnifiedButton>
                   </PermissionGate>
                 </div>
               </div>
@@ -304,7 +305,7 @@ export default function AdminEventCenter() {
           {tText(`当前筛选共 ${listTotal} 条，当前 Tab 数量 ${activeTabCount} 条`)}
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setPage((value) => Math.max(1, value - 1))}
             disabled={page <= 1 || eventsQuery.isFetching}
@@ -312,11 +313,11 @@ export default function AdminEventCenter() {
           >
             <ChevronLeft size={15} />
             <Tx>上一页</Tx>
-          </button>
+          </UnifiedButton>
           <span className="min-w-[5rem] text-center text-sm text-muted-foreground">
             {safePage} / {totalPages}
           </span>
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             disabled={page >= totalPages || eventsQuery.isFetching}
@@ -324,7 +325,7 @@ export default function AdminEventCenter() {
           >
             <Tx>下一页</Tx>
             <ChevronRight size={15} />
-          </button>
+          </UnifiedButton>
         </div>
       </div>
     </AdminPageShell>

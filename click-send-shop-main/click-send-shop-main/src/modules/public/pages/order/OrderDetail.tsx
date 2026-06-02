@@ -33,6 +33,7 @@ import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { OrderDiscountLines } from "./components/OrderDiscountLines";
 import ReturnApplySheet from "./ReturnApplySheet";
 import { SUPPORT_PAGE_PATH } from "@/utils/supportDownloadConfig";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const steps = ["待付款", "已付款", "已发货", "已完成"];
 
@@ -86,36 +87,36 @@ function OrderDetailQuickActions({
   const navigate = useNavigate();
   return (
     <div className={className}>
-      <button
+      <UnifiedButton
         type="button"
         className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs"
         onClick={() => navigate(SUPPORT_PAGE_PATH)}
       >
         客服
-      </button>
+      </UnifiedButton>
       {reviewEnabled && hasReview ? (
-        <button
+        <UnifiedButton
           type="button"
           className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs"
           onClick={() => onReview(firstReviewableId)}
         >
           评价
-        </button>
+        </UnifiedButton>
       ) : null}
-      <button
+      <UnifiedButton
         type="button"
         className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs"
         onClick={onAddToCart}
       >
         加入购物车
-      </button>
-      <button
+      </UnifiedButton>
+      <UnifiedButton
         type="button"
         className="min-w-[7rem] flex-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-medium text-[var(--theme-primary-foreground)] md:flex-none"
         onClick={onRepurchase}
       >
         再买一单
-      </button>
+      </UnifiedButton>
     </div>
   );
 }
@@ -344,7 +345,7 @@ export default function OrderDetail() {
     return (
       <div className="space-y-2">
         {items.map((item) => (
-          <button
+          <UnifiedButton
             key={item.key}
             type="button"
             className={item.danger ? `${moreActionBtn} text-[var(--theme-danger)]` : moreActionBtn}
@@ -352,7 +353,7 @@ export default function OrderDetail() {
           >
             <span>{item.label}</span>
             {item.hint ? <span className="text-xs font-normal text-[var(--theme-text-muted)]">{item.hint}</span> : null}
-          </button>
+          </UnifiedButton>
         ))}
         {items.length === 0 ? (
           <p className="rounded-2xl bg-[var(--theme-bg)] px-4 py-5 text-center text-sm text-[var(--theme-text-muted)]">
@@ -385,7 +386,7 @@ export default function OrderDetail() {
 
   const mobilePrimary =
     isPendingPayment(order) ? (
-      <button
+      <UnifiedButton
         type="button"
         disabled={paying}
         className="min-h-10 flex-1 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60"
@@ -394,23 +395,23 @@ export default function OrderDetail() {
         }}
       >
         {paying ? "处理中..." : payActionLabel}
-      </button>
+      </UnifiedButton>
     ) : order.status === "shipped" ? (
-      <button
+      <UnifiedButton
         type="button"
         className="min-h-10 flex-1 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
         onClick={() => setConfirmReceiveOpen(true)}
       >
         确认收货
-      </button>
+      </UnifiedButton>
     ) : quickActionProps ? (
-      <button
+      <UnifiedButton
         type="button"
         className="min-h-10 flex-1 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
         onClick={() => setRepurchaseConfirmOpen(true)}
       >
         再买一单
-      </button>
+      </UnifiedButton>
     ) : null;
 
   return (
@@ -510,7 +511,7 @@ export default function OrderDetail() {
           <p className="text-sm font-medium">订单信息</p>
           <div className="mt-2 flex items-center justify-between gap-3 text-sm">
             <span className="text-muted-foreground">订单号</span>
-            <button
+            <UnifiedButton
               type="button"
               className="inline-flex items-center gap-1 truncate rounded-full border border-[var(--theme-border)] px-2 py-1 text-xs"
               onClick={async () => {
@@ -520,7 +521,7 @@ export default function OrderDetail() {
             >
               {order.order_no}
               <Copy size={12} />
-            </button>
+            </UnifiedButton>
           </div>
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-muted-foreground">下单时间</span>
@@ -570,12 +571,12 @@ export default function OrderDetail() {
 
         <div className="hidden rounded-2xl border border-border bg-card p-3 md:flex md:flex-wrap md:justify-end md:gap-2">
           {canUserCancelOrder(order) ? (
-            <button type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setCancelConfirmOpen(true)}>
+            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setCancelConfirmOpen(true)}>
               取消订单
-            </button>
+            </UnifiedButton>
           ) : null}
           {isPendingPayment(order) ? (
-            <button
+            <UnifiedButton
               type="button"
               disabled={paying}
               className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)] disabled:opacity-60"
@@ -584,39 +585,39 @@ export default function OrderDetail() {
               }}
             >
               {paying ? "处理中..." : payActionLabel}
-            </button>
+            </UnifiedButton>
           ) : null}
           {order.status === "paid" ? (
-            <button type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate(SUPPORT_PAGE_PATH)}>
+            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate(SUPPORT_PAGE_PATH)}>
               联系客服
-            </button>
+            </UnifiedButton>
           ) : null}
           {order.status === "shipped" ? (
             <>
-              <button type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => viewLogistics(order)}>
+              <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => viewLogistics(order)}>
                 查看物流
-              </button>
-              <button type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setReturnApplyOpen(true)}>
+              </UnifiedButton>
+              <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setReturnApplyOpen(true)}>
                 申请售后
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]"
                 onClick={() => setConfirmReceiveOpen(true)}
               >
                 确认收货
-              </button>
+              </UnifiedButton>
             </>
           ) : null}
           {canApplyAfterSale(order) && order.status === "completed" ? (
-            <button type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setReturnApplyOpen(true)}>
+            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setReturnApplyOpen(true)}>
               申请售后
-            </button>
+            </UnifiedButton>
           ) : null}
           {(order.return_request_count || 0) > 0 || order.status === "refunding" || order.status === "refunded" ? (
-            <button type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/returns")}>
+            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/returns")}>
               查看售后进度
-            </button>
+            </UnifiedButton>
           ) : null}
         </div>
 
@@ -631,13 +632,13 @@ export default function OrderDetail() {
       {showMobileBar ? (
         <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
           <div className="mx-auto flex max-w-lg items-center gap-2 px-4 py-3">
-            <button
+            <UnifiedButton
               type="button"
               className="min-h-10 shrink-0 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-[var(--theme-text)]"
               onClick={() => setMoreMenuOpen(true)}
             >
               更多
-            </button>
+            </UnifiedButton>
             {mobilePrimary}
           </div>
         </div>

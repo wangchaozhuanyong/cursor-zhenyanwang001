@@ -9,6 +9,7 @@ import type { FullscreenPreviewMode, PreviewDevice } from "./themeStudioConstant
 import { DEVICE_WIDTH, PREVIEW_DEVICE_LABELS } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const FULLSCREEN_MODES: { id: FullscreenPreviewMode; label: string }[] = [
   { id: "home", label: "前台首页" },
@@ -77,7 +78,7 @@ export default function ThemeFullscreenPreview({ open, config, onClose }: Props)
         <p className="text-sm font-semibold"><Tx>全屏预览</Tx></p>
         <div className="flex flex-1 flex-wrap gap-1 overflow-x-auto">
           {FULLSCREEN_MODES.map((m) => (
-            <button
+            <UnifiedButton
               key={m.id}
               type="button"
               onClick={() => setMode(m.id)}
@@ -86,24 +87,24 @@ export default function ThemeFullscreenPreview({ open, config, onClose }: Props)
               }`}
             >
               {m.label}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
         <div className="flex gap-1">
           {(Object.keys(PREVIEW_DEVICE_LABELS) as PreviewDevice[]).map((d) => (
-            <button
+            <UnifiedButton
               key={d}
               type="button"
               onClick={() => setDevice(d)}
               className={`rounded px-2 py-1 text-[11px] ${device === d ? "bg-white text-neutral-900" : "bg-white/10"}`}
             >
               {PREVIEW_DEVICE_LABELS[d]}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
-        <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-white/10" aria-label={tText("关闭")}>
+        <UnifiedButton type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-white/10" aria-label={tText("关闭")}>
           <X size={20} />
-        </button>
+        </UnifiedButton>
       </header>
       <div className="flex min-h-0 flex-1 items-start justify-center overflow-auto p-6">
         <ThemePreviewScope

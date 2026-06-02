@@ -17,6 +17,7 @@ import { trackEvent } from "@/services/analyticsService";
 import { cn } from "@/lib/utils";
 import { isProductNewArrival } from "@/utils/productNewArrival";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type ProductCardSiteContext = {
   restrictedComplianceEnabled: boolean;
@@ -223,9 +224,9 @@ function ProductCardInner({
                   ) : null}
                   {product.is_hot ? <StoreBadge type="hot">热销</StoreBadge> : null}
                   {showNewBadge ? (
-                    <button type="button" onClick={openNewArrivals} className="cursor-pointer">
+                    <UnifiedButton type="button" onClick={openNewArrivals} className="cursor-pointer">
                       <StoreBadge type="new">新品</StoreBadge>
-                    </button>
+                    </UnifiedButton>
                   ) : null}
                   <ProductTagList tags={product.tags} max={2} />
                 </div>
@@ -275,9 +276,9 @@ function ProductCardInner({
           )}
           {product.is_hot ? <StoreBadge type="hot" onMedia>热销</StoreBadge> : null}
           {showNewBadge ? (
-            <button type="button" onClick={openNewArrivals} className="cursor-pointer">
+            <UnifiedButton type="button" onClick={openNewArrivals} className="cursor-pointer">
               <StoreBadge type="new" onMedia>新品</StoreBadge>
-            </button>
+            </UnifiedButton>
           ) : null}
           <ProductTagList tags={product.tags} max={2} />
         </div>

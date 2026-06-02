@@ -3,6 +3,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
 import { THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   saving: boolean;
@@ -25,13 +26,13 @@ export default function SiteSettingsSaveActions({
     <PermissionGate permission="settings.manage">
       <div className={`flex flex-wrap items-center gap-2 ${compact ? "" : "justify-end"}`}>
         {dirty && onDiscard ? (
-          <button
+          <UnifiedButton
             type="button"
             onClick={onDiscard}
             className={`rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-secondary ${THEME_HOVER_TEXT_DANGER}`}
           >
             <Tx>放弃修改</Tx>
-          </button>
+          </UnifiedButton>
         ) : null}
         <LoadingButton
           type="button"

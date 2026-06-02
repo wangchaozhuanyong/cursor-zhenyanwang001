@@ -40,6 +40,7 @@ import PolicyPathFields from "./PolicyPathFields";
 import FooterNavEditor from "./FooterNavEditor";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function mergeSettings(data: Partial<SiteSettings> | null | undefined): SiteSettings {
   return { ...EMPTY_SITE_SETTINGS, ...(data && typeof data === "object" ? data : {}) };
@@ -250,13 +251,13 @@ export default function SiteSettingsPage() {
             title={tText("页脚导航 JSON")}
             description="直接编辑 footerNav 字符串；保存高级配置仅提交 footerNav 字段。"
           >
-            <button
+            <UnifiedButton
               type="button"
               className="mb-2 text-xs text-theme-price hover:underline"
               onClick={() => setAdvancedJsonOpen((v) => !v)}
             >
               {advancedJsonOpen ? <Tx>收起</Tx> : <Tx>展开</Tx>} JSON
-            </button>
+            </UnifiedButton>
             {advancedJsonOpen ? (
               <textarea
                 rows={12}

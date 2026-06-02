@@ -23,6 +23,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { buildWhatsAppLink } from "@/utils/supportChannels";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const FOOTER_BRAND_FALLBACK = "大马通";
 const FOOTER_HEADLINE_FALLBACK = "马来西亚华人一站式生活服务与优选商城";
@@ -172,7 +173,7 @@ function AccordionItem({
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="overflow-hidden rounded-lg border border-[#dce9e1] bg-white shadow-[0_18px_42px_-34px_rgba(20,70,41,0.34)]">
-      <button
+      <UnifiedButton
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         className="flex min-h-[58px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#f7fbf8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#078437]/25"
@@ -190,7 +191,7 @@ function AccordionItem({
           className={cn("shrink-0 text-[#078437] transition-transform duration-300 ease-out", isOpen && "rotate-180")}
           aria-hidden
         />
-      </button>
+      </UnifiedButton>
       <div className={cn("grid transition-[grid-template-rows] duration-300 ease-out", isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
         <div className="min-h-0 overflow-hidden">
           {isOpen ? <div className="px-3 pb-4">{children}</div> : null}
@@ -202,14 +203,14 @@ function AccordionItem({
 
 function FooterNavButton({ item, onNavigate }: { item: FooterNavItem; onNavigate: (path: string) => void }) {
   return (
-    <button
+    <UnifiedButton
       type="button"
       onClick={() => onNavigate(item.path)}
       className="group flex min-h-9 w-full items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-[14px] font-medium text-[#526157] transition-all hover:bg-[#eef9f1] hover:text-[#078437] active:scale-[0.99]"
     >
       <span className="min-w-0 truncate">{item.label}</span>
       <ChevronRight size={15} className="shrink-0 opacity-45 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden />
-    </button>
+    </UnifiedButton>
   );
 }
 
@@ -295,14 +296,14 @@ function FollowButton({
   onClick: (channel?: SupportDownloadChannel) => void;
 }) {
   return (
-    <button
+    <UnifiedButton
       type="button"
       onClick={() => onClick(channel)}
       className="flex min-h-[42px] min-w-0 items-center justify-center gap-2 rounded-lg border border-[#bfe9ce] bg-white px-3 py-2 text-[13px] font-semibold text-[#234130] shadow-[0_16px_34px_-32px_rgba(7,132,55,0.7)] transition-all hover:-translate-y-0.5 hover:border-[#078437] hover:text-[#078437] active:scale-[0.99]"
     >
       <span className="shrink-0 text-[#078437]">{icon}</span>
       <span className="min-w-0 truncate">{label}</span>
-    </button>
+    </UnifiedButton>
   );
 }
 
@@ -447,14 +448,14 @@ export default function GuestMobileFooter({
                 在{brandName}，找房、留学、签证、本地办事和生活服务，一站式查看。
               </p>
               <div className="mt-6 grid gap-3 sm:max-w-xl sm:grid-cols-2">
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => onNavigate("/categories")}
                   className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg bg-[#078437] px-5 text-[16px] font-bold text-white shadow-[0_18px_34px_-26px_rgba(7,132,55,0.76)] transition hover:bg-[#046d2d] active:scale-[0.99]"
                 >
                   浏览全部服务
                   <ArrowRight size={20} strokeWidth={2.2} />
-                </button>
+                </UnifiedButton>
                 <a
                   href={whatsappHref}
                   target="_blank"
@@ -589,7 +590,7 @@ export default function GuestMobileFooter({
               </div>
               <div className="flex items-center justify-center gap-4">
                 {policyNav.slice(0, 2).map((item, index) => (
-                  <button
+                  <UnifiedButton
                     key={`${item.label}-${item.path}`}
                     type="button"
                     onClick={() => onNavigate(item.path)}
@@ -597,7 +598,7 @@ export default function GuestMobileFooter({
                   >
                     {index > 0 ? <span className="mr-4 text-[#c9d5cd]" aria-hidden>|</span> : null}
                     {item.label}
-                  </button>
+                  </UnifiedButton>
                 ))}
               </div>
             </div>

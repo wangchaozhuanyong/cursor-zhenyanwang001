@@ -46,6 +46,7 @@ import {
 } from "@/utils/reportFilters";
 import { exportProfitDailyCsv, exportReportCsv } from "@/services/admin/reportService";
 import { formatDate, formatDateTimeAuto } from "@/utils/formatDateTime";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   config: ReportPageConfig;
@@ -262,13 +263,13 @@ export default function AdminReportGenericPage({
         </div>
         {columns.includes("cover_image") ? (
           <div className="mt-3 border-t border-border pt-3">
-            <button
+            <UnifiedButton
               type="button"
               onClick={() => openCoverPreview(row.cover_image)}
               className="touch-manipulation w-full rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"
             >
               <Tx>查看图片</Tx>
-            </button>
+            </UnifiedButton>
           </div>
         ) : null}
       </AdminTableMobileCard>
@@ -391,13 +392,13 @@ export default function AdminReportGenericPage({
                       }}
                     >
                       {k === "cover_image" ? (
-                        <button
+                        <UnifiedButton
                           type="button"
                           className="inline-flex h-8 items-center rounded-md border border-[var(--theme-border)] bg-transparent px-2.5 text-[13px] text-foreground hover:bg-secondary"
                           onClick={() => openCoverPreview(row[k])}
                         >
                           查看图片
-                        </button>
+                        </UnifiedButton>
                       ) : (
                         <AdminTableCell
                           value={display}

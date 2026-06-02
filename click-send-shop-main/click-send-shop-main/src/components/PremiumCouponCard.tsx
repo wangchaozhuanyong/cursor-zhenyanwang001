@@ -9,6 +9,7 @@ import {
   getCouponCardPresentation,
   type CouponCardLayout,
 } from "@/utils/couponCardTheme";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface PremiumCouponCardProps {
   title: string;
@@ -235,7 +236,7 @@ export default function PremiumCouponCard({
 
   const actionButton = displayActionLabel ? (
     skin.useThemedMarketingShell ? (
-      <button
+      <UnifiedButton
         type="button"
         disabled={actionDisabled || actionLoading || disabled}
         onClick={(e) => {
@@ -251,7 +252,7 @@ export default function PremiumCouponCard({
         data-coupon-action-button
       >
         {actionButtonInner}
-      </button>
+      </UnifiedButton>
     ) : (
       <StoreButton
         size={layout === "default" ? "md" : "sm"}
@@ -349,8 +350,8 @@ export default function PremiumCouponCard({
 
   if (!onClick) return wrapper;
   return (
-    <button type="button" onClick={onClick} disabled={disabled} className="w-full min-w-0 text-left">
+    <UnifiedButton type="button" onClick={onClick} disabled={disabled} className="w-full min-w-0 text-left">
       {wrapper}
-    </button>
+    </UnifiedButton>
   );
 }

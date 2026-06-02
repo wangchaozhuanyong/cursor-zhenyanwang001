@@ -1,5 +1,6 @@
 import { ArrowLeft, Home, LockKeyhole, SearchX, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AdminRouteFallbackProps = {
   type?: "not-found" | "feature-disabled" | "forbidden";
@@ -43,22 +44,22 @@ export default function AdminRouteFallback({ type = "not-found" }: AdminRouteFal
         <h1 className="mt-5 text-lg font-semibold text-[var(--theme-text)]">{item.title}</h1>
         <p className="mt-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{item.description}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => navigate("/admin", { replace: true })}
             className="inline-flex items-center gap-2 rounded-lg btn-theme-price px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
             <Home size={15} />
             {item.primary}
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]"
           >
             <ArrowLeft size={15} />
             {item.secondary}
-          </button>
+          </UnifiedButton>
         </div>
       </div>
     </div>

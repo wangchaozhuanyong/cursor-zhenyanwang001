@@ -41,6 +41,7 @@ import {
   THEME_TEXT_SUCCESS_SOFT,
 } from "@/utils/themeVisuals";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type CategoryForm = {
   name: string;
@@ -494,12 +495,12 @@ export default function AdminCategories() {
       hint={<Tx>支持最多 3 级分类；有子分类或已关联商品的分类禁止删除。</Tx>}
       toolbar={(
         <PermissionGate permission="category.manage">
-          <button
+          <UnifiedButton
             onClick={() => (showForm ? closeCreateForm() : setShowForm(true))}
             className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             <Plus size={16} /><Tx> 新增分类</Tx>
-          </button>
+          </UnifiedButton>
         </PermissionGate>
       )}
     >
@@ -577,9 +578,9 @@ export default function AdminCategories() {
                   添加
                 </Tx></LoadingButton>
               </PermissionGate>
-              <button onClick={closeCreateForm} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground"><Tx>
+              <UnifiedButton onClick={closeCreateForm} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground"><Tx>
                 取消
-              </Tx></button>
+              </Tx></UnifiedButton>
             </div>
           </div>
           <CategoryContentFields
@@ -623,13 +624,13 @@ export default function AdminCategories() {
             >
               <div className={`flex min-w-0 items-center gap-2 ${ADMIN_TABLE_ALIGN_LEFT_CLASS}`} style={{ paddingLeft: cat.level * 24 }}>
                 <GripVertical size={15} className="shrink-0 cursor-grab text-muted-foreground" />
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => hasChildren && toggleExpand(cat.id)}
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded hover:bg-secondary"
                 >
                   {hasChildren ? (expanded.has(cat.id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />) : <span className="h-3 w-3" />}
-                </button>
+                </UnifiedButton>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                   {renderIcon(cat)}
                 </div>
@@ -687,7 +688,7 @@ export default function AdminCategories() {
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/50 pt-3 md:mt-0 md:contents md:border-0 md:pt-0">
               <span className="text-xs text-muted-foreground"><span className="mr-1 text-[10px] uppercase tracking-wide text-muted-foreground/80 md:hidden">商品</span>{cat.productCount ?? 0}</span>
               <PermissionGate permission="category.manage">
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => handleVisibleToggle(cat)}
                   className={`flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-xs ${
@@ -696,7 +697,7 @@ export default function AdminCategories() {
                 >
                   {cat.is_visible === false ? <EyeOff size={12} /> : <Eye size={12} />}
                   {cat.is_visible === false ? "隐藏" : "显示"}
-                </button>
+                </UnifiedButton>
               </PermissionGate>
               {isEditing ? (
                 <input
@@ -712,25 +713,25 @@ export default function AdminCategories() {
                 {isEditing ? (
                   <>
                     <PermissionGate permission="category.manage">
-                      <button onClick={() => handleEditSave(cat.id)} className={`rounded-md p-1.5 hover:bg-[color-mix(in_srgb,var(--theme-success)_10%,var(--theme-surface))] ${THEME_TEXT_SUCCESS_SOFT}`}>
+                      <UnifiedButton onClick={() => handleEditSave(cat.id)} className={`rounded-md p-1.5 hover:bg-[color-mix(in_srgb,var(--theme-success)_10%,var(--theme-surface))] ${THEME_TEXT_SUCCESS_SOFT}`}>
                         <Check size={14} />
-                      </button>
+                      </UnifiedButton>
                     </PermissionGate>
-                    <button onClick={closeEditForm} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    <UnifiedButton onClick={closeEditForm} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
                       <X size={14} />
-                    </button>
+                    </UnifiedButton>
                   </>
                 ) : (
                   <>
                     <PermissionGate permission="category.manage">
-                      <button onClick={() => startEdit(cat)} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                      <UnifiedButton onClick={() => startEdit(cat)} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
                         <Pencil size={14} />
-                      </button>
+                      </UnifiedButton>
                     </PermissionGate>
                     <PermissionGate permission="category.manage">
-                      <button onClick={() => setDeleteTarget(cat)} className={`rounded-md p-1.5 text-muted-foreground ${THEME_HOVER_BG_DANGER} ${THEME_HOVER_TEXT_DANGER}`}>
+                      <UnifiedButton onClick={() => setDeleteTarget(cat)} className={`rounded-md p-1.5 text-muted-foreground ${THEME_HOVER_BG_DANGER} ${THEME_HOVER_TEXT_DANGER}`}>
                         <Trash2 size={14} />
-                      </button>
+                      </UnifiedButton>
                     </PermissionGate>
                   </>
                 )}

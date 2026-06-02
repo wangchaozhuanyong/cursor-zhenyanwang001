@@ -9,6 +9,7 @@ import {
 import { POINTS_ADVANCED_FIELD_HINTS, POINTS_SECTION_HINTS } from "@/modules/admin/pages/marketing/adminPointsHints";
 import type { LoyaltyPointsSettings } from "@/services/admin/pointsService";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const PAYMENT_METHOD_PRESETS = ["online", "whatsapp", "reward_wallet"] as const;
 
@@ -178,7 +179,7 @@ export default function PointsAdvancedTab({
               {PAYMENT_METHOD_PRESETS.map((code) => {
                 const active = paymentMethods.split(",").map((x) => x.trim()).includes(code);
                 return (
-                  <button
+                  <UnifiedButton
                     key={code}
                     type="button"
                     disabled={!paymentListApplies}
@@ -200,7 +201,7 @@ export default function PointsAdvancedTab({
                     }}
                   >
                     {code}
-                  </button>
+                  </UnifiedButton>
                 );
               })}
             </div>
@@ -209,7 +210,7 @@ export default function PointsAdvancedTab({
       </AdminSettingsSection>
 
       <div className="flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-start sm:justify-between">
-        <button
+        <UnifiedButton
           type="button"
           onClick={onSave}
           disabled={saving}
@@ -217,9 +218,9 @@ export default function PointsAdvancedTab({
         >
           <Save className="h-4 w-4" />
           <Tx>保存高级设置</Tx>
-        </button>
+        </UnifiedButton>
         <div className="flex w-full flex-col gap-2 sm:max-w-sm sm:items-end">
-          <button
+          <UnifiedButton
             type="button"
             onClick={onExpireRun}
             disabled={expireRunning || !expireEnabled}
@@ -227,7 +228,7 @@ export default function PointsAdvancedTab({
           >
             <RefreshCw className={cn("h-4 w-4", expireRunning && "animate-spin")} />
             <Tx>立即执行过期扣减</Tx>
-          </button>
+          </UnifiedButton>
           <p className="text-xs leading-relaxed text-muted-foreground sm:text-right">
             <Tx>手动触发一次过期扣减，用于测试或补跑；需已开启「启用积分过期」。</Tx>
           </p>

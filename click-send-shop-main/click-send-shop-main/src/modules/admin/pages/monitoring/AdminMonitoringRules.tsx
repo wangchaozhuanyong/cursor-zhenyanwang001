@@ -24,6 +24,7 @@ import {
   adminTdClassName,
   adminThClassName,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const severityOptions: MonitoringSeverity[] = ["P0", "P1", "P2", "P3", "INFO"];
 
@@ -145,13 +146,13 @@ export default function AdminMonitoringRules() {
                     />
                   </td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
-                    <button
+                    <UnifiedButton
                       type="button"
                       className={monitoringPrimaryButtonClass}
                       onClick={() => void runMonitoringRule(rule.code).then(() => load())}
                     >
                       手动执行
-                    </button>
+                    </UnifiedButton>
                   </td>
                 </tr>
               );

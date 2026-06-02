@@ -10,6 +10,7 @@ import PageHeader from "@/components/PageHeader";
 import { STORE_READING_MAIN_CLASS } from "@/constants/storeLayout";
 import type { FaqItem } from "@/constants/help";
 import type { HelpCenterConfig } from "@/types/content";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[] } | null {
   if (!raw?.trim()) return null;
@@ -95,31 +96,31 @@ export default function Help() {
           />
         </div>
         <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto lg:flex-wrap lg:overflow-visible">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => setActiveCategory(null)}
             className={`shrink-0 rounded-full px-4 py-1.5 text-xs ${!activeCategory ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}
           >
             全部
-          </button>
+          </UnifiedButton>
           {faqCategories.map((cat) => (
-            <button
+            <UnifiedButton
               key={cat}
               type="button"
               onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
               className={`shrink-0 rounded-full px-4 py-1.5 text-xs ${activeCategory === cat ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}
             >
               {cat}
-            </button>
+            </UnifiedButton>
           ))}
         </div>
         <div className="mt-4 space-y-3">
           {filtered.map((faq) => (
             <div key={faq.id} className="overflow-hidden rounded-xl border border-border bg-card">
-              <button type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="flex w-full items-center justify-between px-4 py-3 text-left">
+              <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="flex w-full items-center justify-between px-4 py-3 text-left">
                 <span className="pr-2 text-sm text-foreground">{faq.question}</span>
                 {openId === faq.id ? <ChevronUp size={16} className="text-theme-price" /> : <ChevronDown size={16} className="text-muted-foreground" />}
-              </button>
+              </UnifiedButton>
               {openId === faq.id ? <div className="border-t border-border px-4 py-3 text-sm leading-relaxed text-muted-foreground">{faq.answer}</div> : null}
             </div>
           ))}

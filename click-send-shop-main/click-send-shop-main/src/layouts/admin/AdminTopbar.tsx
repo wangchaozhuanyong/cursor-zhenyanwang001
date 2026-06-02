@@ -8,6 +8,7 @@ import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 import type { ResolvedNavChild, ResolvedNavItem } from "./adminNavConfig";
 import AdminAccountMenu from "./AdminAccountMenu";
 import AdminSecurityAlertsButton from "./AdminSecurityAlertsButton";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AdminTopbarProps = {
   navItems: ResolvedNavItem[];
@@ -58,24 +59,24 @@ export default function AdminTopbar({
   return (
     <>
       <div className="admin-chrome-toolbar flex h-[var(--admin-chrome-toolbar-h)] min-h-[var(--admin-chrome-toolbar-h)] items-center gap-1.5 px-[var(--admin-mobile-page-x)] sm:px-4 lg:px-5">
-        <button
+        <UnifiedButton
           type="button"
           aria-label={t("layout.openMenu")}
           className="touch-manipulation flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground hover:bg-secondary lg:hidden"
           onClick={(event) => onOpenMobileSidebar(event.currentTarget)}
         >
           <Menu size={20} />
-        </button>
+        </UnifiedButton>
         <div className="min-w-0 flex-1" aria-hidden />
         <div className="admin-topbar-actions flex shrink-0 flex-nowrap items-center gap-1 sm:gap-1.5">
-          <button
+          <UnifiedButton
             type="button"
             aria-label={t("layout.searchMenu")}
             className="touch-manipulation flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary md:hidden"
             onClick={() => setMobileSearchOpen((v) => !v)}
           >
             <Search size={18} />
-          </button>
+          </UnifiedButton>
           <div className="admin-topbar-search hidden h-9 items-center gap-2 rounded-xl bg-secondary px-2.5 md:flex">
             <Search size={16} className="shrink-0 text-muted-foreground" />
             <input

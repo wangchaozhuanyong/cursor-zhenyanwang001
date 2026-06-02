@@ -11,6 +11,7 @@ import AdminHomeNavEditor from "./homeOps/AdminHomeNavEditor";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type HomeOpsTab = "modules" | "display" | "nav" | "newArrival";
 
@@ -53,7 +54,7 @@ export default function AdminHomeOps() {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
-              <button
+              <UnifiedButton
                 key={tab.id}
                 type="button"
                 aria-current={active ? "page" : undefined}
@@ -68,7 +69,7 @@ export default function AdminHomeOps() {
                 <Icon size={16} className={active ? "text-theme-price" : ""} />
                 {tab.label}
                 <AdminFieldHint text={tab.desc} />
-              </button>
+              </UnifiedButton>
             );
           })}
         </nav>

@@ -1,6 +1,7 @@
 import { Search, X } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 interface SearchBarProps {
   placeholder?: string;
@@ -84,9 +85,9 @@ export default function SearchBar({
         className="app-search-bar__input min-h-0 flex-1 bg-transparent text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground"
       />
       {value && (
-        <button type="button" className="app-search-bar__clear touch-manipulation flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary active:bg-muted" onClick={() => setValue("", true)} aria-label="清除">
+        <UnifiedButton type="button" className="app-search-bar__clear touch-manipulation flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary active:bg-muted" onClick={() => setValue("", true)} aria-label="清除">
           <X size={16} className="text-muted-foreground" />
-        </button>
+        </UnifiedButton>
       )}
     </div>
   );

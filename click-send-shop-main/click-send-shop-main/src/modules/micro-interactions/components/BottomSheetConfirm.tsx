@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LoadingButton } from "./LoadingButton";
 import { AppModal } from "./AppModal";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type BottomSheetConfirmProps = {
   open: boolean;
@@ -47,14 +48,14 @@ export function BottomSheetConfirm({
 
   const footer = (
     <motion.div className="grid grid-cols-2 gap-2">
-      <button
+      <UnifiedButton
         type="button"
         disabled={loading}
         onClick={onClose}
         className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-bg)] disabled:opacity-50"
       >
         {cancelText}
-      </button>
+      </UnifiedButton>
       <LoadingButton
         state={loading ? "loading" : "normal"}
         className={cn(

@@ -13,6 +13,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import { THEME_HOVER_BG_DANGER, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const EMPTY_FORM = {
   name: "",
@@ -99,7 +100,7 @@ export default function AdminProductTags() {
       hint={<Tx>创建后，在「商品管理 → 新增/编辑商品」中勾选即可关联；前台列表与详情页会展示。</Tx>}
       toolbar={(
         <PermissionGate permission="tag.manage">
-          <button
+          <UnifiedButton
             onClick={() => {
               if (showForm && !editingId) setShowForm(false);
               else {
@@ -111,7 +112,7 @@ export default function AdminProductTags() {
             className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             <Plus size={16} /><Tx>新增标签</Tx>
-          </button>
+          </UnifiedButton>
         </PermissionGate>
       )}
     >
@@ -156,7 +157,7 @@ export default function AdminProductTags() {
                 {editingId ? "保存" : "添加"}
               </LoadingButton>
             </PermissionGate>
-            <button onClick={resetForm} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground"><Tx>取消</Tx></button>
+            <UnifiedButton onClick={resetForm} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground"><Tx>取消</Tx></UnifiedButton>
           </div>
         </div>
       )}
@@ -185,18 +186,18 @@ export default function AdminProductTags() {
             </div>
             <div className="flex gap-1">
               <PermissionGate permission="tag.manage">
-                <button onClick={() => startEdit(tag)} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                <UnifiedButton onClick={() => startEdit(tag)} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
                   <Pencil size={14} />
-                </button>
+                </UnifiedButton>
               </PermissionGate>
               <PermissionGate permission="tag.manage">
-                <button
+                <UnifiedButton
                   type="button"
                   onClick={() => adminConfirmDelete(confirm, tag.name, () => deleteMutation.mutate(tag.id))}
                   className={`rounded-md p-1.5 text-muted-foreground ${THEME_HOVER_BG_DANGER} ${THEME_HOVER_TEXT_DANGER}`}
                 >
                   <Trash2 size={14} />
-                </button>
+                </UnifiedButton>
               </PermissionGate>
             </div>
           </div>

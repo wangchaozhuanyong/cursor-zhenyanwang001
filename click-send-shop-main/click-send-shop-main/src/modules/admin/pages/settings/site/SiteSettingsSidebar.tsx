@@ -3,6 +3,7 @@ import type { SiteSettingsSectionId } from "./siteSettingsSections";
 import { SITE_SETTINGS_SECTIONS } from "./siteSettingsSections";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   activeId: SiteSettingsSectionId;
@@ -19,7 +20,7 @@ export default function SiteSettingsSidebar({ activeId, dirtyMap, onSelect, clas
         const active = section.id === activeId;
         const dirty = dirtyMap[section.id];
         return (
-          <button
+          <UnifiedButton
             key={section.id}
             type="button"
             onClick={() => onSelect(section.id)}
@@ -30,7 +31,7 @@ export default function SiteSettingsSidebar({ activeId, dirtyMap, onSelect, clas
           >
             <span>{tText(section.title)}</span>
             {dirty ? <span className="h-2 w-2 shrink-0 rounded-full bg-theme-price" title={tText("未保存")} /> : null}
-          </button>
+          </UnifiedButton>
         );
       })}
     </nav>

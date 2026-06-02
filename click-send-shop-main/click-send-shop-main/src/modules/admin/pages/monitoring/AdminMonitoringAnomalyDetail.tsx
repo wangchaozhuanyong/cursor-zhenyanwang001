@@ -26,6 +26,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function AdminMonitoringAnomalyDetail() {
   const { tText } = useAdminT();
@@ -107,15 +108,15 @@ export default function AdminMonitoringAnomalyDetail() {
               <div><Tx>出现次数</Tx>：{anomaly.seen_count}</div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <button
+              <UnifiedButton
                 type="button"
                 className={monitoringPrimaryButtonClass}
                 disabled={busy}
                 onClick={() => void runAction(() => rescanMonitoringAnomaly(anomaly.id))}
               >
                 手动复查
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 className={monitoringSecondaryButtonClass}
                 disabled={busy || terminal}
@@ -123,23 +124,23 @@ export default function AdminMonitoringAnomalyDetail() {
                 onClick={() => void runAction(() => createRepairTask(anomaly.id))}
               >
                 创建修复任务
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 className={monitoringSecondaryButtonClass}
                 disabled={busy || anomaly.status === "ignored" || anomaly.status === "resolved"}
                 onClick={() => void runAction(() => ignoreMonitoringAnomaly(anomaly.id))}
               >
                 忽略
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 disabled:opacity-40"
                 disabled={busy || anomaly.status === "resolved"}
                 onClick={() => void runAction(() => resolveMonitoringAnomaly(anomaly.id))}
               >
                 标记解决
-              </button>
+              </UnifiedButton>
             </div>
           </section>
 

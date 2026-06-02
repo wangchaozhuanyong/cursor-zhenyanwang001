@@ -1,1 +1,0 @@
-System.register([],function(e,n){return e("t",function(){return"undefined"!=typeof window&&(window.matchMedia("(display-mode: standalone)").matches||!0===window.navigator.standalone)}),{setters:[],execute:function(){}}});

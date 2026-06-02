@@ -49,6 +49,7 @@ import {
   adminTdClassName,
   adminThClassName,
 } from "@/utils/adminTableClasses";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type TabKey = "overview" | "policies" | "preview" | "runs" | "risk";
 
@@ -384,13 +385,13 @@ export default function AdminDataRetention() {
         </>
       )}
       toolbar={(
-        <button
+        <UnifiedButton
           type="button"
           onClick={() => void invalidateAll()}
           className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-secondary"
         >
           <RefreshCw size={15} /> <Tx>刷新</Tx>
-        </button>
+        </UnifiedButton>
       )}
       filters={(
       <div className="flex flex-wrap gap-2 border-b border-border">
@@ -405,7 +406,7 @@ export default function AdminDataRetention() {
                 active ? "border-[var(--theme-primary)]" : "border-transparent"
               }`}
             >
-              <button
+              <UnifiedButton
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={`inline-flex items-center gap-2 text-sm font-medium ${
@@ -414,7 +415,7 @@ export default function AdminDataRetention() {
               >
                 <Icon size={15} />
                 {tText(tab.label)}
-              </button>
+              </UnifiedButton>
               {tabHint ? <AdminFieldHint text={tText(tabHint)} /> : null}
             </div>
           );
@@ -436,14 +437,14 @@ export default function AdminDataRetention() {
                   <span>#{overview.runningRun.id}</span>
                   <StatusBadge status={overview.runningRun.status} tText={tText} />
                   {canExecute ? (
-                    <button
+                    <UnifiedButton
                       type="button"
                       disabled={cancelMutation.isPending}
                       onClick={() => cancelMutation.mutate(overview.runningRun!.id)}
                       className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs hover:bg-blue-100 disabled:opacity-50"
                     >
                       <Tx>请求取消</Tx>
-                    </button>
+                    </UnifiedButton>
                   ) : null}
                 </div>
               </div>
@@ -486,13 +487,13 @@ export default function AdminDataRetention() {
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={runDetailQuery.data.status} tText={tText} />
-                    <button
+                    <UnifiedButton
                       type="button"
                       onClick={() => setSelectedRunId(null)}
                       className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-secondary"
                     >
                       <Tx>返回列表</Tx>
-                    </button>
+                    </UnifiedButton>
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground">
@@ -503,11 +504,11 @@ export default function AdminDataRetention() {
             ) : (
               <div className="space-y-2">
                 {(overview?.recentRuns || []).map((run) => (
-                  <button key={run.id} type="button" onClick={() => setSelectedRunId(run.id)} className="flex w-full items-center justify-between gap-3 rounded-lg bg-secondary/40 px-3 py-2 text-left text-sm hover:bg-secondary">
+                  <UnifiedButton key={run.id} type="button" onClick={() => setSelectedRunId(run.id)} className="flex w-full items-center justify-between gap-3 rounded-lg bg-secondary/40 px-3 py-2 text-left text-sm hover:bg-secondary">
                     <span>#{run.id} {tText(formatDataCleanupRunType(run.run_type))}</span>
                     <span className="text-muted-foreground">命中 {run.total_matched} / 删除 {run.total_deleted}</span>
                     <StatusBadge status={run.status} tText={tText} />
-                  </button>
+                  </UnifiedButton>
                 ))}
                 {!overview?.recentRuns?.length ? <div className="text-sm text-muted-foreground"><Tx>暂无执行记录</Tx></div> : null}
               </div>
@@ -555,14 +556,14 @@ export default function AdminDataRetention() {
             </div>
           </section>
           <div className="flex justify-end">
-            <button
+            <UnifiedButton
               type="button"
               disabled={!canManage || resetMutation.isPending}
               onClick={() => confirm({ title: tText("恢复默认策略"), description: "将重置启用状态、保留天数和批处理大小。", confirmText: "恢复默认", onConfirm: () => resetMutation.mutateAsync() })}
               className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-secondary disabled:opacity-50"
             >
               <RefreshCw size={15} /> 恢复默认
-            </button>
+            </UnifiedButton>
           </div>
           {Object.entries(groupedPolicies).map(([category, items]) => (
             <section key={category} className="rounded-lg border border-border bg-card">
@@ -651,14 +652,14 @@ export default function AdminDataRetention() {
                           <td className={adminTdClassName("px-3 py-3", "right")}>
                             <AdminRowActionsMenu
                               primary={(
-                                <button
+                                <UnifiedButton
                                   type="button"
                                   disabled={!canManage || savePolicyMutation.isPending}
                                   onClick={() => savePolicyMutation.mutate(policy)}
                                   className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary disabled:opacity-50"
                                 >
                                   <Save size={13} className="mr-1 inline" /> <Tx>保存</Tx>
-                                </button>
+                                </UnifiedButton>
                               )}
                               moreLabel={<Tx>更多</Tx>}
                               items={[
@@ -697,8 +698,8 @@ export default function AdminDataRetention() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => { setSelectedKeys(policies.filter((p) => p.enabled).map((p) => p.key)); setPreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>选择启用项</Tx></button>
-                <button type="button" onClick={() => { setSelectedKeys([]); setPreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空</Tx></button>
+                <UnifiedButton type="button" onClick={() => { setSelectedKeys(policies.filter((p) => p.enabled).map((p) => p.key)); setPreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>选择启用项</Tx></UnifiedButton>
+                <UnifiedButton type="button" onClick={() => { setSelectedKeys([]); setPreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空</Tx></UnifiedButton>
               </div>
             </div>
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
@@ -722,22 +723,22 @@ export default function AdminDataRetention() {
               ))}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button
+              <UnifiedButton
                 type="button"
                 disabled={!canExecute || !selectedKeys.length || previewMutation.isPending}
                 onClick={() => previewMutation.mutate()}
                 className="inline-flex min-h-[42px] items-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 <FileSearch size={16} /> 生成预览
-              </button>
-              <button
+              </UnifiedButton>
+              <UnifiedButton
                 type="button"
                 disabled={!canExecute || !previewRun || !previewKeysMatch || executeMutation.isPending}
                 onClick={confirmExecute}
                 className="inline-flex min-h-[42px] items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 <Play size={16} /> 执行清理
-              </button>
+              </UnifiedButton>
               {!previewKeysMatch && previewRun ? (
                 <span className="text-sm text-amber-700"><Tx>策略选择已变更，请重新生成预览</Tx></span>
               ) : null}
@@ -790,13 +791,13 @@ export default function AdminDataRetention() {
                       <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                         <AdminRowActionsMenu
                           primary={(
-                            <button
+                            <UnifiedButton
                               type="button"
                               onClick={() => setSelectedRunId(run.id)}
                               className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
                             >
                               <Tx>查看</Tx>
-                            </button>
+                            </UnifiedButton>
                           )}
                           moreLabel={<Tx>更多</Tx>}
                           items={[

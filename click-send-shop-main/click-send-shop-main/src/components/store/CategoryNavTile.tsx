@@ -1,6 +1,7 @@
 import type { Ref } from "react";
 import HomeNavIcon from "@/components/store/HomeNavIcon";
 import { cn } from "@/lib/utils";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type CategoryNavTileProps = {
   label: string;
@@ -21,7 +22,7 @@ export default function CategoryNavTile({
   className,
 }: CategoryNavTileProps) {
   return (
-    <button
+    <UnifiedButton
       ref={btnRef}
       type="button"
       onClick={onClick}
@@ -44,6 +45,6 @@ export default function CategoryNavTile({
       >
         {label}
       </span>
-    </button>
+    </UnifiedButton>
   );
 }

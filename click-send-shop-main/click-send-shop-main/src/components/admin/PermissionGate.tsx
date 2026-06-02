@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft, Home, LockKeyhole } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {
   /** 单一权限码 */
@@ -29,22 +30,22 @@ function AdminPermissionDeniedPanel() {
           当前账号没有访问这个后台页面的权限。如需处理该模块，请联系超级管理员调整角色权限。
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-          <button
+          <UnifiedButton
             type="button"
             onClick={() => navigate("/admin", { replace: true })}
             className="inline-flex items-center gap-2 rounded-lg btn-theme-price px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
             <Home size={15} aria-hidden />
             返回后台首页
-          </button>
-          <button
+          </UnifiedButton>
+          <UnifiedButton
             type="button"
             onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]"
           >
             <ArrowLeft size={15} aria-hidden />
             返回上一页
-          </button>
+          </UnifiedButton>
         </div>
       </div>
     </div>

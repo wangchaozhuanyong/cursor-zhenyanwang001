@@ -160,10 +160,15 @@ function stripOriginHeaderForDevProxy(proxy: {
 const DEFAULT_DEV_API_PROXY_TARGET = "http://localhost:3000";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
+export default defineConfig(({ mode, command }) => {
+  const fileEnv = loadEnv(mode, process.cwd(), "");
+  const env = { ...fileEnv, ...process.env };
+  if (command === "serve" && fileEnv.VITE_API_BASE_URL) {
+    env.VITE_API_BASE_URL = fileEnv.VITE_API_BASE_URL;
+  }
   const thirdPartyLoginEnabled = env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
   const legacyEnabled = env.VITE_LEGACY_BUILD !== "0";
+  const apiBaseUrl = env.VITE_API_BASE_URL || "/api";
   const devApiProxyTarget = env.VITE_DEV_API_PROXY_TARGET || DEFAULT_DEV_API_PROXY_TARGET;
   const isAdminBuild = mode === "admin" || env.VITE_APP_TARGET === "admin";
   const buildOutDir = env.VITE_BUILD_OUT_DIR || (isAdminBuild ? "admin-dist" : "dist");
@@ -171,6 +176,7 @@ export default defineConfig(({ mode }) => {
 
   return ({
   define: {
+    "import.meta.env.VITE_API_BASE_URL": JSON.stringify(apiBaseUrl),
     "import.meta.env.VITE_THIRD_PARTY_LOGIN_ENABLED": JSON.stringify(
       thirdPartyLoginEnabled ? "true" : "false",
     ),

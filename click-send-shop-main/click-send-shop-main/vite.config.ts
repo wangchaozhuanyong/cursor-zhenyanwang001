@@ -167,6 +167,7 @@ export default defineConfig(({ mode }) => {
   const devApiProxyTarget = env.VITE_DEV_API_PROXY_TARGET || DEFAULT_DEV_API_PROXY_TARGET;
   const isAdminBuild = mode === "admin" || env.VITE_APP_TARGET === "admin";
   const buildOutDir = env.VITE_BUILD_OUT_DIR || (isAdminBuild ? "admin-dist" : "dist");
+  const pwaHtmlEntry = isAdminBuild ? "admin-index.html" : "index.html";
 
   return ({
   define: {
@@ -210,8 +211,7 @@ export default defineConfig(({ mode }) => {
       workbox: {
         swDest: "sw.js",
         globPatterns: [
-          "index.html",
-          "admin-index.html",
+          pwaHtmlEntry,
           "offline.html",
           "browser-preboot.js",
           "favicon*.{ico,png,svg,webp}",

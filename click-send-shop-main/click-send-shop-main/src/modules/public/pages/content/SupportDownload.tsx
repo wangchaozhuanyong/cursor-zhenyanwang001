@@ -315,7 +315,12 @@ export default function SupportDownload() {
 
           {!activeView && !queryChannelId ? (
             <section className="support-empty-panel">
-              {canShowInstallView ? "暂未配置客服渠道或添加到桌面说明，请稍后再试。" : "暂未配置客服渠道，请稍后再试。"}
+              <strong>客服渠道暂未显示</strong>
+              <span>
+                {canShowInstallView
+                  ? "请稍后再试；如果你是管理员，请到后台客服与安装页面检查客服渠道和添加桌面说明是否已启用。"
+                  : "请稍后再试；如果你是管理员，请到后台客服与安装页面检查微信、WhatsApp 或 Telegram 渠道是否已启用。"}
+              </span>
             </section>
           ) : null}
         </div>

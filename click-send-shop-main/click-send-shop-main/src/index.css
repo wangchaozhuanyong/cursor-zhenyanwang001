@@ -1664,6 +1664,18 @@ html[data-app-scope="store"] .support-empty-panel {
   line-height: 1.6;
 }
 
+html[data-app-scope="store"] .support-empty-panel strong {
+  display: block;
+  color: var(--support-ink);
+  font-size: 1.02rem;
+  font-weight: 850;
+}
+
+html[data-app-scope="store"] .support-empty-panel span {
+  display: block;
+  margin-top: 0.35rem;
+}
+
 html[data-app-scope="store"] .support-install-intro,
 html[data-app-scope="store"] .support-notice-panel {
   width: 100%;

@@ -4889,7 +4889,7 @@ html[data-app-scope="store"] .store-coupon-card--template {
   --coupon-template-c: #c58a32;
   --coupon-template-paper: var(--coupon-ticket-paper);
   isolation: isolate;
-  min-height: 7.15rem;
+  min-height: 6.55rem;
   border-width: 1px;
   border-style: solid;
   border-color: color-mix(in srgb, var(--coupon-ticket-gold) 70%, var(--coupon-ticket-red));
@@ -4944,7 +4944,7 @@ html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layou
   --coupon-ticket-left-width: 5.55rem;
   --coupon-ticket-action-width: 3.05rem;
   grid-template-columns: 5.55rem minmax(0, 1fr) 3.05rem;
-  min-height: 6.45rem;
+  min-height: 5.95rem;
   border-radius: 17px;
 }
 
@@ -5000,8 +5000,8 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__te
 }
 
 html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__template-edge {
-  top: 0.74rem;
-  bottom: 0.74rem;
+  top: 0.58rem;
+  bottom: 0.58rem;
   width: 14px;
   border-radius: 999px;
   background:
@@ -5033,7 +5033,7 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__va
 html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__value-pane::before {
   content: "";
   position: absolute;
-  inset: 0.56rem 0.42rem 0.56rem 0.48rem;
+  inset: 0.42rem 0.42rem 0.42rem 0.48rem;
   pointer-events: none;
   border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold-bright) 70%, transparent);
   border-right-color: color-mix(in srgb, var(--coupon-ticket-gold) 32%, transparent);
@@ -5223,7 +5223,7 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__ac
 html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-pane::before {
   content: "";
   position: absolute;
-  inset: 0.58rem 0.38rem;
+  inset: 0.44rem 0.38rem;
   pointer-events: none;
   border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold-bright) 72%, transparent);
   border-left-color: color-mix(in srgb, var(--coupon-ticket-gold) 34%, transparent);

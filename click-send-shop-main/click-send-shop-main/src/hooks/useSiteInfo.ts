@@ -31,6 +31,9 @@ const FALLBACK: SiteInfo = {
 let cachedInfo: SiteInfo | null = null;
 let inflight: Promise<SiteInfo> | null = null;
 const subscribers = new Set<(info: SiteInfo) => void>();
+const SITE_INFO_RETRY_DELAYS_MS = [1_500, 3_000, 6_000] as const;
+let retryTimer: ReturnType<typeof window.setTimeout> | null = null;
+let retryAttempt = 0;
 
 function looksLikeMojibake(value: string): boolean {
   if (!value) return false;
@@ -69,20 +72,47 @@ function notifyAll(info: SiteInfo) {
   subscribers.forEach((cb) => cb(info));
 }
 
+function clearRetryTimer() {
+  if (retryTimer) {
+    window.clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+}
+
+function applyLoadedInfo(info: SiteInfo) {
+  clearRetryTimer();
+  retryAttempt = 0;
+  cachedInfo = info;
+  notifyAll(info);
+}
+
+function notifyFallbackAndScheduleRetry() {
+  notifyAll(FALLBACK);
+
+  if (typeof window === "undefined") return FALLBACK;
+  if (cachedInfo || retryTimer || retryAttempt >= SITE_INFO_RETRY_DELAYS_MS.length) return FALLBACK;
+
+  const delay = SITE_INFO_RETRY_DELAYS_MS[retryAttempt] ?? SITE_INFO_RETRY_DELAYS_MS[SITE_INFO_RETRY_DELAYS_MS.length - 1];
+  retryAttempt += 1;
+  retryTimer = window.setTimeout(() => {
+    retryTimer = null;
+    void loadOnce();
+  }, delay);
+
+  return FALLBACK;
+}
+
 async function loadOnce(): Promise<SiteInfo> {
   if (cachedInfo) return cachedInfo;
   if (inflight) return inflight;
   inflight = homeService.fetchHomeBootstrap().then((b) => b.siteInfo).catch(() => contentService.fetchSiteInfo())
     .then((data) => {
       const merged: SiteInfo = sanitizeSiteInfo({ ...FALLBACK, ...(data ?? {}) });
-      cachedInfo = merged;
-      notifyAll(merged);
+      applyLoadedInfo(merged);
       return merged;
     })
     .catch(() => {
-      cachedInfo = FALLBACK;
-      notifyAll(FALLBACK);
-      return FALLBACK;
+      return notifyFallbackAndScheduleRetry();
     })
     .finally(() => {
       inflight = null;
@@ -91,20 +121,19 @@ async function loadOnce(): Promise<SiteInfo> {
 }
 
 export function refreshSiteInfo() {
+  clearRetryTimer();
+  retryAttempt = 0;
   cachedInfo = null;
   inflight = null;
   homeService.invalidateHomeBootstrapCache();
   inflight = homeService.fetchHomeBootstrap({ force: true }).then((b) => b.siteInfo).catch(() => contentService.fetchSiteInfo())
     .then((data) => {
       const merged: SiteInfo = sanitizeSiteInfo({ ...FALLBACK, ...(data ?? {}) });
-      cachedInfo = merged;
-      notifyAll(merged);
+      applyLoadedInfo(merged);
       return merged;
     })
     .catch(() => {
-      cachedInfo = FALLBACK;
-      notifyAll(FALLBACK);
-      return FALLBACK;
+      return notifyFallbackAndScheduleRetry();
     })
     .finally(() => {
       inflight = null;

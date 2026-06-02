@@ -52,6 +52,7 @@ function getOpenUrl(channel: SupportDownloadChannel) {
 export default function SupportChannelCard({ channel }: Props) {
   const account = cleanSupportText(channel.account);
   const qrUrl = cleanSupportText(channel.qrUrl);
+  const description = cleanSupportText(channel.description);
   const openUrl = getOpenUrl(channel);
   const title = getChannelTitle(channel);
   const qrTrackedRef = useRef(false);
@@ -113,6 +114,10 @@ export default function SupportChannelCard({ channel }: Props) {
             <span>复制</span>
           </button>
         </div>
+      ) : null}
+
+      {description ? (
+        <p className="support-channel-description">{description}</p>
       ) : null}
 
       <div className="support-qr-block">

@@ -1,4 +1,4 @@
-import { ArrowLeft, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
-import { flattenCategories, type FlatCategory } from "@/utils/categoryTree";
+import { flattenCategories } from "@/utils/categoryTree";
 import type { Category } from "@/types/category";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminLabelWithHint, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
@@ -28,8 +28,6 @@ import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { tempVariantId } from "@/utils/productFormVariantUtils";
 import type { ProductFormPayloadSlice } from "@/modules/admin/pages/product/productFormTypes";
-import ProductVariantMatrixTable from "@/modules/admin/pages/product/ProductVariantMatrixTable";
-import ProductSpecGroupsSection from "@/modules/admin/pages/product/ProductSpecGroupsSection";
 import {
   ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS,
   ADMIN_PRODUCT_FORM_CONTROL_CLASS,
@@ -39,13 +37,11 @@ import { createEmptyProductForm } from "@/modules/admin/pages/product/productFor
 import { deleteAdminProduct, submitAdminProductForm } from "@/modules/admin/pages/product/productFormActions";
 import { buildProductFormFromProduct } from "@/modules/admin/pages/product/productFormHydration";
 import { getProductFormSaveBlockMessage } from "@/modules/admin/pages/product/productFormValidation";
-import {
-  updateProductDefaultVariantField,
-  type DefaultVariantSyncedField,
-} from "@/modules/admin/pages/product/productFormState";
 import { useProductMediaUploads } from "@/modules/admin/pages/product/useProductMediaUploads";
 import { useProductSkuMatrix } from "@/modules/admin/pages/product/useProductSkuMatrix";
 import ProductMediaSection from "@/modules/admin/pages/product/ProductMediaSection";
+import ProductBasicInfoSection from "@/modules/admin/pages/product/ProductBasicInfoSection";
+import ProductSkuSection from "@/modules/admin/pages/product/ProductSkuSection";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const tempId = tempVariantId;
@@ -184,10 +180,6 @@ export default function AdminProductForm() {
     0,
   );
 
-  const updateDefaultVariantField = (field: DefaultVariantSyncedField, value: string) => {
-    setForm((f) => updateProductDefaultVariantField(f, field, value));
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -222,199 +214,30 @@ export default function AdminProductForm() {
             tText={tText}
           />
 
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-foreground"><Tx>基本信息</Tx></h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>商品名称</Tx></label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tText("输入商品名称")} className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  <Tx>库存预警阈值（可选）</Tx>
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={form.stock_warning_threshold}
-                  onChange={(e) => updateDefaultVariantField("stock_warning_threshold", e.target.value)}
-                  placeholder="5"
-                  className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
-                />
-                <div className="mt-1 flex justify-end">
-                  <AdminFieldHint text={<Tx>库存低于或等于此值时会提示有可能补货。空值时默认按 5。</Tx>} />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>默认展示售价 (RM)</Tx></label>
-                <input value={form.price} onChange={(e) => updateDefaultVariantField("price", e.target.value)} placeholder="0.00" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
-                <div className="mt-1 flex justify-end">
-                  <AdminFieldHint text={<Tx>保存时与默认 SKU 售价保持一致；多规格商品以前台默认 SKU 作为展示价。</Tx>} />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>划线原价 (RM)</Tx></label>
-                <input value={form.original_price} onChange={(e) => updateDefaultVariantField("original_price", e.target.value)} placeholder={tText("留空则不展示")} className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
-                <div className="mt-1 flex justify-end">
-                  <AdminFieldHint
-                    text={
-                      <Tx>
-                        与下方 SKU「划线原价」为同一字段（默认 SKU 双向同步）。须大于售价时，前台才显示删除线；不是成本价。
-                      </Tx>
-                    }
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>默认 SKU 初始库存</Tx></label>
-                <input
-                  type="number"
-                  min={0}
-                  value={isSingleDefaultSku ? form.stock : String(enabledStockTotal)}
-                  onChange={(e) => updateDefaultVariantField("stock", e.target.value)}
-                  disabled={!isSingleDefaultSku}
-                  placeholder="0"
-                  className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
-                />
-                <div className="mt-1 flex justify-end">
-                  <AdminFieldHint text={<Tx>保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</Tx>} />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>成本价 (RM)</Tx></label>
-                <input value={form.cost_price} onChange={(e) => updateDefaultVariantField("cost_price", e.target.value)} placeholder="0.00" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
-                <div className="mt-1 flex justify-end">
-                  <AdminFieldHint text={<Tx>成本价只用于后台毛利核算，保存时同步默认 SKU。</Tx>} />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>库存下限</Tx></label>
-                <input type="number" min={0} value={form.stock_lower_limit} onChange={(e) => updateDefaultVariantField("stock_lower_limit", e.target.value)} placeholder="0" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
-                <div className="mt-1 flex justify-end">
-                  <AdminFieldHint text={<Tx>下限用于触发补货提醒，保存时同步默认 SKU。</Tx>} />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>库存上限</Tx></label>
-                <input type="number" min={0} value={form.stock_upper_limit} onChange={(e) => updateDefaultVariantField("stock_upper_limit", e.target.value)} placeholder="0" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
-                <div className="mt-1 flex justify-end">
-                  <AdminFieldHint text={<Tx>上限是建议补到的目标库存，保存时同步默认 SKU。</Tx>} />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>销量</Tx></label>
-                <input
-                  type="number"
-                  value={form.sales_count}
-                  onChange={(e) => setForm({ ...form, sales_count: e.target.value })}
-                  placeholder="0"
-                  className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
-                />
-                <div className="mt-1 flex justify-end">
-                  <AdminFieldHint text={<Tx>订单付款后由系统自动累加；可手动修正起步销量。</Tx>} />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类</Tx></label>
-                <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}>
-                  <option value=""><Tx>选择分类</Tx></option>
-                  {categoryOptions.map((c: FlatCategory) => (
-                    <option key={c.id} value={c.id}>
-                      {"　".repeat(c.level)}
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>排序</Tx></label>
-                <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} placeholder="0" className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
-              </div>
-            </div>
-          </div>
+          <ProductBasicInfoSection
+            form={form}
+            setForm={setForm}
+            categoryOptions={categoryOptions}
+            isSingleDefaultSku={isSingleDefaultSku}
+            enabledStockTotal={enabledStockTotal}
+            tText={tText}
+          />
 
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-foreground">
-                {form.spec_groups.length === 0 && form.variants.length === 1 ? <Tx>默认 SKU 设置</Tx> : <Tx>规格 / SKU</Tx>}
-              </h3>
-              {!isSingleDefaultSku ? (
-                <UnifiedButton
-                  type="button"
-                  onClick={() =>
-                    setForm((f) => ({
-                      ...f,
-                      variants: [
-                        ...f.variants,
-                        {
-                          title: "",
-                          sku_code: "",
-                          price: f.price || "0",
-                          stock: f.stock || "0",
-                          stock_warning_threshold: f.stock_warning_threshold || "5",
-                          stock_lower_limit: f.stock_lower_limit || "",
-                          stock_upper_limit: f.stock_upper_limit || "",
-                          sort_order: f.variants.length,
-                          is_default: false,
-                        },
-                      ],
-                    }))
-                  }
-                  className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
-                >
-                  <Plus size={14} /><Tx> 添加 SKU 行
-                </Tx></UnifiedButton>
-              ) : null}
-            </div>
-            <div className="flex justify-end">
-              <AdminFieldHint
-                text={<Tx>可在此维护各规格库存与价格；保存后同步到商品总库存。</Tx>}
-              />
-            </div>
-            {form.spec_groups.length === 0 && form.variants.length === 1 ? (
-              <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 text-xs leading-5 text-muted-foreground">
-                <p className="font-medium text-foreground"><Tx>当前商品未启用多规格，系统将使用“默认规格 / 默认 SKU”管理库存、成本、条码和预警。</Tx></p>
-                <p className="mt-1"><Tx>如果商品有颜色、尺码、口味等差异，可以转为矩阵规格，为每个规格组合单独维护 SKU。</Tx></p>
-                <UnifiedButton
-                  type="button"
-                  onClick={() => setShowDefaultSkuAdvanced((v) => !v)}
-                  className="mt-3 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground"
-                >
-                  {showDefaultSkuAdvanced ? tText("收起默认 SKU 高级设置") : tText("展开默认 SKU 高级设置")}
-                </UnifiedButton>
-              </div>
-            ) : null}
-            {form.spec_groups.length > 0 || form.variants.length > 1 ? (
-              <div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs leading-5 text-muted-foreground">
-                <p className="font-medium text-foreground"><Tx>多规格商品以 SKU 表格维护售价、划线原价与库存。</Tx></p>
-                <p className="mt-1 text-muted-foreground">
-                  <Tx>基本信息只显示默认 SKU 快照和商品总库存；修改默认 SKU 后会同步到这里。</Tx>
-                </p>
-                <p className="mt-1">
-                  {tText("默认展示售价")}：RM {form.price || "0"}；{" "}
-                  {tText("划线原价")}：{form.original_price ? `RM ${form.original_price}` : "-"}；{" "}
-                  {tText("商品总库存")}：{enabledStockTotal}
-                </p>
-              </div>
-            ) : null}
-            <ProductSpecGroupsSection
-              specGroups={form.spec_groups}
-              updateSpecGroups={updateSpecGroups}
-              convertToMatrixMode={convertToMatrixMode}
-              tempId={tempId}
-              tText={tText}
-            />
-            {form.spec_groups.length > 0 || form.variants.length > 1 || showDefaultSkuAdvanced ? (
-              <ProductVariantMatrixTable
-                form={form}
-                setForm={setForm}
-                uploadingVariantImageIndex={uploadingVariantImageIndex}
-                variantUploadProgress={variantUploadProgress}
-                onVariantImageUpload={handleVariantImageUpload}
-                tText={tText}
-              />
-            ) : null}
-          </div>
+          <ProductSkuSection
+            form={form}
+            setForm={setForm}
+            isSingleDefaultSku={isSingleDefaultSku}
+            enabledStockTotal={enabledStockTotal}
+            showDefaultSkuAdvanced={showDefaultSkuAdvanced}
+            setShowDefaultSkuAdvanced={setShowDefaultSkuAdvanced}
+            updateSpecGroups={updateSpecGroups}
+            convertToMatrixMode={convertToMatrixMode}
+            tempId={tempId}
+            uploadingVariantImageIndex={uploadingVariantImageIndex}
+            variantUploadProgress={variantUploadProgress}
+            onVariantImageUpload={handleVariantImageUpload}
+            tText={tText}
+          />
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-3">
             <AdminSectionTitle

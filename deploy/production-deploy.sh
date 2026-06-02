@@ -245,7 +245,7 @@ else
   export VITE_API_BASE_URL
   npm run build:admin
   # Keep the public shop build last so dist/index.html cannot be removed by the admin/PWA build.
-  node ./node_modules/vite/bin/vite.js build
+  npm run build
 fi
 
 if [[ -f "$FRONTEND_DIR/dist/index.html" ]]; then

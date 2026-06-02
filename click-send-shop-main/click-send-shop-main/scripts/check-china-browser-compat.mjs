@@ -68,6 +68,8 @@ if (viteConfig) {
     errors.push("vite.config.ts: legacy should not be limited to the storefront only");
   }
   assertMatch("vite.config.ts", /MODERN_BUILD_TARGETS/, "should declare modern build targets");
+  assertMatch("vite.config.ts", /MODERN_BROWSER_TARGETS/, "should declare modern browser targets for the legacy plugin");
+  assertMatch("vite.config.ts", /modernTargets:\s*\[\.\.\.MODERN_BROWSER_TARGETS\]/, "legacy plugin should declare modern targets explicitly");
   assertMatch("vite.config.ts", /REGIONAL_BROWSER_TARGETS/, "should keep old-browser legacy target set");
   assertMatch("vite.config.ts", /Samsung\s*>=\s*9/i, "legacy targets should cover Samsung Internet");
   assertMatch("vite.config.ts", /Edge\s*>=\s*79/i, "legacy targets should cover Edge Chromium");

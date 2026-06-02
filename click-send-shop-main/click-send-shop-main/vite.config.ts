@@ -87,6 +87,7 @@ function stripImportMetaResolveGuard(): Plugin {
 
 const MODERN_BUILD_TARGETS = ["chrome107", "edge107", "firefox104", "safari16"] as const;
 const MODERN_CSS_TARGETS = ["chrome107", "safari16"] as const;
+const MODERN_BROWSER_TARGETS = ["Chrome >= 107", "Edge >= 107", "Firefox >= 104", "Safari >= 16"] as const;
 
 /** Legacy chunks are opt-in for old Chromium shells / old Android WebView / Safari 12. */
 const REGIONAL_BROWSER_TARGETS = [
@@ -428,6 +429,7 @@ export default defineConfig(({ mode, command }) => {
       ? [
           legacy({
             targets: [...REGIONAL_BROWSER_TARGETS],
+            modernTargets: [...MODERN_BROWSER_TARGETS],
             modernPolyfills: true,
             renderLegacyChunks: true,
           }),

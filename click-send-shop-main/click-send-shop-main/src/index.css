@@ -6703,3 +6703,65 @@ html[data-app-scope="store"] .store-hero-dot-button[aria-current="true"] .store-
     height: 1rem;
   }
 }
+
+html[data-app-scope="store"] .store-home-topbar {
+  border-bottom-color: transparent;
+  background: color-mix(in srgb, var(--theme-bg) 82%, transparent);
+  box-shadow: none;
+}
+
+html[data-app-scope="store"] .store-home-topbar .store-brand-logo {
+  width: 2.42rem;
+  height: 2.42rem;
+}
+
+html[data-app-scope="store"] .store-home-topbar input[type="search"] {
+  min-height: 2.8rem;
+  border-color: color-mix(in srgb, var(--home-hero-gold, #c79f57) 34%, var(--theme-border));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.48)),
+    color-mix(in srgb, var(--theme-surface) 88%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 10px 28px -22px rgba(75, 53, 20, 0.45);
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="home"] .store-coupon-card__action-pane {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border-left: 1px solid color-mix(in srgb, var(--coupon-ticket-gold) 34%, transparent) !important;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="home"] .store-coupon-card__action-button[data-coupon-action-button] {
+  width: 2.42rem !important;
+  max-width: 2.42rem !important;
+  height: 2.42rem !important;
+  min-height: 2.42rem !important;
+  border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold-bright) 78%, var(--coupon-ticket-red)) !important;
+  border-radius: 999px !important;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.28), transparent 35%),
+    linear-gradient(180deg, color-mix(in srgb, var(--coupon-ticket-red-soft) 76%, var(--coupon-ticket-red)), var(--coupon-ticket-red-dark)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 2px color-mix(in srgb, var(--coupon-ticket-gold-bright) 22%, transparent),
+    0 8px 16px -12px color-mix(in srgb, var(--coupon-ticket-red-dark) 82%, transparent) !important;
+}
+
+html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__round-action-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.02rem;
+  color: var(--coupon-ticket-gold-bright);
+  font-size: 0.58rem;
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: 0;
+  text-align: center;
+  text-shadow:
+    0 1px 0 color-mix(in srgb, var(--coupon-ticket-red-dark) 82%, transparent),
+    0 0 8px color-mix(in srgb, var(--coupon-ticket-gold) 32%, transparent);
+}

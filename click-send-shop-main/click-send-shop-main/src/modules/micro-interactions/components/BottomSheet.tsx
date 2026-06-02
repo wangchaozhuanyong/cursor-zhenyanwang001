@@ -15,7 +15,7 @@ export type BottomSheetProps = {
   open: boolean;
   onClose: () => void;
   children?: ReactNode;
-  title?: ReactNode;
+  title: ReactNode;
   description?: ReactNode;
   footer?: ReactNode;
   height?: BottomSheetHeight;
@@ -38,6 +38,10 @@ const HEIGHT_CLASS: Record<BottomSheetHeight, string> = {
 };
 
 const DRAG_CLOSE_PX = 80;
+
+function hasAccessibleTitle(title: ReactNode): boolean {
+  return title !== null && title !== undefined && title !== false && title !== "";
+}
 
 export function BottomSheet({
   open,
@@ -62,6 +66,7 @@ export function BottomSheet({
   const reduced = prefersReducedMotion() || !motionEnabled;
   const [presented, setPresented] = useState(open);
   const { overlayZ, contentZ, isTop } = useModalLayer(presented);
+  const hasTitle = hasAccessibleTitle(title);
 
   useOverlayDismiss({ open: presented, isTop, onClose, lockBody: true, closeOnEscape: open });
 
@@ -84,6 +89,10 @@ export function BottomSheet({
     : { duration: 0.28, ease: "easeOut" };
 
   const dragConstraints = useMemo(() => ({ top: 0, bottom: 0 }), []);
+
+  if (open && !hasTitle) {
+    throw new Error("[BottomSheet] title is required for accessible modal content.");
+  }
 
   if (typeof document === "undefined") return null;
 
@@ -115,7 +124,7 @@ export function BottomSheet({
           <motion.section
             role="dialog"
             aria-modal="true"
-            aria-labelledby={title ? titleId : undefined}
+            aria-labelledby={hasTitle ? titleId : undefined}
             aria-label={!title ? (ariaLabel || "弹窗") : undefined}
             aria-describedby={description ? descId : undefined}
             className={cn(
@@ -161,13 +170,13 @@ export function BottomSheet({
                 </UnifiedButton>
               ) : null}
 
-              {(title || showCloseButton) && (
+              {(hasTitle || showCloseButton) && (
                 <motion.div
                   className="flex shrink-0 items-start justify-between gap-3 px-4 pb-2 pt-1"
                   drag={false}
                 >
                   <motion.div className="min-w-0 flex-1" drag={false}>
-                    {title ? (
+                    {hasTitle ? (
                       <h2 id={titleId} className="text-base font-semibold text-[var(--theme-text)]">
                         {title}
                       </h2>

@@ -1,11 +1,11 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { cp, rm } from "node:fs/promises";
+import { cp, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
 const root = process.cwd();
 const storefrontDist = path.join(root, "dist");
-const protectedStorefrontDist = path.join(root, `.build-admin-dist-backup-${process.pid}-${Date.now()}`);
 const adminDist = "admin-dist";
 
 function runNodeScript(args, env = process.env) {
@@ -27,16 +27,23 @@ function runNodeScript(args, env = process.env) {
   });
 }
 
-async function restoreStorefrontDist(hasProtectedDist) {
+async function restoreStorefrontDist(hasProtectedDist, protectedStorefrontDist, backupRoot) {
   if (hasProtectedDist && existsSync(protectedStorefrontDist)) {
     await rm(storefrontDist, { recursive: true, force: true });
     await cp(protectedStorefrontDist, storefrontDist, { recursive: true });
-    await rm(protectedStorefrontDist, { recursive: true, force: true });
+  }
+  if (backupRoot) {
+    await rm(backupRoot, { recursive: true, force: true });
   }
 }
 
 async function main() {
   const hadStorefrontDist = existsSync(storefrontDist);
+  const backupRoot = hadStorefrontDist
+    ? await mkdtemp(path.join(tmpdir(), "click-send-shop-dist-"))
+    : "";
+  const protectedStorefrontDist = backupRoot ? path.join(backupRoot, "dist") : "";
+
   if (hadStorefrontDist) {
     await rm(protectedStorefrontDist, { recursive: true, force: true });
     await cp(storefrontDist, protectedStorefrontDist, { recursive: true });
@@ -51,7 +58,7 @@ async function main() {
     await runNodeScript([path.join("node_modules", "vite", "bin", "vite.js"), "build", "--mode", "admin"], env);
     await runNodeScript([path.join("scripts", "fix-pwa-sw-location.mjs"), `--dist=${adminDist}`], env);
   } finally {
-    await restoreStorefrontDist(hadStorefrontDist);
+    await restoreStorefrontDist(hadStorefrontDist, protectedStorefrontDist, backupRoot);
   }
 }
 

@@ -149,6 +149,59 @@ describe("admin MFA request CSRF handling", () => {
   });
 });
 
+describe("admin offline retry", () => {
+  beforeEach(() => {
+    clearTokens();
+    clearAdminTokens();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    clearTokens();
+    clearAdminTokens();
+  });
+
+  test("retries a safe admin read request after the browser comes back online", async () => {
+    let online = false;
+    Object.defineProperty(window.navigator, "onLine", {
+      configurable: true,
+      get: () => online,
+    });
+
+    const retryStates: string[] = [];
+    let resolveWaiting: () => void = () => {};
+    const waitingForRetry = new Promise<void>((resolve) => {
+      resolveWaiting = resolve;
+    });
+    const handleRetry = (event: Event) => {
+      const state = String((event as CustomEvent<{ state?: string }>).detail?.state || "");
+      retryStates.push(state);
+      if (state === "waiting") resolveWaiting();
+    };
+    window.addEventListener("admin:offline-retry", handleRetry);
+
+    let fetchCallCount = 0;
+    const fetchMock = vi.fn(async () => {
+      fetchCallCount += 1;
+      if (fetchCallCount === 1) throw new TypeError("NetworkError");
+      return jsonResponse({ data: { items: [] } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const resultPromise = get<{ items: unknown[] }>("/admin/products");
+    await waitingForRetry;
+
+    online = true;
+    window.dispatchEvent(new Event("online"));
+
+    await expect(resultPromise).resolves.toMatchObject({ data: { items: [] } });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(retryStates).toEqual(["waiting", "retrying", "success"]);
+
+    window.removeEventListener("admin:offline-retry", handleRetry);
+  });
+});
+
 describe("session refresh failures", () => {
   beforeEach(() => {
     clearTokens();

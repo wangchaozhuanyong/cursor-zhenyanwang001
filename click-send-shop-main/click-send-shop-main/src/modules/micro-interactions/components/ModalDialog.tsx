@@ -43,6 +43,10 @@ export function ModalDialog({
     console.warn("[ModalDialog] 缺少标题或 ariaLabel，请为弹窗补充可访问名称。");
   }, [ariaLabel, hasTitle, open]);
 
+  if (open && !hasTitle) {
+    throw new Error("[ModalDialog] title is required for accessible modal content.");
+  }
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogPrimitive.Portal>

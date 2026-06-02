@@ -83,7 +83,10 @@ export function toQueryString(params?: Record<string, unknown>): string {
 let refreshing: Promise<string> | null = null;
 let adminRefreshing: Promise<void> | null = null;
 const ADMIN_CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const ADMIN_OFFLINE_RETRY_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const ADMIN_OFFLINE_RETRY_TIMEOUT_MS = 45_000;
 const ADMIN_SESSION_EXPIRED_EVENT = "admin:session-expired";
+const ADMIN_OFFLINE_RETRY_EVENT = "admin:offline-retry";
 
 function isAuthFailureStatus(status: number): boolean {
   return status === 401 || status === 403;
@@ -97,6 +100,66 @@ function isAbortError(err: unknown): boolean {
   if (typeof DOMException !== "undefined" && err instanceof DOMException && err.name === "AbortError") return true;
   if (err instanceof Error && err.name === "AbortError") return true;
   return false;
+}
+
+function getBrowserNavigator(): Navigator | undefined {
+  if (typeof window !== "undefined" && window.navigator) return window.navigator;
+  if (typeof navigator !== "undefined") return navigator;
+  return undefined;
+}
+
+function isBrowserOffline(): boolean {
+  return getBrowserNavigator()?.onLine === false;
+}
+
+function dispatchAdminOfflineRetry(state: "waiting" | "retrying" | "failed" | "success", endpoint: string): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(ADMIN_OFFLINE_RETRY_EVENT, { detail: { state, endpoint } }));
+}
+
+async function waitForBrowserOnline(signal?: AbortSignal, timeoutMs = ADMIN_OFFLINE_RETRY_TIMEOUT_MS): Promise<boolean> {
+  const browserNavigator = getBrowserNavigator();
+  if (typeof window === "undefined" || !browserNavigator) return false;
+  if (browserNavigator.onLine) return true;
+
+  return new Promise<boolean>((resolve, reject) => {
+    let settled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const cleanup = () => {
+      window.removeEventListener("online", handleOnline);
+      signal?.removeEventListener("abort", handleAbort);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+
+    const settle = (value: boolean) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(value);
+    };
+
+    const handleOnline = () => settle(true);
+    const handleAbort = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+
+    window.addEventListener("online", handleOnline, { once: true });
+    signal?.addEventListener("abort", handleAbort, { once: true });
+    timeoutId = setTimeout(() => settle(false), timeoutMs);
+
+    if (signal?.aborted) handleAbort();
+    if (browserNavigator.onLine) handleOnline();
+  });
+}
+
+function shouldRetryAdminReadWhenOnline(endpoint: string, method: string, retry: boolean): boolean {
+  if (!retry || !endpoint.startsWith("/admin/")) return false;
+  if (endpoint.startsWith("/admin/auth/")) return false;
+  return ADMIN_OFFLINE_RETRY_METHODS.has(method);
 }
 
 function defaultTimeoutMs(method?: string): number {
@@ -322,24 +385,52 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     ...options.headers,
   };
 
+  const {
+    skipGlobalLoading: _skipGlobalLoading,
+    loadingMode: _loadingMode,
+    skipAuthRetry: _skipAuthRetry,
+    suppressAuthExpired: _suppressAuthExpired,
+    ...fetchOptions
+  } = options;
+  const runRequestFetch = () => fetchWithTimeout(`${BASE_URL}${endpoint}`, {
+    ...fetchOptions,
+    headers,
+    credentials: "include",
+  });
+
+  const wasBrowserOfflineBeforeFetch = isBrowserOffline();
   let res: Response;
   try {
-    const {
-      skipGlobalLoading: _skipGlobalLoading,
-      loadingMode: _loadingMode,
-      skipAuthRetry: _skipAuthRetry,
-      suppressAuthExpired: _suppressAuthExpired,
-      ...fetchOptions
-    } = options;
-    res = await fetchWithTimeout(`${BASE_URL}${endpoint}`, {
-      ...fetchOptions,
-      headers,
-      credentials: "include",
-    });
+    res = await runRequestFetch();
   } catch (err) {
-    if (err instanceof ApiError) throw err;
+    if (err instanceof ApiError && !isBrowserOffline()) throw err;
     if (isAbortError(err)) throw err;
-    throw new ApiError(0, "网络连接失败，请检查网络设置", err);
+    let retrySucceeded = false;
+    if (shouldRetryAdminReadWhenOnline(endpoint, method, retry)) {
+      dispatchAdminOfflineRetry("waiting", endpoint);
+      const online = wasBrowserOfflineBeforeFetch || isBrowserOffline()
+        ? await waitForBrowserOnline(options.signal)
+        : true;
+      if (online) {
+        dispatchAdminOfflineRetry("retrying", endpoint);
+        try {
+          res = await runRequestFetch();
+          retrySucceeded = true;
+          dispatchAdminOfflineRetry("success", endpoint);
+        } catch (retryErr) {
+          dispatchAdminOfflineRetry("failed", endpoint);
+          if (retryErr instanceof ApiError || isAbortError(retryErr)) throw retryErr;
+          throw new ApiError(0, "\u7f51\u7edc\u8fde\u63a5\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u8bbe\u7f6e", retryErr);
+        }
+      } else {
+        dispatchAdminOfflineRetry("failed", endpoint);
+        throw new ApiError(0, "\u7f51\u7edc\u8fde\u63a5\u5df2\u65ad\u5f00\uff0c\u6062\u590d\u8054\u7f51\u540e\u4f1a\u81ea\u52a8\u91cd\u8bd5\u540e\u53f0\u8bfb\u53d6\u8bf7\u6c42", err);
+      }
+    }
+    if (!retrySucceeded) {
+      if (err instanceof ApiError) throw err;
+      throw new ApiError(0, "网络连接失败，请检查网络设置", err);
+    }
   } finally {
     if (loadingToken) stopGlobalLoading(loadingToken);
   }

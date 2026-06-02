@@ -24,6 +24,10 @@ export type ResponsiveSheetProps = Omit<BottomSheetProps, "desktopMaxWidthClass"
   ariaLabel?: string;
 };
 
+function hasAccessibleTitle(title: ReactNode): boolean {
+  return title !== null && title !== undefined && title !== false && title !== "";
+}
+
 /**
  * 响应式弹层：移动/平板 Bottom Sheet，桌面居中 Dialog。
  * 请优先使用 {@link AppModal}；本组件供内部与兼容导出。
@@ -52,11 +56,16 @@ export function ResponsiveSheet({
   const [lockedUseSheet, setLockedUseSheet] = useState(useSheet);
   const { level, enabled } = useMotionConfig();
   const modal = modalTransition(level);
+  const hasTitle = hasAccessibleTitle(title);
 
   useEffect(() => {
     if (open) return;
     setLockedUseSheet(useSheet);
   }, [open, useSheet]);
+
+  if (open && !hasTitle) {
+    throw new Error("[ResponsiveSheet] title is required for accessible modal content.");
+  }
 
   if (lockedUseSheet) {
     return (
@@ -85,7 +94,7 @@ export function ResponsiveSheet({
       onClose={onClose}
       closeOnOverlay={closeOnOverlay}
       showCloseButton={showCloseButton}
-      hasTitle={Boolean(title)}
+      hasTitle={hasTitle}
       hasDescription={Boolean(description)}
       ariaLabel={ariaLabel}
       className={cn(
@@ -132,7 +141,7 @@ function SheetDialogBody({
   stickyFooter,
   children,
 }: {
-  title?: ReactNode;
+  title: ReactNode;
   description?: ReactNode;
   footer?: ReactNode;
   stickyFooter?: boolean;

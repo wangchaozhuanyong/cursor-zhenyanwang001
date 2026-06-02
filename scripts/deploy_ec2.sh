@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+#
+# @deprecated 2026-06-03
+# Keep only as a compatibility wrapper. The supported production deploy entry is:
+#   PROJECT_DIR=/var/www/click-send-shop PM2_APP=gc-api bash deploy/ci-deploy.sh
+# The old upload deploy branch is kept behind LEGACY_DEPLOY_EC2=1 for manual
+# break-glass use only.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -16,7 +22,8 @@ if [[ "${LEGACY_DEPLOY_EC2:-0}" != "1" && -f "${ROOT_DIR}/deploy/ci-deploy.sh" ]
   exit $?
 fi
 
-echo "[deploy] LEGACY_DEPLOY_EC2=1 enabled; running legacy upload deploy path."
+echo "[deploy][deprecated] LEGACY_DEPLOY_EC2=1 enabled; running legacy upload deploy path."
+echo "[deploy][deprecated] Prefer deploy/ci-deploy.sh unless this is a documented break-glass run."
 
 if ! command -v node >/dev/null 2>&1; then
   echo "[FATAL] node not found on server"

@@ -30,7 +30,7 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { tempVariantId } from "@/utils/productFormVariantUtils";
-import type { AdminVariantForm, ProductFormPayloadSlice } from "@/modules/admin/pages/product/productFormTypes";
+import type { ProductFormPayloadSlice } from "@/modules/admin/pages/product/productFormTypes";
 import ProductVariantMatrixTable from "@/modules/admin/pages/product/ProductVariantMatrixTable";
 import ProductSpecGroupsSection from "@/modules/admin/pages/product/ProductSpecGroupsSection";
 import {
@@ -44,6 +44,13 @@ import { createEmptyProductForm } from "@/modules/admin/pages/product/productFor
 import { deleteAdminProduct, submitAdminProductForm } from "@/modules/admin/pages/product/productFormActions";
 import { buildProductFormFromProduct } from "@/modules/admin/pages/product/productFormHydration";
 import { getProductFormSaveBlockMessage } from "@/modules/admin/pages/product/productFormValidation";
+import {
+  clearProductVideoUrl,
+  removeProductGalleryImage,
+  updateProductDefaultVariantField,
+  updateProductGalleryImageAlt,
+  type DefaultVariantSyncedField,
+} from "@/modules/admin/pages/product/productFormState";
 import { useProductMediaUploads } from "@/modules/admin/pages/product/useProductMediaUploads";
 import { useProductSkuMatrix } from "@/modules/admin/pages/product/useProductSkuMatrix";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -184,14 +191,8 @@ export default function AdminProductForm() {
     0,
   );
 
-  const updateDefaultVariantField = (field: keyof AdminVariantForm, value: string) => {
-    setForm((f) => {
-      const defaultIdx = f.variants.findIndex((variant) => variant.is_default);
-      if (defaultIdx < 0) return { ...f, [field]: value };
-      const variants = [...f.variants];
-      variants[defaultIdx] = { ...variants[defaultIdx], [field]: value };
-      return { ...f, [field]: value, variants };
-    });
+  const updateDefaultVariantField = (field: DefaultVariantSyncedField, value: string) => {
+    setForm((f) => updateProductDefaultVariantField(f, field, value));
   };
 
   return (
@@ -274,7 +275,7 @@ export default function AdminProductForm() {
                     {form.images.map((img, i) => (
                       <div key={i} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border">
                         <img src={img} alt={form.image_alts[i] || `${form.name || "商品"} 详情图 ${i + 1}`} className="h-full w-full object-cover" />
-                        <UnifiedButton onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i), image_alts: f.image_alts.filter((_, idx) => idx !== i) }))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</UnifiedButton>
+                        <UnifiedButton onClick={() => setForm((f) => removeProductGalleryImage(f, i))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</UnifiedButton>
                       </div>
                     ))}
                     {uploadingGallery && (
@@ -305,11 +306,7 @@ export default function AdminProductForm() {
                           <img src={img} alt={form.image_alts[i] || defaultGalleryImageAlt(form.name, i)} className="h-12 w-12 rounded-md object-cover" />
                           <input
                             value={form.image_alts[i] || ""}
-                            onChange={(e) => setForm((f) => {
-                              const next = [...f.image_alts];
-                              next[i] = e.target.value;
-                              return { ...f, image_alts: next };
-                            })}
+                            onChange={(e) => setForm((f) => updateProductGalleryImageAlt(f, i, e.target.value))}
                             maxLength={255}
                             placeholder={defaultGalleryImageAlt(form.name, i)}
                             className={ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS}
@@ -342,7 +339,7 @@ export default function AdminProductForm() {
                   {form.video_url && (
                     <UnifiedButton
                       type="button"
-                      onClick={() => setForm((f) => ({ ...f, video_url: "" }))}
+                      onClick={() => setForm(clearProductVideoUrl)}
                       className={`shrink-0 text-xs hover:underline ${THEME_TEXT_DANGER}`}
                     ><Tx>
                       清除
@@ -399,17 +396,7 @@ export default function AdminProductForm() {
                   type="number"
                   min={0}
                   value={form.stock_warning_threshold}
-                  onChange={(e) => {
-                    const t = e.target.value;
-                    setForm((f) => ({ ...f, stock_warning_threshold: t }));
-                    setForm((f) => {
-                      const defaultIdx = f.variants.findIndex((variant) => variant.is_default);
-                      if (defaultIdx < 0) return f;
-                      const nv = [...f.variants];
-                      nv[defaultIdx] = { ...nv[defaultIdx], stock_warning_threshold: t };
-                      return { ...f, variants: nv };
-                    });
-                  }}
+                  onChange={(e) => updateDefaultVariantField("stock_warning_threshold", e.target.value)}
                   placeholder="5"
                   className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
                 />
@@ -426,15 +413,7 @@ export default function AdminProductForm() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>划线原价 (RM)</Tx></label>
-                <input value={form.original_price} onChange={(e) => {
-                  const t = e.target.value;
-                  setForm((f) => {
-                    const defaultIdx = f.variants.findIndex((variant) => variant.is_default);
-                    const variants = [...f.variants];
-                    if (defaultIdx >= 0) variants[defaultIdx] = { ...variants[defaultIdx], original_price: t };
-                    return { ...f, original_price: t, variants };
-                  });
-                }} placeholder={tText("留空则不展示")} className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
+                <input value={form.original_price} onChange={(e) => updateDefaultVariantField("original_price", e.target.value)} placeholder={tText("留空则不展示")} className={ADMIN_PRODUCT_FORM_CONTROL_CLASS} />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint
                     text={

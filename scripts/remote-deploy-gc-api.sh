@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 # One-shot deploy for gc-api (run via: ssh ... "bash -s" < this file)
+# @deprecated 2026-06-03
+# Prefer the standard production deploy entry:
+#   PROJECT_DIR=/var/www/click-send-shop PM2_APP=gc-api bash deploy/ci-deploy.sh
+# This script is retained only because deployment docs still reference it as a
+# historical one-shot/manual recovery path.
 # 统一通过 ecosystem.config.cjs 启动 gc-api，部署完成后强制运行 verify-pm2.sh。
 set -euo pipefail
 
 ROOT="${PROJECT_DIR:-/var/www/click-send-shop}"
 SERVER="${ROOT}/server"
 PM2_APP="${PM2_APP:-gc-api}"
+
+echo "==> [deprecated] Prefer: PROJECT_DIR=${ROOT} PM2_APP=${PM2_APP} bash ${ROOT}/deploy/ci-deploy.sh"
+echo "==> [deprecated] Continuing legacy one-shot/manual recovery deploy path."
 
 echo "==> Fix ownership (ubuntu can write)"
 sudo chown -R ubuntu:ubuntu "$ROOT"

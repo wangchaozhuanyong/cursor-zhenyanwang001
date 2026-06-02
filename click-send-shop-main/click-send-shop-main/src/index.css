@@ -90,6 +90,9 @@
     --theme-font: var(--font-body);
     --theme-shadow: 0 10px 30px -10px rgba(0,0,0,0.06);
     --theme-shadow-hover: 0 20px 40px -10px rgba(0,0,0,0.12);
+    --theme-shadow-control: inset 0 1px 0 rgba(255,255,255,0.42), 0 10px 22px -18px rgba(0,0,0,0.28);
+    --theme-shadow-control-hover: inset 0 1px 0 rgba(255,255,255,0.5), 0 14px 28px -20px rgba(0,0,0,0.34);
+    --theme-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
     --theme-image-fit: cover;
     --theme-card-align: left;
     --theme-card-shell-bg: var(--theme-surface);
@@ -924,6 +927,41 @@
  * 由 SquishButton 的 variant 挂载对应 class，勿单独用于任意元素。
  */
 @layer components {
+  .app-unified-button {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      transform 160ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease,
+      color 180ms ease,
+      filter 180ms ease,
+      opacity 180ms ease;
+  }
+
+  .app-unified-button:focus-visible {
+    outline: none;
+    box-shadow: var(--theme-focus-ring), var(--theme-shadow-control);
+  }
+
+  .app-unified-button:disabled,
+  .app-unified-button[aria-disabled="true"] {
+    cursor: not-allowed;
+    filter: grayscale(0.08);
+    opacity: 0.58;
+  }
+
+  .app-unified-button[aria-busy="true"] {
+    cursor: progress;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .app-unified-button:not(:disabled):not([aria-disabled="true"]):hover {
+      filter: saturate(1.03) brightness(1.01);
+    }
+  }
+
   .squish-solid-cta {
     background-color: var(--theme-primary) !important;
     color: var(--theme-primary-foreground) !important;

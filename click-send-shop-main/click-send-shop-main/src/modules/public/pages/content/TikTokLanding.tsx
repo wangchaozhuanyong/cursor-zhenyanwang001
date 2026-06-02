@@ -503,7 +503,7 @@ export default function TikTokLanding() {
           <div className="flex min-h-[360px] flex-col justify-center sm:min-h-[420px] lg:min-h-[620px]">
             <TikTokBadge />
 
-            <h1 className="mt-5 max-w-[680px] text-[34px] font-black tracking-normal text-[#050907] min-[390px]:text-[36px] sm:text-5xl lg:text-6xl" style={{ lineHeight: 1.1 }}>
+            <h1 className="mt-5 max-w-[680px] text-[31px] font-black tracking-normal text-[#050907] min-[390px]:text-[36px] sm:text-5xl lg:text-6xl" style={{ lineHeight: 1.1 }}>
               来马来西亚，
               <br />
               生活办事<span className="text-[#007f6d]">不用到处问</span>
@@ -513,11 +513,11 @@ export default function TikTokLanding() {
               找房安家、留学陪读、签证咨询、本地服务、商务资源，一站式集中查看。
             </p>
 
-            <div className="mt-6 grid grid-cols-[1fr_0.9fr] gap-3 sm:flex sm:flex-wrap">
+            <div className="mt-6 grid grid-cols-[1.05fr_0.95fr] gap-2.5 min-[390px]:gap-3 sm:flex sm:flex-wrap">
               <UnifiedButton
                 type="button"
                 onClick={enterOfficialSite}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#008775] px-4 text-sm font-black text-white shadow-[0_16px_30px_rgba(0,127,109,0.26)] transition hover:bg-[#006f61] sm:min-w-[220px] sm:px-7 sm:text-base"
+                className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-full bg-[#008775] px-3 text-[13px] font-black text-white shadow-[0_16px_30px_rgba(0,127,109,0.26)] transition hover:bg-[#006f61] min-[390px]:gap-2 min-[390px]:px-4 min-[390px]:text-sm sm:min-w-[220px] sm:px-7 sm:text-base"
               >
                 立即进入大马通
                 <ArrowRight size={18} />
@@ -525,7 +525,7 @@ export default function TikTokLanding() {
               <UnifiedButton
                 type="button"
                 onClick={openSupport}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#008775] bg-white px-4 text-sm font-black text-[#007f6d] transition hover:bg-[#effaf7] sm:min-w-[180px] sm:px-7 sm:text-base"
+                className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-full border border-[#008775] bg-white px-3 text-[13px] font-black text-[#007f6d] transition hover:bg-[#effaf7] min-[390px]:gap-2 min-[390px]:px-4 min-[390px]:text-sm sm:min-w-[180px] sm:px-7 sm:text-base"
               >
                 <MessageCircle size={18} />
                 联系客服
@@ -558,7 +558,9 @@ export default function TikTokLanding() {
                   <Icon size={26} />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-2xl font-black leading-tight text-[#121816] sm:text-3xl">{item.value}</p>
+                  <p className={`${item.value.length > 3 ? "text-base min-[390px]:text-xl" : "text-2xl"} truncate font-black leading-tight text-[#121816] sm:text-3xl`}>
+                    {item.value}
+                  </p>
                   <p className="mt-1 text-xs font-semibold leading-5 text-[#64716e] sm:text-sm">{item.label}</p>
                 </div>
               </div>

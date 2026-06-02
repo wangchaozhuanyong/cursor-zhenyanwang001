@@ -21,6 +21,8 @@ html[data-app-scope="admin"] .admin-tech-path {
       --admin-field-focus: color-mix(in srgb, var(--theme-primary) 72%, var(--theme-border));
       --admin-field-shadow: inset 0 1px 0 color-mix(in srgb, #fff 70%, transparent), 0 1px 2px color-mix(in srgb, var(--theme-text) 7%, transparent);
       --admin-field-shadow-focus: inset 0 1px 0 color-mix(in srgb, #fff 76%, transparent), 0 0 0 3px color-mix(in srgb, var(--theme-primary) 16%, transparent), 0 10px 24px -18px color-mix(in srgb, var(--theme-primary) 42%, transparent);
+      --admin-control-shadow: inset 0 1px 0 color-mix(in srgb, #fff 42%, transparent), 0 10px 22px -18px color-mix(in srgb, var(--theme-primary) 52%, transparent);
+      --admin-control-shadow-hover: inset 0 1px 0 color-mix(in srgb, #fff 52%, transparent), 0 14px 28px -20px color-mix(in srgb, var(--theme-primary) 62%, transparent);
     }
 
     [data-admin-shell] {
@@ -32,6 +34,21 @@ html[data-app-scope="admin"] .admin-tech-path {
     [data-admin-shell] :where(.bg-card, .admin-native-table-card, .admin-table-mobile-card) {
       border-color: var(--admin-border-soft);
       background-color: var(--admin-surface-strong);
+    }
+
+    [data-admin-shell] .app-unified-button:focus-visible {
+      outline: none;
+      box-shadow: var(--admin-field-shadow-focus);
+    }
+
+    [data-admin-shell] .app-unified-button:where([class*="bg-primary"], [class*="bg-gold"], [class*="btn-theme"], [class*="bg-[var(--theme-primary)]"], [class*="bg-[var(--theme-price)]"]) {
+      box-shadow: var(--admin-control-shadow);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      [data-admin-shell] .app-unified-button:where([class*="bg-primary"], [class*="bg-gold"], [class*="btn-theme"], [class*="bg-[var(--theme-primary)]"], [class*="bg-[var(--theme-price)]"]):hover:not(:disabled):not([aria-disabled="true"]) {
+        box-shadow: var(--admin-control-shadow-hover);
+      }
     }
 
     [data-admin-shell] :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not(.bg-transparent):not(.opacity-0), select, textarea) {

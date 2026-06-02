@@ -123,7 +123,7 @@ export function getCouponCardPresentation(
     valuePaneClass,
     columnRuleClass,
     amountSize: amountSizeByLayout[layout],
-    showScope: layout !== "home",
+    showScope: false,
     infoGap: layout === "home" ? "gap-px" : "gap-px",
     infoPadding: layout === "home" ? "px-1.5 py-0.5" : layout === "compact" ? "px-2 py-0.5" : "px-2.5 py-1",
     actionLayout,

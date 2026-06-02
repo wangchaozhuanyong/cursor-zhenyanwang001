@@ -41,6 +41,7 @@ interface CartState {
   addToCart: (product: Product, qty?: number, variant?: ProductVariant | null) => Promise<void>;
   removeItem: (productId: string, variantId?: string) => Promise<void>;
   updateQty: (productId: string, qty: number, variantId?: string) => Promise<void>;
+  pinItemToTop: (productId: string, variantId?: string) => Promise<void>;
   clearCart: () => Promise<void>;
   removeOrderedItems: (lines: Array<{ product_id: string; variant_id?: string }>) => void;
   setBuyNow: (product: Product, qty: number, variant?: ProductVariant | null) => void;
@@ -190,6 +191,32 @@ export const useCartStore = create<CartState>()(
           } catch (e) {
             set(beforeSnapshot);
             throw (e instanceof Error ? e : new Error("更新失败"));
+          }
+        }
+      },
+
+      pinItemToTop: async (productId, variantId = "") => {
+        const lineKey = cartLineKey(productId, variantId);
+        const beforeSnapshot = { items: get().items, selection: get().selection };
+        let changed = false;
+
+        set((state) => {
+          const index = state.items.findIndex((i) => getCartItemKey(i) === lineKey);
+          if (index <= 0) return state;
+          const items = [...state.items];
+          const [target] = items.splice(index, 1);
+          items.unshift(target);
+          changed = true;
+          return { items };
+        });
+
+        if (!changed) return;
+        if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
+          try {
+            await cartService.pinCartItemToTop(productId, variantId);
+          } catch (e) {
+            set(beforeSnapshot);
+            throw (e instanceof Error ? e : new Error("置顶失败"));
           }
         }
       },

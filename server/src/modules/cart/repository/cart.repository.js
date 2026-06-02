@@ -88,6 +88,14 @@ async function updateCartItemQty(userId, productId, qty, variantId = '') {
   return result.affectedRows;
 }
 
+async function pinCartItemToTop(userId, productId, variantId = '') {
+  const [result] = await db.query(
+    'UPDATE cart_items SET created_at = NOW(), updated_at = NOW() WHERE user_id = ? AND product_id = ? AND variant_id = ?',
+    [userId, productId, variantId || ''],
+  );
+  return result.affectedRows;
+}
+
 async function deleteCartItem(userId, productId, variantId = '') {
   await db.query(
     'DELETE FROM cart_items WHERE user_id = ? AND product_id = ? AND variant_id = ?',
@@ -107,6 +115,7 @@ module.exports = {
   upsertCartItem,
   selectCartLine,
   updateCartItemQty,
+  pinCartItemToTop,
   deleteCartItem,
   deleteAllCartItems,
 };

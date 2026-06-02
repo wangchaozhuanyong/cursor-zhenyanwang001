@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
+import { Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import type { CartItem } from "@/types/cart";
 import { isLoggedIn } from "@/utils/token";
+import { copyToClipboard } from "@/utils/clipboard";
 import EmptyState from "@/components/EmptyState";
 import TrustInfo from "@/components/TrustInfo";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +21,9 @@ import MarketingPositionNotices from "@/modules/public/components/marketing/Mark
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 
+const CART_ACTION_WIDTH = 244;
+const CART_ACTION_REVEAL_THRESHOLD = 64;
+
 export default function Cart() {
   useDocumentTitle("购物车");
   const navigate = useNavigate();
@@ -28,6 +34,7 @@ export default function Cart() {
     error,
     clearError,
     updateQty,
+    pinItemToTop,
     removeItem,
     loadCart,
     isSelected,
@@ -37,10 +44,13 @@ export default function Cart() {
     totalItemsSelected,
   } = useCartStore();
   const selection = useCartStore((s) => s.selection);
+  const isFavoriteProduct = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const siteInfo = useSiteInfo();
   const sstCartNote = (siteInfo.sstCustomerNote || "").trim();
   const showSstCartHint = parseSstEnabled(siteInfo.sstEnabled);
   const [deleteTarget, setDeleteTarget] = useState<{ productId: string; variantId?: string; name: string } | null>(null);
+  const [openActionKey, setOpenActionKey] = useState<string | null>(null);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
@@ -77,6 +87,59 @@ export default function Cart() {
     }
     const couponId = location.state?.coupon_id;
     navigate(couponId ? `/checkout?coupon_id=${couponId}` : "/checkout");
+  };
+
+  const closeItemActions = () => setOpenActionKey(null);
+
+  const getProductShareUrl = (productId: string) => {
+    if (typeof window === "undefined") return `/product/${productId}`;
+    return new URL(`/product/${productId}`, window.location.origin).toString();
+  };
+
+  const handlePinToTop = async (item: CartItem) => {
+    try {
+      await pinItemToTop(item.product.id, item.variant_id);
+      closeItemActions();
+      toast.success("已置顶");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "置顶失败");
+    }
+  };
+
+  const handleMoveToFavorite = async (item: CartItem) => {
+    try {
+      if (!isFavoriteProduct(item.product.id)) {
+        await toggleFavorite(item.product);
+      }
+      await removeItem(item.product.id, item.variant_id);
+      closeItemActions();
+      toast.success("已移入收藏");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "移入收藏失败");
+    }
+  };
+
+  const handleShareProduct = async (item: CartItem) => {
+    const url = getProductShareUrl(item.product.id);
+    const shareData = {
+      title: item.product.name,
+      text: item.product.name,
+      url,
+    };
+
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share(shareData);
+        closeItemActions();
+        return;
+      }
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+    }
+
+    const copied = await copyToClipboard(url);
+    closeItemActions();
+    toast[copied ? "success" : "error"](copied ? "商品链接已复制" : "分享失败，请稍后重试");
   };
 
   return (
@@ -169,112 +232,181 @@ export default function Cart() {
                   </SquishButton>
                 </div>
                 <AnimatePresence>
-                  {items.map((item) => (
+                  {items.map((item) => {
+                    const lineKey = cartLineKey(item.product.id, item.variant_id);
+                    const selected = isSelected(item.product.id, item.variant_id);
+                    const actionsOpen = openActionKey === lineKey;
+
+                    return (
                     <motion.div
-                      key={cartLineKey(item.product.id, item.variant_id)}
+                      key={lineKey}
                       layout
                       exit={{ opacity: 0, x: -100 }}
-                      className="store-cart-item flex gap-3 border-b border-[var(--theme-border)] py-4 last:border-b-0"
+                      className="store-cart-item flex min-w-0 gap-2.5 border-b border-[var(--theme-border)] py-4 last:border-b-0 sm:gap-3"
                     >
                       <SquishButton
                         type="button"
                         variant="ghost"
-                        onClick={() => toggleSelect(item.product.id, item.variant_id)}
-                        className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border-2 !p-0 transition-colors ${
-                          isSelected(item.product.id, item.variant_id)
-                            ? "border-gold btn-theme-price"
-                            : "border-muted-foreground/40 bg-background"
-                        }`}
-                        aria-label={isSelected(item.product.id, item.variant_id) ? "取消勾选" : "勾选结算"}
+                        onClick={() => {
+                          closeItemActions();
+                          toggleSelect(item.product.id, item.variant_id);
+                        }}
+                        className="self-center flex h-10 w-7 flex-shrink-0 items-center justify-center rounded-none border-0 bg-transparent shadow-none !p-0"
+                        aria-label={selected ? "取消勾选" : "勾选结算"}
                       >
-                        {isSelected(item.product.id, item.variant_id) && <Check size={14} strokeWidth={3} />}
+                        <span
+                          className={`flex h-7 w-7 items-center justify-center rounded-full border shadow-sm transition-colors ${
+                            selected
+                              ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_12%,var(--theme-surface))] text-[var(--theme-price)]"
+                              : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-transparent"
+                          }`}
+                        >
+                          {selected && <Check size={15} strokeWidth={3} />}
+                        </span>
                       </SquishButton>
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/product/${item.product.id}`)}
-                        className="store-cart-media h-24 w-24 flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 md:h-28 md:w-28"
-                        aria-label={`查看 ${item.product.name}`}
-                      >
-                        <ProductCoverImage
-                          url={item.product.cover_image}
-                          alt={item.product.name}
-                          className="h-full w-full"
-                          imgClassName="h-full w-full rounded-xl object-cover"
-                          loading="eager"
-                          fetchPriority="high"
-                        />
-                      </button>
-                      <div className="flex flex-1 flex-col justify-between py-0.5">
-                        <div>
-                          <h3
-                            onClick={() => navigate(`/product/${item.product.id}`)}
-                            className="store-card-title cursor-pointer leading-tight text-foreground line-clamp-2 hover:text-theme-price"
+                      <div className="relative min-w-0 flex-1 overflow-hidden rounded-[22px]">
+                        <div
+                          className="absolute inset-y-0 right-0 flex overflow-hidden rounded-[22px] border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,var(--theme-bg))]"
+                          style={{ width: CART_ACTION_WIDTH }}
+                          aria-hidden={!actionsOpen}
+                        >
+                          <button
+                            type="button"
+                            tabIndex={actionsOpen ? 0 : -1}
+                            onClick={() => handlePinToTop(item)}
+                            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-border)] px-1 text-[11px] font-semibold text-[var(--theme-text)]"
                           >
-                            {item.product.name}
-                          </h3>
-                          {item.variant_name ? <p className="store-caption mt-1 text-muted-foreground">规格：{item.variant_name}</p> : null}
+                            <Pin size={15} />
+                            <span>置顶</span>
+                          </button>
+                          <button
+                            type="button"
+                            tabIndex={actionsOpen ? 0 : -1}
+                            onClick={() => handleMoveToFavorite(item)}
+                            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-border)] px-1 text-[11px] font-semibold text-[var(--theme-price)]"
+                          >
+                            <Heart size={15} />
+                            <span>移入收藏</span>
+                          </button>
+                          <button
+                            type="button"
+                            tabIndex={actionsOpen ? 0 : -1}
+                            onClick={() => handleShareProduct(item)}
+                            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-border)] px-1 text-[11px] font-semibold text-[var(--theme-primary)]"
+                          >
+                            <Share2 size={15} />
+                            <span>分享</span>
+                          </button>
+                          <button
+                            type="button"
+                            tabIndex={actionsOpen ? 0 : -1}
+                            onClick={() => {
+                              closeItemActions();
+                              setDeleteTarget({
+                                productId: item.product.id,
+                                variantId: item.variant_id,
+                                name: item.product.name,
+                              });
+                            }}
+                            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-danger)]/20 bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] px-1 text-[11px] font-semibold text-[var(--theme-danger)]"
+                          >
+                            <Trash2 size={15} />
+                            <span>删除</span>
+                          </button>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <StorePriceAmount
-                            amount={item.product.price}
-                            amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
-                          />
-                          <div className="flex items-center gap-3">
-                            <SquishButton
-                              type="button"
-                              variant="ghost"
-                              onClick={() =>
-                                setDeleteTarget({
-                                  productId: item.product.id,
-                                  variantId: item.variant_id,
-                                  name: item.product.name,
-                                })
-                              }
-                              className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target !p-0"
-                              aria-label="删除"
-                            >
-                              <Trash2 size={15} className="text-muted-foreground" />
-                            </SquishButton>
-                            <div className="flex items-center gap-1 rounded-full border border-[var(--theme-border)]">
-                              <SquishButton
-                                type="button"
-                                variant="ghost"
-                                onClick={async () => {
-                                  try {
-                                    await updateQty(item.product.id, item.qty - 1, item.variant_id);
-                                  } catch (e) {
-                                    toast.error(e instanceof Error ? e.message : "更新数量失败");
-                                  }
+                        <motion.div
+                          drag="x"
+                          dragConstraints={{ left: -CART_ACTION_WIDTH, right: 0 }}
+                          dragDirectionLock
+                          dragElastic={0.04}
+                          onDragStart={() => setOpenActionKey(lineKey)}
+                          onDragEnd={(_, info) => {
+                            const shouldOpen = info.offset.x < -CART_ACTION_REVEAL_THRESHOLD || info.velocity.x < -420;
+                            const shouldClose = info.offset.x > CART_ACTION_REVEAL_THRESHOLD || info.velocity.x > 420;
+                            setOpenActionKey(shouldClose ? null : shouldOpen ? lineKey : actionsOpen ? lineKey : null);
+                          }}
+                          animate={{ x: actionsOpen ? -CART_ACTION_WIDTH : 0 }}
+                          transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                          className="relative z-10 flex min-w-0 gap-2.5 bg-[var(--theme-surface)] py-0.5 sm:gap-3"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              closeItemActions();
+                              navigate(`/product/${item.product.id}`);
+                            }}
+                            className="store-cart-media h-[88px] w-[88px] flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:h-24 sm:w-24 md:h-28 md:w-28"
+                            aria-label={`查看 ${item.product.name}`}
+                          >
+                            <ProductCoverImage
+                              url={item.product.cover_image}
+                              alt={item.product.name}
+                              className="h-full w-full"
+                              imgClassName="h-full w-full rounded-xl object-cover"
+                              loading="eager"
+                              fetchPriority="high"
+                            />
+                          </button>
+                          <div className="flex min-w-0 flex-1 flex-col justify-between">
+                            <div className="min-w-0">
+                              <h3
+                                onClick={() => {
+                                  closeItemActions();
+                                  navigate(`/product/${item.product.id}`);
                                 }}
-                                className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target !p-0"
-                                aria-label="减少数量"
+                                className="store-card-title cursor-pointer break-words leading-tight text-foreground line-clamp-2 hover:text-theme-price"
                               >
-                                <Minus size={14} className="text-foreground" />
-                              </SquishButton>
-                              <span className="min-w-[24px] text-center text-sm font-semibold text-foreground">
-                                {item.qty}
-                              </span>
-                              <SquishButton
-                                type="button"
-                                variant="ghost"
-                                onClick={async () => {
-                                  try {
-                                    await updateQty(item.product.id, item.qty + 1, item.variant_id);
-                                  } catch (e) {
-                                    toast.error(e instanceof Error ? e.message : "更新数量失败");
-                                  }
-                                }}
-                                className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target !p-0"
-                                aria-label="增加数量"
-                              >
-                                <Plus size={14} className="text-foreground" />
-                              </SquishButton>
+                                {item.product.name}
+                              </h3>
+                              {item.variant_name ? <p className="store-caption mt-1 truncate text-muted-foreground">规格：{item.variant_name}</p> : null}
+                            </div>
+                            <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+                              <StorePriceAmount
+                                amount={item.product.price}
+                                amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
+                              />
+                              <div className="flex h-9 shrink-0 items-center overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+                                <SquishButton
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    try {
+                                      await updateQty(item.product.id, item.qty - 1, item.variant_id);
+                                    } catch (e) {
+                                      toast.error(e instanceof Error ? e.message : "更新数量失败");
+                                    }
+                                  }}
+                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] !p-0"
+                                  aria-label="减少数量"
+                                >
+                                  <Minus size={14} className="text-foreground" />
+                                </SquishButton>
+                                <span className="min-w-[28px] text-center text-sm font-semibold text-foreground">
+                                  {item.qty}
+                                </span>
+                                <SquishButton
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    try {
+                                      await updateQty(item.product.id, item.qty + 1, item.variant_id);
+                                    } catch (e) {
+                                      toast.error(e instanceof Error ? e.message : "更新数量失败");
+                                    }
+                                  }}
+                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] !p-0"
+                                  aria-label="增加数量"
+                                >
+                                  <Plus size={14} className="text-foreground" />
+                                </SquishButton>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </motion.div>
                       </div>
                     </motion.div>
-                  ))}
+                    );
+                  })}
                 </AnimatePresence>
               </div>
             )}

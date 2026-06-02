@@ -16,6 +16,7 @@ vi.mock("@/services/cartService", () => ({
   addToCart: vi.fn(),
   removeFromCart: vi.fn(),
   updateCartItemQty: vi.fn(),
+  pinCartItemToTop: vi.fn(),
   clearCart: vi.fn(),
 }));
 
@@ -101,5 +102,28 @@ describe("useCartStore", () => {
     const { items } = useCartStore.getState();
     expect(items).toHaveLength(1);
     expect(items[0].product.id).toBe("p1");
+  });
+
+  test("pinItemToTop moves the selected cart line to the first position", async () => {
+    const p1 = sampleProduct("p1");
+    const p2 = sampleProduct("p2");
+    const p3 = sampleProduct("p3");
+    useCartStore.setState({
+      items: [
+        { product: p1, qty: 1 },
+        { product: p2, qty: 1, variant_id: "v2" },
+        { product: p3, qty: 1 },
+      ],
+      selection: {
+        [cartLineKey(p1.id)]: true,
+        [cartLineKey(p2.id, "v2")]: true,
+        [cartLineKey(p3.id)]: true,
+      },
+    });
+
+    await useCartStore.getState().pinItemToTop(p2.id, "v2");
+
+    expect(useCartStore.getState().items.map((item) => item.product.id)).toEqual(["p2", "p1", "p3"]);
+    expect(useCartStore.getState().selection[cartLineKey(p2.id, "v2")]).toBe(true);
   });
 });

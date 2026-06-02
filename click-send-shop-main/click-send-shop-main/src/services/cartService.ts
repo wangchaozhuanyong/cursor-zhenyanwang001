@@ -16,6 +16,11 @@ export async function updateCartItemQty(productId: string, qty: number, variantI
   return res.data;
 }
 
+export async function pinCartItemToTop(productId: string, variantId = "") {
+  const res = await cartApi.pinCartItem(productId, variantId);
+  return res.data;
+}
+
 export async function removeFromCart(productId: string, variantId = "") {
   await cartApi.removeCartItem(productId, variantId);
 }

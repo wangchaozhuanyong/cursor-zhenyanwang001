@@ -76,6 +76,17 @@ async function updateCartItem(userId, productId, body, variantId = '') {
   return { data: formatCartItem(row) };
 }
 
+async function pinCartItemToTop(userId, productId, variantId = '') {
+  const line = await repo.selectCartLine(userId, productId, variantId);
+  if (!line) throw new NotFoundError('购物车商品不存在');
+
+  const affected = await repo.pinCartItemToTop(userId, productId, variantId);
+  if (affected === 0) throw new NotFoundError('购物车商品不存在');
+
+  const row = await repo.selectCartLine(userId, productId, variantId);
+  return { data: formatCartItem(row) };
+}
+
 async function removeCartItem(userId, productId, variantId = '') {
   await repo.deleteCartItem(userId, productId, variantId);
   return { message: '已移除' };
@@ -90,6 +101,7 @@ module.exports = {
   getCart,
   addToCart,
   updateCartItem,
+  pinCartItemToTop,
   removeCartItem,
   clearCart,
 };

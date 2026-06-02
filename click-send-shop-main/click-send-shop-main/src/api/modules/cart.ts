@@ -14,6 +14,11 @@ export function updateCartItem(productId: string, qty: number, variantId = "") {
   return put<CartItem>(`/cart/${productId}${query}`, { qty });
 }
 
+export function pinCartItem(productId: string, variantId = "") {
+  const query = variantId ? `?variant_id=${encodeURIComponent(variantId)}` : "";
+  return put<CartItem>(`/cart/${productId}/pin${query}`, {});
+}
+
 export function removeCartItem(productId: string, variantId = "") {
   const query = variantId ? `?variant_id=${encodeURIComponent(variantId)}` : "";
   return del<void>(`/cart/${productId}${query}`);
@@ -22,4 +27,3 @@ export function removeCartItem(productId: string, variantId = "") {
 export function clearCart() {
   return del<void>("/cart");
 }
-

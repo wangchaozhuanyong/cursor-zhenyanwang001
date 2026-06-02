@@ -18,6 +18,11 @@ router.use(mallFeature);
 router.get('/', ctrl.getCart);
 router.post('/', validate({ body: addToCartBodySchema }), ctrl.addToCart);
 router.put(
+  '/:productId/pin',
+  validate({ params: productIdParamSchema }),
+  ctrl.pinCartItemToTop,
+);
+router.put(
   '/:productId',
   validate({ params: productIdParamSchema, body: updateCartItemBodySchema }),
   ctrl.updateCartItem,

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCouponStore } from "@/stores/useCouponStore";
+import { useCartStore } from "@/stores/useCartStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import EmptyState from "@/components/EmptyState";
 import type { UserCoupon } from "@/types/coupon";
@@ -86,6 +87,15 @@ const EMPTY_STATE_COPY: Record<Tab, { title: string; description?: string }> = {
   invalidated: { title: "暂无已失效优惠券" },
 };
 
+const COUPON_ACTION_LABELS: Record<DisplayStatus, string> = {
+  available: "立即领取",
+  claimed: "使用",
+  pending: "未生效",
+  used: "已使用",
+  expired: "已过期",
+  invalidated: "已失效",
+};
+
 function filterByTab(coupons: DisplayCoupon[], tab: Tab): DisplayCoupon[] {
   const owned = coupons.filter((c) => c.status !== "available");
   switch (tab) {
@@ -111,6 +121,8 @@ export default function Coupons() {
   const location = useLocation() as { state?: { pageView?: PageView } | null };
   const goBack = useGoBack();
   const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
+  const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
+  const loadCart = useCartStore((s) => s.loadCart);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const authHydrated = useAuthStore((s) => s.authHydrated);
   const [tab, setTab] = useState<Tab>("mine");
@@ -121,6 +133,10 @@ export default function Coupons() {
   useEffect(() => {
     loadCoupons();
   }, [loadCoupons]);
+
+  useEffect(() => {
+    if (canViewOwnedCoupons) void loadCart();
+  }, [canViewOwnedCoupons, loadCart]);
 
   useEffect(() => {
     if (authHydrated && !canViewOwnedCoupons) {
@@ -170,6 +186,15 @@ export default function Coupons() {
       setClaimingId(null);
     }
   };
+
+  const handleUseCoupon = useCallback((coupon: DisplayCoupon) => {
+    if (coupon.status !== "claimed") return;
+    if (selectedCartCount > 0) {
+      navigate(`/checkout?coupon_id=${coupon.id}`);
+      return;
+    }
+    navigate("/cart", { state: { coupon_id: coupon.id } });
+  }, [navigate, selectedCartCount]);
 
   const headerRightSlot = pageView === "claimCenter" ? (
     canViewOwnedCoupons ? (
@@ -357,6 +382,7 @@ export default function Coupons() {
               index={i}
               claiming={claimingId === coupon.id}
               onClaim={() => handleClaim(coupon)}
+              onUse={() => handleUseCoupon(coupon)}
             />
           ))}
         </AnimatePresence>
@@ -370,13 +396,16 @@ type CouponCardProps = {
   index: number;
   claiming: boolean;
   onClaim: () => void;
+  onUse: () => void;
 };
 
 const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCard(
-  { coupon, index, claiming, onClaim },
+  { coupon, index, claiming, onClaim, onUse },
   ref,
 ) {
   const isDisabled = coupon.status === "used" || coupon.status === "expired" || coupon.status === "pending" || coupon.status === "invalidated";
+  const actionLabel = COUPON_ACTION_LABELS[coupon.status];
+  const onAction = coupon.status === "available" ? onClaim : coupon.status === "claimed" ? onUse : undefined;
 
   return (
     <motion.div
@@ -390,7 +419,6 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
     >
       <PremiumCouponCard
         colorScheme="invite"
-        infoFieldOrder="thresholdFirst"
         title={coupon.title}
         amountPrefix={coupon.amountPrefix}
         amount={coupon.amount}
@@ -398,10 +426,10 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
         expireText={coupon.expire}
         scopeText={coupon.scopeText}
         disabled={isDisabled}
-        actionLabel={coupon.status === "available" ? "立即领取" : undefined}
+        actionLabel={actionLabel}
         actionLoading={claiming}
-        actionDisabled={claiming}
-        onAction={coupon.status === "available" ? onClaim : undefined}
+        actionDisabled={claiming || isDisabled}
+        onAction={onAction}
       />
       {coupon.orderNo ? <p className="mt-1 px-3 text-xs text-theme-muted">使用订单：{coupon.orderNo}</p> : null}
       {coupon.invalidReason ? <p className="mt-1 px-3 text-xs text-[var(--theme-danger)]">{coupon.invalidReason}</p> : null}

@@ -25,6 +25,11 @@ exports.updateCartItem = asyncRoute(async (req, res) => {
   res.success(r.data);
 });
 
+exports.pinCartItemToTop = asyncRoute(async (req, res) => {
+  const r = await cartService.pinCartItemToTop(req.user.id, req.params.productId, getVariantId(req));
+  res.success(r.data);
+});
+
 exports.removeCartItem = asyncRoute(async (req, res) => {
   const r = await cartService.removeCartItem(req.user.id, req.params.productId, getVariantId(req));
   res.success(null, r.message);

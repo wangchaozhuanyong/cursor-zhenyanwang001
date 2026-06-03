@@ -152,7 +152,7 @@ export default function AdminActivities() {
   const quickButtons = useMemo(() => [
     { label: tText("秒杀"), to: "/admin/marketing/activities/new?type=flash_sale" },
     { label: tText("满减"), to: "/admin/marketing/activities/new?type=full_reduction" },
-    { label: tText("优惠券活动"), to: "/admin/marketing/coupon-campaigns/new" },
+    { label: tText("发券活动"), to: "/admin/marketing/coupon-campaigns/new" },
     { label: tText("积分活动"), to: "/admin/marketing/activities/new?type=points_bonus" },
   ], [tText]);
 

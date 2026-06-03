@@ -128,8 +128,8 @@ export default function AdminCouponForm() {
 
   const tabTitle = useMemo(() => {
     if (isNew) return null;
-    if (form.title.trim()) return L(`编辑优惠券：${form.title.trim()}`, `Edit coupon: ${form.title.trim()}`);
-    if (couponId) return L(`编辑优惠券 #${couponId}`, `Edit coupon #${couponId}`);
+    if (form.title.trim()) return L(`编辑优惠券模板：${form.title.trim()}`, `Edit coupon template: ${form.title.trim()}`);
+    if (couponId) return L(`编辑优惠券模板 #${couponId}`, `Edit coupon template #${couponId}`);
     return null;
   }, [couponId, form.title, isNew, L]);
   useAdminTabTitle(tabTitle, formHydrated && !loading && Boolean(tabTitle));
@@ -255,10 +255,10 @@ export default function AdminCouponForm() {
 
       if (isNew) {
         await createCoupon(payload);
-        toast.success(L("优惠券创建成功", "Coupon created successfully"));
+        toast.success(L("优惠券模板创建成功", "Coupon template created successfully"));
       } else {
         await updateCoupon(couponId, payload);
-        toast.success(L("优惠券更新成功", "Coupon updated successfully"));
+        toast.success(L("优惠券模板更新成功", "Coupon template updated successfully"));
       }
 
       await queryClient.invalidateQueries({ queryKey: ["admin", "coupons"] });
@@ -285,7 +285,7 @@ export default function AdminCouponForm() {
         <UnifiedButton type="button" onClick={goBack} aria-label={L("返回", "Back")}>
           <ArrowLeft size={20} className="text-foreground" />
         </UnifiedButton>
-        <h2 className="text-lg font-semibold text-foreground">{isNew ? L("新建优惠券", "Create coupon") : L("编辑优惠券", "Edit coupon")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{isNew ? L("新建优惠券模板", "Create coupon template") : L("编辑优惠券模板", "Edit coupon template")}</h2>
       </div>
 
       {loading ? (

@@ -16,6 +16,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import * as campaignService from "@/services/admin/couponCampaignService";
 import type { CouponCampaign, CouponCampaignStatus, CouponCampaignType } from "@/types/couponCampaign";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import CouponCenterTabs from "./CouponCenterTabs";
 
 const columnAligns: AdminTableAlign[] = ["left", "center", "center", "center", "right", "left", "right"];
 
@@ -73,7 +74,7 @@ export default function AdminCouponCampaigns() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => campaignService.deleteCouponCampaign(id),
     onSuccess: async () => {
-      toast.success("已删除优惠券活动");
+      toast.success("已删除发券活动");
       setDeleteId(null);
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponCampaignsRoot() });
     },
@@ -95,31 +96,34 @@ export default function AdminCouponCampaigns() {
 
   return (
     <AdminPageShell
-      hint="优惠券活动只负责“展示和发放规则”，真正的券仍然在优惠券管理里维护。这样不会再出现营销活动里重复建券的问题。"
+      hint="发券活动只负责展示位置、发放时间、人群和领取方式。真正的优惠规则仍然在“优惠券模板”里维护。"
       toolbar={(
         <div className="flex flex-wrap gap-2">
           <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons")} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm">
-            <ClipboardList size={15} /> 优惠券管理
+            <ClipboardList size={15} /> 优惠券模板
           </UnifiedButton>
           <PermissionGate permission="coupon.manage">
             <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns/new")} className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground">
-              <Plus size={16} /> 新建优惠券活动
+              <Plus size={16} /> 新建发券活动
             </UnifiedButton>
           </PermissionGate>
         </div>
       )}
       filters={(
-        <div className="grid gap-3 rounded-xl border border-border bg-card p-3 md:grid-cols-[1fr_160px_140px_auto]">
-          <SearchBar placeholder="搜索活动名称" value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} />
-          <select value={campaignType} onChange={(e) => { setCampaignType(e.target.value as CouponCampaignType | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm">
-            <option value="">全部活动</option>
-            {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-          <select value={status} onChange={(e) => { setStatus(e.target.value as CouponCampaignStatus | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm">
-            <option value="">全部状态</option>
-            {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-          <UnifiedButton type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm">查询</UnifiedButton>
+        <div className="space-y-3">
+          <CouponCenterTabs />
+          <div className="grid gap-3 rounded-xl border border-border bg-card p-3 md:grid-cols-[1fr_160px_140px_auto]">
+            <SearchBar placeholder="搜索活动名称" value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} />
+            <select value={campaignType} onChange={(e) => { setCampaignType(e.target.value as CouponCampaignType | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm">
+              <option value="">全部发券活动</option>
+              {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <select value={status} onChange={(e) => { setStatus(e.target.value as CouponCampaignStatus | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm">
+              <option value="">全部状态</option>
+              {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <UnifiedButton type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm">查询</UnifiedButton>
+          </div>
         </div>
       )}
     >
@@ -136,8 +140,8 @@ export default function AdminCouponCampaigns() {
           thead={adminTableTheadRow(["活动名称", "类型", "状态", "券数量", "领取/使用", "活动时间", "操作"], columnAligns)}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
           emptyIcon={Gift}
-          emptyTitle="暂无优惠券活动"
-          emptyDescription="先到优惠券管理创建券，再在这里决定这些券用什么活动展示、什么时候展示、给谁展示。"
+          emptyTitle="暂无发券活动"
+          emptyDescription="先到优惠券模板创建优惠规则，再在这里决定这些券用什么活动展示、什么时候展示、给谁展示。"
           renderRow={(campaign) => (
             <>
               <AdminTableCell>{campaign.title}<div className="mt-1 text-xs text-muted-foreground">{campaign.subtitle || campaign.description || "-"}</div></AdminTableCell>
@@ -162,8 +166,8 @@ export default function AdminCouponCampaigns() {
       <AnimatedConfirmDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        title="删除优惠券活动"
-        description="删除后前台不会再展示这个活动，但优惠券本身不会被删除。确定继续吗？"
+        title="删除发券活动"
+        description="删除后前台不会再展示这个发券活动，但优惠券模板本身不会被删除。确定继续吗？"
         confirmText="删除"
         cancelText="取消"
         danger

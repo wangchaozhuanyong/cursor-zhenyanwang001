@@ -1,7 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import {
-  ArrowRight,
   ChevronDown,
   ChevronRight,
   Clock3,
@@ -91,51 +90,9 @@ export function GuestFooterBrandMark({ siteName, logoSrc }: { siteName: string; 
   );
 }
 
-function FooterSkylineArt() {
-  return (
-    <svg
-      className="pointer-events-none absolute bottom-0 right-0 hidden h-44 w-[430px] text-[#078437] opacity-[0.16] md:block"
-      viewBox="0 0 420 176"
-      fill="none"
-      aria-hidden
-    >
-      <path d="M10 142H410" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M50 142V104H77V142" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M92 142V82H116V142" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M104 82C104 63 122 54 138 54C154 54 172 63 172 82V142" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M132 142V94H144V142" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M190 142V56M190 56L198 46L206 56V142" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M214 142V36M214 36L224 20L234 36V142" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M214 56H234M214 76H234M214 96H234M214 116H234" stroke="currentColor" strokeWidth="1" />
-      <path d="M248 142V32M248 32L258 16L268 32V142" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M248 56H268M248 76H268M248 96H268M248 116H268" stroke="currentColor" strokeWidth="1" />
-      <path d="M234 82H248" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M292 142V78H318V142M305 78V52" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M334 142V95H358V142M346 95V66" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M374 142V106H398V142" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  );
-}
-
-function FooterLeafArt() {
-  return (
-    <svg
-      className="pointer-events-none absolute bottom-0 right-4 h-28 w-32 text-[#0b8f43] opacity-[0.18] md:right-12 md:h-36 md:w-40"
-      viewBox="0 0 140 110"
-      fill="none"
-      aria-hidden
-    >
-      <path d="M132 6C101 23 84 52 76 103" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M119 16C96 15 84 25 78 45C99 45 113 34 119 16Z" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M100 41C78 39 65 50 59 70C81 69 94 60 100 41Z" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M85 70C63 67 49 77 41 96C63 98 78 89 85 70Z" stroke="currentColor" strokeWidth="1.2" />
-    </svg>
-  );
-}
-
 function TrustPill({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-2 text-[13px] font-semibold text-[#254232]">
+    <span className="inline-flex w-[6.35rem] min-w-0 items-center justify-start gap-2 text-left text-[13px] font-semibold text-[#254232]">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#078437] shadow-[0_12px_28px_-22px_rgba(7,132,55,0.7)]">
         {icon}
       </span>
@@ -433,11 +390,9 @@ export default function GuestMobileFooter({
   };
 
   return (
-    <footer className="relative isolate z-0 w-full touch-pan-y">
+    <footer className="guest-mobile-footer relative isolate z-0 w-full touch-pan-y">
       <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pb-7 pt-2 md:px-6 lg:px-8">
         <section className="relative overflow-hidden rounded-lg border border-[#cdebd7] bg-[linear-gradient(120deg,#f4fff7_0%,#fbfffc_46%,#e9f8ef_100%)] px-5 py-8 shadow-[0_22px_60px_-42px_rgba(7,132,55,0.48)] md:px-10 md:py-10" aria-label="页脚服务入口">
-          <FooterSkylineArt />
-          <FooterLeafArt />
           <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
             <div className="min-w-0">
               <p className="text-[13px] font-semibold text-[#078437]">一站式在马生活服务</p>
@@ -454,7 +409,6 @@ export default function GuestMobileFooter({
                   className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg bg-[#078437] px-5 text-[16px] font-bold text-white shadow-[0_18px_34px_-26px_rgba(7,132,55,0.76)] transition hover:bg-[#046d2d] active:scale-[0.99]"
                 >
                   浏览全部服务
-                  <ArrowRight size={20} strokeWidth={2.2} />
                 </UnifiedButton>
                 <a
                   href={whatsappHref}
@@ -487,7 +441,7 @@ export default function GuestMobileFooter({
             <p className="mt-5 max-w-[25rem] text-[14px] leading-7 text-[#607066]">
               {intro}
             </p>
-            <div className="mt-6 grid grid-cols-2 gap-3 text-center">
+            <div className="mx-auto mt-6 grid w-fit grid-cols-2 gap-x-5 gap-y-3">
               <TrustPill icon={<ShieldCheck size={17} strokeWidth={1.9} />} label="安全可靠" />
               <TrustPill icon={<MapPin size={17} strokeWidth={1.9} />} label="本地资源" />
               <TrustPill icon={<MessageCircle size={17} strokeWidth={1.9} />} label="中文支持" />
@@ -535,7 +489,7 @@ export default function GuestMobileFooter({
             <p className="mt-4 text-[14px] leading-7 text-[#607066]">
               {intro}
             </p>
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="mx-auto mt-5 grid w-fit grid-cols-2 gap-x-5 gap-y-3">
               <TrustPill icon={<ShieldCheck size={17} strokeWidth={1.9} />} label="安全可靠" />
               <TrustPill icon={<MapPin size={17} strokeWidth={1.9} />} label="本地资源" />
               <TrustPill icon={<MessageCircle size={17} strokeWidth={1.9} />} label="中文支持" />
@@ -550,9 +504,8 @@ export default function GuestMobileFooter({
             {policyLinks}
           </AccordionItem>
 
-          <section className="rounded-lg border border-[#dce9e1] bg-white px-4 py-5 shadow-[0_18px_42px_-34px_rgba(20,70,41,0.34)]" aria-label="联系我们">
-            <h3 className="text-[18px] font-bold leading-none text-[#151f19]">联系我们</h3>
-            <div className="mt-4 space-y-1">
+          <AccordionItem title="联系我们" icon={<Phone size={21} strokeWidth={1.8} />}>
+            <div className="space-y-1">
               {contactItems.map((item) => (
                 <ContactLine
                   key={item.key}
@@ -574,7 +527,7 @@ export default function GuestMobileFooter({
                 />
               ))}
             </div>
-          </section>
+          </AccordionItem>
         </div>
 
         {legalParts.length > 0 ? (

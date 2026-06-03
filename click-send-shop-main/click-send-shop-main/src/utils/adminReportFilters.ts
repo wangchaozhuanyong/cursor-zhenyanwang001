@@ -126,7 +126,7 @@ export function buildReportFilterChips(
     chips.push({ key: "coupon_id", label: `优惠券：${params.get("coupon_id")}` });
   }
   if (allowed.has("coupon_campaign_id") && params.get("coupon_campaign_id")) {
-    chips.push({ key: "coupon_campaign_id", label: `优惠券活动：${params.get("coupon_campaign_id")}` });
+    chips.push({ key: "coupon_campaign_id", label: `发券活动：${params.get("coupon_campaign_id")}` });
   }
   if (allowed.has("order_status") && params.get("order_status")) {
     const v = params.get("order_status") || "";

@@ -33,8 +33,9 @@ import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { renderBrandTitle } from "@/utils/brand";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
-const MOBILE_CHROME_HIDE_START = 96;
-const MOBILE_CHROME_HIDE_DELTA = 14;
+const MOBILE_CHROME_HIDE_START = 128;
+const MOBILE_CHROME_HIDE_DELTA = 18;
+const MOBILE_CHROME_DOCK_SPACER = "5.1rem";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -234,7 +235,7 @@ export default function Categories() {
   }, []);
 
   const hideMobileChrome = useCallback(() => {
-    layoutScrollGuardUntilRef.current = window.performance.now() + 340;
+    layoutScrollGuardUntilRef.current = window.performance.now() + 420;
     setMobileChromeVisibility(true);
   }, [setMobileChromeVisibility]);
 
@@ -487,7 +488,7 @@ export default function Categories() {
         data-hidden={mobileChromeHidden ? "true" : "false"}
         className={cn(
           "store-category-mobile-chrome fixed inset-x-0 top-0 z-header md:hidden",
-          mobileChromeHidden ? "is-hidden pointer-events-none" : "is-visible",
+          mobileChromeHidden ? "is-hidden" : "is-visible",
         )}
         style={{
           "--store-category-mobile-chrome-height": `${mobileChromeHeight || 0}px`,
@@ -511,7 +512,7 @@ export default function Categories() {
       </div>
       <div
         className="store-category-mobile-spacer md:hidden"
-        style={{ height: mobileChromeHidden ? 0 : mobileChromeHeight > 0 ? mobileChromeHeight : undefined }}
+        style={{ height: mobileChromeHidden ? MOBILE_CHROME_DOCK_SPACER : mobileChromeHeight > 0 ? mobileChromeHeight : undefined }}
         aria-hidden
       />
 

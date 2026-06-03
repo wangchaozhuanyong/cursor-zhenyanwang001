@@ -2,6 +2,30 @@ const DAILY_COMMERCE_SKIN_ID = 'default_life_green';
 const FESTIVAL_SKIN_ID = 'festive_ruby_gold';
 const PREMIUM_IVORY_JADE_SKIN_ID = 'premium_ivory_jade';
 const DEFAULT_SKIN_ID = PREMIUM_IVORY_JADE_SKIN_ID;
+const STARTER_THEME_SKINS = require('../../../../click-send-shop-main/click-send-shop-main/src/constants/starterThemeSkins.data.json');
+
+const STARTER_BY_ID = new Map(STARTER_THEME_SKINS.map((skin) => [skin.id, skin]));
+const OBSIDIAN_BLACK_GOLD_SKIN_ID = 'obsidian_black_gold';
+const MIDNIGHT_TITANIUM_SKIN_ID = 'midnight_titanium';
+const STARTER_FESTIVE_RUBY_GOLD_SKIN_ID = 'starter_festive_ruby_gold';
+const AETHERIAL_BLANC_SKIN_ID = 'aetherial_blanc';
+const ORGANIC_SANDSTONE_SKIN_ID = 'organic_sandstone';
+
+function starterPreset(id, overrides = {}) {
+  const skin = /** @type {any} */ (STARTER_BY_ID.get(id));
+  if (!skin) {
+    throw new Error(`Missing starter theme skin: ${id}`);
+  }
+  return {
+    ...skin,
+    category: skin.category || '推荐皮肤',
+    ...overrides,
+    config: {
+      ...skin.config,
+      ...(overrides.config || {}),
+    },
+  };
+}
 
 const STOREFRONT_DESIGN_LOCKS = {
   radius: '14px',
@@ -105,6 +129,14 @@ const PREMIUM_IVORY_JADE_SKIN = {
   config: PREMIUM_IVORY_JADE_CONFIG,
 };
 
+const OBSIDIAN_BLACK_GOLD_SKIN = starterPreset(OBSIDIAN_BLACK_GOLD_SKIN_ID);
+const MIDNIGHT_TITANIUM_SKIN = starterPreset(MIDNIGHT_TITANIUM_SKIN_ID);
+const STARTER_FESTIVE_RUBY_GOLD_SKIN = starterPreset(FESTIVAL_SKIN_ID, {
+  id: STARTER_FESTIVE_RUBY_GOLD_SKIN_ID,
+});
+const AETHERIAL_BLANC_SKIN = starterPreset(AETHERIAL_BLANC_SKIN_ID);
+const ORGANIC_SANDSTONE_SKIN = starterPreset(ORGANIC_SANDSTONE_SKIN_ID);
+
 const DEFAULT_THEME_HOLIDAY_RULES = [
   { id: 'cn_my_new_year', name: '元旦 / 新年档（中国 1月1-3日，马来西亚 1月1日）', enabled: true, start: '01-01', end: '01-03', skinId: FESTIVAL_SKIN_ID },
   { id: 'cn_spring_festival_2026', name: '春节档（中国公共假期 2026）', enabled: true, start: '02-15', end: '02-23', skinId: FESTIVAL_SKIN_ID },
@@ -141,7 +173,16 @@ const DEFAULT_THEME_HOLIDAY_RULES = [
 ];
 
 const FALLBACK_THEME_SKIN = PREMIUM_IVORY_JADE_SKIN;
-const THEME_PRESETS = [PREMIUM_IVORY_JADE_SKIN, DAILY_COMMERCE_SKIN, FESTIVAL_RUBY_GOLD_SKIN];
+const THEME_PRESETS = [
+  PREMIUM_IVORY_JADE_SKIN,
+  DAILY_COMMERCE_SKIN,
+  FESTIVAL_RUBY_GOLD_SKIN,
+  OBSIDIAN_BLACK_GOLD_SKIN,
+  MIDNIGHT_TITANIUM_SKIN,
+  STARTER_FESTIVE_RUBY_GOLD_SKIN,
+  AETHERIAL_BLANC_SKIN,
+  ORGANIC_SANDSTONE_SKIN,
+];
 const DEFAULT_HOLIDAY_SKIN_ID = FESTIVAL_SKIN_ID;
 
 module.exports = {
@@ -149,6 +190,11 @@ module.exports = {
   DAILY_COMMERCE_SKIN_ID,
   FESTIVAL_SKIN_ID,
   PREMIUM_IVORY_JADE_SKIN_ID,
+  OBSIDIAN_BLACK_GOLD_SKIN_ID,
+  MIDNIGHT_TITANIUM_SKIN_ID,
+  STARTER_FESTIVE_RUBY_GOLD_SKIN_ID,
+  AETHERIAL_BLANC_SKIN_ID,
+  ORGANIC_SANDSTONE_SKIN_ID,
   DEFAULT_HOLIDAY_SKIN_ID,
   DEFAULT_THEME_HOLIDAY_RULES,
   STOREFRONT_DESIGN_LOCKS,
@@ -158,6 +204,11 @@ module.exports = {
   DAILY_COMMERCE_SKIN,
   FESTIVAL_RUBY_GOLD_SKIN,
   PREMIUM_IVORY_JADE_SKIN,
+  OBSIDIAN_BLACK_GOLD_SKIN,
+  MIDNIGHT_TITANIUM_SKIN,
+  STARTER_FESTIVE_RUBY_GOLD_SKIN,
+  AETHERIAL_BLANC_SKIN,
+  ORGANIC_SANDSTONE_SKIN,
   FALLBACK_THEME_SKIN,
   THEME_PRESETS,
 };

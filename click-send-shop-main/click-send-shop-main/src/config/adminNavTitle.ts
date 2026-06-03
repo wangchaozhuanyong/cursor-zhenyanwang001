@@ -64,6 +64,8 @@ export function getHiddenAdminHeaderTitle(
 ): string | null {
   const seg = (center: string, child: string, page: string) =>
     `${t(center)} / ${t(child)} / ${t(page)}`;
+  const seg4 = (center: string, group: string, child: string, page: string) =>
+    `${t(center)} / ${t(group)} / ${t(child)} / ${t(page)}`;
 
   if (pathname === "/admin/account") {
     return t("routeTitles.account");
@@ -89,19 +91,19 @@ export function getHiddenAdminHeaderTitle(
   }
 
   if (pathname === "/admin/marketing/coupons/new") {
-    return seg("nav.marketingCenter", "nav.coupons", "routeTitles.couponNew");
+    return seg4("nav.marketingCenter", "nav.couponCenter", "nav.couponTemplates", "routeTitles.couponNew");
   }
   if (pathname === "/admin/marketing/coupon-campaigns/new") {
-    return `${t("nav.marketingCenter")} / 优惠券活动 / 新建优惠券活动`;
+    return seg4("nav.marketingCenter", "nav.couponCenter", "nav.couponCampaigns", "routeTitles.marketingNewCouponActivity");
   }
   if (/^\/admin\/marketing\/coupon-campaigns\/[^/]+$/.test(pathname)) {
-    return `${t("nav.marketingCenter")} / 优惠券活动 / 编辑优惠券活动${idSuffix(pathname, /^\/admin\/marketing\/coupon-campaigns\/([^/]+)$/)}`;
+    return `${seg4("nav.marketingCenter", "nav.couponCenter", "nav.couponCampaigns", "routeTitles.couponCampaignEdit")}${idSuffix(pathname, /^\/admin\/marketing\/coupon-campaigns\/([^/]+)$/)}`;
   }
   if (
     /^\/admin\/marketing\/coupons\/[^/]+$/.test(pathname)
     && pathname !== "/admin/marketing/coupons/records"
   ) {
-    return `${seg("nav.marketingCenter", "nav.coupons", "routeTitles.couponEdit")}${idSuffix(pathname, /^\/admin\/marketing\/coupons\/([^/]+)$/)}`;
+    return `${seg4("nav.marketingCenter", "nav.couponCenter", "nav.couponTemplates", "routeTitles.couponEdit")}${idSuffix(pathname, /^\/admin\/marketing\/coupons\/([^/]+)$/)}`;
   }
 
   if (pathname === "/admin/marketing/activities/new") {

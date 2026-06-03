@@ -101,6 +101,11 @@ function ProductCardInner({
   const isServiceLike = /服务|咨询|办理|申请|装修/.test(String(product.category_name || product.name || ""));
   const cardImageAlt = product.cover_image_alt || (isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`);
   const showNewBadge = isProductNewArrival(product);
+  const primaryBadgeCount =
+    (product.active_activity ? 1 : 0)
+    + (product.is_hot ? 1 : 0)
+    + (showNewBadge ? 1 : 0);
+  const productTagBadgeMax = Math.max(0, 3 - primaryBadgeCount);
   const imageLoading = index < 2 ? "eager" : "lazy";
   const imageFetchPriority = index === 0 ? "high" : undefined;
   const revealDelay = Math.min(index, 11) * 0.035;
@@ -129,6 +134,7 @@ function ProductCardInner({
     event.stopPropagation();
     navigate("/new-arrivals");
   };
+  const badgeButtonClass = "m-0 inline-flex h-[22px] border-0 bg-transparent p-0 leading-none shadow-none";
 
   const nameRow = (
     <h3
@@ -224,11 +230,11 @@ function ProductCardInner({
                   ) : null}
                   {product.is_hot ? <StoreBadge type="hot">热销</StoreBadge> : null}
                   {showNewBadge ? (
-                    <UnifiedButton type="button" onClick={openNewArrivals} className="cursor-pointer">
+                    <UnifiedButton type="button" onClick={openNewArrivals} className={cn(badgeButtonClass, "cursor-pointer")}>
                       <StoreBadge type="new">新品</StoreBadge>
                     </UnifiedButton>
                   ) : null}
-                  <ProductTagList tags={product.tags} max={2} />
+                  <ProductTagList tags={product.tags} max={productTagBadgeMax} />
                 </div>
               ) : null}
             </div>
@@ -276,11 +282,11 @@ function ProductCardInner({
           )}
           {product.is_hot ? <StoreBadge type="hot" onMedia>热销</StoreBadge> : null}
           {showNewBadge ? (
-            <UnifiedButton type="button" onClick={openNewArrivals} className="cursor-pointer">
+            <UnifiedButton type="button" onClick={openNewArrivals} className={cn(badgeButtonClass, "cursor-pointer")}>
               <StoreBadge type="new" onMedia>新品</StoreBadge>
             </UnifiedButton>
           ) : null}
-          <ProductTagList tags={product.tags} max={2} />
+          <ProductTagList tags={product.tags} max={productTagBadgeMax} />
         </div>
         {soldOut ? <ProductSoldOutOverlay /> : null}
         {ageBadgeLabel ? (

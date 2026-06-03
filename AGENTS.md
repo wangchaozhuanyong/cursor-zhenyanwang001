@@ -147,7 +147,194 @@
 
 ---
 
-## 八、与 Cursor 助手的发布分工
+## 八、后端应用架构强制规范
+
+本项目后端不是自由结构项目，必须严格遵守 Modular Monolith + Layered Architecture。
+
+后端固定为 24 个模块：
+
+```text
+admin
+analytics
+auth
+cart
+dataRetention
+health
+home
+logistics
+loyalty
+marketing
+media
+monitoring
+myinvois
+order
+payment
+privacy
+product
+pwa
+search
+seo
+siteCapabilities
+telegram
+theme
+user
+```
+
+每个模块必须保留标准四层目录：
+
+```text
+routes/
+controller/
+service/
+repository/
+```
+
+可按需增加 `schemas/`、`jobs/`、`rules/`、`adapters/`、`providers/` 等辅助目录，但新增请求处理、业务逻辑、数据库访问代码必须回到标准四层。
+
+分层职责必须严格遵守：
+
+- `routes`：只负责路由绑定和中间件挂载，不写业务逻辑，不查数据库。
+- `controller`：只负责接收参数、调用本模块 service、返回结果，不写业务逻辑，不调用 repository。
+- `service`：只负责业务逻辑、状态流转和流程编排，不直接写 SQL，不直接访问 `db.query / pool.query / conn.execute`。
+- `repository`：只负责数据库读写，不做业务判断，不决定业务状态，不调用 controller/routes。
+
+API 路径必须遵守：
+
+- 所有业务接口必须统一以 `/api` 开头。
+- 管理后台接口必须使用 `/api/admin/*`。
+- 健康检查接口固定为 `/api/health/live` 和 `/api/health/ready`。
+
+跨模块规则：
+
+- 写代码前必须先判断模块归属，再判断层级归属。
+- 如果无法判断模块归属，必须停止，不允许自己创建新模块。
+- 如果需要跨模块调用，必须停止说明风险；不允许直接 import 其他模块的 controller/service/repository/routes 内部实现。
+- 跨模块协作只能通过目标模块入口暴露的公开能力，或先由用户确认新的编排方案。
+- 如果任务会导致 controller/service/repository/routes 职责混写，必须停止。
+
+允许例外：
+
+- `server/src/app.js` 和 `server/src/index.js` 只用于应用启动、全局中间件和总路由挂载。
+- `server/src/config`、`server/src/middleware`、`server/src/errors`、`server/src/utils` 只放通用能力。
+- `server/scripts`、数据库迁移、备份、恢复、部署脚本不属于业务模块，但不能承载常规业务逻辑。
+
+## 九、Architecture Plan 模板
+
+以后任何后端代码任务，在写代码之前必须先输出：
+
+```text
+Architecture Decision:
+1. Target module:
+2. Why this module:
+3. Target layer:
+4. Why this layer:
+5. Files allowed to edit:
+6. Files forbidden to edit:
+7. API paths affected:
+8. Database access location:
+9. Cross-module dependency risk:
+10. Business behavior impact:
+```
+
+如果本次任务不属于后端业务模块，也必须明确写清楚原因，例如“项目级文档 / 架构检查脚本 / CI 配置，不进入业务模块”。
+
+## 十、Architecture Compliance Report 模板
+
+每次完成后必须补充架构合规报告：
+
+```text
+Architecture Compliance Report:
+1. Target module followed:
+2. Layer boundary followed:
+3. Files changed within allowed scope:
+4. API path rule followed:
+5. Database access rule followed:
+6. Cross-module rule followed:
+7. Business behavior unchanged:
+8. arch:check result:
+9. Remaining architecture risks:
+```
+
+后端相关改动完成后，优先在 `server` 目录运行：
+
+```bash
+npm run arch:check
+```
+
+如果没有运行，必须明确说明原因。
+
+---
+
+## 十一、整站架构参考规范
+
+处理前端、管理后台、API 调用、部署、缓存、CI、静态资源、PWA、CDN、生产白屏、chunk 加载失败、路由异常等问题时，必须先参考：
+
+```text
+docs/WEBSITE_ARCHITECTURE.md
+```
+
+使用规则：
+
+- 如果是用户端页面问题，先判断是否属于 `src/modules/public`、用户端 routes、用户端 services、用户端 stores 或通用组件。
+- 如果是管理后台问题，先判断是否属于 `src/modules/admin`、后台 routes、后台 services、后台 layout、权限或后台 i18n。
+- 如果是 API 调用问题，先确认前端是否通过 `VITE_API_BASE_URL=/api` 和 `src/api/request.ts` 调用后端。
+- 如果是生产白屏、chunk 加载失败、路由异常，必须同时检查前端代码、构建产物、HTML 缓存头、assets 缓存、CDN、部署脚本和运行时恢复逻辑。
+- 如果是部署或缓存问题，不要只改页面代码；必须先判断影响范围和回滚方式。
+- 如果问题涉及订单、支付、库存、优惠券、积分、权限、安全、用户数据，最终规则必须以后端为准，不能只在前端修。
+
+本文档和 `docs/ARCHITECTURE.md` 的关系：
+
+- `docs/ARCHITECTURE.md` 是后端硬规范。
+- `docs/WEBSITE_ARCHITECTURE.md` 是整站总览和前后端边界规范。
+- 后端业务改动必须优先遵守 `docs/ARCHITECTURE.md`。
+- 前端、部署、缓存、CI 类问题必须同时参考 `docs/WEBSITE_ARCHITECTURE.md`。
+
+## 十二、新增和修复的验证要求
+
+新增功能或修复功能时，必须按影响范围选择验证方式。
+
+涉及以下高风险业务时，必须运行对应测试或明确说明为什么无法验证：
+
+- 订单：订单创建、取消、支付状态、发货、收货、售后、超时任务。
+- 支付：支付渠道、支付意图、支付回调、退款、对账。
+- 库存：商品库存、SKU 库存、库存扣减、库存恢复、库存同步。
+- 优惠券：领券、用券、退券、活动券、人群券。
+- 积分和会员：积分发放、积分抵扣、积分过期、会员等级、奖励结算。
+- 用户和权限：登录、注册、后台权限、MFA、CSRF、敏感操作。
+- 报表和导出：金额、数量、时间范围、CSV 导出、统计口径。
+- 上传和媒体：图片上传、视频转码、对象存储、公开访问 URL。
+
+如果修改只涉及文档或纯检查脚本，可以不跑完整业务测试，但必须至少运行对应的静态检查，并说明没有改业务代码。
+
+常用验证命令：
+
+```bash
+cd server && npm run arch:check
+cd click-send-shop-main/click-send-shop-main && npm run check:api-paths
+```
+
+## 十三、固定审查清单
+
+每次大功能、新模块倾向改动、跨层问题、生产问题、部署缓存问题开始前，必须先对照这三份文件：
+
+```text
+AGENTS.md
+docs/ARCHITECTURE.md
+docs/WEBSITE_ARCHITECTURE.md
+```
+
+审查重点：
+
+- 是否属于现有 24 个后端模块。
+- 是否会破坏 routes/controller/service/repository 分层。
+- 是否会新增或改变 API 路径。
+- 是否涉及前端用户端、管理后台、部署、缓存或 CI。
+- 是否涉及订单、支付、库存、优惠券、积分、权限等高风险业务。
+- 是否需要运行专项测试，或说明无法验证的原因。
+
+---
+
+## 十四、与 Cursor 助手的发布分工
 
 - **Codex**：日常开发，push 开发分支即可；不要与 Cursor 同时在服务器跑 `ci-deploy`。
 - **Cursor**：只提交/发布本会话改动的文件；线上统一 **`main`**，细则见 `.cursor/rules/cursor-release-workflow.mdc`。

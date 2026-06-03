@@ -1,10 +1,35 @@
 import type { ThemeConfig, ThemeHolidayRule, ThemeSkin } from "@/types/theme";
 import { STOREFRONT_DESIGN_LOCKS } from "@/constants/themeDesignLocks";
+import starterThemeSkinsData from "@/constants/starterThemeSkins.data.json";
 
 export const DAILY_COMMERCE_SKIN_ID = "default_life_green";
 export const FESTIVAL_SKIN_ID = "festive_ruby_gold";
 export const PREMIUM_IVORY_JADE_SKIN_ID = "premium_ivory_jade";
 export const DEFAULT_SKIN_ID = PREMIUM_IVORY_JADE_SKIN_ID;
+export const OBSIDIAN_BLACK_GOLD_SKIN_ID = "obsidian_black_gold";
+export const MIDNIGHT_TITANIUM_SKIN_ID = "midnight_titanium";
+export const STARTER_FESTIVE_RUBY_GOLD_SKIN_ID = "starter_festive_ruby_gold";
+export const AETHERIAL_BLANC_SKIN_ID = "aetherial_blanc";
+export const ORGANIC_SANDSTONE_SKIN_ID = "organic_sandstone";
+
+const STARTER_THEME_SKINS = starterThemeSkinsData as ThemeSkin[];
+const STARTER_BY_ID = new Map(STARTER_THEME_SKINS.map((skin) => [skin.id, skin]));
+
+function starterPreset(id: string, overrides: Partial<ThemeSkin> = {}): ThemeSkin {
+  const skin = STARTER_BY_ID.get(id);
+  if (!skin) {
+    throw new Error(`Missing starter theme skin: ${id}`);
+  }
+  return {
+    ...skin,
+    category: skin.category || "推荐皮肤",
+    ...overrides,
+    config: {
+      ...skin.config,
+      ...(overrides.config || {}),
+    },
+  };
+}
 
 export const DEFAULT_LIFE_GREEN_CONFIG: ThemeConfig = {
   skinName: "日常购物皮肤",
@@ -85,8 +110,25 @@ export const PREMIUM_IVORY_JADE_SKIN: ThemeSkin = {
   config: PREMIUM_IVORY_JADE_CONFIG,
 };
 
+export const OBSIDIAN_BLACK_GOLD_SKIN: ThemeSkin = starterPreset(OBSIDIAN_BLACK_GOLD_SKIN_ID);
+export const MIDNIGHT_TITANIUM_SKIN: ThemeSkin = starterPreset(MIDNIGHT_TITANIUM_SKIN_ID);
+export const STARTER_FESTIVE_RUBY_GOLD_SKIN: ThemeSkin = starterPreset(FESTIVAL_SKIN_ID, {
+  id: STARTER_FESTIVE_RUBY_GOLD_SKIN_ID,
+});
+export const AETHERIAL_BLANC_SKIN: ThemeSkin = starterPreset(AETHERIAL_BLANC_SKIN_ID);
+export const ORGANIC_SANDSTONE_SKIN: ThemeSkin = starterPreset(ORGANIC_SANDSTONE_SKIN_ID);
+
 export const FALLBACK_THEME_SKIN = PREMIUM_IVORY_JADE_SKIN;
-export const THEME_PRESETS: ThemeSkin[] = [PREMIUM_IVORY_JADE_SKIN, DAILY_COMMERCE_SKIN, FESTIVAL_RUBY_GOLD_SKIN];
+export const THEME_PRESETS: ThemeSkin[] = [
+  PREMIUM_IVORY_JADE_SKIN,
+  DAILY_COMMERCE_SKIN,
+  FESTIVAL_RUBY_GOLD_SKIN,
+  OBSIDIAN_BLACK_GOLD_SKIN,
+  MIDNIGHT_TITANIUM_SKIN,
+  STARTER_FESTIVE_RUBY_GOLD_SKIN,
+  AETHERIAL_BLANC_SKIN,
+  ORGANIC_SANDSTONE_SKIN,
+];
 
 export const DEFAULT_HOLIDAY_SKIN_ID = FESTIVAL_SKIN_ID;
 

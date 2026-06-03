@@ -26,7 +26,7 @@ export const HOME_PRODUCT_TITLE_CLASS =
   "line-clamp-2 min-h-[2.25rem] break-words text-[13.5px] font-semibold leading-snug text-[var(--theme-text-on-surface)]";
 
 export const HOME_PRODUCT_BADGE_CLASS =
-  "inline-flex max-w-full items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none";
+  "inline-flex h-[22px] max-w-full items-center rounded-full border px-2 text-[10px] font-extrabold leading-none";
 
 export const HOME_PRODUCT_PRICE_AMOUNT_CLASS = "text-[13px] font-bold leading-none";
 export const HOME_PRODUCT_PRICE_CURRENCY_CLASS = "mr-0.5 text-[10px] font-bold leading-none";

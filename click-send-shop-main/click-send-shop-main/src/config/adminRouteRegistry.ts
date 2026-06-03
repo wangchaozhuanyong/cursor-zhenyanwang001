@@ -29,8 +29,8 @@ export const ADMIN_ROUTE_TITLE_RULES: AdminRouteTitleRule[] = [
   { test: (p) => /^\/admin\/users\/[^/]+$/.test(p), titleKey: "routeTitles.userDetailFull" },
   { test: (p) => /^\/admin\/notifications\/[^/]+$/.test(p), titleKey: "routeTitles.notificationDetailFull" },
   { test: (p) => p === "/admin/marketing/coupons/new", titleKey: "routeTitles.couponNewFull" },
-  { test: (p) => p === "/admin/marketing/coupon-campaigns/new", titleKey: "routeTitles.coupons" },
-  { test: (p) => /^\/admin\/marketing\/coupon-campaigns\/[^/]+$/.test(p), titleKey: "routeTitles.coupons" },
+  { test: (p) => p === "/admin/marketing/coupon-campaigns/new", titleKey: "routeTitles.couponCampaignNewFull" },
+  { test: (p) => /^\/admin\/marketing\/coupon-campaigns\/[^/]+$/.test(p), titleKey: "routeTitles.couponCampaignEditFull" },
   {
     test: (p) => /^\/admin\/marketing\/coupons\/[^/]+$/.test(p) && p !== "/admin/marketing/coupons/records",
     titleKey: "routeTitles.couponEditFull",
@@ -51,6 +51,7 @@ export const ADMIN_ROUTE_TITLE_RULES: AdminRouteTitleRule[] = [
   { test: (p) => p === "/admin/marketing/activities/new", titleKey: "routeTitles.marketingNewFull" },
   { test: (p) => /^\/admin\/marketing\/activities\/[^/]+\/edit$/.test(p), titleKey: "routeTitles.marketingEditFull" },
   { test: (p) => p.startsWith("/admin/marketing/activities"), titleKey: "routeTitles.marketingActivities" },
+  { test: (p) => p.startsWith("/admin/marketing/coupon-campaigns"), titleKey: "routeTitles.couponCampaigns" },
   { test: (p) => p.startsWith("/admin/marketing/coupons/records"), titleKey: "routeTitles.couponRecords" },
   { test: (p) => p.startsWith("/admin/marketing/coupons"), titleKey: "routeTitles.coupons" },
   { test: (p) => p.startsWith("/admin/marketing/points"), titleKey: "routeTitles.points" },

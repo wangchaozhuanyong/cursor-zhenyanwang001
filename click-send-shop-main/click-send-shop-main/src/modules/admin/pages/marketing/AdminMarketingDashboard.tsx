@@ -103,7 +103,10 @@ export default function AdminMarketingDashboard() {
             <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/activities/new?type=full_reduction")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><BarChart3 className="mr-2 inline h-4 w-4" /><Tx>新建满减活动</Tx></UnifiedButton>
           </PermissionGate>
           <PermissionGate permission="coupon.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Ticket className="mr-2 inline h-4 w-4" /><Tx>新建优惠券</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Ticket className="mr-2 inline h-4 w-4" /><Tx>新建优惠券模板</Tx></UnifiedButton>
+          </PermissionGate>
+          <PermissionGate permission="coupon.manage">
+            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Gift className="mr-2 inline h-4 w-4" /><Tx>新建发券活动</Tx></UnifiedButton>
           </PermissionGate>
           <PermissionGate permission="points.manage">
             <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/points")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Star className="mr-2 inline h-4 w-4" /><Tx>积分管理</Tx></UnifiedButton>

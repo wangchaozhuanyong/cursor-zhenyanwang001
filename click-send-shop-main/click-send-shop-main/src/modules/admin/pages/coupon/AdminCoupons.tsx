@@ -28,6 +28,7 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 import { adminTableCellClass, adminTableTheadRow, type AdminTableAlign } from "@/utils/adminTableClasses";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import CouponCenterTabs from "./CouponCenterTabs";
 
 const COUPON_COLUMN_ALIGNS: AdminTableAlign[] = ["left", "center", "left", "right", "right", "left", "center", "right"];
 
@@ -212,16 +213,21 @@ export default function AdminCoupons() {
 
   return (
     <AdminPageShell
-      hint={<Tx>管理优惠券、发放与有效期。</Tx>}
+      hint={<Tx>这里维护优惠券模板，也就是优惠规则本身。需要设置展示、人群和发放方式时，请到“发券活动”。</Tx>}
       toolbar={(
         <div className="flex flex-wrap gap-2">
           <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></UnifiedButton>
           <PermissionGate permission="coupon.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={16} /><Tx>新建优惠券</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={16} /><Tx>新建优惠券模板</Tx></UnifiedButton>
           </PermissionGate>
         </div>
       )}
-      filters={<SearchBar placeholder={L("搜索标题/编码", "Search title/code")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />}
+      filters={(
+        <div className="space-y-3">
+          <CouponCenterTabs />
+          <SearchBar placeholder={L("搜索标题/编码", "Search title/code")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
+        </div>
+      )}
     >
       <AnimatedTable
         loading={loading}

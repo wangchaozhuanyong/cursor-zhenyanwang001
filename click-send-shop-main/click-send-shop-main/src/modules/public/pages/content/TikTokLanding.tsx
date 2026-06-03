@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
-  BadgeCheck,
   BriefcaseBusiness,
   Building2,
   CheckCircle2,
@@ -701,13 +700,10 @@ export default function TikTokLanding() {
         <div className="relative mx-auto max-w-7xl">
           <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
             <div className="rounded-lg border border-white/12 bg-white/[0.06] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.2)] backdrop-blur sm:p-6">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
                 <div className="rounded-lg border border-white/70 bg-white px-3 py-2 shadow-[0_12px_34px_rgba(0,0,0,0.18)]">
                   <BrandMark brandLogoSrc={brandLogoSrc} />
                 </div>
-                <span className="rounded-full border border-[#d9aa58]/45 bg-[#d9aa58]/12 px-3 py-1 text-[11px] font-black text-[#f3d79e]">
-                  TikTok 专属
-                </span>
               </div>
               <p className="mt-4 text-[15px] leading-7 text-[#d7e7e3]">
                 把找房、留学、签证、本地办事和商务资源整理成一个清晰入口，来到马来西亚不用从零开始问。
@@ -764,21 +760,13 @@ export default function TikTokLanding() {
                     <Mail size={18} className="shrink-0 text-[#f3d79e]" />
                     邮箱与服务时间以客服页为准
                   </span>
-                  <span className="flex min-h-10 items-center gap-3 rounded-lg bg-white/[0.055] px-3">
-                    <BadgeCheck size={18} className="shrink-0 text-[#7dd8c5]" />
-                    当前入口仅用于 TikTok 落地页
-                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 border-t border-white/12 pt-5 text-xs text-[#abc6c0] sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 border-t border-white/12 pt-5 text-xs text-[#abc6c0]">
             <span>© 2025 大马通 Damatong.net · 保留所有权利</span>
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-3 py-1.5">
-              <CheckCircle2 size={14} className="text-[#7dd8c5]" />
-              TikTok 独立入口 · nofollow
-            </span>
           </div>
         </div>
       </footer>

@@ -19,7 +19,7 @@ This list is the source of truth for deciding module ownership before writing co
 10. marketing
 11. monitoring
 12. myinvois
-13. notification
+13. media
 14. order
 15. payment
 16. privacy

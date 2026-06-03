@@ -35,6 +35,7 @@ jobs:
       - run: npm run lint
       - run: npm run check:mojibake
       - run: npm run check:admin-i18n
+      - run: npm run check:api-paths
       - run: npm run typecheck
       - run: npm run typecheck:strict-api
       - run: npm run typecheck:strict-admin
@@ -59,7 +60,7 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
       - run: npm ci
-      - run: npm run architecture:check
+      - run: npm run arch:check
       - run: npm run check:migrations
       - run: npm run check:report-registry
       - run: npm run typecheck

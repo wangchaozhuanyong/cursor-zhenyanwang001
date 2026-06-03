@@ -206,7 +206,7 @@ export default function AdminCouponCampaignForm() {
       return campaignService.createCouponCampaign(payload);
     },
     onSuccess: async () => {
-      toast.success("优惠券活动已保存");
+      toast.success("发券活动已保存");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponCampaignsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
@@ -216,13 +216,13 @@ export default function AdminCouponCampaignForm() {
     onError: (error) => toast.error(toastErrorMessage(error, "保存失败")),
   });
 
-  const title = isEdit ? "编辑优惠券活动" : "新建优惠券活动";
+  const title = isEdit ? "编辑发券活动" : "新建发券活动";
 
   return (
     <AdminPageShell
       showTitle
       title={title}
-      hint="先选已有优惠券，再设置活动时间、人群和发放方式。优惠券内容本身不在这里重复维护。"
+      hint="先选已有优惠券模板，再设置活动时间、人群和发放方式。优惠券规则本身不在这里重复维护。"
       toolbar={(
         <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns")} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm">
           <ArrowLeft size={15} /> 返回列表
@@ -311,7 +311,7 @@ export default function AdminCouponCampaignForm() {
 
           <section className="rounded-xl border border-border bg-card p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-base font-semibold">选择优惠券</h2>
+              <h2 className="text-base font-semibold">选择优惠券模板</h2>
               <div className="w-full md:w-72">
                 <SearchBar placeholder="搜索优惠券" value={couponKeyword} onChange={setCouponKeyword} />
               </div>
@@ -333,7 +333,7 @@ export default function AdminCouponCampaignForm() {
                 );
               })}
             </div>
-            {couponOptions.length === 0 ? <p className="rounded-lg bg-secondary px-3 py-4 text-sm text-muted-foreground">还没有可选优惠券，请先到“优惠券管理”创建券。</p> : null}
+            {couponOptions.length === 0 ? <p className="rounded-lg bg-secondary px-3 py-4 text-sm text-muted-foreground">还没有可选优惠券，请先到“优惠券模板”创建券。</p> : null}
           </section>
         </div>
 
@@ -341,13 +341,13 @@ export default function AdminCouponCampaignForm() {
           <section className="rounded-xl border border-border bg-card p-4">
             <h2 className="mb-3 text-base font-semibold">发布检查</h2>
             <div className="space-y-2 text-sm">
-              <p>已选优惠券：<strong>{form.coupon_ids.length}</strong> 张</p>
+              <p>已选优惠券模板：<strong>{form.coupon_ids.length}</strong> 张</p>
               <p>展示位置：统一首页优惠券区</p>
               <p>活动状态：{statusOptions.find((item) => item.value === form.status)?.label || form.status}</p>
             </div>
             {selectedCouponsFromDetail.length && form.coupon_ids.some((couponId) => !couponOptions.some((coupon) => coupon.id === couponId)) ? (
               <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                有些已选优惠券不在当前搜索结果里，但保存时仍会保留。
+                有些已选优惠券模板不在当前搜索结果里，但保存时仍会保留。
               </div>
             ) : null}
             <div className="mt-4 grid gap-2">

@@ -21,6 +21,7 @@ import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { THEME_BADGE_SUCCESS } from "@/utils/themeVisuals";
 import { adminTableCellClass, adminTableTheadRow, type AdminTableAlign } from "@/utils/adminTableClasses";
 import { useAdminTOptional } from "@/hooks/useAdminT";
+import CouponCenterTabs from "./CouponCenterTabs";
 
 const COUPON_RECORD_COLUMN_ALIGNS: AdminTableAlign[] = ["left", "left", "left", "center", "left", "left"];
 
@@ -128,18 +129,21 @@ export default function AdminCouponRecords() {
     <AdminPageShell
       hint={<Tx>{L("查看用户领券与使用状态，支持按用户、优惠券与状态筛选。", "View claim and usage status, with filters for user, coupon, and status.")}</Tx>}
       filters={(
-        <div className="flex flex-wrap gap-2">
-          <SearchBar placeholder={L("搜索用户/优惠券", "Search user/coupon")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="rounded-lg bg-secondary px-3 py-2 text-sm"
-          >
-            <option value="">{L("全部状态", "All statuses")}</option>
-            <option value="available">{L("未使用", "Unused")}</option>
-            <option value="used">{L("已使用", "Used")}</option>
-            <option value="expired">{L("已过期", "Expired")}</option>
-          </select>
+        <div className="space-y-3">
+          <CouponCenterTabs />
+          <div className="flex flex-wrap gap-2">
+            <SearchBar placeholder={L("搜索用户/优惠券", "Search user/coupon")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              className="rounded-lg bg-secondary px-3 py-2 text-sm"
+            >
+              <option value="">{L("全部状态", "All statuses")}</option>
+              <option value="available">{L("未使用", "Unused")}</option>
+              <option value="used">{L("已使用", "Used")}</option>
+              <option value="expired">{L("已过期", "Expired")}</option>
+            </select>
+          </div>
         </div>
       )}
     >

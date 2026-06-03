@@ -1,6 +1,5 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "@/lib/utils";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
 type BadgeType = "hot" | "new" | "sale" | "coupon" | "success" | "warning" | "danger" | "neutral";
 
@@ -12,25 +11,25 @@ interface StoreBadgeProps {
 }
 
 const typeTone: Record<BadgeType, string> = {
-  hot: "var(--theme-price)",
-  new: "var(--theme-primary)",
-  sale: "var(--theme-secondary)",
-  coupon: "var(--theme-accent)",
+  hot: "#d86a1f",
+  new: "#2f9b77",
+  sale: "#d94a3a",
+  coupon: "#b98525",
   success: "var(--theme-success)",
   warning: "var(--theme-warning)",
   danger: "var(--theme-danger)",
-  neutral: "var(--theme-text)",
+  neutral: "color-mix(in srgb, var(--theme-text) 72%, var(--theme-surface))",
 };
 
 const typeForeground: Record<BadgeType, string> = {
-  hot: "var(--theme-price-foreground)",
-  new: "var(--theme-primary-foreground)",
-  sale: "var(--theme-secondary-foreground)",
-  coupon: "var(--theme-accent-foreground)",
+  hot: "#fffaf3",
+  new: "#f7fffb",
+  sale: "#fff7f4",
+  coupon: "#fffaf0",
   success: "var(--theme-success-foreground)",
   warning: "var(--theme-warning-foreground)",
   danger: "var(--theme-danger-foreground)",
-  neutral: "var(--theme-text)",
+  neutral: "var(--theme-surface)",
 };
 
 export default function StoreBadge({
@@ -39,28 +38,22 @@ export default function StoreBadge({
   className,
   children,
 }: PropsWithChildren<StoreBadgeProps>) {
-  const { themeConfig } = useThemeRuntime();
   const tone = typeTone[type];
   const foreground = typeForeground[type];
 
-  const style = onMedia
-    ? {
-        backgroundColor: tone,
-        color: foreground,
-        borderColor: "color-mix(in srgb, var(--theme-text) 18%, transparent)",
-        boxShadow:
-          "0 1px 2px color-mix(in srgb, var(--theme-text) 28%, transparent), 0 0 0 1px color-mix(in srgb, var(--theme-surface) 35%, transparent)",
-      }
-    : themeConfig.badgeStyle === "solid"
-      ? { backgroundColor: tone, color: foreground, borderColor: "transparent" }
-      : themeConfig.badgeStyle === "outline"
-        ? { backgroundColor: "transparent", color: tone, borderColor: tone }
-        : { backgroundColor: `color-mix(in srgb, ${tone} 16%, var(--theme-surface))`, color: tone, borderColor: "transparent" };
+  const style = {
+    backgroundColor: tone,
+    color: foreground,
+    borderColor: "color-mix(in srgb, white 34%, transparent)",
+    boxShadow: onMedia
+      ? "0 8px 16px -12px color-mix(in srgb, var(--theme-text) 42%, transparent), 0 0 0 1px color-mix(in srgb, var(--theme-surface) 40%, transparent)"
+      : "0 8px 16px -14px color-mix(in srgb, var(--theme-text) 30%, transparent)",
+  };
 
   return (
     <span
       className={cn(
-        "store-badge inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none",
+        "store-badge inline-flex h-[22px] max-w-full items-center rounded-full border px-2 text-[10px] font-extrabold leading-none",
         `store-badge--${type}`,
         onMedia && "store-badge--on-media shadow-sm backdrop-blur-[2px]",
         className,

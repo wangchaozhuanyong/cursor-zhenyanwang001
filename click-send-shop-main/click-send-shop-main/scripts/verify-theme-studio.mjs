@@ -68,11 +68,12 @@ async function installApiMocks(context, baseUrl) {
         status: 200,
         contentType: "application/json",
         body: apiOk({
-          defaultSkinId: "default_life_green",
-          activeSkinId: "default_life_green",
+          defaultSkinId: "premium_champagne_ivory",
+          activeSkinId: "premium_champagne_ivory",
+          holidaySkinId: "festival_spring_ruby_gold",
           skins: [
             {
-              id: "default_life_green",
+              id: "premium_champagne_ivory",
               name: "默认皮肤",
               clientEnabled: true,
               config: MOCK_SKIN_CONFIG,

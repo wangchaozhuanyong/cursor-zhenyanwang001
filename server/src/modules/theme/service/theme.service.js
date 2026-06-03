@@ -5,6 +5,7 @@ const {
   DEFAULT_HOLIDAY_SKIN_ID,
   DEFAULT_THEME_HOLIDAY_RULES,
   FALLBACK_THEME_SKIN,
+  RETIRED_SYSTEM_SKIN_IDS,
   STOREFRONT_DESIGN_LOCKS,
   THEME_PRESETS,
 } = require('../theme.presets');
@@ -274,7 +275,12 @@ function normalizeThemeSkinsPayload(rawPayload) {
   const customSkins = incoming
     .map((skin) => normalizeThemeSkinRecord(skin))
     .filter((skin) => {
-      if (!skin || presetIds.has(skin.id) || seenCustomIds.has(skin.id)) return false;
+      if (
+        !skin
+        || presetIds.has(skin.id)
+        || RETIRED_SYSTEM_SKIN_IDS.has(skin.id)
+        || seenCustomIds.has(skin.id)
+      ) return false;
       seenCustomIds.add(skin.id);
       return true;
     });

@@ -221,7 +221,12 @@ function getInitialThemeState() {
   }
 
   const cachedSkins = readCachedSkins();
-  const sourceSkins = cachedSkins.length > 0 ? cachedSkins : THEME_PRESETS;
+  const normalized = normalizeThemeSkinsPayload({
+    defaultSkinId: DEFAULT_SKIN_ID,
+    activeSkinId: DEFAULT_SKIN_ID,
+    skins: cachedSkins.length > 0 ? cachedSkins : THEME_PRESETS,
+  });
+  const sourceSkins = normalized.skins;
   const active = sourceSkins.find((skin) => skin.id === DEFAULT_SKIN_ID) ?? sourceSkins[0];
 
   return {

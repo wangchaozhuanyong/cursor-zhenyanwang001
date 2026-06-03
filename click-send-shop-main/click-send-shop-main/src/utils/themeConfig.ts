@@ -3,7 +3,8 @@ import {
   DEFAULT_SKIN_ID,
   DEFAULT_THEME_HOLIDAY_RULES,
   FALLBACK_THEME_SKIN,
-  PREMIUM_IVORY_JADE_CONFIG,
+  PREMIUM_CHAMPAGNE_IVORY_CONFIG,
+  RETIRED_SYSTEM_SKIN_IDS,
   THEME_PRESETS,
 } from "@/constants/themePresets";
 import { applyStorefrontDesignLocks } from "@/constants/themeDesignLocks";
@@ -69,6 +70,13 @@ const SCENE_TAG_VALUES: ThemeSceneTag[] = [
 ];
 
 const PRESET_SCENE_BY_ID: Record<string, ThemeSceneTag> = {
+  premium_champagne_ivory: "premium",
+  premium_pearl_blush: "premium",
+  premium_porcelain_jade: "premium",
+  premium_sky_silk: "mall",
+  premium_apricot_sand: "mall",
+  festival_spring_ruby_gold: "holiday",
+  festival_moon_orange_gold: "holiday",
   default_life_green: "mall",
   premium_ivory_jade: "premium",
   premium_black_gold: "premium",
@@ -133,7 +141,7 @@ function normalizeFontFamily(value: unknown, fallback: string): string {
 }
 
 export function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefined): ThemeConfig {
-  const base = PREMIUM_IVORY_JADE_CONFIG;
+  const base = PREMIUM_CHAMPAGNE_IVORY_CONFIG;
   const raw = (input ?? {}) as Record<string, unknown>;
 
   const bgColor = normalizeHex(raw.bgColor, base.bgColor);
@@ -297,7 +305,7 @@ export function normalizeThemeSkinsPayload(payload: {
       config: normalizeThemeConfig(existing?.config ?? preset.config),
     };
   });
-  const customSkins = normalizedIncoming.filter((skin) => !presetIds.has(skin.id));
+  const customSkins = normalizedIncoming.filter((skin) => !presetIds.has(skin.id) && !RETIRED_SYSTEM_SKIN_IDS.has(skin.id));
   const skins = [...presetSkins, ...customSkins];
 
   if (skins.length === 0) {

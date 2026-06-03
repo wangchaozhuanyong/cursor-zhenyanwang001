@@ -330,15 +330,6 @@ function SectionTitle({
   );
 }
 
-function TikTokBadge() {
-  return (
-    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#bf811e] bg-white px-3.5 py-2 text-[13px] font-bold text-[#80500b] shadow-[0_8px_24px_rgba(112,78,23,0.08)] sm:px-4 sm:text-sm">
-      <span className="grid h-6 w-6 place-items-center rounded-full bg-[#111] text-[13px] font-black text-white">♪</span>
-      TikTok 用户专属入口
-    </div>
-  );
-}
-
 function PlatformPreview({ brandLogoSrc }: { brandLogoSrc: string }) {
   return (
     <div className="relative mx-auto w-full max-w-[360px] sm:max-w-[430px] lg:max-w-[660px]">
@@ -508,9 +499,7 @@ export default function TikTokLanding() {
 
         <div className="relative mx-auto grid max-w-7xl gap-8 px-5 pb-8 pt-8 sm:px-6 sm:pb-10 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 lg:px-8 lg:py-14">
           <div className="flex min-h-[360px] flex-col justify-center sm:min-h-[420px] lg:min-h-[620px]">
-            <TikTokBadge />
-
-            <h1 className="mt-5 max-w-[680px] text-[31px] font-black tracking-normal text-[#050907] min-[390px]:text-[36px] sm:text-5xl lg:text-6xl" style={{ lineHeight: 1.1 }}>
+            <h1 className="mt-0 max-w-[680px] text-[31px] font-black tracking-normal text-[#050907] min-[390px]:text-[36px] sm:text-5xl lg:text-6xl" style={{ lineHeight: 1.1 }}>
               来马来西亚，
               <br />
               生活办事<span className="text-[#007f6d]">不用到处问</span>

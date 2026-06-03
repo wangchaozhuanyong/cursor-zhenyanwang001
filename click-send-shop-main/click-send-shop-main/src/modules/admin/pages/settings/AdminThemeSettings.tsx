@@ -54,6 +54,24 @@ function applyThemePayload(
   setters.setThemeConfig(normalizeThemeConfig(current?.config));
 }
 
+function monthDayFromDate(date = new Date()) {
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${month}-${day}`;
+}
+
+function isMonthDayInRange(value: string, start: string, end: string) {
+  if (start <= end) return value >= start && value <= end;
+  return value >= start || value <= end;
+}
+
+function getActiveHolidayRuleIds(rules: ThemeHolidayRule[], date = new Date()) {
+  const today = monthDayFromDate(date);
+  return rules
+    .filter((rule) => rule.enabled && isMonthDayInRange(today, rule.start, rule.end))
+    .map((rule) => rule.id);
+}
+
 export default function AdminThemeSettings() {
   const { locale, tText } = useAdminTOptional();
   const isEn = locale === "en";
@@ -100,6 +118,8 @@ export default function AdminThemeSettings() {
     () => holidayRules.filter((rule) => rule.enabled).length,
     [holidayRules],
   );
+  const activeHolidayRuleIds = useMemo(() => getActiveHolidayRuleIds(holidayRules), [holidayRules]);
+  const isHolidayRuleActiveNow = activeHolidayRuleIds.length > 0;
 
   const themeQuery = useQuery({
     queryKey: adminQueryKeys.themeSkins(),
@@ -267,8 +287,23 @@ export default function AdminThemeSettings() {
   const onSetClientSkin = async () => {
     const nextSkins = buildNextSkins();
     if (!nextSkins) return toast.error(L("皮肤名称不能为空", "Skin name cannot be empty"));
+    const nextHolidayRules = isHolidayRuleActiveNow
+      ? holidayRules.map((rule) => (activeHolidayRuleIds.includes(rule.id) ? { ...rule, skinId: selectedSkinId } : rule))
+      : holidayRules;
     try {
-      await persist(nextSkins, selectedSkinId, selectedSkinId, L("已设为客户端日常皮肤", "Set as storefront daily skin"), { selectedSkinId });
+      await persist(
+        nextSkins,
+        selectedSkinId,
+        selectedSkinId,
+        isHolidayRuleActiveNow
+          ? L("已设为默认皮肤，并同步当前节日规则", "Set as default and synced current holiday rule")
+          : L("已设为客户端日常皮肤", "Set as storefront daily skin"),
+        {
+          selectedSkinId,
+          nextHolidaySkinId: isHolidayRuleActiveNow ? selectedSkinId : holidaySkinId,
+          nextHolidayRules,
+        },
+      );
     } catch {
       // noop
     }

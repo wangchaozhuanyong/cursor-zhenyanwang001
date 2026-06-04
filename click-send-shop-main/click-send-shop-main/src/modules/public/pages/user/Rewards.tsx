@@ -147,16 +147,73 @@ export default function Rewards() {
           className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full"
           style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 13%, transparent)" }}
         />
-        <div
-          className="pointer-events-none absolute right-7 top-12 hidden h-28 w-28 rotate-[-10deg] items-center justify-center rounded-[30px] sm:flex"
-          style={{
-            background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 12%, transparent)",
-            boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--theme-coupon-accent-foreground) 16%, transparent)",
-          }}
-        >
-          <Wallet size={54} className="text-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_36%,transparent)]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-4 top-3 z-0 h-36 w-36 opacity-60 sm:right-6 sm:top-8 sm:h-40 sm:w-40 sm:opacity-95">
+          <div
+            className="absolute right-1 top-8 h-[92px] w-[72px] rotate-[13deg] rounded-[22px]"
+            style={{
+              background:
+                "linear-gradient(145deg, color-mix(in srgb, var(--theme-danger) 72%, #ff8d67) 0%, color-mix(in srgb, var(--theme-danger) 92%, #c91f14) 100%)",
+              boxShadow:
+                "inset 0 1px 0 color-mix(in srgb, var(--theme-coupon-accent-foreground) 22%, transparent), 0 16px 30px color-mix(in srgb, #7a110b 26%, transparent)",
+            }}
+          >
+            <div
+              className="absolute inset-x-3 top-4 h-7 rounded-full"
+              style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 12%, transparent)" }}
+            />
+          </div>
+          <div
+            className="absolute right-8 top-4 h-[112px] w-[84px] rotate-[-9deg] overflow-hidden rounded-[22px]"
+            style={{
+              background:
+                "linear-gradient(150deg, color-mix(in srgb, var(--theme-price) 92%, #ff7c48) 0%, color-mix(in srgb, var(--theme-danger) 88%, #d62014) 68%, color-mix(in srgb, var(--theme-danger) 96%, #aa130c) 100%)",
+              boxShadow:
+                "inset 0 1px 0 color-mix(in srgb, var(--theme-coupon-accent-foreground) 28%, transparent), inset 0 -12px 24px color-mix(in srgb, #7a110b 18%, transparent), 0 18px 34px color-mix(in srgb, #7a110b 28%, transparent)",
+            }}
+          >
+            <div
+              className="absolute left-0 right-0 top-0 h-12"
+              style={{
+                background:
+                  "linear-gradient(180deg, color-mix(in srgb, var(--theme-coupon-accent-foreground) 20%, transparent) 0%, color-mix(in srgb, var(--theme-coupon-accent-foreground) 4%, transparent) 100%)",
+                clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+              }}
+            />
+            <div
+              className="absolute left-1/2 top-[38px] flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full text-[11px] font-extrabold"
+              style={{
+                color: "color-mix(in srgb, var(--theme-danger) 78%, #7d120b)",
+                background:
+                  "radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--theme-coupon-accent-foreground) 82%, #ffd58f) 0%, color-mix(in srgb, var(--theme-warning) 92%, #ffbe4d) 64%, color-mix(in srgb, var(--theme-warning) 72%, #b85a11) 100%)",
+                boxShadow:
+                  "0 0 0 6px color-mix(in srgb, var(--theme-warning) 18%, transparent), inset 0 2px 4px color-mix(in srgb, var(--theme-coupon-accent-foreground) 42%, transparent)",
+              }}
+            >
+              RM
+            </div>
+            <div
+              className="absolute bottom-5 left-5 right-5 h-px"
+              style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 24%, transparent)" }}
+            />
+            <div
+              className="absolute -right-5 bottom-1 h-14 w-14 rounded-full"
+              style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 12%, transparent)" }}
+            />
+          </div>
+          <div
+            className="absolute right-[82px] top-[92px] h-8 w-8 rounded-full"
+            style={{
+              background:
+                "radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--theme-coupon-accent-foreground) 86%, #ffe0a3) 0%, color-mix(in srgb, var(--theme-warning) 92%, #f59f24) 66%, color-mix(in srgb, var(--theme-warning) 72%, #a94d0b) 100%)",
+              boxShadow: "0 8px 16px color-mix(in srgb, #7a110b 24%, transparent)",
+            }}
+          />
+          <div
+            className="absolute right-[30px] top-1 h-10 w-16 rounded-full blur-sm"
+            style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 20%, transparent)" }}
+          />
         </div>
-        <div className="relative flex items-start justify-between gap-4">
+        <div className="relative z-10 flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <p className={cn(THEME_ACCENT_HERO_LABEL, "text-[15px] font-semibold normal-case tracking-normal sm:text-base")}>{balanceLabel}</p>

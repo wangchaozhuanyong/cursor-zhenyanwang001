@@ -24,7 +24,7 @@ function LoadingSlots({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="store-category-tile-skeleton flex h-[5.35rem] w-[5.35rem] shrink-0 animate-pulse flex-col items-center justify-center gap-1.5 rounded-[1.15rem]"
+          className="store-category-tile-skeleton flex h-[4.25rem] w-[4.75rem] shrink-0 animate-pulse flex-col items-center justify-center gap-1.5 rounded-[0.875rem]"
           aria-hidden
         />
       ))}
@@ -66,7 +66,7 @@ export default function CategoryKingkongRow({
     >
       <div
         ref={railRef}
-        className="store-category-rail-scroll no-scrollbar flex snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden scroll-smooth px-3 py-3 [-webkit-overflow-scrolling:touch] sm:justify-around sm:gap-3 sm:overflow-x-visible sm:px-4"
+        className="store-category-rail-scroll no-scrollbar flex snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden scroll-smooth px-3 py-3 pr-10 [-webkit-overflow-scrolling:touch] sm:gap-3 sm:px-4 sm:pr-12"
         role="tablist"
         aria-label="商品分类"
       >

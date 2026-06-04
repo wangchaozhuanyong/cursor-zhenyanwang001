@@ -200,31 +200,31 @@ export default function Rewards() {
           <UnifiedButton
             type="button"
             onClick={() => navigate("/")}
-            className="group flex min-w-0 items-center justify-center gap-4 px-4 py-5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]"
+            className="group flex min-w-0 items-center justify-center gap-3 px-3 py-5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] sm:gap-4 sm:px-4"
           >
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_13%,var(--theme-surface))] text-[var(--theme-price)]">
-              <ShoppingBag size={25} />
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_13%,var(--theme-surface))] text-[var(--theme-price)] sm:h-14 sm:w-14">
+              <ShoppingBag size={23} />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-base font-semibold text-[var(--theme-text)]">去购物</span>
-              <span className="mt-1 block truncate text-xs text-[var(--theme-text-muted)]">使用返现抵扣</span>
+              <span className="block whitespace-nowrap text-sm font-semibold text-[var(--theme-text)] sm:text-base">去购物</span>
+              <span className="mt-1 block whitespace-nowrap text-[11px] text-[var(--theme-text-muted)] sm:text-xs">使用返现抵扣</span>
             </span>
           </UnifiedButton>
           {inviteEnabled ? (
             <UnifiedButton
               type="button"
               onClick={() => navigate("/invite")}
-              className="group flex min-w-0 items-center justify-center gap-4 border-l border-[var(--theme-border)] px-4 py-5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]"
+              className="group flex min-w-0 items-center justify-center gap-3 border-l border-[var(--theme-border)] px-3 py-5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] sm:gap-4 sm:px-4"
             >
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_11%,var(--theme-surface))] text-[var(--theme-danger)]">
-                <Users size={25} />
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_11%,var(--theme-surface))] text-[var(--theme-danger)] sm:h-14 sm:w-14">
+                <Users size={23} />
               </span>
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className="truncate text-base font-semibold text-[var(--theme-text)]">邀请好友赚返现</span>
-                  <ArrowRight size={17} className="shrink-0 text-[var(--theme-text-muted)]" />
+                  <span className="whitespace-nowrap text-sm font-semibold text-[var(--theme-text)] sm:text-base">邀请好友赚返现</span>
+                  <ArrowRight size={14} className="hidden shrink-0 text-[var(--theme-text-muted)] sm:block" />
                 </span>
-                <span className="mt-1 block truncate text-xs text-[var(--theme-text-muted)]">好友下单 你得返现</span>
+                <span className="mt-1 block whitespace-nowrap text-[11px] text-[var(--theme-text-muted)] sm:text-xs">好友下单 你得返现</span>
               </span>
             </UnifiedButton>
           ) : null}

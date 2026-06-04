@@ -3197,6 +3197,8 @@ html[data-app-scope="store"] .profile-invite-art-image {
   object-fit: contain;
   object-position: center;
   filter: drop-shadow(0 0.72rem 0.9rem rgba(183, 59, 35, 0.12));
+  transform: scale(1.14);
+  transform-origin: 58% 58%;
   transition:
     transform 220ms ease,
     filter 220ms ease;
@@ -3904,7 +3906,7 @@ html[data-app-scope="store"] .profile-logout-button {
   }
 
   html[data-app-scope="store"] .profile-invite-card:hover .profile-invite-art-image {
-    transform: translateY(-0.12rem) rotate(-1deg);
+    transform: translateY(-0.12rem) rotate(-1deg) scale(1.16);
     filter: saturate(1.04);
   }
 
@@ -4240,21 +4242,21 @@ html[data-app-scope="store"] .store-category-rail::after {
 }
 
 html[data-app-scope="store"] {
-  --store-category-gold: #caa44f;
-  --store-category-gold-soft: #f5e7c1;
-  --store-category-gold-dark: #936923;
-  --store-category-ink: #2f251d;
-  --store-category-muted: #82756a;
-  --store-category-line: rgba(195, 151, 73, 0.24);
-  --store-category-paper: #fffdf7;
-  --store-category-panel: rgba(255, 252, 246, 0.88);
+  --store-category-gold: var(--theme-price);
+  --store-category-gold-soft: color-mix(in srgb, var(--theme-price) 18%, var(--theme-surface));
+  --store-category-gold-dark: color-mix(in srgb, var(--theme-price) 72%, var(--theme-text));
+  --store-category-ink: var(--theme-text);
+  --store-category-muted: var(--theme-text-muted);
+  --store-category-line: color-mix(in srgb, var(--theme-price) 24%, transparent);
+  --store-category-paper: var(--theme-surface);
+  --store-category-panel: color-mix(in srgb, var(--theme-surface) 88%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-page {
   background:
-    radial-gradient(circle at 8% 0%, rgba(244, 224, 178, 0.38), transparent 28rem),
-    radial-gradient(circle at 92% 8%, rgba(205, 164, 79, 0.16), transparent 24rem),
-    linear-gradient(180deg, #fffdf8 0%, color-mix(in srgb, var(--theme-bg) 88%, #fff8e8) 58%, var(--theme-bg) 100%);
+    radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--theme-price) 18%, transparent), transparent 28rem),
+    radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--theme-primary) 10%, transparent), transparent 24rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 92%, var(--theme-bg)) 0%, var(--theme-bg) 100%);
 }
 
 html[data-app-scope="store"] .store-category-mobile-chrome {
@@ -4292,14 +4294,14 @@ html[data-app-scope="store"] .store-category-mobile-spacer {
 }
 
 html[data-app-scope="store"] .store-category-mobile-header {
-  border-color: rgba(201, 161, 92, 0.2);
+  border-color: color-mix(in srgb, var(--theme-price) 20%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 251, 242, 0.78)),
-    rgba(255, 253, 248, 0.72);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 88%, transparent), color-mix(in srgb, var(--theme-bg) 72%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 72%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.86),
-    0 18px 40px -34px rgba(137, 96, 39, 0.34),
-    0 10px 24px -28px rgba(86, 55, 14, 0.26);
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    0 18px 40px -34px color-mix(in srgb, var(--theme-price) 34%, transparent),
+    0 10px 24px -28px rgba(15, 23, 42, 0.24);
   transition:
     border-color 320ms ease,
     background 320ms ease,
@@ -4308,13 +4310,13 @@ html[data-app-scope="store"] .store-category-mobile-header {
 }
 
 html[data-app-scope="store"] .store-category-mobile-chrome.is-compact .store-category-mobile-header {
-  border-color: rgba(201, 161, 92, 0.16);
+  border-color: color-mix(in srgb, var(--theme-price) 16%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 251, 242, 0.82)),
-    rgba(255, 253, 248, 0.82);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 92%, transparent), color-mix(in srgb, var(--theme-bg) 78%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 82%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 16px 34px -28px rgba(112, 79, 31, 0.3);
+    inset 0 1px 0 color-mix(in srgb, white 76%, transparent),
+    0 16px 34px -28px color-mix(in srgb, var(--theme-price) 30%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-chrome.is-hidden .store-category-mobile-header {
@@ -4350,7 +4352,7 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-showc
 
 html[data-app-scope="store"] .store-category-mobile-header > div > div:first-child {
   min-height: 2.75rem;
-  gap: 0.36rem;
+  gap: 0.58rem;
   padding-block: 0.18rem;
   max-height: 4.72rem;
 }
@@ -4405,28 +4407,28 @@ html[data-app-scope="store"] .store-category-mobile-tools {
 html[data-app-scope="store"] .store-category-mobile-chrome.is-compact .store-category-mobile-tools {
   margin-inline: 0.48rem;
   transform: translate3d(0, 0.2rem, 0);
-  border-color: rgba(201, 161, 92, 0.2);
+  border-color: color-mix(in srgb, var(--theme-price) 20%, transparent);
   background:
-    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.96), transparent 54%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 248, 236, 0.72)),
-    rgba(255, 253, 248, 0.82);
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--theme-surface) 96%, transparent), transparent 54%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 84%, transparent), color-mix(in srgb, var(--theme-bg) 72%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 82%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 14px 28px -20px rgba(96, 67, 23, 0.3);
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    0 14px 28px -20px color-mix(in srgb, var(--theme-price) 30%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-chrome.is-hidden .store-category-mobile-tools {
   margin-inline: 0.75rem;
   transform: translate3d(0, 0.38rem, 0);
-  border-color: rgba(201, 161, 92, 0.24);
+  border-color: color-mix(in srgb, var(--theme-price) 24%, transparent);
   background:
-    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.98), transparent 54%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 248, 236, 0.78)),
-    rgba(255, 253, 248, 0.86);
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--theme-surface) 98%, transparent), transparent 54%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 90%, transparent), color-mix(in srgb, var(--theme-bg) 78%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 86%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 18px 36px -22px rgba(96, 67, 23, 0.38),
-    0 4px 16px -14px rgba(81, 52, 10, 0.34);
+    inset 0 1px 0 color-mix(in srgb, white 76%, transparent),
+    0 18px 36px -22px color-mix(in srgb, var(--theme-price) 38%, transparent),
+    0 4px 16px -14px rgba(15, 23, 42, 0.28);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4440,9 +4442,9 @@ html[data-app-scope="store"] .store-category-mobile-chrome.is-hidden .store-cate
 html[data-app-scope="store"] .store-category-brand {
   display: inline-flex;
   min-width: 0;
-  max-width: clamp(6.5rem, 31vw, 9.2rem);
+  max-width: clamp(6rem, 28vw, 7rem);
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
 }
 
 html[data-app-scope="store"] .store-category-brand-logo {
@@ -4450,13 +4452,13 @@ html[data-app-scope="store"] .store-category-brand-logo {
   height: 2rem;
   flex: 0 0 2rem;
   border-radius: 999px;
-  border: 1px solid rgba(196, 151, 72, 0.3);
+  border: 1px solid color-mix(in srgb, var(--theme-price) 30%, var(--theme-border));
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(246, 228, 188, 0.7)),
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-surface) 90%, transparent), color-mix(in srgb, var(--theme-price) 14%, var(--theme-surface))),
     var(--store-category-paper);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 12px 26px -20px rgba(128, 84, 21, 0.48);
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    0 12px 26px -20px color-mix(in srgb, var(--theme-price) 48%, transparent);
   object-fit: cover;
 }
 
@@ -4476,8 +4478,8 @@ html[data-app-scope="store"] .store-category-brand-logo--fallback::after {
   content: "";
   position: absolute;
   border-radius: 999px;
-  background: linear-gradient(180deg, #e5c46f, #9f6f1d);
-  box-shadow: 0 3px 8px -5px rgba(84, 56, 14, 0.7);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 72%, white), var(--store-category-gold-dark));
+  box-shadow: 0 3px 8px -5px color-mix(in srgb, var(--theme-price) 70%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-brand-logo--fallback::before {
@@ -4505,26 +4507,26 @@ html[data-app-scope="store"] .store-category-brand-name {
 
 html[data-app-scope="store"] .store-category-search-field input {
   min-height: 2.625rem;
-  border-color: rgba(192, 146, 63, 0.34);
+  border-color: color-mix(in srgb, var(--theme-price) 34%, var(--theme-border));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 249, 239, 0.78)),
-    rgba(255, 253, 248, 0.82);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 92%, transparent), color-mix(in srgb, var(--theme-bg) 78%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 82%, transparent);
   color: var(--store-category-ink);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 12px 26px -24px rgba(124, 87, 31, 0.38);
+    inset 0 1px 0 color-mix(in srgb, white 74%, transparent),
+    0 12px 26px -24px color-mix(in srgb, var(--theme-price) 38%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-search-field input:focus {
-  border-color: rgba(181, 130, 38, 0.62);
+  border-color: color-mix(in srgb, var(--theme-price) 62%, var(--theme-border));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 0 0 3px rgba(201, 161, 92, 0.16),
-    0 12px 26px -24px rgba(124, 87, 31, 0.38);
+    inset 0 1px 0 color-mix(in srgb, white 76%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--theme-price) 16%, transparent),
+    0 12px 26px -24px color-mix(in srgb, var(--theme-price) 38%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-page .store-category-rail {
-  border-color: rgba(201, 161, 92, 0.16);
+  border-color: color-mix(in srgb, var(--theme-price) 16%, transparent);
   background: transparent;
 }
 
@@ -4533,26 +4535,27 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-showc
 }
 
 html[data-app-scope="store"] .store-category-page .store-category-rail::before {
-  background: linear-gradient(90deg, #fffdf8, transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-surface) 94%, var(--theme-bg)), transparent);
 }
 
 html[data-app-scope="store"] .store-category-page .store-category-rail::after {
-  background: linear-gradient(270deg, #fffdf8, transparent);
+  width: 2.5rem;
+  background: linear-gradient(270deg, color-mix(in srgb, var(--theme-surface) 94%, var(--theme-bg)), transparent);
 }
 
 html[data-app-scope="store"] .store-category-tile,
 html[data-app-scope="store"] .store-category-tile-skeleton {
-  width: clamp(5.18rem, 22.2vw, 5.65rem);
-  height: clamp(5.18rem, 22.2vw, 5.65rem);
-  aspect-ratio: 1 / 1;
-  border-color: rgba(203, 161, 88, 0.18);
+  width: clamp(4.5rem, 19.4vw, 4.75rem);
+  height: clamp(4rem, 17.8vw, 4.25rem);
+  border-radius: 0.875rem;
+  border-color: color-mix(in srgb, var(--theme-price) 18%, var(--theme-border));
   background:
-    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.96), transparent 50%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 238, 0.82)),
+    radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--theme-surface) 96%, transparent), transparent 50%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 90%, transparent), color-mix(in srgb, var(--theme-bg) 82%, transparent)),
     var(--store-category-paper);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 14px 26px -24px rgba(104, 74, 34, 0.3);
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    0 14px 26px -24px color-mix(in srgb, var(--theme-price) 30%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-tile-skeleton {
@@ -4584,14 +4587,14 @@ html[data-app-scope="store"] .store-category-tile {
 }
 
 html[data-app-scope="store"] .store-category-tile.is-active {
-  border-color: rgba(190, 139, 42, 0.44);
+  border-color: color-mix(in srgb, var(--theme-price) 44%, var(--theme-border));
   background:
-    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.98), transparent 48%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(250, 238, 208, 0.9)),
+    radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--theme-surface) 98%, transparent), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 94%, transparent), color-mix(in srgb, var(--theme-price) 14%, var(--theme-surface))),
     var(--store-category-paper);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.94),
-    0 16px 30px -24px rgba(155, 104, 22, 0.42);
+    inset 0 1px 0 color-mix(in srgb, white 74%, transparent),
+    0 16px 30px -24px color-mix(in srgb, var(--theme-price) 42%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-tile-icon {
@@ -4602,21 +4605,21 @@ html[data-app-scope="store"] .store-category-tile-icon {
 
 html[data-app-scope="store"] .store-category-tile-icon svg {
   color: var(--store-category-gold-dark);
-  width: 1.95rem;
-  height: 1.95rem;
+  width: 1.68rem;
+  height: 1.68rem;
   stroke-width: 2;
 }
 
 html[data-app-scope="store"] .store-category-tile-icon img {
-  width: 2.95rem;
-  height: 2.95rem;
+  width: 2.1rem;
+  height: 2.1rem;
   object-fit: contain;
   transform: scale(1.04);
 }
 
 html[data-app-scope="store"] .store-category-tile-label {
   color: var(--store-category-ink);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
@@ -4625,9 +4628,9 @@ html[data-app-scope="store"] .store-category-subtabs {
 }
 
 html[data-app-scope="store"] .store-category-subtab {
-  border-color: rgba(201, 161, 92, 0.22);
-  background: rgba(255, 253, 248, 0.76);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border-color: color-mix(in srgb, var(--theme-price) 22%, var(--theme-border));
+  background: color-mix(in srgb, var(--theme-surface) 76%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 62%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools {
@@ -4637,7 +4640,7 @@ html[data-app-scope="store"] .store-category-mobile-tools {
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-sortbar {
-  min-height: 40px;
+  min-height: 36px;
   padding: 0.12rem 0.24rem;
 }
 
@@ -4646,18 +4649,18 @@ html[data-app-scope="store"] .store-category-mobile-tools .store-category-sortba
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-sort-pill {
-  min-height: 34px;
+  min-height: 32px;
   padding: 0.16rem 0.58rem;
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-tool-icon,
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-filter-button {
-  height: 40px;
-  min-height: 40px;
+  height: 36px;
+  min-height: 36px;
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-tool-icon {
-  width: 40px;
+  width: 36px;
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-filter-button {
@@ -4666,86 +4669,86 @@ html[data-app-scope="store"] .store-category-mobile-tools .store-category-filter
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-showcase {
   background:
-    linear-gradient(180deg, rgba(255, 253, 248, 0.46), rgba(255, 248, 236, 0.3)),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 46%, transparent), color-mix(in srgb, var(--theme-bg) 30%, transparent)),
     transparent;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail::before {
   width: 1.25rem;
-  background: linear-gradient(90deg, rgba(255, 253, 248, 0.96), rgba(255, 253, 248, 0));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-surface) 96%, var(--theme-bg)), transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail::after {
   width: 2.45rem;
-  background: linear-gradient(270deg, rgba(255, 253, 248, 0.98), rgba(255, 253, 248, 0));
+  background: linear-gradient(270deg, color-mix(in srgb, var(--theme-surface) 98%, var(--theme-bg)), transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail-scroll {
-  gap: 0.46rem;
+  gap: 0.5rem;
   scroll-padding-inline: 1rem;
-  padding: 0.34rem 1rem 0.24rem;
+  padding: 0.32rem 1rem 0.24rem;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-tile,
 html[data-app-scope="store"] .store-category-mobile-header .store-category-tile-skeleton {
-  width: clamp(3.9rem, 16.5vw, 4.2rem);
-  height: clamp(3.9rem, 16.5vw, 4.2rem);
-  border-radius: 0.9rem;
+  width: clamp(4.5rem, 19.5vw, 4.75rem);
+  height: clamp(4rem, 17.4vw, 4.25rem);
+  border-radius: 0.875rem;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-tile {
-  border-color: rgba(204, 162, 88, 0.16);
+  border-color: color-mix(in srgb, var(--theme-price) 16%, var(--theme-border));
   background:
-    radial-gradient(circle at 52% 8%, rgba(255, 255, 255, 0.98), transparent 46%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 247, 229, 0.7)),
-    rgba(255, 253, 248, 0.72);
+    radial-gradient(circle at 52% 8%, color-mix(in srgb, var(--theme-surface) 98%, transparent), transparent 46%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 86%, transparent), color-mix(in srgb, var(--theme-bg) 70%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 72%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.94),
-    0 10px 18px -18px rgba(105, 73, 28, 0.26);
+    inset 0 1px 0 color-mix(in srgb, white 74%, transparent),
+    0 10px 18px -18px color-mix(in srgb, var(--theme-price) 26%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-tile.is-active {
-  border-color: rgba(190, 139, 42, 0.38);
+  border-color: color-mix(in srgb, var(--theme-price) 38%, var(--theme-border));
   background:
-    radial-gradient(circle at 52% 8%, rgba(255, 255, 255, 0.98), transparent 45%),
-    linear-gradient(180deg, rgba(255, 252, 244, 0.94), rgba(249, 236, 204, 0.9)),
-    rgba(255, 253, 248, 0.8);
+    radial-gradient(circle at 52% 8%, color-mix(in srgb, var(--theme-surface) 98%, transparent), transparent 45%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 94%, transparent), color-mix(in srgb, var(--theme-price) 14%, var(--theme-surface))),
+    color-mix(in srgb, var(--theme-surface) 80%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.96),
-    0 14px 24px -20px rgba(149, 97, 19, 0.38);
+    inset 0 1px 0 color-mix(in srgb, white 76%, transparent),
+    0 14px 24px -20px color-mix(in srgb, var(--theme-price) 38%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-tile-icon {
-  width: 2.16rem;
-  height: 2.16rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-tile-icon img {
-  width: 2.34rem;
-  height: 2.34rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-tile-icon svg {
-  width: 1.56rem;
-  height: 1.56rem;
+  width: 1.55rem;
+  height: 1.55rem;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-tile-label {
-  font-size: 0.66rem;
+  font-size: 0.74rem;
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools {
   margin-top: 0.22rem;
   padding-inline: 0.34rem;
-  border: 1px solid rgba(201, 161, 92, 0.14);
+  border: 1px solid color-mix(in srgb, var(--theme-price) 14%, transparent);
   border-radius: 999px;
   background:
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.82), transparent 52%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 248, 236, 0.48)),
-    rgba(255, 253, 248, 0.66);
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--theme-surface) 82%, transparent), transparent 52%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 62%, transparent), color-mix(in srgb, var(--theme-bg) 48%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 66%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 8px 18px -18px rgba(93, 63, 21, 0.26);
+    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
+    0 8px 18px -18px color-mix(in srgb, var(--theme-price) 26%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-sortbar {
@@ -4756,66 +4759,66 @@ html[data-app-scope="store"] .store-category-mobile-tools .store-category-sortba
 
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-tool-icon,
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-filter-button {
-  border-color: rgba(201, 161, 92, 0.08);
+  border-color: color-mix(in srgb, var(--theme-price) 10%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 249, 238, 0.42)),
-    rgba(255, 253, 248, 0.46);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 62%, transparent), color-mix(in srgb, var(--theme-bg) 42%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 46%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    0 7px 14px -14px rgba(104, 74, 34, 0.22);
+    inset 0 1px 0 color-mix(in srgb, white 62%, transparent),
+    0 7px 14px -14px color-mix(in srgb, var(--theme-price) 22%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-sortbar {
-  min-height: 2.5rem;
-  border-color: rgba(201, 161, 92, 0.18);
+  min-height: 2.75rem;
+  border-color: color-mix(in srgb, var(--theme-price) 16%, var(--theme-border));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 250, 241, 0.64)),
-    rgba(255, 253, 248, 0.76);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 82%, transparent), color-mix(in srgb, var(--theme-bg) 64%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 76%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 12px 24px -24px rgba(99, 70, 28, 0.26);
+    inset 0 1px 0 color-mix(in srgb, white 66%, transparent),
+    0 12px 24px -24px color-mix(in srgb, var(--theme-price) 26%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-sortbar-icon {
   margin-inline: 0.35rem 0.15rem;
-  color: #7a6657;
+  color: var(--theme-text-muted);
 }
 
 html[data-app-scope="store"] .store-category-sort-pill.is-active {
-  color: #fffdf8;
+  color: var(--theme-price-foreground);
   background:
-    linear-gradient(180deg, #d7ad4b, #bd8b28),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 82%, white), var(--theme-price)),
     var(--store-category-gold);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    0 9px 16px -14px rgba(139, 90, 17, 0.58);
+    inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
+    0 9px 16px -14px color-mix(in srgb, var(--theme-price) 58%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-tool-icon,
 html[data-app-scope="store"] .store-category-filter-button {
-  border-color: rgba(201, 161, 92, 0.24);
+  border-color: color-mix(in srgb, var(--theme-price) 20%, var(--theme-border));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 241, 0.78)),
-    rgba(255, 253, 248, 0.84);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 90%, transparent), color-mix(in srgb, var(--theme-bg) 78%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 84%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.84),
-    0 16px 28px -24px rgba(104, 74, 34, 0.38);
+    inset 0 1px 0 color-mix(in srgb, white 70%, transparent),
+    0 16px 28px -24px color-mix(in srgb, var(--theme-price) 38%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-filter-button span {
-  background: #c5272c;
-  color: white;
+  background: var(--theme-danger);
+  color: var(--theme-danger-foreground);
 }
 
 html[data-app-scope="store"] .store-category-side-panel,
 html[data-app-scope="store"] .store-category-desktop-title {
-  border-color: rgba(201, 161, 92, 0.2);
+  border-color: color-mix(in srgb, var(--theme-price) 20%, var(--theme-border));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 241, 0.76)),
-    rgba(255, 253, 248, 0.86);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 90%, transparent), color-mix(in srgb, var(--theme-bg) 76%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 86%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.86),
-    0 24px 46px -36px rgba(92, 64, 23, 0.36);
+    inset 0 1px 0 color-mix(in srgb, white 70%, transparent),
+    0 24px 46px -36px color-mix(in srgb, var(--theme-price) 36%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-side-button,
@@ -4825,30 +4828,30 @@ html[data-app-scope="store"] .store-category-side-subbutton {
 
 html[data-app-scope="store"] .store-category-side-indicator-primary {
   background:
-    linear-gradient(180deg, rgba(245, 226, 177, 0.9), rgba(229, 195, 111, 0.72));
-  box-shadow: inset 0 0 0 1px rgba(180, 130, 39, 0.22);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 24%, var(--theme-surface)), color-mix(in srgb, var(--theme-price) 18%, var(--theme-surface)));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-price) 22%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-side-indicator-soft,
 html[data-app-scope="store"] .store-category-side-indicator-child {
-  background: rgba(223, 190, 111, 0.16);
+  background: color-mix(in srgb, var(--theme-price) 16%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-filter-input {
-  border-color: rgba(201, 161, 92, 0.22);
-  background: rgba(255, 253, 248, 0.9);
+  border-color: color-mix(in srgb, var(--theme-price) 22%, var(--theme-border));
+  background: color-mix(in srgb, var(--theme-surface) 90%, transparent);
   color: var(--store-category-ink);
 }
 
 html[data-app-scope="store"] .store-category-filter-input:focus {
-  border-color: rgba(181, 130, 38, 0.62);
+  border-color: color-mix(in srgb, var(--theme-price) 62%, var(--theme-border));
   outline: none;
-  box-shadow: 0 0 0 3px rgba(201, 161, 92, 0.14);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-price) 14%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-filter-chip {
-  border-color: rgba(201, 161, 92, 0.2);
-  background: rgba(255, 253, 248, 0.86);
+  border-color: color-mix(in srgb, var(--theme-price) 20%, var(--theme-border));
+  background: color-mix(in srgb, var(--theme-surface) 86%, transparent);
   color: var(--store-category-muted);
 }
 
@@ -4856,15 +4859,15 @@ html[data-app-scope="store"] .store-category-filter-chip.is-active,
 html[data-app-scope="store"] .store-filter-confirm-button {
   border-color: transparent;
   background:
-    linear-gradient(180deg, #dcb75a, #b98525),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 84%, white), var(--theme-price)),
     var(--store-category-gold);
-  color: #fffdf8;
-  box-shadow: 0 14px 26px -20px rgba(139, 90, 17, 0.64);
+  color: var(--theme-price-foreground);
+  box-shadow: 0 14px 26px -20px color-mix(in srgb, var(--theme-price) 64%, transparent);
 }
 
 html[data-app-scope="store"] .store-filter-reset-button {
-  border-color: rgba(201, 161, 92, 0.22);
-  background: rgba(255, 253, 248, 0.82);
+  border-color: color-mix(in srgb, var(--theme-price) 22%, var(--theme-border));
+  background: color-mix(in srgb, var(--theme-surface) 82%, transparent);
   color: var(--store-category-ink);
 }
 
@@ -6490,6 +6493,577 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__ro
     0 0 8px color-mix(in srgb, var(--coupon-ticket-gold) 32%, transparent);
 }
 
+/* Final hero overrides after the late showcase layout rules. */
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase {
+  border-color: color-mix(in srgb, var(--premium-skin-metal) 24%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 34%),
+    radial-gradient(ellipse at 86% 80%, color-mix(in srgb, var(--premium-skin-metal-soft) 28%, transparent), transparent 48%),
+    linear-gradient(112deg, color-mix(in srgb, var(--premium-skin-paper) 88%, transparent), transparent 58%),
+    color-mix(in srgb, var(--theme-surface) 84%, var(--premium-skin-paper));
+  box-shadow:
+    0 26px 68px -50px color-mix(in srgb, var(--premium-skin-deep) 42%, transparent),
+    0 10px 28px -24px color-mix(in srgb, var(--premium-skin-metal) 45%, transparent);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase.store-hero-frame::after {
+  background:
+    radial-gradient(ellipse at 88% 86%, color-mix(in srgb, var(--premium-skin-metal-soft) 22%, transparent), transparent 58%),
+    linear-gradient(315deg, color-mix(in srgb, var(--premium-skin-paper) 14%, transparent) 0%, transparent 42%),
+    repeating-linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-line) 10%, transparent) 0 1px, transparent 1px 22px),
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-paper) 20%, transparent), transparent 36%);
+  opacity: 0.58;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-text-wash {
+  background:
+    linear-gradient(
+      102deg,
+      color-mix(in srgb, var(--premium-skin-deep) 78%, transparent) 0%,
+      color-mix(in srgb, var(--premium-skin-ink) 66%, transparent) 31%,
+      color-mix(in srgb, var(--premium-skin-ink) 28%, transparent) 49%,
+      color-mix(in srgb, var(--premium-skin-paper) 7%, transparent) 62%,
+      transparent 74%
+    ),
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-metal-soft) 12%, transparent), transparent 31%),
+    linear-gradient(0deg, rgba(15, 11, 4, 0.11), transparent 40%);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-text-wash::before {
+  background:
+    linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-metal) 13%, transparent) 0 1px, transparent 1px 18px),
+    radial-gradient(circle at 12% 22%, color-mix(in srgb, var(--premium-skin-metal-soft) 15%, transparent), transparent 24%);
+  opacity: 0.74;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-copy-cta {
+  border-color: color-mix(in srgb, var(--premium-skin-metal-soft) 78%, var(--premium-skin-metal));
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.58), transparent 42%),
+    linear-gradient(180deg, var(--premium-skin-metal-soft), var(--premium-skin-metal));
+  color: var(--premium-skin-deep);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 16px 30px -20px color-mix(in srgb, var(--premium-skin-deep) 48%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--premium-skin-metal) 18%, transparent);
+}
+
+/* Final hero overrides after the showcase layout rules. */
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase {
+  border-color: color-mix(in srgb, var(--premium-skin-metal) 24%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 34%),
+    radial-gradient(ellipse at 86% 80%, color-mix(in srgb, var(--premium-skin-metal-soft) 28%, transparent), transparent 48%),
+    linear-gradient(112deg, color-mix(in srgb, var(--premium-skin-paper) 88%, transparent), transparent 58%),
+    color-mix(in srgb, var(--theme-surface) 84%, var(--premium-skin-paper));
+  box-shadow:
+    0 26px 68px -50px color-mix(in srgb, var(--premium-skin-deep) 42%, transparent),
+    0 10px 28px -24px color-mix(in srgb, var(--premium-skin-metal) 45%, transparent);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase.store-hero-frame::after {
+  background:
+    radial-gradient(ellipse at 88% 86%, color-mix(in srgb, var(--premium-skin-metal-soft) 22%, transparent), transparent 58%),
+    linear-gradient(315deg, color-mix(in srgb, var(--premium-skin-paper) 14%, transparent) 0%, transparent 42%),
+    repeating-linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-line) 10%, transparent) 0 1px, transparent 1px 22px),
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-paper) 20%, transparent), transparent 36%);
+  opacity: 0.58;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-text-wash {
+  background:
+    linear-gradient(
+      102deg,
+      color-mix(in srgb, var(--premium-skin-deep) 78%, transparent) 0%,
+      color-mix(in srgb, var(--premium-skin-ink) 66%, transparent) 31%,
+      color-mix(in srgb, var(--premium-skin-ink) 28%, transparent) 49%,
+      color-mix(in srgb, var(--premium-skin-paper) 7%, transparent) 62%,
+      transparent 74%
+    ),
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-metal-soft) 12%, transparent), transparent 31%),
+    linear-gradient(0deg, rgba(15, 11, 4, 0.11), transparent 40%);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-text-wash::before {
+  background:
+    linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-metal) 13%, transparent) 0 1px, transparent 1px 18px),
+    radial-gradient(circle at 12% 22%, color-mix(in srgb, var(--premium-skin-metal-soft) 15%, transparent), transparent 24%);
+  opacity: 0.74;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-copy-cta {
+  border-color: color-mix(in srgb, var(--premium-skin-metal-soft) 78%, var(--premium-skin-metal));
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.58), transparent 42%),
+    linear-gradient(180deg, var(--premium-skin-metal-soft), var(--premium-skin-metal));
+  color: var(--premium-skin-deep);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 16px 30px -20px color-mix(in srgb, var(--premium-skin-deep) 48%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--premium-skin-metal) 18%, transparent);
+}
+
+/* Customer-side texture tuning for the 7 premium light skins. */
+html[data-app-scope="store"][data-theme-skin-id="premium_champagne_ivory"] {
+  --home-hero-jade: #6a481b;
+  --home-hero-jade-deep: #352512;
+  --home-hero-gold: #d6ab5c;
+  --home-hero-ivory: #fff7e8;
+  --premium-skin-ink: #5a3916;
+  --premium-skin-deep: #2f2418;
+  --premium-skin-metal: #d6ab5c;
+  --premium-skin-metal-soft: #fff0be;
+  --premium-skin-paper: #fff7e8;
+  --premium-skin-paper-deep: #ebd6aa;
+  --premium-skin-wash: #f7f1e6;
+  --premium-skin-line: #cdaa70;
+  --premium-skin-ticket-main: #9b6a24;
+  --premium-skin-ticket-deep: #55380f;
+  --premium-skin-ticket-soft: #ba8a3e;
+}
+
+html[data-app-scope="store"][data-theme-skin-id="premium_pearl_blush"] {
+  --home-hero-jade: #a84f5e;
+  --home-hero-jade-deep: #3b1c26;
+  --home-hero-gold: #dca8a5;
+  --home-hero-ivory: #fff5f3;
+  --premium-skin-ink: #6e2f3d;
+  --premium-skin-deep: #3b1c26;
+  --premium-skin-metal: #dca8a5;
+  --premium-skin-metal-soft: #ffe2de;
+  --premium-skin-paper: #fff5f3;
+  --premium-skin-paper-deep: #f0cbc8;
+  --premium-skin-wash: #fbf5f2;
+  --premium-skin-line: #dea4a9;
+  --premium-skin-ticket-main: #a84f5e;
+  --premium-skin-ticket-deep: #612331;
+  --premium-skin-ticket-soft: #c97380;
+}
+
+html[data-app-scope="store"][data-theme-skin-id="premium_porcelain_jade"] {
+  --home-hero-jade: #0c5d4b;
+  --home-hero-jade-deep: #032a25;
+  --home-hero-gold: #c9aa69;
+  --home-hero-ivory: #f7faf3;
+  --premium-skin-ink: #073f36;
+  --premium-skin-deep: #032a25;
+  --premium-skin-metal: #c9aa69;
+  --premium-skin-metal-soft: #f4e4b3;
+  --premium-skin-paper: #f7faf3;
+  --premium-skin-paper-deep: #dce9da;
+  --premium-skin-wash: #f5f8f2;
+  --premium-skin-line: #afcfba;
+  --premium-skin-ticket-main: #0c5d4b;
+  --premium-skin-ticket-deep: #06352e;
+  --premium-skin-ticket-soft: #248371;
+}
+
+html[data-app-scope="store"][data-theme-skin-id="premium_sky_silk"] {
+  --home-hero-jade: #1e6fb3;
+  --home-hero-jade-deep: #0b2545;
+  --home-hero-gold: #a7c7df;
+  --home-hero-ivory: #f4faff;
+  --premium-skin-ink: #123a66;
+  --premium-skin-deep: #0b2545;
+  --premium-skin-metal: #a7c7df;
+  --premium-skin-metal-soft: #e3f3ff;
+  --premium-skin-paper: #f4faff;
+  --premium-skin-paper-deep: #d7eaf8;
+  --premium-skin-wash: #f4f9fd;
+  --premium-skin-line: #b6d3e8;
+  --premium-skin-ticket-main: #1e6fb3;
+  --premium-skin-ticket-deep: #103e68;
+  --premium-skin-ticket-soft: #4a95cf;
+}
+
+html[data-app-scope="store"][data-theme-skin-id="premium_apricot_sand"] {
+  --home-hero-jade: #b8663c;
+  --home-hero-jade-deep: #3c2115;
+  --home-hero-gold: #e1a66c;
+  --home-hero-ivory: #fff6ec;
+  --premium-skin-ink: #6a351d;
+  --premium-skin-deep: #3c2115;
+  --premium-skin-metal: #e1a66c;
+  --premium-skin-metal-soft: #ffe1b9;
+  --premium-skin-paper: #fff6ec;
+  --premium-skin-paper-deep: #f0d1b3;
+  --premium-skin-wash: #fff6ec;
+  --premium-skin-line: #dca87d;
+  --premium-skin-ticket-main: #b8663c;
+  --premium-skin-ticket-deep: #6b321c;
+  --premium-skin-ticket-soft: #d78355;
+}
+
+html[data-app-scope="store"][data-theme-skin-id="festival_spring_ruby_gold"] {
+  --home-hero-jade: #c9202d;
+  --home-hero-jade-deep: #3d070a;
+  --home-hero-gold: #f1c15d;
+  --home-hero-ivory: #fff5ec;
+  --premium-skin-ink: #7a1119;
+  --premium-skin-deep: #3d070a;
+  --premium-skin-metal: #f1c15d;
+  --premium-skin-metal-soft: #fff0b4;
+  --premium-skin-paper: #fff5ec;
+  --premium-skin-paper-deep: #f1d2a7;
+  --premium-skin-wash: #fff5ec;
+  --premium-skin-line: #e4b75c;
+  --premium-skin-ticket-main: #c9202d;
+  --premium-skin-ticket-deep: #780b12;
+  --premium-skin-ticket-soft: #e3414a;
+}
+
+html[data-app-scope="store"][data-theme-skin-id="festival_moon_orange_gold"] {
+  --home-hero-jade: #d85d2a;
+  --home-hero-jade-deep: #3f1b08;
+  --home-hero-gold: #f0b44f;
+  --home-hero-ivory: #fff7e8;
+  --premium-skin-ink: #7d3412;
+  --premium-skin-deep: #3f1b08;
+  --premium-skin-metal: #f0b44f;
+  --premium-skin-metal-soft: #fff1b7;
+  --premium-skin-paper: #fff7e8;
+  --premium-skin-paper-deep: #efcb94;
+  --premium-skin-wash: #fff7e8;
+  --premium-skin-line: #e0ac5d;
+  --premium-skin-ticket-main: #d85d2a;
+  --premium-skin-ticket-deep: #7f2e10;
+  --premium-skin-ticket-soft: #f0783c;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) body {
+  background-image:
+    radial-gradient(ellipse at 8% 4%, color-mix(in srgb, var(--premium-skin-metal) 13%, transparent), transparent 32rem),
+    radial-gradient(ellipse at 92% 0%, color-mix(in srgb, var(--premium-skin-line) 11%, transparent), transparent 28rem),
+    linear-gradient(180deg, var(--premium-skin-wash) 0%, var(--theme-bg) 30rem, var(--theme-bg) 100%);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase {
+  border-color: color-mix(in srgb, var(--premium-skin-metal) 24%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 34%),
+    radial-gradient(ellipse at 86% 80%, color-mix(in srgb, var(--premium-skin-metal-soft) 28%, transparent), transparent 48%),
+    linear-gradient(112deg, color-mix(in srgb, var(--premium-skin-paper) 88%, transparent), transparent 58%),
+    color-mix(in srgb, var(--theme-surface) 84%, var(--premium-skin-paper));
+  box-shadow:
+    0 26px 68px -50px color-mix(in srgb, var(--premium-skin-deep) 42%, transparent),
+    0 10px 28px -24px color-mix(in srgb, var(--premium-skin-metal) 45%, transparent);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase.store-hero-frame::after {
+  background:
+    radial-gradient(ellipse at 88% 86%, color-mix(in srgb, var(--premium-skin-metal-soft) 22%, transparent), transparent 58%),
+    linear-gradient(315deg, color-mix(in srgb, var(--premium-skin-paper) 14%, transparent) 0%, transparent 42%),
+    repeating-linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-line) 10%, transparent) 0 1px, transparent 1px 22px),
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-paper) 20%, transparent), transparent 36%);
+  opacity: 0.58;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-text-wash {
+  background:
+    linear-gradient(
+      102deg,
+      color-mix(in srgb, var(--premium-skin-deep) 78%, transparent) 0%,
+      color-mix(in srgb, var(--premium-skin-ink) 66%, transparent) 31%,
+      color-mix(in srgb, var(--premium-skin-ink) 28%, transparent) 49%,
+      color-mix(in srgb, var(--premium-skin-paper) 7%, transparent) 62%,
+      transparent 74%
+    ),
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-metal-soft) 12%, transparent), transparent 31%),
+    linear-gradient(0deg, rgba(15, 11, 4, 0.11), transparent 40%);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-text-wash::before {
+  background:
+    linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-metal) 13%, transparent) 0 1px, transparent 1px 18px),
+    radial-gradient(circle at 12% 22%, color-mix(in srgb, var(--premium-skin-metal-soft) 15%, transparent), transparent 24%);
+  opacity: 0.74;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-copy-cta {
+  border-color: color-mix(in srgb, var(--premium-skin-metal-soft) 78%, var(--premium-skin-metal));
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.58), transparent 42%),
+    linear-gradient(180deg, var(--premium-skin-metal-soft), var(--premium-skin-metal));
+  color: var(--premium-skin-deep);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 16px 30px -20px color-mix(in srgb, var(--premium-skin-deep) 48%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--premium-skin-metal) 18%, transparent);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-dot-button[aria-current="true"] .store-hero-dot {
+  background: var(--premium-skin-metal);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, white 42%, transparent),
+    0 4px 10px color-mix(in srgb, var(--premium-skin-deep) 24%, transparent);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-coupon-card--template {
+  --coupon-ticket-red: var(--premium-skin-ticket-main);
+  --coupon-ticket-red-dark: var(--premium-skin-ticket-deep);
+  --coupon-ticket-red-soft: var(--premium-skin-ticket-soft);
+  --coupon-ticket-gold: var(--premium-skin-metal);
+  --coupon-ticket-gold-bright: var(--premium-skin-metal-soft);
+  --coupon-ticket-ink: var(--premium-skin-ink);
+  --coupon-ticket-paper: var(--premium-skin-paper);
+  --coupon-ticket-paper-deep: var(--premium-skin-paper-deep);
+  border-color: color-mix(in srgb, var(--premium-skin-metal) 62%, var(--premium-skin-ticket-main));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    inset 0 -1px 0 color-mix(in srgb, var(--premium-skin-metal) 14%, transparent),
+    0 18px 42px -30px color-mix(in srgb, var(--premium-skin-ticket-deep) 72%, transparent);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-coupon-card--template .store-coupon-card__template-fiber {
+  background:
+    radial-gradient(ellipse at 13% 82%, color-mix(in srgb, var(--premium-skin-metal) 18%, transparent) 0 12%, transparent 29%),
+    radial-gradient(ellipse at 82% 82%, color-mix(in srgb, var(--premium-skin-line) 16%, transparent) 0 12%, transparent 28%),
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--premium-skin-line) 12%, transparent) 0 1px, transparent 1px 10px),
+    repeating-linear-gradient(0deg, color-mix(in srgb, white 8%, transparent) 0 1px, transparent 1px 8px);
+  opacity: 0.36;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-coupon-card--template .store-coupon-card__value-pane::before {
+  border-color: color-mix(in srgb, var(--premium-skin-metal-soft) 72%, transparent);
+  border-right-color: color-mix(in srgb, var(--premium-skin-metal) 34%, transparent);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .bg-theme-member-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 8%, color-mix(in srgb, white 26%, transparent), transparent 34%),
+    radial-gradient(ellipse at 92% 8%, color-mix(in srgb, var(--premium-skin-metal-soft) 24%, transparent), transparent 42%),
+    linear-gradient(128deg, color-mix(in srgb, var(--premium-skin-ticket-deep) 90%, var(--premium-skin-ticket-main)), color-mix(in srgb, var(--premium-skin-ticket-main) 72%, var(--premium-skin-deep)) 54%, var(--premium-skin-deep));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--premium-skin-metal-soft) 18%, transparent),
+    0 22px 52px -34px color-mix(in srgb, var(--premium-skin-deep) 58%, transparent);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .bg-theme-member-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(100deg, transparent 0%, color-mix(in srgb, white 18%, transparent) 44%, transparent 62%),
+    repeating-linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-metal-soft) 9%, transparent) 0 1px, transparent 1px 18px);
+  opacity: 0.56;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .bg-theme-member-card::after {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.9rem;
+  z-index: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--premium-skin-metal-soft) 42%, transparent), transparent);
+  opacity: 0.72;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .bg-theme-member-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__action-pane > span:not([aria-hidden]) {
   border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold) 46%, transparent);
   background: color-mix(in srgb, var(--coupon-ticket-paper) 82%, white);
@@ -8054,4 +8628,99 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__ro
   text-shadow:
     0 1px 0 color-mix(in srgb, var(--coupon-ticket-red-dark) 82%, transparent),
     0 0 8px color-mix(in srgb, var(--coupon-ticket-gold) 32%, transparent);
+}
+
+/* Final hero overrides after the late showcase layout rules. */
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase {
+  border-color: color-mix(in srgb, var(--premium-skin-metal) 24%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 34%),
+    radial-gradient(ellipse at 86% 80%, color-mix(in srgb, var(--premium-skin-metal-soft) 28%, transparent), transparent 48%),
+    linear-gradient(112deg, color-mix(in srgb, var(--premium-skin-paper) 88%, transparent), transparent 58%),
+    color-mix(in srgb, var(--theme-surface) 84%, var(--premium-skin-paper));
+  box-shadow:
+    0 26px 68px -50px color-mix(in srgb, var(--premium-skin-deep) 42%, transparent),
+    0 10px 28px -24px color-mix(in srgb, var(--premium-skin-metal) 45%, transparent);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase.store-hero-frame::after {
+  background:
+    radial-gradient(ellipse at 88% 86%, color-mix(in srgb, var(--premium-skin-metal-soft) 22%, transparent), transparent 58%),
+    linear-gradient(315deg, color-mix(in srgb, var(--premium-skin-paper) 14%, transparent) 0%, transparent 42%),
+    repeating-linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-line) 10%, transparent) 0 1px, transparent 1px 22px),
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-paper) 20%, transparent), transparent 36%);
+  opacity: 0.58;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-text-wash {
+  background:
+    linear-gradient(
+      102deg,
+      color-mix(in srgb, var(--premium-skin-deep) 78%, transparent) 0%,
+      color-mix(in srgb, var(--premium-skin-ink) 66%, transparent) 31%,
+      color-mix(in srgb, var(--premium-skin-ink) 28%, transparent) 49%,
+      color-mix(in srgb, var(--premium-skin-paper) 7%, transparent) 62%,
+      transparent 74%
+    ),
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-metal-soft) 12%, transparent), transparent 31%),
+    linear-gradient(0deg, rgba(15, 11, 4, 0.11), transparent 40%);
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-text-wash::before {
+  background:
+    linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-metal) 13%, transparent) 0 1px, transparent 1px 18px),
+    radial-gradient(circle at 12% 22%, color-mix(in srgb, var(--premium-skin-metal-soft) 15%, transparent), transparent 24%);
+  opacity: 0.74;
+}
+
+html[data-app-scope="store"]:where(
+  [data-theme-skin-id="premium_champagne_ivory"],
+  [data-theme-skin-id="premium_pearl_blush"],
+  [data-theme-skin-id="premium_porcelain_jade"],
+  [data-theme-skin-id="premium_sky_silk"],
+  [data-theme-skin-id="premium_apricot_sand"],
+  [data-theme-skin-id="festival_spring_ruby_gold"],
+  [data-theme-skin-id="festival_moon_orange_gold"]
+) .store-hero-carousel--showcase .store-hero-copy-cta {
+  border-color: color-mix(in srgb, var(--premium-skin-metal-soft) 78%, var(--premium-skin-metal));
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.58), transparent 42%),
+    linear-gradient(180deg, var(--premium-skin-metal-soft), var(--premium-skin-metal));
+  color: var(--premium-skin-deep);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 16px 30px -20px color-mix(in srgb, var(--premium-skin-deep) 48%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--premium-skin-metal) 18%, transparent);
 }

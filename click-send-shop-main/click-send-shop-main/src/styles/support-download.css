@@ -175,9 +175,9 @@ html[data-app-scope="store"] .support-download-tab:active {
   }
 
   html[data-app-scope="store"] .support-download-tab {
-    min-height: 2.75rem;
+    min-height: 44px;
     padding-inline: 0.32rem;
-    font-size: 0.76rem;
+    font-size: 12px;
   }
 }
 

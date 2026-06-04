@@ -43,6 +43,9 @@ export const ABOUT_PLACEHOLDER_MARKERS = [
   "在这里填写关于我们",
   "可在后台「内容管理」继续编辑",
   "请在后台「内容管理」中维护",
+  "本平台提供商品、服务与客户支持信息",
+  "平台主要服务在马来西亚生活、工作、学习、创业或有相关需求的中文用户",
+  "平台可用于展示商品、服务和内容说明",
 ];
 
 export function isAboutPlaceholderBody(body?: string | null): boolean {

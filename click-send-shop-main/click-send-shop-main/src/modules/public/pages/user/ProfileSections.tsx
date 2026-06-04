@@ -210,7 +210,7 @@ export function ProfileGuestCard({
           )}
         </span>
         <div className="profile-vip-copy">
-          <p className="profile-vip-name">欢迎来到 {siteName}</p>
+          <p className="profile-vip-name profile-guest-title">欢迎来到 {siteName}</p>
         </div>
       </div>
       <div className="profile-vip-actions">

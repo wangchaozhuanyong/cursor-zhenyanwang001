@@ -2770,6 +2770,18 @@ html[data-app-scope="store"] .profile-guest-card .profile-vip-actions {
   grid-template-columns: 1fr;
 }
 
+html[data-app-scope="store"] .profile-guest-card .profile-vip-header {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+html[data-app-scope="store"] .profile-guest-card .profile-guest-title {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  text-wrap: balance;
+}
+
 html[data-app-scope="store"] .profile-guest-desc {
   margin-top: 0.36rem;
   color: color-mix(in srgb, white 82%, var(--profile-gold-soft));

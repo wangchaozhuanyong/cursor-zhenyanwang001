@@ -747,14 +747,14 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
 
   html[data-app-scope="store"] .support-download-tab {
     gap: 0.16rem;
-    min-height: 2.42rem;
-    padding-inline: 0.14rem;
-    font-size: clamp(0.62rem, 2.35vw, 0.72rem);
+    min-height: 44px;
+    padding-inline: 0.2rem;
+    font-size: 12px;
   }
 
   html[data-app-scope="store"] .support-download-tab svg {
-    width: 0.92rem;
-    height: 0.92rem;
+    width: 16px;
+    height: 16px;
   }
 
   html[data-app-scope="store"] .support-channel-card {

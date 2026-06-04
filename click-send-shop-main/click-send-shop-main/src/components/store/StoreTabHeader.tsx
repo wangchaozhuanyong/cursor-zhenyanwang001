@@ -65,10 +65,10 @@ export default function StoreTabHeader({
         className,
       )}
     >
-      <div className="mx-auto flex h-[var(--store-tab-header-height)] w-full max-w-screen-xl items-center gap-3 px-[var(--store-page-x)] sm:px-4 md:px-6">
+      <div className="mx-auto flex h-[var(--store-tab-header-height)] w-full max-w-screen-xl items-center gap-2 px-[var(--store-page-x)] sm:px-4 md:px-6">
         <UnifiedButton
           type="button"
-          className="flex shrink-0 cursor-pointer items-center gap-2 border-0 bg-transparent p-0"
+          className="flex shrink-0 cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0"
           onClick={() => navigate("/")}
           aria-label={`${siteName} 首页`}
         >
@@ -105,7 +105,7 @@ export default function StoreTabHeader({
 
         {searchMode === "none" ? <div className="min-w-0 flex-1" /> : null}
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           {rightSlot ?? (
             <NotificationIconButton unreadCount={unreadCount} onClick={goNotifications} />
           )}

@@ -22,6 +22,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { DEFAULT_APPLE_TOUCH_ICON, DEFAULT_FAVICON_ICO, DEFAULT_FAVICON_PNG, DEFAULT_FAVICON_SVG } from "@/constants/siteBrand";
 
 function withViteBase(path: string): string {
   const base = String(import.meta.env.BASE_URL || "/");
@@ -265,16 +266,20 @@ function syncTikTokHead(brandLogoSrc: string) {
   upsertMeta("meta[name='twitter:image']", { name: "twitter:image", content: brandLogoSrc });
 
   document
-    .querySelectorAll<HTMLLinkElement>("link[rel='icon'], link[rel='shortcut icon']")
+    .querySelectorAll<HTMLLinkElement>("link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']")
     .forEach((el) => el.remove());
 
   [
-    { rel: "icon", href: brandLogoSrc },
-    { rel: "shortcut icon", href: brandLogoSrc },
-  ].forEach(({ rel, href }) => {
+    { rel: "icon", href: DEFAULT_FAVICON_SVG, type: "image/svg+xml", sizes: "any" },
+    { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "32x32" },
+    { rel: "shortcut icon", href: DEFAULT_FAVICON_ICO },
+    { rel: "apple-touch-icon", href: DEFAULT_APPLE_TOUCH_ICON, type: "image/png", sizes: "180x180" },
+  ].forEach(({ rel, href, type, sizes }) => {
     const link = document.createElement("link");
     link.rel = rel;
     link.href = href;
+    if (type) link.type = type;
+    if (sizes) link.sizes = sizes;
     document.head.appendChild(link);
   });
 }

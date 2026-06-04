@@ -1,7 +1,8 @@
 import { Check, ChevronDown, Phone, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useId, useState, type KeyboardEventHandler } from "react";
+import { useEffect, useId, useState, type KeyboardEventHandler } from "react";
 import { cn } from "@/lib/utils";
+import { retainBottomSheetVisualState } from "@/modules/micro-interactions/modal/bottomSheetVisualState";
 import type { SupportedCountryCode } from "@/utils/authValidation";
 
 const PHONE_INPUT_CLASS =
@@ -73,6 +74,11 @@ export default function CountryPhoneInput({
     setCountryPickerOpen(false);
   };
 
+  useEffect(() => {
+    if (!countryPickerOpen) return;
+    return retainBottomSheetVisualState();
+  }, [countryPickerOpen]);
+
   return (
     <div className={cn(showErrorText && "space-y-2", className)}>
       <div className="grid grid-cols-[minmax(6.5rem,7rem)_1fr] gap-2 sm:grid-cols-[112px_1fr]">
@@ -138,7 +144,7 @@ export default function CountryPhoneInput({
       <AnimatePresence>
         {countryPickerOpen ? (
           <motion.div
-            className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 p-0 sm:px-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))]"
+            className="app-bottom-sheet-layer app-country-picker-backdrop fixed inset-0 z-[80] flex items-end justify-center p-0 sm:px-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))]"
             role="dialog"
             aria-modal="true"
             aria-labelledby={pickerTitleId}
@@ -149,7 +155,7 @@ export default function CountryPhoneInput({
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
             <motion.div
-              className="w-full overflow-hidden rounded-t-[28px] border-x-0 border-b-0 border-t border-white/70 bg-card shadow-[0_-18px_55px_rgba(15,23,42,0.28)] sm:max-w-md sm:rounded-[28px] sm:border"
+              className="app-bottom-sheet app-country-picker-sheet w-full overflow-hidden rounded-t-[30px] border-x-0 border-b-0 border-t sm:max-w-md sm:rounded-[30px] sm:border"
               onClick={(event) => event.stopPropagation()}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
@@ -157,9 +163,9 @@ export default function CountryPhoneInput({
               transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.9 }}
             >
               <div className="flex justify-center pt-3">
-                <span className="h-1.5 w-14 rounded-full bg-muted-foreground/25" />
+                <span className="app-bottom-sheet-handle" />
               </div>
-              <div className="flex items-center justify-between px-5 pb-3 pt-4">
+              <div className="app-bottom-sheet-header flex items-center justify-between px-5 pb-3 pt-4">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">地区代码</p>
                   <h2 id={pickerTitleId} className="mt-1 text-lg font-bold text-foreground">
@@ -170,12 +176,12 @@ export default function CountryPhoneInput({
                   type="button"
                   aria-label="关闭选择地区"
                   onClick={() => setCountryPickerOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-gold/25"
+                  className="app-bottom-sheet-close flex h-10 w-10 items-center justify-center rounded-full border text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-gold/25"
                 >
                   <X size={18} aria-hidden="true" />
                 </button>
               </div>
-              <div className="space-y-2 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+              <div className="app-bottom-sheet-content space-y-2 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
                 {COUNTRY_PICKER_OPTIONS.map((item) => {
                   const selected = item.value === countryCode;
                   return (

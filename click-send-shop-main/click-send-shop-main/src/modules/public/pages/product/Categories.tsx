@@ -33,8 +33,13 @@ import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { renderBrandTitle } from "@/utils/brand";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
-const MOBILE_CHROME_HIDE_START = 128;
+type MobileChromeMode = "expanded" | "compact" | "hidden";
+
+const MOBILE_CHROME_EXPAND_TOP = 16;
+const MOBILE_CHROME_COMPACT_START = 56;
+const MOBILE_CHROME_HIDE_START = 148;
 const MOBILE_CHROME_HIDE_DELTA = 18;
+const MOBILE_CHROME_COMPACT_SPACER = "8.9rem";
 const MOBILE_CHROME_DOCK_SPACER = "5.1rem";
 
 export default function Categories() {
@@ -218,31 +223,45 @@ export default function Categories() {
 
   const mobileChromeRef = useRef<HTMLDivElement>(null);
   const [mobileChromeHeight, setMobileChromeHeight] = useState(0);
-  const [mobileChromeHidden, setMobileChromeHidden] = useState(false);
-  const mobileChromeHiddenRef = useRef(false);
+  const [mobileChromeMode, setMobileChromeMode] = useState<MobileChromeMode>("expanded");
+  const mobileChromeModeRef = useRef<MobileChromeMode>("expanded");
   const lastScrollYRef = useRef(0);
   const scrollTickingRef = useRef(false);
   const layoutScrollGuardUntilRef = useRef(0);
   const touchStartYRef = useRef(0);
+  const mobileChromeHidden = mobileChromeMode === "hidden";
+  const mobileChromeCompact = mobileChromeMode === "compact";
+  const mobileChromeSpacerHeight = mobileChromeHidden
+    ? MOBILE_CHROME_DOCK_SPACER
+    : mobileChromeCompact
+      ? MOBILE_CHROME_COMPACT_SPACER
+      : mobileChromeHeight > 0
+        ? mobileChromeHeight
+        : undefined;
 
-  const setMobileChromeVisibility = useCallback((hidden: boolean) => {
-    if (mobileChromeHiddenRef.current === hidden) {
+  const setMobileChromeModeStable = useCallback((mode: MobileChromeMode) => {
+    if (mobileChromeModeRef.current === mode) {
       return;
     }
 
-    mobileChromeHiddenRef.current = hidden;
-    setMobileChromeHidden(hidden);
+    mobileChromeModeRef.current = mode;
+    setMobileChromeMode(mode);
   }, []);
 
+  const compactMobileChrome = useCallback(() => {
+    layoutScrollGuardUntilRef.current = 0;
+    setMobileChromeModeStable("compact");
+  }, [setMobileChromeModeStable]);
+
   const hideMobileChrome = useCallback(() => {
-    layoutScrollGuardUntilRef.current = window.performance.now() + 420;
-    setMobileChromeVisibility(true);
-  }, [setMobileChromeVisibility]);
+    layoutScrollGuardUntilRef.current = window.performance.now() + 340;
+    setMobileChromeModeStable("hidden");
+  }, [setMobileChromeModeStable]);
 
   const revealMobileChrome = useCallback(() => {
     layoutScrollGuardUntilRef.current = 0;
-    setMobileChromeVisibility(false);
-  }, [setMobileChromeVisibility]);
+    setMobileChromeModeStable("expanded");
+  }, [setMobileChromeModeStable]);
 
   useLayoutEffect(() => {
     const node = mobileChromeRef.current;
@@ -278,12 +297,15 @@ export default function Categories() {
         return;
       }
 
-      if (currentY <= 16) {
+      if (currentY <= MOBILE_CHROME_EXPAND_TOP) {
         revealMobileChrome();
         return;
       }
 
       if (Math.abs(delta) < MOBILE_CHROME_HIDE_DELTA) {
+        if (currentY > MOBILE_CHROME_COMPACT_START && mobileChromeModeRef.current === "expanded") {
+          compactMobileChrome();
+        }
         return;
       }
 
@@ -292,8 +314,18 @@ export default function Categories() {
         return;
       }
 
+      if (delta > 0 && currentY > MOBILE_CHROME_COMPACT_START) {
+        compactMobileChrome();
+        return;
+      }
+
       if (delta < 0) {
-        revealMobileChrome();
+        if (currentY <= MOBILE_CHROME_COMPACT_START) {
+          revealMobileChrome();
+          return;
+        }
+
+        compactMobileChrome();
       }
     };
 
@@ -313,13 +345,25 @@ export default function Categories() {
 
       lastScrollYRef.current = getScrollY();
 
-      if (event.deltaY > 0 && lastScrollYRef.current > 16) {
-        hideMobileChrome();
+      if (event.deltaY > 0) {
+        if (lastScrollYRef.current > MOBILE_CHROME_HIDE_START) {
+          hideMobileChrome();
+          return;
+        }
+
+        if (lastScrollYRef.current > MOBILE_CHROME_COMPACT_START) {
+          compactMobileChrome();
+        }
         return;
       }
 
       if (event.deltaY < 0) {
-        revealMobileChrome();
+        if (lastScrollYRef.current <= MOBILE_CHROME_COMPACT_START) {
+          revealMobileChrome();
+          return;
+        }
+
+        compactMobileChrome();
       }
     };
 
@@ -341,13 +385,25 @@ export default function Categories() {
       lastScrollYRef.current = getScrollY();
       touchStartYRef.current = currentTouchY;
 
-      if (gestureDelta > 0 && lastScrollYRef.current > 16) {
-        hideMobileChrome();
+      if (gestureDelta > 0) {
+        if (lastScrollYRef.current > MOBILE_CHROME_HIDE_START) {
+          hideMobileChrome();
+          return;
+        }
+
+        if (lastScrollYRef.current > MOBILE_CHROME_COMPACT_START) {
+          compactMobileChrome();
+        }
         return;
       }
 
       if (gestureDelta < 0) {
-        revealMobileChrome();
+        if (lastScrollYRef.current <= MOBILE_CHROME_COMPACT_START) {
+          revealMobileChrome();
+          return;
+        }
+
+        compactMobileChrome();
       }
     };
 
@@ -359,6 +415,8 @@ export default function Categories() {
     lastScrollYRef.current = getScrollY();
     if (lastScrollYRef.current > MOBILE_CHROME_HIDE_START) {
       hideMobileChrome();
+    } else if (lastScrollYRef.current > MOBILE_CHROME_COMPACT_START) {
+      compactMobileChrome();
     } else {
       revealMobileChrome();
     }
@@ -378,7 +436,7 @@ export default function Categories() {
       window.removeEventListener("focusin", revealChrome);
       window.removeEventListener("resize", revealChrome);
     };
-  }, [hideMobileChrome, revealMobileChrome]);
+  }, [compactMobileChrome, hideMobileChrome, revealMobileChrome]);
 
   useEffect(() => {
     revealMobileChrome();
@@ -485,10 +543,11 @@ export default function Categories() {
       />
       <div
         ref={mobileChromeRef}
+        data-chrome-mode={mobileChromeMode}
         data-hidden={mobileChromeHidden ? "true" : "false"}
         className={cn(
           "store-category-mobile-chrome fixed inset-x-0 top-0 z-header md:hidden",
-          mobileChromeHidden ? "is-hidden" : "is-visible",
+          `is-${mobileChromeMode}`,
         )}
         style={{
           "--store-category-mobile-chrome-height": `${mobileChromeHeight || 0}px`,
@@ -512,7 +571,7 @@ export default function Categories() {
       </div>
       <div
         className="store-category-mobile-spacer md:hidden"
-        style={{ height: mobileChromeHidden ? MOBILE_CHROME_DOCK_SPACER : mobileChromeHeight > 0 ? mobileChromeHeight : undefined }}
+        style={{ height: mobileChromeSpacerHeight }}
         aria-hidden
       />
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
+import { Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
@@ -168,15 +168,55 @@ export default function Cart() {
           <div>
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
             {!isLoggedIn() && (
-              <div className="mb-3 flex flex-col gap-2 theme-rounded border border-[var(--theme-price)]/30 bg-[var(--theme-price)]/5 px-4 py-3 text-xs text-[var(--theme-text)] sm:flex-row sm:flex-wrap sm:items-center">
-                <span className="min-w-0 text-muted-foreground">当前未登录，购物车仅保存在本机；登录后可同步到账号。</span>
-                <UnifiedButton
-                  type="button"
-                  onClick={() => navigate("/login", { state: { from: "/cart" } })}
-                  className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-full border border-[var(--theme-price)]/25 bg-[var(--theme-surface)] px-3 font-semibold text-[var(--theme-price)] transition hover:border-[var(--theme-price)] hover:bg-[var(--theme-price)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]"
-                >
-                  登录
-                </UnifiedButton>
+              <div
+                className="relative mb-4 mt-3 overflow-hidden rounded-[22px] border px-4 py-4 text-[var(--theme-text)]"
+                style={{
+                  borderColor: "color-mix(in srgb, var(--theme-price) 24%, transparent)",
+                  background:
+                    "linear-gradient(135deg, color-mix(in srgb, var(--theme-surface) 94%, white) 0%, color-mix(in srgb, var(--theme-price) 8%, var(--theme-bg)) 100%)",
+                  boxShadow: "0 18px 46px color-mix(in srgb, var(--theme-price) 11%, transparent)",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-5 top-0 h-px"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, transparent, color-mix(in srgb, var(--theme-price) 46%, transparent), transparent)",
+                  }}
+                />
+                <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span
+                      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-[var(--theme-surface)] text-[var(--theme-price)] shadow-sm"
+                      style={{ borderColor: "color-mix(in srgb, var(--theme-price) 22%, transparent)" }}
+                    >
+                      <ShieldCheck size={18} strokeWidth={2.2} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold leading-5 text-[var(--theme-text)]">登录后同步购物车</p>
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-semibold leading-4 text-[var(--theme-price)]"
+                          style={{ background: "color-mix(in srgb, var(--theme-price) 10%, transparent)" }}
+                        >
+                          本机暂存
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted)]">
+                        当前购物车仅保存在本机，登录后可同步到账号。
+                      </p>
+                    </div>
+                  </div>
+                  <UnifiedButton
+                    type="button"
+                    onClick={() => navigate("/login", { state: { from: "/cart" } })}
+                    className="inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-full border border-[var(--theme-price)] bg-[var(--theme-price)] px-4 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[var(--theme-price)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)] sm:w-auto"
+                  >
+                    <LogIn className="mr-1.5 h-4 w-4" />
+                    登录
+                  </UnifiedButton>
+                </div>
               </div>
             )}
             {error && (

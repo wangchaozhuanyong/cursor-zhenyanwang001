@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useDragControls, type Transition } from "framer-motion";
 import { X } from "lucide-react";
-import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useOverlayDismiss } from "../hooks/useOverlayDismiss";
 import { useModalLayer } from "../modal/ModalLayerProvider";
-import { prefersReducedMotion } from "../motionConfig";
+import { prefersReducedMotion, SILK_EASE } from "../motionConfig";
 import { useMotionConfig } from "../hooks/useMotionConfig";
+import { retainBottomSheetVisualState } from "../modal/bottomSheetVisualState";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type BottomSheetHeight = "auto" | "50vh" | "70vh" | "90vh" | "full";
@@ -38,6 +39,7 @@ const HEIGHT_CLASS: Record<BottomSheetHeight, string> = {
 };
 
 const DRAG_CLOSE_PX = 80;
+const DRAG_CLOSE_VELOCITY = 720;
 
 function hasAccessibleTitle(title: ReactNode): boolean {
   return title !== null && title !== undefined && title !== false && title !== "";
@@ -60,19 +62,33 @@ export function BottomSheet({
   desktopMaxWidthClass = "md:max-w-[520px] md:mx-auto md:left-0 md:right-0",
 }: BottomSheetProps) {
   const dragControls = useDragControls();
+  const sheetRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
   const descId = useId();
-  const { enabled: motionEnabled } = useMotionConfig();
+  const { enabled: motionEnabled, level } = useMotionConfig();
   const reduced = prefersReducedMotion() || !motionEnabled;
   const [presented, setPresented] = useState(open);
   const { overlayZ, contentZ, isTop } = useModalLayer(presented);
   const hasTitle = hasAccessibleTitle(title);
 
-  useOverlayDismiss({ open: presented, isTop, onClose, lockBody: true, closeOnEscape: open });
+  useOverlayDismiss({
+    open: presented,
+    isTop,
+    onClose,
+    lockBody: true,
+    closeOnEscape: open,
+    contentRef: sheetRef,
+    trapFocus: true,
+  });
 
   useEffect(() => {
     if (open) setPresented(true);
   }, [open]);
+
+  useEffect(() => {
+    if (!presented) return;
+    return retainBottomSheetVisualState();
+  }, [presented]);
 
   useEffect(() => {
     if (!open || title || ariaLabel || !import.meta.env.DEV) return;
@@ -82,11 +98,20 @@ export function BottomSheet({
 
   const overlayTransition: Transition = reduced
     ? { duration: 0.12 }
-    : { duration: 0.24, ease: "easeOut" };
+    : { duration: level === "rich" ? 0.3 : 0.24, ease: SILK_EASE };
 
   const sheetTransition: Transition = reduced
     ? { duration: 0.12 }
-    : { duration: 0.28, ease: "easeOut" };
+    : {
+        type: "spring",
+        stiffness: level === "rich" ? 430 : 390,
+        damping: level === "rich" ? 36 : 38,
+        mass: 0.86,
+      };
+
+  const childInitial = reduced ? false : { opacity: 0, y: 10 };
+  const childAnimate = open || reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 };
+  const childExit = reduced ? { opacity: 0 } : { opacity: 0, y: 8 };
 
   const dragConstraints = useMemo(() => ({ top: 0, bottom: 0 }), []);
 
@@ -100,7 +125,7 @@ export function BottomSheet({
     <AnimatePresence onExitComplete={() => setPresented(false)}>
       {presented ? (
         <motion.div
-          className="fixed inset-0"
+          className="app-bottom-sheet-layer fixed inset-0"
           style={{ zIndex: overlayZ, pointerEvents: open ? "auto" : "none" }}
           initial={{ opacity: 0 }}
           animate={{ opacity: open ? 1 : 0 }}
@@ -113,7 +138,7 @@ export function BottomSheet({
           <motion.button
             type="button"
             aria-label="关闭"
-            className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+            className="app-bottom-sheet-backdrop absolute inset-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: open ? 1 : 0 }}
             exit={{ opacity: 0 }}
@@ -122,26 +147,25 @@ export function BottomSheet({
           />
 
           <motion.section
+            ref={sheetRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={hasTitle ? titleId : undefined}
             aria-label={!title ? (ariaLabel || "弹窗") : undefined}
             aria-describedby={description ? descId : undefined}
             className={cn(
-              "absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-[22px] border border-b-0 border-[var(--theme-border)]",
+              "app-bottom-sheet absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-[30px] border border-b-0",
               HEIGHT_CLASS[height],
               desktopMaxWidthClass,
               className,
             )}
             style={{
               zIndex: contentZ,
-              background: "var(--theme-surface)",
               color: "var(--theme-text)",
-              boxShadow: "var(--theme-shadow-hover)",
             }}
-            initial={reduced ? { opacity: 0 } : { y: "100%" }}
-            animate={open ? (reduced ? { opacity: 1 } : { y: 0 }) : (reduced ? { opacity: 0 } : { y: "100%" })}
-            exit={reduced ? { opacity: 0 } : { y: "100%" }}
+            initial={reduced ? { opacity: 0 } : { y: "102%", scale: 0.985 }}
+            animate={open ? (reduced ? { opacity: 1 } : { y: 0, scale: 1 }) : (reduced ? { opacity: 0 } : { y: "102%", scale: 0.985 })}
+            exit={reduced ? { opacity: 0 } : { y: "102%", scale: 0.985 }}
             transition={sheetTransition}
           >
             <motion.div
@@ -154,7 +178,7 @@ export function BottomSheet({
               dragMomentum={false}
               onDragEnd={(_, info) => {
                 if (reduced) return;
-                if (info.offset.y > DRAG_CLOSE_PX || info.velocity.y > 720) {
+                if (info.offset.y > DRAG_CLOSE_PX || info.velocity.y > DRAG_CLOSE_VELOCITY) {
                   onClose();
                 }
               }}
@@ -162,27 +186,31 @@ export function BottomSheet({
               {showHandle ? (
                 <UnifiedButton
                   type="button"
-                  className="flex w-full shrink-0 flex-col items-center pb-1 pt-3 outline-none"
+                  className="app-bottom-sheet-handle-button flex w-full shrink-0 flex-col items-center pb-1 pt-3 outline-none"
                   aria-label="向下拖动关闭"
                   onPointerDown={(e) => dragControls.start(e)}
                 >
-                  <span className="h-1 w-10 rounded-full bg-[var(--theme-border)]" />
+                  <span className="app-bottom-sheet-handle" />
                 </UnifiedButton>
               ) : null}
 
               {(hasTitle || showCloseButton) && (
                 <motion.div
-                  className="flex shrink-0 items-start justify-between gap-3 px-4 pb-2 pt-1"
+                  className="app-bottom-sheet-header flex shrink-0 items-start justify-between gap-3 px-5 pb-3 pt-2"
                   drag={false}
+                  initial={childInitial}
+                  animate={childAnimate}
+                  exit={childExit}
+                  transition={{ duration: reduced ? 0 : 0.2, ease: SILK_EASE, delay: reduced ? 0 : 0.03 }}
                 >
                   <motion.div className="min-w-0 flex-1" drag={false}>
                     {hasTitle ? (
-                      <h2 id={titleId} className="text-base font-semibold text-[var(--theme-text)]">
+                      <h2 id={titleId} className="app-bottom-sheet-title text-base font-semibold text-[var(--theme-text)]">
                         {title}
                       </h2>
                     ) : null}
                     {description ? (
-                      <p id={descId} className="mt-1 text-sm text-[var(--theme-text-muted)]">
+                      <p id={descId} className="app-bottom-sheet-description mt-1 text-sm text-[var(--theme-text-muted)]">
                         {description}
                       </p>
                     ) : null}
@@ -191,7 +219,7 @@ export function BottomSheet({
                     <UnifiedButton
                       type="button"
                       onClick={onClose}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)]"
+                      className="app-bottom-sheet-close flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-[var(--theme-text-muted)] transition"
                       aria-label="关闭"
                     >
                       <X size={18} />
@@ -203,9 +231,13 @@ export function BottomSheet({
               {children ? (
                 <motion.div
                   className={cn(
-                    "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2",
+                    "app-bottom-sheet-content min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-2",
                     !stickyFooter && "pb-[max(12px,env(safe-area-inset-bottom))]",
                   )}
+                  initial={childInitial}
+                  animate={childAnimate}
+                  exit={childExit}
+                  transition={{ duration: reduced ? 0 : 0.22, ease: SILK_EASE, delay: reduced ? 0 : 0.07 }}
                 >
                   {children}
                 </motion.div>
@@ -214,9 +246,13 @@ export function BottomSheet({
               {footer ? (
                 <motion.div
                   className={cn(
-                    "shrink-0 border-t border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3",
+                    "app-bottom-sheet-footer shrink-0 border-t px-5 py-3",
                     "pb-[max(12px,env(safe-area-inset-bottom))]",
                   )}
+                  initial={childInitial}
+                  animate={childAnimate}
+                  exit={childExit}
+                  transition={{ duration: reduced ? 0 : 0.2, ease: SILK_EASE, delay: reduced ? 0 : 0.11 }}
                 >
                   {footer}
                 </motion.div>

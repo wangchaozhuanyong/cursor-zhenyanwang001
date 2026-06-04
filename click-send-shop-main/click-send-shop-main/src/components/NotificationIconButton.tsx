@@ -18,14 +18,14 @@ export default function NotificationIconButton({
   return (
     <UnifiedButton
       type="button"
-      className={`store-notification-button relative flex h-9 w-9 overflow-visible items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 ${className}`}
+      className={`store-notification-button relative flex h-[2.625rem] w-[2.625rem] overflow-visible items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 ${className}`}
       onClick={onClick}
       aria-label={badgeText ? `消息通知，未读 ${badgeText}` : "消息通知"}
     >
       <Bell size={16} className="relative z-[1] text-[var(--theme-text)]" />
       {badgeText ? (
         <span
-          className="store-notification-badge absolute right-0 top-0 z-[3] inline-flex h-[1.15rem] min-w-[1.15rem] translate-x-[34%] -translate-y-[30%] items-center justify-center rounded-full bg-[var(--theme-price)] px-[0.28rem] text-[10px] font-extrabold leading-none text-white shadow-[0_7px_16px_-8px_var(--theme-price)] ring-2 ring-[var(--theme-surface)]"
+          className="store-notification-badge absolute -right-0.5 -top-0.5 z-[3] inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--theme-price)] px-[0.22rem] text-[10px] font-extrabold leading-none text-white shadow-[0_7px_16px_-8px_var(--theme-price)] ring-2 ring-[var(--theme-surface)]"
           aria-hidden="true"
         >
           {badgeText}

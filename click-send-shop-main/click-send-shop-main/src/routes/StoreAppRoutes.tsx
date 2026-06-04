@@ -184,6 +184,7 @@ function TikTokStandaloneRoutes() {
 
   return (
     <ErrorBoundary resetKey={location.pathname}>
+      <SiteIdentitySync />
       <Suspense fallback={<AppRouteFallback />}>
         <Routes>
           <Route path="/tiktok" element={<TikTokLanding />} />

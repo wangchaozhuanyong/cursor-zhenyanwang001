@@ -39,6 +39,18 @@ KEEP_ROLLBACKS="${KEEP_ROLLBACKS:-1}"
 PRUNE_STALE_ASSET_CHUNKS="${PRUNE_STALE_ASSET_CHUNKS:-1}"
 STALE_ASSET_DAYS="${STALE_ASSET_DAYS:-14}"
 
+if [[ "${WWWROOT_LEGACY_DIRECT_DEPLOY:-0}" != "1" ]]; then
+  echo "[deploy-wwwroot] defaulting to standard deploy chain to avoid stale frontend/code overwrites" | tee -a "$LOG_FILE"
+  PROJECT_DIR="$PROJECT_DIR" \
+  PM2_APP="$PM2_APP" \
+  GIT_BRANCH="${GIT_BRANCH:-main}" \
+  AUTO_ROLLBACK="${AUTO_ROLLBACK:-1}" \
+  BACKUP_BEFORE_DEPLOY="${BACKUP_BEFORE_DEPLOY:-1}" \
+  BUILD_FRONTEND_ON_SERVER="${BUILD_FRONTEND_ON_SERVER:-1}" \
+    bash "$PROJECT_DIR/deploy/release-deploy.sh"
+  exit $?
+fi
+
 sync_public_static() {
   local src_dir="$1"
   local dest_dir="$2"

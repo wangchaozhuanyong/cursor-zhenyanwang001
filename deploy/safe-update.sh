@@ -28,6 +28,18 @@ command -v git >/dev/null || fail "git 未安装"
 command -v npm >/dev/null || fail "npm 未安装"
 command -v pm2 >/dev/null || fail "pm2 未安装"
 
+if [[ "${SAFE_UPDATE_LEGACY_DIRECT_RESET:-0}" != "1" ]]; then
+  log "🔒 safe-update 默认改走标准发布链路，避免旧代码直接 reset 覆盖线上"
+  PROJECT_DIR="$PROJECT_DIR" \
+  PM2_APP="$PM2_APP" \
+  GIT_BRANCH="${GIT_BRANCH:-main}" \
+  AUTO_ROLLBACK="${AUTO_ROLLBACK:-1}" \
+  BACKUP_BEFORE_DEPLOY="$BACKUP_BEFORE_DEPLOY" \
+  BUILD_FRONTEND_ON_SERVER="$BUILD_FRONTEND_ON_SERVER" \
+    bash "$PROJECT_DIR/deploy/release-deploy.sh"
+  exit $?
+fi
+
 PREV_HEAD=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 log "🔄 当前版本: $PREV_HEAD"
 

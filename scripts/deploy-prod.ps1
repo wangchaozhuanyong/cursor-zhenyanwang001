@@ -66,7 +66,7 @@ if (-not $Force) {
 Run-Step "Push $ReleaseBranch" "git push origin $ReleaseBranch" $RepoRoot
 
 if ($Quick) {
-  $RemoteCmd = "set -e; cd '$RemoteProjectDir'; git fetch origin '$ReleaseBranch'; git reset --hard origin/'$ReleaseBranch'; cd server; pm2 restart gc-api; pm2 save; echo QUICK_DEPLOY_OK"
+  $RemoteCmd = "set -e; export PROJECT_DIR='$RemoteProjectDir'; export PM2_APP='gc-api'; export GIT_BRANCH='$ReleaseBranch'; export AUTO_ROLLBACK='0'; export BACKUP_BEFORE_DEPLOY='0'; export BUILD_FRONTEND_ON_SERVER='0'; cd '$RemoteProjectDir'; bash deploy/release-deploy.sh"
 } else {
   $backupFlag = if ($SkipBackup) { "0" } else { "1" }
   $RemoteCmd = "set -e; export PROJECT_DIR='$RemoteProjectDir'; export PM2_APP='gc-api'; export GIT_BRANCH='$ReleaseBranch'; export AUTO_ROLLBACK='1'; export BACKUP_BEFORE_DEPLOY='$backupFlag'; export BUILD_FRONTEND_ON_SERVER='0'; cd '$RemoteProjectDir'; bash deploy/release-deploy.sh"

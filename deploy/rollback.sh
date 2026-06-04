@@ -58,7 +58,12 @@ else
 fi
 
 log "🚀 重新执行标准部署链路"
-bash "$PROJECT_DIR/deploy/production-deploy.sh"
+DEPLOY_MODE=rollback \
+ALLOW_OLD_DEPLOY=1 \
+GIT_COMMIT="$TARGET" \
+PROJECT_DIR="$PROJECT_DIR" \
+PM2_APP="$PM2_APP" \
+  bash "$PROJECT_DIR/deploy/production-deploy.sh"
 
 log "🔎 重新执行 verify-pm2"
 PM2_APP="$PM2_APP" \

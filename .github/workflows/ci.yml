@@ -11,6 +11,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  main-history:
+    name: Main history guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Reject non-fast-forward main updates
+        run: |
+          set -euo pipefail
+          before="${{ github.event.before }}"
+          after="${{ github.sha }}"
+          zero="0000000000000000000000000000000000000000"
+          if [ "$before" = "$zero" ]; then
+            echo "New branch push; no previous commit to compare."
+            exit 0
+          fi
+          if ! git cat-file -e "${before}^{commit}" 2>/dev/null; then
+            echo "::error::Cannot verify previous main commit $before. Refusing deploy until history is checked."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$before" "$after"; then
+            echo "::error::Non-fast-forward update detected on main. Push a new revert/fix commit instead of moving main backward."
+            exit 1
+          fi
+          echo "Main history is fast-forward."
+
   repo-hygiene:
     name: Repo hygiene (tracked artifacts)
     runs-on: ubuntu-latest

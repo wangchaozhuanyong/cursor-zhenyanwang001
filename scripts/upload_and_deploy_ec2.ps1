@@ -6,7 +6,8 @@ param(
   [ValidateSet("0", "1")][string]$FastMode = "1",
   [ValidateSet("0", "1")][string]$BuildFrontendOnServer = "0",
   [switch]$UploadArchive,
-  [switch]$UploadLocalFrontend
+  [switch]$UploadLocalFrontend,
+  [switch]$AllowUploadArchiveDeploy
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,6 +70,10 @@ if (-not $UploadArchive) {
   exit 0
 }
 
+if (-not $AllowUploadArchiveDeploy) {
+  throw "-UploadArchive can overwrite newer production code with local files. Use the default git deploy path, or add -AllowUploadArchiveDeploy only for a documented break-glass run."
+}
+
 Write-Host "[WARN] -UploadArchive is a break-glass path. Prefer the default git + ci-deploy flow."
 
 $stamp = Get-Date -Format "yyyyMMddHHmmss"
@@ -105,7 +110,7 @@ Write-Host "[5/5] Running safe CI deploy script ..."
 # Run deploy as SSH user so PM2 touches the same daemon as production (avoid root vs ubuntu mismatch).
 Invoke-Native ssh ($sshOpts + @(
   "${ServerUser}@${ServerHost}",
-  "set -euo pipefail; cd '${RemoteProjectRoot}'; chmod +x deploy/ci-deploy.sh; PROJECT_DIR='${RemoteProjectRoot}' PM2_APP='gc-api' AUTO_ROLLBACK='1' FAST_MODE='${FastMode}' BUILD_FRONTEND_ON_SERVER='${BuildFrontendOnServer}' SKIP_GIT='1' bash deploy/ci-deploy.sh"
+  "set -euo pipefail; cd '${RemoteProjectRoot}'; chmod +x deploy/ci-deploy.sh; PROJECT_DIR='${RemoteProjectRoot}' PM2_APP='gc-api' AUTO_ROLLBACK='1' FAST_MODE='${FastMode}' BUILD_FRONTEND_ON_SERVER='${BuildFrontendOnServer}' SKIP_GIT='1' ALLOW_SKIP_GIT_DEPLOY='1' bash deploy/ci-deploy.sh"
 ))
 
 if ($UploadLocalFrontend) {

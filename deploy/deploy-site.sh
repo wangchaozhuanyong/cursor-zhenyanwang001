@@ -32,7 +32,16 @@ echo "==> Deploying $SITE_CODE from $GIT_BRANCH"
 cd "$PROJECT_DIR"
 
 git fetch origin "$GIT_BRANCH"
-git reset --hard "origin/$GIT_BRANCH"
+TARGET_COMMIT=$(git rev-parse "origin/$GIT_BRANCH^{commit}")
+CURRENT_COMMIT=$(git rev-parse HEAD 2>/dev/null || true)
+if [[ "${ALLOW_OLD_DEPLOY:-0}" != "1" && -n "$CURRENT_COMMIT" && "$TARGET_COMMIT" != "$CURRENT_COMMIT" ]]; then
+  if ! git merge-base --is-ancestor "$CURRENT_COMMIT" "$TARGET_COMMIT"; then
+    echo "Refusing old/divergent deploy: origin/$GIT_BRANCH does not contain current HEAD."
+    echo "Use ALLOW_OLD_DEPLOY=1 only for a documented rollback/break-glass run."
+    exit 1
+  fi
+fi
+git reset --hard "$TARGET_COMMIT"
 
 echo "==> Installing backend dependencies"
 cd "$PROJECT_DIR/server"

@@ -13,7 +13,9 @@ param(
   [int]$KeepReleases = 2,
   [int]$KeepRollbacks = 1,
   [int]$StaleAssetDays = 14,
-  [switch]$SkipBuild
+  [switch]$SkipBuild,
+  [switch]$SyncPublicFrontend,
+  [switch]$AllowOutOfDateLocalBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -55,6 +57,16 @@ function Assert-FileExists {
   throw $Message
 }
 
+function Get-GitScalar {
+  param([Parameter(Mandatory = $true)][string[]]$ArgumentList)
+  $output = & git @ArgumentList
+  $exitCode = if ($null -ne $global:LASTEXITCODE) { $global:LASTEXITCODE } elseif ($?) { 0 } else { 1 }
+  if ($exitCode -ne 0) {
+    throw "git $($ArgumentList -join ' ') failed with exit code $exitCode"
+  }
+  return (($output | Select-Object -First 1) -as [string]).Trim()
+}
+
 $sshOpts = @(
   "-o", "StrictHostKeyChecking=accept-new",
   "-o", "BatchMode=yes",
@@ -66,6 +78,31 @@ if ($IdentityFile -and (Test-Path $IdentityFile)) {
   $sshOpts += @("-i", $IdentityFile, "-o", "IdentitiesOnly=yes")
 } else {
   Write-Warning "IdentityFile not found: $IdentityFile"
+}
+
+if (-not $AllowOutOfDateLocalBuild) {
+  Write-Host "[0/5] Guard local frontend build is current with origin/main and server HEAD ..."
+  Invoke-Native "git" @("-C", $RepoRoot, "fetch", "origin", "main")
+  $localHead = Get-GitScalar -ArgumentList @("-C", $RepoRoot, "rev-parse", "HEAD")
+  $originHead = Get-GitScalar -ArgumentList @("-C", $RepoRoot, "rev-parse", "origin/main")
+  if ($localHead -ne $originHead) {
+    throw "Local HEAD is not origin/main. local=$localHead origin/main=$originHead. Push/pull first, or pass -AllowOutOfDateLocalBuild only for a documented break-glass run."
+  }
+
+  $frontendDirty = @(git -C $RepoRoot status --porcelain -- "click-send-shop-main/click-send-shop-main")
+  if ($frontendDirty.Count -gt 0) {
+    throw "Frontend worktree has uncommitted changes. Commit/push them before uploading dist, or pass -AllowOutOfDateLocalBuild only for a documented break-glass run."
+  }
+
+  $remoteHead = (& ssh @($sshOpts + @("${ServerUser}@${ServerHost}", "cd '$RemoteProjectRoot' && git rev-parse HEAD"))).Trim()
+  if ($LASTEXITCODE -ne 0) {
+    throw "failed to read server HEAD"
+  }
+  if ($remoteHead -ne $originHead) {
+    throw "Server HEAD is not origin/main. server=$remoteHead origin/main=$originHead. Run the standard deploy first, then upload dist if still needed."
+  }
+} else {
+  Write-Warning "AllowOutOfDateLocalBuild enabled: local dist upload may overwrite newer frontend code."
 }
 
 if (-not $SkipBuild) {

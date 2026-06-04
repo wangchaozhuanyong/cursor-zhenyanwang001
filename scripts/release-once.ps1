@@ -42,9 +42,9 @@ function Test-GitHasUncommitted([string]$Root) {
 function Get-RemoteBashCommand([string]$ModeName) {
   if ($ModeName -eq 'frontend') {
     return (
-      "set -e; cd '$RemoteProjectDir'; " +
-      "git fetch origin '$ReleaseBranch'; git reset --hard origin/'$ReleaseBranch'; " +
-      "cd server; pm2 restart gc-api; pm2 save; echo FRONTEND_SYNC_OK"
+      "set -e; export PROJECT_DIR='$RemoteProjectDir'; export PM2_APP='gc-api'; " +
+      "export GIT_BRANCH='$ReleaseBranch'; export AUTO_ROLLBACK='0'; export BACKUP_BEFORE_DEPLOY='0'; " +
+      "export BUILD_FRONTEND_ON_SERVER='0'; cd '$RemoteProjectDir'; bash deploy/release-deploy.sh"
     )
   }
   if ($ModeName -eq 'full') {
@@ -128,14 +128,12 @@ Run-Step '2/5 git push' {
 
 Run-Step '3/5 remote sync' {
   Invoke-RemoteSsh (Get-RemoteBashCommand $Mode)
-  if ($LASTEXITCODE -ne 0) {
-    if ($Mode -eq 'standard') {
-      Write-Host 'Remote deploy failed; fallback git+pm2...' -ForegroundColor Yellow
-      Invoke-RemoteSsh (Get-RemoteBashCommand 'frontend')
-      if ($LASTEXITCODE -ne 0) { throw 'remote sync failed' }
+    if ($LASTEXITCODE -ne 0) {
+      if ($Mode -eq 'standard') {
+        throw 'remote deploy failed; fallback git+pm2 is disabled because it can bypass release guards'
+      }
+      else { throw 'remote deploy failed' }
     }
-    else { throw 'remote deploy failed' }
-  }
 }
 
 if (-not $SkipUpload) {

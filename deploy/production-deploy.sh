@@ -17,6 +17,8 @@ VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 SKIP_GIT="${SKIP_GIT:-0}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 GIT_COMMIT="${GIT_COMMIT:-${DEPLOY_TARGET_SHA:-}}"
+DEPLOY_MODE="${DEPLOY_MODE:-release}"
+ALLOW_OLD_DEPLOY="${ALLOW_OLD_DEPLOY:-${ALLOW_NON_FAST_FORWARD_DEPLOY:-0}}"
 BUILD_FRONTEND_ON_SERVER="${BUILD_FRONTEND_ON_SERVER:-0}"
 FRONTEND_BUILD_HEAP_MB="${FRONTEND_BUILD_HEAP_MB:-768}"
 FAST_MODE="${FAST_MODE:-1}"
@@ -117,6 +119,43 @@ hash_file() {
   fi
 }
 
+guard_target_commit() {
+  local target="$1"
+  [[ -n "$target" ]] || return 0
+
+  if [[ "$DEPLOY_MODE" == "rollback" || "$ALLOW_OLD_DEPLOY" == "1" ]]; then
+    echo "[deploy] old/divergent deploy guard bypassed: DEPLOY_MODE=$DEPLOY_MODE ALLOW_OLD_DEPLOY=$ALLOW_OLD_DEPLOY" | tee -a "$LOG_FILE"
+    return 0
+  fi
+
+  local label baseline
+  for label in "current:HEAD" "last_good:${STATE_DIR}/last_good_head"; do
+    local kind="${label%%:*}"
+    local source="${label#*:}"
+    baseline=""
+    if [[ "$kind" == "current" ]]; then
+      baseline=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || true)
+    elif [[ -s "$source" ]]; then
+      baseline=$(cat "$source")
+    fi
+    [[ -n "$baseline" ]] || continue
+    baseline=$(git -C "$PROJECT_DIR" rev-parse "${baseline}^{commit}" 2>/dev/null || true)
+    [[ -n "$baseline" ]] || continue
+    [[ "$target" == "$baseline" ]] && continue
+
+    if git -C "$PROJECT_DIR" merge-base --is-ancestor "$baseline" "$target"; then
+      continue
+    fi
+
+    if git -C "$PROJECT_DIR" merge-base --is-ancestor "$target" "$baseline"; then
+      echo "[deploy] refusing old deploy: target $(git -C "$PROJECT_DIR" rev-parse --short "$target") is older than $kind $(git -C "$PROJECT_DIR" rev-parse --short "$baseline"). Use deploy/rollback.sh or ALLOW_OLD_DEPLOY=1 for an intentional rollback." | tee -a "$LOG_FILE"
+    else
+      echo "[deploy] refusing divergent deploy: target $(git -C "$PROJECT_DIR" rev-parse --short "$target") does not contain $kind $(git -C "$PROJECT_DIR" rev-parse --short "$baseline"). Rebase/merge first, or set ALLOW_OLD_DEPLOY=1 only for a documented break-glass deploy." | tee -a "$LOG_FILE"
+    fi
+    exit 1
+  done
+}
+
 maybe_install_backend_deps() {
   if [[ "$FAST_MODE" == "1" && -d "$BACKEND_DIR/node_modules" ]]; then
     echo "⚡ FAST_MODE=1 且后端 node_modules 已存在，跳过后端依赖安装" | tee -a "$LOG_FILE"
@@ -203,16 +242,18 @@ if [[ "$SKIP_GIT" != "1" ]]; then
       echo "[deploy] target commit not found: $GIT_COMMIT" | tee -a "$LOG_FILE"
       exit 1
     fi
-    if ! git -C "$PROJECT_DIR" merge-base --is-ancestor "$GIT_COMMIT" "origin/$GIT_BRANCH"; then
+    if [[ "$DEPLOY_MODE" != "rollback" ]] && ! git -C "$PROJECT_DIR" merge-base --is-ancestor "$GIT_COMMIT" "origin/$GIT_BRANCH"; then
       echo "[deploy] target commit is not reachable from origin/$GIT_BRANCH: $GIT_COMMIT" | tee -a "$LOG_FILE"
       exit 1
     fi
     DEPLOY_REF="$GIT_COMMIT"
   fi
-  git -C "$PROJECT_DIR" reset --hard "$DEPLOY_REF"
+  TARGET_COMMIT=$(git -C "$PROJECT_DIR" rev-parse "${DEPLOY_REF}^{commit}")
+  guard_target_commit "$TARGET_COMMIT"
+  git -C "$PROJECT_DIR" reset --hard "$TARGET_COMMIT"
 
   LOCAL_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short HEAD)
-  REMOTE_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short "$DEPLOY_REF")
+  REMOTE_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short "$TARGET_COMMIT")
   echo "🔄 本地版本: $LOCAL_COMMIT" | tee -a "$LOG_FILE"
   echo "🌐 远程版本: $REMOTE_COMMIT" | tee -a "$LOG_FILE"
 
@@ -221,6 +262,10 @@ if [[ "$SKIP_GIT" != "1" ]]; then
     exit 1
   fi
 else
+  if [[ "${ALLOW_SKIP_GIT_DEPLOY:-0}" != "1" && "$DEPLOY_MODE" != "rollback" ]]; then
+    echo "[deploy] refusing SKIP_GIT=1 deploy. This path can overwrite newer code with local files. Use the git/SHA deploy path, or set ALLOW_SKIP_GIT_DEPLOY=1 for a documented break-glass run." | tee -a "$LOG_FILE"
+    exit 1
+  fi
   echo "⏭️  SKIP_GIT=1，跳过 git 拉取" | tee -a "$LOG_FILE"
   LOCAL_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 fi

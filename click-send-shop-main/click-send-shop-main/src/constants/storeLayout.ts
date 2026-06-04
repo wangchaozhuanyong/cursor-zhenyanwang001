@@ -15,7 +15,7 @@ export const STORE_READING_MAIN_CLASS =
 
 /** 登录注册页：桌面居中卡片 */
 export const STORE_AUTH_SHELL_CLASS =
-  "auth-page-shell flex flex-col overflow-hidden bg-background lg:min-h-[100dvh] lg:justify-center lg:bg-[color-mix(in_srgb,var(--theme-bg)_94%,var(--theme-surface))]";
+  "auth-page-shell fixed inset-0 z-[80] flex flex-col justify-end overflow-hidden bg-black/45 pt-[calc(2rem+env(safe-area-inset-top,0px))] lg:static lg:min-h-[100dvh] lg:justify-center lg:bg-[color-mix(in_srgb,var(--theme-bg)_94%,var(--theme-surface))] lg:pt-0";
 
 export const STORE_AUTH_MAIN_CLASS =
-  "auth-page-main mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pt-3 pb-4 lg:max-h-none lg:max-w-md lg:flex-none lg:overflow-visible lg:rounded-2xl lg:border lg:border-[var(--theme-border)] lg:bg-[var(--theme-surface)] lg:p-8 lg:shadow-[var(--theme-shadow)]";
+  "auth-page-main relative mx-auto min-h-0 w-full max-w-lg flex-none overflow-y-auto overscroll-contain rounded-t-[2rem] border border-[var(--theme-border)] bg-background px-[var(--store-page-x)] pb-4 pt-5 shadow-[0_-24px_70px_rgba(15,23,42,0.28)] lg:max-w-md lg:flex-none lg:overflow-visible lg:rounded-2xl lg:bg-[var(--theme-surface)] lg:p-8 lg:shadow-[var(--theme-shadow)]";

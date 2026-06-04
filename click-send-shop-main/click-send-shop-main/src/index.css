@@ -486,9 +486,162 @@
   }
 
   .auth-page-shell > main.auth-page-main {
+    max-height: calc(100svh - 2.5rem - env(safe-area-inset-top, 0px));
+    animation: auth-login-sheet-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     transition: none;
     scroll-padding-bottom: max(6rem, env(safe-area-inset-bottom, 0px));
     -webkit-overflow-scrolling: touch;
+  }
+
+  @keyframes auth-login-sheet-in {
+    from {
+      opacity: 0.88;
+      transform: translateY(2.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* 登录页底部弹窗和标题样式 */
+  .auth-login-back-btn {
+    position: absolute;
+    top: 0.9rem;
+    left: var(--store-page-x);
+    z-index: 2;
+    display: inline-flex;
+    width: 2.45rem;
+    height: 2.45rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--theme-border) 76%, white);
+    border-radius: 999px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, white 92%, transparent), color-mix(in srgb, var(--theme-surface) 96%, transparent)),
+      var(--theme-surface);
+    color: color-mix(in srgb, var(--theme-text) 82%, var(--theme-primary));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 82%, transparent),
+      0 10px 24px -18px rgba(15, 23, 42, 0.42);
+  }
+
+  .auth-login-back-btn:active {
+    transform: translateY(1px) scale(0.98);
+  }
+
+  .auth-login-heading {
+    position: relative;
+    min-height: 3.9rem;
+    padding: 0.16rem 0.25rem 0.2rem 3.08rem;
+  }
+
+  .auth-login-heading::after {
+    content: "";
+    position: absolute;
+    left: 3.08rem;
+    bottom: -0.65rem;
+    width: 4.4rem;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--theme-price), color-mix(in srgb, var(--theme-primary) 52%, transparent));
+    opacity: 0.72;
+  }
+
+  .auth-login-kicker {
+    display: inline-flex;
+    margin: 0 0 0.42rem;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--theme-price) 24%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-price) 10%, white);
+    padding: 0.16rem 0.54rem;
+    color: color-mix(in srgb, var(--theme-price) 80%, var(--theme-primary));
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.25;
+  }
+
+  .auth-login-heading h2 {
+    margin: 0;
+    font-size: clamp(1.48rem, 5.2vw, 1.8rem);
+    line-height: 1.12;
+    letter-spacing: 0;
+  }
+
+  .auth-login-heading p:not(.auth-login-kicker) {
+    margin-top: 0.42rem;
+    line-height: 1.45;
+  }
+
+  html[data-app-scope="store"] .auth-page-shell .auth-login-trust.store-trust-bar {
+    min-height: 3.35rem;
+    padding: 0.38rem 0.42rem;
+    border-radius: 16px;
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+      0 10px 24px -22px rgba(15, 23, 42, 0.32);
+  }
+
+  html[data-app-scope="store"] .auth-page-shell .auth-login-trust.store-trust-bar::after {
+    inset: 3px;
+    border-radius: 13px;
+  }
+
+  html[data-app-scope="store"] .auth-page-shell .auth-login-trust .store-trust-item {
+    min-height: 2.36rem;
+    gap: 0.22rem;
+    padding: 0 0.08rem;
+  }
+
+  html[data-app-scope="store"] .auth-page-shell .auth-login-trust .store-trust-icon {
+    width: 1.68rem;
+    height: 1.68rem;
+  }
+
+  html[data-app-scope="store"] .auth-page-shell .auth-login-trust .store-trust-icon__glyph {
+    width: 0.94rem;
+    height: 0.94rem;
+  }
+
+  html[data-app-scope="store"] .auth-page-shell .auth-login-trust .store-trust-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.05;
+  }
+
+  .auth-login-agreement-footer--sheet {
+    margin: 0.85rem calc(var(--store-page-x) * -1) 0;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 88%, transparent), var(--theme-bg)),
+      var(--theme-bg);
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 1024px) {
+    .auth-page-shell > main.auth-page-main {
+      max-height: none;
+      animation: none;
+    }
+
+    html[data-app-scope="store"] .auth-page-shell .auth-login-trust.store-trust-bar {
+      display: none;
+    }
+
+    .auth-login-agreement-footer--sheet {
+      margin: 1rem -2rem -2rem;
+      border-bottom-right-radius: 1rem;
+      border-bottom-left-radius: 1rem;
+      padding-right: 2rem;
+      padding-left: 2rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .auth-page-shell > main.auth-page-main {
+      animation: none;
+    }
   }
 
   /* 聚焦时减少浏览器自动滚动的跳动幅度 */
@@ -559,6 +712,8 @@
 
     .auth-login-heading {
       margin-bottom: 0.75rem;
+      min-height: 3.3rem;
+      padding-left: 2.78rem;
     }
 
     .auth-login-heading h2 {
@@ -566,9 +721,14 @@
       line-height: 1.35;
     }
 
-    .auth-login-heading p {
+    .auth-login-heading p:not(.auth-login-kicker) {
       font-size: 0.8125rem;
       line-height: 1.45;
+    }
+
+    .auth-login-kicker {
+      margin-bottom: 0.25rem;
+      font-size: 0.68rem;
     }
 
     .auth-login-mode-tabs,
@@ -2203,19 +2363,21 @@ html[data-app-scope="store"] .profile-count-badge {
   position: absolute;
   right: -0.2rem;
   top: -0.25rem;
+  z-index: 2;
   display: inline-flex;
-  min-width: 1.08rem;
-  height: 1.08rem;
+  min-width: 1.16rem;
+  height: 1.16rem;
   align-items: center;
   justify-content: center;
   border: 1px solid color-mix(in srgb, white 78%, transparent);
   border-radius: 999px;
   background: var(--profile-red);
-  padding: 0 0.2rem;
+  padding: 0 0.24rem;
   color: white;
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   font-weight: 800;
   line-height: 1;
+  white-space: nowrap;
   box-shadow: 0 6px 12px -8px var(--profile-red-deep);
 }
 
@@ -2337,56 +2499,77 @@ html[data-app-scope="store"] .profile-invite-stats b {
 
 html[data-app-scope="store"] .profile-invite-art {
   position: relative;
-  width: 7.1rem;
+  display: flex;
+  width: 6.35rem;
   height: 6.25rem;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
 }
 
-html[data-app-scope="store"] .profile-gift-box {
+html[data-app-scope="store"] .profile-invite-art::before {
+  content: "";
   position: absolute;
-  right: 0.15rem;
-  bottom: 0.15rem;
+  inset: 0.75rem 0.55rem 0.4rem;
+  border-radius: 1.45rem;
+  background:
+    radial-gradient(circle at 28% 18%, color-mix(in srgb, white 78%, var(--profile-gold-soft)) 0 0.52rem, transparent 0.56rem),
+    linear-gradient(145deg, color-mix(in srgb, white 78%, var(--profile-gold-soft)), color-mix(in srgb, var(--profile-red) 10%, white));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 92%, transparent),
+    0 1rem 2rem -1.35rem color-mix(in srgb, var(--profile-red-deep) 48%, transparent);
+  opacity: 0.96;
+}
+
+html[data-app-scope="store"] .profile-gift-box {
+  position: relative;
+  z-index: 1;
   display: flex;
-  width: 5.3rem;
-  height: 4.35rem;
+  width: 4.7rem;
+  height: 4.7rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--profile-red) 18%, white);
-  border-radius: 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--profile-red) 16%, white);
+  border-radius: 1.4rem;
   background:
-    linear-gradient(145deg, color-mix(in srgb, white 92%, var(--profile-gold-soft)), color-mix(in srgb, var(--profile-red) 10%, white));
+    linear-gradient(145deg, white 0%, color-mix(in srgb, white 82%, var(--profile-red) 7%) 100%);
   color: var(--profile-red);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 90%, transparent),
-    0 18px 28px -22px color-mix(in srgb, var(--profile-red) 58%, transparent);
+    inset 0 1px 0 color-mix(in srgb, white 92%, transparent),
+    0 1.15rem 1.95rem -1.25rem color-mix(in srgb, var(--profile-red) 60%, transparent);
 }
 
-html[data-app-scope="store"] .profile-coin {
+html[data-app-scope="store"] .profile-gift-box::before,
+html[data-app-scope="store"] .profile-gift-box::after {
+  content: "";
   position: absolute;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--profile-gold) 76%, white);
-  border-radius: 999px;
-  background: linear-gradient(180deg, color-mix(in srgb, white 84%, var(--profile-gold)), var(--profile-gold));
-  color: var(--profile-red-deep);
-  font-size: 0.58rem;
-  font-weight: 900;
-  box-shadow: 0 9px 18px -13px color-mix(in srgb, var(--profile-red-deep) 48%, transparent);
+  pointer-events: none;
+  background: color-mix(in srgb, var(--profile-red) 88%, var(--profile-gold));
+  opacity: 0.92;
 }
 
-html[data-app-scope="store"] .profile-coin--one {
-  top: 0.15rem;
-  right: 0.7rem;
-  width: 1.72rem;
-  height: 1.72rem;
+html[data-app-scope="store"] .profile-gift-box::before {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 0.42rem;
+  transform: translateX(-50%);
 }
 
-html[data-app-scope="store"] .profile-coin--two {
-  left: 0.45rem;
-  bottom: 1.05rem;
-  width: 1.38rem;
-  height: 1.38rem;
+html[data-app-scope="store"] .profile-gift-box::after {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0.42rem;
+  transform: translateY(-50%);
+}
+
+html[data-app-scope="store"] .profile-gift-box svg {
+  position: relative;
+  z-index: 1;
+  width: 2.35rem;
+  height: 2.35rem;
+  stroke-width: 2.25;
 }
 
 html[data-app-scope="store"] .profile-invite-code {
@@ -2481,14 +2664,16 @@ html[data-app-scope="store"] .profile-service-grid {
 html[data-app-scope="store"] .profile-service-action {
   position: relative;
   display: flex;
-  min-height: 5.15rem;
+  min-height: 5.35rem;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.42rem;
+  overflow: visible;
   border: 1px solid color-mix(in srgb, var(--profile-red) 12%, var(--theme-border));
   border-radius: 1rem;
   background: color-mix(in srgb, white 64%, var(--theme-surface));
+  padding: 0.84rem 0.28rem 0.58rem;
   text-align: center;
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 82%, transparent);
 }
@@ -2510,8 +2695,14 @@ html[data-app-scope="store"] .profile-service-label {
 }
 
 html[data-app-scope="store"] .profile-service-badge {
-  right: 0.72rem;
-  top: 0.58rem;
+  right: 0.42rem;
+  top: 0.42rem;
+  min-width: 1.22rem;
+  height: 1.22rem;
+  max-width: calc(100% - 0.84rem);
+  box-shadow:
+    0 7px 16px -10px var(--profile-red-deep),
+    0 0 0 2px color-mix(in srgb, white 84%, var(--theme-surface));
 }
 
 html[data-app-scope="store"] .profile-trust-strip {

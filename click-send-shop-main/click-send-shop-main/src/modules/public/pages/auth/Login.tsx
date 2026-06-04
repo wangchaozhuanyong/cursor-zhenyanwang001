@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, type KeyboardEvent } from "react";
-import { AlertCircle, Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
+import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -7,12 +7,11 @@ import * as authService from "@/services/authService";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import LoginBannerCarousel from "@/components/LoginBannerCarousel";
+import HomeTrustBar from "@/components/HomeTrustBar";
 import { LoginAgreementFooter } from "@/components/auth/LoginAgreementFooter";
 import { LoginPasswordResetSheet } from "@/components/auth/LoginPasswordResetSheet";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
-import { renderBrandTitle } from "@/utils/brand";
-import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import {
   clearLockedInviteCode,
@@ -22,6 +21,7 @@ import {
 import { SMS_OTP_LOGIN_BUILD_HINT, THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { readCachedAuthFeatures, writeCachedAuthFeatures } from "@/utils/authFeaturesCache";
 import { STORE_AUTH_MAIN_CLASS, STORE_AUTH_SHELL_CLASS } from "@/constants/storeLayout";
+import { isHomeModuleEnabled } from "@/constants/homeModules";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
@@ -32,6 +32,7 @@ import {
 } from "@/utils/authValidation";
 import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { useSupportRuntime } from "@/hooks/useSupportRuntime";
+import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const REMEMBER_KEY = "login_remembered_phone";
@@ -49,10 +50,8 @@ export default function Login() {
   const location = useLocation();
   const authStore = useAuthStore();
   const { banners } = useHomeBanners();
+  const { settings: homeModules } = useHomeModuleSettings();
   const siteInfo = useSiteInfo();
-  const logoSrc = resolveSiteLogoUrl(siteInfo);
-  const siteName = siteInfo.siteName || "官方商城";
-  const slogan = siteInfo.siteSlogan || "Premium Lifestyle";
   const { channels } = useSupportRuntime();
   const supportContact = useMemo(() => {
     const wa = channels.find((channel) => channel.type === "whatsapp");
@@ -65,6 +64,9 @@ export default function Login() {
     rawFrom && rawFrom !== "/login" && rawFrom !== "/register" && !rawFrom.startsWith("/admin")
       ? rawFrom
       : "/";
+  const handleBack = useCallback(() => {
+    navigate(from || "/", { replace: true, state: fromState });
+  }, [from, fromState, navigate]);
   const [mode, setMode] = useState<AuthMode>(() =>
     location.pathname === "/register" ? "register" : "login",
   );
@@ -99,6 +101,7 @@ export default function Login() {
   const effectiveCredentialMode: CredentialMode =
     authFeaturesReady && smsOtpLoginEnabled ? credentialMode : "password";
   const { formCompact } = useFormFieldFocus();
+  const showHomeTrustBar = isHomeModuleEnabled(homeModules, "trust_bar", "guest");
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<{ phone?: string; password?: string; otp?: string; nickname?: string }>({});
@@ -448,42 +451,37 @@ export default function Login() {
 
   return (
     <div className={STORE_AUTH_SHELL_CLASS}>
-      <header className="relative z-20 flex shrink-0 items-center gap-3 border-b border-border/40 bg-background px-[var(--store-page-x)] pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] lg:hidden">
-        {logoSrc ? (
-          <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
-        ) : null}
-        <div className="min-w-0 flex flex-col">
-          <h1 className="font-display text-xl font-bold leading-tight tracking-tight text-foreground">
-            {renderBrandTitle(siteName)}
-          </h1>
-          <p className="truncate text-[11px] uppercase tracking-widest text-muted-foreground">{slogan}</p>
-        </div>
-      </header>
-
       <main className={STORE_AUTH_MAIN_CLASS}>
-        <div className="mb-6 hidden text-center lg:block">
-          {logoSrc ? (
-            <img src={logoSrc} alt="" width={56} height={56} className="mx-auto rounded-2xl object-contain" />
-          ) : null}
-          <h1 className="mt-3 font-display text-2xl font-bold text-foreground">{renderBrandTitle(siteName)}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{slogan}</p>
-        </div>
+        <button
+          type="button"
+          onClick={handleBack}
+          aria-label="返回"
+          className="auth-login-back-btn"
+        >
+          <ArrowLeft size={19} aria-hidden="true" />
+        </button>
+
+        <section className="auth-login-heading mb-5 shrink-0">
+          <p className="auth-login-kicker">
+            {mode === "login" ? "账号登录" : "新用户注册"}
+          </p>
+          <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
+            {mode === "login" ? "欢迎回来" : "创建账号"}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {mode === "login" ? "登录账号，继续选购好物" : "注册账号，开启品质购物"}
+          </p>
+        </section>
+
         {banners.length > 0 ? (
           <section
-            className="auth-login-banner mb-4 overflow-hidden lg:hidden [transition:none]"
+            className="auth-login-banner mb-3 overflow-hidden lg:hidden [transition:none]"
           >
             <LoginBannerCarousel banners={banners} paused={formCompact} />
           </section>
         ) : null}
 
-        <section className="auth-login-heading mb-5 shrink-0">
-          <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
-            {mode === "login" ? "欢迎回来" : "创建账号"}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "login" ? "登录您的账号，畅享品质购物" : "注册新账号，开启品质购物之旅"}
-          </p>
-        </section>
+        {showHomeTrustBar ? <HomeTrustBar className="auth-login-trust mb-4 lg:hidden" /> : null}
 
         <section className="auth-login-mode-tabs mb-4">
           <div className="flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录或注册">
@@ -725,6 +723,12 @@ export default function Login() {
           </form>
         </FormFieldShake>
 
+        <LoginAgreementFooter
+          mode={mode}
+          termsPath={siteInfo.termsPath}
+          privacyPath={siteInfo.privacyPolicyPath}
+          className="auth-login-agreement-footer--sheet"
+        />
       </main>
 
       <LoginPasswordResetSheet
@@ -741,11 +745,6 @@ export default function Login() {
         onConfirmReset={handleConfirmReset}
       />
 
-      <LoginAgreementFooter
-        mode={mode}
-        termsPath={siteInfo.termsPath}
-        privacyPath={siteInfo.privacyPolicyPath}
-      />
     </div>
   );
 }

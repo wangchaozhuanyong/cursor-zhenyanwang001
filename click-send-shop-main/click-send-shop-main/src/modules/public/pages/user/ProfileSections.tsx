@@ -177,7 +177,6 @@ export function ProfileGuestCard({
         </span>
         <div className="profile-vip-copy">
           <p className="profile-vip-name">欢迎来到 {siteName}</p>
-          <p className="profile-guest-desc">登录后可查看订单、积分、优惠券、收藏、返现与邀请奖励</p>
         </div>
       </div>
       <div className="profile-vip-actions">
@@ -295,8 +294,6 @@ export function ProfileInviteRewardCard({
           <span className="profile-gift-box">
             <Gift size={34} />
           </span>
-          <span className="profile-coin profile-coin--one">RM</span>
-          <span className="profile-coin profile-coin--two">+</span>
         </div>
       </div>
 
@@ -321,7 +318,7 @@ export function ProfileInviteRewardCard({
           <>
             <UnifiedButton type="button" onClick={onToggleInviteCode} className="profile-invite-btn profile-invite-btn--secondary">
               <FileText size={16} />
-              {inviteCodeVisible ? "隐藏邀请码" : "查看邀请码"}
+              {inviteCodeVisible ? "隐藏邀请码" : "邀请码"}
             </UnifiedButton>
             <UnifiedButton type="button" onClick={onRecordClick} className="profile-invite-btn profile-invite-btn--secondary">
               <FileText size={16} />

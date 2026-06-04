@@ -428,7 +428,7 @@ function ClaimCenterButton({ count, onClick }: { count: number; onClick: () => v
       <Ticket size={15} strokeWidth={2.4} aria-hidden />
       <span>领券中心</span>
       {count > 0 ? (
-        <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--theme-price)] px-1 text-[10px] font-extrabold leading-none text-white shadow-sm ring-2 ring-[var(--theme-surface)]">
+        <span className="absolute -right-1 top-0 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--theme-price)] px-1 text-[10px] font-extrabold leading-none text-white shadow-sm ring-2 ring-[var(--theme-surface)]">
           {count}
         </span>
       ) : null}

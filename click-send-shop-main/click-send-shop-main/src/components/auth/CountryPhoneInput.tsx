@@ -1,4 +1,5 @@
 import { Check, ChevronDown, Phone, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useId, useState, type KeyboardEventHandler } from "react";
 import { cn } from "@/lib/utils";
 import type { SupportedCountryCode } from "@/utils/authValidation";
@@ -134,72 +135,82 @@ export default function CountryPhoneInput({
           {errorText}
         </p>
       ) : null}
-      {countryPickerOpen ? (
-        <div
-          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={pickerTitleId}
-          onClick={() => setCountryPickerOpen(false)}
-        >
-          <div
-            className="w-full max-w-md overflow-hidden rounded-t-[28px] border border-white/70 bg-card shadow-[0_-18px_55px_rgba(15,23,42,0.28)]"
-            onClick={(event) => event.stopPropagation()}
+      <AnimatePresence>
+        {countryPickerOpen ? (
+          <motion.div
+            className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 p-0 sm:px-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={pickerTitleId}
+            onClick={() => setCountryPickerOpen(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            <div className="flex justify-center pt-3">
-              <span className="h-1.5 w-12 rounded-full bg-muted-foreground/25" />
-            </div>
-            <div className="flex items-center justify-between px-5 pb-3 pt-4">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">地区代码</p>
-                <h2 id={pickerTitleId} className="mt-1 text-lg font-bold text-foreground">
-                  选择地区
-                </h2>
+            <motion.div
+              className="w-full overflow-hidden rounded-t-[28px] border-x-0 border-b-0 border-t border-white/70 bg-card shadow-[0_-18px_55px_rgba(15,23,42,0.28)] sm:max-w-md sm:rounded-[28px] sm:border"
+              onClick={(event) => event.stopPropagation()}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.9 }}
+            >
+              <div className="flex justify-center pt-3">
+                <span className="h-1.5 w-14 rounded-full bg-muted-foreground/25" />
               </div>
-              <button
-                type="button"
-                aria-label="关闭选择地区"
-                onClick={() => setCountryPickerOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-gold/25"
-              >
-                <X size={18} aria-hidden="true" />
-              </button>
-            </div>
-            <div className="space-y-2 px-4 pb-5">
-              {COUNTRY_PICKER_OPTIONS.map((item) => {
-                const selected = item.value === countryCode;
-                return (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => chooseCountryCode(item.value)}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-[background-color,border-color,box-shadow]",
-                      selected
-                        ? "border-gold bg-gold/10 shadow-[0_10px_24px_rgba(177,127,38,0.14)]"
-                        : "border-border bg-background hover:border-gold/45",
-                    )}
-                  >
-                    <span className="text-base font-semibold text-foreground">{item.name}</span>
-                    <span className="flex items-center gap-3">
-                      <span className="text-base font-semibold text-foreground">{item.value}</span>
-                      <span
-                        className={cn(
-                          "flex h-6 w-6 items-center justify-center rounded-full border",
-                          selected ? "border-gold bg-gold text-white" : "border-border bg-card",
-                        )}
-                        aria-hidden="true"
-                      >
-                        {selected ? <Check size={15} strokeWidth={2.5} /> : null}
+              <div className="flex items-center justify-between px-5 pb-3 pt-4">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">地区代码</p>
+                  <h2 id={pickerTitleId} className="mt-1 text-lg font-bold text-foreground">
+                    选择地区
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  aria-label="关闭选择地区"
+                  onClick={() => setCountryPickerOpen(false)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-gold/25"
+                >
+                  <X size={18} aria-hidden="true" />
+                </button>
+              </div>
+              <div className="space-y-2 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                {COUNTRY_PICKER_OPTIONS.map((item) => {
+                  const selected = item.value === countryCode;
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => chooseCountryCode(item.value)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-[background-color,border-color,box-shadow]",
+                        selected
+                          ? "border-gold bg-gold/10 shadow-[0_10px_24px_rgba(177,127,38,0.14)]"
+                          : "border-border bg-background hover:border-gold/45",
+                      )}
+                    >
+                      <span className="text-base font-semibold text-foreground">{item.name}</span>
+                      <span className="flex items-center gap-3">
+                        <span className="text-base font-semibold text-foreground">{item.value}</span>
+                        <span
+                          className={cn(
+                            "flex h-6 w-6 items-center justify-center rounded-full border",
+                            selected ? "border-gold bg-gold text-white" : "border-border bg-card",
+                          )}
+                          aria-hidden="true"
+                        >
+                          {selected ? <Check size={15} strokeWidth={2.5} /> : null}
+                        </span>
                       </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

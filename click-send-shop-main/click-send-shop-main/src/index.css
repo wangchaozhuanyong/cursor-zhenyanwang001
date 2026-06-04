@@ -61,6 +61,13 @@
 
     --font-display: Georgia, Cambria, 'Times New Roman', 'Noto Serif SC', serif;
     --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+    --store-font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'HarmonyOS Sans SC', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+    --store-title-weight: 680;
+    --store-card-title-weight: 600;
+    --store-body-weight: 400;
+    --store-control-weight: 520;
+    --store-emphasis-weight: 660;
+    --store-price-weight: 720;
 
     --theme-primary: #000000;
     --theme-primary-hover: #111111;
@@ -131,6 +138,11 @@
     --store-border-strong: rgba(75, 64, 43, 0.18);
     --store-text: #17211d;
     --store-muted: rgba(23, 33, 29, 0.62);
+    --store-text-strong: color-mix(in srgb, var(--store-text) 94%, black 6%);
+    --store-text-main: color-mix(in srgb, var(--store-text) 88%, var(--store-page-base) 12%);
+    --store-text-secondary: color-mix(in srgb, var(--store-text) 66%, var(--store-page-base) 34%);
+    --store-text-muted-soft: color-mix(in srgb, var(--store-muted) 78%, var(--store-page-base) 22%);
+    --store-text-faint: color-mix(in srgb, var(--store-muted) 58%, transparent);
     --store-card-radius: 16px;
     --store-panel-radius: 22px;
     --store-card-shadow: 0 24px 58px -42px rgba(31, 39, 35, 0.42), 0 8px 24px -22px rgba(107, 88, 50, 0.22);
@@ -270,34 +282,46 @@
   .store-page-title {
     font-size: 17px;
     line-height: 1.25;
-    font-weight: 650;
+    font-weight: var(--store-title-weight, 680);
+    letter-spacing: 0;
+    color: var(--store-text-strong, var(--theme-text));
   }
 
   .store-section-title {
     font-size: 17px;
     line-height: 1.25;
-    font-weight: 700;
+    font-weight: var(--store-title-weight, 680);
+    letter-spacing: 0;
+    color: var(--store-text-strong, var(--theme-text));
   }
 
   .store-card-title {
     font-size: 14px;
     line-height: 1.35;
-    font-weight: 600;
+    font-weight: var(--store-card-title-weight, 600);
+    letter-spacing: 0;
+    color: var(--store-text-main, var(--theme-text-on-surface));
   }
 
   .store-body-text {
     font-size: 14px;
     line-height: 1.5;
+    font-weight: var(--store-body-weight, 400);
+    color: var(--store-text-secondary, var(--theme-text-muted));
   }
 
   .store-body-small {
     font-size: 13px;
     line-height: 1.45;
+    font-weight: var(--store-body-weight, 400);
+    color: var(--store-text-secondary, var(--theme-text-muted));
   }
 
   .store-caption {
     font-size: 12px;
     line-height: 1.35;
+    font-weight: 400;
+    color: var(--store-text-muted-soft, var(--theme-text-muted));
   }
 
   .store-micro {
@@ -308,31 +332,36 @@
   .store-price-card {
     font-size: 17px;
     line-height: 1;
-    font-weight: 800;
+    font-weight: var(--store-price-weight, 720);
+    letter-spacing: 0;
   }
 
   .store-price-detail {
     font-size: 23px;
     line-height: 1;
-    font-weight: 800;
+    font-weight: var(--store-price-weight, 720);
+    letter-spacing: 0;
   }
 
   .store-stat-value {
     font-size: 30px;
     line-height: 1;
-    font-weight: 800;
+    font-weight: var(--store-price-weight, 720);
+    letter-spacing: 0;
   }
 
   .store-coupon-amount-home {
     font-size: 18px;
     line-height: 1;
-    font-weight: 800;
+    font-weight: var(--store-price-weight, 720);
+    letter-spacing: 0;
   }
 
   .store-coupon-amount-list {
     font-size: 20px;
     line-height: 1;
-    font-weight: 800;
+    font-weight: var(--store-price-weight, 720);
+    letter-spacing: 0;
   }
 
   @media (min-width: 640px) {
@@ -1439,11 +1468,16 @@ html[data-app-scope="store"] {
   --theme-surface: var(--store-surface-raised);
   --theme-card: var(--store-card-bg);
   --theme-border: var(--store-border);
-  --theme-text: var(--store-text);
-  --theme-text-on-surface: var(--store-text);
-  --theme-text-muted: var(--store-muted);
-  --theme-muted: var(--store-muted);
-  --theme-text-muted-on-surface: var(--store-muted);
+  --theme-text: var(--store-text-main);
+  --theme-text-on-surface: var(--store-text-main);
+  --theme-text-muted: var(--store-text-secondary);
+  --theme-muted: var(--store-text-secondary);
+  --theme-text-muted-on-surface: var(--store-text-secondary);
+  --theme-text-subtle: var(--store-text-faint);
+  --theme-font: var(--store-font-sans);
+  --theme-font-family: var(--store-font-sans);
+  --font-display: var(--store-font-sans);
+  --font-body: var(--store-font-sans);
   --theme-card-shell-bg: var(--store-card-bg);
   --theme-card-shell-border: 1px solid var(--store-card-border);
   --theme-card-shell-shadow: var(--store-card-shadow);
@@ -1462,8 +1496,22 @@ html[data-app-scope="store"] body {
     repeating-linear-gradient(0deg, color-mix(in srgb, var(--store-border) 8%, transparent) 0 1px, transparent 1px 58px),
     repeating-linear-gradient(90deg, color-mix(in srgb, white 12%, transparent) 0 1px, transparent 1px 66px);
   background-attachment: fixed;
+  font-family: var(--store-font-sans);
+  font-weight: var(--store-body-weight);
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+}
+
+html[data-app-scope="store"] h1,
+html[data-app-scope="store"] h2,
+html[data-app-scope="store"] h3,
+html[data-app-scope="store"] h4,
+html[data-app-scope="store"] h5,
+html[data-app-scope="store"] h6 {
+  font-family: var(--store-font-sans);
+  font-weight: var(--store-title-weight);
+  letter-spacing: 0;
+  color: var(--store-text-strong);
 }
 
 html[data-app-scope="store"] .store-shell {

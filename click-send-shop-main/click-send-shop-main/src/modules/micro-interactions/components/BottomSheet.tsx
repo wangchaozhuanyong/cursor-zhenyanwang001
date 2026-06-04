@@ -163,9 +163,9 @@ export function BottomSheet({
               zIndex: contentZ,
               color: "var(--theme-text)",
             }}
-            initial={reduced ? { opacity: 0 } : { y: "102%", scale: 0.985 }}
-            animate={open ? (reduced ? { opacity: 1 } : { y: 0, scale: 1 }) : (reduced ? { opacity: 0 } : { y: "102%", scale: 0.985 })}
-            exit={reduced ? { opacity: 0 } : { y: "102%", scale: 0.985 }}
+            initial={reduced ? { opacity: 0 } : { y: "102%" }}
+            animate={open ? (reduced ? { opacity: 1 } : { y: 0 }) : (reduced ? { opacity: 0 } : { y: "102%" })}
+            exit={reduced ? { opacity: 0 } : { y: "102%" }}
             transition={sheetTransition}
           >
             <motion.div

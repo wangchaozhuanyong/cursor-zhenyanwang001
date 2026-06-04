@@ -17,7 +17,8 @@ export const EDITABLE_THEME_COLOR_FIELDS = [
 
 export const STOREFRONT_DESIGN_LOCKS = {
   radius: "14px",
-  fontFamily: "system-ui, -apple-system, 'PingFang SC', sans-serif",
+  fontFamily:
+    "system-ui, -apple-system, BlinkMacSystemFont, 'HarmonyOS Sans SC', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif",
   shadowStyle: "soft",
   buttonStyle: "pill",
   navStyle: "glass",

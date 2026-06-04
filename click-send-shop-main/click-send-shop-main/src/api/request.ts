@@ -266,7 +266,7 @@ function shouldRedirectToLogin(options: RequestOptions, isAuthLogout: boolean, i
 
 async function tryRefreshToken(): Promise<string> {
   const loadingToken = startGlobalLoadingDeferred();
-  let res: Response;
+  let res: Response | undefined;
   try {
     res = await fetchWithTimeout(`${BASE_URL}/auth/refresh`, {
       method: "POST",
@@ -410,7 +410,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     if (shouldRetryAdminReadWhenOnline(endpoint, method, retry)) {
       dispatchAdminOfflineRetry("waiting", endpoint);
       const online = wasBrowserOfflineBeforeFetch || isBrowserOffline()
-        ? await waitForBrowserOnline(options.signal)
+        ? await waitForBrowserOnline(options.signal ?? undefined)
         : true;
       if (online) {
         dispatchAdminOfflineRetry("retrying", endpoint);
@@ -434,6 +434,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     }
   } finally {
     if (loadingToken) stopGlobalLoading(loadingToken);
+  }
+
+  if (!res) {
+    throw new ApiError(0, "请求未返回响应，请稍后重试");
   }
 
   if (res.status === 401 && retry && !options.skipAuthRetry && !isAdminEndpoint && !isAuthLoginOrRegister) {

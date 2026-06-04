@@ -1,6 +1,6 @@
 import { ImageOff } from "lucide-react";
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
-import { ProgressiveImage } from "@/modules/micro-interactions/components/ProgressiveImage";
+import { ProgressiveImage } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 import { resolveProductImageSrc, type UploadImageVariant } from "@/utils/uploadImageVariant";
 

@@ -9,20 +9,20 @@ type AdminSiteLogoProps = {
   className?: string;
 };
 
-function AdminSiteLogoView({
-  size,
-  className,
-  logoSrc,
-  alt,
-  fallbackText,
-}: {
-  size: "sm" | "lg";
-  className?: string;
-  logoSrc?: string;
-  alt: string;
-  fallbackText: string;
-}) {
-  const boxClass = size === "lg" ? "h-16 w-16 rounded-2xl" : "h-9 w-9 rounded-lg";
+export default function AdminSiteLogo({ size = "sm", className }: AdminSiteLogoProps) {
+  const siteInfo = useSiteInfo();
+  const { locale } = useAdminTOptional();
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
+  const siteName = siteInfo.siteName?.trim() || "";
+  const isEnglish = locale === "en";
+  const hasCjkSiteName = /[\u4e00-\u9fff]/.test(siteName);
+  const alt = siteName && !(isEnglish && hasCjkSiteName) ? siteName : isEnglish ? "Site logo" : "站点 Logo";
+  const fallbackText = isEnglish && hasCjkSiteName ? "A" : alt.slice(0, 1);
+
+  const boxClass =
+    size === "lg"
+      ? "h-16 w-16 rounded-2xl"
+      : "h-9 w-9 rounded-lg";
 
   if (!logoSrc) {
     return (
@@ -49,31 +49,6 @@ function AdminSiteLogoView({
         className,
       )}
       decoding="async"
-    />
-  );
-}
-
-export default function AdminSiteLogo({ size = "sm", className }: AdminSiteLogoProps) {
-  const siteInfo = useSiteInfo();
-  const { locale } = useAdminTOptional();
-  const logoSrc = resolveSiteLogoUrl(siteInfo);
-  const siteName = siteInfo.siteName?.trim() || "";
-  const isEnglish = locale === "en";
-  const hasCjkSiteName = /[\u4e00-\u9fff]/.test(siteName);
-  const alt = siteName && !(isEnglish && hasCjkSiteName)
-    ? siteName
-    : isEnglish
-      ? "Site logo"
-      : "\u7ad9\u70b9 Logo";
-  const fallbackText = isEnglish && hasCjkSiteName ? "A" : alt.slice(0, 1);
-
-  return (
-    <AdminSiteLogoView
-      size={size}
-      className={className}
-      logoSrc={logoSrc}
-      alt={alt}
-      fallbackText={fallbackText}
     />
   );
 }

@@ -33,48 +33,6 @@ function createQuery(pool) {
   };
 }
 
-function listMigrationBases() {
-  if (!fs.existsSync(MIGRATIONS_DIR)) {
-    fs.mkdirSync(MIGRATIONS_DIR, { recursive: true });
-    return [];
-  }
-  const entries = fs.readdirSync(MIGRATIONS_DIR);
-  const bases = new Set();
-  for (const f of entries) {
-    const m = f.match(/^(.+)\.up\.(sql|js)$/);
-    if (m) bases.add(m[1]);
-  }
-  return [...bases].sort();
-}
-
-async function runMigrationUpByName(name) {
-  const sqlPath = path.join(MIGRATIONS_DIR, `${name}.up.sql`);
-  const jsPath = path.join(MIGRATIONS_DIR, `${name}.up.js`);
-
-  const conn = await db.getConnection();
-  try {
-    await conn.beginTransaction();
-    if (fs.existsSync(sqlPath)) {
-      const sql = fs.readFileSync(sqlPath, 'utf8').trim();
-      if (sql) await conn.query(sql);
-    } else if (fs.existsSync(jsPath)) {
-      const mod = require(path.resolve(jsPath));
-      if (typeof mod.up !== 'function') throw new Error(`${name}.up.js 必须导出 up()`);
-      await mod.up((s, p) => conn.query(s, p || []));
-    } else {
-      throw new Error(`迁移 ${name} 缺少 ${name}.up.sql 或 ${name}.up.js`);
-    }
-    await conn.query('INSERT INTO schema_migrations (name) VALUES (?)', [name]);
-    await conn.commit();
-    console.log(`✅ migration up: ${name}`);
-  } catch (e) {
-    await conn.rollback();
-    throw e;
-  } finally {
-    conn.release();
-  }
-}
-
 /**
  * 执行 pending 的 up 迁移（按文件名排序）
  */
@@ -95,7 +53,13 @@ async function runPendingMigrations() {
     return;
   }
 
-  const sorted = listMigrationBases();
+  const entries = fs.readdirSync(MIGRATIONS_DIR);
+  const bases = new Set();
+  for (const f of entries) {
+    const m = f.match(/^(.+)\.up\.(sql|js)$/);
+    if (m) bases.add(m[1]);
+  }
+  const sorted = [...bases].sort();
 
   const query = createQuery(db);
 
@@ -128,41 +92,6 @@ async function runPendingMigrations() {
       conn.release();
     }
   }
-  } finally {
-    try {
-      if (locked) await lockConn.query("SELECT RELEASE_LOCK('click_send_shop_schema_migrations')");
-    } catch { /* ignore */ }
-    lockConn.release();
-  }
-}
-
-async function runNamedMigrations(names = []) {
-  const normalizedNames = names.map((name) => String(name || '').trim()).filter(Boolean);
-  if (!normalizedNames.length) throw new Error('请提供要执行的迁移名称');
-
-  await ensureTable();
-  const available = new Set(listMigrationBases());
-  const unknown = normalizedNames.filter((name) => !available.has(name));
-  if (unknown.length) {
-    throw new Error(`迁移不存在: ${unknown.join(', ')}`);
-  }
-
-  const lockConn = await db.getConnection();
-  let locked = false;
-  try {
-    const [[row]] = await lockConn.query("SELECT GET_LOCK('click_send_shop_schema_migrations', 30) AS ok");
-    locked = Number(row?.ok) === 1;
-    if (!locked) throw new Error('获取迁移锁失败（GET_LOCK timeout）');
-
-    const applied = await getAppliedNames();
-    for (const name of normalizedNames) {
-      if (applied.has(name)) {
-        console.log(`↷ migration already applied: ${name}`);
-        continue;
-      }
-      await runMigrationUpByName(name);
-      applied.add(name);
-    }
   } finally {
     try {
       if (locked) await lockConn.query("SELECT RELEASE_LOCK('click_send_shop_schema_migrations')");
@@ -222,7 +151,13 @@ async function migrationStatus() {
     console.log('migrations 目录不存在');
     return;
   }
-  const sorted = listMigrationBases();
+  const entries = fs.readdirSync(MIGRATIONS_DIR);
+  const bases = new Set();
+  for (const f of entries) {
+    const m = f.match(/^(.+)\.up\.(sql|js)$/);
+    if (m) bases.add(m[1]);
+  }
+  const sorted = [...bases].sort();
   for (const name of sorted) {
     console.log(applied.has(name) ? `  [x] ${name}` : `  [ ] ${name}`);
   }
@@ -232,12 +167,17 @@ async function listPendingMigrationNames() {
   await ensureTable();
   if (!fs.existsSync(MIGRATIONS_DIR)) return [];
   const applied = await getAppliedNames();
-  return listMigrationBases().filter((name) => !applied.has(name));
+  const entries = fs.readdirSync(MIGRATIONS_DIR);
+  const bases = new Set();
+  for (const f of entries) {
+    const m = f.match(/^(.+)\.up\.(sql|js)$/);
+    if (m) bases.add(m[1]);
+  }
+  return [...bases].sort().filter((name) => !applied.has(name));
 }
 
 module.exports = {
   runPendingMigrations,
-  runNamedMigrations,
   runLastMigrationDown,
   migrationStatus,
   listPendingMigrationNames,

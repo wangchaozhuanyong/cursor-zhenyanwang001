@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -14,7 +14,6 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { useAdminGoBack } from "@/hooks/useAdminGoBack";
 
 const NOTIFICATION_STATUS_LABELS: Record<string, string> = {
   draft: "草稿",
@@ -64,7 +63,7 @@ export default function AdminNotificationDetail() {
     const zh = AUDIT_ACTION_LABELS[value];
     return zh ? tText(zh) : value;
   };
-  const goBack = useAdminGoBack("/admin/notifications");
+  const navigate = useNavigate();
   const { id = "" } = useParams();
   const [readFilter, setReadFilter] = useState<"" | "read" | "unread">("");
   const [page, setPage] = useState(1);
@@ -115,7 +114,7 @@ export default function AdminNotificationDetail() {
         <UnifiedButton
           type="button"
           className="rounded-lg border px-3 py-1.5 text-xs font-medium"
-          onClick={goBack}
+          onClick={() => navigate("/admin/notifications")}
         >
           <Tx>返回通知列表</Tx>
         </UnifiedButton>
@@ -131,7 +130,7 @@ export default function AdminNotificationDetail() {
     <AdminPageShell
       toolbar={(
         <>
-          <UnifiedButton type="button" className="rounded-lg border px-2 py-1 text-xs" onClick={goBack} aria-label={tText("返回通知列表")}>
+          <UnifiedButton type="button" className="rounded-lg border px-2 py-1 text-xs" onClick={() => navigate("/admin/notifications")} aria-label={tText("返回通知列表")}>
             <ArrowLeft size={14} />
           </UnifiedButton>
           <UnifiedButton

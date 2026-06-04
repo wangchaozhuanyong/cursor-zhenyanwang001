@@ -49,8 +49,6 @@ readlink -f /var/www/damatong/current
 - `DEPLOY_BASE`：默认 `/var/www/damatong`
 - `REPO_DIR`：默认 `$DEPLOY_BASE/app`（如果你把仓库 clone 在别处，就改这个）
 - `KEEP_RELEASES`：默认 `2`
-- `KEEP_ROLLBACKS`：默认 `1`（常用部署入口清理 `/var/www/damatong/rollback-*` 时使用）
-- `STALE_ASSET_DAYS`：默认 `14`（只清理超过该天数且未被当前页面引用的旧 JS/CSS chunk）
 - `RELEASE_REF`：默认 `origin/main`
 - `NODE_ENV`：默认 `production`
 - `PM2_APP_NAME`：可选，指定 PM2 应用名（否则重启 all）
@@ -61,13 +59,3 @@ readlink -f /var/www/damatong/current
 未配置 `CF_API_TOKEN` / `CF_ZONE_ID` 时，脚本**不会**自动清 Cloudflare 边缘缓存。每次前端发版成功后，请按清单执行 **Purge Everything**：
 
 → **[POST-RELEASE-CHECKLIST.md](./POST-RELEASE-CHECKLIST.md)**
-
-### 磁盘清理
-
-常用部署入口会在健康检查通过后调用：
-
-```bash
-DEPLOY_BASE=/var/www/damatong KEEP_RELEASES=2 KEEP_ROLLBACKS=1 bash deploy/cleanup-damatong-static.sh
-```
-
-这个脚本只清理未被 `current` / `dist` / `admin-dist` 使用的旧 `releases/*` 和 `rollback-*` 目录；同时只清理超过 `STALE_ASSET_DAYS` 且未被当前入口、service worker 或当前 JS/CSS 引用的旧 `.js` / `.css` / `.map` chunk。需要先预览时可加 `DRY_RUN=1`。

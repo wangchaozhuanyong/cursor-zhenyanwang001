@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo } from "react";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -18,13 +18,18 @@ import BannerCarousel from "@/components/BannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import { useProductStore } from "@/stores/useProductStore";
+import GuestMobileFooter from "@/components/GuestMobileFooter";
 import HomeOpsBlocks from "./HomeOpsBlocks";
 import NewArrivalSection from "./NewArrivalOpsSection";
+import FlashSaleSection from "./FlashSaleSection";
+import MarketingCouponRailSection from "./MarketingCouponRailSection";
+import MarketingFullReductionSection from "./MarketingFullReductionSection";
+import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
 import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
-import { AnimatedSection } from "@/modules/micro-interactions/components/AnimatedSection";
+import { AnimatedSection } from "@/modules/micro-interactions";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { isHomeModuleEnabled } from "@/constants/homeModules";
 import {
@@ -41,13 +46,6 @@ import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
-const FlashSaleSection = lazy(() => import("./FlashSaleSection"));
-const GuestMobileFooter = lazy(() => import("@/components/GuestMobileFooter"));
-const MarketingCouponRailSection = lazy(() => import("./MarketingCouponRailSection"));
-const MarketingFullReductionSection = lazy(() => import("./MarketingFullReductionSection"));
-const MarketingPromotionBannerSection = lazy(() => import("./MarketingPromotionBannerSection"));
-const DEFERRED_HOME_SECTION_DELAY_MS = 9000;
-
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();
   const out: Product[] = [];
@@ -60,56 +58,6 @@ function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: 
     }
   }
   return out;
-}
-
-function LazyHomeSection({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const userScrolledRef = useRef(false);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (ready) return;
-    const node = ref.current;
-    const reveal = () => setReady(true);
-    const timeoutId = window.setTimeout(reveal, DEFERRED_HOME_SECTION_DELAY_MS);
-
-    if (!node || typeof IntersectionObserver === "undefined") {
-      return () => window.clearTimeout(timeoutId);
-    }
-
-    const revealIfNearViewport = () => {
-      if (!userScrolledRef.current) return;
-      const rect = node.getBoundingClientRect();
-      if (rect.top <= window.innerHeight + 160) reveal();
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!userScrolledRef.current) return;
-        if (entries.some((entry) => entry.isIntersecting)) {
-          reveal();
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "0px 0px 160px 0px", threshold: 0.01 },
-    );
-    observer.observe(node);
-
-    const onScroll = () => {
-      if (window.scrollY <= 80) return;
-      userScrolledRef.current = true;
-      revealIfNearViewport();
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      window.removeEventListener("scroll", onScroll);
-      observer.disconnect();
-    };
-  }, [ready]);
-
-  return <div ref={ref}>{ready ? <Suspense fallback={null}>{children}</Suspense> : null}</div>;
 }
 
 function parseFooterNav(json?: string): FooterNavItem[] | null {
@@ -419,31 +367,23 @@ export default function GuestHome() {
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "promotion_banner", "guest") ? (
-          <LazyHomeSection>
-            <MarketingPromotionBannerSection delay={0.105} />
-          </LazyHomeSection>
+          <MarketingPromotionBannerSection delay={0.105} />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "flash_sale_section", "guest") ? (
-          <LazyHomeSection>
-            <FlashSaleSection delay={0.11} />
-          </LazyHomeSection>
+          <FlashSaleSection delay={0.11} />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "full_reduction_notice", "guest") ? (
-          <LazyHomeSection>
-            <MarketingFullReductionSection delay={0.111} />
-          </LazyHomeSection>
+          <MarketingFullReductionSection delay={0.111} />
         ) : null}
 
         {showCouponCenter || showNewUserGift ? (
-          <LazyHomeSection>
-            <MarketingCouponRailSection
-              delay={0.112}
-              showCouponCenter={showCouponCenter}
-              showNewUserGift={showNewUserGift}
-            />
-          </LazyHomeSection>
+          <MarketingCouponRailSection
+            delay={0.112}
+            showCouponCenter={showCouponCenter}
+            showNewUserGift={showNewUserGift}
+          />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "guest_recommend", "guest") ? (
@@ -501,27 +441,25 @@ export default function GuestHome() {
         ) : null}
 
         <div className={HOME_GUEST_FOOTER_WRAP_CLASS}>
-          <LazyHomeSection>
-            <GuestMobileFooter
-              siteName={siteName}
-              logoSrc={logoSrc}
-              slogan={slogan}
-              description={description}
-              supportNav={supportNav}
-              policyNav={policyNav}
-              contactPhone={siteInfo.contactPhone}
-              contactEmail={siteInfo.contactEmail}
-              address={siteInfo.address}
-              instagramUrl={siteInfo.instagramUrl}
-              facebookUrl={siteInfo.facebookUrl}
-              tiktokUrl={siteInfo.tiktokUrl}
-              xhsUrl={siteInfo.xhsUrl}
-              footerCompanyName={siteInfo.footerCompanyName}
-              footerCopyright={siteInfo.footerCopyright}
-              footerIcpNo={siteInfo.footerIcpNo}
-              onNavigate={handleFooterNavigate}
-            />
-          </LazyHomeSection>
+          <GuestMobileFooter
+            siteName={siteName}
+            logoSrc={logoSrc}
+            slogan={slogan}
+            description={description}
+            supportNav={supportNav}
+            policyNav={policyNav}
+            contactPhone={siteInfo.contactPhone}
+            contactEmail={siteInfo.contactEmail}
+            address={siteInfo.address}
+            instagramUrl={siteInfo.instagramUrl}
+            facebookUrl={siteInfo.facebookUrl}
+            tiktokUrl={siteInfo.tiktokUrl}
+            xhsUrl={siteInfo.xhsUrl}
+            footerCompanyName={siteInfo.footerCompanyName}
+            footerCopyright={siteInfo.footerCopyright}
+            footerIcpNo={siteInfo.footerIcpNo}
+            onNavigate={handleFooterNavigate}
+          />
         </div>
       </main>
     </div>

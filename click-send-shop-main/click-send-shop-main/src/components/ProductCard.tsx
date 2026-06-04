@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
-import { AnimatedSection } from "@/modules/micro-interactions/components/AnimatedSection";
+import { AnimatedSection } from "@/modules/micro-interactions";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -13,7 +13,7 @@ import { isRestrictedProduct } from "@/utils/restrictedProduct";
 import ProductTagList from "@/components/ProductTagList";
 import StoreBadge from "@/components/ui/StoreBadge";
 import { getProductSalesCount, hasProductSales, productSalesLabel } from "@/utils/productSales";
-import { trackEventLazy } from "@/services/trackEventLazy";
+import { trackEvent } from "@/services/analyticsService";
 import { cn } from "@/lib/utils";
 import { isProductNewArrival } from "@/utils/productNewArrival";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
@@ -117,7 +117,7 @@ function ProductCardInner({
       const visible = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.4);
       if (!visible || impressionSentRef.current) return;
       impressionSentRef.current = true;
-      trackEventLazy({ event_type: "product_impression", module: "product_card", product_id: product.id }, { deferMs: 9000 });
+      void trackEvent({ event_type: "product_impression", module: "product_card", product_id: product.id });
       observer.disconnect();
     }, { threshold: [0.4] });
     observer.observe(node);
@@ -125,7 +125,7 @@ function ProductCardInner({
   }, [product.id]);
 
   const openDetail = (module: string) => {
-    trackEventLazy({ event_type: "product_click", module, product_id: product.id });
+    void trackEvent({ event_type: "product_click", module, product_id: product.id });
     navigate(`/product/${product.id}`, {
       state: { from: `${location.pathname}${location.search}` },
     });

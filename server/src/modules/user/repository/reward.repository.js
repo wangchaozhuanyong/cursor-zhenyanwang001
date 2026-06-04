@@ -9,11 +9,10 @@ async function getConnection() {
 }
 const { REWARD_STATUS } = require('../../../constants/status');
 
-function buildRecordWhere(filters = {}, alias = '', options = {}) {
+function buildRecordWhere(filters = {}, alias = '') {
   const col = (name) => (alias ? `${alias}.${name}` : name);
   const clauses = ['WHERE 1=1'];
   const params = [];
-  const includeUserKeyword = options.includeUserKeyword === true;
   if (filters.userId) {
     clauses.push(`${col('user_id')} = ?`);
     params.push(filters.userId);
@@ -23,17 +22,8 @@ function buildRecordWhere(filters = {}, alias = '', options = {}) {
     params.push(filters.status);
   }
   if (filters.keyword) {
-    const keywordClauses = [`${col('order_no')} LIKE ?`, `${col('user_id')} LIKE ?`];
+    clauses.push(`(${col('order_no')} LIKE ? OR ${col('user_id')} LIKE ?)`);
     params.push(`%${filters.keyword}%`, `%${filters.keyword}%`);
-    if (includeUserKeyword) {
-      keywordClauses.push(`EXISTS (
-        SELECT 1 FROM users u_kw
-        WHERE u_kw.id = ${col('user_id')}
-          AND (u_kw.phone LIKE ? OR u_kw.nickname LIKE ?)
-      )`);
-      params.push(`%${filters.keyword}%`, `%${filters.keyword}%`);
-    }
-    clauses.push(`(${keywordClauses.join(' OR ')})`);
   }
   return { where: clauses.join(' AND '), params };
 }
@@ -45,13 +35,13 @@ async function countRecords(userId, status) {
 }
 
 async function countAdminRecords(filters) {
-  const { where, params } = buildRecordWhere(filters, 'rr', { includeUserKeyword: true });
-  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM reward_records rr ${where}`, params);
+  const { where, params } = buildRecordWhere(filters);
+  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM reward_records ${where}`, params);
   return total;
 }
 
 async function selectAdminRecordsPage(filters, pageSize, offset) {
-  const { where, params } = buildRecordWhere(filters, 'rr', { includeUserKeyword: true });
+  const { where, params } = buildRecordWhere(filters, 'rr');
   const [rows] = await db.query(
     `SELECT rr.*, u.phone AS user_phone, u.nickname AS user_nickname
      FROM reward_records rr
@@ -96,9 +86,9 @@ function buildTransactionCategoryFilter(category) {
     case 'income':
       return { clause: "type IN ('settle')", params: [] };
     case 'spend':
-      return { clause: "type IN ('wallet_redeem_order', 'consume_order')", params: [] };
+      return { clause: "type IN ('wallet_redeem_order')", params: [] };
     case 'reverse':
-      return { clause: "type IN ('reverse', 'wallet_redeem_refund', 'refund_order')", params: [] };
+      return { clause: "type IN ('reverse', 'wallet_redeem_refund')", params: [] };
     default:
       return { clause: '1=1', params: [] };
   }
@@ -275,7 +265,7 @@ async function selectBalanceSummary(userId) {
        COALESCE(SUM(CASE WHEN type = 'withdraw_request' AND status = 'pending' THEN ABS(amount) ELSE 0 END), 0) AS pendingWithdraw,
        COALESCE(SUM(CASE WHEN type = 'settle' AND status = 'success' THEN amount ELSE 0 END), 0) AS settledAmount,
        COALESCE(SUM(CASE WHEN type IN ('reverse') AND status = 'success' THEN ABS(amount) ELSE 0 END), 0) AS reversedAmount,
-       COALESCE(SUM(CASE WHEN type IN ('wallet_redeem_order', 'consume_order') AND status = 'success' THEN ABS(amount) ELSE 0 END), 0) AS totalSpent,
+       COALESCE(SUM(CASE WHEN type IN ('wallet_redeem_order') AND status = 'success' THEN ABS(amount) ELSE 0 END), 0) AS totalSpent,
        COALESCE(SUM(CASE WHEN type = 'settle' AND status = 'pending' THEN amount ELSE 0 END), 0) AS pendingAmount
      FROM reward_transactions WHERE user_id = ?`,
     [userId],
@@ -343,3 +333,5 @@ module.exports = {
   selectRewardUsageSettings,
   buildTransactionCategoryFilter,
 };
+
+

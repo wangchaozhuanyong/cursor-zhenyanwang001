@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   createRepairTask,
   getMonitoringAnomalyDetail,
@@ -27,13 +27,11 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { useAdminGoBack } from "@/hooks/useAdminGoBack";
 
 export default function AdminMonitoringAnomalyDetail() {
   const { tText } = useAdminT();
   const ml = useMonitoringLabel();
   const { id = "" } = useParams();
-  const goBack = useAdminGoBack("/admin/monitoring/anomalies");
   const [data, setData] = useState<MonitoringAnomalyDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +82,7 @@ export default function AdminMonitoringAnomalyDetail() {
       filters={(
         <>
           <MonitoringSubnav />
-          <UnifiedButton type="button" className={`text-sm ${monitoringActionLinkClass}`} onClick={goBack}><Tx>← 返回异常列表</Tx></UnifiedButton>
+          <Link className={`text-sm ${monitoringActionLinkClass}`} to="/admin/monitoring/anomalies"><Tx>← 返回异常列表</Tx></Link>
         </>
       )}
     >

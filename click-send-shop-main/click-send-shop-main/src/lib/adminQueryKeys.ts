@@ -1,7 +1,6 @@
 import type { ActivityListParams } from "@/api/admin/activity";
 import type { CouponCampaignListParams } from "@/api/admin/couponCampaign";
 import type { DataCleanupRunListParams } from "@/api/admin/dataRetention";
-import type { AdminFeedbackListParams } from "@/api/admin/feedback";
 import type { OrderListParams } from "@/types/order";
 import type { ProductListParams } from "@/types/product";
 
@@ -91,7 +90,7 @@ export const adminQueryKeys = {
   usersRoot: () => ["admin", "users"] as const,
   userDetail: (id: string) => ["admin", "users", "detail", id] as const,
   feedbackRoot: () => ["admin", "feedback"] as const,
-  feedback: (filters?: AdminFeedbackListParams) => ["admin", "feedback", filters ?? {}] as const,
+  feedback: (filters?: Record<string, string | number | undefined>) => ["admin", "feedback", filters ?? {}] as const,
   memberLevelsRoot: () => ["admin", "member-levels"] as const,
   memberLevels: () => ["admin", "member-levels", "list"] as const,
   pointsRoot: () => ["admin", "points"] as const,

@@ -147,27 +147,6 @@ function parseJson(value, fallback = {}) {
   }
 }
 
-function formatRefundEventForUser(row) {
-  const payload = parseJson(row.payload_json, {});
-  return {
-    id: row.id,
-    payment_order_id: row.payment_order_id || null,
-    order_id: row.order_id || null,
-    provider: row.provider || '',
-    provider_event_id: row.provider_event_id || '',
-    event_type: row.event_type || '',
-    verify_status: row.verify_status || '',
-    processing_result: row.processing_result || '',
-    amount: toMoney(payload.amount),
-    currency: payload.currency || 'MYR',
-    mode: payload.mode || '',
-    reason: payload.reason || '',
-    refund_reference: payload.refund_reference || row.provider_event_id || '',
-    error_message: row.error_message || '',
-    created_at: row.created_at,
-  };
-}
-
 function stableStringify(value) {
   if (value === null || value === undefined) return 'null';
   if (typeof value !== 'object') return JSON.stringify(value);
@@ -278,7 +257,7 @@ async function payWithRewardWallet(userId, orderId) {
       userId,
       orderId: lockedOrder.id,
       orderNo: lockedOrder.order_no,
-      type: 'wallet_redeem_order',
+      type: 'consume_order',
       amount: -payableAmount,
       status: 'success',
       reason: `返现钱包支付订单 ${lockedOrder.order_no}`,
@@ -848,12 +827,6 @@ async function listPaymentEventsAdmin(query) {
     provider: query.provider || '',
     orderId: query.orderId || '',
   });
-}
-
-async function listRefundEventsForReturn(orderId, returnId) {
-  if (!orderId || !returnId) return [];
-  const rows = await payRepo.selectRefundEventsForReturn(payDb, orderId, returnId);
-  return rows.map(formatRefundEventForUser);
 }
 
 async function markOrderPaidByAdmin(req, orderId, body) {
@@ -1560,7 +1533,6 @@ module.exports = {
   recordStripeCapture,
   listPaymentOrdersAdmin,
   listPaymentEventsAdmin,
-  listRefundEventsForReturn,
   markOrderPaidByAdmin,
   recordRefundByAdmin,
   replayEvent,

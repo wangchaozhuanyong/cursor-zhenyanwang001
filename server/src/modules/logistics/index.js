@@ -6,8 +6,5 @@ module.exports = {
     refreshOrderTracking: logisticsService.refreshOrderTracking,
     refreshOrderTrackingQuietly: logisticsService.refreshOrderTrackingQuietly,
     listTracks: logisticsService.listTracks,
-    listReturnTracks: logisticsService.listReturnTracks,
-    refreshReturnShipmentTracking: logisticsService.refreshReturnShipmentTracking,
-    refreshReturnShipmentTrackingQuietly: logisticsService.refreshReturnShipmentTrackingQuietly,
   },
 };

@@ -33,6 +33,9 @@ describe("restoreSessionFromCookie", () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       calls.push(url);
+      if (url.endsWith("/auth/session")) {
+        return jsonResponse({ code: 0, data: { authenticated: true } });
+      }
       if (url.endsWith("/auth/refresh")) {
         return jsonResponse({ code: 400, message: "登录状态无效，请重新登录" }, 400);
       }
@@ -58,6 +61,9 @@ describe("restoreSessionFromCookie", () => {
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
       calls.push(url);
+      if (url.endsWith("/auth/session")) {
+        return Promise.resolve(jsonResponse({ code: 0, data: { authenticated: true } }));
+      }
       if (url.endsWith("/auth/refresh")) {
         return refreshGate;
       }
@@ -69,7 +75,10 @@ describe("restoreSessionFromCookie", () => {
 
     const first = restoreSessionFromCookie();
     const second = restoreSessionFromCookie();
-    expect(calls.filter((url) => url.endsWith("/auth/refresh"))).toHaveLength(1);
+    await vi.waitFor(() => {
+      expect(calls.filter((url) => url.endsWith("/auth/session"))).toHaveLength(1);
+      expect(calls.filter((url) => url.endsWith("/auth/refresh"))).toHaveLength(1);
+    });
 
     resolveRefresh(jsonResponse({ code: 0, data: { accessToken: "next-token" } }));
     await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
@@ -80,6 +89,9 @@ describe("restoreSessionFromCookie", () => {
     localStorage.setItem("user_authenticated", "1");
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
+      if (url.endsWith("/auth/session")) {
+        return jsonResponse({ code: 0, data: { authenticated: true } });
+      }
       if (url.endsWith("/auth/refresh")) {
         return jsonResponse({ code: 400, message: "登录状态无效，请重新登录" }, 400);
       }
@@ -91,5 +103,24 @@ describe("restoreSessionFromCookie", () => {
 
     await expect(restoreSessionFromCookie()).resolves.toBe(false);
     expect(localStorage.getItem("user_authenticated")).toBeNull();
+  });
+
+  test("clears stale login hint without refresh/profile when server has no session", async () => {
+    localStorage.setItem("user_authenticated", "1");
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.endsWith("/auth/session")) {
+        return jsonResponse({ code: 0, data: { authenticated: false } });
+      }
+      return jsonResponse({}, 404);
+    }));
+
+    await expect(restoreSessionFromCookie()).resolves.toBe(false);
+    expect(localStorage.getItem("user_authenticated")).toBeNull();
+    expect(calls.filter((url) => url.endsWith("/auth/session"))).toHaveLength(1);
+    expect(calls.some((url) => url.endsWith("/auth/refresh"))).toBe(false);
+    expect(calls.some((url) => url.endsWith("/user/profile"))).toBe(false);
   });
 });

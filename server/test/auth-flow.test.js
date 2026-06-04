@@ -67,6 +67,28 @@ describe('auth API', () => {
     assert.ok(res.body.data?.accessToken);
   });
 
+  test('GET /api/auth/session returns false without cookies', async () => {
+    const res = await request(app)
+      .get('/api/auth/session')
+      .expect(200);
+    assert.equal(res.body.code, 0);
+    assert.equal(res.body.data?.authenticated, false);
+  });
+
+  test('GET /api/auth/session returns true with cookie session', async () => {
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ phone, countryCode, password: TEST_PASSWORD })
+      .expect(200);
+
+    const res = await request(app)
+      .get('/api/auth/session')
+      .set('Cookie', login.headers['set-cookie'])
+      .expect(200);
+    assert.equal(res.body.code, 0);
+    assert.equal(res.body.data?.authenticated, true);
+  });
+
   test('POST /api/auth/password-reset/request and confirm', async () => {
     const requestReset = await request(app)
       .post('/api/auth/password-reset/request')

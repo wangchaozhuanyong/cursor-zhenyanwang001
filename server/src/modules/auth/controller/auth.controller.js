@@ -9,6 +9,7 @@ const {
   setAuthCookies,
   clearAuthCookies,
   getRefreshTokenFromRequest,
+  getAccessTokenFromRequest,
 } = require('../../../utils/authCookies');
 
 exports.register = asyncRoute(async (req, res) => {
@@ -28,6 +29,14 @@ exports.features = asyncRoute(async (req, res) => {
     smsOtpLoginEnabled: otpService.isOtpLoginAvailable(),
     wechatLoginEnabled: wechatService.isWechatLoginEnabled(),
   });
+});
+
+exports.session = asyncRoute(async (req, res) => {
+  const result = await authService.sessionStatus({
+    accessToken: getAccessTokenFromRequest(req),
+    refreshToken: getRefreshTokenFromRequest(req),
+  });
+  res.success(result.data);
 });
 
 exports.getProfile = asyncRoute(async (req, res) => {

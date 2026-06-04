@@ -499,6 +499,51 @@ async function refresh(refreshToken) {
   return { data: { accessToken: newToken.accessToken } };
 }
 
+function isUsableSessionUser(user) {
+  if (!user) return false;
+  if (user.role === 'disabled') return false;
+  return user.account_status !== 'disabled' && user.account_status !== 'blacklisted';
+}
+
+async function hasValidAccessSession(accessToken) {
+  if (!accessToken) return false;
+  try {
+    const payload = verifyToken(accessToken);
+    if (typeof payload === 'string' || payload.type === 'refresh' || !payload.userId) return false;
+    const user = await repo.selectIdAndRoleByUserId(payload.userId);
+    return isUsableSessionUser(user);
+  } catch {
+    return false;
+  }
+}
+
+async function hasValidRefreshSession(refreshToken) {
+  if (!refreshToken) return false;
+  try {
+    const payload = verifyToken(refreshToken);
+    if (typeof payload === 'string' || payload.type !== 'refresh' || !payload.userId) return false;
+    const user = await repo.selectRefreshVersion(payload.userId);
+    if (!isUsableSessionUser(user)) return false;
+
+    const ver = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
+    if (payload.rv === undefined) return ver === 0;
+    return Number(payload.rv) === ver;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @param {{ accessToken?: string | null, refreshToken?: string | null }} [tokens]
+ */
+async function sessionStatus(tokens = {}) {
+  const { accessToken, refreshToken } = tokens;
+  const authenticated =
+    await hasValidAccessSession(accessToken)
+    || await hasValidRefreshSession(refreshToken);
+  return { data: { authenticated } };
+}
+
 async function logout(userId) {
   if (userId) {
     await repo.incrementRefreshTokenVersion(userId);
@@ -553,6 +598,7 @@ module.exports = {
   requestPasswordReset,
   resetPassword,
   refresh,
+  sessionStatus,
   logout,
   findUserByPhone,
   findUserByPhones,

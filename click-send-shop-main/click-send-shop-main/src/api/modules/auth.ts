@@ -56,6 +56,13 @@ export function getAuthFeatures() {
   return get<AuthFeatures>("/auth/features");
 }
 
+export function getSessionStatus() {
+  return get<{ authenticated: boolean }>("/auth/session", undefined, {
+    skipAuthRetry: true,
+    suppressAuthExpired: true,
+  });
+}
+
 export function exchangeOAuthTicket(params: OAuthExchangeParams) {
   return post<LoginResult>("/auth/oauth/exchange", params);
 }
@@ -67,4 +74,3 @@ export function sendWechatBindOtp(params: { phone: string; countryCode: string }
 export function bindWechatPhone(params: WechatBindPhoneParams) {
   return post<LoginResult>("/auth/wechat/bind-phone", params);
 }
-

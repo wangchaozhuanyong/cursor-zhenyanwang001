@@ -180,12 +180,26 @@ async function refreshSessionToken(baseUrl: string): Promise<Response> {
   }
 }
 
+async function hasServerSession(): Promise<boolean> {
+  try {
+    const res = await authApi.getSessionStatus();
+    return Boolean(res.data?.authenticated);
+  } catch {
+    return true;
+  }
+}
+
 /**
  * 启动时用 Cookie 刷新会话；无效时清除本地登录标记，且不在无效会话下请求 /user/profile。
  */
 async function restoreSessionFromCookieOnce(): Promise<boolean> {
   const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
   try {
+    if (!(await hasServerSession())) {
+      clearTokens();
+      return false;
+    }
+
     const refreshRes = await refreshSessionToken(baseUrl);
     if (!refreshRes.ok) {
       if (refreshRes.status === 429 || refreshRes.status >= 500) {

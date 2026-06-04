@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, SlidersHorizontal } from "lucide-react";
 import type { ProductSortType } from "@/types/product";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -38,10 +38,11 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
   return (
     <div
       className={cn(
-        "store-category-sortbar no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border px-1 py-1 sm:gap-2 sm:px-1.5",
+        "store-category-sortbar no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto rounded-full border px-1.5 py-1.5 sm:gap-1.5 sm:px-2",
         className,
       )}
     >
+      <SlidersHorizontal size={16} className="store-category-sortbar-icon shrink-0" aria-hidden />
       {sortItems.map((item) => (
         <UnifiedButton
           key={item.value}

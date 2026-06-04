@@ -253,8 +253,30 @@ async function getAdminRecords(query) {
   return { list, total, page, pageSize, stats };
 }
 
-async function withdraw() {
-  return { error: { code: 400, message: '返现只能用于购物抵扣，不支持提现' } };
+async function withdraw(userId, body) {
+  const amount = parseFloat(body.amount);
+  if (!amount || amount <= 0 || !Number.isFinite(amount)) {
+    return { error: { code: 400, message: '鎻愮幇閲戦蹇呴』澶т簬0' } };
+  }
+
+  const conn = await repo.getConnection();
+  try {
+    await conn.beginTransaction();
+    const available = await repo.sumAvailableForWithdraw(conn, userId);
+    if (available < amount) {
+      await conn.rollback();
+      return { error: { code: 400, message: '余额不足' } };
+    }
+    const id = generateId();
+    await repo.insertWithdrawRecord(conn, id, userId, amount);
+    await conn.commit();
+    return { message: '提现申请已提交' };
+  } catch (err) {
+    try { await conn.rollback(); } catch { /* ignore */ }
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 async function getBalance(userId) {
@@ -320,4 +342,6 @@ module.exports = {
   sumRewardTransactionsBalance,
   insertRewardTransaction,
 };
+
+
 

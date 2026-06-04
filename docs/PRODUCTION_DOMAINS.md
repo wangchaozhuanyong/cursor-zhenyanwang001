@@ -50,7 +50,6 @@ STORAGE_KEY_PREFIX=damatong/prod
 
 - `deploy/production-deploy.sh`、`scripts/upload-frontend-dist-ec2.ps1`：同步到 `/var/www/damatong/dist` 与 `admin-dist`
 - `deploy/deploy-wwwroot.sh`：默认 **不** 改写 Nginx（`INSTALL_NGINX=0`）；需要时设 `INSTALL_NGINX=1`
-- 上述常用部署入口成功后默认运行 `deploy/cleanup-damatong-static.sh`，保留最近 `KEEP_RELEASES=2` 个 release 和 `KEEP_ROLLBACKS=1` 个 `rollback-*` 目录，并清理超过 `STALE_ASSET_DAYS=14` 天且未被当前页面引用的旧 JS/CSS chunk，避免静态发布备份长期占满系统盘。
 
 ## Cloudflare
 

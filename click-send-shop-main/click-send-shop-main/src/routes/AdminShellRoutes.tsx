@@ -1,22 +1,11 @@
-import { useEffect, useLayoutEffect, type ReactNode } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import type { ReactNode } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AdminMfaStepUpHost from "@/components/admin/AdminMfaStepUpHost";
 import AdminSessionSync from "@/components/admin/AdminSessionSync";
-import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
 import AdminLayout from "@/layouts/AdminLayout";
 import AdminRouteFallback from "@/modules/admin/pages/error/AdminRouteFallback";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
-import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
-import { useAdminTOptional } from "@/hooks/useAdminT";
-import { getAdminRouteDocumentTitleKey } from "@/config/adminRouteRegistry";
-import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
-import {
-  DEFAULT_APPLE_TOUCH_ICON,
-  DEFAULT_FAVICON_ICO,
-  DEFAULT_FAVICON_PNG,
-  DEFAULT_FAVICON_SVG,
-} from "@/constants/siteBrand";
 import { LegacyCouponRedirect, LegacyDashboardRedirect } from "@/routes/adminLegacyRedirects";
 import { renderAdminReportRoutes } from "@/routes/adminReportRoutes";
 import {
@@ -38,61 +27,11 @@ function CapabilityRoute({ enabled, children }: { enabled: boolean; children: Re
   return <>{children}</>;
 }
 
-function AdminShellIdentitySync() {
-  const siteInfo = useSiteInfo();
-  const siteInfoLoaded = useSiteInfoLoaded();
-
-  useLayoutEffect(() => {
-    if (!siteInfoLoaded) return;
-    const iconTargets = buildSiteFaviconLinkTargets(siteInfo, {
-      svg: DEFAULT_FAVICON_SVG,
-      png: DEFAULT_FAVICON_PNG,
-      ico: DEFAULT_FAVICON_ICO,
-      appleTouchIcon: DEFAULT_APPLE_TOUCH_ICON,
-    });
-    rememberSiteFaviconUrl(siteInfo);
-
-    document
-      .querySelectorAll<HTMLLinkElement>("link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']")
-      .forEach((el) => el.remove());
-
-    iconTargets.forEach(({ rel, href, type, sizes }) => {
-      const link = document.createElement("link");
-      link.rel = rel;
-      link.href = href;
-      if (type) link.type = type;
-      if (sizes) link.sizes = sizes;
-      document.head.appendChild(link);
-    });
-  }, [siteInfo, siteInfoLoaded]);
-
-  return null;
-}
-
-function AdminShellTitleSync() {
-  const location = useLocation();
-  const siteInfo = useSiteInfo();
-  const { t, locale } = useAdminTOptional();
-
-  useEffect(() => {
-    const rawSiteName = (siteInfo.siteName || "\u5927\u9a6c\u901a").trim();
-    const siteName = locale === "en" && /[\u4e00-\u9fff]/.test(rawSiteName) ? "Official Shop" : rawSiteName;
-    const rawTitleKey = getAdminRouteDocumentTitleKey(location.pathname);
-    const translatedTitle = t(rawTitleKey);
-    const pageTitle = translatedTitle === rawTitleKey ? "Admin" : translatedTitle;
-    document.title = `${pageTitle} | ${siteName}`;
-  }, [location.pathname, locale, siteInfo.siteName, t]);
-
-  return null;
-}
-
-function AdminShellRouteContent() {
+export default function AdminShellRoutes() {
   const capabilities = useSiteCapabilities();
 
   return (
     <>
-      <AdminShellIdentitySync />
-      <AdminShellTitleSync />
       <AdminSessionSync />
       <AdminMfaStepUpHost />
       <TooltipProvider>
@@ -175,13 +114,5 @@ function AdminShellRouteContent() {
         </Routes>
       </TooltipProvider>
     </>
-  );
-}
-
-export default function AdminShellRoutes() {
-  return (
-    <AdminI18nProvider>
-      <AdminShellRouteContent />
-    </AdminI18nProvider>
   );
 }

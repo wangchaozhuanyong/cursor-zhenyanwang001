@@ -3,7 +3,7 @@ import type { RewardStatus } from "@/types/reward";
 
 const STATUS_LABELS: Record<string, string> = {
   approved: "已入账",
-  paid: "已结算",
+  paid: "已提现",
   reversed: "已冲正",
   pending: "待处理",
   rejected: "已拒绝",

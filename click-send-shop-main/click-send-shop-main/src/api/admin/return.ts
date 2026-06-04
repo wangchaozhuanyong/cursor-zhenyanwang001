@@ -1,5 +1,5 @@
 import { get, put } from "@/api/request";
-import type { ApproveReturnParams, ReturnListParams, ReturnRequest, ReturnStatus } from "@/types/return";
+import type { ApproveReturnParams, ReturnListParams, ReturnRequest } from "@/types/return";
 import type { PaginatedData } from "@/types/common";
 
 export function getReturnRequests(params?: ReturnListParams) {
@@ -16,11 +16,4 @@ export function approveReturn(id: string, payload: ApproveReturnParams) {
 
 export function rejectReturn(id: string, adminRemark: string) {
   return put<ReturnRequest>(`/admin/returns/${id}/reject`, { admin_remark: adminRemark });
-}
-
-export function updateReturnStatus(
-  id: string,
-  payload: { status: ReturnStatus | string; admin_remark?: string; refund_amount?: number },
-) {
-  return put<ReturnRequest>(`/admin/returns/${id}`, payload);
 }

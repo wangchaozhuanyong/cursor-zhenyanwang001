@@ -10,9 +10,6 @@ param(
   [string]$ServerUser = "ubuntu",
   [string]$RemoteProjectRoot = "/var/www/click-send-shop",
   [string]$IdentityFile = "E:\yamaxunmishi\aws-key.pem",
-  [int]$KeepReleases = 2,
-  [int]$KeepRollbacks = 1,
-  [int]$StaleAssetDays = 14,
   [switch]$SkipBuild
 )
 
@@ -140,9 +137,6 @@ preserve_assets_sync '$RemoteDist' '$RemotePublicDist'
 preserve_assets_sync '$RemoteAdminDist' '$RemotePublicAdminDist'
 test -f '$RemotePublicDist/index.html'
 test -f '$RemotePublicAdminDist/admin-index.html'
-if [ -f '$RemoteProjectRoot/deploy/cleanup-damatong-static.sh' ]; then
-  DEPLOY_BASE='$RemoteStaticRoot' KEEP_RELEASES='$KeepReleases' KEEP_ROLLBACKS='$KeepRollbacks' STALE_ASSET_DAYS='$StaleAssetDays' bash '$RemoteProjectRoot/deploy/cleanup-damatong-static.sh'
-fi
 "@
 Invoke-Native ssh ($sshOpts + @("${ServerUser}@${ServerHost}", $syncCmd))
 

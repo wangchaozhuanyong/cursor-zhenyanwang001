@@ -1,10 +1,17 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
+  Bell,
   CircleHelp,
+  Clock3,
   Coins,
+  Headphones,
+  Info,
+  MapPin,
   MessageSquare,
   Package,
+  Settings,
   ShieldCheck,
+  Smartphone,
   Star,
   Ticket,
   Truck,
@@ -33,16 +40,13 @@ import { countActiveReturns } from "@/utils/returnBuyerStatus";
 import * as rewardService from "@/services/rewardService";
 import * as loyaltyService from "@/services/loyaltyService";
 import * as meService from "@/services/meService";
-import * as memberBenefitsService from "@/services/memberBenefitsService";
 import * as uploadService from "@/services/uploadService";
-import type { MemberBenefitsOverview } from "@/services/memberBenefitsService";
 import type { OrderSummary } from "@/types/order";
 import { hasPendingReview } from "@/utils/orderBuyerStatus";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
 import { detectBrowserEnv } from "@/utils/browserEnv";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { STORE_COPY } from "@/constants/storeCopy";
-import { computeUpgradeProgress } from "@/utils/memberBenefitPresentation";
 import {
   PROFILE_CARD_CLASS,
   PROFILE_MENU_TAP,
@@ -50,10 +54,8 @@ import {
   ProfileGuestCard,
   ProfileHeroCard,
   ProfileInviteRewardCard,
-  ProfileInstallShortcut,
   ProfileLogoutButton,
   ProfileOrderPanel,
-  ProfileSecondaryLinkPanel,
   ProfileServiceGrid,
   ProfileTrustStrip,
   type ProfileAssetItem,
@@ -61,16 +63,10 @@ import {
   type ProfileServiceItem,
   type ProfileTrustItem,
 } from "./ProfileSections";
-import { buildInstallShortcutItem, buildProfileSecondaryItems, buildShoppingServiceItems } from "./profileQuickLinks";
 
 const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
   ? lazy(() => import("./ProfileWechatBindSection"))
   : null;
-
-function formatGrowthValue(value: number) {
-  const safeValue = Math.max(0, Math.round(Number(value) || 0));
-  return safeValue.toLocaleString("zh-CN");
-}
 
 function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
   if (requireAuth && !isLoggedIn()) {
@@ -100,7 +96,6 @@ export default function Profile() {
   const [rewardBalance, setRewardBalance] = useState(0);
   const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
   const [loyaltyConfig, setLoyaltyConfig] = useState<loyaltyService.LoyaltyConfig | null>(null);
-  const [memberBenefits, setMemberBenefits] = useState<MemberBenefitsOverview | null>(null);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [inviteCodeVisible, setInviteCodeVisible] = useState(false);
   const [activeReturnCount, setActiveReturnCount] = useState(0);
@@ -132,26 +127,6 @@ export default function Profile() {
       loyaltyService.fetchLoyaltyConfig().then((cfg) => setLoyaltyConfig(cfg)).catch(() => setLoyaltyConfig(null));
     });
   }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
-
-  useEffect(() => {
-    if (!loggedIn || !capabilities.memberLevelEnabled) {
-      setMemberBenefits(null);
-      return;
-    }
-
-    let cancelled = false;
-    memberBenefitsService.fetchMemberBenefits()
-      .then((data) => {
-        if (!cancelled) setMemberBenefits(data);
-      })
-      .catch(() => {
-        if (!cancelled) setMemberBenefits(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [capabilities.memberLevelEnabled, loggedIn]);
 
   useEffect(() => {
     if (!loggedIn) {
@@ -213,38 +188,6 @@ export default function Profile() {
   const rewardsEnabled = isLoyaltyFeatureEnabled("reward", capabilities, loyaltyConfig);
   const inviteEnabled = isLoyaltyFeatureEnabled("referral", capabilities, loyaltyConfig);
 
-  const memberProgress = useMemo(() => {
-    const currentGrowth = Number(memberBenefits?.current_growth_value ?? pointsBalance ?? 0);
-    const nextLevel = memberBenefits?.next_level;
-
-    if (memberBenefits && nextLevel) {
-      const growthToNext = Number(memberBenefits.growth_to_next_level || 0);
-      const targetGrowth = currentGrowth + Math.max(0, growthToNext);
-      return {
-        label: growthToNext > 0
-          ? `距离${nextLevel.name}还差 ${formatGrowthValue(growthToNext)} 成长值`
-          : `已满足${nextLevel.name}升级条件`,
-        value: `${formatGrowthValue(currentGrowth)}/${formatGrowthValue(targetGrowth || currentGrowth || 1)}`,
-        percent: computeUpgradeProgress(memberBenefits),
-      };
-    }
-
-    if (memberBenefits && !nextLevel) {
-      return {
-        label: "已达到当前最高会员等级",
-        value: formatGrowthValue(currentGrowth),
-        percent: 100,
-      };
-    }
-
-    const fallbackTarget = Math.max(1000, Math.ceil(Math.max(currentGrowth, 1) / 1000) * 1000);
-    return {
-      label: `当前成长值 ${formatGrowthValue(currentGrowth)}`,
-      value: `${formatGrowthValue(currentGrowth)}/${formatGrowthValue(fallbackTarget)}`,
-      percent: Math.min(100, Math.max(8, Math.round((currentGrowth / fallbackTarget) * 100))),
-    };
-  }, [memberBenefits, pointsBalance]);
-
   const assetItems = useMemo<ProfileAssetItem[]>(() => [
     { key: "points", label: "我的积分", value: String(pointsBalance), icon: Coins, path: "/points", auth: true },
     { key: "favorites", label: "我的收藏", value: String(favoriteCount), icon: Star, path: "/favorites", auth: false },
@@ -277,18 +220,21 @@ export default function Profile() {
 
   const notificationBadgeText = formatUnreadBadge(unreadCount);
   const showInstallShortcut = browserEnv.platform !== "desktop";
-  const shoppingServiceItems = useMemo<ProfileServiceItem[]>(
-    () => buildShoppingServiceItems(capabilities.customerServiceDownloadEnabled),
-    [capabilities.customerServiceDownloadEnabled],
-  );
-  const secondaryItems = useMemo<ProfileServiceItem[]>(
-    () => buildProfileSecondaryItems(notificationBadgeText),
-    [notificationBadgeText],
-  );
-  const installShortcutItem = useMemo<ProfileServiceItem | null>(
-    () => buildInstallShortcutItem(showInstallShortcut, capabilities.customerServiceDownloadEnabled),
-    [capabilities.customerServiceDownloadEnabled, showInstallShortcut],
-  );
+  const serviceItems = useMemo<ProfileServiceItem[]>(() => {
+    const items: ProfileServiceItem[] = [
+      { key: "address", label: "收货地址", icon: MapPin, path: "/address", auth: true },
+      { key: "support", label: "客服中心", icon: Headphones, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help", auth: false },
+      { key: "history", label: "浏览记录", icon: Clock3, path: "/history", auth: false },
+      { key: "feedback", label: "意见反馈", icon: MessageSquare, path: "/feedback", auth: false },
+      { key: "notifications", label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
+      { key: "about", label: "关于我们", icon: Info, path: "/about", auth: false },
+      { key: "settings", label: "账户设置", icon: Settings, path: "/settings", auth: true },
+    ];
+    if (showInstallShortcut) {
+      items.splice(2, 0, { key: "install", label: "添加桌面", icon: Smartphone, path: capabilities.customerServiceDownloadEnabled ? "/support-download?tab=download" : "/help", auth: false });
+    }
+    return items;
+  }, [capabilities.customerServiceDownloadEnabled, notificationBadgeText, showInstallShortcut]);
 
   const trustItems = useMemo<ProfileTrustItem[]>(() => [
     { title: "正品保障", desc: "100% 正品保证", icon: ShieldCheck },
@@ -317,7 +263,6 @@ export default function Profile() {
                 avatar={avatar}
                 userName={userName}
                 memberLevelName={memberLevelName}
-                progress={memberProgress}
                 unreadCount={unreadCount}
                 onMessageClick={() => navigate("/notifications", { state: { from: "/profile" } })}
                 onMemberLevelClick={() => gateNavigate(navigate, "/member/benefits", true)}
@@ -367,20 +312,7 @@ export default function Profile() {
           ) : null}
 
           <ProfileServiceGrid
-            title="购物服务"
-            items={shoppingServiceItems}
-            onNavigate={(item) => gateNavigate(navigate, item.path, item.auth)}
-          />
-
-          {installShortcutItem ? (
-            <ProfileInstallShortcut
-              item={installShortcutItem}
-              onNavigate={(item) => gateNavigate(navigate, item.path, item.auth)}
-            />
-          ) : null}
-
-          <ProfileSecondaryLinkPanel
-            items={secondaryItems}
+            items={serviceItems}
             onNavigate={(item) => gateNavigate(navigate, item.path, item.auth)}
           />
 

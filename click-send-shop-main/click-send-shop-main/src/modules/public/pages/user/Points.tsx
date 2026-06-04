@@ -1,12 +1,6 @@
-import { CN_TIMEZONE, formatDateTime } from "@/utils/formatDateTime";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useCallback, useEffect, useState } from "react";
-import {
-  CalendarCheck,
-  Loader2,
-  Star,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { Star, TrendingDown, TrendingUp, Loader2, CalendarCheck } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
@@ -41,35 +35,6 @@ const POINTS_ERROR_LABELS: Record<string, string> = {
 
 type SignInConfig = PointsClientConfig["signIn"];
 
-function formatDateKeyInChina(value: string | Date) {
-  const date = value instanceof Date ? value : new Date(String(value).trim().replace(" ", "T"));
-  if (Number.isNaN(date.getTime())) {
-    const raw = String(value).trim();
-    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    return match ? `${match[1]}-${match[2]}-${match[3]}` : "";
-  }
-
-  const parts = new Intl.DateTimeFormat("zh-CN", {
-    timeZone: CN_TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const map: Partial<Record<Intl.DateTimeFormatPartTypes, string>> = {};
-  for (const part of parts) {
-    if (part.type !== "literal") map[part.type] = part.value;
-  }
-  return `${map.year}-${map.month}-${map.day}`;
-}
-
-function hasSignedInToday(records: Array<{ action?: string | null; created_at?: string | null }>) {
-  const today = formatDateKeyInChina(new Date());
-  return records.some((record) => {
-    if (record.action !== "sign_in" || !record.created_at) return false;
-    return formatDateKeyInChina(record.created_at) === today;
-  });
-}
-
 function normalizePointsText(value?: string | null, action?: string | null) {
   const text = String(value || "").trim();
   if (!text) return action ? formatPointsRecordLabel({ action, description: "" }) : "";
@@ -82,240 +47,52 @@ function signInHintText(config: SignInConfig | null, ready: boolean) {
   if (!ready) return "正在加载签到规则…";
   if (!config) return "暂时无法获取签到规则";
   if (config.enabled) return `每日签到可获 ${config.points} 积分`;
-  return normalizePointsText(config.disabledReason) || "暂时无法签到";
-}
-
-function signInStatusText(config: SignInConfig | null, ready: boolean, signedInToday: boolean) {
-  if (signedInToday) return "今日已签到";
-  if (!ready) return "状态加载中";
-  if (!config) return "规则未加载";
-  if (config.enabled) return "今日可签到";
-  return "暂不可签到";
-}
-
-function signInRuleText(config: SignInConfig | null, ready: boolean) {
-  if (!ready) return "正在读取签到奖励";
-  if (!config) return "签到规则暂不可用";
-  if (config.enabled) return `签到一次获得 ${config.points} 积分`;
-  return normalizePointsText(config.disabledReason) || "签到规则暂不可用";
+  return config.disabledReason || "暂时无法签到";
 }
 
 function PointsHeroCard({
   balance,
   signInConfig,
   configReady,
-  signedInToday,
   signingIn,
   onSignIn,
 }: {
   balance: number;
   signInConfig: SignInConfig | null;
   configReady: boolean;
-  signedInToday: boolean;
   signingIn: boolean;
   onSignIn: () => void;
 }) {
-  const signInEnabled = configReady && Boolean(signInConfig?.enabled) && !signedInToday;
-  const signInLabel = signingIn ? "签到中..." : signedInToday ? "今日已签到" : signInEnabled ? "每日签到" : "签到不可用";
-  const statusText = signInStatusText(signInConfig, configReady, signedInToday);
+  const signInEnabled = configReady && Boolean(signInConfig?.enabled);
+  const signInLabel = signingIn ? "签到中..." : signInEnabled ? "每日签到" : "签到不可用";
 
   return (
-    <section className={cn("relative overflow-hidden rounded-2xl px-5 py-6 sm:px-8 sm:py-7", THEME_ACCENT_HERO_SHELL)}>
-      <Star
-        size={138}
-        className={cn("pointer-events-none absolute -right-4 top-5 opacity-20", THEME_ACCENT_HERO_ICON)}
-        aria-hidden
-      />
-      <div className="relative flex flex-col gap-5">
-        <div className="max-w-[68%] sm:max-w-none">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-              <Star size={20} className={THEME_ACCENT_HERO_ICON} aria-hidden />
-            </span>
-            <p className={cn(THEME_ACCENT_HERO_LABEL, "normal-case tracking-normal")}>当前积分</p>
-          </div>
-          <p className={cn("store-stat-value mt-4 text-5xl leading-none sm:text-6xl", THEME_ACCENT_HERO_VALUE)}>
-            {balance}
-          </p>
-          <p className={cn("mt-4 text-sm leading-5", THEME_ACCENT_HERO_SUBTLE)}>
-            {signInHintText(signInConfig, configReady)}
-          </p>
-        </div>
+    <section className={cn("rounded-2xl px-5 py-6 sm:px-8 sm:py-7", THEME_ACCENT_HERO_SHELL)}>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <Star size={32} className={THEME_ACCENT_HERO_ICON} aria-hidden />
+        <p className={cn(THEME_ACCENT_HERO_LABEL, "normal-case tracking-normal")}>当前积分</p>
+        <p className={cn("store-stat-value text-4xl leading-none sm:text-5xl", THEME_ACCENT_HERO_VALUE)}>{balance}</p>
+      </div>
 
-        <div className="border-t border-white/20 pt-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex min-h-9 items-center gap-2 rounded-full bg-white/15 px-3 text-xs font-semibold">
-                <CalendarCheck size={15} aria-hidden />
-                {statusText}
-              </span>
-              <span className="inline-flex min-h-9 items-center rounded-full bg-white/10 px-3 text-xs">
-                {signInConfig?.usesDefault ? "默认签到奖励" : "签到奖励规则"}
-              </span>
-            </div>
-            <UnifiedButton
-              type="button"
-              onClick={onSignIn}
-              disabled={signingIn || !signInEnabled}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[var(--theme-price)] shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto"
-            >
-              <CalendarCheck size={16} aria-hidden />
-              {signInLabel}
-            </UnifiedButton>
-          </div>
-        </div>
+      <p className={cn("mt-4 text-center text-xs leading-5", THEME_ACCENT_HERO_SUBTLE)}>
+        {signInHintText(signInConfig, configReady)}
+      </p>
+
+      <div className="mt-4 flex justify-center">
+        <UnifiedButton
+          type="button"
+          onClick={onSignIn}
+          disabled={signingIn || !signInEnabled}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full btn-theme-price px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <CalendarCheck size={16} aria-hidden />
+          {signInLabel}
+        </UnifiedButton>
       </div>
     </section>
   );
 }
 
-function PointsCheckInPanel({
-  signInConfig,
-  configReady,
-  signedInToday,
-  signingIn,
-  onSignIn,
-}: {
-  signInConfig: SignInConfig | null;
-  configReady: boolean;
-  signedInToday: boolean;
-  signingIn: boolean;
-  onSignIn: () => void;
-}) {
-  const signInEnabled = configReady && Boolean(signInConfig?.enabled) && !signedInToday;
-  return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <h2 className="text-sm font-semibold text-foreground">今日签到</h2>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          {signedInToday ? "今天已经完成签到，明天再来领取积分。" : signInRuleText(signInConfig, configReady)}
-        </p>
-      </div>
-      <UnifiedButton
-        type="button"
-        onClick={onSignIn}
-        disabled={signingIn || !signInEnabled}
-        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full btn-theme-price px-5 py-2 text-sm font-semibold text-primary-foreground shadow-md transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <CalendarCheck size={16} aria-hidden />
-        {signingIn ? "签到中..." : signedInToday ? "已签到" : "去签到"}
-      </UnifiedButton>
-    </section>
-  );
-}
-
-function PointsRecordsLoading() {
-  return (
-    <div className="flex items-center justify-center rounded-xl border border-border bg-card p-10">
-      <Loader2 size={20} className="animate-spin text-muted-foreground" aria-label="加载中" />
-    </div>
-  );
-}
-
-function PointsRecordsError({ error, onRetry }: { error: string; onRetry: () => void }) {
-  return (
-    <div className="space-y-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-8 text-center">
-      <p className="text-sm text-[var(--theme-danger)]">{error}</p>
-      <UnifiedButton
-        type="button"
-        onClick={onRetry}
-        className="rounded-full border border-border px-5 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
-      >
-        重试
-      </UnifiedButton>
-    </div>
-  );
-}
-
-function PointsRecordsEmpty() {
-  return (
-    <div className="rounded-xl border border-border bg-card px-6 py-12 text-center">
-      <p className="text-sm font-medium text-foreground">暂无积分记录</p>
-      <p className="mt-2 text-xs text-muted-foreground">完成签到或获得积分后，记录会显示在这里。</p>
-    </div>
-  );
-}
-
-function PointsRecordsFooter({ hasMore }: { hasMore: boolean }) {
-  if (hasMore) return null;
-  return (
-    <div className="px-4 py-8 text-center text-xs text-muted-foreground">
-      暂无更多记录
-    </div>
-  );
-}
-
-function PointsRecordsSection({
-  loading,
-  error,
-  records,
-  hasMore,
-  loadingMore,
-  loadMoreError,
-  onRetry,
-  onLoadMore,
-}: {
-  loading: boolean;
-  error: string | null;
-  records: Array<{
-    id: string;
-    description?: string | null;
-    action?: string | null;
-    created_at: string;
-    amount: number;
-  }>;
-  hasMore: boolean;
-  loadingMore: boolean;
-  loadMoreError: string | null;
-  onRetry: () => void;
-  onLoadMore: () => void;
-}) {
-  return (
-    <section className="min-w-0" aria-labelledby="points-records-heading">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 id="points-records-heading" className="flex items-center gap-2 text-base font-semibold text-foreground">
-          <span className="h-5 w-1 rounded-full bg-[var(--theme-price)]" aria-hidden />
-          积分明细
-        </h2>
-      </div>
-
-      {loading ? (
-        <PointsRecordsLoading />
-      ) : error ? (
-        <PointsRecordsError error={error} onRetry={onRetry} />
-      ) : records.length === 0 ? (
-        <PointsRecordsEmpty />
-      ) : (
-        <div className="space-y-3">
-          {records.map((record) => (
-            <PointsRecordRow
-              key={record.id}
-              description={record.description}
-              action={record.action}
-              createdAt={record.created_at}
-              amount={record.amount}
-            />
-          ))}
-          {loadMoreError ? (
-            <p className="px-1 text-center text-xs text-[var(--theme-danger)]">{loadMoreError}</p>
-          ) : null}
-          {hasMore ? (
-            <UnifiedButton
-              type="button"
-              onClick={onLoadMore}
-              disabled={loadingMore}
-              className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loadingMore ? "加载中..." : "加载更多"}
-            </UnifiedButton>
-          ) : (
-            <PointsRecordsFooter hasMore={hasMore} />
-          )}
-        </div>
-      )}
-    </section>
-  );
-}
 function PointsRecordRow({
   description,
   action,
@@ -397,11 +174,10 @@ export default function Points() {
     void bootstrap();
   }, [bootstrap]);
 
-  const signedInToday = hasSignedInToday(records);
   const displayBalance = loading ? pointsBalance : balance;
 
   const handleSignIn = async () => {
-    if (!configReady || !signInConfig?.enabled || signedInToday || signingIn) return;
+    if (!configReady || !signInConfig?.enabled || signingIn) return;
     setSigningIn(true);
     try {
       const pts = await signIn();
@@ -423,29 +199,61 @@ export default function Points() {
           balance={displayBalance}
           signInConfig={signInConfig}
           configReady={configReady}
-          signedInToday={signedInToday}
           signingIn={signingIn}
           onSignIn={() => void handleSignIn()}
         />
 
-        <PointsCheckInPanel
-          signInConfig={signInConfig}
-          configReady={configReady}
-          signedInToday={signedInToday}
-          signingIn={signingIn}
-          onSignIn={() => void handleSignIn()}
-        />
+        <section className="min-w-0" aria-labelledby="points-records-heading">
+          <h2 id="points-records-heading" className="mb-3 text-sm font-semibold text-foreground">
+            积分明细
+          </h2>
 
-        <PointsRecordsSection
-          loading={loading}
-          error={error}
-          records={records}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          loadMoreError={loadMoreError}
-          onRetry={() => void bootstrap()}
-          onLoadMore={() => void loadMore()}
-        />
+          {loading ? (
+            <div className="flex items-center justify-center rounded-xl border border-border bg-card p-10">
+              <Loader2 size={20} className="animate-spin text-muted-foreground" aria-label="加载中" />
+            </div>
+          ) : error ? (
+            <div className="space-y-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-8 text-center">
+              <p className="text-sm text-[var(--theme-danger)]">{error}</p>
+              <UnifiedButton
+                type="button"
+                onClick={() => void bootstrap()}
+                className="rounded-full border border-border px-5 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+              >
+                重试
+              </UnifiedButton>
+            </div>
+          ) : records.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card p-10 text-center text-sm text-muted-foreground">
+              暂无积分记录
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {records.map((record) => (
+                <PointsRecordRow
+                  key={record.id}
+                  description={record.description}
+                  action={record.action}
+                  createdAt={record.created_at}
+                  amount={record.amount}
+                />
+              ))}
+              {loadMoreError ? (
+                <p className="px-1 text-center text-xs text-[var(--theme-danger)]">{loadMoreError}</p>
+              ) : null}
+              {hasMore ? (
+                <UnifiedButton
+                  type="button"
+                  onClick={() => void loadMore()}
+                  disabled={loadingMore}
+                  className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loadingMore ? "加载中..." : "加载更多"}
+                </UnifiedButton>
+              ) : null}
+            </div>
+          )}
+        </section>
       </div>
     </StoreAccountLayout>
   );

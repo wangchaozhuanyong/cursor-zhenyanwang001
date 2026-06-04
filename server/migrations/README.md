@@ -9,8 +9,3 @@
 ```bash
 npm run check:migrations
 ```
-
-指定执行单条迁移：
-```bash
-npm run migrate:one -- 153_return_logistics_tracking_scope
-```

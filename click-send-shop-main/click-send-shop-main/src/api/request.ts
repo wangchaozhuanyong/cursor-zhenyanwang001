@@ -266,7 +266,7 @@ function shouldRedirectToLogin(options: RequestOptions, isAuthLogout: boolean, i
 
 async function tryRefreshToken(): Promise<string> {
   const loadingToken = startGlobalLoadingDeferred();
-  let res: Response | undefined;
+  let res: Response;
   try {
     res = await fetchWithTimeout(`${BASE_URL}/auth/refresh`, {
       method: "POST",
@@ -400,7 +400,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   });
 
   const wasBrowserOfflineBeforeFetch = isBrowserOffline();
-  let res: Response;
+  let res: Response | undefined;
   try {
     res = await runRequestFetch();
   } catch (err) {
@@ -437,7 +437,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   }
 
   if (!res) {
-    throw new ApiError(0, "请求未返回响应，请稍后重试");
+    throw new ApiError(0, "\u8bf7\u6c42\u672a\u8fd4\u56de\u54cd\u5e94\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5");
   }
 
   if (res.status === 401 && retry && !options.skipAuthRetry && !isAdminEndpoint && !isAuthLoginOrRegister) {

@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { CalendarDays, Camera, ChevronRight, MessageCircle, Phone, UserRound } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Camera } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
@@ -26,28 +26,7 @@ import {
 import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birthday";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
-const CARD =
-  "rounded-[1.25rem] border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]";
-const SECTION_TITLE = "px-1 text-[13px] font-semibold text-[var(--theme-text)]";
-const SOFT_INPUT =
-  "h-12 w-full rounded-[14px] border border-transparent bg-[var(--theme-bg)] px-4 text-sm font-medium text-[var(--theme-text)] outline-none transition-[border-color,box-shadow] placeholder:text-[var(--theme-muted)] focus:border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))] focus:shadow-[var(--theme-focus-ring)] disabled:opacity-70";
-
-function SectionBlock({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="space-y-2">
-      <h2 className={SECTION_TITLE}>{title}</h2>
-      <div className={CARD}>{children}</div>
-    </section>
-  );
-}
-
-function IconBubble({ children }: { children: ReactNode }) {
-  return (
-    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] text-[var(--theme-primary)]">
-      {children}
-    </span>
-  );
-}
+const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -192,237 +171,154 @@ export default function Settings() {
   };
 
   const birthdayReadOnly = Boolean(savedBirthday);
-  const userName = nickname?.trim() || "会员用户";
-  const avatarInitial = userName.slice(0, 1).toUpperCase();
 
   return (
-    <StoreAccountLayout
-      title="账户设置"
-      onBack={goBack}
-      className="store-page bg-[var(--theme-bg)] text-[var(--theme-text)]"
-      mainClassName="space-y-4 pb-28 pt-3 sm:space-y-5 sm:py-5 lg:pb-12"
-    >
-      <section className={`${CARD} overflow-hidden`}>
-        <div className="flex items-center gap-4">
-          <UnifiedButton
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={profileSaving}
-            className="relative h-16 w-16 shrink-0 rounded-full p-0 disabled:cursor-not-allowed disabled:opacity-70"
-            aria-label="更换头像"
-          >
-            <span className="block h-16 w-16 overflow-hidden rounded-full ring-1 ring-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))]">
-              {avatar ? (
+    <StoreAccountLayout title="账户设置" onBack={goBack} className="store-page text-[var(--theme-text)]" mainClassName="space-y-3 pb-24 sm:py-4 lg:pb-12">
+        <section className={CARD}>
+          <div className="flex flex-col items-center gap-4 py-1">
+            {avatar ? (
+              <div className="h-20 w-20 overflow-hidden rounded-full ring-1 ring-[var(--theme-border)]">
                 <img src={avatar} alt="头像" className="h-full w-full object-cover" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center bg-[var(--theme-primary)] text-2xl font-bold text-[var(--theme-primary-foreground)]">
-                  {avatarInitial}
-                </span>
-              )}
-            </span>
-            <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-primary)] shadow-sm">
-              <Camera size={15} />
-            </span>
-          </UnifiedButton>
+              </div>
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--theme-primary)] text-2xl font-bold text-[var(--theme-primary-foreground)]">
+                {(nickname || "会员").trim().slice(0, 1).toUpperCase()}
+              </div>
+            )}
 
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xl font-semibold leading-tight text-[var(--theme-text)]" title={userName}>
-              {userName}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">管理你的个人资料与账户信息</p>
             <UnifiedButton
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={profileSaving}
-              className="mt-3 inline-flex h-9 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-3 text-sm font-semibold text-[var(--theme-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 text-sm font-semibold text-[var(--theme-text)] transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="更换头像"
             >
+              <Camera size={16} />
               {profileSaving ? "保存中..." : "更换头像"}
-              <ChevronRight size={15} />
             </UnifiedButton>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
           </div>
-        </div>
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
-      </section>
+        </section>
 
-      <SectionBlock title="基础信息">
-        <div className="space-y-4">
-          <div className="flex gap-3">
-            <IconBubble>
-              <UserRound size={20} />
-            </IconBubble>
-            <label className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-[var(--theme-text)]">昵称</span>
+        {THIRD_PARTY_LOGIN_ENABLED && wechatLoginEnabled && (
+          <section className={CARD}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <WeChatIcon size={22} />
+                <div>
+                  <p className="text-sm font-medium">微信登录</p>
+                  <p className="mt-0.5 text-xs text-[var(--theme-muted)]">
+                    {wechatBinding.bound
+                      ? `已绑定${wechatBinding.nickname ? `：${wechatBinding.nickname}` : ""}`
+                      : "绑定后可使用微信扫码登录"}
+                  </p>
+                </div>
+              </div>
+              {wechatBinding.bound && wechatBinding.avatarUrl ? (
+                <img src={wechatBinding.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+              ) : null}
+            </div>
+            {wechatBinding.bound && wechatBinding.boundAt ? (
+              <p className="mt-2 text-[11px] text-[var(--theme-muted)]">
+                绑定时间：{formatDateTime(wechatBinding.boundAt)}
+              </p>
+            ) : null}
+            <div className="mt-4">
+              {wechatBinding.bound ? (
+                <UnifiedButton
+                  type="button"
+                  onClick={handleUnbindWechat}
+                  disabled={wechatActionLoading}
+                  className="w-full rounded-xl border border-[color-mix(in_srgb,var(--theme-danger)_35%,transparent)] py-2.5 text-sm font-medium text-[var(--theme-danger)] disabled:opacity-60"
+                >
+                  {wechatActionLoading ? "处理中..." : "解绑微信"}
+                </UnifiedButton>
+              ) : (
+                <UnifiedButton
+                  type="button"
+                  onClick={handleBindWechat}
+                  disabled={wechatActionLoading}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#075E54]/30 bg-[#075E54] py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  <WeChatIcon size={20} />
+                  {wechatActionLoading ? "跳转中..." : "绑定微信"}
+                </UnifiedButton>
+              )}
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-[var(--theme-muted)]">
+              解绑前请确保已绑定手机号或设置密码，否则可能无法登录。
+            </p>
+          </section>
+        )}
+
+        <section className={CARD}>
+          <div className="space-y-4">
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">昵称</span>
               <input
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                className={`mt-2 ${SOFT_INPUT}`}
-                aria-label="昵称"
+                className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm outline-none ring-1 ring-[var(--theme-border)] focus:ring-2 focus:ring-[var(--theme-primary)] disabled:opacity-70"
               />
             </label>
-          </div>
-
-          <div className="border-t border-[color-mix(in_srgb,var(--theme-border)_68%,transparent)] pt-4">
-            <div className="flex gap-3">
-              <IconBubble>
-                <CalendarDays size={20} />
-              </IconBubble>
-              <div className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-[var(--theme-text)]">生日</span>
-                <SegmentedDateInput
-                  value={birthday}
-                  readOnly={birthdayReadOnly}
-                  onChange={setBirthday}
-                  controlClassName="mt-2 h-12 rounded-[14px] border-0 bg-[var(--theme-bg)] px-4 text-[var(--theme-text)] ring-0 focus-within:shadow-[var(--theme-focus-ring)]"
-                />
-                {birthdayReadOnly ? (
-                  <p className="mt-2 text-xs leading-5 text-[var(--theme-muted)]">生日已保存，如需修改请联系客服</p>
-                ) : birthday ? (
-                  <p className="mt-2 text-xs leading-5 text-[var(--theme-muted)]">生日保存后不可自行修改</p>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </div>
-      </SectionBlock>
-
-      <SectionBlock title="联系方式">
-        <div className="space-y-5">
-          <div className="flex gap-3">
-            <IconBubble>
-              <Phone size={20} />
-            </IconBubble>
-            <div className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-[var(--theme-text)]">手机号</span>
+            <div>
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">手机号</span>
               <CountryPhoneInput
                 countryCode={accountPhone.countryCode}
                 onCountryCodeChange={() => {}}
                 phone={accountPhone.phone}
                 onPhoneChange={() => {}}
                 readOnly
-                variant="joined"
-                showErrorText={false}
-                className="mt-2"
+              />
+              <p className="mt-1 text-[11px] text-[var(--theme-muted)]">手机号用于登录，如需修改请联系客服</p>
+            </div>
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">联系微信号</span>
+              <input
+                value={wechat}
+                onChange={(e) => setWechat(e.target.value)}
+                className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm outline-none ring-1 ring-[var(--theme-border)] focus:ring-2 focus:ring-[var(--theme-primary)] disabled:opacity-70"
+              />
+            </label>
+            <div>
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">WhatsApp</span>
+              <CountryPhoneInput
+                countryCode={whatsappCountryCode}
+                onCountryCodeChange={(value) => {
+                  setWhatsappCountryCode(value);
+                  if (fieldErrors.whatsapp) setFieldErrors((prev) => ({ ...prev, whatsapp: undefined }));
+                }}
+                phone={whatsappPhone}
+                onPhoneChange={(value) => {
+                  setWhatsappPhone(value);
+                  if (fieldErrors.whatsapp) setFieldErrors((prev) => ({ ...prev, whatsapp: undefined }));
+                }}
+                errorText={fieldErrors.whatsapp}
+                phonePlaceholder="WhatsApp 号码"
               />
             </div>
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">生日</span>
+              <SegmentedDateInput
+                value={birthday}
+                readOnly={birthdayReadOnly}
+                onChange={setBirthday}
+                controlClassName="h-11 rounded-xl border-0 bg-[var(--theme-bg)] px-4 text-[var(--theme-text)] ring-1 ring-[var(--theme-border)] focus-within:ring-2 focus-within:ring-[var(--theme-primary)]"
+              />
+              {birthdayReadOnly ? (
+                <p className="mt-1 text-[11px] text-[var(--theme-muted)]">生日已保存，如需修改请联系客服</p>
+              ) : birthday ? (
+                <p className="mt-1 text-[11px] text-[var(--theme-muted)]">生日保存后不可自行修改</p>
+              ) : null}
+            </label>
           </div>
+        </section>
 
-          <div className="border-t border-[color-mix(in_srgb,var(--theme-border)_68%,transparent)] pt-4">
-            <div className="flex gap-3">
-              <IconBubble>
-                <WeChatIcon size={20} />
-              </IconBubble>
-              <label className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-[var(--theme-text)]">联系微信号</span>
-                <input
-                  value={wechat}
-                  onChange={(e) => setWechat(e.target.value)}
-                  className={`mt-2 ${SOFT_INPUT}`}
-                  aria-label="联系微信号"
-                />
-              </label>
-            </div>
-          </div>
+        <SettingsSecuritySection />
 
-          <div className="border-t border-[color-mix(in_srgb,var(--theme-border)_68%,transparent)] pt-4">
-            <div className="flex gap-3">
-              <IconBubble>
-                <MessageCircle size={20} />
-              </IconBubble>
-              <div className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-[var(--theme-text)]">WhatsApp</span>
-                <CountryPhoneInput
-                  countryCode={whatsappCountryCode}
-                  onCountryCodeChange={(value) => {
-                    setWhatsappCountryCode(value);
-                    if (fieldErrors.whatsapp) setFieldErrors((prev) => ({ ...prev, whatsapp: undefined }));
-                  }}
-                  phone={whatsappPhone}
-                  onPhoneChange={(value) => {
-                    setWhatsappPhone(value);
-                    if (fieldErrors.whatsapp) setFieldErrors((prev) => ({ ...prev, whatsapp: undefined }));
-                  }}
-                  errorText={fieldErrors.whatsapp}
-                  phonePlaceholder="WhatsApp 号码"
-                  variant="joined"
-                  className="mt-2"
-                />
-              </div>
-            </div>
-          </div>
-
-          <p className="rounded-[14px] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-bg))] px-3 py-2 text-xs leading-5 text-[var(--theme-muted)]">
-            手机号用于登录，如需修改请联系客服。
-          </p>
-        </div>
-      </SectionBlock>
-
-      {THIRD_PARTY_LOGIN_ENABLED && wechatLoginEnabled && (
-        <SectionBlock title="登录方式">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-start gap-3">
-              <IconBubble>
-                <WeChatIcon size={20} />
-              </IconBubble>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[var(--theme-text)]">微信登录</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">
-                  {wechatBinding.bound
-                    ? `已绑定${wechatBinding.nickname ? `：${wechatBinding.nickname}` : ""}`
-                    : "绑定后可使用微信扫码登录"}
-                </p>
-                {wechatBinding.bound && wechatBinding.boundAt ? (
-                  <p className="mt-1 text-[11px] leading-5 text-[var(--theme-muted)]">
-                    绑定时间：{formatDateTime(wechatBinding.boundAt)}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-            {wechatBinding.bound && wechatBinding.avatarUrl ? (
-              <img src={wechatBinding.avatarUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
-            ) : null}
-          </div>
-
-          <div className="mt-4">
-            {wechatBinding.bound ? (
-              <UnifiedButton
-                type="button"
-                onClick={handleUnbindWechat}
-                disabled={wechatActionLoading}
-                className="h-11 w-full rounded-[14px] border border-[color-mix(in_srgb,var(--theme-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--theme-danger)_5%,var(--theme-surface))] text-sm font-semibold text-[var(--theme-danger)] disabled:opacity-60"
-              >
-                {wechatActionLoading ? "处理中..." : "解绑微信"}
-              </UnifiedButton>
-            ) : (
-              <UnifiedButton
-                type="button"
-                onClick={handleBindWechat}
-                disabled={wechatActionLoading}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-[color-mix(in_srgb,#075E54_92%,var(--theme-primary))] text-sm font-semibold text-white disabled:opacity-60"
-              >
-                <WeChatIcon size={20} />
-                {wechatActionLoading ? "跳转中..." : "绑定微信"}
-              </UnifiedButton>
-            )}
-          </div>
-          <p className="mt-2 text-xs leading-5 text-[var(--theme-muted)]">
-            解绑前请确保已绑定手机号或设置密码，否则可能无法登录。
-          </p>
-        </SectionBlock>
-      )}
-
-      <SettingsSecuritySection />
-
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,transparent)] px-[var(--store-page-x)] pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl lg:static lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-0">
-        <div className="mx-auto w-full max-w-lg lg:max-w-none">
-          <UnifiedButton
-            onClick={handleSave}
-            disabled={profileSaving}
-            className="h-12 w-full rounded-[16px] bg-[var(--theme-primary)] text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-[0_12px_26px_-18px_var(--theme-primary)] disabled:opacity-60"
-          >
-            {profileSaving ? "保存中..." : "保存修改"}
-          </UnifiedButton>
-        </div>
-      </div>
+        <UnifiedButton onClick={handleSave} disabled={profileSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
+          {profileSaving ? "保存中..." : "保存修改"}
+        </UnifiedButton>
     </StoreAccountLayout>
   );
 }

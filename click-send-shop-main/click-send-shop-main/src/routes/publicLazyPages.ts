@@ -23,7 +23,6 @@ export const Checkout = lazy(() => import("@/modules/public/pages/order/Checkout
 export const Orders = lazyWithPreload(() => import("@/modules/public/pages/order/Orders"));
 export const OrderDetail = lazy(() => import("@/modules/public/pages/order/OrderDetail"));
 export const Returns = lazy(() => import("@/modules/public/pages/order/Returns"));
-export const ReturnDetail = lazy(() => import("@/modules/public/pages/order/ReturnDetail"));
 export const PendingReviews = lazy(() => import("@/modules/public/pages/review/PendingReviews"));
 
 export const Profile = lazyWithPreload(() => import("@/modules/public/pages/user/Profile"));

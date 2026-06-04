@@ -17,8 +17,7 @@ async function selectOrderForTracking(orderId) {
 
 async function selectTracksByOrderId(orderId) {
   const [rows] = await db.query(
-    `SELECT id, order_id, return_id, return_shipment_id, direction,
-            tracking_no, carrier, carrier_code, status, title,
+    `SELECT id, order_id, tracking_no, carrier, carrier_code, status, title,
             description, location, event_time, source, created_at, updated_at
      FROM logistics_tracks
      WHERE order_id = ?
@@ -28,85 +27,26 @@ async function selectTracksByOrderId(orderId) {
   return rows;
 }
 
-async function selectTracksByReturnId(returnId) {
-  const [rows] = await db.query(
-    `SELECT id, order_id, return_id, return_shipment_id, direction,
-            tracking_no, carrier, carrier_code, status, title,
-            description, location, event_time, source, created_at, updated_at
-     FROM logistics_tracks
-     WHERE return_id = ?
-     ORDER BY event_time DESC, created_at DESC`,
-    [returnId],
-  );
-  return rows;
-}
-
 async function replaceAdapterTracks(orderId, trackingNo, carrierCode, events) {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
     await conn.query(
-      "DELETE FROM logistics_tracks WHERE order_id = ? AND direction = 'order_shipping' AND source = 'adapter'",
+      "DELETE FROM logistics_tracks WHERE order_id = ? AND source = 'adapter'",
       [orderId],
     );
 
     for (const event of events) {
       await conn.query(
         `INSERT INTO logistics_tracks
-           (id, order_id, direction, tracking_no, carrier, carrier_code, status, title,
+           (id, order_id, tracking_no, carrier, carrier_code, status, title,
             description, location, event_time, source, raw_data)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
           event.id,
           orderId,
-          'order_shipping',
           trackingNo || '',
           event.carrier || '',
-          carrierCode || '',
-          event.status,
-          event.title,
-          event.description || '',
-          event.location || '',
-          event.eventTime,
-          'adapter',
-          JSON.stringify(event.raw || {}),
-        ],
-      );
-    }
-
-    await conn.commit();
-  } catch (err) {
-    await conn.rollback();
-    throw err;
-  } finally {
-    conn.release();
-  }
-}
-
-async function replaceAdapterReturnShipmentTracks(shipment, carrierCode, events) {
-  const conn = await db.getConnection();
-  try {
-    await conn.beginTransaction();
-    await conn.query(
-      "DELETE FROM logistics_tracks WHERE return_shipment_id = ? AND source = 'adapter'",
-      [shipment.id],
-    );
-
-    for (const event of events) {
-      await conn.query(
-        `INSERT INTO logistics_tracks
-           (id, order_id, return_id, return_shipment_id, direction,
-            tracking_no, carrier, carrier_code, status, title,
-            description, location, event_time, source, raw_data)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [
-          event.id,
-          shipment.order_id,
-          shipment.return_id,
-          shipment.id,
-          shipment.direction || 'buyer_return',
-          shipment.tracking_no || '',
-          event.carrier || shipment.carrier || '',
           carrierCode || '',
           event.status,
           event.title,
@@ -132,7 +72,5 @@ module.exports = {
   getPool,
   selectOrderForTracking,
   selectTracksByOrderId,
-  selectTracksByReturnId,
   replaceAdapterTracks,
-  replaceAdapterReturnShipmentTracks,
 };

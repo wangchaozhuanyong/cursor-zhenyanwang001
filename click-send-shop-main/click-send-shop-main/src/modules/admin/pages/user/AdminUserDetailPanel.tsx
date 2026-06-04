@@ -427,7 +427,7 @@ export default function AdminUserDetailPanel({
         {tab === "邀请/返现" && (
           <div className="space-y-4">
             <DataList title={tText("直属邀请")} rows={user.related?.invite_relation?.direct_invites} onAll={() => navigate(`/admin/marketing/invites?keyword=${user.invite_code || ""}`)} />
-            <DataList title={tText("返现记录")} rows={user.related?.cashback_records} onAll={() => navigate(`/admin/marketing/rewards?userId=${encodeURIComponent(user.id)}`)} />
+            <DataList title={tText("返现记录")} rows={user.related?.cashback_records} onAll={() => navigate(`/admin/rewards/records?userId=${user.id}`)} />
           </div>
         )}
         {tab === "售后记录" && <DataList title={tText("售后记录")} rows={user.related?.after_sales} onAll={() => navigate(`/admin/returns?userId=${user.id}`)} />}

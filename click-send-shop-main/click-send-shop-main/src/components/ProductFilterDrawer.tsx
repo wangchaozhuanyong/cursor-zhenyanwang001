@@ -41,7 +41,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
       <UnifiedButton
         type="button"
         onClick={() => setOpen(true)}
-        className="store-category-filter-button inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
+        className="store-category-filter-button inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold transition duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <Filter size={14} />
         筛选

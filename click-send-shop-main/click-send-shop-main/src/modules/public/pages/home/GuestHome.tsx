@@ -109,7 +109,15 @@ function LazyHomeSection({ children }: { children: ReactNode }) {
     };
   }, [ready]);
 
-  return <div ref={ref}>{ready ? <Suspense fallback={null}>{children}</Suspense> : null}</div>;
+  return (
+    <div
+      ref={ref}
+      aria-hidden={ready ? undefined : true}
+      className={ready ? "contents" : "pointer-events-none absolute h-px w-px overflow-hidden opacity-0"}
+    >
+      {ready ? <Suspense fallback={null}>{children}</Suspense> : null}
+    </div>
+  );
 }
 
 function parseFooterNav(json?: string): FooterNavItem[] | null {
@@ -331,6 +339,8 @@ export default function GuestHome() {
   const isMagazineLayout = homeLayout === "magazine";
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "guest");
   const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "guest");
+  const showGuestNewArrivals =
+    isHomeModuleEnabled(homeModules, "new_arrivals", "guest") && (homeLoading || newProducts.length > 0);
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription = siteInfo.seoDescription || description;
   const canonical = buildCanonical("/");
@@ -406,7 +416,7 @@ export default function GuestHome() {
           </div>
         ) : null}
 
-        {isHomeModuleEnabled(homeModules, "new_arrivals", "guest") ? (
+        {showGuestNewArrivals ? (
         <AnimatedSection delay={0.1}>
           <NewArrivalSection
             products={newProducts}

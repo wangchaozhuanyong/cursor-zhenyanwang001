@@ -39,3 +39,56 @@ exports.createReturn = asyncRoute(async (req, res) => {
     throw err;
   }
 });
+
+async function runUserReturnAction(req, res, actionType, summary, action) {
+  try {
+    const result = await action();
+    await writeAuditLog({
+      req,
+      operatorId: req.user.id,
+      actionType,
+      objectType: 'return_request',
+      objectId: req.params.id,
+      summary,
+      after: { return_id: req.params.id },
+      result: 'success',
+    });
+    res.success(result.data, result.message || '处理成功');
+  } catch (err) {
+    await writeAuditLog({
+      req,
+      operatorId: req.user?.id,
+      actionType,
+      objectType: 'return_request',
+      objectId: req.params.id,
+      summary: `${summary}失败`,
+      result: 'failure',
+      errorMessage: err?.message || String(err),
+    });
+    throw err;
+  }
+}
+
+exports.cancelReturn = asyncRoute(async (req, res) => {
+  await runUserReturnAction(req, res, 'return.cancel', '用户取消售后', () => (
+    returnService.cancelReturn(req.user.id, req.params.id, req.body)
+  ));
+});
+
+exports.supplementEvidence = asyncRoute(async (req, res) => {
+  await runUserReturnAction(req, res, 'return.evidence_add', '用户补充售后凭证', () => (
+    returnService.supplementEvidence(req.user.id, req.params.id, req.body)
+  ));
+});
+
+exports.submitLogistics = asyncRoute(async (req, res) => {
+  await runUserReturnAction(req, res, 'return.logistics_submit', '用户提交退货物流', () => (
+    returnService.submitReturnLogistics(req.user.id, req.params.id, req.body)
+  ));
+});
+
+exports.confirmCompleted = asyncRoute(async (req, res) => {
+  await runUserReturnAction(req, res, 'return.confirm_complete', '用户确认售后完成', () => (
+    returnService.confirmReturnCompleted(req.user.id, req.params.id)
+  ));
+});

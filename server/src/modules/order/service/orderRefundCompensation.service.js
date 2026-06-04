@@ -165,7 +165,7 @@ async function applyOrderRefundCompensation(conn, params) {
         userId: order.user_id,
         orderId: order.id,
         orderNo: order.order_no,
-        type: 'refund_order',
+        type: 'wallet_redeem_refund',
         amount: total,
         status: 'success',
         reason: `返现钱包支付订单退款 ${order.order_no}`,

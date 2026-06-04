@@ -11,6 +11,7 @@ const checkoutAbandonmentService = require('./service/checkoutAbandonment.servic
 const orderPoints = require('./service/orderPoints.service');
 const orderTimeoutEvents = require('./service/orderEventTimeout.service');
 const orderPaymentTimeout = require('./service/orderPaymentTimeout.service');
+const returnService = require('./service/return.service');
 
 const router = Router();
 
@@ -22,6 +23,8 @@ const router = Router();
   canShip: orderStateMachine.canShip,
   canUserCancel: orderStateMachine.canUserCancel,
   assertReturnTransition: returnStateMachine.assertReturnTransition,
+  insertReturnEvent: returnService.insertReturnEvent,
+  insertReturnEventConn: returnService.insertReturnEventConn,
   markCheckoutAbandonmentPaidByOrderId: checkoutAbandonmentRepo.markPaidByOrderId,
   markCheckoutAbandonmentClosedByOrderId: checkoutAbandonmentRepo.markClosedByOrderId,
   getOrderPool: orderRepo.getPool,

@@ -22,3 +22,11 @@ export async function rejectReturn(id: string, remark: string) {
   const res = await returnApi.rejectReturn(id, remark);
   return res.data;
 }
+
+export async function updateReturnStatus(
+  id: string,
+  payload: { status: string; admin_remark?: string; refund_amount?: number },
+) {
+  const res = await returnApi.updateReturnStatus(id, payload);
+  return res.data;
+}

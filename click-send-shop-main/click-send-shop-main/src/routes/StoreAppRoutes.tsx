@@ -1,19 +1,14 @@
-import { Suspense, useEffect, useLayoutEffect, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback, { StoreOutletFallback } from "@/components/AppRouteFallback";
-import CookieConsentBanner from "@/components/CookieConsentBanner";
-import TrackingManager from "@/components/TrackingManager";
-import RouteAnalyticsTracker from "@/components/RouteAnalyticsTracker";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
 import RouteBackTracker from "@/components/RouteBackTracker";
 import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
-import ChinaBrowserCompatNotice from "@/components/ChinaBrowserCompatNotice";
-import PwaUpdateToast from "@/components/PwaUpdateToast";
 import FrontLayout from "@/layouts/FrontLayout";
 import FeatureUnavailable from "@/modules/public/pages/error/FeatureUnavailable";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -33,7 +28,7 @@ import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
 import { ModalLayerProvider } from "@/modules/micro-interactions/modal/ModalLayerProvider";
-import { setTrafficAnalyticsEnabled, trackEvent } from "@/services/analyticsService";
+import { trackEventLazy } from "@/services/trackEventLazy";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
@@ -41,12 +36,19 @@ import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatu
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
-  Cart, Checkout, Orders, OrderDetail, Returns, PendingReviews,
-  Profile, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
+  Cart, Checkout, Orders, OrderDetail, Returns, ReturnDetail, PendingReviews,
+  Profile, Feedback, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
   Help, About, ContentCmsPage, SupportDownload, TikTokLanding, NotFound,
 } from "@/routes/publicLazyPages";
 
 const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "store-card-equal-mobile-fix";
+const GLOBAL_WIDGET_DELAY_MS = 9000;
+
+const CookieConsentBanner = lazy(() => import("@/components/CookieConsentBanner"));
+const TrackingManager = lazy(() => import("@/components/TrackingManager"));
+const RouteAnalyticsTracker = lazy(() => import("@/components/RouteAnalyticsTracker"));
+const ChinaBrowserCompatNotice = lazy(() => import("@/components/ChinaBrowserCompatNotice"));
+const PwaUpdateToast = lazy(() => import("@/components/PwaUpdateToast"));
 
 function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
@@ -95,17 +97,46 @@ function PwaStandaloneAnalytics() {
     const key = "pwa_open_standalone_tracked";
     if (window.sessionStorage.getItem(key) === "1") return;
     window.sessionStorage.setItem(key, "1");
-    void trackEvent({ event_type: "pwa_open_standalone", module: "pwa", page: window.location.pathname });
+    return trackEventLazy(
+      { event_type: "pwa_open_standalone", module: "pwa", page: window.location.pathname },
+      { deferMs: GLOBAL_WIDGET_DELAY_MS },
+    );
   }, [capabilities.trafficAnalyticsEnabled]);
   return null;
 }
 
 function AnalyticsCapabilitySync() {
   const capabilities = useSiteCapabilities();
+  const analyticsLoadedRef = useRef(false);
   useEffect(() => {
-    setTrafficAnalyticsEnabled(Boolean(capabilities.trafficAnalyticsEnabled));
+    const enabled = Boolean(capabilities.trafficAnalyticsEnabled);
+    if (!enabled && !analyticsLoadedRef.current) return;
+    let cancelled = false;
+    const sync = () => {
+      void import("@/services/analyticsService").then(({ setTrafficAnalyticsEnabled }) => {
+        if (cancelled) return;
+        analyticsLoadedRef.current = true;
+        setTrafficAnalyticsEnabled(enabled);
+      });
+    };
+    const timeoutId = analyticsLoadedRef.current
+      ? window.setTimeout(sync, 0)
+      : window.setTimeout(sync, GLOBAL_WIDGET_DELAY_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [capabilities.trafficAnalyticsEnabled]);
   return null;
+}
+
+function DeferredGlobalMount({ children, delayMs = GLOBAL_WIDGET_DELAY_MS }: { children: ReactNode; delayMs?: number }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setMounted(true), delayMs);
+    return () => window.clearTimeout(timeoutId);
+  }, [delayMs]);
+  return mounted ? <>{children}</> : null;
 }
 
 function AppScopeSync() {
@@ -241,12 +272,8 @@ function MainStoreRoutes() {
           <AnalyticsCapabilitySync />
           <PwaStandaloneAnalytics />
           <AppScopeSync />
-          <TrackingManager />
           <RouteBackTracker />
-          {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
           <RouteSeoGuard />
-          <PwaUpdateToast />
-          <ChinaBrowserCompatNotice />
           <LanguageGate />
           <AgeGate />
           <StoreCardOverlapFix />
@@ -262,9 +289,10 @@ function MainStoreRoutes() {
                 <Route path="/support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><SupportDownload /></CapabilityRoute>} />
                 <Route path="/search" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Search /></CapabilityRoute>} />
                 <Route path="/cart" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Cart /></CapabilityRoute>} />
-                <Route path="/favorites" element={<Favorites />} />
-                <Route path="/profile" element={<Profile />} />
-              </Route>
+              <Route path="/favorites" element={<Favorites />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/feedback" element={<Feedback />} />
+            </Route>
 
               <Route path="/product/:id" element={<CapabilityRoute enabled={capabilities.mallEnabled}><ProductDetail /></CapabilityRoute>} />
               <Route path="/login" element={<Login />} />
@@ -303,6 +331,7 @@ function MainStoreRoutes() {
               <Route path="/coupons" element={<CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
+              <Route path="/returns/:id" element={<ProtectedRoute><ReturnDetail /></ProtectedRoute>} />
               <Route path="/reviews/pending" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.reviewEnabled}><PendingReviews /></CapabilityRoute></ProtectedRoute>} />
               <Route path="/history" element={<History />} />
 
@@ -310,7 +339,15 @@ function MainStoreRoutes() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <CookieConsentBanner />
+          <DeferredGlobalMount>
+            <Suspense fallback={null}>
+              <TrackingManager />
+              {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
+              <PwaUpdateToast />
+              <ChinaBrowserCompatNotice />
+              <CookieConsentBanner />
+            </Suspense>
+          </DeferredGlobalMount>
         </TooltipProvider>
         </DownloadConfirmProvider>
         </ModalLayerProvider>

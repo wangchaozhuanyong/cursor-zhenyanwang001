@@ -418,17 +418,26 @@ function ClaimCenterButton({ count, onClick }: { count: number; onClick: () => v
     <UnifiedButton
       type="button"
       onClick={onClick}
+      aria-label={count > 0 ? `领券中心，${count} 张可领取` : "领券中心"}
       className={cn(
-        "touch-target relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-bold",
-        "bg-[color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))] text-[var(--theme-price)]",
-        "shadow-[0_8px_22px_color-mix(in_srgb,var(--theme-price)_20%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--theme-price)_34%,transparent)]",
+        "touch-target relative inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-transparent p-0",
         "transition-transform active:scale-95",
       )}
     >
-      <Ticket size={15} strokeWidth={2.4} aria-hidden />
-      <span>领券中心</span>
+      <span
+        className={cn(
+          "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 pr-3 text-[13px] font-semibold",
+          "border-[color-mix(in_srgb,var(--theme-price)_18%,var(--theme-border))]",
+          "bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))]",
+          "text-[color-mix(in_srgb,var(--theme-price)_62%,var(--theme-text))]",
+          "shadow-[0_5px_14px_-12px_color-mix(in_srgb,var(--theme-price)_36%,transparent)]",
+        )}
+      >
+        <Ticket size={14} strokeWidth={2.2} aria-hidden />
+        <span>领券中心</span>
+      </span>
       {count > 0 ? (
-        <span className="absolute -right-1 top-0 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--theme-price)] px-1 text-[10px] font-extrabold leading-none text-white shadow-sm ring-2 ring-[var(--theme-surface)]">
+        <span className="absolute right-0 top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_82%,var(--theme-text))] px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-[var(--theme-surface)]">
           {count}
         </span>
       ) : null}

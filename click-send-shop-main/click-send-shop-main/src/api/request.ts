@@ -237,6 +237,7 @@ function isPublicStorefrontPath(pathname: string): boolean {
     || pathname.startsWith("/product/")
     || pathname.startsWith("/help")
     || pathname.startsWith("/about")
+    || pathname.startsWith("/feedback")
     || pathname.startsWith("/content/")
     || pathname.startsWith("/support-download")
     || pathname.startsWith("/install");

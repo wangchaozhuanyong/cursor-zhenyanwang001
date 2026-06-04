@@ -5,6 +5,8 @@ const REWARD_TX_LABEL: Record<string, string> = {
   reverse: "明细",
   wallet_redeem_order: "订单抵扣",
   wallet_redeem_refund: "订单退款退回",
+  consume_order: "返现钱包支付",
+  refund_order: "订单退款退回",
   withdraw_request: "提现申请",
   withdraw_paid: "提现已打款",
   settle_points: "邀请积分入账",

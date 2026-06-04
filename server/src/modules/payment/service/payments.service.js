@@ -257,7 +257,7 @@ async function payWithRewardWallet(userId, orderId) {
       userId,
       orderId: lockedOrder.id,
       orderNo: lockedOrder.order_no,
-      type: 'consume_order',
+      type: 'wallet_redeem_order',
       amount: -payableAmount,
       status: 'success',
       reason: `返现钱包支付订单 ${lockedOrder.order_no}`,

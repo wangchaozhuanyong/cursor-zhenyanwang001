@@ -1,6 +1,5 @@
-import React, { Suspense, useEffect, useLayoutEffect } from "react";
+import React, { lazy, Suspense, useEffect, useLayoutEffect } from "react";
 import { Outlet, useLocation, useNavigationType } from "react-router-dom";
-import BottomNav from "@/components/BottomNav";
 import { StoreOutletFallback } from "@/components/AppRouteFallback";
 import FrontPageTransition from "@/components/FrontPageTransition";
 import {
@@ -8,8 +7,11 @@ import {
   useStoreScrollChrome,
   useStoreScrollChromeActions,
 } from "@/contexts/StoreScrollChromeProvider";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import StoreShell from "@/layouts/StoreShell";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
+
+const BottomNav = lazy(() => import("@/components/BottomNav"));
 
 function shouldAutoHideBottomNav(pathname: string): boolean {
   return pathname === "/search" || pathname === "/new-arrivals";
@@ -33,6 +35,7 @@ function StoreScrollChromeRouteSync({ pathname }: { pathname: string }) {
 const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
   const location = useLocation();
   const navigationType = useNavigationType();
+  const isMobile = useMediaQuery("(max-width: 767px)");
 
   useLayoutEffect(() => {
     if (navigationType === "POP") return;
@@ -64,7 +67,11 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
               </Suspense>
             </FrontPageTransition>
           </div>
-          <BottomNav />
+          {isMobile ? (
+            <Suspense fallback={null}>
+              <BottomNav />
+            </Suspense>
+          ) : null}
         </StoreScrollChromeProvider>
       </StoreShell>
     </div>

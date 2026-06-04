@@ -36,6 +36,7 @@ const couponCtrl = require('../controller/adminCoupon.controller');
 const couponCampaignCtrl = require('../controller/adminCouponCampaign.controller');
 const returnCtrl = require('../controller/adminReturn.controller');
 const reviewCtrl = require('../controller/adminReview.controller');
+const feedbackCtrl = require('../controller/adminFeedback.controller');
 const bannerCtrl = require('../controller/adminBanner.controller');
 const notificationCtrl = require('../controller/adminNotification.controller');
 const inviteCtrl = require('../controller/adminInvite.controller');
@@ -60,6 +61,7 @@ const backupCtrl = require('../controller/adminBackup.controller');
 const paySchemas = require('../../payment/payments.schemas');
 const productSchemas = require('../schemas/adminProduct.schemas');
 const adminOrderSchemas = require('../schemas/adminOrder.schemas');
+const adminFeedbackSchemas = require('../schemas/adminFeedback.schemas');
 const adminUploadCtrl = require('../controller/adminUpload.controller');
 const { getSensitiveActionClass } = require('../adminHighRiskRoutes');
 
@@ -533,6 +535,10 @@ router.put('/users/:id/restrictions', adminAuth, requirePermission('user.update'
 router.get('/users/:id/status-overview', adminAuth, requirePermission('user.view'), userCtrl.getStatusOverview);
 router.put('/users/:id/subordinate', adminAuth, requirePermission('user.update'), userCtrl.updateSubordinate);
 router.put('/users/:userId/points', adminAuth, requireSiteCapability('pointsEnabled', '本站未启用积分功能'), requirePermission('user.points'), userCtrl.adjustPoints);
+
+/* ---- User feedback ---- */
+router.get('/feedback', adminAuth, requirePermission('user.view'), userQueryLimiter, paginationCap({ max: 100, mode: 'clamp' }), validate({ query: adminFeedbackSchemas.adminFeedbackListQuerySchema }), feedbackCtrl.list);
+router.patch('/feedback/:id', adminAuth, requirePermission('user.update'), validate({ params: adminFeedbackSchemas.feedbackIdParamSchema, body: adminFeedbackSchemas.updateAdminFeedbackBodySchema }), feedbackCtrl.update);
 
 /* ---- Categories ---- */
 router.get('/categories', adminAuth, requirePermission('category.manage'), categoryCtrl.list);

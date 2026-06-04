@@ -4,7 +4,6 @@ import { BadgeCheck, ChevronRight, Gift, ShoppingBag, Ticket } from "lucide-reac
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import { ensureStoreSession } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useCartStore } from "@/stores/useCartStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { toast } from "sonner";
@@ -44,7 +43,6 @@ export default function MarketingCouponRailSection({
   const coupons = useCouponStore((s) => s.coupons);
   const loadCoupons = useCouponStore((s) => s.loadCoupons);
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
-  const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const [couponCenter, setCouponCenter] = useState<CouponCenterPayload | null>(null);
   const [newUserGift, setNewUserGift] = useState<NewUserGiftPayload | null>(null);
   const [couponZone, setCouponZone] = useState<CouponZonePayload | null>(null);
@@ -204,6 +202,8 @@ export default function MarketingCouponRailSection({
       navigate("/login", { state: { from: "/" } });
       return;
     }
+    const { useCartStore } = await import("@/stores/useCartStore");
+    const selectedCartCount = useCartStore.getState().getSelectedItems().length;
     if (selectedCartCount > 0) navigate(`/checkout?coupon_id=${item.userCoupon.id}`);
     else navigate("/cart", { state: { coupon_id: item.userCoupon.id } });
   };

@@ -7,6 +7,25 @@ const adminEventBus = require('./adminEventBus.service');
 const { normalizeKnownMojibakeText } = require('../../../utils/textNormalize');
 const { sanitizeCmsHtml } = require('../../../utils/cmsSanitizer');
 
+function returnProgressTitle(status) {
+  const titles = {
+    [RETURN_STATUS.PENDING]: '售后申请回到待审核',
+    [RETURN_STATUS.NEED_EVIDENCE]: '商家要求补充凭证',
+    [RETURN_STATUS.APPROVED]: '售后申请已通过',
+    [RETURN_STATUS.REJECTED]: '售后申请未通过',
+    [RETURN_STATUS.PROCESSING]: '商家正在处理售后',
+    [RETURN_STATUS.WAITING_RETURN]: '请寄回商品并填写物流',
+    [RETURN_STATUS.RETURN_IN_TRANSIT]: '退货运输中',
+    [RETURN_STATUS.RECEIVED]: '商家已收到退货',
+    [RETURN_STATUS.REFUND_PENDING]: '退款等待处理',
+    [RETURN_STATUS.REFUNDED]: '退款已处理',
+    [RETURN_STATUS.EXCHANGE_SHIPPING]: '换货商品已发出',
+    [RETURN_STATUS.COMPLETED]: '售后已完成',
+    [RETURN_STATUS.CANCELLED]: '售后已取消',
+  };
+  return titles[status] || '售后进度已更新';
+}
+
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
 }
@@ -358,6 +377,19 @@ async function updateReturnStatus(id, body, adminUserId, req) {
   if (admin_remark) { setFragments.push('admin_remark = ?'); values.push(admin_remark); }
   if (refund_amount !== undefined) { setFragments.push('refund_amount = ?'); values.push(refund_amount); }
   await repo.updateReturnRequestByFields(setFragments, values, id);
+  await requireOrderApi('insertReturnEvent')({
+    id: generateId(),
+    returnId: id,
+    userId: current.user_id || null,
+    actorType: 'admin',
+    actorId: adminUserId || null,
+    eventType: 'status_changed',
+    fromStatus: current.status,
+    toStatus: status,
+    title: returnProgressTitle(status),
+    note: admin_remark || null,
+    payloadJson: JSON.stringify({ refund_amount: refund_amount ?? null }),
+  });
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'return.status_update', objectType: 'return_request', objectId: id, summary: `售后状态 ${current.status}->${status}`, before: { status: current.status }, after: { status, admin_remark, refund_amount }, result: 'success' });
   adminEventBus.publishAdminEvent({
     type: 'return.updated',
@@ -608,6 +640,21 @@ async function approveReturn(id, body, adminUserId, req) {
       });
     }
 
+    const finalReturnStatus = refundAmount > 0 ? RETURN_STATUS.REFUNDED : nextReturnStatus;
+    await requireOrderApi('insertReturnEventConn')(conn, {
+      id: generateId(),
+      returnId: id,
+      userId: ret.user_id || order.user_id || null,
+      actorType: 'admin',
+      actorId: adminUserId || null,
+      eventType: 'approved',
+      fromStatus: ret.status,
+      toStatus: finalReturnStatus,
+      title: returnProgressTitle(finalReturnStatus),
+      note: admin_remark || null,
+      payloadJson: JSON.stringify({ refund_amount: refundAmount, refund_mode }),
+    });
+
     await conn.commit();
     adminEventBus.publishAdminEvent({
       type: refundAmount > 0 ? 'order.refunded' : 'return.updated',
@@ -727,6 +774,18 @@ async function rejectReturn(id, body, adminUserId, req) {
       return { error: { code: 400, message: msg } };
     }
     await repo.updateReturnRejected(id, String(admin_remark).trim());
+    await requireOrderApi('insertReturnEvent')({
+      id: generateId(),
+      returnId: id,
+      userId: beforeSnapRow.user_id || null,
+      actorType: 'admin',
+      actorId: adminUserId || null,
+      eventType: 'rejected',
+      fromStatus: beforeSnapRow.status,
+      toStatus: RETURN_STATUS.REJECTED,
+      title: returnProgressTitle(RETURN_STATUS.REJECTED),
+      note: String(admin_remark).trim(),
+    });
     await writeAuditLog({
       req,
       operatorId: adminUserId,

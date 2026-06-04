@@ -23,6 +23,7 @@ import { adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
+import { useAdminGoBack } from "@/hooks/useAdminGoBack";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { fetchProducts } from "@/services/admin/productService";
@@ -62,6 +63,7 @@ export default function AdminActivityForm() {
   const { activityType: labelType } = useAdminDisplayLabel();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const goBack = useAdminGoBack("/admin/marketing/activities");
   const { id } = useParams();
   const isEdit = !!id;
   const [search] = useSearchParams();
@@ -371,7 +373,7 @@ export default function AdminActivityForm() {
     <AdminPageShell
       hint={<Tx>状态：{tText(statusLabel)}</Tx>}
       toolbar={(
-        <UnifiedButton type="button" onClick={() => navigate(-1)} className="text-sm text-muted-foreground"><Tx>返回</Tx></UnifiedButton>
+        <UnifiedButton type="button" onClick={goBack} className="text-sm text-muted-foreground"><Tx>返回</Tx></UnifiedButton>
       )}
       filters={(
       <div className="-mx-1 overflow-x-auto pb-1 lg:hidden">
@@ -785,7 +787,7 @@ export default function AdminActivityForm() {
         <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm"><Tx>保存草稿</Tx></LoadingButton>
         <UnifiedButton onClick={() => setStep((s) => Math.min(ACTIVITY_FORM_STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>下一步</Tx></UnifiedButton>
         <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="发布中..." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold"><Tx>发布活动</Tx></LoadingButton>
-        <UnifiedButton onClick={() => navigate("/admin/marketing/activities")} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>取消</Tx></UnifiedButton>
+        <UnifiedButton onClick={goBack} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>取消</Tx></UnifiedButton>
       </div>
 
       <AnimatedConfirmDialog

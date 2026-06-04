@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { fetchProductById, createProduct, updateProduct, deleteProduct, fetchProductTags } from "@/services/admin/productService";
 import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { useGoBack } from "@/hooks/useGoBack";
+import { useAdminGoBack } from "@/hooks/useAdminGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { flattenCategories } from "@/utils/categoryTree";
@@ -39,7 +39,7 @@ export default function AdminProductForm() {
   const { tText } = useAdminT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const goBack = useGoBack("/admin/products");
+  const goBack = useAdminGoBack("/admin/products");
   const { id } = useParams();
   const isNew = id === "new";
 

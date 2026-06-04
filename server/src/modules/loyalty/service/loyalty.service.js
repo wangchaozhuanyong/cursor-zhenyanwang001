@@ -24,7 +24,7 @@ async function getLoyaltyConfig() {
         displayEnabled: !!reward?.display_enabled,
         referralEnabled: reward?.referral_enabled == null ? true : !!reward.referral_enabled,
         walletRedeemEnabled: !!reward?.wallet_redeem_enabled,
-        withdrawEnabled: !!reward?.withdraw_enabled,
+        withdrawEnabled: false,
       },
       checkout: {
         onlinePaymentEnabled: pickPaymentMethodEnabled(enabledPaymentMethods, 'online'),
@@ -39,4 +39,3 @@ async function getLoyaltyConfig() {
 module.exports = {
   getLoyaltyConfig,
 };
-

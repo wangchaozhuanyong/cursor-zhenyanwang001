@@ -4,7 +4,7 @@ import type { Product } from "@/types/product";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import StoreBadge from "@/components/ui/StoreBadge";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
-import { trackEvent } from "@/services/analyticsService";
+import { trackEventLazy } from "@/services/trackEventLazy";
 import { cn } from "@/lib/utils";
 import { isProductNewArrival } from "@/utils/productNewArrival";
 import {
@@ -71,7 +71,7 @@ export default function HomeGridProductCard({
       ref={cardRef}
       to={`/product/${product.id}`}
       onClick={() => {
-        void trackEvent({ event_type: "product_click", module: "hot_sales", product_id: product.id });
+        trackEventLazy({ event_type: "product_click", module: "hot_sales", product_id: product.id });
       }}
       className={cn(
         HOME_PRODUCT_CARD_SHELL,

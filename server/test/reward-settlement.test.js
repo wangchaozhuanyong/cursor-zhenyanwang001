@@ -1,6 +1,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { shouldSettleByTiming } = require('../src/modules/user/service/reward.service');
+const { shouldSettleByTiming, withdraw } = require('../src/modules/user/service/reward.service');
+const { buildTransactionCategoryFilter } = require('../src/modules/user/repository/reward.repository');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../src/constants/status');
 
 describe('shouldSettleByTiming', () => {
@@ -26,5 +27,23 @@ describe('shouldSettleByTiming', () => {
   it('order_shipped requires shipped or completed', () => {
     assert.equal(shouldSettleByTiming('order_shipped', shippedOrder, ''), true);
     assert.equal(shouldSettleByTiming('order_shipped', paidOrder, ''), false);
+  });
+
+  it('keeps cashback wallet transaction types visible in client categories', () => {
+    assert.equal(
+      buildTransactionCategoryFilter('spend').clause,
+      "type IN ('wallet_redeem_order', 'consume_order')",
+    );
+    assert.equal(
+      buildTransactionCategoryFilter('reverse').clause,
+      "type IN ('reverse', 'wallet_redeem_refund', 'refund_order')",
+    );
+  });
+
+  it('does not allow cashback withdrawal', async () => {
+    const result = await withdraw('user-1', { amount: 10 });
+    assert.deepEqual(result, {
+      error: { code: 400, message: '返现只能用于购物抵扣，不支持提现' },
+    });
   });
 });

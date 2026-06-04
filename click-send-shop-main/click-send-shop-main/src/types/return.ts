@@ -33,6 +33,23 @@ export interface ReturnRequest {
   status: ReturnStatus;
   refund_amount?: number;
   admin_remark?: string;
+  contact_phone?: string;
+  product_name?: string;
+  product_image?: string;
+  variant_name?: string;
+  purchased_qty?: number;
+  unit_price?: number;
+  item_info?: {
+    product_name?: string;
+    product_image?: string;
+    variant_name?: string;
+    sku_code?: string;
+    purchased_qty?: number;
+    request_qty?: number;
+    unit_price?: number;
+  };
+  events?: ReturnEvent[];
+  shipments?: ReturnShipment[];
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +63,53 @@ export interface CreateReturnParams {
   description: string;
   images?: string[];
   proof_images?: string[];
+  contact_phone?: string;
+}
+
+export interface ReturnEvent {
+  id: string;
+  return_id: string;
+  user_id?: string | null;
+  actor_type: "user" | "admin" | "system" | string;
+  actor_id?: string | null;
+  event_type: string;
+  from_status?: ReturnStatus | string | null;
+  to_status?: ReturnStatus | string | null;
+  title: string;
+  note?: string | null;
+  payload?: Record<string, unknown> | string | null;
+  created_at: string;
+}
+
+export interface ReturnShipment {
+  id: string;
+  return_id: string;
+  direction: "buyer_return" | "merchant_exchange" | string;
+  carrier: string;
+  tracking_no: string;
+  contact_phone?: string;
+  note?: string | null;
+  created_by_type?: string;
+  created_by?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ReturnEvidenceParams {
+  description?: string;
+  images?: string[];
+  proof_images?: string[];
+}
+
+export interface ReturnLogisticsParams {
+  carrier: string;
+  tracking_no: string;
+  contact_phone?: string;
+  note?: string;
+}
+
+export interface CancelReturnParams {
+  reason?: string;
 }
 
 export interface ApproveReturnParams {
@@ -102,4 +166,6 @@ export interface ReturnDetail extends ReturnRequest {
   refund_records?: ReturnRefundRecordRow[];
   inventory_restore_records?: ReturnInventoryRestoreRow[];
   operation_logs?: ReturnOperationLogRow[];
+  events?: ReturnEvent[];
+  shipments?: ReturnShipment[];
 }

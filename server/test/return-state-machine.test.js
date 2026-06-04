@@ -27,16 +27,44 @@ describe('Return State Machine', () => {
       assert.doesNotThrow(() => assertReturnTransition('pending', 'cancelled'));
     });
 
+    it('pending -> need_evidence should pass', () => {
+      assert.doesNotThrow(() => assertReturnTransition('pending', 'need_evidence'));
+    });
+
+    it('need_evidence -> pending should pass after buyer supplements proof', () => {
+      assert.doesNotThrow(() => assertReturnTransition('need_evidence', 'pending'));
+    });
+
     it('approved -> processing should pass', () => {
       assert.doesNotThrow(() => assertReturnTransition('approved', 'processing'));
+    });
+
+    it('approved -> waiting_return should pass', () => {
+      assert.doesNotThrow(() => assertReturnTransition('approved', 'waiting_return'));
     });
 
     it('approved -> completed should pass', () => {
       assert.doesNotThrow(() => assertReturnTransition('approved', 'completed'));
     });
 
+    it('waiting_return -> return_in_transit should pass after buyer submits logistics', () => {
+      assert.doesNotThrow(() => assertReturnTransition('waiting_return', 'return_in_transit'));
+    });
+
+    it('return_in_transit -> received should pass after merchant receives return', () => {
+      assert.doesNotThrow(() => assertReturnTransition('return_in_transit', 'received'));
+    });
+
     it('processing -> completed should pass', () => {
       assert.doesNotThrow(() => assertReturnTransition('processing', 'completed'));
+    });
+
+    it('received -> exchange_shipping should pass for exchange flow', () => {
+      assert.doesNotThrow(() => assertReturnTransition('received', 'exchange_shipping'));
+    });
+
+    it('exchange_shipping -> completed should pass after buyer confirms', () => {
+      assert.doesNotThrow(() => assertReturnTransition('exchange_shipping', 'completed'));
     });
 
     it('rejected -> approved should throw', () => {

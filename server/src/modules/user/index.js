@@ -26,6 +26,7 @@ router.use('/history', require('./routes/history.routes'));
 router.use('/addresses', require('./routes/addresses.routes'));
 router.use('/shipping', require('./routes/shipping.routes'));
 router.use('/notifications', require('./routes/notifications.routes'));
+router.use('/feedback', require('./routes/feedback.routes'));
 router.use('/coupons', require('./routes/coupons.routes'));
 router.use('/points', require('./routes/points.routes'));
 router.use('/rewards', require('./routes/rewards.routes'));

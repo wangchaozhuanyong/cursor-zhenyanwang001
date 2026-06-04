@@ -18,6 +18,7 @@ const PROFILE_HUB_PATHS = new Set([
   "/returns",
   "/history",
   "/help",
+  "/feedback",
   "/favorites",
   "/reviews/pending",
 ]);

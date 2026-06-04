@@ -26,10 +26,15 @@ MAX_MEM_PERCENT="${MAX_MEM_PERCENT:-85}"
 MAX_CPU_PERCENT="${MAX_CPU_PERCENT:-85}"
 
 failed=0
+ALERT_ITEMS=()
 
 ok() { echo "[通过] $*"; }
 warn() { echo "[警告] $*"; }
-alert() { echo "[告警] $*"; failed=1; }
+alert() {
+  echo "[告警] $*"
+  failed=1
+  ALERT_ITEMS+=("$*")
+}
 
 format_cn_time() {
   TZ=Asia/Shanghai date '+%Y年%m月%d日 %H:%M:%S（北京时间）' 2>/dev/null || date '+%Y年%m月%d日 %H:%M:%S'
@@ -40,15 +45,22 @@ json_escape() {
 }
 
 notify_failure() {
-  local host now message payload
+  local host now message payload failure_summary
   host="$(hostname 2>/dev/null || echo 未知服务器)"
   now="$(format_cn_time)"
+  if (( ${#ALERT_ITEMS[@]} > 0 )); then
+    failure_summary="$(printf ' - %s\n' "${ALERT_ITEMS[@]}")"
+  else
+    failure_summary=" - 未记录具体失败项，请查看 systemd 日志。"
+  fi
   message="【生产健康检查失败】
 服务器：${host}
 检查时间：${now}
 API 地址（API_BASE_URL）：${API_BASE_URL}
 PM2 进程（PM2_APP）：${PM2_APP}
-处理建议：请检查 /api/health/live、/api/health/ready、PM2 状态、Nginx 日志和服务器资源。"
+失败项：
+${failure_summary}
+处理建议：请先按失败项检查。服务器现场日志可运行：sudo journalctl -u click-send-health-check.service -n 80 --no-pager；进一步检查 /api/health/live、/api/health/ready、PM2 状态、Nginx 日志和服务器资源。"
 
   if [[ -f "${PROJECT_ROOT}/server/.env" && -f "${PROJECT_ROOT}/deploy/send-telegram-health-alert.js" ]]; then
     if (

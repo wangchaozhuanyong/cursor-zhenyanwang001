@@ -1,4 +1,3 @@
-import { restoreSessionFromCookie } from "@/services/authService";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
 
@@ -12,6 +11,7 @@ export async function ensureStoreSession(): Promise<boolean> {
   const storeAuthenticated = useAuthStore.getState().isAuthenticated;
   if (!flagged && !storeAuthenticated) return false;
 
+  const { restoreSessionFromCookie } = await import("@/services/authService");
   const ok = await restoreSessionFromCookie();
   if (!ok) {
     useAuthStore.setState({ isAuthenticated: false, authHydrated: true });

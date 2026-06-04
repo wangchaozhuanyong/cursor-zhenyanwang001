@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions/hooks/useMotionConfig";
 import { useNavigate } from "react-router-dom";
 import { getBannerContainerClassName } from "@/utils/themeVisuals";
-import { trackEvent } from "@/services/analyticsService";
+import { trackEventLazy } from "@/services/trackEventLazy";
 import { getBannerCtaText } from "@/utils/bannerCta";
 import {
   BANNER_ASPECT_CSS,
@@ -24,7 +24,7 @@ interface BannerCarouselProps {
   themeConfigOverride?: ThemeConfig;
 }
 
-const AUTO_ROTATE_MS = 5600;
+const AUTO_ROTATE_MS = 4800;
 const USER_INTERACTION_PAUSE_MS = 7200;
 
 function resolveBannerLink(link: string): string {
@@ -73,6 +73,7 @@ export default function BannerCarousel({
   const imageLoadSeqRef = useRef(0);
   const [touchStart, setTouchStart] = useState(0);
   const [manualPauseUntil, setManualPauseUntil] = useState(0);
+  const [hoverPaused, setHoverPaused] = useState(false);
   const navigate = useNavigate();
 
   const goTo = useCallback((index: number, userDriven = false) => {
@@ -130,13 +131,13 @@ export default function BannerCarousel({
   }, [activeImage, nextBannerImage]);
 
   useEffect(() => {
-    if (paused || !motionEnabled || banners.length <= 1) return;
+    if (paused || hoverPaused || !motionEnabled || banners.length <= 1) return;
     const timer = window.setInterval(() => {
       if (Date.now() < manualPauseUntil) return;
       setCurrent((prev) => (prev + 1) % banners.length);
     }, AUTO_ROTATE_MS);
     return () => window.clearInterval(timer);
-  }, [banners.length, manualPauseUntil, motionEnabled, paused]);
+  }, [banners.length, hoverPaused, manualPauseUntil, motionEnabled, paused]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX);
@@ -186,7 +187,7 @@ export default function BannerCarousel({
 
   const handleOpenBanner = () => {
     if (!bannerLink) return;
-    void trackEvent({ event_type: "banner_click", module: trackingModule, activity_id: banner.id });
+    trackEventLazy({ event_type: "banner_click", module: trackingModule, activity_id: banner.id });
     if (/^https?:\/\//i.test(bannerLink)) {
       window.open(bannerLink, "_blank", "noopener,noreferrer");
       return;
@@ -200,11 +201,6 @@ export default function BannerCarousel({
     handleOpenBanner();
   };
 
-  const stepBanner = (delta: number) => {
-    if (banners.length <= 1) return;
-    goTo((safeIndex + delta + banners.length) % banners.length, true);
-  };
-
   return (
     <div
       className={`store-hero-carousel store-hero-carousel--showcase relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
@@ -216,6 +212,8 @@ export default function BannerCarousel({
       }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onMouseEnter={() => setHoverPaused(true)}
+      onMouseLeave={() => setHoverPaused(false)}
       onClick={handleOpenBanner}
       onKeyDown={handleKeyDown}
       role={bannerLink ? "button" : undefined}
@@ -300,7 +298,7 @@ export default function BannerCarousel({
                   }}
                 >
                   <span className="truncate">{bannerCtaText}</span>
-                  <ArrowRight size={14} aria-hidden="true" />
+                  <ArrowRight size={14} strokeWidth={1.75} aria-hidden="true" />
                 </UnifiedButton>
               ) : null}
             </div>
@@ -310,21 +308,11 @@ export default function BannerCarousel({
 
       {showControls ? (
         <div
-          className="store-hero-controls pointer-events-auto absolute z-30"
+          className="store-hero-indicators pointer-events-auto absolute z-30"
           onClick={(e) => e.stopPropagation()}
+          aria-label="轮播图分页"
         >
-          <UnifiedButton
-            type="button"
-            className="store-hero-control-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              stepBanner(-1);
-            }}
-            aria-label="上一张轮播图"
-          >
-            <ChevronLeft size={15} aria-hidden="true" />
-          </UnifiedButton>
-          <div className="store-hero-dots" aria-label="轮播图分页">
+          <div className="store-hero-dots">
             {banners.map((_, index) => (
               <UnifiedButton
                 key={index}
@@ -337,28 +325,10 @@ export default function BannerCarousel({
                 aria-label={`第 ${index + 1} 张轮播图`}
                 aria-current={index === safeIndex ? "true" : undefined}
               >
-                <span
-                  className="store-hero-dot block rounded-full transition-all duration-200"
-                  style={{
-                    width: index === safeIndex ? 12 : 5,
-                    height: 3.5,
-                    opacity: index === safeIndex ? 1 : 0.45,
-                  }}
-                />
+                <span className="store-hero-dot block rounded-full transition-all duration-200" />
               </UnifiedButton>
             ))}
           </div>
-          <UnifiedButton
-            type="button"
-            className="store-hero-control-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              stepBanner(1);
-            }}
-            aria-label="下一张轮播图"
-          >
-            <ChevronRight size={15} aria-hidden="true" />
-          </UnifiedButton>
         </div>
       ) : null}
     </div>

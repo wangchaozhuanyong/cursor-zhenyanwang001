@@ -1,12 +1,12 @@
 import { Headphones, Home, LayoutGrid, ShoppingCart, Sparkles, User } from "lucide-react";
 import type { MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
 import { Cart, Categories, GuestHome, MemberHome, NewArrivals, Profile, Search, SupportDownload } from "@/routes/publicLazyPages";
-import { useCartStore } from "@/stores/useCartStore";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
@@ -47,7 +47,6 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
-  const totalItems = useCartStore((s) => s.totalItems());
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
@@ -147,11 +146,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
               aria-label="购物车"
             >
               <ShoppingCart size={18} />
-              {totalItems > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] font-bold text-[var(--theme-danger-foreground)]">
-                  {totalItems > 99 ? "99+" : totalItems}
-                </span>
-              ) : null}
+              <DeferredStoreCartBadge />
             </UnifiedButton>
           ) : null}
 

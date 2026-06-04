@@ -1,10 +1,6 @@
 import { useLayoutEffect } from "react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
-import {
-  establishSessionFromExistingCookies,
-  restoreSessionFromCookie,
-} from "@/services/authService";
 
 const AUTH_HYDRATE_TIMEOUT_MS = 8_000;
 
@@ -35,7 +31,8 @@ export default function AuthSessionSync() {
 
     const wechatLoginCallback = new URLSearchParams(window.location.search).get("wechatLogin") === "1";
     if (wechatLoginCallback) {
-      void establishSessionFromExistingCookies()
+      void import("@/services/authService")
+        .then((module) => module.establishSessionFromExistingCookies())
         .then(() => {
           finishHydrate(true);
           stripWechatLoginQuery();
@@ -59,7 +56,8 @@ export default function AuthSessionSync() {
     }
 
     useAuthStore.setState({ isAuthenticated: flagged });
-    void restoreSessionFromCookie()
+    void import("@/services/authService")
+      .then((module) => module.restoreSessionFromCookie())
       .then((ok) => {
         finishHydrate(ok);
       })

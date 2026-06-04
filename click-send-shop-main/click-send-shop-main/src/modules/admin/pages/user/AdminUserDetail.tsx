@@ -1,14 +1,15 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import AdminUserDetailPanel from "@/modules/admin/pages/user/AdminUserDetailPanel";
+import { useAdminGoBack } from "@/hooks/useAdminGoBack";
 
 export default function AdminUserDetail() {
-  const navigate = useNavigate();
   const { id = "" } = useParams();
+  const goBack = useAdminGoBack("/admin/users");
 
   return (
     <AdminUserDetailPanel
       userId={id}
-      onBack={() => navigate("/admin/users")}
+      onBack={goBack}
     />
   );
 }

@@ -20,6 +20,8 @@ import type {
   CouponCampaignType,
 } from "@/types/couponCampaign";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
+import { useAdminGoBack } from "@/hooks/useAdminGoBack";
 
 type FormState = Omit<CouponCampaignPayload, "coupon_ids"> & { coupon_ids: string[] };
 
@@ -98,12 +100,14 @@ function couponAmountText(coupon: Coupon) {
 
 export default function AdminCouponCampaignForm() {
   const navigate = useNavigate();
+  const goBack = useAdminGoBack("/admin/marketing/coupon-campaigns");
   const queryClient = useQueryClient();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const isEdit = Boolean(id);
   const requestedType = (searchParams.get("type") as CouponCampaignType) || "public_claim";
   const [form, setForm] = useState<FormState>(() => createInitialForm(requestedType));
+  const [formHydrated, setFormHydrated] = useState(!isEdit);
   const [couponKeyword, setCouponKeyword] = useState("");
 
   const campaignQuery = useQuery({
@@ -133,6 +137,9 @@ export default function AdminCouponCampaignForm() {
     staleTime: 120_000,
   });
 
+  const campaignLoading = isEdit && campaignQuery.isLoading && !campaignQuery.data;
+  const { markClean } = useAdminFormDirty(form, formHydrated && !campaignLoading);
+
   useEffect(() => {
     if (!campaignQuery.data) return;
     const d = campaignQuery.data;
@@ -154,6 +161,7 @@ export default function AdminCouponCampaignForm() {
       internal_note: d.internal_note || "",
       coupon_ids: d.coupon_ids || [],
     });
+    setFormHydrated(true);
   }, [campaignQuery.data]);
 
   const couponOptions = couponsQuery.data || [];
@@ -211,6 +219,7 @@ export default function AdminCouponCampaignForm() {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponCampaignsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
       ]);
+      markClean();
       navigate("/admin/marketing/coupon-campaigns");
     },
     onError: (error) => toast.error(toastErrorMessage(error, "保存失败")),
@@ -224,7 +233,7 @@ export default function AdminCouponCampaignForm() {
       title={title}
       hint="先选已有优惠券模板，再设置活动时间、人群和发放方式。优惠券规则本身不在这里重复维护。"
       toolbar={(
-        <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns")} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm">
+        <UnifiedButton type="button" onClick={goBack} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm">
           <ArrowLeft size={15} /> 返回列表
         </UnifiedButton>
       )}

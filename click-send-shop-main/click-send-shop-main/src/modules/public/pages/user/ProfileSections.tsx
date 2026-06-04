@@ -50,6 +50,12 @@ export type ProfileTrustItem = {
   icon: LucideIcon;
 };
 
+export type ProfileHeroProgress = {
+  label: string;
+  value: string;
+  percent: number;
+};
+
 function formatCount(count?: number) {
   const value = Number(count || 0);
   if (value <= 0) return "";
@@ -83,6 +89,7 @@ export function ProfileHeroCard({
   avatar,
   userName,
   memberLevelName,
+  progress,
   unreadCount,
   onMessageClick,
   onMemberLevelClick,
@@ -94,6 +101,7 @@ export function ProfileHeroCard({
   avatar?: string;
   userName: string;
   memberLevelName: string;
+  progress?: ProfileHeroProgress;
   unreadCount: number;
   onMessageClick: () => void;
   onMemberLevelClick: () => void;
@@ -102,10 +110,11 @@ export function ProfileHeroCard({
   onAvatarClick: () => void;
 }) {
   const displayName = formatProfileHeroName(userName);
+  const progressPercent = Math.min(100, Math.max(0, Math.round(progress?.percent ?? 0)));
 
   return (
     <section className="store-profile-vip-card">
-      <span className="profile-vip-watermark" aria-hidden="true">VIP</span>
+      <span className="profile-vip-watermark" aria-hidden="true" />
       <div className="profile-vip-header">
         <UnifiedButton type="button" onClick={onAvatarClick} className="profile-avatar-button" aria-label="更换头像">
           <span className="profile-avatar-ring">
@@ -128,16 +137,39 @@ export function ProfileHeroCard({
               <span>{memberLevelName}</span>
             </UnifiedButton>
           </div>
+          <p className="profile-vip-subtitle">
+            <span aria-hidden="true" />
+            尊享会员服务
+          </p>
         </div>
 
         <div className="profile-vip-message">
           <NotificationIconButton
             unreadCount={unreadCount}
             onClick={onMessageClick}
-            className="h-12 w-12 border-white/75 bg-white/92 text-[var(--profile-red)] shadow-[0_12px_26px_rgba(108,16,24,0.2)] backdrop-blur"
+            className="profile-vip-notification"
           />
         </div>
       </div>
+
+      {progress ? (
+        <div className="profile-vip-progress">
+          <div className="profile-vip-progress-meta">
+            <span>{progress.label}</span>
+            <b>{progress.value}</b>
+          </div>
+          <div className="profile-vip-progress-track">
+            <span
+              style={{ width: `${progressPercent}%` }}
+              role="progressbar"
+              aria-label="会员等级进度"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressPercent}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <div className="profile-vip-actions">
         <UnifiedButton type="button" onClick={onProfileClick} className="profile-vip-action profile-vip-action--ghost">
@@ -278,35 +310,56 @@ export function ProfileInviteRewardCard({
     <section className="profile-invite-card">
       <div className="profile-invite-content">
         <div className="profile-invite-copy">
-          <p className="profile-invite-title">邀请好友得奖励</p>
+          <div className="profile-invite-heading">
+            <span className="profile-invite-heading-icon" aria-hidden="true">
+              <span className="profile-invite-mini-redpacket">
+                <span className="profile-invite-mini-redpacket-flap" />
+                <span className="profile-invite-mini-redpacket-band" />
+                <span className="profile-invite-mini-redpacket-medal" />
+                <span className="profile-invite-mini-redpacket-star" />
+              </span>
+            </span>
+            <p className="profile-invite-title">邀请好友得奖励</p>
+          </div>
           <p className="profile-invite-desc">
             {loggedIn ? "好友成功完成后，你可获得现金返现" : "登录后邀请好友获得现金返现"}
           </p>
-          {loggedIn ? (
-            <div className="profile-invite-stats" aria-label="邀请奖励数据">
-              <span className="profile-invite-stat-chip">
-                已邀请 <b>{inviteCount}</b> 人
-              </span>
-              <span className="profile-invite-stat-chip">
-                返现金额 <b>RM {rewardBalance.toFixed(2)}</b>
-              </span>
-            </div>
-          ) : null}
         </div>
         <div className="profile-invite-art" aria-hidden="true">
           <span className="profile-reward-visual">
-            <span className="profile-reward-coin profile-reward-coin--back">RM</span>
+            <span className="profile-reward-coin profile-reward-coin--back" />
+            <span className="profile-reward-confetti profile-reward-confetti--left" />
             <span className="profile-reward-envelope">
               <span className="profile-reward-envelope-flap" />
               <span className="profile-reward-ribbon" />
               <span className="profile-reward-seal" />
             </span>
-            <span className="profile-reward-coin profile-reward-coin--front">RM</span>
+            <span className="profile-reward-coin-stack" />
+            <span className="profile-reward-coin profile-reward-coin--front" />
+            <span className="profile-reward-gift-box" />
+            <span className="profile-reward-confetti profile-reward-confetti--right" />
             <span className="profile-reward-sparkle profile-reward-sparkle--one" />
             <span className="profile-reward-sparkle profile-reward-sparkle--two" />
           </span>
         </div>
       </div>
+
+      {loggedIn ? (
+        <div className="profile-invite-stats" aria-label="邀请奖励数据">
+          <span className="profile-invite-stat-chip">
+            <span className="profile-invite-stat-icon profile-invite-stat-icon--people" aria-hidden="true">
+              <User size={13} strokeWidth={2.1} />
+            </span>
+            <span>已邀请</span>
+            <b>{inviteCount} 人</b>
+          </span>
+          <span className="profile-invite-stat-chip">
+            <span className="profile-invite-stat-icon profile-invite-stat-icon--cash" aria-hidden="true">¥</span>
+            <span>返现金额</span>
+            <b>RM {rewardBalance.toFixed(2)}</b>
+          </span>
+        </div>
+      ) : null}
 
       {loggedIn && inviteCodeVisible ? (
         <div className="profile-invite-code">
@@ -345,13 +398,15 @@ export function ProfileInviteRewardCard({
 export function ProfileServiceGrid({
   items,
   onNavigate,
+  title = "我的服务",
 }: {
   items: ProfileServiceItem[];
   onNavigate: (item: ProfileServiceItem) => void;
+  title?: string;
 }) {
   return (
     <section className={cn(PROFILE_CARD_CLASS, PROFILE_SECTION_PADDING)}>
-      <ProfileSectionTitle title="我的服务" />
+      <ProfileSectionTitle title={title} />
       <div className="profile-service-grid">
         {items.map((item) => (
           <UnifiedButton
@@ -368,6 +423,62 @@ export function ProfileServiceGrid({
           </UnifiedButton>
         ))}
       </div>
+    </section>
+  );
+}
+
+export function ProfileSecondaryLinkPanel({
+  items,
+  onNavigate,
+}: {
+  items: ProfileServiceItem[];
+  onNavigate: (item: ProfileServiceItem) => void;
+}) {
+  if (!items.length) return null;
+
+  return (
+    <section className={cn(PROFILE_CARD_CLASS, PROFILE_SECTION_PADDING)}>
+      <ProfileSectionTitle title="更多功能" />
+      <div className="profile-secondary-list">
+        {items.map((item) => (
+          <UnifiedButton
+            key={item.key}
+            type="button"
+            onClick={() => onNavigate(item)}
+            className={cn("profile-secondary-action", PROFILE_MENU_TAP)}
+          >
+            <span className="profile-secondary-icon">
+              <item.icon size={18} strokeWidth={2.1} />
+            </span>
+            <span className="profile-secondary-label">{item.label}</span>
+            {item.badgeText ? <span className="profile-count-badge profile-secondary-badge">{item.badgeText}</span> : null}
+            <ChevronRight size={16} className="profile-secondary-chevron" />
+          </UnifiedButton>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ProfileInstallShortcut({
+  item,
+  onNavigate,
+}: {
+  item: ProfileServiceItem;
+  onNavigate: (item: ProfileServiceItem) => void;
+}) {
+  return (
+    <section className="profile-install-shortcut">
+      <span className="profile-install-icon">
+        <item.icon size={19} strokeWidth={2.1} />
+      </span>
+      <span className="profile-install-copy">
+        <span className="profile-install-title">{item.label}</span>
+        <span className="profile-install-desc">手机端快捷访问</span>
+      </span>
+      <UnifiedButton type="button" onClick={() => onNavigate(item)} className="profile-install-button">
+        去添加
+      </UnifiedButton>
     </section>
   );
 }

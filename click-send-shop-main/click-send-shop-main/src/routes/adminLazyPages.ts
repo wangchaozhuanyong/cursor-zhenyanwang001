@@ -53,6 +53,7 @@ export const AdminShipping = lazyWithPreload(() => import("@/modules/admin/pages
 export const AdminUsers = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUsers"));
 export const AdminUserDetail = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUserDetail"));
 export const AdminUserSecurity = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUserSecurity"));
+export const AdminFeedback = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminFeedback"));
 export const AdminMemberLevels = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminMemberLevels"));
 export const AdminInvites = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminInvites"));
 
@@ -134,6 +135,7 @@ const ADMIN_EXACT_ROUTE_PRELOADERS = new Map<string, AdminLazyComponent>([
   ["/admin/payments/events", AdminPaymentEvents],
   ["/admin/payments/reconciliations", AdminPaymentReconciliations],
   ["/admin/users", AdminUsers],
+  ["/admin/feedback", AdminFeedback],
   ["/admin/user-security", AdminUserSecurity],
   ["/admin/member-levels", AdminMemberLevels],
   ["/admin/settings/site", AdminSiteSettings],

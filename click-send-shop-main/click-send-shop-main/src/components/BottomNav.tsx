@@ -1,8 +1,8 @@
 import { Headphones, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
 import { cn } from "@/lib/utils";
 import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
@@ -61,7 +61,6 @@ export default function BottomNav() {
   const { themeConfig } = useThemeRuntime();
   const navStyle = themeConfig.navStyle;
   const capabilities = useSiteCapabilities();
-  const totalItems = useCartStore((s) => s.totalItems());
   const activePointerRef = useRef<ActivePointer | null>(null);
   const lastNavTapRef = useRef<{ path: string; at: number } | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
@@ -246,16 +245,7 @@ export default function BottomNav() {
                     className={isActive ? "text-[var(--theme-primary)]" : "text-[var(--theme-text-muted)]"}
                     strokeWidth={isActive ? 2.5 : 1.8}
                   />
-                  {tab.path.startsWith("/cart") && totalItems > 0 && (
-                    <span
-                      className={cn(
-                        "absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] font-bold text-[var(--theme-danger-foreground)]",
-                        badgeBump && "store-bottom-nav-badge-bump",
-                      )}
-                    >
-                      {totalItems > 99 ? "99+" : totalItems}
-                    </span>
-                  )}
+                  {tab.path.startsWith("/cart") ? <DeferredStoreCartBadge bumped={badgeBump} variant="bottom" /> : null}
                 </span>
                 <span
                   className={`store-bottom-nav-label text-xs leading-tight ${

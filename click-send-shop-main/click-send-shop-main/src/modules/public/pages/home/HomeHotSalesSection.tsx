@@ -4,7 +4,7 @@ import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 import { HOME_PRODUCT_GRID_CLASS, HOME_SECTION_HEADER_MB } from "@/constants/homeLayout";
 import { useHomeTrackingSessionId } from "@/hooks/useHomeTrackingSessionId";
-import { trackEvent } from "@/services/analyticsService";
+import { trackEventLazy } from "@/services/trackEventLazy";
 import HomeGridProductCard from "./HomeGridProductCard";
 import HomeGridProductCardSkeleton from "./HomeGridProductCardSkeleton";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -39,12 +39,12 @@ export default function HomeHotSalesSection({
     (product: Product, index: number) => {
       if (!product.id || exposedProductIdsRef.current.has(product.id)) return;
       exposedProductIdsRef.current.add(product.id);
-      void trackEvent({
+      trackEventLazy({
         event_type: "product_impression",
         module: "hot_sales",
         product_id: product.id,
         session_id: sessionId,
-      });
+      }, { deferMs: 9000 });
     },
     [sessionId],
   );

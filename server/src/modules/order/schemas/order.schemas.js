@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const { RETURN_STATUS_LIST } = require('../../../constants/status');
 
 const idParam = z.string().trim().min(1);
 
@@ -114,6 +115,24 @@ const createReturnBodySchema = z.object({
 const listReturnsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(10),
+  status: z.enum(RETURN_STATUS_LIST).optional(),
+});
+
+const cancelReturnBodySchema = z.object({
+  reason: z.string().trim().max(300).optional(),
+});
+
+const returnEvidenceBodySchema = z.object({
+  description: z.string().trim().max(1000).optional(),
+  images: z.array(z.string().trim().max(512)).max(20).optional(),
+  proof_images: z.array(z.string().trim().max(512)).max(20).optional(),
+});
+
+const returnLogisticsBodySchema = z.object({
+  carrier: z.string().trim().min(1, '请填写快递公司').max(80),
+  tracking_no: z.string().trim().min(1, '请填写物流单号').max(120),
+  contact_phone: z.string().trim().max(32).optional(),
+  note: z.string().trim().max(500).optional(),
 });
 
 const previewOrderBodySchema = createOrderBodySchema;
@@ -127,5 +146,7 @@ module.exports = {
   payOrderBodySchema,
   createReturnBodySchema,
   listReturnsQuerySchema,
+  cancelReturnBodySchema,
+  returnEvidenceBodySchema,
+  returnLogisticsBodySchema,
 };
-

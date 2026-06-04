@@ -17,7 +17,7 @@ type StoreSearchFieldProps = {
 };
 
 const fieldClass =
-  "h-[2.625rem] min-h-[2.625rem] w-full rounded-full border border-[var(--store-border)] bg-[color-mix(in_srgb,var(--store-surface-raised)_88%,transparent)] py-0 pl-9 pr-3.5 text-sm leading-none text-[var(--theme-text)] shadow-[inset_0_1px_0_color-mix(in_srgb,white_42%,transparent)] placeholder:text-[var(--theme-text-muted)] focus:border-[var(--theme-price)] focus:outline-none";
+  "store-search-field h-[2.625rem] min-h-[2.625rem] w-full rounded-full border border-[var(--store-border)] bg-[color-mix(in_srgb,var(--store-surface-raised)_88%,transparent)] py-0 pl-9 pr-3.5 text-sm leading-none shadow-[inset_0_1px_0_color-mix(in_srgb,white_42%,transparent)] focus:border-[var(--theme-price)] focus:outline-none";
 
 export default function StoreSearchField({
   mode,

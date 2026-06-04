@@ -54,7 +54,7 @@ export default function StoreTabHeader({
   const goNotifications = () => navigate("/notifications");
 
   const nameClass = cn(
-    "truncate font-bold tracking-widest text-[var(--theme-text-on-surface)]",
+    "store-brand-name truncate tracking-normal",
     showSiteNameMobile ? "text-lg" : "hidden text-lg sm:block",
   );
 

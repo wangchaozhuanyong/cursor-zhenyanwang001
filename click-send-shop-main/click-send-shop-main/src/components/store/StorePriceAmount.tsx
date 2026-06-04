@@ -13,7 +13,7 @@ type Props = {
 export default function StorePriceAmount({
   amount,
   amountClassName = "store-price-card",
-  currencyClassName = "mr-0.5 text-[11px] font-bold leading-none sm:text-xs",
+  currencyClassName = "store-price-currency mr-0.5 text-[11px] leading-none sm:text-xs",
   className,
 }: Props) {
   return (

@@ -23,13 +23,13 @@ export const HOME_PRODUCT_INFO_CLASS =
   "store-art-product-info min-w-0 border-t border-[var(--store-border)] px-2 pb-2 pt-2";
 
 export const HOME_PRODUCT_TITLE_CLASS =
-  "line-clamp-2 min-h-[2.25rem] break-words text-[13.5px] font-semibold leading-snug text-[var(--theme-text-on-surface)]";
+  "store-product-card-title line-clamp-2 min-h-[2.25rem] break-words text-[13.5px] font-medium leading-snug";
 
 export const HOME_PRODUCT_BADGE_CLASS =
-  "inline-flex h-[22px] max-w-full items-center rounded-full border px-2 text-[10px] font-extrabold leading-none";
+  "inline-flex h-[22px] max-w-full items-center rounded-full border px-2 text-[10px] font-semibold leading-none";
 
-export const HOME_PRODUCT_PRICE_AMOUNT_CLASS = "text-[13px] font-bold leading-none";
-export const HOME_PRODUCT_PRICE_CURRENCY_CLASS = "mr-0.5 text-[10px] font-bold leading-none";
+export const HOME_PRODUCT_PRICE_AMOUNT_CLASS = "text-[13px] font-semibold leading-none";
+export const HOME_PRODUCT_PRICE_CURRENCY_CLASS = "store-price-currency mr-0.5 text-[10px] leading-none";
 
 export function isHomeServiceLikeProduct(product: Product) {
   return /服务|咨询|办理|申请|装修/.test(String(product.category_name || product.name || ""));

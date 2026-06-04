@@ -161,8 +161,8 @@ function ProductCardInner({
       {isHorizontal ? (
         <StorePriceAmount
           amount={priceDisplay}
-          amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
-          currencyClassName="mr-0.5 text-[11px] font-bold leading-none sm:text-xs"
+          amountClassName="store-price-card text-[15px] leading-tight sm:text-base"
+          currencyClassName="store-price-currency mr-0.5 text-[11px] leading-none sm:text-xs"
         />
       ) : (
         <StorePriceAmount amount={priceDisplay} />

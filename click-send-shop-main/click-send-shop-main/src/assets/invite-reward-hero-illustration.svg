@@ -1,0 +1,86 @@
+<svg width="320" height="250" viewBox="0 0 320 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="heroHalo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(174 112) rotate(92) scale(122 134)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.92"/>
+      <stop offset="0.48" stop-color="#FFD8CA" stop-opacity="0.52"/>
+      <stop offset="1" stop-color="#FFC5B4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="heroRed" x1="142" y1="38" x2="226" y2="176" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8B76"/>
+      <stop offset="0.52" stop-color="#F04A3C"/>
+      <stop offset="1" stop-color="#BF1F19"/>
+    </linearGradient>
+    <linearGradient id="heroRedSide" x1="222" y1="48" x2="241" y2="164" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D53327"/>
+      <stop offset="1" stop-color="#861611"/>
+    </linearGradient>
+    <linearGradient id="heroGold" x1="72" y1="58" x2="223" y2="201" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF4C9"/>
+      <stop offset="0.45" stop-color="#F7BE56"/>
+      <stop offset="1" stop-color="#E28B25"/>
+    </linearGradient>
+    <linearGradient id="heroGift" x1="228" y1="143" x2="281" y2="215" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0D7"/>
+      <stop offset="1" stop-color="#FFC69C"/>
+    </linearGradient>
+    <filter id="heroSoftShadow" x="36" y="34" width="258" height="204" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#B43B24" flood-opacity="0.18"/>
+    </filter>
+    <filter id="heroCoinShadow" x="37" y="54" width="209" height="181" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="9" stdDeviation="7" flood-color="#B76A17" flood-opacity="0.24"/>
+    </filter>
+  </defs>
+  <ellipse cx="178" cy="125" rx="132" ry="116" fill="url(#heroHalo)"/>
+  <path d="M259 29L265 47L283 53L265 59L259 77L253 59L235 53L253 47L259 29Z" fill="white" fill-opacity="0.92"/>
+  <path d="M215 19L218 28L227 31L218 34L215 43L212 34L203 31L212 28L215 19Z" fill="white" fill-opacity="0.74"/>
+  <path d="M54 78L57 86L65 89L57 92L54 100L51 92L43 89L51 86L54 78Z" fill="white" fill-opacity="0.64"/>
+  <g filter="url(#heroSoftShadow)">
+    <path d="M117 54C105 51 96 45 91 35C105 36 116 43 126 53L117 54Z" fill="#FF8A74"/>
+    <path d="M98 65C83 57 72 45 66 27C81 30 94 40 106 56L98 65Z" fill="#FF8A74"/>
+    <path d="M264 107C281 99 294 86 303 68C282 71 266 81 253 97L264 107Z" fill="#FF8A74"/>
+    <path d="M242 83C258 79 271 69 281 54C263 55 249 62 237 75L242 83Z" fill="#FF8A74" opacity="0.62"/>
+    <g transform="rotate(4 189 112)">
+      <rect x="154" y="42" width="82" height="129" rx="14" fill="url(#heroRed)"/>
+      <path d="M221 47C230 49 237 55 238 65V158C238 166 233 172 226 174L218 169C223 166 225 161 225 154V54C225 50 224 48 221 47Z" fill="url(#heroRedSide)"/>
+      <path d="M164 69C181 52 214 52 228 70C218 90 203 103 190 103C177 103 169 91 164 69Z" fill="#FF9C86" fill-opacity="0.58"/>
+      <path d="M161 103C181 91 214 91 232 102L229 113C207 103 184 104 164 116L161 103Z" fill="url(#heroGold)"/>
+      <circle cx="195" cy="103" r="33" fill="#FFF2C8"/>
+      <circle cx="195" cy="103" r="26" fill="url(#heroGold)"/>
+      <path d="M195 86V121M183 94H207M186 106H204" stroke="#E88922" stroke-width="7" stroke-linecap="round"/>
+      <path d="M166 52C182 60 205 61 223 55" stroke="white" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
+    </g>
+  </g>
+  <g filter="url(#heroCoinShadow)">
+    <g transform="rotate(-17 66 113)">
+      <circle cx="66" cy="113" r="25" fill="#FFE9A7"/>
+      <circle cx="66" cy="113" r="19" fill="url(#heroGold)"/>
+      <path d="M66 101V124M58 107H74M60 115H72" stroke="#E9A135" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g transform="rotate(-8 156 185)">
+      <circle cx="156" cy="185" r="31" fill="#FFF1B8"/>
+      <circle cx="156" cy="185" r="24" fill="url(#heroGold)"/>
+      <path d="M156 168V197M146 176H166M148 186H164" stroke="#E9A135" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <g>
+      <ellipse cx="91" cy="170" rx="31" ry="10" fill="#FFE6A2"/>
+      <rect x="60" y="151" width="62" height="23" rx="8" fill="#F3A63E"/>
+      <path d="M60 154C75 163 105 163 122 154" stroke="#FFE8A8" stroke-width="5"/>
+      <path d="M61 165C77 173 105 173 121 165" stroke="#D78324" stroke-opacity="0.45" stroke-width="4"/>
+      <ellipse cx="91" cy="151" rx="31" ry="10" fill="#FFE8A8"/>
+      <ellipse cx="91" cy="151" rx="22" ry="6" fill="#F7BE56"/>
+      <path d="M91 145V156M84 149H98" stroke="#E1942C" stroke-width="3" stroke-linecap="round"/>
+    </g>
+  </g>
+  <g filter="url(#heroSoftShadow)" transform="rotate(2 250 179)">
+    <rect x="224" y="159" width="56" height="52" rx="8" fill="url(#heroGift)"/>
+    <rect x="220" y="149" width="64" height="18" rx="6" fill="#FFE2C4"/>
+    <path d="M249 150V211" stroke="#EF6852" stroke-width="8"/>
+    <path d="M221 167H283" stroke="#EF6852" stroke-width="7"/>
+    <path d="M247 149C236 141 230 130 236 125C244 120 251 135 253 148C257 133 268 124 275 130C282 137 268 146 256 150" stroke="#EF6852" stroke-width="8" stroke-linecap="round"/>
+    <path d="M230 158C244 164 263 164 278 157" stroke="white" stroke-opacity="0.42" stroke-width="3"/>
+  </g>
+  <circle cx="42" cy="73" r="5" fill="#FF8A74"/>
+  <circle cx="282" cy="214" r="5" fill="#F6B264"/>
+  <circle cx="292" cy="119" r="4" fill="#FFB4A0"/>
+  <circle cx="243" cy="219" r="4" fill="#FFFFFF" fill-opacity="0.8"/>
+</svg>

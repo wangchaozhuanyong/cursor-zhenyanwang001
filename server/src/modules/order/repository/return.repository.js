@@ -46,7 +46,9 @@ async function selectReturnByIdAndUser(returnId, userId) {
             COALESCE(oi.price, 0) AS unit_price,
             o.total_amount AS order_total_amount,
             o.status AS order_status,
-            o.payment_status AS order_payment_status
+            o.payment_status AS order_payment_status,
+            o.refund_status AS order_refund_status,
+            o.refunded_amount AS order_refunded_amount
        FROM return_requests rr
        LEFT JOIN order_items oi ON oi.id = rr.order_item_id
        LEFT JOIN products p ON p.id = rr.product_id

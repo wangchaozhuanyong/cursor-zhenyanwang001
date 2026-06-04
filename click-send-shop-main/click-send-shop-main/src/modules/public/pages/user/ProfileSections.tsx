@@ -13,6 +13,8 @@ import NotificationIconButton from "@/components/NotificationIconButton";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { formatProfileHeroName } from "./profileHeroName";
+import inviteRewardHeroImage from "@/assets/invite-reward-hero-illustration.svg";
+import inviteRewardMiniRedpacketImage from "@/assets/invite-reward-mini-redpacket.svg";
 
 export const PROFILE_CARD_CLASS = "store-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
 export const PROFILE_MENU_TAP = "store-profile-tap transition-transform active:scale-[0.98]";
@@ -312,12 +314,7 @@ export function ProfileInviteRewardCard({
         <div className="profile-invite-copy">
           <div className="profile-invite-heading">
             <span className="profile-invite-heading-icon" aria-hidden="true">
-              <span className="profile-invite-mini-redpacket">
-                <span className="profile-invite-mini-redpacket-flap" />
-                <span className="profile-invite-mini-redpacket-band" />
-                <span className="profile-invite-mini-redpacket-medal" />
-                <span className="profile-invite-mini-redpacket-star" />
-              </span>
+              <img className="profile-invite-heading-art" src={inviteRewardMiniRedpacketImage} alt="" />
             </span>
             <p className="profile-invite-title">邀请好友得奖励</p>
           </div>
@@ -326,21 +323,7 @@ export function ProfileInviteRewardCard({
           </p>
         </div>
         <div className="profile-invite-art" aria-hidden="true">
-          <span className="profile-reward-visual">
-            <span className="profile-reward-coin profile-reward-coin--back" />
-            <span className="profile-reward-confetti profile-reward-confetti--left" />
-            <span className="profile-reward-envelope">
-              <span className="profile-reward-envelope-flap" />
-              <span className="profile-reward-ribbon" />
-              <span className="profile-reward-seal" />
-            </span>
-            <span className="profile-reward-coin-stack" />
-            <span className="profile-reward-coin profile-reward-coin--front" />
-            <span className="profile-reward-gift-box" />
-            <span className="profile-reward-confetti profile-reward-confetti--right" />
-            <span className="profile-reward-sparkle profile-reward-sparkle--one" />
-            <span className="profile-reward-sparkle profile-reward-sparkle--two" />
-          </span>
+          <img className="profile-invite-art-image" src={inviteRewardHeroImage} alt="" />
         </div>
       </div>
 

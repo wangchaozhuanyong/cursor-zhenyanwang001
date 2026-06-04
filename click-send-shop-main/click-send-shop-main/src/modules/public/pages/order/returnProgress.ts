@@ -1,4 +1,4 @@
-import type { ReturnEvent, ReturnRequest, ReturnStatus } from "@/types/return";
+import type { ReturnEvent, ReturnLogisticsTrack, ReturnRefundRecordRow, ReturnRequest, ReturnStatus } from "@/types/return";
 
 export type ReturnFilterKey = "all" | "action" | "processing" | "refund" | "done" | "rejected";
 export type BuyerReturnActionKey = "evidence" | "logistics" | "confirm" | "cancel";
@@ -60,6 +60,15 @@ export const RETURN_FILTERS: Array<{ key: ReturnFilterKey; label: string }> = [
   { key: "rejected", label: "异常/关闭" },
 ];
 
+const REFUND_RESULT_LABELS: Record<string, string> = {
+  pending: "等待处理",
+  success: "已处理",
+  manual: "人工记录",
+  refunded: "已退款",
+  partially_refunded: "部分退款",
+  failed: "退款失败",
+};
+
 export function getReturnTypeLabel(type?: string) {
   return RETURN_TYPE_LABELS[type || ""] || type || "售后";
 }
@@ -74,6 +83,20 @@ export function getReturnItemName(ret: ReturnRequest) {
 
 export function getReturnItemImage(ret: ReturnRequest) {
   return ret.item_info?.product_image || ret.product_image || "";
+}
+
+export function getRefundRecordStatusLabel(record: Pick<ReturnRefundRecordRow, "processing_result" | "verify_status">) {
+  return REFUND_RESULT_LABELS[record.processing_result || ""] || REFUND_RESULT_LABELS[record.verify_status || ""] || record.processing_result || record.verify_status || "未知状态";
+}
+
+export function getRefundRecordAmountText(record: Pick<ReturnRefundRecordRow, "amount" | "currency">) {
+  const amount = Number(record.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+  return `${record.currency || "MYR"} ${amount.toFixed(2)}`;
+}
+
+export function getLogisticsTrackTitle(track: Pick<ReturnLogisticsTrack, "title" | "status" | "description">) {
+  return track.title || track.status || track.description || "物流状态更新";
 }
 
 export function getBuyerReturnAction(ret: Pick<ReturnRequest, "status">): {

@@ -264,6 +264,24 @@ async function listPaymentEventsAdmin(q, filters) {
   return { list: rows, total };
 }
 
+async function selectRefundEventsForReturn(q, orderId, returnId) {
+  const refundRefPattern = `return_${returnId}_%`;
+  const [rows] = await q.query(
+    `SELECT id, payment_order_id, order_id, provider, provider_event_id, event_type,
+            verify_status, processing_result, payload_json, error_message, created_at
+       FROM payment_events
+      WHERE order_id = ?
+        AND event_type LIKE 'refund.%'
+        AND (
+          provider_event_id LIKE ?
+          OR JSON_UNQUOTE(JSON_EXTRACT(payload_json, '$.refund_reference')) LIKE ?
+        )
+      ORDER BY created_at DESC`,
+    [orderId, refundRefPattern, refundRefPattern],
+  );
+  return rows;
+}
+
 async function aggregatePaidByDay(q, reconcileDate, provider) {
   const [[row]] = await q.query(
     `SELECT COUNT(*) AS order_count,
@@ -380,6 +398,7 @@ module.exports = {
   listReconciliations,
   listPaymentOrdersAdmin,
   listPaymentEventsAdmin,
+  selectRefundEventsForReturn,
   aggregatePaidByDay,
   selectLatestPendingStripePaymentOrderIdByOrderId,
   selectLatestPendingPaymentOrderId,
@@ -387,4 +406,3 @@ module.exports = {
   selectPaymentEventById,
   selectPaymentEventByProviderEventId,
 };
-

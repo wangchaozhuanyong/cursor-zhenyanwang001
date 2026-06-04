@@ -1,0 +1,36 @@
+<svg width="112" height="94" viewBox="0 0 112 94" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="miniPacketRed" x1="20" y1="16" x2="76" y2="82" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8774"/>
+      <stop offset="0.52" stop-color="#F04438"/>
+      <stop offset="1" stop-color="#C92B20"/>
+    </linearGradient>
+    <linearGradient id="miniPacketRedDark" x1="42" y1="18" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF6E5E"/>
+      <stop offset="1" stop-color="#B91E17"/>
+    </linearGradient>
+    <linearGradient id="miniGold" x1="24" y1="28" x2="77" y2="69" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0B8"/>
+      <stop offset="0.5" stop-color="#F5B548"/>
+      <stop offset="1" stop-color="#E99128"/>
+    </linearGradient>
+    <filter id="miniShadow" x="5" y="9" width="91" height="82" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#A73A24" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <path d="M90.5 17.5L94.1 27.9L104.5 31.5L94.1 35.1L90.5 45.5L86.9 35.1L76.5 31.5L86.9 27.9L90.5 17.5Z" fill="#F6BD59"/>
+  <path d="M18.8 60.2C16.4 61 14.4 58.5 15.7 56.3L22.1 45.6C23.5 43.2 27.1 44.1 28 46.7L32.1 58.6C33 61.2 30.5 63.7 27.9 62.8L18.8 60.2Z" fill="#FFD57C" opacity="0.95"/>
+  <g filter="url(#miniShadow)" transform="rotate(-7 48 50)">
+    <rect x="35" y="22" width="50" height="56" rx="8" fill="url(#miniPacketRedDark)"/>
+    <rect x="18" y="17" width="61" height="65" rx="9" fill="url(#miniPacketRed)"/>
+    <path d="M25 28C31.9 22.2 66.4 18.7 73.6 25.8C68.6 35.4 58.9 42.4 48.9 42.5C38.7 42.6 30.3 36.3 25 28Z" fill="#FF9A83" fill-opacity="0.55"/>
+    <path d="M23.5 49.7C34.9 43.8 63.9 42.5 76.7 48.4L75.8 55.1C60.1 50.3 41.8 51.1 25 57.1L23.5 49.7Z" fill="url(#miniGold)"/>
+    <circle cx="50.8" cy="49.4" r="13.8" fill="#FFF1C7"/>
+    <circle cx="50.8" cy="49.4" r="10.6" fill="url(#miniGold)"/>
+    <path d="M50.8 42.4V57.9M45.9 46.3H55.7M46.7 51.2H54.9" stroke="#E88922" stroke-width="3" stroke-linecap="round"/>
+    <path d="M22.3 20.7C35.8 24 57.2 22.3 75.2 16.5" stroke="white" stroke-opacity="0.32" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <path d="M79.3 60.3L85.4 64.1L91.2 59.7L89.5 66.7L95.5 70.6L88.3 71.1L86.6 78.1L83.9 71.4L76.7 71.9L82.2 67.3L79.3 60.3Z" fill="#FFD36E"/>
+  <circle cx="86.8" cy="13.8" r="2.2" fill="#FFD987"/>
+  <circle cx="99.4" cy="56.5" r="2.6" fill="#FFE8B1"/>
+</svg>

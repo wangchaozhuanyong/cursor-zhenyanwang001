@@ -3,6 +3,8 @@ const { BusinessError } = require('../../../errors/BusinessError');
 const repo = require('../repository/return.repository');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../../constants/status');
 const { assertReturnTransition } = require('../returnStateMachine');
+const logisticsModule = require('../../logistics');
+const paymentModule = require('../../payment');
 
 const USER_CANCELABLE_STATUSES = new Set([
   RETURN_STATUS.PENDING,
@@ -14,6 +16,47 @@ const USER_CANCELABLE_STATUSES = new Set([
 
 function safeJson(value) {
   return JSON.stringify(value || {});
+}
+
+function getLogisticsApi() {
+  return /** @type {any} */ (logisticsModule).api || {};
+}
+
+function getPaymentApi() {
+  return /** @type {any} */ (paymentModule).api || {};
+}
+
+async function listReturnTracksQuietly(returnId) {
+  const fn = getLogisticsApi().listReturnTracks;
+  if (typeof fn !== 'function') return [];
+  try {
+    return await fn(returnId);
+  } catch (err) {
+    console.error('[return.service] load return logistics tracks failed:', err?.message || err);
+    return [];
+  }
+}
+
+async function listRefundRecordsQuietly(orderId, returnId) {
+  const fn = getPaymentApi().listRefundEventsForReturn;
+  if (typeof fn !== 'function') return [];
+  try {
+    return await fn(orderId, returnId);
+  } catch (err) {
+    console.error('[return.service] load return refund records failed:', err?.message || err);
+    return [];
+  }
+}
+
+async function refreshReturnShipmentTrackingQuietly(shipment) {
+  const fn = getLogisticsApi().refreshReturnShipmentTrackingQuietly;
+  if (typeof fn !== 'function') return null;
+  try {
+    return await fn(shipment);
+  } catch (err) {
+    console.error('[return.service] refresh return shipment tracking failed:', err?.message || err);
+    return null;
+  }
 }
 
 function uniqueImages(...groups) {
@@ -86,13 +129,23 @@ async function getReturnRequests(userId, query) {
 async function getReturnById(userId, returnId) {
   const row = await repo.selectReturnByIdAndUser(returnId, userId);
   if (!row) throw new BusinessError(404, '售后记录不存在');
-  const [events, shipments] = await Promise.all([
+  const [events, shipments, logisticsTracks, refundRecords] = await Promise.all([
     repo.selectReturnEvents(returnId, userId),
     repo.selectReturnShipments(returnId),
+    listReturnTracksQuietly(returnId),
+    listRefundRecordsQuietly(row.order_id, returnId),
   ]);
   const data = formatReturnRow(row);
   data.events = events || [];
   data.shipments = shipments || [];
+  data.logistics_tracks = logisticsTracks || [];
+  data.refund_records = refundRecords || [];
+  data.refund_summary = {
+    order_payment_status: row.order_payment_status || '',
+    order_refund_status: row.order_refund_status || '',
+    order_refunded_amount: Number(row.order_refunded_amount || 0),
+    refund_amount: Number(row.refund_amount || 0),
+  };
   return { data };
 }
 
@@ -234,8 +287,9 @@ async function submitReturnLogistics(userId, returnId, body = {}) {
   const trackingNo = String(body.tracking_no || '').trim();
   if (!carrier || !trackingNo) throw new BusinessError(400, '请填写快递公司和物流单号');
   assertReturnTransition(current.status, RETURN_STATUS.RETURN_IN_TRANSIT);
+  const shipmentId = generateId();
   await repo.insertReturnShipment({
-    id: generateId(),
+    id: shipmentId,
     returnId,
     direction: 'buyer_return',
     carrier,
@@ -263,6 +317,14 @@ async function submitReturnLogistics(userId, returnId, body = {}) {
     title: statusEventTitle(RETURN_STATUS.RETURN_IN_TRANSIT),
     note: `${carrier} ${trackingNo}`,
     payloadJson: safeJson({ carrier, tracking_no: trackingNo }),
+  });
+  await refreshReturnShipmentTrackingQuietly({
+    id: shipmentId,
+    order_id: current.order_id,
+    return_id: returnId,
+    direction: 'buyer_return',
+    carrier,
+    tracking_no: trackingNo,
   });
   return getReturnById(userId, returnId);
 }

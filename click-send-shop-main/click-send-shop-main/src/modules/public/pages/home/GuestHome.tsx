@@ -24,7 +24,7 @@ import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
-import { AnimatedSection } from "@/modules/micro-interactions";
+import { AnimatedSection } from "@/modules/micro-interactions/components/AnimatedSection";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { isHomeModuleEnabled } from "@/constants/homeModules";
 import {

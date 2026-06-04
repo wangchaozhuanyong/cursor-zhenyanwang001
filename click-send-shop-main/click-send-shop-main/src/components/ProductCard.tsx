@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
-import { AnimatedSection } from "@/modules/micro-interactions";
+import { AnimatedSection } from "@/modules/micro-interactions/components/AnimatedSection";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";

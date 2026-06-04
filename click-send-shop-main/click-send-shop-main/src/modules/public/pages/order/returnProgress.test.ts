@@ -3,6 +3,9 @@ import type { ReturnRequest } from "@/types/return";
 import {
   buildReturnTimeline,
   getBuyerReturnAction,
+  getLogisticsTrackTitle,
+  getRefundRecordAmountText,
+  getRefundRecordStatusLabel,
   shouldShowReturnInFilter,
 } from "./returnProgress";
 
@@ -64,5 +67,26 @@ describe("returnProgress", () => {
     expect(timeline).toHaveLength(2);
     expect(timeline[1]?.current).toBe(true);
     expect(timeline[1]?.title).toBe("请寄回商品并填写物流");
+  });
+
+  it("formats refund record status and amount", () => {
+    expect(getRefundRecordStatusLabel({
+      processing_result: "partially_refunded",
+      verify_status: "success",
+    })).toBe("部分退款");
+    expect(getRefundRecordAmountText({ amount: 25, currency: "MYR" })).toBe("MYR 25.00");
+  });
+
+  it("uses logistics track title before fallback status", () => {
+    expect(getLogisticsTrackTitle({
+      title: "包裹已签收",
+      status: "delivered",
+      description: "Delivered",
+    })).toBe("包裹已签收");
+    expect(getLogisticsTrackTitle({
+      title: "",
+      status: "in_transit",
+      description: "In transit",
+    })).toBe("in_transit");
   });
 });

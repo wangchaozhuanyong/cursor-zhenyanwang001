@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CheckCircle2, Circle, ImagePlus, Loader2, PackageCheck, RotateCcw, Truck, X } from "lucide-react";
+import { CheckCircle2, Circle, CreditCard, ImagePlus, Loader2, PackageCheck, RotateCcw, Truck, X } from "lucide-react";
 import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
 import PageHeader from "@/components/PageHeader";
@@ -13,11 +13,26 @@ import type { ReturnRequest } from "@/types/return";
 import {
   buildReturnTimeline,
   getBuyerReturnAction,
+  getLogisticsTrackTitle,
+  getRefundRecordAmountText,
+  getRefundRecordStatusLabel,
   getReturnItemImage,
   getReturnItemName,
   getReturnStatusLabel,
   getReturnTypeLabel,
 } from "./returnProgress";
+
+const ORDER_REFUND_STATUS_LABELS: Record<string, string> = {
+  pending: "待处理",
+  paid: "未退款",
+  partially_refunded: "部分退款",
+  refunded: "已退款",
+  refunding: "退款中",
+};
+
+function getOrderRefundStatusLabel(status?: string) {
+  return ORDER_REFUND_STATUS_LABELS[status || ""] || status || "暂无退款";
+}
 
 export default function ReturnDetail() {
   const { id } = useParams();
@@ -263,6 +278,43 @@ export default function ReturnDetail() {
             ) : null}
 
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <h2 className="flex items-center gap-2 font-semibold text-foreground"><CreditCard size={16} />退款状态</h2>
+              <div className="mt-3 rounded-xl bg-secondary/60 p-3 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <span>订单退款状态：{getOrderRefundStatusLabel(detail.refund_summary?.order_refund_status || detail.refund_summary?.order_payment_status)}</span>
+                  {Number(detail.refund_summary?.refund_amount || detail.refund_amount || 0) > 0 ? (
+                    <span>本次退款：RM {Number(detail.refund_summary?.refund_amount || detail.refund_amount || 0).toFixed(2)}</span>
+                  ) : null}
+                  {Number(detail.refund_summary?.order_refunded_amount || 0) > 0 ? (
+                    <span>订单累计已退：RM {Number(detail.refund_summary?.order_refunded_amount || 0).toFixed(2)}</span>
+                  ) : null}
+                </div>
+              </div>
+              {detail.refund_records?.length ? (
+                <div className="mt-3 space-y-2">
+                  {detail.refund_records.map((record) => (
+                    <div key={record.id} className="rounded-xl border border-border bg-background/60 p-3 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-medium text-foreground">{getRefundRecordStatusLabel(record)}</p>
+                        <p className="text-muted-foreground">{formatDateTime(record.created_at)}</p>
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                        {getRefundRecordAmountText(record) ? <span>{getRefundRecordAmountText(record)}</span> : null}
+                        {record.provider ? <span>{record.provider}</span> : null}
+                        {record.refund_reference ? <span>{record.refund_reference}</span> : null}
+                      </div>
+                      {record.error_message ? <p className="mt-1 text-destructive">{record.error_message}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
+                  暂无支付渠道退款记录，商家处理退款后这里会同步显示。
+                </p>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h2 className="font-semibold text-foreground">申请信息</h2>
               <div className="mt-3 space-y-2 text-xs text-muted-foreground">
                 <p>原因：{detail.reason || "-"}</p>
@@ -280,7 +332,7 @@ export default function ReturnDetail() {
 
             {detail.shipments?.length ? (
               <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="font-semibold text-foreground">物流记录</h2>
+                <h2 className="font-semibold text-foreground">退货包裹</h2>
                 <div className="mt-3 space-y-2">
                   {detail.shipments.map((item) => (
                     <div key={item.id} className="rounded-xl bg-secondary/60 p-3 text-xs">
@@ -290,6 +342,38 @@ export default function ReturnDetail() {
                     </div>
                   ))}
                 </div>
+              </section>
+            ) : null}
+
+            {detail.shipments?.length || detail.logistics_tracks?.length ? (
+              <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                <h2 className="flex items-center gap-2 font-semibold text-foreground"><Truck size={16} />退货物流轨迹</h2>
+                {detail.logistics_tracks?.length ? (
+                  <div className="mt-3 space-y-3">
+                    {detail.logistics_tracks.map((track, index) => (
+                      <div key={track.id} className="grid grid-cols-[22px_1fr] gap-3 text-xs">
+                        <div className="flex flex-col items-center">
+                          <Circle className={index === 0 ? "fill-[var(--theme-primary)] text-[var(--theme-primary)]" : "text-muted-foreground"} size={14} />
+                          {index < (detail.logistics_tracks?.length || 0) - 1 ? <span className="mt-1 h-full w-px min-h-8 bg-border" /> : null}
+                        </div>
+                        <div className="min-w-0 rounded-xl bg-background/60 p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="font-medium text-foreground">{getLogisticsTrackTitle(track)}</p>
+                            <p className="text-muted-foreground">{track.event_time ? formatDateTime(track.event_time) : "-"}</p>
+                          </div>
+                          <p className="mt-1 break-words text-muted-foreground">{track.description || track.location || "-"}</p>
+                          <p className="mt-1 text-[11px] text-muted-foreground">
+                            {[track.carrier, track.tracking_no, track.source].filter(Boolean).join(" · ")}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
+                    已收到退货物流单号，暂无承运商轨迹。物流接口接通或商家刷新后会显示完整轨迹。
+                  </p>
+                )}
               </section>
             ) : null}
           </>

@@ -50,6 +50,9 @@ export interface ReturnRequest {
   };
   events?: ReturnEvent[];
   shipments?: ReturnShipment[];
+  logistics_tracks?: ReturnLogisticsTrack[];
+  refund_records?: ReturnRefundRecordRow[];
+  refund_summary?: ReturnRefundSummary;
   created_at: string;
   updated_at: string;
 }
@@ -95,6 +98,23 @@ export interface ReturnShipment {
   updated_at?: string;
 }
 
+export interface ReturnLogisticsTrack {
+  id: string;
+  order_id: string;
+  return_id?: string | null;
+  return_shipment_id?: string | null;
+  direction?: "order_shipping" | "buyer_return" | "merchant_exchange" | string;
+  tracking_no: string;
+  carrier: string;
+  carrier_code: string;
+  status: string;
+  title: string;
+  description: string;
+  location: string;
+  event_time: string;
+  source: string;
+}
+
 export interface ReturnEvidenceParams {
   description?: string;
   images?: string[];
@@ -135,9 +155,27 @@ export type ReturnListParams = Partial<PaginationParams> & {
 
 export interface ReturnRefundRecordRow {
   id: string;
+  payment_order_id?: string | null;
+  order_id?: string | null;
+  provider?: string;
+  provider_event_id?: string;
   event_type: string;
+  verify_status?: string;
   processing_result: string;
+  amount?: number;
+  currency?: string;
+  mode?: string;
+  reason?: string;
+  refund_reference?: string;
+  error_message?: string;
   created_at: string;
+}
+
+export interface ReturnRefundSummary {
+  order_payment_status?: string;
+  order_refund_status?: string;
+  order_refunded_amount?: number;
+  refund_amount?: number;
 }
 
 export interface ReturnInventoryRestoreRow {
@@ -164,6 +202,8 @@ export interface ReturnDetail extends ReturnRequest {
   };
   item_info?: { product_name?: string; sku_code?: string; request_qty?: number };
   refund_records?: ReturnRefundRecordRow[];
+  logistics_tracks?: ReturnLogisticsTrack[];
+  refund_summary?: ReturnRefundSummary;
   inventory_restore_records?: ReturnInventoryRestoreRow[];
   operation_logs?: ReturnOperationLogRow[];
   events?: ReturnEvent[];

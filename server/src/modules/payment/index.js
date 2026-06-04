@@ -2,7 +2,7 @@ const { Router } = require('express');
 
 const router = Router();
 
-/** ?·???? payment ? order ?? api ? */
+/** Public module API for payment consumers. */
 /** @type {any} */ (router).api = {
   payWithRewardWallet: (...args) => require('./service/payments.service').payWithRewardWallet(...args),
   createStripeCheckoutForOrder: (...args) =>
@@ -12,6 +12,7 @@ const router = Router();
   updateChannelAdmin: (...args) => require('./service/payments.service').updateChannelAdmin(...args),
   listPaymentOrdersAdmin: (...args) => require('./service/payments.service').listPaymentOrdersAdmin(...args),
   listPaymentEventsAdmin: (...args) => require('./service/payments.service').listPaymentEventsAdmin(...args),
+  listRefundEventsForReturn: (...args) => require('./service/payments.service').listRefundEventsForReturn(...args),
   markOrderPaidByAdmin: (...args) => require('./service/payments.service').markOrderPaidByAdmin(...args),
   replayEvent: (...args) => require('./service/payments.service').replayEvent(...args),
   listReconciliations: (...args) => require('./service/payments.service').listReconciliations(...args),
@@ -23,4 +24,3 @@ router.use('/payments', require('./routes/payments.webhook.routes'));
 router.use('/payments', require('./routes/payments.routes'));
 
 module.exports = router;
-

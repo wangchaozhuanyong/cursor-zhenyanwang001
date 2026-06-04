@@ -6,6 +6,9 @@ function formatTrack(row) {
   return {
     id: row.id,
     order_id: row.order_id,
+    return_id: row.return_id || null,
+    return_shipment_id: row.return_shipment_id || null,
+    direction: row.direction || 'order_shipping',
     tracking_no: row.tracking_no,
     carrier: row.carrier,
     carrier_code: row.carrier_code,
@@ -31,6 +34,12 @@ function buildProvider(order = {}) {
 
 async function listTracks(orderId) {
   const rows = await repo.selectTracksByOrderId(orderId);
+  return rows.map(formatTrack);
+}
+
+async function listReturnTracks(returnId) {
+  if (!returnId) return [];
+  const rows = await repo.selectTracksByReturnId(returnId);
   return rows.map(formatTrack);
 }
 
@@ -81,9 +90,51 @@ async function refreshOrderTrackingQuietly(orderId) {
   }
 }
 
+async function refreshReturnShipmentTracking(shipment) {
+  if (!shipment?.order_id || !shipment?.return_id || !shipment?.id) {
+    throw new ValidationError('缺少退货物流关联信息');
+  }
+  if (!shipment.tracking_no) {
+    throw new ValidationError('缺少物流单号');
+  }
+
+  const { carrier, events } = await malaysiaCarrierAdapter.fetchTracking({
+    carrier: shipment.carrier,
+    tracking_no: shipment.tracking_no,
+  });
+  if (events.length > 0) {
+    await repo.replaceAdapterReturnShipmentTracks(shipment, carrier.code, events);
+  }
+
+  return {
+    data: {
+      logistics_provider: {
+        carrier: carrier.label,
+        carrier_code: carrier.code,
+        tracking_no: shipment.tracking_no,
+        tracking_url: carrier.url || '',
+      },
+      logistics_timeline: await listReturnTracks(shipment.return_id),
+      tracking_notice: 'Tracking info is subject to the carrier website.',
+    },
+    message: events.length ? 'Tracking timeline refreshed' : 'Carrier API not connected',
+  };
+}
+
+async function refreshReturnShipmentTrackingQuietly(shipment) {
+  try {
+    return await refreshReturnShipmentTracking(shipment);
+  } catch {
+    return null;
+  }
+}
+
 module.exports = {
   attachTracking,
   listTracks,
+  listReturnTracks,
   refreshOrderTracking,
   refreshOrderTrackingQuietly,
+  refreshReturnShipmentTracking,
+  refreshReturnShipmentTrackingQuietly,
 };

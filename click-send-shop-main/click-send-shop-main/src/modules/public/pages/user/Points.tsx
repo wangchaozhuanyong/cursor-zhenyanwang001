@@ -2,14 +2,10 @@ import { CN_TIMEZONE, formatDateTime } from "@/utils/formatDateTime";
 import { useCallback, useEffect, useState } from "react";
 import {
   CalendarCheck,
-  ChevronRight,
-  ClipboardList,
-  ListChecks,
   Loader2,
   Star,
   TrendingDown,
   TrendingUp,
-  type LucideIcon,
 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
@@ -104,44 +100,6 @@ function signInRuleText(config: SignInConfig | null, ready: boolean) {
   return normalizePointsText(config.disabledReason) || "签到规则暂不可用";
 }
 
-function PointsQuickCard({
-  icon: Icon,
-  title,
-  description,
-  href,
-}: {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  href?: string;
-}) {
-  const content = (
-    <>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">
-        <Icon size={20} aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-foreground">{title}</span>
-        <span className="mt-1 block truncate text-xs text-muted-foreground">{description}</span>
-      </span>
-      {href ? <ChevronRight size={16} className="shrink-0 text-muted-foreground" aria-hidden /> : null}
-    </>
-  );
-
-  const className =
-    "flex min-h-[86px] items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm transition-colors";
-
-  if (href) {
-    return (
-      <a href={href} className={cn(className, "hover:bg-secondary/60 active:scale-[0.99]")}>
-        {content}
-      </a>
-    );
-  }
-
-  return <div className={className}>{content}</div>;
-}
-
 function PointsHeroCard({
   balance,
   signInConfig,
@@ -192,7 +150,7 @@ function PointsHeroCard({
                 {statusText}
               </span>
               <span className="inline-flex min-h-9 items-center rounded-full bg-white/10 px-3 text-xs">
-                {signInConfig?.usesDefault ? "默认签到规则" : "后台签到规则"}
+                {signInConfig?.usesDefault ? "默认签到奖励" : "签到奖励规则"}
               </span>
             </div>
             <UnifiedButton
@@ -242,24 +200,6 @@ function PointsCheckInPanel({
         <CalendarCheck size={16} aria-hidden />
         {signingIn ? "签到中..." : signedInToday ? "已签到" : "去签到"}
       </UnifiedButton>
-    </section>
-  );
-}
-
-function PointsActionsSection({ signInConfig, configReady }: { signInConfig: SignInConfig | null; configReady: boolean }) {
-  return (
-    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="积分功能">
-      <PointsQuickCard
-        icon={ClipboardList}
-        title="积分规则"
-        description={signInRuleText(signInConfig, configReady)}
-      />
-      <PointsQuickCard
-        icon={ListChecks}
-        title="积分明细"
-        description="查看收入与消耗记录"
-        href="#points-records-heading"
-      />
     </section>
   );
 }
@@ -495,8 +435,6 @@ export default function Points() {
           signingIn={signingIn}
           onSignIn={() => void handleSignIn()}
         />
-
-        <PointsActionsSection signInConfig={signInConfig} configReady={configReady} />
 
         <PointsRecordsSection
           loading={loading}

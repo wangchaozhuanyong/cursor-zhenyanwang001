@@ -1,6 +1,4 @@
-import { motion } from "framer-motion";
-import { useMotionConfig } from "@/modules/micro-interactions";
-import { silkTransition } from "@/modules/micro-interactions/motionConfig";
+import { useMotionConfig } from "@/modules/micro-interactions/hooks/useMotionConfig";
 import { cn } from "@/lib/utils";
 
 type SilkRefreshOverlayProps = {
@@ -18,10 +16,11 @@ export default function SilkRefreshOverlay({
 
   if (!show) return null;
 
-  const content = (
+  return (
     <div
       className={cn(
         "pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center px-3 pt-2",
+        enabled && level !== "none" && "animate-[store-refresh-fade-in_180ms_ease-out]",
         className,
       )}
       aria-live="polite"
@@ -34,18 +33,5 @@ export default function SilkRefreshOverlay({
         {label}
       </div>
     </div>
-  );
-
-  if (!enabled || level === "none") return content;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      transition={silkTransition(level === "rich" ? 0.22 : 0.16)}
-    >
-      {content}
-    </motion.div>
   );
 }

@@ -20,6 +20,10 @@ BUILD_FRONTEND_ON_SERVER="${BUILD_FRONTEND_ON_SERVER:-0}"
 FRONTEND_BUILD_HEAP_MB="${FRONTEND_BUILD_HEAP_MB:-768}"
 FAST_MODE="${FAST_MODE:-1}"
 BACKUP_BEFORE_DEPLOY="${BACKUP_BEFORE_DEPLOY:-1}"
+CLEANUP_STATIC_AFTER_DEPLOY="${CLEANUP_STATIC_AFTER_DEPLOY:-1}"
+DEPLOY_BASE="${DEPLOY_BASE:-/var/www/damatong}"
+KEEP_RELEASES="${KEEP_RELEASES:-2}"
+KEEP_ROLLBACKS="${KEEP_ROLLBACKS:-1}"
 STATE_DIR="${PROJECT_DIR}/.deploy-state"
 
 # /var/www/damatong 等目录常为 www-data 属主，普通 rsync -a 会因 chgrp 失败（exit 23）
@@ -294,5 +298,11 @@ fi
 
 PM2_APP="$PM2_APP" HEALTH_PORT="$HEALTH_PORT" HEALTH_PATH="$HEALTH_PATH" \
   bash "$PROJECT_DIR/deploy/verify-pm2.sh" | tee -a "$LOG_FILE"
+
+if [[ "$CLEANUP_STATIC_AFTER_DEPLOY" == "1" && -f "$PROJECT_DIR/deploy/cleanup-damatong-static.sh" ]]; then
+  echo "🧹 清理旧静态发布目录（保留 release=${KEEP_RELEASES}, rollback=${KEEP_ROLLBACKS}）..." | tee -a "$LOG_FILE"
+  DEPLOY_BASE="$DEPLOY_BASE" KEEP_RELEASES="$KEEP_RELEASES" KEEP_ROLLBACKS="$KEEP_ROLLBACKS" \
+    bash "$PROJECT_DIR/deploy/cleanup-damatong-static.sh" | tee -a "$LOG_FILE"
+fi
 
 echo "🎉 部署成功，版本 $LOCAL_COMMIT" | tee -a "$LOG_FILE"

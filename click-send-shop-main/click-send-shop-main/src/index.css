@@ -3790,6 +3790,7 @@ html[data-app-scope="store"] .profile-service-grid {
 
 html[data-app-scope="store"] .profile-service-action {
   position: relative;
+  isolation: isolate;
   display: flex;
   aspect-ratio: 1 / 1;
   min-height: 0;
@@ -3798,17 +3799,34 @@ html[data-app-scope="store"] .profile-service-action {
   justify-content: center;
   gap: 0.38rem;
   overflow: visible;
-  border: 1px solid color-mix(in srgb, var(--profile-red) 12%, var(--theme-border));
-  border-radius: 1rem;
-  background: color-mix(in srgb, white 64%, var(--theme-surface));
+  border: 1px solid color-mix(in srgb, var(--profile-red) 15%, var(--theme-border));
+  border-radius: 1.08rem;
+  background:
+    radial-gradient(circle at 50% 8%, color-mix(in srgb, white 82%, transparent), transparent 54%),
+    linear-gradient(180deg, color-mix(in srgb, white 70%, var(--theme-surface)), color-mix(in srgb, var(--theme-surface) 88%, var(--profile-rose-surface))),
+    var(--theme-surface);
   padding: 0.5rem 0.2rem;
   text-align: center;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 82%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 86%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--profile-red) 7%, transparent),
+    0 12px 24px -22px color-mix(in srgb, var(--profile-red-deep) 34%, transparent);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 html[data-app-scope="store"] .profile-service-icon {
   width: clamp(2.18rem, 10vw, 2.58rem);
   height: clamp(2.18rem, 10vw, 2.58rem);
+  border: 1px solid color-mix(in srgb, var(--profile-red) 10%, white);
+  background:
+    radial-gradient(circle at 36% 18%, color-mix(in srgb, white 86%, transparent), transparent 36%),
+    linear-gradient(145deg, color-mix(in srgb, white 82%, var(--theme-surface)), color-mix(in srgb, var(--profile-red) 8%, var(--theme-surface)));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 86%, transparent),
+    0 8px 18px -16px color-mix(in srgb, var(--profile-red-deep) 42%, transparent);
 }
 
 html[data-app-scope="store"] .profile-service-label {
@@ -3816,10 +3834,21 @@ html[data-app-scope="store"] .profile-service-label {
   overflow: hidden;
   color: color-mix(in srgb, var(--theme-text-on-surface) 86%, var(--profile-red-deep));
   font-size: 0.78rem;
-  font-weight: 650;
+  font-weight: var(--store-emphasis-weight, 660);
   line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-app-scope="store"] .profile-service-action:hover {
+    border-color: color-mix(in srgb, var(--profile-red) 24%, var(--theme-border));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 88%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--profile-red) 9%, transparent),
+      0 16px 28px -22px color-mix(in srgb, var(--profile-red-deep) 40%, transparent);
+    transform: translateY(-1px);
+  }
 }
 
 @media (max-width: 380px) {

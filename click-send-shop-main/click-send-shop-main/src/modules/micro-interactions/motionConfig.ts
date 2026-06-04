@@ -38,8 +38,8 @@ export function pageTransition(level: MotionTier) {
   const duration = level === "rich" ? 0.26 : 0.18;
   const y = level === "rich" ? 10 : 5;
   return {
-    initial: level === "rich" ? { opacity: 0, y, scale: 0.996 } : { opacity: 0, y },
-    animate: level === "rich" ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, y: 0 },
+    initial: { opacity: 0, y },
+    animate: { opacity: 1, y: 0 },
     transition: silkTransition(duration),
   };
 }
@@ -61,8 +61,8 @@ export function listItemTransition(level: MotionTier, index: number) {
   const y = level === "rich" ? 18 : 8;
   const delay = Math.min(index, LIST_STAGGER_CAP - 1) * 0.035;
   return {
-    initial: level === "rich" ? { opacity: 0, y, scale: 0.98 } : { opacity: 0, y },
-    animate: level === "rich" ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, y: 0 },
+    initial: { opacity: 0, y },
+    animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, transition: silkTransition(0.14) },
     transition: silkTransition(level === "rich" ? 0.24 : 0.18, delay),
   };
@@ -70,13 +70,13 @@ export function listItemTransition(level: MotionTier, index: number) {
 
 export function modalTransition(level: MotionTier) {
   if (level === "none") return { overlay: {}, content: {}, transition: { duration: 0 } };
-  const scale = level === "rich" ? 0.96 : 0.98;
+  const y = level === "rich" ? 10 : 6;
   return {
     overlay: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
     content: {
-      initial: { opacity: 0, scale },
-      animate: { opacity: 1, scale: 1 },
-      exit: { opacity: 0, scale },
+      initial: { opacity: 0, y },
+      animate: { opacity: 1, y: 0 },
+      exit: { opacity: 0, y },
     },
     transition: easeOut(0.18),
   };

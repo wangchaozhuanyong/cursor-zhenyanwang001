@@ -102,12 +102,7 @@ export function BottomSheet({
 
   const sheetTransition: Transition = reduced
     ? { duration: 0.12 }
-    : {
-        type: "spring",
-        stiffness: level === "rich" ? 430 : 390,
-        damping: level === "rich" ? 36 : 38,
-        mass: 0.86,
-      };
+    : { duration: level === "rich" ? 0.28 : 0.22, ease: SILK_EASE };
 
   const childInitial = reduced ? false : { opacity: 0, y: 10 };
   const childAnimate = open || reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 };

@@ -186,7 +186,7 @@ export default function PointsGiftShop() {
   const onlinePaymentEnabled = loyaltyConfig?.checkout.onlinePaymentEnabled ?? capabilities.onlinePaymentEnabled;
 
   return (
-    <StoreAccountLayout title="积分兑换" onBack={() => navigate("/points")} mainClassName="sm:py-6 lg:py-6">
+    <StoreAccountLayout title="积分兑换" backFallback="/points" mainClassName="sm:py-6 lg:py-6">
       <div className="flex flex-col gap-6">
         <section className={cn("rounded-2xl px-5 py-5 text-center sm:px-8", THEME_ACCENT_HERO_SHELL)}>
           <p className={cn(THEME_ACCENT_HERO_LABEL, "normal-case tracking-normal")}>可用积分</p>

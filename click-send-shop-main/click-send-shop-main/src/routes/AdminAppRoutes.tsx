@@ -8,6 +8,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import AdminRouteFallback from "@/modules/admin/pages/error/AdminRouteFallback";
 import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
 import ChinaBrowserCompatNotice from "@/components/ChinaBrowserCompatNotice";
+import RouteBackTracker from "@/components/RouteBackTracker";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { queryClient } from "@/lib/queryClient";
@@ -96,6 +97,7 @@ export function AdminAppRoutes() {
             <SiteIdentitySync />
             <AppScopeSync />
             <AdminTitleSync />
+            <RouteBackTracker />
             <ChinaBrowserCompatNotice />
             <Suspense fallback={<AppRouteFallback />}>
               <Routes>

@@ -233,7 +233,7 @@ export default function Orders() {
   const moreActionBtn = "flex w-full items-center justify-between rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--theme-text)]";
 
   return (
-    <StoreAccountLayout title="我的订单" onBack={() => navigate("/profile", { replace: true })} mainClassName="sm:p-0 lg:py-6">
+    <StoreAccountLayout title="我的订单" mainClassName="sm:p-0 lg:py-6">
         <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background py-2 sm:-mx-4 lg:top-[calc(var(--store-desktop-header-height,4rem)+0.5rem)] lg:mx-0 lg:rounded-xl lg:border lg:bg-[var(--theme-surface)]">
           <div className="relative overflow-hidden">
             <div

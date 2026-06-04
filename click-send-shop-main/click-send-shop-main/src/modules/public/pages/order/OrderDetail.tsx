@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
@@ -33,6 +33,7 @@ import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { OrderDiscountLines } from "./components/OrderDiscountLines";
 import ReturnApplySheet from "./ReturnApplySheet";
 import { SUPPORT_PAGE_PATH } from "@/utils/supportDownloadConfig";
+import { useGoBack } from "@/hooks/useGoBack";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const steps = ["待付款", "已付款", "已发货", "已完成"];
@@ -127,14 +128,13 @@ function canViewLogistics(order: Order) {
 
 export default function OrderDetail() {
   const { id } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
+  const goBack = useGoBack("/orders");
   const isMobileSheet = usePreferBottomSheet("standard");
   const { currentOrder: order, loading, error, loadOrderDetail, cancelOrder, confirmReceive } = useOrderStore();
   const { addToCart, clearBuyNow, setSelectAll } = useCartStore();
 
-  const fromOrders = (location.state as { from?: string } | null)?.from || "/orders";
-  const handleBack = () => navigate(fromOrders, { replace: true });
+  const handleBack = goBack;
   const [reviewItemId, setReviewItemId] = useState("");
   const [reviewProductMeta, setReviewProductMeta] = useState<{ name?: string; variantName?: string }>({});
   const [confirmReviewOpen, setConfirmReviewOpen] = useState(false);

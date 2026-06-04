@@ -9,6 +9,7 @@ type StoreAccountLayoutProps = {
   onBack?: () => void;
   children: ReactNode;
   rightSlot?: ReactNode;
+  backFallback?: string;
   className?: string;
   mainClassName?: string;
 };
@@ -19,10 +20,11 @@ export default function StoreAccountLayout({
   onBack,
   children,
   rightSlot,
+  backFallback,
   className,
   mainClassName,
 }: StoreAccountLayoutProps) {
-  const defaultBack = useGoBack();
+  const defaultBack = useGoBack(backFallback);
   const handleBack = onBack ?? defaultBack;
 
   return (

@@ -1,11 +1,13 @@
 import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { buildRoutePath, isUsableBackRoute, normalizeInternalRoutePath, readRouteBack } from "@/utils/routeBackState";
 
 type LocationState = { from?: string };
 
 /** 个人中心常见子页：无可用历史栈时默认回到个人中心 */
 const PROFILE_HUB_PATHS = new Set([
   "/points",
+  "/points/gifts",
   "/rewards",
   "/invite",
   "/address",
@@ -42,17 +44,31 @@ export type GoBackAction =
 /** Pure resolver for back navigation; fallback is only used when history/state are unavailable. */
 export function resolveGoBackAction(input: {
   pathname: string;
+  search?: string;
+  hash?: string;
   stateFrom?: string;
+  storedFrom?: string;
   locationKey: string;
   fallback?: string;
+  historyIndex?: number;
 }): GoBackAction {
-  const stateFrom = input.stateFrom?.startsWith("/") ? input.stateFrom : undefined;
+  const currentPath = buildRoutePath({ pathname: input.pathname, search: input.search, hash: input.hash });
+  const normalizedCurrent = normalizeInternalRoutePath(currentPath);
+  const stateFrom = normalizeInternalRoutePath(input.stateFrom);
+  const storedFrom = normalizeInternalRoutePath(input.storedFrom);
+  const canUseHistory = typeof input.historyIndex === "number"
+    ? input.historyIndex > 0
+    : input.locationKey !== "default";
 
-  if (stateFrom) {
+  if (isUsableBackRoute(stateFrom, currentPath) && stateFrom !== normalizedCurrent) {
     return { kind: "path", path: stateFrom, replace: true };
   }
 
-  if (input.locationKey !== "default") {
+  if (isUsableBackRoute(storedFrom, currentPath) && storedFrom !== normalizedCurrent) {
+    return { kind: "path", path: storedFrom, replace: true };
+  }
+
+  if (canUseHistory) {
     return { kind: "history", delta: -1 };
   }
 
@@ -66,14 +82,25 @@ export function resolveGoBackAction(input: {
 export function useGoBack(fallback?: string) {
   const navigate = useNavigate();
   const location = useLocation();
+  const currentPath = buildRoutePath(location);
+  const locationKey = location.key;
+  const locationState = location.state;
+  const pathname = location.pathname;
+  const search = location.search;
+  const hash = location.hash;
 
   return useCallback(() => {
-    const stateFrom = (location.state as LocationState | null)?.from;
+    const stateFrom = (locationState as LocationState | null)?.from;
+    const storedFrom = readRouteBack(locationKey, currentPath);
     const action = resolveGoBackAction({
-      pathname: location.pathname,
+      pathname,
+      search,
+      hash,
       stateFrom,
-      locationKey: location.key,
+      storedFrom,
+      locationKey,
       fallback,
+      historyIndex: typeof window !== "undefined" ? window.history.state?.idx : undefined,
     });
 
     if (action.kind === "history") {
@@ -82,5 +109,5 @@ export function useGoBack(fallback?: string) {
     }
 
     navigate(action.path, { replace: action.replace });
-  }, [fallback, location.key, location.pathname, location.state, navigate]);
+  }, [currentPath, fallback, hash, locationKey, locationState, navigate, pathname, search]);
 }

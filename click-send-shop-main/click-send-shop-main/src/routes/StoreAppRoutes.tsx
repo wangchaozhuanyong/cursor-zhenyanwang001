@@ -9,6 +9,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import TrackingManager from "@/components/TrackingManager";
 import RouteAnalyticsTracker from "@/components/RouteAnalyticsTracker";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
+import RouteBackTracker from "@/components/RouteBackTracker";
 import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
 import ChinaBrowserCompatNotice from "@/components/ChinaBrowserCompatNotice";
@@ -241,6 +242,7 @@ function MainStoreRoutes() {
           <PwaStandaloneAnalytics />
           <AppScopeSync />
           <TrackingManager />
+          <RouteBackTracker />
           {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
           <RouteSeoGuard />
           <PwaUpdateToast />

@@ -139,7 +139,7 @@ function ProductCardInner({
   const nameRow = (
     <h3
       className={cn(
-        "store-product-card-title line-clamp-2 text-[13.5px] font-semibold leading-snug text-[var(--theme-text)]",
+        "store-product-card-title line-clamp-2 text-[13.5px] leading-snug",
         cardCenter && "text-center",
       )}
     >

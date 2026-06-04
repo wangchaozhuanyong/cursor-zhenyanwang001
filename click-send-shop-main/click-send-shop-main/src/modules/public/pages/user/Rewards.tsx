@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Gift, Loader2, ShoppingBag, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Clock, Gift, Loader2, ShoppingBag, TrendingDown, TrendingUp, Users, Wallet } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -9,7 +9,6 @@ import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import type { RewardConfig, RewardTransaction, RewardTransactionCategory } from "@/types/reward";
 import {
   THEME_ACCENT_HERO_ICON,
-  THEME_ACCENT_HERO_ICON_WRAP,
   THEME_ACCENT_HERO_LABEL,
   THEME_ACCENT_HERO_MUTED,
   THEME_ACCENT_HERO_SHELL,
@@ -127,78 +126,122 @@ export default function Rewards() {
   const groupedRecords = useMemo(() => groupRewardRecordsByMonth(records), [records]);
   const balanceLabel = config?.display.balanceLabel?.trim() || DEFAULT_BALANCE_LABEL;
   const usageNotice = config?.display.usageNotice?.trim() || DEFAULT_USAGE_NOTICE;
+  const summaryItems = [
+    { label: "累计获得", value: `+${money(config?.stats.totalEarned ?? 0)}`, icon: Gift },
+    { label: "累计抵扣", value: `-${money(config?.stats.totalSpent ?? 0)}`, icon: Wallet },
+    { label: "待入账", value: money(config?.pendingAmount ?? 0), icon: Clock },
+  ];
 
   return (
-    <StoreAccountLayout title="返现记录" onBack={goBack} className="store-page pb-6" mainClassName="sm:px-4 lg:py-6">
+    <StoreAccountLayout title="返现记录" onBack={goBack} className="store-page pb-8" mainClassName="sm:px-4 lg:py-6">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`relative overflow-hidden rounded-2xl p-6 ${THEME_ACCENT_HERO_SHELL}`}
+        className={cn("relative overflow-hidden rounded-[28px] px-6 py-7 shadow-[0_18px_42px_-24px_rgba(238,54,26,0.72)] sm:px-7", THEME_ACCENT_HERO_SHELL)}
+        style={{
+          background:
+            "linear-gradient(135deg, color-mix(in srgb, var(--theme-price) 92%, #ff6f48) 0%, color-mix(in srgb, var(--theme-danger) 78%, #ff512f) 58%, color-mix(in srgb, var(--theme-danger) 96%, #d92713) 100%)",
+        }}
       >
         <div
-          className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full"
-          style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 12%, transparent)" }}
+          className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full"
+          style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 13%, transparent)" }}
         />
+        <div
+          className="pointer-events-none absolute right-7 top-12 hidden h-28 w-28 rotate-[-10deg] items-center justify-center rounded-[30px] sm:flex"
+          style={{
+            background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 12%, transparent)",
+            boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--theme-coupon-accent-foreground) 16%, transparent)",
+          }}
+        >
+          <Wallet size={54} className="text-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_36%,transparent)]" />
+        </div>
         <div className="relative flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <p className={THEME_ACCENT_HERO_LABEL}>{balanceLabel}</p>
+            <div className="flex items-center gap-2">
+              <p className={cn(THEME_ACCENT_HERO_LABEL, "text-[15px] font-semibold normal-case tracking-normal sm:text-base")}>{balanceLabel}</p>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_45%,transparent)] text-xs font-semibold text-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_75%,transparent)]">
+                ?
+              </span>
+            </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className={`store-stat-value ${THEME_ACCENT_HERO_VALUE}`}>
-                <span className="mr-1 text-[14px] font-bold leading-none sm:text-base">RM</span>
+              <span className={cn("store-stat-value tabular-nums leading-none", THEME_ACCENT_HERO_VALUE, "text-5xl sm:text-6xl")}>
+                <span className="mr-3 text-[22px] font-extrabold leading-none sm:text-2xl">RM</span>
                 {money(config?.balance ?? 0)}
               </span>
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {[
-                { label: "累计获得", value: `+${money(config?.stats.totalEarned ?? 0)}` },
-                { label: "累计消费", value: `-${money(config?.stats.totalSpent ?? 0)}` },
-                { label: "待入账", value: money(config?.pendingAmount ?? 0) },
-              ].map((item) => (
-                <div key={item.label} className="rounded-xl bg-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_10%,transparent)] px-2 py-2 text-center">
-                  <p className={`text-[10px] ${THEME_ACCENT_HERO_MUTED}`}>{item.label}</p>
-                  <p className={`mt-1 text-xs font-semibold ${THEME_ACCENT_HERO_VALUE}`}>{item.value}</p>
-                </div>
-              ))}
+            <p className={cn("mt-4 text-sm font-medium leading-relaxed sm:text-base", THEME_ACCENT_HERO_SUBTLE)}>{usageNotice}</p>
+            <div className="mt-7 grid grid-cols-3 overflow-hidden rounded-[22px] bg-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_12%,transparent)] px-2 py-4 backdrop-blur-sm">
+              {summaryItems.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.label}
+                    className={cn(
+                      "flex min-w-0 flex-col items-center justify-center px-2 text-center",
+                      index > 0 ? "border-l border-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_34%,transparent)]" : "",
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Icon size={17} className={THEME_ACCENT_HERO_ICON} />
+                      <p className={cn("truncate text-[12px] font-semibold sm:text-sm", THEME_ACCENT_HERO_MUTED)}>{item.label}</p>
+                    </div>
+                    <p className={cn("mt-2 text-[22px] font-extrabold leading-none tabular-nums sm:text-2xl", THEME_ACCENT_HERO_VALUE)}>{item.value}</p>
+                  </div>
+                );
+              })}
             </div>
-            <p className={`mt-4 text-xs leading-relaxed ${THEME_ACCENT_HERO_SUBTLE}`}>{usageNotice}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <UnifiedButton
-                type="button"
-                onClick={() => navigate("/")}
-                className={cn("inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold", THEME_BTN_PRICE)}
-              >
-                <ShoppingBag size={14} />
-                去购物
-              </UnifiedButton>
-              {inviteEnabled ? (
-                <UnifiedButton
-                  type="button"
-                  onClick={() => navigate("/invite")}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_35%,transparent)] px-4 py-2 text-xs font-semibold text-[var(--theme-coupon-accent-foreground)]"
-                >
-                  <Users size={14} />
-                  邀请好友赚返现
-                </UnifiedButton>
-              ) : null}
-            </div>
-          </div>
-          <div className={`hidden h-16 w-16 shrink-0 sm:flex ${THEME_ACCENT_HERO_ICON_WRAP}`}>
-            <Gift size={32} className={THEME_ACCENT_HERO_ICON} />
           </div>
         </div>
       </motion.div>
 
-      <div className="mt-5 flex rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] p-1 ring-1 ring-[var(--theme-border)]">
+      <div className="mt-4 overflow-hidden rounded-[24px] border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_18px_42px_-32px_rgba(0,0,0,0.32)]">
+        <div className={cn("grid", inviteEnabled ? "grid-cols-2" : "grid-cols-1")}>
+          <UnifiedButton
+            type="button"
+            onClick={() => navigate("/")}
+            className="group flex min-w-0 items-center justify-center gap-4 px-4 py-5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]"
+          >
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_13%,var(--theme-surface))] text-[var(--theme-price)]">
+              <ShoppingBag size={25} />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-base font-semibold text-[var(--theme-text)]">去购物</span>
+              <span className="mt-1 block truncate text-xs text-[var(--theme-text-muted)]">使用返现抵扣</span>
+            </span>
+          </UnifiedButton>
+          {inviteEnabled ? (
+            <UnifiedButton
+              type="button"
+              onClick={() => navigate("/invite")}
+              className="group flex min-w-0 items-center justify-center gap-4 border-l border-[var(--theme-border)] px-4 py-5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]"
+            >
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_11%,var(--theme-surface))] text-[var(--theme-danger)]">
+                <Users size={25} />
+              </span>
+              <span className="min-w-0">
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="truncate text-base font-semibold text-[var(--theme-text)]">邀请好友赚返现</span>
+                  <ArrowRight size={17} className="shrink-0 text-[var(--theme-text-muted)]" />
+                </span>
+                <span className="mt-1 block truncate text-xs text-[var(--theme-text-muted)]">好友下单 你得返现</span>
+              </span>
+            </UnifiedButton>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-6 flex border-b border-[var(--theme-border)]">
         {TABS.map((item) => (
           <UnifiedButton
             key={item.key}
             type="button"
             onClick={() => void handleTabChange(item.key)}
             className={cn(
-              "relative flex-1 rounded-xl py-3 text-sm font-medium transition-all",
+              "relative flex-1 rounded-none px-1 pb-3 pt-2 text-base font-medium transition-colors",
               tab === item.key
-                ? "bg-[var(--theme-surface)] text-[var(--theme-text-on-surface)] shadow-[var(--theme-shadow)]"
-                : "text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]",
+                ? "text-[var(--theme-price)] after:absolute after:bottom-0 after:left-1/2 after:h-1 after:w-14 after:-translate-x-1/2 after:rounded-full after:bg-[var(--theme-price)]"
+                : "text-[color-mix(in_srgb,var(--theme-text)_62%,var(--theme-text-muted))]",
             )}
           >
             {item.label}
@@ -206,30 +249,45 @@ export default function Rewards() {
         ))}
       </div>
 
-      <div className="mt-5">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">返现明细</h3>
+      <div className="mt-7">
+        <h3 className="mb-4 text-xl font-bold text-foreground">返现明细</h3>
         {loading ? (
-          <div className="flex items-center justify-center rounded-xl border border-border bg-card p-10">
+          <div className="flex items-center justify-center rounded-[24px] border border-border bg-card p-12">
             <Loader2 size={20} className="animate-spin text-muted-foreground" />
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-10 text-center">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-[24px] border border-border bg-card p-10 text-center">
             <p className="text-sm text-muted-foreground">{error}</p>
             <UnifiedButton type="button" onClick={() => void loadInitial()} className={cn("rounded-full px-5 py-2 text-sm font-semibold", THEME_BTN_PRICE)}>
               重试
             </UnifiedButton>
           </div>
         ) : records.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card p-8 text-center">
-            <p className="text-sm text-muted-foreground">暂无返现记录</p>
-            <p className="mt-2 text-xs text-muted-foreground">邀请好友付款成功或购物使用返现余额后，会在这里显示明细。</p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <div className="rounded-[24px] border border-[color-mix(in_srgb,var(--theme-price)_16%,var(--theme-border))] bg-card px-6 py-10 text-center shadow-[0_18px_42px_-34px_rgba(238,54,26,0.42)] sm:px-8">
+            <div className="mx-auto flex h-32 w-44 items-end justify-center">
+              <div className="relative h-24 w-28 rounded-[22px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-danger)_36%,white)_0%,color-mix(in_srgb,var(--theme-danger)_70%,var(--theme-price))_100%)] shadow-[0_18px_35px_-26px_rgba(238,54,26,0.8)]">
+                <div className="absolute -top-8 left-8 h-14 w-14 rounded-xl bg-[var(--theme-surface)] shadow-[0_12px_26px_-18px_rgba(0,0,0,0.3)]">
+                  <div className="mx-auto mt-3 h-1 w-9 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-surface))]" />
+                  <div className="mx-auto mt-3 h-1 w-9 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-surface))]" />
+                </div>
+                <div className="absolute -left-7 bottom-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,var(--theme-warning)_50%,white)] bg-[color-mix(in_srgb,var(--theme-warning)_28%,white)] text-xs font-bold text-[color-mix(in_srgb,var(--theme-warning)_84%,var(--theme-text))]">
+                  ￥
+                </div>
+                <div className="absolute -right-6 bottom-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,var(--theme-warning)_50%,white)] bg-[color-mix(in_srgb,var(--theme-warning)_28%,white)] text-xs font-bold text-[color-mix(in_srgb,var(--theme-warning)_84%,var(--theme-text))]">
+                  ￥
+                </div>
+                <div className="absolute right-[-12px] top-10 h-8 w-11 rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_28%,var(--theme-surface))]" />
+              </div>
+            </div>
+            <p className="mt-5 text-xl font-bold text-[var(--theme-text)]">暂无返现记录</p>
+            <p className="mx-auto mt-3 max-w-[18rem] text-sm leading-relaxed text-muted-foreground">邀请好友付款成功或购物使用返现余额后，会在这里显示明细。</p>
+            <div className="mt-7 flex flex-wrap justify-center gap-3">
               {inviteEnabled ? (
-                <UnifiedButton type="button" onClick={() => navigate("/invite")} className={cn("rounded-full px-4 py-2 text-xs font-semibold", THEME_BTN_PRICE)}>
+                <UnifiedButton type="button" onClick={() => navigate("/invite")} className={cn("rounded-full px-8 py-3 text-sm font-semibold", THEME_BTN_PRICE)}>
                   去邀请好友
                 </UnifiedButton>
               ) : null}
-              <UnifiedButton type="button" onClick={() => navigate("/")} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground">
+              <UnifiedButton type="button" onClick={() => navigate("/")} className="rounded-full border border-[var(--theme-price)] px-8 py-3 text-sm font-semibold text-[var(--theme-price)]">
                 去购物
               </UnifiedButton>
             </div>
@@ -250,7 +308,7 @@ export default function Rewards() {
                         disabled={!orderPath}
                         onClick={() => orderPath && navigate(orderPath)}
                         className={cn(
-                          "flex w-full items-center gap-3 rounded-xl border border-border bg-card px-[var(--store-card-x)] py-[var(--store-card-y)] text-left sm:p-4",
+                          "flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-[var(--store-card-x)] py-[var(--store-card-y)] text-left sm:p-4",
                           orderPath ? "transition-colors hover:bg-secondary/60" : "cursor-default",
                         )}
                       >

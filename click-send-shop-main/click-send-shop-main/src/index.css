@@ -2939,18 +2939,18 @@ html[data-app-scope="store"] .profile-invite-card::after {
   content: "";
   position: absolute;
   z-index: 0;
-  top: -2.18rem;
-  right: -2.42rem;
-  width: clamp(11.6rem, 31vw, 18.6rem);
-  height: clamp(10rem, 26vw, 16.4rem);
+  top: -3.45rem;
+  right: -4.68rem;
+  width: clamp(15.8rem, 45vw, 23rem);
+  height: clamp(12.4rem, 36vw, 18.6rem);
   border-radius: 999px;
   background:
-    radial-gradient(circle at 62% 40%, rgba(255, 255, 255, 0.88) 0 22%, rgba(255, 222, 211, 0.58) 48%, rgba(255, 188, 166, 0.28) 68%, transparent 78%),
-    radial-gradient(circle at 34% 62%, rgba(255, 247, 243, 0.55), transparent 58%);
+    radial-gradient(ellipse at 48% 52%, rgba(255, 255, 255, 0.92) 0 22%, rgba(255, 229, 220, 0.72) 46%, rgba(255, 187, 164, 0.34) 67%, transparent 82%),
+    radial-gradient(circle at 28% 66%, rgba(255, 246, 241, 0.62), transparent 55%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.68),
-    -1.2rem 1.4rem 2.6rem -2.2rem rgba(204, 69, 47, 0.22);
-  opacity: 0.96;
+    -1.5rem 1.6rem 3rem -2.4rem rgba(204, 69, 47, 0.2);
+  opacity: 0.98;
   pointer-events: none;
 }
 
@@ -2974,7 +2974,7 @@ html[data-app-scope="store"] .profile-invite-copy {
   min-width: 0;
   flex: 1 1 auto;
   padding-top: 0.08rem;
-  padding-right: 7.35rem;
+  padding-right: clamp(8.45rem, 29vw, 12.5rem);
 }
 
 html[data-app-scope="store"] .profile-invite-heading {
@@ -3148,11 +3148,11 @@ html[data-app-scope="store"] .profile-invite-stat-chip b {
 html[data-app-scope="store"] .profile-invite-art {
   position: absolute;
   z-index: 1;
-  right: clamp(0.65rem, 2vw, 1.28rem);
-  top: 0.48rem;
+  right: clamp(-0.22rem, 1.6vw, 0.55rem);
+  top: 0.08rem;
   display: flex;
-  width: clamp(8.55rem, 16vw, 11.3rem);
-  height: clamp(6.35rem, 12.5vw, 7.85rem);
+  width: clamp(10.25rem, 22vw, 13.2rem);
+  height: clamp(7.55rem, 16.2vw, 9.65rem);
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
@@ -3162,15 +3162,15 @@ html[data-app-scope="store"] .profile-invite-art::before {
   content: "";
   position: absolute;
   z-index: 0;
-  inset: -0.78rem -0.6rem -0.36rem -1.52rem;
+  inset: -0.44rem -0.12rem -0.22rem -1.35rem;
   border-radius: 999px;
   background:
-    radial-gradient(circle at 42% 28%, rgba(255, 255, 255, 0.98) 0 24%, rgba(255, 255, 255, 0.78) 42%, rgba(255, 226, 217, 0.5) 63%, transparent 76%),
-    rgba(255, 255, 255, 0.48);
+    radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.78) 0 22%, rgba(255, 231, 223, 0.4) 52%, transparent 78%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 0.86rem 1.45rem rgba(210, 60, 45, 0.12);
-  transform: translateX(0.42rem);
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 0.7rem 1.2rem rgba(210, 60, 45, 0.08);
+  opacity: 0.72;
+  transform: translateX(0.62rem);
 }
 
 html[data-app-scope="store"] .profile-invite-art::after {
@@ -3931,10 +3931,10 @@ html[data-app-scope="store"] .profile-logout-button {
   }
 
   html[data-app-scope="store"] .profile-invite-card::after {
-    top: -1.72rem;
-    right: -2.12rem;
-    width: 10.4rem;
-    height: 8.85rem;
+    top: -2.72rem;
+    right: -3.84rem;
+    width: 14.4rem;
+    height: 11.2rem;
   }
 
   html[data-app-scope="store"] .profile-vip-watermark {
@@ -4006,19 +4006,19 @@ html[data-app-scope="store"] .profile-logout-button {
   }
 
   html[data-app-scope="store"] .profile-invite-copy {
-    padding-right: 5.05rem;
+    padding-right: 6.08rem;
   }
 
   html[data-app-scope="store"] .profile-invite-art {
-    right: 0.42rem;
-    top: 0.38rem;
-    width: 5.78rem;
-    height: 4.55rem;
+    right: -0.18rem;
+    top: 0.08rem;
+    width: 7.42rem;
+    height: 5.52rem;
   }
 
   html[data-app-scope="store"] .profile-invite-art::before {
-    inset: -0.45rem -0.42rem -0.22rem -0.82rem;
-    transform: translateX(0.24rem);
+    inset: -0.24rem -0.06rem -0.12rem -0.92rem;
+    transform: translateX(0.42rem);
   }
 
   html[data-app-scope="store"] .profile-invite-heading-icon {
@@ -4113,7 +4113,7 @@ html[data-app-scope="store"] .profile-logout-button {
   }
 
   html[data-app-scope="store"] .profile-invite-copy {
-    padding-right: 4.6rem;
+    padding-right: 5.38rem;
   }
 
   html[data-app-scope="store"] .profile-invite-heading {
@@ -4135,10 +4135,10 @@ html[data-app-scope="store"] .profile-logout-button {
   }
 
   html[data-app-scope="store"] .profile-invite-art {
-    right: 0.22rem;
-    top: 0.44rem;
-    width: 5.22rem;
-    height: 4.2rem;
+    right: -0.36rem;
+    top: 0.16rem;
+    width: 6.62rem;
+    height: 5.08rem;
   }
 
   html[data-app-scope="store"] .profile-invite-btn {

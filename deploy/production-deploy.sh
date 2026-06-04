@@ -20,6 +20,7 @@ BUILD_FRONTEND_ON_SERVER="${BUILD_FRONTEND_ON_SERVER:-0}"
 FRONTEND_BUILD_HEAP_MB="${FRONTEND_BUILD_HEAP_MB:-768}"
 FAST_MODE="${FAST_MODE:-1}"
 BACKUP_BEFORE_DEPLOY="${BACKUP_BEFORE_DEPLOY:-1}"
+MIGRATION_TARGETS="${MIGRATION_TARGETS:-}"
 CLEANUP_STATIC_AFTER_DEPLOY="${CLEANUP_STATIC_AFTER_DEPLOY:-1}"
 DEPLOY_BASE="${DEPLOY_BASE:-/var/www/damatong}"
 KEEP_RELEASES="${KEEP_RELEASES:-2}"
@@ -210,7 +211,15 @@ if ! node -e "require('dotenv').config({path:'$BACKEND_DIR/.env'});const mysql=r
 fi
 
 echo "🧩 执行数据库迁移..." | tee -a "$LOG_FILE"
-BACKUP_BEFORE_MIGRATION=1 npm run migrate
+if [[ -n "$MIGRATION_TARGETS" ]]; then
+  echo "[deploy] running selected migrations only: $MIGRATION_TARGETS" | tee -a "$LOG_FILE"
+  for migration in ${MIGRATION_TARGETS//,/ }; do
+    [[ -n "$migration" ]] || continue
+    BACKUP_BEFORE_MIGRATION=1 npm run migrate:one -- "$migration"
+  done
+else
+  BACKUP_BEFORE_MIGRATION=1 npm run migrate
+fi
 npm run verify-schema
 
 if [[ ! -d "$FRONTEND_DIR" ]]; then

@@ -23,6 +23,7 @@
     "admin:role": "node scripts/set-admin-role.js",
     "data-cleanup:run": "node scripts/run-data-cleanup-once.js",
     "migrate": "node scripts/migrate-cli.js",
+    "migrate:one": "node scripts/migrate-cli.js up-one",
     "migrate:down": "node scripts/migrate-cli.js down",
     "migrate:status": "node scripts/migrate-cli.js status",
     "check:migrations": "node scripts/check-migration-prefix-conflicts.js",

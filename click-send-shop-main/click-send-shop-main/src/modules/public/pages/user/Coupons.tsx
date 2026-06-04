@@ -214,18 +214,7 @@ export default function Coupons() {
       </UnifiedButton>
     )
   ) : (
-    <UnifiedButton
-      type="button"
-      onClick={() => setPageView("claimCenter")}
-      className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
-    >
-      领券中心
-      {available.length > 0 ? (
-        <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_18%,var(--theme-surface))] px-1 text-[10px] font-bold text-[var(--theme-price)]">
-          {available.length}
-        </span>
-      ) : null}
-    </UnifiedButton>
+    <ClaimCenterButton count={available.length} onClick={() => setPageView("claimCenter")} />
   );
 
   if (loading && rawCoupons.length === 0) {
@@ -261,18 +250,7 @@ export default function Coupons() {
     >
       {pageView === "mine" ? (
         <div className="mb-4 hidden items-center justify-end lg:flex">
-          <UnifiedButton
-            type="button"
-            onClick={() => setPageView("claimCenter")}
-            className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
-          >
-            领券中心
-            {available.length > 0 ? (
-              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_18%,var(--theme-surface))] px-1 text-[10px] font-bold text-[var(--theme-price)]">
-                {available.length}
-              </span>
-            ) : null}
-          </UnifiedButton>
+          <ClaimCenterButton count={available.length} onClick={() => setPageView("claimCenter")} />
         </div>
       ) : (
         <div className="mb-4 hidden items-center justify-end lg:flex">
@@ -434,3 +412,26 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
     </motion.div>
   );
 });
+
+function ClaimCenterButton({ count, onClick }: { count: number; onClick: () => void }) {
+  return (
+    <UnifiedButton
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "touch-target relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-bold",
+        "bg-[color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))] text-[var(--theme-price)]",
+        "shadow-[0_8px_22px_color-mix(in_srgb,var(--theme-price)_20%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--theme-price)_34%,transparent)]",
+        "transition-transform active:scale-95",
+      )}
+    >
+      <Ticket size={15} strokeWidth={2.4} aria-hidden />
+      <span>领券中心</span>
+      {count > 0 ? (
+        <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--theme-price)] px-1 text-[10px] font-extrabold leading-none text-white shadow-sm ring-2 ring-[var(--theme-surface)]">
+          {count}
+        </span>
+      ) : null}
+    </UnifiedButton>
+  );
+}

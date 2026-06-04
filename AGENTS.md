@@ -6,27 +6,34 @@
 
 除非用户明确要求，不要扩大任务范围，不要主动重构无关代码，不要顺手优化无关功能。
 
+`AGENTS.md` 是 Codex 每次工作的总入口。详细规则放在 `docs/` 里的专项文档中；处理任务时先判断任务类型，再只读取相关文档，不要把所有 docs 一次性读完。完整 `Task Scope` 模板和 `/plan` 阶段规则见 `docs/PROJECT_GOVERNANCE.md`。
+
 ---
 
 ## 一、节约 Token 的执行规则
 
-1. 先定位，再读取文件。
+1. 先判断任务类型，再定位文件。
+   - 每次任务开始前，先判断属于 backend、frontend、UI/UX、API、database、data consistency、concurrency、security、deployment/cache、i18n、docs、CI/checks 中哪一类。
+   - 根据任务类型只读取相关 docs。
+   - 不要为了一个小任务通读全部文档。
+
+2. 先定位，再读取文件。
    - 优先使用 grep / rg / 文件名搜索定位相关模块。
    - 不要一开始就全项目扫描。
    - 不要一次性读取大文件。
    - 不要重复读取同一个文件，除非确实需要确认上下文。
 
-2. 只看和当前任务直接相关的文件。
+3. 只看和当前任务直接相关的文件。
    - 用户问上传图片问题，就优先查看上传组件、上传接口、存储配置、提示逻辑。
    - 用户问 UI 重叠问题，就优先查看对应页面、布局组件、样式文件。
    - 用户问皮肤功能，就优先查看主题配置、皮肤切换逻辑、CSS 变量、前端状态管理。
 
-3. 不做无关预防性修改。
+4. 不做无关预防性修改。
    - 不要为了“可能发生的问题”提前改一堆代码。
    - 不要把一个小 bug 扩展成全系统重构。
    - 不要修改没有被要求、没有被证明有问题的模块。
 
-4. 不输出大段无用解释。
+5. 不输出大段无用解释。
    - 除非用户要求详细解释，否则汇报保持简洁。
    - 不要粘贴完整文件代码。
    - 只说明关键修改点、影响范围、验证方式。
@@ -115,6 +122,7 @@
 8. 编造项目结构、接口、变量名、函数名。
 9. 把不确定的判断说成确定结论。
 10. 没有用户要求时主动添加新功能。
+11. 为了一个任务顺手修其他无关问题。
 
 ---
 
@@ -122,17 +130,57 @@
 
 处理任何任务时，优先按照这个流程：
 
-1. 复述本次任务目标，确认修改范围。
-2. 使用搜索工具定位相关文件。
-3. 阅读最少数量的相关文件。
-4. 找到真实原因。
-5. 做最小必要修改。
-6. 运行最小必要验证。
-7. 按固定格式汇报。
+1. 先输出 `Task Scope`，说明本次必须做什么、明确不做什么、哪些属于待确认。
+2. 判断任务类型，并按下方规则读取相关 docs。
+3. 使用搜索工具定位相关文件。
+4. 阅读最少数量的相关文件。
+5. 找到真实原因或真实现状。
+6. 输出对应任务计划。
+7. 做最小必要修改。
+8. 运行最小必要验证。
+9. 完成后输出对应 `Compliance Report`。
+
+没有运行测试或检查时，必须明确说明原因，不能声称已经验证。
+
+如果用户使用 `/plan` 或明确要求先规划，本阶段只允许读取、分析和输出计划；不允许创建文件、修改文件或直接写代码，除非用户随后明确确认执行。
 
 ---
 
-## 七、用户项目偏好
+## 七、任务类型和 docs 读取规则
+
+所有任务都先读本文件。更详细的治理总纲见 `docs/PROJECT_GOVERNANCE.md`，但也只在任务需要时读取相关章节。
+
+| 任务类型 | 必读或优先读取 | 开始前必须输出 |
+| --- | --- | --- |
+| 后端任务 | `docs/ARCHITECTURE.md` | `Architecture Decision` |
+| 前端任务 | `docs/FRONTEND_ARCHITECTURE.md` | `Frontend Change Plan` |
+| UI/UX 任务 | `docs/DESIGN_SYSTEM.md` | `UI/UX Change Plan` |
+| API 任务 | `docs/API_CONTRACTS.md` | `API Contract Plan` |
+| 数据库任务 | `docs/DATA_CONSISTENCY_AND_CONCURRENCY.md`，必要时 `docs/ARCHITECTURE.md` | `Data Change Plan` |
+| 数据一致性/并发任务 | `docs/DATA_CONSISTENCY_AND_CONCURRENCY.md` | `Data Consistency / Concurrency Plan` |
+| 安全任务 | `docs/SECURITY_GOVERNANCE.md` | `Security Plan` |
+| 质量检查或 CI 任务 | `docs/QUALITY_GATES.md` | `Quality Gate Plan` |
+| 部署、缓存、PWA、生产白屏 | `docs/WEBSITE_ARCHITECTURE.md`，必要时读取缓存和部署文档 | `Deployment / Cache Plan` |
+| i18n / 编码任务 | `docs/encoding-and-i18n-guardrail.md`，必要时 `docs/QUALITY_GATES.md` | `I18n / Encoding Plan` |
+| 专项审计任务 | `docs/CODEX_TASK_PROMPTS.md` 的对应章节 | 对应专项计划 |
+| 文档任务 | 当前任务相关 docs | `Documentation Scope` |
+
+读取 `docs/CODEX_TASK_PROMPTS.md` 时，只读取本次任务对应章节，不要整份读取。
+
+任务完成后必须输出对应报告：
+
+- 后端任务输出 `Architecture Compliance Report`。
+- 前端任务输出 `Frontend Compliance Report`。
+- UI/UX 任务输出 `UI/UX Compliance Report`。
+- API 任务输出 `API Contract Report`。
+- 数据任务输出 `Data Consistency Report`。
+- 安全任务输出 `Security Report`。
+- 质量检查或 CI 任务输出 `Quality Gate Report`。
+- 文档任务输出本次文档变更报告。
+
+---
+
+## 八、用户项目偏好
 
 本项目重视：
 - 稳定性
@@ -147,9 +195,11 @@
 
 ---
 
-## 八、后端应用架构强制规范
+## 九、后端应用架构强制规范
 
 本项目后端不是自由结构项目，必须严格遵守 Modular Monolith + Layered Architecture。
+
+后端详细硬规范以 `docs/ARCHITECTURE.md` 为准；本节只保留 Codex 必须随时记住的核心约束。
 
 后端固定为 24 个模块：
 
@@ -218,7 +268,7 @@ API 路径必须遵守：
 - `server/src/config`、`server/src/middleware`、`server/src/errors`、`server/src/utils` 只放通用能力。
 - `server/scripts`、数据库迁移、备份、恢复、部署脚本不属于业务模块，但不能承载常规业务逻辑。
 
-## 九、Architecture Plan 模板
+## 十、Architecture Decision 模板
 
 以后任何后端代码任务，在写代码之前必须先输出：
 
@@ -238,7 +288,7 @@ Architecture Decision:
 
 如果本次任务不属于后端业务模块，也必须明确写清楚原因，例如“项目级文档 / 架构检查脚本 / CI 配置，不进入业务模块”。
 
-## 十、Architecture Compliance Report 模板
+## 十一、Architecture Compliance Report 模板
 
 每次完成后必须补充架构合规报告：
 
@@ -265,12 +315,23 @@ npm run arch:check
 
 ---
 
-## 十一、整站架构参考规范
+## 十二、整站架构参考规范
 
 处理前端、管理后台、API 调用、部署、缓存、CI、静态资源、PWA、CDN、生产白屏、chunk 加载失败、路由异常等问题时，必须先参考：
 
 ```text
 docs/WEBSITE_ARCHITECTURE.md
+```
+
+专项任务继续读取对应文档：
+
+```text
+docs/FRONTEND_ARCHITECTURE.md
+docs/DESIGN_SYSTEM.md
+docs/API_CONTRACTS.md
+docs/DATA_CONSISTENCY_AND_CONCURRENCY.md
+docs/SECURITY_GOVERNANCE.md
+docs/QUALITY_GATES.md
 ```
 
 使用规则：
@@ -289,7 +350,7 @@ docs/WEBSITE_ARCHITECTURE.md
 - 后端业务改动必须优先遵守 `docs/ARCHITECTURE.md`。
 - 前端、部署、缓存、CI 类问题必须同时参考 `docs/WEBSITE_ARCHITECTURE.md`。
 
-## 十二、新增和修复的验证要求
+## 十三、新增和修复的验证要求
 
 新增功能或修复功能时，必须按影响范围选择验证方式。
 
@@ -313,14 +374,14 @@ cd server && npm run arch:check
 cd click-send-shop-main/click-send-shop-main && npm run check:api-paths
 ```
 
-## 十三、固定审查清单
+## 十四、固定审查清单
 
-每次大功能、新模块倾向改动、跨层问题、生产问题、部署缓存问题开始前，必须先对照这三份文件：
+每次大功能、新模块倾向改动、跨层问题、生产问题、部署缓存问题开始前，必须先对照入口文件和相关 docs：
 
 ```text
 AGENTS.md
-docs/ARCHITECTURE.md
-docs/WEBSITE_ARCHITECTURE.md
+docs/PROJECT_GOVERNANCE.md
+本次任务对应的专项文档
 ```
 
 审查重点：
@@ -334,7 +395,7 @@ docs/WEBSITE_ARCHITECTURE.md
 
 ---
 
-## 十四、与 Cursor 助手的发布分工
+## 十五、与 Cursor 助手的发布分工
 
 - **Codex**：日常开发，push 开发分支即可；不要与 Cursor 同时在服务器跑 `ci-deploy`。
 - **Cursor**：只提交/发布本会话改动的文件；线上统一 **`main`**，细则见 `.cursor/rules/cursor-release-workflow.mdc`。

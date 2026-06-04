@@ -5,7 +5,6 @@ import {
   Copy,
   Crown,
   FileText,
-  Gift,
   LogOut,
   Send,
   User,
@@ -13,6 +12,7 @@ import {
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { formatProfileHeroName } from "./profileHeroName";
 
 export const PROFILE_CARD_CLASS = "store-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
 export const PROFILE_MENU_TAP = "store-profile-tap transition-transform active:scale-[0.98]";
@@ -101,6 +101,8 @@ export function ProfileHeroCard({
   onViewAllBenefits: () => void;
   onAvatarClick: () => void;
 }) {
+  const displayName = formatProfileHeroName(userName);
+
   return (
     <section className="store-profile-vip-card">
       <span className="profile-vip-watermark" aria-hidden="true">VIP</span>
@@ -120,16 +122,12 @@ export function ProfileHeroCard({
 
         <div className="profile-vip-copy">
           <div className="profile-vip-name-row">
-            <p className="profile-vip-name">{userName}</p>
+            <p className="profile-vip-name" title={userName} aria-label={userName}>{displayName}</p>
             <UnifiedButton type="button" onClick={onMemberLevelClick} className="profile-vip-badge">
               <Crown size={13} />
               <span>{memberLevelName}</span>
             </UnifiedButton>
           </div>
-          <UnifiedButton type="button" onClick={onViewAllBenefits} className="profile-vip-benefit-link">
-            欢迎回来，尊享专属权益
-            <ChevronRight size={15} />
-          </UnifiedButton>
         </div>
 
         <div className="profile-vip-message">
@@ -285,14 +283,27 @@ export function ProfileInviteRewardCard({
             {loggedIn ? "好友成功完成后，你可获得现金返现" : "登录后邀请好友获得现金返现"}
           </p>
           {loggedIn ? (
-            <p className="profile-invite-stats">
-              已邀请 <b>{inviteCount}</b> 人，返现金额 <b>RM {rewardBalance.toFixed(2)}</b>
-            </p>
+            <div className="profile-invite-stats" aria-label="邀请奖励数据">
+              <span className="profile-invite-stat-chip">
+                已邀请 <b>{inviteCount}</b> 人
+              </span>
+              <span className="profile-invite-stat-chip">
+                返现金额 <b>RM {rewardBalance.toFixed(2)}</b>
+              </span>
+            </div>
           ) : null}
         </div>
         <div className="profile-invite-art" aria-hidden="true">
-          <span className="profile-gift-box">
-            <Gift size={34} />
+          <span className="profile-reward-visual">
+            <span className="profile-reward-coin profile-reward-coin--back">RM</span>
+            <span className="profile-reward-envelope">
+              <span className="profile-reward-envelope-flap" />
+              <span className="profile-reward-ribbon" />
+              <span className="profile-reward-seal" />
+            </span>
+            <span className="profile-reward-coin profile-reward-coin--front">RM</span>
+            <span className="profile-reward-sparkle profile-reward-sparkle--one" />
+            <span className="profile-reward-sparkle profile-reward-sparkle--two" />
           </span>
         </div>
       </div>

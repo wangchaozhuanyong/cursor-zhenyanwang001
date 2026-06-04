@@ -1,22 +1,33 @@
 import { useEffect, useState } from "react";
 import { type DeferredPromptEvent, isStandaloneApp } from "@/utils/pwa";
+import {
+  clearCapturedPwaInstallPrompt,
+  getCapturedPwaInstallPrompt,
+  initPwaInstallPromptCapture,
+  subscribePwaInstallPrompt,
+} from "@/lib/pwaInstallPromptStore";
 
 export type PwaInstallResult = "accepted" | "dismissed" | "unavailable";
 
-const INSTALL_PROMPT_CHECK_DELAY_MS = 1800;
-
 export function usePwaInstallPrompt(onInstalled?: () => void) {
-  const [deferredPrompt, setDeferredPrompt] = useState<DeferredPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<DeferredPromptEvent | null>(
+    () => getCapturedPwaInstallPrompt().deferredPrompt,
+  );
   const [installing, setInstalling] = useState(false);
   const [installed, setInstalled] = useState(() => isStandaloneApp());
-  const [installPromptChecked, setInstallPromptChecked] = useState(() => isStandaloneApp());
+  const [installPromptChecked, setInstallPromptChecked] = useState(
+    () => isStandaloneApp() || getCapturedPwaInstallPrompt().installPromptChecked,
+  );
 
   useEffect(() => {
-    const onBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      setDeferredPrompt(event as DeferredPromptEvent);
-      setInstallPromptChecked(true);
+    initPwaInstallPromptCapture();
+
+    const syncCapturedPrompt = () => {
+      const captured = getCapturedPwaInstallPrompt();
+      setDeferredPrompt(captured.deferredPrompt);
+      setInstallPromptChecked(isStandaloneApp() || captured.installPromptChecked);
     };
+
     const onAppInstalled = () => {
       setInstalled(true);
       setDeferredPrompt(null);
@@ -24,16 +35,13 @@ export function usePwaInstallPrompt(onInstalled?: () => void) {
       onInstalled?.();
     };
 
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    syncCapturedPrompt();
+    const unsubscribe = subscribePwaInstallPrompt(syncCapturedPrompt);
     window.addEventListener("appinstalled", onAppInstalled);
-    const checkTimer = window.setTimeout(() => {
-      setInstallPromptChecked(true);
-    }, INSTALL_PROMPT_CHECK_DELAY_MS);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      unsubscribe();
       window.removeEventListener("appinstalled", onAppInstalled);
-      window.clearTimeout(checkTimer);
     };
   }, [onInstalled]);
 
@@ -50,8 +58,7 @@ export function usePwaInstallPrompt(onInstalled?: () => void) {
       return "dismissed";
     } finally {
       setInstalling(false);
-      setDeferredPrompt(null);
-      setInstallPromptChecked(true);
+      clearCapturedPwaInstallPrompt();
     }
   };
 

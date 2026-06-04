@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
+import { STORE_COPY } from "@/constants/storeCopy";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
@@ -209,7 +210,7 @@ export default function Categories() {
   const activeCategory = useMemo(() => (activeCat === "all" ? null : findCategoryById(categories, activeCat)), [activeCat, categories]);
   const activeCategoryName = activeCategory?.name || "";
   const categoryDescription = activeCategory?.description?.trim() || "";
-  const siteName = (siteInfo.siteName || "官方商城").trim();
+  const siteName = (siteInfo.siteName || STORE_COPY.brandName).trim();
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const pageHeading = activeCategoryName || "全部分类";
   const title = activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`);
@@ -241,26 +242,30 @@ export default function Categories() {
 
   const setMobileChromeModeStable = useCallback((mode: MobileChromeMode) => {
     if (mobileChromeModeRef.current === mode) {
-      return;
+      return false;
     }
 
     mobileChromeModeRef.current = mode;
     setMobileChromeMode(mode);
+    return true;
   }, []);
 
   const compactMobileChrome = useCallback(() => {
-    layoutScrollGuardUntilRef.current = 0;
-    setMobileChromeModeStable("compact");
+    if (setMobileChromeModeStable("compact")) {
+      layoutScrollGuardUntilRef.current = 0;
+    }
   }, [setMobileChromeModeStable]);
 
   const hideMobileChrome = useCallback(() => {
-    layoutScrollGuardUntilRef.current = window.performance.now() + 340;
-    setMobileChromeModeStable("hidden");
+    if (setMobileChromeModeStable("hidden")) {
+      layoutScrollGuardUntilRef.current = window.performance.now() + 340;
+    }
   }, [setMobileChromeModeStable]);
 
   const revealMobileChrome = useCallback(() => {
-    layoutScrollGuardUntilRef.current = 0;
-    setMobileChromeModeStable("expanded");
+    if (setMobileChromeModeStable("expanded")) {
+      layoutScrollGuardUntilRef.current = 0;
+    }
   }, [setMobileChromeModeStable]);
 
   useLayoutEffect(() => {
@@ -268,7 +273,16 @@ export default function Categories() {
     if (!node) return;
 
     const update = () => {
-      setMobileChromeHeight(node.offsetHeight || 0);
+      const nextHeight = node.offsetHeight || 0;
+      if (!nextHeight) return;
+
+      setMobileChromeHeight((prev) => {
+        if (mobileChromeModeRef.current === "expanded") {
+          return nextHeight;
+        }
+
+        return prev || nextHeight;
+      });
     };
 
     update();
@@ -346,6 +360,10 @@ export default function Categories() {
       lastScrollYRef.current = getScrollY();
 
       if (event.deltaY > 0) {
+        if (mobileChromeModeRef.current === "hidden") {
+          return;
+        }
+
         if (lastScrollYRef.current > MOBILE_CHROME_HIDE_START) {
           hideMobileChrome();
           return;
@@ -386,6 +404,10 @@ export default function Categories() {
       touchStartYRef.current = currentTouchY;
 
       if (gestureDelta > 0) {
+        if (mobileChromeModeRef.current === "hidden") {
+          return;
+        }
+
         if (lastScrollYRef.current > MOBILE_CHROME_HIDE_START) {
           hideMobileChrome();
           return;
@@ -560,7 +582,7 @@ export default function Categories() {
           titleInlineSlot={
             <StoreSearchField
               mode="filter"
-              placeholder="搜索商品..."
+              placeholder={STORE_COPY.searchPlaceholder}
               value={query}
               onValueChange={setQuery}
               className="store-category-search-field"

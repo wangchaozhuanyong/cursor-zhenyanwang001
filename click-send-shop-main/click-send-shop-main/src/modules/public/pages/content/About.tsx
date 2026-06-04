@@ -10,11 +10,12 @@ import type { ContentPage } from "@/types/content";
 import { stripHtml, truncateText } from "@/utils/seo";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { isAboutPlaceholderBody } from "@/constants/helpCenterConfig";
+import { STORE_COPY } from "@/constants/storeCopy";
 
 export default function About() {
   const goBack = useGoBack();
   const siteInfo = useSiteInfo();
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const [page, setPage] = useState<ContentPage | null>(null);
 
   useEffect(() => {
@@ -45,10 +46,10 @@ export default function About() {
           <>
             <section className="rounded-2xl border border-border bg-card p-5">
               <h2 className="text-lg font-semibold text-foreground">{siteName}</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{siteInfo.siteSlogan || "官方商品与服务平台"}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{siteInfo.siteSlogan || STORE_COPY.siteSlogan}</p>
             </section>
             <section className="rounded-2xl border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
-              {siteInfo.siteDescription || "本平台提供商品、服务与客户支持信息。你可以通过页面说明了解商品、服务流程、使用规则和联系方式。"}
+              {siteInfo.siteDescription || STORE_COPY.siteDescription}
             </section>
           </>
         )}

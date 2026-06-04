@@ -1,5 +1,6 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import { suppressAppVersionRecovery } from "@/lib/appVersionRecovery";
+import { shouldSkipRoutePreload } from "@/utils/routePreloadPolicy";
 
 const ADMIN_PRELOAD_RECOVERY_SUPPRESS_MS = 2_500;
 
@@ -204,6 +205,8 @@ const ADMIN_PATTERN_ROUTE_PRELOADERS: Array<[RegExp, AdminLazyComponent]> = [
 const adminRoutePreloadCache = new Map<string, Promise<unknown>>();
 
 export function preloadAdminRoute(to: string): Promise<unknown> | undefined {
+  if (shouldSkipRoutePreload("intent")) return undefined;
+
   const pathname = normalizeAdminRoutePath(to);
   const component =
     ADMIN_EXACT_ROUTE_PRELOADERS.get(pathname)

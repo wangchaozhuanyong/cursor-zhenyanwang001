@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { STORE_COPY } from "@/constants/storeCopy";
 
-const STATIC_FALLBACK = "官方商城";
+const STATIC_FALLBACK = STORE_COPY.brandName;
 
 /**
  * 更新浏览器标题（SPA 内轻量 SEO / 体验）

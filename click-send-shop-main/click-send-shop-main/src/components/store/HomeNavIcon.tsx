@@ -135,7 +135,7 @@ export default function HomeNavIcon({
   if (TokenIcon) {
     return (
       <span className={cn("flex h-full w-full items-center justify-center text-[var(--theme-primary)]", className)}>
-        <TokenIcon className={cn("h-6 w-6", imageClassName)} strokeWidth={2.1} aria-hidden />
+        <TokenIcon className={cn("h-7 w-7", imageClassName)} strokeWidth={2} aria-hidden />
       </span>
     );
   }
@@ -174,5 +174,5 @@ export default function HomeNavIcon({
     );
   }
 
-  return <span className={cn("text-[1.65rem] leading-none", className)}>{iconValue}</span>;
+  return <span className={cn("text-[1.8rem] leading-none", className)}>{iconValue}</span>;
 }

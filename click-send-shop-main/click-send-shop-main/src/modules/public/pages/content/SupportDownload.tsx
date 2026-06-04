@@ -15,6 +15,7 @@ import {
   getEnabledSupportChannels,
   parseSupportDownloadConfig,
 } from "@/utils/supportDownloadConfig";
+import { isLegacyGenericCopy, STORE_COPY, STORE_LEGACY_GENERIC_COPY } from "@/constants/storeCopy";
 import { getChannelTitle } from "@/utils/supportChannels";
 import { toast } from "sonner";
 import "@/styles/support-download.css";
@@ -189,7 +190,10 @@ export default function SupportDownload() {
     }
     return platforms;
   }, [platforms, recommendedPlatform]);
-  const pageTitle = config.title?.trim() || "客服与安装";
+  const rawPageTitle = config.title?.trim() || "";
+  const pageTitle = !rawPageTitle || isLegacyGenericCopy(rawPageTitle, STORE_LEGACY_GENERIC_COPY.supportTitles)
+    ? STORE_COPY.supportCenterTitle
+    : rawPageTitle;
   const installPageUrl = useMemo(() => buildCanonical("/support-download", "tab=download"), []);
 
   if (!config.enabled) {
@@ -203,7 +207,7 @@ export default function SupportDownload() {
   return (
     <div className="store-page-shell store-bottom-safe support-download-page text-[var(--theme-text)]">
       <SeoHead
-        title={`${pageTitle} - ${siteInfo.siteName || "官方商城"}`}
+        title={`${pageTitle} - ${siteInfo.siteName || STORE_COPY.brandName}`}
         description={config.subtitle}
         canonical={buildCanonical("/support-download")}
         robots="index,follow"
@@ -223,7 +227,7 @@ export default function SupportDownload() {
         {!waitingForConfiguredView && availableViews.length > 0 ? (
           <nav
             className="support-download-tabs"
-            aria-label="客服与安装入口"
+            aria-label={`${STORE_COPY.supportCenterTitle}入口`}
             style={{ gridTemplateColumns: `repeat(${availableViews.length}, minmax(0, 1fr))` }}
           >
             {availableViews.map((view) => {
@@ -303,8 +307,8 @@ export default function SupportDownload() {
               <strong>客服渠道暂未显示</strong>
               <span>
                 {canShowInstallView
-                  ? "请稍后再试；如果你是管理员，请到后台客服与安装页面检查客服渠道和添加桌面说明是否已启用。"
-                  : "请稍后再试；如果你是管理员，请到后台客服与安装页面检查微信、WhatsApp 或 Telegram 渠道是否已启用。"}
+                  ? "请稍后再试；如果你是管理员，请到后台客服中心页面检查客服渠道和添加桌面说明是否已启用。"
+                  : "请稍后再试；如果你是管理员，请到后台客服中心页面检查微信、WhatsApp 或 Telegram 渠道是否已启用。"}
               </span>
             </section>
           ) : null}

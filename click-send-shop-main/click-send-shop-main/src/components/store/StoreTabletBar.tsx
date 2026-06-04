@@ -10,17 +10,19 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { isLoggedIn } from "@/utils/token";
+import { preloadRoute } from "@/utils/routePreloadPolicy";
 
 function preloadTabletRoute(path: string) {
   const base = path.split("?")[0];
   if (base === "/") {
-    GuestHome.preload?.();
-    MemberHome.preload?.();
+    preloadRoute(isLoggedIn() ? MemberHome.preload : GuestHome.preload);
   } else if (base === "/search") {
-    SearchPage.preload?.();
+    preloadRoute(SearchPage.preload);
   } else if (base === "/cart") {
-    Cart.preload?.();
+    preloadRoute(Cart.preload);
   }
 }
 
@@ -34,7 +36,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
   const capabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
   const totalItems = useCartStore((s) => s.totalItems());
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
 

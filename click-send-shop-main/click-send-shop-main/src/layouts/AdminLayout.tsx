@@ -20,64 +20,17 @@ import {
   mobileBottomTab,
   navItemsRaw,
   resolveNavLabels,
-  type ResolvedNavChild,
-  type ResolvedNavItem,
 } from "@/layouts/admin/adminNavConfig";
 import AdminWorkTabs from "@/layouts/admin/AdminWorkTabs";
 import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminDirtyGuardProvider } from "@/modules/admin/context/AdminDirtyGuardContext";
 import { AdminAccountSettingsProvider } from "@/modules/admin/context/AdminAccountSettingsContext";
 import { AdminOrderVoiceProvider } from "@/modules/admin/components/AdminOrderVoiceNotifier";
-import { AnimatedPage } from "@/modules/micro-interactions";
+import { AnimatedPage } from "@/modules/micro-interactions/components/AnimatedPage";
 import { preloadAdminRoute } from "@/routes/adminLazyPages";
 import { adminLogout, fetchAdminProfile, isAdminAuthenticated } from "@/services/admin/accountService";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { syncAdminWorkTabFromLocation, useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
-
-const ADMIN_NAV_PRELOAD_START_DELAY_MS = 900;
-const ADMIN_NAV_PRELOAD_GAP_MS = 120;
-
-function collectAdminNavPreloadPaths(items: ResolvedNavItem[]) {
-  const paths: string[] = [];
-  const seen = new Set<string>();
-  const pushPath = (path?: string) => {
-    if (path && !seen.has(path)) {
-      seen.add(path);
-      paths.push(path);
-    }
-  };
-  const visitChildren = (children?: ResolvedNavChild[]) => {
-    for (const child of children ?? []) {
-      pushPath(child.path);
-      visitChildren(child.children);
-    }
-  };
-
-  for (const item of items) {
-    pushPath(item.path);
-    visitChildren(item.children);
-  }
-  return paths;
-}
-
-function childMatchesAdminPath(child: ResolvedNavChild, pathname: string): boolean {
-  const ownPath = child.path ? pathname === child.path || pathname.startsWith(`${child.path}/`) : false;
-  return ownPath || Boolean(child.children?.some((nested) => childMatchesAdminPath(nested, pathname)));
-}
-
-function collectActiveAdminGroupPreloadPaths(items: ResolvedNavItem[], pathname: string) {
-  const activeGroup = items.find((item) => {
-    const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(`${item.path}/`));
-    const childActive = item.children?.some((child) => childMatchesAdminPath(child, pathname));
-    return active || childActive;
-  });
-  return activeGroup ? collectAdminNavPreloadPaths([activeGroup]) : [];
-}
-
-function shouldSkipAdminIdlePreload() {
-  const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-  return Boolean(connection?.saveData);
-}
 
 function AdminLayoutContent() {
   const navigate = useNavigate();
@@ -87,7 +40,6 @@ function AdminLayoutContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const sidebarReturnFocusRef = useRef<HTMLElement | null>(null);
-  const preloadedNavSignatureRef = useRef("");
 
   const can = useAdminPermissionStore((s) => s.can);
   const canAny = useAdminPermissionStore((s) => s.canAny);
@@ -100,43 +52,6 @@ function AdminLayoutContent() {
     () => resolveNavLabels(filterNav(navItemsRaw, can, canAny, capabilities), t),
     [can, canAny, capabilities, t],
   );
-
-  useEffect(() => {
-    if (!isAdminAuthenticated() || shouldSkipAdminIdlePreload()) return;
-    const paths = collectAdminNavPreloadPaths(navItems);
-    const signature = paths.join("|");
-    if (!paths.length || signature === preloadedNavSignatureRef.current) return;
-    preloadedNavSignatureRef.current = signature;
-
-    let cancelled = false;
-    let timer: ReturnType<typeof window.setTimeout> | null = null;
-
-    const schedule = (cb: () => void, delay = ADMIN_NAV_PRELOAD_GAP_MS) => {
-      timer = window.setTimeout(() => {
-        if (cancelled) return;
-        cb();
-      }, delay);
-    };
-
-    const run = (index: number) => {
-      if (cancelled || index >= paths.length) return;
-      void preloadAdminRoute(paths[index]);
-      schedule(() => run(index + 1));
-    };
-
-    schedule(() => run(0), ADMIN_NAV_PRELOAD_START_DELAY_MS);
-    return () => {
-      cancelled = true;
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [navItems]);
-
-  useEffect(() => {
-    if (!isAdminAuthenticated()) return;
-    for (const path of collectActiveAdminGroupPreloadPaths(navItems, location.pathname)) {
-      void preloadAdminRoute(path);
-    }
-  }, [navItems, location.pathname]);
 
   useEffect(() => {
     if (!isAdminAuthenticated()) return;

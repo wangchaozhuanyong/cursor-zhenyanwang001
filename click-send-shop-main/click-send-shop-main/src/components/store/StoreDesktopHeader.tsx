@@ -11,28 +11,29 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { isLoggedIn } from "@/utils/token";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { preloadRoute } from "@/utils/routePreloadPolicy";
 
 type NavItem = { path: string; label: string; icon: typeof Home; enabled?: boolean };
 
 function preloadHeaderRoute(path: string) {
   const base = path.split("?")[0];
   if (base === "/") {
-    GuestHome.preload?.();
-    MemberHome.preload?.();
+    preloadRoute(isLoggedIn() ? MemberHome.preload : GuestHome.preload);
   } else if (base === "/categories") {
-    Categories.preload?.();
+    preloadRoute(Categories.preload);
   } else if (base === "/new-arrivals") {
-    NewArrivals.preload?.();
+    preloadRoute(NewArrivals.preload);
   } else if (base === "/support-download") {
-    SupportDownload.preload?.();
+    preloadRoute(SupportDownload.preload);
   } else if (base === "/search") {
-    Search.preload?.();
+    preloadRoute(Search.preload);
   } else if (base === "/cart") {
-    Cart.preload?.();
+    preloadRoute(Cart.preload);
   } else if (base === "/profile") {
-    Profile.preload?.();
+    preloadRoute(Profile.preload);
   }
 }
 
@@ -47,7 +48,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   const capabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
   const totalItems = useCartStore((s) => s.totalItems());
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
   const loggedIn = isLoggedIn();
@@ -129,7 +130,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
 
         <div className="min-w-0 flex-1 max-w-xl">
           {capabilities.mallEnabled ? (
-            <StoreSearchField mode="navigate" placeholder="搜索商品或品牌..." onNavigate={() => openRoute("/search")} />
+            <StoreSearchField mode="navigate" placeholder={STORE_COPY.searchPlaceholder} onNavigate={() => openRoute("/search")} />
           ) : (
             <div className="h-9" />
           )}

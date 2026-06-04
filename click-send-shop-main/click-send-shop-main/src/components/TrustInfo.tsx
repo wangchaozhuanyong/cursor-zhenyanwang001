@@ -9,7 +9,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
  *  - variant="card" 主副文案的 3 栏卡片 — 适合商品详情页等需要强转化的位置
  *
  * 副文案优先取后台 site_settings 中的 paymentNotice / shippingNotice / supportText（售后信任文案，非客服渠道）。
- * 未配置时回退到默认文案。联系客服请走「客服与安装」配置。
+ * 未配置时回退到默认文案。联系客服请走「客服中心」配置。
  */
 interface Props {
   className?: string;

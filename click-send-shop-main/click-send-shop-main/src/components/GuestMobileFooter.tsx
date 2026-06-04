@@ -23,11 +23,12 @@ import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { buildWhatsAppLink } from "@/utils/supportChannels";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-
-const FOOTER_BRAND_FALLBACK = "大马通";
-const FOOTER_HEADLINE_FALLBACK = "马来西亚华人一站式生活服务与优选商城";
-const FOOTER_DESCRIPTION_FALLBACK =
-  "大马通专注服务马来西亚华人，整合本地优选商品、中国好物、正品保税、工厂货源、签证留学、第二家园与商业服务资源，让在马生活、采购、办事更省心。";
+import {
+  buildStoreCopyright,
+  isLegacyGenericCopy,
+  STORE_COPY,
+  STORE_LEGACY_GENERIC_COPY,
+} from "@/constants/storeCopy";
 
 function cleanFooterText(value?: string) {
   return String(value || "").trim();
@@ -35,11 +36,11 @@ function cleanFooterText(value?: string) {
 
 function resolveFooterBrand(siteName: string) {
   const base = cleanFooterText(siteName).replace(/[.。]\s*$/, "");
-  if (!base || base === "官方商城" || base === "站点") return FOOTER_BRAND_FALLBACK;
+  if (!base || isLegacyGenericCopy(base, STORE_LEGACY_GENERIC_COPY.siteNames)) return STORE_COPY.brandName;
   return base;
 }
 
-function resolveFooterCopy(value: string, fallback: string, genericValues: string[]) {
+function resolveFooterCopy(value: string, fallback: string, genericValues: readonly string[]) {
   const clean = cleanFooterText(value);
   if (!clean || genericValues.includes(clean)) return fallback;
   return clean;
@@ -55,14 +56,14 @@ function buildMailHref(email: string) {
   return normalized ? `mailto:${normalized}` : undefined;
 }
 
-export function GuestFooterBrandMark({ siteName, logoSrc }: { siteName: string; logoSrc?: string }) {
+export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { siteName: string; logoSrc?: string; centered?: boolean }) {
   const base = resolveFooterBrand(siteName);
   const [failedLogoSrc, setFailedLogoSrc] = useState<string | null>(null);
   const cleanLogoSrc = cleanFooterText(logoSrc);
   const showLogo = Boolean(cleanLogoSrc && failedLogoSrc !== cleanLogoSrc);
 
   return (
-    <div className="flex min-w-0 items-center gap-3">
+    <div className={cn("flex min-w-0 items-center gap-3", centered && "mx-auto w-fit max-w-full justify-center")}>
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-[#bfe9ce] bg-white text-[#078437] shadow-[0_18px_34px_-28px_rgba(7,132,55,0.55)] sm:h-14 sm:w-14">
         {showLogo ? (
           <img
@@ -83,7 +84,7 @@ export function GuestFooterBrandMark({ siteName, logoSrc }: { siteName: string; 
           {base}
         </span>
         <span className="mt-1 block text-[12px] font-semibold leading-none text-[#5f6f65]">
-          Damatong.net
+          {STORE_COPY.brandDomain}
         </span>
       </span>
     </div>
@@ -301,10 +302,10 @@ export default function GuestMobileFooter({
 }: GuestMobileFooterProps) {
   const siteInfo = useSiteInfo();
   const { buildSupportPageUrl, channels, openChannel, workingHours: serviceHours } = useSupportRuntime();
-  const brandName = resolveFooterBrand(siteName || siteInfo.siteName || FOOTER_BRAND_FALLBACK);
+  const brandName = resolveFooterBrand(siteName || siteInfo.siteName || STORE_COPY.brandName);
   const footerLogoSrc = cleanFooterText(logoSrc) || resolveSiteLogoUrl(siteInfo);
-  const headline = resolveFooterCopy(slogan, FOOTER_HEADLINE_FALLBACK, ["官方商品与服务平台"]);
-  const intro = resolveFooterCopy(description, FOOTER_DESCRIPTION_FALLBACK, ["本平台提供商品、服务与客户支持信息。"]);
+  const headline = resolveFooterCopy(slogan, STORE_COPY.siteSlogan, STORE_LEGACY_GENERIC_COPY.siteSlogans);
+  const intro = resolveFooterCopy(description, STORE_COPY.siteDescription, STORE_LEGACY_GENERIC_COPY.siteDescriptions);
 
   const whatsappChannel = channels.find((channel) => channel.type === "whatsapp");
   const whatsappDisplay = whatsappChannel?.account?.trim();
@@ -318,11 +319,11 @@ export default function GuestMobileFooter({
   const displayAddress = cleanFooterText(address) || "Komplek Bandar Park";
 
   const legalCompanyRaw = cleanFooterText(footerCompanyName);
-  const legalCompany = !legalCompanyRaw || legalCompanyRaw === "官方商城" ? `${brandName}平台` : legalCompanyRaw;
+  const legalCompany = !legalCompanyRaw || isLegacyGenericCopy(legalCompanyRaw, STORE_LEGACY_GENERIC_COPY.siteNames) ? `${brandName}平台` : legalCompanyRaw;
   const legalCopyrightRaw = cleanFooterText(footerCopyright);
   const legalCopyright =
-    !legalCopyrightRaw || legalCopyrightRaw.includes("官方商城")
-      ? `© ${new Date().getFullYear()} ${brandName}, 保留所有权利.`
+    !legalCopyrightRaw || STORE_LEGACY_GENERIC_COPY.siteNames.some((name) => legalCopyrightRaw.includes(name))
+      ? buildStoreCopyright()
       : legalCopyrightRaw;
   const legalIcp = cleanFooterText(footerIcpNo);
   const legalParts = [legalCompany, legalCopyright, legalIcp].filter(Boolean);
@@ -485,7 +486,7 @@ export default function GuestMobileFooter({
 
         <div className="mt-5 space-y-3 md:hidden">
           <section className="rounded-lg border border-[#dce9e1] bg-white px-4 py-5 shadow-[0_18px_42px_-34px_rgba(20,70,41,0.34)]">
-            <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} />
+            <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} centered />
             <p className="mt-4 text-[14px] leading-7 text-[#607066]">
               {intro}
             </p>

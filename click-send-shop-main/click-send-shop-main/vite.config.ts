@@ -7,9 +7,15 @@ import fs from "fs/promises";
 
 function resolveVendorChunkName(id: string): string | undefined {
   const normalizedId = id.replace(/\\/g, "/");
+  if (
+    normalizedId.includes("react/jsx-runtime")
+    || normalizedId.includes("react/jsx-dev-runtime")
+  ) {
+    return "vendor-react";
+  }
   if (!normalizedId.includes("/node_modules/")) return undefined;
   if (normalizedId.includes("recharts")) return "vendor-recharts";
-  if (normalizedId.includes("framer-motion")) return "vendor-motion";
+  if (normalizedId.includes("framer-motion")) return undefined;
   if (normalizedId.includes("@radix-ui")) return "vendor-radix";
   if (normalizedId.includes("react-router") || normalizedId.includes("@remix-run")) return "vendor-router";
   if (normalizedId.includes("@tanstack/react-query")) return "vendor-query";

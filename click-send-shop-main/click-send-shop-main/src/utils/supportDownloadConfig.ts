@@ -6,6 +6,7 @@ import type {
   SupportDownloadConfig,
   SupportDownloadTab,
 } from "@/types/content";
+import { STORE_COPY } from "@/constants/storeCopy";
 
 export type LegacySupportDownloadConfig = Partial<SupportDownloadConfig> & {
   workingHours?: string;
@@ -25,7 +26,7 @@ export const DEFAULT_PLATFORMS: DownloadPlatform[] = [
     type: "android",
     enabled: true,
     title: "安卓手机",
-    description: "可将商城添加到安卓手机桌面，像 App 一样快速打开。",
+    description: `可将${STORE_COPY.brandName}添加到安卓手机桌面，像 App 一样快速打开。`,
     buttonText: "一键添加到桌面",
     instructions: [
       "点击浏览器右上角“菜单”或“...”",
@@ -39,7 +40,7 @@ export const DEFAULT_PLATFORMS: DownloadPlatform[] = [
     type: "ios",
     enabled: true,
     title: "苹果手机",
-    description: "请使用 Safari 浏览器将商城添加到主屏幕。",
+    description: `请使用 Safari 浏览器将${STORE_COPY.brandName}添加到主屏幕。`,
     buttonText: "复制链接，用 Safari 打开",
     instructions: [
       "点击 Safari 底部工具栏的“分享”按钮",
@@ -52,19 +53,19 @@ export const DEFAULT_PLATFORMS: DownloadPlatform[] = [
 
 export const DEFAULT_SUPPORT_DOWNLOAD_CONFIG: SupportDownloadConfig = {
   enabled: true,
-  title: "客服与安装",
-  subtitle: "如需咨询商品、订单、售后或使用问题，请联系官方客服。",
+  title: STORE_COPY.supportCenterTitle,
+  subtitle: STORE_COPY.supportSubtitle,
   defaultTab: "support",
   support: {
     enabled: true,
-    description: "请选择下方官方客服渠道咨询商品、订单、售后或使用问题。",
+    description: STORE_COPY.supportDescription,
     workingHours: "",
     channels: [],
   },
   download: {
     enabled: true,
     title: "添加到桌面",
-    description: "可将商城添加到手机桌面，像 App 一样快速打开。",
+    description: `可将${STORE_COPY.brandName}添加到手机桌面，像 App 一样快速打开。`,
     platforms: DEFAULT_PLATFORMS,
   },
 };

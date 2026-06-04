@@ -19,7 +19,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthSessionSync from "@/components/AuthSessionSync";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { isLoggedIn } from "@/utils/token";
 import {
   DEFAULT_APPLE_TOUCH_ICON,
   DEFAULT_FAVICON_ICO,
@@ -32,7 +31,7 @@ import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
-import { ModalLayerProvider } from "@/modules/micro-interactions";
+import { ModalLayerProvider } from "@/modules/micro-interactions/modal/ModalLayerProvider";
 import { setTrafficAnalyticsEnabled, trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
@@ -202,72 +201,6 @@ function HomeRoute() {
   return isAuthenticated ? <MemberHome /> : <GuestHome />;
 }
 
-type NetworkInformationLike = {
-  effectiveType?: string;
-  saveData?: boolean;
-};
-
-function getNetworkInformation(): NetworkInformationLike | undefined {
-  if (typeof navigator === "undefined") return undefined;
-  const nav = navigator as Navigator & {
-    connection?: NetworkInformationLike;
-    mozConnection?: NetworkInformationLike;
-    webkitConnection?: NetworkInformationLike;
-  };
-  return nav.connection || nav.mozConnection || nav.webkitConnection;
-}
-
-function shouldSkipLowPriorityRoutePreload() {
-  const connection = getNetworkInformation();
-  if (!connection) return false;
-  if (connection.saveData) return true;
-  return /^(slow-2g|2g)$/i.test(connection.effectiveType || "");
-}
-
-function scheduleIdle(callback: () => void, timeout = 1200) {
-  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-    const idleWindow = window as Window & {
-      requestIdleCallback: (cb: () => void, options?: { timeout: number }) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-    const id = idleWindow.requestIdleCallback(callback, { timeout });
-    return () => idleWindow.cancelIdleCallback?.(id);
-  }
-  const timer = window.setTimeout(callback, timeout);
-  return () => window.clearTimeout(timer);
-}
-
-function RoutePreloadOnIdle() {
-  useEffect(() => {
-    const preloadPrimaryRoutes = () => {
-      GuestHome.preload?.();
-      MemberHome.preload?.();
-      Categories.preload?.();
-      NewArrivals.preload?.();
-      Search.preload?.();
-    };
-    const preloadLowPriorityRoutes = () => {
-      if (shouldSkipLowPriorityRoutePreload()) return;
-      Cart.preload?.();
-      Profile.preload?.();
-      if (isLoggedIn()) Orders.preload?.();
-    };
-
-    const cleanupPrimary = scheduleIdle(preloadPrimaryRoutes, 1200);
-    let cleanupLowPriority: (() => void) | undefined;
-    const lowPriorityTimer = window.setTimeout(() => {
-      cleanupLowPriority = scheduleIdle(preloadLowPriorityRoutes, 3000);
-    }, 5000);
-
-    return () => {
-      cleanupPrimary();
-      window.clearTimeout(lowPriorityTimer);
-      cleanupLowPriority?.();
-    };
-  }, []);
-  return null;
-}
-
 function LoyaltyRouteGuard({ feature, children }: { feature: "points" | "reward" | "referral"; children: ReactNode }) {
   const capabilities = useSiteCapabilities();
   const { config, loading } = useLoyaltyVisibility();
@@ -301,7 +234,6 @@ function MainStoreRoutes() {
         <TooltipProvider>
           <Sonner />
           <TopProgressBar />
-          <RoutePreloadOnIdle />
           <AuthSessionSync />
           <SiteIdentitySync />
           <ReferralInviteSync />

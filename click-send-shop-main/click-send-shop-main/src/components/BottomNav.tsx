@@ -1,6 +1,5 @@
 import { Headphones, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useCartStore } from "@/stores/useCartStore";
@@ -13,6 +12,7 @@ import { useStoreScrollChrome } from "@/contexts/StoreScrollChromeProvider";
 import { Cart, Categories, GuestHome, MemberHome, Profile, SupportDownload } from "@/routes/publicLazyPages";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { preloadRoute } from "@/utils/routePreloadPolicy";
 
 function isEditableElement(el: Element | null): boolean {
   if (!el || !(el instanceof HTMLElement)) return false;
@@ -43,16 +43,15 @@ type ActivePointer = {
 function preloadTabRoute(path: string) {
   const base = path.split("?")[0];
   if (base === "/") {
-    GuestHome.preload?.();
-    MemberHome.preload?.();
+    preloadRoute(isLoggedIn() ? MemberHome.preload : GuestHome.preload);
   } else if (base === "/categories") {
-    Categories.preload?.();
+    preloadRoute(Categories.preload);
   } else if (base === "/support-download") {
-    SupportDownload.preload?.();
+    preloadRoute(SupportDownload.preload);
   } else if (base === "/cart") {
-    Cart.preload?.();
+    preloadRoute(Cart.preload);
   } else if (base === "/profile") {
-    Profile.preload?.();
+    preloadRoute(Profile.preload);
   }
 }
 
@@ -106,8 +105,6 @@ export default function BottomNav() {
     };
   }, []);
 
-  const requiresAuth = (path: string) => path.split("?")[0] === "/profile";
-
   const handleNavigate = useCallback((path: string) => {
     const base = path.split("?")[0];
     const targetSearch = path.includes("?") ? `?${path.split("?")[1]}` : "";
@@ -117,10 +114,6 @@ export default function BottomNav() {
         return;
       }
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-      return;
-    }
-    if (requiresAuth(path) && !isLoggedIn()) {
-      navigateWithStoreTransition(navigate, "/login", { state: { from: path } });
       return;
     }
     preloadTabRoute(path);
@@ -254,13 +247,14 @@ export default function BottomNav() {
                     strokeWidth={isActive ? 2.5 : 1.8}
                   />
                   {tab.path.startsWith("/cart") && totalItems > 0 && (
-                    <motion.span
-                      animate={badgeBump ? { scale: [1, 1.35, 1] } : { scale: 1 }}
-                      transition={{ duration: 0.35 }}
-                      className="absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] font-bold text-[var(--theme-danger-foreground)]"
+                    <span
+                      className={cn(
+                        "absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] font-bold text-[var(--theme-danger-foreground)]",
+                        badgeBump && "store-bottom-nav-badge-bump",
+                      )}
                     >
                       {totalItems > 99 ? "99+" : totalItems}
-                    </motion.span>
+                    </span>
                   )}
                 </span>
                 <span

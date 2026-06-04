@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { useMotionConfig } from "@/modules/micro-interactions";
+import { useMotionConfig } from "@/modules/micro-interactions/hooks/useMotionConfig";
 import { useNavigate } from "react-router-dom";
 import { getBannerContainerClassName } from "@/utils/themeVisuals";
 import { trackEvent } from "@/services/analyticsService";
@@ -24,12 +23,6 @@ interface BannerCarouselProps {
   ariaLabelPrefix?: string;
   themeConfigOverride?: ThemeConfig;
 }
-
-const CROSSFADE_TRANSITION = {
-  opacity: { duration: 0.46, ease: "easeOut" as const },
-  scale: { duration: 0.78, ease: "easeOut" as const },
-  y: { duration: 0.58, ease: "easeOut" as const },
-};
 
 const AUTO_ROTATE_MS = 5600;
 const USER_INTERACTION_PAUSE_MS = 7200;
@@ -236,34 +229,7 @@ export default function BannerCarousel({
           }`}
           aria-hidden
         />
-        {activeImage && motionEnabled ? (
-          <AnimatePresence initial={false}>
-            <motion.img
-              key={banner.id || activeImage || safeIndex}
-              src={activeImage}
-              alt={bannerTitle || fallbackLabel}
-              width={BANNER_IMAGE_WIDTH}
-              height={BANNER_IMAGE_HEIGHT}
-              loading="eager"
-              {...({ fetchpriority: "high" } as Record<string, string>)}
-              decoding="async"
-              className={`absolute inset-0 h-full w-full object-cover ${
-                hasTextLayer ? "store-hero-image-with-copy" : "object-center"
-              }`}
-              initial={{ opacity: 0, scale: 1.024, y: 8 }}
-              animate={{
-                opacity: activeImageLoaded ? 1 : 0,
-                scale: activeImageLoaded ? 1 : 1.018,
-                y: activeImageLoaded ? 0 : 8,
-              }}
-              exit={{ opacity: 0, scale: 1.012, y: -5 }}
-              transition={CROSSFADE_TRANSITION}
-              onLoad={(event) => {
-                if (event.currentTarget.naturalWidth > 0) setActiveImageLoaded(true);
-              }}
-            />
-          </AnimatePresence>
-        ) : activeImage ? (
+        {activeImage ? (
           <img
             key={banner.id || activeImage || safeIndex}
             src={activeImage}
@@ -278,7 +244,7 @@ export default function BannerCarousel({
             }`}
             style={{
               opacity: activeImageLoaded ? 1 : 0,
-              transform: activeImageLoaded ? "scale(1)" : "scale(1.018)",
+              transform: activeImageLoaded ? "translate3d(0, 0, 0) scale(1)" : "translate3d(0, 8px, 0) scale(1.018)",
             }}
             onLoad={(event) => {
               if (event.currentTarget.naturalWidth > 0) setActiveImageLoaded(true);
@@ -297,12 +263,14 @@ export default function BannerCarousel({
           ) : null}
           <div className="store-hero-text-wash pointer-events-none absolute inset-0 z-10" aria-hidden />
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-full items-center px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
-            <motion.div
+            <div
               key={`copy-${banner.id || safeIndex}`}
               className="store-hero-copy-panel"
-              initial={motionEnabled ? { opacity: 0, x: -10 } : false}
-              animate={motionEnabled ? { opacity: 1, x: 0 } : undefined}
-              transition={{ duration: 0.42, ease: "easeOut" }}
+              style={motionEnabled ? {
+                opacity: activeImageLoaded ? 1 : 0,
+                transform: activeImageLoaded ? "translate3d(0, 0, 0)" : "translate3d(-10px, 0, 0)",
+                transition: "opacity 420ms ease-out, transform 420ms ease-out",
+              } : undefined}
             >
               {bannerTitle ? (
                 <h2 className="store-hero-copy-title text-[16px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
@@ -335,7 +303,7 @@ export default function BannerCarousel({
                   <ArrowRight size={14} aria-hidden="true" />
                 </UnifiedButton>
               ) : null}
-            </motion.div>
+            </div>
           </div>
         </>
       ) : null}
@@ -369,23 +337,14 @@ export default function BannerCarousel({
                 aria-label={`第 ${index + 1} 张轮播图`}
                 aria-current={index === safeIndex ? "true" : undefined}
               >
-                {motionEnabled ? (
-                  <motion.div
-                    className="store-hero-dot"
-                    animate={{
-                      width: index === safeIndex ? 12 : 5,
-                      height: 3.5,
-                      opacity: index === safeIndex ? 1 : 0.45,
-                    }}
-                    transition={{ duration: 0.2 }}
-                  />
-                ) : (
-                  <span
-                    className={`store-hero-dot block h-1 rounded-full transition-all ${
-                      index === safeIndex ? "w-4 opacity-100" : "w-1.5 opacity-40"
-                    }`}
-                  />
-                )}
+                <span
+                  className="store-hero-dot block rounded-full transition-all duration-200"
+                  style={{
+                    width: index === safeIndex ? 12 : 5,
+                    height: 3.5,
+                    opacity: index === safeIndex ? 1 : 0.45,
+                  }}
+                />
               </UnifiedButton>
             ))}
           </div>

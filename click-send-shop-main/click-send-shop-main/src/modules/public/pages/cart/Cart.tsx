@@ -3,6 +3,7 @@ import { Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, L
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import ProductCoverImage from "@/components/ProductCoverImage";
@@ -196,12 +197,6 @@ export default function Cart() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-semibold leading-5 text-[var(--theme-text)]">登录后同步购物车</p>
-                        <span
-                          className="rounded-full px-2 py-0.5 text-[10px] font-semibold leading-4 text-[var(--theme-price)]"
-                          style={{ background: "color-mix(in srgb, var(--theme-price) 10%, transparent)" }}
-                        >
-                          本机暂存
-                        </span>
                       </div>
                       <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted)]">
                         当前购物车仅保存在本机，登录后可同步到账号。
@@ -243,7 +238,7 @@ export default function Cart() {
                 icon={ShoppingBag}
                 title="暂无商品"
                 description="快去挑选心仪的商品吧"
-                action={{ label: "去逛逛", onClick: () => navigate("/categories") }}
+                action={{ label: STORE_COPY.browseAllCategories, onClick: () => navigate("/categories") }}
                 className="max-w-none !rounded-none !border-0 !bg-transparent px-4 py-20 !shadow-none"
               />
             ) : (

@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AnimatedConfirmDialog } from "@/modules/micro-interactions";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   registerDownloadConfirmDialog,
   type DownloadConfirmRequest,
@@ -22,29 +21,66 @@ export function DownloadConfirmProvider({ children }: { children: ReactNode }) {
     return () => registerDownloadConfirmDialog(null);
   }, []);
 
-  const close = (accepted: boolean) => {
+  const close = useCallback((accepted: boolean) => {
     const current = pendingRef.current;
     pendingRef.current = null;
     setPending(null);
     current?.resolve(accepted);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!pending) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [close, pending]);
 
   return (
     <>
       {children}
-      <AnimatedConfirmDialog
-        open={pending !== null}
-        onOpenChange={(open) => {
-          if (!open) close(false);
-        }}
-        title={pending?.title ?? "确认下载"}
-        description={pending?.description}
-        confirmText={pending?.confirmText ?? "下载"}
-        cancelText={pending?.cancelText ?? "取消"}
-        onConfirm={async () => {
-          close(true);
-        }}
-      />
+      {pending ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-sm"
+          role="presentation"
+          onClick={() => close(false)}
+        >
+          <div
+            aria-modal="true"
+            aria-labelledby="download-confirm-title"
+            aria-describedby={pending.description ? "download-confirm-description" : undefined}
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl"
+            role="dialog"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="download-confirm-title" className="text-base font-semibold">
+              {pending.title ?? "\u786e\u8ba4\u4e0b\u8f7d"}
+            </h2>
+            {pending.description ? (
+              <p id="download-confirm-description" className="mt-2 text-sm leading-6 text-muted-foreground">
+                {pending.description}
+              </p>
+            ) : null}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted"
+                onClick={() => close(false)}
+              >
+                {pending.cancelText ?? "\u53d6\u6d88"}
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+                onClick={() => close(true)}
+              >
+                {pending.confirmText ?? "\u4e0b\u8f7d"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

@@ -7,6 +7,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -44,7 +45,7 @@ export default function StoreTabHeader({
   const { themeConfig } = useThemeRuntime();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
 
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
 
@@ -89,7 +90,7 @@ export default function StoreTabHeader({
         {searchMode === "navigate" ? (
           <StoreSearchField
             mode="navigate"
-            placeholder={searchPlaceholder ?? "搜索商品或品牌..."}
+            placeholder={searchPlaceholder ?? STORE_COPY.searchPlaceholder}
             onNavigate={goSearch}
           />
         ) : null}
@@ -97,7 +98,7 @@ export default function StoreTabHeader({
         {searchMode === "filter" ? (
           <StoreSearchField
             mode="filter"
-            placeholder={searchPlaceholder ?? "搜索商品..."}
+            placeholder={searchPlaceholder ?? STORE_COPY.searchPlaceholder}
             value={searchValue}
             onValueChange={onSearchChange}
           />

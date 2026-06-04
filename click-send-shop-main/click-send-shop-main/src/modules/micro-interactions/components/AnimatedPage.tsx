@@ -1,32 +1,44 @@
-import type { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useMotionConfig } from "../hooks/useMotionConfig";
-import { pageTransition } from "../motionConfig";
 
 export function AnimatedPage({ children, className }: { children: ReactNode; className?: string }) {
   const location = useLocation();
   const { level, enabled } = useMotionConfig();
-  const pageMotion = pageTransition(level);
+  const [entered, setEntered] = useState(!enabled);
 
-  if (!enabled) {
-    return <div className={cn("store-route-transition relative w-full", className)}>{children}</div>;
-  }
+  useEffect(() => {
+    if (!enabled) {
+      setEntered(true);
+      return;
+    }
+    setEntered(false);
+    const raf = window.requestAnimationFrame(() => setEntered(true));
+    return () => window.cancelAnimationFrame(raf);
+  }, [enabled, level, location.pathname]);
 
-  // pathname key：仅 query 变化（如分类筛选）不 remount 整页。
-  // 无 AnimatePresence / exit：避免 wait 白屏、旧页堆叠、sticky + transform 残影。
+  const duration = level === "rich" ? 260 : 180;
+  const y = level === "rich" ? 10 : 5;
+
   return (
-    <motion.div
+    <div
       key={location.pathname}
       className={cn("store-route-transition relative w-full", className)}
-      initial={pageMotion.initial}
-      animate={pageMotion.animate}
-      transition={pageMotion.transition}
-      style={{ backfaceVisibility: "hidden", transformOrigin: "50% 0%" }}
+      style={{
+        backfaceVisibility: "hidden",
+        transformOrigin: "50% 0%",
+        opacity: enabled ? (entered ? 1 : 0) : undefined,
+        transform: enabled
+          ? entered
+            ? "translate3d(0, 0, 0) scale(1)"
+            : `translate3d(0, ${y}px, 0) scale(${level === "rich" ? 0.996 : 1})`
+          : undefined,
+        transition: enabled ? `opacity ${duration}ms ease-out, transform ${duration}ms ease-out` : undefined,
+      }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 

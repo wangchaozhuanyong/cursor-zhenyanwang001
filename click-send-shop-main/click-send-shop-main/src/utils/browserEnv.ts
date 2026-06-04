@@ -86,6 +86,7 @@ export function detectBrowserEnvFromUa(ua: string): BrowserEnv {
   const uaLower = ua.toLowerCase();
   const isIOS = /iphone|ipad|ipod/i.test(ua);
   const isAndroid = /android/i.test(ua);
+  const chinaBrowserVendor = detectChinaBrowserVendor(ua);
   const isEdge = /edg|edgios|edga/i.test(uaLower);
   const isFirefox = /firefox|fxios/i.test(uaLower);
   const isSamsungInternet = /samsungbrowser/i.test(uaLower);
@@ -100,15 +101,14 @@ export function detectBrowserEnvFromUa(ua: string): BrowserEnv {
     && !isSamsungInternet
     && !isEdge
     && !isFirefox
-    && /; wv\)|version\/[\d.]+.*chrome/i.test(uaLower)
-    && !isChrome;
+    && !chinaBrowserVendor
+    && (/\bwv\b/i.test(uaLower) || /; wv\)|version\/[\d.]+.*chrome/i.test(uaLower));
   const isInAppBrowser = detectInAppBrowser(ua)
     || (isIOS && !isSafari && !isChrome)
     || isAndroidWebView;
 
   const platform: BrowserPlatform = isIOS ? "ios" : isAndroid ? "android" : "desktop";
 
-  const chinaBrowserVendor = detectChinaBrowserVendor(ua);
   const browserName: BrowserName =
     chinaBrowserVendor === "wechat" ? "wechat"
       : chinaBrowserVendor === "qq" ? "qq"

@@ -46,6 +46,7 @@ import { hasPendingReview } from "@/utils/orderBuyerStatus";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
 import { detectBrowserEnv } from "@/utils/browserEnv";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
+import { STORE_COPY } from "@/constants/storeCopy";
 import {
   PROFILE_CARD_CLASS,
   PROFILE_MENU_TAP,
@@ -80,7 +81,7 @@ export default function Profile() {
   const loggedIn = isLoggedIn();
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const authStore = useAuthStore();
   const { nickname, avatar, pointsBalance, inviteCode, memberLevel, wechatLogin, loadProfile } = useUserStore();

@@ -37,6 +37,7 @@ import {
   HOME_GUEST_MAIN_CLASS,
   HOME_HERO_STACK_CLASS,
 } from "@/constants/homeLayout";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
@@ -190,10 +191,10 @@ export default function GuestHome() {
     }),
     [siteCapabilities.restrictedProductComplianceEnabled, siteInfo],
   );
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
-  const slogan = siteInfo.siteSlogan || "官方商品与服务平台";
-  const description = siteInfo.siteDescription || "本平台提供商品、服务与客户支持信息。";
+  const slogan = siteInfo.siteSlogan || STORE_COPY.siteSlogan;
+  const description = siteInfo.siteDescription || STORE_COPY.siteDescription;
   const { banners, loading: bannersLoading } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
@@ -302,7 +303,7 @@ export default function GuestHome() {
       />
       <StoreTabHeader
         searchMode="navigate"
-        searchPlaceholder="搜索商品或品牌..."
+        searchPlaceholder={STORE_COPY.searchPlaceholder}
         showSiteNameMobile
         className="store-home-topbar"
       />
@@ -421,7 +422,7 @@ export default function GuestHome() {
                   onClick={() => navigate("/categories")}
                   className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
                 >
-                  全部分类
+                  {STORE_COPY.browseAllCategories}
                 </UnifiedButton>
                 <UnifiedButton
                   type="button"

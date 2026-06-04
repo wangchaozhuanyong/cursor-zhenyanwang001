@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { adminLogin, verifyAdminMfa, verifyAdminPasskeyLogin } from "@/services/admin/accountService";
 import { adminLoginErrorMessage } from "@/utils/storefrontError";
-import { FormFieldShake } from "@/modules/micro-interactions";
+import { FormFieldShake } from "@/modules/micro-interactions/components/FormFieldShake";
 import { useAdminT } from "@/hooks/useAdminT";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";

@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import * as contentService from "@/services/contentService";
 import * as homeService from "@/services/homeService";
 import type { SiteInfo } from "@/types/content";
+import {
+  buildStoreCopyright,
+  isLegacyGenericCopy,
+  STORE_COPY,
+  STORE_LEGACY_GENERIC_COPY,
+} from "@/constants/storeCopy";
 
 const FALLBACK: SiteInfo = {
-  siteName: "官方商城",
-  siteDescription: "本平台提供商品、服务与客户支持信息。",
-  siteSlogan: "官方商品与服务平台",
+  siteName: STORE_COPY.brandName,
+  siteDescription: STORE_COPY.siteDescription,
+  siteSlogan: STORE_COPY.siteSlogan,
   contactPhone: "",
   contactEmail: "",
   address: "",
@@ -15,15 +21,15 @@ const FALLBACK: SiteInfo = {
   tiktokUrl: "",
   xhsUrl: "",
   currency: "RM",
-  footerCompanyName: "官方商城",
-  footerCopyright: `© ${new Date().getFullYear()} 官方商城 版权所有`,
+  footerCompanyName: `${STORE_COPY.brandName}平台`,
+  footerCopyright: buildStoreCopyright(),
   newArrivalSectionTitle: "",
   newArrivalSectionSubtitle: "",
   newArrivalDisplayCount: "8",
   newArrivalShowPrice: "1",
   newArrivalOnlyInStock: "1",
   supportDownloadConfig: "",
-  supportText: "官方客服在线，售后无忧",
+  supportText: "大马通客服在线，咨询更省心",
   shippingNotice: "全站商品支持配送，具体以结算页说明为准",
   paymentNotice: "下单后请按页面提示完成支付",
 };
@@ -61,11 +67,23 @@ function sanitizeSiteInfo(data: SiteInfo): SiteInfo {
   for (const key of fallbackTextKeys) {
     const value = next[key];
     const fallbackValue = FALLBACK[key];
-    if (typeof value === "string" && typeof fallbackValue === "string" && looksLikeMojibake(value)) {
+    if (typeof value === "string" && typeof fallbackValue === "string" && (looksLikeMojibake(value) || shouldUseSiteFallback(key, value))) {
       next[key] = fallbackValue as SiteInfo[typeof key];
     }
   }
   return next;
+}
+
+function shouldUseSiteFallback(key: keyof SiteInfo, value: string): boolean {
+  const clean = value.trim();
+  if (!clean) return true;
+  if (key === "siteName") return isLegacyGenericCopy(clean, STORE_LEGACY_GENERIC_COPY.siteNames);
+  if (key === "siteDescription") return isLegacyGenericCopy(clean, STORE_LEGACY_GENERIC_COPY.siteDescriptions);
+  if (key === "siteSlogan") return isLegacyGenericCopy(clean, STORE_LEGACY_GENERIC_COPY.siteSlogans);
+  if (key === "footerCompanyName") return isLegacyGenericCopy(clean, STORE_LEGACY_GENERIC_COPY.siteNames);
+  if (key === "footerCopyright") return STORE_LEGACY_GENERIC_COPY.siteNames.some((name) => clean.includes(name));
+  if (key === "supportText") return clean === "官方客服在线，售后无忧";
+  return false;
 }
 
 function notifyAll(info: SiteInfo) {

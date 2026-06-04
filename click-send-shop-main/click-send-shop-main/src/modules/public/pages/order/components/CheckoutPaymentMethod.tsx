@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronRight, ShieldCheck } from "lucide-react";
 import PaymentMethodPicker, { type PaymentMethod } from "@/components/PaymentMethodPicker";
+import { STORE_COPY } from "@/constants/storeCopy";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { AppModal, usePreferBottomSheet } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -8,7 +9,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   online: "在线支付",
   reward_wallet: "返现钱包",
-  whatsapp: "联系客服下单",
+  whatsapp: STORE_COPY.contactSupport,
 };
 
 const PAYMENT_TRIGGER_CLASS =
@@ -47,7 +48,7 @@ export function CheckoutPaymentMethod({
       value={paymentMethod}
       onChange={onPaymentMethodChange}
       onlineDisabled={paymentConfigLoaded && paymentChannels.length === 0}
-      onlineDisabledHint="商户暂未开通在线支付，请选择联系客服下单"
+      onlineDisabledHint={`商户暂未开通在线支付，请选择${STORE_COPY.contactSupport}`}
       rewardBalance={rewardBalance}
       onlineChannels={paymentChannels}
       selectedOnlineChannelCode={selectedPaymentChannelCode}

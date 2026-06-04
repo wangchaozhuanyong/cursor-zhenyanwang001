@@ -24,6 +24,7 @@ import {
   THEME_INVITE_PROMO_MUTED,
   THEME_INVITE_PROMO_SHELL,
 } from "@/utils/themeVisuals";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type CouponSource = "couponCenter" | "newUserGift" | "couponZone";
@@ -258,7 +259,7 @@ export default function MarketingCouponRailSection({
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
-                className="store-coupon-skeleton-card w-[min(78vw,300px)] shrink-0 snap-start"
+                className="store-coupon-skeleton-card w-[min(86vw,330px)] shrink-0 snap-start"
               />
             ))}
           </div>
@@ -282,7 +283,7 @@ export default function MarketingCouponRailSection({
               const display = marketingCouponToPremiumDisplay(item.coupon);
               const actionLabel = !isAuthenticated && item.source === "newUserGift" ? "注册领取" : item.actionLabel;
               return (
-                <div key={item.railKey} className="store-coupon-rail-card relative w-[min(78vw,300px)] shrink-0 snap-start">
+                <div key={item.railKey} className="store-coupon-rail-card relative w-[min(86vw,330px)] shrink-0 snap-start">
                   <PremiumCouponCard
                     colorScheme="invite"
                     layout="home"
@@ -321,7 +322,7 @@ function GiftIntroCard({
     <UnifiedButton
       type="button"
       onClick={onClick}
-      className={`store-coupon-rail-card flex min-h-[6.75rem] w-[min(78vw,300px)] shrink-0 snap-start items-center gap-3 rounded-xl border border-[var(--theme-border)] p-3 text-left ${THEME_INVITE_PROMO_SHELL}`}
+      className={`store-coupon-rail-card flex min-h-[6.75rem] w-[min(86vw,330px)] shrink-0 snap-start items-center gap-3 rounded-xl border border-[var(--theme-border)] p-3 text-left ${THEME_INVITE_PROMO_SHELL}`}
     >
       <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${THEME_GIFT_BADGE_SHELL}`}>
         <Gift size={23} className="text-[var(--theme-gift-badge-foreground)]" />
@@ -352,7 +353,7 @@ function FallbackCard({
   onShopping: () => void;
 }) {
   return (
-    <div className="store-coupon-rail-card flex min-h-[6.75rem] w-[min(78vw,300px)] shrink-0 snap-start items-start gap-3 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-3">
+    <div className="store-coupon-rail-card flex min-h-[6.75rem] w-[min(86vw,330px)] shrink-0 snap-start items-start gap-3 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_14%,transparent)] text-[var(--theme-primary)]">
         <BadgeCheck size={20} />
       </div>
@@ -377,7 +378,7 @@ function FallbackCard({
             className="inline-flex items-center gap-1 rounded-full border border-[var(--theme-border)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-text-on-surface)]"
           >
             <ShoppingBag size={13} />
-            去逛逛
+            {STORE_COPY.browseAllCategories}
           </UnifiedButton>
         </div>
       </div>

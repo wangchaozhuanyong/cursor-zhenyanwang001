@@ -6,6 +6,12 @@ import type { Banner } from "@/types/banner";
 type UseHomeBannersOpts = { fetchRemote?: boolean };
 const BANNER_CACHE_KEY = "home_banners_cache_v1";
 const BANNER_CACHE_TTL_MS = 60_000;
+const BANNER_IDLE_REFRESH_TIMEOUT_MS = 7_000;
+
+type WindowWithIdleCallback = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+  cancelIdleCallback?: (id: number) => void;
+};
 
 function sanitizeBanners(list: Banner[]): Banner[] {
   if (!Array.isArray(list)) return [];
@@ -31,6 +37,17 @@ function normalizeBootstrapBanners(raw: unknown): Banner[] {
   );
 }
 
+function scheduleBannerIdleRefresh(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const idleWindow = window as WindowWithIdleCallback;
+  if (typeof idleWindow.requestIdleCallback === "function") {
+    const id = idleWindow.requestIdleCallback(callback, { timeout: BANNER_IDLE_REFRESH_TIMEOUT_MS });
+    return () => idleWindow.cancelIdleCallback?.(id);
+  }
+  const timer = window.setTimeout(callback, BANNER_IDLE_REFRESH_TIMEOUT_MS);
+  return () => window.clearTimeout(timer);
+}
+
 export function useHomeBanners(opts?: UseHomeBannersOpts) {
   const fetchRemote = opts?.fetchRemote !== false;
   const [banners, setBanners] = useState<Banner[]>(() => readBannerCache());
@@ -39,6 +56,7 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
   useEffect(() => {
     if (!fetchRemote) return;
     let cancelled = false;
+    let cancelLatestRefresh: (() => void) | undefined;
 
     const applyBanners = (next: Banner[]) => {
       if (cancelled || next.length === 0) return false;
@@ -78,9 +96,9 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
 
       if (usedBootstrapBanners || readBannerCache().length > 0) {
         if (!cancelled) setLoading(false);
-        window.setTimeout(() => {
+        cancelLatestRefresh = scheduleBannerIdleRefresh(() => {
           if (!cancelled) void loadLatestBanners();
-        }, 2800);
+        });
         return;
       }
 
@@ -91,6 +109,7 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
 
     return () => {
       cancelled = true;
+      cancelLatestRefresh?.();
     };
   }, [fetchRemote]);
 

@@ -11,6 +11,7 @@ import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown"
 import { THEME_ALERT_ERROR_BOX } from "@/utils/themeVisuals";
 import { sanitizeClientInstructions } from "@/utils/paymentClientInstructions";
 import PageHeader from "@/components/PageHeader";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 /* ----- Order Success Page ----- */
@@ -61,7 +62,7 @@ export function CheckoutOrderSuccess({
   const isWalletPending = isPending && order.payment_method === "reward_wallet";
   const isWhatsappPending = isPending && isWhatsappOrder;
   const displayOrderNo = String(order.order_no || "").replace(/^#+/, "");
-  const onlinePaymentUnavailableText = "当前商户暂未开通在线支付，请联系人工客服协助。";
+  const onlinePaymentUnavailableText = `当前商户暂未开通在线支付，请${STORE_COPY.contactSupport}协助。`;
 
   const headerTitle = isPaid
     ? "支付成功"
@@ -94,13 +95,13 @@ export function CheckoutOrderSuccess({
     }
     if (isWalletPending && postSubmitWalletError) {
       return onlinePaymentEnabled
-        ? `${postSubmitWalletError} 建议改用在线支付完成付款，或联系人工客服协助。`
+        ? `${postSubmitWalletError} 建议改用在线支付完成付款，或${STORE_COPY.contactSupport}协助。`
         : `${postSubmitWalletError} ${onlinePaymentUnavailableText}`;
     }
     if (isWalletPending) {
       return onlinePaymentEnabled
         ? `返现钱包可用 RM ${rewardBalance.toFixed(2)}。请点击下方完成钱包扣款，或改用在线支付。`
-        : `返现钱包可用 RM ${rewardBalance.toFixed(2)}。请点击下方完成钱包扣款，或联系人工客服协助。`;
+        : `返现钱包可用 RM ${rewardBalance.toFixed(2)}。请点击下方完成钱包扣款，或${STORE_COPY.contactSupport}协助。`;
     }
     if (isWhatsappPending) {
       return onlinePaymentEnabled
@@ -255,7 +256,7 @@ export function CheckoutOrderSuccess({
                     className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--theme-gradient-foreground)] theme-shadow"
                    
                   >
-                    <Phone size={16} /> 联系客服下单
+                    <Phone size={16} /> {STORE_COPY.contactSupport}
                   </UnifiedButton>
                 </div>
               )}

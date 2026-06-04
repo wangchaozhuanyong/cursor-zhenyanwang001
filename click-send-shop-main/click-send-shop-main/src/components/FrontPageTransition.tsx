@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import { AnimatedPage } from "@/modules/micro-interactions";
+import { AnimatedPage } from "@/modules/micro-interactions/components/AnimatedPage";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 
 /**

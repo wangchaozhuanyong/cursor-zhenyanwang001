@@ -28,6 +28,7 @@ import * as authService from "@/services/authService";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { isHomeModuleEnabled } from "@/constants/homeModules";
 import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLayout";
+import { STORE_COPY } from "@/constants/storeCopy";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
@@ -58,12 +59,12 @@ export default function MemberHome() {
   const isMagazineLayout = homeLayout === "magazine";
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "member");
   const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "member");
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription =
     siteInfo.seoDescription ||
     siteInfo.siteDescription ||
-    "本平台提供商品、服务与客户支持信息。";
+    STORE_COPY.siteDescription;
   const seoImage = siteInfo.ogImageUrl || resolveSiteLogoUrl(siteInfo) || "/og-default.png";
 
   useEffect(() => {

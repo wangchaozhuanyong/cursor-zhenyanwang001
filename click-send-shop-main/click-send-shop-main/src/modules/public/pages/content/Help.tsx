@@ -8,6 +8,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useGoBack } from "@/hooks/useGoBack";
 import PageHeader from "@/components/PageHeader";
 import { STORE_READING_MAIN_CLASS } from "@/constants/storeLayout";
+import { STORE_COPY } from "@/constants/storeCopy";
 import type { FaqItem } from "@/constants/help";
 import type { HelpCenterConfig } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -43,7 +44,7 @@ function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[] 
 export default function Help() {
   const goBack = useGoBack();
   const siteInfo = useSiteInfo();
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const configuredHelp = useMemo(() => parseHelpConfig(siteInfo.helpCenterConfig), [siteInfo.helpCenterConfig]);
   const faqCategories = configuredHelp?.categories || DEFAULT_FAQ_CATEGORIES;
   const faqs = configuredHelp?.faqs || DEFAULT_FAQS;

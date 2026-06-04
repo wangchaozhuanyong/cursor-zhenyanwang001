@@ -8,6 +8,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useCategoryListView } from "@/hooks/useCategoryListView";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { useProductStore } from "@/stores/useProductStore";
 import type { ProductSortType } from "@/types/product";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -28,7 +29,7 @@ export default function NewArrivals() {
   const goBack = useGoBack("/");
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const { products, loading, listRefreshing, error, loadProducts } = useProductStore();
   const [sort, setSort] = useState<ProductSortType>("newest");
   const productCardSiteContext = useMemo(

@@ -1,3 +1,5 @@
+import { detectBrowserEnvFromUa } from "@/utils/browserEnv";
+
 export type DeferredPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
@@ -29,11 +31,10 @@ export function isAndroidChrome() {
 
 export function isAndroidInstallCapableBrowser() {
   if (typeof window === "undefined") return false;
-  const ua = window.navigator.userAgent.toLowerCase();
-  return /android/.test(ua)
-    && /chrome\//.test(ua)
-    && !/firefox|fxios|opr|opera|wv/.test(ua)
-    && (/chrome\//.test(ua) || /edga|edg\//.test(ua) || /samsungbrowser/.test(ua));
+  const env = detectBrowserEnvFromUa(window.navigator.userAgent);
+  return env.isAndroid
+    && !env.isInAppBrowser
+    && (env.browserName === "chrome" || env.browserName === "edge" || env.browserName === "samsung");
 }
 
 export function detectPwaPlatform(): PwaPlatform {

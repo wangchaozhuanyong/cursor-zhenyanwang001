@@ -1,4 +1,5 @@
 import { Building2, CreditCard, MessageSquare, Smartphone, Wallet } from "lucide-react";
+import { STORE_COPY } from "@/constants/storeCopy";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { shouldShowPaymentOption } from "@/utils/checkoutPaymentMethod";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -56,7 +57,7 @@ export default function PaymentMethodPicker({
     {
       id: "whatsapp" as const,
       icon: MessageSquare,
-      title: "联系客服下单",
+      title: STORE_COPY.contactSupport,
       desc: "通过 WhatsApp / 微信 与客服确认订单与付款",
       recommended: false,
       disabled: false,

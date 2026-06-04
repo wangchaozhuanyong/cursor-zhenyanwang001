@@ -452,26 +452,25 @@ export default function Login() {
   return (
     <div className={STORE_AUTH_SHELL_CLASS}>
       <main className={STORE_AUTH_MAIN_CLASS}>
-        <button
-          type="button"
-          onClick={handleBack}
-          aria-label="返回"
-          className="auth-login-back-btn"
-        >
-          <ArrowLeft size={19} aria-hidden="true" />
-        </button>
+        <div className="auth-login-topbar">
+          <button
+            type="button"
+            onClick={handleBack}
+            aria-label="返回"
+            className="auth-login-back-btn"
+          >
+            <ArrowLeft size={19} aria-hidden="true" />
+          </button>
 
-        <section className="auth-login-heading mb-5 shrink-0">
-          <p className="auth-login-kicker">
-            {mode === "login" ? "账号登录" : "新用户注册"}
-          </p>
-          <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
-            {mode === "login" ? "欢迎回来" : "创建账号"}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "login" ? "登录账号，继续选购好物" : "注册账号，开启品质购物"}
-          </p>
-        </section>
+          <section className="auth-login-heading shrink-0">
+            <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
+              {mode === "login" ? "欢迎回来" : "创建账号"}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {mode === "login" ? "登录账号，继续选购好物" : "注册账号，开启品质购物"}
+            </p>
+          </section>
+        </div>
 
         {banners.length > 0 ? (
           <section

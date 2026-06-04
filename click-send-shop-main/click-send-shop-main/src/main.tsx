@@ -6,6 +6,7 @@ import "./index.css";
 import { initPwaOfflineNavigation, markStoreSpaReady } from "@/lib/pwaOfflineNavigation";
 import SilkPageLoader from "@/components/motion/SilkPageLoader";
 import AppVersionReadyMarker from "@/components/AppVersionReadyMarker";
+import { initPwaInstallPromptCapture } from "@/lib/pwaInstallPromptStore";
 
 const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
 
@@ -31,6 +32,7 @@ const isTikTokLanding = /^\/tiktok\/?$/.test(window.location.pathname);
 
 installBrowserCompatShims();
 installChunkLoadRecovery("storefront");
+initPwaInstallPromptCapture();
 if (!isTikTokLanding) {
   initPwaOfflineNavigation();
 }

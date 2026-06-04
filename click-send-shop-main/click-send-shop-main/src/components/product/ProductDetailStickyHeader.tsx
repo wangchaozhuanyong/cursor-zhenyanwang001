@@ -3,6 +3,7 @@ import { ArrowLeft, Share2, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -96,7 +97,7 @@ export default function ProductDetailStickyHeader({
         >
           <StoreSearchField
             mode="navigate"
-            placeholder="搜索商品或品牌..."
+            placeholder={STORE_COPY.searchPlaceholder}
             onNavigate={() => navigate("/search")}
           />
         </div>

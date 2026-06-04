@@ -149,6 +149,38 @@ html[data-app-scope="store"] .support-download-tab:active {
   transform: scale(0.98);
 }
 
+@media (max-width: 767px) {
+  html[data-app-scope="store"] .support-title-row {
+    grid-template-columns: minmax(0.6rem, 1fr) auto auto auto minmax(0.6rem, 1fr);
+    gap: 0.28rem;
+  }
+
+  html[data-app-scope="store"] .support-title-row h1 {
+    font-size: clamp(1.5rem, 5.4vw, 2.05rem);
+  }
+
+  html[data-app-scope="store"] .support-title-line {
+    opacity: 0.42;
+  }
+
+  html[data-app-scope="store"] .support-title-diamond {
+    width: 0.5rem;
+    height: 0.5rem;
+    box-shadow: none;
+  }
+
+  html[data-app-scope="store"] .support-download-tabs {
+    margin-top: 1.15rem;
+    padding: 0.32rem;
+  }
+
+  html[data-app-scope="store"] .support-download-tab {
+    min-height: 2.75rem;
+    padding-inline: 0.32rem;
+    font-size: 0.76rem;
+  }
+}
+
 html[data-app-scope="store"] .support-download-content {
   margin-top: clamp(1.55rem, 5vw, 2.8rem);
 }

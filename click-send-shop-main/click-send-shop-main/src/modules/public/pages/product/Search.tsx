@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, Clock, Search as SearchIcon, TrendingUp, X } from "lucide-react";
 import CategoryTabs from "@/components/CategoryTabs";
 import StoreSearchField from "@/components/store/StoreSearchField";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -189,7 +190,7 @@ export default function Search() {
   const shouldShowDiscovery = showHistory && !debouncedQuery && !query.trim();
   const shouldShowSuggestions = query.trim().length > 0 && suggestions.length > 0 && query.trim() !== debouncedQuery.trim();
 
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
 
   return (
     <div className="store-page-shell store-search-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
@@ -218,7 +219,7 @@ export default function Search() {
             <StoreSearchField
               mode="filter"
               autoFocus
-              placeholder="搜索商品或品牌..."
+              placeholder={STORE_COPY.searchPlaceholder}
               value={query}
               onValueChange={handleSearch}
               onSubmit={handleSubmit}

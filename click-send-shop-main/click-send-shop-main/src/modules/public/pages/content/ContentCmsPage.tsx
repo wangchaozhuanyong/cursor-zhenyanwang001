@@ -10,6 +10,7 @@ import { STORE_READING_MAIN_CLASS } from "@/constants/storeLayout";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
+import { STORE_COPY } from "@/constants/storeCopy";
 
 const CONTACT_US_SLUG = "contact-us";
 
@@ -45,12 +46,12 @@ export default function ContentCmsPage() {
 
   const pageSeoTitle = String((page as any)?.seoTitle || (page as any)?.seo_title || "").trim();
   const pageSeoDescription = String((page as any)?.seoDescription || (page as any)?.seo_description || "").trim();
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const title = pageSeoTitle || (page?.title ? `${page.title}｜${siteName}` : `内容页面｜${siteName}`);
   const description = useMemo(() => {
     if (pageSeoDescription) return truncateText(pageSeoDescription, 150);
     if (page?.content) return truncateText(stripHtml(page.content), 150);
-    return siteInfo.siteDescription || "本平台提供商品、服务与客户支持信息。";
+    return siteInfo.siteDescription || STORE_COPY.siteDescription;
   }, [page?.content, pageSeoDescription, siteInfo.siteDescription]);
   const pageStatus = String((page as any)?.status || "").toLowerCase();
   const isNoindex = Boolean((page as any)?.noindex) || ["draft", "hidden", "private"].includes(pageStatus);

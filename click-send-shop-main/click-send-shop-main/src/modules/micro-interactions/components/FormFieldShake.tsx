@@ -1,35 +1,48 @@
-import type { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useMotionConfig } from "../hooks/useMotionConfig";
-import { shakeKeyframes } from "../motionConfig";
 
 type FormFieldShakeProps = {
   children: ReactNode;
-  /** 为 true 或递增数字时触发一次抖动 */
   shake?: boolean | number;
   className?: string;
 };
+
+function resolveShakeTransform(level: string, frame: number) {
+  const x = level === "rich" ? 6 : 4;
+  const frames = [-x, x, -x / 2, x / 2, 0];
+  return `translate3d(${frames[frame] ?? 0}px, 0, 0)`;
+}
 
 export function FormFieldShake({ children, shake, className }: FormFieldShakeProps) {
   const { level, enabled } = useMotionConfig();
   const trigger = shake === true || (typeof shake === "number" && shake > 0);
   const key = typeof shake === "number" ? shake : trigger ? 1 : 0;
+  const [frame, setFrame] = useState(4);
 
-  if (!enabled) {
-    return <div className={className}>{children}</div>;
-  }
+  useEffect(() => {
+    if (!enabled || !trigger) {
+      setFrame(4);
+      return;
+    }
+
+    const duration = level === "rich" ? 400 : 320;
+    const timers = [0, 0.22, 0.44, 0.66, 1].map((ratio, index) =>
+      window.setTimeout(() => setFrame(index), duration * ratio),
+    );
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [enabled, key, level, trigger]);
 
   return (
-    <motion.div
-      key={key}
+    <div
       className={cn(className)}
-      initial={false}
-      animate={trigger ? shakeKeyframes(level) : { x: 0 }}
-      transition={{ duration: level === "rich" ? 0.4 : 0.32 }}
+      style={{
+        transform: enabled ? resolveShakeTransform(level, frame) : undefined,
+        transition: enabled ? `transform ${level === "rich" ? 90 : 70}ms ease-out` : undefined,
+      }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 

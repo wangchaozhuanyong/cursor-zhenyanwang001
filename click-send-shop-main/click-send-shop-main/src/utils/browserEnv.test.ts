@@ -13,6 +13,22 @@ describe("detectBrowserEnvFromUa", () => {
     expect(env.isInAppBrowser).toBe(false);
   });
 
+  it("treats Android Chrome and Edge as normal Android browsers", () => {
+    const chrome = detectBrowserEnvFromUa(
+      "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36",
+    );
+    expect(chrome.platform).toBe("android");
+    expect(chrome.browserName).toBe("chrome");
+    expect(chrome.isInAppBrowser).toBe(false);
+
+    const edge = detectBrowserEnvFromUa(
+      "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36 EdgA/120.0",
+    );
+    expect(edge.platform).toBe("android");
+    expect(edge.browserName).toBe("edge");
+    expect(edge.isInAppBrowser).toBe(false);
+  });
+
   it("detects Malaysia common desktop Edge and Firefox browsers", () => {
     expect(
       detectBrowserEnvFromUa(
@@ -36,5 +52,31 @@ describe("detectBrowserEnvFromUa", () => {
         "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) MQQBrowser/13.9 Chrome/100 Mobile Safari/537.36",
       ).browserName,
     ).toBe("qq");
+  });
+
+  it("detects Android WebView as an in-app browser even when UA only exposes wv", () => {
+    const env = detectBrowserEnvFromUa(
+      "Mozilla/5.0 (Linux; Android 12; Pixel 5 Build/SP1A) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/100.0 Mobile Safari/537.36 wv",
+    );
+
+    expect(env.platform).toBe("android");
+    expect(env.isInAppBrowser).toBe(true);
+    expect(env.browserName).toBe("chrome");
+  });
+
+  it("keeps iPhone Safari and iPhone Chrome on iOS-specific paths", () => {
+    const safari = detectBrowserEnvFromUa(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    );
+    expect(safari.platform).toBe("ios");
+    expect(safari.browserName).toBe("safari");
+    expect(safari.isInAppBrowser).toBe(false);
+
+    const chrome = detectBrowserEnvFromUa(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0 Mobile/15E148 Safari/604.1",
+    );
+    expect(chrome.platform).toBe("ios");
+    expect(chrome.browserName).toBe("chrome");
+    expect(chrome.isInAppBrowser).toBe(false);
   });
 });

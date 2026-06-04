@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
 
 type StoreSearchFieldProps = {
@@ -20,7 +21,7 @@ const fieldClass =
 
 export default function StoreSearchField({
   mode,
-  placeholder = "搜索商品或品牌...",
+  placeholder = STORE_COPY.searchPlaceholder,
   value = "",
   onValueChange,
   onNavigate,

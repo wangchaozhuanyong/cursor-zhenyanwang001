@@ -12,6 +12,7 @@ import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import ProductDetailStickyHeader from "@/components/product/ProductDetailStickyHeader";
 import { STORE_DETAIL_STICKY_TOP_CLASS } from "@/constants/storeLayout";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid";
 import ProductTagList from "@/components/ProductTagList";
 import { AppModal, FavoriteMotionButton } from "@/modules/micro-interactions";
@@ -238,7 +239,7 @@ export default function ProductDetail() {
   );
   const regulatedNoticeProps = buildRegulatedProductNoticeProps(product, siteInfo);
   const canIndex = canIndexProductDetail(product, siteInfo);
-  const siteName = siteInfo.siteName || "官方商城";
+  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const canonical = buildCanonical(`/product/${product.id}`);
   const productDescRaw = stripHtml(product.description || "");
   const productDescription = truncateText(

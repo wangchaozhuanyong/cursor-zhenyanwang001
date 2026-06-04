@@ -5,6 +5,7 @@ import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
 import PageHeader from "@/components/PageHeader";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { toast } from "sonner";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -37,7 +38,7 @@ export default function Favorites() {
           <div className="flex flex-col items-center py-20 text-muted-foreground">
             <Heart size={48} className="mb-3 opacity-20" />
             <p className="text-sm">收藏夹还是空的</p>
-            <UnifiedButton onClick={() => navigate("/categories")} className="mt-4 rounded-full bg-[var(--theme-primary)] px-6 py-2.5 text-sm font-bold text-[var(--theme-primary-foreground)]">去逛逛</UnifiedButton>
+            <UnifiedButton onClick={() => navigate("/categories")} className="mt-4 rounded-full bg-[var(--theme-primary)] px-6 py-2.5 text-sm font-bold text-[var(--theme-primary-foreground)]">{STORE_COPY.browseAllCategories}</UnifiedButton>
           </div>
         ) : (
           <div className="space-y-3">

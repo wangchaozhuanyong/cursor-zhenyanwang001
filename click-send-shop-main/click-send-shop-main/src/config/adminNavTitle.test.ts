@@ -36,5 +36,27 @@ describe("resolveAdminTabTitle", () => {
     expect(resolveAdminTabTitle(navItems, "/admin/orders", "fallback", t)).toBe("订单管理");
     expect(resolveAdminTabTitle(navItems, "/admin/orders/unfinished", "fallback", t)).toBe("未完成结账");
   });
-});
 
+  it("优先匹配优惠券中心里更具体的子路由", () => {
+    const navItems = [
+      {
+        label: "营销中心",
+        path: "/admin/marketing",
+        children: [
+          {
+            label: "优惠券中心",
+            path: "/admin/marketing/coupons",
+            children: [
+              { label: "优惠券模板", path: "/admin/marketing/coupons" },
+              { label: "发券活动", path: "/admin/marketing/coupon-campaigns" },
+              { label: "领券记录", path: "/admin/marketing/coupons/records" },
+            ],
+          },
+        ],
+      },
+    ];
+
+    expect(resolveAdminTabTitle(navItems, "/admin/marketing/coupons", "fallback", t)).toBe("优惠券模板");
+    expect(resolveAdminTabTitle(navItems, "/admin/marketing/coupons/records", "fallback", t)).toBe("领券记录");
+  });
+});

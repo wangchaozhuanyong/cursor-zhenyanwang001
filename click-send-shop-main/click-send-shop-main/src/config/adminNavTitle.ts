@@ -45,7 +45,8 @@ function resolveChildTitle(
 ): string | null {
   const labels = [...parents, child.label];
   if (child.children?.length) {
-    for (const nested of child.children) {
+    const nestedChildren = [...child.children].sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0));
+    for (const nested of nestedChildren) {
       const nestedTitle = resolveChildTitle(pathname, parent, nested, labels);
       if (nestedTitle) return nestedTitle;
     }

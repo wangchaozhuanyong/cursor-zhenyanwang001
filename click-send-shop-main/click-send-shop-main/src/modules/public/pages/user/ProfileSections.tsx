@@ -15,6 +15,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { formatProfileHeroName } from "./profileHeroName";
 import inviteRewardHeroImage from "@/assets/invite-reward-hero-illustration.svg";
 import inviteRewardMiniRedpacketImage from "@/assets/invite-reward-mini-redpacket.svg";
+import profileVipAvatarImage from "@/assets/profile-vip-avatar-medallion.svg";
 
 export const PROFILE_CARD_CLASS = "store-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
 export const PROFILE_MENU_TAP = "store-profile-tap transition-transform active:scale-[0.98]";
@@ -113,6 +114,7 @@ export function ProfileHeroCard({
 }) {
   const displayName = formatProfileHeroName(userName);
   const progressPercent = Math.min(100, Math.max(0, Math.round(progress?.percent ?? 0)));
+  const avatarSrc = avatar || profileVipAvatarImage || logoSrc;
 
   return (
     <section className="store-profile-vip-card">
@@ -120,8 +122,8 @@ export function ProfileHeroCard({
       <div className="profile-vip-header">
         <UnifiedButton type="button" onClick={onAvatarClick} className="profile-avatar-button" aria-label="更换头像">
           <span className="profile-avatar-ring">
-            {avatar || logoSrc ? (
-              <img src={avatar || logoSrc} alt={userName} className="h-full w-full rounded-full object-cover" />
+            {avatarSrc ? (
+              <img src={avatarSrc} alt={userName} className="profile-avatar-image h-full w-full rounded-full object-cover" />
             ) : (
               <span className="profile-avatar-fallback">{userName.slice(0, 1)}</span>
             )}

@@ -1,6 +1,7 @@
 name: Deploy gc-api (CI/CD)
 
-# 自动部署仅在 CI 成功后触发；手动 workflow_dispatch 不受此限制。
+# Auto deploy only after CI succeeds. Manual dispatch can deploy the selected
+# workflow ref, or an explicitly supplied branch/SHA pair.
 on:
   workflow_run:
     workflows: [CI]
@@ -8,8 +9,16 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      deploy_ref:
+        description: "Branch name to deploy. Empty = selected workflow branch"
+        required: false
+        default: ""
+      deploy_sha:
+        description: "Exact commit SHA to deploy. Empty = branch tip"
+        required: false
+        default: ""
       auto_rollback:
-        description: "失败时自动回滚到上一已知良好版本 (1=开)"
+        description: "Auto rollback on deploy failure (1=enabled)"
         required: false
         default: "0"
 
@@ -39,26 +48,34 @@ jobs:
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }
-          [ -n "${DEPLOY_HOST:-}" ] || fail "DEPLOY_HOST 为空，请在仓库 Settings → Secrets → Actions 配置（见 docs/DEPLOYMENT.md）"
-          [ -n "${DEPLOY_USER:-}" ] || fail "DEPLOY_USER 为空"
-          [ -n "${DEPLOY_SSH_KEY:-}" ] || fail "DEPLOY_SSH_KEY 为空"
-          [ -n "${DEPLOY_PROJECT_DIR:-}" ] || fail "DEPLOY_PROJECT_DIR 为空"
+          [ -n "${DEPLOY_HOST:-}" ] || fail "DEPLOY_HOST is empty"
+          [ -n "${DEPLOY_USER:-}" ] || fail "DEPLOY_USER is empty"
+          [ -n "${DEPLOY_SSH_KEY:-}" ] || fail "DEPLOY_SSH_KEY is empty"
+          [ -n "${DEPLOY_PROJECT_DIR:-}" ] || fail "DEPLOY_PROJECT_DIR is empty"
           echo "OK: deploy secrets are present."
 
   deploy:
-    name: SSH deploy → ci-deploy.sh
+    name: SSH deploy via ci-deploy.sh
     needs: check-secrets
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
     env:
       AUTO_ROLLBACK: ${{ github.event.inputs.auto_rollback || '0' }}
+      DEPLOY_TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.event.inputs.deploy_ref || github.ref_name }}
+      DEPLOY_TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.event.inputs.deploy_sha || '' }}
+      BUILD_FRONTEND_ON_SERVER: "1"
+      BACKUP_BEFORE_DEPLOY: "1"
 
     steps:
       - name: Show context
         run: |
+          echo "event=${{ github.event_name }}"
           echo "ref=${{ github.ref }} sha=${{ github.sha }}"
           echo "AUTO_ROLLBACK=${AUTO_ROLLBACK}"
+          echo "DEPLOY_TARGET_BRANCH=${DEPLOY_TARGET_BRANCH}"
+          echo "DEPLOY_TARGET_SHA=${DEPLOY_TARGET_SHA}"
+          echo "BUILD_FRONTEND_ON_SERVER=${BUILD_FRONTEND_ON_SERVER}"
 
       - name: Deploy via SSH (ci-deploy.sh)
         uses: appleboy/ssh-action@v1.0.3
@@ -69,15 +86,18 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           command_timeout: 20m
           script_stop: true
-          envs: AUTO_ROLLBACK
+          envs: AUTO_ROLLBACK,DEPLOY_TARGET_BRANCH,DEPLOY_TARGET_SHA,BUILD_FRONTEND_ON_SERVER,BACKUP_BEFORE_DEPLOY
           script: |
             set -euo pipefail
             cd "${{ secrets.DEPLOY_PROJECT_DIR }}"
             export PROJECT_DIR="${{ secrets.DEPLOY_PROJECT_DIR }}"
             export PM2_APP="${{ secrets.DEPLOY_PM2_APP || 'gc-api' }}"
-            export GIT_BRANCH="main"
+            export GIT_BRANCH="${DEPLOY_TARGET_BRANCH:-main}"
+            export GIT_COMMIT="${DEPLOY_TARGET_SHA:-}"
             export AUTO_ROLLBACK="${AUTO_ROLLBACK:-0}"
-            git fetch origin +refs/heads/main:refs/remotes/origin/main
+            export BUILD_FRONTEND_ON_SERVER="${BUILD_FRONTEND_ON_SERVER:-1}"
+            export BACKUP_BEFORE_DEPLOY="${BACKUP_BEFORE_DEPLOY:-1}"
+            echo "Deploy target branch=${GIT_BRANCH} commit=${GIT_COMMIT}"
             bash deploy/ci-deploy.sh
 
       - name: On failure, fetch remote logs (best-effort)

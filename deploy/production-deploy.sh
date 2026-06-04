@@ -16,6 +16,7 @@ ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/damatong/admin-dist}"
 VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 SKIP_GIT="${SKIP_GIT:-0}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
+GIT_COMMIT="${GIT_COMMIT:-${DEPLOY_TARGET_SHA:-}}"
 BUILD_FRONTEND_ON_SERVER="${BUILD_FRONTEND_ON_SERVER:-0}"
 FRONTEND_BUILD_HEAP_MB="${FRONTEND_BUILD_HEAP_MB:-768}"
 FAST_MODE="${FAST_MODE:-1}"
@@ -81,13 +82,31 @@ sync_public_static() {
   fi
 }
 
-exec 9>"$DEPLOY_LOCK_FILE"
+touch "$DEPLOY_LOCK_FILE"
+exec 9<>"$DEPLOY_LOCK_FILE"
 if ! flock -n 9; then
-  echo "⚠️  已有部署进程正在运行，退出：$DEPLOY_LOCK_FILE" | tee -a "$LOG_FILE"
+  echo "[deploy] another deploy is running; lock=$DEPLOY_LOCK_FILE" | tee -a "$LOG_FILE"
+  if [[ -s "$DEPLOY_LOCK_FILE" ]]; then
+    sed 's/^/[deploy-lock] /' "$DEPLOY_LOCK_FILE" | tee -a "$LOG_FILE"
+  fi
   exit 1
 fi
 
 mkdir -p "$STATE_DIR"
+
+{
+  echo "pid=$$"
+  echo "started_at=$(date -Iseconds)"
+  echo "branch=$GIT_BRANCH"
+  echo "commit=${GIT_COMMIT:-branch-tip}"
+} > "$DEPLOY_LOCK_FILE"
+
+cleanup_deploy_lock() {
+  local exit_code=$?
+  rm -f "$DEPLOY_LOCK_FILE" 2>/dev/null || true
+  exit "$exit_code"
+}
+trap cleanup_deploy_lock EXIT
 
 hash_file() {
   local target="$1"
@@ -174,11 +193,26 @@ LOCAL_COMMIT=""
 if [[ "$SKIP_GIT" != "1" ]]; then
   echo "📜 拉取最新代码（分支 $GIT_BRANCH）..." | tee -a "$LOG_FILE"
   bash "$PROJECT_DIR/deploy/ensure-github-ssh-remote.sh" | tee -a "$LOG_FILE"
-  git -C "$PROJECT_DIR" fetch origin "$GIT_BRANCH"
-  git -C "$PROJECT_DIR" reset --hard "origin/$GIT_BRANCH"
+  git -C "$PROJECT_DIR" fetch origin "+refs/heads/${GIT_BRANCH}:refs/remotes/origin/${GIT_BRANCH}"
+  DEPLOY_REF="origin/$GIT_BRANCH"
+  if [[ -n "$GIT_COMMIT" ]]; then
+    if ! git -C "$PROJECT_DIR" cat-file -e "${GIT_COMMIT}^{commit}" 2>/dev/null; then
+      git -C "$PROJECT_DIR" fetch origin "$GIT_COMMIT" || true
+    fi
+    if ! git -C "$PROJECT_DIR" cat-file -e "${GIT_COMMIT}^{commit}" 2>/dev/null; then
+      echo "[deploy] target commit not found: $GIT_COMMIT" | tee -a "$LOG_FILE"
+      exit 1
+    fi
+    if ! git -C "$PROJECT_DIR" merge-base --is-ancestor "$GIT_COMMIT" "origin/$GIT_BRANCH"; then
+      echo "[deploy] target commit is not reachable from origin/$GIT_BRANCH: $GIT_COMMIT" | tee -a "$LOG_FILE"
+      exit 1
+    fi
+    DEPLOY_REF="$GIT_COMMIT"
+  fi
+  git -C "$PROJECT_DIR" reset --hard "$DEPLOY_REF"
 
   LOCAL_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short HEAD)
-  REMOTE_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short "origin/$GIT_BRANCH")
+  REMOTE_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short "$DEPLOY_REF")
   echo "🔄 本地版本: $LOCAL_COMMIT" | tee -a "$LOG_FILE"
   echo "🌐 远程版本: $REMOTE_COMMIT" | tee -a "$LOG_FILE"
 

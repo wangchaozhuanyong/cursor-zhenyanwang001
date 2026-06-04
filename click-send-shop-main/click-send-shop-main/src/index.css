@@ -7239,10 +7239,10 @@ html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layou
 }
 
 html[data-app-scope="store"] .store-coupon-card--template[data-coupon-card-layout="home"] .store-coupon-card__action-button[data-coupon-action-button] {
-  width: 2.42rem !important;
-  max-width: 2.42rem !important;
-  height: 2.42rem !important;
-  min-height: 2.42rem !important;
+  width: 44px !important;
+  max-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
   border: 1px solid color-mix(in srgb, var(--coupon-ticket-gold-bright) 78%, var(--coupon-ticket-red)) !important;
   border-radius: 999px !important;
   background:

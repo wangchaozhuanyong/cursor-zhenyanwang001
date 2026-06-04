@@ -400,7 +400,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   });
 
   const wasBrowserOfflineBeforeFetch = isBrowserOffline();
-  let res: Response;
+  let res: Response | undefined;
   try {
     res = await runRequestFetch();
   } catch (err) {

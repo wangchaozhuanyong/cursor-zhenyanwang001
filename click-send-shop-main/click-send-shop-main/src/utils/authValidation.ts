@@ -1,10 +1,5 @@
 export type SupportedCountryCode = "+60" | "+86";
 
-export const COUNTRY_CODE_OPTIONS: Array<{ value: SupportedCountryCode; label: string }> = [
-  { value: "+60", label: "🇲🇾 +60" },
-  { value: "+86", label: "🇨🇳 +86" },
-];
-
 function toDigits(value: string): string {
   return String(value || "").replace(/\D+/g, "");
 }

@@ -1,15 +1,17 @@
-import { Phone } from "lucide-react";
-import { useId, type KeyboardEventHandler } from "react";
+import { Check, ChevronDown, Phone, X } from "lucide-react";
+import { useId, useState, type KeyboardEventHandler } from "react";
 import { cn } from "@/lib/utils";
-import {
-  COUNTRY_CODE_OPTIONS,
-  type SupportedCountryCode,
-} from "@/utils/authValidation";
+import type { SupportedCountryCode } from "@/utils/authValidation";
 
 const PHONE_INPUT_CLASS =
   "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground transition-[border-color,box-shadow] focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20";
 const PHONE_INPUT_ERROR_CLASS =
   "border-destructive focus:border-destructive focus:ring-destructive/20";
+
+const COUNTRY_PICKER_OPTIONS: Array<{ value: SupportedCountryCode; name: string }> = [
+  { value: "+86", name: "中国大陆" },
+  { value: "+60", name: "马来西亚" },
+];
 
 type CountryPhoneInputProps = {
   countryCode: SupportedCountryCode;
@@ -55,34 +57,41 @@ export default function CountryPhoneInput({
   showErrorText = true,
 }: CountryPhoneInputProps) {
   const generatedId = useId();
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const resolvedPhonePlaceholder =
     phonePlaceholder ?? (countryCode === "+60" ? "例如 123456789" : "例如 13800138000");
   const phoneMaxLength = 11;
   const invalid = hasError ?? Boolean(errorText);
   const errorId = phoneInputId ? `${phoneInputId}-error` : `country-phone-error-${generatedId}`;
+  const pickerTitleId = `country-picker-title-${generatedId}`;
   const describedBy = errorText ? errorId : undefined;
+  const countryPickerDisabled = disabled || readOnly;
+
+  const chooseCountryCode = (value: SupportedCountryCode) => {
+    onCountryCodeChange(value);
+    setCountryPickerOpen(false);
+  };
 
   return (
     <div className={cn(showErrorText && "space-y-2", className)}>
       <div className="grid grid-cols-[minmax(6.5rem,7rem)_1fr] gap-2 sm:grid-cols-[112px_1fr]">
-        <select
-          value={countryCode}
-          onChange={(e) => onCountryCodeChange(e.target.value as SupportedCountryCode)}
+        <button
+          type="button"
           aria-label={selectAriaLabel}
+          aria-haspopup="dialog"
+          aria-expanded={countryPickerOpen}
           aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
-          disabled={disabled || readOnly}
+          disabled={countryPickerDisabled}
+          onClick={() => setCountryPickerOpen(true)}
           className={cn(
-            "min-w-0 rounded-2xl border border-border bg-card px-2.5 py-3.5 text-base text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 disabled:cursor-not-allowed disabled:opacity-70 sm:px-3",
+            "flex min-w-0 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3.5 text-base font-semibold text-foreground transition-[border-color,box-shadow,background-color] focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 disabled:cursor-not-allowed disabled:opacity-70",
             invalid && PHONE_INPUT_ERROR_CLASS,
           )}
         >
-          {COUNTRY_CODE_OPTIONS.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+          <span>{countryCode}</span>
+          <ChevronDown size={17} aria-hidden="true" className="text-muted-foreground" />
+        </button>
         <div className="relative">
           <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -124,6 +133,72 @@ export default function CountryPhoneInput({
         <p id={errorId} className="sr-only">
           {errorText}
         </p>
+      ) : null}
+      {countryPickerOpen ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={pickerTitleId}
+          onClick={() => setCountryPickerOpen(false)}
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-t-[28px] border border-white/70 bg-card shadow-[0_-18px_55px_rgba(15,23,42,0.28)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex justify-center pt-3">
+              <span className="h-1.5 w-12 rounded-full bg-muted-foreground/25" />
+            </div>
+            <div className="flex items-center justify-between px-5 pb-3 pt-4">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">地区代码</p>
+                <h2 id={pickerTitleId} className="mt-1 text-lg font-bold text-foreground">
+                  选择地区
+                </h2>
+              </div>
+              <button
+                type="button"
+                aria-label="关闭选择地区"
+                onClick={() => setCountryPickerOpen(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-gold/25"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="space-y-2 px-4 pb-5">
+              {COUNTRY_PICKER_OPTIONS.map((item) => {
+                const selected = item.value === countryCode;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => chooseCountryCode(item.value)}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-[background-color,border-color,box-shadow]",
+                      selected
+                        ? "border-gold bg-gold/10 shadow-[0_10px_24px_rgba(177,127,38,0.14)]"
+                        : "border-border bg-background hover:border-gold/45",
+                    )}
+                  >
+                    <span className="text-base font-semibold text-foreground">{item.name}</span>
+                    <span className="flex items-center gap-3">
+                      <span className="text-base font-semibold text-foreground">{item.value}</span>
+                      <span
+                        className={cn(
+                          "flex h-6 w-6 items-center justify-center rounded-full border",
+                          selected ? "border-gold bg-gold text-white" : "border-border bg-card",
+                        )}
+                        aria-hidden="true"
+                      >
+                        {selected ? <Check size={15} strokeWidth={2.5} /> : null}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

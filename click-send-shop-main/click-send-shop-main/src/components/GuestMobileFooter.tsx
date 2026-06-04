@@ -62,31 +62,53 @@ export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { 
   const cleanLogoSrc = cleanFooterText(logoSrc);
   const showLogo = Boolean(cleanLogoSrc && failedLogoSrc !== cleanLogoSrc);
 
+  const logoMark = (
+    <span
+      className={cn(
+        "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-[#bfe9ce] bg-white text-[#078437] shadow-[0_18px_34px_-28px_rgba(7,132,55,0.55)] sm:h-14 sm:w-14",
+        centered && "absolute right-full top-1/2 mr-3 -translate-y-1/2",
+      )}
+    >
+      {showLogo ? (
+        <img
+          src={cleanLogoSrc}
+          alt=""
+          className="h-9 w-9 object-contain sm:h-10 sm:w-10"
+          loading="eager"
+          decoding="async"
+          aria-hidden="true"
+          onError={() => setFailedLogoSrc(cleanLogoSrc)}
+        />
+      ) : (
+        <Sparkles size={24} strokeWidth={1.8} />
+      )}
+    </span>
+  );
+
+  const textMark = (
+    <span className={cn("min-w-0", centered && "block max-w-full text-center")}>
+      <span className="block truncate font-display text-[28px] font-bold leading-none text-[#17231c] sm:text-[34px]">
+        {base}
+      </span>
+      <span className="mt-1 block text-[12px] font-semibold leading-none text-[#5f6f65]">
+        {STORE_COPY.brandDomain}
+      </span>
+    </span>
+  );
+
+  if (centered) {
+    return (
+      <div className="relative mx-auto w-fit max-w-[calc(100%-3.75rem)] sm:max-w-[calc(100%-4.25rem)]">
+        {logoMark}
+        {textMark}
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("flex min-w-0 items-center gap-3", centered && "mx-auto w-fit max-w-full justify-center")}>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-[#bfe9ce] bg-white text-[#078437] shadow-[0_18px_34px_-28px_rgba(7,132,55,0.55)] sm:h-14 sm:w-14">
-        {showLogo ? (
-          <img
-            src={cleanLogoSrc}
-            alt=""
-            className="h-9 w-9 object-contain sm:h-10 sm:w-10"
-            loading="eager"
-            decoding="async"
-            aria-hidden="true"
-            onError={() => setFailedLogoSrc(cleanLogoSrc)}
-          />
-        ) : (
-          <Sparkles size={24} strokeWidth={1.8} />
-        )}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate font-display text-[28px] font-bold leading-none text-[#17231c] sm:text-[34px]">
-          {base}
-        </span>
-        <span className="mt-1 block text-[12px] font-semibold leading-none text-[#5f6f65]">
-          {STORE_COPY.brandDomain}
-        </span>
-      </span>
+    <div className="flex min-w-0 items-center gap-3">
+      {logoMark}
+      {textMark}
     </div>
   );
 }

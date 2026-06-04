@@ -4071,12 +4071,6 @@ html[data-app-scope="store"] .store-category-page .store-product-grid {
   padding-top: 0.25rem;
 }
 
-@media (max-width: 767px) {
-  html[data-app-scope="store"] .store-category-page .store-product-grid > .store-product-card:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
-}
-
 html[data-app-scope="store"] .store-category-page .store-product-card {
   border-radius: 1.35rem;
   border-color: rgba(201, 161, 92, 0.22);

@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { isLoggedIn as hasAuthSession } from "@/utils/token";
+import * as authService from "@/services/authService";
+import { useUserStore } from "@/stores/useUserStore";
+import { useCartStore } from "@/stores/useCartStore";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useHistoryStore } from "@/stores/useHistoryStore";
+import { useOrderStore } from "@/stores/useOrderStore";
 import type {
   LoginParams,
   RegisterParams,
@@ -12,25 +17,6 @@ import type { CartItem } from "@/types/cart";
 import type { Product } from "@/types/product";
 import type { FavoriteProduct } from "@/stores/useFavoritesStore";
 import { registerAuthExpiredHandler } from "@/lib/authSessionBridge";
-
-const loadAuthService = () => import("@/services/authService");
-
-async function loadAuthRelatedStores() {
-  const [
-    { useUserStore },
-    { useCartStore },
-    { useFavoritesStore },
-    { useHistoryStore },
-    { useOrderStore },
-  ] = await Promise.all([
-    import("@/stores/useUserStore"),
-    import("@/stores/useCartStore"),
-    import("@/stores/useFavoritesStore"),
-    import("@/stores/useHistoryStore"),
-    import("@/stores/useOrderStore"),
-  ]);
-  return { useUserStore, useCartStore, useFavoritesStore, useHistoryStore, useOrderStore };
-}
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -55,8 +41,7 @@ type LocalAuthSnapshots = {
   localHistorySnapshot: Product[];
 };
 
-async function captureLocalAuthSnapshots(): Promise<LocalAuthSnapshots> {
-  const { useCartStore, useFavoritesStore, useHistoryStore } = await loadAuthRelatedStores();
+function captureLocalAuthSnapshots(): LocalAuthSnapshots {
   return {
     localCartSnapshot: [...useCartStore.getState().items],
     localFavoriteIds: [...useFavoritesStore.getState().favoriteIds],
@@ -72,7 +57,6 @@ async function syncAfterAuthenticated({
   localFavoriteProducts,
   localHistorySnapshot,
 }: LocalAuthSnapshots): Promise<void> {
-  const { useCartStore, useFavoritesStore, useHistoryStore, useUserStore } = await loadAuthRelatedStores();
   await Promise.allSettled([
     useCartStore.getState().mergeLocalThenSync(localCartSnapshot),
     useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts),
@@ -87,7 +71,7 @@ function createAuthFlow<A extends unknown[]>(
   failureMessage: string,
 ) {
   return async (...args: A) => {
-    const snapshots = await captureLocalAuthSnapshots();
+    const snapshots = captureLocalAuthSnapshots();
     set({ loading: true, error: null });
     try {
       await runAuth(...args);
@@ -107,20 +91,19 @@ function createAuthFlow<A extends unknown[]>(
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      isAuthenticated: hasAuthSession(),
+      isAuthenticated: authService.isAuthenticated(),
       authHydrated: false,
       loading: false,
       error: null,
 
-      login: createAuthFlow(set, async (params) => (await loadAuthService()).login(params), "登录失败"),
-      register: createAuthFlow(set, async (params) => (await loadAuthService()).register(params), "注册失败"),
-      loginWithOtp: createAuthFlow(set, async (params) => (await loadAuthService()).loginWithOtp(params), "登录失败"),
-      completeOAuthLogin: createAuthFlow(set, async (params) => (await loadAuthService()).exchangeOAuthTicket(params), "登录失败"),
-      bindWechatPhone: createAuthFlow(set, async (params) => (await loadAuthService()).bindWechatPhone(params), "绑定失败"),
+      login: createAuthFlow(set, authService.login, "登录失败"),
+      register: createAuthFlow(set, authService.register, "注册失败"),
+      loginWithOtp: createAuthFlow(set, authService.loginWithOtp, "登录失败"),
+      completeOAuthLogin: createAuthFlow(set, authService.exchangeOAuthTicket, "登录失败"),
+      bindWechatPhone: createAuthFlow(set, authService.bindWechatPhone, "绑定失败"),
 
       logout: async () => {
-        try { await (await loadAuthService()).logout(); } catch { /* best-effort */ }
-        const { useUserStore, useCartStore, useOrderStore } = await loadAuthRelatedStores();
+        try { await authService.logout(); } catch { /* best-effort */ }
         useUserStore.getState().clearProfile();
         useCartStore.setState({ buyNowItem: null, selection: {} });
         useOrderStore.setState({ orders: [], currentOrder: null });

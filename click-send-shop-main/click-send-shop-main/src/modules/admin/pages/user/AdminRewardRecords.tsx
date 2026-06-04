@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Loader2, RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import { AdminFilterSelect } from "@/components/admin/AdminFilterControls";
 import Pagination from "@/components/admin/Pagination";
@@ -80,7 +79,6 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
   const L = useCallback((zh: string, en: string) => (isEn ? en : zh), [isEn]);
   const { rewardStatus: labelRewardStatus } = useAdminDisplayLabel();
   const queryClient = useQueryClient();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState<"" | RewardStatus>("");
   const [page, setPage] = useState(1);
@@ -102,7 +100,7 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
   const statusOptions = useMemo(() => ([
     { value: "", label: L("全部状态", "All statuses") },
     { value: "approved" as const, label: L("已入账", "Credited") },
-    { value: "paid" as const, label: L("已结算", "Settled") },
+    { value: "paid" as const, label: L("已提现", "Withdrawn") },
     { value: "reversed" as const, label: L("已冲正", "Reversed") },
     { value: "pending" as const, label: L("待处理", "Pending") },
     { value: "rejected" as const, label: L("已拒绝", "Rejected") },
@@ -111,15 +109,14 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
   const statusLabels = useMemo(() => ({
     pending: { label: L("待处理", "Pending"), className: THEME_BADGE_WARNING },
     approved: { label: L("已入账", "Credited"), className: THEME_BADGE_SUCCESS },
-    paid: { label: L("已结算", "Settled"), className: THEME_BADGE_PRIMARY },
+    paid: { label: L("已提现", "Withdrawn"), className: THEME_BADGE_PRIMARY },
     rejected: { label: L("已拒绝", "Rejected"), className: THEME_BADGE_MUTED },
     reversed: { label: L("已冲正", "Reversed"), className: THEME_BADGE_DANGER },
   }), [L]);
 
-  const userIdFilter = searchParams.get("userId")?.trim() || "";
   const queryParams = useMemo(
-    () => ({ page, pageSize, keyword, status: status || undefined, userId: userIdFilter || undefined }),
-    [keyword, page, pageSize, status, userIdFilter],
+    () => ({ page, pageSize, keyword, status: status || undefined }),
+    [keyword, page, pageSize, status],
   );
 
   const listQuery = useQuery({
@@ -202,39 +199,25 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
   const filterState = useMemo(() => ({ keyword, status }), [keyword, status]);
   const filterChips = useMemo(() => {
     const chips: Array<{ key: string; label: string }> = [];
-    if (userIdFilter) chips.push({ key: "userId", label: L(`用户：${userIdFilter}`, `User: ${userIdFilter}`) });
     if (keyword.trim()) chips.push({ key: "keyword", label: L(`关键词：${keyword.trim()}`, `Keyword: ${keyword.trim()}`) });
     if (status) {
       const statusLabel = statusLabels[status]?.label || status;
       chips.push({ key: "status", label: L(`状态：${statusLabel}`, `Status: ${statusLabel}`) });
     }
     return chips;
-  }, [L, keyword, status, statusLabels, userIdFilter]);
-  const filtersActive = hasActiveRewardRecordFilters(filterState) || Boolean(userIdFilter);
+  }, [L, keyword, status, statusLabels]);
+  const filtersActive = hasActiveRewardRecordFilters(filterState);
   const emptyGuide = useLocalizedAdminEmptyGuide(
     filtersActive ? ADMIN_EMPTY_GUIDES.rewardRecordsFiltered : ADMIN_EMPTY_GUIDES.rewardRecords,
   );
 
-  const clearUserFilter = useCallback(() => {
-    if (!userIdFilter) return;
-    const next = new URLSearchParams(searchParams);
-    next.delete("userId");
-    setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams, userIdFilter]);
-
   const clearFilters = () => {
     setKeyword("");
     setStatus("");
-    clearUserFilter();
     setPage(1);
   };
 
   const handleRemoveFilterChip = (key: string) => {
-    if (key === "userId") {
-      clearUserFilter();
-      setPage(1);
-      return;
-    }
     const patch = removeRewardRecordFilterChip(key);
     if ("keyword" in patch) setKeyword(patch.keyword ?? "");
     if ("status" in patch) setStatus(patch.status ?? "");

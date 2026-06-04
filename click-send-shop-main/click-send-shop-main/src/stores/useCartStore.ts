@@ -4,9 +4,8 @@ import { ApiError } from "@/types/common";
 import { isLoggedIn } from "@/utils/token";
 import type { Product, ProductVariant } from "@/types/product";
 import type { CartItem } from "@/types/cart";
+import * as cartService from "@/services/cartService";
 import { normalizeCartItem, normalizeCartItems } from "@/utils/cartNormalize";
-
-const loadCartService = () => import("@/services/cartService");
 
 export const LOCAL_ONLY_CART_PRODUCT_PREFIX = "demo-micro-interactions:" as const;
 
@@ -92,7 +91,6 @@ export const useCartStore = create<CartState>()(
         cartLoadInflight = (async () => {
           set({ loading: true, error: null });
           try {
-            const cartService = await loadCartService();
             const items = normalizeCartItems(await cartService.fetchCart());
             set((s) => ({ items, selection: mergeSelection(s.selection, items), loading: false }));
           } catch (e) {
@@ -115,7 +113,6 @@ export const useCartStore = create<CartState>()(
         const serverIds = new Set(get().items.map(getCartItemKey));
         const toAdd = localBeforeAuth.filter((item) => !isLocalOnlyCartProductId(item.product.id) && item.qty > 0 && !serverIds.has(getCartItemKey(item)));
         if (toAdd.length) {
-          const cartService = await loadCartService();
           await Promise.allSettled(toAdd.map(({ product, qty, variant_id, sku_code }) => cartService.addToCart(product.id, qty, variant_id, sku_code)));
         }
         await get().loadCart();
@@ -148,7 +145,6 @@ export const useCartStore = create<CartState>()(
         if (!isLoggedIn() || isLocalOnlyCartProductId(product.id)) return;
 
         try {
-          const cartService = await loadCartService();
           await cartService.addToCart(product.id, qty, variant?.id, variant?.sku_code ?? "");
           await get().loadCart();
         } catch (e) {
@@ -171,7 +167,6 @@ export const useCartStore = create<CartState>()(
         });
         if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
           try {
-            const cartService = await loadCartService();
             await cartService.removeFromCart(productId, variantId);
             await get().loadCart();
           } catch (e) {
@@ -191,7 +186,6 @@ export const useCartStore = create<CartState>()(
         set((state) => ({ items: state.items.map((i) => (getCartItemKey(i) === lineKey ? { ...i, qty } : i)) }));
         if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
           try {
-            const cartService = await loadCartService();
             await cartService.updateCartItemQty(productId, qty, variantId);
             await get().loadCart();
           } catch (e) {
@@ -219,7 +213,6 @@ export const useCartStore = create<CartState>()(
         if (!changed) return;
         if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
           try {
-            const cartService = await loadCartService();
             await cartService.pinCartItemToTop(productId, variantId);
           } catch (e) {
             set(beforeSnapshot);
@@ -234,7 +227,6 @@ export const useCartStore = create<CartState>()(
         set({ items: [], selection: {} });
         if (isLoggedIn()) {
           try {
-            const cartService = await loadCartService();
             await cartService.clearCart();
             await get().loadCart();
           } catch (e) {

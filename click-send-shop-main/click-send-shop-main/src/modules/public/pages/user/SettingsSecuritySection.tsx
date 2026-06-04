@@ -1,5 +1,5 @@
 import { useCallback, useId, useState, type FormEvent, type ReactNode } from "react";
-import { ChevronRight, Lock, Trash2 } from "lucide-react";
+import { ChevronDown, Lock, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -7,11 +7,9 @@ import * as userService from "@/services/userService";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
-const CARD =
-  "rounded-[1.25rem] border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]";
-const SECTION_TITLE = "px-1 text-[13px] font-semibold text-[var(--theme-text)]";
+const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 const INPUT =
-  "h-11 w-full rounded-[14px] bg-[var(--theme-surface)] px-4 text-sm ring-1 ring-[color-mix(in_srgb,var(--theme-border)_76%,transparent)] outline-none focus:ring-2 disabled:opacity-60";
+  "h-11 w-full rounded-xl bg-[var(--theme-surface)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 disabled:opacity-60";
 
 type SecurityPanel = "password" | "cancel";
 
@@ -41,7 +39,7 @@ function SecurityActionRow({
   const panelId = `${rowId}-panel`;
 
   return (
-    <div className="border-t border-[color-mix(in_srgb,var(--theme-border)_68%,transparent)] first:border-t-0">
+    <div className="border-t border-[var(--theme-border)] first:border-t-0">
       <UnifiedButton
         type="button"
         id={`${rowId}-trigger`}
@@ -49,19 +47,19 @@ function SecurityActionRow({
         aria-controls={panelId}
         disabled={disabled}
         onClick={onToggle}
-        className={`grid w-full grid-cols-[2.75rem_minmax(0,1fr)_1.25rem] items-start gap-x-3 px-0 py-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`grid w-full grid-cols-[2.25rem_minmax(0,1fr)_1.25rem] items-start gap-x-3 px-3 py-3.5 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
           danger && expanded
-            ? "bg-[color-mix(in_srgb,var(--theme-danger)_5%,transparent)]"
+            ? "bg-[color-mix(in_srgb,var(--theme-danger)_8%,transparent)]"
             : danger
-              ? "bg-transparent"
+              ? "bg-[color-mix(in_srgb,var(--theme-danger)_4%,transparent)]"
               : ""
         }`}
       >
         <span
-          className={`mt-0.5 flex h-11 w-11 items-center justify-center rounded-full ${
+          className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl ${
             danger
-              ? "bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] text-[var(--theme-danger)]"
-              : "bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] text-[var(--theme-primary)]"
+              ? "bg-[color-mix(in_srgb,var(--theme-danger)_12%,transparent)] text-[var(--theme-danger)]"
+              : "bg-[color-mix(in_srgb,var(--theme-primary)_12%,transparent)] text-[var(--theme-primary)]"
           }`}
         >
           {icon}
@@ -76,10 +74,10 @@ function SecurityActionRow({
           </span>
           <span className="mt-0.5 block text-xs leading-relaxed text-[var(--theme-muted)]">{description}</span>
         </span>
-        <ChevronRight
+        <ChevronDown
           size={16}
           className={`mt-1 shrink-0 text-[var(--theme-muted)] transition-transform duration-200 ${
-            expanded ? "rotate-90" : ""
+            expanded ? "rotate-180" : ""
           }`}
           aria-hidden
         />
@@ -90,10 +88,10 @@ function SecurityActionRow({
           id={panelId}
           role="region"
           aria-labelledby={`${rowId}-trigger`}
-          className={`mb-4 rounded-[16px] px-3 py-3 ${
+          className={`border-t px-3 py-3 ${
             danger
-              ? "bg-[color-mix(in_srgb,var(--theme-danger)_6%,var(--theme-surface))]"
-              : "bg-[var(--theme-bg)]"
+              ? "border-[color-mix(in_srgb,var(--theme-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--theme-danger)_6%,transparent)]"
+              : "border-[var(--theme-border)] bg-[var(--theme-bg)]"
           }`}
         >
           {children}
@@ -185,9 +183,9 @@ export default function SettingsSecuritySection() {
   const cancelExpanded = activePanel === "cancel";
 
   return (
-    <section className="space-y-2">
-      <h2 className={SECTION_TITLE}>账户安全</h2>
-      <div className={CARD}>
+    <section className={CARD}>
+      <h2 className="mb-2 text-xs font-medium text-[var(--theme-muted)]">账户安全</h2>
+      <div className="isolate overflow-hidden rounded-xl ring-1 ring-[var(--theme-border)]">
         <SecurityActionRow
           rowId={`${sectionId}-password`}
           expanded={passwordExpanded}
@@ -240,7 +238,7 @@ export default function SettingsSecuritySection() {
           expanded={cancelExpanded}
           icon={<Trash2 size={18} strokeWidth={2} />}
           title="注销账号"
-          description="注销后无法恢复，请谨慎操作"
+          description="注销后无法再次登录"
           danger
           disabled={panelBusy}
           onToggle={() => togglePanel("cancel")}

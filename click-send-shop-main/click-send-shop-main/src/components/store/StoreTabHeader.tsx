@@ -1,17 +1,15 @@
-import { Bell } from "lucide-react";
-import { lazy, Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useNotificationStore } from "@/stores/useNotificationStore";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { isLoggedIn } from "@/utils/token";
-
-const StoreNotificationAction = lazy(() => import("@/components/store/StoreNotificationAction"));
 
 export type StoreTabHeaderSearchMode = "navigate" | "filter" | "none";
 
@@ -45,6 +43,7 @@ export default function StoreTabHeader({
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
   const { themeConfig } = useThemeRuntime();
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
@@ -109,20 +108,7 @@ export default function StoreTabHeader({
 
         <div className="flex shrink-0 items-center gap-1.5">
           {rightSlot ?? (
-            isLoggedIn() ? (
-              <Suspense fallback={null}>
-                <StoreNotificationAction onClick={goNotifications} />
-              </Suspense>
-            ) : (
-              <UnifiedButton
-                type="button"
-                className="store-notification-button relative flex h-[2.625rem] w-[2.625rem] overflow-visible items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50"
-                onClick={goNotifications}
-                aria-label="消息通知"
-              >
-                <Bell size={16} className="relative z-[1] text-[var(--theme-text)]" />
-              </UnifiedButton>
-            )
+            <NotificationIconButton unreadCount={unreadCount} onClick={goNotifications} />
           )}
         </div>
       </div>

@@ -4,6 +4,7 @@ import * as couponService from "@/services/couponService";
 import { clearTokens, isLoggedIn } from "@/utils/token";
 import { ApiError } from "@/types/common";
 import { ensureStoreSession, STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
+import { restoreSessionFromCookie } from "@/services/authService";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 const COUPON_PAGE_SIZE = 50;
@@ -78,7 +79,6 @@ export const useCouponStore = create<CouponState>((set, get) => ({
           return;
         } catch (err) {
           if (!isAuthError(err)) throw err;
-          const { restoreSessionFromCookie } = await import("@/services/authService");
           const restored = await restoreSessionFromCookie();
           if (!restored) {
             clearTokens();

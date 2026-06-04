@@ -1,7 +1,8 @@
-import { Check, ChevronDown, Phone } from "lucide-react";
-import { useId, useState, type KeyboardEventHandler } from "react";
+import { Check, ChevronDown, Phone, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useId, useState, type KeyboardEventHandler } from "react";
 import { cn } from "@/lib/utils";
-import { AppModal } from "@/modules/micro-interactions";
+import { retainBottomSheetVisualState } from "@/modules/micro-interactions/modal/bottomSheetVisualState";
 import type { SupportedCountryCode } from "@/utils/authValidation";
 
 const PHONE_INPUT_CLASS =
@@ -34,7 +35,6 @@ type CountryPhoneInputProps = {
   phoneAriaLabel?: string;
   hasError?: boolean;
   showErrorText?: boolean;
-  variant?: "split" | "joined";
 };
 
 export default function CountryPhoneInput({
@@ -57,7 +57,6 @@ export default function CountryPhoneInput({
   phoneAriaLabel = "手机号",
   hasError,
   showErrorText = true,
-  variant = "split",
 }: CountryPhoneInputProps) {
   const generatedId = useId();
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
@@ -69,23 +68,20 @@ export default function CountryPhoneInput({
   const pickerTitleId = `country-picker-title-${generatedId}`;
   const describedBy = errorText ? errorId : undefined;
   const countryPickerDisabled = disabled || readOnly;
-  const joined = variant === "joined";
 
   const chooseCountryCode = (value: SupportedCountryCode) => {
     onCountryCodeChange(value);
     setCountryPickerOpen(false);
   };
 
+  useEffect(() => {
+    if (!countryPickerOpen) return;
+    return retainBottomSheetVisualState();
+  }, [countryPickerOpen]);
+
   return (
     <div className={cn(showErrorText && "space-y-2", className)}>
-      <div
-        className={cn(
-          joined
-            ? "grid grid-cols-[5rem_minmax(0,1fr)] overflow-hidden rounded-[14px] border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[var(--theme-bg)] transition-[border-color,box-shadow] focus-within:border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))] focus-within:shadow-[var(--theme-focus-ring)]"
-            : "grid grid-cols-[minmax(6.5rem,7rem)_1fr] gap-2 sm:grid-cols-[112px_1fr]",
-          invalid && joined && "border-destructive focus-within:border-destructive focus-within:shadow-none focus-within:ring-2 focus-within:ring-destructive/20",
-        )}
-      >
+      <div className="grid grid-cols-[minmax(6.5rem,7rem)_1fr] gap-2 sm:grid-cols-[112px_1fr]">
         <button
           type="button"
           aria-label={selectAriaLabel}
@@ -96,23 +92,15 @@ export default function CountryPhoneInput({
           disabled={countryPickerDisabled}
           onClick={() => setCountryPickerOpen(true)}
           className={cn(
-            joined
-              ? "flex min-w-0 items-center justify-center gap-1.5 border-r border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-transparent px-3 py-3 text-base font-semibold text-foreground transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-80"
-              : "flex min-w-0 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3.5 text-base font-semibold text-foreground transition-[border-color,box-shadow,background-color] focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 disabled:cursor-not-allowed disabled:opacity-70",
-            invalid && !joined && PHONE_INPUT_ERROR_CLASS,
+            "flex min-w-0 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3.5 text-base font-semibold text-foreground transition-[border-color,box-shadow,background-color] focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 disabled:cursor-not-allowed disabled:opacity-70",
+            invalid && PHONE_INPUT_ERROR_CLASS,
           )}
         >
           <span>{countryCode}</span>
           <ChevronDown size={17} aria-hidden="true" className="text-muted-foreground" />
         </button>
         <div className="relative">
-          <Phone
-            size={18}
-            className={cn(
-              "absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground",
-              joined && "hidden",
-            )}
-          />
+          <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             id={phoneInputId}
             name={phoneInputName}
@@ -135,10 +123,8 @@ export default function CountryPhoneInput({
             onKeyDown={onPhoneKeyDown}
             onChange={(e) => onPhoneChange(e.target.value.replace(/\D/g, ""))}
             className={cn(
-              joined
-                ? "h-12 w-full bg-transparent px-4 text-base text-foreground placeholder:text-muted-foreground outline-none disabled:cursor-default disabled:opacity-80"
-                : PHONE_INPUT_CLASS,
-              !joined && "pl-12 pr-4",
+              PHONE_INPUT_CLASS,
+              "pl-12 pr-4",
               invalid && PHONE_INPUT_ERROR_CLASS,
               (disabled || readOnly) && "cursor-default opacity-80",
               phoneClassName,
@@ -155,47 +141,82 @@ export default function CountryPhoneInput({
           {errorText}
         </p>
       ) : null}
-      <AppModal
-        tier="standard"
-        open={countryPickerOpen}
-        onClose={() => setCountryPickerOpen(false)}
-        title={<span id={pickerTitleId}>选择地区</span>}
-        height="auto"
-        className="app-country-picker-sheet"
-      >
-        <div className="space-y-2 pb-2">
-          {COUNTRY_PICKER_OPTIONS.map((item) => {
-            const selected = item.value === countryCode;
-            return (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => chooseCountryCode(item.value)}
-                className={cn(
-                  "flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-[background-color,border-color,box-shadow]",
-                  selected
-                    ? "border-gold bg-gold/10 shadow-[0_10px_24px_rgba(177,127,38,0.14)]"
-                    : "border-border bg-background hover:border-gold/45",
-                )}
-              >
-                <span className="text-base font-semibold text-foreground">{item.name}</span>
-                <span className="flex items-center gap-3">
-                  <span className="text-base font-semibold text-foreground">{item.value}</span>
-                  <span
-                    className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full border",
-                      selected ? "border-gold bg-gold text-white" : "border-border bg-card",
-                    )}
-                    aria-hidden="true"
-                  >
-                    {selected ? <Check size={15} strokeWidth={2.5} /> : null}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </AppModal>
+      <AnimatePresence>
+        {countryPickerOpen ? (
+          <motion.div
+            className="app-bottom-sheet-layer app-country-picker-backdrop fixed inset-0 z-[80] flex items-end justify-center p-0 sm:px-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={pickerTitleId}
+            onClick={() => setCountryPickerOpen(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            <motion.div
+              className="app-bottom-sheet app-country-picker-sheet w-full overflow-hidden rounded-t-[30px] border-x-0 border-b-0 border-t sm:max-w-md sm:rounded-[30px] sm:border"
+              onClick={(event) => event.stopPropagation()}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.9 }}
+            >
+              <div className="flex justify-center pt-3">
+                <span className="app-bottom-sheet-handle" />
+              </div>
+              <div className="app-bottom-sheet-header flex items-center justify-between px-5 pb-3 pt-4">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">地区代码</p>
+                  <h2 id={pickerTitleId} className="mt-1 text-lg font-bold text-foreground">
+                    选择地区
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  aria-label="关闭选择地区"
+                  onClick={() => setCountryPickerOpen(false)}
+                  className="app-bottom-sheet-close flex h-10 w-10 items-center justify-center rounded-full border text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-gold/25"
+                >
+                  <X size={18} aria-hidden="true" />
+                </button>
+              </div>
+              <div className="app-bottom-sheet-content space-y-2 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                {COUNTRY_PICKER_OPTIONS.map((item) => {
+                  const selected = item.value === countryCode;
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => chooseCountryCode(item.value)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-[background-color,border-color,box-shadow]",
+                        selected
+                          ? "border-gold bg-gold/10 shadow-[0_10px_24px_rgba(177,127,38,0.14)]"
+                          : "border-border bg-background hover:border-gold/45",
+                      )}
+                    >
+                      <span className="text-base font-semibold text-foreground">{item.name}</span>
+                      <span className="flex items-center gap-3">
+                        <span className="text-base font-semibold text-foreground">{item.value}</span>
+                        <span
+                          className={cn(
+                            "flex h-6 w-6 items-center justify-center rounded-full border",
+                            selected ? "border-gold bg-gold text-white" : "border-border bg-card",
+                          )}
+                          aria-hidden="true"
+                        >
+                          {selected ? <Check size={15} strokeWidth={2.5} /> : null}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

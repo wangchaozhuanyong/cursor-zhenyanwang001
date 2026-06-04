@@ -18,7 +18,7 @@ import {
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import * as returnService from "@/services/admin/returnService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
-import type { ApproveReturnParams, ReturnDetail, ReturnRequest, ReturnStatus } from "@/types/return";
+import type { ApproveReturnParams, ReturnDetail, ReturnRequest } from "@/types/return";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
@@ -61,7 +61,7 @@ function money(value: unknown) {
   return `RM ${Number(value || 0).toFixed(2)}`;
 }
 
-type ReviewMode = "approve" | "reject" | "status";
+type ReviewMode = "approve" | "reject";
 
 const TABLE_HEADERS = ["申请", "订单", "类型", "原因", "退款金额", "状态", "创建时间", "操作"] as const;
 
@@ -87,7 +87,6 @@ export default function AdminReturns() {
   const [reviewMode, setReviewMode] = useState<ReviewMode | null>(null);
   const [refundAmount, setRefundAmount] = useState("");
   const [adminRemark, setAdminRemark] = useState("");
-  const [statusTarget, setStatusTarget] = useState("");
   const [reviewBaseline, setReviewBaseline] = useState<{ refundAmount: string; adminRemark: string } | null>(null);
 
   const params = useMemo(() => ({
@@ -148,20 +147,6 @@ export default function AdminReturns() {
     onError: (error) => toast.error(toastErrorMessage(error, tText("拒绝售后失败"))),
   });
 
-  const statusMutation = useMutation({
-    mutationFn: async (detail: ReturnDetail) => returnService.updateReturnStatus(detail.id, {
-      status: statusTarget,
-      admin_remark: adminRemark.trim() || undefined,
-      refund_amount: refundAmount.trim() ? Number(refundAmount) : undefined,
-    }),
-    onSuccess: async () => {
-      toast.success(tText("售后状态已更新"));
-      closeReviewPanel();
-      await invalidateReturns();
-    },
-    onError: (error) => toast.error(toastErrorMessage(error, tText("更新售后状态失败"))),
-  });
-
   const rows = returnsQuery.data?.list || [];
   const total = returnsQuery.data?.total || 0;
   const detail = detailQuery.data;
@@ -176,7 +161,6 @@ export default function AdminReturns() {
     setReviewMode(null);
     setRefundAmount("");
     setAdminRemark("");
-    setStatusTarget("");
     setReviewBaseline(null);
   };
 
@@ -189,33 +173,8 @@ export default function AdminReturns() {
     setReviewBaseline({ refundAmount: nextRefundAmount, adminRemark: "" });
   };
 
-  const openStatusUpdate = (row: ReturnRequest) => {
-    setSelectedId(row.id);
-    setReviewMode("status");
-    const nextRefundAmount = String(row.refund_amount || "");
-    setRefundAmount(nextRefundAmount);
-    setAdminRemark("");
-    setStatusTarget("");
-    setReviewBaseline({ refundAmount: nextRefundAmount, adminRemark: "" });
-  };
-
   const confirmSubmitReview = (detail: ReturnDetail) => {
     if (!reviewMode) return;
-    if (reviewMode === "status") {
-      if (!statusTarget) {
-        toast.error(tText("请选择要更新到的状态"));
-        return;
-      }
-      confirm({
-        title: tText("确认更新售后状态"),
-        description: tText(`确定将该售后状态更新为「${labelStatus(statusTarget)}」吗？用户端会看到新的售后进度。`),
-        confirmText: tText("确认更新"),
-        onConfirm: async () => {
-          await statusMutation.mutateAsync(detail);
-        },
-      });
-      return;
-    }
     const approving = reviewMode === "approve";
     const amount = Number(refundAmount || detail.refund_amount || 0);
     if (approving && (!Number.isFinite(amount) || amount < 0)) {
@@ -255,7 +214,6 @@ export default function AdminReturns() {
         <UnifiedButton type="button" onClick={() => setSelectedId(row.id)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>详情</Tx></UnifiedButton>
         {canHandleReturn ? (
           <>
-            <UnifiedButton type="button" onClick={() => openStatusUpdate(row)} className="touch-manipulation rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>改状态</Tx></UnifiedButton>
             <UnifiedButton type="button" onClick={() => openReview("approve", row)} className="touch-manipulation rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>通过</Tx></UnifiedButton>
             <UnifiedButton type="button" onClick={() => openReview("reject", row)} className="touch-manipulation rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white"><Tx>拒绝</Tx></UnifiedButton>
           </>
@@ -338,11 +296,6 @@ export default function AdminReturns() {
                   items={[
                     ...(canHandleReturn ? ([
                       {
-                        key: "status",
-                        label: <Tx>改状态</Tx>,
-                        onClick: () => openStatusUpdate(row),
-                      },
-                      {
                         key: "approve",
                         label: <Tx>通过</Tx>,
                         onClick: () => openReview("approve", row),
@@ -405,22 +358,7 @@ export default function AdminReturns() {
 
                   {reviewMode ? (
                     <div className="rounded-xl border border-border p-4">
-                      <p className="font-medium text-foreground">{reviewMode === "approve" ? tText("通过售后") : reviewMode === "status" ? tText("更新售后状态") : tText("拒绝售后")}</p>
-                      {reviewMode === "status" ? (
-                        <label className="mt-3 block text-xs text-muted-foreground">
-                          <Tx>目标状态</Tx>
-                          <select
-                            value={statusTarget}
-                            onChange={(e) => setStatusTarget(e.target.value as ReturnStatus)}
-                            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                          >
-                            <option value=""><Tx>请选择状态</Tx></option>
-                            {statusOptionsLocalized
-                              .filter((opt) => opt.value !== detail.status)
-                              .map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                          </select>
-                        </label>
-                      ) : null}
+                      <p className="font-medium text-foreground">{reviewMode === "approve" ? tText("通过售后") : tText("拒绝售后")}</p>
                       {reviewMode === "approve" ? (
                         <label className="mt-3 block text-xs text-muted-foreground">
                           <Tx>退款金额</Tx>
@@ -436,10 +374,10 @@ export default function AdminReturns() {
                         <UnifiedButton
                           type="button"
                           onClick={() => confirmSubmitReview(detail)}
-                          disabled={approveMutation.isPending || rejectMutation.isPending || statusMutation.isPending}
+                          disabled={approveMutation.isPending || rejectMutation.isPending}
                           className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                         >
-                          {approveMutation.isPending || rejectMutation.isPending || statusMutation.isPending ? tText("处理中...") : <Tx>提交处理</Tx>}
+                          {approveMutation.isPending || rejectMutation.isPending ? tText("处理中...") : <Tx>提交处理</Tx>}
                         </UnifiedButton>
                       </div>
                     </div>

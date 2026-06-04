@@ -1,5 +1,5 @@
 export type RewardStatus = "pending" | "approved" | "rejected" | "paid" | "reversed";
-export type RewardTransactionType = "settle" | "reverse" | "withdraw_request" | "withdraw_paid" | "wallet_redeem_order" | "wallet_redeem_refund" | "consume_order" | "refund_order" | "settle_points" | "reverse_points";
+export type RewardTransactionType = "settle" | "reverse" | "withdraw_request" | "withdraw_paid" | "wallet_redeem_order" | "wallet_redeem_refund" | "settle_points" | "reverse_points";
 export type RewardTransactionCategory = "" | "income" | "spend" | "reverse";
 
 export interface RewardRecord {

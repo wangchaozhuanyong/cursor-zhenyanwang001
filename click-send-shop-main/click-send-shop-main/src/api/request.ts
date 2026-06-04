@@ -400,7 +400,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   });
 
   const wasBrowserOfflineBeforeFetch = isBrowserOffline();
-  let res: Response;
+  let res: Response | undefined;
   try {
     res = await runRequestFetch();
   } catch (err) {
@@ -410,7 +410,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     if (shouldRetryAdminReadWhenOnline(endpoint, method, retry)) {
       dispatchAdminOfflineRetry("waiting", endpoint);
       const online = wasBrowserOfflineBeforeFetch || isBrowserOffline()
-        ? await waitForBrowserOnline(options.signal)
+        ? await waitForBrowserOnline(options.signal ?? undefined)
         : true;
       if (online) {
         dispatchAdminOfflineRetry("retrying", endpoint);
@@ -434,6 +434,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     }
   } finally {
     if (loadingToken) stopGlobalLoading(loadingToken);
+  }
+
+  if (!res) {
+    throw new ApiError(0, "\u8bf7\u6c42\u672a\u8fd4\u56de\u54cd\u5e94\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5");
   }
 
   if (res.status === 401 && retry && !options.skipAuthRetry && !isAdminEndpoint && !isAuthLoginOrRegister) {

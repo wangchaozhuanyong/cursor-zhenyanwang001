@@ -59,7 +59,7 @@ export function BottomSheet({
   stickyFooter = Boolean(footer),
   className,
   ariaLabel,
-  desktopMaxWidthClass = "lg:max-w-[520px] lg:mx-auto lg:left-0 lg:right-0",
+  desktopMaxWidthClass = "md:max-w-[520px] md:mx-auto md:left-0 md:right-0",
 }: BottomSheetProps) {
   const dragControls = useDragControls();
   const sheetRef = useRef<HTMLElement | null>(null);

@@ -4,7 +4,7 @@ import * as marketingService from "@/services/marketingService";
 import * as homeService from "@/services/homeService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
-import { trackEventLazy } from "@/services/trackEventLazy";
+import { trackEvent } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?: number }) {
@@ -35,7 +35,7 @@ export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?:
   const banner = banners[0];
   if (!banner) return null;
   const openBanner = () => {
-    trackEventLazy({ event_type: "activity_click", module: "promotion_banner", activity_id: banner.id });
+    void trackEvent({ event_type: "activity_click", module: "promotion_banner", activity_id: banner.id });
     navigate(banner.link_url || "/categories");
   };
 

@@ -1,13 +1,14 @@
-import { lazy, Suspense, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Fingerprint, KeyRound, Lock, User } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
+import { adminLogin, verifyAdminMfa, verifyAdminPasskeyLogin } from "@/services/admin/accountService";
 import { adminLoginErrorMessage } from "@/utils/storefrontError";
 import { FormFieldShake } from "@/modules/micro-interactions/components/FormFieldShake";
-import { useAdminLoginT } from "@/i18n/adminLogin";
+import { useAdminT } from "@/hooks/useAdminT";
+import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-
-const QRCodeSVG = lazy(() => import("qrcode.react").then((module) => ({ default: module.QRCodeSVG })));
 
 function normalizeMfaCode(value: string) {
   return value
@@ -16,22 +17,9 @@ function normalizeMfaCode(value: string) {
     .slice(0, 6);
 }
 
-const loadAccountService = () => import("@/services/admin/accountService");
-
-function AdminLoginLogo() {
-  return (
-    <div
-      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[var(--theme-surface)] text-sm font-bold text-[var(--theme-text-on-surface)] ring-1 ring-[color-mix(in_srgb,var(--theme-border)_80%,transparent)]"
-      aria-label={"\u5927\u9a6c\u901a"}
-    >
-      {"\u5927"}
-    </div>
-  );
-}
-
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const { t, tText, locale } = useAdminLoginT();
+  const { t, tText, locale } = useAdminT();
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -59,8 +47,8 @@ export default function AdminLogin() {
   const handleLogin = async () => {
     const normalizedAccount = account.trim();
     const nextErrors: { account?: string; password?: string } = {};
-    if (!normalizedAccount) nextErrors.account = tText("\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u8d26\u53f7");
-    if (!password.trim()) nextErrors.password = tText("\u8bf7\u8f93\u5165\u5bc6\u7801");
+    if (!normalizedAccount) nextErrors.account = tText("请输入管理员账号");
+    if (!password.trim()) nextErrors.password = tText("请输入密码");
     if (nextErrors.account || nextErrors.password) {
       setFieldErrors(nextErrors);
       setShakeKey((k) => k + 1);
@@ -69,7 +57,6 @@ export default function AdminLogin() {
     setFieldErrors({});
     setLoading(true);
     try {
-      const { adminLogin } = await loadAccountService();
       const result = await adminLogin({ username: normalizedAccount, phone: normalizedAccount, password });
       if (result.mfaRequired || result.mfaSetupRequired) {
         setMfaState({
@@ -100,13 +87,12 @@ export default function AdminLogin() {
     const code = normalizeMfaCode(mfaCode);
     if (!/^\d{6}$/.test(code)) {
       setShakeKey((k) => k + 1);
-      toast.error(tText("\u8bf7\u8f93\u5165\u5b8c\u6574\u7684 6 \u4f4d\u9a8c\u8bc1\u7801"));
+      toast.error(tText("请输入完整的 6 位验证码"));
       return;
     }
     mfaSubmittingRef.current = true;
     setLoading(true);
     try {
-      const { verifyAdminMfa } = await loadAccountService();
       await verifyAdminMfa({
         mfaTicket: mfaState.ticket,
         code,
@@ -117,7 +103,7 @@ export default function AdminLogin() {
       finishLogin();
     } catch (e) {
       setShakeKey((k) => k + 1);
-      toast.error(adminLoginErrorMessage(e, tText("\u591a\u56e0\u7d20\u9a8c\u8bc1\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u9a8c\u8bc1\u7801\u662f\u5426\u6b63\u786e\u6216\u662f\u5426\u5df2\u8fc7\u671f")));
+      toast.error(adminLoginErrorMessage(e, tText("多因素验证失败，请检查验证码是否正确或是否已过期")));
     } finally {
       mfaSubmittingRef.current = false;
       setLoading(false);
@@ -128,7 +114,6 @@ export default function AdminLogin() {
     if (!mfaState?.ticket) return;
     setPasskeyLoading(true);
     try {
-      const { verifyAdminPasskeyLogin } = await loadAccountService();
       await verifyAdminPasskeyLogin({
         mfaTicket: mfaState.ticket,
         username: account.trim(),
@@ -138,7 +123,7 @@ export default function AdminLogin() {
       finishLogin();
     } catch (e) {
       setShakeKey((k) => k + 1);
-      toast.error(adminLoginErrorMessage(e, tText("Passkey \u9a8c\u8bc1\u5931\u8d25")));
+      toast.error(adminLoginErrorMessage(e, tText("Passkey 验证失败")));
     } finally {
       setPasskeyLoading(false);
     }
@@ -152,7 +137,7 @@ export default function AdminLogin() {
         <div className="rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
           <div className="mb-8 text-center">
             <div className="mx-auto w-fit shadow-md">
-              <AdminLoginLogo />
+              <AdminSiteLogo size="lg" />
             </div>
             <h1 className="mt-4 font-display text-2xl font-bold text-foreground">{t("login.title")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t("login.subtitle")}</p>
@@ -170,9 +155,7 @@ export default function AdminLogin() {
                     <div className="mt-4 space-y-3">
                       {mfaState.otpAuthUrl ? (
                         <div className="mx-auto flex w-fit rounded-lg bg-white p-3">
-                          <Suspense fallback={<div className="h-[168px] w-[168px] rounded-lg bg-white" />}>
-                            <QRCodeSVG value={mfaState.otpAuthUrl} size={168} />
-                          </Suspense>
+                          <QRCodeSVG value={mfaState.otpAuthUrl} size={168} />
                         </div>
                       ) : null}
                       {mfaState.secret ? (
@@ -197,11 +180,11 @@ export default function AdminLogin() {
                       className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background disabled:opacity-50"
                     >
                       <Fingerprint size={16} />
-                      {passkeyLoading ? tText("\u6b63\u5728\u9a8c\u8bc1 Passkey...") : tText("\u4f7f\u7528 Passkey \u767b\u5f55")}
+                      {passkeyLoading ? tText("正在验证 Passkey...") : tText("使用 Passkey 登录")}
                     </UnifiedButton>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="h-px flex-1 bg-border" />
-                      <span>{tText("\u6216\u8f93\u5165\u9a8c\u8bc1\u7801")}</span>
+                      <span>{tText("或输入验证码")}</span>
                       <span className="h-px flex-1 bg-border" />
                     </div>
                   </>
@@ -235,7 +218,7 @@ export default function AdminLogin() {
                       onChange={(e) => setTrustDevice(e.target.checked)}
                       className="h-4 w-4 rounded border-border"
                     />
-                    <span>{tText("\u4fe1\u4efb\u6b64\u8bbe\u5907")}</span>
+                    <span>{tText("信任此设备")}</span>
                   </label>
                   {trustDevice ? (
                     <div className="mt-3 grid grid-cols-3 gap-2">
@@ -250,7 +233,7 @@ export default function AdminLogin() {
                               : "border-border text-muted-foreground hover:bg-background"
                           }`}
                         >
-                          {locale === "en" ? `${days} days` : `${days} \u5929`}
+                          {locale === "en" ? `${days} days` : `${days} 天`}
                         </UnifiedButton>
                       ))}
                     </div>
@@ -289,9 +272,7 @@ export default function AdminLogin() {
                       }}
                       placeholder={t("login.accountPlaceholder")}
                       className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") void handleLogin();
-                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                     />
                   </div>
                   {fieldErrors.account ? <p className="mt-1 text-xs text-destructive">{fieldErrors.account}</p> : null}
@@ -311,14 +292,12 @@ export default function AdminLogin() {
                       }}
                       placeholder={t("login.passwordPlaceholder")}
                       className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") void handleLogin();
-                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                     />
                     <UnifiedButton
                       type="button"
                       onClick={() => setShowPwd(!showPwd)}
-                      aria-label={showPwd ? tText("\u9690\u85cf\u5bc6\u7801") : tText("\u663e\u793a\u5bc6\u7801")}
+                      aria-label={showPwd ? "隐藏密码" : "显示密码"}
                       className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
                     >
                       {showPwd ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}

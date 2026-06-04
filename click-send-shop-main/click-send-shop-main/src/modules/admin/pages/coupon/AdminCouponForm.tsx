@@ -9,7 +9,7 @@ import { createCoupon, fetchCoupons, updateCoupon } from "@/services/admin/coupo
 import * as categoryService from "@/services/admin/categoryService";
 import { fetchProducts } from "@/services/admin/productService";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { useAdminGoBack } from "@/hooks/useAdminGoBack";
+import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { Category } from "@/types/category";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
@@ -45,7 +45,7 @@ export default function AdminCouponForm() {
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const navigate = useNavigate();
-  const goBack = useAdminGoBack("/admin/marketing/coupons");
+  const goBack = useGoBack("/admin/marketing/coupons");
   const { id } = useParams();
   const couponId = String(id || "").trim();
   const isNew = !couponId || couponId === "new";

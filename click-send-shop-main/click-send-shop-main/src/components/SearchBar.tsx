@@ -15,7 +15,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({
-  placeholder = "搜索商品...",
+  placeholder = "搜索...",
   value: controlledValue,
   onChange,
   onSearch,

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -20,6 +21,7 @@ import {
   Star,
   Users,
   Wrench,
+  X,
 } from "lucide-react";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DEFAULT_APPLE_TOUCH_ICON, DEFAULT_FAVICON_ICO, DEFAULT_FAVICON_PNG, DEFAULT_FAVICON_SVG } from "@/constants/siteBrand";
@@ -409,6 +411,7 @@ function PlatformPreview({ brandLogoSrc }: { brandLogoSrc: string }) {
 
 export default function TikTokLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const brandLogoSrc = useMemo(resolveInitialBrandLogo, []);
 
   useEffect(() => {
@@ -471,27 +474,51 @@ export default function TikTokLanding() {
           <UnifiedButton
             type="button"
             onClick={() => setMobileMenuOpen((open) => !open)}
-            className="grid h-11 w-11 place-items-center rounded-lg bg-white text-[#101614] lg:hidden"
+            className="grid h-11 w-11 place-items-center rounded-2xl border border-[#cfe4df] bg-[#f7fbfa] text-[#101614] shadow-[0_10px_24px_rgba(0,67,57,0.08)] transition active:scale-95 lg:hidden"
             aria-expanded={mobileMenuOpen}
-            aria-label="打开导航菜单"
+            aria-controls={mobileMenuOpen ? "tiktok-mobile-menu" : undefined}
+            aria-label={mobileMenuOpen ? "关闭导航菜单" : "打开导航菜单"}
           >
-            <Menu size={30} strokeWidth={2.6} />
+            {mobileMenuOpen ? <X size={25} strokeWidth={2.5} /> : <Menu size={30} strokeWidth={2.6} />}
           </UnifiedButton>
         </div>
 
         {mobileMenuOpen ? (
-          <div className="border-t border-[#e0ebe8] bg-white px-4 py-3 lg:hidden">
-            <div className="mx-auto grid max-w-7xl grid-cols-2 gap-2">
-              {navItems.slice(1).map((item) => (
+          <div className="px-4 pb-4 lg:hidden">
+            <div
+              id="tiktok-mobile-menu"
+              role="dialog"
+              aria-label="移动端导航菜单"
+              className="mx-auto max-w-7xl rounded-[24px] border border-[#c8e2dc] bg-[linear-gradient(180deg,#ffffff_0%,#f3faf7_100%)] p-3 shadow-[0_18px_45px_rgba(0,67,57,0.14)]"
+            >
+              <div className="mb-3 flex items-center justify-between border-b border-[#e0ebe8] pb-3">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#007f6d]">Menu</p>
+                  <p className="mt-0.5 text-base font-black text-[#101614]">快速导航</p>
+                </div>
                 <UnifiedButton
-                  key={item.label}
                   type="button"
-                  onClick={() => scrollToSection(item.target)}
-                  className="h-10 rounded-lg border border-[#dfe9e6] bg-[#f7fbfa] text-sm font-bold text-[#34413e]"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-[#cfe4df] bg-white text-[#1d2a27] shadow-sm transition active:scale-95"
+                  aria-label="关闭导航菜单"
                 >
-                  {item.label}
+                  <X size={18} strokeWidth={2.4} />
                 </UnifiedButton>
-              ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {navItems.slice(1).map((item) => (
+                  <UnifiedButton
+                    key={item.label}
+                    type="button"
+                    onClick={() => scrollToSection(item.target)}
+                    className="flex h-12 items-center justify-between rounded-2xl border border-[#d9e9e5] bg-white px-3 text-sm font-black text-[#34413e] shadow-[0_8px_22px_rgba(0,67,57,0.06)] transition hover:border-[#9fd1c7] hover:bg-[#effaf7] active:scale-[0.98]"
+                  >
+                    <span>{item.label}</span>
+                    <ArrowRight size={15} className="text-[#008775]" />
+                  </UnifiedButton>
+                ))}
+              </div>
             </div>
           </div>
         ) : null}
@@ -513,24 +540,75 @@ export default function TikTokLanding() {
               找房安家、留学陪读、签证咨询、本地服务、商务资源，一站式集中查看。
             </p>
 
-            <div className="mt-6 grid grid-cols-[1.05fr_0.95fr] gap-2.5 min-[390px]:gap-3 sm:flex sm:flex-wrap">
-              <UnifiedButton
-                type="button"
-                onClick={enterOfficialSite}
-                className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-full bg-[#008775] px-3 text-[13px] font-black text-white shadow-[0_16px_30px_rgba(0,127,109,0.26)] transition hover:bg-[#006f61] min-[390px]:gap-2 min-[390px]:px-4 min-[390px]:text-sm sm:min-w-[220px] sm:px-7 sm:text-base"
+            <motion.div
+              initial={reduceMotion ? false : "hidden"}
+              animate={reduceMotion ? undefined : "show"}
+              variants={
+                reduceMotion
+                  ? undefined
+                  : {
+                      hidden: {},
+                      show: { transition: { staggerChildren: 0.08 } },
+                    }
+              }
+              className="mt-6 grid grid-cols-[1.05fr_0.95fr] gap-2.5 min-[390px]:gap-3 sm:flex sm:flex-wrap"
+            >
+              <motion.div
+                variants={
+                  reduceMotion
+                    ? undefined
+                    : {
+                        hidden: { opacity: 0, y: 12 },
+                        show: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { duration: 0.42, ease: [0.16, 1, 0.3, 1] },
+                        },
+                      }
+                }
+                className="min-w-0 sm:w-auto"
               >
-                立即进入大马通
-                <ArrowRight size={18} />
-              </UnifiedButton>
-              <UnifiedButton
-                type="button"
-                onClick={openSupport}
-                className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-full border border-[#008775] bg-white px-3 text-[13px] font-black text-[#007f6d] transition hover:bg-[#effaf7] min-[390px]:gap-2 min-[390px]:px-4 min-[390px]:text-sm sm:min-w-[180px] sm:px-7 sm:text-base"
+                <UnifiedButton
+                  type="button"
+                  onClick={enterOfficialSite}
+                  className="group relative inline-flex min-h-12 w-full overflow-hidden items-center justify-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#009b86_0%,#008775_52%,#006f61_100%)] px-3 text-[13px] font-black text-white shadow-[0_18px_34px_rgba(0,127,109,0.28)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_42px_rgba(0,127,109,0.34)] active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#008775] focus-visible:ring-offset-2 focus-visible:ring-offset-white min-[390px]:gap-2 min-[390px]:px-4 min-[390px]:text-sm sm:min-w-[220px] sm:px-7 sm:text-base"
+                >
+                  <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.34),transparent_58%)] opacity-0 transition-opacity duration-200 group-active:opacity-100" />
+                  <span className="relative z-[1]">立即进入大马通</span>
+                  <ArrowRight
+                    size={18}
+                    className="relative z-[1] shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-1 group-active:translate-x-1.5"
+                  />
+                </UnifiedButton>
+              </motion.div>
+              <motion.div
+                variants={
+                  reduceMotion
+                    ? undefined
+                    : {
+                        hidden: { opacity: 0, y: 12 },
+                        show: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { duration: 0.42, ease: [0.16, 1, 0.3, 1] },
+                        },
+                      }
+                }
+                className="min-w-0 sm:w-auto"
               >
-                <MessageCircle size={18} />
-                联系客服
-              </UnifiedButton>
-            </div>
+                <UnifiedButton
+                  type="button"
+                  onClick={openSupport}
+                  className="group relative inline-flex min-h-12 w-full overflow-hidden items-center justify-center gap-1.5 rounded-full border border-[#008775] bg-white px-3 text-[13px] font-black text-[#007f6d] shadow-[0_12px_26px_rgba(0,97,82,0.08)] transition-all duration-200 ease-out hover:-translate-y-px hover:border-[#007565] hover:bg-[#f0fbf8] hover:shadow-[0_16px_30px_rgba(0,97,82,0.12)] active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#008775] focus-visible:ring-offset-2 focus-visible:ring-offset-white min-[390px]:gap-2 min-[390px]:px-4 min-[390px]:text-sm sm:min-w-[180px] sm:px-7 sm:text-base"
+                >
+                  <MessageCircle
+                    size={18}
+                    className="relative z-[1] shrink-0 transition-transform duration-200 ease-out group-hover:-rotate-3 group-hover:scale-110 group-active:scale-95"
+                  />
+                  <span className="relative z-[1]">联系客服</span>
+                </UnifiedButton>
+              </motion.div>
+            </motion.div>
 
             <div className="mt-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
               {featureChips.map((item) => (

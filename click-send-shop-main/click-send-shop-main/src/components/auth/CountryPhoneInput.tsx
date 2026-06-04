@@ -56,7 +56,7 @@ export default function CountryPhoneInput({
 }: CountryPhoneInputProps) {
   const generatedId = useId();
   const resolvedPhonePlaceholder =
-    phonePlaceholder ?? (countryCode === "+60" ? "手机号，例如 0123456789" : "手机号，例如 13800138000");
+    phonePlaceholder ?? (countryCode === "+60" ? "例如 123456789" : "例如 13800138000");
   const phoneMaxLength = 11;
   const invalid = hasError ?? Boolean(errorText);
   const errorId = phoneInputId ? `${phoneInputId}-error` : `country-phone-error-${generatedId}`;

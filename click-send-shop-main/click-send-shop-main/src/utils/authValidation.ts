@@ -63,7 +63,7 @@ export function splitPhoneForInput(
   const normalizedDigits = normalizePhoneDigits(phone, countryCode);
   return {
     countryCode,
-    phone: countryCode === "+60" && normalizedDigits ? `0${normalizedDigits}` : normalizedDigits,
+    phone: normalizedDigits,
   };
 }
 
@@ -73,7 +73,7 @@ export function validatePhoneForCountry(phone: string, countryCode: string): str
   const digits = normalizePhoneDigits(phone, cc);
   if (!digits) return "请填写手机号";
   if (cc === "+60" && !/^1\d{8,9}$/.test(digits)) {
-    return "马来西亚手机号格式不正确，请输入 9-10 位本地手机号，例如 0123456789";
+    return "马来西亚手机号格式不正确，请输入 9-10 位本地手机号，例如 123456789";
   }
   if (cc === "+86" && !/^1[3-9]\d{9}$/.test(digits)) {
     return "中国手机号格式不正确，请输入 11 位手机号";

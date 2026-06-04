@@ -24,6 +24,8 @@ CLEANUP_STATIC_AFTER_DEPLOY="${CLEANUP_STATIC_AFTER_DEPLOY:-1}"
 DEPLOY_BASE="${DEPLOY_BASE:-/var/www/damatong}"
 KEEP_RELEASES="${KEEP_RELEASES:-2}"
 KEEP_ROLLBACKS="${KEEP_ROLLBACKS:-1}"
+PRUNE_STALE_ASSET_CHUNKS="${PRUNE_STALE_ASSET_CHUNKS:-1}"
+STALE_ASSET_DAYS="${STALE_ASSET_DAYS:-14}"
 STATE_DIR="${PROJECT_DIR}/.deploy-state"
 
 # /var/www/damatong 等目录常为 www-data 属主，普通 rsync -a 会因 chgrp 失败（exit 23）
@@ -302,6 +304,7 @@ PM2_APP="$PM2_APP" HEALTH_PORT="$HEALTH_PORT" HEALTH_PATH="$HEALTH_PATH" \
 if [[ "$CLEANUP_STATIC_AFTER_DEPLOY" == "1" && -f "$PROJECT_DIR/deploy/cleanup-damatong-static.sh" ]]; then
   echo "🧹 清理旧静态发布目录（保留 release=${KEEP_RELEASES}, rollback=${KEEP_ROLLBACKS}）..." | tee -a "$LOG_FILE"
   DEPLOY_BASE="$DEPLOY_BASE" KEEP_RELEASES="$KEEP_RELEASES" KEEP_ROLLBACKS="$KEEP_ROLLBACKS" \
+    PRUNE_STALE_ASSET_CHUNKS="$PRUNE_STALE_ASSET_CHUNKS" STALE_ASSET_DAYS="$STALE_ASSET_DAYS" \
     bash "$PROJECT_DIR/deploy/cleanup-damatong-static.sh" | tee -a "$LOG_FILE"
 fi
 

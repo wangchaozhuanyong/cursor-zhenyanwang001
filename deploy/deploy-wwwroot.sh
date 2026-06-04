@@ -12,6 +12,7 @@
 #   PM2_APP            pm2 进程名，默认 gc-api
 #   NPM_CI=1           若存在 package-lock.json 则用 npm ci 替代 npm install（根/前端/后端）
 #   CLEANUP_STATIC_AFTER_DEPLOY=1  部署成功后清理旧 release / rollback
+#   STALE_ASSET_DAYS=14  只清理超过该天数且未被当前页面引用的旧 JS/CSS chunk
 #
 set -euo pipefail
 
@@ -35,6 +36,8 @@ CLEANUP_STATIC_AFTER_DEPLOY="${CLEANUP_STATIC_AFTER_DEPLOY:-1}"
 DEPLOY_BASE="${DEPLOY_BASE:-/var/www/damatong}"
 KEEP_RELEASES="${KEEP_RELEASES:-2}"
 KEEP_ROLLBACKS="${KEEP_ROLLBACKS:-1}"
+PRUNE_STALE_ASSET_CHUNKS="${PRUNE_STALE_ASSET_CHUNKS:-1}"
+STALE_ASSET_DAYS="${STALE_ASSET_DAYS:-14}"
 
 sync_public_static() {
   local src_dir="$1"
@@ -219,6 +222,7 @@ PM2_APP="$PM2_APP" bash "$PROJECT_DIR/deploy/verify-pm2.sh" | tee -a "$LOG_FILE"
 if [[ "$CLEANUP_STATIC_AFTER_DEPLOY" == "1" && -f "$PROJECT_DIR/deploy/cleanup-damatong-static.sh" ]]; then
   echo "🧹 清理旧静态发布目录（保留 release=${KEEP_RELEASES}, rollback=${KEEP_ROLLBACKS}）..." | tee -a "$LOG_FILE"
   DEPLOY_BASE="$DEPLOY_BASE" KEEP_RELEASES="$KEEP_RELEASES" KEEP_ROLLBACKS="$KEEP_ROLLBACKS" \
+    PRUNE_STALE_ASSET_CHUNKS="$PRUNE_STALE_ASSET_CHUNKS" STALE_ASSET_DAYS="$STALE_ASSET_DAYS" \
     bash "$PROJECT_DIR/deploy/cleanup-damatong-static.sh" | tee -a "$LOG_FILE"
 fi
 

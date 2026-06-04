@@ -34,6 +34,8 @@ import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { useSupportRuntime } from "@/hooks/useSupportRuntime";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { resolveAuthRedirectTarget, resolveLoginCancelTarget } from "@/utils/authRedirect";
+import { buildRoutePath, readRouteBack } from "@/utils/routeBackState";
 
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
@@ -44,6 +46,7 @@ const INPUT_ERROR_CLASS =
 const REMEMBER_COUNTRY_CODE_KEY = "login_remembered_country_code";
 type AuthMode = "login" | "register";
 type CredentialMode = "password" | "otp";
+type AuthNavigationState = { from?: string; fromState?: unknown; cancelFrom?: string };
 
 export default function Login() {
   const navigate = useNavigate();
@@ -57,16 +60,22 @@ export default function Login() {
     const wa = channels.find((channel) => channel.type === "whatsapp");
     return wa?.account?.trim() || siteInfo.contactPhone || siteInfo.contactEmail || "客服";
   }, [channels, siteInfo.contactEmail, siteInfo.contactPhone]);
-  const loginState = location.state as { from?: string; fromState?: unknown } | null;
+  const loginState = location.state as AuthNavigationState | null;
   const rawFrom = loginState?.from;
   const fromState = loginState?.fromState;
-  const from =
-    rawFrom && rawFrom !== "/login" && rawFrom !== "/register" && !rawFrom.startsWith("/admin")
-      ? rawFrom
-      : "/";
+  const from = useMemo(() => resolveAuthRedirectTarget(rawFrom), [rawFrom]);
+  const currentPath = buildRoutePath(location);
   const handleBack = useCallback(() => {
-    navigate(from || "/", { replace: true, state: fromState });
-  }, [from, fromState, navigate]);
+    const trackedFrom = readRouteBack(location.key, currentPath);
+    const target = resolveLoginCancelTarget({
+      currentPath,
+      cancelFrom: loginState?.cancelFrom,
+      returnTo: rawFrom,
+      trackedFrom,
+      fallback: "/",
+    });
+    navigate(target, { replace: true, state: target === from ? fromState : undefined });
+  }, [currentPath, from, fromState, location.key, loginState?.cancelFrom, navigate, rawFrom]);
   const [mode, setMode] = useState<AuthMode>(() =>
     location.pathname === "/register" ? "register" : "login",
   );

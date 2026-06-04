@@ -53,7 +53,7 @@ describe("首页优惠券展示状态", () => {
     expect(items).toHaveLength(1);
     expect(items[0].action).toBe("use");
     expect(items[0].actionLabel).toBe("去使用");
-    expect(items[0].statusLabel).toBe("已领取");
+    expect(items[0].statusLabel).toBeUndefined();
   });
 
   it("可领取但未领取时继续展示领取", () => {

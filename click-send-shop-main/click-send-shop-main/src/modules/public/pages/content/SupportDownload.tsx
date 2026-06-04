@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Clock, Copy, MessageCircle, PlusSquare, Send, Smartphone } from "lucide-react";
+import { Copy, MessageCircle, PlusSquare, Send, Smartphone } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import SupportChannelCard from "@/components/support/SupportChannelCard";
@@ -61,18 +61,18 @@ function firstChannelByType(channels: SupportDownloadChannel[], type: SupportCha
   return channels.find((channel) => channel.type === type);
 }
 
-function getDesktopSafeSubtitle(subtitle: string) {
-  return subtitle
-    .replace(/；?也可查看添加到桌面的使用指引。?/g, "")
-    .replace(/；?可查看添加到桌面的使用指引。?/g, "")
-    .trim();
-}
-
 function SupportTabIcon({ view }: { view: SupportDownloadView }) {
   if (view === "telegram") return <Send size={19} aria-hidden="true" />;
   if (view === "download") return <PlusSquare size={19} aria-hidden="true" />;
   if (view === "whatsapp") return <MessageCircle size={19} aria-hidden="true" />;
   return <MessageCircle size={19} aria-hidden="true" />;
+}
+
+function getSupportTabLabel(view: SupportDownloadView) {
+  if (view === "wechat") return "微信";
+  if (view === "whatsapp") return "Whatsapp";
+  if (view === "telegram") return "Telegram";
+  return "添加桌面";
 }
 
 export default function SupportDownload() {
@@ -190,11 +190,6 @@ export default function SupportDownload() {
     return platforms;
   }, [platforms, recommendedPlatform]);
   const pageTitle = config.title?.trim() || "客服与安装";
-  const rawPageSubtitle = config.subtitle?.trim();
-  const pageSubtitle = canShowInstallView ? rawPageSubtitle : getDesktopSafeSubtitle(rawPageSubtitle);
-  const supportDescription = config.support.description?.trim();
-  const supportWorkingHours = config.support.workingHours?.trim();
-  const downloadTabTitle = config.download.title?.trim() || "添加桌面";
   const installPageUrl = useMemo(() => buildCanonical("/support-download", "tab=download"), []);
 
   if (!config.enabled) {
@@ -209,7 +204,7 @@ export default function SupportDownload() {
     <div className="store-page-shell store-bottom-safe support-download-page text-[var(--theme-text)]">
       <SeoHead
         title={`${pageTitle} - ${siteInfo.siteName || "官方商城"}`}
-        description={pageSubtitle || config.subtitle}
+        description={config.subtitle}
         canonical={buildCanonical("/support-download")}
         robots="index,follow"
       />
@@ -223,7 +218,6 @@ export default function SupportDownload() {
             <span className="support-title-diamond" aria-hidden="true" />
             <span className="support-title-line" aria-hidden="true" />
           </div>
-          {pageSubtitle ? <p className="support-download-subtitle">{pageSubtitle}</p> : null}
         </header>
 
         {!waitingForConfiguredView && availableViews.length > 0 ? (
@@ -243,7 +237,7 @@ export default function SupportDownload() {
                   aria-pressed={active}
                 >
                   <SupportTabIcon view={view} />
-                  <span>{view === "download" ? downloadTabTitle : getChannelTitle(channelByType[view]!)}</span>
+                  <span>{getSupportTabLabel(view)}</span>
                 </UnifiedButton>
               );
             })}
@@ -257,17 +251,6 @@ export default function SupportDownload() {
 
           {activeChannel ? (
             <>
-              {supportDescription || supportWorkingHours ? (
-                <section className="support-context-panel">
-                  {supportDescription ? <p>{supportDescription}</p> : null}
-                  {supportWorkingHours ? (
-                    <p className="support-context-time">
-                      <Clock size={15} aria-hidden="true" />
-                      <span>服务时间：{supportWorkingHours}</span>
-                    </p>
-                  ) : null}
-                </section>
-              ) : null}
               <SupportChannelCard channel={{ ...activeChannel, name: getChannelTitle(activeChannel) }} />
             </>
           ) : null}

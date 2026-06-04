@@ -112,7 +112,6 @@ export function buildHomeCouponCardItems(
         userCoupon: actionable,
         action: pending ? "view" : "use",
         actionLabel: pending ? "查看券包" : "去使用",
-        statusLabel: "已领取",
       });
       continue;
     }

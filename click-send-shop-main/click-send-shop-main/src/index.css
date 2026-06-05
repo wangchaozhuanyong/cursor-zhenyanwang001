@@ -6914,7 +6914,7 @@ html[data-app-scope="store"]:where(
     linear-gradient(315deg, color-mix(in srgb, var(--premium-skin-paper) 14%, transparent) 0%, transparent 42%),
     repeating-linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-line) 10%, transparent) 0 1px, transparent 1px 22px),
     linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-paper) 20%, transparent), transparent 36%);
-  opacity: 0.58;
+  opacity: 0.28;
 }
 
 html[data-app-scope="store"]:where(
@@ -6929,14 +6929,14 @@ html[data-app-scope="store"]:where(
   background:
     linear-gradient(
       102deg,
-      color-mix(in srgb, var(--premium-skin-deep) 58%, transparent) 0%,
-      color-mix(in srgb, var(--premium-skin-ink) 44%, transparent) 30%,
-      color-mix(in srgb, var(--premium-skin-ink) 16%, transparent) 47%,
-      color-mix(in srgb, var(--premium-skin-paper) 6%, transparent) 58%,
-      transparent 68%
+      color-mix(in srgb, var(--premium-skin-deep) 34%, transparent) 0%,
+      color-mix(in srgb, var(--premium-skin-ink) 22%, transparent) 26%,
+      color-mix(in srgb, var(--premium-skin-ink) 8%, transparent) 42%,
+      color-mix(in srgb, var(--premium-skin-paper) 3%, transparent) 52%,
+      transparent 62%
     ),
-    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-metal-soft) 14%, transparent), transparent 30%),
-    linear-gradient(0deg, rgba(15, 11, 4, 0.07), transparent 36%);
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-metal-soft) 7%, transparent), transparent 25%),
+    linear-gradient(0deg, rgba(15, 11, 4, 0.04), transparent 30%);
 }
 
 html[data-app-scope="store"]:where(
@@ -6951,7 +6951,7 @@ html[data-app-scope="store"]:where(
   background:
     linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-metal) 13%, transparent) 0 1px, transparent 1px 18px),
     radial-gradient(circle at 12% 22%, color-mix(in srgb, var(--premium-skin-metal-soft) 15%, transparent), transparent 24%);
-  opacity: 0.46;
+  opacity: 0.22;
 }
 
 html[data-app-scope="store"]:where(
@@ -8172,13 +8172,13 @@ html[data-app-scope="store"] .store-hero-carousel--showcase.store-hero-frame::af
     radial-gradient(ellipse at 88% 86%, rgba(255, 248, 226, 0.18), rgba(255, 236, 192, 0.11) 28%, transparent 58%),
     linear-gradient(315deg, rgba(255, 250, 238, 0.12) 0%, transparent 42%),
     linear-gradient(90deg, color-mix(in srgb, var(--home-hero-ivory) 18%, transparent), transparent 36%);
-  opacity: 0.56;
+  opacity: 0.24;
 }
 
 html[data-app-scope="store"] .store-hero-carousel--showcase .store-hero-image-with-copy,
 .theme-preview-store .store-hero-carousel--showcase .store-hero-image-with-copy {
   object-position: 68% center;
-  filter: saturate(1.01) contrast(0.98) brightness(1.03);
+  filter: none;
 }
 
 html[data-app-scope="store"] .store-hero-carousel--showcase .store-hero-story-layer,
@@ -8192,14 +8192,14 @@ html[data-app-scope="store"] .store-hero-carousel--showcase .store-hero-text-was
   background:
     linear-gradient(
       102deg,
-      rgba(3, 42, 34, 0.58) 0%,
-      rgba(4, 61, 51, 0.48) 30%,
-      rgba(5, 87, 67, 0.2) 47%,
-      rgba(5, 87, 67, 0.04) 58%,
-      transparent 68%
+      rgba(3, 42, 34, 0.36) 0%,
+      rgba(4, 61, 51, 0.24) 26%,
+      rgba(5, 87, 67, 0.08) 43%,
+      rgba(5, 87, 67, 0.02) 52%,
+      transparent 62%
     ),
-    linear-gradient(90deg, rgba(255, 248, 226, 0.14), transparent 30%),
-    linear-gradient(0deg, rgba(15, 11, 4, 0.08), transparent 36%);
+    linear-gradient(90deg, rgba(255, 248, 226, 0.06), transparent 25%),
+    linear-gradient(0deg, rgba(15, 11, 4, 0.04), transparent 30%);
 }
 
 html[data-app-scope="store"] .store-hero-carousel--showcase .store-hero-text-wash::before,
@@ -8211,9 +8211,9 @@ html[data-app-scope="store"] .store-hero-carousel--showcase .store-hero-text-was
   background:
     linear-gradient(118deg, rgba(246, 219, 158, 0.12) 0 1px, transparent 1px 18px),
     radial-gradient(circle at 12% 22%, rgba(255, 241, 201, 0.13), transparent 24%);
-  mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.62) 38%, transparent 60%);
-  -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.62) 38%, transparent 60%);
-  opacity: 0.44;
+  mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.46) 34%, transparent 54%);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.46) 34%, transparent 54%);
+  opacity: 0.2;
 }
 
 html[data-app-scope="store"] .store-hero-carousel--showcase .store-hero-copy-panel,
@@ -8496,9 +8496,9 @@ html[data-app-scope="store"] .store-hero-dot-button:focus-visible .store-hero-do
   html[data-app-scope="store"] .store-hero-carousel--showcase .store-hero-text-wash,
   .theme-preview-store .store-hero-carousel--showcase .store-hero-text-wash {
     background:
-      linear-gradient(102deg, rgba(3, 42, 34, 0.6) 0%, rgba(4, 61, 51, 0.5) 36%, rgba(5, 87, 67, 0.16) 55%, transparent 68%),
-      linear-gradient(90deg, rgba(255, 248, 226, 0.12), transparent 30%),
-      linear-gradient(0deg, rgba(15, 11, 4, 0.07), transparent 34%);
+      linear-gradient(102deg, rgba(3, 42, 34, 0.4) 0%, rgba(4, 61, 51, 0.3) 34%, rgba(5, 87, 67, 0.08) 52%, transparent 62%),
+      linear-gradient(90deg, rgba(255, 248, 226, 0.06), transparent 24%),
+      linear-gradient(0deg, rgba(15, 11, 4, 0.04), transparent 28%);
   }
 
   html[data-app-scope="store"] .store-hero-carousel--showcase .store-hero-copy-panel,
@@ -8762,7 +8762,7 @@ html[data-app-scope="store"]:where(
     linear-gradient(315deg, color-mix(in srgb, var(--premium-skin-paper) 14%, transparent) 0%, transparent 42%),
     repeating-linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-line) 10%, transparent) 0 1px, transparent 1px 22px),
     linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-paper) 20%, transparent), transparent 36%);
-  opacity: 0.58;
+  opacity: 0.28;
 }
 
 html[data-app-scope="store"]:where(
@@ -8777,14 +8777,14 @@ html[data-app-scope="store"]:where(
   background:
     linear-gradient(
       102deg,
-      color-mix(in srgb, var(--premium-skin-deep) 58%, transparent) 0%,
-      color-mix(in srgb, var(--premium-skin-ink) 44%, transparent) 30%,
-      color-mix(in srgb, var(--premium-skin-ink) 16%, transparent) 47%,
-      color-mix(in srgb, var(--premium-skin-paper) 6%, transparent) 58%,
-      transparent 68%
+      color-mix(in srgb, var(--premium-skin-deep) 34%, transparent) 0%,
+      color-mix(in srgb, var(--premium-skin-ink) 22%, transparent) 26%,
+      color-mix(in srgb, var(--premium-skin-ink) 8%, transparent) 42%,
+      color-mix(in srgb, var(--premium-skin-paper) 3%, transparent) 52%,
+      transparent 62%
     ),
-    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-metal-soft) 14%, transparent), transparent 30%),
-    linear-gradient(0deg, rgba(15, 11, 4, 0.07), transparent 36%);
+    linear-gradient(90deg, color-mix(in srgb, var(--premium-skin-metal-soft) 7%, transparent), transparent 25%),
+    linear-gradient(0deg, rgba(15, 11, 4, 0.04), transparent 30%);
 }
 
 html[data-app-scope="store"]:where(
@@ -8799,7 +8799,7 @@ html[data-app-scope="store"]:where(
   background:
     linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-metal) 13%, transparent) 0 1px, transparent 1px 18px),
     radial-gradient(circle at 12% 22%, color-mix(in srgb, var(--premium-skin-metal-soft) 15%, transparent), transparent 24%);
-  opacity: 0.46;
+  opacity: 0.22;
 }
 
 html[data-app-scope="store"]:where(

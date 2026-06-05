@@ -27,6 +27,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ensureMediaUrl } from "@/utils/mediaUrl";
+import { resolveNavIconThumbUrl } from "@/utils/navIconThumbUrl";
 
 const ICON_TOKENS = {
   all: Grid3X3,
@@ -102,8 +103,8 @@ export default function HomeNavIcon({
   value,
   className,
   imageClassName,
-  loading = "eager",
-  fetchPriority = "auto",
+  loading = "lazy",
+  fetchPriority = "low",
 }: HomeNavIconProps) {
   const iconValue = value.trim();
   const token = iconValue.toLowerCase() as keyof typeof ICON_TOKENS;
@@ -112,14 +113,18 @@ export default function HomeNavIcon({
     () => (isHomeNavImageIcon(iconValue) ? resolveIconImageSrc(iconValue) : null),
     [iconValue],
   );
+  const displayImageSource = useMemo(
+    () => (imageSource ? resolveNavIconThumbUrl(imageSource) : null),
+    [imageSource],
+  );
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const [src, setSrc] = useState(imageSource || "");
+  const [src, setSrc] = useState(displayImageSource || imageSource || "");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setSrc(imageSource || "");
+    setSrc(displayImageSource || imageSource || "");
     setLoaded(false);
-  }, [imageSource]);
+  }, [displayImageSource, imageSource]);
 
   useEffect(() => {
     const img = imgRef.current;
@@ -164,11 +169,18 @@ export default function HomeNavIcon({
           )}
           loading={loading}
           {...({ fetchpriority: fetchPriority } as Record<string, string>)}
-          decoding={loading === "eager" ? "sync" : "async"}
+          decoding="async"
           onLoad={(event) => {
             if (event.currentTarget.naturalWidth > 0) setLoaded(true);
           }}
-          onError={() => setLoaded(false)}
+          onError={() => {
+            if (imageSource && src !== imageSource) {
+              setSrc(imageSource);
+              setLoaded(false);
+              return;
+            }
+            setLoaded(false);
+          }}
         />
       </span>
     );

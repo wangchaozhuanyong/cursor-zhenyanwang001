@@ -20,6 +20,7 @@ const seo = require('../modules/seo');
 const theme = require('../modules/theme');
 const monitoring = require('../modules/monitoring');
 const dataRetention = require('../modules/dataRetention');
+const media = require('../modules/media');
 
 const router = Router();
 
@@ -49,6 +50,7 @@ router.use(seo);
 router.use(theme);
 router.use(monitoring);
 router.use(dataRetention);
+router.use(media.routes);
 router.use(admin);
 
 module.exports = router;

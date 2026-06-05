@@ -55,3 +55,4 @@ server/scripts/_remote-manual-switch.sh
 
 server/public/uploads/*
 !server/public/uploads/.gitkeep
+server/public/thumb-cache/

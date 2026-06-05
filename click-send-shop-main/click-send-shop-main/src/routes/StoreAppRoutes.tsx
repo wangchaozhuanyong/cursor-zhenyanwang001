@@ -29,7 +29,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
 import { ModalLayerProvider } from "@/modules/micro-interactions/modal/ModalLayerProvider";
 import { trackEventLazy } from "@/services/trackEventLazy";
-import { isStandaloneApp } from "@/utils/pwa";
+import { detectPwaPlatform, isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
@@ -141,8 +141,37 @@ function DeferredGlobalMount({ children, delayMs = GLOBAL_WIDGET_DELAY_MS }: { c
 
 function AppScopeSync() {
   useEffect(() => {
-    document.documentElement.setAttribute("data-app-scope", "store");
-    window.dispatchEvent(new CustomEvent("app:scope-changed", { detail: { scope: "store" } }));
+    const root = document.documentElement;
+    const standaloneMedia = window.matchMedia("(display-mode: standalone)");
+
+    const syncScope = () => {
+      root.setAttribute("data-app-scope", "store");
+      if (isStandaloneApp()) {
+        root.setAttribute("data-pwa-standalone", "true");
+        root.setAttribute("data-pwa-platform", detectPwaPlatform());
+      } else {
+        root.removeAttribute("data-pwa-standalone");
+        root.removeAttribute("data-pwa-platform");
+      }
+      window.dispatchEvent(new CustomEvent("app:scope-changed", { detail: { scope: "store" } }));
+    };
+
+    syncScope();
+    if (typeof standaloneMedia.addEventListener === "function") {
+      standaloneMedia.addEventListener("change", syncScope);
+    } else {
+      standaloneMedia.addListener(syncScope);
+    }
+    window.addEventListener("pageshow", syncScope);
+
+    return () => {
+      if (typeof standaloneMedia.removeEventListener === "function") {
+        standaloneMedia.removeEventListener("change", syncScope);
+      } else {
+        standaloneMedia.removeListener(syncScope);
+      }
+      window.removeEventListener("pageshow", syncScope);
+    };
   }, []);
   return null;
 }

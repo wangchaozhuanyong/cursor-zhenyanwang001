@@ -29,6 +29,8 @@ import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 import { adminTableCellClass, adminTableTheadRow, type AdminTableAlign } from "@/utils/adminTableClasses";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import CouponCenterTabs from "./CouponCenterTabs";
+import { invalidateHomeBootstrapCache } from "@/services/homeService";
+import { invalidateCouponStoreCache } from "@/stores/useCouponStore";
 
 const COUPON_COLUMN_ALIGNS: AdminTableAlign[] = ["left", "center", "left", "right", "right", "left", "center", "right"];
 
@@ -141,6 +143,8 @@ export default function AdminCoupons() {
     mutationFn: (id: string) => couponService.deleteCoupon(id),
     onSuccess: async () => {
       toast.success(L("已删除", "Deleted"));
+      invalidateCouponStoreCache();
+      invalidateHomeBootstrapCache();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() });
     },
     onError: (error) => toast.error(toastErrorMessage(error, L("删除失败", "Delete failed"))),
@@ -152,6 +156,8 @@ export default function AdminCoupons() {
       toast.success(L(`发放完成：${result?.issued || 0}/${result?.targetUsers || 0}`, `Issued: ${result?.issued || 0}/${result?.targetUsers || 0}`));
       setIssueCouponId(null);
       setIssueTagId("");
+      invalidateCouponStoreCache();
+      invalidateHomeBootstrapCache();
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponRecordsRoot() }),
@@ -167,6 +173,8 @@ export default function AdminCoupons() {
       const copy = couponOperationCopy[variables.type];
       toast.success(L(copy.successZh, copy.successEn));
       setOperation(null);
+      invalidateCouponStoreCache();
+      invalidateHomeBootstrapCache();
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponRecordsRoot() }),

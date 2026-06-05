@@ -22,6 +22,8 @@ import type {
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { useAdminGoBack } from "@/hooks/useAdminGoBack";
+import { invalidateHomeBootstrapCache } from "@/services/homeService";
+import { invalidateCouponStoreCache } from "@/stores/useCouponStore";
 
 type FormState = Omit<CouponCampaignPayload, "coupon_ids"> & { coupon_ids: string[] };
 
@@ -215,6 +217,8 @@ export default function AdminCouponCampaignForm() {
     },
     onSuccess: async () => {
       toast.success("发券活动已保存");
+      invalidateCouponStoreCache();
+      invalidateHomeBootstrapCache();
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponCampaignsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),

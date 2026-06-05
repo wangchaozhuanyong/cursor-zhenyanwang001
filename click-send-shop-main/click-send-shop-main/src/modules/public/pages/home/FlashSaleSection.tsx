@@ -88,7 +88,15 @@ export default function FlashSaleSection({ delay = 0 }: { delay?: number }) {
             onClick={() => navigate(`/product/${item.product_id}`)}
             className="w-[140px] shrink-0 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-left theme-shadow"
           >
-            <img src={item.cover_image} alt={item.product_name} className="aspect-square w-full object-cover" />
+            <img
+              src={item.cover_image}
+              alt={item.product_name}
+              width={280}
+              height={280}
+              className="aspect-square w-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
             <div className="space-y-1 p-2.5">
               <p className="line-clamp-2 text-xs font-medium text-[var(--theme-text)]">{item.product_name}</p>
               <p className="text-sm font-bold text-[var(--theme-price)]">RM {item.flash_price}</p>

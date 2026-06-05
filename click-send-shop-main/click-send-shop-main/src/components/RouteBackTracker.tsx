@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { buildRoutePath, rememberRouteBack } from "@/utils/routeBackState";
+import { buildRoutePath, readRouteBack, rememberRouteBack, resolveTrackedRouteBackSource } from "@/utils/routeBackState";
 
 type PreviousRoute = {
   key: string;
@@ -21,7 +21,14 @@ export default function RouteBackTracker() {
     const previous = previousRef.current;
 
     if (previous && previous.path !== current.path) {
-      rememberRouteBack(current.key, previous.path, current.path);
+      const fromPath = resolveTrackedRouteBackSource({
+        previousPath: previous.path,
+        currentPath: current.path,
+        previousStoredFrom: readRouteBack(previous.key, previous.path),
+      });
+      if (fromPath) {
+        rememberRouteBack(current.key, fromPath, current.path);
+      }
     }
 
     previousRef.current = current;

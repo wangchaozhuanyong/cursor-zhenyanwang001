@@ -54,6 +54,7 @@ export function refreshSiteCapabilities() {
   cachedCapabilities = null;
   cachedRuntimeConfig = null;
   inflight = null;
+  homeService.invalidateHomeBootstrapCache();
   return loadOnce();
 }
 

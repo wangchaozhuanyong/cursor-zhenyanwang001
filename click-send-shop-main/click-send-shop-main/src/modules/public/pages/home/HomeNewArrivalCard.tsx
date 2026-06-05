@@ -35,6 +35,7 @@ export default function HomeNewArrivalCard({
   registerImpression,
 }: HomeNewArrivalCardProps) {
   const imageUrl = resolveNewArrivalImage(product, index);
+  const shouldEagerLoadImage = index === 0;
   const cardRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
@@ -70,7 +71,8 @@ export default function HomeNewArrivalCard({
           className="h-full w-full"
           imgClassName={HOME_PRODUCT_IMAGE_IMG_CLASS}
           sizes="(max-width: 768px) 28vw, 128px"
-          loading={index < 4 ? "eager" : "lazy"}
+          loading={shouldEagerLoadImage ? "eager" : "lazy"}
+          fetchPriority={shouldEagerLoadImage ? "low" : undefined}
         />
         <StoreBadge type="new" onMedia className={cn(HOME_PRODUCT_BADGE_CLASS, "absolute left-1.5 top-1.5")}>
           新品

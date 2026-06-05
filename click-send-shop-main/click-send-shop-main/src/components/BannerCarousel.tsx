@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 import { ArrowRight } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions/hooks/useMotionConfig";
@@ -70,7 +70,6 @@ export default function BannerCarousel({
     ? banners[(safeIndex + 1) % banners.length]?.image?.trim() || ""
     : "";
   const [activeImageLoaded, setActiveImageLoaded] = useState(false);
-  const imageLoadSeqRef = useRef(0);
   const [touchStart, setTouchStart] = useState(0);
   const [manualPauseUntil, setManualPauseUntil] = useState(0);
   const [hoverPaused, setHoverPaused] = useState(false);
@@ -90,33 +89,7 @@ export default function BannerCarousel({
   }, [banners.length, current]);
 
   useEffect(() => {
-    const seq = imageLoadSeqRef.current + 1;
-    imageLoadSeqRef.current = seq;
     setActiveImageLoaded(false);
-    if (!activeImage) return;
-
-    const markLoaded = () => {
-      if (imageLoadSeqRef.current === seq) {
-        setActiveImageLoaded(true);
-      }
-    };
-
-    const img = new Image();
-    img.decoding = "async";
-    (img as HTMLImageElement & { fetchPriority?: "high" }).fetchPriority = "high";
-    img.onload = markLoaded;
-    img.src = activeImage;
-
-    if (img.complete && img.naturalWidth > 0) {
-      markLoaded();
-      return;
-    }
-
-    if (typeof img.decode === "function") {
-      void img.decode().then(markLoaded).catch(() => {
-        if (img.complete && img.naturalWidth > 0) markLoaded();
-      });
-    }
   }, [activeImage]);
 
   useEffect(() => {

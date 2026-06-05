@@ -1,13 +1,22 @@
 const { generateId, formatProduct, parseProductImages, parseProductImageAlts } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { ValidationError } = require('../../../errors');
-const { parseCsv, parseBool } = require('../../../utils/csv');
+const { parseCsv, parseBool, decodeCsvBuffer } = require('../../../utils/csv');
 const { rowsToCsvLocalized, normalizeCsvImportRows } = require('../../../utils/adminCsvLabels');
 const { buildSearchKeywords, normalizeSearchKeyword } = require('../../../utils/searchKeywords');
 const repo = require('../repository/adminProduct.repository');
 const variantRepo = require('../repository/adminProductVariant.repository');
 const adminExtendedRepo = require('../repository/adminExtended.repository');
 const inventoryRepo = require('../repository/adminInventory.repository');
+const categoryService = require('./adminCategory.service');
+const {
+  DEFAULT_VARIANT_TITLE: YINBAO_DEFAULT_VARIANT_TITLE,
+  groupYinbaoRows,
+  isYinbaoExcelFile,
+  makeNameCategoryKey,
+  normalizeKey: normalizeYinbaoKey,
+  parseYinbaoWorkbookBuffer,
+} = require('./yinbaoProductImport');
 const {
   LIFECYCLE,
   lifecycleFromBody,
@@ -294,6 +303,7 @@ function formatVariantRow(row) {
     stock_warning_threshold: row.stock_warning_threshold ?? 5,
     stock_lower_limit: row.stock_lower_limit == null ? null : Number(row.stock_lower_limit),
     stock_upper_limit: row.stock_upper_limit == null ? null : Number(row.stock_upper_limit),
+    unit_name: row.unit_name || '件',
     barcode: row.barcode || '',
     image_url: row.image_url || '',
     weight: row.weight == null ? null : parseFloat(row.weight),
@@ -375,6 +385,7 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock, sto
         : 5,
       stock_lower_limit: optionalNonnegativeInt(stockOptions.stock_lower_limit),
       stock_upper_limit: optionalNonnegativeInt(stockOptions.stock_upper_limit),
+      unit_name: stockOptions.unit_name || '件',
       sort_order: 0,
       is_default: 1,
     }];
@@ -394,6 +405,7 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock, sto
       stock_warning_threshold: Number.isFinite(Number(v.stock_warning_threshold)) ? Number(v.stock_warning_threshold) : 5,
       stock_lower_limit: optionalNonnegativeInt(v.stock_lower_limit),
       stock_upper_limit: optionalNonnegativeInt(v.stock_upper_limit),
+      unit_name: v.unit_name || '件',
       barcode: v.barcode || null,
       image_url: v.image_url || null,
       weight: v.weight === '' || v.weight == null ? null : Number(v.weight),
@@ -1420,6 +1432,426 @@ async function importProductsCsv(text, adminUserId, req) {
   };
 }
 
+function flattenCategoryTree(nodes, out = []) {
+  for (const node of Array.isArray(nodes) ? nodes : []) {
+    out.push(node);
+    if (Array.isArray(node.children) && node.children.length) flattenCategoryTree(node.children, out);
+  }
+  return out;
+}
+
+async function loadCategoryNameMap() {
+  const result = await categoryService.listCategories();
+  const categories = flattenCategoryTree(result.data || []);
+  const map = new Map();
+  for (const category of categories) {
+    const key = normalizeYinbaoKey(category.name);
+    if (key && !map.has(key)) map.set(key, category);
+  }
+  return { map, categories };
+}
+
+function categoryNamesFromGroups(groups) {
+  const names = [];
+  const seen = new Set();
+  for (const group of groups) {
+    const key = normalizeYinbaoKey(group.categoryName);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    names.push(group.categoryName);
+  }
+  return names;
+}
+
+async function buildExistingProductMap(groups, categoryMap) {
+  const pairs = [];
+  const names = [];
+  const categoryIds = [];
+  for (const group of groups) {
+    const category = categoryMap.get(normalizeYinbaoKey(group.categoryName));
+    if (!category?.id) continue;
+    names.push(group.name);
+    categoryIds.push(category.id);
+    pairs.push({ name: group.name, categoryId: category.id });
+  }
+  if (!pairs.length) return new Map();
+  const rows = await repo.selectProductsByNamesAndCategoryIds(names, categoryIds);
+  const wanted = new Set(pairs.map((item) => makeNameCategoryKey(item.name, item.categoryId)));
+  const map = new Map();
+  for (const row of rows) {
+    const key = makeNameCategoryKey(row.name, row.category_id);
+    if (wanted.has(key) && !map.has(key)) map.set(key, row);
+  }
+  return map;
+}
+
+function buildYinbaoPreviewFromParsed(parsed, groups, categoryMap, existingProductMap) {
+  const categoryNames = categoryNamesFromGroups(groups);
+  const categoriesToCreate = categoryNames.filter((name) => !categoryMap.has(normalizeYinbaoKey(name)));
+  const existingCategories = categoryNames.filter((name) => categoryMap.has(normalizeYinbaoKey(name)));
+  let productsToCreate = 0;
+  let productsToUpdate = 0;
+  for (const group of groups) {
+    const category = categoryMap.get(normalizeYinbaoKey(group.categoryName));
+    const existing = category ? existingProductMap.get(makeNameCategoryKey(group.name, category.id)) : null;
+    if (existing) productsToUpdate += 1;
+    else productsToCreate += 1;
+  }
+
+  const categoriesByName = new Map();
+  for (const group of groups) {
+    const set = categoriesByName.get(group.name) || new Set();
+    set.add(group.categoryName);
+    categoriesByName.set(group.name, set);
+  }
+  const sameNameMultiCategory = [...categoriesByName.entries()]
+    .filter(([, set]) => set.size > 1)
+    .map(([name, set]) => ({ name, categories: [...set] }));
+  const negativeStockRows = parsed.rows.filter((row) => Number(row.stock) < 0).length;
+
+  return {
+    mode: 'yinbao_excel',
+    filename: parsed.filename || '',
+    sheet_name: parsed.sheetName || '',
+    total_rows: parsed.totalRows,
+    valid_rows: parsed.rows.length,
+    sku_rows: parsed.rows.length,
+    product_groups: groups.length,
+    products_to_create: productsToCreate,
+    products_to_update: productsToUpdate,
+    categories_existing: existingCategories,
+    categories_to_create: categoriesToCreate,
+    negative_stock_rows: negativeStockRows,
+    same_name_multi_category: sameNameMultiCategory,
+    ignored_columns: ['主编码', '扩展条码', '批发价', '毛利率', '创建日期'],
+    errors: parsed.errors,
+    warnings: [
+      ...(negativeStockRows ? [`检测到 ${negativeStockRows} 行负库存，确认导入后会按银豹账面数保留。`] : []),
+      ...(sameNameMultiCategory.length ? [`检测到 ${sameNameMultiCategory.length} 组同名不同分类商品，本次会按“商品名 + 分类”分开导入。`] : []),
+      '条码字段本次会完全忽略，不会写入 SKU。',
+    ],
+  };
+}
+
+async function previewProductsImportFile(file, adminUserId, req) {
+  if (!file || !file.buffer) throw new ValidationError('请上传导入文件');
+  if (!isYinbaoExcelFile(file)) {
+    const text = decodeCsvBuffer(file.buffer);
+    const { rows: rawRows } = parseCsv(text);
+    const rows = normalizeCsvImportRows(rawRows);
+    return {
+      data: {
+        mode: 'csv',
+        filename: file.originalname || '',
+        total_rows: rows.length,
+        valid_rows: rows.length,
+        sku_rows: rows.filter(isSkuMatrixCsvRow).length || rows.length,
+        product_groups: isSkuMatrixImport(rows) ? groupSkuImportRows(rows).size : rows.length,
+        products_to_create: 0,
+        products_to_update: 0,
+        categories_existing: [],
+        categories_to_create: [],
+        negative_stock_rows: rows.filter((row) => Number(row.stock) < 0).length,
+        same_name_multi_category: [],
+        ignored_columns: [],
+        errors: [],
+        warnings: ['CSV 会沿用原有商品导入模板规则；银豹 Excel 请上传 .xlsx 文件。'],
+      },
+      message: '预览完成',
+    };
+  }
+
+  const parsed = await parseYinbaoWorkbookBuffer(file.buffer, file.originalname || '');
+  const fatal = parsed.errors.find((item) => item.row === 0);
+  const groups = groupYinbaoRows(parsed.rows);
+  const { map: categoryMap } = await loadCategoryNameMap();
+  const existingProductMap = await buildExistingProductMap(groups, categoryMap);
+  return {
+    data: buildYinbaoPreviewFromParsed(parsed, groups, categoryMap, existingProductMap),
+    message: fatal ? fatal.reason : '预览完成',
+  };
+}
+
+async function ensureYinbaoCategories(groups, adminUserId, req) {
+  const { map, categories } = await loadCategoryNameMap();
+  let sortOrder = categories.length;
+  const created = [];
+  for (const name of categoryNamesFromGroups(groups)) {
+    const key = normalizeYinbaoKey(name);
+    if (map.has(key)) continue;
+    const result = await categoryService.createCategory({
+      name,
+      sort_order: sortOrder,
+      is_visible: true,
+    }, adminUserId, req);
+    sortOrder += 1;
+    if (result?.data?.id) {
+      map.set(key, result.data);
+      created.push(result.data);
+    } else {
+      const refreshed = await loadCategoryNameMap();
+      if (refreshed.map.has(key)) map.set(key, refreshed.map.get(key));
+      else throw new BusinessError(400, `分类「${name}」创建失败`);
+    }
+  }
+  return { map, created };
+}
+
+function makeVariantTitleKey(title) {
+  return normalizeYinbaoKey(title || YINBAO_DEFAULT_VARIANT_TITLE);
+}
+
+function buildYinbaoVariantRows(groupRows, existingVariants) {
+  const existingByTitle = new Map();
+  for (const variant of existingVariants || []) {
+    const key = makeVariantTitleKey(variant.title);
+    if (key && !existingByTitle.has(key)) existingByTitle.set(key, variant);
+  }
+
+  const usedExistingIds = new Set();
+  const usedTitleKeys = new Set();
+  const importRows = groupRows.map((row, index) => {
+    let title = row.variantTitle || YINBAO_DEFAULT_VARIANT_TITLE;
+    let titleKey = makeVariantTitleKey(title);
+    if (usedTitleKeys.has(titleKey)) {
+      title = `${title} #${row.rowNumber}`;
+      titleKey = makeVariantTitleKey(title);
+    }
+    usedTitleKeys.add(titleKey);
+    const existing = existingByTitle.get(titleKey);
+    if (existing?.id) usedExistingIds.add(existing.id);
+    return {
+      id: existing?.id || generateId(),
+      sku_code: existing?.sku_code ?? null,
+      title,
+      price: row.price,
+      original_price: null,
+      stock: row.stock,
+      cost_price: row.costPrice,
+      stock_warning_threshold: existing?.stock_warning_threshold ?? 5,
+      stock_lower_limit: existing?.stock_lower_limit ?? null,
+      stock_upper_limit: existing?.stock_upper_limit ?? null,
+      unit_name: row.unitName || existing?.unit_name || '件',
+      barcode: null,
+      image_url: existing?.image_url || null,
+      weight: existing?.weight ?? null,
+      enabled: true,
+      sort_order: index,
+      is_default: index === 0,
+      _yinbaoRowNumber: row.rowNumber,
+      _beforeStock: existing ? Number(existing.stock || 0) : 0,
+      _isExistingVariant: !!existing,
+    };
+  });
+
+  const preservedRows = (existingVariants || [])
+    .filter((variant) => variant.id && !usedExistingIds.has(variant.id))
+    .map((variant, index) => ({
+      id: variant.id,
+      sku_code: variant.sku_code ?? null,
+      title: variant.title || YINBAO_DEFAULT_VARIANT_TITLE,
+      price: Number(variant.price || 0),
+      original_price: variant.original_price == null ? null : Number(variant.original_price),
+      stock: Number(variant.stock || 0),
+      cost_price: variant.cost_price == null ? null : Number(variant.cost_price),
+      stock_warning_threshold: variant.stock_warning_threshold ?? 5,
+      stock_lower_limit: variant.stock_lower_limit ?? null,
+      stock_upper_limit: variant.stock_upper_limit ?? null,
+      unit_name: variant.unit_name || '件',
+      barcode: variant.barcode ?? null,
+      image_url: variant.image_url || null,
+      weight: variant.weight ?? null,
+      enabled: variant.enabled !== 0,
+      sort_order: importRows.length + index,
+      is_default: false,
+    }));
+
+  return {
+    imported: importRows,
+    all: [...importRows, ...preservedRows],
+  };
+}
+
+async function writeYinbaoStockRecords(productId, productName, importedVariants, adminUserId) {
+  const rows = importedVariants.filter((variant) => {
+    const afterStock = Number(variant.stock || 0);
+    const beforeStock = Number(variant._beforeStock || 0);
+    return !variant._isExistingVariant || afterStock !== beforeStock;
+  });
+  if (!rows.length) return;
+  const conn = await inventoryRepo.getConnection();
+  try {
+    await conn.beginTransaction();
+    for (const variant of rows) {
+      const beforeStock = Number(variant._beforeStock || 0);
+      const afterStock = Number(variant.stock || 0);
+      await inventoryRepo.insertStockRecord(conn, {
+        id: generateId(),
+        productId,
+        variantId: variant.id,
+        changeType: variant._isExistingVariant ? 'adjust' : (afterStock >= 0 ? 'in' : 'adjust'),
+        quantityDelta: afterStock - beforeStock,
+        beforeStock,
+        afterStock,
+        reason: variant._isExistingVariant ? '银豹导入库存同步' : '银豹导入初始库存',
+        refType: 'admin',
+        refId: '',
+        operatorId: adminUserId,
+        productNameSnapshot: productName,
+        variantNameSnapshot: variant.title || '',
+        skuCodeSnapshot: variant.sku_code || '',
+        orderNoSnapshot: '',
+        sourceNo: 'yinbao-import',
+        remark: `银豹 Excel 第 ${variant._yinbaoRowNumber || '-'} 行`,
+        costPrice: variant.cost_price,
+        createdByType: 'admin',
+      });
+    }
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+}
+
+async function upsertYinbaoGroup(group, categoryId, existingProduct, adminUserId, req) {
+  const existingVariants = existingProduct?.id
+    ? await variantRepo.selectVariantsByProductId(existingProduct.id)
+    : [];
+  const { imported, all } = buildYinbaoVariantRows(group.rows, existingVariants);
+  const defaultVariant = imported[0] || all[0];
+  const lc = csvStatusToLifecycle(group.rows[0]?.status || 'active');
+  const productId = existingProduct?.id || generateId();
+  const payloadForKeywords = {
+    name: group.name,
+    description: '',
+    category_id: categoryId,
+  };
+
+  if (existingProduct) {
+    await repo.updateProductDynamic([
+      'name = ?',
+      'category_id = ?',
+      'status = ?',
+      'lifecycle_status = ?',
+      'search_keywords = ?',
+    ], [
+      group.name,
+      categoryId,
+      lc.status,
+      lc.lifecycle_status,
+      buildProductSearchKeywordsFromPayload(payloadForKeywords, all, []),
+      productId,
+    ]);
+  } else {
+    await repo.insertProduct({
+      id: productId,
+      name: group.name,
+      cover_image: '',
+      video_url: '',
+      imagesJson: '[]',
+      imageAltJson: '[]',
+      price: defaultVariant?.price ?? 0,
+      original_price: null,
+      sales_count: 0,
+      category_id: categoryId,
+      stock: all.reduce((sum, variant) => sum + (variant.enabled ? Number(variant.stock || 0) : 0), 0),
+      stock_warning_threshold: defaultVariant?.stock_warning_threshold ?? 5,
+      stock_lower_limit: defaultVariant?.stock_lower_limit ?? null,
+      stock_upper_limit: defaultVariant?.stock_upper_limit ?? null,
+      status: lc.status,
+      lifecycle_status: lc.lifecycle_status,
+      sort_order: 0,
+      description: '',
+      search_keywords: buildProductSearchKeywordsFromPayload(payloadForKeywords, all, []),
+      is_recommended: 0,
+      is_new: 0,
+      is_hot: 0,
+    });
+  }
+
+  await variantRepo.upsertProductSkuMatrix(productId, null, all);
+  await syncProductPriceStockFromDefaultVariant(productId);
+  await writeYinbaoStockRecords(productId, group.name, imported, adminUserId);
+  return { productId, created: existingProduct ? 0 : 1, updated: existingProduct ? 1 : 0, skuRows: imported.length };
+}
+
+async function importYinbaoProductsFile(file, adminUserId, req) {
+  const parsed = await parseYinbaoWorkbookBuffer(file.buffer, file.originalname || '');
+  const fatal = parsed.errors.find((item) => item.row === 0);
+  if (fatal) throw new BusinessError(400, fatal.reason);
+  if (!parsed.rows.length) throw new BusinessError(400, 'Excel 没有可导入的数据行');
+  const groups = groupYinbaoRows(parsed.rows);
+  const { map: categoryMap, created: createdCategories } = await ensureYinbaoCategories(groups, adminUserId, req);
+  const existingProductMap = await buildExistingProductMap(groups, categoryMap);
+
+  let created = 0;
+  let updated = 0;
+  let skuRows = 0;
+  let skipped = parsed.errors.filter((item) => item.row > 0).length;
+  const errors = [...parsed.errors];
+
+  for (const group of groups) {
+    try {
+      const category = categoryMap.get(normalizeYinbaoKey(group.categoryName));
+      if (!category?.id) throw new BusinessError(400, `分类「${group.categoryName}」不存在`);
+      const existingProduct = existingProductMap.get(makeNameCategoryKey(group.name, category.id));
+      const result = await upsertYinbaoGroup(group, category.id, existingProduct, adminUserId, req);
+      created += result.created;
+      updated += result.updated;
+      skuRows += result.skuRows;
+    } catch (error) {
+      skipped += group.rows.length;
+      for (const row of group.rows) {
+        errors.push({ row: row.rowNumber, reason: error?.message || '导入失败' });
+      }
+    }
+  }
+
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'product.import.yinbao',
+    objectType: 'product',
+    objectId: 'batch',
+    summary: `银豹商品导入：新建 ${created}，更新 ${updated}，SKU ${skuRows}，新建分类 ${createdCategories.length}，跳过 ${skipped}`,
+    after: {
+      created,
+      updated,
+      skipped,
+      sku_rows: skuRows,
+      categories_created: createdCategories.map((item) => item.name),
+      error_count: errors.length,
+      mode: 'yinbao_excel',
+      ignored_barcode: true,
+    },
+    result: errors.length || skipped ? 'partial' : 'success',
+  });
+
+  if (created > 0 || updated > 0 || createdCategories.length > 0) bumpCatalogCache();
+  return {
+    data: {
+      created,
+      updated,
+      skipped,
+      errors,
+      sku_rows: skuRows,
+      mode: 'yinbao_excel',
+      categories_created: createdCategories.map((item) => item.name),
+    },
+    message: `银豹导入完成：新建 ${created} 个商品，更新 ${updated} 个商品，同步 ${skuRows} 个 SKU，新建 ${createdCategories.length} 个分类${skipped ? `，跳过 ${skipped} 行` : ''}`,
+  };
+}
+
+async function importProductsFile(file, adminUserId, req) {
+  if (!file || !file.buffer) throw new ValidationError('请上传导入文件');
+  if (isYinbaoExcelFile(file)) return importYinbaoProductsFile(file, adminUserId, req);
+  const text = decodeCsvBuffer(file.buffer);
+  return importProductsCsv(text, adminUserId, req);
+}
+
 async function batchUpdateStatus(ids, status, adminUserId, req) {
   if (!Array.isArray(ids) || ids.length === 0) return { error: { code: 400, message: '请选择商品' } };
   const lcMap = { active: 1, inactive: 2, draft: 0 };
@@ -1473,5 +1905,7 @@ module.exports = {
   deleteProduct,
   exportProductsCsv,
   importProductsCsv,
+  previewProductsImportFile,
+  importProductsFile,
   batchUpdateStatus,
 };

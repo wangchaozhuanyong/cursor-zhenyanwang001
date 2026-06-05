@@ -47,6 +47,7 @@ import {
   removeActivityFilterChip,
 } from "@/utils/adminActivityFilters";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
+import { invalidateHomeBootstrapCache } from "@/services/homeService";
 
 function getActivityPreviewPath(activity: MarketingActivity) {
   const positions = activity.display_positions || [];
@@ -107,7 +108,13 @@ export default function AdminActivities() {
   const total = activitiesQuery.data?.total ?? 0;
   const loading = activitiesQuery.isLoading && !activitiesQuery.data;
 
-  const invalidateActivities = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.activitiesRoot() });
+  const invalidateActivities = async () => {
+    invalidateHomeBootstrapCache();
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.activitiesRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
+    ]);
+  };
 
   const toggleDisabledMutation = useMutation({
     mutationFn: ({ id, disabled }: { id: string; disabled: boolean }) => activityService.setActivityDisabled(id, disabled),

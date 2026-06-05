@@ -64,7 +64,16 @@ export default function History() {
                   onClick={() => navigate(`/product/${product.id}`)}
                   className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition-colors active:bg-muted"
                 >
-                  <img src={product.cover_image} alt={product.cover_image_alt || product.name} className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" />
+                  <img
+                    src={product.cover_image}
+                    alt={product.cover_image_alt || product.name}
+                    width={64}
+                    height={64}
+                    className="h-16 w-16 flex-shrink-0 rounded-xl object-cover"
+                    loading={i === 0 ? "eager" : "lazy"}
+                    fetchPriority={i === 0 ? "high" : "low"}
+                    decoding="async"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
                     <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{product.description}</p>

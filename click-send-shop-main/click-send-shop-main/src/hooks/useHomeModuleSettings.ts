@@ -5,7 +5,7 @@ import * as homeService from "@/services/homeService";
 import type { HomeNavItem } from "@/types/content";
 
 const HOME_MODULE_CACHE_KEY = "home_module_settings_cache_v1";
-const HOME_MODULE_CACHE_TTL_MS = 300_000;
+const HOME_MODULE_CACHE_TTL_MS = 60_000;
 
 function isFresh(cachedAt: number) {
   return cachedAt > 0 && Date.now() - cachedAt < HOME_MODULE_CACHE_TTL_MS;
@@ -100,6 +100,7 @@ export function invalidateHomeModuleSettingsCache() {
   cachedNavItems = null;
   inflight = null;
   homeService.invalidateHomeBootstrapCache();
+  if (typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem(HOME_MODULE_CACHE_KEY);
   } catch {

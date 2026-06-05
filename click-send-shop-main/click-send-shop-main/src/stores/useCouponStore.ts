@@ -7,7 +7,14 @@ import { ensureStoreSession, STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureS
 import { useAuthStore } from "@/stores/useAuthStore";
 
 const COUPON_PAGE_SIZE = 50;
+const COUPON_CACHE_TTL_MS = 60_000;
 let couponLoadInflight: Promise<void> | null = null;
+let couponCacheLoadedAt = 0;
+
+export function invalidateCouponStoreCache() {
+  couponLoadInflight = null;
+  couponCacheLoadedAt = 0;
+}
 
 function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && err.code === 401;
@@ -38,7 +45,7 @@ interface CouponState {
   coupons: UserCoupon[];
   loading: boolean;
   error: string | null;
-  loadCoupons: () => Promise<void>;
+  loadCoupons: (options?: { force?: boolean }) => Promise<void>;
   claimCoupon: (code: string, activityId?: string) => Promise<UserCoupon>;
   clearError: () => void;
 }
@@ -48,7 +55,13 @@ export const useCouponStore = create<CouponState>((set, get) => ({
   loading: false,
   error: null,
 
-  loadCoupons: async () => {
+  loadCoupons: async (options) => {
+    const hasFreshCache =
+      !options?.force &&
+      get().coupons.length > 0 &&
+      couponCacheLoadedAt > 0 &&
+      Date.now() - couponCacheLoadedAt < COUPON_CACHE_TTL_MS;
+    if (hasFreshCache) return;
     if (couponLoadInflight) return couponLoadInflight;
 
     couponLoadInflight = (async () => {
@@ -61,6 +74,7 @@ export const useCouponStore = create<CouponState>((set, get) => ({
         const hasSessionHint = isLoggedIn() || useAuthStore.getState().isAuthenticated;
 
         if (!hasSessionHint) {
+          couponCacheLoadedAt = Date.now();
           set({ coupons: availableCoupons, loading: false, error: null });
           return;
         }
@@ -69,11 +83,13 @@ export const useCouponStore = create<CouponState>((set, get) => ({
         if (!sessionReady) {
           clearTokens();
           useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
+          couponCacheLoadedAt = Date.now();
           set({ coupons: availableCoupons, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
           return;
         }
 
         try {
+          couponCacheLoadedAt = Date.now();
           set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
           return;
         } catch (err) {
@@ -83,16 +99,19 @@ export const useCouponStore = create<CouponState>((set, get) => ({
           if (!restored) {
             clearTokens();
             useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
+            couponCacheLoadedAt = Date.now();
             set({ coupons: availableCoupons, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
             return;
           }
           useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
+          couponCacheLoadedAt = Date.now();
           set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
         }
       } catch (err) {
         if (isAuthError(err)) {
           clearTokens();
           useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
+          if (availableCoupons.length > 0) couponCacheLoadedAt = Date.now();
           set({
             coupons: availableCoupons.length > 0 ? availableCoupons : previousCoupons,
             loading: false,
@@ -100,6 +119,7 @@ export const useCouponStore = create<CouponState>((set, get) => ({
           });
           return;
         }
+        if (availableCoupons.length > 0) couponCacheLoadedAt = Date.now();
         set({
           coupons: availableCoupons.length > 0 ? availableCoupons : previousCoupons,
           loading: false,
@@ -116,6 +136,7 @@ export const useCouponStore = create<CouponState>((set, get) => ({
   claimCoupon: async (code, activityId) => {
     try {
       const claimed = await couponService.claimCoupon(code, activityId);
+      couponCacheLoadedAt = 0;
       set((state) => ({
         coupons: [
           claimed,
@@ -127,7 +148,7 @@ export const useCouponStore = create<CouponState>((set, get) => ({
         error: null,
       }));
       try {
-        await get().loadCoupons();
+        await get().loadCoupons({ force: true });
       } catch {
         // 领取已成功，列表刷新失败不应让用户误以为领取失败
       }

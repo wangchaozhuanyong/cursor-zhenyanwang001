@@ -26,14 +26,15 @@ const INITIAL_FILTERS: ProductListParams = {
   pageSize: 10,
 };
 
-const HOME_DATA_TTL_MS = 300_000;
-const PRODUCT_LIST_TTL_MS = 300_000;
-const PRODUCT_DETAIL_TTL_MS = 600_000;
-const CATEGORY_TTL_MS = 1_800_000;
+const HOME_DATA_TTL_MS = 60_000;
+const PRODUCT_LIST_TTL_MS = 60_000;
+const PRODUCT_DETAIL_TTL_MS = 120_000;
+const CATEGORY_TTL_MS = 300_000;
 const CATEGORY_CACHE_KEY = "store_categories_cache_v1";
 const PRODUCT_LIST_CACHE_MAX = 24;
 const PRODUCT_DETAIL_CACHE_MAX = 48;
 let productListRequestSeq = 0;
+let categoryRequest: Promise<Category[]> | null = null;
 
 /** 有上限的 Map 缓存：写入时淘汰最旧条目，避免筛选/详情浏览导致内存持续增长 */
 function setBoundedMapEntry<K, V>(map: Map<K, V>, key: K, value: V, maxEntries: number) {
@@ -56,6 +57,7 @@ type ProductListCacheEntry = {
 
 const productListCache = new Map<string, ProductListCacheEntry>();
 const productDetailCache = new Map<string, { product: Product; relatedProducts: Product[]; cachedAt: number }>();
+const productListRequestCache = new Map<string, Promise<Awaited<ReturnType<typeof productService.fetchProducts>>>>();
 let categoriesCachedAt = 0;
 
 function buildProductListCacheKey(params: ProductListParams) {
@@ -222,7 +224,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }
 
     try {
-      const data = await productService.fetchProducts(merged);
+      let request = productListRequestCache.get(cacheKey);
+      if (!request) {
+        request = productService.fetchProducts(merged).finally(() => {
+          productListRequestCache.delete(cacheKey);
+        });
+        productListRequestCache.set(cacheKey, request);
+      }
+      const data = await request;
       if (requestSeq !== productListRequestSeq) return;
       const pagination = {
         total: data.total,
@@ -352,7 +361,12 @@ export const useProductStore = create<ProductState>((set, get) => ({
     if (get().categories.length > 0 && isFresh(categoriesCachedAt, CATEGORY_TTL_MS)) return;
 
     try {
-      const cats = await productService.fetchCategories();
+      if (!categoryRequest) {
+        categoryRequest = productService.fetchCategories().finally(() => {
+          categoryRequest = null;
+        });
+      }
+      const cats = await categoryRequest;
       categoriesCachedAt = Date.now();
       writeCategoryCache(cats);
       set({ categories: cats });
@@ -376,3 +390,46 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 }));
+
+export function invalidatePublicProductStoreCache(options?: {
+  categories?: boolean;
+  home?: boolean;
+  productId?: string;
+  products?: boolean;
+}) {
+  const invalidateProducts = options?.products !== false;
+  const invalidateCategories = options?.categories === true;
+  const invalidateHome = options?.home !== false;
+
+  if (invalidateProducts) {
+    productListRequestSeq += 1;
+    productListCache.clear();
+    productListRequestCache.clear();
+    if (options?.productId) {
+      productDetailCache.delete(options.productId);
+    } else {
+      productDetailCache.clear();
+    }
+  }
+
+  if (invalidateCategories) {
+    categoriesCachedAt = 0;
+    categoryRequest = null;
+    if (typeof window !== "undefined") {
+      try {
+        window.sessionStorage.removeItem(CATEGORY_CACHE_KEY);
+      } catch {
+        // Ignore storage failures; in-memory cache is already cleared.
+      }
+    }
+  }
+
+  if (invalidateHome) {
+    homeService.invalidateHomeBootstrapCache();
+  }
+
+  useProductStore.setState((state) => ({
+    currentListCacheKey: invalidateProducts ? null : state.currentListCacheKey,
+    homeDataLoadedAt: invalidateHome ? 0 : state.homeDataLoadedAt,
+  }));
+}

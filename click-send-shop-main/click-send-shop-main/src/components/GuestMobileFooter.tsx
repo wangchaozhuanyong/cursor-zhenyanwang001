@@ -65,7 +65,7 @@ export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { 
   const logoMark = (
     <span
       className={cn(
-        "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-[#bfe9ce] bg-white text-[#078437] shadow-[0_18px_34px_-28px_rgba(7,132,55,0.55)] sm:h-14 sm:w-14",
+        "store-footer-brand-logo-shell flex shrink-0 items-center justify-center rounded-lg border border-[#bfe9ce] bg-white text-[#078437] shadow-[0_18px_34px_-28px_rgba(7,132,55,0.55)]",
         centered && "absolute right-full top-1/2 mr-3 -translate-y-1/2",
       )}
     >
@@ -73,8 +73,10 @@ export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { 
         <img
           src={cleanLogoSrc}
           alt=""
-          className="h-9 w-9 object-contain sm:h-10 sm:w-10"
-          loading="eager"
+          width={40}
+          height={40}
+          className="store-footer-brand-logo-image object-contain"
+          loading="lazy"
           decoding="async"
           aria-hidden="true"
           onError={() => setFailedLogoSrc(cleanLogoSrc)}
@@ -98,7 +100,7 @@ export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { 
 
   if (centered) {
     return (
-      <div className="relative mx-auto w-fit max-w-[calc(100%-3.75rem)] sm:max-w-[calc(100%-4.25rem)]">
+      <div className="relative mx-auto w-fit max-w-[calc(100%-4.25rem)] sm:max-w-[calc(100%-4.75rem)]">
         {logoMark}
         {textMark}
       </div>

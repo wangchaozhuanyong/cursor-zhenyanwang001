@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Star } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -7,6 +7,7 @@ import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import BannerCarousel from "@/components/BannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
@@ -15,10 +16,6 @@ import HomeOpsBlocks from "./HomeOpsBlocks";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import NewArrivalSection from "./NewArrivalOpsSection";
 import HomeHotSalesSection from "./HomeHotSalesSection";
-import FlashSaleSection from "./FlashSaleSection";
-import MarketingCouponRailSection from "./MarketingCouponRailSection";
-import MarketingFullReductionSection from "./MarketingFullReductionSection";
-import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
@@ -36,12 +33,42 @@ import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
+const FlashSaleSection = lazy(() => import("./FlashSaleSection"));
+const MarketingCouponRailSection = lazy(() => import("./MarketingCouponRailSection"));
+const MarketingFullReductionSection = lazy(() => import("./MarketingFullReductionSection"));
+const MarketingPromotionBannerSection = lazy(() => import("./MarketingPromotionBannerSection"));
+const MEMBER_HOME_DEFERRED_DATA_TIMEOUT_MS = 4_500;
+
+type WindowWithIdleCallback = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+  cancelIdleCallback?: (id: number) => void;
+};
+
+function scheduleMemberHomeDeferredData(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const idleWindow = window as WindowWithIdleCallback;
+  if (typeof idleWindow.requestIdleCallback === "function") {
+    const id = idleWindow.requestIdleCallback(callback, { timeout: MEMBER_HOME_DEFERRED_DATA_TIMEOUT_MS });
+    return () => idleWindow.cancelIdleCallback?.(id);
+  }
+  const timer = window.setTimeout(callback, MEMBER_HOME_DEFERRED_DATA_TIMEOUT_MS);
+  return () => window.clearTimeout(timer);
+}
+
 export default function MemberHome() {
   useDocumentTitle(undefined);
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
   const siteInfo = useSiteInfo();
+  const siteCapabilities = useSiteCapabilities();
+  const productCardSiteContext = useMemo(
+    () => ({
+      restrictedComplianceEnabled: siteCapabilities.restrictedProductComplianceEnabled,
+      siteInfo,
+    }),
+    [siteCapabilities.restrictedProductComplianceEnabled, siteInfo],
+  );
   const cartItems = useCartStore((s) => s.items);
   const loadCart = useCartStore((s) => s.loadCart);
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
@@ -75,14 +102,27 @@ export default function MemberHome() {
 
   useEffect(() => {
     if (!isLoggedIn()) return;
+    let cancelled = false;
+    let cancelDeferredData: (() => void) | undefined;
+
     void authService.restoreSessionFromCookie().then((ok) => {
-      if (!ok) return;
-      useNotificationStore.getState().fetchUnreadCount();
-      void loadHistory().catch(() => {});
-      void loadFavorites().catch(() => {});
-      void loadCart().catch(() => {});
-      void loadOrders({ page: 1, pageSize: 20 }).catch(() => {});
+      if (!ok || cancelled) return;
+      void useNotificationStore.getState().fetchUnreadCount();
+      cancelDeferredData = scheduleMemberHomeDeferredData(() => {
+        if (cancelled) return;
+        void Promise.allSettled([
+          loadHistory(),
+          loadFavorites(),
+          loadCart(),
+          loadOrders({ page: 1, pageSize: 20 }),
+        ]);
+      });
     });
+
+    return () => {
+      cancelled = true;
+      cancelDeferredData?.();
+    };
   }, [loadHistory, loadFavorites, loadCart, loadOrders]);
 
   const [hotBatchIndex, setHotBatchIndex] = useState(0);
@@ -108,6 +148,14 @@ export default function MemberHome() {
   const recBatches = useMemo(() => toBatches(recList, REC_BATCH_SIZE), [recList, REC_BATCH_SIZE]);
   const hot = hotBatches.length > 0 ? hotBatches[hotBatchIndex % hotBatches.length] : [];
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
+  const handleHotRotate = useCallback(() => {
+    if (hotBatches.length <= 1) return;
+    setHotBatchIndex((prev) => (prev + 1) % hotBatches.length);
+  }, [hotBatches.length]);
+  const handleRecRotate = useCallback(() => {
+    if (recBatches.length <= 1) return;
+    setRecBatchIndex((prev) => (prev + 1) % recBatches.length);
+  }, [recBatches.length]);
 
   return (
     <div className={`store-page-shell store-bottom-safe text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
@@ -164,20 +212,28 @@ export default function MemberHome() {
         </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "promotion_banner", "member") ? (
-          <MarketingPromotionBannerSection delay={0.125} />
+          <Suspense fallback={null}>
+            <MarketingPromotionBannerSection delay={0.125} />
+          </Suspense>
         ) : null}
         {isHomeModuleEnabled(homeModules, "flash_sale_section", "member") ? (
-          <FlashSaleSection delay={0.13} />
+          <Suspense fallback={null}>
+            <FlashSaleSection delay={0.13} />
+          </Suspense>
         ) : null}
         {isHomeModuleEnabled(homeModules, "full_reduction_notice", "member") ? (
-          <MarketingFullReductionSection delay={0.131} />
+          <Suspense fallback={null}>
+            <MarketingFullReductionSection delay={0.131} />
+          </Suspense>
         ) : null}
         {showCouponCenter || showNewUserGift ? (
-          <MarketingCouponRailSection
-            delay={0.132}
-            showCouponCenter={showCouponCenter}
-            showNewUserGift={showNewUserGift}
-          />
+          <Suspense fallback={null}>
+            <MarketingCouponRailSection
+              delay={0.132}
+              showCouponCenter={showCouponCenter}
+              showNewUserGift={showNewUserGift}
+            />
+          </Suspense>
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
         <AnimatedSection delay={0.14}>
@@ -186,7 +242,7 @@ export default function MemberHome() {
             loading={homeLoading && hot.length === 0}
             skeletonCount={HOT_BATCH_SIZE}
             showRotate={hotBatches.length > 1}
-            onRotate={() => setHotBatchIndex((prev) => (prev + 1) % hotBatches.length)}
+            onRotate={handleHotRotate}
           />
         </AnimatedSection>
         ) : null}
@@ -203,7 +259,7 @@ export default function MemberHome() {
             {recBatches.length > 1 ? (
               <UnifiedButton
                 type="button"
-                onClick={() => setRecBatchIndex((prev) => (prev + 1) % recBatches.length)}
+                onClick={handleRecRotate}
                 className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)]"
               >
                 <RefreshCw size={12} />
@@ -214,6 +270,7 @@ export default function MemberHome() {
             products={rec}
             className={productGridClass}
             skeletonCount={REC_BATCH_SIZE}
+            siteContext={productCardSiteContext}
             showFullSkeleton={homeLoading && rec.length === 0}
           />
         </section>

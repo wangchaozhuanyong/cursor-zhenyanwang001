@@ -114,6 +114,24 @@ async function selectProductById(id, opts = {}) {
   return row || null;
 }
 
+async function selectProductsByNamesAndCategoryIds(names, categoryIds) {
+  const cleanNames = [...new Set((names || []).map((item) => String(item || '').trim()).filter(Boolean))];
+  const cleanCategoryIds = [...new Set((categoryIds || []).map((item) => String(item || '').trim()).filter(Boolean))];
+  if (!cleanNames.length || !cleanCategoryIds.length) return [];
+  const namePlaceholders = cleanNames.map(() => '?').join(',');
+  const categoryPlaceholders = cleanCategoryIds.map(() => '?').join(',');
+  const [rows] = await db.query(
+    `SELECT *
+     FROM products
+     WHERE deleted_at IS NULL
+       AND name IN (${namePlaceholders})
+       AND category_id IN (${categoryPlaceholders})
+     ORDER BY created_at ASC`,
+    [...cleanNames, ...cleanCategoryIds],
+  );
+  return rows;
+}
+
 async function insertProduct(params) {
   const {
     id, name, cover_image, cover_image_alt = '', video_url, imagesJson, imageAltJson = '[]', price, original_price, sales_count,
@@ -174,6 +192,7 @@ module.exports = {
   selectProductsPage,
   selectProductsForExport,
   selectProductById,
+  selectProductsByNamesAndCategoryIds,
   insertProduct,
   updateProductDynamic,
   updateProductDynamicWithVersion,

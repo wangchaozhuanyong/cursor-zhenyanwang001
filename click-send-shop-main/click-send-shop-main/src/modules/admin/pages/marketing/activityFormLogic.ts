@@ -12,6 +12,7 @@ import {
   normalizeDisplayPositionsForActivity,
   type DisplayPosition,
 } from "@/constants/marketingDisplayPositions";
+import { invalidateHomeBootstrapCache } from "@/services/homeService";
 
 export const ACTIVITY_FORM_STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
 export const OBJECT_SCOPE_TYPES = new Set<ActivityPayload["scope_type"]>(["category", "product"]);
@@ -142,6 +143,7 @@ export function useActivitySave({
         if (targetStatus !== "draft") await activityService.validateActivity(payload, id);
         if (isEdit && id) await activityService.updateActivity(id, payload);
         else await activityService.createActivity(payload);
+        invalidateHomeBootstrapCache();
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: adminQueryKeys.activitiesRoot() }),
           queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),

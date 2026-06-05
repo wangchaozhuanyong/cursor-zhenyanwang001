@@ -22,6 +22,8 @@ import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { invalidateHomeBootstrapCache } from "@/services/homeService";
+import { invalidateCouponStoreCache } from "@/stores/useCouponStore";
 
 type CouponType = "fixed" | "percentage" | "shipping";
 type ScopeType = "all" | "category";
@@ -261,6 +263,8 @@ export default function AdminCouponForm() {
         toast.success(L("优惠券模板更新成功", "Coupon template updated successfully"));
       }
 
+      invalidateCouponStoreCache();
+      invalidateHomeBootstrapCache();
       await queryClient.invalidateQueries({ queryKey: ["admin", "coupons"] });
       await queryClient.invalidateQueries({ queryKey: ["admin", "marketing-dashboard"] });
       markClean();

@@ -2,7 +2,7 @@ import * as homeApi from "@/api/modules/home";
 
 export type HomeBootstrap = homeApi.HomeBootstrap;
 
-const HOME_BOOTSTRAP_TTL_MS = 300_000;
+const HOME_BOOTSTRAP_TTL_MS = 60_000;
 let cachedBootstrap: HomeBootstrap | null = null;
 let cachedAt = 0;
 let inflightBootstrap: Promise<HomeBootstrap> | null = null;

@@ -57,6 +57,7 @@ import {
 } from "@/utils/themeVisuals";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminT } from "@/hooks/useAdminT";
+import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 
 const TYPE_BADGE: Record<string, string> = {
   products: THEME_BADGE_PRIMARY,
@@ -106,9 +107,24 @@ export default function AdminRecycleBin() {
   const invalidateRecycleBin = async (itemType?: string) => {
     const tasks = [queryClient.invalidateQueries({ queryKey: adminQueryKeys.recycleBinRoot() })];
     if (itemType === "products") {
+      invalidatePublicProductStoreCache();
       tasks.push(
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
+      );
+    }
+    if (itemType === "categories") {
+      invalidatePublicProductStoreCache({ categories: true });
+      tasks.push(
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
+      );
+    }
+    if (itemType === "product_tags") {
+      invalidatePublicProductStoreCache();
+      tasks.push(
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.productTags() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
       );
     }
     await Promise.all(tasks);

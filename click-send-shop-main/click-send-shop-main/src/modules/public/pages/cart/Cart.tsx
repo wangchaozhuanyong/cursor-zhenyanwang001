@@ -386,8 +386,8 @@ export default function Cart() {
                               alt={item.product.name}
                               className="h-full w-full"
                               imgClassName="h-full w-full rounded-xl object-cover"
-                              loading="eager"
-                              fetchPriority="high"
+                              loading={index === 0 ? "eager" : "lazy"}
+                              fetchPriority={index === 0 ? "high" : "low"}
                             />
                           </UnifiedButton>
                           <div className="flex min-w-0 flex-1 flex-col justify-between">

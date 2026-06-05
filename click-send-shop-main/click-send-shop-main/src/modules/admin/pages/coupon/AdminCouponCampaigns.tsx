@@ -17,6 +17,8 @@ import * as campaignService from "@/services/admin/couponCampaignService";
 import type { CouponCampaign, CouponCampaignStatus, CouponCampaignType } from "@/types/couponCampaign";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import CouponCenterTabs from "./CouponCenterTabs";
+import { invalidateHomeBootstrapCache } from "@/services/homeService";
+import { invalidateCouponStoreCache } from "@/stores/useCouponStore";
 
 const columnAligns: AdminTableAlign[] = ["left", "center", "center", "center", "right", "left", "right"];
 
@@ -76,6 +78,8 @@ export default function AdminCouponCampaigns() {
     onSuccess: async () => {
       toast.success("已删除发券活动");
       setDeleteId(null);
+      invalidateCouponStoreCache();
+      invalidateHomeBootstrapCache();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponCampaignsRoot() });
     },
     onError: (error) => toast.error(toastErrorMessage(error, "删除失败")),

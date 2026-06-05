@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, type CSSProperties, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -33,13 +33,8 @@ import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { renderBrandTitle } from "@/utils/brand";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useSmartMobileChrome } from "@/hooks/useSmartMobileChrome";
 
-type MobileChromeMode = "expanded" | "compact" | "hidden";
-
-const MOBILE_CHROME_EXPAND_TOP = 16;
-const MOBILE_CHROME_COMPACT_START = 56;
-const MOBILE_CHROME_HIDE_START = 148;
-const MOBILE_CHROME_HIDE_DELTA = 18;
 const MOBILE_CHROME_COMPACT_SPACER = "8.9rem";
 const MOBILE_CHROME_DOCK_SPACER = "5.1rem";
 
@@ -222,16 +217,16 @@ export default function Categories() {
   const showFullSkeleton = loading && products.length === 0;
   const showSoftRefreshing = listRefreshing && products.length > 0;
 
-  const mobileChromeRef = useRef<HTMLDivElement>(null);
-  const [mobileChromeHeight, setMobileChromeHeight] = useState(0);
-  const [mobileChromeMode, setMobileChromeMode] = useState<MobileChromeMode>("expanded");
-  const mobileChromeModeRef = useRef<MobileChromeMode>("expanded");
-  const lastScrollYRef = useRef(0);
-  const scrollTickingRef = useRef(false);
-  const layoutScrollGuardUntilRef = useRef(0);
-  const touchStartYRef = useRef(0);
-  const mobileChromeHidden = mobileChromeMode === "hidden";
-  const mobileChromeCompact = mobileChromeMode === "compact";
+  const {
+    chromeRef: mobileChromeRef,
+    chromeHeight: mobileChromeHeight,
+    mode: mobileChromeMode,
+    isHidden: mobileChromeHidden,
+    isCompact: mobileChromeCompact,
+    revealChrome: revealMobileChrome,
+  } = useSmartMobileChrome({
+    measureKey: `${categories.length}:${subCategories.length}:${activeFilterCount}:${viewMode}:${loading}`,
+  });
   const mobileChromeSpacerHeight = mobileChromeHidden
     ? MOBILE_CHROME_DOCK_SPACER
     : mobileChromeCompact
@@ -239,226 +234,6 @@ export default function Categories() {
       : mobileChromeHeight > 0
         ? mobileChromeHeight
         : undefined;
-
-  const setMobileChromeModeStable = useCallback((mode: MobileChromeMode) => {
-    if (mobileChromeModeRef.current === mode) {
-      return false;
-    }
-
-    mobileChromeModeRef.current = mode;
-    setMobileChromeMode(mode);
-    return true;
-  }, []);
-
-  const compactMobileChrome = useCallback(() => {
-    if (setMobileChromeModeStable("compact")) {
-      layoutScrollGuardUntilRef.current = 0;
-    }
-  }, [setMobileChromeModeStable]);
-
-  const hideMobileChrome = useCallback(() => {
-    if (setMobileChromeModeStable("hidden")) {
-      layoutScrollGuardUntilRef.current = window.performance.now() + 340;
-    }
-  }, [setMobileChromeModeStable]);
-
-  const revealMobileChrome = useCallback(() => {
-    if (setMobileChromeModeStable("expanded")) {
-      layoutScrollGuardUntilRef.current = 0;
-    }
-  }, [setMobileChromeModeStable]);
-
-  useLayoutEffect(() => {
-    const node = mobileChromeRef.current;
-    if (!node) return;
-
-    const update = () => {
-      const nextHeight = node.offsetHeight || 0;
-      if (!nextHeight) return;
-
-      setMobileChromeHeight((prev) => {
-        if (mobileChromeModeRef.current === "expanded") {
-          return nextHeight;
-        }
-
-        return prev || nextHeight;
-      });
-    };
-
-    update();
-
-    const observer = new ResizeObserver(update);
-    observer.observe(node);
-    window.addEventListener("resize", update);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", update);
-    };
-  }, [categories.length, subCategories.length, activeFilterCount, viewMode, loading]);
-
-  useEffect(() => {
-    const getScrollY = () => window.scrollY || document.documentElement.scrollTop || 0;
-
-    const updateChromeVisibility = () => {
-      scrollTickingRef.current = false;
-
-      const currentY = getScrollY();
-      const delta = currentY - lastScrollYRef.current;
-      lastScrollYRef.current = currentY;
-
-      if (window.performance.now() < layoutScrollGuardUntilRef.current) {
-        return;
-      }
-
-      if (currentY <= MOBILE_CHROME_EXPAND_TOP) {
-        revealMobileChrome();
-        return;
-      }
-
-      if (Math.abs(delta) < MOBILE_CHROME_HIDE_DELTA) {
-        if (currentY > MOBILE_CHROME_COMPACT_START && mobileChromeModeRef.current === "expanded") {
-          compactMobileChrome();
-        }
-        return;
-      }
-
-      if (delta > 0 && currentY > MOBILE_CHROME_HIDE_START) {
-        hideMobileChrome();
-        return;
-      }
-
-      if (delta > 0 && currentY > MOBILE_CHROME_COMPACT_START) {
-        compactMobileChrome();
-        return;
-      }
-
-      if (delta < 0) {
-        if (currentY <= MOBILE_CHROME_COMPACT_START) {
-          revealMobileChrome();
-          return;
-        }
-
-        compactMobileChrome();
-      }
-    };
-
-    const handleScroll = () => {
-      if (scrollTickingRef.current) {
-        return;
-      }
-
-      scrollTickingRef.current = true;
-      window.requestAnimationFrame(updateChromeVisibility);
-    };
-
-    const handleWheel = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) < MOBILE_CHROME_HIDE_DELTA) {
-        return;
-      }
-
-      lastScrollYRef.current = getScrollY();
-
-      if (event.deltaY > 0) {
-        if (mobileChromeModeRef.current === "hidden") {
-          return;
-        }
-
-        if (lastScrollYRef.current > MOBILE_CHROME_HIDE_START) {
-          hideMobileChrome();
-          return;
-        }
-
-        if (lastScrollYRef.current > MOBILE_CHROME_COMPACT_START) {
-          compactMobileChrome();
-        }
-        return;
-      }
-
-      if (event.deltaY < 0) {
-        if (lastScrollYRef.current <= MOBILE_CHROME_COMPACT_START) {
-          revealMobileChrome();
-          return;
-        }
-
-        compactMobileChrome();
-      }
-    };
-
-    const handleTouchStart = (event: TouchEvent) => {
-      touchStartYRef.current = event.touches[0]?.clientY ?? 0;
-    };
-
-    const handleTouchMove = (event: TouchEvent) => {
-      const currentTouchY = event.touches[0]?.clientY;
-      if (currentTouchY === undefined) {
-        return;
-      }
-
-      const gestureDelta = touchStartYRef.current - currentTouchY;
-      if (Math.abs(gestureDelta) < 24) {
-        return;
-      }
-
-      lastScrollYRef.current = getScrollY();
-      touchStartYRef.current = currentTouchY;
-
-      if (gestureDelta > 0) {
-        if (mobileChromeModeRef.current === "hidden") {
-          return;
-        }
-
-        if (lastScrollYRef.current > MOBILE_CHROME_HIDE_START) {
-          hideMobileChrome();
-          return;
-        }
-
-        if (lastScrollYRef.current > MOBILE_CHROME_COMPACT_START) {
-          compactMobileChrome();
-        }
-        return;
-      }
-
-      if (gestureDelta < 0) {
-        if (lastScrollYRef.current <= MOBILE_CHROME_COMPACT_START) {
-          revealMobileChrome();
-          return;
-        }
-
-        compactMobileChrome();
-      }
-    };
-
-    const revealChrome = () => {
-      lastScrollYRef.current = getScrollY();
-      revealMobileChrome();
-    };
-
-    lastScrollYRef.current = getScrollY();
-    if (lastScrollYRef.current > MOBILE_CHROME_HIDE_START) {
-      hideMobileChrome();
-    } else if (lastScrollYRef.current > MOBILE_CHROME_COMPACT_START) {
-      compactMobileChrome();
-    } else {
-      revealMobileChrome();
-    }
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    window.addEventListener("focusin", revealChrome);
-    window.addEventListener("resize", revealChrome);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("focusin", revealChrome);
-      window.removeEventListener("resize", revealChrome);
-    };
-  }, [compactMobileChrome, hideMobileChrome, revealMobileChrome]);
 
   useEffect(() => {
     revealMobileChrome();

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 
 type AdminSiteLogoProps = {
-  /** sm: 36px; lg: login page 64px */
+  /** sm: regular admin chrome; lg: login page */
   size?: "sm" | "lg";
   className?: string;
 };
@@ -22,7 +22,9 @@ function AdminSiteLogoView({
   alt: string;
   fallbackText: string;
 }) {
-  const boxClass = size === "lg" ? "h-16 w-16 rounded-2xl" : "h-9 w-9 rounded-lg";
+  const boxClass = size === "lg"
+    ? "admin-site-logo admin-site-logo--lg rounded-2xl"
+    : "admin-site-logo admin-site-logo--sm rounded-xl";
 
   if (!logoSrc) {
     return (

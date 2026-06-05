@@ -55,6 +55,7 @@ import type {
   SmartEditMap,
   SmartReplenishmentForm,
 } from "@/modules/admin/pages/product/inventory/inventoryTypes";
+import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 
 const PAGE_SIZE = INVENTORY_PAGE_SIZE;
 const BATCH_MAX = INVENTORY_BATCH_MAX;
@@ -131,6 +132,7 @@ export function useAdminInventory(initialTab: InventoryTabKey = "skus") {
   });
 
   const invalidateInventory = async () => {
+    invalidatePublicProductStoreCache();
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),

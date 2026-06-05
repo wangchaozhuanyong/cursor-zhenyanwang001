@@ -18,6 +18,17 @@ const DEFAULT_TIMEOUT_MS = 8000;
 const MAX_SOURCE_BYTES = 5 * 1024 * 1024;
 const IMAGE_PATH_RE = /\.(?:avif|gif|jpe?g|png|webp)$/i;
 
+/**
+ * @param {string} message
+ * @param {number} statusCode
+ * @returns {Error & { statusCode: number }}
+ */
+function createStatusError(message, statusCode) {
+  const error = /** @type {Error & { statusCode: number }} */ (new Error(message));
+  error.statusCode = statusCode;
+  return error;
+}
+
 function normalizeHostname(value) {
   return String(value || '').trim().toLowerCase();
 }
@@ -157,23 +168,17 @@ async function fetchRemoteImage(source, options = {}) {
       },
     });
     if (!response.ok) {
-      const error = new Error(`Image download failed with HTTP ${response.status}`);
-      error.statusCode = response.status;
-      throw error;
+      throw createStatusError(`Image download failed with HTTP ${response.status}`, response.status);
     }
 
     const contentType = String(response.headers.get('content-type') || '').toLowerCase();
     if (contentType && !contentType.startsWith('image/')) {
-      const error = new Error('Remote source is not an image');
-      error.statusCode = 415;
-      throw error;
+      throw createStatusError('Remote source is not an image', 415);
     }
 
     const arrayBuffer = await response.arrayBuffer();
     if (arrayBuffer.byteLength > MAX_SOURCE_BYTES) {
-      const error = new Error('Remote image is too large for nav icon thumbnailing');
-      error.statusCode = 413;
-      throw error;
+      throw createStatusError('Remote image is too large for nav icon thumbnailing', 413);
     }
 
     return Buffer.from(arrayBuffer);
@@ -187,9 +192,7 @@ async function loadSourceImage(source, options = {}) {
   if (localPath && fs.existsSync(localPath)) {
     const stat = await fs.promises.stat(localPath);
     if (stat.size > MAX_SOURCE_BYTES) {
-      const error = new Error('Local image is too large for nav icon thumbnailing');
-      error.statusCode = 413;
-      throw error;
+      throw createStatusError('Local image is too large for nav icon thumbnailing', 413);
     }
     return fs.promises.readFile(localPath);
   }
@@ -200,9 +203,7 @@ async function loadSourceImage(source, options = {}) {
       try {
         const buffer = await getS3ObjectBuffer(storageKey);
         if (buffer.length > MAX_SOURCE_BYTES) {
-          const error = new Error('Stored image is too large for nav icon thumbnailing');
-          error.statusCode = 413;
-          throw error;
+          throw createStatusError('Stored image is too large for nav icon thumbnailing', 413);
         }
         return buffer;
       } catch (error) {
@@ -212,9 +213,7 @@ async function loadSourceImage(source, options = {}) {
   }
 
   if (!/^https?:\/\//i.test(source)) {
-    const error = new Error('Relative source image is not available locally');
-    error.statusCode = 404;
-    throw error;
+    throw createStatusError('Relative source image is not available locally', 404);
   }
 
   return fetchRemoteImage(source, options);
@@ -222,9 +221,7 @@ async function loadSourceImage(source, options = {}) {
 
 async function getOrCreateNavIconThumb(source, options = {}) {
   if (!isNavIconThumbSourceAllowed(source, options)) {
-    const error = new Error('Nav icon source is not allowed');
-    error.statusCode = 400;
-    throw error;
+    throw createStatusError('Nav icon source is not allowed', 400);
   }
 
   const width = Math.max(48, Math.min(256, Number(options.width || DEFAULT_SIZE)));

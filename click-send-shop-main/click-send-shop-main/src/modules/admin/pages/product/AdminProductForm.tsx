@@ -32,6 +32,7 @@ import ProductBasicInfoSection from "@/modules/admin/pages/product/ProductBasicI
 import ProductSkuSection from "@/modules/admin/pages/product/ProductSkuSection";
 import ProductStatusSidebar from "@/modules/admin/pages/product/ProductStatusSidebar";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 
 const tempId = tempVariantId;
 
@@ -44,6 +45,7 @@ export default function AdminProductForm() {
   const isNew = id === "new";
 
   const invalidateProductCaches = async () => {
+    invalidatePublicProductStoreCache({ productId: id && id !== "new" ? id : undefined });
     const tasks = [
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),

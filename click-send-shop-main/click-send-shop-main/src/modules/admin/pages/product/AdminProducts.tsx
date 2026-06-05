@@ -22,7 +22,7 @@ import { AdminFilterButton, AdminFilterSelect } from "@/components/admin/AdminFi
 import AdminCsvImportDialog from "@/components/admin/AdminCsvImportDialog";
 import PermissionGate from "@/components/admin/PermissionGate";
 import SafeImage from "@/components/admin/SafeImage";
-import { batchUpdateProductStatus, exportProductsCsv, fetchProducts, importProductsCsv } from "@/services/admin/productService";
+import { batchUpdateProductStatus, exportProductsCsv, fetchProducts, importProductsCsv, previewProductsImport } from "@/services/admin/productService";
 import { downloadProductCsvTemplate } from "@/utils/productCsvTemplate";
 import type { Product, ProductListParams, ProductStatus } from "@/types/product";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -45,6 +45,7 @@ import {
   ADMIN_TABLE_NOWRAP_CLASS,
 } from "@/utils/adminTableClasses";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 
 const PAGE_SIZE = 20;
 
@@ -140,6 +141,7 @@ export default function AdminProducts() {
       }
       toast.success(parts.join(tText("，")));
       setSelected([]);
+      invalidatePublicProductStoreCache();
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
@@ -240,9 +242,11 @@ export default function AdminProducts() {
   };
 
   const handleImportSuccess = async () => {
+    invalidatePublicProductStoreCache({ categories: true });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() }),
     ]);
     setSelected([]);
   };
@@ -415,11 +419,13 @@ export default function AdminProducts() {
         open={importOpen}
         onOpenChange={setImportOpen}
         title={tText("批量导入商品")}
+        description={tText("支持系统 CSV 模板和银豹 .xlsx 商品表；银豹表会先解析预览，确认后才写入商品、SKU、库存和分类。")}
+        onPreview={previewProductsImport}
         onImport={importProductsCsv}
         extraHints={[
-          tText("ERP 格式：同一商品多行，每行一个 SKU（规格名称/SKU编码/售价/库存/成本价）"),
-          tText("标签列填中文名，多个用逗号分隔（须在「标签管理」中已存在）"),
-          tText("无规格编号时可用 SKU 编码匹配已有 SKU"),
+          tText("银豹 Excel：按商品名 + 分类分组；分类不存在时会通过后台分类逻辑自动创建。"),
+          tText("银豹 Excel：主编码、扩展条码和 barcode 本次全部忽略，不录入也不匹配。"),
+          tText("系统 CSV：仍沿用下载模板的原有字段规则。"),
         ]}
         onSuccess={async (result) => {
           toast.success(

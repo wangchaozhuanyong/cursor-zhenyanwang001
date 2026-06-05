@@ -3,7 +3,6 @@
  */
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const { ValidationError } = require('../../../errors');
-const { decodeCsvBuffer } = require('../../../utils/csv');
 const svc = require('../service/adminProduct.service');
 const adminExtended = require('../service/adminExtended.service');
 const dataChangeTracker = require('../service/adminDataChange.service');
@@ -20,10 +19,15 @@ exports.exportCsv = asyncRoute(async (req, res) => {
   res.send(`\uFEFF${csv}`);
 });
 
+exports.previewImport = asyncRoute(async (req, res) => {
+  if (!req.file || !req.file.buffer) throw new ValidationError('请上传导入文件');
+  const r = await svc.previewProductsImportFile(req.file, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
 exports.importCsv = asyncRoute(async (req, res) => {
   if (!req.file || !req.file.buffer) throw new ValidationError('请上传 CSV 文件');
-  const text = decodeCsvBuffer(req.file.buffer);
-  const r = await svc.importProductsCsv(text, req.user?.id, req);
+  const r = await svc.importProductsFile(req.file, req.user?.id, req);
   res.success(r.data, r.message);
 });
 

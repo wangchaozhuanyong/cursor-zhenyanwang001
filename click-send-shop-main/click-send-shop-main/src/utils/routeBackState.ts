@@ -92,3 +92,17 @@ export function readRouteBack(locationKey: string, currentPath: string): string 
     return undefined;
   }
 }
+
+export function resolveTrackedRouteBackSource(input: {
+  previousPath: string;
+  currentPath: string;
+  previousStoredFrom?: string;
+}): string | undefined {
+  if (input.previousPath === input.currentPath) return undefined;
+
+  if (basePathOf(input.previousPath) === basePathOf(input.currentPath)) {
+    return normalizeInternalRoutePath(input.previousStoredFrom);
+  }
+
+  return normalizeInternalRoutePath(input.previousPath);
+}

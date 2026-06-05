@@ -202,7 +202,7 @@ export function ProfileGuestCard({
     <section className="store-profile-vip-card profile-guest-card">
       <span className="profile-vip-watermark" aria-hidden="true">VIP</span>
       <div className="profile-vip-header">
-        <span className="profile-avatar-ring">
+        <span className="profile-avatar-ring profile-brand-logo-ring">
           {logoSrc ? (
             <img src={logoSrc} alt={siteName} className="h-full w-full rounded-full object-cover" />
           ) : (

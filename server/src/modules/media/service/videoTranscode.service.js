@@ -13,7 +13,7 @@ const {
 } = require('../../../utils/objectStorage');
 const userModule = require('../../user');
 
-const userApi = userModule.api;
+const userApi = /** @type {any} */ (userModule).api;
 
 const DEFAULT_MAX_WIDTH = 1280;
 const DEFAULT_CRF = 26;

@@ -3,7 +3,15 @@ import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useMotionConfig } from "../hooks/useMotionConfig";
 
-export function AnimatedPage({ children, className }: { children: ReactNode; className?: string }) {
+export function AnimatedPage({
+  children,
+  className,
+  disableTransform = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  disableTransform?: boolean;
+}) {
   const location = useLocation();
   const { level, enabled } = useMotionConfig();
   const [entered, setEntered] = useState(!enabled);
@@ -29,12 +37,16 @@ export function AnimatedPage({ children, className }: { children: ReactNode; cla
         backfaceVisibility: "hidden",
         transformOrigin: "50% 0%",
         opacity: enabled ? (entered ? 1 : 0) : undefined,
-        transform: enabled
+        transform: enabled && !disableTransform
           ? entered
             ? "translate3d(0, 0, 0) scale(1)"
             : `translate3d(0, ${y}px, 0) scale(${level === "rich" ? 0.996 : 1})`
           : undefined,
-        transition: enabled ? `opacity ${duration}ms ease-out, transform ${duration}ms ease-out` : undefined,
+        transition: enabled
+          ? disableTransform
+            ? `opacity ${duration}ms ease-out`
+            : `opacity ${duration}ms ease-out, transform ${duration}ms ease-out`
+          : undefined,
       }}
     >
       {children}

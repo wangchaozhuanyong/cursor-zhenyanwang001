@@ -42,6 +42,7 @@ import {
 } from "@/utils/themeVisuals";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 
 type CategoryForm = {
   name: string;
@@ -261,8 +262,13 @@ export default function AdminCategories() {
   const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
   const loading = categoriesQuery.isLoading && !categoriesQuery.data;
 
-  const invalidateCategories = () =>
-    queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() });
+  const invalidateCategories = async () => {
+    invalidatePublicProductStoreCache({ categories: true });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
+    ]);
+  };
 
   useEffect(() => {
     if (!categories.length || expandedInitialized.current) return;

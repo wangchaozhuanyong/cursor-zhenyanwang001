@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
@@ -55,12 +55,14 @@ function ProductSoldOutOverlay({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export default function ProductCard(props: Props) {
+function ProductCard(props: Props) {
   if (props.siteContext) {
     return <ProductCardInner {...props} siteContext={props.siteContext} />;
   }
   return <ProductCardWithHooks {...props} />;
 }
+
+export default memo(ProductCard);
 
 function ProductCardWithHooks(props: Omit<Props, "siteContext">) {
   const capabilities = useSiteCapabilities();

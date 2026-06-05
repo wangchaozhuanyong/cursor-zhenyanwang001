@@ -143,7 +143,7 @@ export default function Search() {
     if (!trimmed) return;
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("keyword", trimmed);
-    setSearchParams(nextParams);
+    setSearchParams(nextParams, { replace: true });
     setQuery(trimmed);
     setDebouncedQuery(trimmed);
     setShowHistory(false);

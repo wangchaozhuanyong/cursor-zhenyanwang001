@@ -3,6 +3,7 @@ import type {
   AdminProductUpsertPayload,
   Product,
   ProductBatchStatusResult,
+  ProductImportPreview,
   ProductImportResult,
   ProductLifecycleStatus,
   ProductListParams,
@@ -91,11 +92,19 @@ export async function exportProductsCsv(params?: ProductListParams) {
 }
 
 export async function importProductsCsv(file: File): Promise<ProductImportResult> {
+  return uploadProductImportFile<ProductImportResult>("/admin/products/import", file);
+}
+
+export async function previewProductsImport(file: File): Promise<ProductImportPreview> {
+  return uploadProductImportFile<ProductImportPreview>("/admin/products/import/preview", file);
+}
+
+async function uploadProductImportFile<T>(path: string, file: File): Promise<T> {
   const token = getAdminAccessToken();
   const csrfToken = await getAdminCsrfToken();
   const fd = new FormData();
   fd.append("file", file);
-  const res = await fetch(`${BASE}/admin/products/import`, {
+  const res = await fetch(`${BASE}${path}`, {
     method: "POST",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -104,7 +113,8 @@ export async function importProductsCsv(file: File): Promise<ProductImportResult
     credentials: "include",
     body: fd,
   });
-  const body = (await res.json()) as { code: number; message?: string; data?: ProductImportResult };
+  const body = (await res.json()) as { code: number; message?: string; data?: T };
   if (!res.ok || body.code !== 0) throw new Error(body.message || "导入失败");
-  return body.data ?? { created: 0, updated: 0, skipped: 0, errors: [] };
+  if (!body.data) throw new Error(body.message || "导入失败");
+  return body.data;
 }

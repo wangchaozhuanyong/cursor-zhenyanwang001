@@ -220,7 +220,27 @@ export interface ProductImportResult {
   updated: number;
   skipped?: number;
   sku_rows?: number;
-  mode?: "sku_matrix" | "legacy";
+  mode?: "sku_matrix" | "legacy" | "yinbao_excel" | "csv";
+  errors?: ProductImportRowError[];
+  categories_created?: string[];
+}
+
+export interface ProductImportPreview {
+  mode: "yinbao_excel" | "csv";
+  filename?: string;
+  sheet_name?: string;
+  total_rows: number;
+  valid_rows: number;
+  sku_rows: number;
+  product_groups: number;
+  products_to_create: number;
+  products_to_update: number;
+  categories_existing: string[];
+  categories_to_create: string[];
+  negative_stock_rows: number;
+  same_name_multi_category?: Array<{ name: string; categories: string[] }>;
+  ignored_columns?: string[];
+  warnings?: string[];
   errors?: ProductImportRowError[];
 }
 

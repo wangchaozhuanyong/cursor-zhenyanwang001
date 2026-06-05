@@ -247,6 +247,7 @@ router.get(
   validate({ query: productSchemas.adminProductListQuerySchema }),
   productCtrl.exportCsv,
 );
+router.post('/products/import/preview', adminAuth, requirePermission('product.manage'), uploadCsv.single('file'), productCtrl.previewImport);
 router.post('/products/import', adminAuth, requirePermission('product.manage'), uploadCsv.single('file'), productCtrl.importCsv);
 router.get(
   '/products',

@@ -14,6 +14,7 @@ import { THEME_HOVER_BG_DANGER, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVis
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 
 const EMPTY_FORM = {
   name: "",
@@ -42,6 +43,7 @@ export default function AdminProductTags() {
   const loading = tagsQuery.isLoading && !tagsQuery.data;
 
   const invalidateTags = async () => {
+    invalidatePublicProductStoreCache();
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.productTags() }),
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),

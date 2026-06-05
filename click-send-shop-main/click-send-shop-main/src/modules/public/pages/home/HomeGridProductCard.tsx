@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "@/types/product";
 import ProductCoverImage from "@/components/ProductCoverImage";
@@ -27,7 +27,7 @@ interface HomeGridProductCardProps {
   registerImpression?: (product: Product, index: number) => void;
 }
 
-export default function HomeGridProductCard({
+function HomeGridProductCard({
   product,
   index,
   showPrice = true,
@@ -136,3 +136,5 @@ export default function HomeGridProductCard({
     </Link>
   );
 }
+
+export default memo(HomeGridProductCard);

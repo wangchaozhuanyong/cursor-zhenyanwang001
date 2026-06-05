@@ -277,7 +277,7 @@ export default function Orders() {
         ) : null}
 
         <div className="space-y-3">
-          {displayOrders.map((order) => {
+          {displayOrders.map((order, orderIndex) => {
             const shownItems = order.items.slice(0, 3);
             const totalItems = order.items.reduce((s, i) => s + i.qty, 0);
             return (
@@ -310,9 +310,18 @@ export default function Orders() {
                 ) : null}
 
                 <div className="space-y-2">
-                  {shownItems.map((item) => (
+                  {shownItems.map((item, itemIndex) => (
                     <div key={item.order_item_id || item.id || item.product.id} className="flex gap-2">
-                      <img src={item.product.cover_image} alt={item.product.name} className="h-[72px] w-[72px] rounded-lg object-cover" />
+                      <img
+                        src={item.product.cover_image}
+                        alt={item.product.name}
+                        width={72}
+                        height={72}
+                        className="h-[72px] w-[72px] rounded-lg object-cover"
+                        loading={orderIndex === 0 && itemIndex === 0 ? "eager" : "lazy"}
+                        fetchPriority={orderIndex === 0 && itemIndex === 0 ? "high" : "low"}
+                        decoding="async"
+                      />
                       <div className="min-w-0 flex-1">
                         <p className="store-card-title line-clamp-2">{item.product.name}</p>
                         <p className="store-caption mt-1 truncate text-[var(--theme-text-muted)]">{item.variant_name || item.sku_code || "默认规格"}</p>

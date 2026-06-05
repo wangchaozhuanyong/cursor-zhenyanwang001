@@ -8,7 +8,7 @@ async function selectVariantsByProductIds(productIds) {
   const ph = uniq.map(() => '?').join(',');
   const [rows] = await db.query(
     `SELECT id, product_id, sku_code, title, price, original_price, stock, sort_order, is_default,
-            stock_warning_threshold, stock_lower_limit, stock_upper_limit, cost_price, barcode, image_url, weight, enabled
+            stock_warning_threshold, stock_lower_limit, stock_upper_limit, unit_name, cost_price, barcode, image_url, weight, enabled
      FROM product_variants
      WHERE product_id IN (${ph}) AND deleted_at IS NULL
      ORDER BY product_id ASC, is_default DESC, sort_order ASC, created_at ASC`,
@@ -27,7 +27,7 @@ async function selectVariantsByProductId(productId, opts = {}) {
   const includeDeleted = !!opts.includeDeleted;
   const [rows] = await db.query(
     `SELECT id, product_id, sku_code, title, price, original_price, stock, sort_order, is_default, stock_warning_threshold,
-            stock_lower_limit, stock_upper_limit,
+            stock_lower_limit, stock_upper_limit, unit_name,
             reserved_stock, cost_price, barcode, image_url, weight, enabled, deleted_at, created_at, updated_at
      FROM product_variants
      WHERE product_id = ? ${includeDeleted ? '' : 'AND deleted_at IS NULL'}
@@ -268,6 +268,7 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
                stock_warning_threshold = COALESCE(?, stock_warning_threshold),
                stock_lower_limit = ?,
                stock_upper_limit = ?,
+               unit_name = COALESCE(?, unit_name),
                barcode = COALESCE(?, barcode), cost_price = COALESCE(?, cost_price),
                image_url = ?, weight = ?, enabled = ?, deleted_at = NULL
            WHERE id = ? AND product_id = ?`,
@@ -282,6 +283,7 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
             r.stock_warning_threshold ?? null,
             r.stock_lower_limit ?? null,
             r.stock_upper_limit ?? null,
+            r.unit_name ?? null,
             r.barcode ?? null,
             r.cost_price ?? null,
             r.image_url || null,
@@ -295,8 +297,8 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
         await conn.query(
           `INSERT INTO product_variants
              (id, product_id, sku_code, title, price, original_price, stock, sort_order, is_default,
-              stock_warning_threshold, stock_lower_limit, stock_upper_limit, reserved_stock, barcode, cost_price, image_url, weight, enabled, deleted_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
+               stock_warning_threshold, stock_lower_limit, stock_upper_limit, unit_name, reserved_stock, barcode, cost_price, image_url, weight, enabled, deleted_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
           [
             r.id,
             productId,
@@ -310,6 +312,7 @@ async function upsertProductSkuMatrix(productId, specGroups, rows) {
             r.stock_warning_threshold ?? 5,
             r.stock_lower_limit ?? null,
             r.stock_upper_limit ?? null,
+            r.unit_name || '件',
             r.reserved_stock ?? 0,
             r.barcode ?? null,
             r.cost_price ?? null,

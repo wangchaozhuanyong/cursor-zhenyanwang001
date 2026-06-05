@@ -84,6 +84,16 @@ describe("useCouponStore", () => {
     expect(useCouponStore.getState().coupons.map((row) => row.coupon.id)).toEqual(["guest"]);
   });
 
+  it("reuses fresh loaded coupons without another request", async () => {
+    vi.mocked(couponService.fetchAvailableCoupons).mockResolvedValue([coupon("guest")]);
+
+    await useCouponStore.getState().loadCoupons();
+    await useCouponStore.getState().loadCoupons();
+
+    expect(couponService.fetchAvailableCoupons).toHaveBeenCalledTimes(1);
+    expect(useCouponStore.getState().coupons.map((row) => row.coupon.id)).toEqual(["guest"]);
+  });
+
   it("loads public and owned coupons when a session is ready", async () => {
     useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
     vi.mocked(ensureStoreSession).mockResolvedValue(true);

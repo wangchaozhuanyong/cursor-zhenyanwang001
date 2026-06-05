@@ -9,6 +9,9 @@ set -euo pipefail
 #   PM2_APP=gc-api
 #   NGINX_ACCESS_LOG=/var/log/nginx/access.log
 #   LOG_SAMPLE_LINES=1000
+#   DEPLOY_LOCK_FILE=/var/www/click-send-shop/.deploy.lock
+#   LIVE_RETRY_ATTEMPTS=5
+#   LIVE_RETRY_DELAY_SEC=1
 #   HEALTH_ALERT_WEBHOOK_URL=https://example.com/webhook
 
 API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:3001}"
@@ -17,7 +20,10 @@ NGINX_ACCESS_LOG="${NGINX_ACCESS_LOG:-/var/log/nginx/access.log}"
 LOG_SAMPLE_LINES="${LOG_SAMPLE_LINES:-1000}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE:-${PROJECT_ROOT}/.deploy.lock}"
 
+LIVE_RETRY_ATTEMPTS="${LIVE_RETRY_ATTEMPTS:-5}"
+LIVE_RETRY_DELAY_SEC="${LIVE_RETRY_DELAY_SEC:-1}"
 READY_FAIL_THRESHOLD="${READY_FAIL_THRESHOLD:-3}"
 MAX_5XX_RATE_PERCENT="${MAX_5XX_RATE_PERCENT:-1}"
 MAX_API_LATENCY_SEC="${MAX_API_LATENCY_SEC:-2}"
@@ -34,6 +40,45 @@ alert() {
   echo "[告警] $*"
   failed=1
   ALERT_ITEMS+=("$*")
+}
+
+is_deploy_active() {
+  [[ -e "${DEPLOY_LOCK_FILE}" ]] || return 1
+
+  if command -v flock >/dev/null 2>&1; then
+    exec 8<>"${DEPLOY_LOCK_FILE}" || return 1
+    if ! flock -n 8; then
+      return 0
+    fi
+    flock -u 8 || true
+    exec 8>&- || true
+    return 1
+  fi
+
+  local pid
+  pid="$(awk -F= '$1=="pid"{print $2; exit}' "${DEPLOY_LOCK_FILE}" 2>/dev/null || true)"
+  [[ -n "${pid}" && -d "/proc/${pid}" ]]
+}
+
+check_live() {
+  local attempt code
+  for ((attempt = 1; attempt <= LIVE_RETRY_ATTEMPTS; attempt += 1)); do
+    code="$(curl -s -o /dev/null -w "%{http_code}" "${API_BASE_URL}/api/health/live" || true)"
+    if [[ "${code}" == "200" ]]; then
+      if [[ "${attempt}" -eq 1 ]]; then
+        ok "API 存活检查可访问"
+      else
+        ok "API 存活检查第 ${attempt} 次恢复：200"
+      fi
+      return 0
+    fi
+
+    warn "API 存活检查 #${attempt}：${code:-000}"
+    if [[ "${attempt}" -lt "${LIVE_RETRY_ATTEMPTS}" ]]; then
+      sleep "${LIVE_RETRY_DELAY_SEC}"
+    fi
+  done
+  return 1
 }
 
 format_cn_time() {
@@ -92,10 +137,17 @@ ${failure_summary}
 echo "== 生产健康检查 =="
 echo "API_BASE_URL=${API_BASE_URL}"
 echo "PM2_APP=${PM2_APP}"
+echo "DEPLOY_LOCK_FILE=${DEPLOY_LOCK_FILE}"
 
-if curl -fsS "${API_BASE_URL}/api/health/live" >/dev/null; then
-  ok "API 存活检查可访问"
-else
+if is_deploy_active; then
+  warn "检测到发布正在进行，本轮健康检查跳过告警：${DEPLOY_LOCK_FILE}"
+  if [[ -s "${DEPLOY_LOCK_FILE}" ]]; then
+    sed 's/^/[部署锁] /' "${DEPLOY_LOCK_FILE}" || true
+  fi
+  exit 0
+fi
+
+if ! check_live; then
   alert "API 存活检查失败：${API_BASE_URL}/api/health/live"
 fi
 

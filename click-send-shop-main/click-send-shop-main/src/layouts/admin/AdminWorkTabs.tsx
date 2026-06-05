@@ -179,7 +179,7 @@ export default function AdminWorkTabs() {
 
   return (
     <>
-      <div className="flex h-[var(--admin-chrome-tabs-h)] shrink-0 items-center border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/90">
+      <div className="admin-work-tabs-shell flex h-[var(--admin-chrome-tabs-h)] w-full min-w-0 max-w-full shrink-0 items-center overflow-hidden border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/90">
         <UnifiedButton
           type="button"
           aria-label={tText("向左滚动标签")}
@@ -192,7 +192,7 @@ export default function AdminWorkTabs() {
 
         <div
           ref={scrollRef}
-          className="admin-work-tabs hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth px-1 sm:flex"
+          className="admin-work-tabs hidden h-full min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth px-1 py-1 sm:flex"
           role="tablist"
           aria-label={tText("已打开页面")}
         >
@@ -206,7 +206,7 @@ export default function AdminWorkTabs() {
                 aria-selected={active}
                 onContextMenu={(e) => openContextMenu(tab, e)}
                 className={cn(
-                  "group relative flex max-w-[12rem] shrink-0 items-center rounded-full border px-3 py-1.5 text-xs transition-all",
+                  "admin-work-tab-item group relative flex h-7 max-w-[12rem] shrink-0 items-center overflow-hidden rounded-full border px-2.5 text-xs leading-none transition-all",
                   active
                     ? "z-[1] border-[var(--theme-price)] btn-theme-price font-semibold shadow-sm"
                     : "border-transparent bg-transparent text-muted-foreground hover:border-[color-mix(in_srgb,var(--theme-price)_28%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-price)_8%,var(--theme-surface))] hover:text-foreground",
@@ -214,7 +214,7 @@ export default function AdminWorkTabs() {
               >
                 <UnifiedButton
                   type="button"
-                  className="flex min-w-0 flex-1 items-center gap-1 truncate text-left"
+                  className="flex h-full min-w-0 flex-1 items-center gap-1 truncate text-left leading-none"
                   onPointerEnter={() => { void preloadAdminRoute(tab.path); }}
                   onFocus={() => { void preloadAdminRoute(tab.path); }}
                   onClick={() => activateTab(tab)}
@@ -243,7 +243,7 @@ export default function AdminWorkTabs() {
           <ChevronRight size={16} />
         </UnifiedButton>
 
-        <div className="flex h-full shrink-0 items-center gap-1.5 border-l border-[var(--theme-border)]/70 pl-1.5 pr-2">
+        <div className="admin-work-tabs-tools flex h-full shrink-0 items-center gap-1.5 overflow-hidden border-l border-[var(--theme-border)]/70 pl-1.5 pr-2">
           <div ref={listRef} className="relative shrink-0">
             <UnifiedButton
               ref={listBtnRef}

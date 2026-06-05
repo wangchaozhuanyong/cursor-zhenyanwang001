@@ -225,6 +225,40 @@ html[data-app-scope="admin"] .admin-tech-path {
       display: none;
     }
 
+    [data-admin-shell] .admin-work-tabs-shell {
+      min-width: 0;
+      max-width: 100%;
+      contain: layout paint;
+    }
+
+    [data-admin-shell] .admin-work-tabs {
+      min-width: 0;
+      max-width: 100%;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+    }
+
+    [data-admin-shell] .admin-work-tabs::-webkit-scrollbar {
+      height: 0;
+    }
+
+    [data-admin-shell] .admin-work-tab-item {
+      box-sizing: border-box;
+      max-height: calc(var(--admin-chrome-tabs-h) - 0.5rem);
+      line-height: 1;
+    }
+
+    [data-admin-shell] .admin-work-tab-item > .app-unified-button {
+      min-height: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    [data-admin-shell] .admin-work-tabs-tools {
+      min-width: 0;
+      max-width: min(11rem, 34vw);
+    }
+
     html[data-app-scope="admin"] .admin-responsive-sheet {
       max-width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     }

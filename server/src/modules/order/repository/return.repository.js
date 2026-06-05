@@ -21,9 +21,9 @@ async function selectReturnRequestsPage(userId, status, pageSize, offset) {
   }
   const [rows] = await db.query(
     `SELECT rr.*,
-            COALESCE(oi.product_name_snapshot, oi.product_name, p.name, '') AS product_name,
-            COALESCE(oi.variant_name_snapshot, oi.variant_name, '') AS variant_name,
-            COALESCE(oi.product_image_snapshot, oi.variant_image_snapshot, oi.product_image, p.cover_image, '') AS product_image,
+            COALESCE(NULLIF(oi.product_name_snapshot, ''), NULLIF(oi.product_name, ''), p.name, '') AS product_name,
+            COALESCE(NULLIF(oi.variant_name, ''), '') AS variant_name,
+            COALESCE(NULLIF(oi.variant_image_snapshot, ''), NULLIF(oi.product_image_snapshot, ''), NULLIF(oi.product_image, ''), p.cover_image, '') AS product_image,
             COALESCE(oi.qty, 0) AS purchased_qty,
             COALESCE(oi.price, 0) AS unit_price
        FROM return_requests rr
@@ -39,9 +39,9 @@ async function selectReturnRequestsPage(userId, status, pageSize, offset) {
 async function selectReturnByIdAndUser(returnId, userId) {
   const [[row]] = await db.query(
     `SELECT rr.*,
-            COALESCE(oi.product_name_snapshot, oi.product_name, p.name, '') AS product_name,
-            COALESCE(oi.variant_name_snapshot, oi.variant_name, '') AS variant_name,
-            COALESCE(oi.product_image_snapshot, oi.variant_image_snapshot, oi.product_image, p.cover_image, '') AS product_image,
+            COALESCE(NULLIF(oi.product_name_snapshot, ''), NULLIF(oi.product_name, ''), p.name, '') AS product_name,
+            COALESCE(NULLIF(oi.variant_name, ''), '') AS variant_name,
+            COALESCE(NULLIF(oi.variant_image_snapshot, ''), NULLIF(oi.product_image_snapshot, ''), NULLIF(oi.product_image, ''), p.cover_image, '') AS product_image,
             COALESCE(oi.qty, 0) AS purchased_qty,
             COALESCE(oi.price, 0) AS unit_price,
             o.total_amount AS order_total_amount,
@@ -71,7 +71,8 @@ async function selectOrderItemForReturn(orderId, orderItemId) {
   const [[row]] = await db.query(
     `SELECT id, order_id, product_id, variant_id, sku_code, qty,
             product_name, product_image, variant_name,
-            product_name_snapshot, product_image_snapshot, variant_image_snapshot, variant_name_snapshot
+            product_name_snapshot, product_image_snapshot, variant_image_snapshot,
+            variant_name AS variant_name_snapshot
      FROM order_items
      WHERE id = ? AND order_id = ?`,
     [orderItemId, orderId],

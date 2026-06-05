@@ -1,4 +1,4 @@
-const PROFILE_HERO_NAME_MAX_CHARS = 4;
+const PROFILE_HERO_NAME_MAX_CHARS = 8;
 
 export function formatProfileHeroName(name: string) {
   const trimmed = name.trim();

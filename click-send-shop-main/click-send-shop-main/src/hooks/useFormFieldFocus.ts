@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from "react";
 
 const VIEWPORT_SYNC_DELAY_MS = 320;
 
+type KeyboardViewportState = {
+  keyboardInset: number;
+  visualViewportHeight: number;
+};
+
 /** 会唤起软键盘的控件（不含 select / checkbox 等） */
 function isKeyboardTriggerField(el: Element | null): boolean {
   if (el instanceof HTMLTextAreaElement) return true;
@@ -16,11 +21,22 @@ function isCoarsePointerDevice(): boolean {
   return window.matchMedia("(pointer: coarse)").matches;
 }
 
+function readKeyboardViewportState(): KeyboardViewportState {
+  if (typeof window === "undefined") return { keyboardInset: 0, visualViewportHeight: 0 };
+  const layoutHeight = window.innerHeight || 0;
+  const visualViewport = window.visualViewport;
+  const visualViewportHeight = Math.max(0, Math.round(visualViewport?.height || layoutHeight));
+  const visualViewportOffsetTop = Math.max(0, Math.round(visualViewport?.offsetTop || 0));
+  const keyboardInset = Math.max(0, Math.round(layoutHeight - visualViewportHeight - visualViewportOffsetTop));
+  return { keyboardInset, visualViewportHeight };
+}
+
 /** 迟滞阈值，避免 iOS Chrome visualViewport 微抖导致布局来回切换 */
 function readKeyboardLikelyOpen(prevOpen: boolean): boolean {
   if (typeof window === "undefined" || !window.visualViewport) return false;
   const ratio = window.visualViewport.height / window.innerHeight;
-  return prevOpen ? ratio < 0.88 : ratio < 0.72;
+  const { keyboardInset } = readKeyboardViewportState();
+  return prevOpen ? ratio < 0.88 || keyboardInset > 80 : ratio < 0.72 || keyboardInset > 120;
 }
 
 /**
@@ -31,6 +47,7 @@ function readKeyboardLikelyOpen(prevOpen: boolean): boolean {
 export function useFormFieldFocus(enabled = true) {
   const [textFieldFocused, setTextFieldFocused] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [viewportState, setViewportState] = useState(readKeyboardViewportState);
   const keyboardOpenRef = useRef(false);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viewportDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -60,7 +77,21 @@ export function useFormFieldFocus(enabled = true) {
       setKeyboardOpen(next);
     };
 
+    const syncViewportState = () => {
+      const next = readKeyboardViewportState();
+      setViewportState((prev) => {
+        if (
+          Math.abs(prev.keyboardInset - next.keyboardInset) < 2
+          && Math.abs(prev.visualViewportHeight - next.visualViewportHeight) < 2
+        ) {
+          return prev;
+        }
+        return next;
+      });
+    };
+
     const syncKeyboardOpen = () => {
+      syncViewportState();
       const next = readKeyboardLikelyOpen(keyboardOpenRef.current);
       applyKeyboardOpen(next);
     };
@@ -120,6 +151,7 @@ export function useFormFieldFocus(enabled = true) {
     document.addEventListener("focusin", onFocusIn);
     document.addEventListener("focusout", onFocusOut);
     window.visualViewport?.addEventListener("resize", onViewportResize);
+    window.visualViewport?.addEventListener("scroll", onViewportResize);
     syncKeyboardOpen();
 
     return () => {
@@ -128,6 +160,7 @@ export function useFormFieldFocus(enabled = true) {
       document.removeEventListener("focusin", onFocusIn);
       document.removeEventListener("focusout", onFocusOut);
       window.visualViewport?.removeEventListener("resize", onViewportResize);
+      window.visualViewport?.removeEventListener("scroll", onViewportResize);
     };
   }, [enabled]);
 
@@ -136,6 +169,8 @@ export function useFormFieldFocus(enabled = true) {
   return {
     textFieldFocused,
     keyboardOpen,
+    keyboardInset: keyboardOpen ? viewportState.keyboardInset : 0,
+    visualViewportHeight: viewportState.visualViewportHeight,
     /** 仅触屏 + 软键盘：收起轮播等，桌面 Chrome 不触发 */
     layoutCompact,
     /** 文本框聚焦或软键盘已弹起（用于暂停轮播） */

@@ -27,6 +27,22 @@ interface BannerCarouselProps {
 const AUTO_ROTATE_MS = 4800;
 const USER_INTERACTION_PAUSE_MS = 7200;
 const STATIC_HOME_BANNER_RE = /^(.*\/assets\/home-banners\/home-hero-\d{2}-[^?#]+?)(-mobile)?(\.webp)(\?.*)?$/i;
+const loadedBannerImages = new Set<string>();
+
+function getImageCacheKeys(...values: Array<string | undefined | null>): string[] {
+  return values
+    .flatMap((value) => String(value || "").split(","))
+    .map((value) => value.trim().split(/\s+/)[0])
+    .filter(Boolean);
+}
+
+function hasLoadedImage(...values: Array<string | undefined | null>): boolean {
+  return getImageCacheKeys(...values).some((value) => loadedBannerImages.has(value));
+}
+
+function markImageLoaded(...values: Array<string | undefined | null>) {
+  getImageCacheKeys(...values).forEach((value) => loadedBannerImages.add(value));
+}
 
 function resolveBannerLink(link: string): string {
   const value = (link || "").trim();
@@ -86,7 +102,9 @@ export default function BannerCarousel({
   const nextBannerImage = banners.length > 1
     ? banners[(safeIndex + 1) % banners.length]?.image?.trim() || ""
     : "";
-  const [activeImageLoaded, setActiveImageLoaded] = useState(false);
+  const [activeImageLoaded, setActiveImageLoaded] = useState(() => (
+    hasLoadedImage(activeImage, responsiveImage.src, responsiveImage.srcSet)
+  ));
   const [activeImageFailed, setActiveImageFailed] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
   const [manualPauseUntil, setManualPauseUntil] = useState(0);
@@ -108,9 +126,9 @@ export default function BannerCarousel({
   }, [banners.length, current]);
 
   useEffect(() => {
-    setActiveImageLoaded(false);
+    setActiveImageLoaded(hasLoadedImage(activeImage, responsiveImage.src, responsiveImage.srcSet));
     setActiveImageFailed(false);
-  }, [activeImage]);
+  }, [activeImage, responsiveImage.src, responsiveImage.srcSet]);
 
   useEffect(() => {
     if (!nextBannerImage || nextBannerImage === activeImage) return;
@@ -119,6 +137,9 @@ export default function BannerCarousel({
       img.decoding = "async";
       (img as HTMLImageElement & { fetchPriority?: "low" }).fetchPriority = "low";
       const nextResponsiveImage = getResponsiveBannerImage(nextBannerImage);
+      img.onload = () => {
+        markImageLoaded(nextBannerImage, nextResponsiveImage.src, nextResponsiveImage.srcSet, img.currentSrc, img.src);
+      };
       if (nextResponsiveImage.srcSet) {
         img.srcset = nextResponsiveImage.srcSet;
         img.sizes = nextResponsiveImage.sizes || "100vw";
@@ -246,6 +267,13 @@ export default function BannerCarousel({
             }}
             onLoad={(event) => {
               if (event.currentTarget.naturalWidth > 0) {
+                markImageLoaded(
+                  activeImage,
+                  responsiveImage.src,
+                  responsiveImage.srcSet,
+                  event.currentTarget.currentSrc,
+                  event.currentTarget.src,
+                );
                 setActiveImageLoaded(true);
                 setActiveImageFailed(false);
               }

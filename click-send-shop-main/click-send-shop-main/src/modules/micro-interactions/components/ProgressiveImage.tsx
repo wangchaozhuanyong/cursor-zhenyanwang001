@@ -19,6 +19,22 @@ export type ProgressiveImageProps = {
   withBlurPlaceholder?: boolean;
 };
 
+const loadedProgressiveImages = new Set<string>();
+
+function hasLoadedImage(...values: Array<string | undefined | null>): boolean {
+  return values
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .some((value) => loadedProgressiveImages.has(value));
+}
+
+function markImageLoaded(...values: Array<string | undefined | null>) {
+  values
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .forEach((value) => loadedProgressiveImages.add(value));
+}
+
 /**
  * Blur-up reveal: LQIP 垫底，高清图加载完成后淡入；失败时回退 full 或保持可见占位。
  */
@@ -35,7 +51,7 @@ export function ProgressiveImage({
   withBlurPlaceholder = true,
 }: ProgressiveImageProps) {
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const [hiResLoaded, setHiResLoaded] = useState(false);
+  const [hiResLoaded, setHiResLoaded] = useState(() => hasLoadedImage(src));
   const [loadFailed, setLoadFailed] = useState(false);
   const fallbackSources = useMemo(() => {
     const full = toFullUploadImageUrl(src);
@@ -47,7 +63,7 @@ export function ProgressiveImage({
 
   useEffect(() => {
     setSourceIndex(0);
-    setHiResLoaded(false);
+    setHiResLoaded(hasLoadedImage(src));
     setLoadFailed(false);
   }, [src]);
 
@@ -57,6 +73,7 @@ export function ProgressiveImage({
 
     const markLoadedIfReady = () => {
       if (img.complete && img.naturalWidth > 0) {
+        markImageLoaded(activeSrc, img.currentSrc, img.src);
         setHiResLoaded(true);
         setLoadFailed(false);
       }
@@ -127,15 +144,17 @@ export function ProgressiveImage({
           decoding="async"
           {...fetchPriorityProps}
           draggable={false}
-          onLoad={() => {
+          onLoad={(event) => {
+            markImageLoaded(activeSrc, event.currentTarget.currentSrc, event.currentTarget.src);
             setHiResLoaded(true);
             setLoadFailed(false);
           }}
           onError={() => {
             const nextIndex = sourceIndex + 1;
             if (nextIndex <= fallbackSources.length) {
+              const nextSource = fallbackSources[nextIndex - 1];
               setSourceIndex(nextIndex);
-              setHiResLoaded(false);
+              setHiResLoaded(hasLoadedImage(nextSource));
               setLoadFailed(false);
               return;
             }

@@ -82,6 +82,22 @@ const ICON_TOKENS = {
   migration: Landmark,
 } as const;
 
+const loadedHomeNavImages = new Set<string>();
+
+function hasLoadedImage(...values: Array<string | undefined | null>): boolean {
+  return values
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .some((value) => loadedHomeNavImages.has(value));
+}
+
+function markImageLoaded(...values: Array<string | undefined | null>) {
+  values
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .forEach((value) => loadedHomeNavImages.add(value));
+}
+
 type HomeNavIconProps = {
   value: string;
   className?: string;
@@ -119,19 +135,21 @@ export default function HomeNavIcon({
   );
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [src, setSrc] = useState(displayImageSource || imageSource || "");
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => hasLoadedImage(displayImageSource, imageSource));
 
   useEffect(() => {
-    setSrc(displayImageSource || imageSource || "");
-    setLoaded(false);
+    const nextSrc = displayImageSource || imageSource || "";
+    setSrc(nextSrc);
+    setLoaded(hasLoadedImage(nextSrc, imageSource));
   }, [displayImageSource, imageSource]);
 
   useEffect(() => {
     const img = imgRef.current;
     if (img?.complete && img.naturalWidth > 0) {
+      markImageLoaded(src, img.currentSrc, img.src, imageSource);
       setLoaded(true);
     }
-  }, [src]);
+  }, [imageSource, src]);
 
   if (!iconValue) {
     return <span className={cn("text-sm font-semibold text-[var(--theme-text-muted)]", className)}>·</span>;
@@ -171,12 +189,15 @@ export default function HomeNavIcon({
           {...({ fetchpriority: fetchPriority } as Record<string, string>)}
           decoding="async"
           onLoad={(event) => {
-            if (event.currentTarget.naturalWidth > 0) setLoaded(true);
+            if (event.currentTarget.naturalWidth > 0) {
+              markImageLoaded(src, event.currentTarget.currentSrc, event.currentTarget.src, imageSource);
+              setLoaded(true);
+            }
           }}
           onError={() => {
             if (imageSource && src !== imageSource) {
               setSrc(imageSource);
-              setLoaded(false);
+              setLoaded(hasLoadedImage(imageSource));
               return;
             }
             setLoaded(false);

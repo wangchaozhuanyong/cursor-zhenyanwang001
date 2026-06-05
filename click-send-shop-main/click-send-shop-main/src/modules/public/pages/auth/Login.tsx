@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, type KeyboardEvent } from "react";
+import { useState, useEffect, useMemo, useCallback, type CSSProperties, type KeyboardEvent } from "react";
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -109,7 +109,7 @@ export default function Login() {
   const smsOtpLoginEnabled = authFeatures?.smsOtpLoginEnabled === true;
   const effectiveCredentialMode: CredentialMode =
     authFeaturesReady && smsOtpLoginEnabled ? credentialMode : "password";
-  const { formCompact } = useFormFieldFocus();
+  const { formCompact, keyboardOpen, keyboardInset, visualViewportHeight } = useFormFieldFocus();
   const showHomeTrustBar = isHomeModuleEnabled(homeModules, "trust_bar", "guest");
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
@@ -458,8 +458,41 @@ export default function Login() {
     setDevResetToken("");
   };
 
+  const authShellStyle = useMemo(() => ({
+    "--auth-keyboard-inset": `${Math.max(0, Math.round(keyboardInset))}px`,
+    "--auth-visual-height": visualViewportHeight > 0 ? `${Math.round(visualViewportHeight)}px` : "100svh",
+  }) as CSSProperties, [keyboardInset, visualViewportHeight]);
+
+  useEffect(() => {
+    if (!keyboardOpen) return;
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement)) return;
+    if (!active.closest(".auth-page-shell")) return;
+
+    const timer = window.setTimeout(() => {
+      const scrollContainer = active.closest("main.auth-page-main");
+      if (!(scrollContainer instanceof HTMLElement)) return;
+
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const activeRect = active.getBoundingClientRect();
+      const targetTop = containerRect.top + Math.min(Math.max(containerRect.height * 0.34, 92), 156);
+      const maxScrollTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+      const nextScrollTop = Math.min(
+        maxScrollTop,
+        Math.max(0, scrollContainer.scrollTop + activeRect.top - targetTop),
+      );
+
+      scrollContainer.scrollTo({ top: nextScrollTop, behavior: "auto" });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [keyboardInset, keyboardOpen]);
+
   return (
-    <div className={STORE_AUTH_SHELL_CLASS}>
+    <div
+      className={STORE_AUTH_SHELL_CLASS}
+      data-keyboard-open={keyboardOpen ? "true" : undefined}
+      style={authShellStyle}
+    >
       <main className={STORE_AUTH_MAIN_CLASS}>
         <div className="auth-login-topbar">
           <button

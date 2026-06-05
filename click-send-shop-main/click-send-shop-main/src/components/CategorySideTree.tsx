@@ -5,6 +5,7 @@ import { isCategoryOrDescendantActive } from "@/utils/categoryTree";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { resolveNavIconThumbUrl } from "@/utils/navIconThumbUrl";
 
 type CategorySideTreeProps = {
   categories: Category[];
@@ -69,7 +70,24 @@ export default function CategorySideTree({
 }: CategorySideTreeProps) {
   const renderCategoryMark = (category: Category) => {
     if (category.icon_url) {
-      return <img src={category.icon_url} alt="" className="mr-1 inline-block h-4 w-4 object-contain align-text-bottom" />;
+      const iconSrc = resolveNavIconThumbUrl(category.icon_url);
+      return (
+        <img
+          src={iconSrc}
+          alt=""
+          width={16}
+          height={16}
+          loading="lazy"
+          decoding="async"
+          className="mr-1 inline-block h-4 w-4 object-contain align-text-bottom"
+          onError={(event) => {
+            if (iconSrc && iconSrc !== category.icon_url && event.currentTarget.dataset.fallbackSrc !== "1") {
+              event.currentTarget.dataset.fallbackSrc = "1";
+              event.currentTarget.src = category.icon_url;
+            }
+          }}
+        />
+      );
     }
     if (category.icon) return <span className="mr-1">{category.icon}</span>;
     return null;

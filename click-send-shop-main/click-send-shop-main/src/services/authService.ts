@@ -195,17 +195,16 @@ async function hasServerSession(): Promise<boolean> {
 async function restoreSessionFromCookieOnce(): Promise<boolean> {
   const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
   try {
-    if (!(await hasServerSession())) {
-      clearTokens();
-      return false;
-    }
+    // Refresh cookies are path-scoped to /api/auth/refresh, so /auth/session
+    // can be false after the short-lived access cookie expires.
+    const serverSessionAvailable = await hasServerSession();
 
     const refreshRes = await refreshSessionToken(baseUrl);
     if (!refreshRes.ok) {
       if (refreshRes.status === 429 || refreshRes.status >= 500) {
         return true;
       }
-      if (await canUseExistingSession()) {
+      if (serverSessionAvailable && await canUseExistingSession()) {
         return true;
       }
       clearTokens();

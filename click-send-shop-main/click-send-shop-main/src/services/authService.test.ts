@@ -105,7 +105,7 @@ describe("restoreSessionFromCookie", () => {
     expect(localStorage.getItem("user_authenticated")).toBeNull();
   });
 
-  test("clears stale login hint without refresh/profile when server has no session", async () => {
+  test("refreshes when session endpoint cannot see path-scoped refresh cookie", async () => {
     localStorage.setItem("user_authenticated", "1");
     const calls: string[] = [];
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
@@ -114,13 +114,41 @@ describe("restoreSessionFromCookie", () => {
       if (url.endsWith("/auth/session")) {
         return jsonResponse({ code: 0, data: { authenticated: false } });
       }
+      if (url.endsWith("/auth/refresh")) {
+        return jsonResponse({ code: 0, data: { accessToken: "refreshed-token" } });
+      }
+      if (url.endsWith("/user/profile")) {
+        return jsonResponse({ code: 0, data: profilePayload });
+      }
+      return jsonResponse({}, 404);
+    }));
+
+    await expect(restoreSessionFromCookie()).resolves.toBe(true);
+    expect(localStorage.getItem("user_authenticated")).toBe("1");
+    expect(calls.filter((url) => url.endsWith("/auth/session"))).toHaveLength(1);
+    expect(calls.filter((url) => url.endsWith("/auth/refresh"))).toHaveLength(1);
+    expect(calls.filter((url) => url.endsWith("/user/profile"))).toHaveLength(1);
+  });
+
+  test("clears stale login hint when server session and refresh are both invalid", async () => {
+    localStorage.setItem("user_authenticated", "1");
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.endsWith("/auth/session")) {
+        return jsonResponse({ code: 0, data: { authenticated: false } });
+      }
+      if (url.endsWith("/auth/refresh")) {
+        return jsonResponse({ code: 401, message: "璇峰厛鐧诲綍" }, 401);
+      }
       return jsonResponse({}, 404);
     }));
 
     await expect(restoreSessionFromCookie()).resolves.toBe(false);
     expect(localStorage.getItem("user_authenticated")).toBeNull();
     expect(calls.filter((url) => url.endsWith("/auth/session"))).toHaveLength(1);
-    expect(calls.some((url) => url.endsWith("/auth/refresh"))).toBe(false);
+    expect(calls.filter((url) => url.endsWith("/auth/refresh"))).toHaveLength(1);
     expect(calls.some((url) => url.endsWith("/user/profile"))).toBe(false);
   });
 });

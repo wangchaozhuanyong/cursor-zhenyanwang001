@@ -12,6 +12,8 @@ set -euo pipefail
 #   DEPLOY_LOCK_FILE=/var/www/click-send-shop/.deploy.lock
 #   LIVE_RETRY_ATTEMPTS=5
 #   LIVE_RETRY_DELAY_SEC=1
+#   CPU_SAMPLE_ATTEMPTS=3
+#   CPU_SAMPLE_INTERVAL_SEC=1
 #   HEALTH_ALERT_WEBHOOK_URL=https://example.com/webhook
 
 API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:3001}"
@@ -24,6 +26,8 @@ DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE:-${PROJECT_ROOT}/.deploy.lock}"
 
 LIVE_RETRY_ATTEMPTS="${LIVE_RETRY_ATTEMPTS:-5}"
 LIVE_RETRY_DELAY_SEC="${LIVE_RETRY_DELAY_SEC:-1}"
+CPU_SAMPLE_ATTEMPTS="${CPU_SAMPLE_ATTEMPTS:-3}"
+CPU_SAMPLE_INTERVAL_SEC="${CPU_SAMPLE_INTERVAL_SEC:-1}"
 READY_FAIL_THRESHOLD="${READY_FAIL_THRESHOLD:-3}"
 MAX_5XX_RATE_PERCENT="${MAX_5XX_RATE_PERCENT:-1}"
 MAX_API_LATENCY_SEC="${MAX_API_LATENCY_SEC:-2}"
@@ -79,6 +83,37 @@ check_live() {
     fi
   done
   return 1
+}
+
+read_cpu_used_percent() {
+  local interval="${1:-1}"
+  if [[ -r /proc/stat ]]; then
+    local idle1 total1 idle2 total2
+    read -r idle1 total1 < <(awk '/^cpu / { idle=$5+$6; total=0; for(i=2;i<=NF;i++) total+=$i; print idle, total; exit }' /proc/stat)
+    sleep "${interval}"
+    read -r idle2 total2 < <(awk '/^cpu / { idle=$5+$6; total=0; for(i=2;i<=NF;i++) total+=$i; print idle, total; exit }' /proc/stat)
+    awk -v idle1="${idle1}" -v total1="${total1}" -v idle2="${idle2}" -v total2="${total2}" '
+      BEGIN {
+        total_delta = total2 - total1;
+        idle_delta = idle2 - idle1;
+        if (total_delta <= 0) exit 1;
+        used = (1 - idle_delta / total_delta) * 100;
+        if (used < 0) used = 0;
+        if (used > 100) used = 100;
+        printf "%.0f", used;
+      }'
+    return
+  fi
+
+  top -bn1 | awk -F',' '/Cpu\(s\)/ {
+    for(i=1;i<=NF;i++){
+      if($i ~ / id/){
+        gsub(/[^0-9.]/,"",$i);
+        printf "%.0f", 100-$i;
+        exit
+      }
+    }
+  }'
 }
 
 format_cn_time() {
@@ -239,16 +274,25 @@ else
   ok "内存使用率 ${mem_used}% <= ${MAX_MEM_PERCENT}%"
 fi
 
-cpu_idle="$(top -bn1 | awk -F',' '/Cpu\(s\)/ {for(i=1;i<=NF;i++){if($i ~ / id/){gsub(/[^0-9.]/,"",$i); print $i; exit}}}')"
-if [[ -n "${cpu_idle}" ]]; then
-  cpu_used="$(awk -v idle="${cpu_idle}" 'BEGIN{printf "%.0f", 100-idle}')"
-  if [[ "${cpu_used}" -gt "${MAX_CPU_PERCENT}" ]]; then
-    alert "CPU 使用率 ${cpu_used}% > ${MAX_CPU_PERCENT}%"
+cpu_values=()
+for ((i = 1; i <= CPU_SAMPLE_ATTEMPTS; i += 1)); do
+  cpu_used="$(read_cpu_used_percent "${CPU_SAMPLE_INTERVAL_SEC}" || true)"
+  if [[ -n "${cpu_used}" ]]; then
+    cpu_values+=("${cpu_used}")
+  fi
+done
+if (( ${#cpu_values[@]} > 0 )); then
+  cpu_avg="$(printf '%s\n' "${cpu_values[@]}" | awk '{sum+=$1} END{printf "%.0f", sum/NR}')"
+  cpu_max="$(printf '%s\n' "${cpu_values[@]}" | awk 'BEGIN{max=0} {if($1>max)max=$1} END{printf "%.0f", max}')"
+  cpu_samples="$(IFS=,; echo "${cpu_values[*]}")"
+  cpu_over="$(awk -v x="${cpu_avg}" -v t="${MAX_CPU_PERCENT}" 'BEGIN{if(x>t)print 1; else print 0}')"
+  if [[ "${cpu_over}" == "1" ]]; then
+    alert "CPU 平均使用率 ${cpu_avg}% > ${MAX_CPU_PERCENT}%（样本=${cpu_samples}，峰值=${cpu_max}%）"
   else
-    ok "CPU 使用率 ${cpu_used}% <= ${MAX_CPU_PERCENT}%"
+    ok "CPU 平均使用率 ${cpu_avg}% <= ${MAX_CPU_PERCENT}%（样本=${cpu_samples}，峰值=${cpu_max}%）"
   fi
 else
-  warn "无法从 top 输出解析 CPU 使用率"
+  warn "无法采样 CPU 使用率"
 fi
 
 echo "== 检查结果 =="

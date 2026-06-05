@@ -397,6 +397,11 @@ export default defineConfig(({ mode, command }) => {
           {
             urlPattern: ({ request }) => request.mode === "navigate",
             handler: "NetworkOnly",
+            options: {
+              precacheFallback: {
+                fallbackURL: "/offline.html",
+              },
+            },
           },
           {
             urlPattern: ({ url, request }) =>

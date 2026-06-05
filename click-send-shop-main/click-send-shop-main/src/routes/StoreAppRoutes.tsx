@@ -375,10 +375,12 @@ function MainStoreRoutes() {
               <CookieConsentBanner />
             </Suspense>
           </DeferredGlobalMount>
+          <Suspense fallback={null}>
+            <PwaUpdateToast />
+          </Suspense>
           <DeferredGlobalMount>
             <Suspense fallback={null}>
               {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
-              <PwaUpdateToast />
               <ChinaBrowserCompatNotice />
             </Suspense>
           </DeferredGlobalMount>

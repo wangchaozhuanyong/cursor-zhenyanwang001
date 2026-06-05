@@ -26,11 +26,27 @@ interface BannerCarouselProps {
 
 const AUTO_ROTATE_MS = 4800;
 const USER_INTERACTION_PAUSE_MS = 7200;
+const STATIC_HOME_BANNER_RE = /^(.*\/assets\/home-banners\/home-hero-\d{2}-[^?#]+?)(-mobile)?(\.webp)(\?.*)?$/i;
 
 function resolveBannerLink(link: string): string {
   const value = (link || "").trim();
   if (!value) return "";
   return value;
+}
+
+function getResponsiveBannerImage(image: string): { src: string; srcSet?: string; sizes?: string } {
+  const src = image.trim();
+  const match = src.match(STATIC_HOME_BANNER_RE);
+  if (!match) return { src };
+
+  const [, base, , ext, query = ""] = match;
+  const desktop = `${base}${ext}${query}`;
+  const mobile = `${base}-mobile${ext}${query}`;
+  return {
+    src: desktop,
+    srcSet: `${mobile} 1080w, ${desktop} 1920w`,
+    sizes: "(max-width: 768px) 100vw, 1200px",
+  };
 }
 
 function splitBannerDescription(description: string): { subtitle: string; body: string } {
@@ -66,14 +82,17 @@ export default function BannerCarousel({
   const safeIndex = banners.length > 0 && current < banners.length ? current : 0;
   const banner = banners[safeIndex] ?? null;
   const activeImage = banner?.image?.trim() || "";
+  const responsiveImage = getResponsiveBannerImage(activeImage);
   const nextBannerImage = banners.length > 1
     ? banners[(safeIndex + 1) % banners.length]?.image?.trim() || ""
     : "";
   const [activeImageLoaded, setActiveImageLoaded] = useState(false);
+  const [activeImageFailed, setActiveImageFailed] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
   const [manualPauseUntil, setManualPauseUntil] = useState(0);
   const [hoverPaused, setHoverPaused] = useState(false);
   const navigate = useNavigate();
+  const activeImageReady = !activeImage || activeImageLoaded || activeImageFailed;
 
   const goTo = useCallback((index: number, userDriven = false) => {
     setCurrent(index);
@@ -90,6 +109,7 @@ export default function BannerCarousel({
 
   useEffect(() => {
     setActiveImageLoaded(false);
+    setActiveImageFailed(false);
   }, [activeImage]);
 
   useEffect(() => {
@@ -98,7 +118,12 @@ export default function BannerCarousel({
       const img = new Image();
       img.decoding = "async";
       (img as HTMLImageElement & { fetchPriority?: "low" }).fetchPriority = "low";
-      img.src = nextBannerImage;
+      const nextResponsiveImage = getResponsiveBannerImage(nextBannerImage);
+      if (nextResponsiveImage.srcSet) {
+        img.srcset = nextResponsiveImage.srcSet;
+        img.sizes = nextResponsiveImage.sizes || "100vw";
+      }
+      img.src = nextResponsiveImage.src;
     }, 800);
     return () => window.clearTimeout(timer);
   }, [activeImage, nextBannerImage]);
@@ -196,14 +221,16 @@ export default function BannerCarousel({
       <div className="absolute inset-0">
         <div
           className={`absolute inset-0 skeleton-base skeleton-shimmer transition-opacity duration-300 ${
-            activeImageLoaded ? "opacity-0" : "opacity-100"
+            activeImageReady ? "opacity-0" : "opacity-100"
           }`}
           aria-hidden
         />
         {activeImage ? (
           <img
             key={banner.id || activeImage || safeIndex}
-            src={activeImage}
+            src={responsiveImage.src}
+            srcSet={responsiveImage.srcSet}
+            sizes={responsiveImage.sizes}
             alt={bannerTitle || fallbackLabel}
             width={BANNER_IMAGE_WIDTH}
             height={BANNER_IMAGE_HEIGHT}
@@ -218,7 +245,14 @@ export default function BannerCarousel({
               transform: activeImageLoaded ? "translate3d(0, 0, 0) scale(1)" : "translate3d(0, 8px, 0) scale(1.018)",
             }}
             onLoad={(event) => {
-              if (event.currentTarget.naturalWidth > 0) setActiveImageLoaded(true);
+              if (event.currentTarget.naturalWidth > 0) {
+                setActiveImageLoaded(true);
+                setActiveImageFailed(false);
+              }
+            }}
+            onError={() => {
+              setActiveImageLoaded(false);
+              setActiveImageFailed(true);
             }}
           />
         ) : null}
@@ -232,8 +266,8 @@ export default function BannerCarousel({
               key={`copy-${banner.id || safeIndex}`}
               className="store-hero-copy-panel"
               style={motionEnabled ? {
-                opacity: activeImageLoaded ? 1 : 0,
-                transform: activeImageLoaded ? "translate3d(0, 0, 0)" : "translate3d(-10px, 0, 0)",
+                opacity: 1,
+                transform: activeImageReady ? "translate3d(0, 0, 0)" : "translate3d(-6px, 0, 0)",
                 transition: "opacity 420ms ease-out, transform 420ms ease-out",
               } : undefined}
             >

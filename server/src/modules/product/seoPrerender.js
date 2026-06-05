@@ -290,13 +290,13 @@ function buildTikTokPayload(baseUrl, siteInfo) {
   const landingUrl = `${baseUrl}/tiktok`;
   const siteName = resolveSiteName(siteInfo);
   const image = resolveTikTokOgImage(baseUrl, siteInfo);
-  const description = `${siteName}为 TikTok 用户提供马来西亚找房安家、留学陪读、签证咨询、本地办事、维修搬家和商务资源入口。`;
+  const description = `${siteName}提供马来西亚找房安家、留学陪读、签证咨询、本地办事、维修搬家和商务资源导航。`;
   return {
     ...basePayload,
-    title: `${siteName} TikTok 用户入口 | 马来西亚生活服务导航`,
+    title: `${siteName} | 马来西亚生活服务导航`,
     description,
-    keywords: `${siteName},TikTok,马来西亚生活服务,马来西亚找房,马来西亚留学,马来西亚签证`,
-    ogTitle: `${siteName} TikTok 用户入口`,
+    keywords: `${siteName},马来西亚生活服务,马来西亚找房,马来西亚留学,马来西亚签证`,
+    ogTitle: `${siteName} | 马来西亚生活服务导航`,
     ogDescription: description,
     ogImage: image,
     twitterImage: image,
@@ -304,7 +304,7 @@ function buildTikTokPayload(baseUrl, siteInfo) {
     ogUrl: landingUrl,
     robots: 'index,nofollow',
     googleSiteVerification: '',
-    prerenderH1: `${siteName} TikTok 用户入口`,
+    prerenderH1: `${siteName}生活服务导航`,
     prerenderText: description,
     jsonLd: [],
   };

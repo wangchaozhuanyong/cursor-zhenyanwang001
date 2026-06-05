@@ -226,8 +226,8 @@ function upsertMeta(selector: string, attributes: Record<string, string>) {
 }
 
 function syncTikTokHead(brandLogoSrc: string) {
-  const title = "大马通 TikTok 用户入口 | 马来西亚生活服务导航";
-  const description = "从 TikTok 来到大马通，快速查看找房安家、留学陪读、签证咨询、本地办事、维修搬家和商务资源。";
+  const title = "大马通 | 马来西亚生活服务导航";
+  const description = "在大马通快速查看找房安家、留学陪读、签证咨询、本地办事、维修搬家和商务资源。";
 
   document.title = title;
 
@@ -254,7 +254,7 @@ function syncTikTokHead(brandLogoSrc: string) {
   upsertMeta("meta[name='description']", { name: "description", content: description });
   upsertMeta("meta[name='keywords']", {
     name: "keywords",
-    content: "大马通 TikTok,马来西亚生活服务,马来西亚找房,马来西亚留学,马来西亚签证",
+    content: "大马通,马来西亚生活服务,马来西亚找房,马来西亚留学,马来西亚签证",
   });
   upsertMeta("meta[property='og:title']", { property: "og:title", content: title });
   upsertMeta("meta[property='og:description']", { property: "og:description", content: description });
@@ -419,7 +419,7 @@ export default function TikTokLanding() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6 lg:h-20 lg:px-8">
           <BrandMark brandLogoSrc={brandLogoSrc} />
 
-          <nav className="hidden items-center gap-8 lg:flex" aria-label="TikTok 页面导航">
+          <nav className="hidden items-center gap-8 lg:flex" aria-label="页面导航">
             {navItems.map((item, index) => (
               <UnifiedButton
                 key={item.label}

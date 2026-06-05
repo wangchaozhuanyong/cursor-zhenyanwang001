@@ -4,6 +4,7 @@ import { Tx } from "@/components/admin/AdminText";
 import { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import {
+  Check,
   ChevronDown,
   ChevronRight,
   Eye,
@@ -14,6 +15,7 @@ import {
   Plus,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -36,6 +38,7 @@ import {
   THEME_BADGE_SUCCESS,
   THEME_HOVER_BG_DANGER,
   THEME_HOVER_TEXT_DANGER,
+  THEME_TEXT_SUCCESS_SOFT,
 } from "@/utils/themeVisuals";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -725,7 +728,7 @@ export default function AdminCategories() {
                 drawerMode === "edit" ? editingId || undefined : undefined,
               )}
               onChange={updateDrawerForm}
-              onUpload={(file) => void uploadIcon(file, drawerMode)}
+              onUpload={(file) => void uploadIcon(file, drawerMode === "edit" ? "edit" : "create")}
             />
           </form>
         ) : null}
@@ -861,7 +864,7 @@ export default function AdminCategories() {
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                   {renderIcon(cat)}
                 </div>
-                {isEditing ? (
+                {isEditing && !drawerMode ? (
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="grid gap-2 md:grid-cols-[1fr_80px_1fr]">
                       <input
@@ -926,7 +929,7 @@ export default function AdminCategories() {
                   {cat.is_visible === false ? "隐藏" : "显示"}
                 </UnifiedButton>
               </PermissionGate>
-              {isEditing ? (
+              {isEditing && !drawerMode ? (
                 <input
                   type="number"
                   value={editData.sort_order}
@@ -937,7 +940,7 @@ export default function AdminCategories() {
                 <span className="text-xs text-muted-foreground">{cat.sort_order ?? 0}</span>
               )}
               <div className="flex justify-center gap-1">
-                {isEditing ? (
+                {isEditing && !drawerMode ? (
                   <>
                     <PermissionGate permission="category.manage">
                       <UnifiedButton onClick={() => handleEditSave(cat.id)} className={`rounded-md p-1.5 hover:bg-[color-mix(in_srgb,var(--theme-success)_10%,var(--theme-surface))] ${THEME_TEXT_SUCCESS_SOFT}`}>

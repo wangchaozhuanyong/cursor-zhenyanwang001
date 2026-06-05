@@ -1,22 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import {
-  Check,
   ChevronDown,
   ChevronRight,
   Eye,
   EyeOff,
   GripVertical,
   Image as ImageIcon,
-  Loader2,
   Pencil,
   Plus,
   Trash2,
   Upload,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -28,6 +25,7 @@ import { iconMatteProgressToast, iconMatteSuccessToast } from "@/utils/iconMatte
 import type { Category } from "@/types/category";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
+import { AdminSideDrawer } from "@/modules/admin/components/AdminSideDrawer";
 import { useAdminT } from "@/hooks/useAdminT";
 import {
   ADMIN_TABLE_ALIGN_LEFT_CLASS,
@@ -38,7 +36,6 @@ import {
   THEME_BADGE_SUCCESS,
   THEME_HOVER_BG_DANGER,
   THEME_HOVER_TEXT_DANGER,
-  THEME_TEXT_SUCCESS_SOFT,
 } from "@/utils/themeVisuals";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -62,6 +59,8 @@ type FlatCategory = Category & {
   level: number;
   children: Category[];
 };
+
+type CategoryDrawerMode = "create" | "edit";
 
 const EMPTY_FORM: CategoryForm = {
   name: "",
@@ -184,7 +183,7 @@ function CategoryContentFields({
   onChange: (patch: Partial<CategoryForm>) => void;
 }) {
   return (
-    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+    <div className="grid gap-3 xl:grid-cols-2">
       <div>
         <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类介绍</Tx></label>
         <textarea
@@ -236,6 +235,140 @@ function CategoryContentFields({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function CategoryIconPreview({ value }: { value: CategoryForm }) {
+  const iconUrl = value.icon_url.trim();
+  const icon = value.icon.trim();
+  if (iconUrl) return <img src={iconUrl} alt="" className="h-full w-full object-contain object-center" />;
+  if (icon) return <span className="text-2xl leading-none">{icon}</span>;
+  return <ImageIcon size={22} className="text-muted-foreground" />;
+}
+
+function CategoryDrawerSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>{title}</Tx></h3>
+      {children}
+    </section>
+  );
+}
+
+function CategoryDrawerFields({
+  mode,
+  value,
+  parentControl,
+  onChange,
+  onUpload,
+}: {
+  mode: CategoryDrawerMode;
+  value: CategoryForm;
+  parentControl: ReactNode;
+  onChange: (patch: Partial<CategoryForm>) => void;
+  onUpload: (file: File) => void;
+}) {
+  const previewName = value.name.trim() || (mode === "create" ? "新分类" : "未命名分类");
+  const statusClass = value.is_visible ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED;
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl border border-[var(--theme-primary)]/18 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface)),var(--theme-surface))] p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-background">
+            <CategoryIconPreview value={value} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-semibold text-foreground">{previewName}</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              {mode === "create" ? "从右侧新增分类，保存后会同步到前台分类入口。" : "正在编辑分类资料，保存后会刷新后台列表和前台分类缓存。"}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ${statusClass}`}>
+                {value.is_visible ? <Eye size={12} /> : <EyeOff size={12} />}
+                {value.is_visible ? "前台显示" : "前台隐藏"}
+              </span>
+              <span className="inline-flex rounded-full bg-secondary px-2.5 py-1 text-xs text-muted-foreground">
+                排序 {Number(value.sort_order || 0)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <CategoryDrawerSection title="基础设置">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="space-y-1 sm:col-span-2">
+            <span className="text-xs font-medium text-muted-foreground"><Tx>分类名称</Tx></span>
+            <input
+              value={value.name}
+              onChange={(e) => onChange({ name: e.target.value })}
+              placeholder="输入分类名称"
+              autoFocus
+              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)]"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground"><Tx>父级分类</Tx></span>
+            {parentControl}
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground"><Tx>排序</Tx></span>
+            <input
+              type="number"
+              value={value.sort_order}
+              onChange={(e) => onChange({ sort_order: Number(e.target.value) })}
+              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)]"
+            />
+          </label>
+          <label className="flex h-11 items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 text-sm text-foreground sm:col-span-2">
+            <span><Tx>前台显示</Tx></span>
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-gold"
+              checked={value.is_visible}
+              onChange={(e) => onChange({ is_visible: e.target.checked })}
+            />
+          </label>
+        </div>
+      </CategoryDrawerSection>
+
+      <CategoryDrawerSection title="图标设置">
+        <div className="grid gap-3 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-end">
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground"><Tx>符号图标</Tx></span>
+            <input
+              value={value.icon}
+              onChange={(e) => onChange({ icon: e.target.value })}
+              placeholder="如 🧾"
+              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)]"
+            />
+          </label>
+          <div className="space-y-1">
+            <AdminLabelWithHint
+              label={<Tx>图标 URL</Tx>}
+              hint={<Tx>建议上传 128x128 正方形透明图；不透明图片会自动尝试抠图。</Tx>}
+            />
+            <div className="flex gap-2">
+              <input
+                value={value.icon_url}
+                onChange={(e) => onChange({ icon_url: e.target.value })}
+                placeholder="粘贴 URL 或上传图片"
+                className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)]"
+              />
+              <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:bg-secondary hover:text-foreground">
+                <Upload size={16} />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
+              </label>
+            </div>
+          </div>
+        </div>
+      </CategoryDrawerSection>
+
+      <CategoryDrawerSection title="前台内容与 SEO">
+        <CategoryContentFields value={value} onChange={onChange} />
+      </CategoryDrawerSection>
     </div>
   );
 }
@@ -314,6 +447,13 @@ export default function AdminCategories() {
     });
   };
 
+  const openCreateForm = () => {
+    setEditingId(null);
+    setEditData(EMPTY_FORM);
+    setFormData(EMPTY_FORM);
+    setShowForm(true);
+  };
+
   const closeCreateForm = () => {
     setShowForm(false);
     setFormData(EMPTY_FORM);
@@ -376,6 +516,8 @@ export default function AdminCategories() {
   };
 
   const startEdit = (cat: Category) => {
+    setShowForm(false);
+    setFormData(EMPTY_FORM);
     setEditingId(cat.id);
     setEditData({
       name: cat.name,
@@ -482,7 +624,7 @@ export default function AdminCategories() {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="min-w-[180px] rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
+      className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)]"
     >
       <option value=""><Tx>一级分类</Tx></option>
       {parentOptions

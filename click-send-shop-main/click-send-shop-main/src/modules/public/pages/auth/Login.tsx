@@ -475,9 +475,6 @@ export default function Login() {
             <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
               {mode === "login" ? "欢迎回来" : "创建账号"}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {mode === "login" ? "登录账号，继续选购好物" : "注册账号，开启品质购物"}
-            </p>
           </section>
         </div>
 

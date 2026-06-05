@@ -2177,7 +2177,7 @@ html[data-app-scope="store"] .store-bottom-nav-badge-bump {
 
 html[data-app-scope="store"] .store-home-main {
   --store-home-hero-gap: clamp(0.7rem, 1.4vw, 1.05rem);
-  --store-home-hero-top-gap: calc(var(--store-home-hero-gap) + 2px);
+  --store-home-hero-top-gap: var(--store-home-hero-gap);
   position: relative;
 }
 

@@ -638,13 +638,35 @@ export default function AdminCategories() {
     </select>
   );
 
+  const drawerMode: CategoryDrawerMode | null = editingId ? "edit" : showForm ? "create" : null;
+  const drawerForm = drawerMode === "edit" ? editData : formData;
+  const drawerTitle = drawerMode === "edit" ? tText("编辑分类") : tText("新增分类");
+  const drawerDescription = drawerMode === "edit"
+    ? tText("从右侧维护分类资料，列表保持稳定，保存后立即刷新。")
+    : tText("从右侧新增分类，适合补充图标、排序和前台说明。");
+
+  const updateDrawerForm = (patch: Partial<CategoryForm>) => {
+    if (drawerMode === "edit") setEditData((prev) => ({ ...prev, ...patch }));
+    else setFormData((prev) => ({ ...prev, ...patch }));
+  };
+
+  const closeCategoryDrawer = () => {
+    if (drawerMode === "edit") closeEditForm();
+    else closeCreateForm();
+  };
+
+  const submitCategoryDrawer = () => {
+    if (drawerMode === "edit" && editingId) return handleEditSave(editingId);
+    return handleAdd();
+  };
+
   return (
     <AdminPageShell
       hint={<Tx>支持最多 3 级分类；有子分类或已关联商品的分类禁止删除。</Tx>}
       toolbar={(
         <PermissionGate permission="category.manage">
           <UnifiedButton
-            onClick={() => (showForm ? closeCreateForm() : setShowForm(true))}
+            onClick={openCreateForm}
             className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             <Plus size={16} /><Tx> 新增分类</Tx>
@@ -652,7 +674,64 @@ export default function AdminCategories() {
         </PermissionGate>
       )}
     >
-      {showForm && (
+      <AdminSideDrawer
+        open={Boolean(drawerMode)}
+        onOpenChange={(open) => {
+          if (!open) closeCategoryDrawer();
+        }}
+        title={drawerTitle}
+        description={drawerDescription}
+        className="lg:w-[min(560px,calc(100vw-2rem))] xl:w-[min(640px,calc(100vw-2rem))]"
+        bodyClassName="bg-muted/20"
+        footer={drawerMode ? (
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <UnifiedButton
+              type="button"
+              disabled={saving}
+              onClick={closeCategoryDrawer}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
+            >
+              <Tx>取消</Tx>
+            </UnifiedButton>
+            <PermissionGate permission="category.manage">
+              <LoadingButton
+                type="button"
+                state={saving ? "loading" : "normal"}
+                disabled={saving || !drawerForm.name.trim()}
+                loadingText={drawerMode === "edit" ? "保存中..." : "新增中..."}
+                onClick={() => void submitCategoryDrawer()}
+                className="inline-flex h-11 min-w-32 items-center justify-center rounded-xl bg-gold px-5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                {drawerMode === "edit" ? "保存修改" : "新增分类"}
+              </LoadingButton>
+            </PermissionGate>
+          </div>
+        ) : undefined}
+      >
+        {drawerMode ? (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submitCategoryDrawer();
+            }}
+          >
+            <CategoryDrawerFields
+              mode={drawerMode}
+              value={drawerForm}
+              parentControl={parentSelect(
+                drawerForm.parent_id,
+                (v) => updateDrawerForm({ parent_id: v }),
+                drawerMode === "edit" ? editingId || undefined : undefined,
+              )}
+              onChange={updateDrawerForm}
+              onUpload={(file) => void uploadIcon(file, drawerMode)}
+            />
+          </form>
+        ) : null}
+      </AdminSideDrawer>
+
+      {showForm && !drawerMode && (
         <div className="rounded-xl border border-gold/30 bg-card p-3 sm:p-4">
           <div className="grid gap-3 lg:grid-cols-[1fr_120px_1fr_180px_90px_120px_auto] lg:items-end">
             <div>

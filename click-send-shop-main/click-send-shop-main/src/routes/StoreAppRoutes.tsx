@@ -43,6 +43,7 @@ import {
 
 const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "store-card-equal-mobile-fix";
 const GLOBAL_WIDGET_DELAY_MS = 9000;
+const PRIVACY_TRACKING_DELAY_MS = 1000;
 
 const CookieConsentBanner = lazy(() => import("@/components/CookieConsentBanner"));
 const TrackingManager = lazy(() => import("@/components/TrackingManager"));
@@ -368,13 +369,17 @@ function MainStoreRoutes() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <DeferredGlobalMount>
+          <DeferredGlobalMount delayMs={PRIVACY_TRACKING_DELAY_MS}>
             <Suspense fallback={null}>
               <TrackingManager />
+              <CookieConsentBanner />
+            </Suspense>
+          </DeferredGlobalMount>
+          <DeferredGlobalMount>
+            <Suspense fallback={null}>
               {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
               <PwaUpdateToast />
               <ChinaBrowserCompatNotice />
-              <CookieConsentBanner />
             </Suspense>
           </DeferredGlobalMount>
         </TooltipProvider>

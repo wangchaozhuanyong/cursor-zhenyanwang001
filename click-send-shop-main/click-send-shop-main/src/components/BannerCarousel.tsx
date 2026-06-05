@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowRight } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions/hooks/useMotionConfig";
@@ -27,6 +27,7 @@ interface BannerCarouselProps {
 const AUTO_ROTATE_MS = 4800;
 const USER_INTERACTION_PAUSE_MS = 7200;
 const STATIC_HOME_BANNER_RE = /^(.*\/assets\/home-banners\/home-hero-\d{2}-[^?#]+?)(-mobile)?(\.webp)(\?.*)?$/i;
+const STATIC_HOME_BANNER_VERSION = String(import.meta.env.VITE_STATIC_HOME_BANNER_VERSION || "").trim();
 const loadedBannerImages = new Set<string>();
 
 function getImageCacheKeys(...values: Array<string | undefined | null>): string[] {
@@ -50,14 +51,19 @@ function resolveBannerLink(link: string): string {
   return value;
 }
 
+function appendStaticBannerVersion(url: string): string {
+  if (!STATIC_HOME_BANNER_VERSION || /[?&]hbv=/.test(url)) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}hbv=${encodeURIComponent(STATIC_HOME_BANNER_VERSION)}`;
+}
+
 function getResponsiveBannerImage(image: string): { src: string; srcSet?: string; sizes?: string } {
   const src = image.trim();
   const match = src.match(STATIC_HOME_BANNER_RE);
   if (!match) return { src };
 
   const [, base, , ext, query = ""] = match;
-  const desktop = `${base}${ext}${query}`;
-  const mobile = `${base}-mobile${ext}${query}`;
+  const desktop = appendStaticBannerVersion(`${base}${ext}${query}`);
+  const mobile = appendStaticBannerVersion(`${base}-mobile${ext}${query}`);
   return {
     src: desktop,
     srcSet: `${mobile} 1080w, ${desktop} 1920w`,
@@ -109,6 +115,7 @@ export default function BannerCarousel({
   const [touchStart, setTouchStart] = useState(0);
   const [manualPauseUntil, setManualPauseUntil] = useState(0);
   const [hoverPaused, setHoverPaused] = useState(false);
+  const activeImageRef = useRef<HTMLImageElement | null>(null);
   const navigate = useNavigate();
   const activeImageReady = !activeImage || activeImageLoaded || activeImageFailed;
 
@@ -128,6 +135,26 @@ export default function BannerCarousel({
   useEffect(() => {
     setActiveImageLoaded(hasLoadedImage(activeImage, responsiveImage.src, responsiveImage.srcSet));
     setActiveImageFailed(false);
+  }, [activeImage, responsiveImage.src, responsiveImage.srcSet]);
+
+  useEffect(() => {
+    const img = activeImageRef.current;
+    if (!img || !activeImage) return;
+
+    const markLoadedIfReady = () => {
+      if (!img.complete || img.naturalWidth <= 0) return;
+      markImageLoaded(activeImage, responsiveImage.src, responsiveImage.srcSet, img.currentSrc, img.src);
+      setActiveImageLoaded(true);
+      setActiveImageFailed(false);
+    };
+
+    markLoadedIfReady();
+    const frame = window.requestAnimationFrame(markLoadedIfReady);
+    const timer = window.setTimeout(markLoadedIfReady, 160);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
   }, [activeImage, responsiveImage.src, responsiveImage.srcSet]);
 
   useEffect(() => {
@@ -249,6 +276,7 @@ export default function BannerCarousel({
         {activeImage ? (
           <img
             key={banner.id || activeImage || safeIndex}
+            ref={activeImageRef}
             src={responsiveImage.src}
             srcSet={responsiveImage.srcSet}
             sizes={responsiveImage.sizes}

@@ -187,10 +187,17 @@ export default defineConfig(({ mode, command }) => {
   const isAdminBuild = mode === "admin" || env.VITE_APP_TARGET === "admin";
   const buildOutDir = env.VITE_BUILD_OUT_DIR || (isAdminBuild ? "admin-dist" : "dist");
   const pwaHtmlEntry = isAdminBuild ? "admin-index.html" : "index.html";
+  const staticHomeBannerVersion =
+    env.VITE_STATIC_HOME_BANNER_VERSION
+    || env.GIT_COMMIT
+    || env.CF_PAGES_COMMIT_SHA
+    || env.VERCEL_GIT_COMMIT_SHA
+    || (command === "serve" ? "dev" : "local");
 
   return ({
   define: {
     "import.meta.env.VITE_API_BASE_URL": JSON.stringify(apiBaseUrl),
+    "import.meta.env.VITE_STATIC_HOME_BANNER_VERSION": JSON.stringify(staticHomeBannerVersion),
     "import.meta.env.VITE_THIRD_PARTY_LOGIN_ENABLED": JSON.stringify(
       thirdPartyLoginEnabled ? "true" : "false",
     ),

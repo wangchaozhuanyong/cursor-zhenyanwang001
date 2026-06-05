@@ -13,6 +13,7 @@ import BannerCarousel from "@/components/BannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import HomeOpsBlocks from "./HomeOpsBlocks";
+import MarketingCouponRailSection from "./MarketingCouponRailSection";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import NewArrivalSection from "./NewArrivalOpsSection";
 import HomeHotSalesSection from "./HomeHotSalesSection";
@@ -34,7 +35,6 @@ import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const FlashSaleSection = lazy(() => import("./FlashSaleSection"));
-const MarketingCouponRailSection = lazy(() => import("./MarketingCouponRailSection"));
 const MarketingFullReductionSection = lazy(() => import("./MarketingFullReductionSection"));
 const MarketingPromotionBannerSection = lazy(() => import("./MarketingPromotionBannerSection"));
 const MEMBER_HOME_DEFERRED_DATA_TIMEOUT_MS = 4_500;
@@ -79,13 +79,14 @@ export default function MemberHome() {
   const orders = useOrderStore((s) => s.orders);
   const loadOrders = useOrderStore((s) => s.loadOrders);
   const { banners, loading: bannersLoading } = useHomeBanners();
-  const { settings: homeModules } = useHomeModuleSettings();
+  const { settings: homeModules, ready: homeModulesReady } = useHomeModuleSettings();
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
   const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "member");
   const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "member");
+  const showCouponRail = homeModulesReady && (showCouponCenter || showNewUserGift);
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription =
@@ -226,14 +227,11 @@ export default function MemberHome() {
             <MarketingFullReductionSection delay={0.131} />
           </Suspense>
         ) : null}
-        {showCouponCenter || showNewUserGift ? (
-          <Suspense fallback={null}>
-            <MarketingCouponRailSection
-              delay={0.132}
-              showCouponCenter={showCouponCenter}
-              showNewUserGift={showNewUserGift}
-            />
-          </Suspense>
+        {showCouponRail ? (
+          <MarketingCouponRailSection
+            showCouponCenter={showCouponCenter}
+            showNewUserGift={showNewUserGift}
+          />
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
         <AnimatedSection delay={0.14}>

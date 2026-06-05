@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ADMIN_WORK_TABS_MAX, adminTabPathKey, normalizeAdminTabPath, shouldTrackAdminWorkTab } from "@/config/adminWorkTab";
 import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
 import { useAdminDirtyGuardOptional } from "@/modules/admin/context/AdminDirtyGuardContext";
+import { preloadAdminRoute } from "@/routes/adminLazyPages";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -58,6 +59,7 @@ export function useAdminNavigation() {
         guard.setTabDirty(currentTabId, false);
       }
 
+      void preloadAdminRoute(target.fullPath);
       navigate(to, options);
       return true;
     },

@@ -1,5 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 function loadDashboardServiceWithRepo(repoOverrides = {}) {
   const servicePath = require.resolve('../src/modules/admin/service/adminDashboard.service');
@@ -59,4 +61,54 @@ test('dashboard summary metrics use the selected date range', async () => {
   assert.equal(result.today.paidOrders, 3);
   assert.equal(result.today.orderCount, 5);
   assert.equal(result.today.newUsers, 2);
+});
+
+test('dashboard stats cache reuses reads and separates order permissions', async (t) => {
+  const previousTtl = process.env.ADMIN_DASHBOARD_STATS_CACHE_TTL_MS;
+  process.env.ADMIN_DASHBOARD_STATS_CACHE_TTL_MS = '60000';
+  t.after(() => {
+    if (previousTtl == null) {
+      delete process.env.ADMIN_DASHBOARD_STATS_CACHE_TTL_MS;
+    } else {
+      process.env.ADMIN_DASHBOARD_STATS_CACHE_TTL_MS = previousTtl;
+    }
+  });
+
+  let countOrdersCalls = 0;
+  const { service } = loadDashboardServiceWithRepo({
+    async countOrdersExcludingCancelled() {
+      countOrdersCalls += 1;
+      return countOrdersCalls;
+    },
+  });
+
+  const first = await service.getStats({ range_preset: 'last_7_days' }, { isSuperAdmin: true });
+  const second = await service.getStats({ range_preset: 'last_7_days' }, { isSuperAdmin: true });
+  const noOrderPermission = await service.getStats({ range_preset: 'last_7_days' }, { permissions: [] });
+
+  assert.equal(first.totalOrders, 1);
+  assert.equal(second.totalOrders, 1);
+  assert.equal(noOrderPermission.totalOrders, 2);
+  assert.equal(noOrderPermission.canViewOrders, false);
+  assert.equal(countOrdersCalls, 2);
+
+  service.invalidateDashboardStatsCache();
+  const afterInvalidation = await service.getStats({ range_preset: 'last_7_days' }, { isSuperAdmin: true });
+
+  assert.equal(afterInvalidation.totalOrders, 3);
+});
+
+test('dashboard recent orders query pages ids before reading row details', () => {
+  const source = fs.readFileSync(
+    path.join(__dirname, '../src/modules/admin/repository/adminDashboard.repository.js'),
+    'utf8',
+  );
+  const start = source.indexOf('async function selectRecentOrders');
+  const end = source.indexOf('\nasync function selectAnalyticsMonitor', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const querySource = source.slice(start, end);
+
+  assert.match(querySource, /FROM \(\s*SELECT id, created_at\s*FROM orders\s*ORDER BY created_at DESC\s*LIMIT \?\s*\) recent/i);
+  assert.match(querySource, /INNER JOIN orders o ON o\.id = recent\.id/i);
 });

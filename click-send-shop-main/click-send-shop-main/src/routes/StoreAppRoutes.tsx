@@ -319,12 +319,12 @@ function MainStoreRoutes() {
                 <Route path="/support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><SupportDownload /></CapabilityRoute>} />
                 <Route path="/search" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Search /></CapabilityRoute>} />
                 <Route path="/cart" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Cart /></CapabilityRoute>} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/feedback" element={<Feedback />} />
-            </Route>
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/feedback" element={<Feedback />} />
+                <Route path="/product/:id" element={<CapabilityRoute enabled={capabilities.mallEnabled}><ProductDetail /></CapabilityRoute>} />
+              </Route>
 
-              <Route path="/product/:id" element={<CapabilityRoute enabled={capabilities.mallEnabled}><ProductDetail /></CapabilityRoute>} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Login />} />
               <Route path="/login/bind-phone" element={<BindWechatPhone />} />
@@ -375,9 +375,11 @@ function MainStoreRoutes() {
               <CookieConsentBanner />
             </Suspense>
           </DeferredGlobalMount>
-          <Suspense fallback={null}>
-            <PwaUpdateToast />
-          </Suspense>
+          <DeferredGlobalMount>
+            <Suspense fallback={null}>
+              <PwaUpdateToast />
+            </Suspense>
+          </DeferredGlobalMount>
           <DeferredGlobalMount>
             <Suspense fallback={null}>
               {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}

@@ -239,7 +239,14 @@ async function selectLowStockProducts(limit = 10) {
 async function selectRecentOrders(limit = 5) {
   const [rows] = await db.query(
     `SELECT o.id, o.order_no, o.contact_name, o.total_amount, o.status, o.created_at
-     FROM orders o ORDER BY o.created_at DESC LIMIT ?`,
+     FROM (
+       SELECT id, created_at
+       FROM orders
+       ORDER BY created_at DESC
+       LIMIT ?
+     ) recent
+     INNER JOIN orders o ON o.id = recent.id
+     ORDER BY recent.created_at DESC`,
     [limit],
   );
   return rows;

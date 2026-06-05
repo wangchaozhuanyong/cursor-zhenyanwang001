@@ -14,9 +14,9 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const P0_SOUND_PLAYED_KEY = "admin_event_p0_sound_played_ids";
 const MAX_SOUND_PLAYED_IDS = 300;
-const SUMMARY_POLL_MS = 30_000;
-const EVENT_LIST_POLL_MS = 30_000;
-const P0_SOUND_POLL_MS = 15_000;
+const SUMMARY_POLL_MS = 60_000;
+const EVENT_LIST_POLL_MS = 60_000;
+const P0_SOUND_POLL_MS = 30_000;
 
 const tabs = [
   { key: "all", label: "全部" },

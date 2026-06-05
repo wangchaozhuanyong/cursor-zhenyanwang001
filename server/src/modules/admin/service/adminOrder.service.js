@@ -222,7 +222,7 @@ async function buildAdminOrderListWhere(query) {
       .catch(() => ({ enabled: false, minutes: 120 }));
     const thresholdMinutes = enabled ? Math.max(1, Number(minutes || 30)) : 120;
     where += ` AND o.status = 'pending'
-      AND COALESCE(o.payment_status, 'pending') = 'pending'
+      AND (o.payment_status = 'pending' OR o.payment_status IS NULL)
       AND o.created_at < DATE_SUB(NOW(), INTERVAL ? MINUTE)`;
     params.push(thresholdMinutes);
   }

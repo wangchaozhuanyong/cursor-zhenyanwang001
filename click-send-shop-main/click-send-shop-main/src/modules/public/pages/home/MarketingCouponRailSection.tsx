@@ -5,11 +5,11 @@ import PremiumCouponCard from "@/components/PremiumCouponCard";
 import { ensureStoreSession } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCouponStore } from "@/stores/useCouponStore";
-import { AnimatedSection } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as homeService from "@/services/homeService";
 import * as marketingService from "@/services/marketingService";
+import type { HomeBootstrap } from "@/services/homeService";
 import type { CouponCenterPayload, CouponZonePayload, NewUserGiftPayload } from "@/services/marketingService";
 import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import {
@@ -17,6 +17,7 @@ import {
   summarizeHomeCouponState,
   type HomeCouponCardItem,
 } from "@/utils/homeCouponPresentation";
+import { hasHomeCouponMarketingPayload } from "@/utils/homeCouponMarketing";
 import {
   THEME_GIFT_BADGE_SHELL,
   THEME_INVITE_PROMO_CTA,
@@ -29,8 +30,51 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 type CouponSource = "couponCenter" | "newUserGift" | "couponZone";
 type CouponRailItem = HomeCouponCardItem & { source: CouponSource; railKey: string };
 
+type CouponMarketingState = {
+  couponCenter: CouponCenterPayload | null;
+  newUserGift: NewUserGiftPayload | null;
+  couponZone: CouponZonePayload | null;
+  ready: boolean;
+};
+
+const EMPTY_COUPON_MARKETING_STATE: CouponMarketingState = {
+  couponCenter: null,
+  newUserGift: null,
+  couponZone: null,
+  ready: false,
+};
+
+function buildCouponMarketingState(
+  bootstrap: HomeBootstrap | null,
+  showCouponCenter: boolean,
+  showNewUserGift: boolean,
+): CouponMarketingState {
+  return {
+    couponZone: (showCouponCenter || showNewUserGift)
+      ? (bootstrap?.marketing?.couponZone as CouponZonePayload | null) ?? null
+      : null,
+    couponCenter: showCouponCenter
+      ? (bootstrap?.marketing?.couponCenter as CouponCenterPayload | null) ?? null
+      : null,
+    newUserGift: showNewUserGift
+      ? (bootstrap?.marketing?.newUserGift as NewUserGiftPayload | null) ?? null
+      : null,
+    ready: Boolean(bootstrap),
+  };
+}
+
+function readCachedCouponMarketingState(
+  showCouponCenter: boolean,
+  showNewUserGift: boolean,
+): CouponMarketingState {
+  return buildCouponMarketingState(
+    homeService.getCachedHomeBootstrap(),
+    showCouponCenter,
+    showNewUserGift,
+  );
+}
+
 export default function MarketingCouponRailSection({
-  delay = 0,
   showCouponCenter,
   showNewUserGift,
 }: {
@@ -43,30 +87,28 @@ export default function MarketingCouponRailSection({
   const coupons = useCouponStore((s) => s.coupons);
   const loadCoupons = useCouponStore((s) => s.loadCoupons);
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
-  const [couponCenter, setCouponCenter] = useState<CouponCenterPayload | null>(null);
-  const [newUserGift, setNewUserGift] = useState<NewUserGiftPayload | null>(null);
-  const [couponZone, setCouponZone] = useState<CouponZonePayload | null>(null);
+  const shouldLoadMarketing = showCouponCenter || showNewUserGift;
+  const [marketingState, setMarketingState] = useState<CouponMarketingState>(() =>
+    readCachedCouponMarketingState(showCouponCenter, showNewUserGift),
+  );
   const [claimingKey, setClaimingKey] = useState<string | null>(null);
   const [couponStateReady, setCouponStateReady] = useState(false);
 
   useEffect(() => {
+    if (!shouldLoadMarketing) {
+      setMarketingState({ ...EMPTY_COUPON_MARKETING_STATE, ready: true });
+      return;
+    }
+
     let cancelled = false;
-    const cached = homeService.getCachedHomeBootstrap();
-    if ((showCouponCenter || showNewUserGift) && cached?.marketing?.couponZone) {
-      setCouponZone(cached.marketing.couponZone as CouponZonePayload);
-    }
-    if (showCouponCenter && cached?.marketing?.couponCenter) {
-      setCouponCenter(cached.marketing.couponCenter as CouponCenterPayload);
-    }
-    if (showNewUserGift && cached?.marketing?.newUserGift) {
-      setNewUserGift(cached.marketing.newUserGift as NewUserGiftPayload);
-    }
+    const cachedState = readCachedCouponMarketingState(showCouponCenter, showNewUserGift);
+    setMarketingState(cachedState.ready ? cachedState : EMPTY_COUPON_MARKETING_STATE);
 
     void (async () => {
       const bootstrap = await homeService.fetchHomeBootstrap().catch(() => null);
       if (cancelled) return;
 
-      const nextCouponZone = (showCouponCenter || showNewUserGift)
+      const nextCouponZone = shouldLoadMarketing
         ? (bootstrap?.marketing?.couponZone as CouponZonePayload | null) ?? await marketingService.fetchCouponZone().catch(() => null)
         : null;
       const nextCouponCenter = showCouponCenter && !nextCouponZone
@@ -77,15 +119,18 @@ export default function MarketingCouponRailSection({
         : null;
 
       if (cancelled) return;
-      setCouponZone(nextCouponZone);
-      setCouponCenter(nextCouponCenter);
-      setNewUserGift(nextNewUserGift);
+      setMarketingState({
+        couponZone: nextCouponZone,
+        couponCenter: nextCouponCenter,
+        newUserGift: nextNewUserGift,
+        ready: true,
+      });
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [showCouponCenter, showNewUserGift]);
+  }, [shouldLoadMarketing, showCouponCenter, showNewUserGift]);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,6 +160,12 @@ export default function MarketingCouponRailSection({
     };
   }, [isAuthenticated, loadCoupons]);
 
+  const {
+    couponCenter,
+    couponZone,
+    newUserGift,
+    ready: marketingReady,
+  } = marketingState;
   const isCouponSyncing = isAuthenticated && !couponStateReady;
   const couponItems = useMemo<CouponRailItem[]>(() => {
     const items: CouponRailItem[] = [];
@@ -181,11 +232,15 @@ export default function MarketingCouponRailSection({
       auto_issue_on_register: giftCampaign.issue_mode === "auto_register",
     };
   }, [couponZone?.campaigns, newUserGift]);
-  const hasCouponZone = Boolean(couponZone?.coupons?.length || couponZone?.campaigns?.some((campaign) => campaign.coupons?.length));
-  const hasCouponCenter = Boolean(couponCenter?.coupons?.length);
   const hasNewUserGift = Boolean(giftIntroPayload?.coupons?.length);
-  const hasAnyMarketing = hasCouponZone || hasCouponCenter || hasNewUserGift;
+  const hasAnyMarketing = hasHomeCouponMarketingPayload({
+    couponCenter,
+    couponZone,
+    newUserGift: giftIntroPayload,
+  });
 
+  if (!shouldLoadMarketing) return null;
+  if (!marketingReady) return <CouponRailLoadingShell />;
   if (!hasAnyMarketing) return null;
 
   const openAllCoupons = () => {
@@ -237,7 +292,7 @@ export default function MarketingCouponRailSection({
   const showFallback = isAuthenticated && couponStateReady && couponItems.length === 0;
 
   return (
-    <AnimatedSection delay={delay}>
+    <>
       <section className="store-coupon-rail-section w-full">
         <div className="store-section-heading mb-3 flex items-center justify-between gap-3">
           <h2 className="store-section-title flex min-w-0 items-center gap-2 text-[var(--theme-text-on-surface)]">
@@ -255,14 +310,7 @@ export default function MarketingCouponRailSection({
         </div>
 
         {isCouponSyncing && couponItems.length === 0 ? (
-          <div className="store-coupon-rail no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div
-                key={index}
-                className="store-coupon-skeleton-card w-[min(86vw,330px)] shrink-0 snap-start"
-              />
-            ))}
-          </div>
+          <CouponRailSkeleton />
         ) : (
           <div className="store-coupon-rail no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0" data-syncing={isCouponSyncing ? "true" : undefined}>
             {hasNewUserGift ? (
@@ -304,7 +352,32 @@ export default function MarketingCouponRailSection({
           </div>
         )}
       </section>
-    </AnimatedSection>
+    </>
+  );
+}
+
+function CouponRailLoadingShell() {
+  return (
+    <section className="store-coupon-rail-section w-full" aria-busy="true">
+      <div className="store-section-heading mb-3 flex items-center justify-between gap-3">
+        <div className="h-6 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-border)_72%,transparent)]" />
+        <div className="h-9 w-24 rounded-full bg-[color-mix(in_srgb,var(--theme-border)_58%,transparent)]" />
+      </div>
+      <CouponRailSkeleton />
+    </section>
+  );
+}
+
+function CouponRailSkeleton() {
+  return (
+    <div className="store-coupon-rail no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={index}
+          className="store-coupon-skeleton-card w-[min(86vw,330px)] shrink-0 snap-start"
+        />
+      ))}
+    </div>
   );
 }
 

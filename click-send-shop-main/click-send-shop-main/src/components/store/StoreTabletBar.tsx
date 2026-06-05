@@ -5,25 +5,16 @@ import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
-import { Cart, GuestHome, MemberHome, Search as SearchPage } from "@/routes/publicLazyPages";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { isLoggedIn } from "@/utils/token";
-import { preloadRoute } from "@/utils/routePreloadPolicy";
+import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 
 function preloadTabletRoute(path: string) {
-  const base = path.split("?")[0];
-  if (base === "/") {
-    preloadRoute(isLoggedIn() ? MemberHome.preload : GuestHome.preload);
-  } else if (base === "/search") {
-    preloadRoute(SearchPage.preload);
-  } else if (base === "/cart") {
-    preloadRoute(Cart.preload);
-  }
+  preloadStoreRoute(path);
 }
 
 function isPlainLeftClick(event: MouseEvent<HTMLElement>) {

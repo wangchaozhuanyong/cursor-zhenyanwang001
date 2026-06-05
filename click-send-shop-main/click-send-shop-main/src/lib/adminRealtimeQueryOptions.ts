@@ -9,9 +9,8 @@ export const adminRealtimeQueryOptions = {
   /** 订单详情：操作后希望尽快看到状态/金额变化 */
   order: {
     staleTime: 0,
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
     refetchOnMount: true,
     refetchOnReconnect: true,
   },
 } as const;
-

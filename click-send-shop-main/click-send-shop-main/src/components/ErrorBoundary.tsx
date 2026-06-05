@@ -1,7 +1,7 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
-import { AlertTriangle, Home, RefreshCw } from "lucide-react";
+import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from "react";
 import { isChunkLoadFailure, recoverFromChunkLoadError } from "@/lib/browserBoot";
-import { UnifiedButton } from "@/components/ui/UnifiedButton";
+
+const ErrorBoundaryFallback = lazy(() => import("@/components/ErrorBoundaryFallback"));
 
 interface Props {
   children: ReactNode;
@@ -48,41 +48,30 @@ export default class ErrorBoundary extends Component<Props, State> {
       const message = this.state.isChunkLoadError
         ? "请刷新页面加载最新版本。"
         : "系统遇到临时问题，请刷新页面后再试。";
+      const title = this.state.isChunkLoadError ? "网站版本已更新" : "页面出错了";
+      const details = !import.meta.env.PROD && !this.state.isChunkLoadError && this.state.message
+        ? this.state.message
+        : "";
 
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 py-16 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]">
-            <AlertTriangle className="h-8 w-8 text-[var(--theme-danger)]" />
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">
-              {this.state.isChunkLoadError ? "网站版本已更新" : "页面出错了"}
-            </h1>
-            <p className="mt-2 max-w-sm text-sm text-muted-foreground break-words">
-              {message}
-            </p>
-            {!import.meta.env.PROD && !this.state.isChunkLoadError && this.state.message ? (
-              <p className="mt-2 max-w-sm break-words rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                {this.state.message}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            <UnifiedButton
-              type="button"
-              onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-2 rounded-full btn-theme-price px-6 py-3 text-sm font-bold text-primary-foreground"
-            >
-              <RefreshCw size={16} /> 刷新页面
-            </UnifiedButton>
-            <a
-              href={homeHref}
-              className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground"
-            >
-              <Home size={16} /> {homeLabel}
-            </a>
-          </div>
-        </div>
+        <Suspense
+          fallback={(
+            <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 py-16 text-center">
+              <h1 className="font-display text-xl font-bold text-foreground">{title}</h1>
+              <p className="max-w-sm text-sm text-muted-foreground break-words">{message}</p>
+            </div>
+          )}
+        >
+          <ErrorBoundaryFallback
+            title={title}
+            message={message}
+            details={details}
+            homeHref={homeHref}
+            homeLabel={homeLabel}
+            refreshLabel="刷新页面"
+            onReload={() => window.location.reload()}
+          />
+        </Suspense>
       );
     }
     return this.props.children;

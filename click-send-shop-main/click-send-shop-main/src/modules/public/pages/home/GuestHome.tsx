@@ -20,6 +20,7 @@ import { useHomeBanners } from "@/hooks/useHomeBanners";
 import { useProductStore } from "@/stores/useProductStore";
 import HomeOpsBlocks from "./HomeOpsBlocks";
 import NewArrivalSection from "./NewArrivalOpsSection";
+import MarketingCouponRailSection from "./MarketingCouponRailSection";
 import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -43,7 +44,6 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const FlashSaleSection = lazy(() => import("./FlashSaleSection"));
 const GuestMobileFooter = lazy(() => import("@/components/GuestMobileFooter"));
-const MarketingCouponRailSection = lazy(() => import("./MarketingCouponRailSection"));
 const MarketingFullReductionSection = lazy(() => import("./MarketingFullReductionSection"));
 const MarketingPromotionBannerSection = lazy(() => import("./MarketingPromotionBannerSection"));
 const DEFERRED_HOME_SECTION_DELAY_MS = 9000;
@@ -258,7 +258,7 @@ export default function GuestHome() {
   const { banners, loading: bannersLoading } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
-  const { settings: homeModules } = useHomeModuleSettings();
+  const { settings: homeModules, ready: homeModulesReady } = useHomeModuleSettings();
   const guestBannerEnabled = isHomeModuleEnabled(homeModules, "banner", "guest");
   const showGuestIntroFallback =
     !bannersLoading && (!guestBannerEnabled || banners.length === 0);
@@ -339,6 +339,7 @@ export default function GuestHome() {
   const isMagazineLayout = homeLayout === "magazine";
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "guest");
   const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "guest");
+  const showCouponRail = homeModulesReady && (showCouponCenter || showNewUserGift);
   const showGuestNewArrivals =
     isHomeModuleEnabled(homeModules, "new_arrivals", "guest") && (homeLoading || newProducts.length > 0);
   const seoTitle = siteInfo.seoTitle || siteName;
@@ -446,14 +447,11 @@ export default function GuestHome() {
           </LazyHomeSection>
         ) : null}
 
-        {showCouponCenter || showNewUserGift ? (
-          <LazyHomeSection>
-            <MarketingCouponRailSection
-              delay={0.112}
-              showCouponCenter={showCouponCenter}
-              showNewUserGift={showNewUserGift}
-            />
-          </LazyHomeSection>
+        {showCouponRail ? (
+          <MarketingCouponRailSection
+            showCouponCenter={showCouponCenter}
+            showNewUserGift={showNewUserGift}
+          />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "guest_recommend", "guest") ? (

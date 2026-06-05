@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Navigate, useLocation, useNavigate, useNavigationType } from "react-router-dom";
-import { AdminOutletFallback } from "@/components/AppRouteFallback";
+import { AdminOutletFallback, DelayedRouteFallback } from "@/components/AppRouteFallback";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
 import AdminOfflineBanner from "@/components/admin/AdminOfflineBanner";
 import { canAccessAdminPath, getFirstAllowedAdminPath, hasAdminPathAccessRule } from "@/config/adminNavAccess";
@@ -76,7 +76,6 @@ function AdminLayoutContent() {
   useLayoutEffect(() => {
     if (navigationType === "POP") return;
     mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location.pathname, navigationType]);
 
   const handleSidebarNavigate = useCallback(
@@ -196,7 +195,7 @@ function AdminLayoutContent() {
                   </header>
 
                   <main ref={mainScrollRef} className="admin-mobile-main admin-table-scope min-h-0 w-full max-w-full flex-1 overflow-y-auto overflow-x-hidden p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
-                    <Suspense fallback={<AdminOutletFallback />}>
+                    <Suspense fallback={<DelayedRouteFallback fallback={<AdminOutletFallback />} />}>
                       <AnimatedPage>
                         <AdminKeepAliveOutlet />
                       </AnimatedPage>

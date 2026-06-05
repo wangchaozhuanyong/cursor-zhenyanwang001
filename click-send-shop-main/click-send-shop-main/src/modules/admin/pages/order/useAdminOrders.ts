@@ -19,6 +19,8 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { initialSummary, paymentMethodOptions, shippingOptions } from "@/modules/admin/pages/order/orderListConstants";
 import { money } from "@/modules/admin/pages/order/orderListDisplayUtils";
 
+const ORDER_LIST_REFRESH_MS = 300_000;
+
 export function useAdminOrders() {
   const { tText } = useAdminT();
   const [searchParams] = useSearchParams();
@@ -210,7 +212,7 @@ export function useAdminOrders() {
     queryKey: adminQueryKeys.orders(queryParams),
     queryFn: () => orderService.fetchOrders(queryParams),
     placeholderData: (previous) => previous,
-    refetchInterval: 120_000,
+    refetchInterval: ORDER_LIST_REFRESH_MS,
     refetchIntervalInBackground: false,
   });
 
@@ -218,7 +220,7 @@ export function useAdminOrders() {
     queryKey: adminQueryKeys.orderSummary(summaryParams),
     queryFn: () => orderService.fetchOrderSummary(summaryParams),
     placeholderData: (previous) => previous,
-    refetchInterval: 120_000,
+    refetchInterval: ORDER_LIST_REFRESH_MS,
     refetchIntervalInBackground: false,
   });
 

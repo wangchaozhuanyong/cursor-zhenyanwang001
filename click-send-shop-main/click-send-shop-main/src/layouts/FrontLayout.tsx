@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useEffect, useLayoutEffect } from "react";
 import { Outlet, useLocation, useNavigationType } from "react-router-dom";
-import { StoreOutletFallback } from "@/components/AppRouteFallback";
+import { DelayedRouteFallback, StoreOutletFallback } from "@/components/AppRouteFallback";
 import FrontPageTransition from "@/components/FrontPageTransition";
 import {
   StoreScrollChromeProvider,
@@ -62,7 +62,7 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
           <StoreScrollChromeRouteSync pathname={location.pathname} />
           <div className="relative isolate w-full">
             <FrontPageTransition>
-              <Suspense fallback={<StoreOutletFallback />}>
+              <Suspense fallback={<DelayedRouteFallback fallback={<StoreOutletFallback />} />}>
                 <Outlet />
               </Suspense>
             </FrontPageTransition>

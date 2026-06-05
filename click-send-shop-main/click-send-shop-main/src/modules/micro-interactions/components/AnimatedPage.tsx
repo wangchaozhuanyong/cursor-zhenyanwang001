@@ -14,7 +14,7 @@ export function AnimatedPage({
 }) {
   const location = useLocation();
   const { level, enabled } = useMotionConfig();
-  const [entered, setEntered] = useState(!enabled);
+  const [entered, setEntered] = useState(true);
 
   useEffect(() => {
     if (!enabled) {
@@ -26,21 +26,20 @@ export function AnimatedPage({
     return () => window.cancelAnimationFrame(raf);
   }, [enabled, level, location.pathname]);
 
-  const duration = level === "rich" ? 260 : 180;
-  const y = level === "rich" ? 10 : 5;
+  const duration = level === "rich" ? 160 : 120;
+  const y = level === "rich" ? 2 : 0;
 
   return (
     <div
-      key={location.pathname}
       className={cn("store-route-transition relative w-full", className)}
       style={{
         backfaceVisibility: "hidden",
         transformOrigin: "50% 0%",
-        opacity: enabled ? (entered ? 1 : 0) : undefined,
+        opacity: enabled ? (entered ? 1 : 0.985) : undefined,
         transform: enabled && !disableTransform
           ? entered
             ? "translate3d(0, 0, 0) scale(1)"
-            : `translate3d(0, ${y}px, 0) scale(${level === "rich" ? 0.996 : 1})`
+            : `translate3d(0, ${y}px, 0) scale(1)`
           : undefined,
         transition: enabled
           ? disableTransform

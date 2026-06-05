@@ -1,3 +1,4 @@
+import { useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { BANNER_SKELETON_HEIGHT_CLASS } from "@/constants/bannerAspect";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 function StorefrontFallback() {
   return (
     <div
+      data-route-fallback="store-app"
       className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
       aria-busy="true"
       aria-label="页面加载中"
@@ -31,6 +33,7 @@ function StorefrontFallback() {
 function AdminFallback() {
   return (
     <div
+      data-route-fallback="admin-app"
       className="flex min-h-screen bg-muted/30"
       aria-busy="true"
       aria-label="后台加载中"
@@ -54,7 +57,7 @@ function AdminFallback() {
 /** 仅主内容区占位：与 AdminLayout 中 `<main>` 同级，避免懒加载子路由时整站侧栏被根 Suspense 卸掉导致闪跳 */
 export function AdminOutletFallback() {
   return (
-    <div className="space-y-6" aria-busy="true" aria-label="页面加载中">
+    <div data-route-fallback="admin-outlet" className="space-y-6" aria-busy="true" aria-label="页面加载中">
       <div className="space-y-2">
         <Skeleton className="h-8 w-56 max-w-full" />
         <Skeleton className="h-4 w-80 max-w-full" />
@@ -68,6 +71,7 @@ export function AdminOutletFallback() {
 export function StoreOutletFallback() {
   return (
     <div
+      data-route-fallback="store-outlet"
       className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
       aria-busy="true"
       aria-label="页面加载中"
@@ -88,6 +92,28 @@ export function StoreOutletFallback() {
       </div>
     </div>
   );
+}
+
+export function DelayedRouteFallback({
+  fallback,
+  delayMs = 120,
+}: {
+  fallback: ReactNode;
+  delayMs?: number;
+}) {
+  const [visible, setVisible] = useState(delayMs <= 0);
+
+  useEffect(() => {
+    if (delayMs <= 0) {
+      setVisible(true);
+      return;
+    }
+    setVisible(false);
+    const timer = window.setTimeout(() => setVisible(true), delayMs);
+    return () => window.clearTimeout(timer);
+  }, [delayMs]);
+
+  return visible ? <>{fallback}</> : null;
 }
 
 export default function AppRouteFallback() {

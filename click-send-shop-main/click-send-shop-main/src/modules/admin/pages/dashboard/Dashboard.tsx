@@ -21,6 +21,8 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type TrendMetric = "sales" | "order_count" | "paid_order_count" | "refund_amount" | "avg_order_value";
 
+const DASHBOARD_REFRESH_MS = 300_000;
+
 const RANGE_OPTIONS: { value: DashboardRangePreset; zh: string; en: string }[] = [
   { value: "today", zh: "今天", en: "Today" },
   { value: "last_7_days", zh: "近 7 天", en: "Last 7 days" },
@@ -73,7 +75,7 @@ export default function Dashboard() {
     queryKey: [...adminQueryKeys.dashboard(), queryParams],
     queryFn: () => dashboardService.fetchDashboardStats(queryParams),
     enabled: rangePreset !== "custom" || customRangeReady,
-    refetchInterval: 120_000,
+    refetchInterval: DASHBOARD_REFRESH_MS,
     refetchIntervalInBackground: false,
   });
 

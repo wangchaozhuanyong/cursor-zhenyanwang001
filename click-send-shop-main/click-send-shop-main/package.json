@@ -40,6 +40,7 @@
     "prepare": "node scripts/install-git-hooks.mjs",
     "audit:overlap": "node scripts/audit-ui-overlap.mjs",
     "audit:overlap:full": "node scripts/audit-ui-overlap.mjs --full",
+    "audit:route-transition": "node scripts/audit-route-transition.mjs",
     "pwa:icons": "node scripts/generate-pwa-icons.mjs",
     "verify:pwa": "node scripts/verify-pwa.mjs",
     "acceptance:pwa-device": "node scripts/pwa-device-acceptance.mjs"

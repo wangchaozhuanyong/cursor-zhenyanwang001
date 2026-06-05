@@ -3,16 +3,14 @@ import { type PointerEvent, useCallback, useEffect, useRef, useState } from "rea
 import { useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { isLoggedIn } from "@/utils/token";
 import { cn } from "@/lib/utils";
 import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { shouldHideBottomNav } from "./bottomNavVisibility";
 import { useStoreScrollChrome } from "@/contexts/StoreScrollChromeProvider";
-import { Cart, Categories, GuestHome, MemberHome, Profile, SupportDownload } from "@/routes/publicLazyPages";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { preloadRoute } from "@/utils/routePreloadPolicy";
+import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 
 function isEditableElement(el: Element | null): boolean {
   if (!el || !(el instanceof HTMLElement)) return false;
@@ -41,18 +39,7 @@ type ActivePointer = {
 };
 
 function preloadTabRoute(path: string) {
-  const base = path.split("?")[0];
-  if (base === "/") {
-    preloadRoute(isLoggedIn() ? MemberHome.preload : GuestHome.preload);
-  } else if (base === "/categories") {
-    preloadRoute(Categories.preload);
-  } else if (base === "/support-download") {
-    preloadRoute(SupportDownload.preload);
-  } else if (base === "/cart") {
-    preloadRoute(Cart.preload);
-  } else if (base === "/profile") {
-    preloadRoute(Profile.preload);
-  }
+  preloadStoreRoute(path);
 }
 
 export default function BottomNav() {

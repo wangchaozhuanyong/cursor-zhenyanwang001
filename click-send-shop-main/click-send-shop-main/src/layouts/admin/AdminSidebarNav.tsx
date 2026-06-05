@@ -41,25 +41,9 @@ function AdminSidebarNav({
     const ownPath = child.path ? currentPath === child.path || currentPath.startsWith(child.path) : false;
     return ownPath || Boolean(child.children?.some((nested) => childMatchesPath(nested, currentPath)));
   }, []);
-  const preloadChildren = useCallback(
-    (children?: ResolvedNavChild[]) => {
-      const stack = [...(children ?? [])];
-      while (stack.length > 0) {
-        const child = stack.shift();
-        if (!child) continue;
-        if (child.path) onPreload?.(child.path);
-        if (child.children?.length) stack.push(...child.children);
-      }
-    },
-    [onPreload],
-  );
-  const preloadItem = useCallback(
-    (path?: string, children?: ResolvedNavChild[]) => {
-      if (path) onPreload?.(path);
-      preloadChildren(children);
-    },
-    [onPreload, preloadChildren],
-  );
+  const preloadPath = useCallback((path?: string) => {
+    if (path) onPreload?.(path);
+  }, [onPreload]);
 
   useEffect(() => {
     const activeGroup = navItems.find((item) => {
@@ -106,8 +90,8 @@ function AdminSidebarNav({
             <div key={item.path}>
               <UnifiedButton
                 type="button"
-                onPointerEnter={() => preloadItem(item.path, item.children)}
-                onFocus={() => preloadItem(item.path, item.children)}
+                onPointerEnter={() => preloadPath(item.path)}
+                onFocus={() => preloadPath(item.path)}
                 onClick={() => {
                   if (item.children?.length) {
                     setExpandedPath(item.path);
@@ -156,8 +140,8 @@ function AdminSidebarNav({
                                 <UnifiedButton
                                   type="button"
                                   key={nested.path ?? nested.label}
-                                  onPointerEnter={() => preloadItem(nested.path, nested.children)}
-                                  onFocus={() => preloadItem(nested.path, nested.children)}
+                                  onPointerEnter={() => preloadPath(nested.path)}
+                                  onFocus={() => preloadPath(nested.path)}
                                   onClick={() => nested.path && onNavigate(nested.path)}
                                   className={`flex min-h-[40px] w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors active:bg-secondary/80 ${
                                     nestedActive ? "font-semibold text-[var(--theme-primary)]" : "text-muted-foreground hover:text-foreground"
@@ -176,8 +160,8 @@ function AdminSidebarNav({
                       <UnifiedButton
                         type="button"
                         key={child.path ?? child.label}
-                        onPointerEnter={() => preloadItem(child.path, child.children)}
-                        onFocus={() => preloadItem(child.path, child.children)}
+                        onPointerEnter={() => preloadPath(child.path)}
+                        onFocus={() => preloadPath(child.path)}
                         onClick={() => child.path && onNavigate(child.path)}
                         className={`flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-sm transition-colors active:bg-secondary/80 ${
                           cActive ? "font-semibold text-[var(--theme-primary)]" : "text-muted-foreground hover:text-foreground"

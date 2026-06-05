@@ -317,7 +317,7 @@ export default function BannerCarousel({
       {hasTextLayer ? (
         <>
           <div className="store-hero-text-wash pointer-events-none absolute inset-0 z-10" aria-hidden />
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-full items-center px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
+          <div className="store-hero-copy-zone pointer-events-none absolute inset-y-0 left-0 z-20 flex w-full items-center px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
             <div
               key={`copy-${banner.id || safeIndex}`}
               className="store-hero-copy-panel"

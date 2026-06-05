@@ -6,6 +6,39 @@ const {
   klDateString,
 } = require('../../../utils/klDateRange');
 
+const DEFAULT_DASHBOARD_STATS_CACHE_TTL_MS = 60_000;
+const MAX_DASHBOARD_STATS_CACHE_TTL_MS = 5 * 60_000;
+
+const statsCache = new Map();
+const statsInflight = new Map();
+
+function resolveDashboardStatsCacheTtlMs() {
+  const raw = Number(process.env.ADMIN_DASHBOARD_STATS_CACHE_TTL_MS);
+  if (!Number.isFinite(raw)) return DEFAULT_DASHBOARD_STATS_CACHE_TTL_MS;
+  if (raw <= 0) return 0;
+  return Math.min(raw, MAX_DASHBOARD_STATS_CACHE_TTL_MS);
+}
+
+function buildDashboardStatsCacheKey({ preset, dateFrom, dateTo, viewOrders }) {
+  return JSON.stringify({ preset, dateFrom, dateTo, viewOrders });
+}
+
+function getCachedDashboardStats(cacheKey) {
+  const ttl = resolveDashboardStatsCacheTtlMs();
+  const hit = statsCache.get(cacheKey);
+  if (ttl <= 0 || !hit) return null;
+  if (Date.now() - hit.updatedAt > ttl) {
+    statsCache.delete(cacheKey);
+    return null;
+  }
+  return hit.value;
+}
+
+function invalidateDashboardStatsCache() {
+  statsCache.clear();
+  statsInflight.clear();
+}
+
 function canViewOrders(user) {
   if (!user) return false;
   if (user.isSuperAdmin) return true;
@@ -67,7 +100,26 @@ async function settleDashboardQuery(label, fn, fallback) {
 async function getStats(query = {}, user = {}) {
   const { dateFrom, dateTo, preset } = resolveKLDateRange(query);
   const viewOrders = canViewOrders(user);
+  const cacheKey = buildDashboardStatsCacheKey({ preset, dateFrom, dateTo, viewOrders });
+  const cached = getCachedDashboardStats(cacheKey);
+  if (cached) return cached;
+  if (statsInflight.has(cacheKey)) return statsInflight.get(cacheKey);
 
+  const inflight = buildStatsPayload({ dateFrom, dateTo, preset, viewOrders })
+    .then((data) => {
+      if (resolveDashboardStatsCacheTtlMs() > 0) {
+        statsCache.set(cacheKey, { value: data, updatedAt: Date.now() });
+      }
+      return data;
+    })
+    .finally(() => {
+      statsInflight.delete(cacheKey);
+    });
+  statsInflight.set(cacheKey, inflight);
+  return inflight;
+}
+
+async function buildStatsPayload({ dateFrom, dateTo, preset, viewOrders }) {
   const emptyToday = {
     todayRevenue: 0,
     todayPaidOrders: 0,
@@ -209,4 +261,4 @@ async function getStats(query = {}, user = {}) {
   };
 }
 
-module.exports = { getStats, canViewOrders };
+module.exports = { getStats, canViewOrders, invalidateDashboardStatsCache };

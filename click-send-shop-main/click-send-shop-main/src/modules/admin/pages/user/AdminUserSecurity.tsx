@@ -31,6 +31,16 @@ import { Badge, formatTime } from "@/modules/admin/pages/monitoring/monitoringUi
 import { AdminInputSheet } from "@/modules/admin/components/AdminInputSheet";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import {
+  formatDeviceLabel,
+  formatLoginMethodLabel,
+  formatRiskLevelLabel,
+  formatRiskSignalSummary,
+  formatRiskSourceLabel,
+  formatRiskStatusLabel,
+  formatUserSecurityEventDescription,
+  formatUserSecurityEventTitle,
+} from "./userSecurityDisplay";
 
 type TabKey = "ips" | "devices" | "login" | "events";
 type SecurityActionTarget =
@@ -58,11 +68,6 @@ const severityOptions = [
   { value: "info", label: "普通" },
 ];
 
-function shortId(value?: string | null, len = 12) {
-  if (!value) return "-";
-  return value.length > len ? `${value.slice(0, len)}...` : value;
-}
-
 function userLabel(row: { user_id?: string | null; phone?: string | null; nickname?: string | null }) {
   const label = row.nickname || row.phone || row.user_id || "-";
   if (!row.user_id) return label;
@@ -81,8 +86,10 @@ function statusTone(status?: string | null) {
 }
 
 function levelTone(level?: string | null) {
-  if (level === "high") return "bg-red-600 text-white";
-  if (level === "medium") return "bg-orange-100 text-orange-700";
+  if (level === "critical" || level === "P0" || level === "high" || level === "P1") return "bg-red-600 text-white";
+  if (level === "medium" || level === "P2") return "bg-orange-100 text-orange-700";
+  if (level === "low" || level === "P3") return "bg-blue-100 text-blue-700";
+  if (level === "info" || level === "INFO") return "bg-slate-100 text-slate-600";
   return "bg-slate-100 text-slate-600";
 }
 
@@ -286,12 +293,12 @@ export default function AdminUserSecurity() {
             <thead className="bg-secondary text-muted-foreground">
               <tr>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>IP</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>状态</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>等级</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>登录数</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>关联用户</th>
-                <th className={adminThClassName(undefined, "left")}>原因</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>最近出现</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>处理状态</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>风险等级</th>
+                <th className={adminThClassName(undefined, "left")}>触发来源</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>涉及用户</th>
+                <th className={adminThClassName(undefined, "left")}>风险原因</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>最近记录</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>操作</th>
               </tr>
             </thead>
@@ -299,9 +306,12 @@ export default function AdminUserSecurity() {
               {riskIps.map((row) => (
                 <tr key={row.ip} className="border-t border-[var(--theme-border)]">
                   <td className={adminTdClassName("font-mono text-foreground", "left")}>{row.ip}</td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.status} tone={statusTone(row.status)} /></td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.risk_level} tone={levelTone(row.risk_level)} /></td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.login_count || row.failed_count || 0}</td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskStatusLabel(row.status)} tone={statusTone(row.status)} /></td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskLevelLabel(row.risk_level)} tone={levelTone(row.risk_level)} /></td>
+                  <td className={adminTdClassName("min-w-40 text-muted-foreground", "left")}>
+                    <div className="font-medium text-foreground">{formatRiskSourceLabel(row.source)}</div>
+                    <div className="mt-1 text-xs">{formatRiskSignalSummary(row)}</div>
+                  </td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.related_user_count || 0}</td>
                   <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
@@ -324,22 +334,25 @@ export default function AdminUserSecurity() {
             <thead className="bg-secondary text-muted-foreground">
               <tr>
                 <th className={adminThClassName(undefined, "left")}>设备</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>状态</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>等级</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>登录数</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>关联用户</th>
-                <th className={adminThClassName(undefined, "left")}>原因</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>最近出现</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>处理状态</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>风险等级</th>
+                <th className={adminThClassName(undefined, "left")}>触发来源</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>涉及用户</th>
+                <th className={adminThClassName(undefined, "left")}>风险原因</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>最近记录</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>操作</th>
               </tr>
             </thead>
             <tbody>
               {riskDevices.map((row) => (
                 <tr key={row.device_id} className="border-t border-[var(--theme-border)]">
-                  <td className={adminTdClassName("font-mono text-foreground", "left")} title={row.device_id}>{row.device_label || shortId(row.device_id, 18)}</td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.status} tone={statusTone(row.status)} /></td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.risk_level} tone={levelTone(row.risk_level)} /></td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.login_count || 0}</td>
+                  <td className={adminTdClassName("font-mono text-foreground", "left")} title={row.device_id}>{formatDeviceLabel(row.device_id, row.device_label)}</td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskStatusLabel(row.status)} tone={statusTone(row.status)} /></td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskLevelLabel(row.risk_level)} tone={levelTone(row.risk_level)} /></td>
+                  <td className={adminTdClassName("min-w-40 text-muted-foreground", "left")}>
+                    <div className="font-medium text-foreground">{formatRiskSourceLabel(row.source)}</div>
+                    <div className="mt-1 text-xs">{formatRiskSignalSummary(row)}</div>
+                  </td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.related_user_count || 0}</td>
                   <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
@@ -362,9 +375,9 @@ export default function AdminUserSecurity() {
             <thead className="bg-secondary text-muted-foreground">
               <tr>
                 <th className={adminThClassName(undefined, "left")}>用户</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>方式</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>登录方式</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>IP</th>
-                <th className={adminThClassName(undefined, "left")}>设备指纹</th>
+                <th className={adminThClassName(undefined, "left")}>设备标识</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>时间</th>
               </tr>
             </thead>
@@ -372,9 +385,9 @@ export default function AdminUserSecurity() {
               {loginAttempts.map((row) => (
                 <tr key={row.id} className="border-t border-[var(--theme-border)]">
                   <td className={adminTdClassName("text-foreground", "left")}>{userLabel(row)}</td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{row.login_method}</td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatLoginMethodLabel(row.login_method)}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-mono`, "left")}>{row.ip || "-"}</td>
-                  <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{shortId(row.device_id, 18)}</td>
+                  <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{formatDeviceLabel(row.device_id)}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.created_at)}</td>
                 </tr>
               ))}
@@ -389,7 +402,7 @@ export default function AdminUserSecurity() {
           <AdminNativeTable>
             <thead className="bg-secondary text-muted-foreground">
               <tr>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>等级</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>风险等级</th>
                 <th className={adminThClassName(undefined, "left")}>事件</th>
                 <th className={adminThClassName(undefined, "left")}>用户</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>IP</th>
@@ -400,14 +413,14 @@ export default function AdminUserSecurity() {
             <tbody>
               {events.map((row) => (
                 <tr key={row.id} className="border-t border-[var(--theme-border)]">
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={row.severity} tone={levelTone(row.severity)} /></td>
+                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskLevelLabel(row.severity)} tone={levelTone(row.severity)} /></td>
                   <td className={adminTdClassName("text-foreground", "left")}>
-                    <div className="font-medium">{row.title || row.event_type}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{row.description || row.event_type}</div>
+                    <div className="font-medium">{formatUserSecurityEventTitle(row.title, row.event_type)}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{formatUserSecurityEventDescription(row.description, row.event_type, row.title)}</div>
                   </td>
                   <td className={adminTdClassName("text-muted-foreground", "left")}>{userLabel(row)}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-mono`, "left")}>{row.ip || "-"}</td>
-                  <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{shortId(row.device_id, 18)}</td>
+                  <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{formatDeviceLabel(row.device_id)}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.created_at)}</td>
                 </tr>
               ))}

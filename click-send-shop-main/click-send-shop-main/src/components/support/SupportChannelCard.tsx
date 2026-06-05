@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, Download, ExternalLink, Loader2, ScanLine, UserRound } from "lucide-react";
+import { BadgeCheck, Copy, Download, ExternalLink, Loader2, QrCode, ScanLine } from "lucide-react";
 import { toast } from "sonner";
+import WeChatIcon from "@/components/icons/WeChatIcon";
+import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
+import TelegramIcon from "@/components/icons/TelegramIcon";
 import type { SupportDownloadChannel } from "@/types/content";
 import { copyToClipboard } from "@/utils/clipboard";
 import { downloadImage } from "@/utils/downloadImage";
@@ -50,12 +53,49 @@ function getOpenUrl(channel: SupportDownloadChannel) {
   return buildTelegramLink(channel);
 }
 
+function SupportChannelVisualIcon({ type }: { type: SupportDownloadChannel["type"] }) {
+  if (type === "wechat") return <WeChatIcon size={26} />;
+  if (type === "whatsapp") return <WhatsAppIcon size={26} />;
+  return <TelegramIcon size={26} />;
+}
+
+function getChannelKicker(channel: SupportDownloadChannel) {
+  if (channel.type === "wechat") return "扫码添加微信客服";
+  if (channel.type === "whatsapp") return "WhatsApp 在线客服";
+  return "Telegram 在线客服";
+}
+
+function getQrActionHint(channel: SupportDownloadChannel) {
+  if (channel.type === "wechat") return "长按二维码保存或识别";
+  return "扫码或保存二维码后联系客服";
+}
+
+function getChannelGuide(channel: SupportDownloadChannel) {
+  if (channel.type === "wechat") {
+    return {
+      primary: "扫码后可发送商品、订单或售后问题。",
+      secondary: "请认准页面展示的微信号。",
+    };
+  }
+  if (channel.type === "whatsapp") {
+    return {
+      primary: "点击打开 WhatsApp，也可保存二维码。",
+      secondary: "咨询时附上商品截图和收货地区。",
+    };
+  }
+  return {
+    primary: "点击打开 Telegram，也可保存二维码。",
+    secondary: "避免私下转账或泄露验证码。",
+  };
+}
+
 export default function SupportChannelCard({ channel }: Props) {
   const account = cleanSupportText(channel.account);
   const qrUrl = cleanSupportText(channel.qrUrl);
   const description = cleanSupportText(channel.description);
   const openUrl = getOpenUrl(channel);
   const title = getChannelTitle(channel);
+  const guide = getChannelGuide(channel);
   const qrTrackedRef = useRef(false);
   const [downloadingQr, setDownloadingQr] = useState(false);
 
@@ -97,75 +137,106 @@ export default function SupportChannelCard({ channel }: Props) {
 
   return (
     <section className={`support-channel-card support-channel-card--${channel.type}`}>
-      {account ? (
-        <div className="support-account-panel">
-          <span className="support-account-icon" aria-hidden="true">
-            <UserRound size={22} />
-          </span>
-          <p>
-            <span>{getAccountLabel(channel)}：</span>
-            <strong>{account}</strong>
-          </p>
-          <UnifiedButton
-            type="button"
-            onClick={() => { void onCopyAccount(); }}
-            className="support-copy-button"
-          >
-            <Copy size={17} aria-hidden="true" />
-            <span>复制</span>
-          </UnifiedButton>
-        </div>
-      ) : null}
+      <div className="support-channel-layout">
+        <div className="support-channel-info">
+          <div className="support-channel-head">
+            <span className="support-channel-icon" aria-hidden="true">
+              <SupportChannelVisualIcon type={channel.type} />
+            </span>
+            <div className="support-channel-title-block">
+              <span className="support-channel-kicker">{getChannelKicker(channel)}</span>
+              <h2>{title}</h2>
+            </div>
+          </div>
 
-      {description ? (
-        <p className="support-channel-description">{description}</p>
-      ) : null}
+          {description ? (
+            <p className="support-channel-description">{description}</p>
+          ) : null}
 
-      <div className="support-qr-block">
-        <div className="support-qr-stage">
-          <div className="support-qr-frame">
-            {qrUrl ? (
-              <img
-                src={qrUrl}
-                alt={`${title}二维码`}
-                className="support-qr-image"
-              />
-            ) : (
-              <div className="support-qr-placeholder">暂未配置二维码</div>
-            )}
+          {account ? (
+            <div className="support-account-panel">
+              <div className="support-account-copy">
+                <span>{getAccountLabel(channel)}</span>
+                <strong>{account}</strong>
+              </div>
+              <UnifiedButton
+                type="button"
+                onClick={() => { void onCopyAccount(); }}
+                className="support-copy-button"
+              >
+                <Copy size={17} aria-hidden="true" />
+                <span>复制</span>
+              </UnifiedButton>
+            </div>
+          ) : null}
+
+          <div className="support-context-panel" aria-label="客服说明">
+            <p>{guide.primary}</p>
+            <p className="support-context-time">{guide.secondary}</p>
           </div>
         </div>
 
-        {qrUrl ? (
-          <p className="support-qr-hint">
-            <ScanLine size={18} aria-hidden="true" />
-            <span>长按二维码保存或识别</span>
-          </p>
-        ) : null}
+        <div className="support-qr-block">
+          <div className="support-qr-heading">
+            <span className="support-qr-heading-icon" aria-hidden="true">
+              <QrCode size={18} />
+            </span>
+            <div>
+              <span>客服二维码</span>
+              <strong>{qrUrl ? "扫码直达客服" : "等待后台配置"}</strong>
+            </div>
+          </div>
 
-        <div className="support-channel-actions">
+          <div className="support-qr-stage">
+            <div className="support-qr-frame">
+              {qrUrl ? (
+                <img
+                  src={qrUrl}
+                  alt={`${title}二维码`}
+                  className="support-qr-image"
+                />
+              ) : (
+                <div className="support-qr-placeholder">暂未配置二维码</div>
+              )}
+            </div>
+          </div>
+
           {qrUrl ? (
-            <UnifiedButton
-              type="button"
-              onClick={() => { void onDownloadQr(); }}
-              disabled={downloadingQr}
-              className="support-download-qr-button"
-            >
-              {downloadingQr ? <Loader2 size={20} className="animate-spin" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
-              <span>下载二维码</span>
-            </UnifiedButton>
+            <p className="support-qr-hint">
+              <ScanLine size={18} aria-hidden="true" />
+              <span>{getQrActionHint(channel)}</span>
+            </p>
           ) : null}
 
-          {openUrl ? (
-            <UnifiedButton
-              type="button"
-              onClick={onOpenLink}
-              className="support-open-channel-button"
-            >
-              <ExternalLink size={18} aria-hidden="true" />
-              <span>{getOpenLabel(channel)}</span>
-            </UnifiedButton>
-          ) : null}
+          <div className="support-channel-actions">
+            {openUrl ? (
+              <UnifiedButton
+                type="button"
+                onClick={onOpenLink}
+                className="support-open-channel-button"
+              >
+                <ExternalLink size={18} aria-hidden="true" />
+                <span>{getOpenLabel(channel)}</span>
+              </UnifiedButton>
+            ) : null}
+
+            {qrUrl ? (
+              <UnifiedButton
+                type="button"
+                onClick={() => { void onDownloadQr(); }}
+                disabled={downloadingQr}
+                className="support-download-qr-button"
+              >
+                {downloadingQr ? <Loader2 size={20} className="animate-spin" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
+                <span>保存二维码</span>
+              </UnifiedButton>
+            ) : null}
+          </div>
+
+          <div className="support-qr-safety">
+            <BadgeCheck size={15} aria-hidden="true" />
+            <span>请认准页面展示的官方客服账号</span>
+          </div>
         </div>
       </div>
 

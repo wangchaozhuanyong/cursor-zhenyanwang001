@@ -4,6 +4,7 @@ import { AdminAppRoutes } from "@/routes/AdminAppRoutes";
 const AdminApp = () => (
   <BrowserRouter
     future={{
+      v7_startTransition: true,
       v7_relativeSplatPath: true,
     }}
   >

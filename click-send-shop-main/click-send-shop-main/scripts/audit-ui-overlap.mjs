@@ -250,9 +250,12 @@ async function detectOverlaps(page) {
     function meaningful(el) {
       if (!visible(el)) return false;
       if (inFixedChrome(el)) return false;
+      if (el.getAttribute("aria-hidden") === "true" || el.closest('[aria-hidden="true"]')) return false;
       const tag = el.tagName;
       if (tag === "BUTTON" || tag === "A" || tag === "INPUT" || tag === "LABEL") return true;
       if (el.getAttribute("role") === "button") return true;
+      const style = getComputedStyle(el);
+      if (style.pointerEvents === "none" && !hasText(el)) return false;
       if (el.hasAttribute("data-coupon-card-layout")) return true;
       if (el.closest("[data-coupon-card-layout]")) return true;
       if (SKIP_TAGS.has(tag)) return false;
@@ -322,8 +325,15 @@ async function detectOverlaps(page) {
 async function detectCouponCardOverlaps(page) {
   return page.evaluate(() => {
     const issues = [];
+    function isDecorative(el) {
+      if (el.getAttribute("aria-hidden") === "true" || el.closest('[aria-hidden="true"]')) return true;
+      const style = getComputedStyle(el);
+      if (style.pointerEvents === "none") return true;
+      return el.tagName !== "BUTTON" && !(el.textContent || "").trim();
+    }
     for (const card of document.querySelectorAll("[data-coupon-card-layout]")) {
       const items = Array.from(card.querySelectorAll("p, span, button")).filter((el) => {
+        if (isDecorative(el)) return false;
         const r = el.getBoundingClientRect();
         return r.width > 2 && r.height > 2;
       });

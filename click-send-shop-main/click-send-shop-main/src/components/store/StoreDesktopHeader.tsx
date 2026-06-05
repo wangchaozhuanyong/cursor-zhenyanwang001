@@ -6,7 +6,6 @@ import StoreSearchField from "@/components/store/StoreSearchField";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
-import { Cart, Categories, GuestHome, MemberHome, NewArrivals, Profile, Search, SupportDownload } from "@/routes/publicLazyPages";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
@@ -14,27 +13,12 @@ import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { isLoggedIn } from "@/utils/token";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { preloadRoute } from "@/utils/routePreloadPolicy";
+import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 
 type NavItem = { path: string; label: string; icon: typeof Home; enabled?: boolean };
 
 function preloadHeaderRoute(path: string) {
-  const base = path.split("?")[0];
-  if (base === "/") {
-    preloadRoute(isLoggedIn() ? MemberHome.preload : GuestHome.preload);
-  } else if (base === "/categories") {
-    preloadRoute(Categories.preload);
-  } else if (base === "/new-arrivals") {
-    preloadRoute(NewArrivals.preload);
-  } else if (base === "/support-download") {
-    preloadRoute(SupportDownload.preload);
-  } else if (base === "/search") {
-    preloadRoute(Search.preload);
-  } else if (base === "/cart") {
-    preloadRoute(Cart.preload);
-  } else if (base === "/profile") {
-    preloadRoute(Profile.preload);
-  }
+  preloadStoreRoute(path);
 }
 
 function isPlainLeftClick(event: MouseEvent<HTMLElement>) {

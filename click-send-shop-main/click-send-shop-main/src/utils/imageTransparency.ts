@@ -172,10 +172,20 @@ export async function removeConnectedBackground(file: File): Promise<File> {
   return imageDataToPngFile(imageData, file.name);
 }
 
-async function matteWithAiThenEdge(
+async function matteWithEdgeThenAi(
   file: File,
   onProgress?: AiMatteProgress,
 ): Promise<{ file: File; method: IconMatteMethod }> {
+  try {
+    onProgress?.("正在快速去除背景...", 0.2);
+    const edgeFile = await removeConnectedBackground(file);
+    if (await hasTransparentPixels(edgeFile)) {
+      return { file: edgeFile, method: "edge" };
+    }
+  } catch {
+    onProgress?.("快速去底不适合这张图，准备使用 AI 抠图...", 0.35);
+  }
+
   try {
     const { removeBackgroundWithAi } = await import("@/utils/aiBackgroundRemoval");
     const aiFile = await removeBackgroundWithAi(file, onProgress);
@@ -183,19 +193,15 @@ async function matteWithAiThenEdge(
       return { file: aiFile, method: "ai" };
     }
   } catch {
-    onProgress?.("AI 抠图不可用，改用快速去底…");
+    onProgress?.("AI 抠图不可用，请上传透明 PNG/WebP，或先用设计软件删除背景。");
   }
 
-  const edgeFile = await removeConnectedBackground(file);
-  if (!(await hasTransparentPixels(edgeFile))) {
-    throw new Error("无法自动去除背景，请上传透明 PNG/WebP，或在设计软件中删除背景后重试。");
-  }
-  return { file: edgeFile, method: "edge" };
+  throw new Error("无法自动去除背景，请上传透明 PNG/WebP，或先用设计软件删除背景后重试。");
 }
 
 /**
  * Ensures an icon file has transparency before upload.
- * Uses AI matting first, then edge-connected removal as fallback.
+ * Uses fast edge-connected removal first, then AI matting as fallback.
  */
 export async function ensureTransparentIconFile(
   file: File,
@@ -204,6 +210,6 @@ export async function ensureTransparentIconFile(
   if (await hasTransparentPixels(file)) {
     return { file, autoMatted: false, method: "none" };
   }
-  const { file: matted, method } = await matteWithAiThenEdge(file, options?.onProgress);
+  const { file: matted, method } = await matteWithEdgeThenAi(file, options?.onProgress);
   return { file: matted, autoMatted: true, method };
 }

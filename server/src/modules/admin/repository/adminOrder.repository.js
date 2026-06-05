@@ -74,6 +74,171 @@ async function selectOrderStatusSummary(where, params) {
   return rows;
 }
 
+function indexRows(rows, key) {
+  const indexed = new Map();
+  for (const row of rows) {
+    if (row?.[key] != null) indexed.set(String(row[key]), row);
+  }
+  return indexed;
+}
+
+async function selectOrderUserStatsForPage(userIds) {
+  if (!userIds.length) return new Map();
+  const [rows] = await db.query(
+    `SELECT
+       user_id,
+       COUNT(*) AS order_count,
+       SUM(CASE WHEN payment_status IN ('paid', 'partially_refunded') THEN total_amount ELSE 0 END) AS total_paid_amount
+     FROM orders
+     WHERE user_id IN (?)
+     GROUP BY user_id`,
+    [userIds],
+  );
+  return indexRows(rows, 'user_id');
+}
+
+async function selectOrderItemStatsForPage(orderIds) {
+  if (!orderIds.length) return new Map();
+  const [rows] = await db.query(
+    `SELECT
+       order_id,
+       SUM(qty) AS items_count,
+       COUNT(DISTINCT COALESCE(NULLIF(variant_id, ''), product_id)) AS sku_count,
+       GROUP_CONCAT(
+        CONCAT(COALESCE(NULLIF(product_name, ''), NULLIF(product_name_snapshot, ''), '商品'), ' ×', qty)
+         ORDER BY id
+         SEPARATOR '；'
+       ) AS items_summary,
+       SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) AS missing_cost_item_count,
+       CASE WHEN SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) > 0 THEN 'missing' ELSE 'normal' END AS cost_snapshot_source
+     FROM order_items
+     WHERE order_id IN (?)
+       AND COALESCE(line_status, 'active') = 'active'
+       AND COALESCE(qty, 0) > 0
+     GROUP BY order_id`,
+    [orderIds],
+  );
+  return indexRows(rows, 'order_id');
+}
+
+async function selectOrderReturnStatsForPage(orderIds) {
+  if (!orderIds.length) return new Map();
+  const [rows] = await db.query(
+    `SELECT
+       order_id,
+       COUNT(*) AS return_request_count,
+       SUM(CASE WHEN status IN ('pending', 'approved', 'processing') THEN 1 ELSE 0 END) AS active_return_count
+     FROM return_requests
+     WHERE order_id IN (?)
+     GROUP BY order_id`,
+    [orderIds],
+  );
+  return indexRows(rows, 'order_id');
+}
+
+function attachAdminOrderListStats(order, { userStats, itemStats, returnStats }) {
+  const user = order.user_id != null ? userStats.get(String(order.user_id)) : null;
+  const items = itemStats.get(String(order.id));
+  const returns = returnStats.get(String(order.id));
+
+  order.user_order_count = Number(user?.order_count || 0);
+  order.user_total_paid_amount = Number(user?.total_paid_amount || 0);
+  order.items_count = Number(items?.items_count || 0);
+  order.sku_count = Number(items?.sku_count || 0);
+  order.items_summary = items?.items_summary || null;
+  order.missing_cost_item_count = Number(items?.missing_cost_item_count || 0);
+  order.cost_snapshot_source = items?.cost_snapshot_source || null;
+  order.return_request_count = Number(returns?.return_request_count || 0);
+  order.active_return_count = Number(returns?.active_return_count || 0);
+}
+
+function buildPlaceholders(values) {
+  return values.map(() => '?').join(', ');
+}
+
+function requiresUserJoinForOrderPage(where) {
+  return /\bu\./.test(String(where || ''));
+}
+
+const OVERDUE_SHIPMENT_PAYMENT_STATUS_FILTER = "o.payment_status IN ('paid', 'partially_refunded')";
+
+function isOverdueShipmentPageWhere(where) {
+  const text = String(where || '');
+  return /\bo\.status\s*=\s*'paid'/.test(text)
+    && text.includes(OVERDUE_SHIPMENT_PAYMENT_STATUS_FILTER)
+    && /\bCOALESCE\(o\.paid_at,\s*o\.payment_time,\s*o\.created_at\)\s*<\s*DATE_SUB\(NOW\(\),\s*INTERVAL\s+24\s+HOUR\)/.test(text);
+}
+
+function overdueShipmentWhereForPaymentStatus(where, paymentStatus) {
+  return String(where || '').replace(
+    OVERDUE_SHIPMENT_PAYMENT_STATUS_FILTER,
+    `o.payment_status = '${paymentStatus}'`,
+  );
+}
+
+function selectOrderPageIndexHint(where) {
+  const text = String(where || '');
+  if (/\bo\.status\s*=\s*\?/.test(text) && /\bo\.payment_status\s*=\s*\?/.test(text)) {
+    return '/*+ INDEX(o idx_orders_admin_status_payment_created) */ ';
+  }
+  if (
+    /\bo\.status\s*=\s*'pending'/.test(text)
+    && /\bo\.payment_status\s*=\s*'pending'/.test(text)
+    && /\bo\.payment_status\s+IS\s+NULL/.test(text)
+    && /\bo\.created_at\s*</.test(text)
+  ) {
+    return '/*+ INDEX(o idx_orders_unpaid_timeout) */ ';
+  }
+  return '';
+}
+
+async function selectOverdueShipmentOrderPageRows(where, params, pageSize, offset, pageJoinSql) {
+  const candidateLimit = pageSize + offset;
+  const paidWhere = overdueShipmentWhereForPaymentStatus(where, 'paid');
+  const partialRefundWhere = overdueShipmentWhereForPaymentStatus(where, 'partially_refunded');
+
+  const [pageRows] = await db.query(
+    `SELECT id
+     FROM (
+       (SELECT /*+ INDEX(o idx_orders_admin_status_payment_created) */ o.id, o.created_at
+        FROM orders o${pageJoinSql}
+        ${paidWhere}
+        ORDER BY o.created_at DESC LIMIT ?)
+       UNION ALL
+       (SELECT /*+ INDEX(o idx_orders_admin_status_payment_created) */ o.id, o.created_at
+        FROM orders o${pageJoinSql}
+        ${partialRefundWhere}
+        ORDER BY o.created_at DESC LIMIT ?)
+     ) overdue_order_candidates
+     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    [
+      ...params,
+      candidateLimit,
+      ...params,
+      candidateLimit,
+      pageSize,
+      offset,
+    ],
+  );
+  return pageRows;
+}
+
+async function selectOrderPageRows(where, params, pageSize, offset, pageJoinSql) {
+  if (isOverdueShipmentPageWhere(where)) {
+    return selectOverdueShipmentOrderPageRows(where, params, pageSize, offset, pageJoinSql);
+  }
+
+  const pageIndexHint = selectOrderPageIndexHint(where);
+  const [pageRows] = await db.query(
+    `SELECT ${pageIndexHint}o.id
+      FROM orders o${pageJoinSql}
+      ${where}
+      ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
+    [...params, pageSize, offset],
+  );
+  return pageRows;
+}
+
 async function selectOrdersAdminPage(where, params, pageSize, offset) {
   const { schema } = await getOrderRevenueExprs();
   const amountFields = [
@@ -90,6 +255,15 @@ async function selectOrdersAdminPage(where, params, pageSize, offset) {
     schema.ordersOutstandingAmount ? 'o.outstanding_amount' : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN 0 ELSE COALESCE(o.total_amount, 0) END AS outstanding_amount",
     schema.ordersAmountSnapshot ? 'o.amount_snapshot' : 'NULL AS amount_snapshot',
   ].join(',\n       ');
+
+  const pageJoinSql = requiresUserJoinForOrderPage(where)
+    ? '\n      LEFT JOIN users u ON u.id = o.user_id'
+    : '';
+  const pageRows = await selectOrderPageRows(where, params, pageSize, offset, pageJoinSql);
+  const orderIds = pageRows.map((order) => order.id).filter((id) => id != null && id !== '');
+  if (!orderIds.length) return [];
+
+  const orderPlaceholders = buildPlaceholders(orderIds);
   const [orders] = await db.query(
     `SELECT
        o.id, o.user_id, o.order_no, o.raw_amount, o.discount_amount, o.coupon_title,
@@ -106,55 +280,27 @@ async function selectOrdersAdminPage(where, params, pageSize, offset) {
        u.email AS user_email,
        u.member_level_id,
        ml.name AS member_level_name,
-       COALESCE(user_stats.order_count, 0) AS user_order_count,
-       COALESCE(user_stats.total_paid_amount, 0) AS user_total_paid_amount,
-       COALESCE(item_stats.items_count, 0) AS items_count,
-       COALESCE(item_stats.sku_count, 0) AS sku_count,
-       item_stats.items_summary,
-       COALESCE(item_stats.missing_cost_item_count, 0) AS missing_cost_item_count,
-       item_stats.cost_snapshot_source,
-       COALESCE(return_stats.return_request_count, 0) AS return_request_count,
-       COALESCE(return_stats.active_return_count, 0) AS active_return_count,
        COALESCE(o.refunded_amount, 0) AS refund_amount
-     FROM orders o
-     LEFT JOIN users u ON u.id = o.user_id
-     LEFT JOIN member_levels ml ON ml.id = u.member_level_id
-     LEFT JOIN (
-       SELECT
-         user_id,
-         COUNT(*) AS order_count,
-         SUM(CASE WHEN payment_status IN ('paid', 'partially_refunded') THEN total_amount ELSE 0 END) AS total_paid_amount
-       FROM orders
-       GROUP BY user_id
-     ) user_stats ON user_stats.user_id = o.user_id
-     LEFT JOIN (
-       SELECT
-         order_id,
-         SUM(qty) AS items_count,
-         COUNT(DISTINCT COALESCE(NULLIF(variant_id, ''), product_id)) AS sku_count,
-         GROUP_CONCAT(
-          CONCAT(COALESCE(NULLIF(product_name, ''), NULLIF(product_name_snapshot, ''), '商品'), ' ×', qty)
-           ORDER BY id
-           SEPARATOR '；'
-         ) AS items_summary,
-         SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) AS missing_cost_item_count,
-         CASE WHEN SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) > 0 THEN 'missing' ELSE 'normal' END AS cost_snapshot_source
-      FROM order_items
-      WHERE COALESCE(line_status, 'active') = 'active' AND COALESCE(qty, 0) > 0
-       GROUP BY order_id
-     ) item_stats ON item_stats.order_id = o.id
-     LEFT JOIN (
-       SELECT
-         order_id,
-         COUNT(*) AS return_request_count,
-         SUM(CASE WHEN status IN ('pending', 'approved', 'processing') THEN 1 ELSE 0 END) AS active_return_count
-       FROM return_requests
-       GROUP BY order_id
-     ) return_stats ON return_stats.order_id = o.id
-     ${where}
-     ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
-    [...params, pageSize, offset],
+      FROM orders o
+      LEFT JOIN users u ON u.id = o.user_id
+      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
+      WHERE o.id IN (${orderPlaceholders})
+      ORDER BY FIELD(o.id, ${orderPlaceholders})`,
+    [...orderIds, ...orderIds],
   );
+  const userIds = Array.from(new Set(
+    orders
+      .map((order) => order.user_id)
+      .filter((id) => id != null && id !== ''),
+  ));
+  const [userStats, itemStats, returnStats] = await Promise.all([
+    selectOrderUserStatsForPage(userIds),
+    selectOrderItemStatsForPage(orderIds),
+    selectOrderReturnStatsForPage(orderIds),
+  ]);
+  for (const order of orders) {
+    attachAdminOrderListStats(order, { userStats, itemStats, returnStats });
+  }
   return orders;
 }
 

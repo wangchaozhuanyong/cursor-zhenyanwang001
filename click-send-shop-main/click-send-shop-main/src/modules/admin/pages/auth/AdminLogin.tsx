@@ -1,11 +1,13 @@
 import { lazy, Suspense, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Fingerprint, KeyRound, Lock, User } from "lucide-react";
-import { toast } from "sonner";
 import { adminLoginErrorMessage } from "@/utils/storefrontError";
 import { FormFieldShake } from "@/modules/micro-interactions/components/FormFieldShake";
-import { useAdminLoginT } from "@/i18n/adminLogin";
+import { useAdminLoginT, type AdminLoginLocale } from "@/i18n/adminLogin";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { cn } from "@/lib/utils";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 
 const QRCodeSVG = lazy(() => import("qrcode.react").then((module) => ({ default: module.QRCodeSVG })));
 
@@ -17,14 +19,51 @@ function normalizeMfaCode(value: string) {
 }
 
 const loadAccountService = () => import("@/services/admin/accountService");
+const loadToast = () => import("sonner").then((module) => module.toast);
 
-function AdminLoginLogo() {
+function showLoginToast(type: "success" | "error", message: string) {
+  void loadToast()
+    .then((toast) => {
+      toast[type](message);
+    })
+    .catch(() => void 0);
+}
+
+function AdminLoginLogo({ locale }: { locale: AdminLoginLocale }) {
+  const siteInfo = useSiteInfo();
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
+  const siteName = siteInfo.siteName?.trim() || "";
+  const isEnglish = locale === "en";
+  const hasCjkSiteName = /[\u4e00-\u9fff]/.test(siteName);
+  const alt = siteName && !(isEnglish && hasCjkSiteName)
+    ? siteName
+    : "站点标志";
+  const fallbackText = isEnglish && hasCjkSiteName ? "A" : alt.slice(0, 1);
+  const logoClass = "admin-site-logo admin-site-logo--lg rounded-2xl";
+
+  if (logoSrc) {
+    return (
+      <img
+        src={logoSrc}
+        alt={alt}
+        className={cn(
+          logoClass,
+          "shrink-0 bg-[var(--theme-surface)] object-contain ring-1 ring-[color-mix(in_srgb,var(--theme-border)_80%,transparent)]",
+        )}
+        decoding="async"
+      />
+    );
+  }
+
   return (
     <div
-      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[var(--theme-surface)] text-sm font-bold text-[var(--theme-text-on-surface)] ring-1 ring-[color-mix(in_srgb,var(--theme-border)_80%,transparent)]"
-      aria-label={"\u5927\u9a6c\u901a"}
+      className={cn(
+        logoClass,
+        "flex shrink-0 items-center justify-center bg-[var(--theme-surface)] text-sm font-bold text-[var(--theme-text-on-surface)] ring-1 ring-[color-mix(in_srgb,var(--theme-border)_80%,transparent)]",
+      )}
+      aria-label={alt}
     >
-      {"\u5927"}
+      {fallbackText}
     </div>
   );
 }
@@ -52,7 +91,7 @@ export default function AdminLogin() {
   const mfaSubmittingRef = useRef(false);
 
   const finishLogin = () => {
-    toast.success(t("login.loginSuccess"));
+    showLoginToast("success", t("login.loginSuccess"));
     navigate("/admin");
   };
 
@@ -85,7 +124,7 @@ export default function AdminLogin() {
       finishLogin();
     } catch (e) {
       setShakeKey((k) => k + 1);
-      toast.error(adminLoginErrorMessage(e, t("login.loginFailed")));
+      showLoginToast("error", adminLoginErrorMessage(e, t("login.loginFailed")));
     } finally {
       setLoading(false);
     }
@@ -100,7 +139,7 @@ export default function AdminLogin() {
     const code = normalizeMfaCode(mfaCode);
     if (!/^\d{6}$/.test(code)) {
       setShakeKey((k) => k + 1);
-      toast.error(tText("\u8bf7\u8f93\u5165\u5b8c\u6574\u7684 6 \u4f4d\u9a8c\u8bc1\u7801"));
+      showLoginToast("error", tText("\u8bf7\u8f93\u5165\u5b8c\u6574\u7684 6 \u4f4d\u9a8c\u8bc1\u7801"));
       return;
     }
     mfaSubmittingRef.current = true;
@@ -117,7 +156,10 @@ export default function AdminLogin() {
       finishLogin();
     } catch (e) {
       setShakeKey((k) => k + 1);
-      toast.error(adminLoginErrorMessage(e, tText("\u591a\u56e0\u7d20\u9a8c\u8bc1\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u9a8c\u8bc1\u7801\u662f\u5426\u6b63\u786e\u6216\u662f\u5426\u5df2\u8fc7\u671f")));
+      showLoginToast(
+        "error",
+        adminLoginErrorMessage(e, tText("\u591a\u56e0\u7d20\u9a8c\u8bc1\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u9a8c\u8bc1\u7801\u662f\u5426\u6b63\u786e\u6216\u662f\u5426\u5df2\u8fc7\u671f")),
+      );
     } finally {
       mfaSubmittingRef.current = false;
       setLoading(false);
@@ -138,7 +180,7 @@ export default function AdminLogin() {
       finishLogin();
     } catch (e) {
       setShakeKey((k) => k + 1);
-      toast.error(adminLoginErrorMessage(e, tText("Passkey \u9a8c\u8bc1\u5931\u8d25")));
+      showLoginToast("error", adminLoginErrorMessage(e, tText("Passkey \u9a8c\u8bc1\u5931\u8d25")));
     } finally {
       setPasskeyLoading(false);
     }
@@ -152,7 +194,7 @@ export default function AdminLogin() {
         <div className="rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
           <div className="mb-8 text-center">
             <div className="mx-auto w-fit shadow-md">
-              <AdminLoginLogo />
+              <AdminLoginLogo locale={locale} />
             </div>
             <h1 className="mt-4 font-display text-2xl font-bold text-foreground">{t("login.title")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t("login.subtitle")}</p>

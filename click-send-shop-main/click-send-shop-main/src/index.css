@@ -2137,11 +2137,12 @@ html[data-app-scope="store"] .store-bottom-nav-badge-bump {
 
 html[data-app-scope="store"] .store-home-main {
   --store-home-hero-gap: clamp(0.7rem, 1.4vw, 1.05rem);
+  --store-home-hero-top-gap: calc(var(--store-home-hero-gap) + 2px);
   position: relative;
 }
 
 html[data-app-scope="store"] .store-home-main-guest {
-  padding-top: var(--store-home-hero-gap);
+  padding-top: var(--store-home-hero-top-gap);
 }
 
 html[data-app-scope="store"] .store-home-hero-stack {

@@ -4,15 +4,19 @@ const { writeAuditLog } = require('../../../utils/auditLog');
 const repo = require('../repository/privacy.repository');
 
 const DELETE_CONFIRM_TEXT = 'DELETE ACCOUNT';
+const ACCOUNT_CANCEL_CONFIRM_TEXTS = new Set([
+  DELETE_CONFIRM_TEXT,
+  '\u6ce8\u9500\u8d26\u53f7',
+]);
 
 function buildExportPayload({ user, addresses, orders, pointsRecords }) {
   return {
     exported_at: new Date().toISOString(),
     scope: {
-      profile: '账号基础资料',
-      addresses: '收货地址',
+      profile: '\u8d26\u53f7\u57fa\u7840\u8d44\u6599',
+      addresses: '\u6536\u8d27\u5730\u5740',
       orders: 'Orders and order items',
-      points_records: '积分流水',
+      points_records: '\u79ef\u5206\u6d41\u6c34',
     },
     profile: user,
     addresses,
@@ -23,7 +27,7 @@ function buildExportPayload({ user, addresses, orders, pointsRecords }) {
 
 async function exportAccountData(userId, req) {
   const user = await repo.selectUserForExport(userId);
-  if (!user) throw new NotFoundError('用户不存在');
+  if (!user) throw new NotFoundError('\u7528\u6237\u4e0d\u5b58\u5728');
 
   const [addresses, orders, pointsRecords] = await Promise.all([
     repo.selectAddressesForExport(userId),
@@ -38,7 +42,7 @@ async function exportAccountData(userId, req) {
     actionType: 'user.data_export',
     objectType: 'user',
     objectId: userId,
-    summary: '用户导出账号数据',
+    summary: '\u7528\u6237\u5bfc\u51fa\u8d26\u53f7\u6570\u636e',
     after: {
       addressCount: addresses.length,
       orderCount: orders.length,
@@ -47,12 +51,13 @@ async function exportAccountData(userId, req) {
     result: 'success',
   });
 
-  return { data: payload, message: '导出数据已生成' };
+  return { data: payload, message: '\u5bfc\u51fa\u6570\u636e\u5df2\u751f\u6210' };
 }
 
 async function cancelAccount(userId, body, req) {
-  if (body.confirmText !== DELETE_CONFIRM_TEXT) {
-    throw new ValidationError('请输入确认文字以注销账号');
+  const confirmText = String(body.confirmText || '').trim();
+  if (!ACCOUNT_CANCEL_CONFIRM_TEXTS.has(confirmText)) {
+    throw new ValidationError('\u8bf7\u8f93\u5165\u786e\u8ba4\u6587\u5b57\u4ee5\u6ce8\u9500\u8d26\u53f7');
   }
 
   const conn = await repo.getConnection();
@@ -62,7 +67,7 @@ async function cancelAccount(userId, body, req) {
   try {
     await conn.beginTransaction();
     beforeUser = await repo.selectUserForDeletion(conn, userId);
-    if (!beforeUser || beforeUser.deleted_at) throw new NotFoundError('用户不存在');
+    if (!beforeUser || beforeUser.deleted_at) throw new NotFoundError('\u7528\u6237\u4e0d\u5b58\u5728');
 
     const suffix = crypto.createHash('sha256').update(String(userId)).digest('hex').slice(0, 12);
     const anonymizedPhone = `deleted_${suffix}`;
@@ -76,7 +81,7 @@ async function cancelAccount(userId, body, req) {
       anonymizedInviteCode,
       anonymizedPasswordHash,
     );
-    if (affected !== 1) throw new NotFoundError('用户不存在');
+    if (affected !== 1) throw new NotFoundError('\u7528\u6237\u4e0d\u5b58\u5728');
 
     anonymizedOrderCount = await repo.anonymizeOrders(conn, userId);
     deletedAddressCount = await repo.deleteAddresses(conn, userId);
@@ -89,7 +94,7 @@ async function cancelAccount(userId, body, req) {
       actionType: 'user.account_cancel',
       objectType: 'user',
       objectId: userId,
-      summary: '用户注销账号失败',
+      summary: '\u7528\u6237\u6ce8\u9500\u8d26\u53f7\u5931\u8d25',
       result: 'failure',
       errorMessage: err?.message || 'unknown',
     });
@@ -106,13 +111,13 @@ async function cancelAccount(userId, body, req) {
     actionType: 'user.account_cancel',
     objectType: 'user',
     objectId: userId,
-    summary: '用户注销账号并完成匿名化',
+    summary: '\u7528\u6237\u6ce8\u9500\u8d26\u53f7\u5e76\u5b8c\u6210\u533f\u540d\u5316',
     before: beforeUser,
     after: { deletedAddressCount, anonymizedOrderCount },
     result: 'success',
   });
 
-  return { data: null, message: '账号已注销' };
+  return { data: null, message: '\u8d26\u53f7\u5df2\u6ce8\u9500' };
 }
 
 module.exports = {
@@ -120,5 +125,3 @@ module.exports = {
   exportAccountData,
   cancelAccount,
 };
-
-

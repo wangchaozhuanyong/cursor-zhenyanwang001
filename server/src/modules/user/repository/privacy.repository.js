@@ -1,5 +1,8 @@
 const db = require('../../../config/db');
 
+const DELETED_USER_NICKNAME = '\u5df2\u6ce8\u9500\u7528\u6237';
+const ANONYMIZED_TEXT = '\u5df2\u533f\u540d';
+
 async function getConnection() {
   return db.getConnection();
 }
@@ -84,7 +87,7 @@ async function anonymizeUser(conn, userId, anonymizedPhone, anonymizedInviteCode
     `UPDATE users
      SET phone = ?,
          password_hash = ?,
-         nickname = '已注销用户',
+         nickname = ?,
          avatar = '',
          wechat = '',
          whatsapp = '',
@@ -94,7 +97,7 @@ async function anonymizeUser(conn, userId, anonymizedPhone, anonymizedInviteCode
          refresh_token_version = refresh_token_version + 1,
          deleted_at = NOW()
      WHERE id = ? AND deleted_at IS NULL`,
-    [anonymizedPhone, anonymizedPasswordHash, anonymizedInviteCode, userId],
+    [anonymizedPhone, anonymizedPasswordHash, DELETED_USER_NICKNAME, anonymizedInviteCode, userId],
   );
   return result.affectedRows || 0;
 }
@@ -102,12 +105,12 @@ async function anonymizeUser(conn, userId, anonymizedPhone, anonymizedInviteCode
 async function anonymizeOrders(conn, userId) {
   const [result] = await conn.query(
     `UPDATE orders
-     SET contact_name = '已匿名,
+     SET contact_name = ?,
          contact_phone = '',
-         address = '已匿名,
+         address = ?,
          note = ''
      WHERE user_id = ?`,
-    [userId],
+    [ANONYMIZED_TEXT, ANONYMIZED_TEXT, userId],
   );
   return result.affectedRows || 0;
 }
@@ -128,6 +131,3 @@ module.exports = {
   anonymizeOrders,
   deleteAddresses,
 };
-
-
-

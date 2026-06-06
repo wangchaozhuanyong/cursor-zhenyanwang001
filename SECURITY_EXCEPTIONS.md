@@ -6,15 +6,20 @@ This file tracks accepted temporary security gaps that are not fully closed yet.
 
 ## EX-001: No automated SAST/DAST pipeline gate in CI
 
+- Status: Partially mitigated on 2026-06-06.
 - Risk: code-level security issues may pass without automated static/dynamic security test gates.
 - Reason: current CI focuses on typecheck/build/unit tests and deployment readiness.
 - Temporary mitigation:
   1. Mandatory code review for security-sensitive modules (`auth`, `payment`, `upload`, `admin`).
   2. Manual pre-release security checklist execution (`docs/SECURITY_CHECKLIST.md`).
   3. Rate limiting + RBAC + input validation remain enabled in runtime.
+  4. CI and local verification now run `node scripts/check-static-security.mjs` for high-confidence risky source patterns.
 - Planned fix:
-  1. Add SAST (for example Semgrep/CodeQL) in CI.
+  1. Add full SAST (for example Semgrep/CodeQL) in CI.
   2. Add periodic DAST against staging.
+- Current remaining gap:
+  1. Full SAST rulepack is not yet configured.
+  2. DAST is not yet automated because staging URL and test authorization are not defined in this repo.
 - Owner: Engineering Lead / Security Owner
 - Target date: 2026-06-15
 
@@ -24,8 +29,9 @@ This file tracks accepted temporary security gaps that are not fully closed yet.
 - Previous risk: accidental credential commit may not be blocked automatically.
 - Fix:
   1. Added `scripts/check-secret-leaks.mjs`.
-  2. Added the scanner to CI repo hygiene.
-  3. Added the scanner to local `scripts/verify-all.mjs` and `scripts/verify-before-push.ps1`.
+  2. Added `scripts/check-static-security.mjs`.
+  3. Added both scanners to CI repo hygiene.
+  4. Added both scanners to local `scripts/verify-all.mjs` and `scripts/verify-before-push.ps1`.
 - Remaining manual gate:
   1. Store all production secrets in secure vault / GitHub Secrets only.
   2. Confirm CI/deploy logs do not print real secret values.

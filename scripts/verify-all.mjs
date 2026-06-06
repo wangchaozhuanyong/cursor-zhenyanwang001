@@ -22,6 +22,7 @@ function run(label, cwd, command, args = []) {
 }
 
 run("Repo secret scan", root, "node", ["scripts/check-secret-leaks.mjs"]);
+run("Repo static security scan", root, "node", ["scripts/check-static-security.mjs"]);
 
 run("Frontend dependency audit", frontendDir, "npm", ["audit", "--omit=dev"]);
 run("Frontend lint", frontendDir, "npm", ["run", "lint"]);

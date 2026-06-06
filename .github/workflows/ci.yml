@@ -40,12 +40,13 @@ jobs:
           echo "Main history is fast-forward."
 
   repo-hygiene:
-    name: Repo hygiene (tracked artifacts + secrets)
+    name: Repo hygiene (tracked artifacts + secrets + static security)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - run: node server/scripts/check-tracked-artifacts.js
       - run: node scripts/check-secret-leaks.mjs
+      - run: node scripts/check-static-security.mjs
 
   frontend:
     name: Frontend (typecheck + build)

@@ -39,6 +39,10 @@ Write-Host "`n--- repo: secret scan ---" -ForegroundColor DarkCyan
 node scripts/check-secret-leaks.mjs
 Assert-LastExitCode "repo secret scan"
 
+Write-Host "`n--- repo: static security scan ---" -ForegroundColor DarkCyan
+node scripts/check-static-security.mjs
+Assert-LastExitCode "repo static security scan"
+
 Write-Host "`n--- server: deps + typecheck ---" -ForegroundColor DarkCyan
 Set-Location (Join-Path $RepoRoot "server")
 Install-Deps "server"

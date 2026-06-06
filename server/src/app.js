@@ -32,7 +32,7 @@ app.use(accessLogger);
 app.use((req, res, next) => {
   res.charset = 'utf-8';
   if (req.path.startsWith('/api/')) {
-    res.setHeader('X-Robots-Tag', 'noindex');
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   }
   next();
 });
@@ -137,6 +137,7 @@ function setNoStoreHtmlHeaders(res) {
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
 }
 
 function setHashedAssetHeaders(res) {

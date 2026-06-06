@@ -4,11 +4,17 @@ import path from "node:path";
 const BASE = process.env.BASE_URL || "https://damatong.net";
 const API = `${BASE}/api`;
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin123456";
+const ADMIN_PASSWORD = requireEnv("ADMIN_PASSWORD");
 const USE_DIRECT_URLS = process.env.USE_DIRECT_URLS === "1";
 const ASSET_DIR = process.env.ASSET_DIR
   ? path.resolve(process.cwd(), process.env.ASSET_DIR)
   : path.resolve(process.cwd(), "artifacts", "webp-products");
+
+function requireEnv(name) {
+  const value = String(process.env[name] || "").trim();
+  if (!value) throw new Error(`Missing ${name} env; do not use hardcoded admin credentials.`);
+  return value;
+}
 
 async function jfetch(url, options = {}) {
   const res = await fetch(url, options);
@@ -162,4 +168,3 @@ main().catch((e) => {
   console.error(`UPLOAD_BIND_FAILED: ${e.message}`);
   process.exit(1);
 });
-

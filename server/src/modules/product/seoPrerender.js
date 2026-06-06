@@ -4,6 +4,9 @@ const catalogService = require('./service/catalog.service');
 const contentService = require('./service/content.service');
 const { NEUTRAL_SITE_DESCRIPTION, resolveSiteDescription, resolveSiteName } = require('../../config/instance');
 
+const INDEXABLE_ROBOTS = 'index,nofollow';
+const NOINDEX_ROBOTS = 'noindex,nofollow';
+
 const RESTRICTED_KEYWORDS = [
   'tobacco', 'cigarette', 'cigar', 'smoking', 'vape', 'e-cigarette', 'nicotine',
   'alcohol', 'liquor', 'wine', 'beer', 'areca', 'betel',
@@ -219,7 +222,9 @@ function renderHtmlWithSeo(baseHtml, payload = {}) {
   html = upsertMeta(html, 'name', 'google-site-verification', payload.googleSiteVerification);
   html = upsertLinkCanonical(html, payload.canonical);
 
-  const jsonLdItems = Array.isArray(payload.jsonLd) ? payload.jsonLd : [];
+  const robots = String(payload.robots || '').trim().toLowerCase();
+  const isIndexable = robots.startsWith('index');
+  const jsonLdItems = isIndexable && Array.isArray(payload.jsonLd) ? payload.jsonLd : [];
   if (jsonLdItems.length > 0) {
     const scripts = jsonLdItems
       .map((data, idx) => `<script type="application/ld+json" data-seo-id="prerender-${idx}">${safeJsonScript(data)}</script>`)
@@ -227,7 +232,7 @@ function renderHtmlWithSeo(baseHtml, payload = {}) {
     html = html.replace('</head>', `  ${scripts}\n</head>`);
   }
 
-  if (payload.prerenderH1 || payload.prerenderText) {
+  if (isIndexable && (payload.prerenderH1 || payload.prerenderText)) {
     const textBlock = `<div id="seo-prerender-content" data-seo-prerender="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"><h1>${escapeHtml(payload.prerenderH1 || '')}</h1><p>${escapeHtml(payload.prerenderText || '')}</p></div>`;
     html = html.replace('<div id="root"></div>', `<div id="root"></div>${textBlock}`);
   }
@@ -257,13 +262,10 @@ function buildHomePayload(baseUrl, siteInfo) {
     ogType: 'website',
     ogSiteName: siteName,
     googleSiteVerification: siteInfo.googleSiteVerification || '',
-    robots: 'index,follow',
+    robots: NOINDEX_ROBOTS,
     prerenderH1: siteName,
     prerenderText: description,
-    jsonLd: [
-      buildWebsiteJsonLd(baseUrl, siteInfo),
-      buildOrganizationJsonLd(baseUrl, siteInfo),
-    ],
+    jsonLd: [],
   };
 }
 
@@ -302,7 +304,7 @@ function buildTikTokPayload(baseUrl, siteInfo) {
     twitterImage: image,
     canonical: landingUrl,
     ogUrl: landingUrl,
-    robots: 'index,nofollow',
+    robots: INDEXABLE_ROBOTS,
     googleSiteVerification: '',
     prerenderH1: `${siteName}生活服务导航`,
     prerenderText: description,
@@ -316,11 +318,13 @@ async function registerSeoPrerender(app, { frontendDist }) {
 
   const render = async (req, res, payloadBuilder) => {
     setNoStoreHtmlHeaders(res);
+    res.setHeader('X-Robots-Tag', NOINDEX_ROBOTS);
     try {
       const baseHtml = fs.readFileSync(indexPath, 'utf8');
       const baseUrl = getBaseUrl(req);
       const siteInfo = await getSiteInfoSafe();
       const payload = await payloadBuilder(baseUrl, siteInfo);
+      res.setHeader('X-Robots-Tag', String(payload?.robots || NOINDEX_ROBOTS).trim() || NOINDEX_ROBOTS);
       if (!payload) return res.sendFile(indexPath);
       return res.type('html').send(renderHtmlWithSeo(baseHtml, payload));
     } catch {
@@ -404,7 +408,7 @@ async function registerSeoPrerender(app, { frontendDist }) {
       title: seoTitle || `${page.title}｜${resolveSiteName(siteInfo)}`,
       description: seoDesc || truncate(contentText, 150),
       canonical: `${baseUrl}/content/${encodeURIComponent(req.params.slug)}`,
-      robots: ['draft', 'hidden', 'private'].includes(String(page.status || '').toLowerCase()) || Number(page.noindex || 0) === 1 ? 'noindex,follow' : 'index,follow',
+      robots: NOINDEX_ROBOTS,
       prerenderH1: page.title,
       prerenderText: truncate(contentText, 260),
     };
@@ -426,7 +430,7 @@ async function registerSeoPrerender(app, { frontendDist }) {
       canonical: `${baseUrl}/product/${encodeURIComponent(product.id)}`,
       ogType: 'product',
       ogImage: toAbsolute(baseUrl, product.cover_image || (Array.isArray(product.images) ? product.images[0] : '') || siteInfo.ogImageUrl || '/og-default.png'),
-      robots: restricted ? 'noindex,follow' : 'index,follow',
+      robots: NOINDEX_ROBOTS,
       prerenderH1: product.name,
       prerenderText: description,
       jsonLd: productJsonLd ? [...basePayload.jsonLd, productJsonLd] : basePayload.jsonLd,

@@ -136,7 +136,7 @@ export default function HomeOpsBlocks() {
   if (!ready) {
     return (
       <section className="store-nav-band" aria-busy="true" aria-label="快捷入口加载中">
-        <div className="store-home-nav-grid grid grid-cols-5 gap-x-1 gap-y-3 px-3 py-3.5 sm:grid-cols-6 sm:px-4 md:grid-cols-6 lg:grid-cols-8 lg:gap-x-2 lg:px-6">
+        <div className="store-home-nav-grid grid grid-cols-5 gap-x-2 gap-y-4 px-2 py-2.5 sm:grid-cols-6 sm:gap-x-3 sm:px-4 md:grid-cols-6 lg:grid-cols-8 lg:px-6">
           <HomeNavLoadingSlots />
         </div>
       </section>
@@ -146,8 +146,8 @@ export default function HomeOpsBlocks() {
 
   return (
     <section className="store-nav-band">
-      <div className="store-home-nav-grid grid grid-cols-5 gap-x-1 gap-y-3 px-3 py-3.5 sm:grid-cols-6 sm:px-4 md:grid-cols-6 lg:grid-cols-8 lg:gap-x-2 lg:px-6" role="navigation" aria-label="快捷入口">
-        {navSource.slice(0, 12).map((item) => (
+      <div className="store-home-nav-grid grid grid-cols-5 gap-x-2 gap-y-4 px-2 py-2.5 sm:grid-cols-6 sm:gap-x-3 sm:px-4 md:grid-cols-6 lg:grid-cols-8 lg:px-6" role="navigation" aria-label="快捷入口">
+        {navSource.slice(0, 15).map((item) => (
           <UnifiedButton
             key={item.id}
             type="button"

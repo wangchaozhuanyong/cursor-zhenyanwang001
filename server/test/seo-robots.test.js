@@ -1,6 +1,6 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildRobotsTxt } = require('../src/modules/seo/service/seo.service');
+const { buildRobotsTxt, buildSitemapXml } = require('../src/modules/seo/service/seo.service');
 
 function fakeRequest() {
   return {
@@ -30,14 +30,29 @@ describe('SEO robots rules', () => {
       const group = readUserAgentGroup(robots, userAgent);
       assert.match(group, /Allow: \/tiktok\n/);
       assert.match(group, /Allow: \/tiktok\/\n/);
+      assert.match(group, /Allow: \/sitemap\.xml\n/);
       assert.match(group, /Allow: \/assets\/tiktok-\n/);
       assert.match(group, /Disallow: \/\n?$/);
       assert.doesNotMatch(group, /Allow: \/\n/);
     }
 
     const publicGroup = readUserAgentGroup(robots, '*');
-    assert.match(publicGroup, /Allow: \/\n/);
-    assert.match(publicGroup, /Disallow: \/api\n/);
+    assert.match(publicGroup, /Allow: \/tiktok\n/);
+    assert.match(publicGroup, /Allow: \/tiktok\/\n/);
+    assert.match(publicGroup, /Allow: \/sitemap\.xml\n/);
+    assert.match(publicGroup, /Allow: \/assets\/tiktok-\n/);
+    assert.match(publicGroup, /Disallow: \/\n?$/);
+    assert.doesNotMatch(publicGroup, /Allow: \/\n/);
     assert.match(robots, /Sitemap: https:\/\/damatong\.net\/sitemap\.xml/);
+  });
+
+  test('sitemap only exposes the TikTok landing page', async () => {
+    const sitemap = await buildSitemapXml(fakeRequest());
+
+    assert.match(sitemap, /<loc>https:\/\/damatong\.net\/tiktok<\/loc>/);
+    assert.doesNotMatch(sitemap, /https:\/\/damatong\.net\/product\//);
+    assert.doesNotMatch(sitemap, /https:\/\/damatong\.net\/categories/);
+    assert.doesNotMatch(sitemap, /https:\/\/damatong\.net\/content\//);
+    assert.doesNotMatch(sitemap, /<loc>https:\/\/damatong\.net\/<\/loc>/);
   });
 });

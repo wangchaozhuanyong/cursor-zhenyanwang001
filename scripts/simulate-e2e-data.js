@@ -9,8 +9,14 @@ const crypto = require('crypto');
 const BASE = process.env.BASE_URL || 'https://damatong.net';
 const API = `${BASE}/api`;
 const ADMIN_PHONE = process.env.ADMIN_PHONE || '18800000001';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin123456';
+const ADMIN_PASSWORD = requireEnv('ADMIN_PASSWORD');
 const PRODUCT_COUNT = Number(process.env.PRODUCT_COUNT || 50);
+
+function requireEnv(name) {
+  const value = String(process.env[name] || '').trim();
+  if (!value) throw new Error(`Missing ${name} env; do not use hardcoded admin credentials.`);
+  return value;
+}
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -256,4 +262,3 @@ main().catch((err) => {
   console.error('模拟失败:', err.message);
   process.exit(1);
 });
-

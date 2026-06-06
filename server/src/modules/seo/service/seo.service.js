@@ -1,15 +1,6 @@
 const seoRepo = require('../repository/seo.repository');
 
-const { SITEMAP_MAX_URLS } = seoRepo;
-
-const STATIC_PUBLIC_PATHS = [
-  '/',
-  '/categories',
-  '/new-arrivals',
-  '/support-download',
-  '/help',
-  '/about',
-];
+const STATIC_PUBLIC_PATHS = ['/tiktok'];
 
 const TIKTOK_CRAWLER_USER_AGENTS = [
   'TikTokSpider',
@@ -65,6 +56,7 @@ function buildTikTokCrawlerRobotsRules() {
     `User-agent: ${userAgent}`,
     'Allow: /tiktok',
     'Allow: /tiktok/',
+    'Allow: /sitemap.xml',
     'Allow: /assets/tiktok-',
     'Allow: /assets/tiktok-logo.jpeg',
     'Disallow: /',
@@ -135,41 +127,13 @@ async function withSitemapFallback(label, loader) {
 
 async function buildSitemapXml(req) {
   const baseUrl = getPublicBaseUrl(req);
-  const [products, categories, contentPages] = await Promise.all([
-    withSitemapFallback('products', selectProductsForSitemap),
-    withSitemapFallback('categories', selectCategoriesForSitemap),
-    withSitemapFallback('content_pages', selectContentPagesForSitemap),
-  ]);
-
   const entries = [
     ...STATIC_PUBLIC_PATHS.map((path) => ({
       loc: buildUrl(baseUrl, path),
-      changefreq: path === '/' ? 'daily' : 'weekly',
-      priority: path === '/' ? '1.0' : '0.8',
+      changefreq: 'daily',
+      priority: '1.0',
     })),
-    ...categories.map((category) => ({
-      loc: buildUrl(baseUrl, `/categories?cat=${encodeURIComponent(category.id)}`),
-      lastmod: category.lastmod,
-      changefreq: 'weekly',
-      priority: '0.7',
-    })),
-    ...products
-      .filter((product) => !shouldExcludeProductFromSitemap(product))
-      .map((product) => ({
-      loc: buildUrl(baseUrl, `/product/${encodePathSegment(product.id)}`),
-      lastmod: product.lastmod,
-      changefreq: 'weekly',
-      priority: '0.8',
-    })),
-    ...contentPages
-      .filter((page) => !containsRestrictedText(`${page.title || ''} ${page.content || ''}`))
-      .map((page) => ({
-      loc: buildUrl(baseUrl, `/content/${encodePathSegment(page.slug)}`),
-      lastmod: page.lastmod,
-      changefreq: 'monthly',
-      priority: '0.6',
-    })),
-  ].slice(0, SITEMAP_MAX_URLS);
+  ];
 
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -185,18 +149,12 @@ function buildRobotsTxt(req) {
   return [
     ...buildTikTokCrawlerRobotsRules(),
     'User-agent: *',
-    'Allow: /',
-    'Disallow: /admin',
-    'Disallow: /api',
-    'Disallow: /checkout',
-    'Disallow: /orders',
-    'Disallow: /profile',
-    'Disallow: /settings',
-    'Disallow: /address',
-    'Disallow: /notifications',
-    'Disallow: /returns',
-    'Disallow: /reviews',
-    'Disallow: /login',
+    'Allow: /tiktok',
+    'Allow: /tiktok/',
+    'Allow: /sitemap.xml',
+    'Allow: /assets/tiktok-',
+    'Allow: /assets/tiktok-logo.jpeg',
+    'Disallow: /',
     '',
     `Sitemap: ${sitemapUrl}`,
     '',

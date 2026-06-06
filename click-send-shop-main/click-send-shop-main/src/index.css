@@ -784,15 +784,7 @@
   }
 
   .auth-login-heading::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -0.16rem;
-    width: 3.5rem;
-    height: 2px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, var(--theme-price), color-mix(in srgb, var(--theme-primary) 52%, transparent));
-    opacity: 0.72;
+    display: none;
   }
 
   .auth-login-kicker {
@@ -1883,23 +1875,15 @@ html[data-app-scope="store"] .store-hero-copy-desc {
 }
 
 html[data-app-scope="store"] .store-nav-band {
-  border-block: 1px solid color-mix(in srgb, var(--store-border) 84%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--store-surface-raised) 96%, transparent), color-mix(in srgb, var(--store-surface) 88%, var(--store-page-base)));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
-    0 12px 28px -26px color-mix(in srgb, var(--theme-primary) 28%, transparent);
+  border-block: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-app-scope="store"] .store-icon-tile {
-  border: 1px solid var(--store-icon-border);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, white 58%, transparent), transparent),
-    var(--store-icon-bg);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 10%, transparent),
-    0 10px 22px -18px var(--theme-primary);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-app-scope="store"] .store-coupon-card {
@@ -4415,45 +4399,61 @@ html[data-app-scope="store"] .store-footer-brand-logo-image {
 }
 
 html[data-app-scope="store"] .store-home-hero-stack .store-nav-band {
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--theme-primary) 9%, var(--store-border));
-  border-radius: var(--store-panel-radius);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, white 56%, transparent), transparent 46%),
-    color-mix(in srgb, var(--store-surface) 86%, var(--store-page-base));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
-    0 16px 42px -34px rgba(17, 24, 39, 0.28);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-app-scope="store"] .store-home-nav-grid {
-  gap: clamp(0.25rem, 1vw, 0.75rem);
+  column-gap: clamp(0.5rem, 2vw, 1.25rem);
+  row-gap: clamp(0.9rem, 2.6vw, 1.35rem);
 }
 
 html[data-app-scope="store"] .store-nav-action {
-  border-radius: 16px;
-  padding-block: 0.2rem;
+  --store-nav-icon-color: var(--theme-primary);
+  border-radius: 0;
+  padding-block: 0;
   transition:
     transform 180ms ease,
-    filter 180ms ease;
+    opacity 180ms ease;
+}
+
+html[data-app-scope="store"] .store-nav-action:nth-child(5n + 1) {
+  --store-nav-icon-color: #20b952;
+}
+
+html[data-app-scope="store"] .store-nav-action:nth-child(5n + 2) {
+  --store-nav-icon-color: #d33242;
+}
+
+html[data-app-scope="store"] .store-nav-action:nth-child(5n + 3) {
+  --store-nav-icon-color: #b030d8;
+}
+
+html[data-app-scope="store"] .store-nav-action:nth-child(5n + 4) {
+  --store-nav-icon-color: #1592e6;
+}
+
+html[data-app-scope="store"] .store-nav-action:nth-child(5n + 5) {
+  --store-nav-icon-color: #f06722;
 }
 
 html[data-app-scope="store"] .store-nav-action .store-icon-tile {
-  overflow: hidden;
+  overflow: visible;
   transition:
     transform 220ms ease,
-    border-color 220ms ease,
-    box-shadow 220ms ease,
-    background-color 220ms ease;
+    opacity 220ms ease;
 }
 
 html[data-app-scope="store"] .store-nav-action .store-icon-tile svg {
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 2.35rem;
+  height: 2.35rem;
 }
 
 html[data-app-scope="store"] .store-nav-action .store-icon-tile img {
-  transform: scale(1.08);
+  transform: scale(1.18);
 }
 
 html[data-app-scope="store"] .store-category-rail {
@@ -5536,10 +5536,8 @@ html[data-app-scope="store"] .store-art-product-info {
   }
 
   html[data-app-scope="store"] .store-nav-action:hover .store-icon-tile {
-    border-color: color-mix(in srgb, var(--theme-primary) 24%, var(--store-icon-border));
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 64%, transparent),
-      0 14px 28px -20px color-mix(in srgb, var(--theme-primary) 74%, transparent);
+    border-color: transparent;
+    box-shadow: none;
     transform: translateY(-1px);
   }
 
@@ -7542,6 +7540,22 @@ html[data-app-scope="store"][data-theme-scene="holiday"] .store-icon-tile {
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 62%, transparent),
     0 10px 22px -18px color-mix(in srgb, var(--theme-primary) 68%, transparent);
+}
+
+html[data-app-scope="store"] .store-home-hero-stack .store-nav-band,
+html[data-app-scope="store"][data-theme-skin-id] .store-home-hero-stack .store-nav-band,
+html[data-app-scope="store"][data-theme-scene] .store-home-hero-stack .store-nav-band {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"] .store-nav-action .store-icon-tile,
+html[data-app-scope="store"][data-theme-skin-id] .store-nav-action .store-icon-tile,
+html[data-app-scope="store"][data-theme-scene] .store-nav-action .store-icon-tile {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 html[data-app-scope="store"][data-theme-scene="holiday"] .store-coupon-card:not(.store-coupon-card--template) {

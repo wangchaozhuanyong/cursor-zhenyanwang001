@@ -26,7 +26,7 @@ const router = Router();
 
 router.use((req, res, next) => {
   if (req.path.startsWith('/api') || req.originalUrl.startsWith('/api/')) {
-    res.setHeader('X-Robots-Tag', 'noindex');
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   }
   next();
 });

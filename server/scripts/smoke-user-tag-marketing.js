@@ -5,7 +5,13 @@ const crypto = require('crypto');
 const BASE = process.env.BASE_URL || 'http://127.0.0.1:3000';
 const API = `${BASE}/api`;
 const ADMIN_PHONE = process.env.ADMIN_PHONE || '18800000001';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin123456';
+const ADMIN_PASSWORD = requireEnv('ADMIN_PASSWORD');
+
+function requireEnv(name) {
+  const value = String(process.env[name] || '').trim();
+  if (!value) throw new Error(`Missing ${name} env; do not use hardcoded admin credentials.`);
+  return value;
+}
 
 function uniqueCode(prefix) {
   return `${prefix}${Date.now().toString().slice(-8)}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
@@ -135,4 +141,3 @@ run().catch((err) => {
   console.error(`SMOKE_USER_TAG_MARKETING_FAILED: ${err instanceof Error ? err.message : String(err)}`);
   process.exit(1);
 });
-

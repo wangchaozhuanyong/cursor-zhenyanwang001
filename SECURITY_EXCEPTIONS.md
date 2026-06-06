@@ -1,6 +1,6 @@
 # Security Exceptions Register
 
-Last updated: 2026-05-19
+Last updated: 2026-06-06
 
 This file tracks accepted temporary security gaps that are not fully closed yet.
 
@@ -18,17 +18,19 @@ This file tracks accepted temporary security gaps that are not fully closed yet.
 - Owner: Engineering Lead / Security Owner
 - Target date: 2026-06-15
 
-## EX-002: No repository-native secret scanning gate enforced in CI
+## EX-002: Repository-native secret scanning gate enforced in CI
 
-- Risk: accidental credential commit may not be blocked automatically.
-- Reason: repository currently relies on `.gitignore`, manual review, and environment variable discipline.
-- Temporary mitigation:
-  1. Manual grep scan before release.
-  2. Store all production secrets in secure vault / GitHub Secrets only.
-- Planned fix:
-  1. Add secret scanning action (gitleaks or equivalent) as required CI check.
+- Status: Closed on 2026-06-06.
+- Previous risk: accidental credential commit may not be blocked automatically.
+- Fix:
+  1. Added `scripts/check-secret-leaks.mjs`.
+  2. Added the scanner to CI repo hygiene.
+  3. Added the scanner to local `scripts/verify-all.mjs` and `scripts/verify-before-push.ps1`.
+- Remaining manual gate:
+  1. Store all production secrets in secure vault / GitHub Secrets only.
+  2. Confirm CI/deploy logs do not print real secret values.
 - Owner: DevOps Owner
-- Target date: 2026-06-15
+- Closed date: 2026-06-06
 
 ## EX-003: Observability alerts currently script-driven, not yet unified in managed alert platform
 
@@ -41,4 +43,3 @@ This file tracks accepted temporary security gaps that are not fully closed yet.
   1. Integrate health metrics and alert routing to one platform (CloudWatch/Prometheus/Grafana/etc).
 - Owner: SRE/Ops Owner
 - Target date: 2026-06-20
-

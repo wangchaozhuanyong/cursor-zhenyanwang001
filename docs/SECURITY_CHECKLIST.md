@@ -1,6 +1,6 @@
 # Security Checklist (Pre-Release)
 
-Last updated: 2026-05-19
+Last updated: 2026-06-06
 
 ## 1. Dependency vulnerability check
 
@@ -10,6 +10,11 @@ Executed:
 2. `frontend`: `npm audit --omit=dev --json` -> vulnerabilities total: `0`
 
 Note: rerun these checks before each production release.
+
+CI gate:
+
+1. Frontend CI runs `npm audit --omit=dev` after `npm ci`.
+2. Backend CI runs `npm audit --omit=dev` after `npm ci`.
 
 ## 2. Sensitive data in repository (quick scan)
 
@@ -23,6 +28,11 @@ Required manual gate:
 
 1. Validate CI secrets and server `.env` are not leaked in logs.
 2. Confirm no real credentials in release notes or screenshots.
+
+Automated gate:
+
+1. CI runs `node scripts/check-secret-leaks.mjs` against git-tracked files.
+2. The scan blocks high-confidence private keys, cloud/API tokens, and hardcoded default admin credentials.
 
 ## 3. CORS policy check
 
@@ -76,4 +86,3 @@ Status:
 2. Production env guard: `server/src/config/validateEnv.js`
 3. Upload guards: `server/src/modules/user/controller/upload.controller.js`, `server/src/modules/user/service/uploadMedia.service.js`
 4. Admin RBAC routes: `server/src/modules/admin/routes/admin.routes.js`
-

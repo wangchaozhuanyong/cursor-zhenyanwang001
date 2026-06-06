@@ -40,11 +40,12 @@ jobs:
           echo "Main history is fast-forward."
 
   repo-hygiene:
-    name: Repo hygiene (tracked artifacts)
+    name: Repo hygiene (tracked artifacts + secrets)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - run: node server/scripts/check-tracked-artifacts.js
+      - run: node scripts/check-secret-leaks.mjs
 
   frontend:
     name: Frontend (typecheck + build)
@@ -60,6 +61,7 @@ jobs:
           cache: npm
           cache-dependency-path: click-send-shop-main/click-send-shop-main/package-lock.json
       - run: npm ci
+      - run: npm audit --omit=dev
       - run: npm run lint
       - run: npm run check:mojibake
       - run: npm run check:admin-i18n
@@ -88,6 +90,7 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
       - run: npm ci
+      - run: npm audit --omit=dev
       - run: npm run arch:check
       - run: npm run check:migrations
       - run: npm run check:report-registry

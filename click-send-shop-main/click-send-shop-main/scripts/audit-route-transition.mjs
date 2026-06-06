@@ -7,7 +7,7 @@ const ADMIN_ENTRY_URL = (process.env.ADMIN_ENTRY_URL || "").replace(/\/$/, "");
 const ADMIN_ENTRY_PATH = process.env.ADMIN_ENTRY_PATH || "/admin-index.html";
 const API_ORIGIN = (process.env.API_ORIGIN || "http://127.0.0.1:3000").replace(/\/$/, "");
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin123456";
+const ADMIN_PASSWORD = requireEnv("ADMIN_PASSWORD");
 const MAX_LAYOUT_SHIFT = Number(process.env.ROUTE_AUDIT_MAX_CLS || "0.05");
 const MAX_PREHEATED_FALLBACK_MS = Number(process.env.ROUTE_AUDIT_MAX_FALLBACK_MS || "80");
 const SAMPLE_INTERVAL_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_INTERVAL_MS || "40");
@@ -18,6 +18,12 @@ const adminRoutes = ["/admin", "/admin/products", "/admin/orders", "/admin/setti
 
 const issues = [];
 const warnings = [];
+
+function requireEnv(name) {
+  const value = String(process.env[name] || "").trim();
+  if (!value) throw new Error(`Missing ${name} env; do not use hardcoded admin credentials.`);
+  return value;
+}
 
 function addIssue(area, message, extra = {}) {
   issues.push({ area, message, ...extra });

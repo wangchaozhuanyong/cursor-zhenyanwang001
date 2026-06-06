@@ -6,7 +6,13 @@
 import { chromium } from "@playwright/test";
 
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin123456";
+const ADMIN_PASSWORD = requireEnv("ADMIN_PASSWORD");
+
+function requireEnv(name) {
+  const value = String(process.env[name] || "").trim();
+  if (!value) throw new Error(`Missing ${name} env; do not use hardcoded admin credentials.`);
+  return value;
+}
 
 const PATHS = [
   "/admin",

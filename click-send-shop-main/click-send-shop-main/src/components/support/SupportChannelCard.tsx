@@ -70,32 +70,12 @@ function getQrActionHint(channel: SupportDownloadChannel) {
   return "扫码或保存二维码后联系客服";
 }
 
-function getChannelGuide(channel: SupportDownloadChannel) {
-  if (channel.type === "wechat") {
-    return {
-      primary: "扫码后可发送商品、订单或售后问题。",
-      secondary: "请认准页面展示的微信号。",
-    };
-  }
-  if (channel.type === "whatsapp") {
-    return {
-      primary: "点击打开 WhatsApp，也可保存二维码。",
-      secondary: "咨询时附上商品截图和收货地区。",
-    };
-  }
-  return {
-    primary: "点击打开 Telegram，也可保存二维码。",
-    secondary: "避免私下转账或泄露验证码。",
-  };
-}
-
 export default function SupportChannelCard({ channel }: Props) {
   const account = cleanSupportText(channel.account);
   const qrUrl = cleanSupportText(channel.qrUrl);
   const description = cleanSupportText(channel.description);
   const openUrl = getOpenUrl(channel);
   const title = getChannelTitle(channel);
-  const guide = getChannelGuide(channel);
   const qrTrackedRef = useRef(false);
   const [downloadingQr, setDownloadingQr] = useState(false);
 
@@ -169,11 +149,6 @@ export default function SupportChannelCard({ channel }: Props) {
               </UnifiedButton>
             </div>
           ) : null}
-
-          <div className="support-context-panel" aria-label="客服说明">
-            <p>{guide.primary}</p>
-            <p className="support-context-time">{guide.secondary}</p>
-          </div>
         </div>
 
         <div className="support-qr-block">

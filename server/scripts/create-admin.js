@@ -1,62 +1,58 @@
 /**
- * 创建或重置本地管理员（手机号 + 密码，与前台用户同表）。
+ * Create or reset an admin account.
  *
- * 用法（在 server 目录）：
- *   node scripts/create-admin.js
+ * Usage from server/:
+ *   ADMIN_PASSWORD=MySecretPass node scripts/create-admin.js
  *   node scripts/create-admin.js 13900000000 MySecretPass
  *   node scripts/create-admin.js 13900000000 MySecretPass super
  *
- * 第三个参数为 super 时：设为超级管理员（users.role=super_admin + RBAC 同步）。
- * 未传参数时默认：18800000001 / Admin123456 / 普通管理员 admin
+ * Password must be passed as argv[3] or ADMIN_PASSWORD. This script does not
+ * ship with a default admin password.
  */
-require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
-const db = require("../src/config/db");
-const { generateId, generateInviteCode, hashPassword } = require("../src/utils/helpers");
-const { syncAdminLegacyRoleToUserRoles } = require("./adminRbacSync");
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+const db = require('../src/config/db');
+const { generateId, generateInviteCode, hashPassword } = require('../src/utils/helpers');
+const { syncAdminLegacyRoleToUserRoles } = require('./adminRbacSync');
 const {
   buildPhoneLookupCandidates,
   inferCountryCodeForPhone,
   normalizeIntlPhone,
-} = require("../src/utils/phone");
+} = require('../src/utils/phone');
 
 async function uniqueInviteCode() {
   for (let i = 0; i < 30; i += 1) {
     const code = generateInviteCode();
-    const [[row]] = await db.query("SELECT id FROM users WHERE invite_code = ?", [code]);
+    const [[row]] = await db.query('SELECT id FROM users WHERE invite_code = ?', [code]);
     if (!row) return code;
   }
-  throw new Error("无法生成唯一邀请码");
+  throw new Error('Unable to generate a unique invite code');
+}
+
+function readAdminInput() {
+  const phone = (process.argv[2] || process.env.ADMIN_PHONE || '18800000001').trim();
+  const password = process.argv[3] || String(process.env.ADMIN_PASSWORD || '').trim();
+  const tier = String(process.argv[4] || process.env.ADMIN_ROLE || '').toLowerCase();
+  const isSuper = tier === 'super' || tier === 'super_admin';
+
+  if (!phone) throw new Error('Phone is required');
+  if (!password) throw new Error('Missing admin password. Pass it as argv[3] or set ADMIN_PASSWORD.');
+  if (password.length < 8) throw new Error('Password must be at least 8 characters');
+  if (password.length > 64) throw new Error('Password must not exceed 64 characters');
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+    throw new Error('Password must include uppercase, lowercase and number characters');
+  }
+
+  return { phone, password, isSuper };
 }
 
 async function main() {
-  const phone = (process.argv[2] || "18800000001").trim();
-  const password = process.argv[3] || "Admin123456";
-  const tier = String(process.argv[4] || "").toLowerCase();
-  const isSuper = tier === "super" || tier === "super_admin";
-
-  if (!phone) {
-    console.error("手机号不能为空");
-    process.exit(1);
-  }
-  if (password.length < 8) {
-    console.error("密码至少 8 位，并包含大写字母、小写字母和数字");
-    process.exit(1);
-  }
-  if (password.length > 64) {
-    console.error("密码不能超过 64 位");
-    process.exit(1);
-  }
-  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
-    console.error("密码必须包含大写字母、小写字母和数字");
-    process.exit(1);
-  }
-
-  const legacyRole = isSuper ? "super_admin" : "admin";
+  const { phone, password, isSuper } = readAdminInput();
+  const legacyRole = isSuper ? 'super_admin' : 'admin';
   const hash = await hashPassword(password);
-  const cc = inferCountryCodeForPhone(phone) || "86";
+  const cc = inferCountryCodeForPhone(phone) || '86';
   const normalizedPhone = normalizeIntlPhone(phone, cc) || phone;
   const lookupPhones = buildPhoneLookupCandidates(normalizedPhone, cc);
-  const placeholders = lookupPhones.map(() => "?").join(",");
+  const placeholders = lookupPhones.map(() => '?').join(',');
   const [existingRows] = await db.query(
     `SELECT id, phone FROM users WHERE phone IN (${placeholders}) AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1`,
     lookupPhones,
@@ -69,31 +65,30 @@ async function main() {
       [normalizedPhone, hash, legacyRole, existing.id],
     );
     await syncAdminLegacyRoleToUserRoles(existing.id, legacyRole);
-    console.log(`✅ 已将该手机号设为${isSuper ? "超级" : ""}管理员并重置密码`);
+    console.log(`OK: reset ${legacyRole} password for ${normalizedPhone}`);
   } else {
     const id = generateId();
     const invite = await uniqueInviteCode();
     await db.query(
       `INSERT INTO users (id, phone, password_hash, nickname, invite_code, parent_invite_code, role, account_status)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'normal')`,
-      [id, normalizedPhone, hash, isSuper ? "超级管理员" : "管理员", invite, "", legacyRole],
+      [id, normalizedPhone, hash, isSuper ? 'Super Admin' : 'Admin', invite, '', legacyRole],
     );
     await syncAdminLegacyRoleToUserRoles(id, legacyRole);
-    console.log(`✅ 已新建${isSuper ? "超级" : ""}管理员账号`);
+    console.log(`OK: created ${legacyRole} account for ${normalizedPhone}`);
   }
 
-  console.log("");
-  console.log("  手机号:", normalizedPhone);
-  console.log("  密码:  ", password);
-  console.log("  角色:  ", legacyRole);
-  console.log("  后台:  使用站点域名 /admin/login");
-  console.log("");
-  console.log("提示：生产环境请尽快修改密码；勿泄露脚本输出。");
+  console.log('');
+  console.log('  phone:', normalizedPhone);
+  console.log('  role: ', legacyRole);
+  console.log('  login: /admin/login');
+  console.log('');
+  console.log('Keep this password out of shell history and logs.');
 }
 
 main()
   .then(() => process.exit(0))
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error(error?.message || error);
     process.exit(1);
   });

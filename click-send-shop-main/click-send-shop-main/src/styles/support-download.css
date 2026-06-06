@@ -254,25 +254,6 @@ html[data-app-scope="store"] .support-outline-action {
   padding: 0 1rem;
 }
 
-html[data-app-scope="store"] .support-context-panel {
-  display: grid;
-  gap: 0.32rem;
-  border-left: 3px solid var(--support-accent);
-  padding-left: 0.75rem;
-  color: var(--support-muted);
-  font-size: 0.9rem;
-  line-height: 1.55;
-}
-
-html[data-app-scope="store"] .support-context-panel p {
-  margin: 0;
-}
-
-html[data-app-scope="store"] .support-context-time {
-  color: var(--support-accent-dark);
-  font-weight: 800;
-}
-
 html[data-app-scope="store"] .support-qr-block {
   display: flex;
   min-width: 0;

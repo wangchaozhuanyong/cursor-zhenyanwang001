@@ -23,9 +23,13 @@ const COUPON_STYLES =
     ? ["ticket", "premium", "deal", "minimal"]
     : ["ticket"];
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin123456";
+const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "").trim();
 const SKIP_AUTH = READ_ONLY_AUDIT || process.env.SKIP_AUTH === "1";
 const SKIP_ADMIN = READ_ONLY_AUDIT || process.env.SKIP_ADMIN === "1";
+
+function assertAdminPassword() {
+  if (!ADMIN_PASSWORD) throw new Error("Missing ADMIN_PASSWORD env; do not use hardcoded admin credentials.");
+}
 
 const PUBLIC_ROUTES = [
   { path: "/", name: "首页" },
@@ -147,6 +151,7 @@ async function registerUser() {
 }
 
 async function adminLogin() {
+  assertAdminPassword();
   const data = await jfetch(`${API}/admin/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -196,6 +201,7 @@ async function loginFrontend(page, phone, password) {
 }
 
 async function loginAdminUi(page) {
+  assertAdminPassword();
   await page.goto(`${BASE}/admin/login`, { waitUntil: "domcontentloaded" });
   await waitStable(page);
   await page.getByPlaceholder("输入账号").fill(ADMIN_PHONE);

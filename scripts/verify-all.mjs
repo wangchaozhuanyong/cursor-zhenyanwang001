@@ -21,12 +21,16 @@ function run(label, cwd, command, args = []) {
   }
 }
 
+run("Repo secret scan", root, "node", ["scripts/check-secret-leaks.mjs"]);
+
+run("Frontend dependency audit", frontendDir, "npm", ["audit", "--omit=dev"]);
 run("Frontend lint", frontendDir, "npm", ["run", "lint"]);
 run("Frontend typecheck", frontendDir, "npm", ["run", "typecheck"]);
 run("Frontend strict-api typecheck", frontendDir, "npm", ["run", "typecheck:strict-api"]);
 run("Frontend strict-admin typecheck", frontendDir, "npm", ["run", "typecheck:strict-admin"]);
 run("Frontend unit tests", frontendDir, "npm", ["run", "test"]);
 
+run("Server dependency audit", serverDir, "npm", ["audit", "--omit=dev"]);
 run("Server module structure", serverDir, "npm", ["run", "check:module-structure"]);
 run("Server service layer", serverDir, "npm", ["run", "check:service-layer"]);
 run("Server module boundaries (strict)", serverDir, "npm", ["run", "check:module-boundaries"]);

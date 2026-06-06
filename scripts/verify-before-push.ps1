@@ -35,9 +35,15 @@ function Install-Deps($label) {
 
 Write-Host "== verify-before-push: repo root = $RepoRoot" -ForegroundColor Cyan
 
+Write-Host "`n--- repo: secret scan ---" -ForegroundColor DarkCyan
+node scripts/check-secret-leaks.mjs
+Assert-LastExitCode "repo secret scan"
+
 Write-Host "`n--- server: deps + typecheck ---" -ForegroundColor DarkCyan
 Set-Location (Join-Path $RepoRoot "server")
 Install-Deps "server"
+npm audit --omit=dev
+Assert-LastExitCode "server dependency audit"
 npm run typecheck
 Assert-LastExitCode "server typecheck"
 
@@ -56,6 +62,8 @@ Write-Host "`n--- frontend: deps + typecheck + build (VITE_API_BASE_URL=/api) --
 $fe = Join-Path $RepoRoot "click-send-shop-main\click-send-shop-main"
 Set-Location $fe
 Install-Deps "frontend"
+npm audit --omit=dev
+Assert-LastExitCode "frontend dependency audit"
 npm run typecheck
 Assert-LastExitCode "frontend typecheck"
 npm run test

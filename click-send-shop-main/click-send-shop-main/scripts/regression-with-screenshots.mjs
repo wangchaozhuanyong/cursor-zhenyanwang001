@@ -5,12 +5,18 @@ import { chromium } from "@playwright/test";
 const BASE = process.env.BASE_URL || "https://example.com";
 const API = `${BASE}/api`;
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin123456";
+const ADMIN_PASSWORD = requireEnv("ADMIN_PASSWORD");
 
 function nowStamp() {
   const d = new Date();
   const p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+function requireEnv(name) {
+  const value = String(process.env[name] || "").trim();
+  if (!value) throw new Error(`Missing ${name} env; do not use hardcoded admin credentials.`);
+  return value;
 }
 
 function randomPhone() {
@@ -248,4 +254,3 @@ main().catch((e) => {
   console.error(`REGRESSION_FAILED: ${e.message}`);
   process.exit(1);
 });
-

@@ -10,11 +10,10 @@ permissions:
 
 jobs:
   dast-baseline:
-    name: DAST baseline against staging
+    name: DAST baseline against approved external targets
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      DAST_BASE_URL: ${{ secrets.DAST_BASE_URL }}
       DAST_ALLOWED_HOSTS: ${{ secrets.DAST_ALLOWED_HOSTS }}
       DAST_ADMIN_ORIGIN: ${{ secrets.DAST_ADMIN_ORIGIN }}
       DAST_AUTH_HEADER: ${{ secrets.DAST_AUTH_HEADER }}
@@ -29,5 +28,11 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
-      - name: Run DAST baseline checks
+      - name: Run DAST baseline checks for storefront
+        env:
+          DAST_BASE_URL: ${{ secrets.DAST_BASE_URL }}
+        run: node scripts/check-dast-baseline.mjs
+      - name: Run DAST baseline checks for admin
+        env:
+          DAST_BASE_URL: ${{ secrets.DAST_ADMIN_BASE_URL }}
         run: node scripts/check-dast-baseline.mjs

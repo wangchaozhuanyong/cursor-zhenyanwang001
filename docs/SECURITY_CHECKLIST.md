@@ -49,15 +49,23 @@ Remaining manual gate:
 
 ## 4. Dynamic security baseline (DAST)
 
+Latest executed result:
+
+1. `node scripts/check-dast-local.mjs` passed locally on 2026-06-06.
+2. Authorized production baseline passed for `https://damatong.net` on 2026-06-06.
+3. Authorized production baseline passed for `https://console.damatong.net` on 2026-06-06.
+4. GitHub Secrets were configured on 2026-06-06 for recurring approved production baseline scans.
+
 Automated gate:
 
-1. `Security DAST Baseline` runs `node scripts/check-dast-baseline.mjs` on schedule and manual dispatch.
-2. Strict workflow mode requires `DAST_BASE_URL`; local scripts skip this gate when no target is configured.
-3. The baseline checks health/security headers, anonymous access rejection, admin Origin/CSRF blocking, unsigned payment webhook rejection, and encoded upload path traversal rejection.
+1. Local verification runs `node scripts/check-dast-local.mjs`, which starts the Express app and executes the baseline against `127.0.0.1`.
+2. `Security DAST Baseline` runs `node scripts/check-dast-baseline.mjs` on schedule and manual dispatch for staging or another approved external target.
+3. Strict workflow mode requires `DAST_BASE_URL`; the external target check is skipped locally when no target is configured.
+4. The baseline checks health/security headers, anonymous access rejection, admin Origin/CSRF blocking, unsigned payment webhook rejection, and encoded upload path traversal rejection.
 
 Required configuration:
 
-1. Configure GitHub Secrets: `DAST_BASE_URL`, `DAST_ALLOWED_HOSTS`, and optionally `DAST_ADMIN_ORIGIN`, `DAST_AUTH_HEADER`, `DAST_COOKIE`.
+1. Configure GitHub Secrets: `DAST_BASE_URL`, `DAST_ADMIN_BASE_URL`, `DAST_ALLOWED_HOSTS`, and optionally `DAST_ADMIN_ORIGIN`, `DAST_AUTH_HEADER`, `DAST_COOKIE`.
 2. Use staging or an approved test target. Do not point this workflow at production without explicit approval.
 3. Production hosts are refused unless `DAST_PRODUCTION_ACK=I_UNDERSTAND_THIS_IS_PRODUCTION` is explicitly set.
 

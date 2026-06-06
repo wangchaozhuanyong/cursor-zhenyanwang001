@@ -4,6 +4,7 @@
  * Usage: node scripts/verify-all.mjs
  */
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,9 +13,22 @@ const root = path.resolve(__dirname, "..");
 const frontendDir = path.join(root, "click-send-shop-main", "click-send-shop-main");
 const serverDir = path.join(root, "server");
 
+function resolveCommand(command, args) {
+  if (process.platform !== "win32" || command !== "npm") {
+    return { command, args };
+  }
+
+  const npmCli = path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
+  if (!fs.existsSync(npmCli)) {
+    return { command: "cmd.exe", args: ["/d", "/s", "/c", "npm.cmd", ...args] };
+  }
+  return { command: process.execPath, args: [npmCli, ...args] };
+}
+
 function run(label, cwd, command, args = []) {
   console.log(`\n=== ${label} ===`);
-  const result = spawnSync(command, args, { cwd, stdio: "inherit", shell: process.platform === "win32" });
+  const resolved = resolveCommand(command, args);
+  const result = spawnSync(resolved.command, resolved.args, { cwd, stdio: "inherit" });
   if (result.status !== 0) {
     console.error(`\n[verify-all] FAILED: ${label}`);
     process.exit(result.status ?? 1);
@@ -23,7 +37,8 @@ function run(label, cwd, command, args = []) {
 
 run("Repo secret scan", root, "node", ["scripts/check-secret-leaks.mjs"]);
 run("Repo static security scan", root, "node", ["scripts/check-static-security.mjs"]);
-run("DAST baseline (skips without DAST_BASE_URL)", root, "node", ["scripts/check-dast-baseline.mjs"]);
+run("Local DAST baseline", root, "node", ["scripts/check-dast-local.mjs"]);
+run("External DAST baseline (skips without DAST_BASE_URL)", root, "node", ["scripts/check-dast-baseline.mjs"]);
 
 run("Frontend dependency audit", frontendDir, "npm", ["audit", "--omit=dev"]);
 run("Frontend lint", frontendDir, "npm", ["run", "lint"]);

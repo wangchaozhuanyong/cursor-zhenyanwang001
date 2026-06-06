@@ -4,10 +4,14 @@ Last updated: 2026-06-06
 
 This file tracks accepted temporary security gaps that are not fully closed yet.
 
-## EX-001: DAST staging target not configured yet
+## EX-001: Dedicated staging DAST target not configured yet
 
-- Status: Partially mitigated on 2026-06-06; code-side SAST/DAST plumbing is in place.
-- Risk: dynamic security regressions may pass if the scheduled DAST job has no staging target to scan.
+- Status: Current full-repository security review completed on 2026-06-06; recurring GitHub Actions baseline is configured for approved production targets, but no dedicated staging target exists yet.
+- Current review evidence:
+  1. Local `node scripts/check-dast-local.mjs` passed.
+  2. Authorized production baseline DAST passed for `https://damatong.net`.
+  3. Authorized production baseline DAST passed for `https://console.damatong.net`.
+- Risk: future environment-specific dynamic security regressions may pass if the scheduled DAST job has no staging target to scan.
 - Reason: the repository does not contain the staging base URL or scan authorization secrets.
 - Temporary mitigation:
   1. Mandatory code review for security-sensitive modules (`auth`, `payment`, `upload`, `admin`).
@@ -15,13 +19,15 @@ This file tracks accepted temporary security gaps that are not fully closed yet.
   3. Rate limiting + RBAC + input validation remain enabled in runtime.
   4. CI and local verification now run `node scripts/check-static-security.mjs` for high-confidence risky source patterns.
   5. CodeQL SAST workflow runs on PR/push/schedule.
-  6. DAST baseline workflow exists and fails in strict mode until `DAST_BASE_URL` is configured.
+  6. Local `node scripts/check-dast-local.mjs` runs the DAST baseline against a temporary local Express server.
+  7. DAST baseline workflow exists and fails in strict mode until `DAST_BASE_URL` is configured.
 - Planned fix:
-  1. Configure GitHub Secrets: `DAST_BASE_URL`, `DAST_ALLOWED_HOSTS`, and optionally `DAST_ADMIN_ORIGIN`, `DAST_AUTH_HEADER`, `DAST_COOKIE`.
-  2. Run `Security DAST Baseline` successfully against staging.
+  1. Provision a dedicated staging or preview target with production-like routing and security middleware.
+  2. Repoint `DAST_BASE_URL` and `DAST_ADMIN_BASE_URL` to staging once that environment exists.
+  3. Run `Security DAST Baseline` successfully against staging.
 - Current remaining gap:
   1. No real staging DAST result has been produced in this workspace because no staging target URL/authorization was provided.
-  2. Production domains were found in repo docs/config, but production DAST is intentionally refused unless explicitly acknowledged.
+  2. GitHub Secrets currently point recurring external baseline scans at the approved production targets.
 - Owner: Engineering Lead / Security Owner
 - Target date: 2026-06-15
 

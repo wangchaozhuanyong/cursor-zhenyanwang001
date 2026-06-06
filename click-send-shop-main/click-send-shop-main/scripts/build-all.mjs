@@ -47,6 +47,10 @@ async function main() {
   await run(npm.command, npm.args, buildEnv);
   npm = npmCommand(["run", "verify:dist"]);
   await run(npm.command, npm.args, buildEnv);
+  if (legacy) {
+    npm = npmCommand(["run", "verify:legacy-dist"]);
+    await run(npm.command, npm.args, buildEnv);
+  }
 }
 
 main().catch((error) => {

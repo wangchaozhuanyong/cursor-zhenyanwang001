@@ -36,12 +36,12 @@ export default function ChinaBrowserCompatNotice() {
       className="fixed inset-x-0 top-0 z-[9996] px-3 pt-[max(env(safe-area-inset-top,0px),0.5rem)]"
       role="status"
     >
-      <div className="mx-auto flex max-w-screen-xl items-start gap-2 rounded-lg border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950 shadow-sm dark:bg-amber-950/90 dark:text-amber-50">
+      <div className="mx-auto flex max-w-screen-xl items-start gap-2 rounded-lg border border-[color-mix(in_srgb,var(--theme-warning)_34%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_14%,var(--theme-surface))] px-3 py-2 text-xs leading-relaxed text-[color-mix(in_srgb,var(--theme-warning)_78%,var(--theme-text-on-surface))] shadow-sm">
         <p className="min-w-0 flex-1">{hint}</p>
         <UnifiedButton
           type="button"
           onClick={dismiss}
-          className="shrink-0 rounded px-2 py-0.5 font-medium text-amber-900/80 hover:bg-amber-200/60 dark:text-amber-100 dark:hover:bg-amber-900"
+          className="shrink-0 rounded px-2 py-0.5 font-medium text-[color-mix(in_srgb,var(--theme-warning)_78%,var(--theme-text-on-surface))] hover:bg-[color-mix(in_srgb,var(--theme-warning)_20%,var(--theme-surface))]"
         >
           知道了
         </UnifiedButton>

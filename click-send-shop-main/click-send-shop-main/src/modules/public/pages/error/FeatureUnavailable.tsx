@@ -19,7 +19,7 @@ export default function FeatureUnavailable() {
           <UnifiedButton
             type="button"
             onClick={() => navigate("/", { replace: true })}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full btn-theme-price px-5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full btn-theme-price px-5 text-sm font-semibold text-[var(--theme-price-foreground)] transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2"
           >
             <Home size={15} />
             返回首页

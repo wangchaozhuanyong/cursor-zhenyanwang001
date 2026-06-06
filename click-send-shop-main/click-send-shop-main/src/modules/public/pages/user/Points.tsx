@@ -195,7 +195,7 @@ function PointsCheckInPanel({
         type="button"
         onClick={onSignIn}
         disabled={signingIn || !signInEnabled}
-        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full btn-theme-price px-5 py-2 text-sm font-semibold text-primary-foreground shadow-md transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full btn-theme-price px-5 py-2 text-sm font-semibold text-[var(--theme-price-foreground)] shadow-md transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <CalendarCheck size={16} aria-hidden />
         {signingIn ? "签到中..." : signedInToday ? "已签到" : "去签到"}

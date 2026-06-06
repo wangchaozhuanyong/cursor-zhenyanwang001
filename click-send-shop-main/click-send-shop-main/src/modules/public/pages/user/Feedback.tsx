@@ -191,7 +191,7 @@ export default function Feedback() {
         <PageHeader title="意见反馈" backFallback="/profile" />
         <main className="mx-auto max-w-lg px-[var(--store-page-x)] pt-5 sm:px-4">
           <section className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 text-center shadow-[var(--theme-shadow)]">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-success)_12%,var(--theme-surface))] text-[var(--theme-success)]">
               <CheckCircle2 size={30} />
             </div>
             <h2 className="mt-4 text-lg font-semibold text-[var(--theme-text)]">已收到你的反馈</h2>

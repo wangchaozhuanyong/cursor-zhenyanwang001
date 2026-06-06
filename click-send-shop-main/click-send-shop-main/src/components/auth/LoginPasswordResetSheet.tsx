@@ -2,7 +2,7 @@ import { AppModal, LoadingButton } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const RESET_INPUT_CLASS =
-  "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20";
+  "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:border-[var(--theme-primary)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_22%,transparent)]";
 
 type LoginPasswordResetSheetProps = {
   open: boolean;
@@ -45,7 +45,7 @@ export function LoginPasswordResetSheet({
           type="button"
           state={resetLoading ? "loading" : "normal"}
           loadingText="处理中..."
-          className="min-h-12 w-full rounded-2xl btn-theme-price text-sm font-bold text-primary-foreground"
+          className="min-h-12 w-full rounded-2xl btn-theme-price text-sm font-bold text-[var(--theme-price-foreground)]"
           onClick={() => void onConfirmReset()}
         >
           确认重置密码
@@ -57,7 +57,7 @@ export function LoginPasswordResetSheet({
           type="button"
           onClick={() => void onRequestReset()}
           disabled={resetLoading}
-          className="w-full rounded-xl border border-gold/30 bg-gold/10 py-2.5 text-xs font-semibold text-theme-price disabled:opacity-60"
+          className="w-full rounded-xl border border-[color-mix(in_srgb,var(--theme-primary)_32%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] py-2.5 text-xs font-semibold text-[var(--theme-primary)] disabled:opacity-60"
         >
           {resetLoading ? "处理中..." : "发送重置令牌"}
         </UnifiedButton>

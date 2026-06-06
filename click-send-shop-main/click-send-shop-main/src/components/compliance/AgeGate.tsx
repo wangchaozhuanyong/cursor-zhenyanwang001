@@ -75,22 +75,22 @@ export default function AgeGate() {
       aria-modal="true"
       aria-labelledby="age-gate-title"
     >
-      <div className="max-w-md rounded-2xl border border-amber-300/40 bg-card p-6 shadow-lg">
-        <h1 id="age-gate-title" className="text-lg font-semibold text-foreground">
+      <div className="max-w-md rounded-2xl border border-[color-mix(in_srgb,var(--theme-warning)_42%,var(--theme-border))] bg-[var(--theme-surface)] p-6 shadow-lg">
+        <h1 id="age-gate-title" className="text-lg font-semibold text-[var(--theme-text)]">
           年龄确认
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
           本网站可能包含受年龄或当地法规限制的商品与服务信息，仅面向符合法定年龄要求的用户。
-          继续浏览即表示您确认已满 <strong className="text-foreground">{minimumAge}</strong> 岁，并符合您所在地区的相关规定。
+          继续浏览即表示您确认已满 <strong className="text-[var(--theme-text)]">{minimumAge}</strong> 岁，并符合您所在地区的相关规定。
         </p>
         {complianceText ? (
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{complianceText}</p>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--theme-text-muted)]">{complianceText}</p>
         ) : null}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <UnifiedButton
             type="button"
             onClick={handleDecline}
-            className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary"
+            className="rounded-lg border border-[var(--theme-border)] px-4 py-2.5 text-sm font-medium text-[var(--theme-text-muted)] hover:bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]"
           >
             离开网站
           </UnifiedButton>

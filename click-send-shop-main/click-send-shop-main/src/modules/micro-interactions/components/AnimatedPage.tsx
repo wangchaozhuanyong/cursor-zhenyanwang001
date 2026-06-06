@@ -7,25 +7,28 @@ export function AnimatedPage({
   children,
   className,
   disableTransform = false,
+  disableAnimation = false,
 }: {
   children: ReactNode;
   className?: string;
   disableTransform?: boolean;
+  disableAnimation?: boolean;
 }) {
   const location = useLocation();
   const { level, enabled } = useMotionConfig();
   const [entered, setEntered] = useState(true);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || disableAnimation) {
       setEntered(true);
       return;
     }
     setEntered(false);
     const raf = window.requestAnimationFrame(() => setEntered(true));
     return () => window.cancelAnimationFrame(raf);
-  }, [enabled, level, location.pathname]);
+  }, [disableAnimation, enabled, level, location.pathname]);
 
+  const shouldAnimate = enabled && !disableAnimation;
   const duration = level === "rich" ? 160 : 120;
   const y = level === "rich" ? 2 : 0;
 
@@ -35,13 +38,13 @@ export function AnimatedPage({
       style={{
         backfaceVisibility: "hidden",
         transformOrigin: "50% 0%",
-        opacity: enabled ? (entered ? 1 : 0.985) : undefined,
-        transform: enabled && !disableTransform
+        opacity: shouldAnimate ? (entered ? 1 : 0.985) : undefined,
+        transform: shouldAnimate && !disableTransform
           ? entered
             ? "translate3d(0, 0, 0) scale(1)"
             : `translate3d(0, ${y}px, 0) scale(1)`
           : undefined,
-        transition: enabled
+        transition: shouldAnimate
           ? disableTransform
             ? `opacity ${duration}ms ease-out`
             : `opacity ${duration}ms ease-out, transform ${duration}ms ease-out`

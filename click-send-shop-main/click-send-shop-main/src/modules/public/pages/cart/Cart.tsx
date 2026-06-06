@@ -206,7 +206,7 @@ export default function Cart() {
                   <UnifiedButton
                     type="button"
                     onClick={() => navigate("/login", { state: { from: "/cart" } })}
-                    className="inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-full border border-[var(--theme-price)] bg-[var(--theme-price)] px-4 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[var(--theme-price)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)] sm:w-auto"
+                    className="inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-full border border-[var(--theme-price)] bg-[var(--theme-price)] px-4 text-sm font-semibold text-[var(--theme-price-foreground)] shadow-sm transition hover:-translate-y-0.5 hover:bg-[var(--theme-price)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)] sm:w-auto"
                   >
                     <LogIn className="mr-1.5 h-4 w-4" />
                     登录
@@ -257,15 +257,15 @@ export default function Cart() {
                     <span
                       className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
                         allSelected
-                          ? "border-gold btn-theme-price"
+                          ? "border-[var(--theme-price)] btn-theme-price"
                           : someSelected
-                            ? "border-gold/60 bg-gold/10"
+                            ? "border-[color-mix(in_srgb,var(--theme-price)_60%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]"
                             : "border-muted-foreground/40"
                       }`}
                     >
                       {allSelected && <Check size={12} strokeWidth={3} />}
                       {!allSelected && someSelected && (
-                        <span className="h-2 w-2 rounded-sm bg-gold" />
+                        <span className="h-2 w-2 rounded-sm bg-[var(--theme-price)]" />
                       )}
                     </span>
                     全选 ({selectedCount}/{items.length})
@@ -529,14 +529,14 @@ export default function Cart() {
               <span
                 className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
                   allSelected
-                    ? "border-gold btn-theme-price"
+                    ? "border-[var(--theme-price)] btn-theme-price"
                     : someSelected
-                      ? "border-gold/60 bg-gold/10"
+                      ? "border-[color-mix(in_srgb,var(--theme-price)_60%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]"
                       : "border-muted-foreground/40"
                 }`}
               >
                 {allSelected && <Check size={12} strokeWidth={3} />}
-                {!allSelected && someSelected && <span className="h-2 w-2 rounded-sm bg-gold" />}
+                {!allSelected && someSelected && <span className="h-2 w-2 rounded-sm bg-[var(--theme-price)]" />}
               </span>
               全选
             </SquishButton>

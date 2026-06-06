@@ -71,7 +71,7 @@ function SupportTabIcon({ view }: { view: SupportDownloadView }) {
 
 function getSupportTabLabel(view: SupportDownloadView) {
   if (view === "wechat") return "微信";
-  if (view === "whatsapp") return "Whatsapp";
+  if (view === "whatsapp") return "WhatsApp";
   if (view === "telegram") return "Telegram";
   return "添加桌面";
 }
@@ -215,13 +215,11 @@ export default function SupportDownload() {
 
       <main className="support-download-shell">
         <header className="support-download-hero">
-          <div className="support-title-row">
-            <span className="support-title-line" aria-hidden="true" />
-            <span className="support-title-diamond" aria-hidden="true" />
-            <h1>{pageTitle}</h1>
-            <span className="support-title-diamond" aria-hidden="true" />
-            <span className="support-title-line" aria-hidden="true" />
-          </div>
+          <p className="support-hero-eyebrow">官方客服</p>
+          <h1>{pageTitle}</h1>
+          {config.subtitle ? (
+            <p className="support-download-subtitle">{config.subtitle}</p>
+          ) : null}
         </header>
 
         {!waitingForConfiguredView && availableViews.length > 0 ? (

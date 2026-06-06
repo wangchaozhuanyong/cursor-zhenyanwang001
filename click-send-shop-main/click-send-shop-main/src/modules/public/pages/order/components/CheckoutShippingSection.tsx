@@ -19,7 +19,7 @@ export function CheckoutShippingSection({
   return (
     <div className={SECTION_SHELL}>
       <div className="mb-3 flex items-center gap-3">
-        <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">5</span>
+        <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-[var(--theme-price-foreground)]">5</span>
         <div>
           <h3 className="text-[15px] font-semibold text-foreground">配送方式</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">系统会根据商品、地址和平台规则自动计算运费</p>

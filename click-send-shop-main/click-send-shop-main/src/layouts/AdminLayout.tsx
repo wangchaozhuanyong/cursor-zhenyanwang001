@@ -32,6 +32,18 @@ import { adminLogout, fetchAdminProfile, isAdminAuthenticated } from "@/services
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { syncAdminWorkTabFromLocation, useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
 
+const MONITORING_SUBNAV_PATHS = new Set([
+  "/admin/monitoring",
+  "/admin/monitoring/anomalies",
+  "/admin/monitoring/repair-tasks",
+  "/admin/monitoring/rules",
+  "/admin/monitoring/runs",
+]);
+
+function isMonitoringSubnavSwitch(previousPath: string, nextPath: string) {
+  return previousPath !== nextPath && MONITORING_SUBNAV_PATHS.has(previousPath) && MONITORING_SUBNAV_PATHS.has(nextPath);
+}
+
 function AdminLayoutContent() {
   const navigate = useNavigate();
   const adminNavigate = useAdminNavigation();
@@ -41,6 +53,7 @@ function AdminLayoutContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const mainScrollRef = useRef<HTMLElement | null>(null);
+  const previousPathRef = useRef(location.pathname);
   const sidebarReturnFocusRef = useRef<HTMLElement | null>(null);
 
   const can = useAdminPermissionStore((s) => s.can);
@@ -74,7 +87,10 @@ function AdminLayoutContent() {
   }, [location.pathname]);
 
   useLayoutEffect(() => {
+    const previousPath = previousPathRef.current;
+    previousPathRef.current = location.pathname;
     if (navigationType === "POP") return;
+    if (isMonitoringSubnavSwitch(previousPath, location.pathname)) return;
     mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location.pathname, navigationType]);
 
@@ -196,7 +212,7 @@ function AdminLayoutContent() {
 
                   <main ref={mainScrollRef} className="admin-mobile-main admin-table-scope min-h-0 w-full max-w-full flex-1 overflow-y-auto overflow-x-hidden p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
                     <Suspense fallback={<DelayedRouteFallback fallback={<AdminOutletFallback />} />}>
-                      <AnimatedPage>
+                      <AnimatedPage disableAnimation>
                         <AdminKeepAliveOutlet />
                       </AnimatedPage>
                     </Suspense>

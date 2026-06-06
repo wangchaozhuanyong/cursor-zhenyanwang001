@@ -11,10 +11,10 @@ interface StoreBadgeProps {
 }
 
 const typeTone: Record<BadgeType, string> = {
-  hot: "#d86a1f",
-  new: "#2f9b77",
-  sale: "#d94a3a",
-  coupon: "#b98525",
+  hot: "var(--theme-price)",
+  new: "var(--theme-success)",
+  sale: "var(--theme-danger)",
+  coupon: "var(--theme-warning)",
   success: "var(--theme-success)",
   warning: "var(--theme-warning)",
   danger: "var(--theme-danger)",
@@ -22,10 +22,10 @@ const typeTone: Record<BadgeType, string> = {
 };
 
 const typeForeground: Record<BadgeType, string> = {
-  hot: "#fffaf3",
-  new: "#f7fffb",
-  sale: "#fff7f4",
-  coupon: "#fffaf0",
+  hot: "var(--theme-price-foreground)",
+  new: "var(--theme-success-foreground)",
+  sale: "var(--theme-danger-foreground)",
+  coupon: "var(--theme-warning-foreground)",
   success: "var(--theme-success-foreground)",
   warning: "var(--theme-warning-foreground)",
   danger: "var(--theme-danger-foreground)",
@@ -44,7 +44,7 @@ export default function StoreBadge({
   const style = {
     backgroundColor: tone,
     color: foreground,
-    borderColor: "color-mix(in srgb, white 34%, transparent)",
+    borderColor: "color-mix(in srgb, var(--theme-surface) 34%, transparent)",
     boxShadow: onMedia
       ? "0 8px 16px -12px color-mix(in srgb, var(--theme-text) 42%, transparent), 0 0 0 1px color-mix(in srgb, var(--theme-surface) 40%, transparent)"
       : "0 8px 16px -14px color-mix(in srgb, var(--theme-text) 30%, transparent)",

@@ -25,7 +25,7 @@ export default function NotificationIconButton({
       <Bell size={16} className="relative z-[1] text-[var(--theme-text)]" />
       {badgeText ? (
         <span
-          className="store-notification-badge absolute -right-0.5 -top-0.5 z-[3] inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--theme-price)] px-[0.22rem] text-[10px] font-extrabold leading-none text-white shadow-[0_7px_16px_-8px_var(--theme-price)] ring-2 ring-[var(--theme-surface)]"
+          className="store-notification-badge absolute -right-0.5 -top-0.5 z-[3] inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--theme-price)] px-[0.22rem] text-[10px] font-extrabold leading-none text-[var(--theme-price-foreground)] shadow-[0_7px_16px_-8px_var(--theme-price)] ring-2 ring-[var(--theme-surface)]"
           aria-hidden="true"
         >
           {badgeText}

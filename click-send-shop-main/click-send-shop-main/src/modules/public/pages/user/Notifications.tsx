@@ -84,7 +84,7 @@ export default function Notifications() {
         <p className="text-sm text-[var(--theme-danger)]">{error}</p>
         <UnifiedButton
           onClick={() => loadNotifications()}
-          className="rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-primary-foreground"
+          className="rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-[var(--theme-price-foreground)]"
         >
           重试
         </UnifiedButton>
@@ -96,7 +96,7 @@ export default function Notifications() {
     <span className="inline-flex items-center gap-2">
       <span>消息通知</span>
       {unreadBadgeText ? (
-        <span className="inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
+        <span className="inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold leading-none text-[var(--theme-price-foreground)]">
           {unreadBadgeText}
         </span>
       ) : null}
@@ -137,11 +137,11 @@ export default function Notifications() {
                   transition={{ delay: i * 0.04 }}
                   onClick={() => handleOpenNotification(n.id, n.link_url)}
                   className={`relative rounded-2xl border p-4 transition-all active:bg-muted ${
-                    n.is_read ? "border-border bg-card" : "border-gold/20 bg-gold/[0.03]"
+                    n.is_read ? "border-border bg-card" : "border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_3%,var(--theme-surface))]"
                   }`}
                 >
                   {!n.is_read && (
-                    <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-gold" />
+                    <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-[var(--theme-price)]" />
                   )}
                   <div className="flex gap-3">
                     <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${config.color}`}>

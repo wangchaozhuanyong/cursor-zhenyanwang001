@@ -268,7 +268,7 @@ export default function Orders() {
         </div>
 
         {loading ? <p className="text-sm text-muted-foreground">加载中...</p> : null}
-        {error ? <p className="text-sm text-red-500">{error}</p> : null}
+        {error ? <p className="text-sm text-[var(--theme-danger)]">{error}</p> : null}
 
         {!loading && displayOrders.length === 0 ? (
           <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">

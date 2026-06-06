@@ -65,7 +65,7 @@ export function CheckoutLoyaltySection({
   return (
     <section className="store-checkout-card theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow space-y-4">
       <div className="mb-1 flex items-center gap-3">
-        <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">4</span>
+        <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-[var(--theme-price-foreground)]">4</span>
         <div>
           <h3 className="text-[15px] font-semibold text-foreground">积分抵扣</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">使用积分直接抵扣订单金额，系统会按本单规则计算可抵扣上限</p>

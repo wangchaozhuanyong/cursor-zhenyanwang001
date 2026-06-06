@@ -72,7 +72,7 @@ export function DownloadConfirmProvider({ children }: { children: ReactNode }) {
               </button>
               <button
                 type="button"
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+                className="rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition hover:bg-[var(--theme-primary-hover,var(--theme-primary))]"
                 onClick={() => close(true)}
               >
                 {pending.confirmText ?? "\u4e0b\u8f7d"}

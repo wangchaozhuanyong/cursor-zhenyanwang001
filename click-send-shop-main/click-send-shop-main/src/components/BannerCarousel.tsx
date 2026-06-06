@@ -14,6 +14,7 @@ import {
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { getBannerCopyToneFromImage, type BannerCopyTone } from "@/utils/bannerTextTone";
 
 interface BannerCarouselProps {
   banners: Banner[];
@@ -105,6 +106,14 @@ export default function BannerCarousel({
   const banner = banners[safeIndex] ?? null;
   const activeImage = banner?.image?.trim() || "";
   const responsiveImage = getResponsiveBannerImage(activeImage);
+  const bannerLink = resolveBannerLink(banner?.link ?? "");
+  const bannerTitle = banner?.title?.trim() || "";
+  const bannerDescription = banner?.description?.trim() || "";
+  const bannerCopy = splitBannerDescription(bannerDescription);
+  const bannerCtaText = banner ? getBannerCtaText(banner) : "";
+  const hasTextLayer = Boolean(bannerTitle || bannerDescription || bannerCtaText);
+  const showControls = banners.length > 1;
+  const fallbackLabel = `${ariaLabelPrefix} ${safeIndex + 1}`;
   const nextBannerImage = banners.length > 1
     ? banners[(safeIndex + 1) % banners.length]?.image?.trim() || ""
     : "";
@@ -115,9 +124,16 @@ export default function BannerCarousel({
   const [touchStart, setTouchStart] = useState(0);
   const [manualPauseUntil, setManualPauseUntil] = useState(0);
   const [hoverPaused, setHoverPaused] = useState(false);
+  const [copyTone, setCopyTone] = useState<BannerCopyTone>("light");
   const activeImageRef = useRef<HTMLImageElement | null>(null);
+  const copyPanelRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
   const activeImageReady = !activeImage || activeImageLoaded || activeImageFailed;
+
+  const refreshCopyTone = useCallback(() => {
+    if (!hasTextLayer) return;
+    setCopyTone(getBannerCopyToneFromImage(activeImageRef.current, copyPanelRef.current, "light"));
+  }, [hasTextLayer]);
 
   const goTo = useCallback((index: number, userDriven = false) => {
     setCurrent(index);
@@ -135,6 +151,7 @@ export default function BannerCarousel({
   useEffect(() => {
     setActiveImageLoaded(hasLoadedImage(activeImage, responsiveImage.src, responsiveImage.srcSet));
     setActiveImageFailed(false);
+    setCopyTone("light");
   }, [activeImage, responsiveImage.src, responsiveImage.srcSet]);
 
   useEffect(() => {
@@ -146,6 +163,7 @@ export default function BannerCarousel({
       markImageLoaded(activeImage, responsiveImage.src, responsiveImage.srcSet, img.currentSrc, img.src);
       setActiveImageLoaded(true);
       setActiveImageFailed(false);
+      refreshCopyTone();
     };
 
     markLoadedIfReady();
@@ -155,7 +173,20 @@ export default function BannerCarousel({
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timer);
     };
-  }, [activeImage, responsiveImage.src, responsiveImage.srcSet]);
+  }, [activeImage, refreshCopyTone, responsiveImage.src, responsiveImage.srcSet]);
+
+  useEffect(() => {
+    if (!hasTextLayer || !activeImageReady) return;
+    const updateTone = () => refreshCopyTone();
+    const frame = window.requestAnimationFrame(updateTone);
+    const timer = window.setTimeout(updateTone, 180);
+    window.addEventListener("resize", updateTone);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", updateTone);
+    };
+  }, [activeImageReady, hasTextLayer, refreshCopyTone, safeIndex]);
 
   useEffect(() => {
     if (!nextBannerImage || nextBannerImage === activeImage) return;
@@ -222,15 +253,6 @@ export default function BannerCarousel({
 
   if (!banner) return null;
 
-  const bannerLink = resolveBannerLink(banner.link);
-  const bannerTitle = banner.title?.trim() || "";
-  const bannerDescription = banner.description?.trim() || "";
-  const bannerCopy = splitBannerDescription(bannerDescription);
-  const bannerCtaText = getBannerCtaText(banner);
-  const hasTextLayer = Boolean(bannerTitle || bannerDescription || bannerCtaText);
-  const showControls = banners.length > 1;
-  const fallbackLabel = `${ariaLabelPrefix} ${safeIndex + 1}`;
-
   const handleOpenBanner = () => {
     if (!bannerLink) return;
     trackEventLazy({ event_type: "banner_click", module: trackingModule, activity_id: banner.id });
@@ -252,6 +274,7 @@ export default function BannerCarousel({
       className={`store-hero-carousel store-hero-carousel--showcase relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
+      data-copy-tone={hasTextLayer ? copyTone : undefined}
       style={{
         aspectRatio: BANNER_ASPECT_CSS,
         borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)",
@@ -304,6 +327,7 @@ export default function BannerCarousel({
                 );
                 setActiveImageLoaded(true);
                 setActiveImageFailed(false);
+                refreshCopyTone();
               }
             }}
             onError={() => {
@@ -320,6 +344,7 @@ export default function BannerCarousel({
           <div className="store-hero-copy-zone pointer-events-none absolute inset-y-0 left-0 z-20 flex w-full items-center px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
             <div
               key={`copy-${banner.id || safeIndex}`}
+              ref={copyPanelRef}
               className="store-hero-copy-panel"
               style={motionEnabled ? {
                 opacity: 1,

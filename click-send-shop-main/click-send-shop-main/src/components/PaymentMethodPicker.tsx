@@ -76,8 +76,8 @@ export default function PaymentMethodPicker({
             key={opt.id}
             className={`store-payment-option rounded-xl border transition-colors ${
               isActive
-                ? "border-gold bg-gold/5"
-                : "border-border hover:border-gold/40"
+                ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))]"
+                : "border-border hover:border-[color-mix(in_srgb,var(--theme-price)_40%,var(--theme-border))]"
             } ${isDisabled ? "opacity-50" : ""}`}
           >
             <UnifiedButton
@@ -98,7 +98,7 @@ export default function PaymentMethodPicker({
                     {opt.title}
                   </p>
                   {opt.recommended && !isDisabled && (
-                    <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-bold text-theme-price">
+                    <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2 py-0.5 text-[10px] font-bold text-theme-price">
                       推荐
                     </span>
                   )}
@@ -109,7 +109,7 @@ export default function PaymentMethodPicker({
               </div>
               <div
                 className={`mt-1 h-4 w-4 rounded-full border-2 flex-shrink-0 ${
-                  isActive ? "border-gold bg-gold" : "border-muted-foreground"
+                  isActive ? "border-[var(--theme-price)] bg-[var(--theme-price)]" : "border-muted-foreground"
                 }`}
               />
             </UnifiedButton>
@@ -129,7 +129,7 @@ export default function PaymentMethodPicker({
                         onClick={() => onOnlineChannelChange?.(channel.code)}
                         className={`store-payment-channel flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
                           selected
-                            ? "border-gold bg-gold/10 text-foreground"
+                            ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-foreground"
                             : "border-border bg-background text-muted-foreground"
                         }`}
                       >

@@ -34,7 +34,7 @@ export function CheckoutAddressCard({
   const [noteSheetOpen, setNoteSheetOpen] = useState(false);
 
   const inputClass =
-    "w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground";
+    "w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-[var(--theme-primary)] focus:ring-2 placeholder:text-muted-foreground";
 
   const addressSummary =
     [name, phone].filter(Boolean).join(" · ") || "请填写收货人信息";
@@ -49,7 +49,7 @@ export function CheckoutAddressCard({
     <div className="store-checkout-card theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">1</span>
+          <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-[var(--theme-price-foreground)]">1</span>
           <div>
             <h3 className="text-[15px] font-semibold text-foreground">收货信息</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">用于配送员联系和确认送达地址</p>

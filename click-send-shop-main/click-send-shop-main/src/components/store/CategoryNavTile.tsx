@@ -28,12 +28,12 @@ export default function CategoryNavTile({
       onClick={onClick}
       aria-current={active ? "true" : undefined}
       className={cn(
-        "store-category-tile group flex h-[4.25rem] w-[4.75rem] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-[0.875rem] border text-center transition duration-200 active:scale-[0.98]",
+        "store-category-tile group flex h-[4.85rem] w-[5.05rem] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-[0.875rem] border text-center transition duration-200 active:scale-[0.98]",
         active ? "is-active" : "opacity-95",
         className,
       )}
     >
-      <span className="store-category-tile-icon flex h-8 w-8 shrink-0 items-center justify-center">
+      <span className="store-category-tile-icon flex h-10 w-10 shrink-0 items-center justify-center">
         <HomeNavIcon value={iconValue} />
       </span>
       <span

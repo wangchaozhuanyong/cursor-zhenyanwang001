@@ -31,7 +31,7 @@ export default function EmptyState({ icon: Icon, title, description, action, cla
         <UnifiedButton
           type="button"
           onClick={action.onClick}
-          className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full btn-theme-price px-6 text-sm font-semibold text-primary-foreground transition hover:brightness-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]"
+          className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full btn-theme-price px-6 text-sm font-semibold text-[var(--theme-price-foreground)] transition hover:brightness-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]"
         >
           {action.label}
         </UnifiedButton>

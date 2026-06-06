@@ -5,7 +5,7 @@ import { AppModal } from "@/modules/micro-interactions";
 import type { SupportedCountryCode } from "@/utils/authValidation";
 
 const PHONE_INPUT_CLASS =
-  "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground transition-[border-color,box-shadow] focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20";
+  "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground transition-[border-color,box-shadow] focus:border-[var(--theme-primary)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_22%,transparent)]";
 const PHONE_INPUT_ERROR_CLASS =
   "border-destructive focus:border-destructive focus:ring-destructive/20";
 
@@ -98,7 +98,7 @@ export default function CountryPhoneInput({
           className={cn(
             joined
               ? "flex min-w-0 items-center justify-center gap-1.5 border-r border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-transparent px-3 py-3 text-base font-semibold text-foreground transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-80"
-              : "flex min-w-0 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3.5 text-base font-semibold text-foreground transition-[border-color,box-shadow,background-color] focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 disabled:cursor-not-allowed disabled:opacity-70",
+              : "flex min-w-0 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3.5 text-base font-semibold text-foreground transition-[border-color,box-shadow,background-color] focus:border-[var(--theme-primary)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_22%,transparent)] disabled:cursor-not-allowed disabled:opacity-70",
             invalid && !joined && PHONE_INPUT_ERROR_CLASS,
           )}
         >
@@ -174,8 +174,8 @@ export default function CountryPhoneInput({
                 className={cn(
                   "flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-[background-color,border-color,box-shadow]",
                   selected
-                    ? "border-gold bg-gold/10 shadow-[0_10px_24px_rgba(177,127,38,0.14)]"
-                    : "border-border bg-background hover:border-gold/45",
+                    ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] shadow-[0_10px_24px_color-mix(in_srgb,var(--theme-primary)_14%,transparent)]"
+                    : "border-border bg-background hover:border-[color-mix(in_srgb,var(--theme-primary)_45%,var(--theme-border))]",
                 )}
               >
                 <span className="text-base font-semibold text-foreground">{item.name}</span>
@@ -184,7 +184,7 @@ export default function CountryPhoneInput({
                   <span
                     className={cn(
                       "flex h-6 w-6 items-center justify-center rounded-full border",
-                      selected ? "border-gold bg-gold text-white" : "border-border bg-card",
+                      selected ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "border-border bg-card",
                     )}
                     aria-hidden="true"
                   >

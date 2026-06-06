@@ -176,7 +176,7 @@ export default function ProductDetail() {
           <p>{error ?? "商品不存在"}</p>
           <UnifiedButton
             onClick={() => id && loadProductDetail(id)}
-            className="mt-4 rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-primary-foreground"
+            className="mt-4 rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-[var(--theme-price-foreground)]"
           >
             重试
           </UnifiedButton>
@@ -502,7 +502,7 @@ export default function ProductDetail() {
               ) : null}
               {showRegulatedNotice ? <RegulatedProductNotice {...regulatedNoticeProps} /> : null}
               {purchaseAgeBlocked ? (
-                <p className="mt-3 rounded-lg border border-amber-300/40 bg-amber-50/80 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-100">
+                <p className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--theme-warning)_34%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_14%,var(--theme-surface))] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-warning)_78%,var(--theme-text-on-surface))]">
                   该商品需年满 {purchaseMinimumAge} 岁方可购买，请点击下方「需年龄确认」完成验证。
                 </p>
               ) : null}

@@ -65,7 +65,7 @@ export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { 
   const logoMark = (
     <span
       className={cn(
-        "store-footer-brand-logo-shell flex shrink-0 items-center justify-center rounded-lg border border-[#bfe9ce] bg-white text-[#078437] shadow-[0_18px_34px_-28px_rgba(7,132,55,0.55)]",
+        "store-footer-brand-logo-shell flex shrink-0 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--theme-primary)_24%,var(--theme-border))] bg-[var(--theme-surface)] text-[var(--theme-primary)] shadow-[var(--store-soft-shadow)]",
         centered && "absolute right-full top-1/2 mr-3 -translate-y-1/2",
       )}
     >
@@ -89,10 +89,10 @@ export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { 
 
   const textMark = (
     <span className={cn("min-w-0", centered && "block max-w-full text-center")}>
-      <span className="block truncate font-display text-[28px] font-bold leading-none text-[#17231c] sm:text-[34px]">
+      <span className="block truncate font-display text-[28px] font-bold leading-none text-[var(--theme-text-on-surface)] sm:text-[34px]">
         {base}
       </span>
-      <span className="mt-1 block text-[12px] font-semibold leading-none text-[#5f6f65]">
+      <span className="mt-1 block text-[12px] font-semibold leading-none text-[var(--theme-text-muted-on-surface)]">
         {STORE_COPY.brandDomain}
       </span>
     </span>
@@ -117,8 +117,8 @@ export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { 
 
 function TrustPill({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="inline-flex w-[6.35rem] min-w-0 items-center justify-start gap-2 text-left text-[13px] font-semibold text-[#254232]">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#078437] shadow-[0_12px_28px_-22px_rgba(7,132,55,0.7)]">
+    <span className="inline-flex w-[6.35rem] min-w-0 items-center justify-start gap-2 text-left text-[13px] font-semibold text-[var(--theme-text-on-surface)]">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)] shadow-[var(--store-soft-shadow)]">
         {icon}
       </span>
       <span className="whitespace-nowrap">{label}</span>
@@ -137,7 +137,7 @@ function FooterColumn({
 }) {
   return (
     <section className={cn("min-w-0", className)}>
-      <h3 className="text-[17px] font-bold leading-none text-[#151f19]">{title}</h3>
+      <h3 className="text-[17px] font-bold leading-none text-[var(--theme-text-on-surface)]">{title}</h3>
       <div className="mt-5">{children}</div>
     </section>
   );
@@ -154,23 +154,23 @@ function AccordionItem({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="overflow-hidden rounded-lg border border-[#dce9e1] bg-white shadow-[0_18px_42px_-34px_rgba(20,70,41,0.34)]">
+    <div className="overflow-hidden rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[var(--store-soft-shadow)]">
       <UnifiedButton
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="flex min-h-[58px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#f7fbf8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#078437]/25"
+        className="flex min-h-[58px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--theme-primary)_25%,transparent)]"
         aria-expanded={isOpen}
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eef9f1] text-[#078437]">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_11%,var(--theme-surface))] text-[var(--theme-primary)]">
           {icon}
         </span>
-        <span className="min-w-0 flex-1 text-[16px] font-bold leading-snug text-[#17231c]">
+        <span className="min-w-0 flex-1 text-[16px] font-bold leading-snug text-[var(--theme-text-on-surface)]">
           {title}
         </span>
         <ChevronDown
           size={19}
           strokeWidth={2.1}
-          className={cn("shrink-0 text-[#078437] transition-transform duration-300 ease-out", isOpen && "rotate-180")}
+          className={cn("shrink-0 text-[var(--theme-primary)] transition-transform duration-300 ease-out", isOpen && "rotate-180")}
           aria-hidden
         />
       </UnifiedButton>
@@ -188,7 +188,7 @@ function FooterNavButton({ item, onNavigate }: { item: FooterNavItem; onNavigate
     <UnifiedButton
       type="button"
       onClick={() => onNavigate(item.path)}
-      className="group flex min-h-9 w-full items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-[14px] font-medium text-[#526157] transition-all hover:bg-[#eef9f1] hover:text-[#078437] active:scale-[0.99]"
+      className="group flex min-h-9 w-full items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-[14px] font-medium text-[var(--theme-text-muted-on-surface)] transition-all hover:bg-[color-mix(in_srgb,var(--theme-primary)_9%,var(--theme-surface))] hover:text-[var(--theme-primary)] active:scale-[0.99]"
     >
       <span className="min-w-0 truncate">{item.label}</span>
       <ChevronRight size={15} className="shrink-0 opacity-45 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden />
@@ -210,15 +210,15 @@ function ContactLine({
   const lines = value.split("\n").map((line) => line.trim()).filter(Boolean);
   const accessibleValue = lines.join(" ") || value;
   const className =
-    "group flex min-h-[62px] items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[#f4fbf6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#078437]/25";
+    "group flex min-h-[62px] items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--theme-primary)_25%,transparent)]";
   const content = (
     <>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eef9f1] text-[#078437]">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_11%,var(--theme-surface))] text-[var(--theme-primary)]">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-semibold leading-none text-[#151f19]">{label}</span>
-        <span className="mt-1.5 block max-w-full text-[13px] leading-5 text-[#607066] [overflow-wrap:anywhere]">
+        <span className="block text-[13px] font-semibold leading-none text-[var(--theme-text-on-surface)]">{label}</span>
+        <span className="mt-1.5 block max-w-full text-[13px] leading-5 text-[var(--theme-text-muted-on-surface)] [overflow-wrap:anywhere]">
           {lines.length > 1
             ? lines.map((line, index) => (
               <span key={`${line}-${index}`} className="block">
@@ -228,7 +228,7 @@ function ContactLine({
             : value}
         </span>
       </span>
-      {href ? <ChevronRight size={16} className="shrink-0 text-[#9aa9a0] transition group-hover:translate-x-0.5 group-hover:text-[#078437]" aria-hidden /> : null}
+      {href ? <ChevronRight size={16} className="shrink-0 text-[var(--theme-text-muted-on-surface)] opacity-60 transition group-hover:translate-x-0.5 group-hover:text-[var(--theme-primary)] group-hover:opacity-100" aria-hidden /> : null}
     </>
   );
 
@@ -266,6 +266,21 @@ function getChannelIcon(type: SupportDownloadChannel["type"]) {
   return <MessageCircle size={18} strokeWidth={1.9} />;
 }
 
+const FOOTER_CHANNEL_BUTTON_TONE: Record<SupportDownloadChannel["type"], { button: string; icon: string }> = {
+  wechat: {
+    button: "border-[#07C160]/35 text-[#047857] hover:border-[#07C160] hover:bg-[#07C160]/10 hover:text-[#047857]",
+    icon: "text-[#07C160]",
+  },
+  whatsapp: {
+    button: "border-[#128C7E]/35 text-[#075E54] hover:border-[#128C7E] hover:bg-[#128C7E]/10 hover:text-[#075E54]",
+    icon: "text-[#128C7E]",
+  },
+  telegram: {
+    button: "border-[#229ED9]/35 text-[#0369A1] hover:border-[#229ED9] hover:bg-[#229ED9]/10 hover:text-[#0369A1]",
+    icon: "text-[#229ED9]",
+  },
+};
+
 function FollowButton({
   channel,
   icon,
@@ -277,13 +292,17 @@ function FollowButton({
   label: string;
   onClick: (channel?: SupportDownloadChannel) => void;
 }) {
+  const tone = channel ? FOOTER_CHANNEL_BUTTON_TONE[channel.type] : undefined;
   return (
     <UnifiedButton
       type="button"
       onClick={() => onClick(channel)}
-      className="flex min-h-[42px] min-w-0 items-center justify-center gap-2 rounded-lg border border-[#bfe9ce] bg-white px-3 py-2 text-[13px] font-semibold text-[#234130] shadow-[0_16px_34px_-32px_rgba(7,132,55,0.7)] transition-all hover:-translate-y-0.5 hover:border-[#078437] hover:text-[#078437] active:scale-[0.99]"
+      className={cn(
+        "flex min-h-[42px] min-w-0 items-center justify-center gap-2 rounded-lg border bg-[var(--theme-surface)] px-3 py-2 text-[13px] font-semibold shadow-[var(--store-soft-shadow)] transition-all hover:-translate-y-0.5 active:scale-[0.99]",
+        tone?.button || "border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))] text-[var(--theme-text-on-surface)] hover:border-[var(--theme-primary)] hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] hover:text-[var(--theme-primary)]",
+      )}
     >
-      <span className="shrink-0 text-[#078437]">{icon}</span>
+      <span className={cn("shrink-0", tone?.icon || "text-[var(--theme-primary)]")}>{icon}</span>
       <span className="min-w-0 truncate">{label}</span>
     </UnifiedButton>
   );
@@ -417,21 +436,21 @@ export default function GuestMobileFooter({
   return (
     <footer className="guest-mobile-footer relative isolate z-0 w-full touch-pan-y">
       <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pb-7 pt-2 md:px-6 lg:px-8">
-        <section className="relative overflow-hidden rounded-lg border border-[#cdebd7] bg-[linear-gradient(120deg,#f4fff7_0%,#fbfffc_46%,#e9f8ef_100%)] px-5 py-8 shadow-[0_22px_60px_-42px_rgba(7,132,55,0.48)] md:px-10 md:py-10" aria-label="页脚服务入口">
+        <section className="relative overflow-hidden rounded-lg border border-[var(--store-card-border)] bg-[var(--store-card-bg)] px-5 py-8 shadow-[var(--store-card-shadow)] md:px-10 md:py-10" aria-label="页脚服务入口">
           <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-[#078437]">一站式在马生活服务</p>
-              <h2 className="mt-3 font-display text-[28px] font-bold leading-tight text-[#08632f] sm:text-[40px]">
+              <p className="text-[13px] font-semibold text-[var(--theme-primary)]">一站式在马生活服务</p>
+              <h2 className="mt-3 font-display text-[28px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-[40px]">
                 还没找到你需要的服务？
               </h2>
-              <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[#415146]">
+              <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--theme-text-muted-on-surface)]">
                 在{brandName}，找房、留学、签证、本地办事和生活服务，一站式查看。
               </p>
               <div className="mt-6 grid gap-3 sm:max-w-xl sm:grid-cols-2">
                 <UnifiedButton
                   type="button"
                   onClick={() => onNavigate("/categories")}
-                  className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg bg-[#078437] px-5 text-[16px] font-bold text-white shadow-[0_18px_34px_-26px_rgba(7,132,55,0.76)] transition hover:bg-[#046d2d] active:scale-[0.99]"
+                  className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg bg-[var(--theme-primary)] px-5 text-[16px] font-bold text-[var(--theme-primary-foreground)] shadow-[var(--store-soft-shadow)] transition hover:bg-[var(--theme-primary-hover)] active:scale-[0.99]"
                 >
                   浏览全部服务
                 </UnifiedButton>
@@ -439,13 +458,13 @@ export default function GuestMobileFooter({
                   href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg border border-[#078437] bg-white px-5 text-[16px] font-bold text-[#078437] transition hover:bg-[#f4fbf6] active:scale-[0.99]"
+                  className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg border border-[#128C7E] bg-[var(--theme-surface)] px-5 text-[16px] font-bold text-[#075E54] transition hover:bg-[#128C7E]/10 active:scale-[0.99]"
                 >
                   <MessageCircle size={20} strokeWidth={2.1} />
                   WhatsApp 咨询
                 </a>
               </div>
-              <div className="mt-7 grid grid-cols-2 gap-4 border-t border-[#d7ebde] pt-5 sm:flex sm:flex-wrap sm:items-center sm:gap-7">
+              <div className="mt-7 grid grid-cols-2 gap-4 border-t border-[var(--theme-border)] pt-5 sm:flex sm:flex-wrap sm:items-center sm:gap-7">
                 <TrustPill icon={<MessageCircle size={18} strokeWidth={1.9} />} label="中文沟通" />
                 <TrustPill icon={<MapPin size={18} strokeWidth={1.9} />} label="本地资源" />
                 <TrustPill icon={<ShieldCheck size={18} strokeWidth={1.9} />} label="真实信息" />
@@ -453,17 +472,17 @@ export default function GuestMobileFooter({
               </div>
             </div>
             <div className="relative hidden min-h-[210px] lg:block" aria-hidden>
-              <div className="absolute bottom-0 right-0 h-48 w-72 rounded-full bg-[#b7edc8]/40 blur-3xl" />
-              <div className="absolute bottom-0 right-6 h-24 w-32 rounded-lg border border-[#9ad7ad] bg-white/70 shadow-[0_24px_50px_-36px_rgba(7,132,55,0.58)]" />
-              <div className="absolute bottom-7 right-36 h-16 w-24 rounded-lg border border-[#bfe9ce] bg-white/80 shadow-[0_20px_44px_-34px_rgba(7,132,55,0.5)]" />
+              <div className="absolute bottom-0 right-0 h-48 w-72 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_18%,transparent)] blur-3xl" />
+              <div className="absolute bottom-0 right-6 h-24 w-32 rounded-lg border border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_78%,transparent)] shadow-[var(--store-soft-shadow)]" />
+              <div className="absolute bottom-7 right-36 h-16 w-24 rounded-lg border border-[color-mix(in_srgb,var(--theme-primary)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_84%,transparent)] shadow-[var(--store-soft-shadow)]" />
             </div>
           </div>
         </section>
 
-        <div className="mt-8 hidden grid-cols-[1.3fr_0.7fr_0.8fr_1fr] gap-8 border-b border-[#dde7e0] pb-9 md:grid lg:gap-12">
+        <div className="mt-8 hidden grid-cols-[1.3fr_0.7fr_0.8fr_1fr] gap-8 border-b border-[var(--theme-border)] pb-9 md:grid lg:gap-12">
           <FooterColumn title={brandName}>
             <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} />
-            <p className="mt-5 max-w-[25rem] text-[14px] leading-7 text-[#607066]">
+            <p className="mt-5 max-w-[25rem] text-[14px] leading-7 text-[var(--theme-text-muted-on-surface)]">
               {intro}
             </p>
             <div className="mx-auto mt-6 grid w-fit grid-cols-2 gap-x-5 gap-y-3">
@@ -509,9 +528,9 @@ export default function GuestMobileFooter({
         </div>
 
         <div className="mt-5 space-y-3 md:hidden">
-          <section className="rounded-lg border border-[#dce9e1] bg-white px-4 py-5 shadow-[0_18px_42px_-34px_rgba(20,70,41,0.34)]">
+          <section className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 shadow-[var(--store-soft-shadow)]">
             <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} centered />
-            <p className="mt-4 text-[14px] leading-7 text-[#607066]">
+            <p className="mt-4 text-[14px] leading-7 text-[var(--theme-text-muted-on-surface)]">
               {intro}
             </p>
             <div className="mx-auto mt-5 grid w-fit grid-cols-2 gap-x-5 gap-y-3">
@@ -556,12 +575,12 @@ export default function GuestMobileFooter({
         </div>
 
         {legalParts.length > 0 ? (
-          <section className="border-t border-[#dde7e0] pt-5 md:border-t-0" aria-label="版权信息">
-            <div className="flex flex-col items-center justify-between gap-3 text-center text-[12px] leading-5 text-[#718077] md:flex-row md:text-left">
+          <section className="border-t border-[var(--theme-border)] pt-5 md:border-t-0" aria-label="版权信息">
+            <div className="flex flex-col items-center justify-between gap-3 text-center text-[12px] leading-5 text-[var(--theme-text-muted-on-surface)] md:flex-row md:text-left">
               <div className="flex flex-col gap-1 md:flex-row md:flex-wrap md:items-center md:gap-x-4">
                 {legalParts.map((item, index) => (
                   <span key={`${item}-${index}`} className="inline-flex items-center justify-center gap-4">
-                    {index > 0 ? <span className="hidden h-4 w-px bg-[#ccd9d1] md:block" aria-hidden /> : null}
+                    {index > 0 ? <span className="hidden h-4 w-px bg-[var(--theme-border)] md:block" aria-hidden /> : null}
                     <span>{item}</span>
                   </span>
                 ))}
@@ -572,9 +591,9 @@ export default function GuestMobileFooter({
                     key={`${item.label}-${item.path}`}
                     type="button"
                     onClick={() => onNavigate(item.path)}
-                    className="text-[12px] font-medium text-[#526157] transition hover:text-[#078437]"
+                    className="text-[12px] font-medium text-[var(--theme-text-muted-on-surface)] transition hover:text-[var(--theme-primary)]"
                   >
-                    {index > 0 ? <span className="mr-4 text-[#c9d5cd]" aria-hidden>|</span> : null}
+                    {index > 0 ? <span className="mr-4 text-[var(--theme-border)]" aria-hidden>|</span> : null}
                     {item.label}
                   </UnifiedButton>
                 ))}

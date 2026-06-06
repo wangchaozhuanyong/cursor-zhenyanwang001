@@ -437,7 +437,7 @@ function ClaimCenterButton({ count, onClick }: { count: number; onClick: () => v
         <span>领券中心</span>
       </span>
       {count > 0 ? (
-        <span className="absolute right-0 top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_82%,var(--theme-text))] px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-[var(--theme-surface)]">
+        <span className="absolute right-0 top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_82%,var(--theme-text))] px-1 text-[10px] font-bold leading-none text-[var(--theme-price-foreground)] shadow-sm ring-2 ring-[var(--theme-surface)]">
           {count}
         </span>
       ) : null}

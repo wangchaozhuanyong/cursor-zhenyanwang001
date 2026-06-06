@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
@@ -110,8 +110,23 @@ export default function AdminUserSecurity() {
   const [loginAttempts, setLoginAttempts] = useState<UserSecurityLoginAttempt[]>([]);
   const [events, setEvents] = useState<UserSecurityEvent[]>([]);
   const [total, setTotal] = useState(0);
+  const loadedListKeysRef = useRef(new Set<string>());
 
   const pageSize = 20;
+  const listKey = useMemo(
+    () => [activeTab, page, keyword.trim(), status, severity].join("|"),
+    [activeTab, keyword, page, severity, status],
+  );
+
+  const loadOverview = useCallback(async () => {
+    try {
+      const overviewRes = await fetchUserSecurityOverview();
+      setOverview(overviewRes.data);
+    } catch (err) {
+      setError("安全概览加载失败，请检查网络或稍后重试。");
+      toast.error(toastErrorMessage(err, "安全概览加载失败"));
+    }
+  }, []);
 
   const metrics = useMemo(
     () => [
@@ -125,13 +140,11 @@ export default function AdminUserSecurity() {
     [overview],
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (options?: { forceLoading?: boolean }) => {
+    const shouldShowLoading = options?.forceLoading || !loadedListKeysRef.current.has(listKey);
+    setLoading(shouldShowLoading);
     setError("");
     try {
-      const overviewRes = await fetchUserSecurityOverview();
-      setOverview(overviewRes.data);
-
       const baseParams = { page, pageSize, keyword: keyword.trim() || undefined };
       if (activeTab === "ips") {
         const res = await fetchRiskIps({ ...baseParams, status: status || undefined });
@@ -150,16 +163,21 @@ export default function AdminUserSecurity() {
         setEvents(res.data.list);
         setTotal(res.data.total);
       }
+      loadedListKeysRef.current.add(listKey);
     } catch (err) {
       setError("安全数据加载失败，请检查网络或稍后重试。");
       toast.error(toastErrorMessage(err, "安全数据加载失败"));
     } finally {
       setLoading(false);
     }
-  }, [activeTab, keyword, page, severity, status]);
+  }, [activeTab, keyword, listKey, page, severity, status]);
 
   useEffect(() => {
-    load();
+    void loadOverview();
+  }, [loadOverview]);
+
+  useEffect(() => {
+    void load();
   }, [load]);
 
   function changeTab(next: TabKey) {
@@ -183,7 +201,7 @@ export default function AdminUserSecurity() {
         else await blockRiskDevice(actionTarget.row.device_id, reason, actionTarget.row.device_label);
       }
       setActionTarget(null);
-      await load();
+      await Promise.all([load({ forceLoading: true }), loadOverview()]);
       toast.success(actionTarget.type === "ip"
         ? (isBlocked ? "IP 已解封" : "IP 已封禁")
         : (isBlocked ? "设备已解封" : "设备已封禁"));
@@ -252,7 +270,7 @@ export default function AdminUserSecurity() {
             {severityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
         )}
-        <UnifiedButton className="min-h-10 rounded-lg px-4 py-2 text-sm font-semibold btn-theme-price" onClick={() => load()}>
+        <UnifiedButton className="min-h-10 rounded-lg px-4 py-2 text-sm font-semibold btn-theme-price" onClick={() => load({ forceLoading: true })}>
           刷新
         </UnifiedButton>
       </div>
@@ -280,7 +298,7 @@ export default function AdminUserSecurity() {
             <span>{error}</span>
             <UnifiedButton
               type="button"
-              onClick={() => { void load(); }}
+              onClick={() => { void load({ forceLoading: true }); }}
               className="rounded-lg border border-destructive/30 bg-[var(--theme-card)] px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
             >
               重试

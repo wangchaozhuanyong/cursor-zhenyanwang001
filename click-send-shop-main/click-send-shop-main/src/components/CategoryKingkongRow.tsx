@@ -24,7 +24,7 @@ function LoadingSlots({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="store-category-tile-skeleton flex h-[4.25rem] w-[4.75rem] shrink-0 animate-pulse flex-col items-center justify-center gap-1.5 rounded-[0.875rem]"
+          className="store-category-tile-skeleton flex h-[4.85rem] w-[5.05rem] shrink-0 animate-pulse flex-col items-center justify-center gap-1.5 rounded-[0.875rem]"
           aria-hidden
         />
       ))}

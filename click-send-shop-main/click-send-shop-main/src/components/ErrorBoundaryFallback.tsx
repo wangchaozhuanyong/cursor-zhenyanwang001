@@ -42,7 +42,7 @@ export default function ErrorBoundaryFallback({
         <UnifiedButton
           type="button"
           onClick={onReload}
-          className="inline-flex items-center gap-2 rounded-full btn-theme-price px-6 py-3 text-sm font-bold text-primary-foreground"
+          className="inline-flex items-center gap-2 rounded-full btn-theme-price px-6 py-3 text-sm font-bold text-[var(--theme-price-foreground)]"
         >
           <RefreshCw size={16} /> {refreshLabel}
         </UnifiedButton>

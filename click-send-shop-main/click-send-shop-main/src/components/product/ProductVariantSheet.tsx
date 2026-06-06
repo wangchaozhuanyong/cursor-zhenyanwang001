@@ -192,7 +192,7 @@ export default function ProductVariantSheet({
                       >
                         {value.value}
                         {outOfStock ? (
-                          <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-white">
+                          <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
                             缺货
                           </span>
                         ) : null}
@@ -233,7 +233,7 @@ export default function ProductVariantSheet({
                     </span>
                     <span className="mt-1 block text-[var(--theme-text-muted)]">库存 {variant.stock}</span>
                     {variant.stock <= 0 ? (
-                      <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-white">
+                      <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
                         缺货
                       </span>
                     ) : null}

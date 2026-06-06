@@ -40,7 +40,7 @@ import { buildRoutePath, readRouteBack } from "@/utils/routeBackState";
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
 const INPUT_CLASS =
-  "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
+  "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-[var(--theme-primary)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_22%,transparent)] transition-[border-color,box-shadow]";
 const INPUT_ERROR_CLASS =
   "border-destructive focus:border-destructive focus:ring-destructive/20";
 const REMEMBER_COUNTRY_CODE_KEY = "login_remembered_country_code";
@@ -714,7 +714,7 @@ export default function Login() {
                 type="button"
                 onClick={handleSendOtp}
                 disabled={otpSending || otpCooldown > 0 || !authFeaturesReady}
-                className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-theme-price disabled:opacity-50"
+                className="w-full rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] py-3 text-xs font-semibold text-[var(--theme-primary)] disabled:opacity-50"
               >
                 {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "发送验证码"}
               </UnifiedButton>
@@ -728,7 +728,7 @@ export default function Login() {
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="rounded border-border accent-gold w-4 h-4"
+                  className="h-4 w-4 rounded border-border accent-[var(--theme-primary)]"
                 />
                 <span className="text-xs text-muted-foreground">记住账号</span>
               </label>
@@ -746,7 +746,7 @@ export default function Login() {
             type="submit"
             disabled={loading}
             aria-busy={loading || undefined}
-            className="auth-login-submit w-full min-h-12 rounded-2xl btn-theme-price px-4 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+            className="auth-login-submit min-h-12 w-full rounded-2xl btn-theme-price px-4 py-3.5 text-sm font-bold text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)] transition-all active:scale-[0.98] disabled:opacity-60"
           >
             {loading ? (
               <span className="flex min-w-0 items-center justify-center gap-2 whitespace-nowrap">

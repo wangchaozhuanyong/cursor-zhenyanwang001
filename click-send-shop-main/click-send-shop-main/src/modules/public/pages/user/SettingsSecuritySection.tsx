@@ -259,7 +259,7 @@ export default function SettingsSecuritySection() {
             <UnifiedButton
               type="submit"
               disabled={panelBusy}
-              className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold text-white disabled:opacity-60"
+              className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold text-[var(--theme-danger-foreground)] disabled:opacity-60"
             >
               {panelBusy ? "注销中..." : "确认注销账号"}
             </UnifiedButton>

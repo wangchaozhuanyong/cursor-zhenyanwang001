@@ -88,7 +88,7 @@ export default function CookieConsentBanner() {
             <UnifiedButton type="button" onClick={() => setExpanded((v) => !v)} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary">
               自定义
             </UnifiedButton>
-            <UnifiedButton type="button" onClick={acceptAll} className="rounded-full btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground shadow-lg shadow-gold/20">
+            <UnifiedButton type="button" onClick={acceptAll} className="rounded-full btn-theme-price px-4 py-2 text-xs font-semibold text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)]">
               接受全部
             </UnifiedButton>
           </div>
@@ -103,7 +103,7 @@ export default function CookieConsentBanner() {
                     type="checkbox"
                     checked={draft[item.key]}
                     onChange={(e) => setDraft((prev) => ({ ...prev, [item.key]: e.target.checked }))}
-                    className="mt-1 h-4 w-4 accent-gold"
+                    className="mt-1 h-4 w-4 accent-[var(--theme-primary)]"
                   />
                   <span>
                     <span className="block text-xs font-semibold text-foreground">{item.label}</span>

@@ -30,7 +30,7 @@ export default function History() {
       mainClassName="sm:px-4 lg:py-6"
     >
         {!isLoggedIn() && (
-          <div className="mb-3 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-xs text-foreground">
+          <div className="mb-3 rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_30%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))] px-4 py-3 text-xs text-foreground">
             <span className="text-muted-foreground">未登录时仅在本机记录浏览；</span>
             <UnifiedButton
               type="button"

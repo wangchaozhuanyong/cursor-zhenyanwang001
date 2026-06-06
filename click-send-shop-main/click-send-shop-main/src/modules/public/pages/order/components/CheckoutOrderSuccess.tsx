@@ -119,7 +119,7 @@ export function CheckoutOrderSuccess({
   const statusBadge = isPaid ? "已支付" : isPending ? "待支付" : "处理中";
   const primaryActionClass = isPaid
     ? "btn-theme-gradient shadow-lg theme-shadow"
-    : "btn-theme-price shadow-lg shadow-gold/20";
+    : "btn-theme-price shadow-[0_18px_34px_-26px_var(--theme-price)]";
   const onlineNote = sanitizeClientInstructions(postSubmitOnlineNote);
   const paymentHint =
     isOnlinePending && !postSubmitOnlineError
@@ -145,7 +145,7 @@ export function CheckoutOrderSuccess({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", bounce: 0.4, delay: 0.05 }}
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-                isPaid ? "bg-[color-mix(in_srgb,var(--theme-success)_18%,transparent)]" : "bg-gold-light"
+                isPaid ? "bg-[color-mix(in_srgb,var(--theme-success)_18%,transparent)]" : "bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]"
               }`}
             >
               <CheckCircle2 size={24} className={isPaid ? "text-[var(--theme-success)]" : "text-theme-price"} />

@@ -66,7 +66,7 @@ function GiftCard({
           type="button"
           disabled={disabled}
           onClick={() => onRedeem(gift)}
-          className="self-start rounded-full btn-theme-price px-4 py-1.5 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-start rounded-full btn-theme-price px-4 py-1.5 text-xs font-semibold text-[var(--theme-price-foreground)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {redeeming ? "兑换中…" : blockReason || "立即兑换"}
         </UnifiedButton>

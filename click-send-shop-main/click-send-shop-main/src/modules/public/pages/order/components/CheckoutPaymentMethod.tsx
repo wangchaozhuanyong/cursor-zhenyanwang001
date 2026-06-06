@@ -67,7 +67,7 @@ export function CheckoutPaymentMethod({
     <div className="store-checkout-card theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-white">2</span>
+          <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-[var(--theme-price-foreground)]">2</span>
           <div>
             <h3 className="text-[15px] font-semibold text-foreground">支付方式</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">选择适合你的付款方式</p>

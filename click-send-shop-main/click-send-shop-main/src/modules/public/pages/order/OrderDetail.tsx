@@ -434,7 +434,7 @@ export default function OrderDetail() {
             </div>
           ) : null}
           {order.has_shortage_adjustment || order.shortage_notice ? (
-            <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <p className="mt-2 rounded-xl bg-[color-mix(in_srgb,var(--theme-warning)_14%,var(--theme-surface))] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-warning)_76%,var(--theme-text-on-surface))]">
               {order.shortage_notice || "部分商品因缺货已移除"}
             </p>
           ) : null}

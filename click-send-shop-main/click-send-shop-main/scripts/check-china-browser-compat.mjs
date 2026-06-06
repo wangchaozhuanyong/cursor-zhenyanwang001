@@ -68,8 +68,8 @@ if (viteConfig) {
     errors.push("vite.config.ts: legacy should not be limited to the storefront only");
   }
   assertMatch("vite.config.ts", /MODERN_BUILD_TARGETS/, "should declare modern build targets");
-  assertMatch("vite.config.ts", /MODERN_BROWSER_TARGETS/, "should declare modern browser targets for the legacy plugin");
-  assertMatch("vite.config.ts", /modernTargets:\s*\[\.\.\.MODERN_BROWSER_TARGETS\]/, "legacy plugin should declare modern targets explicitly");
+  assertMatch("vite.config.ts", /target:\s*legacyEnabled\s*\?\s*undefined\s*:\s*\[\.\.\.MODERN_BUILD_TARGETS\]/, "legacy builds should let plugin-legacy own the JS target");
+  assertNoMatch("vite.config.ts", /modernTargets\s*:/, "legacy plugin should not set modernTargets while rendering legacy chunks");
   assertMatch("vite.config.ts", /REGIONAL_BROWSER_TARGETS/, "should keep old-browser legacy target set");
   assertMatch("vite.config.ts", /Samsung\s*>=\s*9/i, "legacy targets should cover Samsung Internet");
   assertMatch("vite.config.ts", /Edge\s*>=\s*79/i, "legacy targets should cover Edge Chromium");
@@ -88,6 +88,12 @@ assertMatch("src/utils/chinaBrowser.ts", /micromessenger/i, "should detect WeCha
 assertMatch("src/utils/chinaBrowser.ts", /mqqbrowser/i, "should detect QQ Browser UA");
 assertMatch("src/utils/browserEnv.ts", /samsungbrowser/i, "should detect Samsung Internet UA");
 assertMatch("src/utils/browserEnv.ts", /detectBrowserEnvFromUa/, "browser environment detection should be unit-testable");
+
+// 8. Legacy production artifact guard.
+assertMatch("package.json", /"verify:legacy-dist"\s*:\s*"node scripts\/verify-legacy-dist\.mjs"/, "should expose legacy dist verification script");
+assertMatch("package.json", /"test:browser-compat"\s*:\s*"vitest run --pool=threads --maxWorkers=1/, "should expose stable browser compatibility tests");
+assertMatch("scripts/build-all.mjs", /verify:legacy-dist/, "legacy build-all should verify legacy dist artifacts");
+assertMatch("scripts/verify-legacy-dist.mjs", /vite-legacy-entry/, "legacy verifier should require Vite legacy entry script");
 
 if (warnings.length) {
   console.warn("\nBrowser compatibility warnings\n");

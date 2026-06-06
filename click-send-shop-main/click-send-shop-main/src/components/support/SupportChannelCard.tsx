@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck, Copy, Download, ExternalLink, Loader2, QrCode, ScanLine } from "lucide-react";
+import { BadgeCheck, Copy, Download, ExternalLink, Loader2, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
@@ -60,9 +60,9 @@ function SupportChannelVisualIcon({ type }: { type: SupportDownloadChannel["type
 }
 
 function getChannelKicker(channel: SupportDownloadChannel) {
-  if (channel.type === "wechat") return "扫码添加微信客服";
-  if (channel.type === "whatsapp") return "WhatsApp 在线客服";
-  return "Telegram 在线客服";
+  if (channel.type === "wechat") return "微信客服";
+  if (channel.type === "whatsapp") return "WhatsApp 客服";
+  return "Telegram 客服";
 }
 
 function getQrActionHint(channel: SupportDownloadChannel) {
@@ -178,27 +178,22 @@ export default function SupportChannelCard({ channel }: Props) {
 
         <div className="support-qr-block">
           <div className="support-qr-heading">
-            <span className="support-qr-heading-icon" aria-hidden="true">
-              <QrCode size={18} />
-            </span>
             <div>
               <span>客服二维码</span>
               <strong>{qrUrl ? "扫码直达客服" : "等待后台配置"}</strong>
             </div>
           </div>
 
-          <div className="support-qr-stage">
-            <div className="support-qr-frame">
-              {qrUrl ? (
-                <img
-                  src={qrUrl}
-                  alt={`${title}二维码`}
-                  className="support-qr-image"
-                />
-              ) : (
-                <div className="support-qr-placeholder">暂未配置二维码</div>
-              )}
-            </div>
+          <div className="support-qr-media">
+            {qrUrl ? (
+              <img
+                src={qrUrl}
+                alt={`${title}二维码`}
+                className="support-qr-image"
+              />
+            ) : (
+              <div className="support-qr-placeholder">暂未配置二维码</div>
+            )}
           </div>
 
           {qrUrl ? (

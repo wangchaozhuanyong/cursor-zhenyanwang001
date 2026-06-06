@@ -13,7 +13,7 @@ import { validatePhoneForCountry } from "@/utils/authValidation";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const INPUT_CLASS =
-  "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
+  "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-[var(--theme-primary)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_22%,transparent)] transition-[border-color,box-shadow]";
 
 export default function BindWechatPhone() {
   useDocumentTitle("绑定手机号");
@@ -134,7 +134,7 @@ export default function BindWechatPhone() {
             type="button"
             onClick={handleSendOtp}
             disabled={otpSending || otpCooldown > 0}
-            className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-theme-price disabled:opacity-50"
+            className="w-full rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] py-3 text-xs font-semibold text-[var(--theme-primary)] disabled:opacity-50"
           >
             {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "获取验证码"}
           </UnifiedButton>
@@ -143,7 +143,7 @@ export default function BindWechatPhone() {
             type="button"
             onClick={handleSubmit}
             disabled={authStore.loading}
-            className="w-full rounded-2xl btn-theme-price py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+            className="w-full rounded-2xl btn-theme-price py-3.5 text-sm font-bold text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)] transition-all active:scale-[0.98] disabled:opacity-60"
           >
             {authStore.loading ? "处理中…" : "绑定并登录"}
           </UnifiedButton>

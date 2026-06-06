@@ -297,17 +297,6 @@ html[data-app-scope="store"] .support-qr-placeholder {
   text-align: center;
 }
 
-html[data-app-scope="store"] .support-qr-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  margin: 0;
-  color: var(--support-muted);
-  font-size: 0.9rem;
-  font-weight: 750;
-  line-height: 1.35;
-}
-
 html[data-app-scope="store"] .support-qr-safety {
   display: inline-flex;
   align-items: center;

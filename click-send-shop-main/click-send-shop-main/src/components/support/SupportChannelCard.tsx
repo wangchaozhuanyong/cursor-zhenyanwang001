@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck, Copy, Download, ExternalLink, Loader2, ScanLine } from "lucide-react";
+import { BadgeCheck, Copy, Download, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
@@ -163,13 +163,6 @@ export default function SupportChannelCard({ channel }: Props) {
               <div className="support-qr-placeholder">暂未配置二维码</div>
             )}
           </div>
-
-          {qrUrl ? (
-            <p className="support-qr-hint">
-              <ScanLine size={18} aria-hidden="true" />
-              <span>{getQrActionHint(channel)}</span>
-            </p>
-          ) : null}
 
           <div className="support-channel-actions">
             {openUrl ? (

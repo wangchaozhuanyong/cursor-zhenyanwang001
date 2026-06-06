@@ -623,7 +623,7 @@ export default function GuestHome() {
               <ArrowRight size={14} aria-hidden="true" />
             </UnifiedButton>
           </div>
-          <div className="store-home-featured-layout">
+          <div className={`store-home-featured-layout${showGuestNewArrivals ? "" : " store-home-featured-layout--with-aside"}`}>
             <div className="store-home-featured-products">
           <h2 className="sr-only">
             <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
@@ -673,6 +673,7 @@ export default function GuestHome() {
             }
           />
             </div>
+            {!showGuestNewArrivals ? <DesktopHomeServiceAside onNavigate={navigate} /> : null}
           </div>
         </section>
         </AnimatedSection>

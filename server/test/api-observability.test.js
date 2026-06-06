@@ -72,6 +72,25 @@ describe('API observability guardrails', () => {
     assert.equal(res.headers['x-trace-id'], 'test-trace-timeout');
   });
 
+  test('disallowed CORS origin returns 403 instead of leaking a 500', async () => {
+    const res = await request(app)
+      .get('/api/health/live')
+      .set('Origin', 'https://evil.example')
+      .expect('Content-Type', /json/)
+      .expect(403);
+
+    assert.equal(res.body.code, 403);
+    assert.equal(res.body.message, 'CORS not allowed');
+  });
+
+  test('encoded traversal under uploads returns 404 instead of SPA fallback', async () => {
+    const res = await request(app)
+      .get('/uploads/%2e%2e/%2e%2e/server/.env')
+      .expect(404);
+
+    assert.doesNotMatch(res.text, /JWT_SECRET|DB_PASSWORD|STRIPE_SECRET_KEY/i);
+  });
+
   test('missing hashed frontend chunks are classified as cache inconsistency in Chinese logs', () => {
     const classification = accessLogger._private.classifyAccessLog(
       { originalUrl: '/assets/AdminOrders-oldhash.js?from=stale-html' },

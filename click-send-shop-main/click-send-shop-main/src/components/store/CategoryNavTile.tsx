@@ -25,6 +25,12 @@ export default function CategoryNavTile({
   variant = "standard",
 }: CategoryNavTileProps) {
   const isPlain = variant === "plain";
+  const tileClassName = cn(
+    "store-category-tile group flex h-[4.85rem] w-[5.05rem] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-[0.875rem] border text-center transition duration-200 active:scale-[0.98]",
+    isPlain && "store-category-tile--plain h-auto rounded-none border-0 bg-transparent shadow-none active:scale-100",
+    active ? "is-active" : "opacity-95",
+    className,
+  );
 
   return (
     <UnifiedButton
@@ -32,12 +38,7 @@ export default function CategoryNavTile({
       type="button"
       onClick={onClick}
       aria-current={active ? "true" : undefined}
-      className={cn(
-        "store-category-tile group flex h-[4.85rem] w-[5.05rem] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-[0.875rem] border text-center transition duration-200 active:scale-[0.98]",
-        isPlain && "store-category-tile--plain",
-        active ? "is-active" : "opacity-95",
-        className,
-      )}
+      className={tileClassName}
     >
       <span
         className={cn(

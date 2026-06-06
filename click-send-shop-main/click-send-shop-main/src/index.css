@@ -5046,15 +5046,16 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-tile-
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-showcase--plain {
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
+  border: 0 !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain {
-  border: 0;
-  background: transparent;
-  box-shadow: none;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain::before,
@@ -5073,10 +5074,10 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-rail-
   width: clamp(4.72rem, 19.8vw, 5.05rem);
   height: auto;
   min-height: 4.75rem;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile {
@@ -5086,9 +5087,10 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-rail-
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile.is-active {
-  border: 0;
-  background: transparent;
-  box-shadow: none;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile-icon {

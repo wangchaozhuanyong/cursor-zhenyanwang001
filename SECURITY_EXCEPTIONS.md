@@ -4,22 +4,24 @@ Last updated: 2026-06-06
 
 This file tracks accepted temporary security gaps that are not fully closed yet.
 
-## EX-001: No automated SAST/DAST pipeline gate in CI
+## EX-001: DAST staging target not configured yet
 
-- Status: Partially mitigated on 2026-06-06.
-- Risk: code-level security issues may pass without automated static/dynamic security test gates.
-- Reason: current CI focuses on typecheck/build/unit tests and deployment readiness.
+- Status: Partially mitigated on 2026-06-06; code-side SAST/DAST plumbing is in place.
+- Risk: dynamic security regressions may pass if the scheduled DAST job has no staging target to scan.
+- Reason: the repository does not contain the staging base URL or scan authorization secrets.
 - Temporary mitigation:
   1. Mandatory code review for security-sensitive modules (`auth`, `payment`, `upload`, `admin`).
   2. Manual pre-release security checklist execution (`docs/SECURITY_CHECKLIST.md`).
   3. Rate limiting + RBAC + input validation remain enabled in runtime.
   4. CI and local verification now run `node scripts/check-static-security.mjs` for high-confidence risky source patterns.
+  5. CodeQL SAST workflow runs on PR/push/schedule.
+  6. DAST baseline workflow exists and fails in strict mode until `DAST_BASE_URL` is configured.
 - Planned fix:
-  1. Add full SAST (for example Semgrep/CodeQL) in CI.
-  2. Add periodic DAST against staging.
+  1. Configure GitHub Secrets: `DAST_BASE_URL`, `DAST_ALLOWED_HOSTS`, and optionally `DAST_ADMIN_ORIGIN`, `DAST_AUTH_HEADER`, `DAST_COOKIE`.
+  2. Run `Security DAST Baseline` successfully against staging.
 - Current remaining gap:
-  1. Full SAST rulepack is not yet configured.
-  2. DAST is not yet automated because staging URL and test authorization are not defined in this repo.
+  1. No real staging DAST result has been produced in this workspace because no staging target URL/authorization was provided.
+  2. Production domains were found in repo docs/config, but production DAST is intentionally refused unless explicitly acknowledged.
 - Owner: Engineering Lead / Security Owner
 - Target date: 2026-06-15
 
@@ -29,9 +31,8 @@ This file tracks accepted temporary security gaps that are not fully closed yet.
 - Previous risk: accidental credential commit may not be blocked automatically.
 - Fix:
   1. Added `scripts/check-secret-leaks.mjs`.
-  2. Added `scripts/check-static-security.mjs`.
-  3. Added both scanners to CI repo hygiene.
-  4. Added both scanners to local `scripts/verify-all.mjs` and `scripts/verify-before-push.ps1`.
+  2. Added the scanner to CI repo hygiene.
+  3. Added the scanner to local `scripts/verify-all.mjs` and `scripts/verify-before-push.ps1`.
 - Remaining manual gate:
   1. Store all production secrets in secure vault / GitHub Secrets only.
   2. Confirm CI/deploy logs do not print real secret values.

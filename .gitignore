@@ -37,6 +37,8 @@ bun.lockb
 .github/workflows/*
 !.github/workflows/deploy.yml
 !.github/workflows/ci.yml
+!.github/workflows/security-codeql.yml
+!.github/workflows/security-dast.yml
 
 # 部署状态文件（last_good_head / history.log 等）
 .deploy-state/

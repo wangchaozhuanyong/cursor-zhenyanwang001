@@ -30,6 +30,8 @@ sudo -E bash deploy/origin-cloudflare-only-firewall.sh rollback
 ## What it does
 
 - Allows Cloudflare IP ranges to reach ports `80,443`.
+- Allows local loopback traffic so local health checks and Tunnel-to-Nginx
+  traffic can still work.
 - Drops direct non-Cloudflare traffic to ports `80,443`.
 - Does not touch SSH, database, Redis, PM2, Node, or application files.
 - Uses a dedicated iptables chain so rollback is predictable.

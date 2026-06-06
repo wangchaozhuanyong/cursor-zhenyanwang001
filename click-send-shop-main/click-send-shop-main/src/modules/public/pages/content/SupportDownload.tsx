@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Copy, MessageCircle, PlusSquare, Send, Smartphone } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
+import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import SupportChannelCard from "@/components/support/SupportChannelCard";
 import InstallPlatformCard from "@/components/support/InstallPlatformCard";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
@@ -65,7 +66,7 @@ function firstChannelByType(channels: SupportDownloadChannel[], type: SupportCha
 function SupportTabIcon({ view }: { view: SupportDownloadView }) {
   if (view === "telegram") return <Send size={19} aria-hidden="true" />;
   if (view === "download") return <PlusSquare size={19} aria-hidden="true" />;
-  if (view === "whatsapp") return <MessageCircle size={19} aria-hidden="true" />;
+  if (view === "whatsapp") return <WhatsAppIcon size={19} color="currentColor" aria-hidden="true" />;
   return <MessageCircle size={19} aria-hidden="true" />;
 }
 
@@ -215,11 +216,7 @@ export default function SupportDownload() {
 
       <main className="support-download-shell">
         <header className="support-download-hero">
-          <p className="support-hero-eyebrow">官方客服</p>
           <h1>{pageTitle}</h1>
-          {config.subtitle ? (
-            <p className="support-download-subtitle">{config.subtitle}</p>
-          ) : null}
         </header>
 
         {!waitingForConfiguredView && availableViews.length > 0 ? (

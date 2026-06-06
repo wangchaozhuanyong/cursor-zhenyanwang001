@@ -23,15 +23,7 @@ html[data-app-scope="store"] .support-download-shell {
 }
 
 html[data-app-scope="store"] .support-download-hero {
-  text-align: left;
-}
-
-html[data-app-scope="store"] .support-hero-eyebrow {
-  margin: 0 0 0.45rem;
-  color: var(--support-accent-dark);
-  font-size: 0.78rem;
-  font-weight: 800;
-  line-height: 1.2;
+  text-align: center;
 }
 
 html[data-app-scope="store"] .support-download-hero h1 {
@@ -41,14 +33,6 @@ html[data-app-scope="store"] .support-download-hero h1 {
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1.12;
-}
-
-html[data-app-scope="store"] .support-download-subtitle {
-  max-width: 42rem;
-  margin: 0.65rem 0 0;
-  color: var(--support-muted);
-  font-size: 0.95rem;
-  line-height: 1.62;
 }
 
 html[data-app-scope="store"] .support-download-tabs {
@@ -165,20 +149,13 @@ html[data-app-scope="store"] .support-channel-icon {
 }
 
 html[data-app-scope="store"] .support-channel-title-block {
+  display: flex;
   min-width: 0;
-}
-
-html[data-app-scope="store"] .support-channel-kicker {
-  display: block;
-  color: var(--support-accent-dark);
-  font-size: 0.78rem;
-  font-weight: 850;
-  letter-spacing: 0;
-  line-height: 1.2;
+  align-items: center;
 }
 
 html[data-app-scope="store"] .support-channel-title-block h2 {
-  margin: 0.18rem 0 0;
+  margin: 0;
   overflow: hidden;
   color: var(--support-ink);
   font-size: 1.25rem;
@@ -248,6 +225,7 @@ html[data-app-scope="store"] .support-outline-action {
 
 html[data-app-scope="store"] .support-copy-button {
   padding: 0 0.82rem;
+  white-space: nowrap;
 }
 
 html[data-app-scope="store"] .support-outline-action {
@@ -661,11 +639,13 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
   }
 
   html[data-app-scope="store"] .support-account-panel {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
   }
 
   html[data-app-scope="store"] .support-copy-button {
-    width: 100%;
+    min-width: max-content;
+    padding-inline: 0.7rem;
   }
 
   html[data-app-scope="store"] .support-qr-media {

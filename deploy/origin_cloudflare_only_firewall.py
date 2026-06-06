@@ -41,6 +41,8 @@ def build_apply_commands(v4_ranges: list[str], v6_ranges: list[str]) -> list[lis
     commands: list[list[str]] = [
         ["iptables", "-N", IPTABLES_CHAIN],
         ["iptables", "-F", IPTABLES_CHAIN],
+        ["iptables", "-A", IPTABLES_CHAIN, "-i", "lo", "-j", "RETURN"],
+        ["iptables", "-A", IPTABLES_CHAIN, "-s", "127.0.0.1/32", "-j", "RETURN"],
     ]
     for cidr in v4_ranges:
         commands.append(["iptables", "-A", IPTABLES_CHAIN, "-s", cidr, "-j", "RETURN"])
@@ -51,7 +53,12 @@ def build_apply_commands(v4_ranges: list[str], v6_ranges: list[str]) -> list[lis
     ]
 
     if v6_ranges:
-        commands += [["ip6tables", "-N", IP6TABLES_CHAIN], ["ip6tables", "-F", IP6TABLES_CHAIN]]
+        commands += [
+            ["ip6tables", "-N", IP6TABLES_CHAIN],
+            ["ip6tables", "-F", IP6TABLES_CHAIN],
+            ["ip6tables", "-A", IP6TABLES_CHAIN, "-i", "lo", "-j", "RETURN"],
+            ["ip6tables", "-A", IP6TABLES_CHAIN, "-s", "::1/128", "-j", "RETURN"],
+        ]
         for cidr in v6_ranges:
             commands.append(["ip6tables", "-A", IP6TABLES_CHAIN, "-s", cidr, "-j", "RETURN"])
         commands += [

@@ -23,6 +23,7 @@ const seoRoutes = require('./modules/seo/routes/seo.routes');
 const { registerSeoPrerender } = require('./modules/product/seoPrerender');
 const { registerPwaBrandRoutes } = require('./modules/pwa/routes/pwa.routes');
 const stripeWebhook = require('./modules/payment/controller/stripeWebhook.controller');
+const { ForbiddenError } = require('./errors');
 
 const app = express();
 
@@ -132,6 +133,27 @@ const HTML_NO_STORE_CACHE_CONTROL = 'no-store, no-cache, must-revalidate, proxy-
 const HASHED_ASSET_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const SHORT_STATIC_CACHE_CONTROL = 'public, max-age=300';
 
+function decodePathRepeatedly(rawPath) {
+  let current = String(rawPath || '');
+  for (let i = 0; i < 3; i += 1) {
+    try {
+      const decoded = decodeURIComponent(current);
+      if (decoded === current) return decoded;
+      current = decoded;
+    } catch {
+      return current;
+    }
+  }
+  return current;
+}
+
+function isUnsafeUploadsPath(req) {
+  const rawPath = String(req.originalUrl || req.url || '').split(/[?#]/, 1)[0];
+  if (!/^\/uploads(?:\/|$|%2f|%5c)/i.test(rawPath)) return false;
+  const decodedPath = decodePathRepeatedly(rawPath).replace(/\\/g, '/');
+  return decodedPath.split('/').some((segment) => segment === '..');
+}
+
 function setNoStoreHtmlHeaders(res) {
   res.setHeader('Cache-Control', HTML_NO_STORE_CACHE_CONTROL);
   res.setHeader('Pragma', 'no-cache');
@@ -158,6 +180,14 @@ function setSpaStaticHeaders(res, filePath) {
     return;
   }
   res.setHeader('Cache-Control', SHORT_STATIC_CACHE_CONTROL);
+}
+
+function isSensitiveFileProbe(req) {
+  const rawPath = String(req.originalUrl || req.url || '').split(/[?#]/)[0];
+  const normalizedPath = String(req.path || '');
+  if (/(?:^|\/|%2f)(?:\.\.|%2e%2e)(?:\/|%2f|$)/i.test(rawPath)) return true;
+  if (/(^|\/)\.[^/]+/i.test(normalizedPath)) return true;
+  return /\.(?:env|pem|key|crt|pfx|p12|sql|sqlite|db|log|bak|zip|tar|gz|7z|rar)$/i.test(normalizedPath);
 }
 
 /** Extend Helmet CSP for configured image storage, analytics, and Stripe. */
@@ -302,7 +332,7 @@ app.use(cors((req, callback) => {
   callback(null, {
     origin: (origin, originCallback) => {
       if (isAllowedCorsOrigin(origin, req)) return originCallback(null, true);
-      originCallback(new Error('CORS not allowed'), false);
+      originCallback(new ForbiddenError('CORS not allowed'), false);
     },
     credentials: true,
   });
@@ -332,6 +362,10 @@ app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '1mb' }));
 app.use(adminCsrfGuard);
 
 const uploadsDir = path.join(__dirname, '../public/uploads');
+app.use((req, res, next) => {
+  if (!isUnsafeUploadsPath(req)) return next();
+  return res.status(404).send('Not Found');
+});
 /**
  * @deprecated Legacy local /uploads compatibility.
  * Keep until DB URLs and production access logs show no local-upload traffic.
@@ -359,6 +393,9 @@ app.use(
     },
   }),
 );
+app.use('/uploads', (_req, res) => {
+  res.status(404).send('Not Found');
+});
 app.use(seoRoutes);
 
 const authLimiter = rateLimit({
@@ -483,6 +520,7 @@ if (serveSpa) {
     // Missing hashed chunks must be a real 404; returning index.html makes
     // dynamic import failures harder to diagnose and can cache the wrong MIME.
     if (req.path.startsWith('/assets/')) return next();
+    if (isSensitiveFileProbe(req)) return next();
     setNoStoreHtmlHeaders(res);
     res.sendFile(path.join(frontendDist, 'index.html'), (err) => next(err));
   });
@@ -519,6 +557,7 @@ if (serveAdminFromAdminDist && !serveSpa) {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api')) return next();
     if (req.path.startsWith('/assets/')) return next();
+    if (isSensitiveFileProbe(req)) return next();
     setNoStoreHtmlHeaders(res);
     res.sendFile(adminDistIndexHtml, (err) => next(err));
   });

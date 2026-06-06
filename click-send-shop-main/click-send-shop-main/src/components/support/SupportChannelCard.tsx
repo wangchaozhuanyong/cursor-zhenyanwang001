@@ -124,7 +124,6 @@ export default function SupportChannelCard({ channel }: Props) {
               <SupportChannelVisualIcon type={channel.type} />
             </span>
             <div className="support-channel-title-block">
-              <span className="support-channel-kicker">{getChannelKicker(channel)}</span>
               <h2>{title}</h2>
             </div>
           </div>

@@ -43,6 +43,10 @@ Write-Host "`n--- repo: static security scan ---" -ForegroundColor DarkCyan
 node scripts/check-static-security.mjs
 Assert-LastExitCode "repo static security scan"
 
+Write-Host "`n--- repo: DAST baseline (skips without DAST_BASE_URL) ---" -ForegroundColor DarkCyan
+node scripts/check-dast-baseline.mjs
+Assert-LastExitCode "repo DAST baseline"
+
 Write-Host "`n--- server: deps + typecheck ---" -ForegroundColor DarkCyan
 Set-Location (Join-Path $RepoRoot "server")
 Install-Deps "server"

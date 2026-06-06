@@ -1,0 +1,33 @@
+name: Security DAST Baseline
+
+on:
+  schedule:
+    - cron: "17 19 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dast-baseline:
+    name: DAST baseline against staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DAST_BASE_URL: ${{ secrets.DAST_BASE_URL }}
+      DAST_ALLOWED_HOSTS: ${{ secrets.DAST_ALLOWED_HOSTS }}
+      DAST_ADMIN_ORIGIN: ${{ secrets.DAST_ADMIN_ORIGIN }}
+      DAST_AUTH_HEADER: ${{ secrets.DAST_AUTH_HEADER }}
+      DAST_COOKIE: ${{ secrets.DAST_COOKIE }}
+      DAST_PRODUCTION_HOSTS: ${{ secrets.DAST_PRODUCTION_HOSTS }}
+      DAST_PRODUCTION_ACK: ${{ secrets.DAST_PRODUCTION_ACK }}
+      DAST_ALLOW_EXTERNAL: "1"
+      DAST_REQUIRED: "1"
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+      - name: Run DAST baseline checks
+        run: node scripts/check-dast-baseline.mjs

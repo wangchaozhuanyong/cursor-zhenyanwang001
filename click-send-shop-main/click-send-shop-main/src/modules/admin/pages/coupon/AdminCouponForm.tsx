@@ -575,7 +575,7 @@ export default function AdminCouponForm() {
             <PermissionGate permission="coupon.manage">
               <LoadingButton
                 type="button"
-                variant="gold"
+                variant="price"
                 state={saving ? "loading" : "normal"}
                 onClick={() => adminConfirmSave(confirm, isEdit ? L("优惠券修改", "Update coupon") : L("新优惠券", "New coupon"), () => handleSave())}
                 className="rounded-lg px-6 py-2.5 text-sm font-semibold"

@@ -44,7 +44,7 @@ export const monitoringPrimaryButtonClass =
 export const monitoringSecondaryButtonClass =
   "inline-flex min-h-9 items-center justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-[var(--theme-bg)] disabled:cursor-not-allowed disabled:opacity-40";
 export const monitoringInputClass =
-  "rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-1.5 text-sm text-foreground outline-none transition focus:border-gold focus:ring-2 focus:ring-gold/20";
+  "rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-1.5 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]";
 export const monitoringActionLinkClass = "font-semibold text-theme-price underline-offset-2 hover:underline";
 
 function resolveBadgeLabel(value?: string | null): string {

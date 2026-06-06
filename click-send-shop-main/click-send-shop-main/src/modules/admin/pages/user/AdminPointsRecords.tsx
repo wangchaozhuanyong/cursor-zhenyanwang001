@@ -317,7 +317,7 @@ export default function AdminPointsRecords({ embedded = false }: { embedded?: bo
             <PermissionGate permission="points.manage">
               <LoadingButton
                 type="button"
-                variant="gold"
+                variant="price"
                 state={rulesSaving ? "loading" : "normal"}
                 loadingText={L("保存中...", "Saving...")}
                 onClick={() => void saveRules()}

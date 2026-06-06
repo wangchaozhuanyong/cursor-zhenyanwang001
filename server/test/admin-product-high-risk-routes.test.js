@@ -18,14 +18,28 @@ describe('admin sensitive action routes', () => {
   });
 
   test('customer exports are classified', () => {
+    assert.equal(getSensitiveActionClass(req('GET', '/event-center/events/export')), 'customer_export');
+    assert.equal(getSensitiveActionClass(req('GET', '/products/export')), 'customer_export');
+    assert.equal(getSensitiveActionClass(req('GET', '/inventory/export')), 'customer_export');
+    assert.equal(getSensitiveActionClass(req('GET', '/inventory/records/export')), 'customer_export');
     assert.equal(getSensitiveActionClass(req('GET', '/users/export')), 'customer_export');
     assert.equal(getSensitiveActionClass(req('GET', '/orders/export')), 'customer_export');
+    assert.equal(getSensitiveActionClass(req('GET', '/reports/export')), 'customer_export');
+    assert.equal(getSensitiveActionClass(req('GET', '/reports/sales/export')), 'customer_export');
+    assert.equal(getSensitiveActionClass(req('GET', '/reports/profit/export')), 'customer_export');
+    assert.equal(getSensitiveActionClass(req('GET', '/reports/products/export')), 'customer_export');
+    assert.equal(getSensitiveActionClass(req('GET', '/reports/users/export')), 'customer_export');
   });
 
   test('admin security and RBAC mutations are classified', () => {
     assert.equal(getSensitiveActionClass(req('PUT', '/account/password')), 'account_security');
+    assert.equal(getSensitiveActionClass(req('PUT', '/rbac/mfa-policy')), 'rbac_admin');
     assert.equal(getSensitiveActionClass(req('PUT', '/rbac/users/u-1/roles')), 'rbac_admin');
     assert.equal(getSensitiveActionClass(req('POST', '/rbac/admin-users/u-1/security/mfa-reset')), 'rbac_admin');
+  });
+
+  test('payment manual state changes are classified', () => {
+    assert.equal(getSensitiveActionClass(req('POST', '/payments/orders/order-1/mark-paid')), 'payment_manual_change');
   });
 
   test('high-risk config and permanent delete are classified', () => {

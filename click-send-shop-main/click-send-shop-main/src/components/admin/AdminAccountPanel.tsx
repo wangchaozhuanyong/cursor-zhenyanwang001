@@ -132,7 +132,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
       ) : activeTab === "profile" ? (
         <div className="max-w-lg space-y-4 rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-4 border-b border-border pb-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gold text-2xl font-bold text-primary-foreground">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--theme-price)] text-2xl font-bold text-[var(--theme-price-foreground)]">
               {profile.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -148,7 +148,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
                 <input
                   value={profile.name}
                   onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--theme-primary)]"
                 />
               </div>
             </label>
@@ -159,7 +159,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
                 <input
                   value={profile.email}
                   onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--theme-primary)]"
                 />
               </div>
             </label>
@@ -170,13 +170,13 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
                 <input
                   value={profile.phone}
                   onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--theme-primary)]"
                 />
               </div>
             </label>
           </div>
           <LoadingButton
-            variant="gold"
+            variant="price"
             state={saving ? "loading" : "normal"}
             loadingText={L("保存中...", "Saving...")}
             onClick={() => void handleSaveProfile()}
@@ -202,13 +202,13 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
                   placeholder={f.placeholder}
                   value={pwd[f.key]}
                   onChange={(e) => setPwd({ ...pwd, [f.key]: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--theme-primary)]"
                 />
               </div>
             </label>
           ))}
           <LoadingButton
-            variant="gold"
+            variant="price"
             state={saving ? "loading" : "normal"}
             loadingText={L("提交中...", "Submitting...")}
             onClick={() => void handleChangePwd()}
@@ -236,12 +236,12 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
                 value={passkeyLabel}
                 onChange={(e) => setPasskeyLabel(e.target.value)}
                 placeholder={L("例如：办公室电脑", "For example: office computer")}
-                className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+                className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--theme-primary)]"
               />
             </div>
           </label>
           <LoadingButton
-            variant="gold"
+            variant="price"
             state={saving ? "loading" : "normal"}
             loadingText={L("添加中...", "Adding...")}
             onClick={() => void handleRegisterPasskey()}

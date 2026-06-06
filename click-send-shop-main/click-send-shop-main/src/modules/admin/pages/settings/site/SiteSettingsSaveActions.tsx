@@ -36,7 +36,7 @@ export default function SiteSettingsSaveActions({
         ) : null}
         <LoadingButton
           type="button"
-          variant="gold"
+          variant="price"
           state={saving ? "loading" : "normal"}
           loadingText="保存中..."
           onClick={onSaveSection}

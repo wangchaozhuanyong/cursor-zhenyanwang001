@@ -32,7 +32,7 @@ type Props = {
 
 const fieldClassName = "flex min-w-0 flex-col gap-1";
 const fieldLabelClassName = "flex h-5 items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground";
-const controlClassName = "h-11 w-full min-w-0 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold";
+const controlClassName = "h-11 w-full min-w-0 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[var(--theme-primary)]";
 const readonlyControlClassName = "flex h-11 w-full min-w-0 items-center rounded-xl border border-dashed border-border bg-background/40 px-3 text-sm text-muted-foreground";
 
 export default function HomeNavFormPanel({
@@ -291,7 +291,7 @@ export default function HomeNavFormPanel({
         <span className="flex h-11 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm text-foreground">
           <input
             type="checkbox"
-            className="accent-gold"
+            className="accent-[var(--theme-primary)]"
             checked={navForm.enabled}
             onChange={(e) => setNavForm({ ...navForm, enabled: e.target.checked })}
           />
@@ -304,7 +304,7 @@ export default function HomeNavFormPanel({
         <PermissionGate permission="home_ops.manage">
           <LoadingButton
             type="button"
-            variant="gold"
+            variant="price"
             state={saving ? "loading" : "normal"}
             loadingText={L("保存中...", "Saving...")}
             onClick={() => adminConfirmSave(confirm, editingNavId ? L("保存导航修改", "Save navigation changes") : L("新增导航", "Add navigation item"), () => onSave())}

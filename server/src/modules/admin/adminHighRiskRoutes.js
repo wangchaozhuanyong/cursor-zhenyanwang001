@@ -8,18 +8,24 @@ const RULES = [
 
   { method: '*', pattern: /^\/rbac\/users\/[^/]+\/roles$/, actionClass: 'rbac_admin' },
   { method: '*', pattern: /^\/rbac\/roles(\/|$)/, actionClass: 'rbac_admin' },
+  { method: 'PUT', pattern: /^\/rbac\/mfa-policy$/, actionClass: 'rbac_admin' },
   { method: 'POST', pattern: /^\/rbac\/admin-users$/, actionClass: 'rbac_admin' },
   { method: '*', pattern: /^\/rbac\/admin-users\/[^/]+\/(security|toggle|reset-password|delete)/, actionClass: 'rbac_admin' },
   { method: 'DELETE', pattern: /^\/rbac\/admin-users\/[^/]+$/, actionClass: 'rbac_admin' },
 
   { method: 'PUT', pattern: /^\/payments\/channels\/[^/]+$/, actionClass: 'payment_config' },
   { method: 'POST', pattern: /^\/payments\/orders\/[^/]+\/refund$/, actionClass: 'bulk_refund' },
+  { method: 'POST', pattern: /^\/payments\/orders\/[^/]+\/mark-paid$/, actionClass: 'payment_manual_change' },
   { method: 'POST', pattern: /^\/payments\/events\/[^/]+\/replay$/, actionClass: 'payment_config' },
   { method: 'POST', pattern: /^\/payments\/reconciliations$/, actionClass: 'payment_config' },
 
+  { method: 'GET', pattern: /^\/event-center\/events\/export$/, actionClass: 'customer_export' },
+  { method: 'GET', pattern: /^\/products\/export$/, actionClass: 'customer_export' },
+  { method: 'GET', pattern: /^\/inventory\/(records\/)?export$/, actionClass: 'customer_export' },
   { method: 'GET', pattern: /^\/users\/export$/, actionClass: 'customer_export' },
   { method: 'GET', pattern: /^\/orders\/export$/, actionClass: 'customer_export' },
-  { method: 'GET', pattern: /^\/reports\/(users|customers)\/export$/, actionClass: 'customer_export' },
+  { method: 'GET', pattern: /^\/reports\/export$/, actionClass: 'customer_export' },
+  { method: 'GET', pattern: /^\/reports\/[^/]+\/export$/, actionClass: 'customer_export' },
   { method: 'GET', pattern: /^\/notifications\/[^/]+\/recipients\/export$/, actionClass: 'customer_export' },
   { method: 'GET', pattern: /^\/exports\/[^/]+\/download$/, actionClass: 'customer_export' },
 

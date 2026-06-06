@@ -29,7 +29,7 @@ export default function SettingSwitch({ id, checked, onCheckedChange, label, hin
         checked={checked}
         disabled={disabled}
         onChange={(e) => onCheckedChange(e.target.checked)}
-        className="mt-0.5 h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full border border-border bg-secondary transition-colors checked:border-gold checked:bg-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/30"
+        className="mt-0.5 h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full border border-border bg-secondary transition-colors checked:border-[var(--theme-price)] checked:bg-[var(--theme-price)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--theme-price)_30%,transparent)]"
         style={{
           backgroundImage: checked
             ? "radial-gradient(circle at 14px center, var(--background) 6px, transparent 6px)"

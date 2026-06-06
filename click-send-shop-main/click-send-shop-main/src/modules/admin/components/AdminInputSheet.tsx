@@ -53,7 +53,7 @@ export function AdminInputSheet({
   };
 
   const inputClass =
-    "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20";
+    "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]";
 
   return (
     <AdminFormSheet

@@ -226,7 +226,7 @@ export default function AdminCoupons() {
         <div className="flex flex-wrap gap-2">
           <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></UnifiedButton>
           <PermissionGate permission="coupon.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={16} /><Tx>新建优惠券模板</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><Plus size={16} /><Tx>新建优惠券模板</Tx></UnifiedButton>
           </PermissionGate>
         </div>
       )}

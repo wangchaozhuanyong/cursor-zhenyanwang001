@@ -80,7 +80,7 @@ export default function ProductSkuSection({
         />
       </div>
       {isSingleDefaultSku ? (
-        <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 text-xs leading-5 text-muted-foreground">
+        <div className="rounded-lg border border-[color-mix(in_srgb,var(--theme-price)_30%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))] p-3 text-xs leading-5 text-muted-foreground">
           <p className="font-medium text-foreground"><Tx>当前商品未启用多规格，系统将使用“默认规格 / 默认 SKU”管理库存、成本、条码和预警。</Tx></p>
           <p className="mt-1"><Tx>如果商品有颜色、尺码、口味等差异，可以转为矩阵规格，为每个规格组合单独维护 SKU。</Tx></p>
           <UnifiedButton

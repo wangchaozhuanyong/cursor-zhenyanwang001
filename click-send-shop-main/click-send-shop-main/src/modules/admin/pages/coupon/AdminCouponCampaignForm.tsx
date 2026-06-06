@@ -333,7 +333,7 @@ export default function AdminCouponCampaignForm() {
               {couponOptions.map((coupon) => {
                 const checked = selectedCouponIds.has(coupon.id);
                 return (
-                  <label key={coupon.id} className={`cursor-pointer rounded-xl border px-3 py-2 text-sm transition ${checked ? "border-gold bg-gold/10" : "border-border bg-background"}`}>
+                  <label key={coupon.id} className={`cursor-pointer rounded-xl border px-3 py-2 text-sm transition ${checked ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]" : "border-border bg-background"}`}>
                     <span className="flex items-start gap-2">
                       <input type="checkbox" checked={checked} onChange={() => toggleCoupon(coupon.id)} className="mt-1" />
                       <span className="min-w-0">

@@ -384,7 +384,7 @@ export default function AdminActivityForm() {
               type="button"
               onClick={() => setStep(i)}
               className={`touch-manipulation shrink-0 rounded-lg px-3 py-2 text-xs font-medium ${
-                i === step ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"
+                i === step ? "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] text-theme-price" : "bg-secondary text-muted-foreground"
               }`}
             >
               {i + 1}. {tText(getStepLabel(i, form.type))}
@@ -397,7 +397,7 @@ export default function AdminActivityForm() {
       <div className="grid gap-4 lg:grid-cols-[220px_1fr_340px]">
         <div className="hidden rounded-xl border border-border bg-card p-3 lg:block">
           {ACTIVITY_FORM_STEPS.map((s, i) => (
-            <UnifiedButton key={s} onClick={() => setStep(i)} className={`mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm ${i === step ? "bg-gold/15 text-theme-price" : "text-muted-foreground hover:bg-secondary"}`}>
+            <UnifiedButton key={s} onClick={() => setStep(i)} className={`mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm ${i === step ? "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] text-theme-price" : "text-muted-foreground hover:bg-secondary"}`}>
               {i + 1}. {tText(getStepLabel(i, form.type))}
             </UnifiedButton>
           ))}
@@ -434,7 +434,7 @@ export default function AdminActivityForm() {
                         : p.activity_config,
                     }))
                   }
-                  className={`rounded-xl border p-3 text-left ${form.type === x.k ? "border-gold bg-gold/5" : "border-border"}`}
+                  className={`rounded-xl border p-3 text-left ${form.type === x.k ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))]" : "border-border"}`}
                 >
                   <p className="font-semibold">{tText(x.t)}</p>
                   <p className="text-xs text-muted-foreground">{tText(x.d)}</p>
@@ -606,7 +606,7 @@ export default function AdminActivityForm() {
                         key={option.value}
                         type="button"
                         onClick={() => handleScopeTypeChange(option.value)}
-                        className={`rounded-xl border p-3 text-left transition-colors ${active ? "border-gold bg-gold/10" : "border-border hover:bg-secondary/60"}`}
+                        className={`rounded-xl border p-3 text-left transition-colors ${active ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]" : "border-border hover:bg-secondary/60"}`}
                       >
                         <span className="block text-sm font-semibold">{tText(option.title)}</span>
                         <span className="mt-1 block text-xs text-muted-foreground">{tText(option.desc)}</span>
@@ -638,7 +638,7 @@ export default function AdminActivityForm() {
                       {categoryOptions.map((category) => {
                         const checked = selectedScopeIds.includes(category.id);
                         return (
-                          <label key={category.id} className={`flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm ${checked ? "bg-gold/10 text-foreground" : "hover:bg-secondary/60"}`}>
+                          <label key={category.id} className={`flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm ${checked ? "bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-foreground" : "hover:bg-secondary/60"}`}>
                             <input type="checkbox" checked={checked} onChange={(e) => toggleScopeId(category.id, e.target.checked)} />
                             <span className="truncate" style={{ paddingLeft: category.level * 12 }}>{category.name}</span>
                           </label>
@@ -671,7 +671,7 @@ export default function AdminActivityForm() {
                       {productOptions.map((product) => {
                         const checked = selectedScopeIds.includes(product.id);
                         return (
-                          <label key={product.id} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-2 text-sm ${checked ? "border-gold bg-gold/10" : "border-border hover:bg-secondary/60"}`}>
+                          <label key={product.id} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-2 text-sm ${checked ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]" : "border-border hover:bg-secondary/60"}`}>
                             <input type="checkbox" checked={checked} onChange={(e) => toggleScopeId(product.id, e.target.checked)} />
                             <img src={product.cover_image || ""} alt={product.name} className="h-10 w-10 rounded bg-secondary object-cover" />
                             <span className="min-w-0 flex-1">
@@ -736,7 +736,7 @@ export default function AdminActivityForm() {
                   {allowedDisplayPositions.map((key) => {
                     const checked = (form.display_positions || []).includes(key);
                     return (
-                      <label key={key} className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${checked ? "border-gold bg-gold/10" : "border-border"}`}>
+                      <label key={key} className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${checked ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]" : "border-border"}`}>
                         <input type="checkbox" checked={checked} onChange={() => setForm((p) => ({ ...p, display_positions: toggleDisplayPosition(p.display_positions, key) }))} />
                         {tText(DISPLAY_POSITION_LABELS[key])}
                       </label>
@@ -786,7 +786,7 @@ export default function AdminActivityForm() {
         <UnifiedButton onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>上一步</Tx></UnifiedButton>
         <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm"><Tx>保存草稿</Tx></LoadingButton>
         <UnifiedButton onClick={() => setStep((s) => Math.min(ACTIVITY_FORM_STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>下一步</Tx></UnifiedButton>
-        <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="发布中..." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold"><Tx>发布活动</Tx></LoadingButton>
+        <LoadingButton type="button" variant="price" state={saving ? "loading" : "normal"} loadingText="发布中..." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold"><Tx>发布活动</Tx></LoadingButton>
         <UnifiedButton onClick={goBack} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>取消</Tx></UnifiedButton>
       </div>
 

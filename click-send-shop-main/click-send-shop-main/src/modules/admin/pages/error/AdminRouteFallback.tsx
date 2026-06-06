@@ -47,7 +47,7 @@ export default function AdminRouteFallback({ type = "not-found" }: AdminRouteFal
           <UnifiedButton
             type="button"
             onClick={() => navigate("/admin", { replace: true })}
-            className="inline-flex items-center gap-2 rounded-lg btn-theme-price px-4 py-2 text-sm font-semibold text-primary-foreground"
+            className="inline-flex items-center gap-2 rounded-lg btn-theme-price px-4 py-2 text-sm font-semibold text-[var(--theme-price-foreground)]"
           >
             <Home size={15} />
             {item.primary}

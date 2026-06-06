@@ -190,7 +190,7 @@ export function AnimatedTable<T>({
       <UnifiedButton
         type="button"
         onClick={onRetry}
-        className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground"
+        className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-[var(--theme-price-foreground)]"
       >
         重试
       </UnifiedButton>

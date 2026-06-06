@@ -404,7 +404,7 @@ export default function AdminOrderDetailPanel({
               className={cn(
                 "min-h-9 shrink-0 rounded-lg px-3 text-xs font-medium transition sm:flex-1",
                 activeTab === tab.key
-                  ? "bg-[var(--theme-price)] text-primary-foreground shadow-sm"
+                  ? "bg-[var(--theme-price)] text-[var(--theme-price-foreground)] shadow-sm"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground",
               )}
             >

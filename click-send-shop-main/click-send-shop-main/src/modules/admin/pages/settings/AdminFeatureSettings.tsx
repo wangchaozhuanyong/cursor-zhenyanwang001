@@ -164,8 +164,8 @@ export default function AdminFeatureSettings() {
           type="button"
           onClick={save}
           disabled={saving || loading || !dirty}
-          className={`rounded-full px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50 ${
-            dirty ? "bg-primary" : "bg-muted text-muted-foreground"
+          className={`rounded-full px-4 py-2 text-sm font-medium text-[var(--theme-price-foreground)] disabled:opacity-50 ${
+            dirty ? "bg-[var(--theme-price)]" : "bg-muted text-muted-foreground"
           }`}
         >
           {saving ? tText("保存中...") : dirty ? tText("保存") : tText("已保存")}

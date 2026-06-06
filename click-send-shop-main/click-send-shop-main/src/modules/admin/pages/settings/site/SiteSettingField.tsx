@@ -44,7 +44,7 @@ export default function SiteSettingField({ field, value, onChange, uploadingKey,
           value={value}
           onChange={(e) => onChange(field.key, e.target.value)}
           placeholder={placeholder}
-          className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-gold"
+          className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-[var(--theme-primary)]"
         />
       </div>
     );
@@ -58,7 +58,7 @@ export default function SiteSettingField({ field, value, onChange, uploadingKey,
           id={id}
           value={value}
           onChange={(e) => onChange(field.key, e.target.value)}
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-gold"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-[var(--theme-primary)]"
         >
           {field.options?.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -93,7 +93,7 @@ export default function SiteSettingField({ field, value, onChange, uploadingKey,
         value={value}
         onChange={(e) => onChange(field.key, e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-gold"
+        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-[var(--theme-primary)]"
       />
     </div>
   );

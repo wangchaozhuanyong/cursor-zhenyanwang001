@@ -166,7 +166,7 @@ export default function InventorySkusTab({
                 <div className="inline-flex flex-nowrap items-center justify-end gap-1.5">
                   <UnifiedButton type="button" onClick={() => onAdjust(emptyAdjust(sku, "in"))} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>入库</Tx></UnifiedButton>
                   <UnifiedButton type="button" onClick={() => onAdjust(emptyAdjust(sku, "out"))} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>出库</Tx></UnifiedButton>
-                  <UnifiedButton type="button" onClick={() => onAdjust(emptyAdjust(sku, "adjust", String(sku.stock)))} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></UnifiedButton>
+                  <UnifiedButton type="button" onClick={() => onAdjust(emptyAdjust(sku, "adjust", String(sku.stock)))} className="rounded-lg bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></UnifiedButton>
                 </div>
               </td>
             </>

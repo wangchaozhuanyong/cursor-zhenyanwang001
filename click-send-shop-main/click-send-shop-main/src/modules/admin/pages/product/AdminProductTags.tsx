@@ -111,7 +111,7 @@ export default function AdminProductTags() {
                 setShowForm(true);
               }
             }}
-            className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+            className="flex items-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"
           >
             <Plus size={16} /><Tx>新增标签</Tx>
           </UnifiedButton>
@@ -119,7 +119,7 @@ export default function AdminProductTags() {
       )}
     >
       {showForm && (
-        <div className="rounded-xl border border-gold/30 bg-card p-3 sm:p-4">
+        <div className="rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_30%,var(--theme-border))] bg-card p-3 sm:p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>标签名称</Tx></label>
@@ -138,7 +138,7 @@ export default function AdminProductTags() {
               <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-24 rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none" />
             </div>
             <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-xs text-muted-foreground">
-              <input type="checkbox" className="accent-gold" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} /><Tx>
+              <input type="checkbox" className="accent-[var(--theme-primary)]" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} /><Tx>
               启用
             </Tx></label>
             <div>
@@ -150,7 +150,7 @@ export default function AdminProductTags() {
             <PermissionGate permission="tag.manage">
               <LoadingButton
                 type="button"
-                variant="gold"
+                variant="price"
                 state={saving ? "loading" : "normal"}
                 loadingText="保存中..."
                 onClick={() => adminConfirmSave(confirm, editingId ? "标签修改" : "新标签", () => handleSave())}

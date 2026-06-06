@@ -117,7 +117,7 @@ export default function AdminShipping() {
       )}
       toolbar={(
         <PermissionGate permission="shipping.manage">
-          <UnifiedButton type="button" onClick={() => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">
+          <UnifiedButton type="button" onClick={() => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-[var(--theme-price)] px-4 py-2.5 text-sm font-bold text-[var(--theme-price-foreground)]">
             <Plus size={16} /><Tx>新建模板</Tx>
           </UnifiedButton>
         </PermissionGate>
@@ -138,7 +138,7 @@ export default function AdminShipping() {
             ))
           : null}
         {!loading && templates.map((t) => (
-          <div key={t.id} className={`rounded-2xl border bg-card p-5 transition-all ${t.isDefault ? "border-gold/40 ring-1 ring-gold/20" : "border-border opacity-75"}`}>
+          <div key={t.id} className={`rounded-2xl border bg-card p-5 transition-all ${t.isDefault ? "border-[color-mix(in_srgb,var(--theme-price)_40%,var(--theme-border))] ring-1 ring-[color-mix(in_srgb,var(--theme-price)_20%,transparent)]" : "border-border opacity-75"}`}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
                 <Truck size={18} className={t.isDefault ? "text-theme-price" : "text-muted-foreground"} />
@@ -187,7 +187,7 @@ export default function AdminShipping() {
                         onConfirm: () => handleSetDefault(t.id),
                       })
                     }
-                    className="flex-1 rounded-xl border border-gold/40 bg-gold/10 py-2 text-xs font-semibold text-theme-price hover:bg-gold/20"
+                    className="flex-1 rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_40%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] py-2 text-xs font-semibold text-theme-price hover:bg-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-surface))]"
                   >
                     <Tx>设为默认生效</Tx>
                   </UnifiedButton>
@@ -218,17 +218,17 @@ export default function AdminShipping() {
         size="sm"
       >
         <div className="space-y-4">
-          <input aria-label={tText("模板名称")} placeholder={tText("模板名称")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-          <input aria-label={tText("适用区域")} placeholder={tText("适用区域（如：雪兰莪、吉隆坡）")} value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <input aria-label={tText("模板名称")} placeholder={tText("模板名称")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
+          <input aria-label={tText("适用区域")} placeholder={tText("适用区域（如：雪兰莪、吉隆坡）")} value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
           <div className="grid grid-cols-3 gap-3">
-            <label className="block"><span className="text-xs text-muted-foreground"><Tx>基础运费</Tx></span><input type="number" value={form.baseFee} onChange={(e) => setForm({ ...form, baseFee: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
-            <label className="block"><span className="text-xs text-muted-foreground"><Tx>包邮门槛</Tx></span><input type="number" value={form.freeAbove} onChange={(e) => setForm({ ...form, freeAbove: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
-            <label className="block"><span className="text-xs text-muted-foreground"><Tx>续重/kg</Tx></span><input type="number" value={form.extraPerKg} onChange={(e) => setForm({ ...form, extraPerKg: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
+            <label className="block"><span className="text-xs text-muted-foreground"><Tx>基础运费</Tx></span><input type="number" value={form.baseFee} onChange={(e) => setForm({ ...form, baseFee: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]" /></label>
+            <label className="block"><span className="text-xs text-muted-foreground"><Tx>包邮门槛</Tx></span><input type="number" value={form.freeAbove} onChange={(e) => setForm({ ...form, freeAbove: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]" /></label>
+            <label className="block"><span className="text-xs text-muted-foreground"><Tx>续重/kg</Tx></span><input type="number" value={form.extraPerKg} onChange={(e) => setForm({ ...form, extraPerKg: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]" /></label>
           </div>
           <PermissionGate permission="shipping.manage">
             <LoadingButton
               type="button"
-              variant="gold"
+              variant="price"
               state={saving ? "loading" : "normal"}
               loadingText={tText("保存中...")}
               onClick={() => adminConfirmSave(confirm, editing ? tText("运费模板修改") : tText("新运费模板"), () => handleSave())}

@@ -117,7 +117,7 @@ export function InventoryAlertsTab({
                     expected_arrival_date: "",
                     remark: "",
                   })}
-                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+                  className="rounded-lg bg-[var(--theme-price)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-price-foreground)]"
                 >
                   <Tx>生成采购单</Tx>
                 </UnifiedButton>
@@ -184,7 +184,7 @@ export function InventoryPurchaseOrdersTab({
             <td className={adminTableCellClass("right")}>RM {Number(row.total_amount || 0).toFixed(2)}</td>
             <td className={adminTableCellClass("right")}>
               {!["received", "cancelled"].includes(row.status) ? (
-                <UnifiedButton type="button" onClick={() => onReceive(row)} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>确认到货入库</Tx></UnifiedButton>
+                <UnifiedButton type="button" onClick={() => onReceive(row)} className="rounded-lg bg-[var(--theme-price)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-price-foreground)]"><Tx>确认到货入库</Tx></UnifiedButton>
               ) : <span className="text-xs text-muted-foreground">-</span>}
             </td>
           </>

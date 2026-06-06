@@ -402,11 +402,11 @@ export default function AdminReviews() {
     return (
       <AdminTableMobileCard className="p-4 shadow-sm">
 <div className="flex items-start gap-3">
-                    <input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-gold mt-1 h-5 w-5 shrink-0" />
+                    <input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-[var(--theme-primary)] mt-1 h-5 w-5 shrink-0" />
                     {r.avatar ? (
                       <img src={r.avatar} alt={`${r.nickname || "用户"} 头像`} className="h-10 w-10 shrink-0 rounded-full object-cover" />
                     ) : (
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full btn-theme-price text-xs font-bold text-primary-foreground">{(r.nickname || "?")[0]}</div>
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full btn-theme-price text-xs font-bold text-[var(--theme-price-foreground)]">{(r.nickname || "?")[0]}</div>
                     )}
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
@@ -461,7 +461,7 @@ export default function AdminReviews() {
                         {r.status !== "deleted" && r.status !== "pending" && r.status !== "rejected" && (
                           <>
                             <PermissionGate anyOf={REVIEW_FEATURE}>
-                              <UnifiedButton type="button" onClick={() => confirm({ title: tText("确认操作"), description: "确定切换该评论的精选状态？", onConfirm: () => handleToggleFeatured(r.id) })} className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-theme-price" : "border-border"}`}>
+                              <UnifiedButton type="button" onClick={() => confirm({ title: tText("确认操作"), description: "确定切换该评论的精选状态？", onConfirm: () => handleToggleFeatured(r.id) })} className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs hover:bg-secondary ${r.is_featured ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-theme-price" : "border-border"}`}>
                                 <Sparkles size={12} className="mr-1 inline" />{r.is_featured ? "已精选" : "设精选"}
                               </UnifiedButton>
                             </PermissionGate>
@@ -601,7 +601,7 @@ export default function AdminReviews() {
     >
       {/* Batch actions */}
       {selected.length > 0 && status !== "deleted" && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/5 px-3 py-3">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_30%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))] px-3 py-3">
           <span className="text-sm font-medium text-foreground">已选 {selected.length} 项</span>
           <span className="h-4 w-px bg-border" />
           <PermissionGate anyOf={REVIEW_MODERATE}>
@@ -630,7 +630,7 @@ export default function AdminReviews() {
           thead={(
             <tr>
               <th className={adminTableHeadCellClass("center", "px-3 py-3")}>
-                <input type="checkbox" checked={allReviewsOnPageSelected} onChange={toggleAll} className="accent-gold" />
+                <input type="checkbox" checked={allReviewsOnPageSelected} onChange={toggleAll} className="accent-[var(--theme-primary)]" />
               </th>
               {REVIEW_TABLE_HEADERS.map((h, index) => (
                 <th key={h} className={adminTableHeadCellClass(REVIEW_COLUMN_ALIGNS[index], "px-3 py-3")}>{h}</th>
@@ -653,13 +653,13 @@ export default function AdminReviews() {
             const badge = STATUS_BADGE[r.status] || STATUS_BADGE.normal;
             return (
               <>
-                <td className={adminTableCellClass("center", "px-3 py-3")}><input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-gold" /></td>
+                <td className={adminTableCellClass("center", "px-3 py-3")}><input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-[var(--theme-primary)]" /></td>
                 <td className={adminTableCellClass("left", "px-3 py-3")}>
                   <div className="flex items-center gap-2">
                     {r.avatar ? (
                       <img src={r.avatar} alt={`${r.nickname || "用户"} 头像`} className="h-7 w-7 rounded-full object-cover" />
                     ) : (
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full btn-theme-price text-[10px] font-bold text-primary-foreground">{(r.nickname || "?")[0]}</div>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full btn-theme-price text-[10px] font-bold text-[var(--theme-price-foreground)]">{(r.nickname || "?")[0]}</div>
                     )}
                     <span className="text-xs text-foreground">{r.nickname || "匿名"}</span>
                   </div>
@@ -873,7 +873,7 @@ export default function AdminReviews() {
           onChange={(e) => setReplyText(e.target.value)}
           placeholder={tText("输入官方回复...")}
           rows={4}
-          className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+          className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]"
         />
       </AdminFormSheet>
     </AdminPageShell>

@@ -69,7 +69,7 @@ export default function ProductStatusSidebar({
             <span className="text-sm text-foreground"><Tx>是否受年龄限制</Tx></span>
             <input
               type="checkbox"
-              className="accent-gold"
+              className="accent-[var(--theme-primary)]"
               checked={form.is_age_restricted}
               onChange={(e) => {
                 const checked = e.target.checked;
@@ -136,7 +136,7 @@ export default function ProductStatusSidebar({
             <span className="text-sm text-foreground"><Tx>允许搜索引擎收录</Tx></span>
             <input
               type="checkbox"
-              className="accent-gold"
+              className="accent-[var(--theme-primary)]"
               checked={form.allow_index}
               onChange={(e) => setForm((prev) => ({ ...prev, allow_index: e.target.checked }))}
             />
@@ -156,7 +156,7 @@ export default function ProductStatusSidebar({
             </div>
             <input
               type="checkbox"
-              className="accent-gold"
+              className="accent-[var(--theme-primary)]"
               checked={form[t.key]}
               onChange={(e) => {
                 setForm((prev) => ({ ...prev, [t.key]: e.target.checked }));
@@ -202,7 +202,7 @@ export default function ProductStatusSidebar({
       <div className="space-y-2">
         <LoadingButton
           type="button"
-          variant="gold"
+          variant="price"
           state={saving ? "loading" : "normal"}
           loadingText="保存中..."
           disabled={saving || deleting || uploadBusy}
@@ -218,7 +218,7 @@ export default function ProductStatusSidebar({
           loadingText="保存中..."
           disabled={saving || deleting || uploadBusy}
           onClick={() => void onSave(true)}
-          className="w-full rounded-lg border border-gold bg-gold/10 px-6 py-3 text-sm font-semibold text-theme-price"
+          className="w-full rounded-lg border border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-6 py-3 text-sm font-semibold text-theme-price"
         ><Tx>
           保存并上架
         </Tx></LoadingButton>

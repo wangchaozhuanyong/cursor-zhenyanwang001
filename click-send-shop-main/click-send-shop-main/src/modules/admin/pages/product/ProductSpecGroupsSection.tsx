@@ -144,7 +144,7 @@ export default function ProductSpecGroupsSection({
                   ),
                 )
               }
-              className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:border-gold/50 disabled:opacity-40"
+              className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] disabled:opacity-40"
             >
               + 规格值
             </UnifiedButton>

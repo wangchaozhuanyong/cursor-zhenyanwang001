@@ -107,7 +107,7 @@ export default function AdminCouponCampaigns() {
             <ClipboardList size={15} /> 优惠券模板
           </UnifiedButton>
           <PermissionGate permission="coupon.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns/new")} className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground">
+            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupon-campaigns/new")} className="flex items-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-[var(--theme-price-foreground)]">
               <Plus size={16} /> 新建发券活动
             </UnifiedButton>
           </PermissionGate>

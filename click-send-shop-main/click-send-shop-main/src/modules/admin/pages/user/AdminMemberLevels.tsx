@@ -362,7 +362,7 @@ export default function AdminMemberLevels() {
         <LoadingButton
           className="mt-3"
           type="button"
-          variant="gold"
+          variant="price"
           state={savingId === "new" ? "loading" : "normal"}
           onClick={async () => {
             const err = validateDraft(newLevel);

@@ -251,7 +251,7 @@ export default function AdminContent() {
         <AdminContentPageSkeleton />
       ) : (
       <>
-      <div className="rounded-2xl border border-gold/30 bg-card p-4">
+      <div className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_30%,var(--theme-border))] bg-card p-4">
         <div className="mb-3 flex items-center gap-2">
           <LogIn size={18} className="text-theme-price" />
           <h3 className="font-semibold"><Tx>登录页与合规文案</Tx></h3>
@@ -378,7 +378,7 @@ export default function AdminContent() {
               {categories.map((cat) => (
                 <div key={cat.id} draggable onDragStart={() => setDragCatId(cat.id)} onDragOver={(e) => e.preventDefault()} onDrop={() => { reorderCategories(dragCatId, cat.id); setDragCatId(""); }} className="grid gap-2 rounded-lg border border-border bg-background p-2 md:grid-cols-[32px,1fr,56px,56px,80px,56px]">
                   <UnifiedButton type="button" onClick={() => setCollapsedCategoryIds((prev) => ({ ...prev, [cat.id]: !prev[cat.id] }))} className="inline-flex items-center justify-center rounded-lg border border-border bg-card">{collapsedCategoryIds[cat.id] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}</UnifiedButton>
-                  <input value={cat.name} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, name: e.target.value } : x) }))} placeholder={tText("分类名称")} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold" />
+                  <input value={cat.name} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, name: e.target.value } : x) }))} placeholder={tText("分类名称")} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-[var(--theme-primary)]" />
                   <UnifiedButton type="button" onClick={() => reorderCategories(cat.id, categories[Math.max(0, categories.findIndex((c) => c.id === cat.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></UnifiedButton>
                   <UnifiedButton type="button" onClick={() => reorderCategories(cat.id, categories[Math.min(categories.length - 1, categories.findIndex((c) => c.id === cat.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></UnifiedButton>
                   <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={cat.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
@@ -411,8 +411,8 @@ export default function AdminContent() {
               {faqs.map((faq) => (
                 <div key={faq.id} draggable onDragStart={() => setDragFaqId(faq.id)} onDragOver={(e) => e.preventDefault()} onDrop={() => { reorderFaqs(dragFaqId, faq.id); setDragFaqId(""); }} className="space-y-2 rounded-lg border border-border bg-background p-2">
                   <div className={`grid gap-2 ${collapsedCategoryIds[faq.categoryId] ? "hidden" : "md:grid-cols-[1fr,100px,56px,56px,80px,56px]"}`}>
-                    <input value={faq.question} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, question: e.target.value } : x) }))} placeholder={tText("问题")} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold" />
-                    <select value={faq.categoryId} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, categoryId: e.target.value } : x) }))} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold">
+                    <input value={faq.question} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, question: e.target.value } : x) }))} placeholder={tText("问题")} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-[var(--theme-primary)]" />
+                    <select value={faq.categoryId} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, categoryId: e.target.value } : x) }))} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-[var(--theme-primary)]">
                       <option value=""><Tx>未分类</Tx></option>
                       {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name || "未命名分类"}</option>)}
                     </select>
@@ -421,7 +421,7 @@ export default function AdminContent() {
                     <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={faq.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
                     <UnifiedButton type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.filter((x) => x.id !== faq.id) }))} className={`inline-flex items-center justify-center rounded-lg border border-border bg-card ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></UnifiedButton>
                   </div>
-                  {!collapsedCategoryIds[faq.categoryId] ? <textarea value={faq.answer} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, answer: e.target.value } : x) }))} rows={3} placeholder={tText("答案")} className="w-full rounded-lg border border-border bg-card px-2 py-2 text-xs outline-none focus:border-gold" /> : null}
+                  {!collapsedCategoryIds[faq.categoryId] ? <textarea value={faq.answer} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, answer: e.target.value } : x) }))} rows={3} placeholder={tText("答案")} className="w-full rounded-lg border border-border bg-card px-2 py-2 text-xs outline-none focus:border-[var(--theme-primary)]" /> : null}
                 </div>
               ))}
               {faqs.length === 0 ? <p className="text-xs text-muted-foreground"><Tx>暂无问题，请新增 FAQ。</Tx></p> : null}
@@ -430,7 +430,7 @@ export default function AdminContent() {
 
           <div className="rounded-xl border border-border p-3">
             <div className="mb-2 text-xs font-semibold text-muted-foreground"><Tx>数据预览 / 导入（可选）</Tx></div>
-            <textarea value={helpJson} onChange={(e) => setHelpJson(e.target.value)} rows={8} className="w-full rounded-xl border border-border bg-background px-3 py-3 font-mono text-xs outline-none focus:border-gold" />
+            <textarea value={helpJson} onChange={(e) => setHelpJson(e.target.value)} rows={8} className="w-full rounded-xl border border-border bg-background px-3 py-3 font-mono text-xs outline-none focus:border-[var(--theme-primary)]" />
             <div className="mt-2 flex gap-2">
               <UnifiedButton type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpCenterConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从表单生成数据</Tx></UnifiedButton>
               <UnifiedButton type="button" onClick={() => { try { const parsed = normalizeHelpCenterConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success(tText("已导入到表单")); } catch (e) { toast.error(e instanceof Error ? e.message : "数据格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从数据导入表单</Tx></UnifiedButton>
@@ -460,7 +460,7 @@ export default function AdminContent() {
             </UnifiedButton>
             <LoadingButton
               type="button"
-              variant="gold"
+              variant="price"
               state={helpSaving ? "loading" : "normal"}
               loadingText="保存中..."
               onClick={() => void handleSaveHelp()}
@@ -517,12 +517,12 @@ export default function AdminContent() {
         height="70vh"
       >
         <div className="space-y-4">
-          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-          <textarea rows={10} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
+          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
+          <textarea rows={10} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)] resize-none" />
           <PermissionGate permission="content.manage">
             <LoadingButton
               type="button"
-              variant="gold"
+              variant="price"
               state={saving ? "loading" : "normal"}
               loadingText="保存中..."
               onClick={() => void handleSave()}
@@ -542,18 +542,18 @@ export default function AdminContent() {
         height="70vh"
       >
         <div className="space-y-4">
-          <input value={createForm.title} onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))} placeholder={tText("标题")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-          <input value={createForm.slug} onChange={(e) => setCreateForm((p) => ({ ...p, slug: e.target.value }))} placeholder={tText("页面标识（小写字母、数字、横线，如 terms-of-service）")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-          <select value={createForm.publish_status} onChange={(e) => setCreateForm((p) => ({ ...p, publish_status: e.target.value as "published" | "draft" }))} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold">
+          <input value={createForm.title} onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))} placeholder={tText("标题")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
+          <input value={createForm.slug} onChange={(e) => setCreateForm((p) => ({ ...p, slug: e.target.value }))} placeholder={tText("页面标识（小写字母、数字、横线，如 terms-of-service）")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
+          <select value={createForm.publish_status} onChange={(e) => setCreateForm((p) => ({ ...p, publish_status: e.target.value as "published" | "draft" }))} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]">
             <option value="published"><Tx>已发布</Tx></option>
             <option value="draft"><Tx>草稿</Tx></option>
           </select>
-          <input value={createForm.sort_order} onChange={(e) => setCreateForm((p) => ({ ...p, sort_order: e.target.value }))} placeholder={tText("排序（可选）")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-          <textarea rows={10} value={createForm.content} onChange={(e) => setCreateForm((p) => ({ ...p, content: e.target.value }))} placeholder={tText("正文内容")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
+          <input value={createForm.sort_order} onChange={(e) => setCreateForm((p) => ({ ...p, sort_order: e.target.value }))} placeholder={tText("排序（可选）")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
+          <textarea rows={10} value={createForm.content} onChange={(e) => setCreateForm((p) => ({ ...p, content: e.target.value }))} placeholder={tText("正文内容")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)] resize-none" />
           <PermissionGate permission="content.manage">
             <LoadingButton
               type="button"
-              variant="gold"
+              variant="price"
               state={saving ? "loading" : "normal"}
               loadingText="创建中..."
               onClick={() => void handleCreate()}

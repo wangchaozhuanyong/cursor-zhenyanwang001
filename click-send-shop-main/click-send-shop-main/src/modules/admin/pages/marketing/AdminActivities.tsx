@@ -194,13 +194,13 @@ export default function AdminActivities() {
       hint={<Tx>活动列表与运营动作入口。</Tx>}
       toolbar={(
         <PermissionGate permission="activity.manage">
-          <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><PlusCircle className="mr-1 inline h-4 w-4" /><Tx>新建活动</Tx></UnifiedButton>
+          <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><PlusCircle className="mr-1 inline h-4 w-4" /><Tx>新建活动</Tx></UnifiedButton>
         </PermissionGate>
       )}
       filters={(
         <>
           <div className="flex flex-wrap gap-2">{quickButtons.map((button) => <UnifiedButton key={button.label} onClick={() => navigate(button.to)} className="rounded-lg border border-border px-3 py-1.5 text-sm">{button.label}</UnifiedButton>)}</div>
-          <div className="flex flex-wrap gap-2">{tabsLocalized.map((tab) => <UnifiedButton key={String(tab.value)} type="button" onClick={() => { setStatus(tab.value); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === tab.value ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tab.label}</UnifiedButton>)}</div>
+          <div className="flex flex-wrap gap-2">{tabsLocalized.map((tab) => <UnifiedButton key={String(tab.value)} type="button" onClick={() => { setStatus(tab.value); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === tab.value ? "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tab.label}</UnifiedButton>)}</div>
           <div className="space-y-2">
             <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
               <SearchBar placeholder={tText("搜索活动名称")} value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} />

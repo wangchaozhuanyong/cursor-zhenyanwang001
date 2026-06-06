@@ -128,7 +128,7 @@ export default function AdminCsvImportDialog({
           type="button"
           disabled={busy || !file}
           onClick={() => void handlePreview()}
-          className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-[var(--theme-price-foreground)] transition hover:opacity-90 disabled:opacity-60"
         >
           {previewing ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}
           {previewing ? L("解析中...", "Previewing...") : L("解析预览", "Preview")}
@@ -138,7 +138,7 @@ export default function AdminCsvImportDialog({
           type="button"
           disabled={busy || !file || !!lastResult}
           onClick={() => void handleImport()}
-          className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-[var(--theme-price-foreground)] transition hover:opacity-90 disabled:opacity-60"
         >
           {importing ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
           {importing ? L("导入中...", "Importing...") : L("确认导入", "Confirm import")}

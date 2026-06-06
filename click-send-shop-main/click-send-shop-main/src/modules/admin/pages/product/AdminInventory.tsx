@@ -196,7 +196,7 @@ export default function AdminInventory({
         <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
           <UnifiedButton type="button" onClick={() => setAdjusting({ sku, change_type: "in", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`touch-manipulation rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>入库</Tx></UnifiedButton>
           <UnifiedButton type="button" onClick={() => setAdjusting({ sku, change_type: "out", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`touch-manipulation rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>出库</Tx></UnifiedButton>
-          <UnifiedButton type="button" onClick={() => setAdjusting({ sku, change_type: "adjust", quantity: String(sku.stock), reason: "", remark: "", source_no: "", cost_price: "" })} className="touch-manipulation rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></UnifiedButton>
+          <UnifiedButton type="button" onClick={() => setAdjusting({ sku, change_type: "adjust", quantity: String(sku.stock), reason: "", remark: "", source_no: "", cost_price: "" })} className="touch-manipulation rounded-lg bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></UnifiedButton>
         </div>
       </AdminTableMobileCard>
     );
@@ -241,7 +241,7 @@ export default function AdminInventory({
       </div>
       {row.alert_status !== "resolved" ? (
         <div className="mt-3 border-t border-border pt-3">
-          <UnifiedButton type="button" onClick={() => setPurchaseFromAlert({ alert: row, ordered_qty: String(Math.max(row.suggested_qty, row.warning_stock - row.available_stock, 1)), unit_cost: "", expected_arrival_date: "", remark: "" })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>生成采购单</Tx></UnifiedButton>
+          <UnifiedButton type="button" onClick={() => setPurchaseFromAlert({ alert: row, ordered_qty: String(Math.max(row.suggested_qty, row.warning_stock - row.available_stock, 1)), unit_cost: "", expected_arrival_date: "", remark: "" })} className="rounded-lg bg-[var(--theme-price)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-price-foreground)]"><Tx>生成采购单</Tx></UnifiedButton>
         </div>
       ) : null}
     </AdminTableMobileCard>
@@ -261,7 +261,7 @@ export default function AdminInventory({
       </div>
       {!["received", "cancelled"].includes(row.status) ? (
         <div className="mt-3 border-t border-border pt-3">
-          <UnifiedButton type="button" onClick={() => setReceivingOrder({ order: row, remark: "", actual_arrival_date: "", items: {} })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Tx>确认到货入库</Tx></UnifiedButton>
+          <UnifiedButton type="button" onClick={() => setReceivingOrder({ order: row, remark: "", actual_arrival_date: "", items: {} })} className="rounded-lg bg-[var(--theme-price)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-price-foreground)]"><Tx>确认到货入库</Tx></UnifiedButton>
         </div>
       ) : null}
     </AdminTableMobileCard>
@@ -347,7 +347,7 @@ export default function AdminInventory({
               ["records", "库存流水"],
               ["rules", "组装拆包规则"],
               ["conversions", "组装拆包单据"],
-            ] as const).map(([key, label]) => <UnifiedButton key={key} onClick={() => setTab(key)} className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{L(label)}</UnifiedButton>)}
+            ] as const).map(([key, label]) => <UnifiedButton key={key} onClick={() => setTab(key)} className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === key ? "bg-[var(--theme-price)] text-[var(--theme-price-foreground)]" : "bg-secondary text-muted-foreground"}`}>{L(label)}</UnifiedButton>)}
           </div>
           <div className="flex flex-wrap items-center gap-2 border-b border-border p-4">
             <AdminSearchInput
@@ -377,7 +377,7 @@ export default function AdminInventory({
                   <option value="balanced"><Tx>平衡</Tx></option>
                   <option value="aggressive"><Tx>激进</Tx></option>
                 </select>
-                <UnifiedButton type="button" onClick={() => smartPreviewMutation.mutate()} disabled={smartPreviewMutation.isPending} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                <UnifiedButton type="button" onClick={() => smartPreviewMutation.mutate()} disabled={smartPreviewMutation.isPending} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-60">
                   {smartPreviewMutation.isPending ? L("计算中...") : selectedCount > 0 ? `${L("计算已选 SKU")} (${selectedCount})` : L("计算全部 SKU")}
                 </UnifiedButton>
               </>
@@ -388,7 +388,7 @@ export default function AdminInventory({
                   <option value=""><Tx>全部预警状态</Tx></option>
                   {Object.entries(ALERT_STATUS_LABEL).map(([key, label]) => <option key={key} value={key}>{L(label)}</option>)}
                 </select>
-                <UnifiedButton type="button" onClick={() => generateAlertsMutation.mutate()} disabled={generateAlertsMutation.isPending} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                <UnifiedButton type="button" onClick={() => generateAlertsMutation.mutate()} disabled={generateAlertsMutation.isPending} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-60">
                   {generateAlertsMutation.isPending ? L("扫描中...") : L("扫描生成预警")}
                 </UnifiedButton>
               </>
@@ -401,7 +401,7 @@ export default function AdminInventory({
             ) : null}
             {tab === "records" ? <select value={changeType} onChange={(e) => { setChangeType(e.target.value); setRecordsPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value=""><Tx>全部流水类型</Tx></option>{Object.entries(CHANGE_LABEL).map(([key, value]) => <option key={key} value={key}>{L(value)}</option>)}</select> : null}
             {tab === "conversions" ? <select value={conversionType} onChange={(e) => { setConversionType(e.target.value); setConversionsPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value=""><Tx>全部单据类型</Tx></option><option value="unpack"><Tx>手动拆包</Tx></option><option value="assemble"><Tx>手动组装</Tx></option><option value="auto_unpack"><Tx>自动拆包</Tx></option></select> : null}
-            {tab === "rules" ? <UnifiedButton onClick={() => setRuleForm({ parent_qty: 1, child_qty: 0, enabled: true, manual_unpack_enabled: true, manual_assemble_enabled: true, auto_unpack_enabled: false })} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={15} /><Tx>新增规则</Tx></UnifiedButton> : null}
+            {tab === "rules" ? <UnifiedButton onClick={() => setRuleForm({ parent_qty: 1, child_qty: 0, enabled: true, manual_unpack_enabled: true, manual_assemble_enabled: true, auto_unpack_enabled: false })} className="flex items-center gap-2 rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><Plus size={15} /><Tx>新增规则</Tx></UnifiedButton> : null}
             {tab === "records" ? <UnifiedButton type="button" onClick={() => void exportInventoryRecordsCsv({ keyword, change_type: changeType })} className="rounded-lg border border-border px-3 py-2.5 text-sm"><Tx>导出流水</Tx></UnifiedButton> : null}
           </div>
         </div>

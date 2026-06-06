@@ -62,8 +62,8 @@ export default function AdminHomeOps() {
                 className={cn(
                   "inline-flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
                   active
-                    ? "border-gold/40 bg-gold/10 text-foreground shadow-sm"
-                    : "border-border bg-card text-muted-foreground hover:border-gold/25 hover:bg-secondary/50",
+                    ? "border-[color-mix(in_srgb,var(--theme-price)_40%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-foreground shadow-sm"
+                    : "border-border bg-card text-muted-foreground hover:border-[color-mix(in_srgb,var(--theme-primary)_25%,var(--theme-border))] hover:bg-secondary/50",
                 )}
               >
                 <Icon size={16} className={active ? "text-theme-price" : ""} />

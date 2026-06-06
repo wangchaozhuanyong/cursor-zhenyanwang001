@@ -260,7 +260,7 @@ export default function AdminMarketingPoints() {
             onClick={() => setTab(t)}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm",
-              tab === t ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground",
+              tab === t ? "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] text-theme-price" : "bg-secondary text-muted-foreground",
             )}
           >
             {tText(t)}
@@ -321,7 +321,7 @@ export default function AdminMarketingPoints() {
               <AdminToggleRow label={tText("允许积分抵扣")} hint={POINTS_PRODUCT_RULE_HINTS.redeem_enabled} checked={!!ruleForm.redeem_enabled} onChange={(v) => setRuleForm((s) => ({ ...s, redeem_enabled: v }))} />
               <AdminToggleRow label={tText("启用")} hint={POINTS_PRODUCT_RULE_HINTS.enabled} checked={!!ruleForm.enabled} onChange={(v) => setRuleForm((s) => ({ ...s, enabled: v }))} />
             </div>
-            <UnifiedButton type="button" onClick={() => saveRuleMutation.mutate()} disabled={saveRuleMutation.isPending} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"><Plus className="h-4 w-4" />{ruleForm.id ? "保存规则" : "新增规则"}</UnifiedButton>
+            <UnifiedButton type="button" onClick={() => saveRuleMutation.mutate()} disabled={saveRuleMutation.isPending} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[var(--theme-price)] px-5 py-2.5 text-sm font-medium text-[var(--theme-price-foreground)]"><Plus className="h-4 w-4" />{ruleForm.id ? "保存规则" : "新增规则"}</UnifiedButton>
           </div>
           <AnimatedTable
             embedded

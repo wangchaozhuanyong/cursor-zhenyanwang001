@@ -221,7 +221,7 @@ export default function AdminFeedback() {
             type="button"
             disabled={!changed || updateMutation.isPending}
             onClick={() => saveFeedback(item)}
-            className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg btn-theme-price px-3 py-2 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg btn-theme-price px-3 py-2 text-xs font-semibold text-[var(--theme-price-foreground)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <CheckCircle2 size={14} />
             {updateMutation.isPending ? L("保存中", "Saving") : L("保存处理", "Save")}

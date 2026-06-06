@@ -9,7 +9,7 @@ const tapTransition = {
   damping: 25,
 } as const;
 
-export type SquishButtonVariant = "solid" | "outline" | "ghost" | "gold";
+export type SquishButtonVariant = "solid" | "outline" | "ghost" | "price" | "gold";
 
 export type SquishButtonProps = Omit<
   HTMLMotionProps<"button">,
@@ -20,7 +20,8 @@ export type SquishButtonProps = Omit<
   /**
    * solid — 主色填充（对比度由 `.squish-solid-cta` 锁定，避免外层 `text-*` 覆盖）
    * outline — 线框主按钮（如「加入购物车」）
-   * gold — 价格色 CTA（如「立即购买」「去结算」）
+   * price — 价格色 CTA（如「立即购买」「去结算」）
+   * gold — 旧价格色别名，保留给存量调用兼容
    * ghost — 透明底图标/辅助按钮
    */
   variant?: SquishButtonVariant;
@@ -46,6 +47,7 @@ export function SquishButton({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]",
         variant === "solid" && "squish-solid-cta shadow-[var(--theme-shadow)]",
         variant === "outline" && "squish-outline-cta",
+        variant === "price" && "squish-price-cta",
         variant === "gold" && "squish-gold-cta",
         variant === "ghost" && "squish-ghost",
         className,

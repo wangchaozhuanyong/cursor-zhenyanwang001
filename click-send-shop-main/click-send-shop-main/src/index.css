@@ -1459,6 +1459,7 @@
     background-color: var(--theme-primary) !important;
     color: var(--theme-primary-foreground) !important;
   }
+  .squish-price-cta,
   .squish-gold-cta {
     background-color: var(--theme-price, hsl(var(--gold))) !important;
     color: var(--theme-price-foreground) !important;

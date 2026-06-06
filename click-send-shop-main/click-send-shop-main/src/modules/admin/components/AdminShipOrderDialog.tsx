@@ -67,7 +67,7 @@ export default function AdminShipOrderDialog({ open, orderNo, onOpenChange, onCo
           value={carrier}
           onChange={(e) => setCarrier(e.target.value)}
           placeholder={tText("例如 J&T、Pos Laju")}
-          className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]"
         />
       </div>
       <div>
@@ -76,7 +76,7 @@ export default function AdminShipOrderDialog({ open, orderNo, onOpenChange, onCo
           value={trackingNo}
           onChange={(e) => setTrackingNo(e.target.value)}
           placeholder={tText("填写物流单号")}
-          className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]"
         />
       </div>
       <div>
@@ -86,7 +86,7 @@ export default function AdminShipOrderDialog({ open, orderNo, onOpenChange, onCo
           onChange={(e) => setShippingCostAmount(e.target.value)}
           placeholder={tText("例如 8.50")}
           inputMode="decimal"
-          className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]"
         />
       </div>
     </AdminFormSheet>

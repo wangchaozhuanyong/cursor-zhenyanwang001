@@ -9,7 +9,7 @@ type AddToCartFeedbackProps = {
   idleLabel?: string;
   successLabel?: string;
   toastMessage?: string;
-  variant?: "solid" | "outline" | "gold";
+  variant?: "solid" | "outline" | "price" | "gold";
 };
 
 export function AddToCartFeedback({

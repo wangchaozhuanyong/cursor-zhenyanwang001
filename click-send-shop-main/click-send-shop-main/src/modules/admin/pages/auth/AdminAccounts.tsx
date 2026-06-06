@@ -429,7 +429,7 @@ export default function AdminAccounts() {
                 <UnifiedButton
                   type="button"
                   onClick={() => setShowCreate(true)}
-                  className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground"
+                  className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-[var(--theme-price-foreground)]"
                 >
                   <Tx>新建管理员</Tx>
                 </UnifiedButton>
@@ -576,7 +576,7 @@ export default function AdminAccounts() {
         onSubmit={handleReset}
         size="sm"
       >
-        <input aria-label={tText("新密码")} placeholder={tText("新密码（至少8位，含大小写和数字）")} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+        <input aria-label={tText("新密码")} placeholder={tText("新密码（至少8位，含大小写和数字）")} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
       </AdminFormSheet>
 
       {securityTarget ? (

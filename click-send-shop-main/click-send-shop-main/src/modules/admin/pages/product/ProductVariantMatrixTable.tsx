@@ -83,7 +83,7 @@ export default function ProductVariantMatrixTable<T extends ProductVariantMatrix
                 name="default-variant"
                 checked={v.is_default}
                 onChange={() => setForm((f) => selectProductDefaultVariant(f, idx))}
-                className="accent-gold"
+                className="accent-[var(--theme-primary)]"
               />
             </td>
             <td className="py-2 pr-2">
@@ -242,7 +242,7 @@ export default function ProductVariantMatrixTable<T extends ProductVariantMatrix
                 type="checkbox"
                 checked={v.enabled !== false}
                 onChange={(e) => setForm((f) => updateProductVariantField(f, idx, "enabled", e.target.checked))}
-                className="accent-gold"
+                className="accent-[var(--theme-primary)]"
               />
             </td>
             <td className="py-2 align-middle">

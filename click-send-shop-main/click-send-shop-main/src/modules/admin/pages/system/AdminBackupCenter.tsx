@@ -342,7 +342,7 @@ export default function AdminBackupCenter() {
               onClick={() => fullBackupMutation.mutate()}
               disabled={fullBackupMutation.isPending || Boolean(fullBackupBlockedReason)}
               title={fullBackupBlockedReason || undefined}
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-md bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-md bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-60"
             >
               <DatabaseBackup size={16} />
               <Tx>全量备份</Tx>

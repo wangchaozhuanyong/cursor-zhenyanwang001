@@ -140,7 +140,7 @@ export default function AdminHomeOpsDisplayPanel({ onDirtyChange }: Props) {
         <div className="mt-6 flex justify-end">
           <LoadingButton
             type="button"
-            variant="gold"
+            variant="price"
             state={saving ? "loading" : "normal"}
             loadingText="保存中..."
             disabled={loading}

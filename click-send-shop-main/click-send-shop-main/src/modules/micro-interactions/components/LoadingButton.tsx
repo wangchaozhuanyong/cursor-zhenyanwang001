@@ -21,6 +21,7 @@ export type LoadingButtonProps = {
 const variantClass: Record<SquishButtonVariant, string> = {
   solid: "squish-solid-cta",
   outline: "squish-outline-cta",
+  price: "squish-price-cta",
   gold: "squish-gold-cta",
   ghost: "squish-ghost",
 };

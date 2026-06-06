@@ -19,7 +19,7 @@ export function AdminEmptyGuideActions({ guide, onClearFilters, showClearFilters
         <UnifiedButton
           type="button"
           onClick={() => navigate(guide.primaryPath!)}
-          className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground"
+          className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-[var(--theme-price-foreground)]"
         >
           {tText(guide.primaryLabel)}
         </UnifiedButton>

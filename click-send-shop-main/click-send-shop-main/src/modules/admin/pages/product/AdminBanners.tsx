@@ -193,14 +193,14 @@ export default function AdminBanners() {
               setStrictRatioCheck(false);
               setShowForm(true);
             }}
-            className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground"
+            className="flex items-center gap-2 rounded-xl bg-[var(--theme-price)] px-4 py-2.5 text-sm font-bold text-[var(--theme-price-foreground)]"
           >
             <Plus size={16} /><Tx>添加 Banner</Tx>
           </UnifiedButton>
         </PermissionGate>
       )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gold/25 bg-gold/[0.06] px-4 py-2.5 text-sm dark:bg-gold/10">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_25%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_6%,var(--theme-surface))] px-4 py-2.5 text-sm dark:bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-foreground"><Tx>轮播图上传规范</Tx></span>
           <AdminFieldHint
@@ -315,7 +315,7 @@ export default function AdminBanners() {
               />
               <span>{`严格 ${BANNER_RATIO_LABEL} 校验（开启后，非标准比例图片将禁止上传）`}</span>
             </label>
-            <label className={`flex ${BANNER_ASPECT_CLASS} w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-secondary hover:border-gold/50`}>
+            <label className={`flex ${BANNER_ASPECT_CLASS} w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-secondary hover:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))]`}>
               {form.image ? (
                 <img src={form.image} alt={`${form.title || "Banner"} 图片预览`} className="h-full w-full object-cover" />
               ) : (
@@ -363,14 +363,14 @@ export default function AdminBanners() {
                 }}
               />
             </label>
-            <input placeholder={tText("Banner 标题")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <textarea rows={3} placeholder={tText("Banner 说明，用于后台识别和图片 alt 补充")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <input placeholder={tText("按钮文字（默认：立即查看）")} value={form.cta_text} onChange={(e) => setForm({ ...form, cta_text: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <input placeholder={tText("跳转链接（如 /categories）")} value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <input placeholder={tText("Banner 标题")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
+            <textarea rows={3} placeholder={tText("Banner 说明，用于后台识别和图片 alt 补充")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
+            <input placeholder={tText("按钮文字（默认：立即查看）")} value={form.cta_text} onChange={(e) => setForm({ ...form, cta_text: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
+            <input placeholder={tText("跳转链接（如 /categories）")} value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-[var(--theme-primary)]" />
             <PermissionGate permission="banner.manage">
               <LoadingButton
                 type="button"
-                variant="gold"
+                variant="price"
                 state={saving ? "loading" : "normal"}
                 loadingText="保存中..."
                 onClick={() => adminConfirmSave(confirm, editingId ? "Banner 修改" : "新 Banner", () => handleSave())}

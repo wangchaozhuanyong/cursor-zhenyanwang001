@@ -69,7 +69,7 @@ export function AdminFormSheet({
           "min-h-11 w-full rounded-lg text-sm font-semibold",
           danger
             ? "!bg-destructive !text-destructive-foreground"
-            : "btn-theme-price !text-primary-foreground",
+            : "btn-theme-price !text-[var(--theme-price-foreground)]",
         )}
         onClick={() => void handleSubmit()}
         loadingText={submitText}

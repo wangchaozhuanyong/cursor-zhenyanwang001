@@ -62,7 +62,7 @@ export default function ProductMediaSection({
             <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>封面图</Tx></label>
             <UploadDropZone
               disabled={uploadingCover}
-              className={`relative mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border sm:mx-0 ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-gold/50"}`}
+              className={`relative mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border sm:mx-0 ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))]"}`}
               onFiles={(files) => {
                 const file = files[0];
                 if (file) void uploadImageFile(file, "cover");
@@ -120,7 +120,7 @@ export default function ProductMediaSection({
               {form.images.length < 6 && (
                 <UploadDropZone
                   disabled={uploadingGallery}
-                  className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border ${uploadingGallery ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-gold/50"}`}
+                  className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border ${uploadingGallery ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))]"}`}
                   onFiles={(files) => {
                     const file = files[0];
                     if (file) void uploadImageFile(file, "gallery");
@@ -185,7 +185,7 @@ export default function ProductMediaSection({
               placeholder={tText("填写视频 URL，或点击右侧上传")}
               className={ADMIN_PRODUCT_FORM_CONTROL_CLASS}
             />
-            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:border-gold/50 hover:bg-secondary">
+            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] hover:bg-secondary">
               <Video size={16} /><Tx>
               上传视频
               </Tx><input

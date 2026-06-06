@@ -26,7 +26,7 @@ import CouponCenterTabs from "./CouponCenterTabs";
 const COUPON_RECORD_COLUMN_ALIGNS: AdminTableAlign[] = ["left", "left", "left", "center", "left", "left"];
 
 const STATUS_LABELS: Record<string, { zh: string; en: string; color: string }> = {
-  available: { zh: "未使用", en: "Unused", color: "bg-gold/10 text-theme-price" },
+  available: { zh: "未使用", en: "Unused", color: "bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-theme-price" },
   used: { zh: "已使用", en: "Used", color: THEME_BADGE_SUCCESS },
   expired: { zh: "已过期", en: "Expired", color: "bg-muted text-muted-foreground" },
 };

@@ -186,8 +186,8 @@ export default function PointsAdvancedTab({
                     className={cn(
                       "rounded-md border px-2.5 py-1 text-xs font-medium transition",
                       active
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-background text-muted-foreground hover:border-primary/40",
+                        ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-theme-price"
+                        : "border-border bg-background text-muted-foreground hover:border-[color-mix(in_srgb,var(--theme-price)_40%,var(--theme-border))]",
                     )}
                     onClick={() => {
                       const current = paymentMethods
@@ -214,7 +214,7 @@ export default function PointsAdvancedTab({
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground sm:w-auto"
+          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-[var(--theme-price)] px-5 py-2.5 text-sm font-medium text-[var(--theme-price-foreground)] sm:w-auto"
         >
           <Save className="h-4 w-4" />
           <Tx>保存高级设置</Tx>

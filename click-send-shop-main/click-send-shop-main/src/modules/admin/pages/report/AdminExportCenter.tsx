@@ -172,7 +172,7 @@ export default function AdminExportCenter() {
           <SegmentedDateInput value={dateTo} onChange={setDateTo} className="min-w-[12rem]" />
           <LoadingButton
             type="button"
-            variant="gold"
+            variant="price"
             state={creating ? "loading" : "normal"}
             loadingText="创建中..."
             onClick={() =>

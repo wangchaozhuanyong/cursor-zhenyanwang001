@@ -329,7 +329,7 @@ function CategoryDrawerFields({
             <span><Tx>前台显示</Tx></span>
             <input
               type="checkbox"
-              className="h-4 w-4 accent-gold"
+              className="h-4 w-4 accent-[var(--theme-primary)]"
               checked={value.is_visible}
               onChange={(e) => onChange({ is_visible: e.target.checked })}
             />
@@ -670,7 +670,7 @@ export default function AdminCategories() {
         <PermissionGate permission="category.manage">
           <UnifiedButton
             onClick={openCreateForm}
-            className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+            className="flex items-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"
           >
             <Plus size={16} /><Tx> 新增分类</Tx>
           </UnifiedButton>
@@ -703,7 +703,7 @@ export default function AdminCategories() {
                 disabled={saving || !drawerForm.name.trim()}
                 loadingText={drawerMode === "edit" ? "保存中..." : "新增中..."}
                 onClick={() => void submitCategoryDrawer()}
-                className="inline-flex h-11 min-w-32 items-center justify-center rounded-xl bg-gold px-5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-55"
+                className="inline-flex h-11 min-w-32 items-center justify-center rounded-xl bg-[var(--theme-price)] px-5 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:cursor-not-allowed disabled:opacity-55"
               >
                 {drawerMode === "edit" ? "保存修改" : "新增分类"}
               </LoadingButton>
@@ -735,7 +735,7 @@ export default function AdminCategories() {
       </AdminSideDrawer>
 
       {showForm && !drawerMode && (
-        <div className="rounded-xl border border-gold/30 bg-card p-3 sm:p-4">
+        <div className="rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_30%,var(--theme-border))] bg-card p-3 sm:p-4">
           <div className="grid gap-3 lg:grid-cols-[1fr_120px_1fr_180px_90px_120px_auto] lg:items-end">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类名称</Tx></label>
@@ -789,7 +789,7 @@ export default function AdminCategories() {
             <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground">
               <input
                 type="checkbox"
-                className="accent-gold"
+                className="accent-[var(--theme-primary)]"
                 checked={formData.is_visible}
                 onChange={(e) => setFormData({ ...formData, is_visible: e.target.checked })}
               /><Tx>
@@ -799,7 +799,7 @@ export default function AdminCategories() {
               <PermissionGate permission="category.manage">
                 <LoadingButton
                   type="button"
-                  variant="gold"
+                  variant="price"
                   state={saving ? "loading" : "normal"}
                   loadingText="添加中..."
                   onClick={() => void handleAdd()}

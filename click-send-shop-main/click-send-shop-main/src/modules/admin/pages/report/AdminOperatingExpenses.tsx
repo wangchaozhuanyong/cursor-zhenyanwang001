@@ -210,7 +210,7 @@ export default function AdminOperatingExpenses() {
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <UnifiedButton disabled={saving} onClick={() => void handleSubmit()} className="inline-flex items-center gap-1 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+          <UnifiedButton disabled={saving} onClick={() => void handleSubmit()} className="inline-flex items-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-60">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             {editingId ? "保存修改" : "新增支出"}
           </UnifiedButton>

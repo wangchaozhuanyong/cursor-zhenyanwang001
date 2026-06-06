@@ -40,7 +40,7 @@ export default function PolicyPathFields({ settings, onChange }: Props) {
                 value={value}
                 onChange={(e) => onChange(f.key, e.target.value)}
                 placeholder={f.placeholder}
-                className="min-w-0 flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-gold"
+                className="min-w-0 flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]"
               />
               {value.trim() ? (
                 <Link

@@ -110,18 +110,18 @@ export default function FooterNavEditor({ value, onChange }: Props) {
                 value={item.label}
                 onChange={(e) => updateAt(idx, { label: e.target.value })}
                 placeholder={tText("名称")}
-                className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold"
+                className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-[var(--theme-primary)]"
               />
               <input
                 value={item.path}
                 onChange={(e) => updateAt(idx, { path: e.target.value })}
                 placeholder="/path"
-                className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold"
+                className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-[var(--theme-primary)]"
               />
               <select
                 value={item.section}
                 onChange={(e) => updateAt(idx, { section: e.target.value as FooterNavEditorItem["section"] })}
-                className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold"
+                className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-[var(--theme-primary)]"
               >
                 <option value="support">support</option>
                 <option value="policy">policy</option>
@@ -174,7 +174,7 @@ export default function FooterNavEditor({ value, onChange }: Props) {
             rows={8}
             value={jsonDraft}
             onChange={(e) => setJsonDraft(e.target.value)}
-            className="w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-xs outline-none focus:border-gold"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-xs outline-none focus:border-[var(--theme-primary)]"
           />
           <UnifiedButton
             type="button"

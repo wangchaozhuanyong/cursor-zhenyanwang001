@@ -263,7 +263,7 @@ export default function SiteSettingsPage() {
                 rows={12}
                 value={String(settings.footerNav ?? "")}
                 onChange={(e) => setField("footerNav", e.target.value)}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 font-mono text-xs outline-none focus:border-gold"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 font-mono text-xs outline-none focus:border-[var(--theme-primary)]"
               />
             ) : (
               <p className="truncate font-mono text-xs text-muted-foreground">

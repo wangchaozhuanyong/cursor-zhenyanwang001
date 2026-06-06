@@ -255,7 +255,7 @@ export default function AdminProductForm() {
                     className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-transform active:scale-95 ${
                         on
                           ? "border-current"
-                          : "border-border bg-secondary text-muted-foreground hover:border-gold/40"
+                          : "border-border bg-secondary text-muted-foreground hover:border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))]"
                       }`}
                     style={on ? {
                       backgroundColor: t.bg_color || "#FEF3C7",

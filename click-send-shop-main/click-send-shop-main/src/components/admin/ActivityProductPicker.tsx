@@ -135,7 +135,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
       height="90vh"
       footer={(
         <div className="flex gap-2">
-          <UnifiedButton type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation flex-1 rounded-lg bg-gold px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{L("加入活动", "Add to promotion")}</UnifiedButton>
+          <UnifiedButton type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation flex-1 rounded-lg bg-[var(--theme-price)] px-3 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-50">{L("加入活动", "Add to promotion")}</UnifiedButton>
           <UnifiedButton type="button" onClick={onClose} className="touch-manipulation rounded-lg border border-border px-3 py-2.5 text-sm">{L("取消", "Cancel")}</UnifiedButton>
         </div>
       )}
@@ -163,7 +163,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
                     key={p.id}
                     type="button"
                     onClick={() => toggle(p)}
-                    className={`touch-manipulation flex w-full items-center gap-3 rounded-lg border p-2 text-left ${checked ? "border-gold bg-gold/5" : "border-border"}`}
+                    className={`touch-manipulation flex w-full items-center gap-3 rounded-lg border p-2 text-left ${checked ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))]" : "border-border"}`}
                   >
                     <input type="checkbox" checked={checked} readOnly />
                     <img src={p.cover_image || ""} alt={p.name} className="h-12 w-12 rounded object-cover bg-secondary" />

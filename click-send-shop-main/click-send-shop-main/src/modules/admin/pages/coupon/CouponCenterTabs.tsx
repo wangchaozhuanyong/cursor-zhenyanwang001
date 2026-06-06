@@ -55,7 +55,7 @@ export default function CouponCenterTabs() {
             type="button"
             onClick={() => navigate(tab.path)}
             className={`min-h-[40px] flex-1 justify-center gap-2 rounded-md px-3 py-2 text-sm sm:flex-none ${
-              active ? "bg-gold/15 font-semibold text-theme-price" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              active ? "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] font-semibold text-theme-price" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
             <Icon size={16} />

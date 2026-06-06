@@ -205,7 +205,7 @@ export default function AdminPointsGifts() {
               saveMutation.mutate();
             }}
             disabled={saveMutation.isPending}
-            className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
+            className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm text-[var(--theme-price-foreground)]"
           >
             <Tx>{editingId ? "保存" : "创建"}</Tx>
           </UnifiedButton>
@@ -229,7 +229,7 @@ export default function AdminPointsGifts() {
                     <p className="text-xs text-muted-foreground">{item.required_points} 积分 · 已兑 {item.redeemed_count ?? 0}</p>
                   </div>
                   <div className="flex gap-1">
-                    <UnifiedButton type="button" className="text-xs text-primary" onClick={() => { setEditingId(item.id!); setForm({ ...emptyForm, ...item }); }}><Tx>编辑</Tx></UnifiedButton>
+                    <UnifiedButton type="button" className="text-xs text-theme-price" onClick={() => { setEditingId(item.id!); setForm({ ...emptyForm, ...item }); }}><Tx>编辑</Tx></UnifiedButton>
                     <UnifiedButton type="button" className="text-destructive" onClick={() => item.id && deleteMutation.mutate(item.id)}><Trash2 size={14} /></UnifiedButton>
                   </div>
                 </li>

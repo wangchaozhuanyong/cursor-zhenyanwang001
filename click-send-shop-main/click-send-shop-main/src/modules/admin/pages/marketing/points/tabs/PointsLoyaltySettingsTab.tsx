@@ -109,7 +109,7 @@ export default function PointsLoyaltySettingsTab({ settings, setSetting, onSave,
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[var(--theme-price)] px-5 py-2.5 text-sm font-medium text-[var(--theme-price-foreground)]"
         >
           <Save className="h-4 w-4" />
           <Tx>保存全局积分设置</Tx>

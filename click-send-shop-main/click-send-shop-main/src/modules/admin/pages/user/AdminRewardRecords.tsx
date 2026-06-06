@@ -370,7 +370,7 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
             <PermissionGate permission="referral.manage">
               <LoadingButton
                 type="button"
-                variant="gold"
+                variant="price"
                 state={rulesSaving ? "loading" : "normal"}
                 loadingText={L("保存中...", "Saving...")}
                 onClick={() => void saveRules()}
@@ -421,7 +421,7 @@ export default function AdminRewardRecords({ embedded = false }: { embedded?: bo
             <PermissionGate permission="referral.manage">
               <LoadingButton
                 type="button"
-                variant="gold"
+                variant="price"
                 state={displaySaving ? "loading" : "normal"}
                 loadingText={L("保存中...", "Saving...")}
                 onClick={() => void saveDisplaySettings()}

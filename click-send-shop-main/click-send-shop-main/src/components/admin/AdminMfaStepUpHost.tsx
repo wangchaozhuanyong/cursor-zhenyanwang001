@@ -276,7 +276,7 @@ export default function AdminMfaStepUpHost() {
                 if (errorText) setErrorText("");
               }}
               placeholder="000000"
-              className="mt-1.5 w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-center font-mono text-lg tracking-widest text-foreground outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+              className="mt-1.5 w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-center font-mono text-lg tracking-widest text-foreground outline-none focus:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]"
               onKeyDown={(e) => e.key === "Enter" && !loading && !passkeyLoading && void handleSubmit()}
             />
             {errorText ? <p className="mt-2 text-xs leading-5 text-destructive">{errorText}</p> : null}
@@ -294,7 +294,7 @@ export default function AdminMfaStepUpHost() {
           {mfaEnabled === false ? (
             <UnifiedButton
               type="button"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-[var(--theme-price-foreground)]"
               onClick={() => {
                 handleClose();
                 navigate("/admin/login");
@@ -305,7 +305,7 @@ export default function AdminMfaStepUpHost() {
           ) : (
             <UnifiedButton
               type="button"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-50"
               disabled={loading || passkeyLoading}
               onClick={() => void handleSubmit()}
             >

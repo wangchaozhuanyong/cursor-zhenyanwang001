@@ -251,7 +251,7 @@ export default function AdminLogin() {
 
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{t("login.mfaCodeLabel")}</label>
-                  <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20">
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] focus-within:ring-1 focus-within:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]">
                     <KeyRound size={16} className="text-muted-foreground" />
                     <input
                       type="text"
@@ -288,7 +288,7 @@ export default function AdminLogin() {
                           onClick={() => setTrustDays(days)}
                           className={`rounded-lg border px-2 py-2 text-xs font-medium ${
                             trustDays === days
-                              ? "border-gold/60 bg-gold/10 text-foreground"
+                              ? "border-[color-mix(in_srgb,var(--theme-price)_60%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-foreground"
                               : "border-border text-muted-foreground hover:bg-background"
                           }`}
                         >
@@ -303,7 +303,7 @@ export default function AdminLogin() {
                   type="button"
                   onClick={handleVerifyMfa}
                   disabled={loading || passkeyLoading || mfaCode.length !== 6}
-                  className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
+                  className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-[var(--theme-price-foreground)] transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
                 >
                   {loading ? t("login.mfaVerifying") : t("login.mfaVerifySubmit")}
                 </UnifiedButton>
@@ -319,7 +319,7 @@ export default function AdminLogin() {
               <>
                 <div>
                   <label htmlFor="admin-login-account" className="mb-1.5 block text-xs font-medium text-muted-foreground">{t("login.accountLabel")}</label>
-                  <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20">
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] focus-within:ring-1 focus-within:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]">
                     <User size={16} className="text-muted-foreground" />
                     <input
                       id="admin-login-account"
@@ -341,7 +341,7 @@ export default function AdminLogin() {
 
                 <div>
                   <label htmlFor="admin-login-password" className="mb-1.5 block text-xs font-medium text-muted-foreground">{t("login.passwordLabel")}</label>
-                  <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20">
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))] focus-within:ring-1 focus-within:ring-[color-mix(in_srgb,var(--theme-primary)_20%,transparent)]">
                     <Lock size={16} className="text-muted-foreground" />
                     <input
                       id="admin-login-password"
@@ -373,7 +373,7 @@ export default function AdminLogin() {
                   type="button"
                   onClick={handleLogin}
                   disabled={loading}
-                  className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
+                  className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-[var(--theme-price-foreground)] transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
                 >
                   {loading ? t("login.submitting") : t("login.submit")}
                 </UnifiedButton>

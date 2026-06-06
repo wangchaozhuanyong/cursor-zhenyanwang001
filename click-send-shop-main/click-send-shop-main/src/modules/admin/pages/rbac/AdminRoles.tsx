@@ -239,7 +239,7 @@ export default function AdminRoles() {
           <PermissionGate permission="role.manage">
             <LoadingButton
               type="button"
-              variant="gold"
+              variant="price"
               state={saving ? "loading" : "normal"}
               loadingText="保存中..."
               disabled={!selectedUserId || selectedTargetLocked}
@@ -342,7 +342,7 @@ export default function AdminRoles() {
               </div>
             <LoadingButton
               type="button"
-              variant="gold"
+              variant="price"
               state={saving ? "loading" : "normal"}
               loadingText="保存中..."
               disabled={!roleForm.code || !roleForm.name}

@@ -140,7 +140,7 @@ export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
                       <label className="flex shrink-0 cursor-pointer items-center gap-2 pt-0.5 text-sm">
                         <input
                           type="checkbox"
-                          className="accent-gold h-4 w-4"
+                          className="accent-[var(--theme-primary)] h-4 w-4"
                           checked={settings.modules[def.key] !== false}
                           onChange={(e) => setModule(def.key, e.target.checked)}
                         />
@@ -161,7 +161,7 @@ export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
         <div className="mt-6 flex justify-end">
           <LoadingButton
             type="button"
-            variant="gold"
+            variant="price"
             state={saving ? "loading" : "normal"}
             loadingText="保存中..."
             disabled={loading}

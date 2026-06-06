@@ -95,7 +95,7 @@ export default function HomeNavSortRow({
             type="number"
             min={1}
             disabled={savingSort || savingOrder}
-            className="h-8 w-full rounded-lg border border-gold/40 bg-background px-1 text-center text-sm font-semibold tabular-nums outline-none focus:border-gold"
+            className="h-8 w-full rounded-lg border border-[color-mix(in_srgb,var(--theme-price)_40%,var(--theme-border))] bg-background px-1 text-center text-sm font-semibold tabular-nums outline-none focus:border-[var(--theme-primary)]"
             value={sortDraft}
             onChange={(e) => setSortDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -112,7 +112,7 @@ export default function HomeNavSortRow({
             type="button"
             disabled={!canManage || savingOrder || savingSort}
             onClick={() => canManage && setEditingSort(true)}
-            className="flex h-8 min-w-[3rem] items-center justify-center rounded-lg border border-border bg-secondary/60 px-2 text-xs font-semibold tabular-nums text-foreground hover:border-gold/30 hover:bg-gold/5 disabled:cursor-default disabled:opacity-80"
+            className="flex h-8 min-w-[3rem] items-center justify-center rounded-lg border border-border bg-secondary/60 px-2 text-xs font-semibold tabular-nums text-foreground hover:border-[color-mix(in_srgb,var(--theme-primary)_30%,var(--theme-border))] hover:bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))] disabled:cursor-default disabled:opacity-80"
             title={canManage ? "点击修改排序" : undefined}
           >
             {savingSort ? <Loader2 size={14} className="animate-spin text-muted-foreground" /> : displayIndex}

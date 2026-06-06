@@ -90,7 +90,7 @@ function HomeGridProductCard({
             soldOut && "grayscale-[35%] brightness-[0.88] saturate-[0.85]",
             isServiceLike && "object-[center_22%]",
           )}
-          sizes="(max-width: 768px) 45vw, 240px"
+          sizes="(max-width: 767px) 45vw, (max-width: 1023px) 30vw, 240px"
           loading={imageLoading}
           fetchPriority={imageFetchPriority}
         />

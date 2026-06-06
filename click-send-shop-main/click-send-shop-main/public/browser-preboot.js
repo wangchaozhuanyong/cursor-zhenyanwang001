@@ -138,6 +138,14 @@
     }
   }
 
+  function hasFreshQueryParam() {
+    try {
+      return new URL(global.location.href).searchParams.has(FRESH_QUERY_PARAM);
+    } catch (_e5fresh) {
+      return false;
+    }
+  }
+
   function withTimeout(task, timeoutMs) {
     return new Promise(function (resolve, reject) {
       var timer = global.setTimeout(function () {
@@ -288,13 +296,15 @@
 
     var appName = getAppName();
     var plan = resolveRecoveryPlan(appName, reason);
+    var shouldAutoReload = plan.shouldAutoReload && !hasFreshQueryParam();
+    var waitForManualRefresh = plan.isRepeatedFailure || !shouldAutoReload;
     global[GLOBAL_RECOVERY_FLAG] = true;
     writeRecoveryState(appName, plan.state);
-    showRecoveryNotice(appName, plan.isRepeatedFailure);
+    showRecoveryNotice(appName, waitForManualRefresh);
 
-    withTimeout(clearRuntimeCaches(plan.isRepeatedFailure), CLEANUP_TIMEOUT_MS)
+    withTimeout(clearRuntimeCaches(waitForManualRefresh), CLEANUP_TIMEOUT_MS)
       .then(function () {
-        if (plan.shouldAutoReload) {
+        if (shouldAutoReload) {
           reloadWithCacheBuster();
           return;
         }

@@ -331,6 +331,35 @@ export default function Categories() {
     </>
   );
 
+  const tabletCategoryRail = (
+    <div className="store-category-tablet-rail mb-4 hidden md:block lg:hidden">
+      <CategoryKingkongRow
+        items={rootKingkongItems}
+        scrollKey={scrollTabKey}
+        loading={loading && categories.length === 0}
+        variant="plain"
+        className="store-category-showcase store-category-showcase--plain"
+      />
+      {subCategories.length > 0 ? (
+        <div className="store-category-tablet-subtabs flex flex-wrap gap-1.5">
+          {subCategories.map((child) => (
+            <CategoryTabButton
+              key={child.id}
+              active={activeCat === child.id}
+              onClick={() => handleSelectChild(child.id)}
+              layoutId="category-tablet-sub-tab"
+              activeClassName="bg-[var(--theme-price)]"
+              activeTextClass="text-[var(--theme-price-foreground)]"
+              className="store-category-subtab px-3"
+            >
+              {child.name}
+            </CategoryTabButton>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+
   return (
     <div className="store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
@@ -375,8 +404,10 @@ export default function Categories() {
 
       <main className="store-category-main mx-auto max-w-screen-xl">
         <div className="px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6">
-          <div className="md:grid md:grid-cols-[260px,1fr] md:gap-6 lg:grid-cols-[288px,1fr]">
-            <CategorySideTree categories={categories} activeCat={activeCat} onSelectAll={handleSelectAll} onRootClick={handleRootCategoryClick} onChildClick={handleSelectChild} />
+          <div className="lg:grid lg:grid-cols-[288px,1fr] lg:gap-6">
+            <div className="hidden lg:block">
+              <CategorySideTree categories={categories} activeCat={activeCat} onSelectAll={handleSelectAll} onRootClick={handleRootCategoryClick} onChildClick={handleSelectChild} />
+            </div>
             <section className="store-category-content min-w-0">
               <div className="store-category-desktop-title mb-4 hidden rounded-3xl border px-5 py-4 md:block">
                 <p className="text-xs font-semibold tracking-[0.22em] text-[var(--theme-text-muted)]">分类目录</p>
@@ -385,6 +416,8 @@ export default function Categories() {
                   <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{categoryDescription}</p>
                 ) : null}
               </div>
+
+              {tabletCategoryRail}
 
               <div className="store-category-toolbar mb-3 hidden items-center gap-2 md:flex">
                 <div className="min-w-0 flex-1">

@@ -14,7 +14,6 @@ import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { formatProfileHeroName } from "./profileHeroName";
 import inviteRewardHeroImage from "@/assets/invite-reward-hero-illustration.svg";
-import inviteRewardMiniRedpacketImage from "@/assets/invite-reward-mini-redpacket.svg";
 import profileVipAvatarImage from "@/assets/profile-vip-avatar-medallion.svg";
 
 export const PROFILE_CARD_CLASS = "store-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
@@ -312,16 +311,21 @@ export function ProfileInviteRewardCard({
 }) {
   return (
     <section className="profile-invite-card">
+      <span className="profile-invite-glow profile-invite-glow--mint" aria-hidden="true" />
+      <span className="profile-invite-glow profile-invite-glow--gold" aria-hidden="true" />
+      <span className="profile-invite-sparkle profile-invite-sparkle--one" aria-hidden="true" />
+      <span className="profile-invite-sparkle profile-invite-sparkle--two" aria-hidden="true" />
+      <span className="profile-invite-sparkle profile-invite-sparkle--three" aria-hidden="true" />
+
       <div className="profile-invite-content">
         <div className="profile-invite-copy">
-          <div className="profile-invite-heading">
-            <span className="profile-invite-heading-icon" aria-hidden="true">
-              <img className="profile-invite-heading-art" src={inviteRewardMiniRedpacketImage} alt="" />
-            </span>
-            <p className="profile-invite-title">邀请好友得奖励</p>
+          <div className="profile-invite-eyebrow" aria-hidden="true">
+            <span />
+            Invite Bonus
           </div>
+          <h2 className="profile-invite-title">邀请好友得奖励</h2>
           <p className="profile-invite-desc">
-            {loggedIn ? "好友成功完成后，你可获得现金返现" : "登录后邀请好友获得现金返现"}
+            {loggedIn ? "好友付款成功后，返现奖励自动入账" : "登录后邀请好友获得购物返现"}
           </p>
         </div>
         <div className="profile-invite-art" aria-hidden="true">
@@ -339,8 +343,8 @@ export function ProfileInviteRewardCard({
             <b>{inviteCount} 人</b>
           </span>
           <span className="profile-invite-stat-chip">
-            <span className="profile-invite-stat-icon profile-invite-stat-icon--cash" aria-hidden="true">¥</span>
-            <span>返现金额</span>
+            <span className="profile-invite-stat-icon profile-invite-stat-icon--cash" aria-hidden="true">RM</span>
+            <span>可用返现</span>
             <b>RM {rewardBalance.toFixed(2)}</b>
           </span>
         </div>
@@ -371,10 +375,15 @@ export function ProfileInviteRewardCard({
             </UnifiedButton>
             <UnifiedButton type="button" onClick={onRecordClick} className="profile-invite-btn profile-invite-btn--secondary">
               <FileText size={16} />
-              邀请记录
+              记录
             </UnifiedButton>
           </>
         ) : null}
+      </div>
+
+      <div className="profile-invite-badge" aria-hidden="true">
+        <span>RM</span>
+        购物返现
       </div>
     </section>
   );

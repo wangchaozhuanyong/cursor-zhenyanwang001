@@ -74,6 +74,21 @@ html[data-app-scope="store"] .support-download-tab:active {
   transform: scale(0.98);
 }
 
+html[data-app-scope="store"] .support-download-tab-icon {
+  display: inline-flex;
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: 0 0 1.125rem;
+  align-items: center;
+  justify-content: center;
+}
+
+html[data-app-scope="store"] .support-download-tab-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 html[data-app-scope="store"] .support-download-content {
   margin-top: 1rem;
 }
@@ -93,6 +108,7 @@ html[data-app-scope="store"] .support-channel-card {
   --support-accent-soft: color-mix(in srgb, var(--theme-primary) 12%, var(--theme-surface));
   --support-accent-foreground: var(--theme-primary-foreground);
   padding: 1rem;
+  text-align: center;
 }
 
 html[data-app-scope="store"] .support-channel-card--wechat {
@@ -119,12 +135,15 @@ html[data-app-scope="store"] .support-channel-card--telegram {
 html[data-app-scope="store"] .support-channel-layout {
   display: grid;
   gap: 1rem;
+  justify-items: center;
 }
 
 html[data-app-scope="store"] .support-channel-info {
   display: flex;
+  width: 100%;
   min-width: 0;
   flex-direction: column;
+  align-items: center;
   gap: 0.9rem;
 }
 
@@ -132,6 +151,7 @@ html[data-app-scope="store"] .support-channel-head {
   display: flex;
   min-width: 0;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
 }
 
@@ -152,6 +172,7 @@ html[data-app-scope="store"] .support-channel-title-block {
   display: flex;
   min-width: 0;
   align-items: center;
+  justify-content: center;
 }
 
 html[data-app-scope="store"] .support-channel-title-block h2 {
@@ -168,15 +189,19 @@ html[data-app-scope="store"] .support-channel-title-block h2 {
 
 html[data-app-scope="store"] .support-channel-description {
   margin: 0;
+  max-width: 36rem;
   color: var(--support-muted);
   font-size: 0.94rem;
   line-height: 1.62;
+  text-align: center;
 }
 
 html[data-app-scope="store"] .support-account-panel {
   display: grid;
+  width: min(100%, 28rem);
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+  justify-items: stretch;
   gap: 0.75rem;
   border-top: 1px solid var(--support-line);
   border-bottom: 1px solid var(--support-line);
@@ -186,7 +211,9 @@ html[data-app-scope="store"] .support-account-panel {
 html[data-app-scope="store"] .support-account-copy {
   display: grid;
   min-width: 0;
+  justify-items: start;
   gap: 0.22rem;
+  text-align: left;
 }
 
 html[data-app-scope="store"] .support-account-copy span {
@@ -234,8 +261,10 @@ html[data-app-scope="store"] .support-outline-action {
 
 html[data-app-scope="store"] .support-qr-block {
   display: flex;
+  width: min(100%, 22rem);
   min-width: 0;
   flex-direction: column;
+  align-items: center;
   gap: 0.78rem;
 }
 
@@ -295,6 +324,7 @@ html[data-app-scope="store"] .support-install-stack {
 
 html[data-app-scope="store"] .support-channel-actions {
   width: 100%;
+  align-items: center;
 }
 
 html[data-app-scope="store"] .support-download-qr-button,
@@ -577,21 +607,33 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
 @media (min-width: 768px) {
   html[data-app-scope="store"] .support-download-shell {
     width: min(100%, 56rem);
-    padding-top: calc(env(safe-area-inset-top, 0px) + 2.25rem);
+    padding-top: 1rem;
+    padding-inline: 1.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  html[data-app-scope="store"] .support-download-hero {
+    text-align: left;
   }
 
   html[data-app-scope="store"] .support-download-hero h1 {
-    font-size: 2.35rem;
+    font-size: 2.05rem;
+    line-height: 1.12;
+  }
+
+  html[data-app-scope="store"] .support-download-tabs {
+    margin-top: 1rem;
   }
 
   html[data-app-scope="store"] .support-channel-card {
-    padding: 1.35rem;
+    border-radius: 1.2rem;
+    padding: 1.15rem;
   }
 
   html[data-app-scope="store"] .support-channel-layout {
-    grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 0.82fr);
+    grid-template-columns: minmax(0, 1fr) minmax(16.5rem, 0.72fr);
     align-items: start;
-    gap: 1.35rem;
+    gap: 1rem;
   }
 
   html[data-app-scope="store"] .support-qr-media {
@@ -617,6 +659,39 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
   }
 }
 
+@media (min-width: 768px) and (max-width: 1023px) {
+  html[data-app-scope="store"] .support-download-shell {
+    width: min(100%, 48rem);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 1.35rem);
+    padding-inline: 1.5rem;
+  }
+
+  html[data-app-scope="store"] .support-download-hero h1 {
+    font-size: 2.05rem;
+  }
+
+  html[data-app-scope="store"] .support-download-tabs {
+    margin-top: 0.85rem;
+  }
+
+  html[data-app-scope="store"] .support-channel-card {
+    padding: 1.1rem;
+  }
+
+  html[data-app-scope="store"] .support-channel-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(14.5rem, 16.5rem);
+    gap: 1rem;
+  }
+
+  html[data-app-scope="store"] .support-qr-media {
+    max-width: 16.5rem;
+  }
+
+  html[data-app-scope="store"] .support-ios-step-card {
+    min-height: 8.35rem;
+  }
+}
+
 @media (max-width: 420px) {
   html[data-app-scope="store"] .support-download-shell {
     padding-inline: 0.75rem;
@@ -633,13 +708,20 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
     font-size: 0.78rem;
   }
 
-  html[data-app-scope="store"] .support-download-tab svg {
+  html[data-app-scope="store"] .support-download-tab-icon {
     width: 1rem;
     height: 1rem;
+    flex-basis: 1rem;
+  }
+
+  html[data-app-scope="store"] .support-download-tab-icon svg {
+    width: 100%;
+    height: 100%;
   }
 
   html[data-app-scope="store"] .support-account-panel {
     grid-template-columns: minmax(0, 1fr) auto;
+    justify-items: stretch;
     gap: 0.5rem;
   }
 

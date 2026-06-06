@@ -165,7 +165,7 @@ export default function Cart() {
 
       <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] md:px-6 md:py-4">
         {/* 桌面端：左商品列表 / 右结算摘要 */}
-        <div className="md:grid md:grid-cols-[1fr_360px] md:gap-8">
+        <div className={items.length > 0 ? "md:grid md:grid-cols-[minmax(0,1fr)_minmax(16rem,18rem)] md:gap-5 lg:grid-cols-[1fr_360px] lg:gap-8" : "mx-auto max-w-2xl"}>
           <div>
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
             {!isLoggedIn() && (
@@ -378,7 +378,7 @@ export default function Cart() {
                               closeItemActions();
                               navigate(`/product/${item.product.id}`);
                             }}
-                            className="store-cart-media h-[88px] w-[88px] flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:h-24 sm:w-24 md:h-28 md:w-28"
+                            className="store-cart-media h-[88px] w-[88px] flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:h-24 sm:w-24 md:h-24 md:w-24 lg:h-28 lg:w-28"
                             aria-label={`查看 ${item.product.name}`}
                           >
                             <ProductCoverImage
@@ -464,7 +464,7 @@ export default function Cart() {
 
           {/* 桌面右侧结算摘要 */}
           {items.length > 0 && (
-            <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
+            <aside className="mt-6 hidden self-start md:sticky md:top-[calc(var(--store-tablet-header-height,4.25rem)+1rem)] md:mt-0 md:block lg:top-20">
               <div className="store-checkout-summary theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
                 <h3 className="store-section-title mb-4 text-foreground">结算摘要</h3>
                 <div className="space-y-2.5 text-sm">

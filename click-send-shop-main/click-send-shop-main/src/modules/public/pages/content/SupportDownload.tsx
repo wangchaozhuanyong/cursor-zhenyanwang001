@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Copy, MessageCircle, PlusSquare, Send, Smartphone } from "lucide-react";
+import { Copy, PlusSquare, Smartphone } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
+import WeChatIcon from "@/components/icons/WeChatIcon";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
+import TelegramIcon from "@/components/icons/TelegramIcon";
 import SupportChannelCard from "@/components/support/SupportChannelCard";
 import InstallPlatformCard from "@/components/support/InstallPlatformCard";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
@@ -64,10 +66,14 @@ function firstChannelByType(channels: SupportDownloadChannel[], type: SupportCha
 }
 
 function SupportTabIcon({ view }: { view: SupportDownloadView }) {
-  if (view === "telegram") return <Send size={19} aria-hidden="true" />;
-  if (view === "download") return <PlusSquare size={19} aria-hidden="true" />;
-  if (view === "whatsapp") return <WhatsAppIcon size={19} color="currentColor" aria-hidden="true" />;
-  return <MessageCircle size={19} aria-hidden="true" />;
+  return (
+    <span className="support-download-tab-icon" aria-hidden="true">
+      {view === "wechat" ? <WeChatIcon size={18} color="currentColor" /> : null}
+      {view === "whatsapp" ? <WhatsAppIcon size={18} color="currentColor" /> : null}
+      {view === "telegram" ? <TelegramIcon size={18} color="currentColor" /> : null}
+      {view === "download" ? <PlusSquare size={18} strokeWidth={2.2} /> : null}
+    </span>
+  );
 }
 
 function getSupportTabLabel(view: SupportDownloadView) {

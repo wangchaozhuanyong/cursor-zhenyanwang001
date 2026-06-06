@@ -2,7 +2,7 @@
 export const HOME_SECTION_HEADER_MB = "mb-2.5";
 
 /** 首页两列商品网格（今日热销等） */
-export const HOME_PRODUCT_GRID_CLASS = "store-product-grid grid grid-cols-2 gap-3 sm:gap-4";
+export const HOME_PRODUCT_GRID_CLASS = "store-product-grid grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4";
 
 /** 首页主内容区：模块之间统一纵向间距（移动端 16px，桌面逐级加大） */
 export const HOME_PAGE_MAIN_CLASS =

@@ -201,9 +201,12 @@ async function runRecovery(appName: string, reason?: unknown): Promise<void> {
       reason,
     );
 
+    const shouldAutoReload = plan.shouldAutoReload && !hasFreshQueryParam();
+    const waitForManualRefresh = plan.isRepeatedFailure || !shouldAutoReload;
+
     writeAppVersionRecoveryState(normalizedAppName, plan.state);
-    reportAppVersionRecovery(normalizedAppName, plan.state, plan.isRepeatedFailure);
-    showRecoveryNotice(normalizedAppName, plan.isRepeatedFailure);
+    reportAppVersionRecovery(normalizedAppName, plan.state, waitForManualRefresh);
+    showRecoveryNotice(normalizedAppName, waitForManualRefresh);
 
     await withTimeout(
       clearAppVersionRuntimeCaches({
@@ -212,7 +215,7 @@ async function runRecovery(appName: string, reason?: unknown): Promise<void> {
       CLEANUP_TIMEOUT_MS,
     );
 
-    if (plan.shouldAutoReload) {
+    if (shouldAutoReload) {
       forceReloadWithCacheBuster();
       return;
     }
@@ -444,6 +447,14 @@ function forceReloadWithCacheBuster(): void {
     window.location.replace(nextUrl.toString());
   } catch {
     window.location.reload();
+  }
+}
+
+function hasFreshQueryParam(): boolean {
+  try {
+    return new URL(window.location.href).searchParams.has(FRESH_QUERY_PARAM);
+  } catch {
+    return false;
   }
 }
 

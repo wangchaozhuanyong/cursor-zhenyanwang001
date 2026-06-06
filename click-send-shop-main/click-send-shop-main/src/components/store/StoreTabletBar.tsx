@@ -1,6 +1,6 @@
-import { Search, ShoppingCart } from "lucide-react";
+import { Headphones, Home, LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
 import type { MouseEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -13,6 +13,14 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 
+type TabletNavItem = {
+  path: string;
+  label: string;
+  icon: typeof Home;
+  enabled?: boolean;
+  badge?: "cart";
+};
+
 function preloadTabletRoute(path: string) {
   preloadStoreRoute(path);
 }
@@ -23,78 +31,107 @@ function isPlainLeftClick(event: MouseEvent<HTMLElement>) {
 
 export default function StoreTabletBar({ className }: { className?: string }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
+  const navItems: TabletNavItem[] = [
+    { path: "/", label: "\u9996\u9875", icon: Home, enabled: true },
+    { path: "/categories", label: "\u5206\u7c7b", icon: LayoutGrid, enabled: capabilities.mallEnabled },
+    { path: "/support-download?tab=support", label: "\u5ba2\u670d", icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled },
+    { path: "/cart", label: "\u8d2d\u7269\u8f66", icon: ShoppingCart, enabled: capabilities.mallEnabled, badge: "cart" },
+    { path: "/profile", label: "\u6211\u7684", icon: User, enabled: true },
+  ].filter((item) => item.enabled !== false);
+
+  const isActive = (path: string) => {
+    const base = path.split("?")[0];
+    if (base === "/") return location.pathname === "/";
+    return location.pathname === base || location.pathname.startsWith(`${base}/`);
+  };
 
   const openRoute = (path: string) => {
     preloadTabletRoute(path);
     navigateWithStoreTransition(navigate, path);
   };
 
-  const handleHomeClick = (event: MouseEvent<HTMLAnchorElement>) => {
+  const handleRouteLink = (event: MouseEvent<HTMLAnchorElement>, path: string) => {
     if (!isPlainLeftClick(event)) return;
     event.preventDefault();
-    openRoute("/");
+    openRoute(path);
   };
 
   return (
     <header
+      data-store-tablet-bar
       className={cn(
-        "store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl md:flex lg:hidden",
+        "store-tablet-bar store-tablet-header store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl md:flex lg:hidden",
         surfaceClass,
         className,
       )}
-      style={{ height: "var(--store-tablet-header-height, 3.25rem)" }}
+      style={{ height: "var(--store-tablet-header-height, 4.25rem)" }}
     >
-      <div className="mx-auto flex h-full w-full max-w-screen-xl items-center gap-3 px-6">
+      <div className="store-tablet-bar-inner store-tablet-header-inner mx-auto flex h-full w-full max-w-screen-xl items-center gap-3 px-6">
         <Link
           to="/"
-          onClick={handleHomeClick}
+          onClick={(event) => handleRouteLink(event, "/")}
           onMouseEnter={() => preloadTabletRoute("/")}
           onFocus={() => preloadTabletRoute("/")}
-          className="store-header-brand flex shrink-0 items-center gap-2"
-          aria-label={`${siteName} 首页`}
+          className="store-tablet-brand store-header-brand flex shrink-0 items-center gap-2"
+          aria-label={`${siteName} \u9996\u9875`}
         >
           {logoSrc ? (
             <img src={logoSrc} alt={`${siteName} Logo`} width={36} height={36} className="store-brand-logo" />
           ) : null}
-          <span className="hidden max-w-[8rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline">
+          <span className="store-tablet-brand-name hidden max-w-[8rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline">
             {siteName}
           </span>
         </Link>
 
-        <div className="min-w-0 flex-1" />
+        <nav
+          className="store-tablet-nav"
+          aria-label="\u4e3b\u5bfc\u822a"
+          style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
+        >
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={(event) => handleRouteLink(event, item.path)}
+                onMouseEnter={() => preloadTabletRoute(item.path)}
+                onFocus={() => preloadTabletRoute(item.path)}
+                aria-current={active ? "page" : undefined}
+                className={cn("store-tablet-nav-link store-tablet-nav-item", active && "is-active")}
+              >
+                <span className="store-tablet-nav-icon">
+                  <Icon size={17} strokeWidth={active ? 2.35 : 1.9} />
+                  {item.badge === "cart" ? <DeferredStoreCartBadge /> : null}
+                </span>
+                <span className="store-tablet-nav-label">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
-        {capabilities.mallEnabled ? (
-          <UnifiedButton
-            type="button"
-            onMouseEnter={() => preloadTabletRoute("/search")}
-            onFocus={() => preloadTabletRoute("/search")}
-            onClick={() => openRoute("/search")}
-            className="store-header-icon-button flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
-            aria-label="搜索"
-          >
-            <Search size={18} />
-          </UnifiedButton>
-        ) : null}
-
-        {capabilities.mallEnabled ? (
-          <UnifiedButton
-            type="button"
-            onMouseEnter={() => preloadTabletRoute("/cart")}
-            onFocus={() => preloadTabletRoute("/cart")}
-            onClick={() => openRoute("/cart")}
-            className="store-header-icon-button relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
-            aria-label="购物车"
-          >
-            <ShoppingCart size={18} />
-            <DeferredStoreCartBadge />
-          </UnifiedButton>
-        ) : null}
+        <div className="store-tablet-actions flex shrink-0 items-center gap-2">
+          {capabilities.mallEnabled ? (
+            <UnifiedButton
+              type="button"
+              onMouseEnter={() => preloadTabletRoute("/search")}
+              onFocus={() => preloadTabletRoute("/search")}
+              onClick={() => openRoute("/search")}
+              className="store-tablet-search-button store-header-icon-button flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
+              aria-label="\u641c\u7d22"
+            >
+              <Search size={18} />
+            </UnifiedButton>
+          ) : null}
+        </div>
       </div>
     </header>
   );

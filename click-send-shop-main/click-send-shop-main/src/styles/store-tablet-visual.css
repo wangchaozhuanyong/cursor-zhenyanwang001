@@ -1,0 +1,10 @@
+@media (min-width: 768px) and (max-width: 1023px) {
+  html[data-app-scope="store"] .store-home-desktop-hero-copy {
+    display: flex;
+  }
+
+  html[data-app-scope="store"] .store-home-desktop-service-grid,
+  html[data-app-scope="store"] .store-home-desktop-aside {
+    display: grid;
+  }
+}

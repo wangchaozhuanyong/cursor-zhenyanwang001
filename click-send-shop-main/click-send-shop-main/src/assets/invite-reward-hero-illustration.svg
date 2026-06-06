@@ -1,87 +1,53 @@
-<svg width="340" height="250" viewBox="0 0 340 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="180" height="176" viewBox="0 0 180 176" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="packetFront" x1="179" y1="42" x2="246" y2="176" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF8C74"/>
-      <stop offset="0.48" stop-color="#EF4238"/>
-      <stop offset="1" stop-color="#B91F19"/>
+    <linearGradient id="coinFace" x1="24" y1="5" x2="64" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF6B8"/>
+      <stop offset=".55" stop-color="#FFD76C"/>
+      <stop offset="1" stop-color="#FFAB3D"/>
     </linearGradient>
-    <linearGradient id="packetSide" x1="253" y1="54" x2="274" y2="171" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#DD372D"/>
-      <stop offset="1" stop-color="#7D120E"/>
+    <linearGradient id="cardGrad" x1="54" y1="34" x2="134" y2="142" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF7B65"/>
+      <stop offset=".48" stop-color="#FF456F"/>
+      <stop offset="1" stop-color="#A42DF5"/>
     </linearGradient>
-    <linearGradient id="packetFlap" x1="183" y1="54" x2="249" y2="110" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFA58F" stop-opacity="0.92"/>
-      <stop offset="1" stop-color="#FF705E" stop-opacity="0.22"/>
+    <linearGradient id="mintRing" x1="44" y1="36" x2="156" y2="142" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#83FFE1"/>
+      <stop offset="1" stop-color="#35D7B4" stop-opacity=".2"/>
     </linearGradient>
-    <linearGradient id="gold" x1="64" y1="62" x2="222" y2="208" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFF5CE"/>
-      <stop offset="0.44" stop-color="#F8C85E"/>
-      <stop offset="1" stop-color="#D98524"/>
-    </linearGradient>
-    <linearGradient id="giftCream" x1="268" y1="148" x2="320" y2="218" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFF5E9"/>
-      <stop offset="1" stop-color="#FFC397"/>
-    </linearGradient>
-    <filter id="softShadow" x="43" y="18" width="287" height="226" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="15" stdDeviation="13" flood-color="#7E2B1D" flood-opacity="0.18"/>
+    <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#001818" flood-opacity=".35"/>
     </filter>
-    <filter id="coinShadow" x="35" y="56" width="202" height="182" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#B76B1C" flood-opacity="0.2"/>
+    <filter id="coinShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#000000" flood-opacity=".2"/>
     </filter>
   </defs>
 
-  <path d="M292 30L299 49L318 56L299 63L292 82L285 63L266 56L285 49L292 30Z" fill="#FFFFFF" fill-opacity="0.92"/>
-  <path d="M249 18L253 29L264 33L253 37L249 48L245 37L234 33L245 29L249 18Z" fill="#F6D47A" fill-opacity="0.86"/>
-  <path d="M76 87L79 96L88 99L79 102L76 111L73 102L64 99L73 96L76 87Z" fill="#FFFFFF" fill-opacity="0.7"/>
+  <ellipse cx="95" cy="148" rx="60" ry="13" fill="#001B1D" opacity=".22"/>
+  <path d="M39 100c10-46 62-72 105-43" stroke="url(#mintRing)" stroke-width="5" stroke-linecap="round" opacity=".82"/>
+  <path d="M151 64c14 24 10 55-10 76" stroke="url(#mintRing)" stroke-width="5" stroke-linecap="round" opacity=".42"/>
 
-  <g filter="url(#softShadow)">
-    <path d="M127 58C111 50 99 38 93 22C110 24 124 36 137 52L127 58Z" fill="#FF8A70"/>
-    <path d="M289 112C308 104 321 90 329 69C309 72 293 84 279 101L289 112Z" fill="#FF856D"/>
-    <path d="M108 35C117 38 124 44 130 52C120 52 109 47 102 39L108 35Z" fill="#FFB18F"/>
-    <path d="M274 75C288 72 300 63 309 50C294 51 281 58 270 69L274 75Z" fill="#FFAB91" opacity="0.78"/>
-
-    <g transform="rotate(4 220 114)">
-      <rect x="184" y="44" width="91" height="137" rx="14" fill="url(#packetFront)"/>
-      <path d="M259 49C269 51 275 58 276 68V160C276 169 271 176 263 180L255 174C260 171 263 165 263 157V59C263 54 262 51 259 49Z" fill="url(#packetSide)"/>
-      <path d="M191 70C210 54 243 54 262 70C250 90 233 103 218 103C203 103 196 92 191 70Z" fill="url(#packetFlap)"/>
-      <path d="M189 103C211 91 244 91 267 103L264 117C241 106 214 106 192 117L189 103Z" fill="url(#gold)"/>
-      <circle cx="226" cy="105" r="35" fill="#FFF3CA"/>
-      <circle cx="226" cy="105" r="27" fill="url(#gold)"/>
-      <path d="M226 87V123M214 96H238M217 108H235" stroke="#DD8424" stroke-width="7" stroke-linecap="round"/>
-      <path d="M196 55C214 62 239 63 259 56" stroke="#FFFFFF" stroke-opacity="0.36" stroke-width="3" stroke-linecap="round"/>
-      <path d="M257 62C262 69 264 79 263 92" stroke="#8E1611" stroke-opacity="0.16" stroke-width="4" stroke-linecap="round"/>
-    </g>
+  <g filter="url(#coinShadow)">
+    <circle cx="38" cy="46" r="21" fill="url(#coinFace)"/>
+    <circle cx="38" cy="46" r="14" stroke="#FFF8C6" stroke-width="3" opacity=".8"/>
+    <path d="M38 34v24M31 42h14c4 0 4 8 0 8H31" stroke="#8A5B00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
   </g>
 
   <g filter="url(#coinShadow)">
-    <g transform="rotate(-16 83 112)">
-      <circle cx="83" cy="112" r="26" fill="#FFF1BC"/>
-      <circle cx="83" cy="112" r="20" fill="url(#gold)"/>
-      <path d="M83 100V124M75 107H91M77 115H89" stroke="#DF8E2B" stroke-width="4" stroke-linecap="round"/>
-      <path d="M71 97C80 102 92 103 101 98" stroke="#FFFFFF" stroke-opacity="0.48" stroke-width="3" stroke-linecap="round"/>
-    </g>
-    <g>
-      <ellipse cx="115" cy="174" rx="35" ry="10" fill="#FFEAB0"/>
-      <rect x="80" y="153" width="70" height="29" rx="8" fill="#F0A33D"/>
-      <path d="M82 158C99 167 130 167 149 158" stroke="#FFE9A8" stroke-width="5"/>
-      <path d="M82 171C101 178 130 178 149 171" stroke="#D78224" stroke-opacity="0.5" stroke-width="4"/>
-      <ellipse cx="115" cy="153" rx="35" ry="10" fill="#FFE9A8"/>
-      <ellipse cx="115" cy="153" rx="25" ry="6.5" fill="#F8C65D"/>
-      <path d="M115 147V159M108 152H122" stroke="#DF8F2D" stroke-width="3" stroke-linecap="round"/>
-    </g>
+    <circle cx="139" cy="39" r="15" fill="url(#coinFace)"/>
+    <path d="M139 31v16M134 36h9c3 0 3 6 0 6h-9" stroke="#8A5B00" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
   </g>
 
-  <g transform="rotate(-4 294 184)">
-    <rect x="268" y="164" width="52" height="48" rx="10" fill="url(#giftCream)" stroke="#FFF3E4" stroke-width="2"/>
-    <path d="M292 164V212" stroke="#F04438" stroke-width="7" stroke-linecap="round"/>
-    <path d="M268 185H320" stroke="#F04438" stroke-width="7" stroke-linecap="round"/>
-    <path d="M283 163C276 154 279 146 287 147C294 148 294 156 292 164" stroke="#F04438" stroke-width="6" stroke-linecap="round"/>
-    <path d="M301 164C310 157 310 148 302 147C295 146 292 155 292 164" stroke="#F04438" stroke-width="6" stroke-linecap="round"/>
+  <g filter="url(#softShadow)" transform="rotate(-7 96 88)">
+    <rect x="59" y="38" width="79" height="103" rx="18" fill="url(#cardGrad)"/>
+    <rect x="67" y="48" width="63" height="83" rx="14" stroke="rgba(255,255,255,.42)" stroke-width="2"/>
+    <circle cx="99" cy="82" r="25" fill="rgba(255,255,255,.16)"/>
+    <circle cx="99" cy="82" r="18" fill="url(#coinFace)"/>
+    <path d="M99 70v24M92 78h13c4 0 4 8 0 8H92" stroke="#8A5B00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".82"/>
+    <path d="M78 58c12-7 29-8 42 0" stroke="rgba(255,255,255,.45)" stroke-width="4" stroke-linecap="round"/>
   </g>
 
-  <circle cx="304" cy="128" r="9" fill="#FFF0B8"/>
-  <circle cx="304" cy="128" r="6" fill="#F7BF55"/>
-  <path d="M304 123V133M300 127H308" stroke="#DA8726" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="171" cy="211" r="5" fill="#F8C65D" opacity="0.7"/>
-  <circle cx="315" cy="91" r="4" fill="#FF8C74" opacity="0.72"/>
+  <path d="M29 84 16 78M35 108l-18 8M153 91l15-8M148 112l15 12" stroke="#FFD76C" stroke-width="5" stroke-linecap="round" opacity=".86"/>
+  <path d="M48 22 40 11M125 18l9-10M161 55l11-3" stroke="#75FFD6" stroke-width="4" stroke-linecap="round" opacity=".75"/>
+  <circle cx="62" cy="19" r="3" fill="#FFF2A6"/>
+  <circle cx="157" cy="138" r="4" fill="#75FFD6" opacity=".75"/>
 </svg>

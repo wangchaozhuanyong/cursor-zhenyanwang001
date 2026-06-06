@@ -16,7 +16,7 @@ exports.getTransactions = async (req, res, next) => {
 
 exports.withdraw = async (req, res, next) => {
   try {
-    const result = await rewardService.withdraw();
+    const result = await rewardService.withdraw(req.user.id, req.body);
     if (result.error) return res.fail(result.error.code, result.error.message);
     res.success(null, result.message);
   } catch (err) { next(err); }
@@ -42,4 +42,3 @@ exports.adminListRecords = async (req, res, next) => {
     res.success(data);
   } catch (err) { next(err); }
 };
-

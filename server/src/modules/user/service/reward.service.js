@@ -253,7 +253,7 @@ async function getAdminRecords(query) {
   return { list, total, page, pageSize, stats };
 }
 
-async function withdraw() {
+async function withdraw(_userId, _body = {}) {
   return { error: { code: 400, message: '返现只能用于购物抵扣，不支持提现' } };
 }
 
@@ -320,4 +320,3 @@ module.exports = {
   sumRewardTransactionsBalance,
   insertRewardTransaction,
 };
-

@@ -1,4 +1,4 @@
-import { GraduationCap, Headphones, Home, LayoutGrid, ShoppingCart, User, Wrench } from "lucide-react";
+import { Headphones, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
 import type { MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
@@ -14,6 +14,7 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import { isLoggedIn } from "@/utils/token";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
+import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 
 type NavItem = { path: string; label: string; icon: typeof Home; enabled?: boolean };
 
@@ -39,10 +40,8 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   const navItems: NavItem[] = [
     { path: "/", label: "首页", icon: Home, enabled: true },
     { path: "/categories", label: "全部分类", icon: LayoutGrid, enabled: capabilities.mallEnabled },
-    { path: "/categories?keyword=本地服务", label: "本地服务", icon: Wrench, enabled: capabilities.mallEnabled },
-    { path: "/categories?keyword=签证", label: "签证留学", icon: GraduationCap, enabled: capabilities.mallEnabled },
-    { path: "/support-download?tab=support", label: "客服中心", icon: Headphones, enabled: true },
-  ].filter((item) => item.enabled !== false);
+    { path: "/support-download?tab=support", label: "客服中心", icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled },
+  ].filter((item) => item.enabled !== false && isStoreNavPathVisible(item.path, capabilities));
 
   const isActive = (path: string) => {
     const [base, query = ""] = path.split("?");

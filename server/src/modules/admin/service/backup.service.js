@@ -63,6 +63,24 @@ function cleanOptionalText(value, maxLength = 255) {
 }
 
 const IMPLEMENTED_RESTORE_TYPES = new Set(['site', 'point_in_time']);
+const RESTORE_SWITCH_PRODUCTION_ACKS = [
+  {
+    key: 'RESTORE_SWITCH_ACK_DESTRUCTIVE',
+    message: '生产切换缺少维护窗口确认，请设置 RESTORE_SWITCH_ACK_DESTRUCTIVE=1',
+    isSatisfied: () => process.env.RESTORE_SWITCH_ACK_DESTRUCTIVE === '1',
+  },
+  {
+    key: 'RESTORE_SWITCH_TRAFFIC_FROZEN',
+    message: '生产切换前必须确认已冻结业务写入，请设置 RESTORE_SWITCH_TRAFFIC_FROZEN=1',
+    isSatisfied: () => process.env.RESTORE_SWITCH_TRAFFIC_FROZEN === '1',
+  },
+  {
+    key: 'RESTORE_SWITCH_PRE_BACKUP_DONE',
+    message: '生产切换前必须确认已完成切换前备份，请设置 RESTORE_SWITCH_PRE_BACKUP_DONE=1；如需紧急跳过，需同时设置 RESTORE_SWITCH_SKIP_PRE_BACKUP=1 和 RESTORE_SWITCH_ACK_SKIP_PRE_BACKUP=1',
+    isSatisfied: () => process.env.RESTORE_SWITCH_PRE_BACKUP_DONE === '1'
+      || (process.env.RESTORE_SWITCH_SKIP_PRE_BACKUP === '1' && process.env.RESTORE_SWITCH_ACK_SKIP_PRE_BACKUP === '1'),
+  },
+];
 
 function maskPath(value) {
   return value ? String(value) : '';
@@ -187,7 +205,7 @@ async function getBackupHealth() {
 
 function assertRestorePayload({ restoreType, targetTimeRaw, targetTime, targetTable, targetEntityId }) {
   if (!IMPLEMENTED_RESTORE_TYPES.has(restoreType)) {
-    throw new BusinessError(400, '该恢复类型尚未实现，当前仅支持整站恢复与指定时间点恢复');
+    throw new BusinessError(400, '该恢复类型尚未实现，当前仅支持数据库整库恢复与指定时间点恢复');
   }
   if (targetTimeRaw && !targetTime) {
     throw new BusinessError(400, '指定时间点格式不正确');
@@ -214,6 +232,56 @@ function runDetachedScript(scriptRelativePath, args = [], env = {}) {
     env: { ...process.env, ...env },
   });
   child.unref();
+}
+
+function runScriptAndWait(scriptRelativePath, args = [], env = {}, timeoutMs = Number(process.env.BACKUP_WAIT_TIMEOUT_MS || 60 * 60 * 1000)) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [path.join(SERVER_ROOT, scriptRelativePath), ...args], {
+      cwd: SERVER_ROOT,
+      detached: false,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, ...env },
+    });
+    let stderr = '';
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      try { child.kill(); } catch { /* ignore */ }
+      reject(new Error(`BACKUP_SCRIPT_TIMEOUT:${scriptRelativePath}`));
+    }, Math.max(60_000, Number(timeoutMs) || 60 * 60 * 1000));
+
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+      if (stderr.length > 4000) stderr = stderr.slice(-4000);
+    });
+    child.stdout.on('data', () => {
+      // Drain stdout so a verbose backup script cannot block on a full pipe.
+    });
+    child.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.on('close', (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (code === 0) {
+        resolve({ code });
+        return;
+      }
+      reject(new Error(`BACKUP_SCRIPT_FAILED:${code}:${stderr.slice(-1000)}`));
+    });
+  });
+}
+
+function assertProductionRestoreSwitchAcks() {
+  if (process.env.NODE_ENV !== 'production') return;
+  for (const ack of RESTORE_SWITCH_PRODUCTION_ACKS) {
+    if (!ack.isSatisfied()) throw new BusinessError(400, ack.message);
+  }
 }
 
 function classifyBackupAlertReason(message = '') {
@@ -343,6 +411,44 @@ async function createFullBackup({ req, userId, reason = 'manual' }) {
   });
   runDetachedScript('scripts/backup/backup-full.js', ['--job-id', id], { BACKUP_JOB_ID: id });
   return { id, status: 'queued' };
+}
+
+async function createPreCleanupBackup({ req, userId, reason = 'data_cleanup', metadata = {} }) {
+  const id = generateId();
+  await repo.insertBackupJob({
+    id,
+    jobType: 'pre_cleanup',
+    status: 'queued',
+    triggerSource: 'cleanup',
+    triggeredBy: userId,
+    reason,
+    metadata: { requestedFrom: 'data_cleanup', ...metadata },
+  });
+  await writeAuditLog({
+    req,
+    operatorId: userId,
+    actionType: 'backup.pre_cleanup.create',
+    objectType: 'backup_job',
+    objectId: id,
+    summary: 'pre-cleanup full backup requested',
+    result: 'success',
+    after: { reason, ...metadata },
+  });
+  await runScriptAndWait('scripts/backup/backup-full.js', ['--job-id', id], {
+    BACKUP_JOB_ID: id,
+    BACKUP_KIND: 'pre_cleanup',
+    BACKUP_TRIGGER_SOURCE: 'cleanup',
+    BACKUP_REASON: reason,
+  }, Number(process.env.DATA_CLEANUP_PRE_BACKUP_TIMEOUT_MS || process.env.BACKUP_WAIT_TIMEOUT_MS || 60 * 60 * 1000));
+
+  const job = await repo.findBackupJob(id);
+  if (!job || job.status !== 'success') {
+    throw new Error(`PRE_CLEANUP_BACKUP_NOT_SUCCESS:${id}:${job?.status || 'missing'}`);
+  }
+  await repo.updateBackupJob(id, {
+    metadata: { requestedFrom: 'data_cleanup', ...metadata, ...(job.metadata || {}) },
+  });
+  return { id, status: job.status, finished_at: job.finished_at || null };
 }
 
 async function createScriptBackupJob({ req, userId, reason = 'manual', jobType, scriptRelativePath, actionType, summary }) {
@@ -495,12 +601,7 @@ async function switchRestoreJobToProduction({ req, userId, restoreJobId }) {
   if (process.env.RESTORE_SWITCH_ENABLED !== '1') {
     throw new BusinessError(400, '生产切换未启用，请先在服务器设置 RESTORE_SWITCH_ENABLED=1');
   }
-  if (
-    process.env.NODE_ENV === 'production'
-    && process.env.RESTORE_SWITCH_ACK_DESTRUCTIVE !== '1'
-  ) {
-    throw new BusinessError(400, '生产切换缺少维护窗口确认，请设置 RESTORE_SWITCH_ACK_DESTRUCTIVE=1');
-  }
+  assertProductionRestoreSwitchAcks();
 
   const existing = await repo.findRestoreJob(restoreJobId);
   if (!existing) {
@@ -560,6 +661,7 @@ module.exports = {
   getOverview,
   listBackupFiles,
   createFullBackup,
+  createPreCleanupBackup,
   createConfigBackup,
   createUploadsBackup,
   createRestoreJob,

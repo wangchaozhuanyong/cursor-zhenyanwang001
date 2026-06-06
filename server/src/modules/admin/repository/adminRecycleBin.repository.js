@@ -8,6 +8,7 @@ const TABLE_CONFIGS = {
   content_pages: { label: '内容页', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名内容页') AS name, slug, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
   product_reviews: { label: '评论', nameCol: 'content', selectCols: "id, CONCAT(LEFT(content, 50), '...') AS name, product_id, user_id, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
   marketing_activities: { label: '营销活动', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名营销活动') AS name, deleted_at, deleted_by", permanentDelete: false },
+  coupon_campaigns: { label: '发券活动', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名发券活动') AS name, deleted_at, deleted_by", permanentDelete: false, hasDeletedBy: true },
   product_tags: { label: '商品标签', nameCol: 'name', selectCols: "id, COALESCE(NULLIF(TRIM(name), ''), '未命名商品标签') AS name, image_url AS cover_image, deleted_at, NULL AS deleted_by", permanentDelete: false },
   notifications: { label: '通知', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名通知') AS name, deleted_at, NULL AS deleted_by", permanentDelete: false },
   notification_batches: { label: '通知批次', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名通知批次') AS name, deleted_at, NULL AS deleted_by", permanentDelete: false },
@@ -42,12 +43,28 @@ function buildDeletedWhere(config, query = {}) {
   return { where, params };
 }
 
+function buildSelectColumns(type, config) {
+  const canPermanentDelete = config.permanentDelete ? 1 : 0;
+  return `${config.selectCols}, '${type}' AS type, '${config.label}' AS type_label, ${canPermanentDelete} AS can_permanent_delete`;
+}
+
+function emptyDeletedPage(query = {}) {
+  const { page, pageSize } = normalizePagination(query);
+  return {
+    kind: 'paginate',
+    list: [],
+    total: 0,
+    page,
+    pageSize,
+  };
+}
+
 async function listDeletedItems(type, query = {}) {
   const config = TABLE_CONFIGS[type];
   if (!config) return [];
   const { where, params } = buildDeletedWhere(config, query);
   const [rows] = await db.query(
-    `SELECT ${config.selectCols}, '${type}' AS type, '${config.label}' AS type_label FROM ${type} ${where} ORDER BY deleted_at DESC`,
+    `SELECT ${buildSelectColumns(type, config)} FROM ${type} ${where} ORDER BY deleted_at DESC`,
     params,
   );
   return rows;
@@ -59,7 +76,7 @@ async function listAllDeleted(query = {}) {
     try {
       const { where, params } = buildDeletedWhere(config, query);
       const [rows] = await db.query(
-        `SELECT ${config.selectCols}, '${type}' AS type, '${config.label}' AS type_label FROM ${type} ${where} ORDER BY deleted_at DESC`,
+        `SELECT ${buildSelectColumns(type, config)} FROM ${type} ${where} ORDER BY deleted_at DESC`,
         params,
       );
       results.push(...rows);
@@ -74,6 +91,7 @@ async function listAllDeleted(query = {}) {
 async function listDeletedPage(query = {}) {
   const { page, pageSize, offset } = normalizePagination(query);
   const type = query.type;
+  if (type && !TABLE_CONFIGS[type]) return emptyDeletedPage(query);
   const rows = type && TABLE_CONFIGS[type]
     ? await listDeletedItems(type, query)
     : await listAllDeleted(query);
@@ -91,7 +109,7 @@ async function getDeletedItem(type, id, q) {
   const config = TABLE_CONFIGS[type];
   if (!config) return null;
   const [[row]] = await query.query(
-    `SELECT ${config.selectCols}, '${type}' AS type, '${config.label}' AS type_label FROM ${type} WHERE id = ? AND deleted_at IS NOT NULL LIMIT 1`,
+    `SELECT ${buildSelectColumns(type, config)} FROM ${type} WHERE id = ? AND deleted_at IS NOT NULL LIMIT 1`,
     [id],
   );
   return row || null;
@@ -118,6 +136,22 @@ async function getAnyUser(id) {
 async function getCouponCategoryIds(couponId) {
   const [rows] = await db.query('SELECT category_id FROM coupon_categories WHERE coupon_id = ?', [couponId]);
   return rows.map((row) => row.category_id).filter(Boolean);
+}
+
+async function getActiveCoupon(id) {
+  if (!id) return null;
+  const [[row]] = await db.query('SELECT id FROM coupons WHERE BINARY id = BINARY ? AND deleted_at IS NULL AND archived_at IS NULL LIMIT 1', [id]);
+  return row || null;
+}
+
+async function getCouponCampaignCouponIds(campaignId) {
+  const [rows] = await db.query(
+    `SELECT coupon_id
+       FROM coupon_campaign_items
+      WHERE BINARY campaign_id = BINARY ?`,
+    [campaignId],
+  );
+  return rows.map((row) => row.coupon_id).filter(Boolean);
 }
 
 async function restoreItem(type, id) {
@@ -174,6 +208,8 @@ module.exports = {
   getActiveProduct,
   getAnyUser,
   getCouponCategoryIds,
+  getActiveCoupon,
+  getCouponCampaignCouponIds,
   restoreItem,
   permanentDeleteItem,
 };

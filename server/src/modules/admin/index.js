@@ -10,6 +10,7 @@ const adminEventRepo = require('./repository/adminEvent.repository');
 const adminSiteSettingsRepo = require('./repository/adminSiteSettings.repository');
 const adminUserSecurityRepo = require('./repository/adminUserSecurity.repository');
 const adminCouponCampaignRepo = require('./repository/adminCouponCampaign.repository');
+const backupService = require('./service/backup.service');
 
 const router = Router();
 
@@ -31,6 +32,7 @@ const router = Router();
   isCouponCampaignClaimAllowed: adminCouponCampaignRepo.isCouponCampaignClaimAllowed,
   resolveCouponCampaignClaim: adminCouponCampaignRepo.resolveCouponCampaignClaim,
   selectCouponCampaignCouponIds: adminCouponCampaignRepo.selectCouponIdsByCampaignId,
+  createPreCleanupBackup: backupService.createPreCleanupBackup,
 };
 
 router.use('/admin', require('./routes/admin.routes'));

@@ -6,6 +6,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { cn } from "@/lib/utils";
 import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import { shouldHideBottomNav } from "./bottomNavVisibility";
 import { useStoreScrollChrome } from "@/contexts/StoreScrollChromeProvider";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
@@ -124,7 +125,7 @@ export default function BottomNav() {
     const base = path.split("?")[0];
     return location.pathname === base;
   };
-  const visibleTabs = tabs.filter((tab) => capabilities.mallEnabled || !["/categories", "/cart"].includes(tab.path.split("?")[0]));
+  const visibleTabs = tabs.filter((tab) => isStoreNavPathVisible(tab.path, capabilities));
 
   const isTapIntent = (active: ActivePointer) => active.maxMove <= TAP_MOVE_THRESHOLD;
 

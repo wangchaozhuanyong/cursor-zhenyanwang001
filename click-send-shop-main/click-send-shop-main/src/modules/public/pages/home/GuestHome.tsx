@@ -3,12 +3,10 @@ import {
   ArrowRight,
   BriefcaseBusiness,
   GraduationCap,
-  Headphones,
   Home,
   RefreshCw,
   ShoppingBag,
   Sparkles,
-  Truck,
   Wrench,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -183,54 +181,6 @@ const guestRecommendFallbackItems = [
   },
 ];
 
-const desktopHeroHighlights = [
-  {
-    title: "签证留学",
-    description: "流程清晰，资料少跑腿",
-    path: "/categories?keyword=签证",
-    icon: GraduationCap,
-    tone: "visa",
-  },
-  {
-    title: "本地配送",
-    description: "马来西亚本地交付",
-    path: "/categories?keyword=配送",
-    icon: Truck,
-    tone: "delivery",
-  },
-  {
-    title: "装修服务",
-    description: "安装维修，一站对接",
-    path: "/categories?keyword=装修",
-    icon: Wrench,
-    tone: "renovation",
-  },
-  {
-    title: "第二家园",
-    description: "安家与生活资源",
-    path: "/categories?keyword=第二家园",
-    icon: Home,
-    tone: "home",
-  },
-] as const;
-
-const desktopHeroStats = [
-  { value: "12+", label: "常用服务入口" },
-  { value: "4项", label: "安心保障" },
-  { value: "中文", label: "咨询与售后支持" },
-] as const;
-
-const desktopFocusItems = [
-  {
-    title: "新人礼包入口前置",
-    description: "登录后可领取优惠，提升首单转化。",
-  },
-  {
-    title: "服务与商品分区更清楚",
-    description: "用户能更快判断自己该点哪里。",
-  },
-] as const;
-
 function GuestRecommendFallback({
   onNavigate,
   onRetry,
@@ -286,41 +236,6 @@ function GuestRecommendFallback({
         })}
       </div>
     </div>
-  );
-}
-
-function DesktopHomeServiceAside({ onNavigate }: { onNavigate: (path: string) => void }) {
-  return (
-    <aside className="store-home-desktop-aside" aria-label="平台服务提示">
-      <section className="store-home-advisor-card">
-        <span className="store-home-advisor-tag">平台服务</span>
-        <h3>需要办事？<br />先找中文顾问</h3>
-        <p>签证、留学、第二家园、本地维修与商业资源，可以从客服入口统一咨询。</p>
-        <UnifiedButton
-          type="button"
-          onClick={() => onNavigate("/support-download?tab=support")}
-          className="store-home-advisor-action"
-        >
-          <Headphones size={16} aria-hidden="true" />
-          进入客服中心
-        </UnifiedButton>
-      </section>
-
-      <section className="store-home-focus-card">
-        <h3>今日重点</h3>
-        <div className="store-home-focus-list">
-          {desktopFocusItems.map((item, index) => (
-            <div key={item.title} className="store-home-focus-item">
-              <span>{index + 1}</span>
-              <div>
-                <strong>{item.title}</strong>
-                <em>{item.description}</em>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    </aside>
   );
 }
 
@@ -420,7 +335,6 @@ export default function GuestHome() {
   };
 
   const homeLayout = themeConfig.homeLayout ?? "classic";
-  const isPremiumLayout = homeLayout === "premium";
   const isMagazineLayout = homeLayout === "magazine";
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "guest");
   const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "guest");
@@ -488,62 +402,6 @@ export default function GuestHome() {
                   themeConfigOverride={themeConfig}
                 />
               </div>
-
-              <div className="store-home-desktop-hero-copy" aria-hidden={bannersLoading ? true : undefined}>
-                <span className="store-home-desktop-kicker">马来西亚中文生活服务平台</span>
-                <p className="store-home-desktop-brand">{siteName}</p>
-                <p className="store-home-desktop-domain">{STORE_COPY.brandDomain}</p>
-                <p className="store-home-desktop-subtitle">在马生活、采购、办事，一个入口搞定</p>
-                <p className="store-home-desktop-description">{description}</p>
-                <div className="store-home-desktop-actions">
-                  <UnifiedButton
-                    type="button"
-                    onClick={() => navigate("/categories")}
-                    className="store-home-desktop-primary"
-                  >
-                    {STORE_COPY.browseAllCategories}
-                    <ArrowRight size={16} aria-hidden="true" />
-                  </UnifiedButton>
-                  <UnifiedButton
-                    type="button"
-                    onClick={() => navigate("/support-download?tab=support")}
-                    className="store-home-desktop-secondary"
-                  >
-                    联系中文客服
-                  </UnifiedButton>
-                </div>
-                <div className="store-home-desktop-stats" aria-label="平台亮点">
-                  {desktopHeroStats.map((item) => (
-                    <div key={item.label} className="store-home-desktop-stat">
-                      <strong>{item.value}</strong>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="store-home-desktop-service-grid" aria-label="重点服务入口">
-                {desktopHeroHighlights.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <UnifiedButton
-                      key={item.title}
-                      type="button"
-                      onClick={() => navigate(item.path)}
-                      className="store-home-desktop-service-card"
-                      data-service-tone={item.tone}
-                    >
-                      <span className="store-home-desktop-service-icon" aria-hidden="true">
-                        <Icon size={18} />
-                      </span>
-                      <span className="store-home-desktop-service-copy">
-                        <strong>{item.title}</strong>
-                        <em>{item.description}</em>
-                      </span>
-                    </UnifiedButton>
-                  );
-                })}
-              </div>
             </div>
           </AnimatedSection>
         ) : null}
@@ -562,19 +420,14 @@ export default function GuestHome() {
 
         {showGuestNewArrivals ? (
         <AnimatedSection delay={0.1}>
-          <section className="store-home-featured-layout store-home-featured-layout--with-aside">
-            <div className="store-home-featured-products">
-              <NewArrivalSection
-                products={newProducts}
-                loading={homeLoading}
-                title={siteInfo.newArrivalSectionTitle}
-                displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
-                showPrice={siteInfo.newArrivalShowPrice !== "0"}
-                className="store-home-primary-arrivals"
-              />
-            </div>
-            <DesktopHomeServiceAside onNavigate={navigate} />
-          </section>
+          <NewArrivalSection
+            products={newProducts}
+            loading={homeLoading}
+            title={siteInfo.newArrivalSectionTitle}
+            displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
+            showPrice={siteInfo.newArrivalShowPrice !== "0"}
+            className="store-home-primary-arrivals"
+          />
         </AnimatedSection>
         ) : null}
 
@@ -612,18 +465,9 @@ export default function GuestHome() {
                 <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
                 最新服务与精选好物
               </h2>
-              <p className="store-home-section-subtitle">电脑版用更宽的商品卡片，服务入口和精选好物一眼看清。</p>
             </div>
-            <UnifiedButton
-              type="button"
-              onClick={() => navigate("/categories")}
-              className="store-home-section-more"
-            >
-              查看更多
-              <ArrowRight size={14} aria-hidden="true" />
-            </UnifiedButton>
           </div>
-          <div className={`store-home-featured-layout${showGuestNewArrivals ? "" : " store-home-featured-layout--with-aside"}`}>
+          <div className="store-home-featured-layout">
             <div className="store-home-featured-products">
           <h2 className="sr-only">
             <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
@@ -673,7 +517,6 @@ export default function GuestHome() {
             }
           />
             </div>
-            {!showGuestNewArrivals ? <DesktopHomeServiceAside onNavigate={navigate} /> : null}
           </div>
         </section>
         </AnimatedSection>

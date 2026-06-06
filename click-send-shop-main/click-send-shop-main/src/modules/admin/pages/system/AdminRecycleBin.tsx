@@ -58,6 +58,7 @@ import {
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminT } from "@/hooks/useAdminT";
 import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
+import { invalidateCouponStoreCache } from "@/stores/useCouponStore";
 
 const TYPE_BADGE: Record<string, string> = {
   products: THEME_BADGE_PRIMARY,
@@ -67,6 +68,7 @@ const TYPE_BADGE: Record<string, string> = {
   content_pages: THEME_BADGE_PRICE,
   product_reviews: THEME_BADGE_DANGER,
   marketing_activities: THEME_BADGE_SUCCESS,
+  coupon_campaigns: THEME_BADGE_SUCCESS,
   product_tags: THEME_BADGE_ACCENT,
   notifications: THEME_BADGE_PRIMARY,
   notification_batches: THEME_BADGE_PRIMARY,
@@ -76,6 +78,42 @@ const TYPE_BADGE: Record<string, string> = {
   inventory_pack_rules: THEME_BADGE_WARNING,
   users: "bg-muted text-muted-foreground",
 };
+
+const PUBLIC_PRODUCT_CACHE_TYPES = new Set([
+  "products",
+  "categories",
+  "banners",
+  "content_pages",
+  "product_reviews",
+  "marketing_activities",
+  "coupon_campaigns",
+  "product_tags",
+  "product_variants",
+  "product_spec_groups",
+  "product_spec_values",
+  "inventory_pack_rules",
+]);
+
+const COUPON_CACHE_TYPES = new Set(["coupons", "coupon_campaigns"]);
+
+const NON_PERMANENT_DELETE_TYPES = new Set([
+  "marketing_activities",
+  "coupon_campaigns",
+  "product_tags",
+  "notifications",
+  "notification_batches",
+  "product_variants",
+  "product_spec_groups",
+  "product_spec_values",
+  "inventory_pack_rules",
+  "users",
+]);
+
+function canPermanentlyDelete(item: RecycleBinItem) {
+  if (item.can_permanent_delete === false || item.can_permanent_delete === 0) return false;
+  if (item.can_permanent_delete === true || item.can_permanent_delete === 1) return true;
+  return !NON_PERMANENT_DELETE_TYPES.has(item.type);
+}
 
 export default function AdminRecycleBin() {
   const { tText } = useAdminT();
@@ -106,15 +144,19 @@ export default function AdminRecycleBin() {
 
   const invalidateRecycleBin = async (itemType?: string) => {
     const tasks = [queryClient.invalidateQueries({ queryKey: adminQueryKeys.recycleBinRoot() })];
+    if (itemType && PUBLIC_PRODUCT_CACHE_TYPES.has(itemType)) {
+      invalidatePublicProductStoreCache({ categories: itemType === "categories" });
+    }
+    if (itemType && COUPON_CACHE_TYPES.has(itemType)) {
+      invalidateCouponStoreCache();
+    }
     if (itemType === "products") {
-      invalidatePublicProductStoreCache();
       tasks.push(
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
       );
     }
     if (itemType === "categories") {
-      invalidatePublicProductStoreCache({ categories: true });
       tasks.push(
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
@@ -125,6 +167,36 @@ export default function AdminRecycleBin() {
       tasks.push(
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.productTags() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
+      );
+    }
+    if (itemType === "coupons") {
+      tasks.push(queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() }));
+    }
+    if (itemType === "coupon_campaigns") {
+      tasks.push(
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponCampaignsRoot() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
+      );
+    }
+    if (itemType === "marketing_activities") {
+      tasks.push(
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.activitiesRoot() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
+      );
+    }
+    if (itemType === "product_reviews") {
+      tasks.push(queryClient.invalidateQueries({ queryKey: adminQueryKeys.reviewsRoot() }));
+    }
+    if (itemType === "notifications" || itemType === "notification_batches") {
+      tasks.push(queryClient.invalidateQueries({ queryKey: adminQueryKeys.notificationsRoot() }));
+    }
+    if (itemType === "users") {
+      tasks.push(queryClient.invalidateQueries({ queryKey: adminQueryKeys.usersRoot() }));
+    }
+    if (itemType && ["product_variants", "product_spec_groups", "product_spec_values", "inventory_pack_rules"].includes(itemType)) {
+      tasks.push(
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
       );
     }
     await Promise.all(tasks);
@@ -219,14 +291,16 @@ export default function AdminRecycleBin() {
               >
                 <RotateCcw size={12} className="mr-1 inline" />{busyActionKey === `restore:${item.type}:${item.id}` ? tText("恢复中...") : <Tx>恢复</Tx>}
               </UnifiedButton>
-              <UnifiedButton
-                type="button"
-                onClick={() => confirmPermanentDelete(item)}
-                disabled={itemBusy(item)}
-                className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER} disabled:opacity-60`}
-              >
-                <Trash2 size={12} className="mr-1 inline" />{busyActionKey === `delete:${item.type}:${item.id}` ? tText("删除中...") : <Tx>彻底删除</Tx>}
-              </UnifiedButton>
+              {canPermanentlyDelete(item) ? (
+                <UnifiedButton
+                  type="button"
+                  onClick={() => confirmPermanentDelete(item)}
+                  disabled={itemBusy(item)}
+                  className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER} disabled:opacity-60`}
+                >
+                  <Trash2 size={12} className="mr-1 inline" />{busyActionKey === `delete:${item.type}:${item.id}` ? tText("删除中...") : <Tx>彻底删除</Tx>}
+                </UnifiedButton>
+              ) : null}
             </div>
           </PermissionGate>
         </div>
@@ -321,15 +395,17 @@ export default function AdminRecycleBin() {
                     >
                       <RotateCcw size={14} />
                     </UnifiedButton>
-                    <UnifiedButton
-                      type="button"
-                      onClick={() => confirmPermanentDelete(item)}
-                      disabled={itemBusy(item)}
-                      className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER} disabled:opacity-60`}
-                      title={busyActionKey === `delete:${item.type}:${item.id}` ? tText("删除中...") : tText("彻底删除")}
-                    >
-                      <Trash2 size={14} />
-                    </UnifiedButton>
+                    {canPermanentlyDelete(item) ? (
+                      <UnifiedButton
+                        type="button"
+                        onClick={() => confirmPermanentDelete(item)}
+                        disabled={itemBusy(item)}
+                        className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER} disabled:opacity-60`}
+                        title={busyActionKey === `delete:${item.type}:${item.id}` ? tText("删除中...") : tText("彻底删除")}
+                      >
+                        <Trash2 size={14} />
+                      </UnifiedButton>
+                    ) : null}
                   </div>
                 </PermissionGate>
               </td>

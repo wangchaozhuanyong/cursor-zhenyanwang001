@@ -51,6 +51,11 @@ async function insertBackupJob(job) {
   );
 }
 
+async function findBackupJob(id) {
+  const [[row]] = await db.query(`SELECT * FROM backup_jobs WHERE id = ? LIMIT 1`, [id]);
+  return mapJob(row);
+}
+
 async function updateBackupJob(id, fields = {}) {
   const sets = [];
   const values = [];
@@ -414,6 +419,7 @@ async function getRecentJobs(limit = 8) {
 
 module.exports = {
   insertBackupJob,
+  findBackupJob,
   updateBackupJob,
   insertBackupFile,
   insertBinlogFile,

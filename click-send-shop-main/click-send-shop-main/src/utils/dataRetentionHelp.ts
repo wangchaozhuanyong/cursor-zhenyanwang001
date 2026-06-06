@@ -59,6 +59,8 @@ export const DATA_RETENTION_CATEGORY_HINTS: Record<string, string> = {
 
 /** 每条策略的通俗说明（policy key 与后端一致） */
 export const DATA_CLEANUP_POLICY_HELP: Record<string, string> = {
+  uploaded_assets_orphaned_files:
+    "扫描商品图、Banner、站点设置、内容页、评价、售后图片等引用后，只清理确认没有任何业务引用的上传文件。这个策略默认关闭，建议先预览命中列表，再人工确认是否启用。",
   otp_send_logs:
     "用户收短信验证码时留下的发送记录。过期后可删，不影响账号。",
   password_reset_tokens:
@@ -73,14 +75,20 @@ export const DATA_CLEANUP_POLICY_HELP: Record<string, string> = {
     "管理员勾选「信任此设备」的记录。只删已过期或已撤销的设备，不影响当前正常登录。",
   admin_sensitive_action_tokens:
     "管理员执行删除、导出等敏感操作时的二次验证令牌。过期或撤销后可删，不影响当前会话。",
+  admin_webauthn_credentials_revoked:
+    "管理员绑定过、后来又撤销的通行密钥。只删已撤销很久的记录，仍可用的通行密钥不会删。",
   cart_items:
     "购物车里长期没更新的商品行。不是订单，删了只是清空「僵尸购物车」。",
   checkout_abandonments:
     "用户下单中途离开、系统保存的结账快照，用于分析弃单，时间久了可删。",
   browsing_history:
     "用户看了哪些商品的历史，用于「最近浏览」，过期可删。",
+  user_feedback_closed:
+    "用户提交的意见反馈。只删已解决或已驳回很久的记录，待处理和处理中反馈不会删。",
   analytics_events:
     "前台埋点产生的访问、点击等原始日志，删了不影响订单，只影响很久以前的分析明细。",
+  search_terms:
+    "用户搜索过的关键词统计。长期没人再搜的词可以清掉，热门词和近期搜索词会保留。",
   home_engagement_events:
     "首页轮播、按钮等运营互动统计用的记录。",
   notifications_read:
@@ -93,12 +101,32 @@ export const DATA_CLEANUP_POLICY_HELP: Record<string, string> = {
     "在报表里点「导出 Excel」等产生的任务记录。",
   export_files:
     "导出完成后留在服务器磁盘上的文件，过期可删以释放空间。",
+  uploaded_assets_soft_deleted:
+    "上传图片、视频时留下的资产登记。这里只删已经标记删除很久的元数据，不会主动删除仍在商品、Banner、站点设置里使用的图片文件。",
   user_login_audits:
     "普通用户登录成功/失败的记录，用于安全排查。",
+  user_security_events_resolved:
+    "用户账号安全中心的事件记录。只删已经解决并超过保留期的事件，未处理风险不会删。",
+  user_risk_ips_released:
+    "被判定过有风险的 IP。只删已解除封禁且很久没有再次出现的记录，仍封禁的 IP 不会删。",
+  user_risk_devices_released:
+    "被判定过有风险的设备。只删已解除封禁且很久没有再次出现的记录，仍封禁的设备不会删。",
   audit_logs:
     "管理员在后台的重要操作记录（谁改了什么）。默认保留约 7 年且锁定，一般不要缩短。",
   admin_event_records_resolved:
     "顶部铃铛「后台事件」里已经解决、忽略或过期的条目。进行中的事件不会删，需先在事件中心处理完。",
+  backup_alerts_resolved:
+    "备份中心产生的告警。只删已经标记解决并超过保留期的告警，打开中的告警不会删。",
+  backup_jobs_terminal_without_files:
+    "备份中心的任务记录。只删已经结束且没有关联备份文件的任务，避免误删可恢复备份的元数据。",
+  restore_drill_reports_finished:
+    "恢复演练完成后留下的报告。超过保留期后可清理，保留期内仍可用于检查恢复能力。",
+  data_cleanup_run_steps_history:
+    "数据清理中心每次执行时，每条策略的步骤明细。只删已经结束很久的步骤，运行中的步骤不会删。",
+  data_cleanup_runs_history:
+    "数据清理中心的预览、手动执行、定时执行历史。只删已经结束很久的记录，运行中的任务不会删。",
+  data_cleanup_locks_expired:
+    "数据清理中心用来防止两个清理任务同时跑的锁。只删已经过期一段时间的历史锁。",
   data_consistency_runs:
     "系统自动检查订单/库存等是否对得上时，每次检查的运行记录。",
   data_consistency_rule_events:
@@ -110,6 +138,9 @@ export const DATA_CLEANUP_POLICY_HELP: Record<string, string> = {
   data_repair_tasks:
     "后台「数据修复」功能执行过的任务历史。",
 };
+
+DATA_CLEANUP_POLICY_HELP.uploaded_assets_soft_deleted =
+  "清理已经被标记删除、并且超过保留期的上传文件。现在会先确认没有商品、Banner、站点设置等业务引用，再删除实际文件和资产记录，避免只删元数据导致文件残留。";
 
 export function getDataCleanupPolicyHelp(policyKey: string, fallbackDescription?: string): string {
   const key = String(policyKey || "").trim();

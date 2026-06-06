@@ -1,5 +1,6 @@
 const repo = require('../repository/adminRecycleBin.repository');
 const productModule = require('../../product');
+const homeModule = require('../../home');
 const { writeAuditLog } = require('../../../utils/auditLog');
 
 const NOT_IN_RECYCLE_BIN = '记录不存在或未在回收站';
@@ -8,12 +9,40 @@ function getProductApi() {
   return /** @type {any} */ (productModule).api || {};
 }
 
-function requireProductApi(name) {
-  const fn = getProductApi()[name];
-  if (typeof fn !== 'function') {
-    throw new Error(`Product 模块 API 未暴露方法：${name}`);
+function getHomeApi() {
+  return /** @type {any} */ (homeModule).api || {};
+}
+
+const PUBLIC_CACHE_AFFECTING_TYPES = new Set([
+  'products',
+  'categories',
+  'coupons',
+  'banners',
+  'content_pages',
+  'product_reviews',
+  'marketing_activities',
+  'coupon_campaigns',
+  'product_tags',
+  'product_variants',
+  'product_spec_groups',
+  'product_spec_values',
+  'inventory_pack_rules',
+]);
+
+function invalidatePublicCaches(type) {
+  if (!PUBLIC_CACHE_AFFECTING_TYPES.has(type)) return;
+  try {
+    const clearCatalogCache = getProductApi().clearCatalogCache;
+    if (typeof clearCatalogCache === 'function') clearCatalogCache();
+  } catch (err) {
+    console.warn('[adminRecycleBin] clearCatalogCache:', err?.message || err);
   }
-  return fn;
+  try {
+    const invalidateHomeBootstrapCache = getHomeApi().invalidateHomeBootstrapCache;
+    if (typeof invalidateHomeBootstrapCache === 'function') invalidateHomeBootstrapCache();
+  } catch (err) {
+    console.warn('[adminRecycleBin] invalidateHomeBootstrapCache:', err?.message || err);
+  }
 }
 
 async function listRecycleBin(query = {}) {
@@ -24,6 +53,7 @@ async function listRecycleBin(query = {}) {
   if (type && repo.TABLE_CONFIGS[type]) {
     return repo.listDeletedItems(type, query);
   }
+  if (type) return [];
   return repo.listAllDeleted(query);
 }
 
@@ -43,6 +73,14 @@ async function validateRestoreDependencies(type, id) {
     for (const categoryId of categoryIds) {
       const category = await repo.getActiveCategory(categoryId);
       if (!category) return '优惠券关联分类不存在或仍在回收站，不能恢复优惠券';
+    }
+  }
+  if (type === 'coupon_campaigns') {
+    const couponIds = await repo.getCouponCampaignCouponIds(id);
+    if (!couponIds.length) return '发券活动未关联优惠券，不能恢复';
+    for (const couponId of couponIds) {
+      const coupon = await repo.getActiveCoupon(couponId);
+      if (!coupon) return '发券活动关联优惠券不存在、已删除或已归档，不能恢复';
     }
   }
   if (type === 'product_reviews') {
@@ -93,10 +131,7 @@ async function restoreItem(type, id, adminUserId, req) {
       await auditRecycleBinFailure(req, adminUserId, 'recycle_bin.restore', type, id, NOT_IN_RECYCLE_BIN);
       return { error: { code: 400, message: NOT_IN_RECYCLE_BIN } };
     }
-    if (type === 'banners' || type === 'products') {
-      const clearFn = getProductApi().clearCatalogCache;
-      if (typeof clearFn === 'function') clearFn();
-    }
+    invalidatePublicCaches(type);
     await writeAuditLog({
       req,
       operatorId: adminUserId,
@@ -131,7 +166,7 @@ async function permanentDelete(type, id, adminUserId, req) {
       await auditRecycleBinFailure(req, adminUserId, 'recycle_bin.permanent_delete', type, id, NOT_IN_RECYCLE_BIN);
       return { error: { code: 400, message: NOT_IN_RECYCLE_BIN } };
     }
-    if (type === 'banners') requireProductApi('clearCatalogCache')();
+    invalidatePublicCaches(type);
     await writeAuditLog({
       req,
       operatorId: adminUserId,

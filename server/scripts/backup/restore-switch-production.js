@@ -10,6 +10,21 @@ function assertTempDbName(name) {
   }
 }
 
+function assertProductionSwitchAcks() {
+  if (process.env.NODE_ENV !== 'production') return;
+  if (process.env.RESTORE_SWITCH_ACK_DESTRUCTIVE !== '1') {
+    throw new Error('生产切换缺少维护窗口确认，请设置 RESTORE_SWITCH_ACK_DESTRUCTIVE=1');
+  }
+  if (process.env.RESTORE_SWITCH_TRAFFIC_FROZEN !== '1') {
+    throw new Error('生产切换前必须确认已冻结业务写入，请设置 RESTORE_SWITCH_TRAFFIC_FROZEN=1');
+  }
+  const preBackupOk = process.env.RESTORE_SWITCH_PRE_BACKUP_DONE === '1'
+    || (process.env.RESTORE_SWITCH_SKIP_PRE_BACKUP === '1' && process.env.RESTORE_SWITCH_ACK_SKIP_PRE_BACKUP === '1');
+  if (!preBackupOk) {
+    throw new Error('生产切换前必须确认已完成切换前备份，请设置 RESTORE_SWITCH_PRE_BACKUP_DONE=1；如需紧急跳过，需同时设置 RESTORE_SWITCH_SKIP_PRE_BACKUP=1 和 RESTORE_SWITCH_ACK_SKIP_PRE_BACKUP=1');
+  }
+}
+
 function mysqlAdminOptions(database) {
   return {
     host: process.env.RESTORE_DB_HOST || process.env.DB_HOST || 'localhost',
@@ -100,12 +115,7 @@ async function main() {
   if (process.env.RESTORE_SWITCH_ENABLED !== '1') {
     throw new Error('未启用生产切换，请在环境变量中设置 RESTORE_SWITCH_ENABLED=1');
   }
-  if (
-    process.env.NODE_ENV === 'production'
-    && process.env.RESTORE_SWITCH_ACK_DESTRUCTIVE !== '1'
-  ) {
-    throw new Error('生产切换缺少维护窗口确认，请设置 RESTORE_SWITCH_ACK_DESTRUCTIVE=1');
-  }
+  assertProductionSwitchAcks();
 
   const args = parseArgs();
   const restoreJobId = args.restoreJobId || process.env.RESTORE_JOB_ID;

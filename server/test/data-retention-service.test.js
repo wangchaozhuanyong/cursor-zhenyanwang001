@@ -36,16 +36,21 @@ function loadServiceWithMocks(options = {}) {
   const repoPath = require.resolve('../src/modules/dataRetention/repository/dataRetention.repository');
   const auditPath = require.resolve('../src/utils/auditLog');
   const exportPath = require.resolve('../src/modules/dataRetention/service/exportCleanup.service');
+  const uploadedAssetCleanupPath = require.resolve('../src/modules/dataRetention/service/uploadedAssetCleanup.service');
+  const adminModulePath = require.resolve('../src/modules/admin');
 
   delete require.cache[servicePath];
   delete require.cache[repoPath];
   delete require.cache[auditPath];
   delete require.cache[exportPath];
+  delete require.cache[uploadedAssetCleanupPath];
+  delete require.cache[adminModulePath];
 
   const policies = new Map();
   const runs = new Map();
   const steps = [];
   const audits = [];
+  const backupCalls = [];
   const tables = {
     otp_send_logs: [
       { id: 'old-1', created_at: new Date('2020-01-01T00:00:00Z') },
@@ -139,6 +144,7 @@ function loadServiceWithMocks(options = {}) {
         total_deleted: 0,
         total_failed: 0,
         cancel_requested: false,
+        request_snapshot: payload.requestSnapshot || null,
         started_at: new Date(),
         created_at: new Date(),
       });
@@ -226,9 +232,38 @@ function loadServiceWithMocks(options = {}) {
       deleteExpiredExportFiles: async () => ({ matched: 0, deleted: 0, batchCount: 0 }),
     },
   };
+  require.cache[uploadedAssetCleanupPath] = {
+    id: uploadedAssetCleanupPath,
+    filename: uploadedAssetCleanupPath,
+    loaded: true,
+    exports: options.uploadedAssetCleanup || {
+      listOrphanUploadedAssets: async () => ({ matched: 0, batchCount: 0, sampleIds: [] }),
+      deleteOrphanUploadedAssets: async () => ({
+        matched: 0,
+        deleted: 0,
+        failed: 0,
+        batchCount: 0,
+        sampleIds: [],
+        cancelled: false,
+      }),
+    },
+  };
+  require.cache[adminModulePath] = {
+    id: adminModulePath,
+    filename: adminModulePath,
+    loaded: true,
+    exports: {
+      api: options.adminApi || options.backupService || {
+        createPreCleanupBackup: async (payload) => {
+          backupCalls.push(payload);
+          return { id: 'backup-1', status: 'success' };
+        },
+      },
+    },
+  };
 
   const service = require(servicePath);
-  return { service, repo, tables, runs, steps, audits };
+  return { service, repo, tables, runs, steps, audits, backupCalls };
 }
 
 describe('data retention cleanup service', () => {
@@ -246,12 +281,33 @@ describe('data retention cleanup service', () => {
   });
 
   test('execute deletes only matched rows', async () => {
-    const { service, tables } = loadServiceWithMocks();
+    const { service, tables, backupCalls } = loadServiceWithMocks();
     const preview = await service.createPreview({ policy_keys: ['otp_send_logs'] }, makeReq());
     const run = await service.executeRun({ preview_run_id: preview.id, policy_keys: ['otp_send_logs'] }, makeReq());
 
+    assert.equal(backupCalls.length, 1);
+    assert.deepEqual(run.request_snapshot.preCleanupBackup, { id: 'backup-1', status: 'success' });
     assert.equal(run.total_deleted, 2);
     assert.deepEqual(tables.otp_send_logs.map((row) => row.id), ['new-1']);
+  });
+
+  test('pre-cleanup backup failure blocks deletion and leaves preview reusable', async () => {
+    const { service, tables, runs } = loadServiceWithMocks({
+      backupService: {
+        createPreCleanupBackup: async () => {
+          throw new Error('mock pre-cleanup backup failed');
+        },
+      },
+    });
+    const preview = await service.createPreview({ policy_keys: ['otp_send_logs'] }, makeReq());
+
+    await assert.rejects(
+      () => service.executeRun({ preview_run_id: preview.id, policy_keys: ['otp_send_logs'] }, makeReq()),
+      /mock pre-cleanup backup failed/,
+    );
+
+    assert.equal(runs.get(preview.id).preview_consumed_at, null);
+    assert.deepEqual(tables.otp_send_logs.map((row) => row.id), ['old-1', 'old-2', 'new-1']);
   });
 
   test('locked policy cannot lower retention days', async () => {
@@ -286,6 +342,88 @@ describe('data retention cleanup service', () => {
     assert.deepEqual(unsafeDefaults, []);
   });
 
+  test('expanded operational cleanup policies stay scoped to terminal records', () => {
+    const byKey = new Map(listPolicyDefinitions().map((policy) => [policy.key, policy]));
+    const cutoffAt = new Date('2025-01-01T00:00:00Z');
+
+    const expectedTables = {
+      admin_webauthn_credentials_revoked: 'admin_webauthn_credentials',
+      user_feedback_closed: 'user_feedback',
+      search_terms: 'search_terms',
+      user_security_events_resolved: 'user_security_events',
+      user_risk_ips_released: 'user_risk_ips',
+      user_risk_devices_released: 'user_risk_devices',
+      backup_alerts_resolved: 'backup_alerts',
+      backup_jobs_terminal_without_files: 'backup_jobs',
+      restore_drill_reports_finished: 'restore_drill_reports',
+      uploaded_assets_soft_deleted: 'uploaded_assets',
+      uploaded_assets_orphaned_files: 'uploaded_assets',
+      data_cleanup_run_steps_history: 'data_cleanup_run_steps',
+      data_cleanup_runs_history: 'data_cleanup_runs',
+      data_cleanup_locks_expired: 'data_cleanup_locks',
+    };
+
+    for (const [key, tableName] of Object.entries(expectedTables)) {
+      const policy = byKey.get(key);
+      assert.ok(policy, `${key} should be registered`);
+      assert.equal(policy.tableName, tableName);
+      assert.equal(isProtectedTable(policy.tableName), false);
+    }
+
+    assert.match(byKey.get('admin_webauthn_credentials_revoked').where({ cutoffAt }).sql, /revoked_at IS NOT NULL/);
+    assert.match(byKey.get('user_feedback_closed').where({ cutoffAt }).sql, /status IN \('resolved','dismissed'\)/);
+    assert.match(byKey.get('user_security_events_resolved').where({ cutoffAt }).sql, /resolved_at IS NOT NULL/);
+    assert.match(byKey.get('user_risk_ips_released').where({ cutoffAt }).sql, /status <> 'blocked'/);
+    assert.match(byKey.get('user_risk_devices_released').where({ cutoffAt }).sql, /status <> 'blocked'/);
+    assert.match(byKey.get('backup_alerts_resolved').where({ cutoffAt }).sql, /status = 'resolved'/);
+    assert.match(byKey.get('backup_jobs_terminal_without_files').where({ cutoffAt }).sql, /NOT EXISTS \(SELECT 1 FROM backup_files/);
+    assert.match(byKey.get('restore_drill_reports_finished').where({ cutoffAt }).sql, /status IN \('success','failed'\)/);
+    assert.equal(byKey.get('uploaded_assets_soft_deleted').deleteMode, 'uploaded_asset_delete');
+    assert.equal(byKey.get('uploaded_assets_soft_deleted').uploadedAssetMode, 'soft_deleted');
+    assert.equal(byKey.get('uploaded_assets_orphaned_files').deleteMode, 'uploaded_asset_delete');
+    assert.equal(byKey.get('uploaded_assets_orphaned_files').uploadedAssetMode, 'orphaned');
+    assert.equal(byKey.get('uploaded_assets_orphaned_files').enabled, false);
+    assert.match(byKey.get('data_cleanup_run_steps_history').where({ cutoffAt }).sql, /data_cleanup_runs r/);
+    assert.match(byKey.get('data_cleanup_runs_history').where({ cutoffAt }).sql, /status <> 'running'/);
+    assert.match(byKey.get('data_cleanup_locks_expired').where({ cutoffAt }).sql, /expires_at < NOW\(\)/);
+  });
+
+  test('uploaded asset cleanup policies use file-aware cleanup service', async () => {
+    const calls = [];
+    const { service, steps } = loadServiceWithMocks({
+      tables: { uploaded_assets: [] },
+      uploadedAssetCleanup: {
+        listOrphanUploadedAssets: async (policy) => {
+          calls.push(['preview', policy.policyKey, policy.uploadedAssetMode]);
+          return { matched: 2, batchCount: 1, sampleIds: ['asset-1', 'asset-2'] };
+        },
+        deleteOrphanUploadedAssets: async (policy) => {
+          calls.push(['execute', policy.policyKey, policy.uploadedAssetMode]);
+          return {
+            matched: 2,
+            deleted: 2,
+            failed: 0,
+            batchCount: 1,
+            sampleIds: ['asset-1', 'asset-2'],
+            cancelled: false,
+          };
+        },
+      },
+    });
+
+    await service.updatePolicy('uploaded_assets_orphaned_files', { enabled: true }, makeReq());
+    const preview = await service.createPreview({ policy_keys: ['uploaded_assets_orphaned_files'] }, makeReq());
+    const run = await service.executeRun({ preview_run_id: preview.id, policy_keys: ['uploaded_assets_orphaned_files'] }, makeReq());
+
+    assert.deepEqual(calls, [
+      ['preview', 'uploaded_assets_orphaned_files', 'orphaned'],
+      ['execute', 'uploaded_assets_orphaned_files', 'orphaned'],
+    ]);
+    assert.equal(preview.total_matched, 2);
+    assert.equal(run.total_deleted, 2);
+    assert.equal(steps.some((step) => step.policy_key === 'uploaded_assets_orphaned_files' && step.sample_ids.includes('asset-1')), true);
+  });
+
   test('each execute writes audit logs', async () => {
     const { service, audits } = loadServiceWithMocks();
     const preview = await service.createPreview({ policy_keys: ['otp_send_logs'] }, makeReq());
@@ -293,6 +431,110 @@ describe('data retention cleanup service', () => {
 
     assert.equal(audits.some((entry) => entry.actionType === 'data_cleanup.run'), true);
   });
+});
+
+test('uploaded asset orphan scan keeps the whole variant group when one asset is referenced', async () => {
+  const servicePath = require.resolve('../src/modules/dataRetention/service/uploadedAssetCleanup.service');
+  const dbPath = require.resolve('../src/config/db');
+  const objectStoragePath = require.resolve('../src/utils/objectStorage');
+  delete require.cache[servicePath];
+  delete require.cache[dbPath];
+  delete require.cache[objectStoragePath];
+
+  const knownTables = new Set(['uploaded_assets', 'products']);
+  const knownColumns = new Map([
+    ['products', new Set(['cover_image', 'images', 'video_url', 'description'])],
+    ['uploaded_assets', new Set(['asset_group_id', 'storage_key', 'source_storage_key', 'public_url', 'metadata'])],
+  ]);
+  const assetRows = [
+    {
+      id: 'keep-full',
+      asset_group_id: 'group-keep',
+      storage_provider: 'local',
+      storage_key: 'uploads/products/keep-full.webp',
+      source_storage_key: '',
+      public_url: '/uploads/products/keep-full.webp',
+      variant_tag: 'full',
+      status: 'ready',
+      deleted_at: null,
+      created_at: new Date('2020-01-01T00:00:00Z'),
+    },
+    {
+      id: 'keep-card',
+      asset_group_id: 'group-keep',
+      storage_provider: 'local',
+      storage_key: 'uploads/products/keep-card.webp',
+      source_storage_key: '',
+      public_url: '/uploads/products/keep-card.webp',
+      variant_tag: 'card',
+      status: 'ready',
+      deleted_at: null,
+      created_at: new Date('2020-01-01T00:00:00Z'),
+    },
+    {
+      id: 'delete-full',
+      asset_group_id: 'group-delete',
+      storage_provider: 'local',
+      storage_key: 'uploads/products/delete-full.webp',
+      source_storage_key: '',
+      public_url: '/uploads/products/delete-full.webp',
+      variant_tag: 'full',
+      status: 'ready',
+      deleted_at: null,
+      created_at: new Date('2020-01-01T00:00:00Z'),
+    },
+  ];
+
+  const db = {
+    async query(sql, params = []) {
+      const text = String(sql);
+      if (text.includes('INFORMATION_SCHEMA.TABLES')) {
+        return [[{ c: knownTables.has(params[0]) ? 1 : 0 }]];
+      }
+      if (text.includes('INFORMATION_SCHEMA.COLUMNS')) {
+        return [[{ c: knownColumns.get(params[0])?.has(params[1]) ? 1 : 0 }]];
+      }
+      if (text.includes('SELECT asset_group_id')) {
+        return [[
+          { asset_group_id: 'group-keep', asset_count: 2 },
+          { asset_group_id: 'group-delete', asset_count: 1 },
+        ]];
+      }
+      if (text.includes('FROM uploaded_assets') && text.includes('asset_group_id IN')) {
+        return [assetRows];
+      }
+      if (text.includes('SELECT 1 AS hit') && text.includes('FROM `products`')) {
+        const referencesKeptFull = params.some((value) => String(value).includes('/uploads/products/keep-full.webp'));
+        return referencesKeptFull ? [[{ hit: 1 }]] : [[]];
+      }
+      if (text.includes('SELECT 1 AS hit')) return [[]];
+      throw new Error(`Unexpected query: ${text}`);
+    },
+  };
+
+  require.cache[dbPath] = { id: dbPath, filename: dbPath, loaded: true, exports: db };
+  require.cache[objectStoragePath] = {
+    id: objectStoragePath,
+    filename: objectStoragePath,
+    loaded: true,
+    exports: {
+      buildStorageKey: (key) => key,
+      deleteS3Object: async () => {},
+      getPublicUrlByKey: () => '',
+      isS3StorageEnabled: () => false,
+    },
+  };
+
+  const uploadedAssetCleanup = require(servicePath);
+  const result = await uploadedAssetCleanup.listOrphanUploadedAssets({
+    policyKey: 'uploaded_assets_orphaned_files',
+    uploadedAssetMode: 'orphaned',
+    cutoffAt: new Date('2025-01-01T00:00:00Z'),
+    batchSize: 500,
+  });
+
+  assert.deepEqual(result.sampleIds, ['delete-full']);
+  assert.equal(result.matched, 1);
 });
 
 test('route blocks execute without recent MFA', async () => {

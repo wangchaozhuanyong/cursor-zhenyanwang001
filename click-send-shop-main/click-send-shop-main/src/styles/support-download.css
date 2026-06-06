@@ -1,4 +1,5 @@
 html[data-app-scope="store"] .support-download-page {
+  --support-tab-count: 1;
   --support-ink: var(--theme-text-on-surface, var(--theme-text));
   --support-muted: var(--theme-text-muted-on-surface, var(--theme-text-muted));
   --support-soft: var(--theme-bg);
@@ -37,6 +38,7 @@ html[data-app-scope="store"] .support-download-hero h1 {
 
 html[data-app-scope="store"] .support-download-tabs {
   display: grid;
+  grid-template-columns: repeat(var(--support-tab-count), minmax(0, 1fr));
   gap: 0.35rem;
   margin-top: 1.15rem;
   padding: 0.35rem;
@@ -65,9 +67,30 @@ html[data-app-scope="store"] .support-download-tab {
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
+html[data-app-scope="store"] .support-download-tab span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 html[data-app-scope="store"] .support-download-tab.is-active {
   background: var(--theme-primary);
   color: var(--theme-primary-foreground);
+}
+
+html[data-app-scope="store"] .support-download-tab--wechat.is-active {
+  background: #047857;
+  color: #ffffff;
+}
+
+html[data-app-scope="store"] .support-download-tab--whatsapp.is-active {
+  background: #075e54;
+  color: #ffffff;
+}
+
+html[data-app-scope="store"] .support-download-tab--telegram.is-active {
+  background: #0369a1;
+  color: #ffffff;
 }
 
 html[data-app-scope="store"] .support-download-tab:active {
@@ -692,6 +715,37 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
   }
 }
 
+@media (max-width: 640px) {
+  html[data-app-scope="store"] .support-download-tabs {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0.32rem;
+    padding: 0.32rem;
+    scroll-padding-inline: 0.32rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  html[data-app-scope="store"] .support-download-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  html[data-app-scope="store"] .support-download-tab {
+    flex: 0 0 auto;
+    min-width: max-content;
+    min-height: 2.66rem;
+    gap: 0.3rem;
+    padding-inline: 0.48rem;
+    scroll-snap-align: start;
+  }
+
+  html[data-app-scope="store"] .support-download-tab span {
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
 @media (max-width: 420px) {
   html[data-app-scope="store"] .support-download-shell {
     padding-inline: 0.75rem;
@@ -702,10 +756,10 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
   }
 
   html[data-app-scope="store"] .support-download-tab {
-    min-height: 2.75rem;
-    gap: 0.18rem;
-    padding-inline: 0.24rem;
-    font-size: 0.78rem;
+    min-height: 2.6rem;
+    gap: 0.24rem;
+    padding-inline: 0.35rem;
+    font-size: 0.8rem;
   }
 
   html[data-app-scope="store"] .support-download-tab-icon {

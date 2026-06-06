@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Copy, PlusSquare, Smartphone } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
@@ -229,7 +229,7 @@ export default function SupportDownload() {
           <nav
             className="support-download-tabs"
             aria-label={`${STORE_COPY.supportCenterTitle}入口`}
-            style={{ gridTemplateColumns: `repeat(${availableViews.length}, minmax(0, 1fr))` }}
+            style={{ "--support-tab-count": availableViews.length } as CSSProperties}
           >
             {availableViews.map((view) => {
               const active = activeView === view;
@@ -238,7 +238,7 @@ export default function SupportDownload() {
                   key={view}
                   type="button"
                   onClick={() => setActiveView(view)}
-                  className={`support-download-tab${active ? " is-active" : ""}`}
+                  className={`support-download-tab support-download-tab--${view}${active ? " is-active" : ""}`}
                   aria-pressed={active}
                 >
                   <SupportTabIcon view={view} />

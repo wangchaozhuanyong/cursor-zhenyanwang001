@@ -71,7 +71,9 @@ async function buildHomeBootstrap() {
     couponEnabled.then((enabled) => (enabled
       ? getMarketingApi().getCouponCenter({ position: 'home_coupon_center' }).then((r) => r.data).catch(() => null)
       : null)),
-    getMarketingApi().getNewUserGift({ position: 'home_new_user_gift' }).then((r) => r.data).catch(() => null),
+    couponEnabled.then((enabled) => (enabled
+      ? getMarketingApi().getNewUserGift({ position: 'home_new_user_gift' }).then((r) => r.data).catch(() => null)
+      : null)),
   ]);
   const instance = getInstanceInfo();
   const storage = getStorageHealthReport();

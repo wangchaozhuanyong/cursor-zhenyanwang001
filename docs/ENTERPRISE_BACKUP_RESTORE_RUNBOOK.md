@@ -94,13 +94,27 @@ sudo systemctl enable --now click-send-restore-drill.timer
 
 ## Restore Flow
 
-1. Create a restore job in `系统设置 -> 数据安全 -> 备份与恢复`.
+1. Create a database restore job in `系统设置 -> 数据安全 -> 备份与恢复`.
 2. Worker restores full backup into `restore_tmp_*`.
 3. Worker applies binlogs until the target timestamp when point-in-time recovery is requested.
 4. Worker validates key tables and creates a diff/validation report.
 5. Super admin reviews the temporary database result.
 6. Super admin confirms with recent MFA.
-7. Production switch or merge is performed by the controlled ops procedure.
+7. Before production switch, freeze write traffic and create a fresh pre-switch full backup.
+8. Production switch or merge is performed by the controlled ops procedure.
+
+The admin restore center currently automates database restore only. Config, uploads/assets, PM2, Nginx, and release version restore must follow the wider site restore runbook.
+
+Production switch requires:
+
+```bash
+RESTORE_SWITCH_ENABLED=1
+RESTORE_SWITCH_ACK_DESTRUCTIVE=1
+RESTORE_SWITCH_TRAFFIC_FROZEN=1
+RESTORE_SWITCH_PRE_BACKUP_DONE=1
+```
+
+Emergency skip of the pre-switch backup is intentionally explicit and requires both `RESTORE_SWITCH_SKIP_PRE_BACKUP=1` and `RESTORE_SWITCH_ACK_SKIP_PRE_BACKUP=1`.
 
 Deletion of backup files is intentionally not exposed in the admin UI.
 

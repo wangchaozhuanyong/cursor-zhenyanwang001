@@ -1,7 +1,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
-function loadHomeServiceWithMocks(t) {
+function loadHomeServiceWithMocks(t, options = {}) {
+  const couponCapabilityEnabled = options.couponEnabled !== false;
   const servicePath = require.resolve('../src/modules/home/service/home.service');
   const productPath = require.resolve('../src/modules/product');
   const marketingPath = require.resolve('../src/modules/marketing');
@@ -24,6 +25,9 @@ function loadHomeServiceWithMocks(t) {
     categories: 0,
     products: 0,
     couponEnabled: 0,
+    couponZone: 0,
+    couponCenter: 0,
+    newUserGift: 0,
   };
 
   require.cache[productPath] = {
@@ -65,11 +69,18 @@ function loadHomeServiceWithMocks(t) {
         async getFlashSaleForHome() { return { data: null }; },
         async getActivitiesByPosition() { return { data: [] }; },
         async getFullReductionNotices() { return { data: [] }; },
-        async getCouponZone() { return { data: { coupons: [{ id: 'zone-coupon' }] } }; },
+        async getCouponZone() {
+          calls.couponZone += 1;
+          return { data: { coupons: [{ id: 'zone-coupon' }] } };
+        },
         async getCouponCenter() {
+          calls.couponCenter += 1;
           return { data: { coupons: [{ id: 'gift-coupon' }, { id: 'center-coupon' }] } };
         },
-        async getNewUserGift() { return { data: { coupons: [{ id: 'gift-coupon' }] } }; },
+        async getNewUserGift() {
+          calls.newUserGift += 1;
+          return { data: { coupons: [{ id: 'gift-coupon' }] } };
+        },
       },
     },
   };
@@ -82,12 +93,12 @@ function loadHomeServiceWithMocks(t) {
       api: {
         async getSiteCapabilities() {
           calls.siteCapabilities += 1;
-          return { couponEnabled: true };
+          return { couponEnabled: couponCapabilityEnabled };
         },
         async isCapabilityEnabled(key) {
           assert.equal(key, 'couponEnabled');
           calls.couponEnabled += 1;
-          return true;
+          return couponCapabilityEnabled;
         },
       },
     },
@@ -141,10 +152,27 @@ test('home bootstrap caches concurrent and repeated reads', async (t) => {
   assert.equal(calls.homeOps, 1);
   assert.equal(calls.products, 1);
   assert.equal(calls.couponEnabled, 1);
+  assert.equal(calls.couponZone, 1);
+  assert.equal(calls.couponCenter, 1);
+  assert.equal(calls.newUserGift, 1);
   assert.deepEqual(first.marketing.couponCenter.coupons.map((coupon) => coupon.id), ['center-coupon']);
 
   service.invalidateHomeBootstrapCache();
   await service.getHomeBootstrap();
 
   assert.equal(calls.siteInfo, 2);
+});
+
+test('home bootstrap omits coupon marketing blocks when coupon capability is disabled', async (t) => {
+  const { service, calls } = loadHomeServiceWithMocks(t, { couponEnabled: false });
+
+  const bootstrap = await service.getHomeBootstrap();
+
+  assert.equal(calls.couponEnabled, 1);
+  assert.equal(calls.couponZone, 0);
+  assert.equal(calls.couponCenter, 0);
+  assert.equal(calls.newUserGift, 0);
+  assert.equal(bootstrap.marketing.couponZone, null);
+  assert.equal(bootstrap.marketing.couponCenter, null);
+  assert.equal(bootstrap.marketing.newUserGift, null);
 });

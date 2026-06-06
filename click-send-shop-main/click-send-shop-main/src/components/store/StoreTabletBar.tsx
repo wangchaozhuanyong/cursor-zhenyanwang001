@@ -12,6 +12,7 @@ import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
+import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 
 type TabletNavItem = {
   path: string;
@@ -44,7 +45,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
     { path: "/support-download?tab=support", label: "\u5ba2\u670d", icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled },
     { path: "/cart", label: "\u8d2d\u7269\u8f66", icon: ShoppingCart, enabled: capabilities.mallEnabled, badge: "cart" },
     { path: "/profile", label: "\u6211\u7684", icon: User, enabled: true },
-  ].filter((item) => item.enabled !== false);
+  ].filter((item) => item.enabled !== false && isStoreNavPathVisible(item.path, capabilities));
 
   const isActive = (path: string) => {
     const base = path.split("?")[0];

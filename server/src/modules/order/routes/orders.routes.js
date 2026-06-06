@@ -16,6 +16,7 @@ const {
 const router = Router();
 const mallFeature = requireSiteCapability('mallEnabled', '商城功能已关闭');
 const onlinePaymentFeature = requireSiteCapability('onlinePaymentEnabled', '本站未启用在线支付');
+const couponFeature = requireSiteCapability('couponEnabled', '本站未启用优惠券功能');
 
 function allowWalletOrEnabledOnline(req, res, next) {
   const channel = String(req.body?.channel || '').trim();
@@ -29,7 +30,7 @@ router.use(guardByAction('order'));
 router.get('/', validate({ query: listOrdersQuerySchema }), ctrl.getOrders);
 router.get('/summary', ctrl.getOrderSummary);
 router.post('/checkout-abandonments', validate({ body: checkoutAbandonmentBodySchema }), ctrl.recordCheckoutAbandonment);
-router.post('/checkout/coupons', mallFeature, ctrl.checkoutCoupons);
+router.post('/checkout/coupons', mallFeature, couponFeature, ctrl.checkoutCoupons);
 router.post('/preview', mallFeature, validate({ body: previewOrderBodySchema }), ctrl.previewOrder);
 router.post('/', mallFeature, validate({ body: createOrderBodySchema }), ctrl.createOrder);
 
@@ -51,4 +52,3 @@ router.post(
 router.post('/:id/confirm', validate({ params: orderIdParamSchema }), ctrl.confirmReceive);
 
 module.exports = router;
-

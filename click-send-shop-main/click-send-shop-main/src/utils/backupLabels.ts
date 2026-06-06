@@ -42,7 +42,7 @@ export const BACKUP_STORAGE_PROVIDER_LABELS: Record<string, string> = {
 };
 
 export const RESTORE_TYPE_LABELS: Record<string, string> = {
-  site: "整站恢复",
+  site: "数据库整库恢复",
   point_in_time: "指定时间点恢复",
   table: "单表恢复",
   order: "单订单恢复",

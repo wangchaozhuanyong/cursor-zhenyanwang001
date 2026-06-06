@@ -11,6 +11,7 @@ export interface RecycleBinItem {
   product_id?: string;
   deleted_at: string;
   deleted_by: string | null;
+  can_permanent_delete?: boolean | number;
 }
 
 export interface RecycleBinListParams {
@@ -33,4 +34,3 @@ export function restoreItem(id: string, type: string) {
 export function permanentDeleteItem(id: string, type: string) {
   return post<void>(`/admin/recycle-bin/${id}/permanent-delete`, { type });
 }
-

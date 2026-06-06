@@ -213,7 +213,7 @@ export default function AdminBackupCenter() {
       title: tText("确认恢复任务"),
       description: (
         <div className="space-y-1 text-sm">
-          <div>{tText("确认后可将临时库数据切换至生产库，生产切换为不可逆操作。")}</div>
+          <div>{tText("确认后仅可将临时数据库切换至生产数据库；配置、上传文件和发布版本需按运维流程另行恢复。")}</div>
           <div>{tText("临时库")}：{formatRestoreTempDatabase(job.temp_db_name)}</div>
           {job.target_time ? <div>{tText("目标时间")}：{fmt(job.target_time)}</div> : null}
         </div>
@@ -229,7 +229,8 @@ export default function AdminBackupCenter() {
       title: tText("执行生产切换"),
       description: (
         <div className="space-y-1 text-sm">
-          <div>{tText("将把临时库数据覆盖写入生产数据库，请确保已停止写入流量并完成最终确认。")}</div>
+          <div>{tText("将把临时库数据覆盖写入生产数据库。执行前必须确认已冻结业务写入，并已完成切换前备份。")}</div>
+          <div>{tText("服务器会校验维护窗口、写入冻结和切换前备份标记。")}</div>
           <div>{tText("临时库")}：{formatRestoreTempDatabase(job.temp_db_name)}</div>
         </div>
       ),
@@ -267,7 +268,7 @@ export default function AdminBackupCenter() {
           <div>
             <p className="text-xs font-semibold text-amber-900 dark:text-amber-100"><Tx>高风险操作 · 仅超级管理员</Tx></p>
             <p className="mt-0.5 text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-200/80">
-              <Tx>确认恢复或执行生产切换将写入生产库，操作前请确认已停止业务写入且临时库校验已通过。</Tx>
+              <Tx>确认恢复或执行生产切换将写入生产库，操作前请确认已冻结业务写入、完成切换前备份且临时库校验已通过。</Tx>
             </p>
           </div>
         </div>
@@ -537,7 +538,7 @@ export default function AdminBackupCenter() {
               <label className="block text-sm">
                 <span className="text-muted-foreground"><Tx>恢复类型</Tx></span>
                 <select value={restoreType} onChange={(e) => setRestoreType(e.target.value as typeof restoreType)} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
-                  <option value="site"><Tx>整站恢复</Tx></option>
+                  <option value="site"><Tx>数据库整库恢复</Tx></option>
                   <option value="point_in_time" disabled={health ? !health.canRunPointInTimeRestore : false}><Tx>指定时间点恢复</Tx></option>
                 </select>
               </label>

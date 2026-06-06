@@ -435,52 +435,12 @@ export default function GuestMobileFooter({
 
   return (
     <footer className="guest-mobile-footer relative isolate z-0 w-full touch-pan-y">
-      <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pb-7 pt-2 md:px-6 lg:px-8">
-        <section className="relative overflow-hidden rounded-lg border border-[var(--store-card-border)] bg-[var(--store-card-bg)] px-5 py-8 shadow-[var(--store-card-shadow)] md:px-10 md:py-10" aria-label="页脚服务入口">
-          <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
-            <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-[var(--theme-primary)]">一站式在马生活服务</p>
-              <h2 className="mt-3 font-display text-[28px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-[40px]">
-                还没找到你需要的服务？
-              </h2>
-              <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--theme-text-muted-on-surface)]">
-                在{brandName}，找房、留学、签证、本地办事和生活服务，一站式查看。
-              </p>
-              <div className="mt-6 grid gap-3 sm:max-w-xl sm:grid-cols-2">
-                <UnifiedButton
-                  type="button"
-                  onClick={() => onNavigate("/categories")}
-                  className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg bg-[var(--theme-primary)] px-5 text-[16px] font-bold text-[var(--theme-primary-foreground)] shadow-[var(--store-soft-shadow)] transition hover:bg-[var(--theme-primary-hover)] active:scale-[0.99]"
-                >
-                  浏览全部服务
-                </UnifiedButton>
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg border border-[#128C7E] bg-[var(--theme-surface)] px-5 text-[16px] font-bold text-[#075E54] transition hover:bg-[#128C7E]/10 active:scale-[0.99]"
-                >
-                  <MessageCircle size={20} strokeWidth={2.1} />
-                  WhatsApp 咨询
-                </a>
-              </div>
-              <div className="mt-7 grid grid-cols-2 gap-4 border-t border-[var(--theme-border)] pt-5 sm:flex sm:flex-wrap sm:items-center sm:gap-7">
-                <TrustPill icon={<MessageCircle size={18} strokeWidth={1.9} />} label="中文沟通" />
-                <TrustPill icon={<MapPin size={18} strokeWidth={1.9} />} label="本地资源" />
-                <TrustPill icon={<ShieldCheck size={18} strokeWidth={1.9} />} label="真实信息" />
-                <TrustPill icon={<Zap size={18} strokeWidth={1.9} />} label="高频服务入口" />
-              </div>
-            </div>
-            <div className="relative hidden min-h-[210px] lg:block" aria-hidden>
-              <div className="absolute bottom-0 right-0 h-48 w-72 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_18%,transparent)] blur-3xl" />
-              <div className="absolute bottom-0 right-6 h-24 w-32 rounded-lg border border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_78%,transparent)] shadow-[var(--store-soft-shadow)]" />
-              <div className="absolute bottom-7 right-36 h-16 w-24 rounded-lg border border-[color-mix(in_srgb,var(--theme-primary)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_84%,transparent)] shadow-[var(--store-soft-shadow)]" />
-            </div>
-          </div>
-        </section>
-
-        <div className="mt-8 hidden grid-cols-[1.3fr_0.7fr_0.8fr_1fr] gap-8 border-b border-[var(--theme-border)] pb-9 md:grid lg:gap-12">
-          <FooterColumn title={brandName}>
+      <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pb-7 pt-4 md:px-6 md:pb-8 md:pt-6 lg:px-8">
+        <div className="hidden grid-cols-2 gap-3 border-b border-[var(--theme-border)] pb-6 md:grid lg:grid-cols-[1.2fr_0.82fr_0.9fr_1.08fr] lg:gap-4">
+          <FooterColumn
+            title={brandName}
+            className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--store-soft-shadow)]"
+          >
             <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} />
             <p className="mt-5 max-w-[25rem] text-[14px] leading-7 text-[var(--theme-text-muted-on-surface)]">
               {intro}
@@ -493,17 +453,26 @@ export default function GuestMobileFooter({
             </div>
           </FooterColumn>
 
-          <FooterColumn title="平台服务">
+          <FooterColumn
+            title="平台服务"
+            className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--store-soft-shadow)]"
+          >
             {supportLinks}
           </FooterColumn>
 
-          <FooterColumn title="帮助与政策">
+          <FooterColumn
+            title="帮助与政策"
+            className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--store-soft-shadow)]"
+          >
             {policyLinks}
           </FooterColumn>
 
-          <FooterColumn title="联系我们">
+          <FooterColumn
+            title="联系我们"
+            className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--store-soft-shadow)]"
+          >
             <div className="space-y-1">
-              {contactItems.slice(0, 4).map((item) => (
+              {contactItems.map((item) => (
                 <ContactLine
                   key={item.key}
                   icon={item.icon}
@@ -527,7 +496,7 @@ export default function GuestMobileFooter({
           </FooterColumn>
         </div>
 
-        <div className="mt-5 space-y-3 md:hidden">
+        <div className="space-y-3 md:hidden">
           <section className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 shadow-[var(--store-soft-shadow)]">
             <GuestFooterBrandMark siteName={brandName} logoSrc={footerLogoSrc} centered />
             <p className="mt-4 text-[14px] leading-7 text-[var(--theme-text-muted-on-surface)]">

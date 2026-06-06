@@ -8,12 +8,21 @@ function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
 }
 
+function getCapabilitiesApi() {
+  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+}
+
 function requireUserApi(name) {
   const fn = getUserApi()[name];
   if (typeof fn !== 'function') {
     throw new Error(`User module API missing method: ${name}`);
   }
   return fn;
+}
+
+async function isCouponCapabilityEnabled() {
+  const fn = getCapabilitiesApi().isCapabilityEnabled;
+  return typeof fn === 'function' ? await fn('couponEnabled') : true;
 }
 
 async function issueCouponIfEligible(userId, coupon, activityId) {
@@ -28,6 +37,8 @@ async function issueCouponIfEligible(userId, coupon, activityId) {
 /**
  * 娉ㄥ唽鎴愬姛鍚庡彂鏀炬柊浜虹ぜ鍖咃紙鍏宠仈 coupons 琛紝涓嶉噸澶嶅垱寤哄埜瑙勫垯锛? */
 async function issueNewUserGiftPack(userId) {
+  if (!await isCouponCapabilityEnabled()) return [];
+
   const adminApi = getAdminApi();
   const campaigns = await adminApi.selectPublicCouponCampaignsByPosition('home_coupon_zone', ['new_user_gift'], { userId });
   const issued = [];
@@ -62,5 +73,6 @@ async function issueNewUserGiftPack(userId) {
 }
 
 module.exports = {
+  isCouponCapabilityEnabled,
   issueNewUserGiftPack,
 };

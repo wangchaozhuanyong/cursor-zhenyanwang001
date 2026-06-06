@@ -54,6 +54,7 @@ describe('backup service exports', () => {
     assert.equal(typeof service.getBackupHealth, 'function');
     assert.equal(typeof service.createConfigBackup, 'function');
     assert.equal(typeof service.createUploadsBackup, 'function');
+    assert.equal(typeof service.createPreCleanupBackup, 'function');
   });
 
   test('reports point-in-time restore as unavailable without binlog directory', async () => {
@@ -113,6 +114,76 @@ describe('backup service exports', () => {
           body: { restoreType: 'point_in_time', targetTime: new Date().toISOString() },
         }),
         /增量备份未就绪/,
+      );
+    } finally {
+      restoreEnv();
+    }
+  });
+
+  test('blocks production restore switch without write-freeze acknowledgement', async () => {
+    const restoreEnv = snapshotEnv([
+      'NODE_ENV',
+      'RESTORE_SWITCH_ENABLED',
+      'RESTORE_SWITCH_ACK_DESTRUCTIVE',
+      'RESTORE_SWITCH_TRAFFIC_FROZEN',
+      'RESTORE_SWITCH_PRE_BACKUP_DONE',
+      'RESTORE_SWITCH_SKIP_PRE_BACKUP',
+      'RESTORE_SWITCH_ACK_SKIP_PRE_BACKUP',
+    ]);
+    process.env.NODE_ENV = 'production';
+    process.env.RESTORE_SWITCH_ENABLED = '1';
+    process.env.RESTORE_SWITCH_ACK_DESTRUCTIVE = '1';
+    delete process.env.RESTORE_SWITCH_TRAFFIC_FROZEN;
+    process.env.RESTORE_SWITCH_PRE_BACKUP_DONE = '1';
+    try {
+      const service = loadBackupServiceWithRepoMock({
+        async findRestoreJob() {
+          throw new Error('should not reach restore lookup before production acknowledgements');
+        },
+      });
+      await assert.rejects(
+        () => service.switchRestoreJobToProduction({
+          req: { user: { id: 'admin-1', isSuperAdmin: true } },
+          userId: 'admin-1',
+          restoreJobId: 'restore-1',
+        }),
+        /冻结业务写入/,
+      );
+    } finally {
+      restoreEnv();
+    }
+  });
+
+  test('blocks production restore switch without pre-switch backup acknowledgement', async () => {
+    const restoreEnv = snapshotEnv([
+      'NODE_ENV',
+      'RESTORE_SWITCH_ENABLED',
+      'RESTORE_SWITCH_ACK_DESTRUCTIVE',
+      'RESTORE_SWITCH_TRAFFIC_FROZEN',
+      'RESTORE_SWITCH_PRE_BACKUP_DONE',
+      'RESTORE_SWITCH_SKIP_PRE_BACKUP',
+      'RESTORE_SWITCH_ACK_SKIP_PRE_BACKUP',
+    ]);
+    process.env.NODE_ENV = 'production';
+    process.env.RESTORE_SWITCH_ENABLED = '1';
+    process.env.RESTORE_SWITCH_ACK_DESTRUCTIVE = '1';
+    process.env.RESTORE_SWITCH_TRAFFIC_FROZEN = '1';
+    delete process.env.RESTORE_SWITCH_PRE_BACKUP_DONE;
+    delete process.env.RESTORE_SWITCH_SKIP_PRE_BACKUP;
+    delete process.env.RESTORE_SWITCH_ACK_SKIP_PRE_BACKUP;
+    try {
+      const service = loadBackupServiceWithRepoMock({
+        async findRestoreJob() {
+          throw new Error('should not reach restore lookup before production acknowledgements');
+        },
+      });
+      await assert.rejects(
+        () => service.switchRestoreJobToProduction({
+          req: { user: { id: 'admin-1', isSuperAdmin: true } },
+          userId: 'admin-1',
+          restoreJobId: 'restore-1',
+        }),
+        /切换前备份/,
       );
     } finally {
       restoreEnv();

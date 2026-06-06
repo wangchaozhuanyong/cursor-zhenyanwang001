@@ -3,6 +3,7 @@ const { BusinessError } = require('../../../errors');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const repo = require('../repository/dataRetention.repository');
 const exportCleanup = require('./exportCleanup.service');
+const uploadedAssetCleanup = require('./uploadedAssetCleanup.service');
 const {
   MAX_BATCH_SIZE,
   MIN_BATCH_SIZE,
@@ -18,6 +19,7 @@ const LOCK_NAME = 'data_cleanup:run';
 const PREVIEW_TTL_MS = Number(process.env.DATA_CLEANUP_PREVIEW_TTL_MINUTES || 30) * 60 * 1000;
 const SCHEDULER_INTERVAL_MS = Number(process.env.DATA_CLEANUP_INTERVAL_HOURS || 24) * 60 * 60 * 1000;
 const SCHEDULER_INITIAL_DELAY_MS = Number(process.env.DATA_CLEANUP_INITIAL_DELAY_MS || 5 * 60 * 1000);
+const PRE_CLEANUP_BACKUP_DISABLED = () => process.env.DATA_CLEANUP_PRE_BACKUP_DISABLED === '1';
 
 let policiesSeeded = false;
 let schedulerTimer = null;
@@ -57,6 +59,25 @@ async function auditCleanup(req, actionType, result, summary, extra = {}) {
   });
 }
 
+async function ensurePreCleanupBackup(req, options = {}) {
+  if (PRE_CLEANUP_BACKUP_DISABLED() || options.skipPreCleanupBackup === true) return null;
+  const adminApi = /** @type {any} */ (require('../../admin')).api || {};
+  if (typeof adminApi.createPreCleanupBackup !== 'function') {
+    throw new Error('PRE_CLEANUP_BACKUP_API_MISSING');
+  }
+  const operatorId = options.operatorId === undefined ? req?.user?.id || null : options.operatorId;
+  return adminApi.createPreCleanupBackup({
+    req,
+    userId: operatorId,
+    reason: `data_cleanup:${options.runType || 'manual'}`,
+    metadata: {
+      previewRunId: options.previewRunId || null,
+      policyKeys: options.policyKeys || [],
+      runType: options.runType || 'manual',
+    },
+  });
+}
+
 async function ensureDefaultPolicies() {
   if (policiesSeeded) return;
   assertCatalogIsSafe();
@@ -83,6 +104,10 @@ function mapPolicy(policy) {
     locked: policy.locked,
     protected: policy.deleteMode !== 'file_delete' && isProtectedTable(policy.tableName),
   };
+}
+
+function isUploadedAssetPolicy(policy) {
+  return policy.deleteMode === 'uploaded_asset_delete';
 }
 
 async function getPolicyRuntimes() {
@@ -241,6 +266,43 @@ async function previewFilePolicy(policy, runId) {
   return { matched: policy.enabled ? files.length : 0, deleted: 0, failed: 0, status: policy.enabled ? 'success' : 'skipped' };
 }
 
+async function previewUploadedAssetPolicy(policy, runId) {
+  const stepId = await repo.insertStep({
+    runId,
+    policyKey: policy.policyKey,
+    tableName: policy.tableName,
+    status: 'running',
+    cutoffAt: policy.cutoffAt,
+    batchSize: policy.batchSize,
+  });
+  if (!policy.enabled) {
+    await repo.updateStep(stepId, { status: 'skipped', error_message: 'POLICY_DISABLED', finished_at: true });
+    return { matched: 0, deleted: 0, failed: 0, status: 'skipped' };
+  }
+  if (!(await repo.tableExists(policy.tableName))) {
+    await repo.updateStep(stepId, { status: 'skipped', error_message: 'TABLE_NOT_FOUND', finished_at: true });
+    return { matched: 0, deleted: 0, failed: 0, status: 'skipped' };
+  }
+
+  const result = await uploadedAssetCleanup.listOrphanUploadedAssets(policy);
+  await repo.updateStep(stepId, {
+    status: 'success',
+    matched_count: result.matched,
+    deleted_count: 0,
+    batch_size: policy.batchSize,
+    batch_count: result.batchCount || 0,
+    sample_ids: result.sampleIds || [],
+    finished_at: true,
+  });
+  return { matched: result.matched, deleted: 0, failed: 0, status: 'success' };
+}
+
+async function previewPolicy(policy, runId) {
+  if (policy.deleteMode === 'file_delete') return previewFilePolicy(policy, runId);
+  if (isUploadedAssetPolicy(policy)) return previewUploadedAssetPolicy(policy, runId);
+  return previewDbPolicy(policy, runId);
+}
+
 async function createPreview(body = {}, req = null, options = {}) {
   const policies = await resolvePolicies(body.policy_keys || body.policyKeys);
   const policyKeys = policies.map((policy) => policy.policyKey);
@@ -256,9 +318,7 @@ async function createPreview(body = {}, req = null, options = {}) {
   let totalFailed = 0;
   for (const policy of policies) {
     try {
-      const result = policy.deleteMode === 'file_delete'
-        ? await previewFilePolicy(policy, runId)
-        : await previewDbPolicy(policy, runId);
+      const result = await previewPolicy(policy, runId);
       totalMatched += result.matched;
       totalFailed += result.failed;
     } catch (error) {
@@ -406,6 +466,49 @@ async function executeFilePolicy(policy, runId) {
   return { matched: result.matched, deleted: result.deleted, failed: 0, cancelled };
 }
 
+async function executeUploadedAssetPolicy(policy, runId) {
+  const stepId = await repo.insertStep({
+    runId,
+    policyKey: policy.policyKey,
+    tableName: policy.tableName,
+    status: 'running',
+    cutoffAt: policy.cutoffAt,
+    batchSize: policy.batchSize,
+  });
+  if (!policy.enabled) {
+    await repo.updateStep(stepId, { status: 'skipped', error_message: 'POLICY_DISABLED', finished_at: true });
+    return { matched: 0, deleted: 0, failed: 0, cancelled: false };
+  }
+  if (!(await repo.tableExists(policy.tableName))) {
+    await repo.updateStep(stepId, { status: 'skipped', error_message: 'TABLE_NOT_FOUND', finished_at: true });
+    return { matched: 0, deleted: 0, failed: 0, cancelled: false };
+  }
+
+  const result = await uploadedAssetCleanup.deleteOrphanUploadedAssets(
+    policy,
+    () => repo.isRunCancelRequested(runId),
+  );
+  const cancelled = result.cancelled || await repo.isRunCancelRequested(runId);
+  const failed = Number(result.failed || 0);
+  await repo.updateStep(stepId, {
+    status: cancelled ? 'cancelled' : (failed > 0 ? 'partial_failed' : 'success'),
+    matched_count: result.matched,
+    deleted_count: result.deleted,
+    batch_size: policy.batchSize,
+    batch_count: result.batchCount || 0,
+    sample_ids: result.sampleIds || [],
+    error_message: failed > 0 ? `UPLOAD_ASSET_DELETE_FAILED:${failed}` : null,
+    finished_at: true,
+  });
+  return { matched: result.matched, deleted: result.deleted, failed, cancelled };
+}
+
+async function executePolicy(policy, runId) {
+  if (policy.deleteMode === 'file_delete') return executeFilePolicy(policy, runId);
+  if (isUploadedAssetPolicy(policy)) return executeUploadedAssetPolicy(policy, runId);
+  return executeDbPolicy(policy, runId);
+}
+
 async function executeRun(body = {}, req = null, options = {}) {
   let runId = null;
   let lockOwner = null;
@@ -422,6 +525,14 @@ async function executeRun(body = {}, req = null, options = {}) {
     acquired = await repo.tryAcquireLock(LOCK_NAME, lockOwner, Number(process.env.DATA_CLEANUP_LOCK_TTL_SECONDS || 3600));
     if (!acquired) throw new BusinessError(409, '已有清理任务正在执行');
 
+    const preCleanupBackup = await ensurePreCleanupBackup(req, {
+      operatorId: options.operatorId,
+      policyKeys,
+      previewRunId: preview.id,
+      runType: options.runType || 'manual',
+      skipPreCleanupBackup: options.skipPreCleanupBackup,
+    });
+
     const consumed = await repo.consumePreviewRun(preview.id);
     if (!consumed) throw new BusinessError(409, '该清理预览已被使用，请重新预览');
 
@@ -432,7 +543,7 @@ async function executeRun(body = {}, req = null, options = {}) {
       triggeredBy: options.operatorId === undefined ? req?.user?.id || null : options.operatorId,
       previewRunId: preview.id,
       policyKeys,
-      requestSnapshot: { previewRunId: preview.id, policyKeys },
+      requestSnapshot: { previewRunId: preview.id, policyKeys, preCleanupBackup },
     });
 
     let totalMatched = 0;
@@ -444,9 +555,7 @@ async function executeRun(body = {}, req = null, options = {}) {
     for (const policy of policies) {
       if (cancelled) break;
       try {
-        const result = policy.deleteMode === 'file_delete'
-          ? await executeFilePolicy(policy, runId)
-          : await executeDbPolicy(policy, runId);
+        const result = await executePolicy(policy, runId);
         totalMatched += result.matched;
         totalDeleted += result.deleted;
         totalFailed += result.failed;

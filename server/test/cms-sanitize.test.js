@@ -26,6 +26,12 @@ describe('cms html sanitize', () => {
     assert.equal(cleaned.includes('data:text/html'), false);
     assert.equal(cleaned.includes('href="#'), true);
   });
-});
 
+  test('adds tabnabbing protection to links', () => {
+    const raw = '<a href="https://example.com" target="_blank">open</a>';
+    const cleaned = sanitize(raw);
+    assert.match(cleaned, /target="_blank"/);
+    assert.match(cleaned, /rel="noopener noreferrer"/);
+  });
+});
 

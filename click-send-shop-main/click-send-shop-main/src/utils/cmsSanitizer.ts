@@ -8,6 +8,7 @@ const CMS_SANITIZE_CONFIG: Config = {
     "ul", "ol", "li", "a", "img", "table", "thead", "tbody", "tr", "th", "td",
   ],
   ALLOWED_ATTR: ["href", "name", "target", "rel", "src", "alt", "title", "width", "height", "loading", "class"],
+  ADD_URI_SAFE_ATTR: ["target"],
   ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|\/(?!\/))/i,
   FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input", "button", "meta", "link", "svg", "math"],
   FORBID_ATTR: ["style", "onerror", "onload", "onclick"],
@@ -38,15 +39,27 @@ function sanitizeWithDomPurify(html: string): string {
     (window: Window): { sanitize: (dirty: string, config?: Config) => string };
   };
 
-  if (typeof purifierFactory.sanitize === "function") {
-    return purifierFactory.sanitize(html, CMS_SANITIZE_CONFIG);
-  }
-
   if (typeof window !== "undefined") {
     return purifierFactory(window).sanitize(html, CMS_SANITIZE_CONFIG);
   }
 
+  if (typeof purifierFactory.sanitize === "function") {
+    return purifierFactory.sanitize(html, CMS_SANITIZE_CONFIG);
+  }
+
   return escapeHtml(html);
+}
+
+function isSafeCmsUrl(value: string): boolean {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+  if (raw.startsWith("/")) return !raw.startsWith("//");
+  try {
+    const url = new URL(raw);
+    return ["http:", "https:", "mailto:", "tel:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
 }
 
 function normalizePhoneHref(text: string): string {
@@ -138,7 +151,31 @@ function linkifyCmsContactText(html: string): string {
   }
 
   textNodes.forEach(linkifyTextNode);
+  hardenBlankTargetLinks(template.content);
   return template.innerHTML;
+}
+
+function hardenBlankTargetLinks(root: DocumentFragment): void {
+  root.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((anchor) => {
+    if (!isSafeCmsUrl(anchor.getAttribute("href") || "")) anchor.setAttribute("href", "#");
+  });
+  root.querySelectorAll<HTMLImageElement>("img[src]").forEach((image) => {
+    if (!isSafeCmsUrl(image.getAttribute("src") || "")) image.removeAttribute("src");
+  });
+  root.querySelectorAll<HTMLAnchorElement>("a[target]").forEach((anchor) => {
+    const target = String(anchor.getAttribute("target") || "").trim().toLowerCase();
+    if (target !== "_blank") return;
+    anchor.setAttribute("target", "_blank");
+    const relTokens = new Set(
+      String(anchor.getAttribute("rel") || "")
+        .split(/\s+/)
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean),
+    );
+    relTokens.add("noopener");
+    relTokens.add("noreferrer");
+    anchor.setAttribute("rel", Array.from(relTokens).join(" "));
+  });
 }
 
 export function sanitizeCmsHtml(html: string): string {

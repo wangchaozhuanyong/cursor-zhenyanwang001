@@ -43,4 +43,20 @@ describe("sanitizeCmsHtml", () => {
     expect(html).not.toContain("<script");
     expect(html).toContain('href="mailto:ppfzj1314@gmail.com"');
   });
+
+  it("blocks unsafe CMS URL protocols", () => {
+    const html = sanitizeCmsHtml('<a href="javascript:alert(1)">bad</a><img src="data:text/html;base64,PGgxPg==">');
+
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("data:text/html");
+    expect(html).not.toContain("href=");
+    expect(html).not.toContain("src=");
+  });
+
+  it("adds tabnabbing protection for CMS links opened in a new tab", () => {
+    const html = sanitizeCmsHtml('<p><a href="https://example.com" target="_blank">open</a></p>');
+
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+  });
 });

@@ -337,6 +337,7 @@ docs/QUALITY_GATES.md
 使用规则：
 
 - 如果是用户端页面问题，先判断是否属于 `src/modules/public`、用户端 routes、用户端 services、用户端 stores 或通用组件。
+- 如果是用户端首页或公共端响应式布局问题，必须以同一套公共内容为基准：手机、平板、电脑只允许做布局密度、间距、列数、顶部壳层等适配，不允许某个端单独新增、删除、改名或隐藏首页模块、金刚区导航入口；后台新增或调整首页模块/导航后，必须验证三端 public render path 是否同步。
 - 如果是管理后台问题，先判断是否属于 `src/modules/admin`、后台 routes、后台 services、后台 layout、权限或后台 i18n。
 - 如果是 API 调用问题，先确认前端是否通过 `VITE_API_BASE_URL=/api` 和 `src/api/request.ts` 调用后端。
 - 如果是生产白屏、chunk 加载失败、路由异常，必须同时检查前端代码、构建产物、HTML 缓存头、assets 缓存、CDN、部署脚本和运行时恢复逻辑。

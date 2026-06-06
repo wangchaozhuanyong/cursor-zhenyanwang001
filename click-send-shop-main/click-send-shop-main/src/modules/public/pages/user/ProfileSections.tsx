@@ -2,18 +2,14 @@ import type { LucideIcon } from "lucide-react";
 import {
   Camera,
   ChevronRight,
-  Copy,
   Crown,
-  FileText,
   LogOut,
-  Send,
   User,
 } from "lucide-react";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { formatProfileHeroName } from "./profileHeroName";
-import inviteRewardHeroImage from "@/assets/invite-reward-hero-illustration.svg";
 import profileVipAvatarImage from "@/assets/profile-vip-avatar-medallion.svg";
 
 export const PROFILE_CARD_CLASS = "store-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
@@ -62,6 +58,74 @@ function formatCount(count?: number) {
   const value = Number(count || 0);
   if (value <= 0) return "";
   return value > 99 ? "99+" : String(value);
+}
+
+function InviteBadgeIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M3 18h18l-1 2H4l-1-2Zm1.3-9.8 3.8 3.1 3-5 3.2 4.1 4.4-3.2-1.8 8.3H6.1L4.3 8.2Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function InvitePeopleIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="7.2" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.65" />
+      <path d="M4.5 19.2c1.7-3.5 4.4-5.2 7.5-5.2s5.8 1.7 7.5 5.2" fill="none" stroke="currentColor" strokeWidth="1.65" />
+    </svg>
+  );
+}
+
+function InviteWalletIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M3 8.5C3 7.1 4.1 6 5.5 6h11C17.9 6 19 7.1 19 8.5v7c0 1.4-1.1 2.5-2.5 2.5h-11C4.1 18 3 16.9 3 15.5v-7Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M16 9h5v6h-5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="16.5" cy="12" r="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+function InviteSendIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M22 2 11 13" fill="none" stroke="currentColor" strokeWidth="1.85" />
+      <path d="M22 2 15 22l-4-9-9-4 20-7Z" fill="none" stroke="currentColor" strokeWidth="1.85" />
+    </svg>
+  );
+}
+
+function InviteCodeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" fill="none" stroke="currentColor" strokeWidth="1.85" />
+      <path d="M14 2v6h6" fill="none" stroke="currentColor" strokeWidth="1.85" />
+      <path d="m9 14-2 2 2 2" fill="none" stroke="currentColor" strokeWidth="1.85" />
+      <path d="m15 14 2 2-2 2" fill="none" stroke="currentColor" strokeWidth="1.85" />
+      <path d="m13 13-2 6" fill="none" stroke="currentColor" strokeWidth="1.85" />
+    </svg>
+  );
+}
+
+function InviteRecordIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="5" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="1.85" />
+      <path d="M9 8h6" fill="none" stroke="currentColor" strokeWidth="1.85" />
+      <path d="M9 12h6" fill="none" stroke="currentColor" strokeWidth="1.85" />
+      <path d="M9 16h4" fill="none" stroke="currentColor" strokeWidth="1.85" />
+    </svg>
+  );
+}
+
+function InviteCopyIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="8" y="8" width="12" height="12" rx="2.2" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M4 15.8V6.2A2.2 2.2 0 0 1 6.2 4h9.6" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+    </svg>
+  );
 }
 
 function ProfileSectionTitle({
@@ -309,81 +373,106 @@ export function ProfileInviteRewardCard({
   onCopyInviteCode: () => void;
   onRecordClick: () => void;
 }) {
+  const safeInviteCount = Math.max(0, Number(inviteCount) || 0);
+  const safeRewardBalance = Math.max(0, Number(rewardBalance) || 0);
+  const cashbackAmount = "RM " + safeRewardBalance.toFixed(2);
+
   return (
-    <section className="profile-invite-card">
-      <span className="profile-invite-glow profile-invite-glow--mint" aria-hidden="true" />
-      <span className="profile-invite-glow profile-invite-glow--gold" aria-hidden="true" />
-      <span className="profile-invite-sparkle profile-invite-sparkle--one" aria-hidden="true" />
-      <span className="profile-invite-sparkle profile-invite-sparkle--two" aria-hidden="true" />
-      <span className="profile-invite-sparkle profile-invite-sparkle--three" aria-hidden="true" />
-
-      <div className="profile-invite-content">
-        <div className="profile-invite-copy">
-          <div className="profile-invite-eyebrow" aria-hidden="true">
-            <span />
-            Invite Bonus
+    <section className="irc-card" aria-label="邀请好友得奖励">
+      <div className="irc-layout">
+        <div className="irc-left">
+          <div className="irc-badge">
+            <div className="irc-badgeIcon" aria-hidden="true">
+              <InviteBadgeIcon />
+            </div>
+            <span>INVITE BONUS</span>
           </div>
-          <h2 className="profile-invite-title">邀请好友得奖励</h2>
-          <p className="profile-invite-desc">
-            {loggedIn ? "好友付款成功后，返现奖励自动入账" : "登录后邀请好友获得购物返现"}
-          </p>
-        </div>
-        <div className="profile-invite-art" aria-hidden="true">
-          <img className="profile-invite-art-image" src={inviteRewardHeroImage} alt="" />
-        </div>
-      </div>
 
-      {loggedIn ? (
-        <div className="profile-invite-stats" aria-label="邀请奖励数据">
-          <span className="profile-invite-stat-chip">
-            <span className="profile-invite-stat-icon profile-invite-stat-icon--people" aria-hidden="true">
-              <User size={13} strokeWidth={2.1} />
-            </span>
-            <span>已邀请</span>
-            <b>{inviteCount} 人</b>
-          </span>
-          <span className="profile-invite-stat-chip">
-            <span className="profile-invite-stat-icon profile-invite-stat-icon--cash" aria-hidden="true">RM</span>
-            <span>可用返现</span>
-            <b>RM {rewardBalance.toFixed(2)}</b>
-          </span>
+          <h2 className="irc-title">邀请好友得奖励</h2>
+          <p className="irc-subtitle">好友完成有效任务后，现金奖励自动入账</p>
+
+          <div className="irc-stats" aria-label="邀请奖励数据">
+            <div className="irc-stat">
+              <div className="irc-statIcon irc-teal" aria-hidden="true">
+                <InvitePeopleIcon />
+              </div>
+              <div className="irc-statText">
+                <span className="irc-statLabel">已邀请</span>
+                <strong className="irc-statValue">{safeInviteCount} 人</strong>
+              </div>
+            </div>
+
+            <div className="irc-stat">
+              <div className="irc-statIcon irc-gold" aria-hidden="true">
+                <InviteWalletIcon />
+              </div>
+              <div className="irc-statText">
+                <span className="irc-statLabel">可用返现</span>
+                <strong className="irc-statValue">{cashbackAmount}</strong>
+              </div>
+            </div>
+          </div>
+
+          {loggedIn && inviteCodeVisible ? (
+            <div className="irc-code">
+              <span>
+                邀请码：<strong>{inviteCode}</strong>
+              </span>
+              <button type="button" onClick={onCopyInviteCode} disabled={inviteCode === "暂无"}>
+                <InviteCopyIcon />
+                复制
+              </button>
+            </div>
+          ) : null}
+
+          <div className="irc-actions">
+            <button type="button" onClick={onPrimaryClick} className="irc-action irc-primary">
+              <InviteSendIcon />
+              <span>立即邀请</span>
+            </button>
+
+            <button type="button" onClick={onToggleInviteCode} className="irc-action">
+              <InviteCodeIcon />
+              <span>邀请码</span>
+            </button>
+
+            <button type="button" onClick={onRecordClick} className="irc-action">
+              <InviteRecordIcon />
+              <span>记录</span>
+            </button>
+          </div>
         </div>
-      ) : null}
 
-      {loggedIn && inviteCodeVisible ? (
-        <div className="profile-invite-code">
-          <p>
-            邀请码：<span>{inviteCode}</span>
-          </p>
-          <UnifiedButton type="button" onClick={onCopyInviteCode} disabled={inviteCode === "暂无"}>
-            <Copy size={13} />
-            复制
-          </UnifiedButton>
+        <div className="irc-right" aria-hidden="true">
+          <div className="irc-heroGlow" />
+          <div className="irc-ring" />
+          <div className="irc-platform" />
+
+          <div className="irc-ribbon irc-ribbonLeft" />
+          <div className="irc-ribbon irc-ribbonRight" />
+
+          <div className="irc-envelope">
+            <div className="irc-envelopeFlap" />
+            <div className="irc-envelopeTrim" />
+            <div className="irc-seal">福</div>
+            <div className="irc-wavePattern" />
+          </div>
+
+          <div className="irc-gift">
+            <div className="irc-giftLid" />
+            <div className="irc-giftBow" />
+          </div>
+
+          <div className="irc-coin irc-coin1" />
+          <div className="irc-coin irc-coin2" />
+          <div className="irc-coin irc-coin3" />
+          <div className="irc-coin irc-coin4" />
+
+          <span className="irc-spark irc-spark1" />
+          <span className="irc-spark irc-spark2" />
+          <span className="irc-spark irc-spark3" />
+          <span className="irc-spark irc-spark4" />
         </div>
-      ) : null}
-
-      <div className={cn("profile-invite-actions", loggedIn ? "profile-invite-actions--triple" : "profile-invite-actions--single")}>
-        <UnifiedButton type="button" onClick={onPrimaryClick} className="profile-invite-btn profile-invite-btn--primary">
-          <Send size={16} />
-          {loggedIn ? "立即邀请" : "去登录"}
-        </UnifiedButton>
-        {loggedIn ? (
-          <>
-            <UnifiedButton type="button" onClick={onToggleInviteCode} className="profile-invite-btn profile-invite-btn--secondary">
-              <FileText size={16} />
-              {inviteCodeVisible ? "隐藏邀请码" : "邀请码"}
-            </UnifiedButton>
-            <UnifiedButton type="button" onClick={onRecordClick} className="profile-invite-btn profile-invite-btn--secondary">
-              <FileText size={16} />
-              记录
-            </UnifiedButton>
-          </>
-        ) : null}
-      </div>
-
-      <div className="profile-invite-badge" aria-hidden="true">
-        <span>RM</span>
-        购物返现
       </div>
     </section>
   );

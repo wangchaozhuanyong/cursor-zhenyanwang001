@@ -360,7 +360,7 @@ export default function Profile() {
               inviteCode={code}
               inviteCodeVisible={inviteCodeVisible}
               onPrimaryClick={() => loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } })}
-              onToggleInviteCode={() => setInviteCodeVisible((v) => !v)}
+              onToggleInviteCode={() => loggedIn ? setInviteCodeVisible((v) => !v) : navigate("/login", { state: { from: "/profile" } })}
               onCopyInviteCode={handleCopyInviteCode}
               onRecordClick={() => gateNavigate(navigate, "/invite", true)}
             />

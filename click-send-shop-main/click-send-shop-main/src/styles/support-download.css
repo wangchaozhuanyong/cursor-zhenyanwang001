@@ -36,6 +36,16 @@ html[data-app-scope="store"] .support-download-hero h1 {
   line-height: 1.12;
 }
 
+@media (max-width: 767px) {
+  html[data-app-scope="store"] .support-download-shell {
+    padding-top: 0.85rem;
+  }
+
+  html[data-app-scope="store"] .support-download-hero {
+    display: none;
+  }
+}
+
 html[data-app-scope="store"] .support-download-tabs {
   display: grid;
   grid-template-columns: repeat(var(--support-tab-count), minmax(0, 1fr));
@@ -410,23 +420,12 @@ html[data-app-scope="store"] .support-empty-panel span {
   margin-top: 0.35rem;
 }
 
-html[data-app-scope="store"] .support-install-intro,
 html[data-app-scope="store"] .support-notice-panel {
   width: 100%;
   border: 1px solid var(--support-line);
   border-radius: 8px;
   background: var(--support-surface);
   color: var(--support-muted);
-}
-
-html[data-app-scope="store"] .support-install-intro {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.55rem;
-  margin: 0;
-  padding: 0.95rem 1rem;
-  font-size: 0.93rem;
-  line-height: 1.58;
 }
 
 html[data-app-scope="store"] .support-notice-panel {

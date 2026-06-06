@@ -139,6 +139,9 @@ describe("restoreSessionFromCookie", () => {
       if (url.endsWith("/auth/session")) {
         return jsonResponse({ code: 0, data: { authenticated: false } });
       }
+      if (url.endsWith("/auth/refresh/session")) {
+        return jsonResponse({ code: 0, data: { authenticated: false } });
+      }
       if (url.endsWith("/auth/refresh")) {
         return jsonResponse({ code: 401, message: "璇峰厛鐧诲綍" }, 401);
       }
@@ -148,7 +151,8 @@ describe("restoreSessionFromCookie", () => {
     await expect(restoreSessionFromCookie()).resolves.toBe(false);
     expect(localStorage.getItem("user_authenticated")).toBeNull();
     expect(calls.filter((url) => url.endsWith("/auth/session"))).toHaveLength(1);
-    expect(calls.filter((url) => url.endsWith("/auth/refresh"))).toHaveLength(1);
+    expect(calls.filter((url) => url.endsWith("/auth/refresh/session"))).toHaveLength(1);
+    expect(calls.filter((url) => url.endsWith("/auth/refresh"))).toHaveLength(0);
     expect(calls.some((url) => url.endsWith("/user/profile"))).toBe(false);
   });
 });

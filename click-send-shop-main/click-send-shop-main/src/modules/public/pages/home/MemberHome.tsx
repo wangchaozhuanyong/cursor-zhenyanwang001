@@ -176,8 +176,8 @@ export default function MemberHome() {
           { id: "organization", data: buildOrganizationJsonLd(siteInfo) },
         ]}
       />
-      <StoreTabHeader searchMode="navigate" />
-      <main className={HOME_PAGE_MAIN_CLASS}>
+      <StoreTabHeader searchMode="navigate" className="store-home-topbar" />
+      <main className={`${HOME_PAGE_MAIN_CLASS} store-home-main-member`}>
         {(isHomeModuleEnabled(homeModules, "banner", "member") ||
           isHomeModuleEnabled(homeModules, "trust_bar", "member") ||
           isHomeModuleEnabled(homeModules, "nav_grid", "member")) ? (

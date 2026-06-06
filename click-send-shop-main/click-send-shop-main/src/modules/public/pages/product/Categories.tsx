@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
 import CategoryKingkongRow, { type CategoryKingkongItem } from "@/components/CategoryKingkongRow";
-import CategorySideTree from "@/components/CategorySideTree";
 import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
 import * as productService from "@/services/productService";
 import type { ProductSortType, ProductTag } from "@/types/product";
@@ -33,10 +32,6 @@ import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { renderBrandTitle } from "@/utils/brand";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { useSmartMobileChrome } from "@/hooks/useSmartMobileChrome";
-
-const MOBILE_CHROME_COMPACT_SPACER = "8.9rem";
-const MOBILE_CHROME_DOCK_SPACER = "5.1rem";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -217,28 +212,6 @@ export default function Categories() {
   const showFullSkeleton = loading && products.length === 0;
   const showSoftRefreshing = listRefreshing && products.length > 0;
 
-  const {
-    chromeRef: mobileChromeRef,
-    chromeHeight: mobileChromeHeight,
-    mode: mobileChromeMode,
-    isHidden: mobileChromeHidden,
-    isCompact: mobileChromeCompact,
-    revealChrome: revealMobileChrome,
-  } = useSmartMobileChrome({
-    measureKey: `${categories.length}:${subCategories.length}:${activeFilterCount}:${viewMode}:${loading}`,
-  });
-  const mobileChromeSpacerHeight = mobileChromeHidden
-    ? MOBILE_CHROME_DOCK_SPACER
-    : mobileChromeCompact
-      ? MOBILE_CHROME_COMPACT_SPACER
-      : mobileChromeHeight > 0
-        ? mobileChromeHeight
-        : undefined;
-
-  useEffect(() => {
-    revealMobileChrome();
-  }, [activeCat, activeTagId, sort, viewMode, activeFilterCount, query, revealMobileChrome]);
-
   const filterDrawer = (
     <ProductFilterDrawer
       activeFilterCount={activeFilterCount}
@@ -293,34 +266,37 @@ export default function Categories() {
     </span>
   );
 
-  const mobileCategoryBottomSlot = (
-    <>
-      <div className="store-category-mobile-tabs space-y-2 pb-1">
-        <CategoryKingkongRow
-          items={rootKingkongItems}
-          scrollKey={scrollTabKey}
-          loading={loading && categories.length === 0}
-          variant="plain"
-          className="store-category-showcase store-category-showcase--plain -mx-[var(--store-page-x)] rounded-none border-x-0"
-        />
-        {subCategories.length > 0 ? (
-          <div className="store-category-subtabs flex flex-wrap gap-1.5">
-            {subCategories.map((child) => (
-              <CategoryTabButton
-                key={child.id}
-                active={activeCat === child.id}
-                onClick={() => handleSelectChild(child.id)}
-                layoutId="category-sub-tab"
-                activeClassName="bg-[var(--theme-price)]"
-                activeTextClass="text-[var(--theme-price-foreground)]"
-                className="store-category-subtab px-3"
-              >
-                {child.name}
-              </CategoryTabButton>
-            ))}
-          </div>
-        ) : null}
-      </div>
+  const mobileCategoryTabs = (
+    <div className="store-category-mobile-tabs space-y-2 pb-1">
+      <CategoryKingkongRow
+        items={rootKingkongItems}
+        scrollKey={scrollTabKey}
+        loading={loading && categories.length === 0}
+        variant="plain"
+        className="store-category-showcase store-category-showcase--plain -mx-[var(--store-page-x)] rounded-none border-x-0"
+      />
+      {subCategories.length > 0 ? (
+        <div className="store-category-subtabs flex flex-wrap gap-1.5">
+          {subCategories.map((child) => (
+            <CategoryTabButton
+              key={child.id}
+              active={activeCat === child.id}
+              onClick={() => handleSelectChild(child.id)}
+              layoutId="category-sub-tab"
+              activeClassName="bg-[var(--theme-price)]"
+              activeTextClass="text-[var(--theme-price-foreground)]"
+              className="store-category-subtab px-3"
+            >
+              {child.name}
+            </CategoryTabButton>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const mobileFilterBar = (
+    <div className="store-category-mobile-filter-shell store-category-sticky-filter md:hidden">
       <div className="store-category-mobile-tools flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <ProductSortBar value={sort} onChange={setSort} />
@@ -328,11 +304,21 @@ export default function Categories() {
         <ProductListViewToggle value={viewMode} onChange={setViewMode} />
         {filterDrawer}
       </div>
-    </>
+    </div>
   );
 
-  const tabletCategoryRail = (
-    <div className="store-category-tablet-rail mb-4 hidden md:block lg:hidden">
+  const desktopFilterBar = (
+    <div className="store-category-toolbar store-category-sticky-filter mb-3 hidden items-center gap-2 md:flex">
+      <div className="min-w-0 flex-1">
+        <ProductSortBar value={sort} onChange={setSort} />
+      </div>
+      <ProductListViewToggle value={viewMode} onChange={setViewMode} />
+      {filterDrawer}
+    </div>
+  );
+
+  const wideCategoryRail = (
+    <div className="store-category-tablet-rail mb-4 hidden md:block">
       <CategoryKingkongRow
         items={rootKingkongItems}
         scrollKey={scrollTabKey}
@@ -368,20 +354,10 @@ export default function Categories() {
         canonical={canonical}
         robots={robots}
       />
-      <div
-        ref={mobileChromeRef}
-        data-chrome-mode={mobileChromeMode}
-        data-hidden={mobileChromeHidden ? "true" : "false"}
-        className={cn(
-          "store-category-mobile-chrome fixed inset-x-0 top-0 z-header md:hidden",
-          `is-${mobileChromeMode}`,
-        )}
-        style={{
-          "--store-category-mobile-chrome-height": `${mobileChromeHeight || 0}px`,
-        } as CSSProperties}
-      >
+      <div className="store-category-mobile-chrome md:hidden">
         <StorePageHeader
           sticky={false}
+          matchTabHeaderHeight
           className={cn(STORE_MOBILE_PAGE_HEADER_CLASS, "store-category-mobile-header")}
           title={categoryHeaderTitle}
           titleInlineSlot={
@@ -393,21 +369,16 @@ export default function Categories() {
               className="store-category-search-field"
             />
           }
-          bottomSlot={mobileCategoryBottomSlot}
         />
       </div>
-      <div
-        className="store-category-mobile-spacer md:hidden"
-        style={{ height: mobileChromeSpacerHeight }}
-        aria-hidden
-      />
+      <div className="store-category-mobile-tabs-shell md:hidden">
+        {mobileCategoryTabs}
+      </div>
+      {mobileFilterBar}
 
       <main className="store-category-main mx-auto max-w-screen-xl">
         <div className="px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6">
-          <div className="lg:grid lg:grid-cols-[288px,1fr] lg:gap-6">
-            <div className="hidden lg:block">
-              <CategorySideTree categories={categories} activeCat={activeCat} onSelectAll={handleSelectAll} onRootClick={handleRootCategoryClick} onChildClick={handleSelectChild} />
-            </div>
+          <div>
             <section className="store-category-content min-w-0">
               <div className="store-category-desktop-title mb-4 hidden rounded-3xl border px-5 py-4 md:block">
                 <p className="text-xs font-semibold tracking-[0.22em] text-[var(--theme-text-muted)]">分类目录</p>
@@ -417,15 +388,9 @@ export default function Categories() {
                 ) : null}
               </div>
 
-              {tabletCategoryRail}
+              {wideCategoryRail}
 
-              <div className="store-category-toolbar mb-3 hidden items-center gap-2 md:flex">
-                <div className="min-w-0 flex-1">
-                  <ProductSortBar value={sort} onChange={setSort} />
-                </div>
-                <ProductListViewToggle value={viewMode} onChange={setViewMode} />
-                {filterDrawer}
-              </div>
+              {desktopFilterBar}
 
               {filterSummary ? <div className="store-filter-summary mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">当前筛选：{filterSummary}</div> : null}
 

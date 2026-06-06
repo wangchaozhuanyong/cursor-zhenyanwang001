@@ -15,6 +15,7 @@ export type StorePageHeaderProps = {
   subtitle?: string;
   rightSlot?: ReactNode;
   bottomSlot?: ReactNode;
+  matchTabHeaderHeight?: boolean;
   sticky?: boolean;
   transparent?: boolean;
   className?: string;
@@ -29,6 +30,7 @@ export default function StorePageHeader({
   subtitle,
   rightSlot,
   bottomSlot,
+  matchTabHeaderHeight = false,
   sticky = true,
   transparent = false,
   className,
@@ -50,7 +52,10 @@ export default function StorePageHeader({
       <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] sm:px-4 md:px-6">
         <div
           className={cn(
-            "flex min-h-14 items-center gap-3 py-2",
+            "flex items-center gap-3",
+            matchTabHeaderHeight
+              ? "h-[var(--store-tab-header-height)] min-h-[var(--store-tab-header-height)] py-0"
+              : "min-h-14 py-2",
             centerTitle && !titleInlineSlot && "relative justify-center",
           )}
         >

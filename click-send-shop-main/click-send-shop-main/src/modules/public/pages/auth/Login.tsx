@@ -465,27 +465,56 @@ export default function Login() {
 
   useEffect(() => {
     if (!keyboardOpen) return;
-    const active = document.activeElement;
-    if (!(active instanceof HTMLElement)) return;
-    if (!active.closest(".auth-page-shell")) return;
+    let revealTimer: number | undefined;
 
-    const timer = window.setTimeout(() => {
-      const scrollContainer = active.closest("main.auth-page-main");
-      if (!(scrollContainer instanceof HTMLElement)) return;
+    const revealFocusedField = () => {
+      const active = document.activeElement;
+      if (!(active instanceof HTMLElement)) return;
+      if (!active.closest(".auth-page-shell")) return;
+      if (!active.matches("input, textarea, select")) return;
 
-      const containerRect = scrollContainer.getBoundingClientRect();
-      const activeRect = active.getBoundingClientRect();
-      const targetTop = containerRect.top + Math.min(Math.max(containerRect.height * 0.34, 92), 156);
-      const maxScrollTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
-      const nextScrollTop = Math.min(
-        maxScrollTop,
-        Math.max(0, scrollContainer.scrollTop + activeRect.top - targetTop),
-      );
+      window.clearTimeout(revealTimer);
+      revealTimer = window.setTimeout(() => {
+        const scrollContainer = active.closest("main.auth-page-main");
+        if (!(scrollContainer instanceof HTMLElement)) return;
 
-      scrollContainer.scrollTo({ top: nextScrollTop, behavior: "auto" });
-    }, 80);
-    return () => window.clearTimeout(timer);
-  }, [keyboardInset, keyboardOpen]);
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const activeRect = active.getBoundingClientRect();
+        const visibleTop = containerRect.top + 10;
+        const visibleBottom = containerRect.bottom - 16;
+        const shouldRevealSubmit = active.id === "auth-password" || active.id === "auth-otp";
+        const revealTarget = shouldRevealSubmit
+          ? scrollContainer.querySelector(".auth-login-submit")
+          : active;
+        const revealRect = revealTarget?.getBoundingClientRect() ?? activeRect;
+        const maxScrollTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+        let delta = 0;
+
+        if (revealRect.bottom > visibleBottom) {
+          delta = revealRect.bottom - visibleBottom;
+        } else if (activeRect.top < visibleTop) {
+          delta = activeRect.top - visibleTop;
+        }
+
+        if (activeRect.top - delta < visibleTop) {
+          delta = activeRect.top - visibleTop;
+        }
+
+        if (Math.abs(delta) < 1) return;
+
+        const nextScrollTop = Math.min(maxScrollTop, Math.max(0, scrollContainer.scrollTop + delta));
+
+        scrollContainer.scrollTo({ top: nextScrollTop, behavior: "auto" });
+      }, 80);
+    };
+
+    revealFocusedField();
+    document.addEventListener("focusin", revealFocusedField);
+    return () => {
+      document.removeEventListener("focusin", revealFocusedField);
+      window.clearTimeout(revealTimer);
+    };
+  }, [keyboardOpen, visualViewportHeight]);
 
   return (
     <div

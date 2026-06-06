@@ -147,7 +147,8 @@ export default function Cart() {
   return (
     <div className="store-page-shell store-cart-page store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
       <StorePageHeader
-        className={STORE_MOBILE_PAGE_HEADER_CLASS}
+        className={`${STORE_MOBILE_PAGE_HEADER_CLASS} store-cart-mobile-header`}
+        matchTabHeaderHeight
         centerTitle
         title={headerTitle}
         rightSlot={

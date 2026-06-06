@@ -39,6 +39,13 @@ exports.session = asyncRoute(async (req, res) => {
   res.success(result.data);
 });
 
+exports.refreshSession = asyncRoute(async (req, res) => {
+  const result = await authService.sessionStatus({
+    refreshToken: getRefreshTokenFromRequest(req),
+  });
+  res.success(result.data);
+});
+
 exports.getProfile = asyncRoute(async (req, res) => {
   const result = await authService.getProfile(req.user.id);
   res.success(result.data);

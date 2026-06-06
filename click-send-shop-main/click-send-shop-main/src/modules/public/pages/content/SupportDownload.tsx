@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Copy, PlusSquare, Smartphone } from "lucide-react";
+import { Copy, PlusSquare } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
+import StorePageHeader from "@/components/store/StorePageHeader";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import TelegramIcon from "@/components/icons/TelegramIcon";
@@ -19,6 +20,7 @@ import {
   parseSupportDownloadConfig,
 } from "@/utils/supportDownloadConfig";
 import { isLegacyGenericCopy, STORE_COPY, STORE_LEGACY_GENERIC_COPY } from "@/constants/storeCopy";
+import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { getChannelTitle } from "@/utils/supportChannels";
 import { toast } from "sonner";
 import "@/styles/support-download.css";
@@ -202,11 +204,22 @@ export default function SupportDownload() {
     ? STORE_COPY.supportCenterTitle
     : rawPageTitle;
   const installPageUrl = useMemo(() => buildCanonical("/support-download", "tab=download"), []);
+  const mobileHeader = (
+    <StorePageHeader
+      className={`${STORE_MOBILE_PAGE_HEADER_CLASS} support-download-mobile-header`}
+      matchTabHeaderHeight
+      centerTitle
+      title={pageTitle}
+    />
+  );
 
   if (!config.enabled) {
     return (
-      <div className="store-page-shell support-download-page support-download-page--empty px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm">
-        <div className="support-empty-panel">客服中心暂未开放。</div>
+      <div className="store-page-shell store-bottom-safe support-download-page support-download-page--empty text-sm text-[var(--theme-text)]">
+        {mobileHeader}
+        <main className="support-download-shell">
+          <div className="support-empty-panel">客服中心暂未开放。</div>
+        </main>
       </div>
     );
   }
@@ -219,6 +232,7 @@ export default function SupportDownload() {
         canonical={buildCanonical("/support-download")}
         robots="index,follow"
       />
+      {mobileHeader}
 
       <main className="support-download-shell">
         <header className="support-download-hero">
@@ -262,12 +276,6 @@ export default function SupportDownload() {
 
           {activeView === "download" && config.download.enabled !== false ? (
             <div className="support-install-stack">
-              {config.download.description ? (
-                <p className="support-install-intro">
-                  <Smartphone size={16} aria-hidden="true" />
-                  <span>{config.download.description}</span>
-                </p>
-              ) : null}
               {browserEnv.isInAppBrowser ? (
                 <div className="support-notice-panel">
                   <p className="font-semibold">当前是在 App 内打开，可能无法直接添加到桌面。</p>

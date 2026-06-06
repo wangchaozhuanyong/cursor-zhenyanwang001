@@ -189,6 +189,25 @@ async function hasServerSession(): Promise<boolean> {
   }
 }
 
+async function hasRefreshSession(baseUrl: string): Promise<boolean | null> {
+  const controller = new AbortController();
+  const timer = globalThis.setTimeout(() => controller.abort(), SESSION_RESTORE_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${baseUrl}/auth/refresh/session`, {
+      method: "GET",
+      credentials: "include",
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { data?: { authenticated?: boolean } };
+    return Boolean(body?.data?.authenticated);
+  } catch {
+    return null;
+  } finally {
+    globalThis.clearTimeout(timer);
+  }
+}
+
 /**
  * 启动时用 Cookie 刷新会话；无效时清除本地登录标记，且不在无效会话下请求 /user/profile。
  */
@@ -198,6 +217,15 @@ async function restoreSessionFromCookieOnce(): Promise<boolean> {
     // Refresh cookies are path-scoped to /api/auth/refresh, so /auth/session
     // can be false after the short-lived access cookie expires.
     const serverSessionAvailable = await hasServerSession();
+    const refreshSessionAvailable = await hasRefreshSession(baseUrl);
+
+    if (refreshSessionAvailable === false) {
+      if (serverSessionAvailable && await canUseExistingSession()) {
+        return true;
+      }
+      clearTokens();
+      return false;
+    }
 
     const refreshRes = await refreshSessionToken(baseUrl);
     if (!refreshRes.ok) {

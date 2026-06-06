@@ -85,3 +85,49 @@ test('refresh body schema accepts missing body for cookie-based refresh', () => 
   assert.equal(result.success, true);
   assert.deepEqual(result.data, {});
 });
+
+test('refresh session probe returns status without throwing for cookie checks', async () => {
+  const controllerPath = require.resolve('../src/modules/auth/controller/auth.controller');
+  const servicePath = require.resolve('../src/modules/auth/service/auth.service');
+  delete require.cache[controllerPath];
+  delete require.cache[servicePath];
+
+  const seen = [];
+  require.cache[servicePath] = {
+    id: servicePath,
+    filename: servicePath,
+    loaded: true,
+    exports: {
+      sessionStatus: async (tokens) => {
+        seen.push(tokens);
+        return { data: { authenticated: Boolean(tokens.refreshToken) } };
+      },
+    },
+  };
+
+  const ctrl = require(controllerPath);
+  let payload = null;
+  let nextError = null;
+  await new Promise((resolve) => {
+    ctrl.refreshSession(
+      { headers: { cookie: 'refresh_token=specific-token' } },
+      {
+        success(data) {
+          payload = data;
+          resolve();
+        },
+      },
+      (error) => {
+        nextError = error;
+        resolve();
+      },
+    );
+  });
+
+  assert.equal(nextError, null);
+  assert.deepEqual(seen, [{ refreshToken: 'specific-token' }]);
+  assert.deepEqual(payload, { authenticated: true });
+
+  delete require.cache[controllerPath];
+  delete require.cache[servicePath];
+});

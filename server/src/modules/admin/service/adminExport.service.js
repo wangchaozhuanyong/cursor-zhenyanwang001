@@ -42,6 +42,35 @@ function isSupportedExportType(type) {
   return listExportableReports().some((report) => report.type === type);
 }
 
+function safeExportFileName(name, fallback = 'export.csv') {
+  const fallbackName = String(fallback || 'export.csv').split(/[\\/]/).pop() || 'export.csv';
+  const raw = String(name || fallbackName).split(/[\\/]/).pop() || fallbackName;
+  const cleaned = raw.replace(/[\x00-\x1F\x7F<>:"|?*]+/g, '_').trim().slice(0, 180);
+  if (!cleaned || cleaned === '.' || cleaned === '..') return fallbackName;
+  return cleaned;
+}
+
+function isPathInsideDir(filePath, dirPath) {
+  const resolvedFile = path.resolve(String(filePath || ''));
+  const resolvedDir = path.resolve(dirPath);
+  const relative = path.relative(resolvedDir, resolvedFile);
+  return Boolean(relative) && !relative.startsWith('..') && !path.isAbsolute(relative);
+}
+
+function resolveExportFilePath(fileName) {
+  const exportDir = getExportDir();
+  const filePath = path.resolve(exportDir, safeExportFileName(fileName));
+  if (!isPathInsideDir(filePath, exportDir)) {
+    throw new Error('Export file path escaped export directory');
+  }
+  return filePath;
+}
+
+function normalizeStoredExportFilePath(filePath) {
+  if (!isPathInsideDir(filePath, getExportDir())) return '';
+  return path.resolve(String(filePath || ''));
+}
+
 async function createExportTask(type, params, adminUserId) {
   const definition = getReportDefinition(type);
   if (!definition || !isSupportedExportType(type)) {
@@ -61,8 +90,8 @@ async function createExportTask(type, params, adminUserId) {
     try {
       ensureExportDir();
       const { csv, filename: suggestedName } = await adminReportService.exportByType(type, params || {});
-      const finalName = suggestedName || fileName;
-      const filePath = path.join(getExportDir(), `${id}_${finalName}`);
+      const finalName = safeExportFileName(suggestedName, fileName);
+      const filePath = resolveExportFilePath(`${id}_${finalName}`);
       fs.writeFileSync(filePath, `\uFEFF${csv}`, 'utf8');
       const stat = fs.statSync(filePath);
       await repo.updateTaskSuccess(id, filePath, stat.size);
@@ -88,16 +117,26 @@ async function downloadExportFile(taskId, requester = {}) {
     return { error: { code: 403, message: '无权下载该导出文件' } };
   }
   if (task.status !== EXPORT_TASK_STATUS.SUCCESS) return { error: { code: 400, message: '文件尚未就绪' } };
-  if (!task.file_path || !fs.existsSync(task.file_path)) {
+  const safePath = normalizeStoredExportFilePath(task.file_path);
+  if (!safePath) {
+    return { error: { code: 403, message: '导出文件路径异常' } };
+  }
+  if (!fs.existsSync(safePath) || !fs.statSync(safePath).isFile()) {
     return { error: { code: 404, message: '文件不存在' } };
   }
-  return { filePath: task.file_path, fileName: task.file_name };
+  return { filePath: safePath, fileName: safeExportFileName(task.file_name) };
 }
 
-module.exports = { createExportTask, listExportTasks, downloadExportFile, startCleanupScheduler };
-
-
-
-
-
+module.exports = {
+  createExportTask,
+  listExportTasks,
+  downloadExportFile,
+  startCleanupScheduler,
+  _private: {
+    safeExportFileName,
+    isPathInsideDir,
+    resolveExportFilePath,
+    normalizeStoredExportFilePath,
+  },
+};
 

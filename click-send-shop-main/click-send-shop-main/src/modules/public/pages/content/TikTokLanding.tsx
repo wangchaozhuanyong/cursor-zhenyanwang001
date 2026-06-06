@@ -322,8 +322,8 @@ function PlatformPreview({ brandLogoSrc }: { brandLogoSrc: string }) {
   return (
     <div className="relative mx-auto w-full max-w-[360px] sm:max-w-[430px] lg:max-w-[660px]">
       <div className="absolute -right-9 top-16 hidden h-56 w-56 rounded-full bg-[#9bd2c8] opacity-80 sm:block lg:-right-16 lg:top-28 lg:h-72 lg:w-72" />
-      <div className="relative rounded-[28px] border border-[#e9efee] bg-white p-2.5 shadow-[0_22px_60px_rgba(24,67,61,0.14)] sm:p-3 lg:rounded-[24px] lg:p-4">
-        <div className="rounded-[22px] border border-[#e7efec] bg-[#fbfefd] p-3 lg:rounded-lg lg:p-4">
+      <div className="relative rounded-[28px] border border-[#e9efee] bg-white p-2 shadow-[0_22px_60px_rgba(24,67,61,0.14)] sm:p-3 lg:rounded-[24px] lg:p-4">
+        <div className="rounded-[22px] border border-[#e7efec] bg-[#fbfefd] p-2.5 sm:p-3 lg:rounded-lg lg:p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <BrandMark brandLogoSrc={brandLogoSrc} compact />
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#dfe9e6] bg-white text-[#64716e] lg:hidden">
@@ -350,7 +350,7 @@ function PlatformPreview({ brandLogoSrc }: { brandLogoSrc: string }) {
             </div>
 
             <div className="grid gap-3">
-              <div className="relative min-h-[145px] overflow-hidden rounded-lg bg-[#007f6d] sm:min-h-[175px] lg:min-h-[210px]">
+              <div className="relative min-h-[132px] overflow-hidden rounded-lg bg-[#007f6d] sm:min-h-[175px] lg:min-h-[210px]">
                 <img
                   src={HERO_IMAGE}
                   alt=""
@@ -359,7 +359,7 @@ function PlatformPreview({ brandLogoSrc }: { brandLogoSrc: string }) {
                   decoding="async"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,111,97,0.9),rgba(0,111,97,0.12))]" />
-                <div className="relative max-w-[250px] p-4 text-white sm:p-5 lg:max-w-[330px] lg:p-7">
+                <div className="relative max-w-[250px] p-3 text-white sm:p-5 lg:max-w-[330px] lg:p-7">
                   <p className="text-xl font-black leading-snug sm:text-2xl">在马来西亚的生活更简单，更安心</p>
                   <UnifiedButton
                     type="button"
@@ -374,7 +374,7 @@ function PlatformPreview({ brandLogoSrc }: { brandLogoSrc: string }) {
                 {serviceCards.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <div key={item.title} className="min-h-[72px] rounded-lg border border-[#e6eeeb] bg-white p-2 shadow-sm sm:min-h-[84px] sm:p-3">
+                    <div key={item.title} className="min-h-[66px] rounded-lg border border-[#e6eeeb] bg-white p-2 shadow-sm sm:min-h-[84px] sm:p-3">
                       <span className={`mx-auto mb-1.5 grid h-9 w-9 place-items-center rounded-lg ${item.tone} sm:h-10 sm:w-10`}>
                         <Icon size={20} />
                       </span>
@@ -510,15 +510,15 @@ export default function TikTokLanding() {
         <div className="absolute -left-32 top-28 h-64 w-64 rounded-full border border-[#d8efea] bg-[#effaf7]" />
         <div className="absolute -right-36 top-48 h-80 w-80 rounded-full bg-[#9bd2c8] opacity-80 sm:-right-24 lg:top-44 lg:h-[420px] lg:w-[420px]" />
 
-        <div className="relative mx-auto grid max-w-7xl gap-8 px-5 pb-8 pt-8 sm:px-6 sm:pb-10 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 lg:px-8 lg:py-14">
-          <div className="flex min-h-[360px] flex-col justify-center sm:min-h-[420px] lg:min-h-[620px]">
+        <div className="relative mx-auto grid max-w-7xl gap-6 px-5 pb-6 pt-6 sm:px-6 sm:pb-8 sm:pt-7 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 lg:px-8 lg:py-14">
+          <div className="flex flex-col justify-start lg:min-h-[620px] lg:justify-center">
             <h1 className="mt-0 max-w-[680px] text-[31px] font-black tracking-normal text-[#050907] min-[390px]:text-[36px] sm:text-5xl lg:text-6xl" style={{ lineHeight: 1.1 }}>
               来马来西亚，
               <br />
               生活办事<span className="text-[#007f6d]">不用到处问</span>
             </h1>
 
-            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#3f4c49] sm:text-lg sm:leading-8">
+            <p className="mt-3 max-w-xl text-[15px] leading-7 text-[#3f4c49] sm:text-lg sm:leading-8">
               找房安家、留学陪读、签证咨询、本地服务、商务资源，一站式集中查看。
             </p>
 
@@ -533,7 +533,7 @@ export default function TikTokLanding() {
                       show: { transition: { staggerChildren: 0.08 } },
                     }
               }
-              className="mt-6 grid grid-cols-[1.05fr_0.95fr] gap-2.5 min-[390px]:gap-3 sm:flex sm:flex-wrap"
+              className="mt-5 grid grid-cols-[1.05fr_0.95fr] gap-2.5 min-[390px]:gap-3 sm:flex sm:flex-wrap"
             >
               <motion.div
                 variants={
@@ -592,7 +592,7 @@ export default function TikTokLanding() {
               </motion.div>
             </motion.div>
 
-            <div className="mt-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
               {featureChips.map((item) => (
                 <div key={item} className="flex min-h-9 items-center justify-center gap-2 rounded-full border border-[#dfe9e6] bg-white/90 px-3 text-xs font-bold text-[#34413e] shadow-sm sm:text-sm">
                   <CheckCircle2 size={16} className="shrink-0 text-[#008775]" />

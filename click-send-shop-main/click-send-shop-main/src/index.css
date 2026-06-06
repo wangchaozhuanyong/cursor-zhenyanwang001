@@ -5094,17 +5094,33 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-rail-
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile-icon {
-  width: 3rem;
-  height: 3rem;
+  width: 3.18rem;
+  height: 3.18rem;
+  overflow: visible;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile-icon img {
-  width: 3rem;
-  height: 3rem;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   transform: scale(1);
+}
+
+html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-icon-renderer--plain {
+  overflow: visible;
+}
+
+html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-icon-renderer--plain > span[aria-hidden] {
+  display: none;
+}
+
+html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile-image--plain {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile-icon svg {
@@ -5116,7 +5132,7 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-rail-
   color: var(--store-text-main);
   font-size: 0.88rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile.is-active .store-category-tile-label {

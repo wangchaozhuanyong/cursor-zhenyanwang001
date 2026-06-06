@@ -48,7 +48,8 @@ export default function CategoryNavTile({
       >
         <HomeNavIcon
           value={iconValue}
-          imageClassName={isPlain ? "h-9 w-9" : undefined}
+          className={isPlain ? "store-category-icon-renderer--plain" : undefined}
+          imageClassName={isPlain ? "store-category-tile-image--plain" : undefined}
         />
       </span>
       <span

@@ -1,0 +1,20 @@
+tunnel: <TUNNEL_UUID>
+credentials-file: /etc/cloudflared/<TUNNEL_UUID>.json
+
+ingress:
+  - hostname: damatong.net
+    service: https://127.0.0.1:443
+    originRequest:
+      httpHostHeader: damatong.net
+      noTLSVerify: true
+  - hostname: www.damatong.net
+    service: https://127.0.0.1:443
+    originRequest:
+      httpHostHeader: www.damatong.net
+      noTLSVerify: true
+  - hostname: console.damatong.net
+    service: https://127.0.0.1:443
+    originRequest:
+      httpHostHeader: console.damatong.net
+      noTLSVerify: true
+  - service: http_status:404

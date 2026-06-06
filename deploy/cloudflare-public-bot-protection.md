@@ -74,3 +74,38 @@ Default rule names:
 
 - `public-storefront-ai-crawler-block`
 - `public-storefront-bot-challenge`
+
+## Optional Bot Management
+
+Bot Management is more aggressive than the custom WAF rules above, so it is
+also disabled by default.
+
+Dry run:
+
+```bash
+bash deploy/cloudflare-apply-bot-management.sh dry-run
+```
+
+Conservative apply:
+
+```bash
+APPLY_CF_BOT_MANAGEMENT=1 \
+CF_BOT_MANAGEMENT_MODE=conservative \
+CF_BOT_MANAGEMENT_ACK=KEEP_TIKTOK_AVAILABLE \
+bash deploy/cloudflare-apply-bot-management.sh apply
+```
+
+The script first creates a Super Bot Fight Mode skip rule for `/tiktok`,
+`/assets/tiktok-*`, `/robots.txt`, and `/sitemap.xml`.
+
+Modes:
+
+- `conservative`: challenge definitely automated traffic and keep likely bots,
+  verified bots, content bots, and AI bot blocking relaxed.
+- `ai-only`: block Cloudflare AI bot protection only. This requires
+  `CF_BOT_MANAGEMENT_RISK_ACK=AI_BOTS_CAN_AFFECT_TIKTOK`.
+- `aggressive`: block AI/content crawlers and challenge more bot traffic. This
+  also requires `CF_BOT_MANAGEMENT_RISK_ACK=AI_BOTS_CAN_AFFECT_TIKTOK`.
+
+Use `conservative` first and watch Cloudflare Security Events before moving to
+the stronger modes.

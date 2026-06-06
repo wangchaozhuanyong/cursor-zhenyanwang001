@@ -86,6 +86,20 @@ else
   log "跳过 Cloudflare bot rules（设置 APPLY_CF_PUBLIC_BOT_RULES=1 才会应用）"
 fi
 
+log "===== ci-deploy: 4) optional Cloudflare Bot Management ====="
+if [[ "${APPLY_CF_BOT_MANAGEMENT:-0}" == "1" ]]; then
+  bash "$PROJECT_DIR/deploy/cloudflare-apply-bot-management.sh" apply || log "Cloudflare Bot Management failed (release continues)"
+else
+  log "skip Cloudflare Bot Management (set APPLY_CF_BOT_MANAGEMENT=1 to apply)"
+fi
+
+log "===== ci-deploy: 5) optional origin Cloudflare-only firewall ====="
+if [[ "${APPLY_ORIGIN_CLOUDFLARE_ONLY:-0}" == "1" ]]; then
+  bash "$PROJECT_DIR/deploy/origin-cloudflare-only-firewall.sh" apply || log "origin Cloudflare-only firewall failed (release continues)"
+else
+  log "skip origin firewall changes (set APPLY_ORIGIN_CLOUDFLARE_ONLY=1 to apply)"
+fi
+
 NEW_HEAD=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || echo "unknown")
 echo "$NEW_HEAD" > "$LAST_GOOD"
 echo "[$(ts)] OK   prev=$PREV_HEAD new=$NEW_HEAD" >> "$HISTORY"

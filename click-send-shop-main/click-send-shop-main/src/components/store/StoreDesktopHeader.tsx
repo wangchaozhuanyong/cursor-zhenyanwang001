@@ -1,4 +1,4 @@
-import { Headphones, Home, LayoutGrid, ShoppingCart, Sparkles, User } from "lucide-react";
+import { GraduationCap, Headphones, Home, LayoutGrid, ShoppingCart, User, Wrench } from "lucide-react";
 import type { MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
@@ -38,14 +38,27 @@ export default function StoreDesktopHeader({ className }: { className?: string }
 
   const navItems: NavItem[] = [
     { path: "/", label: "首页", icon: Home, enabled: true },
-    { path: "/categories", label: "分类", icon: LayoutGrid, enabled: capabilities.mallEnabled },
-    { path: "/new-arrivals", label: "新品", icon: Sparkles, enabled: capabilities.mallEnabled },
-    { path: "/support-download?tab=support", label: "客服", icon: Headphones, enabled: true },
+    { path: "/categories", label: "全部分类", icon: LayoutGrid, enabled: capabilities.mallEnabled },
+    { path: "/categories?keyword=本地服务", label: "本地服务", icon: Wrench, enabled: capabilities.mallEnabled },
+    { path: "/categories?keyword=签证", label: "签证留学", icon: GraduationCap, enabled: capabilities.mallEnabled },
+    { path: "/support-download?tab=support", label: "客服中心", icon: Headphones, enabled: true },
   ].filter((item) => item.enabled !== false);
 
   const isActive = (path: string) => {
-    const base = path.split("?")[0];
+    const [base, query = ""] = path.split("?");
     if (base === "/") return location.pathname === "/";
+    if (query) {
+      const expected = new URLSearchParams(query);
+      const current = new URLSearchParams(location.search);
+      for (const [key, value] of expected.entries()) {
+        if (current.get(key) !== value) return false;
+      }
+      return location.pathname === base;
+    }
+    if (base === "/categories") {
+      const current = new URLSearchParams(location.search);
+      return location.pathname === base && !current.has("keyword");
+    }
     return location.pathname === base || location.pathname.startsWith(`${base}/`);
   };
 

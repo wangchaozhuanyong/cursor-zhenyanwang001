@@ -300,7 +300,8 @@ export default function Categories() {
           items={rootKingkongItems}
           scrollKey={scrollTabKey}
           loading={loading && categories.length === 0}
-          className="store-category-showcase -mx-[var(--store-page-x)] rounded-none border-x-0"
+          variant="plain"
+          className="store-category-showcase store-category-showcase--plain -mx-[var(--store-page-x)] rounded-none border-x-0"
         />
         {subCategories.length > 0 ? (
           <div className="store-category-subtabs flex flex-wrap gap-1.5">

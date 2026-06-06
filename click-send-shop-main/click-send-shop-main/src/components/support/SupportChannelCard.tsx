@@ -152,13 +152,6 @@ export default function SupportChannelCard({ channel }: Props) {
         </div>
 
         <div className="support-qr-block">
-          <div className="support-qr-heading">
-            <div>
-              <span>客服二维码</span>
-              <strong>{qrUrl ? "扫码直达客服" : "等待后台配置"}</strong>
-            </div>
-          </div>
-
           <div className="support-qr-media">
             {qrUrl ? (
               <img

@@ -79,6 +79,13 @@ bash "$PROJECT_DIR/deploy/production-deploy.sh"
 log "===== ci-deploy: 2) 可选 Cloudflare 缓存刷新 ====="
 bash "$PROJECT_DIR/deploy/purge-cloudflare-cache.sh" || log "⚠️ Cloudflare purge 失败（不影响本次发布）"
 
+log "===== ci-deploy: 3) 可选 Cloudflare 前台防爬规则 ====="
+if [[ "${APPLY_CF_PUBLIC_BOT_RULES:-0}" == "1" ]]; then
+  bash "$PROJECT_DIR/deploy/cloudflare-apply-public-bot-rules.sh" || log "⚠️ Cloudflare bot rules 失败（不影响本次发布）"
+else
+  log "跳过 Cloudflare bot rules（设置 APPLY_CF_PUBLIC_BOT_RULES=1 才会应用）"
+fi
+
 NEW_HEAD=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || echo "unknown")
 echo "$NEW_HEAD" > "$LAST_GOOD"
 echo "[$(ts)] OK   prev=$PREV_HEAD new=$NEW_HEAD" >> "$HISTORY"

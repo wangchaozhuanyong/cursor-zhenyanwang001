@@ -261,31 +261,6 @@ html[data-app-scope="store"] .support-qr-block {
   gap: 0.78rem;
 }
 
-html[data-app-scope="store"] .support-qr-heading {
-  display: flex;
-  min-width: 0;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-html[data-app-scope="store"] .support-qr-heading span {
-  display: block;
-  color: var(--support-muted);
-  font-size: 0.78rem;
-  font-weight: 750;
-  line-height: 1.2;
-}
-
-html[data-app-scope="store"] .support-qr-heading strong {
-  display: block;
-  margin-top: 0.16rem;
-  color: var(--support-ink);
-  font-size: 1rem;
-  font-weight: 900;
-  line-height: 1.2;
-}
-
 html[data-app-scope="store"] .support-qr-media {
   display: flex;
   width: 100%;

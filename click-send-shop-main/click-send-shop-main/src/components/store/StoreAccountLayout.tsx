@@ -36,7 +36,7 @@ export default function StoreAccountLayout({
       <main
         className={cn(
           "mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] sm:max-w-lg sm:px-4 sm:py-4",
-          "lg:grid lg:max-w-none lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-8 lg:px-8 lg:pb-12 lg:pt-6",
+          "lg:grid lg:max-w-screen-xl lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-8 lg:px-8 lg:pb-12 lg:pt-6",
           mainClassName,
         )}
       >

@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
-import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { parseSupportDownloadConfig } from "@/utils/supportDownloadConfig";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -31,10 +31,12 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   const navigate = useNavigate();
   const location = useLocation();
   const siteInfo = useSiteInfo();
+  const siteInfoLoaded = useSiteInfoLoaded();
   const capabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
+  const shouldReserveLogoSpace = Boolean(logoSrc) || !siteInfoLoaded;
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
   const loggedIn = isLoggedIn();
   const supportNavLabel = parseSupportDownloadConfig(siteInfo.supportDownloadConfig).title.trim();
@@ -92,8 +94,12 @@ export default function StoreDesktopHeader({ className }: { className?: string }
           className="store-header-brand flex shrink-0 items-center gap-2.5"
           aria-label={`${siteName} 首页`}
         >
-          {logoSrc ? (
-            <img src={logoSrc} alt={`${siteName} Logo`} width={40} height={40} className="store-brand-logo" />
+          {shouldReserveLogoSpace ? (
+            <span className="store-brand-logo flex shrink-0 items-center justify-center" aria-hidden={!logoSrc}>
+              {logoSrc ? (
+                <img src={logoSrc} alt={`${siteName} Logo`} width={40} height={40} className="h-full w-full object-contain" />
+              ) : null}
+            </span>
           ) : null}
           <span className="max-w-[10rem] truncate text-base font-bold tracking-wide text-[var(--theme-text-on-surface)]">
             {siteName}

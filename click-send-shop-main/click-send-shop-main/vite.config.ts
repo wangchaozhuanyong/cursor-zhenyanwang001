@@ -13,10 +13,20 @@ function resolveVendorChunkName(id: string): string | undefined {
   ) {
     return "vendor-react";
   }
+  if (
+    /\/node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?(?:react|react-dom|scheduler)\//.test(normalizedId)
+    || (
+      /(?:^|\/)(?:react|react-dom|scheduler)(?:\/|$)/.test(normalizedId)
+      && !normalizedId.includes("@floating-ui/")
+    )
+  ) {
+    return "vendor-react";
+  }
   if (!normalizedId.includes("/node_modules/")) return undefined;
   if (normalizedId.includes("recharts")) return "vendor-recharts";
   if (normalizedId.includes("framer-motion")) return undefined;
-  if (normalizedId.includes("@radix-ui")) return "vendor-radix";
+  if (normalizedId.includes("@floating-ui")) return undefined;
+  if (normalizedId.includes("@radix-ui")) return undefined;
   if (normalizedId.includes("react-router") || normalizedId.includes("@remix-run")) return "vendor-router";
   if (normalizedId.includes("@tanstack/react-query")) return "vendor-query";
   if (normalizedId.includes("zustand")) return "vendor-state";
@@ -25,14 +35,6 @@ function resolveVendorChunkName(id: string): string | undefined {
   if (normalizedId.includes("sonner")) return "vendor-toast";
   if (normalizedId.includes("@imgly/background-removal") || normalizedId.includes("onnxruntime-web")) {
     return undefined;
-  }
-
-  if (
-    normalizedId.includes("/node_modules/react/")
-    || normalizedId.includes("/node_modules/react-dom/")
-    || normalizedId.includes("/node_modules/scheduler/")
-  ) {
-    return "vendor-react";
   }
 
   if (

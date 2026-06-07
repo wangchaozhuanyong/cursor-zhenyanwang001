@@ -21,7 +21,6 @@ import { useProductStore } from "@/stores/useProductStore";
 import HomeOpsBlocks from "./HomeOpsBlocks";
 import LazyHomeSection from "./LazyHomeSection";
 import NewArrivalSection from "./NewArrivalOpsSection";
-import MarketingCouponRailSection from "./MarketingCouponRailSection";
 import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -47,6 +46,7 @@ const FlashSaleSection = lazy(() => import("./FlashSaleSection"));
 const GuestMobileFooter = lazy(() => import("@/components/GuestMobileFooter"));
 const MarketingFullReductionSection = lazy(() => import("./MarketingFullReductionSection"));
 const MarketingPromotionBannerSection = lazy(() => import("./MarketingPromotionBannerSection"));
+const MarketingCouponRailSection = lazy(() => import("./MarketingCouponRailSection"));
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();

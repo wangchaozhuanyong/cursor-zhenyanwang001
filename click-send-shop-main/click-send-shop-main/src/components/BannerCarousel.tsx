@@ -26,6 +26,7 @@ interface BannerCarouselProps {
 }
 
 const AUTO_ROTATE_MS = 3000;
+const INITIAL_AUTO_ROTATE_DELAY_MS = 12000;
 const USER_INTERACTION_PAUSE_MS = 7200;
 const STATIC_HOME_BANNER_RE = /^(.*\/assets\/home-banners\/home-hero-\d{2}-[^?#]+?)(-mobile)?(\.webp)(\?.*)?$/i;
 const STATIC_HOME_BANNER_VERSION = String(import.meta.env.VITE_STATIC_HOME_BANNER_VERSION || "").trim();
@@ -209,11 +210,19 @@ export default function BannerCarousel({
 
   useEffect(() => {
     if (paused || hoverPaused || !motionEnabled || banners.length <= 1) return;
-    const timer = window.setInterval(() => {
-      if (Date.now() < manualPauseUntil) return;
-      setCurrent((prev) => (prev + 1) % banners.length);
-    }, AUTO_ROTATE_MS);
-    return () => window.clearInterval(timer);
+    let delay = INITIAL_AUTO_ROTATE_DELAY_MS;
+    let timer: ReturnType<typeof window.setTimeout>;
+    const scheduleNext = () => {
+      timer = window.setTimeout(() => {
+        if (Date.now() >= manualPauseUntil) {
+          setCurrent((prev) => (prev + 1) % banners.length);
+        }
+        delay = AUTO_ROTATE_MS;
+        scheduleNext();
+      }, delay);
+    };
+    scheduleNext();
+    return () => window.clearTimeout(timer);
   }, [banners.length, hoverPaused, manualPauseUntil, motionEnabled, paused]);
 
   const handleTouchStart = (e: React.TouchEvent) => {

@@ -1,8 +1,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback, { StoreOutletFallback } from "@/components/AppRouteFallback";
 import SilkPageLoader from "@/components/motion/SilkPageLoader";
@@ -49,6 +47,7 @@ const PRIVACY_TRACKING_DELAY_MS = 1000;
 
 const CookieConsentBanner = lazy(() => import("@/components/CookieConsentBanner"));
 const TrackingManager = lazy(() => import("@/components/TrackingManager"));
+const SonnerToaster = lazy(() => import("@/components/ui/sonner").then((module) => ({ default: module.Toaster })));
 const RouteAnalyticsTracker = lazy(() => import("@/components/RouteAnalyticsTracker"));
 const ChinaBrowserCompatNotice = lazy(() => import("@/components/ChinaBrowserCompatNotice"));
 const PwaUpdateToast = lazy(() => import("@/components/PwaUpdateToast"));
@@ -143,7 +142,7 @@ function DeferredGlobalMount({ children, delayMs = GLOBAL_WIDGET_DELAY_MS }: { c
 }
 
 function AppScopeSync() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
     const standaloneMedia = window.matchMedia("(display-mode: standalone)");
 
@@ -240,7 +239,7 @@ function StoreCardOverlapFix() {
 function TikTokStandaloneRoutes() {
   const location = useLocation();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.documentElement.setAttribute("data-app-scope", "store");
     window.dispatchEvent(new CustomEvent("app:scope-changed", { detail: { scope: "store" } }));
   }, []);
@@ -298,8 +297,6 @@ function MainStoreRoutes() {
       <QueryClientProvider client={queryClient}>
         <ModalLayerProvider>
         <DownloadConfirmProvider>
-        <TooltipProvider>
-          <Sonner />
           <TopProgressBar />
           <AuthSessionSync />
           <SiteIdentitySync />
@@ -376,6 +373,7 @@ function MainStoreRoutes() {
           </Suspense>
           <DeferredGlobalMount delayMs={PRIVACY_TRACKING_DELAY_MS}>
             <Suspense fallback={null}>
+              <SonnerToaster />
               <TrackingManager />
               <CookieConsentBanner />
             </Suspense>
@@ -391,7 +389,6 @@ function MainStoreRoutes() {
               <ChinaBrowserCompatNotice />
             </Suspense>
           </DeferredGlobalMount>
-        </TooltipProvider>
         </DownloadConfirmProvider>
         </ModalLayerProvider>
       </QueryClientProvider>

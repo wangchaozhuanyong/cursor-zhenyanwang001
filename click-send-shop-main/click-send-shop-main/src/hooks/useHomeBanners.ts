@@ -6,7 +6,8 @@ import type { Banner } from "@/types/banner";
 type UseHomeBannersOpts = { fetchRemote?: boolean };
 const BANNER_CACHE_KEY = "home_banners_cache_v1";
 const BANNER_CACHE_TTL_MS = 60_000;
-const BANNER_IDLE_REFRESH_TIMEOUT_MS = 7_000;
+const BANNER_BACKGROUND_REFRESH_DELAY_MS = 9_000;
+const BANNER_IDLE_REFRESH_TIMEOUT_MS = 3_000;
 
 type WindowWithIdleCallback = Window & {
   requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
@@ -40,12 +41,18 @@ function normalizeBootstrapBanners(raw: unknown): Banner[] {
 function scheduleBannerIdleRefresh(callback: () => void) {
   if (typeof window === "undefined") return () => {};
   const idleWindow = window as WindowWithIdleCallback;
-  if (typeof idleWindow.requestIdleCallback === "function") {
-    const id = idleWindow.requestIdleCallback(callback, { timeout: BANNER_IDLE_REFRESH_TIMEOUT_MS });
-    return () => idleWindow.cancelIdleCallback?.(id);
-  }
-  const timer = window.setTimeout(callback, BANNER_IDLE_REFRESH_TIMEOUT_MS);
-  return () => window.clearTimeout(timer);
+  let idleId: number | undefined;
+  const timer = window.setTimeout(() => {
+    if (typeof idleWindow.requestIdleCallback === "function") {
+      idleId = idleWindow.requestIdleCallback(callback, { timeout: BANNER_IDLE_REFRESH_TIMEOUT_MS });
+      return;
+    }
+    callback();
+  }, BANNER_BACKGROUND_REFRESH_DELAY_MS);
+  return () => {
+    window.clearTimeout(timer);
+    if (idleId !== undefined) idleWindow.cancelIdleCallback?.(idleId);
+  };
 }
 
 export function useHomeBanners(opts?: UseHomeBannersOpts) {

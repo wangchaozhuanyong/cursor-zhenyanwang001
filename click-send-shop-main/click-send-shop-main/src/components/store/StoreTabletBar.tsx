@@ -3,7 +3,7 @@ import type { MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
-import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { parseSupportDownloadConfig } from "@/utils/supportDownloadConfig";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -35,10 +35,12 @@ export default function StoreTabletBar({ className }: { className?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
   const siteInfo = useSiteInfo();
+  const siteInfoLoaded = useSiteInfoLoaded();
   const capabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
+  const shouldReserveLogoSpace = Boolean(logoSrc) || !siteInfoLoaded;
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
   const supportNavLabel = parseSupportDownloadConfig(siteInfo.supportDownloadConfig).title.trim();
   const navItems: TabletNavItem[] = [
@@ -85,8 +87,12 @@ export default function StoreTabletBar({ className }: { className?: string }) {
           className="store-tablet-brand store-header-brand flex shrink-0 items-center gap-2"
           aria-label={`${siteName} \u9996\u9875`}
         >
-          {logoSrc ? (
-            <img src={logoSrc} alt={`${siteName} Logo`} width={36} height={36} className="store-brand-logo" />
+          {shouldReserveLogoSpace ? (
+            <span className="store-brand-logo flex shrink-0 items-center justify-center" aria-hidden={!logoSrc}>
+              {logoSrc ? (
+                <img src={logoSrc} alt={`${siteName} Logo`} width={36} height={36} className="h-full w-full object-contain" />
+              ) : null}
+            </span>
           ) : null}
           <span className="store-tablet-brand-name hidden max-w-[8rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline">
             {siteName}

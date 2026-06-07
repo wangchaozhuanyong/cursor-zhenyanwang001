@@ -474,7 +474,7 @@
   @media (min-width: 1024px) {
     :root {
       --store-bottom-nav-height: 0px;
-      --store-desktop-header-height: 4rem;
+      --store-desktop-header-height: 4.75rem;
       --store-tablet-header-height: 3.25rem;
       --store-page-x: 24px;
     }

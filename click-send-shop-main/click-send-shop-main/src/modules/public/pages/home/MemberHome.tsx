@@ -14,7 +14,6 @@ import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import HomeOpsBlocks from "./HomeOpsBlocks";
 import LazyHomeSection from "./LazyHomeSection";
-import MarketingCouponRailSection from "./MarketingCouponRailSection";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import NewArrivalSection from "./NewArrivalOpsSection";
 import HomeHotSalesSection from "./HomeHotSalesSection";
@@ -39,6 +38,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 const FlashSaleSection = lazy(() => import("./FlashSaleSection"));
 const MarketingFullReductionSection = lazy(() => import("./MarketingFullReductionSection"));
 const MarketingPromotionBannerSection = lazy(() => import("./MarketingPromotionBannerSection"));
+const MarketingCouponRailSection = lazy(() => import("./MarketingCouponRailSection"));
 const MEMBER_HOME_DEFERRED_DATA_TIMEOUT_MS = 4_500;
 
 type WindowWithIdleCallback = Window & {

@@ -2,7 +2,7 @@ import { Bell } from "lucide-react";
 import { lazy, Suspense, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import StoreSearchField from "@/components/store/StoreSearchField";
-import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
@@ -44,10 +44,12 @@ export default function StoreTabHeader({
 }: StoreTabHeaderProps) {
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
+  const siteInfoLoaded = useSiteInfoLoaded();
   const { themeConfig } = useThemeRuntime();
 
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
+  const shouldReserveLogoSpace = Boolean(logoSrc) || !siteInfoLoaded;
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
 
   const goSearch = () => navigate("/search");
@@ -74,16 +76,20 @@ export default function StoreTabHeader({
           onClick={() => navigate("/")}
           aria-label={`${siteName} 首页`}
         >
-          {logoSrc ? (
-            <img
-              src={logoSrc}
-              alt={`${siteName} Logo`}
-              width={36}
-              height={36}
-              className="store-brand-logo"
-              loading="eager"
-              decoding="async"
-            />
+          {shouldReserveLogoSpace ? (
+            <span className="store-brand-logo flex shrink-0 items-center justify-center" aria-hidden={!logoSrc}>
+              {logoSrc ? (
+                <img
+                  src={logoSrc}
+                  alt={`${siteName} Logo`}
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-contain"
+                  loading="eager"
+                  decoding="async"
+                />
+              ) : null}
+            </span>
           ) : null}
           {showSiteName ? <span className={nameClass}>{siteName}</span> : null}
         </UnifiedButton>

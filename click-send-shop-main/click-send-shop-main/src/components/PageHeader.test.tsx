@@ -1,4 +1,4 @@
-import { act, type ReactNode } from "react";
+import { act, type ComponentProps, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
@@ -10,7 +10,10 @@ describe("PageHeader", () => {
   let container: HTMLDivElement | null = null;
   let root: Root | null = null;
 
-  async function renderHeader(rightSlot?: ReactNode) {
+  async function renderHeader(
+    rightSlot?: ReactNode,
+    props: Partial<ComponentProps<typeof PageHeader>> = {},
+  ) {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -18,7 +21,7 @@ describe("PageHeader", () => {
     await act(async () => {
       root?.render(
         <MemoryRouter>
-          <PageHeader title="我的订单" rightSlot={rightSlot} />
+          <PageHeader title="我的订单" rightSlot={rightSlot} {...props} />
         </MemoryRouter>,
       );
     });
@@ -57,5 +60,15 @@ describe("PageHeader", () => {
     const headerClassName = container?.querySelector("header")?.className ?? "";
     expect(headerClassName).toContain("store-glass-surface");
     expect(headerClassName).not.toContain("bg-background/95");
+  });
+
+  it("allows the header content and back button to match the page container", async () => {
+    await renderHeader(undefined, {
+      contentClassName: "max-w-3xl",
+      backButtonClassName: "lg:left-8",
+    });
+
+    expect(container?.querySelector("header > div")?.className).toContain("max-w-3xl");
+    expect(container?.querySelector("button[aria-label='返回']")?.className).toContain("lg:left-8");
   });
 });

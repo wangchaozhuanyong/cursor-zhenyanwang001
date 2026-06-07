@@ -29,6 +29,7 @@ const DEFAULT_MODULES = {
 
 const DEFAULT_SETTINGS = {
   modules: { ...DEFAULT_MODULES },
+  titles: {},
   hotBatchSize: 4,
   recBatchSize: 4,
   guestRecommendMax: 8,
@@ -38,6 +39,21 @@ function clampInt(value, min, max, fallback) {
   const n = Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, Math.trunc(n)));
+}
+
+function normalizeTitle(value) {
+  if (typeof value !== 'string') return '';
+  return value.trim().slice(0, 40);
+}
+
+function normalizeTitles(raw) {
+  const titles = {};
+  if (!raw || typeof raw !== 'object') return titles;
+  for (const key of MODULE_KEYS) {
+    const title = normalizeTitle(raw[key]);
+    if (title) titles[key] = title;
+  }
+  return titles;
 }
 
 function parseSettings(raw) {
@@ -66,6 +82,7 @@ function parseSettings(raw) {
   modules.member_coupons = false;
   return {
     modules,
+    titles: normalizeTitles(parsed.titles),
     hotBatchSize: clampInt(
       parsed.hotBatchSize ?? parsed.hot_batch_size,
       2,
@@ -105,6 +122,15 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
     }
     next.modules.member_coupons = false;
   }
+  if (body.titles && typeof body.titles === 'object') {
+    next.titles = { ...(current.titles || {}) };
+    for (const key of MODULE_KEYS) {
+      if (body.titles[key] === undefined) continue;
+      const title = normalizeTitle(body.titles[key]);
+      if (title) next.titles[key] = title;
+      else delete next.titles[key];
+    }
+  }
   if (body.hotBatchSize !== undefined) {
     next.hotBatchSize = clampInt(body.hotBatchSize, 2, 12, current.hotBatchSize);
   }
@@ -116,6 +142,13 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
   }
 
   await siteSettingsRepo.upsertSetting(SETTING_KEY, JSON.stringify(next));
+
+  try {
+    const homeApi = /** @type {any} */ (require('../home')).api || {};
+    if (typeof homeApi.invalidateHomeBootstrapCache === 'function') homeApi.invalidateHomeBootstrapCache();
+  } catch {
+    /* home bootstrap cache is best-effort */
+  }
 
   try {
     const productApi = /** @type {any} */ (productModule).api || {};

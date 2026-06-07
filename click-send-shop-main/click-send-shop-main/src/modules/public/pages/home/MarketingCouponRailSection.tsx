@@ -77,10 +77,16 @@ function readCachedCouponMarketingState(
 export default function MarketingCouponRailSection({
   showCouponCenter,
   showNewUserGift,
+  title = "",
+  newUserGiftTitle = "",
+  compactAfterNav = false,
 }: {
   delay?: number;
   showCouponCenter: boolean;
   showNewUserGift: boolean;
+  title?: string;
+  newUserGiftTitle?: string;
+  compactAfterNav?: boolean;
 }) {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -240,7 +246,7 @@ export default function MarketingCouponRailSection({
   });
 
   if (!shouldLoadMarketing) return null;
-  if (!marketingReady) return <CouponRailLoadingShell />;
+  if (!marketingReady) return <CouponRailLoadingShell compactAfterNav={compactAfterNav} />;
   if (!hasAnyMarketing) return null;
 
   const openAllCoupons = () => {
@@ -288,8 +294,11 @@ export default function MarketingCouponRailSection({
     void (item.action === "claim" ? handleClaim(item) : goUseCoupon(item));
   };
 
-  const sectionTitle = couponZone?.activity?.title || couponCenter?.activity?.title || "优惠券专区";
+  const sectionTitle = title || couponZone?.activity?.title || couponCenter?.activity?.title || "优惠券专区";
   const showFallback = isAuthenticated && couponStateReady && couponItems.length === 0;
+  const sectionClassName = compactAfterNav
+    ? "store-coupon-rail-section store-coupon-rail-section--after-nav w-full"
+    : "store-coupon-rail-section w-full";
 
   return (
     <>
@@ -317,6 +326,7 @@ export default function MarketingCouponRailSection({
               <GiftIntroCard
                 payload={giftIntroPayload}
                 isAuthenticated={isAuthenticated}
+                title={newUserGiftTitle}
                 onClick={() => navigate(isAuthenticated ? "/coupons" : "/register")}
               />
             ) : null}
@@ -384,10 +394,12 @@ function CouponRailSkeleton() {
 function GiftIntroCard({
   payload,
   isAuthenticated,
+  title = "",
   onClick,
 }: {
   payload: NewUserGiftPayload | null;
   isAuthenticated: boolean;
+  title?: string;
   onClick: () => void;
 }) {
   if (!payload) return null;
@@ -402,7 +414,7 @@ function GiftIntroCard({
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-bold text-[var(--theme-invite-promo-foreground)]">
-          {payload.activity.title || "新人礼包"}
+          {title || payload.activity.title || "新人礼包"}
         </span>
         <span className={`mt-1 block line-clamp-2 text-xs leading-5 ${THEME_INVITE_PROMO_MUTED}`}>
           {payload.activity.subtitle || (!isAuthenticated ? `注册即领 ${payload.coupons.length} 张优惠券` : "新人礼权益已同步到你的券包")}

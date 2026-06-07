@@ -293,7 +293,7 @@ export default function Orders() {
     <StoreAccountLayout
       title="我的订单"
       mainClassName="sm:p-0 lg:py-6"
-      rightSlot={renderOrderSearchField("w-[9.5rem] max-w-[44vw] flex-none sm:w-44 lg:hidden")}
+      rightSlot={renderOrderSearchField("store-order-header-search-field w-[9.5rem] max-w-[44vw] flex-none sm:w-44 lg:hidden")}
     >
         <div className="store-glass-surface sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b py-2 backdrop-blur-xl sm:-mx-4 lg:top-[calc(var(--store-desktop-header-height,4rem)+0.5rem)] lg:mx-0 lg:rounded-xl lg:border">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">

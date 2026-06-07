@@ -69,7 +69,7 @@ export const SITE_SETTINGS_SECTIONS: SiteSettingsSectionDef[] = [
     id: "contact",
     title: "联系方式",
     description:
-      "电话、邮箱、地址等法定/展示类联系信息。即时客服（微信 / WhatsApp / Telegram）、二维码、服务时间与「添加到桌面」请在「页面装修 → 客服与安装」统一维护。",
+      "电话、邮箱、地址等法定/展示类联系信息。即时客服（微信 / WhatsApp / Telegram）、二维码、服务时间请在「页面装修 → 客服配置」统一维护。",
     fields: [
       { key: "contactPhone", label: "客服电话", placeholder: "+60 12-345 6789" },
       { key: "contactEmail", label: "客服邮箱", placeholder: "support@example.com" },
@@ -230,7 +230,7 @@ export const SECTION_HELP: Record<
   },
   contact: {
     impacts: ["页脚电话/邮箱/地址", "关于我们"],
-    tips: ["即时客服请在「页面装修 → 客服与安装」配置"],
+    tips: ["即时客服请在「页面装修 → 客服配置」配置"],
   },
   social: {
     impacts: ["页脚社交图标", "关于我们社交链接"],

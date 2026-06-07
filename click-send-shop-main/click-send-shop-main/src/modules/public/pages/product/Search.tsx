@@ -11,7 +11,6 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { useProductStore } from "@/stores/useProductStore";
-import { Skeleton } from "@/components/ui/skeleton";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { flattenCategories } from "@/utils/categoryTree";
 import { fetchHotSearchTerms, fetchSearchSuggestions, trackSearchKeyword } from "@/services/searchService";
@@ -226,15 +225,13 @@ export default function Search() {
             />
           </div>
           <div className="pb-2">
-            {loading && categories.length === 0 ? (
-              <div className="flex gap-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-16 flex-shrink-0 rounded-full" />
-                ))}
-              </div>
-            ) : (
-              <CategoryTabs categories={allCategories} activeId={activeCat} onChange={handleCatChange} />
-            )}
+            <CategoryTabs
+              categories={allCategories}
+              activeId={activeCat}
+              onChange={handleCatChange}
+              loading={loading && categories.length === 0}
+              loadingSlots={5}
+            />
           </div>
         </div>
       </header>

@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback, { StoreOutletFallback } from "@/components/AppRouteFallback";
+import SilkPageLoader from "@/components/motion/SilkPageLoader";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
 import RouteBackTracker from "@/components/RouteBackTracker";
 import AgeGate from "@/components/compliance/AgeGate";
@@ -33,6 +34,7 @@ import { detectPwaPlatform, isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
+import { isLoggedIn } from "@/utils/token";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
@@ -259,7 +261,9 @@ function TikTokStandaloneRoutes() {
 function HomeRoute() {
   const authHydrated = useAuthStore((s) => s.authHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  if (!authHydrated) return <AppRouteFallback />;
+  if (!authHydrated) {
+    return isLoggedIn() ? <AppRouteFallback /> : <GuestHome />;
+  }
   return isAuthenticated ? <MemberHome /> : <GuestHome />;
 }
 
@@ -287,6 +291,7 @@ export function StoreAppRoutes() {
 function MainStoreRoutes() {
   const location = useLocation();
   const capabilities = useSiteCapabilities();
+  const routeFallback = location.pathname === "/" ? <SilkPageLoader variant="home" /> : <SilkPageLoader variant="page" />;
 
   return (
     <ErrorBoundary resetKey={location.pathname}>
@@ -307,7 +312,7 @@ function MainStoreRoutes() {
           <LanguageGate />
           <AgeGate />
           <StoreCardOverlapFix />
-          <Suspense fallback={<AppRouteFallback />}>
+          <Suspense fallback={routeFallback}>
             <Routes>
               <Route path="/zh" element={<Navigate to="/" replace />} />
               <Route path="/en" element={<Navigate to="/" replace />} />

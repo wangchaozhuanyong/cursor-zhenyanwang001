@@ -2038,7 +2038,8 @@ html[data-app-scope="store"] .store-search-field {
   }
 
   html[data-app-scope="store"] .store-home-topbar .store-search-field,
-  html[data-app-scope="store"] .store-category-search-field .store-search-field {
+  html[data-app-scope="store"] .store-category-search-field .store-search-field,
+  html[data-app-scope="store"] .store-order-header-search-field .store-search-field {
     height: 2.375rem;
     min-height: 2.375rem;
     padding-left: 2.1rem;

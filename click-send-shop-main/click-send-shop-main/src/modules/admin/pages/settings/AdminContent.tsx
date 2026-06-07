@@ -351,7 +351,7 @@ export default function AdminContent() {
           <Link to="/help" className="text-theme-price underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/help</Link>
           <Tx>优先读取此处配置（未保存前前台仍使用内置默认）。客服渠道、工作时间与「联系客服」入口请在</Tx>{" "}
           <Link to="/admin/support-download" className="text-theme-price underline-offset-2 hover:underline">
-            <Tx>页面装修 / 客服与安装</Tx>
+            <Tx>页面装修 / 客服配置</Tx>
           </Link>
           <Tx>统一维护。</Tx>
         </p>

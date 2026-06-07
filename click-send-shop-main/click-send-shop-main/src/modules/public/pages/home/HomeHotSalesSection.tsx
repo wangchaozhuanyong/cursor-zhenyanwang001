@@ -15,6 +15,7 @@ interface HomeHotSalesSectionProps {
   skeletonCount?: number;
   showRotate?: boolean;
   onRotate?: () => void;
+  title?: string;
   showPrice?: boolean;
   className?: string;
 }
@@ -25,6 +26,7 @@ export default function HomeHotSalesSection({
   skeletonCount = 4,
   showRotate = false,
   onRotate,
+  title = "今日热销",
   showPrice = true,
   className,
 }: HomeHotSalesSectionProps) {
@@ -56,7 +58,7 @@ export default function HomeHotSalesSection({
       <div className={cn("flex items-center justify-between gap-2", HOME_SECTION_HEADER_MB)}>
         <h2 className="flex min-w-0 items-center gap-2 store-section-title tracking-widest text-[var(--theme-text-on-surface)]">
           <Flame className="h-5 w-5 shrink-0 text-[var(--theme-price)]" />
-          今日热销
+          {title}
         </h2>
         {showRotate ? (
           <UnifiedButton

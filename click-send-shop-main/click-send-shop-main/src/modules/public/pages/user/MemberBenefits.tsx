@@ -329,6 +329,7 @@ export default function MemberBenefits() {
   const progressPercent = useMemo(() => computeUpgradeProgress(data), [data]);
   const displayLevels = useMemo(() => orderedDisplayLevels(data), [data]);
   const currentName = currentLevel?.name || "普通会员";
+  const upgradeIntro = buildUpgradeIntro(currentLevel, nextLevel);
 
   return (
     <div className="member-page-shell store-bottom-safe">
@@ -360,16 +361,6 @@ export default function MemberBenefits() {
                       <h2 className="level-name">{currentName}</h2>
                       <CurrentLevelBadge />
                     </div>
-
-                    <p className="hero-copy">
-                      {buildUpgradeIntro(currentLevel, nextLevel)}
-                      {nextLevel ? (
-                        <>
-                          <br />
-                          可升级至 <span className="next-level">{nextLevel.name}</span>
-                        </>
-                      ) : null}
-                    </p>
                   </div>
 
                   <div className="hero-stats">
@@ -379,6 +370,15 @@ export default function MemberBenefits() {
                     <p className="stat-label">有效订单</p>
                     <p className="stat-order">{Number(data?.stats?.order_count ?? 0)} 笔</p>
                   </div>
+
+                  <p className="hero-copy">
+                    <span className="upgrade-line upgrade-line--intro">{upgradeIntro}</span>
+                    {nextLevel ? (
+                      <span className="upgrade-line upgrade-line--next">
+                        可升级至 <span className="next-level">{nextLevel.name}</span>
+                      </span>
+                    ) : null}
+                  </p>
                 </div>
 
                 <div className="hero-divider" />
@@ -444,7 +444,10 @@ export default function MemberBenefits() {
                         </div>
 
                         <div className="tier-content">
-                          <h3 className="tier-name">{level.name}</h3>
+                          <div className="tier-heading">
+                            <h3 className="tier-name">{level.name}</h3>
+                            {current ? <span className="tier-badge">当前等级</span> : null}
+                          </div>
                           <p className="tier-desc">
                             升级条件：{formatLevelRequirement(level)}
                             <br />
@@ -452,7 +455,6 @@ export default function MemberBenefits() {
                           </p>
                         </div>
 
-                        {current ? <span className="tier-badge">当前等级</span> : null}
                         <span className="tier-arrow" aria-hidden="true" />
                       </article>
                     );

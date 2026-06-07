@@ -63,7 +63,7 @@ export const DEFAULT_SUPPORT_DOWNLOAD_CONFIG: SupportDownloadConfig = {
     channels: [],
   },
   download: {
-    enabled: true,
+    enabled: false,
     title: "添加到桌面",
     description: `可将${STORE_COPY.brandName}添加到手机桌面，像 App 一样快速打开。`,
     platforms: DEFAULT_PLATFORMS,
@@ -156,7 +156,7 @@ export function normalizeSupportDownloadConfig(config: LegacySupportDownloadConf
     enabled: config.enabled !== false,
     title: resolveOptionalConfigText(config.title, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.title),
     subtitle: resolveOptionalConfigText(config.subtitle, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.subtitle),
-    defaultTab: config.defaultTab === "download" ? "download" : "support",
+    defaultTab: "support",
     support: {
       enabled: config.support?.enabled !== false,
       description: resolveFromSources(
@@ -167,7 +167,7 @@ export function normalizeSupportDownloadConfig(config: LegacySupportDownloadConf
       channels: channels ?? [],
     },
     download: {
-      enabled: config.download?.enabled !== false && config.showAppInstall !== false,
+      enabled: false,
       title: resolveFromSources(
         [config.download?.title, config.appInstallTitle],
         DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.title,
@@ -209,6 +209,7 @@ export function getEnabledSupportChannels(config: SupportDownloadConfig): Suppor
 }
 
 export function getEnabledDownloadPlatforms(config: SupportDownloadConfig): DownloadPlatform[] {
+  if (config.download.enabled === false) return [];
   return (config.download.platforms || DEFAULT_PLATFORMS)
     .filter((p) => p.enabled !== false)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));

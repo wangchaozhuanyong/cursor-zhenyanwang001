@@ -1,6 +1,12 @@
-export default function SilkPageLoader() {
+type SilkPageLoaderProps = {
+  variant?: "home" | "page";
+};
+
+export default function SilkPageLoader({ variant = "home" }: SilkPageLoaderProps) {
+  const shellClassName = variant === "page" ? "preboot-shell preboot-shell--page" : "preboot-shell";
+
   return (
-    <div className="preboot-shell" aria-busy="true" aria-label="页面加载中">
+    <div className={shellClassName} aria-busy="true" aria-label="页面加载中">
       <header className="preboot-topbar">
         <div className="preboot-topbar-inner">
           <div className="preboot-logo preboot-skeleton" />

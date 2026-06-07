@@ -79,6 +79,7 @@ export default function Checkout() {
       <PageHeader
         title="确认订单"
         onBack={checkout.goBack}
+        contentClassName="max-w-screen-xl md:px-6"
         rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
       />
 

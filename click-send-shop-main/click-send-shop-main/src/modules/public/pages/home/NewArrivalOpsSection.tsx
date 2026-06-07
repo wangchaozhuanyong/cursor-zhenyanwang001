@@ -22,6 +22,7 @@ interface NewArrivalSectionProps {
   loading?: boolean;
   className?: string;
   title?: string;
+  exactTitle?: boolean;
   displayCount?: number;
   showPrice?: boolean;
 }
@@ -33,13 +34,19 @@ export default function NewArrivalSection({
   loading = false,
   className = "",
   title = DEFAULT_TITLE,
+  exactTitle = false,
   displayCount = 8,
   showPrice = true,
 }: NewArrivalSectionProps) {
   const navigate = useNavigate();
   const sessionId = useHomeTrackingSessionId();
   const exposedProductIdsRef = useRef<Set<string>>(new Set());
-  const normalizedTitle = !title || title.trim() === "新品" ? DEFAULT_TITLE : title;
+  const trimmedTitle = title?.trim();
+  const normalizedTitle = exactTitle
+    ? trimmedTitle || DEFAULT_TITLE
+    : !trimmedTitle || trimmedTitle === "新品"
+      ? DEFAULT_TITLE
+      : trimmedTitle;
 
   const items = useMemo(
     () => products.slice(0, Math.min(8, Math.max(6, Number(displayCount) || 8))),

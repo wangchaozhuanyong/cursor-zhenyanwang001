@@ -64,7 +64,12 @@ export default function ContentCmsPage() {
         canonical={buildCanonical(`/content/${slug}`)}
         robots={isNoindex ? "noindex,follow" : "index,follow"}
       />
-      <PageHeader title={loading ? "加载中..." : page?.title || (isContactUs ? "联系我们" : "内容")} onBack={goBack} />
+      <PageHeader
+        title={loading ? "加载中..." : page?.title || (isContactUs ? "联系我们" : "内容")}
+        onBack={goBack}
+        contentClassName="lg:max-w-3xl lg:px-8"
+        backButtonClassName="lg:left-8"
+      />
       <main className={STORE_READING_MAIN_CLASS}>
         {error && !loading ? <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">{error}</p> : null}
         {page?.content && !loading && !error ? <article className="store-body-text max-w-none leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }} /> : null}

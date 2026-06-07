@@ -30,6 +30,10 @@ function getProductApi() {
   return /** @type {any} */ (require('../../product')).api || {};
 }
 
+function getHomeApi() {
+  return /** @type {any} */ (require('../../home')).api || {};
+}
+
 function requireProductApi(name) {
   const fn = getProductApi()[name];
   if (typeof fn === 'undefined') {
@@ -44,6 +48,12 @@ function bumpCatalogCache() {
     if (typeof fn === 'function') fn();
   } catch (err) {
     console.warn('[adminProduct] clearCatalogCache:', err?.message || err);
+  }
+  try {
+    const fn = getHomeApi().invalidateHomeBootstrapCache;
+    if (typeof fn === 'function') fn();
+  } catch (err) {
+    console.warn('[adminProduct] invalidateHomeBootstrapCache:', err?.message || err);
   }
 }
 

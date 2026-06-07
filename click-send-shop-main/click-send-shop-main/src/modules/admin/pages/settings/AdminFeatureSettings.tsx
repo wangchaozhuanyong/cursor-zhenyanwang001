@@ -25,7 +25,11 @@ type FeatureItem = {
 
 const FEATURE_ITEMS: FeatureItem[] = [
   { key: "mallEnabled", label: "商城模块", desc: "控制商品、购物车等商城入口展示。" },
-  { key: "onlinePaymentEnabled", label: "在线支付", desc: "关闭后前端隐藏支付入口，后端拒绝创建在线支付。" },
+  {
+    key: "onlinePaymentEnabled",
+    label: "在线支付",
+    desc: "作用：控制结账支付渠道、支付订单和后台支付管理接口；默认开启。关闭后用户不能创建在线支付，只能走站点允许的其他付款方式。风险：误关会直接影响下单收款；只在支付渠道、Webhook 和对账链路确认正常后开启。",
+  },
   { key: "pointsEnabled", label: "积分", desc: "关闭后隐藏积分入口，后端拒绝积分相关接口。" },
   { key: "couponEnabled", label: "优惠券", desc: "关闭后隐藏优惠券入口，后端拒绝领券和优惠券管理接口。" },
   { key: "reviewEnabled", label: "评价", desc: "关闭后隐藏评价入口，后端拒绝提交评价。" },
@@ -41,13 +45,17 @@ const FEATURE_ITEMS: FeatureItem[] = [
   {
     key: "languageGateEnabled",
     label: "中文浏览器限制",
-    desc: "开启后前台商城路由将拦截非中文浏览器；后台 /admin 不受限。仅前端拦截，API 仍可直连。",
+    desc: "作用：前台商城会拦截非中文浏览器访问；默认关闭。影响范围只包含前台页面，后台 /admin 不受影响，API 仍需靠后端权限保护。风险：海外或英文系统用户可能被挡住；只在明确要限制中文用户访问时开启。",
   },
-  { key: "trafficAnalyticsEnabled", label: "流量分析", desc: "关闭后前端隐藏追踪加载，后端可减少埋点入口。" },
+  {
+    key: "trafficAnalyticsEnabled",
+    label: "流量分析",
+    desc: "作用：控制前台浏览、点击和活动统计上报；默认开启。影响范围是数据分析和报表，不应影响用户看页面、下单或支付。风险：关闭后报表会缺少新流量数据；只在统计接口异常、隐私策略调整或临时排查时关闭。",
+  },
   {
     key: "downloadConfirmEnabled",
     label: "下载二次确认",
-    desc: "开启后，前台与后台的导出、下载文件（含 CSV 导出、导出中心、二维码/海报下载等）均需确认后才会保存到本机。",
+    desc: "作用：导出、CSV、二维码、海报等下载前先弹出确认；默认开启。影响前台和后台下载入口。风险：关闭后误点会直接保存文件，敏感报表更容易被带出；只在可信内网或临时排查下载问题时考虑关闭。",
   },
   {
     key: "serviceEnabled",
@@ -58,7 +66,7 @@ const FEATURE_ITEMS: FeatureItem[] = [
   {
     key: "restrictedProductComplianceEnabled",
     label: "受限商品合规（预留）",
-    desc: "预留开关：影响受监管商品的提示与限制逻辑；修改前请与业务/法务确认。",
+    desc: "作用：预留给受监管商品提示、noindex、年龄/合规限制；默认开启。影响前台展示、SEO 和部分合规提示。风险：误关可能让受限商品缺少提醒或搜索限制；修改前必须先和业务/法务确认。",
     superAdminOnly: true,
   },
 ];

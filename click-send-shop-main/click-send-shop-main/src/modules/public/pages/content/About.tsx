@@ -38,7 +38,12 @@ export default function About() {
         canonical={buildCanonical("/about")}
         robots="index,follow"
       />
-      <PageHeader title="关于我们" onBack={goBack} />
+      <PageHeader
+        title="关于我们"
+        onBack={goBack}
+        contentClassName="lg:max-w-3xl lg:px-8"
+        backButtonClassName="lg:left-8"
+      />
       <main className={`${STORE_READING_MAIN_CLASS} space-y-4`}>
         {cmsBody ? (
           <article className="store-body-text max-w-none rounded-2xl border border-border bg-card p-5 leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />

@@ -7,7 +7,7 @@ import { AnimatedSection } from "@/modules/micro-interactions";
 import { trackEventLazy } from "@/services/trackEventLazy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
-export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?: number }) {
+export default function MarketingPromotionBannerSection({ delay = 0, title = "" }: { delay?: number; title?: string }) {
   const navigate = useNavigate();
   const [banners, setBanners] = useState<MarketingActivitySummary[]>([]);
 
@@ -61,7 +61,7 @@ export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?:
           <div className="h-28 w-full bg-gradient-to-r from-[var(--theme-primary)]/20 to-[var(--theme-bg)] md:h-36" />
         )}
         <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/55 to-transparent p-4">
-          <p className="text-sm font-bold text-white">{banner.title}</p>
+          <p className="text-sm font-bold text-white">{title || banner.title}</p>
           {banner.promo_label ? <p className="text-xs text-white/85">{banner.promo_label}</p> : null}
         </div>
       </UnifiedButton>

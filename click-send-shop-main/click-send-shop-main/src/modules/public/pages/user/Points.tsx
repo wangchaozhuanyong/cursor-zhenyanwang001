@@ -81,7 +81,7 @@ function normalizePointsText(value?: string | null, action?: string | null) {
 function signInHintText(config: SignInConfig | null, ready: boolean) {
   if (!ready) return "正在加载签到规则…";
   if (!config) return "暂时无法获取签到规则";
-  if (config.enabled) return `每日签到可获 ${config.points} 积分`;
+  if (config.enabled) return `每日签到可获得 ${config.points} 积分`;
   return normalizePointsText(config.disabledReason) || "暂时无法签到";
 }
 
@@ -91,13 +91,6 @@ function signInStatusText(config: SignInConfig | null, ready: boolean, signedInT
   if (!config) return "规则未加载";
   if (config.enabled) return "今日可签到";
   return "暂不可签到";
-}
-
-function signInRuleText(config: SignInConfig | null, ready: boolean) {
-  if (!ready) return "正在读取签到奖励";
-  if (!config) return "签到规则暂不可用";
-  if (config.enabled) return `签到一次获得 ${config.points} 积分`;
-  return normalizePointsText(config.disabledReason) || "签到规则暂不可用";
 }
 
 function PointsHeroCard({
@@ -116,43 +109,45 @@ function PointsHeroCard({
   onSignIn: () => void;
 }) {
   const signInEnabled = configReady && Boolean(signInConfig?.enabled) && !signedInToday;
-  const signInLabel = signingIn ? "签到中..." : signedInToday ? "今日已签到" : signInEnabled ? "每日签到" : "签到不可用";
+  const signInLabel = signingIn ? "签到中..." : signedInToday ? "明天再来" : signInEnabled ? "每日签到" : "签到不可用";
   const statusText = signInStatusText(signInConfig, configReady, signedInToday);
+  const rewardText = signInHintText(signInConfig, configReady);
 
   return (
-    <section className={cn("relative overflow-hidden rounded-2xl px-5 py-6 sm:px-8 sm:py-7", THEME_ACCENT_HERO_SHELL)}>
+    <section className={cn("relative overflow-hidden rounded-2xl px-5 py-5 sm:px-8 sm:py-7", THEME_ACCENT_HERO_SHELL)}>
       <Star
-        size={138}
-        className={cn("pointer-events-none absolute -right-4 top-5 opacity-20", THEME_ACCENT_HERO_ICON)}
+        size={132}
+        className={cn("pointer-events-none absolute -right-5 top-7 opacity-15", THEME_ACCENT_HERO_ICON)}
         aria-hidden
       />
       <div className="relative flex flex-col gap-5">
-        <div className="max-w-[68%] sm:max-w-none">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-              <Star size={20} className={THEME_ACCENT_HERO_ICON} aria-hidden />
-            </span>
-            <p className={cn(THEME_ACCENT_HERO_LABEL, "normal-case tracking-normal")}>当前积分</p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                <Star size={20} className={THEME_ACCENT_HERO_ICON} aria-hidden />
+              </span>
+              <p className={cn(THEME_ACCENT_HERO_LABEL, "normal-case tracking-normal")}>当前积分</p>
+            </div>
+            <p className={cn("store-stat-value mt-4 break-words text-5xl leading-none sm:text-6xl", THEME_ACCENT_HERO_VALUE)}>
+              {balance}
+            </p>
           </div>
-          <p className={cn("store-stat-value mt-4 text-5xl leading-none sm:text-6xl", THEME_ACCENT_HERO_VALUE)}>
-            {balance}
-          </p>
-          <p className={cn("mt-4 text-sm leading-5", THEME_ACCENT_HERO_SUBTLE)}>
-            {signInHintText(signInConfig, configReady)}
-          </p>
+          <span className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 text-xs font-semibold">
+            <CalendarCheck size={14} aria-hidden />
+            {statusText}
+          </span>
+        </div>
+
+        <div className="rounded-2xl bg-white/10 px-4 py-3">
+          <p className={cn("text-sm font-medium leading-5", THEME_ACCENT_HERO_SUBTLE)}>{rewardText}</p>
+          {!signedInToday ? (
+            <p className={cn("mt-1 text-xs leading-5", THEME_ACCENT_HERO_SUBTLE)}>每天一次，签到后积分会自动入账。</p>
+          ) : null}
         </div>
 
         <div className="border-t border-white/20 pt-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex min-h-9 items-center gap-2 rounded-full bg-white/15 px-3 text-xs font-semibold">
-                <CalendarCheck size={15} aria-hidden />
-                {statusText}
-              </span>
-              <span className="inline-flex min-h-9 items-center rounded-full bg-white/10 px-3 text-xs">
-                {signInConfig?.usesDefault ? "默认签到奖励" : "签到奖励规则"}
-              </span>
-            </div>
+          <div className="flex justify-end">
             <UnifiedButton
               type="button"
               onClick={onSignIn}
@@ -165,41 +160,6 @@ function PointsHeroCard({
           </div>
         </div>
       </div>
-    </section>
-  );
-}
-
-function PointsCheckInPanel({
-  signInConfig,
-  configReady,
-  signedInToday,
-  signingIn,
-  onSignIn,
-}: {
-  signInConfig: SignInConfig | null;
-  configReady: boolean;
-  signedInToday: boolean;
-  signingIn: boolean;
-  onSignIn: () => void;
-}) {
-  const signInEnabled = configReady && Boolean(signInConfig?.enabled) && !signedInToday;
-  return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <h2 className="text-sm font-semibold text-foreground">今日签到</h2>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          {signedInToday ? "今天已经完成签到，明天再来领取积分。" : signInRuleText(signInConfig, configReady)}
-        </p>
-      </div>
-      <UnifiedButton
-        type="button"
-        onClick={onSignIn}
-        disabled={signingIn || !signInEnabled}
-        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full btn-theme-price px-5 py-2 text-sm font-semibold text-[var(--theme-price-foreground)] shadow-md transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <CalendarCheck size={16} aria-hidden />
-        {signingIn ? "签到中..." : signedInToday ? "已签到" : "去签到"}
-      </UnifiedButton>
     </section>
   );
 }
@@ -421,14 +381,6 @@ export default function Points() {
       <div className="flex flex-col gap-6">
         <PointsHeroCard
           balance={displayBalance}
-          signInConfig={signInConfig}
-          configReady={configReady}
-          signedInToday={signedInToday}
-          signingIn={signingIn}
-          onSignIn={() => void handleSignIn()}
-        />
-
-        <PointsCheckInPanel
           signInConfig={signInConfig}
           configReady={configReady}
           signedInToday={signedInToday}

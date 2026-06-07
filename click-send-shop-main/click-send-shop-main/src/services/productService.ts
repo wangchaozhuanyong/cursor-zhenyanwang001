@@ -56,5 +56,9 @@ export async function trackHomeEngagement(data: {
   session_id?: string;
   meta?: Record<string, unknown>;
 }): Promise<void> {
-  await productApi.trackHomeEvent(data);
+  try {
+    await productApi.trackHomeEvent(data);
+  } catch {
+    // 首页统计失败不能影响用户浏览商品和活动入口。
+  }
 }

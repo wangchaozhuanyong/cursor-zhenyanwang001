@@ -21,9 +21,18 @@ function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
 }
 
+function getProductApi() {
+  return /** @type {any} */ (require('../../product')).api || {};
+}
+
+function getHomeApi() {
+  return /** @type {any} */ (require('../../home')).api || {};
+}
+
 const LEGACY_DEFAULT_OG_IMAGE_KEY = 'defaultOgImageUrl';
 const SITE_ASSET_KEYS = new Set(['logoUrl', 'faviconUrl']);
 const SITE_ASSET_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const HOME_PRODUCT_SETTING_KEYS = new Set(['newArrivalDisplayCount', 'newArrivalOnlyInStock']);
 
 async function trimTransparentIconPadding(inputBuffer) {
   try {
@@ -132,6 +141,20 @@ async function updateSiteSettings(body, adminUserId, req) {
       || Object.prototype.hasOwnProperty.call(normalizedBody, 'orderPaymentTimeoutMinutes')
     ) {
       invalidatePaymentTimeoutSettingsCache();
+    }
+    if (Object.keys(normalizedBody).some((key) => HOME_PRODUCT_SETTING_KEYS.has(key))) {
+      try {
+        const clearCatalogCache = getProductApi().clearCatalogCache;
+        if (typeof clearCatalogCache === 'function') clearCatalogCache();
+      } catch (err) {
+        console.warn('[siteSettings] clearCatalogCache:', err?.message || err);
+      }
+    }
+    try {
+      const invalidateHomeBootstrapCache = getHomeApi().invalidateHomeBootstrapCache;
+      if (typeof invalidateHomeBootstrapCache === 'function') invalidateHomeBootstrapCache();
+    } catch (err) {
+      console.warn('[siteSettings] invalidateHomeBootstrapCache:', err?.message || err);
     }
     await writeAuditLog({
       req,
@@ -305,4 +328,3 @@ module.exports = {
   updateSiteSettings,
   uploadSiteAsset,
 };
-

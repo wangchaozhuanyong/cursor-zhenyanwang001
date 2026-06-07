@@ -1,5 +1,5 @@
 ﻿<!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-app-scope="store" data-preboot-layout="home">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content" />
@@ -61,7 +61,20 @@
       })();
     </script>
     <link rel="manifest" href="/manifest.webmanifest" />
+    <script>
+      (function () {
+        try {
+          var pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+          var isHome = pathname === "/" || pathname === "/zh" || pathname === "/en";
+          document.documentElement.setAttribute("data-preboot-layout", isHome ? "home" : "page");
+        } catch (_e) {}
+      })();
+    </script>
     <style>
+      html,
+      body {
+        margin: 0;
+      }
       .preboot-shell {
         min-height: 100dvh;
         background: #f9fafb;
@@ -89,11 +102,12 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
+        height: 2.875rem;
+        padding-top: 0;
+        padding-bottom: 0;
       }
       .preboot-main {
-        padding-top: 1.25rem;
+        padding-top: 0.45rem;
         padding-bottom: 5rem;
       }
       .preboot-skeleton {
@@ -117,11 +131,11 @@
         flex: 0 0 auto;
       }
       .preboot-search {
-        height: 2.25rem;
+        height: 2.375rem;
         flex: 1 1 auto;
       }
       .preboot-hero {
-        height: min(42vh, 20rem);
+        height: clamp(16rem, 62vw, 21rem);
         border-radius: 1rem;
       }
       .preboot-grid {
@@ -140,13 +154,81 @@
         }
       }
       @media (min-width: 768px) {
+        .preboot-topbar-inner {
+          height: 4.25rem;
+        }
         .preboot-topbar-inner,
         .preboot-main {
+          max-width: 56rem;
           padding-left: 1.5rem;
           padding-right: 1.5rem;
         }
+        .preboot-main {
+          padding-top: 1rem;
+        }
+        .preboot-hero {
+          height: auto;
+          aspect-ratio: 2 / 1;
+        }
         .preboot-grid {
           grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+      @media (min-width: 1024px) {
+        .preboot-topbar-inner {
+          height: 4.75rem;
+        }
+        .preboot-topbar-inner,
+        .preboot-main {
+          max-width: min(1240px, calc(100vw - 4.5rem));
+          padding-left: 2rem;
+          padding-right: 2rem;
+        }
+        .preboot-main {
+          padding-top: 0;
+        }
+      }
+      html[data-preboot-layout="page"] .preboot-main,
+      .preboot-shell--page .preboot-main {
+        padding-top: 0.75rem;
+      }
+      html[data-preboot-layout="page"] .preboot-hero,
+      .preboot-shell--page .preboot-hero {
+        height: 7.75rem;
+        aspect-ratio: auto;
+        border-radius: 1rem;
+      }
+      html[data-preboot-layout="page"] .preboot-grid,
+      .preboot-shell--page .preboot-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+      }
+      html[data-preboot-layout="page"] .preboot-card,
+      .preboot-shell--page .preboot-card {
+        height: 4.35rem;
+        border-radius: 0.875rem;
+      }
+      @media (min-width: 768px) {
+        html[data-preboot-layout="page"] .preboot-main,
+        .preboot-shell--page .preboot-main {
+          max-width: min(1240px, calc(100vw - 3rem));
+          padding-top: 1rem;
+        }
+        html[data-preboot-layout="page"] .preboot-hero,
+        .preboot-shell--page .preboot-hero {
+          height: 8.25rem;
+          aspect-ratio: auto;
+        }
+        html[data-preboot-layout="page"] .preboot-grid,
+        .preboot-shell--page .preboot-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (min-width: 1024px) {
+        html[data-preboot-layout="page"] .preboot-main,
+        .preboot-shell--page .preboot-main {
+          max-width: min(1240px, calc(100vw - 4.5rem));
         }
       }
     </style>

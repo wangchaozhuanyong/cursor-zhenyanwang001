@@ -21,10 +21,11 @@ import StoreTabHeader from "@/components/store/StoreTabHeader";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
 import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
+import { getHomeBatchListLimit, preferNonOverlappingProducts } from "@/utils/homeProductBlocks";
 import { isLoggedIn } from "@/utils/token";
 import * as authService from "@/services/authService";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
-import { isHomeModuleEnabled } from "@/constants/homeModules";
+import { getHomeModuleCustomTitle, getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules";
 import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLayout";
 import { STORE_COPY } from "@/constants/storeCopy";
 import SeoHead from "@/components/SeoHead";
@@ -87,6 +88,15 @@ export default function MemberHome() {
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "member");
   const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "member");
   const showCouponRail = homeModulesReady && (showCouponCenter || showNewUserGift);
+  const newArrivalsCustomTitle = getHomeModuleCustomTitle(homeModules, "new_arrivals");
+  const promotionBannerTitle = getHomeModuleCustomTitle(homeModules, "promotion_banner");
+  const flashSaleTitle = getHomeModuleCustomTitle(homeModules, "flash_sale_section");
+  const fullReductionTitle = getHomeModuleCustomTitle(homeModules, "full_reduction_notice");
+  const couponCenterTitle = getHomeModuleCustomTitle(homeModules, "coupon_center");
+  const newUserGiftTitle = getHomeModuleCustomTitle(homeModules, "new_user_gift");
+  const couponRailTitle = showCouponCenter ? couponCenterTitle : newUserGiftTitle;
+  const hotSalesTitle = getHomeModuleTitle(homeModules, "hot_sales", "今日热销");
+  const recommendTitle = getHomeModuleTitle(homeModules, "recommend", "猜你喜欢");
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription =
@@ -130,21 +140,24 @@ export default function MemberHome() {
   const [recBatchIndex, setRecBatchIndex] = useState(0);
   const HOT_BATCH_SIZE = homeModules.hotBatchSize;
   const REC_BATCH_SIZE = homeModules.recBatchSize;
+  const hotListLimit = getHomeBatchListLimit(HOT_BATCH_SIZE);
+  const recListLimit = getHomeBatchListLimit(REC_BATCH_SIZE);
 
-  const hotList = useMemo(() => hotProducts.slice(0, 16), [hotProducts]);
+  const hotList = useMemo(() => hotProducts.slice(0, hotListLimit), [hotProducts, hotListLimit]);
   const recList = useMemo(() => {
     const excludedIds = new Set([...hotList, ...newProducts].map((p) => p.id));
-    return buildPersonalizedRecommendations({
+    const personalized = buildPersonalizedRecommendations({
       candidates: recommendedProducts,
-      fallbackProducts: [...recommendedProducts, ...hotProducts],
+      fallbackProducts: [...recommendedProducts, ...hotProducts, ...newProducts],
       historyProducts,
       favoriteIds,
       favoriteProducts,
       cartItems,
       orders,
-      limit: 24,
-    }).filter((p) => !excludedIds.has(p.id)).slice(0, 16);
-  }, [recommendedProducts, newProducts, hotProducts, hotList, historyProducts, favoriteIds, favoriteProducts, cartItems, orders]);
+      limit: recListLimit,
+    });
+    return preferNonOverlappingProducts(personalized, excludedIds, REC_BATCH_SIZE, recListLimit);
+  }, [REC_BATCH_SIZE, recListLimit, recommendedProducts, newProducts, hotProducts, hotList, historyProducts, favoriteIds, favoriteProducts, cartItems, orders]);
   const hotBatches = useMemo(() => toBatches(hotList, HOT_BATCH_SIZE), [hotList, HOT_BATCH_SIZE]);
   const recBatches = useMemo(() => toBatches(recList, REC_BATCH_SIZE), [recList, REC_BATCH_SIZE]);
   const hot = hotBatches.length > 0 ? hotBatches[hotBatchIndex % hotBatches.length] : [];
@@ -206,7 +219,8 @@ export default function MemberHome() {
         <NewArrivalSection
           products={newProducts}
           loading={homeLoading}
-          title={siteInfo.newArrivalSectionTitle}
+          title={newArrivalsCustomTitle || siteInfo.newArrivalSectionTitle}
+          exactTitle={Boolean(newArrivalsCustomTitle)}
           displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
           showPrice={siteInfo.newArrivalShowPrice !== "0"}
         />
@@ -214,23 +228,25 @@ export default function MemberHome() {
         ) : null}
         {isHomeModuleEnabled(homeModules, "promotion_banner", "member") ? (
           <Suspense fallback={null}>
-            <MarketingPromotionBannerSection delay={0.125} />
+            <MarketingPromotionBannerSection delay={0.125} title={promotionBannerTitle} />
           </Suspense>
         ) : null}
         {isHomeModuleEnabled(homeModules, "flash_sale_section", "member") ? (
           <Suspense fallback={null}>
-            <FlashSaleSection delay={0.13} />
+            <FlashSaleSection delay={0.13} title={flashSaleTitle} />
           </Suspense>
         ) : null}
         {isHomeModuleEnabled(homeModules, "full_reduction_notice", "member") ? (
           <Suspense fallback={null}>
-            <MarketingFullReductionSection delay={0.131} />
+            <MarketingFullReductionSection delay={0.131} title={fullReductionTitle || "满减特惠"} />
           </Suspense>
         ) : null}
         {showCouponRail ? (
           <MarketingCouponRailSection
             showCouponCenter={showCouponCenter}
             showNewUserGift={showNewUserGift}
+            title={couponRailTitle}
+            newUserGiftTitle={newUserGiftTitle}
           />
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
@@ -241,6 +257,7 @@ export default function MemberHome() {
             skeletonCount={HOT_BATCH_SIZE}
             showRotate={hotBatches.length > 1}
             onRotate={handleHotRotate}
+            title={hotSalesTitle}
           />
         </AnimatedSection>
         ) : null}
@@ -251,7 +268,7 @@ export default function MemberHome() {
             <div>
               <h2 className="flex items-center gap-2 store-section-title tracking-widest text-[var(--theme-text-on-surface)]">
                 <Star className="h-5 w-5 text-[var(--theme-price)]" />
-                猜你喜欢
+                {recommendTitle}
               </h2>
             </div>
             {recBatches.length > 1 ? (

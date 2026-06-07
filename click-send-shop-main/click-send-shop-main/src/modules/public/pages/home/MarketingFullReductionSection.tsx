@@ -7,7 +7,7 @@ import type { MarketingActivitySummary } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
-export default function MarketingFullReductionSection({ delay = 0 }: { delay?: number }) {
+export default function MarketingFullReductionSection({ delay = 0, title = "满减特惠" }: { delay?: number; title?: string }) {
   const navigate = useNavigate();
   const [list, setList] = useState<MarketingActivitySummary[]>([]);
 
@@ -39,7 +39,7 @@ export default function MarketingFullReductionSection({ delay = 0 }: { delay?: n
     <section className="w-full">
       <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--theme-text)]">
         <Percent size={16} className="text-[var(--theme-primary)]" />
-        满减特惠
+        {title}
       </h2>
       <div className="flex flex-wrap gap-2">
         {list.map((item) => (

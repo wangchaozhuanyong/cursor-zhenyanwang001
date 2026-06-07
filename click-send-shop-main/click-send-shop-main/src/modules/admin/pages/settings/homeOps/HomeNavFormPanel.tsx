@@ -101,8 +101,8 @@ export default function HomeNavFormPanel({
         : navForm.target_type === "support"
           ? supportNavEnabled
             ? L(
-                "账号在「页面装修 → 客服与安装」中维护，仅显示已启用账号",
-                'Accounts are managed in "Page Design → Support & Install" and only enabled accounts are shown',
+                "账号在「页面装修 → 客服配置」中维护，仅显示已启用账号",
+                'Accounts are managed in "Page Design → Support Settings" and only enabled accounts are shown',
               )
             : L("请先在站点能力中开启「客服/APP 页」", 'Please enable the "Support/App Page" capability first')
           : L("支持站内路径和完整 URL", "Supports internal paths and full URLs");

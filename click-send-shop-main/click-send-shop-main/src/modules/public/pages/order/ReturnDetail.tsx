@@ -154,7 +154,7 @@ export default function ReturnDetail() {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] pb-8 text-[var(--theme-text)]">
-      <PageHeader title="售后详情" onBack={goBack} />
+      <PageHeader title="售后详情" onBack={goBack} contentClassName="max-w-3xl" />
       <main className="mx-auto w-full max-w-3xl space-y-4 px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm sm:p-4">
         {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">加载中...</p> : null}
         {detail ? (

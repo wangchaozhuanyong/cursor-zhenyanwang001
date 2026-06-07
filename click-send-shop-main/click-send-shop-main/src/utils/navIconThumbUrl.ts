@@ -11,13 +11,7 @@ export function shouldUseNavIconThumbProxy(value: string | null | undefined): bo
   if (!raw || raw.startsWith("data:") || raw.startsWith("blob:")) return false;
   if (raw.startsWith("/api/media/nav-icon-thumb")) return false;
   if (raw.startsWith(UPLOADS_PATH)) return true;
-
-  try {
-    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "http://localhost");
-    return /^https?:$/i.test(url.protocol) && url.pathname.includes(UPLOADS_PATH);
-  } catch {
-    return false;
-  }
+  return false;
 }
 
 export function resolveNavIconThumbUrl(value: string | null | undefined): string {

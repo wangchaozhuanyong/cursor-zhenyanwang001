@@ -232,7 +232,9 @@ export default function BannerCarousel({
     if (!loading) return null;
     return (
       <div
-        className="store-hero-loading-shell relative overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)]"
+        className={`store-hero-carousel store-hero-carousel--showcase store-hero-loading-shell relative w-full overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] ${bannerContainerClass}`}
+        data-banner-style={bannerStyle}
+        data-theme-banner-style={bannerStyle}
         style={{ aspectRatio: BANNER_ASPECT_CSS, borderRadius: "var(--theme-radius)" }}
         aria-busy="true"
       >

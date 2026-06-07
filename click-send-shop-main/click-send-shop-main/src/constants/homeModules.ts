@@ -17,6 +17,7 @@ export type HomeModuleKey =
 
 export type HomeModuleSettings = {
   modules: Record<HomeModuleKey, boolean>;
+  titles: Partial<Record<HomeModuleKey, string>>;
   hotBatchSize: number;
   recBatchSize: number;
   guestRecommendMax: number;
@@ -140,10 +141,17 @@ export const DEFAULT_HOME_MODULE_SETTINGS: HomeModuleSettings = {
     full_reduction_notice: true,
     promotion_banner: true,
   },
+  titles: {},
   hotBatchSize: 4,
   recBatchSize: 4,
   guestRecommendMax: 8,
 };
+
+function normalizeHomeModuleTitle(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const text = value.trim().slice(0, 40);
+  return text || undefined;
+}
 
 function clampHomeBatchSize(value: unknown, fallback: number) {
   return typeof value === "number" && value >= 2 ? Math.min(12, Math.trunc(value)) : fallback;
@@ -164,8 +172,16 @@ export function mergeHomeModuleSettings(
     }
   }
   modules.member_coupons = false;
+  const titles: Partial<Record<HomeModuleKey, string>> = {};
+  if (partial?.titles && typeof partial.titles === "object") {
+    for (const def of HOME_MODULE_DEFINITIONS) {
+      const title = normalizeHomeModuleTitle(partial.titles[def.key]);
+      if (title) titles[def.key] = title;
+    }
+  }
   return {
     modules,
+    titles,
     hotBatchSize: clampHomeBatchSize(
       partial?.hotBatchSize ?? (partial as { hot_batch_size?: number })?.hot_batch_size,
       DEFAULT_HOME_MODULE_SETTINGS.hotBatchSize,
@@ -189,4 +205,19 @@ export function isHomeModuleEnabled(
   const def = HOME_MODULE_DEFINITIONS.find((d) => d.key === key);
   if (!def?.audiences.includes(audience)) return false;
   return settings.modules[key] !== false;
+}
+
+export function getHomeModuleCustomTitle(
+  settings: HomeModuleSettings,
+  key: HomeModuleKey,
+): string {
+  return normalizeHomeModuleTitle(settings.titles?.[key]) || "";
+}
+
+export function getHomeModuleTitle(
+  settings: HomeModuleSettings,
+  key: HomeModuleKey,
+  fallback: string,
+): string {
+  return getHomeModuleCustomTitle(settings, key) || fallback;
 }

@@ -26,12 +26,24 @@ const CATEGORY_LABELS: Record<string, string> = {
   guest: "未登录首页",
 };
 
+const CLIENT_TITLE_MODULE_KEYS = new Set<HomeModuleKey>([
+  "new_arrivals",
+  "promotion_banner",
+  "flash_sale_section",
+  "full_reduction_notice",
+  "coupon_center",
+  "new_user_gift",
+  "hot_sales",
+  "recommend",
+  "guest_recommend",
+]);
+
 type Props = {
   onDirtyChange?: (dirty: boolean) => void;
 };
 
 function serializeModuleDraft(value: HomeModuleSettings) {
-  return JSON.stringify({ modules: value.modules });
+  return JSON.stringify({ modules: value.modules, titles: value.titles || {} });
 }
 
 export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
@@ -74,10 +86,26 @@ export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
     }));
   };
 
+  const setModuleTitle = (key: HomeModuleKey, value: string) => {
+    setSettings((prev) => {
+      const titles = { ...(prev.titles || {}) };
+      const nextTitle = value.slice(0, 40);
+      if (nextTitle.trim()) titles[key] = nextTitle;
+      else delete titles[key];
+      return { ...prev, titles };
+    });
+  };
+
   const save = async () => {
     setSaving(true);
     try {
-      const saved = await homeOpsService.updateHomeOpsSettings({ modules: settings.modules });
+      const titlePayload = Object.fromEntries(
+        HOME_MODULE_DEFINITIONS.map((def) => [def.key, settings.titles?.[def.key] || ""]),
+      ) as Partial<Record<HomeModuleKey, string>>;
+      const saved = await homeOpsService.updateHomeOpsSettings({
+        modules: settings.modules,
+        titles: titlePayload,
+      });
       const merged = mergeHomeModuleSettings(saved);
       setSettings(merged);
       setBaseline(serializeModuleDraft(merged));
@@ -136,6 +164,24 @@ export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
                             )}
                           />
                         </div>
+                        {CLIENT_TITLE_MODULE_KEYS.has(def.key) ? (
+                          <label className="mt-3 block max-w-xl">
+                            <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                              <Tx>客户端显示标题</Tx>
+                            </span>
+                            <input
+                              type="text"
+                              maxLength={40}
+                              value={settings.titles?.[def.key] || ""}
+                              onChange={(e) => setModuleTitle(def.key, e.target.value)}
+                              placeholder={`默认：${def.label}`}
+                              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/15"
+                            />
+                            <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                              <Tx>留空时继续使用前台原来的默认标题或活动标题。</Tx>
+                            </span>
+                          </label>
+                        ) : null}
                       </div>
                       <label className="flex shrink-0 cursor-pointer items-center gap-2 pt-0.5 text-sm">
                         <input

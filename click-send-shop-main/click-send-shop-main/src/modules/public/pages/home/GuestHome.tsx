@@ -27,7 +27,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
 import { AnimatedSection } from "@/modules/micro-interactions/components/AnimatedSection";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
-import { isHomeModuleEnabled } from "@/constants/homeModules";
+import { getHomeModuleCustomTitle, getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules";
 import {
   HOME_GUEST_FOOTER_WRAP_CLASS,
   HOME_GUEST_MAIN_CLASS,
@@ -336,11 +336,30 @@ export default function GuestHome() {
 
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isMagazineLayout = homeLayout === "magazine";
+  const showNavGrid = isHomeModuleEnabled(homeModules, "nav_grid", "guest");
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "guest");
   const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "guest");
   const showCouponRail = homeModulesReady && (showCouponCenter || showNewUserGift);
+  const showPromotionBanner = isHomeModuleEnabled(homeModules, "promotion_banner", "guest");
+  const showFlashSaleSection = isHomeModuleEnabled(homeModules, "flash_sale_section", "guest");
+  const showFullReductionNotice = isHomeModuleEnabled(homeModules, "full_reduction_notice", "guest");
+  const newArrivalsCustomTitle = getHomeModuleCustomTitle(homeModules, "new_arrivals");
+  const promotionBannerTitle = getHomeModuleCustomTitle(homeModules, "promotion_banner");
+  const flashSaleTitle = getHomeModuleCustomTitle(homeModules, "flash_sale_section");
+  const fullReductionTitle = getHomeModuleCustomTitle(homeModules, "full_reduction_notice");
+  const couponCenterTitle = getHomeModuleCustomTitle(homeModules, "coupon_center");
+  const newUserGiftTitle = getHomeModuleCustomTitle(homeModules, "new_user_gift");
+  const couponRailTitle = showCouponCenter ? couponCenterTitle : newUserGiftTitle;
+  const guestRecommendTitle = getHomeModuleTitle(homeModules, "guest_recommend", "最新服务与精选好物");
   const showGuestNewArrivals =
     isHomeModuleEnabled(homeModules, "new_arrivals", "guest") && (homeLoading || newProducts.length > 0);
+  const compactCouponRailAfterNav =
+    showCouponRail &&
+    showNavGrid &&
+    !showGuestNewArrivals &&
+    !showPromotionBanner &&
+    !showFlashSaleSection &&
+    !showFullReductionNotice;
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription = siteInfo.seoDescription || description;
   const canonical = buildCanonical("/");
@@ -390,10 +409,10 @@ export default function GuestHome() {
 
         {(guestBannerEnabled ||
           isHomeModuleEnabled(homeModules, "trust_bar", "guest") ||
-          isHomeModuleEnabled(homeModules, "nav_grid", "guest")) ? (
+          showNavGrid) ? (
           <div className={HOME_HERO_STACK_CLASS}>
         {guestBannerEnabled ? (
-          <AnimatedSection>
+          <section>
             <div className="store-home-desktop-hero-panel">
               <div className="store-home-desktop-hero-media">
                 <BannerCarousel
@@ -403,17 +422,17 @@ export default function GuestHome() {
                 />
               </div>
             </div>
-          </AnimatedSection>
+          </section>
         ) : null}
         {isHomeModuleEnabled(homeModules, "trust_bar", "guest") ? (
-          <AnimatedSection delay={0.05}>
+          <section>
             <HomeTrustBar className="store-home-desktop-trust" />
-          </AnimatedSection>
+          </section>
         ) : null}
-        {isHomeModuleEnabled(homeModules, "nav_grid", "guest") ? (
-          <AnimatedSection delay={0.08} className="store-home-desktop-nav-section -mx-[var(--store-page-x)] md:mx-0">
+        {showNavGrid ? (
+          <section className="store-home-desktop-nav-section -mx-[var(--store-page-x)] md:mx-0">
             <HomeOpsBlocks />
-          </AnimatedSection>
+          </section>
         ) : null}
           </div>
         ) : null}
@@ -423,7 +442,8 @@ export default function GuestHome() {
           <NewArrivalSection
             products={newProducts}
             loading={homeLoading}
-            title={siteInfo.newArrivalSectionTitle}
+            title={newArrivalsCustomTitle || siteInfo.newArrivalSectionTitle}
+            exactTitle={Boolean(newArrivalsCustomTitle)}
             displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
             showPrice={siteInfo.newArrivalShowPrice !== "0"}
             className="store-home-primary-arrivals"
@@ -431,21 +451,21 @@ export default function GuestHome() {
         </AnimatedSection>
         ) : null}
 
-        {isHomeModuleEnabled(homeModules, "promotion_banner", "guest") ? (
+        {showPromotionBanner ? (
           <LazyHomeSection>
-            <MarketingPromotionBannerSection delay={0.105} />
+            <MarketingPromotionBannerSection delay={0.105} title={promotionBannerTitle} />
           </LazyHomeSection>
         ) : null}
 
-        {isHomeModuleEnabled(homeModules, "flash_sale_section", "guest") ? (
+        {showFlashSaleSection ? (
           <LazyHomeSection>
-            <FlashSaleSection delay={0.11} />
+            <FlashSaleSection delay={0.11} title={flashSaleTitle} />
           </LazyHomeSection>
         ) : null}
 
-        {isHomeModuleEnabled(homeModules, "full_reduction_notice", "guest") ? (
+        {showFullReductionNotice ? (
           <LazyHomeSection>
-            <MarketingFullReductionSection delay={0.111} />
+            <MarketingFullReductionSection delay={0.111} title={fullReductionTitle || "满减特惠"} />
           </LazyHomeSection>
         ) : null}
 
@@ -453,6 +473,9 @@ export default function GuestHome() {
           <MarketingCouponRailSection
             showCouponCenter={showCouponCenter}
             showNewUserGift={showNewUserGift}
+            title={couponRailTitle}
+            newUserGiftTitle={newUserGiftTitle}
+            compactAfterNav={compactCouponRailAfterNav}
           />
         ) : null}
 
@@ -463,7 +486,7 @@ export default function GuestHome() {
             <div>
               <h2 className="store-section-title flex items-center gap-2 tracking-widest text-[var(--theme-text)]">
                 <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
-                最新服务与精选好物
+                {guestRecommendTitle}
               </h2>
             </div>
           </div>
@@ -471,7 +494,7 @@ export default function GuestHome() {
             <div className="store-home-featured-products">
           <h2 className="sr-only">
             <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
-            全网爆款
+            {guestRecommendTitle}
           </h2>
           {homeError && gridProducts.length === 0 ? (
             <GuestRecommendFallback

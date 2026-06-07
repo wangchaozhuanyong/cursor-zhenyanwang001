@@ -389,14 +389,17 @@ async function loadHomeProducts() {
   const moduleSettings = await homeModuleSettings.getHomeModuleSettings();
   const hotBatchSize = Number(moduleSettings.hotBatchSize) || 4;
   const recBatchSize = Number(moduleSettings.recBatchSize) || 4;
+  const blockTarget = (batchSize) => Math.min(24, Math.max(1, Math.trunc(Number(batchSize) || 0)) * 2);
+  const hotTarget = blockTarget(hotBatchSize);
+  const recTarget = blockTarget(recBatchSize);
 
   const siteSettings = await repo.selectSiteSettingValues([
     'newArrivalDisplayCount',
     'newArrivalOnlyInStock',
   ]);
-  const hotLimit = Math.min(24, Math.max(8, hotBatchSize + 4));
-  const recLimit = Math.min(32, Math.max(8, recBatchSize + hotBatchSize + 8));
   const newArrivalLimit = Math.min(16, Math.max(1, Number(siteSettings.newArrivalDisplayCount) || 8));
+  const hotLimit = Math.min(24, Math.max(8, hotTarget));
+  const recLimit = Math.min(32, Math.max(8, recTarget + hotBatchSize + Math.min(newArrivalLimit, 8)));
   const newArrivalOnlyInStock = String(siteSettings.newArrivalOnlyInStock ?? '1') !== '0';
   const [hotManual, newArrivals, recommendedManual, fallbackBySales, fallbackByRecommend, fallbackByNew] =
     await Promise.all([
@@ -408,29 +411,39 @@ async function loadHomeProducts() {
       repo.selectActiveProductsRecent(30, 64, newArrivalOnlyInStock),
     ]);
 
-  const pickUnique = (primary, fallback, target, excludeIds = new Set()) => {
+  const pickUnique = (primary, fallback, target, excludeIds = new Set(), options = {}) => {
     const out = [];
-    const used = new Set(excludeIds);
-    for (const p of primary) {
-      if (used.has(p.id)) continue;
-      used.add(p.id);
-      out.push(p);
-      if (out.length >= target) return out;
-    }
-    for (const p of fallback) {
-      if (used.has(p.id)) continue;
-      used.add(p.id);
-      out.push(p);
-      if (out.length >= target) return out;
+    const used = new Set();
+    const blocked = excludeIds instanceof Set ? excludeIds : new Set();
+    const sources = [primary, fallback];
+    const take = (allowBlocked) => {
+      for (const list of sources) {
+        for (const p of Array.isArray(list) ? list : []) {
+          if (!p?.id || used.has(p.id)) continue;
+          if (!allowBlocked && blocked.has(p.id)) continue;
+          used.add(p.id);
+          out.push(p);
+          if (out.length >= target) return true;
+        }
+      }
+      return false;
+    };
+    if (take(false)) return out;
+    if (options.allowExcludedBackfill) {
+      take(true);
     }
     return out;
   };
 
-  const hot = pickUnique(hotManual, fallbackBySales, hotBatchSize);
+  const hot = pickUnique(hotManual, fallbackBySales, hotTarget);
   const hotIdSet = new Set(hot.map((p) => p.id));
-  const newArrivalsUnique = pickUnique(newArrivals, fallbackByNew, newArrivalLimit, hotIdSet);
+  const newArrivalsUnique = pickUnique(newArrivals, fallbackByNew, newArrivalLimit, hotIdSet, {
+    allowExcludedBackfill: true,
+  });
   const homeUsedIdSet = new Set([...hot, ...newArrivalsUnique].map((p) => p.id));
-  const recommended = pickUnique(recommendedManual, fallbackByRecommend, recBatchSize, homeUsedIdSet);
+  const recommended = pickUnique(recommendedManual, fallbackByRecommend, recTarget, homeUsedIdSet, {
+    allowExcludedBackfill: true,
+  });
 
   const allRows = [...hot, ...newArrivalsUnique, ...recommended];
   const allIds = allRows.map((r) => r.id);
@@ -496,4 +509,3 @@ module.exports = {
   trackHomeEngagement,
   clearCatalogCache,
 };
-

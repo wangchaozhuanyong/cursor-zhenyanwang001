@@ -255,6 +255,67 @@ async function selectRiskIpEventSignals(sinceDays, limit) {
   return rows;
 }
 
+function placeholders(values) {
+  return values.map(() => '?').join(',');
+}
+
+async function selectRiskIpRelatedUsers(ips, sinceDays, limit) {
+  const list = Array.isArray(ips) ? ips.filter(Boolean) : [];
+  if (!list.length) return [];
+  const ph = placeholders(list);
+  const [rows] = await db.query(
+    `SELECT
+        x.ip,
+        x.user_id,
+        MAX(x.phone) AS phone,
+        MAX(x.nickname) AS nickname,
+        MAX(x.account_status) AS account_status,
+        SUM(x.login_count) AS login_count,
+        SUM(x.event_count) AS event_count,
+        MAX(x.last_seen_at) AS last_seen_at
+       FROM (
+        SELECT
+          ula.ip,
+          ula.user_id,
+          u.phone,
+          u.nickname,
+          u.account_status,
+          COUNT(*) AS login_count,
+          0 AS event_count,
+          MAX(ula.created_at) AS last_seen_at
+         FROM user_login_audits ula
+         LEFT JOIN users u ON BINARY u.id = BINARY ula.user_id
+        WHERE ula.ip IN (${ph})
+          AND ula.user_id IS NOT NULL
+          AND ula.user_id <> ''
+          AND ula.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY ula.ip, ula.user_id, u.phone, u.nickname, u.account_status
+        UNION ALL
+        SELECT
+          e.ip,
+          e.user_id,
+          u.phone,
+          u.nickname,
+          u.account_status,
+          0 AS login_count,
+          COUNT(*) AS event_count,
+          MAX(e.created_at) AS last_seen_at
+         FROM user_security_events e
+         LEFT JOIN users u ON BINARY u.id = BINARY e.user_id
+        WHERE e.ip IN (${ph})
+          AND e.user_id IS NOT NULL
+          AND e.user_id <> ''
+          AND e.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY e.ip, e.user_id, u.phone, u.nickname, u.account_status
+       ) x
+       GROUP BY x.ip, x.user_id
+       ORDER BY x.ip ASC, last_seen_at DESC, login_count DESC, event_count DESC
+       LIMIT ?`,
+    [...list, sinceDays, ...list, sinceDays, limit],
+  );
+  return rows;
+}
+
 async function selectManualRiskIps(status) {
   const params = [];
   let where = 'WHERE 1=1';
@@ -308,6 +369,63 @@ async function selectRiskDeviceEventSignals(sinceDays, limit) {
       ORDER BY event_count DESC, last_event_at DESC
       LIMIT ?`,
     [sinceDays, limit],
+  );
+  return rows;
+}
+
+async function selectRiskDeviceRelatedUsers(deviceIds, sinceDays, limit) {
+  const list = Array.isArray(deviceIds) ? deviceIds.filter(Boolean) : [];
+  if (!list.length) return [];
+  const ph = placeholders(list);
+  const [rows] = await db.query(
+    `SELECT
+        x.device_id,
+        x.user_id,
+        MAX(x.phone) AS phone,
+        MAX(x.nickname) AS nickname,
+        MAX(x.account_status) AS account_status,
+        SUM(x.login_count) AS login_count,
+        SUM(x.event_count) AS event_count,
+        MAX(x.last_seen_at) AS last_seen_at
+       FROM (
+        SELECT
+          ula.ua_hash AS device_id,
+          ula.user_id,
+          u.phone,
+          u.nickname,
+          u.account_status,
+          COUNT(*) AS login_count,
+          0 AS event_count,
+          MAX(ula.created_at) AS last_seen_at
+         FROM user_login_audits ula
+         LEFT JOIN users u ON BINARY u.id = BINARY ula.user_id
+        WHERE ula.ua_hash IN (${ph})
+          AND ula.user_id IS NOT NULL
+          AND ula.user_id <> ''
+          AND ula.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY ula.ua_hash, ula.user_id, u.phone, u.nickname, u.account_status
+        UNION ALL
+        SELECT
+          e.device_id,
+          e.user_id,
+          u.phone,
+          u.nickname,
+          u.account_status,
+          0 AS login_count,
+          COUNT(*) AS event_count,
+          MAX(e.created_at) AS last_seen_at
+         FROM user_security_events e
+         LEFT JOIN users u ON BINARY u.id = BINARY e.user_id
+        WHERE e.device_id IN (${ph})
+          AND e.user_id IS NOT NULL
+          AND e.user_id <> ''
+          AND e.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY e.device_id, e.user_id, u.phone, u.nickname, u.account_status
+       ) x
+       GROUP BY x.device_id, x.user_id
+       ORDER BY x.device_id ASC, last_seen_at DESC, login_count DESC, event_count DESC
+       LIMIT ?`,
+    [...list, sinceDays, ...list, sinceDays, limit],
   );
   return rows;
 }
@@ -527,9 +645,11 @@ module.exports = {
   countBlockedDevices,
   selectRiskIpSignals,
   selectRiskIpEventSignals,
+  selectRiskIpRelatedUsers,
   selectManualRiskIps,
   selectRiskDeviceSignals,
   selectRiskDeviceEventSignals,
+  selectRiskDeviceRelatedUsers,
   selectManualRiskDevices,
   selectRiskIp,
   selectRiskDevice,

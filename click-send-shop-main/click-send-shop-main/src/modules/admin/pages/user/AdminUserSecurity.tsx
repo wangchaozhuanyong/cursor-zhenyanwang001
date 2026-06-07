@@ -105,6 +105,51 @@ function IpCell({ ip, location }: { ip?: string | null; location?: RiskIp["ip_lo
   );
 }
 
+function shortUserId(value?: string | null) {
+  const raw = String(value || "").trim();
+  if (!raw) return "-";
+  return raw.length > 10 ? `${raw.slice(0, 10)}...` : raw;
+}
+
+function relatedUserTitle(user: NonNullable<RiskIp["related_users"]>[number]) {
+  const name = user.nickname || user.phone || shortUserId(user.user_id);
+  const meta = [user.phone && user.nickname ? user.phone : "", user.account_status].filter(Boolean).join(" · ");
+  return { name, meta };
+}
+
+function RelatedUsersCell({
+  count,
+  users,
+}: {
+  count?: number | null;
+  users?: RiskIp["related_users"] | RiskDevice["related_users"];
+}) {
+  const total = Number(count || 0);
+  const list = Array.isArray(users) ? users.filter((user) => user?.user_id).slice(0, 3) : [];
+  if (!total && !list.length) return <span className="text-muted-foreground">-</span>;
+
+  return (
+    <div className="min-w-44 space-y-1 text-left">
+      {list.map((user) => {
+        const item = relatedUserTitle(user);
+        return (
+          <div key={user.user_id} className="min-w-0">
+            <Link className="block truncate font-medium text-[var(--theme-primary)] hover:underline" to={`/admin/users/${user.user_id}`}>
+              {item.name}
+            </Link>
+            {item.meta ? <div className="truncate text-xs text-muted-foreground">{item.meta}</div> : null}
+          </div>
+        );
+      })}
+      {total > list.length ? (
+        <div className="text-xs text-muted-foreground">
+          {list.length ? `另 ${total - list.length} 人` : `${total} 人，暂无用户明细`}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function AdminUserSecurity() {
   const [overview, setOverview] = useState<UserSecurityOverview | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("ips");
@@ -326,7 +371,7 @@ export default function AdminUserSecurity() {
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>处理状态</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>风险等级</th>
                 <th className={adminThClassName(undefined, "left")}>触发来源</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>涉及用户</th>
+                <th className={adminThClassName(undefined, "left")}>涉及用户</th>
                 <th className={adminThClassName(undefined, "left")}>风险原因</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>最近记录</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>操作</th>
@@ -342,7 +387,7 @@ export default function AdminUserSecurity() {
                     <div className="font-medium text-foreground">{formatRiskSourceLabel(row.source)}</div>
                     <div className="mt-1 text-xs">{formatRiskSignalSummary(row)}</div>
                   </td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.related_user_count || 0}</td>
+                  <td className={adminTdClassName("min-w-44", "left")}><RelatedUsersCell count={row.related_user_count} users={row.related_users} /></td>
                   <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
@@ -367,7 +412,7 @@ export default function AdminUserSecurity() {
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>处理状态</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>风险等级</th>
                 <th className={adminThClassName(undefined, "left")}>触发来源</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>涉及用户</th>
+                <th className={adminThClassName(undefined, "left")}>涉及用户</th>
                 <th className={adminThClassName(undefined, "left")}>风险原因</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>最近记录</th>
                 <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>操作</th>
@@ -383,7 +428,7 @@ export default function AdminUserSecurity() {
                     <div className="font-medium text-foreground">{formatRiskSourceLabel(row.source)}</div>
                     <div className="mt-1 text-xs">{formatRiskSignalSummary(row)}</div>
                   </td>
-                  <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{row.related_user_count || 0}</td>
+                  <td className={adminTdClassName("min-w-44", "left")}><RelatedUsersCell count={row.related_user_count} users={row.related_users} /></td>
                   <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>

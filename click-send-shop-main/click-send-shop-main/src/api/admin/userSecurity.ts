@@ -19,6 +19,16 @@ export type IpLocation = {
   source?: string | null;
 };
 
+export type RelatedSecurityUser = {
+  user_id: string;
+  phone?: string | null;
+  nickname?: string | null;
+  account_status?: string | null;
+  login_count?: number;
+  event_count?: number;
+  last_seen_at?: string | null;
+};
+
 export type UserSecurityLoginAttempt = {
   id: string;
   user_id: string;
@@ -62,6 +72,7 @@ export type RiskIp = {
   high_event_count?: number;
   failed_count?: number;
   related_user_count?: number;
+  related_users?: RelatedSecurityUser[];
   last_seen_at?: string | null;
   blocked_at?: string | null;
   unblocked_at?: string | null;
@@ -80,6 +91,7 @@ export type RiskDevice = {
   event_count?: number;
   high_event_count?: number;
   related_user_count?: number;
+  related_users?: RelatedSecurityUser[];
   last_seen_at?: string | null;
   blocked_at?: string | null;
   unblocked_at?: string | null;

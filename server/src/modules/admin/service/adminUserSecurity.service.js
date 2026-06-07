@@ -77,6 +77,48 @@ function mergeRiskItem(map, key, patch) {
   map.set(key, merged);
 }
 
+function mergeRelatedUser(map, row) {
+  const userId = normalizeText(row?.user_id, 64);
+  if (!userId) return;
+  const old = map.get(userId) || {};
+  const oldLast = old.last_seen_at ? new Date(old.last_seen_at).getTime() : 0;
+  const nextLast = row.last_seen_at ? new Date(row.last_seen_at).getTime() : 0;
+  map.set(userId, {
+    user_id: userId,
+    phone: normalizeText(row.phone, 64) || old.phone || null,
+    nickname: normalizeText(row.nickname, 120) || old.nickname || null,
+    account_status: normalizeText(row.account_status, 32) || old.account_status || null,
+    login_count: Number(old.login_count || 0) + Number(row.login_count || 0),
+    event_count: Number(old.event_count || 0) + Number(row.event_count || 0),
+    last_seen_at: nextLast >= oldLast ? row.last_seen_at : old.last_seen_at,
+  });
+}
+
+function sortRelatedUsers(users) {
+  return users.sort((a, b) => {
+    const lastDiff = new Date(b.last_seen_at || 0).getTime() - new Date(a.last_seen_at || 0).getTime();
+    if (lastDiff) return lastDiff;
+    return (Number(b.login_count || 0) + Number(b.event_count || 0)) - (Number(a.login_count || 0) + Number(a.event_count || 0));
+  });
+}
+
+function attachRelatedUsers(rows, relatedRows, keyField) {
+  const grouped = new Map();
+  relatedRows.forEach((row) => {
+    const key = normalizeText(row?.[keyField], keyField === 'ip' ? 45 : 191);
+    if (!key) return;
+    if (!grouped.has(key)) grouped.set(key, new Map());
+    mergeRelatedUser(grouped.get(key), row);
+  });
+
+  rows.forEach((row) => {
+    const key = normalizeText(row?.[keyField], keyField === 'ip' ? 45 : 191);
+    const users = key && grouped.has(key) ? sortRelatedUsers([...grouped.get(key).values()]) : [];
+    row.related_users = users.slice(0, 5);
+    row.related_user_count = Math.max(Number(row.related_user_count || 0), users.length);
+  });
+}
+
 function sortRiskRows(rows) {
   return rows.sort((a, b) => {
     const statusScore = (v) => (v === 'blocked' ? 3 : v === 'watching' ? 2 : 1);
@@ -117,6 +159,12 @@ function finalRiskRows(rows, keyword, status) {
         row.ip_location?.country_code,
         row.ip_location?.region,
         row.ip_location?.city,
+        ...(row.related_users || []).flatMap((user) => [
+          user.user_id,
+          user.phone,
+          user.nickname,
+          user.account_status,
+        ]),
       ]
         .some((v) => String(v || '').toLowerCase().includes(k));
     }));
@@ -237,7 +285,14 @@ async function listRiskIps(query = {}) {
     });
   });
 
-  const rows = finalRiskRows([...map.values()], query.keyword, query.status);
+  const rawRows = [...map.values()];
+  const relatedRows = await repo.selectRiskIpRelatedUsers(
+    rawRows.map((row) => row.ip).filter(Boolean),
+    sinceDays,
+    Math.min(5000, Math.max(200, rawRows.length * 20)),
+  );
+  attachRelatedUsers(rawRows, relatedRows, 'ip');
+  const rows = finalRiskRows(rawRows, query.keyword, query.status);
   return paginateArray(rows, page, pageSize);
 }
 
@@ -287,7 +342,14 @@ async function listRiskDevices(query = {}) {
     });
   });
 
-  const rows = finalRiskRows([...map.values()], query.keyword, query.status);
+  const rawRows = [...map.values()];
+  const relatedRows = await repo.selectRiskDeviceRelatedUsers(
+    rawRows.map((row) => row.device_id).filter(Boolean),
+    sinceDays,
+    Math.min(5000, Math.max(200, rawRows.length * 20)),
+  );
+  attachRelatedUsers(rawRows, relatedRows, 'device_id');
+  const rows = finalRiskRows(rawRows, query.keyword, query.status);
   return paginateArray(rows, page, pageSize);
 }
 

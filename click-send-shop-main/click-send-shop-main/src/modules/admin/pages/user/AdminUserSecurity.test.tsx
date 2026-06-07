@@ -85,6 +85,21 @@ describe("AdminUserSecurity", () => {
             status: "watching",
             login_count: 7,
             related_user_count: 2,
+            related_users: [
+              {
+                user_id: "user-a",
+                phone: "+60123456789",
+                nickname: "测试用户A",
+                login_count: 5,
+                last_seen_at: "2026-06-07T06:01:32.000Z",
+              },
+              {
+                user_id: "user-b",
+                phone: "+60198765432",
+                login_count: 2,
+                last_seen_at: "2026-06-07T05:01:32.000Z",
+              },
+            ],
             source: "signal",
             last_seen_at: "2026-06-07T06:01:32.000Z",
           },
@@ -134,6 +149,9 @@ describe("AdminUserSecurity", () => {
 
     expect(container).toHaveTextContent("2405:3800:8ba:3c1:5c71:8838:bd01:5549");
     expect(container).toHaveTextContent("马来西亚");
+    expect(container).toHaveTextContent("测试用户A");
+    expect(container).toHaveTextContent("+60123456789");
+    expect(container).toHaveTextContent("+60198765432");
     expect(container).toHaveTextContent("登录行为触发观察");
   });
 });

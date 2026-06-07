@@ -231,6 +231,12 @@ echo "🔍 部署前自检（preflight）..." | tee -a "$LOG_FILE"
 bash "$PROJECT_DIR/deploy/preflight.sh" | tee -a "$LOG_FILE"
 
 LOCAL_COMMIT=""
+DEPLOY_SCRIPT_PATH="$PROJECT_DIR/deploy/production-deploy.sh"
+DEPLOY_SCRIPT_HASH_BEFORE=""
+if [[ -f "$DEPLOY_SCRIPT_PATH" ]]; then
+  DEPLOY_SCRIPT_HASH_BEFORE="$(hash_file "$DEPLOY_SCRIPT_PATH" || true)"
+fi
+
 if [[ "$SKIP_GIT" != "1" ]]; then
   echo "📜 拉取最新代码（分支 $GIT_BRANCH）..." | tee -a "$LOG_FILE"
   bash "$PROJECT_DIR/deploy/ensure-github-ssh-remote.sh" | tee -a "$LOG_FILE"
@@ -253,6 +259,14 @@ if [[ "$SKIP_GIT" != "1" ]]; then
   TARGET_COMMIT=$(git -C "$PROJECT_DIR" rev-parse "${DEPLOY_REF}^{commit}")
   guard_target_commit "$TARGET_COMMIT"
   git -C "$PROJECT_DIR" reset --hard "$TARGET_COMMIT"
+  if [[ "${DEPLOY_REEXEC_AFTER_GIT:-0}" != "1" && -n "$DEPLOY_SCRIPT_HASH_BEFORE" && -f "$DEPLOY_SCRIPT_PATH" ]]; then
+    DEPLOY_SCRIPT_HASH_AFTER="$(hash_file "$DEPLOY_SCRIPT_PATH" || true)"
+    if [[ -n "$DEPLOY_SCRIPT_HASH_AFTER" && "$DEPLOY_SCRIPT_HASH_AFTER" != "$DEPLOY_SCRIPT_HASH_BEFORE" ]]; then
+      echo "[deploy] production-deploy.sh changed after checkout; re-exec with the checked-out script" | tee -a "$LOG_FILE"
+      export DEPLOY_REEXEC_AFTER_GIT=1
+      exec bash "$DEPLOY_SCRIPT_PATH"
+    fi
+  fi
 
   LOCAL_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short HEAD)
   REMOTE_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short "$TARGET_COMMIT")

@@ -226,7 +226,7 @@ export default function Rewards() {
                       type="button"
                       aria-label="查看返现说明"
                       onClick={() => setUsageHelpOpen((open) => !open)}
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_82%,transparent)] transition-colors hover:text-[var(--theme-coupon-accent-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_58%,transparent)]"
+                      className="flex !h-5 !min-h-0 !w-5 shrink-0 items-center justify-center rounded-full bg-transparent p-0 leading-none text-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_82%,transparent)] transition-colors hover:text-[var(--theme-coupon-accent-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_58%,transparent)]"
                     >
                       <CircleHelp size={14} strokeWidth={2.4} aria-hidden="true" />
                     </button>

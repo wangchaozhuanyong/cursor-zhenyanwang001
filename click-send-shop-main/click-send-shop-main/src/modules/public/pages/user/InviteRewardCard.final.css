@@ -1,5 +1,5 @@
 :root {
-  --ir-bg: #01090b;
+  --ir-bg: #05242b;
 }
 
 .ir-stage,
@@ -13,28 +13,27 @@
   position: relative;
   container-type: inline-size;
   font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
-  background: #000;
+  background: transparent;
   overflow: hidden;
 }
 
 .ir-card {
   position: absolute;
-  left: 1.86cqw;
-  top: 1.86cqw;
-  width: 96.28cqw;
-  height: 45.38cqw;
-  border-radius: 3.55cqw;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 3.1cqw;
   overflow: hidden;
   background:
-    radial-gradient(circle at 15% 16%, rgba(83, 255, 221, 0.10) 0%, rgba(83, 255, 221, 0.02) 22%, transparent 44%),
-    radial-gradient(circle at 77% 26%, rgba(255, 208, 95, 0.12) 0%, rgba(255, 208, 95, 0.05) 18%, transparent 42%),
-    radial-gradient(circle at 84% 60%, rgba(44, 238, 199, 0.13) 0%, rgba(44, 238, 199, 0.04) 26%, transparent 50%),
-    linear-gradient(120deg, #020f13 0%, #051f25 34%, #082e2e 66%, #072820 100%);
+    radial-gradient(circle at 15% 16%, rgba(83, 255, 221, 0.16) 0%, rgba(83, 255, 221, 0.04) 24%, transparent 46%),
+    radial-gradient(circle at 78% 24%, rgba(255, 208, 95, 0.19) 0%, rgba(255, 208, 95, 0.07) 20%, transparent 44%),
+    radial-gradient(circle at 83% 68%, rgba(44, 238, 199, 0.18) 0%, rgba(44, 238, 199, 0.05) 28%, transparent 54%),
+    linear-gradient(120deg, #062129 0%, #063840 35%, #08554e 68%, #063a30 100%);
   border: 0.11cqw solid rgba(81, 255, 222, 0.48);
   box-shadow:
     0 0 0 0.07cqw rgba(31, 255, 212, 0.18) inset,
-    0 0 2.8cqw rgba(38, 238, 199, 0.16),
-    0 1.8cqw 4.5cqw rgba(0, 0, 0, 0.58);
+    0 0 2.8cqw rgba(38, 238, 199, 0.14),
+    inset 0 -2.2cqw 5.8cqw rgba(0, 20, 18, 0.22);
 }
 
 .ir-card::before {
@@ -65,9 +64,9 @@
 
 .ir-badge {
   position: absolute;
-  left: 3.35cqw;
-  top: 2.42cqw;
-  width: 23.08cqw;
+  left: 4.4cqw;
+  top: 3.45cqw;
+  width: 23.8cqw;
   height: 4.67cqw;
   border-radius: 2.5cqw;
   display: flex;
@@ -114,8 +113,8 @@
 .ir-title {
   position: absolute;
   z-index: 2;
-  left: 3.55cqw;
-  top: 9.72cqw;
+  left: 4.72cqw;
+  top: 10.85cqw;
   margin: 0;
   font-size: 6.35cqw;
   line-height: 1.05;
@@ -134,8 +133,8 @@
 .ir-subtitle {
   position: absolute;
   z-index: 2;
-  left: 3.72cqw;
-  top: 17.92cqw;
+  left: 4.84cqw;
+  top: 19.1cqw;
   margin: 0;
   font-size: 2.35cqw;
   line-height: 1.25;
@@ -149,15 +148,15 @@
 .ir-stats {
   position: absolute;
   z-index: 2;
-  left: 3.44cqw;
-  top: 23.12cqw;
+  left: 4.42cqw;
+  top: 24.35cqw;
   display: grid;
-  grid-template-columns: repeat(2, 27.0cqw);
+  grid-template-columns: repeat(2, 27.4cqw);
   gap: 1.04cqw;
 }
 
 .ir-stat {
-  width: 27.0cqw;
+  width: 27.4cqw;
   height: 8.1cqw;
   border-radius: 1.45cqw;
   display: flex;
@@ -212,15 +211,15 @@
 .ir-actions {
   position: absolute;
   z-index: 4;
-  left: 3.44cqw;
-  top: 33.60cqw;
+  left: 4.42cqw;
+  top: 36.25cqw;
   display: grid;
-  grid-template-columns: repeat(3, 28.4cqw);
-  gap: 1.78cqw;
+  grid-template-columns: repeat(3, 28.55cqw);
+  gap: 1.35cqw;
 }
 
 .ir-action {
-  width: 28.4cqw;
+  width: 28.55cqw;
   height: 8.5cqw;
   border: 0;
   outline: 0;
@@ -272,10 +271,10 @@
 .ir-hero {
   position: absolute;
   z-index: 2;
-  left: 57.90cqw;
-  top: 2.10cqw;
-  width: 36.64cqw;
-  height: 31.0cqw;
+  left: 58.2cqw;
+  top: 3.2cqw;
+  width: 38.4cqw;
+  height: 32.4cqw;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 1.4cqw 2.2cqw rgba(0, 0, 0, 0.28));
@@ -284,11 +283,11 @@
 .ir-safe-overlay {
   position: absolute;
   z-index: 1;
-  right: 1.5cqw;
-  top: 2.8cqw;
-  width: 38cqw;
-  height: 34cqw;
-  background: radial-gradient(circle at 56% 52%, rgba(255, 200, 89, 0.06), transparent 54%);
+  right: 0;
+  top: 0;
+  width: 44cqw;
+  height: 39cqw;
+  background: radial-gradient(circle at 56% 52%, rgba(255, 200, 89, 0.09), transparent 57%);
   pointer-events: none;
 }
 
@@ -301,6 +300,9 @@
 .profile-invite-reward-card {
   position: relative;
   width: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+  background: transparent;
 }
 
 .profile-invite-reward-card > .ir-stage {

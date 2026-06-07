@@ -101,6 +101,9 @@ describe("Rewards", () => {
     expect(helpButton).toBeInTheDocument();
     expect(helpButton?.className ?? "").not.toContain("border");
     expect(helpButton?.className ?? "").not.toContain("hover:bg");
+    expect(helpButton?.className ?? "").toContain("!h-5");
+    expect(helpButton?.className ?? "").toContain("!min-h-0");
+    expect(helpButton?.className ?? "").toContain("bg-transparent");
     expect(container?.textContent).toContain("购物可用返现");
     expect(container?.textContent).not.toContain("返现金额仅可用于购物，不可提现。");
 

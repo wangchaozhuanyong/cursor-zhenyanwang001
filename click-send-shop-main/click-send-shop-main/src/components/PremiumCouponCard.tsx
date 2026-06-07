@@ -193,7 +193,7 @@ export default function PremiumCouponCard({
   const minSpendText = minSpendTextProp ?? "无门槛可用";
   const leftValue = amount.trim();
   const amountRmMatch = leftValue.match(/^(RM)\s*(.+)$/i);
-  const expireLabel = expireText.includes("有效期") ? expireText : `有效期至：${expireText}`;
+  const expireLabel = expireText;
   const displayActionLabel = actionLabel ? formatCouponActionLabel(actionLabel, layout) : "";
   const normalizedActionLabel = displayActionLabel.replace(/\s+/g, "");
   const normalizedStatusLabel = (statusLabel ?? "").replace(/\s+/g, "");

@@ -71,6 +71,10 @@ function formatCnDateTimeParts(p: CnParts) {
   return `${formatCnDateParts(p)} ${p.hour}:${p.minute}:${p.second}`;
 }
 
+function formatDotDateTimeMinuteParts(p: CnParts) {
+  return `${p.year}.${p.month}.${p.day} ${p.hour}:${p.minute}`;
+}
+
 /** 2026年05月17日 */
 export function formatDate(value: string | Date | null | undefined): string {
   if (value == null || value === "") return "—";
@@ -107,6 +111,26 @@ export function formatDateTime(value: string | Date | null | undefined): string 
   }
 
   return formatCnDateTimeParts(partsInChina(d, true));
+}
+
+/** 2026.06.15 19:59 */
+export function formatDateTimeDotMinute(value: string | Date | null | undefined): string {
+  if (value == null || value === "") return "—";
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (isDateOnlyString(raw)) {
+    const [y, m, d] = raw.split("-");
+    return `${y}.${m}.${d} 00:00`;
+  }
+
+  const d = parseDate(value);
+  if (!d) return typeof value === "string" ? value : "—";
+
+  if (raw && isMidnightIso(raw)) {
+    const p = partsInChina(d, false);
+    return `${p.year}.${p.month}.${p.day} 00:00`;
+  }
+
+  return formatDotDateTimeMinuteParts(partsInChina(d, true));
 }
 
 /** 有效期等区间 */

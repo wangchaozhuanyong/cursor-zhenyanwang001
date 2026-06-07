@@ -1,6 +1,6 @@
 import type { UserCoupon } from "@/types/coupon";
 import type { MarketingCouponPublic } from "@/services/marketingService";
-import { formatDate } from "@/utils/formatDateTime";
+import { formatDateTimeDotMinute } from "@/utils/formatDateTime";
 
 function normalizeCouponType(type: string | undefined) {
   if (type === "percent") return "percentage";
@@ -16,8 +16,8 @@ export function formatCouponMinSpendText(c: UserCoupon["coupon"]) {
 
 export function formatCouponExpireText(endDate: string | undefined) {
   if (!endDate) return "有效期待定";
-  const date = formatDate(endDate);
-  return date === "--" ? "有效期待定" : `有效期至：${date}`;
+  const date = formatDateTimeDotMinute(endDate);
+  return date === "—" ? "有效期待定" : `${date} 到期`;
 }
 
 export function formatCouponLeftAmount(c: UserCoupon["coupon"]) {
@@ -92,7 +92,7 @@ export function userCouponToPremiumDisplay(uc: UserCoupon) {
     amount: formatCouponLeftAmount(c),
     minSpendText,
     scopeText,
-    expireText: formatCouponExpireText(c.end_date),
+    expireText: formatCouponExpireText(uc.valid_until || c.end_date),
     code: c.code,
   };
 }

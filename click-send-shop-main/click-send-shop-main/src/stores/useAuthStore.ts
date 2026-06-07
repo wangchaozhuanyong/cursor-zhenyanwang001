@@ -19,7 +19,7 @@ const loadAuthService = () => import("@/services/authService");
 async function loadAuthRelatedStores() {
   const [
     { useUserStore },
-    { useCartStore },
+    { clearCartSessionLoad, useCartStore },
     { useFavoritesStore },
     { useHistoryStore },
     { useOrderStore },
@@ -30,7 +30,7 @@ async function loadAuthRelatedStores() {
     import("@/stores/useHistoryStore"),
     import("@/stores/useOrderStore"),
   ]);
-  return { useUserStore, useCartStore, useFavoritesStore, useHistoryStore, useOrderStore };
+  return { clearCartSessionLoad, useUserStore, useCartStore, useFavoritesStore, useHistoryStore, useOrderStore };
 }
 
 interface AuthState {
@@ -121,8 +121,9 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try { await (await loadAuthService()).logout(); } catch { /* best-effort */ }
-        const { useUserStore, useCartStore, useOrderStore } = await loadAuthRelatedStores();
+        const { clearCartSessionLoad, useUserStore, useCartStore, useOrderStore } = await loadAuthRelatedStores();
         clearStorefrontUserQueryCache();
+        clearCartSessionLoad();
         useUserStore.getState().clearProfile();
         useCartStore.setState({ buyNowItem: null, selection: {}, hasLoaded: false });
         useOrderStore.setState({ orders: [], currentOrder: null });
@@ -141,7 +142,8 @@ export const useAuthStore = create<AuthState>()(
 registerAuthExpiredHandler(() => {
   clearStorefrontUserQueryCache();
   useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
-  void import("@/stores/useCartStore").then(({ useCartStore }) => {
+  void import("@/stores/useCartStore").then(({ clearCartSessionLoad, useCartStore }) => {
+    clearCartSessionLoad();
     useCartStore.setState({ hasLoaded: false });
   });
 });

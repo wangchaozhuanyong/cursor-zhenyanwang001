@@ -11,10 +11,26 @@ const loadCartService = () => import("@/services/cartService");
 export const LOCAL_ONLY_CART_PRODUCT_PREFIX = "demo-micro-interactions:" as const;
 
 let cartLoadInflight: Promise<void> | null = null;
+const CART_SESSION_LOAD_KEY = "cart:loaded-session";
 
 type LoadCartOptions = {
   force?: boolean;
 };
+
+function hasSessionCartLoad() {
+  if (typeof sessionStorage === "undefined") return false;
+  return sessionStorage.getItem(CART_SESSION_LOAD_KEY) === "1";
+}
+
+function markSessionCartLoaded() {
+  if (typeof sessionStorage === "undefined") return;
+  sessionStorage.setItem(CART_SESSION_LOAD_KEY, "1");
+}
+
+export function clearCartSessionLoad() {
+  if (typeof sessionStorage === "undefined") return;
+  sessionStorage.removeItem(CART_SESSION_LOAD_KEY);
+}
 
 function isLocalOnlyCartProductId(productId: string) {
   return productId.startsWith(LOCAL_ONLY_CART_PRODUCT_PREFIX);
@@ -94,16 +110,18 @@ export const useCartStore = create<CartState>()(
       loadCart: async (options = {}) => {
         if (!isLoggedIn()) return;
         if (cartLoadInflight) return cartLoadInflight;
-        if (!options.force && get().hasLoaded) return;
+        if (!options.force && (get().hasLoaded || hasSessionCartLoad())) return;
 
         cartLoadInflight = (async () => {
           set({ loading: get().items.length === 0, error: null });
           try {
             const cartService = await loadCartService();
             const items = normalizeCartItems(await cartService.fetchCart());
+            markSessionCartLoaded();
             set((s) => ({ items, selection: mergeSelection(s.selection, items), loading: false, hasLoaded: true }));
           } catch (e) {
             if (e instanceof ApiError && e.code === 401) {
+              clearCartSessionLoad();
               set({ loading: false, error: null, items: [], selection: {}, hasLoaded: false });
               return;
             }

@@ -45,6 +45,7 @@ describe("useCartStore", () => {
     tokenMock.loggedIn = false;
     vi.clearAllMocks();
     localStorage.clear();
+    sessionStorage.clear();
     useCartStore.setState({
       items: [],
       buyNowItem: null,
@@ -192,5 +193,17 @@ describe("useCartStore", () => {
 
     expect(cartService.fetchCart).toHaveBeenCalledTimes(1);
     expect(useCartStore.getState().items.map((item) => item.product.id)).toEqual(["server"]);
+  });
+
+  test("skips repeated cart loads after the store is recreated in the same browser session", async () => {
+    tokenMock.loggedIn = true;
+    vi.mocked(cartService.fetchCart).mockResolvedValueOnce([{ product: sampleProduct("server"), qty: 1 }]);
+
+    await useCartStore.getState().loadCart();
+    useCartStore.setState({ hasLoaded: false });
+
+    await useCartStore.getState().loadCart();
+
+    expect(cartService.fetchCart).toHaveBeenCalledTimes(1);
   });
 });

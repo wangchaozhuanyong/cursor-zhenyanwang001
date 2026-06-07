@@ -2,6 +2,7 @@ const net = require('net');
 const { BusinessError } = require('../../../errors');
 const { generateId } = require('../../../utils/helpers');
 const { writeAuditLog } = require('../../../utils/auditLog');
+const { resolveIpLocation } = require('../../../utils/ipLocation');
 const repo = require('../repository/adminUserSecurity.repository');
 
 const HIGH_SEVERITIES = new Set(['critical', 'high', 'P0', 'P1']);
@@ -88,15 +89,35 @@ function sortRiskRows(rows) {
   });
 }
 
+function withIpLocation(row) {
+  if (!row || !row.ip) return row;
+  return {
+    ...row,
+    ip_location: resolveIpLocation(row.ip),
+  };
+}
+
 function finalRiskRows(rows, keyword, status) {
   const k = normalizeText(keyword, 100).toLowerCase();
   const s = normalizeStatus(status);
   return sortRiskRows(rows
-    .map((row) => ({ ...row, risk_level: row.risk_level || deriveRiskLevel(row) }))
+    .map((row) => withIpLocation({ ...row, risk_level: row.risk_level || deriveRiskLevel(row) }))
     .filter((row) => (!s || row.status === s))
     .filter((row) => {
       if (!k) return true;
-      return [row.ip, row.device_id, row.device_label, row.reason, row.status, row.risk_level]
+      return [
+        row.ip,
+        row.device_id,
+        row.device_label,
+        row.reason,
+        row.status,
+        row.risk_level,
+        row.ip_location?.label,
+        row.ip_location?.country,
+        row.ip_location?.country_code,
+        row.ip_location?.region,
+        row.ip_location?.city,
+      ]
         .some((v) => String(v || '').toLowerCase().includes(k));
     }));
 }
@@ -150,7 +171,7 @@ async function listLoginAttempts(query = {}) {
     repo.countLoginAttempts(filters),
     repo.selectLoginAttempts(filters, pageSize, offset),
   ]);
-  return { list, total, page, pageSize, totalPages: total === 0 ? 0 : Math.ceil(total / pageSize) };
+  return { list: list.map(withIpLocation), total, page, pageSize, totalPages: total === 0 ? 0 : Math.ceil(total / pageSize) };
 }
 
 async function listSecurityEvents(query = {}) {
@@ -169,7 +190,7 @@ async function listSecurityEvents(query = {}) {
     repo.countSecurityEvents(filters),
     repo.selectSecurityEvents(filters, pageSize, offset),
   ]);
-  return { list, total, page, pageSize, totalPages: total === 0 ? 0 : Math.ceil(total / pageSize) };
+  return { list: list.map(withIpLocation), total, page, pageSize, totalPages: total === 0 ? 0 : Math.ceil(total / pageSize) };
 }
 
 async function listRiskIps(query = {}) {
@@ -306,7 +327,7 @@ async function blockIp(body, adminUserId, req) {
     after,
     result: 'success',
   });
-  return { data: after, message: '风险 IP 已封禁' };
+  return { data: withIpLocation(after), message: '风险 IP 已封禁' };
 }
 
 async function unblockIp(body, adminUserId, req) {
@@ -336,7 +357,7 @@ async function unblockIp(body, adminUserId, req) {
     after,
     result: 'success',
   });
-  return { data: after, message: '风险 IP 已解封' };
+  return { data: withIpLocation(after), message: '风险 IP 已解封' };
 }
 
 async function blockDevice(body, adminUserId, req) {
@@ -417,7 +438,7 @@ async function listUserSessions(userId, query = {}) {
     repo.countUserRecentLoginSessions(uid),
     repo.selectUserRecentLoginSessions(uid, pageSize, offset),
   ]);
-  return { list, total, page, pageSize, totalPages: total === 0 ? 0 : Math.ceil(total / pageSize) };
+  return { list: list.map(withIpLocation), total, page, pageSize, totalPages: total === 0 ? 0 : Math.ceil(total / pageSize) };
 }
 
 async function revokeUserSessions(userId, body, adminUserId, req) {

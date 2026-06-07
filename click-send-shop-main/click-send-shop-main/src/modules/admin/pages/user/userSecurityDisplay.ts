@@ -50,6 +50,14 @@ type RiskSignalRow = {
   failed_count?: number | null;
 };
 
+type IpLocation = {
+  label?: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  region?: string | null;
+  city?: string | null;
+};
+
 export function humanizeCode(value?: string | null): string {
   const raw = String(value || "").trim();
   if (!raw) return "-";
@@ -90,6 +98,17 @@ export function formatDeviceLabel(deviceId?: string | null, deviceLabel?: string
   if (!id && !label) return "-";
   const raw = id || label.replace(/^UA-/i, "");
   return `设备指纹 ${shortSecurityId(raw, 18)}`;
+}
+
+export function formatIpLocationLabel(location?: IpLocation | null): string {
+  if (!location) return "归属地未知";
+  const label = String(location.label || "").trim();
+  if (label) return label;
+  const parts = [location.country, location.region, location.city]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .filter((item, index, list) => list.findIndex((other) => other.toLowerCase() === item.toLowerCase()) === index);
+  return parts.length ? parts.join(" / ") : "归属地未知";
 }
 
 export function formatRiskSourceLabel(source?: string | null): string {

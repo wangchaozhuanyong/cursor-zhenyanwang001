@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatDeviceLabel,
+  formatIpLocationLabel,
   formatLoginMethodLabel,
   formatRiskLevelLabel,
   formatRiskSignalSummary,
@@ -23,6 +24,12 @@ describe("userSecurityDisplay", () => {
     expect(formatLoginMethodLabel("phone_password")).toBe("手机号密码登录");
     expect(formatLoginMethodLabel("phone_sms")).toBe("短信验证码登录");
     expect(formatDeviceLabel("abcdef1234567890abcdef")).toBe("设备指纹 abcdef1234567890ab...");
+  });
+
+  it("把 IP 归属地转成国家和城市显示", () => {
+    expect(formatIpLocationLabel({ country: "马来西亚", city: "吉隆坡" })).toBe("马来西亚 / 吉隆坡");
+    expect(formatIpLocationLabel({ label: "美国 / CA / Mountain View" })).toBe("美国 / CA / Mountain View");
+    expect(formatIpLocationLabel(null)).toBe("归属地未知");
   });
 
   it("把风险来源和触发次数说明清楚", () => {

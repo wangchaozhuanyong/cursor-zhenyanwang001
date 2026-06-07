@@ -8,11 +8,23 @@ export type UserSecurityPaginated<T> = {
   totalPages: number;
 };
 
+export type IpLocation = {
+  ip?: string | null;
+  country_code?: string | null;
+  country?: string | null;
+  region?: string | null;
+  city?: string | null;
+  timezone?: string | null;
+  label?: string | null;
+  source?: string | null;
+};
+
 export type UserSecurityLoginAttempt = {
   id: string;
   user_id: string;
   login_method: string;
   ip?: string | null;
+  ip_location?: IpLocation | null;
   device_id?: string | null;
   created_at?: string;
   phone?: string | null;
@@ -28,6 +40,7 @@ export type UserSecurityEvent = {
   title: string;
   description?: string;
   ip?: string | null;
+  ip_location?: IpLocation | null;
   device_id?: string | null;
   user_agent?: string | null;
   metadata?: unknown;
@@ -40,6 +53,7 @@ export type UserSecurityEvent = {
 export type RiskIp = {
   id?: string;
   ip: string;
+  ip_location?: IpLocation | null;
   risk_level: string;
   reason?: string;
   status: "blocked" | "watching" | "unblocked" | string;

@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, Clock, Gift, Loader2, ShoppingBag, TrendingDown, TrendingUp, Users, Wallet } from "lucide-react";
+import { ArrowRight, CircleHelp, Clock, Gift, Loader2, ShoppingBag, TrendingDown, TrendingUp, Users, Wallet } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -24,6 +24,7 @@ import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { cn } from "@/lib/utils";
 import { formatRewardTransactionLabel, groupRewardRecordsByMonth } from "@/utils/rewardDisplayLabels";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const PAGE_SIZE = 20;
 const DEFAULT_BALANCE_LABEL = "购物可用返现";
@@ -55,6 +56,7 @@ export default function Rewards() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [usageHelpOpen, setUsageHelpOpen] = useState(false);
 
   const inviteEnabled = loyaltyConfig?.reward?.referralEnabled !== false;
 
@@ -137,7 +139,7 @@ export default function Rewards() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className={cn("relative overflow-hidden rounded-[28px] px-6 py-7 shadow-[0_18px_42px_-24px_rgba(238,54,26,0.72)] sm:px-7", THEME_ACCENT_HERO_SHELL)}
+        className={cn("relative overflow-hidden rounded-[28px] px-5 py-6 shadow-[0_18px_42px_-24px_rgba(238,54,26,0.72)] sm:px-7 sm:py-7", THEME_ACCENT_HERO_SHELL)}
         style={{
           background:
             "linear-gradient(135deg, color-mix(in srgb, var(--theme-price) 92%, #ff6f48) 0%, color-mix(in srgb, var(--theme-danger) 78%, #ff512f) 58%, color-mix(in srgb, var(--theme-danger) 96%, #d92713) 100%)",
@@ -215,35 +217,48 @@ export default function Rewards() {
         </div>
         <div className="relative z-10 flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className={cn(THEME_ACCENT_HERO_LABEL, "text-[15px] font-semibold normal-case tracking-normal sm:text-base")}>{balanceLabel}</p>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_45%,transparent)] text-xs font-semibold text-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_75%,transparent)]">
-                ?
-              </span>
+            <div className="max-w-[calc(100%-5.75rem)] sm:max-w-[calc(100%-9rem)]">
+              <div className="flex min-w-0 items-center gap-2">
+                <p className={cn(THEME_ACCENT_HERO_LABEL, "min-w-0 truncate text-[15px] font-semibold normal-case tracking-normal sm:text-base")}>{balanceLabel}</p>
+                <Tooltip open={usageHelpOpen} onOpenChange={setUsageHelpOpen}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="查看返现说明"
+                      onClick={() => setUsageHelpOpen((open) => !open)}
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_48%,transparent)] text-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_82%,transparent)] transition-colors hover:bg-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_14%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_58%,transparent)]"
+                    >
+                      <CircleHelp size={14} strokeWidth={2.4} aria-hidden="true" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="start" sideOffset={8} className="max-w-[15rem] whitespace-normal rounded-xl px-3 py-2 text-xs leading-relaxed shadow-xl">
+                    {usageNotice}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className={cn("store-stat-value tabular-nums leading-none", THEME_ACCENT_HERO_VALUE, "text-[42px] sm:text-6xl")}>
+                  <span className="mr-2 text-[20px] font-extrabold leading-none sm:mr-3 sm:text-2xl">RM</span>
+                  {money(config?.balance ?? 0)}
+                </span>
+              </div>
             </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className={cn("store-stat-value tabular-nums leading-none", THEME_ACCENT_HERO_VALUE, "text-5xl sm:text-6xl")}>
-                <span className="mr-3 text-[22px] font-extrabold leading-none sm:text-2xl">RM</span>
-                {money(config?.balance ?? 0)}
-              </span>
-            </div>
-            <p className={cn("mt-4 text-sm font-medium leading-relaxed sm:text-base", THEME_ACCENT_HERO_SUBTLE)}>{usageNotice}</p>
-            <div className="mt-7 grid grid-cols-3 overflow-hidden rounded-[22px] bg-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_12%,transparent)] px-2 py-4 backdrop-blur-sm">
+            <div className="mt-8 grid grid-cols-3 overflow-hidden rounded-[22px] bg-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_12%,transparent)] px-1.5 py-3.5 backdrop-blur-sm sm:px-2 sm:py-4">
               {summaryItems.map((item, index) => {
                 const Icon = item.icon;
                 return (
                   <div
                     key={item.label}
                     className={cn(
-                      "flex min-w-0 flex-col items-center justify-center px-2 text-center",
+                      "flex min-w-0 flex-col items-center justify-center px-1.5 text-center sm:px-2",
                       index > 0 ? "border-l border-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_34%,transparent)]" : "",
                     )}
                   >
-                    <div className="flex items-center gap-1.5">
-                      <Icon size={17} className={THEME_ACCENT_HERO_ICON} />
-                      <p className={cn("truncate text-[12px] font-semibold sm:text-sm", THEME_ACCENT_HERO_MUTED)}>{item.label}</p>
+                    <div className="flex max-w-full items-center gap-1">
+                      <Icon size={16} className={cn("shrink-0", THEME_ACCENT_HERO_ICON)} />
+                      <p className={cn("min-w-0 truncate text-[11px] font-semibold sm:text-sm", THEME_ACCENT_HERO_MUTED)}>{item.label}</p>
                     </div>
-                    <p className={cn("mt-2 text-[22px] font-extrabold leading-none tabular-nums sm:text-2xl", THEME_ACCENT_HERO_VALUE)}>{item.value}</p>
+                    <p className={cn("mt-2 text-[20px] font-extrabold leading-none tabular-nums sm:text-2xl", THEME_ACCENT_HERO_VALUE)}>{item.value}</p>
                   </div>
                 );
               })}

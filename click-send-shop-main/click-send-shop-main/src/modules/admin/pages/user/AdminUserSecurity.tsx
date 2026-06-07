@@ -33,6 +33,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import {
   formatDeviceLabel,
+  formatIpLocationLabel,
   formatLoginMethodLabel,
   formatRiskLevelLabel,
   formatRiskSignalSummary,
@@ -91,6 +92,17 @@ function levelTone(level?: string | null) {
   if (level === "low" || level === "P3") return "bg-blue-100 text-blue-700";
   if (level === "info" || level === "INFO") return "bg-slate-100 text-slate-600";
   return "bg-slate-100 text-slate-600";
+}
+
+function IpCell({ ip, location }: { ip?: string | null; location?: RiskIp["ip_location"] }) {
+  if (!ip) return <span className="text-muted-foreground">-</span>;
+  const locationLabel = formatIpLocationLabel(location);
+  return (
+    <div className="min-w-0" title={`${ip} · ${locationLabel}`}>
+      <div className="font-mono text-sm text-foreground">{ip}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{locationLabel}</div>
+    </div>
+  );
 }
 
 export default function AdminUserSecurity() {
@@ -323,7 +335,7 @@ export default function AdminUserSecurity() {
             <tbody>
               {riskIps.map((row) => (
                 <tr key={row.ip} className="border-t border-[var(--theme-border)]">
-                  <td className={adminTdClassName("font-mono text-foreground", "left")}>{row.ip}</td>
+                  <td className={adminTdClassName("min-w-56 text-foreground", "left")}><IpCell ip={row.ip} location={row.ip_location} /></td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskStatusLabel(row.status)} tone={statusTone(row.status)} /></td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskLevelLabel(row.risk_level)} tone={levelTone(row.risk_level)} /></td>
                   <td className={adminTdClassName("min-w-40 text-muted-foreground", "left")}>
@@ -404,7 +416,7 @@ export default function AdminUserSecurity() {
                 <tr key={row.id} className="border-t border-[var(--theme-border)]">
                   <td className={adminTdClassName("text-foreground", "left")}>{userLabel(row)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatLoginMethodLabel(row.login_method)}</td>
-                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-mono`, "left")}>{row.ip || "-"}</td>
+                  <td className={adminTdClassName("min-w-56", "left")}><IpCell ip={row.ip} location={row.ip_location} /></td>
                   <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{formatDeviceLabel(row.device_id)}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.created_at)}</td>
                 </tr>
@@ -437,7 +449,7 @@ export default function AdminUserSecurity() {
                     <div className="mt-1 text-xs text-muted-foreground">{formatUserSecurityEventDescription(row.description, row.event_type, row.title)}</div>
                   </td>
                   <td className={adminTdClassName("text-muted-foreground", "left")}>{userLabel(row)}</td>
-                  <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-mono`, "left")}>{row.ip || "-"}</td>
+                  <td className={adminTdClassName("min-w-56", "left")}><IpCell ip={row.ip} location={row.ip_location} /></td>
                   <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{formatDeviceLabel(row.device_id)}</td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.created_at)}</td>
                 </tr>

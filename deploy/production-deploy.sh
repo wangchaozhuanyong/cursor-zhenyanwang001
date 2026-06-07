@@ -157,7 +157,8 @@ guard_target_commit() {
 }
 
 maybe_install_backend_deps() {
-  if [[ "$FAST_MODE" == "1" && -d "$BACKEND_DIR/node_modules" ]]; then
+  # FAST_MODE can only skip after the lockfile hash check below.
+  if [[ "${LEGACY_FAST_SKIP_WITHOUT_HASH:-0}" == "1" && "$FAST_MODE" == "1" && -d "$BACKEND_DIR/node_modules" ]]; then
     echo "⚡ FAST_MODE=1 且后端 node_modules 已存在，跳过后端依赖安装" | tee -a "$LOG_FILE"
     return 0
   fi
@@ -192,7 +193,8 @@ maybe_install_backend_deps() {
 }
 
 maybe_install_frontend_deps() {
-  if [[ "$FAST_MODE" == "1" && -d "$FRONTEND_DIR/node_modules" ]]; then
+  # FAST_MODE can only skip after the lockfile hash check below.
+  if [[ "${LEGACY_FAST_SKIP_WITHOUT_HASH:-0}" == "1" && "$FAST_MODE" == "1" && -d "$FRONTEND_DIR/node_modules" ]]; then
     echo "⚡ FAST_MODE=1 且前端 node_modules 已存在，跳过前端依赖安装" | tee -a "$LOG_FILE"
     return 0
   fi

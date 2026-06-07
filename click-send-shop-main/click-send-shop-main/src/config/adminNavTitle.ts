@@ -65,9 +65,6 @@ export function getHiddenAdminHeaderTitle(
 ): string | null {
   const seg = (center: string, child: string, page: string) =>
     `${t(center)} / ${t(child)} / ${t(page)}`;
-  const seg4 = (center: string, group: string, child: string, page: string) =>
-    `${t(center)} / ${t(group)} / ${t(child)} / ${t(page)}`;
-
   if (pathname === "/admin/account") {
     return t("routeTitles.account");
   }
@@ -92,19 +89,19 @@ export function getHiddenAdminHeaderTitle(
   }
 
   if (pathname === "/admin/marketing/coupons/new") {
-    return seg4("nav.marketingCenter", "nav.couponCenter", "nav.couponTemplates", "routeTitles.couponNew");
+    return seg("nav.marketingCenter", "nav.couponCenter", "routeTitles.couponNew");
   }
   if (pathname === "/admin/marketing/coupon-campaigns/new") {
-    return seg4("nav.marketingCenter", "nav.couponCenter", "nav.couponCampaigns", "routeTitles.marketingNewCouponActivity");
+    return seg("nav.marketingCenter", "nav.couponCenter", "routeTitles.couponNew");
   }
   if (/^\/admin\/marketing\/coupon-campaigns\/[^/]+$/.test(pathname)) {
-    return `${seg4("nav.marketingCenter", "nav.couponCenter", "nav.couponCampaigns", "routeTitles.couponCampaignEdit")}${idSuffix(pathname, /^\/admin\/marketing\/coupon-campaigns\/([^/]+)$/)}`;
+    return seg("nav.marketingCenter", "nav.couponCenter", "routeTitles.coupons");
   }
   if (
     /^\/admin\/marketing\/coupons\/[^/]+$/.test(pathname)
     && pathname !== "/admin/marketing/coupons/records"
   ) {
-    return `${seg4("nav.marketingCenter", "nav.couponCenter", "nav.couponTemplates", "routeTitles.couponEdit")}${idSuffix(pathname, /^\/admin\/marketing\/coupons\/([^/]+)$/)}`;
+    return `${seg("nav.marketingCenter", "nav.couponCenter", "routeTitles.couponEdit")}${idSuffix(pathname, /^\/admin\/marketing\/coupons\/([^/]+)$/)}`;
   }
 
   if (pathname === "/admin/marketing/activities/new") {

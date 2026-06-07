@@ -5,9 +5,9 @@ const REPORT_COLUMN_LABELS = {
   keyword: '关键词',
   category_id: '分类',
   coupon_id: '优惠券',
-  coupon_campaign_id: '优惠券活动ID',
-  coupon_campaign_title: '优惠券活动',
-  coupon_campaign_type: '优惠券活动类型',
+  coupon_campaign_id: '礼券发行ID',
+  coupon_campaign_title: '礼券发行',
+  coupon_campaign_type: '礼券发行类型',
   activity_id: '活动',
   order_id: '订单',
   user_id: '用户',
@@ -195,7 +195,7 @@ const STOCK_STATUS_LABELS = {
   slow_moving: '滞销',
 };
 const ACTIVITY_TYPE_LABELS = {
-  flash_sale: '限时秒杀', full_reduction: '满减活动', coupon_activity: '优惠券活动', new_user_gift: '新人礼包',
+  flash_sale: '限时秒杀', full_reduction: '满减活动', coupon_activity: '礼券发行', new_user_gift: '新人礼包',
   member_activity: '会员活动', points_bonus: '积分赠送', cashback_activity: '返现活动',
 };
 const PAYMENT_STATUS_LABELS = { pending: '待支付', unpaid: '未支付', paid: '已支付', success: '支付成功', refunded: '已退款', failed: '支付失败', cancelled: '已取消', partially_refunded: '部分退款' };

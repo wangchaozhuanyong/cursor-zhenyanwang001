@@ -12,6 +12,7 @@ const uploadAssetService = require('./service/uploadAsset.service');
 const uploadAssetRepo = require('./repository/uploadAsset.repository');
 const rewardServiceApi = require('./service/reward.service');
 const couponAdminIssueService = require('./service/couponAdminIssue.service');
+const couponService = require('./service/coupon.service');
 const couponLifecycle = require('./service/couponLifecycle.service');
 const couponRepo = require('./repository/coupon.repository');
 const pointsRepo = require('./repository/points.repository');
@@ -70,6 +71,8 @@ router.use('/upload', require('./routes/upload.routes'));
   replaceProductVideoUrl: uploadAssetRepo.replaceProductVideoUrl,
   getAdminRewardRecords: rewardServiceApi.getAdminRecords,
   issueCouponToUsers: couponAdminIssueService.issueCouponToUsers,
+  getAvailableCoupons: couponService.getAvailableCoupons,
+  getCouponCenter: couponService.getCouponCenter,
   buildEffectiveCoupon: couponLifecycle.buildEffectiveCoupon,
   resolveUserCouponRuntimeStatus: couponLifecycle.resolveUserCouponRuntimeStatus,
   restoreCouponAfterOrderCancelled: couponLifecycle.restoreCouponAfterOrderCancelled,

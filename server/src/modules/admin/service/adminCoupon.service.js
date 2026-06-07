@@ -46,6 +46,11 @@ function formatCouponRow(row) {
   r.publish_status = r.publish_status || (r.status === 'available' ? 'active' : r.status || 'active');
   r.validity_mode = r.validity_mode || 'absolute';
   r.issue_mode = r.issue_mode || (r.auto_issue ? 'auto' : 'manual');
+  r.campaign_start_at = r.campaign_start_at || r.claim_start_at || null;
+  r.campaign_end_at = r.campaign_end_at || r.claim_end_at || null;
+  r.post_end_valid_days = Number(r.post_end_valid_days || 0);
+  r.source_campaign_id = r.source_campaign_id || null;
+  r.source_coupon_id = r.source_coupon_id || null;
   r.usable_scope_type = r.usable_scope_type || 'all';
   try { r.usable_product_ids = r.usable_product_ids ? JSON.parse(r.usable_product_ids) : []; } catch { r.usable_product_ids = []; }
   try { r.usable_category_ids = r.usable_category_ids ? JSON.parse(r.usable_category_ids) : []; } catch { r.usable_category_ids = []; }
@@ -102,7 +107,17 @@ const CORE_FIELDS = new Set([
   'usable_scope_type', 'usable_product_ids', 'usable_category_ids',
   'stackable_with_activity', 'new_user_only', 'member_only',
   'validity_mode', 'valid_days_after_claim', 'follow_activity_id',
+  'campaign_start_at', 'campaign_end_at', 'post_end_valid_days', 'audience_type', 'audience_config',
 ]);
+
+function isCouponClosedForDelete(coupon) {
+  if (!coupon) return false;
+  if (coupon.deleted_at || coupon.archived_at || coupon.invalidated_at || coupon.stop_use_at || coupon.stop_claim_at) return true;
+  const publishStatus = String(coupon.publish_status || '');
+  if (['paused', 'disabled', 'archived', 'invalidated'].includes(publishStatus)) return true;
+  const end = coupon.campaign_end_at || coupon.claim_end_at || coupon.use_end_at || coupon.end_date;
+  return !!end && new Date(end).getTime() < Date.now();
+}
 
 async function listCoupons(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -121,6 +136,8 @@ async function createCoupon(body, adminUserId, req) {
     usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity,
     publish_status, claim_start_at, claim_end_at, use_start_at, use_end_at,
     validity_mode, valid_days_after_claim, follow_activity_id, issue_mode,
+    campaign_start_at, campaign_end_at, post_end_valid_days, display_positions,
+    audience_type, audience_config, source_campaign_id, source_coupon_id,
   } = body;
   if (!code || !title) throw new BusinessError(400, '编码和标题不能为空');
   assertCouponPayloadValid({ ...body, type: type || 'fixed' });
@@ -153,6 +170,14 @@ async function createCoupon(body, adminUserId, req) {
     publish_status: publish_status || 'active',
     claim_start_at: claim_start_at || (start_date ? `${start_date} 00:00:00` : null),
     claim_end_at: claim_end_at || (end_date ? `${end_date} 23:59:59` : null),
+    campaign_start_at: campaign_start_at || claim_start_at || (start_date ? `${start_date} 00:00:00` : null),
+    campaign_end_at: campaign_end_at || claim_end_at || (end_date ? `${end_date} 23:59:59` : null),
+    post_end_valid_days,
+    display_positions,
+    audience_type,
+    audience_config,
+    source_campaign_id,
+    source_coupon_id,
     use_start_at: use_start_at || (start_date ? `${start_date} 00:00:00` : null),
     use_end_at: use_end_at || (end_date ? `${end_date} 23:59:59` : null),
     validity_mode: validity_mode || 'absolute',
@@ -188,7 +213,7 @@ async function updateCoupon(id, body, adminUserId, req) {
   }
   const fragments = [];
   const values = [];
-  for (const f of ['code', 'title', 'type', 'description', 'start_date', 'end_date', 'scope_type', 'display_badge', 'total_quantity', 'per_user_limit', 'usable_scope_type', 'publish_status', 'claim_start_at', 'claim_end_at', 'use_start_at', 'use_end_at', 'validity_mode', 'valid_days_after_claim', 'follow_activity_id', 'issue_mode']) {
+  for (const f of ['code', 'title', 'type', 'description', 'start_date', 'end_date', 'scope_type', 'display_badge', 'total_quantity', 'per_user_limit', 'usable_scope_type', 'publish_status', 'claim_start_at', 'claim_end_at', 'campaign_start_at', 'campaign_end_at', 'post_end_valid_days', 'audience_type', 'use_start_at', 'use_end_at', 'validity_mode', 'valid_days_after_claim', 'follow_activity_id', 'source_campaign_id', 'source_coupon_id', 'issue_mode']) {
     if (body[f] !== undefined) {
       fragments.push(`${f} = ?`);
       values.push(body[f]);
@@ -207,6 +232,14 @@ async function updateCoupon(id, body, adminUserId, req) {
   if (body.usable_category_ids !== undefined) {
     fragments.push('usable_category_ids = ?');
     values.push(Array.isArray(body.usable_category_ids) ? JSON.stringify(body.usable_category_ids) : null);
+  }
+  if (body.display_positions !== undefined) {
+    fragments.push('display_positions = ?');
+    values.push(Array.isArray(body.display_positions) ? JSON.stringify(body.display_positions) : null);
+  }
+  if (body.audience_config !== undefined) {
+    fragments.push('audience_config = ?');
+    values.push(body.audience_config ? JSON.stringify(body.audience_config) : null);
   }
   if (body.value !== undefined) {
     fragments.push('value = ?');
@@ -235,8 +268,10 @@ async function updateCoupon(id, body, adminUserId, req) {
 }
 
 async function deleteCoupon(id, adminUserId, req) {
+  const coupon = await repo.selectCouponById(id);
+  if (!coupon || coupon.deleted_at) throw new BusinessError(404, '礼券不存在或已删除');
   const claimedCount = await repo.countUserCouponsByCouponId(id);
-  if (claimedCount > 0) {
+  if (claimedCount > 0 && ((await repo.countOpenUserCouponsByCouponId(id)) > 0 || !isCouponClosedForDelete(coupon))) {
     throw new BusinessError(409, '该优惠券已有领取记录，不能直接删除。请使用归档、暂停领取、停止使用或作废已领取券。');
   }
   await repo.deleteCouponById(id, adminUserId);

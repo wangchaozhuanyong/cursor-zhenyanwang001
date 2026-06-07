@@ -49,6 +49,19 @@ function addDays(date, days) {
   return d;
 }
 
+function minDate(...values) {
+  const dates = values.map(dateOrNull).filter(Boolean);
+  if (!dates.length) return null;
+  return new Date(Math.min(...dates.map((d) => d.getTime())));
+}
+
+function resolveCampaignCutoff(coupon) {
+  const campaignEnd = dateOrNull(coupon.campaign_end_at);
+  if (!campaignEnd) return null;
+  const postEndDays = Math.max(0, Number(coupon.post_end_valid_days || 0));
+  return postEndDays > 0 ? addDays(campaignEnd, postEndDays) : campaignEnd;
+}
+
 function buildCouponSnapshot(coupon, claimedAt = new Date()) {
   return {
     coupon_id: coupon.id,
@@ -69,6 +82,9 @@ function buildCouponSnapshot(coupon, claimedAt = new Date()) {
     validity_mode: coupon.validity_mode || 'absolute',
     claim_start_at: coupon.claim_start_at || null,
     claim_end_at: coupon.claim_end_at || null,
+    campaign_start_at: coupon.campaign_start_at || coupon.claim_start_at || null,
+    campaign_end_at: coupon.campaign_end_at || coupon.claim_end_at || null,
+    post_end_valid_days: coupon.post_end_valid_days == null ? null : Number(coupon.post_end_valid_days),
     use_start_at: coupon.use_start_at || coupon.start_date || null,
     use_end_at: coupon.use_end_at || coupon.end_date || null,
     valid_days_after_claim: coupon.valid_days_after_claim == null ? null : Number(coupon.valid_days_after_claim),
@@ -80,13 +96,15 @@ function buildCouponSnapshot(coupon, claimedAt = new Date()) {
 }
 
 function resolveUserCouponValidity(coupon, now = new Date()) {
+  const campaignCutoff = resolveCampaignCutoff(coupon);
   if ((coupon.validity_mode || 'absolute') === 'after_claim') {
     const days = Math.max(1, Number(coupon.valid_days_after_claim || 1));
-    return { validFrom: now, validUntil: addDays(now, days) };
+    return { validFrom: now, validUntil: minDate(addDays(now, days), campaignCutoff) || addDays(now, days) };
   }
+  const absoluteUntil = dateOrNull(coupon.use_end_at) || dateOrNull(coupon.end_date) || null;
   return {
     validFrom: dateOrNull(coupon.use_start_at) || dateOrNull(coupon.start_date) || now,
-    validUntil: dateOrNull(coupon.use_end_at) || dateOrNull(coupon.end_date) || null,
+    validUntil: minDate(absoluteUntil, campaignCutoff) || absoluteUntil || campaignCutoff,
   };
 }
 
@@ -102,6 +120,9 @@ function buildEffectiveCoupon(row = {}) {
     min_amount: Number(source.min_amount ?? row.min_amount ?? 0),
     start_date: source.use_start_at || source.start_date || row.use_start_at || row.start_date || '',
     end_date: source.use_end_at || source.end_date || row.use_end_at || row.end_date || '',
+    campaign_start_at: source.campaign_start_at || row.campaign_start_at || row.claim_start_at || '',
+    campaign_end_at: source.campaign_end_at || row.campaign_end_at || row.claim_end_at || '',
+    post_end_valid_days: source.post_end_valid_days ?? row.post_end_valid_days ?? null,
     status: row.coupon_publish_status || row.coupon_status || row.publish_status || row.status || 'active',
     description: source.description || row.description || '',
     scope_type: source.scope_type || row.scope_type || 'all',

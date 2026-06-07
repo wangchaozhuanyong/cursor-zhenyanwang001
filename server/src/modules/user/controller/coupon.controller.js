@@ -15,6 +15,14 @@ exports.getAvailableCoupons = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.getCouponCenter = async (req, res, next) => {
+  try {
+    const userId = req.user?.id ? String(req.user.id) : null;
+    const data = await couponService.getCouponCenter(userId);
+    res.success(data);
+  } catch (err) { next(err); }
+};
+
 exports.claimCoupon = async (req, res, next) => {
   try {
     const result = await couponService.claimCoupon(req.user.id, req.body);
@@ -22,7 +30,6 @@ exports.claimCoupon = async (req, res, next) => {
     res.success(result.data, result.message);
   } catch (err) { next(err); }
 };
-
 
 
 

@@ -30,7 +30,15 @@ function legacyStatusWhere(status, params) {
 function statusWhere(status, params) {
   if (!status || status === 'all') return '';
   if (status === 'available') {
-    return " AND uc.status = 'available' AND (uc.valid_from IS NULL OR uc.valid_from <= NOW()) AND (uc.valid_until IS NULL OR uc.valid_until >= NOW())";
+    return ` AND uc.status = 'available'
+      AND (uc.valid_from IS NULL OR uc.valid_from <= NOW())
+      AND (uc.valid_until IS NULL OR uc.valid_until >= NOW())
+      AND c.deleted_at IS NULL
+      AND c.archived_at IS NULL
+      AND c.invalidated_at IS NULL
+      AND c.stop_use_at IS NULL
+      AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) = 'active'
+      AND c.status IN ('available', 'active')`;
   }
   if (status === 'pending') {
     return " AND (uc.status = 'pending' OR (uc.status = 'available' AND uc.valid_from IS NOT NULL AND uc.valid_from > NOW()))";
@@ -82,6 +90,8 @@ async function selectUserCouponsPage(userId, status, pageSize, offset) {
               c.publish_status AS coupon_publish_status, c.description,
               c.scope_type, c.display_badge, c.usable_scope_type, c.usable_product_ids,
               c.usable_category_ids, c.stackable_with_activity,
+              c.deleted_at, c.archived_at, c.invalidated_at, c.stop_use_at,
+              c.campaign_start_at, c.campaign_end_at, c.post_end_valid_days,
               ${COUPON_CATEGORY_SELECT}
        FROM user_coupons uc
        LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
@@ -132,9 +142,16 @@ async function selectAvailableCoupons() {
        WHERE c.deleted_at IS NULL
          AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) = 'active'
          AND c.status IN ('available', 'active')
-         AND (c.claim_start_at IS NULL OR c.claim_start_at <= NOW())
-         AND (c.claim_end_at IS NULL OR c.claim_end_at >= NOW())
+         AND (
+           COALESCE(c.campaign_start_at, c.claim_start_at, CONCAT(c.start_date, ' 00:00:00')) IS NULL
+           OR COALESCE(c.campaign_start_at, c.claim_start_at, CONCAT(c.start_date, ' 00:00:00')) <= NOW()
+         )
+         AND (
+           COALESCE(c.campaign_end_at, c.claim_end_at, CONCAT(c.end_date, ' 23:59:59')) IS NULL
+           OR COALESCE(c.campaign_end_at, c.claim_end_at, CONCAT(c.end_date, ' 23:59:59')) >= NOW()
+         )
          AND c.stop_claim_at IS NULL
+         AND c.stop_use_at IS NULL
          AND c.archived_at IS NULL
          AND c.invalidated_at IS NULL
          AND (
@@ -421,4 +438,3 @@ module.exports = {
   updateUserCouponAfterRestore,
   selectUserOrderCount,
 };
-

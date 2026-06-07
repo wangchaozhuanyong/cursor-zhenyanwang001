@@ -1,28 +1,21 @@
-import { ClipboardList, Gift, Ticket } from "lucide-react";
+import { ClipboardList, Ticket } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 
 const TABS = [
   {
-    key: "templates",
+    key: "vouchers",
     path: "/admin/marketing/coupons",
-    zh: "优惠券模板",
-    en: "Coupon templates",
+    zh: "礼券管理",
+    en: "Voucher management",
     icon: Ticket,
-  },
-  {
-    key: "campaigns",
-    path: "/admin/marketing/coupon-campaigns",
-    zh: "发券活动",
-    en: "Issuing campaigns",
-    icon: Gift,
   },
   {
     key: "records",
     path: "/admin/marketing/coupons/records",
-    zh: "领券记录",
-    en: "Coupon claims",
+    zh: "领取记录",
+    en: "Claim records",
     icon: ClipboardList,
   },
 ] as const;

@@ -77,10 +77,10 @@ async function validateRestoreDependencies(type, id) {
   }
   if (type === 'coupon_campaigns') {
     const couponIds = await repo.getCouponCampaignCouponIds(id);
-    if (!couponIds.length) return '发券活动未关联优惠券，不能恢复';
+    if (!couponIds.length) return '礼券发行未关联优惠券，不能恢复';
     for (const couponId of couponIds) {
       const coupon = await repo.getActiveCoupon(couponId);
-      if (!coupon) return '发券活动关联优惠券不存在、已删除或已归档，不能恢复';
+      if (!coupon) return '礼券发行关联优惠券不存在、已删除或已归档，不能恢复';
     }
   }
   if (type === 'product_reviews') {

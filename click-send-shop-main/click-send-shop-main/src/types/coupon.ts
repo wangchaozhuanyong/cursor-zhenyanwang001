@@ -10,6 +10,9 @@ export interface Coupon {
   min_amount: number;
   start_date: string;
   end_date: string;
+  campaign_start_at?: string;
+  campaign_end_at?: string;
+  post_end_valid_days?: number | null;
   status: CouponStatus;
   description?: string;
   scope_type?: "all" | "category";
@@ -60,6 +63,13 @@ export interface CouponListParams {
   status?: CouponStatus | "all";
   page?: number;
   pageSize?: number;
+}
+
+export interface CouponCenterData {
+  usable_count: number;
+  claimable_count: number;
+  my_usable_coupons: UserCoupon[];
+  claimable_coupons: UserCoupon[];
 }
 
 /** 管理端领券记录列表行 */

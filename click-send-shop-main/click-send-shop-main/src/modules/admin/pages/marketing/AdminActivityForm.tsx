@@ -155,8 +155,7 @@ export default function AdminActivityForm() {
 
   useEffect(() => {
     if (isEdit || copyFromId || !LEGACY_COUPON_ACTIVITY_TYPES.has(requestedCreateType)) return;
-    const targetType = requestedCreateType === "new_user_gift" ? "new_user_gift" : "public_claim";
-    navigate(`/admin/marketing/coupon-campaigns/new?type=${targetType}`, { replace: true });
+    navigate("/admin/marketing/coupons/new", { replace: true });
   }, [copyFromId, isEdit, navigate, requestedCreateType]);
 
   const tabTitle = useMemo(() => {

@@ -72,9 +72,9 @@ export const ADMIN_EMPTY_GUIDES = {
   },
   coupons: {
     icon: Ticket,
-    title: "暂无优惠券",
-    description: "创建优惠券模板后可在发券活动中发放，或在结账页供客户使用。",
-    primaryLabel: "新建优惠券模板",
+    title: "暂无礼券",
+    description: "创建礼券后会按领取时间、人群和使用范围进入客户端领券中心；过期、作废或停止使用后客户端不再展示。",
+    primaryLabel: "新建礼券",
     primaryPath: "/admin/marketing/coupons/new",
   },
   users: {
@@ -95,7 +95,7 @@ export const ADMIN_EMPTY_GUIDES = {
     description: "创建秒杀、满减等活动后，可在前台营销位展示并提升转化。",
     primaryLabel: "新建活动",
     primaryPath: "/admin/marketing/activities/new",
-    secondaryLabel: "新建优惠券模板",
+    secondaryLabel: "新建礼券",
     secondaryPath: "/admin/marketing/coupons/new",
   },
   activitiesFiltered: {
@@ -187,7 +187,7 @@ export const ADMIN_EMPTY_GUIDES = {
     icon: ClipboardList,
     title: "暂无领券记录",
     description: "客户领取优惠券或使用后会在此展示。",
-    primaryLabel: "优惠券模板",
+    primaryLabel: "礼券管理",
     primaryPath: "/admin/marketing/coupons",
   },
   couponRecordsFiltered: {

@@ -88,38 +88,58 @@ async function selectCouponsPage(pageSize, offset, query = {}) {
 }
 
 async function insertCoupon(params) {
-  const {
-    id, code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge,
-    total_quantity, per_user_limit, new_user_only, member_only, auto_issue,
-    usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity,
-    publish_status, claim_start_at, claim_end_at, use_start_at, use_end_at, validity_mode,
-    valid_days_after_claim, follow_activity_id, issue_mode,
-  } = params;
+  const columns = [
+    'id', 'code', 'title', 'type', 'value', 'min_amount', 'start_date', 'end_date', 'description', 'scope_type',
+    'display_badge', 'total_quantity', 'per_user_limit', 'new_user_only', 'member_only', 'auto_issue',
+    'usable_scope_type', 'usable_product_ids', 'usable_category_ids', 'stackable_with_activity',
+    'publish_status', 'claim_start_at', 'claim_end_at', 'campaign_start_at', 'campaign_end_at', 'post_end_valid_days',
+    'display_positions', 'audience_type', 'audience_config', 'use_start_at', 'use_end_at', 'validity_mode',
+    'valid_days_after_claim', 'follow_activity_id', 'source_campaign_id', 'source_coupon_id', 'issue_mode',
+  ];
+  const valuesByColumn = {
+    id: params.id,
+    code: params.code,
+    title: params.title,
+    type: params.type,
+    value: params.value,
+    min_amount: params.min_amount,
+    start_date: params.start_date,
+    end_date: params.end_date,
+    description: params.description,
+    scope_type: params.scope_type || 'all',
+    display_badge: params.display_badge || '',
+    total_quantity: Number(params.total_quantity || 0),
+    per_user_limit: Number(params.per_user_limit || 1),
+    new_user_only: params.new_user_only ? 1 : 0,
+    member_only: params.member_only ? 1 : 0,
+    auto_issue: params.auto_issue ? 1 : 0,
+    usable_scope_type: params.usable_scope_type || 'all',
+    usable_product_ids: params.usable_product_ids ? JSON.stringify(params.usable_product_ids) : null,
+    usable_category_ids: params.usable_category_ids ? JSON.stringify(params.usable_category_ids) : null,
+    stackable_with_activity: params.stackable_with_activity === false ? 0 : 1,
+    publish_status: params.publish_status || 'active',
+    claim_start_at: params.claim_start_at || null,
+    claim_end_at: params.claim_end_at || null,
+    campaign_start_at: params.campaign_start_at || params.claim_start_at || null,
+    campaign_end_at: params.campaign_end_at || params.claim_end_at || null,
+    post_end_valid_days: Number(params.post_end_valid_days || 0),
+    display_positions: params.display_positions ? JSON.stringify(params.display_positions) : JSON.stringify(['home_coupon_zone']),
+    audience_type: params.audience_type || 'all',
+    audience_config: params.audience_config ? JSON.stringify(params.audience_config) : null,
+    use_start_at: params.use_start_at || null,
+    use_end_at: params.use_end_at || null,
+    validity_mode: params.validity_mode || 'absolute',
+    valid_days_after_claim: params.valid_days_after_claim == null ? null : Number(params.valid_days_after_claim),
+    follow_activity_id: params.follow_activity_id || null,
+    source_campaign_id: params.source_campaign_id || null,
+    source_coupon_id: params.source_coupon_id || params.id,
+    issue_mode: params.issue_mode || (params.auto_issue ? 'auto' : 'manual'),
+  };
   await db.query(
     `INSERT INTO coupons
-      (id, code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge,
-       total_quantity, per_user_limit, new_user_only, member_only, auto_issue,
-       usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity,
-       publish_status, claim_start_at, claim_end_at, use_start_at, use_end_at, validity_mode,
-       valid_days_after_claim, follow_activity_id, issue_mode)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [
-      id, code, title, type, value, min_amount, start_date, end_date, description, scope_type || 'all', display_badge || '',
-      Number(total_quantity || 0), Number(per_user_limit || 1), new_user_only ? 1 : 0, member_only ? 1 : 0, auto_issue ? 1 : 0,
-      usable_scope_type || 'all',
-      usable_product_ids ? JSON.stringify(usable_product_ids) : null,
-      usable_category_ids ? JSON.stringify(usable_category_ids) : null,
-      stackable_with_activity === false ? 0 : 1,
-      publish_status || 'active',
-      claim_start_at || null,
-      claim_end_at || null,
-      use_start_at || null,
-      use_end_at || null,
-      validity_mode || 'absolute',
-      valid_days_after_claim == null ? null : Number(valid_days_after_claim),
-      follow_activity_id || null,
-      issue_mode || (auto_issue ? 'auto' : 'manual'),
-    ],
+      (${columns.join(', ')})
+     VALUES (${columns.map(() => '?').join(', ')})`,
+    columns.map((column) => valuesByColumn[column]),
   );
 }
 
@@ -211,6 +231,18 @@ async function countUserCouponsByCouponId(couponId, query = {}) {
     params,
   );
   return total;
+}
+
+async function countOpenUserCouponsByCouponId(couponId) {
+  const [[{ total }]] = await db.query(
+    `SELECT COUNT(*) AS total
+       FROM user_coupons
+      WHERE BINARY coupon_id = BINARY ?
+        AND status IN ('available', 'pending')
+        AND (valid_until IS NULL OR valid_until >= NOW())`,
+    [couponId],
+  );
+  return Number(total || 0);
 }
 
 async function selectCouponRecordsPage(couponId, pageSize, offset, query = {}) {
@@ -318,10 +350,10 @@ module.exports = {
   countAllUserCoupons,
   selectAllCouponRecordsPage,
   countUserCouponsByCouponId,
+  countOpenUserCouponsByCouponId,
   selectCouponRecordsPage,
   selectCouponBaseById,
   selectUserIdsByTagIds,
   invalidateUsableUserCouponsByCoupon,
   batchIssueCouponToUsers,
 };
-

@@ -6,7 +6,6 @@ import { ApiError } from "@/types/common";
 import { ensureStoreSession, STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
 
-const COUPON_PAGE_SIZE = 50;
 const COUPON_CACHE_TTL_MS = 60_000;
 let couponLoadInflight: Promise<void> | null = null;
 let couponCacheLoadedAt = 0;
@@ -18,27 +17,6 @@ export function invalidateCouponStoreCache() {
 
 function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && err.code === 401;
-}
-
-async function fetchOwnedCoupons(): Promise<UserCoupon[]> {
-  const userCoupons: UserCoupon[] = [];
-  let page = 1;
-  let total = 0;
-  let lastBatchSize = 0;
-
-  do {
-    const userData = await couponService.fetchUserCoupons({
-      status: "all",
-      page,
-      pageSize: COUPON_PAGE_SIZE,
-    });
-    userCoupons.push(...userData.list);
-    total = userData.total;
-    lastBatchSize = userData.list.length;
-    page += 1;
-  } while (lastBatchSize > 0 && userCoupons.length < total);
-
-  return userCoupons;
 }
 
 interface CouponState {
@@ -70,7 +48,9 @@ export const useCouponStore = create<CouponState>((set, get) => ({
       let availableCoupons: UserCoupon[] = [];
       set({ loading: !hasCached, error: null });
       try {
-        availableCoupons = await couponService.fetchAvailableCoupons(0);
+        const center = await couponService.fetchCouponCenter();
+        availableCoupons = center.claimable_coupons || [];
+        const ownedCoupons = center.my_usable_coupons || [];
         const hasSessionHint = isLoggedIn() || useAuthStore.getState().isAuthenticated;
 
         if (!hasSessionHint) {
@@ -90,7 +70,7 @@ export const useCouponStore = create<CouponState>((set, get) => ({
 
         try {
           couponCacheLoadedAt = Date.now();
-          set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
+          set({ coupons: [...availableCoupons, ...ownedCoupons], loading: false });
           return;
         } catch (err) {
           if (!isAuthError(err)) throw err;
@@ -105,7 +85,7 @@ export const useCouponStore = create<CouponState>((set, get) => ({
           }
           useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
           couponCacheLoadedAt = Date.now();
-          set({ coupons: [...availableCoupons, ...(await fetchOwnedCoupons())], loading: false });
+          set({ coupons: [...availableCoupons, ...ownedCoupons], loading: false });
         }
       } catch (err) {
         if (isAuthError(err)) {

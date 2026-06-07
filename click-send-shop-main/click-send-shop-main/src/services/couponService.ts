@@ -1,5 +1,5 @@
 import * as couponApi from "@/api/modules/coupon";
-import type { UserCoupon, CouponListParams, CheckoutPickerCoupon } from "@/types/coupon";
+import type { CouponCenterData, UserCoupon, CouponListParams, CheckoutPickerCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import type { PaginatedData } from "@/types/common";
 
@@ -7,6 +7,11 @@ export async function fetchUserCoupons(
   params?: CouponListParams,
 ): Promise<PaginatedData<UserCoupon>> {
   const res = await couponApi.getUserCoupons(params);
+  return res.data;
+}
+
+export async function fetchCouponCenter(): Promise<CouponCenterData> {
+  const res = await couponApi.getCouponCenter();
   return res.data;
 }
 

@@ -69,6 +69,7 @@ export default function AdminCouponForm() {
     claim_end_at: "",
     use_start_at: "",
     use_end_at: "",
+    post_end_valid_days: "0",
     validity_mode: "absolute" as ValidityMode,
     valid_days_after_claim: "7",
     description: "",
@@ -130,8 +131,8 @@ export default function AdminCouponForm() {
 
   const tabTitle = useMemo(() => {
     if (isNew) return null;
-    if (form.title.trim()) return L(`编辑优惠券模板：${form.title.trim()}`, `Edit coupon template: ${form.title.trim()}`);
-    if (couponId) return L(`编辑优惠券模板 #${couponId}`, `Edit coupon template #${couponId}`);
+    if (form.title.trim()) return L(`编辑礼券：${form.title.trim()}`, `Edit voucher: ${form.title.trim()}`);
+    if (couponId) return L(`编辑礼券 #${couponId}`, `Edit voucher #${couponId}`);
     return null;
   }, [couponId, form.title, isNew, L]);
   useAdminTabTitle(tabTitle, formHydrated && !loading && Boolean(tabTitle));
@@ -171,6 +172,7 @@ export default function AdminCouponForm() {
       claim_end_at: coupon.claim_end_at?.slice(0, 10) || coupon.end_date?.slice(0, 10) || "",
       use_start_at: coupon.use_start_at?.slice(0, 10) || coupon.start_date?.slice(0, 10) || "",
       use_end_at: coupon.use_end_at?.slice(0, 10) || coupon.end_date?.slice(0, 10) || "",
+      post_end_valid_days: coupon.post_end_valid_days?.toString() || "0",
       validity_mode: coupon.validity_mode || "absolute",
       valid_days_after_claim: coupon.valid_days_after_claim?.toString() || "7",
       description: coupon.description || "",
@@ -236,6 +238,9 @@ export default function AdminCouponForm() {
         publish_status: form.publish_status,
         claim_start_at: form.claim_start_at ? `${form.claim_start_at} 00:00:00` : undefined,
         claim_end_at: form.claim_end_at ? `${form.claim_end_at} 23:59:59` : undefined,
+        campaign_start_at: form.claim_start_at ? `${form.claim_start_at} 00:00:00` : undefined,
+        campaign_end_at: form.claim_end_at ? `${form.claim_end_at} 23:59:59` : undefined,
+        post_end_valid_days: Math.max(0, parseInt(form.post_end_valid_days, 10) || 0),
         use_start_at: form.use_start_at ? `${form.use_start_at} 00:00:00` : undefined,
         use_end_at: form.use_end_at ? `${form.use_end_at} 23:59:59` : undefined,
         validity_mode: form.validity_mode,
@@ -257,10 +262,10 @@ export default function AdminCouponForm() {
 
       if (isNew) {
         await createCoupon(payload);
-        toast.success(L("优惠券模板创建成功", "Coupon template created successfully"));
+        toast.success(L("礼券创建成功", "Voucher created successfully"));
       } else {
         await updateCoupon(couponId, payload);
-        toast.success(L("优惠券模板更新成功", "Coupon template updated successfully"));
+        toast.success(L("礼券更新成功", "Voucher updated successfully"));
       }
 
       invalidateCouponStoreCache();
@@ -289,7 +294,7 @@ export default function AdminCouponForm() {
         <UnifiedButton type="button" onClick={goBack} aria-label={L("返回", "Back")}>
           <ArrowLeft size={20} className="text-foreground" />
         </UnifiedButton>
-        <h2 className="text-lg font-semibold text-foreground">{isNew ? L("新建优惠券模板", "Create coupon template") : L("编辑优惠券模板", "Edit coupon template")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{isNew ? L("新建礼券", "Create voucher") : L("编辑礼券", "Edit voucher")}</h2>
       </div>
 
       {loading ? (
@@ -381,6 +386,10 @@ export default function AdminCouponForm() {
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">{L("使用结束", "Use end")}</label>
                   <SegmentedDateInput id="coupon-use-end" value={form.use_end_at} onChange={(v) => setForm({ ...form, use_end_at: v })} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">{L("到期后可用天数", "Usable days after end")}</label>
+                  <input value={form.post_end_valid_days} onChange={(e) => setForm({ ...form, post_end_valid_days: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none" />
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-4">

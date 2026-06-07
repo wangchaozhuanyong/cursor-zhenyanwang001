@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Copy, Eye, PlusCircle, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
@@ -77,13 +77,19 @@ export default function AdminActivities() {
     return normalized.map((p) => tText(DISPLAY_POSITION_LABELS[p] || p)).join(tText("、"));
   };
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState("");
-  const [type, setType] = useState<ActivityType | "">("");
+  const [type, setType] = useState<ActivityType | "">((searchParams.get("type") as ActivityType | "") || "");
   const [status, setStatus] = useState<ActivityStatus | "">("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setType((searchParams.get("type") as ActivityType | "") || "");
+    setPage(1);
+  }, [searchParams]);
 
   const queryParams = useMemo(
     () => ({
@@ -159,7 +165,6 @@ export default function AdminActivities() {
   const quickButtons = useMemo(() => [
     { label: tText("秒杀"), to: "/admin/marketing/activities/new?type=flash_sale" },
     { label: tText("满减"), to: "/admin/marketing/activities/new?type=full_reduction" },
-    { label: tText("发券活动"), to: "/admin/marketing/coupon-campaigns/new" },
     { label: tText("积分活动"), to: "/admin/marketing/activities/new?type=points_bonus" },
   ], [tText]);
 
@@ -194,7 +199,7 @@ export default function AdminActivities() {
       hint={<Tx>活动列表与运营动作入口。</Tx>}
       toolbar={(
         <PermissionGate permission="activity.manage">
-          <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><PlusCircle className="mr-1 inline h-4 w-4" /><Tx>新建活动</Tx></UnifiedButton>
+          <UnifiedButton type="button" onClick={() => navigate(type ? `/admin/marketing/activities/new?type=${type}` : "/admin/marketing/activities/new")} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><PlusCircle className="mr-1 inline h-4 w-4" /><Tx>新建活动</Tx></UnifiedButton>
         </PermissionGate>
       )}
       filters={(

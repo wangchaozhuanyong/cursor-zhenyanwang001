@@ -8,7 +8,7 @@ const TABLE_CONFIGS = {
   content_pages: { label: '内容页', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名内容页') AS name, slug, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
   product_reviews: { label: '评论', nameCol: 'content', selectCols: "id, CONCAT(LEFT(content, 50), '...') AS name, product_id, user_id, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
   marketing_activities: { label: '营销活动', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名营销活动') AS name, deleted_at, deleted_by", permanentDelete: false },
-  coupon_campaigns: { label: '发券活动', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名发券活动') AS name, deleted_at, deleted_by", permanentDelete: false, hasDeletedBy: true },
+  coupon_campaigns: { label: '礼券发行', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名礼券发行') AS name, deleted_at, deleted_by", permanentDelete: false, hasDeletedBy: true },
   product_tags: { label: '商品标签', nameCol: 'name', selectCols: "id, COALESCE(NULLIF(TRIM(name), ''), '未命名商品标签') AS name, image_url AS cover_image, deleted_at, NULL AS deleted_by", permanentDelete: false },
   notifications: { label: '通知', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名通知') AS name, deleted_at, NULL AS deleted_by", permanentDelete: false },
   notification_batches: { label: '通知批次', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名通知批次') AS name, deleted_at, NULL AS deleted_by", permanentDelete: false },

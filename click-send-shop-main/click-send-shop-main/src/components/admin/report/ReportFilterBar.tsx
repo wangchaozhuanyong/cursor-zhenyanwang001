@@ -197,7 +197,7 @@ export default function ReportFilterBar({
           <input
             value={couponCampaignId}
             onChange={(e) => update({ coupon_campaign_id: e.target.value })}
-            placeholder={tText("发券活动 ID（可选）")}
+            placeholder={tText("礼券发行 ID（可选）")}
             className={`${selectClass} min-w-[11rem]`}
           />
         ) : null}

@@ -152,8 +152,6 @@ const ADMIN_EXACT_ROUTE_PRELOADERS = new Map<string, AdminLazyComponent>([
   ["/admin/marketing/coupons", AdminCoupons],
   ["/admin/marketing/coupons/new", AdminCouponForm],
   ["/admin/marketing/coupons/records", AdminCouponRecords],
-  ["/admin/marketing/coupon-campaigns", AdminCouponCampaigns],
-  ["/admin/marketing/coupon-campaigns/new", AdminCouponCampaignForm],
   ["/admin/marketing/points", AdminMarketingPoints],
   ["/admin/marketing/rewards", AdminMarketingRewards],
   ["/admin/marketing/invites", AdminInvites],
@@ -200,7 +198,6 @@ const ADMIN_PATTERN_ROUTE_PRELOADERS: Array<[RegExp, AdminLazyComponent]> = [
   [/^\/admin\/notifications\/[^/]+$/, AdminNotificationDetail],
   [/^\/admin\/marketing\/activities\/[^/]+\/edit$/, AdminActivityForm],
   [/^\/admin\/marketing\/coupons\/[^/]+$/, AdminCouponForm],
-  [/^\/admin\/marketing\/coupon-campaigns\/[^/]+$/, AdminCouponCampaignForm],
   [/^\/admin\/monitoring\/anomalies\/[^/]+$/, AdminMonitoringAnomalyDetail],
 ];
 

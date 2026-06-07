@@ -2,6 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
 const couponService = require('../src/modules/user/service/coupon.service');
+const couponLifecycle = require('../src/modules/user/service/couponLifecycle.service');
 const couponRepo = require('../src/modules/user/repository/coupon.repository');
 const memberLevelService = require('../src/modules/user/service/memberLevel.service');
 
@@ -34,6 +35,51 @@ test('getAvailableCoupons only returns coupons currently claimable by the user',
     couponRepo.selectUserOrderCount = original.selectUserOrderCount;
     memberLevelService.getUserMemberLevel = original.getUserMemberLevel;
   }
+});
+
+test('coupon center hides ended vouchers from claimable list', async () => {
+  const original = {
+    selectAvailableCoupons: couponRepo.selectAvailableCoupons,
+    selectUserCouponClaimCounts: couponRepo.selectUserCouponClaimCounts,
+    countUserCoupons: couponRepo.countUserCoupons,
+    selectUserCouponsPage: couponRepo.selectUserCouponsPage,
+  };
+
+  try {
+    couponRepo.selectAvailableCoupons = async () => [
+      { id: 'ended', code: 'ENDED', title: '已结束礼券', type: 'fixed', value: 10, min_amount: 0, status: 'available', per_user_limit: 1, campaign_end_at: '2026-01-01 00:00:00' },
+      { id: 'active', code: 'ACTIVE', title: '进行中礼券', type: 'fixed', value: 10, min_amount: 0, status: 'available', per_user_limit: 1, campaign_end_at: '2099-01-01 00:00:00' },
+    ];
+    couponRepo.selectUserCouponClaimCounts = async () => [];
+    couponRepo.countUserCoupons = async () => 0;
+    couponRepo.selectUserCouponsPage = async () => [];
+
+    const center = await couponService.getCouponCenter('user-1');
+
+    assert.deepEqual(center.claimable_coupons.map((row) => row.coupon.id), ['active']);
+    assert.equal(center.usable_count, 0);
+  } finally {
+    couponRepo.selectAvailableCoupons = original.selectAvailableCoupons;
+    couponRepo.selectUserCouponClaimCounts = original.selectUserCouponClaimCounts;
+    couponRepo.countUserCoupons = original.countUserCoupons;
+    couponRepo.selectUserCouponsPage = original.selectUserCouponsPage;
+  }
+});
+
+test('claimed voucher validity is clamped by campaign end unless post-end days are configured', () => {
+  const now = new Date('2026-06-01T00:00:00Z');
+  const base = {
+    validity_mode: 'absolute',
+    use_start_at: '2026-06-01 00:00:00',
+    use_end_at: '2026-06-30 23:59:59',
+    campaign_end_at: '2026-06-10 23:59:59',
+  };
+
+  const defaultValidity = couponLifecycle.resolveUserCouponValidity({ ...base, post_end_valid_days: 0 }, now);
+  const extendedValidity = couponLifecycle.resolveUserCouponValidity({ ...base, post_end_valid_days: 3 }, now);
+
+  assert.equal(defaultValidity.validUntil.toISOString().slice(0, 10), '2026-06-10');
+  assert.equal(extendedValidity.validUntil.toISOString().slice(0, 10), '2026-06-13');
 });
 
 test('member_only coupons exclude users with only default member level', async () => {

@@ -24,7 +24,7 @@ import {
   AdminProducts, AdminProductForm, AdminCategories, AdminInventory, AdminProductTags, AdminBanners,
   AdminOrders, AdminCheckoutAbandonments, AdminOrderDetail, AdminReturns, AdminShipping,
   AdminUsers, AdminUserDetail, AdminUserSecurity, AdminFeedback, AdminMemberLevels, AdminInvites,
-  AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminCouponCampaigns, AdminCouponCampaignForm, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
+  AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
   AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
   AdminRoles, AdminLogs, AdminRecycleBin, AdminDataRetention, AdminBackupCenter,
@@ -143,9 +143,9 @@ function AdminShellRouteContent() {
             <Route path="marketing/coupons/new" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponForm /></CapabilityRoute>} />
             <Route path="marketing/coupons/:id" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponForm /></CapabilityRoute>} />
             <Route path="marketing/coupons/records" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponRecords /></CapabilityRoute>} />
-            <Route path="marketing/coupon-campaigns" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponCampaigns /></CapabilityRoute>} />
-            <Route path="marketing/coupon-campaigns/new" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponCampaignForm /></CapabilityRoute>} />
-            <Route path="marketing/coupon-campaigns/:id" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponCampaignForm /></CapabilityRoute>} />
+            <Route path="marketing/coupon-campaigns" element={<Navigate to="/admin/marketing/coupons" replace />} />
+            <Route path="marketing/coupon-campaigns/new" element={<Navigate to="/admin/marketing/coupons/new" replace />} />
+            <Route path="marketing/coupon-campaigns/:id" element={<Navigate to="/admin/marketing/coupons" replace />} />
             <Route path="marketing/points" element={<CapabilityRoute enabled={capabilities.pointsEnabled}><AdminMarketingPoints /></CapabilityRoute>} />
             <Route path="marketing/rewards" element={<AdminMarketingRewards />} />
             <Route path="marketing/invites" element={<AdminInvites />} />

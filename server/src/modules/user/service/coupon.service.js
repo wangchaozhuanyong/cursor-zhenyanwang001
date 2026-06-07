@@ -30,8 +30,12 @@ function isClaimWindowOpen(coupon, now = new Date()) {
   if (coupon.deleted_at || coupon.archived_at || coupon.invalidated_at || coupon.stop_claim_at) return false;
   if (publishStatus !== 'active') return false;
   if (!['available', 'active'].includes(String(coupon.status || 'available'))) return false;
-  const start = coupon.claim_start_at ? new Date(coupon.claim_start_at) : (coupon.start_date ? new Date(`${dateOnly(coupon.start_date)}T00:00:00`) : null);
-  const end = coupon.claim_end_at ? new Date(coupon.claim_end_at) : (coupon.end_date ? new Date(`${dateOnly(coupon.end_date)}T23:59:59`) : null);
+  const start = coupon.campaign_start_at
+    ? new Date(coupon.campaign_start_at)
+    : (coupon.claim_start_at ? new Date(coupon.claim_start_at) : (coupon.start_date ? new Date(`${dateOnly(coupon.start_date)}T00:00:00`) : null));
+  const end = coupon.campaign_end_at
+    ? new Date(coupon.campaign_end_at)
+    : (coupon.claim_end_at ? new Date(coupon.claim_end_at) : (coupon.end_date ? new Date(`${dateOnly(coupon.end_date)}T23:59:59`) : null));
   if (start && start > now) return false;
   if (end && end < now) return false;
   return true;
@@ -79,6 +83,9 @@ function mapCouponEntity(c) {
       min_amount: parseFloat(c.min_amount),
       start_date: c.start_date,
       end_date: c.end_date,
+      campaign_start_at: c.campaign_start_at || c.claim_start_at || undefined,
+      campaign_end_at: c.campaign_end_at || c.claim_end_at || undefined,
+      post_end_valid_days: c.post_end_valid_days == null ? undefined : Number(c.post_end_valid_days),
       status: normalizeCouponStatus(c.status, c.end_date),
       description: c.description || undefined,
       scope_type: c.scope_type || 'all',
@@ -92,12 +99,25 @@ function mapCouponEntity(c) {
 async function getUserCoupons(userId, query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
-  const { status } = query;
+  const status = 'available';
   const total = await repo.countUserCoupons(userId, status);
   const offset = (page - 1) * pageSize;
   const rows = await repo.selectUserCouponsPage(userId, status, pageSize, offset);
   const list = rows.map(mapUserCouponRow);
   return { list, total, page, pageSize };
+}
+
+async function getCouponCenter(userId) {
+  const [claimableCoupons, mine] = await Promise.all([
+    getAvailableCoupons(userId),
+    userId ? getUserCoupons(userId, { status: 'available', page: 1, pageSize: 50 }) : Promise.resolve({ list: [], total: 0 }),
+  ]);
+  return {
+    usable_count: Number(mine.total || mine.list?.length || 0),
+    claimable_count: claimableCoupons.length,
+    my_usable_coupons: mine.list || [],
+    claimable_coupons: claimableCoupons,
+  };
 }
 
 async function getAvailableCoupons(userId) {
@@ -124,6 +144,7 @@ async function getAvailableCoupons(userId) {
   ]);
   const hasMemberLevel = hasCouponMemberPrivilege(memberContext);
   return coupons
+    .filter((c) => isClaimWindowOpen(c, new Date()))
     .filter((c) => Number(claimedCountMap.get(String(c.id)) || 0) < Math.max(1, Number(c.per_user_limit || 1)))
     .filter((c) => !c.auto_issue)
     .filter((c) => !c.new_user_only || orderCount <= 0)
@@ -168,6 +189,7 @@ async function assertCouponClaimable(userId, coupon) {
 
 async function resolveCampaignClaim(userId, couponId, issueActivityId) {
   const adminApi = /** @type {any} */ (require('../../admin')).api || {};
+  if (!issueActivityId) return { issueActivityId: null };
   if (typeof adminApi.resolveCouponCampaignClaim === 'function') {
     const resolved = await adminApi.resolveCouponCampaignClaim(issueActivityId, couponId, userId);
     if (!resolved) {
@@ -198,12 +220,15 @@ async function claimCoupon(userId, body) {
       await conn.rollback();
       return claimErr;
     }
-    const campaignClaim = await resolveCampaignClaim(userId, coupon.id, issueActivityId);
+    const legacyActivityId = issueActivityId && issueActivityId !== coupon.id && issueActivityId !== coupon.source_campaign_id
+      ? issueActivityId
+      : null;
+    const campaignClaim = await resolveCampaignClaim(userId, coupon.id, legacyActivityId);
     if (campaignClaim?.error) {
       await conn.rollback();
       return campaignClaim;
     }
-    issueActivityId = campaignClaim?.issueActivityId || null;
+    issueActivityId = campaignClaim?.issueActivityId || coupon.source_campaign_id || coupon.id;
     const perUserLimit = Math.max(1, Number(coupon.per_user_limit || 1));
     const userClaims = await repo.countUserClaimsForCouponInConn(conn, userId, coupon.id);
     if (userClaims >= perUserLimit) {
@@ -268,6 +293,7 @@ async function expireUserCouponsNow() {
 module.exports = {
   getUserCoupons,
   getAvailableCoupons,
+  getCouponCenter,
   claimCoupon,
   expireUserCouponsNow,
 };

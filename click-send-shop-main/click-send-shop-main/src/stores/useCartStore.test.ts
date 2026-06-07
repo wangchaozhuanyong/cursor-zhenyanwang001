@@ -5,10 +5,13 @@ import {
   LOCAL_ONLY_CART_PRODUCT_PREFIX,
   useCartStore,
 } from "@/stores/useCartStore";
+import * as cartService from "@/services/cartService";
 import type { Product } from "@/types/product";
 
+const tokenMock = vi.hoisted(() => ({ loggedIn: false }));
+
 vi.mock("@/utils/token", () => ({
-  isLoggedIn: () => false,
+  isLoggedIn: () => tokenMock.loggedIn,
 }));
 
 vi.mock("@/services/cartService", () => ({
@@ -39,6 +42,8 @@ const sampleProduct = (id: string, price = 10, stock = 5): Product => ({
 
 describe("useCartStore", () => {
   beforeEach(() => {
+    tokenMock.loggedIn = false;
+    vi.clearAllMocks();
     localStorage.clear();
     useCartStore.setState({
       items: [],
@@ -125,5 +130,32 @@ describe("useCartStore", () => {
 
     expect(useCartStore.getState().items.map((item) => item.product.id)).toEqual(["p2", "p1", "p3"]);
     expect(useCartStore.getState().selection[cartLineKey(p2.id, "v2")]).toBe(true);
+  });
+
+  test("keeps existing cart visible while refreshing server cart", async () => {
+    tokenMock.loggedIn = true;
+    const existing = sampleProduct("existing");
+    const server = sampleProduct("server");
+    let resolveFetch!: (items: Array<{ product: Product; qty: number }>) => void;
+    vi.mocked(cartService.fetchCart).mockReturnValueOnce(new Promise((resolve) => {
+      resolveFetch = resolve;
+    }));
+    useCartStore.setState({
+      items: [{ product: existing, qty: 1 }],
+      selection: { [cartLineKey(existing.id)]: true },
+      loading: false,
+      error: null,
+    });
+
+    const pending = useCartStore.getState().loadCart();
+
+    expect(useCartStore.getState().loading).toBe(false);
+    expect(useCartStore.getState().items.map((item) => item.product.id)).toEqual(["existing"]);
+
+    resolveFetch([{ product: server, qty: 2 }]);
+    await pending;
+
+    expect(useCartStore.getState().loading).toBe(false);
+    expect(useCartStore.getState().items.map((item) => item.product.id)).toEqual(["server"]);
   });
 });

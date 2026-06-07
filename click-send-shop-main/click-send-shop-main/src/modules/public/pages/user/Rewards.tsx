@@ -308,7 +308,7 @@ export default function Rewards() {
 
       <div className="mt-7">
         <h3 className="mb-4 text-xl font-bold text-foreground">返现明细</h3>
-        {loading ? (
+        {loading && records.length === 0 ? (
           <div className="flex items-center justify-center rounded-[24px] border border-border bg-card p-12">
             <Loader2 size={20} className="animate-spin text-muted-foreground" />
           </div>

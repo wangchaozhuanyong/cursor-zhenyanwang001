@@ -90,7 +90,7 @@ export const useCartStore = create<CartState>()(
         if (cartLoadInflight) return cartLoadInflight;
 
         cartLoadInflight = (async () => {
-          set({ loading: true, error: null });
+          set({ loading: get().items.length === 0, error: null });
           try {
             const cartService = await loadCartService();
             const items = normalizeCartItems(await cartService.fetchCart());

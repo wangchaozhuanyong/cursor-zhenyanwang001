@@ -437,7 +437,7 @@ export default function Points() {
         />
 
         <PointsRecordsSection
-          loading={loading}
+          loading={loading && records.length === 0}
           error={error}
           records={records}
           hasMore={hasMore}

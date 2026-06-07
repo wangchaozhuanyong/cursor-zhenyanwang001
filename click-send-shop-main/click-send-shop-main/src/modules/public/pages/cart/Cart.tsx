@@ -229,7 +229,7 @@ export default function Cart() {
                 </UnifiedButton>
               </div>
             )}
-            {loading ? (
+            {loading && items.length === 0 ? (
               <div className="flex flex-col items-center py-20 text-muted-foreground" role="status" aria-live="polite">
                 <Loader2 size={24} className="animate-spin mb-3" />
                 <p className="text-sm">加载中…</p>

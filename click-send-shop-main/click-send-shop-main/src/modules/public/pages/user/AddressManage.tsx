@@ -118,7 +118,7 @@ export default function AddressManage() {
         mainClassName="pb-24 sm:py-4 lg:pb-12"
       >
         <div className="mb-3 hidden justify-end lg:flex">{addAddressButton}</div>
-        {addressLoading ? (
+        {addressLoading && addresses.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-[var(--theme-muted)]">
             <Loader2 size={24} className="mb-3 animate-spin" />
             <p className="text-sm">加载中...</p>

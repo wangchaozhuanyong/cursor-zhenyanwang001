@@ -42,7 +42,7 @@ export default function History() {
             <span className="text-muted-foreground">后多端同步</span>
           </div>
         )}
-        {loading ? (
+        {loading && history.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-muted-foreground">
             <Loader2 size={24} className="mb-3 animate-spin" />
             <p className="text-sm">加载中…</p>

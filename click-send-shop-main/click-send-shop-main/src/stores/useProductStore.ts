@@ -178,7 +178,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
     const hasFreshCache = Boolean(cached && isFresh(cached.cachedAt, PRODUCT_LIST_TTL_MS));
     const hasStaleCache = Boolean(cached && !hasFreshCache);
     const state = get();
-    const sameListKey = state.currentListCacheKey === cacheKey;
 
     if (hasFreshCache && cached) {
       set({
@@ -203,7 +202,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         filters: merged,
         currentListCacheKey: cacheKey,
       });
-    } else if (sameListKey && state.products.length > 0) {
+    } else if (state.products.length > 0) {
       set({
         loading: false,
         listRefreshing: true,

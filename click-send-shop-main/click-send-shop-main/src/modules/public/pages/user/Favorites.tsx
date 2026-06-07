@@ -32,7 +32,7 @@ export default function Favorites() {
           </div>
         )}
 
-        {loading ? (
+        {loading && favoriteProducts.length === 0 ? (
           <div className="flex justify-center py-20 text-sm text-muted-foreground">加载中...</div>
         ) : favoriteProducts.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-muted-foreground">

@@ -8,17 +8,9 @@ import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import { shouldHideBottomNav } from "./bottomNavVisibility";
-import { useStoreScrollChrome } from "@/contexts/StoreScrollChromeProvider";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
-
-function isEditableElement(el: Element | null): boolean {
-  if (!el || !(el instanceof HTMLElement)) return false;
-  if (el.isContentEditable) return true;
-  const tag = el.tagName?.toLowerCase();
-  return tag === "input" || tag === "textarea" || tag === "select";
-}
 
 const tabs = [
   { path: "/", label: "\u9996\u9875", icon: Home },
@@ -37,6 +29,7 @@ type ActivePointer = {
   startY: number;
   startTime: number;
   maxMove: number;
+  activatedOnDown: boolean;
 };
 
 function preloadTabRoute(path: string) {
@@ -52,12 +45,6 @@ export default function BottomNav() {
   const activePointerRef = useRef<ActivePointer | null>(null);
   const lastNavTapRef = useRef<{ path: string; at: number } | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
-  const [routeReveal, setRouteReveal] = useState(false);
-  const [inputActive, setInputActive] = useState(false);
-
-  const barsHidden = useStoreScrollChrome((s) => s.barsHidden);
-  const isAtTop = useStoreScrollChrome((s) => s.isAtTop);
-  const autoHideEnabled = useStoreScrollChrome((s) => s.autoHideEnabled);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -70,25 +57,6 @@ export default function BottomNav() {
     return () => {
       window.removeEventListener("cart:badge-bump", onBump);
       if (timer) window.clearTimeout(timer);
-    };
-  }, []);
-
-  useEffect(() => {
-    // 路由变化时短暂强制显示，避免底栏残留隐藏态造成误判
-    if (!autoHideEnabled) return;
-    setRouteReveal(true);
-    const t = window.setTimeout(() => setRouteReveal(false), 420);
-    return () => window.clearTimeout(t);
-  }, [location.pathname, autoHideEnabled]);
-
-  useEffect(() => {
-    const onFocusIn = () => setInputActive(isEditableElement(document.activeElement));
-    const onFocusOut = () => setInputActive(false);
-    window.addEventListener("focusin", onFocusIn);
-    window.addEventListener("focusout", onFocusOut);
-    return () => {
-      window.removeEventListener("focusin", onFocusIn);
-      window.removeEventListener("focusout", onFocusOut);
     };
   }, []);
 
@@ -118,9 +86,6 @@ export default function BottomNav() {
 
   if (shouldHideBottomNav(location.pathname)) return null;
 
-  const forceVisible = isAtTop || inputActive || routeReveal;
-  const shouldHideByScroll = autoHideEnabled && barsHidden && !forceVisible;
-
   const isTabActive = (path: string) => {
     const base = path.split("?")[0];
     return location.pathname === base;
@@ -143,6 +108,7 @@ export default function BottomNav() {
     if (event.button !== 0) return;
     preloadTabRoute(path);
     const target = event.currentTarget;
+    const shouldActivateImmediately = event.pointerType === "touch" || event.pointerType === "pen";
     try {
       target.setPointerCapture(event.pointerId);
     } catch {
@@ -155,7 +121,11 @@ export default function BottomNav() {
       startY: event.clientY,
       startTime: Date.now(),
       maxMove: 0,
+      activatedOnDown: shouldActivateImmediately,
     };
+    if (shouldActivateImmediately) {
+      activateTab(path);
+    }
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
@@ -172,6 +142,7 @@ export default function BottomNav() {
     activePointerRef.current = null;
     clearPointerCapture(event.currentTarget, event.pointerId);
 
+    if (active.activatedOnDown) return;
     if (!isTapIntent(active)) return;
 
     activateTab(path);
@@ -189,10 +160,7 @@ export default function BottomNav() {
       className={cn(
         "store-bottom-nav",
         getBottomNavShellClassName(navStyle, "fixed"),
-        "lg:hidden transition-transform transition-opacity duration-200 ease-out motion-reduce:transition-none",
-        shouldHideByScroll
-          ? "translate-y-[calc(100%+env(safe-area-inset-bottom,0px))] opacity-0 pointer-events-none"
-          : "translate-y-0 opacity-100",
+        "lg:hidden translate-y-0 opacity-100",
       )}
       data-theme-nav-style={navStyle}
       style={{

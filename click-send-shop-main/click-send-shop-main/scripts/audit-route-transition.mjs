@@ -84,6 +84,8 @@ async function apiAdminLogin() {
       return {
         access: data.token?.accessToken || "",
         refresh: data.token?.refreshToken || "",
+        csrf: data.csrfToken || "",
+        cookies: readResponseCookies(res, origin),
         permissions: data.permissions || [],
         isSuperAdmin: Boolean(data.isSuperAdmin),
       };
@@ -95,10 +97,81 @@ async function apiAdminLogin() {
   throw new Error(errors.join("; "));
 }
 
+function splitSetCookieHeader(value) {
+  if (!value) return [];
+  const parts = [];
+  let start = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    if (value[i] !== ",") continue;
+    const rest = value.slice(i + 1);
+    if (/^\s*[^=;,\s]+=/.test(rest)) {
+      parts.push(value.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  parts.push(value.slice(start).trim());
+  return parts.filter(Boolean);
+}
+
+function parseSetCookieHeader(header, origin) {
+  const url = new URL(origin);
+  const segments = header.split(";").map((part) => part.trim()).filter(Boolean);
+  const [nameValue, ...attrs] = segments;
+  const eqIndex = nameValue.indexOf("=");
+  if (eqIndex <= 0) return null;
+
+  const cookie = {
+    name: nameValue.slice(0, eqIndex),
+    value: nameValue.slice(eqIndex + 1),
+    secure: url.protocol === "https:",
+    httpOnly: false,
+    sameSite: "Lax",
+  };
+  let cookiePath = "/";
+  let cookieDomain = "";
+
+  for (const attr of attrs) {
+    const [rawKey, ...rawValueParts] = attr.split("=");
+    const key = rawKey.toLowerCase();
+    const value = rawValueParts.join("=");
+    if (key === "path" && value) cookiePath = value;
+    else if (key === "domain" && value) {
+      cookieDomain = value;
+    } else if (key === "secure") cookie.secure = true;
+    else if (key === "httponly") cookie.httpOnly = true;
+    else if (key === "samesite" && /^(Strict|Lax|None)$/i.test(value)) {
+      cookie.sameSite = value[0].toUpperCase() + value.slice(1).toLowerCase();
+    } else if (key === "max-age" && value) {
+      const seconds = Number(value);
+      if (Number.isFinite(seconds)) cookie.expires = Math.floor(Date.now() / 1000) + seconds;
+    } else if (key === "expires" && value) {
+      const time = Date.parse(value);
+      if (Number.isFinite(time)) cookie.expires = Math.floor(time / 1000);
+    }
+  }
+
+  if (cookieDomain) {
+    cookie.domain = cookieDomain;
+    cookie.path = cookiePath;
+  } else {
+    cookie.url = url.origin;
+  }
+
+  return cookie;
+}
+
+function readResponseCookies(res, origin) {
+  const headers = typeof res.headers.getSetCookie === "function"
+    ? res.headers.getSetCookie()
+    : splitSetCookieHeader(res.headers.get("set-cookie") || "");
+  return headers.map((header) => parseSetCookieHeader(header, origin)).filter(Boolean);
+}
+
 function bootstrapAdminSession(session) {
   localStorage.setItem("admin_access_token", session.access);
   localStorage.setItem("admin_refresh_token", session.refresh);
   localStorage.setItem("admin_authenticated", "1");
+  if (session.csrf) localStorage.setItem("admin_csrf_token", session.csrf);
   localStorage.setItem(
     "admin-permissions",
     JSON.stringify({ state: { permissions: session.permissions, isSuperAdmin: session.isSuperAdmin }, version: 0 }),
@@ -391,6 +464,9 @@ async function auditAdmin(browser, launch, session) {
   });
   await addLayoutShiftObserver(context);
   if (session) {
+    if (session.cookies?.length) {
+      await context.addCookies(session.cookies);
+    }
     await context.addInitScript(bootstrapAdminSession, session);
   }
   const page = await context.newPage();

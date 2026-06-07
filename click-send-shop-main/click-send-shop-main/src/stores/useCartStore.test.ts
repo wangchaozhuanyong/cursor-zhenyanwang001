@@ -51,6 +51,7 @@ describe("useCartStore", () => {
       selection: {},
       loading: false,
       error: null,
+      hasLoaded: false,
     });
   });
 
@@ -145,6 +146,7 @@ describe("useCartStore", () => {
       selection: { [cartLineKey(existing.id)]: true },
       loading: false,
       error: null,
+      hasLoaded: false,
     });
 
     const pending = useCartStore.getState().loadCart();
@@ -156,6 +158,39 @@ describe("useCartStore", () => {
     await pending;
 
     expect(useCartStore.getState().loading).toBe(false);
+    expect(useCartStore.getState().items.map((item) => item.product.id)).toEqual(["server"]);
+  });
+
+  test("skips repeated cart loads after an empty server cart has loaded", async () => {
+    tokenMock.loggedIn = true;
+    vi.mocked(cartService.fetchCart).mockResolvedValueOnce([]);
+
+    await useCartStore.getState().loadCart();
+
+    expect(cartService.fetchCart).toHaveBeenCalledTimes(1);
+    expect(useCartStore.getState().hasLoaded).toBe(true);
+    expect(useCartStore.getState().items).toHaveLength(0);
+
+    await useCartStore.getState().loadCart();
+
+    expect(cartService.fetchCart).toHaveBeenCalledTimes(1);
+    expect(useCartStore.getState().loading).toBe(false);
+  });
+
+  test("force reload bypasses the cached cart load state", async () => {
+    tokenMock.loggedIn = true;
+    const existing = sampleProduct("existing");
+    const server = sampleProduct("server");
+    useCartStore.setState({
+      items: [{ product: existing, qty: 1 }],
+      selection: { [cartLineKey(existing.id)]: true },
+      hasLoaded: true,
+    });
+    vi.mocked(cartService.fetchCart).mockResolvedValueOnce([{ product: server, qty: 2 }]);
+
+    await useCartStore.getState().loadCart({ force: true });
+
+    expect(cartService.fetchCart).toHaveBeenCalledTimes(1);
     expect(useCartStore.getState().items.map((item) => item.product.id)).toEqual(["server"]);
   });
 });

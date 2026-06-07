@@ -12,6 +12,10 @@ export const LOCAL_ONLY_CART_PRODUCT_PREFIX = "demo-micro-interactions:" as cons
 
 let cartLoadInflight: Promise<void> | null = null;
 
+type LoadCartOptions = {
+  force?: boolean;
+};
+
 function isLocalOnlyCartProductId(productId: string) {
   return productId.startsWith(LOCAL_ONLY_CART_PRODUCT_PREFIX);
 }
@@ -35,8 +39,9 @@ interface CartState {
   selection: Record<string, boolean>;
   loading: boolean;
   error: string | null;
+  hasLoaded: boolean;
 
-  loadCart: () => Promise<void>;
+  loadCart: (options?: LoadCartOptions) => Promise<void>;
   mergeLocalThenSync: (localBeforeAuth: CartItem[]) => Promise<void>;
   addItem: (product: Product, qty?: number, variant?: ProductVariant | null) => Promise<void>;
   addToCart: (product: Product, qty?: number, variant?: ProductVariant | null) => Promise<void>;
@@ -84,20 +89,22 @@ export const useCartStore = create<CartState>()(
       selection: {},
       loading: false,
       error: null,
+      hasLoaded: false,
 
-      loadCart: async () => {
+      loadCart: async (options = {}) => {
         if (!isLoggedIn()) return;
         if (cartLoadInflight) return cartLoadInflight;
+        if (!options.force && get().hasLoaded) return;
 
         cartLoadInflight = (async () => {
           set({ loading: get().items.length === 0, error: null });
           try {
             const cartService = await loadCartService();
             const items = normalizeCartItems(await cartService.fetchCart());
-            set((s) => ({ items, selection: mergeSelection(s.selection, items), loading: false }));
+            set((s) => ({ items, selection: mergeSelection(s.selection, items), loading: false, hasLoaded: true }));
           } catch (e) {
             if (e instanceof ApiError && e.code === 401) {
-              set({ loading: false, error: null, items: [], selection: {} });
+              set({ loading: false, error: null, items: [], selection: {}, hasLoaded: false });
               return;
             }
             set({ loading: false, error: e instanceof Error ? e.message : "加载购物车失败" });
@@ -111,14 +118,14 @@ export const useCartStore = create<CartState>()(
 
       mergeLocalThenSync: async (localBeforeAuth) => {
         if (!isLoggedIn()) return;
-        await get().loadCart();
+        await get().loadCart({ force: true });
         const serverIds = new Set(get().items.map(getCartItemKey));
         const toAdd = localBeforeAuth.filter((item) => !isLocalOnlyCartProductId(item.product.id) && item.qty > 0 && !serverIds.has(getCartItemKey(item)));
         if (toAdd.length) {
           const cartService = await loadCartService();
           await Promise.allSettled(toAdd.map(({ product, qty, variant_id, sku_code }) => cartService.addToCart(product.id, qty, variant_id, sku_code)));
         }
-        await get().loadCart();
+        await get().loadCart({ force: true });
       },
 
       addItem: async (product, qty = 1, variant = null) => {
@@ -150,7 +157,7 @@ export const useCartStore = create<CartState>()(
         try {
           const cartService = await loadCartService();
           await cartService.addToCart(product.id, qty, variant?.id, variant?.sku_code ?? "");
-          await get().loadCart();
+          await get().loadCart({ force: true });
         } catch (e) {
           set(beforeSnapshot);
           throw (e instanceof Error ? e : new Error("加入购物车失败"));
@@ -173,7 +180,7 @@ export const useCartStore = create<CartState>()(
           try {
             const cartService = await loadCartService();
             await cartService.removeFromCart(productId, variantId);
-            await get().loadCart();
+            await get().loadCart({ force: true });
           } catch (e) {
             set(beforeSnapshot);
             throw (e instanceof Error ? e : new Error("删除失败"));
@@ -193,7 +200,7 @@ export const useCartStore = create<CartState>()(
           try {
             const cartService = await loadCartService();
             await cartService.updateCartItemQty(productId, qty, variantId);
-            await get().loadCart();
+            await get().loadCart({ force: true });
           } catch (e) {
             set(beforeSnapshot);
             throw (e instanceof Error ? e : new Error("更新失败"));
@@ -236,7 +243,7 @@ export const useCartStore = create<CartState>()(
           try {
             const cartService = await loadCartService();
             await cartService.clearCart();
-            await get().loadCart();
+            await get().loadCart({ force: true });
           } catch (e) {
             set({ items: prev, selection: prevSel });
             throw (e instanceof Error ? e : new Error("清空失败"));

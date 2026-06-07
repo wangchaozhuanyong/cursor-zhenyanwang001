@@ -124,7 +124,7 @@ export const useAuthStore = create<AuthState>()(
         const { useUserStore, useCartStore, useOrderStore } = await loadAuthRelatedStores();
         clearStorefrontUserQueryCache();
         useUserStore.getState().clearProfile();
-        useCartStore.setState({ buyNowItem: null, selection: {} });
+        useCartStore.setState({ buyNowItem: null, selection: {}, hasLoaded: false });
         useOrderStore.setState({ orders: [], currentOrder: null });
         set({ isAuthenticated: false, error: null });
       },
@@ -141,4 +141,7 @@ export const useAuthStore = create<AuthState>()(
 registerAuthExpiredHandler(() => {
   clearStorefrontUserQueryCache();
   useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
+  void import("@/stores/useCartStore").then(({ useCartStore }) => {
+    useCartStore.setState({ hasLoaded: false });
+  });
 });

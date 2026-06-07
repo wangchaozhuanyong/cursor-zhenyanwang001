@@ -221,7 +221,7 @@ export default function Cart() {
                 <UnifiedButton
                   onClick={() => {
                     clearError();
-                    loadCart();
+                    loadCart({ force: true });
                   }}
                   className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-full px-3 text-xs font-semibold underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-danger)] focus-visible:ring-offset-2"
                 >

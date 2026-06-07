@@ -99,6 +99,8 @@ describe("Rewards", () => {
 
     const helpButton = document.querySelector<HTMLButtonElement>("button[aria-label='查看返现说明']");
     expect(helpButton).toBeInTheDocument();
+    expect(helpButton?.className ?? "").not.toContain("border");
+    expect(helpButton?.className ?? "").not.toContain("hover:bg");
     expect(container?.textContent).toContain("购物可用返现");
     expect(container?.textContent).not.toContain("返现金额仅可用于购物，不可提现。");
 

@@ -264,8 +264,8 @@ async function selectUserCouponRead(q, ucId, userId) {
        FROM user_coupons uc
        LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
       WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 'available'
-        AND (uc.valid_from IS NULL OR uc.valid_from <= NOW())
-        AND (uc.valid_until IS NULL OR uc.valid_until >= NOW())
+        AND (uc.valid_from IS NULL OR uc.valid_from <= UTC_TIMESTAMP())
+        AND (uc.valid_until IS NULL OR uc.valid_until >= UTC_TIMESTAMP())
         AND (c.id IS NULL OR (
           c.deleted_at IS NULL
           AND c.invalidated_at IS NULL
@@ -318,8 +318,8 @@ async function selectUserCouponForUpdate(q, ucId, userId) {
        FROM user_coupons uc
        LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
       WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 'available'
-        AND (uc.valid_from IS NULL OR uc.valid_from <= NOW())
-        AND (uc.valid_until IS NULL OR uc.valid_until >= NOW())
+        AND (uc.valid_from IS NULL OR uc.valid_from <= UTC_TIMESTAMP())
+        AND (uc.valid_until IS NULL OR uc.valid_until >= UTC_TIMESTAMP())
         AND (c.id IS NULL OR (
           c.deleted_at IS NULL
           AND c.invalidated_at IS NULL

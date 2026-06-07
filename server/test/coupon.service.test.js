@@ -82,6 +82,23 @@ test('claimed voucher validity is clamped by campaign end unless post-end days a
   assert.equal(extendedValidity.validUntil.toISOString().slice(0, 10), '2026-06-13');
 });
 
+test('coupon campaign datetime is interpreted as Malaysia time', () => {
+  const campaignEnd = couponLifecycle.couponDateOrNull('2026-06-07 23:59:59', 'endOfDay');
+  assert.equal(campaignEnd.toISOString(), '2026-06-07T15:59:59.000Z');
+
+  const dateOnlyEnd = couponLifecycle.couponDateOrNull('2026-06-07', 'endOfDay');
+  assert.equal(dateOnlyEnd.toISOString(), '2026-06-07T15:59:59.000Z');
+
+  const validity = couponLifecycle.resolveUserCouponValidity({
+    validity_mode: 'absolute',
+    use_end_at: '2026-06-30 23:59:59',
+    campaign_end_at: '2026-06-07 23:59:59',
+    post_end_valid_days: 0,
+  }, new Date('2026-06-01T00:00:00.000Z'));
+
+  assert.equal(validity.validUntil.toISOString(), '2026-06-07T15:59:59.000Z');
+});
+
 test('member_only coupons exclude users with only default member level', async () => {
   const original = {
     selectAvailableCoupons: couponRepo.selectAvailableCoupons,

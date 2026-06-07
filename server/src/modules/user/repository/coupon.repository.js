@@ -1,5 +1,6 @@
 const db = require('../../../config/db');
 const { isSchemaDriftError } = require('../../../db/schemaErrors');
+const { klDateTimeSql } = require('../../../utils/couponBusinessTime');
 
 function getPool() {
   return db;
@@ -18,6 +19,9 @@ const COUPON_CATEGORY_SELECT = `
               WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_names`;
 
+const COUPON_CAMPAIGN_START_EXPR = "COALESCE(c.campaign_start_at, c.claim_start_at, CONCAT(c.start_date, ' 00:00:00'))";
+const COUPON_CAMPAIGN_END_EXPR = "COALESCE(c.campaign_end_at, c.claim_end_at, CONCAT(c.end_date, ' 23:59:59'))";
+
 function legacyStatusWhere(status, params) {
   if (!status || status === 'all') return '';
   if (status === 'available') {
@@ -31,8 +35,8 @@ function statusWhere(status, params) {
   if (!status || status === 'all') return '';
   if (status === 'available') {
     return ` AND uc.status = 'available'
-      AND (uc.valid_from IS NULL OR uc.valid_from <= NOW())
-      AND (uc.valid_until IS NULL OR uc.valid_until >= NOW())
+      AND (uc.valid_from IS NULL OR uc.valid_from <= UTC_TIMESTAMP())
+      AND (uc.valid_until IS NULL OR uc.valid_until >= UTC_TIMESTAMP())
       AND c.deleted_at IS NULL
       AND c.archived_at IS NULL
       AND c.invalidated_at IS NULL
@@ -41,10 +45,10 @@ function statusWhere(status, params) {
       AND c.status IN ('available', 'active')`;
   }
   if (status === 'pending') {
-    return " AND (uc.status = 'pending' OR (uc.status = 'available' AND uc.valid_from IS NOT NULL AND uc.valid_from > NOW()))";
+    return " AND (uc.status = 'pending' OR (uc.status = 'available' AND uc.valid_from IS NOT NULL AND uc.valid_from > UTC_TIMESTAMP()))";
   }
   if (status === 'expired') {
-    return " AND (uc.status = 'expired' OR (uc.status IN ('available','pending') AND uc.valid_until IS NOT NULL AND uc.valid_until < NOW()))";
+    return " AND (uc.status = 'expired' OR (uc.status IN ('available','pending') AND uc.valid_until IS NOT NULL AND uc.valid_until < UTC_TIMESTAMP()))";
   }
   params.push(status);
   return ' AND BINARY uc.status = BINARY ?';
@@ -143,12 +147,12 @@ async function selectAvailableCoupons() {
          AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) = 'active'
          AND c.status IN ('available', 'active')
          AND (
-           COALESCE(c.campaign_start_at, c.claim_start_at, CONCAT(c.start_date, ' 00:00:00')) IS NULL
-           OR COALESCE(c.campaign_start_at, c.claim_start_at, CONCAT(c.start_date, ' 00:00:00')) <= NOW()
+           ${COUPON_CAMPAIGN_START_EXPR} IS NULL
+           OR ${klDateTimeSql(COUPON_CAMPAIGN_START_EXPR)} <= UTC_TIMESTAMP()
          )
          AND (
-           COALESCE(c.campaign_end_at, c.claim_end_at, CONCAT(c.end_date, ' 23:59:59')) IS NULL
-           OR COALESCE(c.campaign_end_at, c.claim_end_at, CONCAT(c.end_date, ' 23:59:59')) >= NOW()
+           ${COUPON_CAMPAIGN_END_EXPR} IS NULL
+           OR ${klDateTimeSql(COUPON_CAMPAIGN_END_EXPR)} >= UTC_TIMESTAMP()
          )
          AND c.stop_claim_at IS NULL
          AND c.stop_use_at IS NULL
@@ -357,7 +361,7 @@ async function selectExpiredUserCoupons(q, limit) {
        FROM user_coupons
       WHERE status IN ('available', 'pending')
         AND valid_until IS NOT NULL
-        AND valid_until < NOW()
+        AND valid_until < UTC_TIMESTAMP()
       LIMIT ?`,
     [limit],
   );

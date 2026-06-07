@@ -2,6 +2,7 @@ const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/coupon.repository');
 const lifecycle = require('./couponLifecycle.service');
 const memberLevelService = require('./memberLevel.service');
+const { klDateString } = require('../../../utils/klDateRange');
 
 function normalizeCouponType(type) {
   return lifecycle.normalizeCouponType(type);
@@ -14,7 +15,7 @@ function dateOnly(value) {
 }
 
 function normalizeCouponStatus(status, endDate) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = klDateString();
   if (status === 'available' && dateOnly(endDate) && dateOnly(endDate) < today) return 'expired';
   return status;
 }
@@ -31,11 +32,15 @@ function isClaimWindowOpen(coupon, now = new Date()) {
   if (publishStatus !== 'active') return false;
   if (!['available', 'active'].includes(String(coupon.status || 'available'))) return false;
   const start = coupon.campaign_start_at
-    ? new Date(coupon.campaign_start_at)
-    : (coupon.claim_start_at ? new Date(coupon.claim_start_at) : (coupon.start_date ? new Date(`${dateOnly(coupon.start_date)}T00:00:00`) : null));
+    ? lifecycle.couponDateOrNull(coupon.campaign_start_at, 'startOfDay')
+    : (coupon.claim_start_at
+      ? lifecycle.couponDateOrNull(coupon.claim_start_at, 'startOfDay')
+      : (coupon.start_date ? lifecycle.couponDateOrNull(dateOnly(coupon.start_date), 'startOfDay') : null));
   const end = coupon.campaign_end_at
-    ? new Date(coupon.campaign_end_at)
-    : (coupon.claim_end_at ? new Date(coupon.claim_end_at) : (coupon.end_date ? new Date(`${dateOnly(coupon.end_date)}T23:59:59`) : null));
+    ? lifecycle.couponDateOrNull(coupon.campaign_end_at, 'endOfDay')
+    : (coupon.claim_end_at
+      ? lifecycle.couponDateOrNull(coupon.claim_end_at, 'endOfDay')
+      : (coupon.end_date ? lifecycle.couponDateOrNull(dateOnly(coupon.end_date), 'endOfDay') : null));
   if (start && start > now) return false;
   if (end && end < now) return false;
   return true;

@@ -1,5 +1,9 @@
 const { generateId } = require('../../../utils/helpers');
 const couponRepo = require('../repository/coupon.repository');
+const {
+  klDateTimeOrNull,
+  mysqlUtcDateTime,
+} = require('../../../utils/couponBusinessTime');
 
 function normalizeCouponType(type) {
   if (type === 'amount') return 'fixed';
@@ -37,10 +41,12 @@ function dateOrNull(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function couponDateOrNull(value, mode = 'exact') {
+  return klDateTimeOrNull(value, mode);
+}
+
 function mysqlDateTime(value) {
-  const d = dateOrNull(value);
-  if (!d) return null;
-  return d.toISOString().slice(0, 19).replace('T', ' ');
+  return mysqlUtcDateTime(value);
 }
 
 function addDays(date, days) {
@@ -56,7 +62,7 @@ function minDate(...values) {
 }
 
 function resolveCampaignCutoff(coupon) {
-  const campaignEnd = dateOrNull(coupon.campaign_end_at);
+  const campaignEnd = couponDateOrNull(coupon.campaign_end_at || coupon.claim_end_at, 'endOfDay');
   if (!campaignEnd) return null;
   const postEndDays = Math.max(0, Number(coupon.post_end_valid_days || 0));
   return postEndDays > 0 ? addDays(campaignEnd, postEndDays) : campaignEnd;
@@ -101,9 +107,13 @@ function resolveUserCouponValidity(coupon, now = new Date()) {
     const days = Math.max(1, Number(coupon.valid_days_after_claim || 1));
     return { validFrom: now, validUntil: minDate(addDays(now, days), campaignCutoff) || addDays(now, days) };
   }
-  const absoluteUntil = dateOrNull(coupon.use_end_at) || dateOrNull(coupon.end_date) || null;
+  const absoluteUntil = couponDateOrNull(coupon.use_end_at, 'endOfDay')
+    || couponDateOrNull(coupon.end_date, 'endOfDay')
+    || null;
   return {
-    validFrom: dateOrNull(coupon.use_start_at) || dateOrNull(coupon.start_date) || now,
+    validFrom: couponDateOrNull(coupon.use_start_at, 'startOfDay')
+      || couponDateOrNull(coupon.start_date, 'startOfDay')
+      || now,
     validUntil: minDate(absoluteUntil, campaignCutoff) || absoluteUntil || campaignCutoff,
   };
 }
@@ -204,6 +214,7 @@ module.exports = {
   normalizeCouponType,
   parseJsonArray,
   parseSnapshot,
+  couponDateOrNull,
   mysqlDateTime,
   buildCouponSnapshot,
   resolveUserCouponValidity,

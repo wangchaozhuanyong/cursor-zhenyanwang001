@@ -302,7 +302,7 @@ export default function MarketingCouponRailSection({
 
   return (
     <>
-      <section className="store-coupon-rail-section w-full">
+      <section className={sectionClassName}>
         <div className="store-section-heading mb-3 flex items-center justify-between gap-3">
           <h2 className="store-section-title flex min-w-0 items-center gap-2 text-[var(--theme-text-on-surface)]">
             <Ticket className="h-5 w-5 shrink-0 text-[var(--theme-primary)]" />
@@ -366,9 +366,13 @@ export default function MarketingCouponRailSection({
   );
 }
 
-function CouponRailLoadingShell() {
+function CouponRailLoadingShell({ compactAfterNav = false }: { compactAfterNav?: boolean }) {
+  const sectionClassName = compactAfterNav
+    ? "store-coupon-rail-section store-coupon-rail-section--after-nav w-full"
+    : "store-coupon-rail-section w-full";
+
   return (
-    <section className="store-coupon-rail-section w-full" aria-busy="true">
+    <section className={sectionClassName} aria-busy="true">
       <div className="store-section-heading mb-3 flex items-center justify-between gap-3">
         <div className="h-6 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-border)_72%,transparent)]" />
         <div className="h-9 w-24 rounded-full bg-[color-mix(in_srgb,var(--theme-border)_58%,transparent)]" />

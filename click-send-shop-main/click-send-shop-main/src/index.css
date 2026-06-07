@@ -5768,6 +5768,22 @@ html[data-app-scope="store"] .store-coupon-rail-section {
   position: relative;
 }
 
+html[data-app-scope="store"] .store-coupon-rail-section--after-nav {
+  margin-top: 0.25rem;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  html[data-app-scope="store"] .store-coupon-rail-section--after-nav {
+    margin-top: -0.1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  html[data-app-scope="store"] .store-coupon-rail-section--after-nav {
+    margin-top: calc(1.25rem - clamp(2.05rem, 3vw, 2.8rem));
+  }
+}
+
 html[data-app-scope="store"] .store-section-heading {
   align-items: center;
 }

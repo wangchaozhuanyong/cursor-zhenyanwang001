@@ -203,6 +203,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
         currentListCacheKey: cacheKey,
       });
     } else if (state.products.length > 0) {
+      // Intentionally keep the current visible list while an uncached category/search request is in flight.
+      // Clearing here remounts product images and brings back the storefront image reload flicker.
       set({
         loading: false,
         listRefreshing: true,

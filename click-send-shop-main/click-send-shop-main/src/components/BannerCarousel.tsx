@@ -271,6 +271,62 @@ export default function BannerCarousel({
     handleOpenBanner();
   };
 
+  const bannerImageNodes = activeImage
+    ? banners.map((item, index) => {
+        const itemImage = item.image?.trim() || "";
+        if (!itemImage) return null;
+        const itemResponsiveImage = getResponsiveBannerImage(itemImage);
+        const isActive = index === safeIndex;
+
+        return (
+          <img
+            key={item.id || itemImage || index}
+            ref={isActive ? activeImageRef : undefined}
+            src={itemResponsiveImage.src}
+            srcSet={itemResponsiveImage.srcSet}
+            sizes={itemResponsiveImage.sizes}
+            alt={isActive ? bannerTitle || fallbackLabel : ""}
+            width={BANNER_IMAGE_WIDTH}
+            height={BANNER_IMAGE_HEIGHT}
+            loading={isActive ? "eager" : "lazy"}
+            {...(isActive ? ({ fetchpriority: "high" } as Record<string, string>) : {})}
+            decoding="async"
+            aria-hidden={isActive ? undefined : "true"}
+            className={`store-hero-slide-image absolute inset-0 h-full w-full object-cover ${
+              hasTextLayer ? "store-hero-image-with-copy" : "object-center"
+            }`}
+            data-active={isActive ? "true" : "false"}
+            style={{
+              opacity: isActive ? 1 : 0,
+              transform: isActive ? "translate3d(0, 0, 0) scale(1.006)" : "translate3d(0, 0, 0) scale(1.035)",
+            }}
+            onLoad={(event) => {
+              if (event.currentTarget.naturalWidth > 0) {
+                markImageLoaded(
+                  itemImage,
+                  itemResponsiveImage.src,
+                  itemResponsiveImage.srcSet,
+                  event.currentTarget.currentSrc,
+                  event.currentTarget.src,
+                );
+                if (isActive) {
+                  setActiveImageLoaded(true);
+                  setActiveImageFailed(false);
+                  refreshCopyTone();
+                }
+              }
+            }}
+            onError={() => {
+              if (isActive) {
+                setActiveImageLoaded(false);
+                setActiveImageFailed(true);
+              }
+            }}
+          />
+        );
+      })
+    : null;
+
   return (
     <div
       className={`store-hero-carousel store-hero-carousel--showcase relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
@@ -298,46 +354,7 @@ export default function BannerCarousel({
           }`}
           aria-hidden
         />
-        {activeImage ? (
-          <img
-            key={banner.id || activeImage || safeIndex}
-            ref={activeImageRef}
-            src={responsiveImage.src}
-            srcSet={responsiveImage.srcSet}
-            sizes={responsiveImage.sizes}
-            alt={bannerTitle || fallbackLabel}
-            width={BANNER_IMAGE_WIDTH}
-            height={BANNER_IMAGE_HEIGHT}
-            loading="eager"
-            {...({ fetchpriority: "high" } as Record<string, string>)}
-            decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-500 ease-out ${
-              hasTextLayer ? "store-hero-image-with-copy" : "object-center"
-            }`}
-            style={{
-              opacity: activeImageLoaded ? 1 : 0,
-              transform: activeImageLoaded ? "translate3d(0, 0, 0) scale(1)" : "translate3d(0, 8px, 0) scale(1.018)",
-            }}
-            onLoad={(event) => {
-              if (event.currentTarget.naturalWidth > 0) {
-                markImageLoaded(
-                  activeImage,
-                  responsiveImage.src,
-                  responsiveImage.srcSet,
-                  event.currentTarget.currentSrc,
-                  event.currentTarget.src,
-                );
-                setActiveImageLoaded(true);
-                setActiveImageFailed(false);
-                refreshCopyTone();
-              }
-            }}
-            onError={() => {
-              setActiveImageLoaded(false);
-              setActiveImageFailed(true);
-            }}
-          />
-        ) : null}
+        {bannerImageNodes}
       </div>
 
       {hasTextLayer ? (

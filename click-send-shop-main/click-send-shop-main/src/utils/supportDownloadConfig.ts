@@ -53,20 +53,20 @@ export const DEFAULT_PLATFORMS: DownloadPlatform[] = [
 
 export const DEFAULT_SUPPORT_DOWNLOAD_CONFIG: SupportDownloadConfig = {
   enabled: true,
-  title: STORE_COPY.supportCenterTitle,
-  subtitle: STORE_COPY.supportSubtitle,
+  title: "",
+  subtitle: "",
   defaultTab: "support",
   support: {
     enabled: true,
-    description: STORE_COPY.supportDescription,
+    description: "",
     workingHours: "",
     channels: [],
   },
   download: {
     enabled: false,
-    title: "添加到桌面",
-    description: `可将${STORE_COPY.brandName}添加到手机桌面，像 App 一样快速打开。`,
-    platforms: DEFAULT_PLATFORMS,
+    title: "",
+    description: "",
+    platforms: [],
   },
 };
 
@@ -74,7 +74,7 @@ function trim(value?: string) {
   return String(value || "").trim();
 }
 
-/** 字段未配置时用默认值；显式空字符串保留为空（与后台清空说明一致） */
+/** 字段未配置时返回传入兜底；显式空字符串保留为空（与后台清空说明一致） */
 export function resolveOptionalConfigText(
   value: string | undefined | null,
   fallback: string,
@@ -101,11 +101,10 @@ export function normalizeChannel(
     ? (channel.type as SupportChannelType)
     : null;
   if (!type) return null;
-  const typeLabel = type === "wechat" ? "微信" : type === "whatsapp" ? "WhatsApp" : "Telegram";
   return {
     id: trim(channel.id) || `${type}-${index}`,
     type,
-    name: trim(channel.name) || `${typeLabel}客服`,
+    name: trim(channel.name),
     enabled: channel.enabled !== false,
     account: trim(channel.account),
     linkUrl: trim(channel.linkUrl),
@@ -123,17 +122,16 @@ export function normalizePlatform(
     ? (platform.type as DownloadPlatformType)
     : null;
   if (!type) return null;
-  const fallback = DEFAULT_PLATFORMS.find((item) => item.type === type) || DEFAULT_PLATFORMS[0];
   return {
     id: trim(platform.id) || type,
     type,
     enabled: platform.enabled !== false,
-    title: trim(platform.title) || fallback.title,
-    description: resolveOptionalConfigText(platform.description, fallback.description),
-    buttonText: trim(platform.buttonText) || fallback.buttonText,
+    title: trim(platform.title),
+    description: trim(platform.description),
+    buttonText: trim(platform.buttonText),
     instructions: Array.isArray(platform.instructions) && platform.instructions.length > 0
       ? platform.instructions.map(trim).filter(Boolean)
-      : fallback.instructions,
+      : [],
     sortOrder: Number(platform.sortOrder) || index + 1,
   };
 }
@@ -154,29 +152,29 @@ export function normalizeSupportDownloadConfig(config: LegacySupportDownloadConf
 
   return {
     enabled: config.enabled !== false,
-    title: resolveOptionalConfigText(config.title, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.title),
-    subtitle: resolveOptionalConfigText(config.subtitle, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.subtitle),
-    defaultTab: "support",
+    title: resolveOptionalConfigText(config.title, ""),
+    subtitle: resolveOptionalConfigText(config.subtitle, ""),
+    defaultTab: config.defaultTab === "download" ? "download" : "support",
     support: {
       enabled: config.support?.enabled !== false,
       description: resolveFromSources(
         [config.support?.description, config.supportDescription],
-        DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.description,
+        "",
       ),
       workingHours: trim(config.support?.workingHours ?? config.workingHours),
       channels: channels ?? [],
     },
     download: {
-      enabled: false,
+      enabled: config.showAppInstall === false ? false : config.download?.enabled === true || config.showAppInstall === true,
       title: resolveFromSources(
         [config.download?.title, config.appInstallTitle],
-        DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.title,
+        "",
       ),
       description: resolveFromSources(
         [config.download?.description, config.appInstallDescription],
-        DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.description,
+        "",
       ),
-      platforms: platforms?.length ? platforms : DEFAULT_PLATFORMS,
+      platforms: platforms ?? [],
     },
   };
 }
@@ -210,7 +208,7 @@ export function getEnabledSupportChannels(config: SupportDownloadConfig): Suppor
 
 export function getEnabledDownloadPlatforms(config: SupportDownloadConfig): DownloadPlatform[] {
   if (config.download.enabled === false) return [];
-  return (config.download.platforms || DEFAULT_PLATFORMS)
+  return (config.download.platforms || [])
     .filter((p) => p.enabled !== false)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }

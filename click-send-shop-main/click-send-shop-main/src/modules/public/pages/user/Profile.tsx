@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   CircleHelp,
   Coins,
@@ -43,6 +44,7 @@ import { detectBrowserEnv } from "@/utils/browserEnv";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { computeUpgradeProgress } from "@/utils/memberBenefitPresentation";
+import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import {
   PROFILE_CARD_CLASS,
   PROFILE_MENU_TAP,
@@ -72,10 +74,15 @@ function formatGrowthValue(value: number) {
   return safeValue.toLocaleString("zh-CN");
 }
 
-function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
+async function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
   if (requireAuth && !isLoggedIn()) {
     navigate("/login", { state: { from: path } });
     return;
+  }
+  try {
+    await preloadStoreRoute(path);
+  } catch {
+    // If a chunk preload fails, keep the original navigation path so the app-level recovery can handle it.
   }
   navigate(path, { state: { from: "/profile" } });
 }
@@ -100,12 +107,18 @@ export default function Profile() {
   const [rewardBalance, setRewardBalance] = useState(0);
   const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
   const [loyaltyConfig, setLoyaltyConfig] = useState<loyaltyService.LoyaltyConfig | null>(null);
-  const [memberBenefits, setMemberBenefits] = useState<MemberBenefitsOverview | null>(null);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [inviteCodeVisible, setInviteCodeVisible] = useState(false);
   const [activeReturnCount, setActiveReturnCount] = useState(0);
   const [browserEnv, setBrowserEnv] = useState(() => detectBrowserEnv());
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const memberBenefitsQuery = useQuery<MemberBenefitsOverview>({
+    queryKey: memberBenefitsService.memberBenefitsQueryKey,
+    queryFn: memberBenefitsService.fetchMemberBenefits,
+    enabled: loggedIn && capabilities.memberLevelEnabled,
+  });
+  const memberBenefits = memberBenefitsQuery.data ?? null;
 
   useEffect(() => {
     setBrowserEnv(detectBrowserEnv());
@@ -132,26 +145,6 @@ export default function Profile() {
       loyaltyService.fetchLoyaltyConfig().then((cfg) => setLoyaltyConfig(cfg)).catch(() => setLoyaltyConfig(null));
     });
   }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
-
-  useEffect(() => {
-    if (!loggedIn || !capabilities.memberLevelEnabled) {
-      setMemberBenefits(null);
-      return;
-    }
-
-    let cancelled = false;
-    memberBenefitsService.fetchMemberBenefits()
-      .then((data) => {
-        if (!cancelled) setMemberBenefits(data);
-      })
-      .catch(() => {
-        if (!cancelled) setMemberBenefits(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [capabilities.memberLevelEnabled, loggedIn]);
 
   useEffect(() => {
     if (!loggedIn) {
@@ -319,7 +312,7 @@ export default function Profile() {
                 memberLevelName={memberLevelName}
                 progress={memberProgress}
                 unreadCount={unreadCount}
-                onMessageClick={() => navigate("/notifications", { state: { from: "/profile" } })}
+                onMessageClick={() => gateNavigate(navigate, "/notifications", true)}
                 onMemberLevelClick={() => gateNavigate(navigate, "/member/benefits", true)}
                 onProfileClick={() => gateNavigate(navigate, "/settings", true)}
                 onViewAllBenefits={() => gateNavigate(navigate, "/member/benefits", true)}
@@ -330,7 +323,7 @@ export default function Profile() {
                 <Suspense fallback={null}>
                   <ProfileWechatBindSection
                     wechatLogin={wechatLogin}
-                    onNavigateSettings={() => navigate("/settings", { state: { from: "/profile" } })}
+                    onNavigateSettings={() => gateNavigate(navigate, "/settings", true)}
                     cardClass={PROFILE_CARD_CLASS}
                     menuTapClass={PROFILE_MENU_TAP}
                   />

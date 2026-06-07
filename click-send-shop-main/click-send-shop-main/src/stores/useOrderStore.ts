@@ -16,6 +16,7 @@ interface OrderState {
   pagination: PaginationState;
   filterStatus: OrderStatus | "all";
   loading: boolean;
+  loadingMore: boolean;
   submitting: boolean;
   error: string | null;
 
@@ -35,12 +36,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 },
   filterStatus: "all",
   loading: false,
+  loadingMore: false,
   submitting: false,
   error: null,
 
   loadOrders: async (params) => {
     const requestPage = params?.page ?? 1;
-    set({ loading: true, error: null });
+    const loadingKey = requestPage > 1 ? "loadingMore" : "loading";
+    set({ [loadingKey]: true, error: null });
     try {
       const filter = get().filterStatus;
       const data = await orderService.fetchOrders({
@@ -56,10 +59,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           totalPages: data.totalPages,
         },
         loading: false,
+        loadingMore: false,
       }));
     } catch (e) {
       set({
-        loading: false,
+        [loadingKey]: false,
         error: e instanceof Error ? e.message : "加载订单失败",
       });
     }
@@ -144,6 +148,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
-  setFilterStatus: (filterStatus) => set({ filterStatus, orders: [], pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 } }),
+  setFilterStatus: (filterStatus) => set({ filterStatus, orders: [], loadingMore: false, pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 } }),
   clearError: () => set({ error: null }),
 }));

@@ -1,230 +1,476 @@
-import { useEffect, useMemo, useState } from "react";
-import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
+import { useGoBack } from "@/hooks/useGoBack";
 import * as memberBenefitsService from "@/services/memberBenefitsService";
-import type { MemberBenefitsOverview } from "@/services/memberBenefitsService";
-import { cn } from "@/lib/utils";
-import {
-  THEME_MEMBER_CARD_MUTED,
-  THEME_MEMBER_CARD_SHELL,
-} from "@/utils/themeVisuals";
-import {
-  buildBenefitHighlightsFromLevel,
-  buildBenefitSummaryFromBenefits,
-  computeUpgradeProgress,
-  formatLevelRequirement,
-  MEMBER_BENEFIT_TILE_BG,
-} from "@/utils/memberBenefitPresentation";
+import type { MemberBenefitsLevel, MemberBenefitsOverview } from "@/services/memberBenefitsService";
+import type { MemberLevel } from "@/types/user";
+import { computeUpgradeProgress, formatLevelRequirement } from "@/utils/memberBenefitPresentation";
+import "./MemberBenefits.css";
 
-const CARD_CLASS = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
+type BenefitCard = {
+  key: "service" | "discount" | "points" | "shipping";
+  title: string;
+  lines: string[];
+};
 
-function HeroSkeleton() {
+const BENEFIT_CARDS: BenefitCard[] = [
+  { key: "service", title: "专属服务", lines: ["专属客服", "优先响应"] },
+  { key: "discount", title: "专属折扣", lines: ["会员专享", "超值优惠"] },
+  { key: "points", title: "积分加速", lines: ["下单积分", "加速累积"] },
+  { key: "shipping", title: "免邮权益", lines: ["满额免邮", "轻松购物"] },
+];
+
+const FALLBACK_LEVELS: MemberBenefitsLevel[] = [
+  {
+    id: "normal",
+    name: "普通会员",
+    min_spent: 0,
+    min_orders: 0,
+    sort_order: 0,
+    is_default: true,
+    description: "注册后默认为普通会员等级",
+    benefits: [],
+  },
+  {
+    id: "silver",
+    name: "白银会员",
+    min_spent: 500,
+    min_orders: 3,
+    sort_order: 1,
+    description: "累计消费 RM 500 或完成 3 笔订单后可升级",
+    benefits: [],
+  },
+  {
+    id: "gold",
+    name: "黄金会员",
+    min_spent: 5000,
+    min_orders: 8,
+    sort_order: 2,
+    description: "累计消费 RM 5000 或完成 8 笔订单后可升级",
+    benefits: [],
+  },
+  {
+    id: "diamond",
+    name: "钻石会员",
+    min_spent: 10000,
+    min_orders: 20,
+    sort_order: 3,
+    description: "符合条件可享受全部权益",
+    benefits: [],
+  },
+];
+
+function formatMoney(value?: number | null, digits = 2): string {
+  return `RM ${Number(value ?? 0).toFixed(digits)}`;
+}
+
+function formatCompactMoney(value?: number | null): string {
+  const amount = Number(value ?? 0);
+  return `RM ${Number.isInteger(amount) ? amount.toFixed(0) : amount.toFixed(2)}`;
+}
+
+function hasUsefulText(value?: string | null): value is string {
+  return Boolean(value && value.trim() && !/^\?+$/.test(value.trim()));
+}
+
+function buildUpgradeIntro(currentLevel?: MemberLevel | null, nextLevel?: MemberLevel | null): string {
+  if (!nextLevel) return "你已达到当前最高会员等级";
+
+  const spent = Number(currentLevel?.min_spent ?? 0);
+  const orders = Number(currentLevel?.min_orders ?? 0);
+  const parts: string[] = [];
+  if (spent > 0) parts.push(`累计消费 ${formatCompactMoney(spent)}`);
+  if (orders > 0) parts.push(`完成 ${orders} 笔订单后`);
+
+  if (!parts.length) return "满足升级条件后";
+  return parts.join(" 或 ");
+}
+
+function buildProgressDesc(data: MemberBenefitsOverview | null): JSX.Element {
+  const nextLevel = data?.next_level;
+  if (!nextLevel) {
+    return <>当前已经是最高会员等级，所有可用权益将自动保留</>;
+  }
+
+  const spent = Number(data?.growth_to_next_level ?? 0);
+  const orders = Number(data?.orders_to_next_level ?? 0);
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <div className="h-4 w-24 animate-pulse rounded-lg bg-[var(--theme-bg)]" />
-        <div className="h-8 w-2/3 animate-pulse rounded-lg bg-[var(--theme-bg)]" />
-        <div className="h-4 w-full animate-pulse rounded-lg bg-[var(--theme-bg)]" />
-      </div>
-      <div className="border-t border-[color-mix(in_srgb,var(--theme-member-card-muted)_35%,transparent)] pt-4">
-        <div className="h-4 w-28 animate-pulse rounded-lg bg-[var(--theme-bg)]" />
-        <div className="mt-3 h-2 animate-pulse rounded-full bg-[var(--theme-bg)]" />
+    <>
+      距离 <b>{nextLevel.name}</b> 还差 {formatMoney(spent)} 消费或 {orders} 笔有效订单
+    </>
+  );
+}
+
+function orderedDisplayLevels(data: MemberBenefitsOverview | null): MemberBenefitsLevel[] {
+  const levels = [...(data?.all_levels || [])].sort((a, b) => {
+    const orderDiff = Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0);
+    if (orderDiff !== 0) return orderDiff;
+
+    const spentDiff = Number(a.min_spent ?? 0) - Number(b.min_spent ?? 0);
+    if (spentDiff !== 0) return spentDiff;
+
+    return Number(a.min_orders ?? 0) - Number(b.min_orders ?? 0);
+  });
+
+  if (!levels.length) return FALLBACK_LEVELS;
+  return levels.slice(0, 4);
+}
+
+function isCurrentLevel(level: MemberLevel, currentLevel?: MemberLevel | null): boolean {
+  if (!currentLevel) return false;
+  if (level.id === currentLevel.id) return true;
+  return Boolean(level.name && currentLevel.name && level.name === currentLevel.name);
+}
+
+function tierKind(level: MemberLevel, current: boolean): "basic" | "silver" | "gold" | "purple" {
+  const label = `${level.id || ""} ${level.name || ""}`.toLowerCase();
+  if (current || label.includes("gold") || label.includes("黄金") || label.includes("金卡")) return "gold";
+  if (label.includes("diamond") || label.includes("钻石")) return "purple";
+  if (label.includes("silver") || label.includes("白银") || label.includes("银")) return "silver";
+  return "basic";
+}
+
+function buildTierDescription(level: MemberBenefitsLevel, isLast: boolean): string {
+  if (hasUsefulText(level.description)) return level.description.trim();
+  if (level.is_default || (Number(level.min_spent ?? 0) <= 0 && Number(level.min_orders ?? 0) <= 0)) {
+    return "注册后默认为普通会员等级";
+  }
+  if (isLast) return "符合条件可享受全部权益";
+
+  const parts: string[] = [];
+  const spent = Number(level.min_spent ?? 0);
+  const orders = Number(level.min_orders ?? 0);
+  if (spent > 0) parts.push(`累计消费 ${formatCompactMoney(spent)}`);
+  if (orders > 0) parts.push(`完成 ${orders} 笔订单后`);
+  return parts.length ? `${parts.join(" 或 ")}可升级` : "享受平台基础会员服务与活动权益";
+}
+
+function CrownEmblem() {
+  return (
+    <div className="rank-emblem" aria-hidden="true">
+      <div className="emblem-core">
+        <span className="emblem-shine" />
+        <svg viewBox="0 0 64 64" fill="none">
+          <path
+            d="M15 40h34l4-22-11 9-10-15-10 15-11-9 4 22Z"
+            fill="url(#memberBenefitsCrownGold)"
+            stroke="#fff0bc"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+          <path d="M18 45h28" stroke="#fff0bc" strokeWidth="3" strokeLinecap="round" />
+          <path
+            d="M32 48l9-9H23l9 9Z"
+            fill="#f2c76f"
+            stroke="#fff0bc"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <defs>
+            <linearGradient id="memberBenefitsCrownGold" x1="14" y1="12" x2="52" y2="45">
+              <stop stopColor="#FFF0B7" />
+              <stop offset="0.42" stopColor="#E2A337" />
+              <stop offset="1" stopColor="#FFF1BA" />
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
     </div>
   );
 }
 
+function CurrentLevelBadge() {
+  return (
+    <span className="current-pill">
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M8 1.5l6.2 4.2L8 14.5 1.8 5.7 8 1.5Z" />
+      </svg>
+      当前等级
+    </span>
+  );
+}
+
+function BenefitIcon({ type }: { type: BenefitCard["key"] }) {
+  if (type === "service") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M4 13a8 8 0 0 1 16 0" strokeLinecap="round" />
+        <path d="M5 13v4a2 2 0 0 0 2 2h1v-8H7a2 2 0 0 0-2 2Z" />
+        <path d="M19 13v4a2 2 0 0 1-2 2h-1v-8h1a2 2 0 0 1 2 2Z" />
+        <path d="M12 19h3" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (type === "discount") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M4 5h8l8 8-8 8-8-8V5Z" strokeLinejoin="round" />
+        <path d="M8.5 8.5h.01" />
+        <path d="M9 16l6-6" strokeLinecap="round" />
+        <path d="M10 10.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+        <path d="M14 15.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+      </svg>
+    );
+  }
+
+  if (type === "points") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M4 18h16" strokeLinecap="round" />
+        <path d="M6 16l4-5 4 3 5-8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M16 6h3v3" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M7 18v-3M12 18v-5M17 18v-7" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+      <path d="M3 7h11v10H3V7Z" strokeLinejoin="round" />
+      <path d="M14 11h3l4 4v2h-7v-6Z" strokeLinejoin="round" />
+      <path d="M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+      <path d="M17 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+      <path d="M8.5 11.2l1.6 1.6 3-3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function TierIcon({ kind }: { kind: "basic" | "silver" | "gold" | "purple" }) {
+  if (kind === "basic") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+        <path d="M4.5 20a7.5 7.5 0 0 1 15 0" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (kind === "silver") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M12 3l2.4 5 5.6.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.6-.8L12 3Z" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+      <path d="M12 3l8 5-8 13L4 8l8-5Z" strokeLinejoin="round" />
+      <path d="M4 8h16M8 8l4 13 4-13M9 3l-1 5M15 3l1 5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LoadingContent() {
+  return (
+    <>
+      <section className="hero-card member-skeleton-card" aria-busy="true">
+        <div className="hero-top">
+          <div className="member-skeleton-circle" />
+          <div className="hero-main">
+            <div className="member-skeleton-line member-skeleton-line-lg" />
+            <div className="member-skeleton-line member-skeleton-line-sm" />
+            <div className="member-skeleton-line member-skeleton-line-md" />
+          </div>
+          <div className="hero-stats">
+            <div className="member-skeleton-line member-skeleton-line-sm" />
+            <div className="member-skeleton-line member-skeleton-line-md" />
+          </div>
+        </div>
+        <div className="hero-divider" />
+        <div className="member-skeleton-line member-skeleton-line-full" />
+        <div className="progress-bar">
+          <div className="progress-fill member-skeleton-fill" />
+        </div>
+      </section>
+
+      <section className="benefit-grid" aria-busy="true">
+        {BENEFIT_CARDS.map((card) => (
+          <article className="benefit-card" key={card.key}>
+            <div className="benefit-icon member-skeleton-icon" />
+            <div>
+              <div className="member-skeleton-line member-skeleton-line-md" />
+              <div className="member-skeleton-line member-skeleton-line-sm" />
+            </div>
+          </article>
+        ))}
+      </section>
+    </>
+  );
+}
+
+function ErrorState({ onRetry, retrying }: { onRetry: () => void; retrying: boolean }) {
+  return (
+    <section className="member-error-card">
+      <p className="member-error-title">会员权益暂时加载失败</p>
+      <p className="member-error-copy">网络或登录状态可能刚好不稳定，请重新加载一次。</p>
+      <button type="button" className="member-retry-btn" onClick={onRetry} disabled={retrying}>
+        <RefreshCw size={16} className={retrying ? "member-retry-spin" : undefined} />
+        <span>{retrying ? "加载中" : "重新加载"}</span>
+      </button>
+    </section>
+  );
+}
+
 export default function MemberBenefits() {
-  const [data, setData] = useState<MemberBenefitsOverview | null>(null);
-  const [loading, setLoading] = useState(true);
+  const goBack = useGoBack("/profile");
+  const benefitsQuery = useQuery<MemberBenefitsOverview>({
+    queryKey: memberBenefitsService.memberBenefitsQueryKey,
+    queryFn: memberBenefitsService.fetchMemberBenefits,
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    memberBenefitsService.fetchMemberBenefits()
-      .then((res) => {
-        if (!cancelled) setData(res);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+  const data = benefitsQuery.data ?? null;
+  const loading = benefitsQuery.isLoading && !data;
+  const failed = benefitsQuery.isError && !data;
   const currentLevel = data?.current_level;
   const nextLevel = data?.next_level;
   const progressPercent = useMemo(() => computeUpgradeProgress(data), [data]);
-
-  const progressText = useMemo(() => {
-    if (!nextLevel) return "你已达到当前最高会员等级";
-    const spent = Number(data?.growth_to_next_level || 0);
-    const orders = Number(data?.orders_to_next_level || 0);
-    if (spent <= 0 && orders <= 0) return `已满足 ${nextLevel.name} 升级条件`;
-    return `距离 ${nextLevel.name} 还差 RM ${spent.toFixed(2)} 消费或 ${orders} 笔有效订单`;
-  }, [data?.growth_to_next_level, data?.orders_to_next_level, nextLevel]);
-
-  const orderedLevels = useMemo(() => {
-    return [...(data?.all_levels || [])].sort((a, b) => {
-      const orderDiff = Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0);
-      if (orderDiff !== 0) return orderDiff;
-
-      const spentDiff = Number(a.min_spent ?? 0) - Number(b.min_spent ?? 0);
-      if (spentDiff !== 0) return spentDiff;
-
-      return Number(a.min_orders ?? 0) - Number(b.min_orders ?? 0);
-    });
-  }, [data?.all_levels]);
-
-  const benefitHighlightTiles = useMemo(
-    () => buildBenefitHighlightsFromLevel(currentLevel),
-    [currentLevel],
-  );
+  const displayLevels = useMemo(() => orderedDisplayLevels(data), [data]);
+  const currentName = currentLevel?.name || "普通会员";
 
   return (
-    <StoreAccountLayout title="会员权益">
-      <div className="space-y-4">
-        <section
-          className={cn(
-            CARD_CLASS,
-            THEME_MEMBER_CARD_SHELL,
-            "overflow-hidden rounded-2xl p-4",
-          )}
-        >
-          {loading ? (
-            <HeroSkeleton />
-          ) : (
-            <div className="space-y-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className={`text-xs ${THEME_MEMBER_CARD_MUTED}`}>当前会员等级</p>
-                  <h1 className="mt-1 text-2xl font-bold leading-tight text-[var(--theme-member-card-foreground)]">
-                    {currentLevel?.name || "普通会员"}
-                  </h1>
-                  <p className={`mt-2 text-sm leading-6 ${THEME_MEMBER_CARD_MUTED}`}>
-                    {currentLevel?.description || buildBenefitSummaryFromBenefits(currentLevel?.benefits || [], currentLevel)}
-                  </p>
-                </div>
+    <div className="member-page-shell store-bottom-safe">
+      <main className="member-page">
+        <div className="page-inner">
+          <header className="nav">
+            <button type="button" className="back-btn" aria-label="返回" onClick={goBack}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M15 5L8 12l7 7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <h1 className="page-title">会员权益</h1>
+          </header>
 
-                <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm sm:block sm:min-w-[180px] sm:text-right">
-                  <div>
-                    <p className={`text-xs ${THEME_MEMBER_CARD_MUTED}`}>当前有效消费</p>
-                    <p className="mt-1 font-semibold text-[var(--theme-member-card-foreground)]">
-                      RM {Number(data?.stats.total_spent || 0).toFixed(2)}
+          {failed ? (
+            <ErrorState onRetry={() => void benefitsQuery.refetch()} retrying={benefitsQuery.isFetching} />
+          ) : null}
+
+          {!failed && loading ? <LoadingContent /> : null}
+
+          {!failed && !loading ? (
+            <>
+              <section className="hero-card">
+                <div className="hero-top">
+                  <CrownEmblem />
+
+                  <div className="hero-main">
+                    <div className="level-row">
+                      <h2 className="level-name">{currentName}</h2>
+                      <CurrentLevelBadge />
+                    </div>
+
+                    <p className="hero-copy">
+                      {buildUpgradeIntro(currentLevel, nextLevel)}
+                      {nextLevel ? (
+                        <>
+                          <br />
+                          可升级至 <span className="next-level">{nextLevel.name}</span>
+                        </>
+                      ) : null}
                     </p>
                   </div>
-                  <div className="sm:mt-3">
-                    <p className={`text-xs ${THEME_MEMBER_CARD_MUTED}`}>有效订单</p>
-                    <p className="mt-1 font-semibold text-[var(--theme-member-card-foreground)]">{data?.stats.order_count || 0} 笔</p>
-                  </div>
-                </div>
-              </div>
 
-              <div className="border-t border-[color-mix(in_srgb,var(--theme-member-card-muted)_35%,transparent)] pt-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[var(--theme-member-card-foreground)]">升级进度</p>
-                    <p className={`mt-1 text-sm leading-6 ${THEME_MEMBER_CARD_MUTED}`}>{progressText}</p>
+                  <div className="hero-stats">
+                    <p className="stat-label">当前有效消费</p>
+                    <p className="stat-money">{formatMoney(data?.stats?.total_spent)}</p>
+
+                    <p className="stat-label">有效订单</p>
+                    <p className="stat-order">{Number(data?.stats?.order_count ?? 0)} 笔</p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-[var(--theme-member-card-badge-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--theme-member-card-badge-fg)]">
-                    {progressPercent}%
-                  </span>
                 </div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--theme-member-card-subtle)]">
+
+                <div className="hero-divider" />
+
+                <div className="progress-header">
+                  <div className="progress-title">升级进度</div>
+                  <div className="progress-percent">{progressPercent}%</div>
+                </div>
+
+                <p className="progress-desc">{buildProgressDesc(data)}</p>
+
+                <div className="progress-bar" aria-label={`升级进度 ${progressPercent}%`}>
                   <div
-                    className="h-full rounded-full bg-[var(--theme-member-card-badge-bg)] transition-[width] duration-500"
+                    className="progress-fill"
                     style={{ width: `${progressPercent}%` }}
                     role="progressbar"
                     aria-valuenow={progressPercent}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-label="升级进度"
                   />
                 </div>
-              </div>
-            </div>
-          )}
-        </section>
+              </section>
 
-        <section className={cn(CARD_CLASS, "p-4")}>
-          {loading ? (
-            <div className="grid grid-cols-2 gap-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="min-h-[104px] animate-pulse rounded-2xl bg-[var(--theme-bg)]" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {benefitHighlightTiles.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    key={item.label}
-                    className={cn(
-                      "flex min-h-[104px] min-w-0 flex-col items-center justify-center rounded-2xl px-2.5 py-3 text-center",
-                      MEMBER_BENEFIT_TILE_BG,
-                    )}
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]">
-                      <Icon size={18} />
-                    </span>
-                    <p className="mt-2 max-w-full break-words text-sm font-semibold leading-5 text-[var(--theme-text)]">
-                      {item.label}
-                    </p>
-                    {item.value ? (
-                      <p className="mt-0.5 max-w-full break-words text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
-                        {item.value}
-                      </p>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className={cn(CARD_CLASS, "p-4")}>
-          <h2 className="text-base font-semibold text-[var(--theme-text)]">等级权益对比</h2>
-          {loading ? (
-            <div className="mt-3 space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="min-h-[100px] animate-pulse rounded-2xl bg-[var(--theme-bg)]" />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-3 space-y-2">
-              {orderedLevels.map((level) => {
-                const isCurrent = level.id === currentLevel?.id;
-                return (
-                  <div
-                    key={level.id}
-                    className={cn(
-                      "min-w-0 rounded-2xl border p-3",
-                      isCurrent
-                        ? "border-[color-mix(in_srgb,var(--theme-primary)_35%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]"
-                        : "border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,var(--theme-bg))]",
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="min-w-0 text-sm font-semibold text-[var(--theme-text)]">{level.name}</p>
-                      {isCurrent ? (
-                        <span className="shrink-0 rounded-full bg-[var(--theme-primary)] px-2.5 py-1 text-xs font-semibold text-[var(--theme-primary-foreground)]">
-                          当前等级
-                        </span>
-                      ) : null}
+              <section className="benefit-grid">
+                {BENEFIT_CARDS.map((card) => (
+                  <article className="benefit-card" key={card.key}>
+                    <div className="benefit-icon">
+                      <BenefitIcon type={card.key} />
                     </div>
-                    <p className="mt-2 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)]">
-                      升级条件：{formatLevelRequirement(level)}
-                    </p>
-                    <p className="mt-1 break-words text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">
-                      {buildBenefitSummaryFromBenefits(level.benefits || [], level)}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
-    </StoreAccountLayout>
+                    <div>
+                      <h3 className="benefit-title">{card.title}</h3>
+                      <p className="benefit-sub">
+                        {card.lines[0]}
+                        <br />
+                        {card.lines[1]}
+                      </p>
+                    </div>
+                    <span className="chevron" aria-hidden="true" />
+                  </article>
+                ))}
+              </section>
+
+              <section>
+                <div className="section-title">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 18h16l2-11-6 4-4-7-4 7-6-4 2 11Zm1 3h14v-2H5v2Z" />
+                  </svg>
+                  等级权益对比
+                  <span className="sparkles" aria-hidden="true">
+                    <i />
+                    <i />
+                  </span>
+                </div>
+
+                <div className="tier-list">
+                  {displayLevels.map((level, index) => {
+                    const current = isCurrentLevel(level, currentLevel);
+                    const kind = tierKind(level, current);
+                    return (
+                      <article className={`tier-card${current ? " current" : ""}`} key={level.id || level.name}>
+                        <div className={`tier-icon ${kind}`}>
+                          <TierIcon kind={kind} />
+                        </div>
+
+                        <div className="tier-content">
+                          <h3 className="tier-name">{level.name}</h3>
+                          <p className="tier-desc">
+                            升级条件：{formatLevelRequirement(level)}
+                            <br />
+                            权益：{buildTierDescription(level, index === displayLevels.length - 1)}
+                          </p>
+                        </div>
+
+                        {current ? <span className="tier-badge">当前等级</span> : null}
+                        <span className="tier-arrow" aria-hidden="true" />
+                      </article>
+                    );
+                  })}
+                </div>
+
+                <div className="footer-note">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6l7-3Z" />
+                    <path d="M9 12l2 2 4-5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  有效消费与有效订单将于完成后自动统计
+                </div>
+              </section>
+            </>
+          ) : null}
+        </div>
+      </main>
+    </div>
   );
 }

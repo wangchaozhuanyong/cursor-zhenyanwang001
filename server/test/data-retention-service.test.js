@@ -435,9 +435,11 @@ describe('data retention cleanup service', () => {
 
 test('uploaded asset orphan scan keeps the whole variant group when one asset is referenced', async () => {
   const servicePath = require.resolve('../src/modules/dataRetention/service/uploadedAssetCleanup.service');
+  const uploadedAssetRepoPath = require.resolve('../src/modules/dataRetention/repository/uploadedAssetCleanup.repository');
   const dbPath = require.resolve('../src/config/db');
   const objectStoragePath = require.resolve('../src/utils/objectStorage');
   delete require.cache[servicePath];
+  delete require.cache[uploadedAssetRepoPath];
   delete require.cache[dbPath];
   delete require.cache[objectStoragePath];
 

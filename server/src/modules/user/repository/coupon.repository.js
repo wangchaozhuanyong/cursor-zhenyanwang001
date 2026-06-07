@@ -391,7 +391,7 @@ async function updateUserCouponAfterRestore(q, userCouponId, status, returnReaso
 async function selectUserOrderCount(userId) {
   const [[row]] = await db.query(
     `SELECT COUNT(*) AS cnt FROM orders
-     WHERE user_id = ? AND deleted_at IS NULL AND status NOT IN ('cancelled')`,
+     WHERE user_id = ? AND status NOT IN ('cancelled')`,
     [userId],
   );
   return Number(row?.cnt || 0);
@@ -421,5 +421,4 @@ module.exports = {
   updateUserCouponAfterRestore,
   selectUserOrderCount,
 };
-
 

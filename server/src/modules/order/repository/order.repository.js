@@ -842,8 +842,12 @@ async function selectOrderById(q, orderId) {
   return row || null;
 }
 
+function escapeLikeKeyword(value) {
+  return String(value || '').replace(/[!%_]/g, (char) => `!${char}`);
+}
+
 function buildOrderListWhere(filters = {}) {
-  const { userId, status, tab } = filters;
+  const { userId, status, tab, keyword } = filters;
   let where = 'WHERE o.user_id = ? AND o.buyer_deleted_at IS NULL';
   const params = [userId];
 
@@ -877,6 +881,35 @@ function buildOrderListWhere(filters = {}) {
   } else if (status) {
     where += ' AND o.status = ?';
     params.push(status);
+  }
+
+  const normalizedKeyword = String(keyword || '').trim();
+  if (normalizedKeyword) {
+    const like = `%${escapeLikeKeyword(normalizedKeyword)}%`;
+    where += ` AND (
+      o.order_no LIKE ? ESCAPE '!'
+      OR COALESCE(o.contact_name, '') LIKE ? ESCAPE '!'
+      OR COALESCE(o.contact_phone, '') LIKE ? ESCAPE '!'
+      OR COALESCE(o.shipping_phone, '') LIKE ? ESCAPE '!'
+      OR COALESCE(o.shipping_name, '') LIKE ? ESCAPE '!'
+      OR COALESCE(o.tracking_no, '') LIKE ? ESCAPE '!'
+      OR COALESCE(o.carrier, '') LIKE ? ESCAPE '!'
+      OR COALESCE(o.note, '') LIKE ? ESCAPE '!'
+      OR COALESCE(o.address, '') LIKE ? ESCAPE '!'
+      OR EXISTS (
+        SELECT 1
+        FROM order_items oi
+        WHERE oi.order_id = o.id
+          AND COALESCE(oi.line_status, 'active') = 'active'
+          AND COALESCE(oi.qty, 0) > 0
+          AND (
+            COALESCE(NULLIF(oi.product_name, ''), NULLIF(oi.product_name_snapshot, ''), '') LIKE ? ESCAPE '!'
+            OR COALESCE(oi.variant_name, '') LIKE ? ESCAPE '!'
+            OR COALESCE(oi.sku_code, '') LIKE ? ESCAPE '!'
+          )
+      )
+    )`;
+    params.push(like, like, like, like, like, like, like, like, like, like, like, like);
   }
 
   return { where, params };

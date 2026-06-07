@@ -72,9 +72,12 @@ export default function Notifications() {
 
   if (loading && notifications.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-theme-price" />
-      </div>
+      <StoreAccountLayout title="消息通知" onBack={goBack} mainClassName="sm:px-4 lg:py-6">
+        <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">
+          <Loader2 size={28} className="animate-spin text-theme-price" aria-label="加载中" />
+          <p className="mt-3 text-sm">消息通知加载中...</p>
+        </div>
+      </StoreAccountLayout>
     );
   }
 

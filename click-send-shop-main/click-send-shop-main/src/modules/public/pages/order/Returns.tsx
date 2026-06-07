@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, FileText, Plus, RefreshCw } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
@@ -9,6 +9,7 @@ import { getReturnStatusBadgeClass } from "@/constants/statusDictionary";
 import { formatDateTime } from "@/utils/formatDateTime";
 import ReturnApplySheet from "./ReturnApplySheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import afterSaleProgressHero from "./assets/after-sale-progress-hero.webp";
 import {
   RETURN_FILTERS,
   type ReturnFilterKey,
@@ -30,6 +31,7 @@ export default function Returns() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<ReturnFilterKey>("all");
   const [applyOpen, setApplyOpen] = useState(!!applyOrderId);
+  const filterButtonRefs = useRef<Map<ReturnFilterKey, HTMLButtonElement>>(new Map());
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -51,6 +53,14 @@ export default function Returns() {
     if (applyOrderId) setApplyOpen(true);
   }, [applyOrderId]);
 
+  useEffect(() => {
+    filterButtonRefs.current.get(filter)?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [filter]);
+
   const filteredList = useMemo(
     () => list.filter((item) => shouldShowReturnInFilter(item, filter)),
     [filter, list],
@@ -69,55 +79,82 @@ export default function Returns() {
     <div className="min-h-screen bg-[var(--theme-bg)] pb-8 text-[var(--theme-text)]">
       <PageHeader title="售后进度" onBack={goBack} />
       <main className="mx-auto w-full max-w-3xl space-y-4 px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm sm:p-4">
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">售后进度中心</h1>
-              <p className="mt-1 text-xs text-muted-foreground">查看退款、退货、换货和维修处理进度。</p>
-            </div>
-            <div className="flex gap-2">
+        <section className="relative overflow-hidden rounded-[28px] border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))_0%,var(--theme-surface)_56%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_100%)] p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-6">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_36%,color-mix(in_srgb,var(--theme-primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_18%_16%,rgba(255,255,255,0.9),transparent_34%)]" aria-hidden />
+          <img
+            src={afterSaleProgressHero}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-2 right-[-2.5rem] z-0 h-[78%] max-h-[12.5rem] w-auto select-none object-contain opacity-95 [mask-image:linear-gradient(to_right,transparent_0%,rgba(0,0,0,0.2)_28%,black_48%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,rgba(0,0,0,0.2)_28%,black_48%)] sm:bottom-0 sm:right-0 sm:max-h-[15rem]"
+            draggable={false}
+          />
+          <div className="relative z-10 flex min-h-[11.5rem] max-w-[68%] flex-col justify-center sm:min-h-[13.5rem] sm:max-w-[60%]">
+            <h1 className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">售后进度中心</h1>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">查看退款、退货、换货和维修处理进度。</p>
+            <div className="mt-5 flex flex-wrap gap-2">
               <UnifiedButton
                 type="button"
                 onClick={() => void loadList()}
-                className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-2 text-xs"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--theme-border)_80%,white)] bg-[var(--theme-surface)] px-3.5 py-2 text-sm font-medium shadow-sm"
               >
-                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
                 刷新
               </UnifiedButton>
               <UnifiedButton
                 type="button"
-                className="inline-flex items-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-medium text-[var(--theme-primary-foreground)]"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--theme-primary)] px-3.5 py-2 text-sm font-medium text-[var(--theme-primary-foreground)] shadow-sm"
                 onClick={() => setApplyOpen(true)}
               >
-                <Plus size={14} />
+                <Plus size={17} />
                 发起售后
               </UnifiedButton>
             </div>
           </div>
+        </section>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-            {RETURN_FILTERS.map((item) => (
-              <UnifiedButton
-                key={item.key}
-                type="button"
-                onClick={() => setFilter(item.key)}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs ${
-                  filter === item.key
-                    ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-                    : "border-border bg-background text-muted-foreground"
-                }`}
-              >
-                {item.label}
-              </UnifiedButton>
-            ))}
+        <section className="rounded-[24px] border border-border bg-card p-3 shadow-[0_14px_34px_rgba(15,23,42,0.07)]">
+          <div className="relative overflow-hidden">
+            <div
+              className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-1 py-1 [-webkit-overflow-scrolling:touch]"
+              role="tablist"
+              aria-label="售后状态"
+            >
+              {RETURN_FILTERS.map((item) => {
+                const active = filter === item.key;
+                return (
+                  <UnifiedButton
+                    key={item.key}
+                    ref={(el) => {
+                      if (el) filterButtonRefs.current.set(item.key, el);
+                      else filterButtonRefs.current.delete(item.key);
+                    }}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setFilter(item.key)}
+                    className={`min-h-10 shrink-0 snap-center whitespace-nowrap rounded-full border px-4 py-2 text-sm transition-colors ${
+                      active
+                        ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] font-medium text-[var(--theme-primary)]"
+                        : "border-border bg-background text-muted-foreground"
+                    }`}
+                  >
+                    {item.label}
+                  </UnifiedButton>
+                );
+              })}
+            </div>
+            <span className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-card to-transparent" aria-hidden />
+            <span className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-card to-transparent" aria-hidden />
           </div>
         </section>
 
         {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">加载中...</p> : null}
         {!loading && filteredList.length === 0 ? (
-          <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-            <FileText className="mx-auto text-muted-foreground" size={34} />
-            <p className="mt-3 font-medium text-foreground">暂无售后记录</p>
+          <section className="rounded-[28px] border border-border bg-card px-6 py-12 text-center shadow-[0_14px_34px_rgba(15,23,42,0.06)] sm:py-14">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] text-muted-foreground">
+              <FileText size={44} strokeWidth={1.6} />
+            </div>
+            <p className="mt-5 text-lg font-medium text-foreground">暂无售后记录</p>
             <p className="mt-1 text-xs text-muted-foreground">可以从已发货或已完成订单发起售后申请。</p>
           </section>
         ) : null}

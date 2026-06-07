@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
@@ -24,6 +24,7 @@ import {
 import { AppModal, BottomSheetConfirm } from "@/modules/micro-interactions";
 import ReturnApplySheet from "./ReturnApplySheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StoreSearchField from "@/components/store/StoreSearchField";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
   { key: "all", label: "全部" },
@@ -121,12 +122,13 @@ export default function Orders() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams);
+  const keyword = (searchParams.get("keyword") || "").trim();
   const tabButtonRefs = useRef<Map<OrderTab, HTMLButtonElement>>(new Map());
   const capabilities = useSiteCapabilities();
   const { paying, payPendingOrder } = usePayPendingOrder();
   const tabs = useMemo(() => TABS.filter((t) => t.key !== "pending_review" || capabilities.reviewEnabled), [capabilities.reviewEnabled]);
 
-  const { orders, loading, error, loadOrders, cancelOrder, confirmReceive, deleteOrder } = useOrderStore();
+  const { orders, pagination, loading, loadingMore, error, loadOrders, cancelOrder, confirmReceive, deleteOrder } = useOrderStore();
   const { addToCart, clearBuyNow, setSelectAll } = useCartStore();
 
   const [summary, setSummary] = useState<OrderSummary | null>(null);
@@ -138,6 +140,33 @@ export default function Orders() {
   const [returnApplyOrderId, setReturnApplyOrderId] = useState<string | null>(null);
   const [logisticsInfo, setLogisticsInfo] = useState<OrderLogisticsSnapshot | null>(null);
   const [repurchaseConfirmOrder, setRepurchaseConfirmOrder] = useState<Order | null>(null);
+  const [searchText, setSearchText] = useState(keyword);
+
+  useEffect(() => {
+    setSearchText(keyword);
+  }, [keyword]);
+
+  const updateKeywordParam = useCallback((value: string) => {
+    const nextKeyword = value.trim();
+    const next = new URLSearchParams(searchParams);
+    if (nextKeyword) next.set("keyword", nextKeyword);
+    else next.delete("keyword");
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      updateKeywordParam(searchText);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchText, updateKeywordParam]);
+
+  const loadCurrentOrders = useCallback(
+    () => loadOrders({ page: 1, tab, status: undefined, keyword: keyword || undefined }),
+    [keyword, loadOrders, tab],
+  );
 
   const viewLogistics = (order: Order) => {
     const mode = resolveOrderLogisticsView(order);
@@ -153,8 +182,8 @@ export default function Orders() {
   };
 
   useEffect(() => {
-    void loadOrders({ page: 1, tab, status: undefined });
-  }, [loadOrders, tab]);
+    void loadCurrentOrders();
+  }, [loadCurrentOrders]);
 
   useEffect(() => {
     let cancelled = false;
@@ -171,6 +200,19 @@ export default function Orders() {
     [orders, tab],
   );
   const currentSummary = summary || summaryFromOrders(orders);
+  const hasMoreOrders = pagination.page < pagination.totalPages;
+  const showOrderPagingFooter = displayOrders.length > 0 && pagination.total > pagination.pageSize;
+
+  const loadMoreOrders = useCallback(() => {
+    if (loading || loadingMore || !hasMoreOrders) return;
+    void loadOrders({
+      page: pagination.page + 1,
+      pageSize: pagination.pageSize,
+      tab,
+      status: undefined,
+      keyword: keyword || undefined,
+    });
+  }, [hasMoreOrders, keyword, loadOrders, loading, loadingMore, pagination.page, pagination.pageSize, tab]);
 
   useEffect(() => {
     const activeButton = tabButtonRefs.current.get(tab);
@@ -178,7 +220,11 @@ export default function Orders() {
   }, [tab, tabs.length]);
 
   const switchTab = (next: OrderTab) => {
-    setSearchParams(next === "all" ? {} : { tab: next }, { replace: true });
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("status");
+    if (next === "all") nextParams.delete("tab");
+    else nextParams.set("tab", next);
+    setSearchParams(nextParams, { replace: true });
   };
 
   const openDetail = (order: Order) => {
@@ -209,7 +255,7 @@ export default function Orders() {
       await deleteOrder(order.id);
       toast.success("订单已删除");
       setSummary(null);
-      await loadOrders({ page: 1, tab, status: undefined });
+      await loadCurrentOrders();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "删除订单失败");
     } finally {
@@ -227,43 +273,61 @@ export default function Orders() {
     after_sale: "暂无退款/售后订单",
     cancelled: "暂无已取消订单",
   };
+  const emptyOrderText = keyword ? `没有找到“${keyword}”相关订单` : emptyText[tab];
 
   const actionBtn = "min-h-8 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs leading-none whitespace-nowrap";
   const primaryActionBtn = "min-h-8 rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1.5 text-xs leading-none whitespace-nowrap text-[var(--theme-primary-foreground)]";
   const moreActionBtn = "flex w-full items-center justify-between rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--theme-text)]";
+  const renderOrderSearchField = (className: string) => (
+    <StoreSearchField
+      mode="filter"
+      placeholder="搜索订单"
+      value={searchText}
+      onValueChange={setSearchText}
+      onSubmit={() => updateKeywordParam(searchText)}
+      className={className}
+    />
+  );
 
   return (
-    <StoreAccountLayout title="我的订单" mainClassName="sm:p-0 lg:py-6">
-        <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background py-2 sm:-mx-4 lg:top-[calc(var(--store-desktop-header-height,4rem)+0.5rem)] lg:mx-0 lg:rounded-xl lg:border lg:bg-[var(--theme-surface)]">
-          <div className="relative overflow-hidden">
-            <div
-              className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-[var(--store-page-x)] pb-1 [-webkit-overflow-scrolling:touch] sm:px-4"
-              role="tablist"
-              aria-label="订单状态"
-            >
-            {tabs.map((t) => {
-              const active = t.key === tab;
-              const count = tabCount(currentSummary, t.key);
-              return (
-                <UnifiedButton
-                  key={t.key}
-                  ref={(el) => {
-                    if (el) tabButtonRefs.current.set(t.key, el);
-                    else tabButtonRefs.current.delete(t.key);
-                  }}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  className={`snap-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition-colors ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
-                  onClick={() => switchTab(t.key)}
-                >
-                  {t.label}{count && count > 0 ? ` ${count}` : ""}
-                </UnifiedButton>
-              );
-            })}
+    <StoreAccountLayout
+      title="我的订单"
+      mainClassName="sm:p-0 lg:py-6"
+      rightSlot={renderOrderSearchField("w-[9.5rem] max-w-[44vw] flex-none sm:w-44 lg:hidden")}
+    >
+        <div className="store-glass-surface sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b py-2 backdrop-blur-xl sm:-mx-4 lg:top-[calc(var(--store-desktop-header-height,4rem)+0.5rem)] lg:mx-0 lg:rounded-xl lg:border">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
+            <div className="relative min-w-0 overflow-hidden lg:flex-1">
+              <div
+                className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-[var(--store-page-x)] pb-1 [-webkit-overflow-scrolling:touch] sm:px-4"
+                role="tablist"
+                aria-label="订单状态"
+              >
+              {tabs.map((t) => {
+                const active = t.key === tab;
+                const count = tabCount(currentSummary, t.key);
+                return (
+                  <UnifiedButton
+                    key={t.key}
+                    ref={(el) => {
+                      if (el) tabButtonRefs.current.set(t.key, el);
+                      else tabButtonRefs.current.delete(t.key);
+                    }}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    className={`snap-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition-colors ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
+                    onClick={() => switchTab(t.key)}
+                  >
+                    {t.label}{count && count > 0 ? ` ${count}` : ""}
+                  </UnifiedButton>
+                );
+              })}
+              </div>
+              <span className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-[var(--theme-surface)] to-transparent" aria-hidden />
+              <span className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-[var(--theme-surface)] to-transparent" aria-hidden />
             </div>
-            <span className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-background to-transparent lg:from-[var(--theme-surface)]" aria-hidden />
-            <span className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-background to-transparent lg:from-[var(--theme-surface)]" aria-hidden />
+            {renderOrderSearchField("hidden lg:flex lg:w-72 lg:flex-none")}
           </div>
         </div>
 
@@ -272,7 +336,7 @@ export default function Orders() {
 
         {!loading && displayOrders.length === 0 ? (
           <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
-            {emptyText[tab]}
+            {emptyOrderText}
           </div>
         ) : null}
 
@@ -298,7 +362,7 @@ export default function Orders() {
                       order={order}
                       compact
                       onExpired={() => {
-                        void loadOrders({ page: 1, tab, status: undefined });
+                        void loadCurrentOrders();
                       }}
                     />
                   </div>
@@ -371,7 +435,7 @@ export default function Orders() {
                         onClick={(e) => {
                           e.stopPropagation();
                           setActingId(order.id);
-                          void payPendingOrder(order, () => loadOrders({ page: 1, tab })).finally(() => setActingId(""));
+                          void payPendingOrder(order, loadCurrentOrders).finally(() => setActingId(""));
                         }}
                       >
                         {paying && actingId === order.id ? "处理中..." : labelPendingPaymentAction(order.payment_method, order.order_type)}
@@ -456,6 +520,23 @@ export default function Orders() {
             );
           })}
         </div>
+
+        {showOrderPagingFooter ? (
+          <div className="flex justify-center pt-2">
+            {hasMoreOrders ? (
+              <UnifiedButton
+                type="button"
+                className="min-h-10 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 py-2 text-sm font-medium text-[var(--theme-text)] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={loading || loadingMore}
+                onClick={loadMoreOrders}
+              >
+                {loadingMore ? "加载中..." : "加载更多"}
+              </UnifiedButton>
+            ) : (
+              <p className="text-xs text-[var(--theme-text-muted)]">已全部加载</p>
+            )}
+          </div>
+        ) : null}
         <AppModal
           tier="standard"
           open={Boolean(moreOrder)}
@@ -575,7 +656,7 @@ export default function Orders() {
             setActingId(cancelConfirmOrder.id);
             try {
               await cancelOrder(cancelConfirmOrder.id);
-              await loadOrders({ page: 1, tab });
+              await loadCurrentOrders();
               toast.success("订单已取消");
               setCancelConfirmOrder(null);
             } catch (e) {
@@ -599,7 +680,7 @@ export default function Orders() {
             setActingId(confirmReceiveOrder.id);
             try {
               await confirmReceive(confirmReceiveOrder.id);
-              await loadOrders({ page: 1, tab });
+              await loadCurrentOrders();
               toast.success("已确认收货");
               setConfirmReceiveOrder(null);
             } catch (e) {
@@ -615,7 +696,7 @@ export default function Orders() {
           open={Boolean(returnApplyOrderId)}
           onClose={() => setReturnApplyOrderId(null)}
           onSuccess={() => {
-            void loadOrders({ page: 1, tab });
+            void loadCurrentOrders();
           }}
         />
 

@@ -1,0 +1,359 @@
+:root {
+  --ir-bg: #01090b;
+}
+
+.ir-stage,
+.ir-stage * {
+  box-sizing: border-box;
+}
+
+.ir-stage {
+  width: min(100%, 1774px);
+  aspect-ratio: 1774 / 887;
+  position: relative;
+  container-type: inline-size;
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  background: #000;
+  overflow: hidden;
+}
+
+.ir-card {
+  position: absolute;
+  left: 1.86cqw;
+  top: 1.86cqw;
+  width: 96.28cqw;
+  height: 45.38cqw;
+  border-radius: 3.55cqw;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 16%, rgba(83, 255, 221, 0.10) 0%, rgba(83, 255, 221, 0.02) 22%, transparent 44%),
+    radial-gradient(circle at 77% 26%, rgba(255, 208, 95, 0.12) 0%, rgba(255, 208, 95, 0.05) 18%, transparent 42%),
+    radial-gradient(circle at 84% 60%, rgba(44, 238, 199, 0.13) 0%, rgba(44, 238, 199, 0.04) 26%, transparent 50%),
+    linear-gradient(120deg, #020f13 0%, #051f25 34%, #082e2e 66%, #072820 100%);
+  border: 0.11cqw solid rgba(81, 255, 222, 0.48);
+  box-shadow:
+    0 0 0 0.07cqw rgba(31, 255, 212, 0.18) inset,
+    0 0 2.8cqw rgba(38, 238, 199, 0.16),
+    0 1.8cqw 4.5cqw rgba(0, 0, 0, 0.58);
+}
+
+.ir-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(107, 255, 224, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(107, 255, 224, 0.055) 1px, transparent 1px);
+  background-size: 4.7cqw 4.7cqw;
+  opacity: 0.74;
+  pointer-events: none;
+}
+
+.ir-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.08), transparent 18%, transparent 80%, rgba(255,255,255,0.03)),
+    radial-gradient(circle at 2% 4%, rgba(129, 255, 229, 0.28), transparent 10%),
+    radial-gradient(circle at 96% 92%, rgba(110, 255, 158, 0.18), transparent 13%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.82;
+}
+
+.ir-badge {
+  position: absolute;
+  left: 3.35cqw;
+  top: 2.42cqw;
+  width: 23.08cqw;
+  height: 4.67cqw;
+  border-radius: 2.5cqw;
+  display: flex;
+  align-items: center;
+  gap: 1.2cqw;
+  padding: 0 2.1cqw 0 1.05cqw;
+  color: #ffe89e;
+  background: linear-gradient(180deg, rgba(23, 48, 51, 0.92), rgba(7, 23, 27, 0.96));
+  border: 0.08cqw solid rgba(253, 211, 104, 0.66);
+  box-shadow:
+    0 0.4cqw 1.2cqw rgba(0,0,0,0.32),
+    0 0 1.35cqw rgba(255, 215, 96, 0.12),
+    0 0 0 0.05cqw rgba(255, 255, 255, 0.07) inset;
+  z-index: 3;
+}
+
+.ir-badgeIcon {
+  width: 3.6cqw;
+  height: 3.6cqw;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,255,255,0.85), transparent 10%),
+    radial-gradient(circle at 50% 50%, #ffe58d 0%, #f6c846 50%, #bc7d19 100%);
+  box-shadow: 0 0 1.2cqw rgba(255, 208, 75, 0.38), 0 0 0 0.11cqw rgba(255, 248, 211, 0.16) inset;
+}
+
+.ir-badgeIcon svg {
+  width: 1.8cqw;
+  height: 1.8cqw;
+  color: #171916;
+}
+
+.ir-badgeText {
+  font-size: 1.68cqw;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.16cqw;
+  white-space: nowrap;
+}
+
+.ir-title {
+  position: absolute;
+  z-index: 2;
+  left: 3.55cqw;
+  top: 9.72cqw;
+  margin: 0;
+  font-size: 6.35cqw;
+  line-height: 1.05;
+  font-weight: 950;
+  letter-spacing: -0.08cqw;
+  color: #f8ffff;
+  background: linear-gradient(180deg, #ffffff 0%, #eefcfc 54%, #aefff0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0.24cqw 0.36cqw 0 rgba(0,0,0,0.28), 0 0 1.2cqw rgba(187, 255, 244, 0.1);
+  filter: drop-shadow(0 0.28cqw 0.1cqw rgba(0,0,0,0.28));
+  white-space: nowrap;
+}
+
+.ir-subtitle {
+  position: absolute;
+  z-index: 2;
+  left: 3.72cqw;
+  top: 17.92cqw;
+  margin: 0;
+  font-size: 2.35cqw;
+  line-height: 1.25;
+  font-weight: 760;
+  letter-spacing: 0.02cqw;
+  color: rgba(244, 250, 253, 0.78);
+  text-shadow: 0 0.2cqw 0.55cqw rgba(0,0,0,0.32);
+  white-space: nowrap;
+}
+
+.ir-stats {
+  position: absolute;
+  z-index: 2;
+  left: 3.44cqw;
+  top: 23.12cqw;
+  display: grid;
+  grid-template-columns: repeat(2, 27.0cqw);
+  gap: 1.04cqw;
+}
+
+.ir-stat {
+  width: 27.0cqw;
+  height: 8.1cqw;
+  border-radius: 1.45cqw;
+  display: flex;
+  align-items: center;
+  padding: 0 1.9cqw;
+  gap: 1.25cqw;
+  background: linear-gradient(180deg, rgba(11, 64, 64, 0.86), rgba(3, 31, 35, 0.91));
+  border: 0.08cqw solid rgba(79, 255, 221, 0.42);
+  box-shadow:
+    0 0 0 0.06cqw rgba(255,255,255,0.05) inset,
+    0 1.1cqw 2.4cqw rgba(0,0,0,0.28),
+    0 0 1.7cqw rgba(69, 255, 215, 0.08);
+  overflow: hidden;
+}
+
+.ir-statIcon {
+  width: 4.4cqw;
+  height: 4.4cqw;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.ir-statIcon svg {
+  width: 3.35cqw;
+  height: 3.35cqw;
+  display: block;
+}
+
+.ir-statIcon--teal { color: #6bffe8; }
+.ir-statIcon--gold { color: #f4d66e; }
+
+.ir-statLabel {
+  color: rgba(245, 251, 253, 0.72);
+  font-size: 1.92cqw;
+  font-weight: 760;
+  line-height: 1;
+  white-space: nowrap;
+  min-width: 6.7cqw;
+}
+
+.ir-statValue {
+  color: #fff0ab;
+  font-size: 2.56cqw;
+  font-weight: 930;
+  line-height: 1;
+  letter-spacing: -0.02cqw;
+  white-space: nowrap;
+  text-shadow: 0 0 1cqw rgba(255, 223, 126, 0.10);
+}
+
+.ir-actions {
+  position: absolute;
+  z-index: 4;
+  left: 3.44cqw;
+  top: 33.60cqw;
+  display: grid;
+  grid-template-columns: repeat(3, 28.4cqw);
+  gap: 1.78cqw;
+}
+
+.ir-action {
+  width: 28.4cqw;
+  height: 8.5cqw;
+  border: 0;
+  outline: 0;
+  border-radius: 1.55cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.35cqw;
+  font-family: inherit;
+  font-size: 2.32cqw;
+  line-height: 1;
+  font-weight: 880;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .16s ease, filter .16s ease;
+}
+
+.ir-action:active { transform: translateY(0.1cqw) scale(0.995); }
+
+.ir-action svg {
+  width: 3.55cqw;
+  height: 3.55cqw;
+  flex: 0 0 auto;
+}
+
+.ir-action--primary {
+  color: #061e24;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255,255,255,0.36), transparent 22%),
+    linear-gradient(100deg, #6efbe5 0%, #7df2c7 56%, #f4e65b 100%);
+  box-shadow:
+    0 0 0 0.12cqw rgba(255,255,255,0.14) inset,
+    0 1.2cqw 2.6cqw rgba(0,0,0,0.34),
+    0 0 2.2cqw rgba(114, 255, 226, 0.23);
+}
+
+.ir-action--secondary {
+  color: #f5ffff;
+  background: linear-gradient(180deg, rgba(10, 60, 60, 0.88), rgba(4, 27, 31, 0.94));
+  border: 0.08cqw solid rgba(84, 255, 222, 0.42);
+  box-shadow:
+    0 0 0 0.06cqw rgba(255,255,255,0.04) inset,
+    0 1.1cqw 2.4cqw rgba(0,0,0,0.27),
+    0 0 1.6cqw rgba(74, 255, 219, 0.08);
+}
+
+.ir-action--secondary svg { color: #6bffe8; }
+
+.ir-hero {
+  position: absolute;
+  z-index: 2;
+  left: 57.90cqw;
+  top: 2.10cqw;
+  width: 36.64cqw;
+  height: 31.0cqw;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 1.4cqw 2.2cqw rgba(0, 0, 0, 0.28));
+}
+
+.ir-safe-overlay {
+  position: absolute;
+  z-index: 1;
+  right: 1.5cqw;
+  top: 2.8cqw;
+  width: 38cqw;
+  height: 34cqw;
+  background: radial-gradient(circle at 56% 52%, rgba(255, 200, 89, 0.06), transparent 54%);
+  pointer-events: none;
+}
+
+@media (max-width: 560px) {
+  .ir-stage {
+    min-width: 760px;
+  }
+}
+
+.profile-invite-reward-card {
+  position: relative;
+  width: 100%;
+}
+
+.profile-invite-reward-card > .ir-stage {
+  margin: 0 auto;
+}
+
+.profile-invite-code-panel {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(84, 255, 222, 0.34);
+  background: linear-gradient(180deg, rgba(7, 42, 44, 0.92), rgba(3, 24, 28, 0.96));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24), 0 0 22px rgba(74, 255, 219, 0.08);
+  color: rgba(245, 251, 253, 0.86);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profile-invite-code-panel strong {
+  color: #fff0ab;
+  font-size: 15px;
+}
+
+.profile-invite-code-panel button {
+  flex: 0 0 auto;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #062228;
+  background: linear-gradient(100deg, #6efbe5 0%, #7df2c7 56%, #f4e65b 100%);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.profile-invite-code-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 560px) {
+  .profile-invite-reward-card {
+    overflow: hidden;
+    border-radius: 14px;
+  }
+
+  .profile-invite-reward-card > .ir-stage {
+    min-width: 0;
+    width: 100%;
+  }
+}

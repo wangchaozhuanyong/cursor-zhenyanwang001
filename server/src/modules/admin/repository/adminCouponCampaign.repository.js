@@ -231,7 +231,6 @@ async function selectUserAudienceContext(userId) {
               SELECT COUNT(*)
                 FROM orders o
                WHERE BINARY o.user_id = BINARY u.id
-                 AND o.deleted_at IS NULL
                  AND o.status NOT IN ('cancelled')
             ) AS order_count
        FROM users u

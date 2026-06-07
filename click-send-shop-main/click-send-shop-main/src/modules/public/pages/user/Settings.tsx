@@ -200,8 +200,9 @@ export default function Settings() {
       title="账户设置"
       onBack={goBack}
       className="store-page bg-[var(--theme-bg)] text-[var(--theme-text)]"
-      mainClassName="space-y-4 pb-28 pt-3 sm:space-y-5 sm:py-5 lg:pb-12"
+      mainClassName="pb-28 pt-3 sm:py-5 lg:pb-12"
     >
+      <div className="space-y-4 sm:space-y-5">
       <section className={`${CARD} overflow-hidden`}>
         <div className="flex items-center gap-4">
           <UnifiedButton
@@ -411,6 +412,7 @@ export default function Settings() {
       )}
 
       <SettingsSecuritySection />
+      </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,transparent)] px-[var(--store-page-x)] pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl lg:static lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-0">
         <div className="mx-auto w-full max-w-lg lg:max-w-none">

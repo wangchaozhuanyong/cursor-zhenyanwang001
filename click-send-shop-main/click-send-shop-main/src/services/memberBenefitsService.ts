@@ -1,6 +1,8 @@
 import { get } from "@/api/request";
 import type { MemberLevel } from "@/types/user";
 
+export const memberBenefitsQueryKey = ["storefront", "user", "member-benefits"] as const;
+
 export interface MemberBenefit {
   type: string;
   name: string;

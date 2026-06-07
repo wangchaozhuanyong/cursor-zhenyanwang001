@@ -15,3 +15,7 @@ export const queryClient = new QueryClient({
 export function clearAdminQueryCache() {
   queryClient.removeQueries({ queryKey: ["admin"] });
 }
+
+export function clearStorefrontUserQueryCache() {
+  queryClient.removeQueries({ queryKey: ["storefront", "user"] });
+}

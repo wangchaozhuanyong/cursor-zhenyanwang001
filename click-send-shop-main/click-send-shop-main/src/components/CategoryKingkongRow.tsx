@@ -57,20 +57,32 @@ export default function CategoryKingkongRow({
     const rail = railRef.current;
     const btn = itemRefs.current.get(scrollKey);
     if (!rail || !btn) return;
+    const prefersReducedMotion =
+      typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
 
     if (scrollKey === firstItemId) {
-      rail.scrollTo({ left: 0, behavior: "smooth" });
+      rail.scrollTo({ left: 0, behavior });
       return;
     }
 
-    btn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    const railRect = rail.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const centeredLeft = rail.scrollLeft + btnRect.left - railRect.left - (rail.clientWidth - btn.clientWidth) / 2;
+    const maxLeft = Math.max(0, rail.scrollWidth - rail.clientWidth);
+
+    rail.scrollTo({
+      left: Math.min(Math.max(0, centeredLeft), maxLeft),
+      behavior,
+    });
   }, [firstItemId, scrollKey, items.length]);
 
   return (
     <section
       className={cn(
-        "store-category-rail relative border-y border-[color-mix(in_srgb,var(--theme-border)_80%,transparent)] bg-[var(--theme-surface)]",
-        variant === "plain" && "store-category-rail--plain",
+        "store-category-rail relative min-w-0 max-w-full bg-[var(--theme-surface)]",
+        variant === "standard" && "border-y border-[color-mix(in_srgb,var(--theme-border)_80%,transparent)]",
+        variant === "plain" && "store-category-rail--plain bg-transparent",
         className,
       )}
       data-category-kingkong-variant={variant}
@@ -78,7 +90,7 @@ export default function CategoryKingkongRow({
       <div
         ref={railRef}
         className={cn(
-          "store-category-rail-scroll no-scrollbar flex snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden scroll-smooth px-3 py-3 pr-10 [-webkit-overflow-scrolling:touch] sm:gap-3 sm:px-4 sm:pr-12",
+          "store-category-rail-scroll no-scrollbar flex min-w-0 max-w-full snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden scroll-smooth px-3 py-3 pr-10 [-webkit-overflow-scrolling:touch] sm:gap-3 sm:px-4 sm:pr-12",
           variant === "plain" && "store-category-rail-scroll--plain",
         )}
         role="tablist"

@@ -12,6 +12,7 @@ import type { CartItem } from "@/types/cart";
 import type { Product } from "@/types/product";
 import type { FavoriteProduct } from "@/stores/useFavoritesStore";
 import { registerAuthExpiredHandler } from "@/lib/authSessionBridge";
+import { clearStorefrontUserQueryCache } from "@/lib/queryClient";
 
 const loadAuthService = () => import("@/services/authService");
 
@@ -121,6 +122,7 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try { await (await loadAuthService()).logout(); } catch { /* best-effort */ }
         const { useUserStore, useCartStore, useOrderStore } = await loadAuthRelatedStores();
+        clearStorefrontUserQueryCache();
         useUserStore.getState().clearProfile();
         useCartStore.setState({ buyNowItem: null, selection: {} });
         useOrderStore.setState({ orders: [], currentOrder: null });
@@ -137,5 +139,6 @@ export const useAuthStore = create<AuthState>()(
 );
 
 registerAuthExpiredHandler(() => {
+  clearStorefrontUserQueryCache();
   useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
 });

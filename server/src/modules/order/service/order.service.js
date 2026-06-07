@@ -72,8 +72,9 @@ async function getOrders(userId, query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 10));
   const { status, tab } = query;
+  const keyword = String(query.keyword || '').trim();
 
-  const filters = { userId, status, tab };
+  const filters = { userId, status, tab, keyword };
   const total = await repo.countOrdersForUser(orderDb, filters);
   const offset = (page - 1) * pageSize;
   const orders = await repo.selectOrdersPage(orderDb, filters, pageSize, offset);

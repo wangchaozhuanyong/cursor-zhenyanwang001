@@ -219,9 +219,12 @@ export default function Coupons() {
 
   if (loading && rawCoupons.length === 0) {
     return (
-      <div className="store-page flex min-h-screen items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-theme-price" />
-      </div>
+      <StoreAccountLayout title="优惠券" onBack={goBack} className="store-page pb-6" mainClassName="sm:px-4 lg:py-6">
+        <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">
+          <Loader2 size={28} className="animate-spin text-theme-price" aria-label="加载中" />
+          <p className="mt-3 text-sm">优惠券加载中...</p>
+        </div>
+      </StoreAccountLayout>
     );
   }
 

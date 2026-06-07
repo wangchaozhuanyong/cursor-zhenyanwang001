@@ -7,6 +7,7 @@ import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { trackEventLazy } from "@/services/trackEventLazy";
 import { cn } from "@/lib/utils";
 import { isProductNewArrival } from "@/utils/productNewArrival";
+import { observeHomeCardImpression } from "./homeCardImpressionObserver";
 import {
   HOME_PRODUCT_BADGE_CLASS,
   HOME_PRODUCT_CARD_MEDIA,
@@ -48,19 +49,7 @@ function HomeGridProductCard({
   useEffect(() => {
     if (!cardRef.current || !registerImpression) return;
     const node = cardRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            registerImpression(product, index);
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.45 },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
+    return observeHomeCardImpression(node, () => registerImpression(product, index));
   }, [index, product, registerImpression]);
 
   const hasBadges =

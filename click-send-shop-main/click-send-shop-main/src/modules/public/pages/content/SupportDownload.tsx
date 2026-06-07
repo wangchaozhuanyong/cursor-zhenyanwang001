@@ -19,7 +19,7 @@ import {
   getEnabledSupportChannels,
   parseSupportDownloadConfig,
 } from "@/utils/supportDownloadConfig";
-import { isLegacyGenericCopy, STORE_COPY, STORE_LEGACY_GENERIC_COPY } from "@/constants/storeCopy";
+import { STORE_COPY } from "@/constants/storeCopy";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { getChannelTitle } from "@/utils/supportChannels";
 import { toast } from "sonner";
@@ -199,10 +199,7 @@ export default function SupportDownload() {
     }
     return platforms;
   }, [platforms, recommendedPlatform]);
-  const rawPageTitle = config.title?.trim() || "";
-  const pageTitle = !rawPageTitle || isLegacyGenericCopy(rawPageTitle, STORE_LEGACY_GENERIC_COPY.supportTitles)
-    ? STORE_COPY.supportCenterTitle
-    : rawPageTitle;
+  const pageTitle = config.title?.trim() || "";
   const installPageUrl = useMemo(() => buildCanonical("/support-download", "tab=download"), []);
   const mobileHeader = (
     <StorePageHeader
@@ -227,7 +224,7 @@ export default function SupportDownload() {
   return (
     <div className="store-page-shell store-bottom-safe support-download-page text-[var(--theme-text)]">
       <SeoHead
-        title={`${pageTitle} - ${siteInfo.siteName || STORE_COPY.brandName}`}
+        title={pageTitle ? `${pageTitle} - ${siteInfo.siteName || STORE_COPY.brandName}` : siteInfo.siteName || STORE_COPY.brandName}
         description={config.subtitle}
         canonical={buildCanonical("/support-download")}
         robots="index,follow"
@@ -236,7 +233,7 @@ export default function SupportDownload() {
 
       <main className="support-download-shell">
         <header className="support-download-hero">
-          <h1>{pageTitle}</h1>
+          {pageTitle ? <h1>{pageTitle}</h1> : null}
         </header>
 
         {!waitingForConfiguredView && availableViews.length > 0 ? (

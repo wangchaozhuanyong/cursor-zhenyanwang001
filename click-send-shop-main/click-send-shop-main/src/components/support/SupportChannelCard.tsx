@@ -59,12 +59,6 @@ function SupportChannelVisualIcon({ type }: { type: SupportDownloadChannel["type
   return <TelegramIcon size={26} />;
 }
 
-function getChannelKicker(channel: SupportDownloadChannel) {
-  if (channel.type === "wechat") return "微信客服";
-  if (channel.type === "whatsapp") return "WhatsApp 客服";
-  return "Telegram 客服";
-}
-
 function getQrActionHint(channel: SupportDownloadChannel) {
   if (channel.type === "wechat") return "长按二维码保存或识别";
   return "扫码或保存二维码后联系客服";

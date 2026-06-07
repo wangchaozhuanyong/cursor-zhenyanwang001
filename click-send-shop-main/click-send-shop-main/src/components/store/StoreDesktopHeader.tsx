@@ -5,6 +5,7 @@ import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { parseSupportDownloadConfig } from "@/utils/supportDownloadConfig";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
@@ -36,11 +37,12 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
   const loggedIn = isLoggedIn();
+  const supportNavLabel = parseSupportDownloadConfig(siteInfo.supportDownloadConfig).title.trim();
 
   const navItems: NavItem[] = [
     { path: "/", label: "首页", icon: Home, enabled: true },
     { path: "/categories", label: "全部分类", icon: LayoutGrid, enabled: capabilities.mallEnabled },
-    { path: "/support-download?tab=support", label: "客服中心", icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled },
+    { path: "/support-download?tab=support", label: supportNavLabel, icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled && Boolean(supportNavLabel) },
   ].filter((item) => item.enabled !== false && isStoreNavPathVisible(item.path, capabilities));
 
   const isActive = (path: string) => {

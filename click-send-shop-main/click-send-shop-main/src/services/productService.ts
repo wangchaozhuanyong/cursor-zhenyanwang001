@@ -55,7 +55,15 @@ export async function trackHomeEngagement(data: {
   product_id?: string;
   session_id?: string;
   meta?: Record<string, unknown>;
-}): Promise<void> {
+}, options: { deferMs?: number } = {}): Promise<void> {
+  const { deferMs = 0 } = options;
+  if (deferMs > 0 && typeof window !== "undefined") {
+    window.setTimeout(() => {
+      void trackHomeEngagement(data);
+    }, deferMs);
+    return;
+  }
+
   try {
     await productApi.trackHomeEvent(data);
   } catch {

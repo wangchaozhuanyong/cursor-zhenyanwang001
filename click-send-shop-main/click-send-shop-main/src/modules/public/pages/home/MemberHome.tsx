@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Star } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -13,6 +13,7 @@ import BannerCarousel from "@/components/BannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import HomeOpsBlocks from "./HomeOpsBlocks";
+import LazyHomeSection from "./LazyHomeSection";
 import MarketingCouponRailSection from "./MarketingCouponRailSection";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import NewArrivalSection from "./NewArrivalOpsSection";
@@ -227,27 +228,29 @@ export default function MemberHome() {
         </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "promotion_banner", "member") ? (
-          <Suspense fallback={null}>
+          <LazyHomeSection>
             <MarketingPromotionBannerSection delay={0.125} title={promotionBannerTitle} />
-          </Suspense>
+          </LazyHomeSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "flash_sale_section", "member") ? (
-          <Suspense fallback={null}>
+          <LazyHomeSection>
             <FlashSaleSection delay={0.13} title={flashSaleTitle} />
-          </Suspense>
+          </LazyHomeSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "full_reduction_notice", "member") ? (
-          <Suspense fallback={null}>
+          <LazyHomeSection>
             <MarketingFullReductionSection delay={0.131} title={fullReductionTitle || "满减特惠"} />
-          </Suspense>
+          </LazyHomeSection>
         ) : null}
         {showCouponRail ? (
-          <MarketingCouponRailSection
-            showCouponCenter={showCouponCenter}
-            showNewUserGift={showNewUserGift}
-            title={couponRailTitle}
-            newUserGiftTitle={newUserGiftTitle}
-          />
+          <LazyHomeSection>
+            <MarketingCouponRailSection
+              showCouponCenter={showCouponCenter}
+              showNewUserGift={showNewUserGift}
+              title={couponRailTitle}
+              newUserGiftTitle={newUserGiftTitle}
+            />
+          </LazyHomeSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
         <AnimatedSection delay={0.14}>

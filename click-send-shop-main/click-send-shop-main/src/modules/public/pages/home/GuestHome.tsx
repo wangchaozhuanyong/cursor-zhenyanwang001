@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, useEffect, useMemo } from "react";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -19,6 +19,7 @@ import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import { useProductStore } from "@/stores/useProductStore";
 import HomeOpsBlocks from "./HomeOpsBlocks";
+import LazyHomeSection from "./LazyHomeSection";
 import NewArrivalSection from "./NewArrivalOpsSection";
 import MarketingCouponRailSection from "./MarketingCouponRailSection";
 import type { Product } from "@/types/product";
@@ -46,7 +47,6 @@ const FlashSaleSection = lazy(() => import("./FlashSaleSection"));
 const GuestMobileFooter = lazy(() => import("@/components/GuestMobileFooter"));
 const MarketingFullReductionSection = lazy(() => import("./MarketingFullReductionSection"));
 const MarketingPromotionBannerSection = lazy(() => import("./MarketingPromotionBannerSection"));
-const DEFERRED_HOME_SECTION_DELAY_MS = 9000;
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();
@@ -60,64 +60,6 @@ function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: 
     }
   }
   return out;
-}
-
-function LazyHomeSection({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const userScrolledRef = useRef(false);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (ready) return;
-    const node = ref.current;
-    const reveal = () => setReady(true);
-    const timeoutId = window.setTimeout(reveal, DEFERRED_HOME_SECTION_DELAY_MS);
-
-    if (!node || typeof IntersectionObserver === "undefined") {
-      return () => window.clearTimeout(timeoutId);
-    }
-
-    const revealIfNearViewport = () => {
-      if (!userScrolledRef.current) return;
-      const rect = node.getBoundingClientRect();
-      if (rect.top <= window.innerHeight + 160) reveal();
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!userScrolledRef.current) return;
-        if (entries.some((entry) => entry.isIntersecting)) {
-          reveal();
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "0px 0px 160px 0px", threshold: 0.01 },
-    );
-    observer.observe(node);
-
-    const onScroll = () => {
-      if (window.scrollY <= 80) return;
-      userScrolledRef.current = true;
-      revealIfNearViewport();
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      window.removeEventListener("scroll", onScroll);
-      observer.disconnect();
-    };
-  }, [ready]);
-
-  return (
-    <div
-      ref={ref}
-      aria-hidden={ready ? undefined : true}
-      className={ready ? "contents" : "pointer-events-none absolute h-px w-px overflow-hidden opacity-0"}
-    >
-      {ready ? <Suspense fallback={null}>{children}</Suspense> : null}
-    </div>
-  );
 }
 
 function parseFooterNav(json?: string): FooterNavItem[] | null {
@@ -470,13 +412,15 @@ export default function GuestHome() {
         ) : null}
 
         {showCouponRail ? (
-          <MarketingCouponRailSection
-            showCouponCenter={showCouponCenter}
-            showNewUserGift={showNewUserGift}
-            title={couponRailTitle}
-            newUserGiftTitle={newUserGiftTitle}
-            compactAfterNav={compactCouponRailAfterNav}
-          />
+          <LazyHomeSection>
+            <MarketingCouponRailSection
+              showCouponCenter={showCouponCenter}
+              showNewUserGift={showNewUserGift}
+              title={couponRailTitle}
+              newUserGiftTitle={newUserGiftTitle}
+              compactAfterNav={compactCouponRailAfterNav}
+            />
+          </LazyHomeSection>
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "guest_recommend", "guest") ? (

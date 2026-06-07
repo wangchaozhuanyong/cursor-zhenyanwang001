@@ -5,6 +5,7 @@ import ProductCoverImage from "@/components/ProductCoverImage";
 import { resolveNewArrivalImage } from "./newArrivalOps";
 import StoreBadge from "@/components/ui/StoreBadge";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
+import { observeHomeCardImpression } from "./homeCardImpressionObserver";
 import {
   HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS,
   HOME_PRODUCT_BADGE_CLASS,
@@ -41,19 +42,7 @@ export default function HomeNewArrivalCard({
   useEffect(() => {
     if (!cardRef.current || !registerImpression) return;
     const node = cardRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            registerImpression(product, index);
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.5 },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
+    return observeHomeCardImpression(node, () => registerImpression(product, index));
   }, [index, product, registerImpression]);
 
   return (

@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { parseSupportDownloadConfig } from "@/utils/supportDownloadConfig";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
@@ -39,10 +40,11 @@ export default function StoreTabletBar({ className }: { className?: string }) {
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
+  const supportNavLabel = parseSupportDownloadConfig(siteInfo.supportDownloadConfig).title.trim();
   const navItems: TabletNavItem[] = [
     { path: "/", label: "\u9996\u9875", icon: Home, enabled: true },
     { path: "/categories", label: "\u5206\u7c7b", icon: LayoutGrid, enabled: capabilities.mallEnabled },
-    { path: "/support-download?tab=support", label: "\u5ba2\u670d", icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled },
+    { path: "/support-download?tab=support", label: supportNavLabel, icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled && Boolean(supportNavLabel) },
     { path: "/cart", label: "\u8d2d\u7269\u8f66", icon: ShoppingCart, enabled: capabilities.mallEnabled, badge: "cart" },
     { path: "/profile", label: "\u6211\u7684", icon: User, enabled: true },
   ].filter((item) => item.enabled !== false && isStoreNavPathVisible(item.path, capabilities));

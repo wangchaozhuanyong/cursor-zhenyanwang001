@@ -2183,6 +2183,25 @@ html[data-app-scope="store"] .store-hero-carousel {
   transform: translateZ(0);
 }
 
+html[data-app-scope="store"] .store-hero-slide-image,
+.theme-preview-store .store-hero-slide-image {
+  transform-origin: 58% 50%;
+  will-change: opacity, transform;
+  transition:
+    opacity 860ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html[data-app-scope="store"] .store-hero-slide-image[data-active="true"],
+.theme-preview-store .store-hero-slide-image[data-active="true"] {
+  z-index: 2;
+}
+
+html[data-app-scope="store"] .store-hero-slide-image[data-active="false"],
+.theme-preview-store .store-hero-slide-image[data-active="false"] {
+  z-index: 1;
+}
+
 html[data-app-scope="store"] .store-hero-frame {
   border-color: color-mix(in srgb, var(--store-border-strong) 72%, transparent);
   background:
@@ -10479,7 +10498,9 @@ html[data-app-scope="store"] .store-hero-dot-button,
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  transition: transform 160ms ease;
+  transition:
+    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 160ms ease;
 }
 
 html[data-app-scope="store"] .store-hero-dot-button[aria-current="true"],
@@ -10494,6 +10515,8 @@ html[data-app-scope="store"] .store-hero-dot-button:active,
 
 html[data-app-scope="store"] .store-hero-dot,
 .theme-preview-store .store-hero-dot {
+  position: relative;
+  overflow: hidden;
   width: 5px;
   height: 5px;
   border-radius: 999px;
@@ -10507,10 +10530,21 @@ html[data-app-scope="store"] .store-hero-dot-button[aria-current="true"] .store-
 .theme-preview-store .store-hero-dot-button[aria-current="true"] .store-hero-dot {
   width: 22px;
   height: 3px;
-  background: #f2d28a;
+  background: rgba(255, 255, 255, 0.28);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.26),
     0 3px 9px rgba(76, 48, 12, 0.26);
+}
+
+html[data-app-scope="store"] .store-hero-dot-button[aria-current="true"] .store-hero-dot::after,
+.theme-preview-store .store-hero-dot-button[aria-current="true"] .store-hero-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f7e3ab, #d8b46b);
+  transform-origin: left center;
+  animation: store-hero-dot-progress 3000ms linear both;
 }
 
 html[data-app-scope="store"] .store-hero-dot-button:focus-visible .store-hero-dot,
@@ -10518,6 +10552,16 @@ html[data-app-scope="store"] .store-hero-dot-button:focus-visible .store-hero-do
   box-shadow:
     0 0 0 2px rgba(255, 248, 226, 0.82),
     0 0 0 4px rgba(7, 87, 67, 0.38);
+}
+
+@keyframes store-hero-dot-progress {
+  from {
+    transform: scaleX(0.12);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
 }
 
 @media (max-width: 767px) {

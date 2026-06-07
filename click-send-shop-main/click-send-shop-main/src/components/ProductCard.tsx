@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { isProductNewArrival } from "@/utils/productNewArrival";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import type { ThemeConfig } from "@/types/theme";
 
 export type ProductCardSiteContext = {
   restrictedComplianceEnabled: boolean;
@@ -31,6 +32,74 @@ interface Props {
   displayMode?: "theme" | "list";
   /** 列表页由 SilkProductGrid 注入，避免每张卡重复订阅站点配置 */
   siteContext?: ProductCardSiteContext;
+  themeConfig?: ThemeConfig;
+  animate?: boolean;
+  lightMedia?: boolean;
+}
+
+type ProductImpressionHandler = () => void;
+
+const productImpressionHandlers = new WeakMap<Element, ProductImpressionHandler>();
+let sharedProductImpressionObserver: IntersectionObserver | null = null;
+
+function getSharedProductImpressionObserver() {
+  if (typeof IntersectionObserver === "undefined") return null;
+  if (!sharedProductImpressionObserver) {
+    sharedProductImpressionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting || entry.intersectionRatio < 0.4) return;
+        const handler = productImpressionHandlers.get(entry.target);
+        if (!handler) return;
+        handler();
+        productImpressionHandlers.delete(entry.target);
+        sharedProductImpressionObserver?.unobserve(entry.target);
+      });
+    }, { threshold: [0.4] });
+  }
+  return sharedProductImpressionObserver;
+}
+
+function observeProductImpression(node: Element, onVisible: ProductImpressionHandler) {
+  const observer = getSharedProductImpressionObserver();
+  if (!observer) {
+    onVisible();
+    return () => undefined;
+  }
+
+  productImpressionHandlers.set(node, onVisible);
+  observer.observe(node);
+  return () => {
+    productImpressionHandlers.delete(node);
+    observer.unobserve(node);
+  };
+}
+
+function ProductCardShell({
+  animate,
+  children,
+  className,
+  delay,
+  onClick,
+}: {
+  animate: boolean;
+  children: ReactNode;
+  className: string;
+  delay: number;
+  onClick: () => void;
+}) {
+  if (!animate) {
+    return (
+      <div className={className} onClick={onClick}>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <AnimatedSection as="div" delay={delay} className={className} onClick={onClick}>
+      {children}
+    </AnimatedSection>
+  );
 }
 
 /** 商品图上的售罄层：保留封面可见，文案清晰可读 */
@@ -56,7 +125,7 @@ function ProductSoldOutOverlay({ compact = false }: { compact?: boolean }) {
 }
 
 function ProductCard(props: Props) {
-  if (props.siteContext) {
+  if (props.siteContext && props.themeConfig) {
     return <ProductCardInner {...props} siteContext={props.siteContext} />;
   }
   return <ProductCardWithHooks {...props} />;
@@ -64,16 +133,18 @@ function ProductCard(props: Props) {
 
 export default memo(ProductCard);
 
-function ProductCardWithHooks(props: Omit<Props, "siteContext">) {
+function ProductCardWithHooks(props: Props) {
   const capabilities = useSiteCapabilities();
   const siteInfo = useSiteInfo();
+  const { themeConfig } = useThemeRuntime();
   return (
     <ProductCardInner
       {...props}
-      siteContext={{
+      siteContext={props.siteContext ?? {
         restrictedComplianceEnabled: capabilities.restrictedProductComplianceEnabled,
         siteInfo,
       }}
+      themeConfig={props.themeConfig ?? themeConfig}
     />
   );
 }
@@ -83,12 +154,14 @@ function ProductCardInner({
   index = 0,
   displayMode = "theme",
   siteContext,
-}: Props & { siteContext: ProductCardSiteContext }) {
+  themeConfig,
+  animate = true,
+  lightMedia = false,
+}: Props & { siteContext: ProductCardSiteContext; themeConfig: ThemeConfig }) {
   const navigate = useNavigate();
   const location = useLocation();
   const impressionRef = useRef<HTMLDivElement | null>(null);
   const impressionSentRef = useRef(false);
-  const { themeConfig } = useThemeRuntime();
   const { siteInfo, restrictedComplianceEnabled } = siteContext;
   const showAgeBadge = restrictedComplianceEnabled && isRestrictedProduct(product);
   const ageBadgeLabel = showAgeBadge ? `${getRestrictedProductMinimumAge(product, siteInfo)}+` : null;
@@ -111,19 +184,16 @@ function ProductCardInner({
   const imageLoading = index < 2 ? "eager" : "lazy";
   const imageFetchPriority = index === 0 ? "high" : undefined;
   const revealDelay = Math.min(index, 11) * 0.035;
+  const withBlurPlaceholder = !lightMedia && index <= 8;
 
   useEffect(() => {
     const node = impressionRef.current;
     if (!node || impressionSentRef.current) return;
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.4);
-      if (!visible || impressionSentRef.current) return;
+    return observeProductImpression(node, () => {
+      if (impressionSentRef.current) return;
       impressionSentRef.current = true;
       trackEventLazy({ event_type: "product_impression", module: "product_card", product_id: product.id }, { deferMs: 9000 });
-      observer.disconnect();
-    }, { threshold: [0.4] });
-    observer.observe(node);
-    return () => observer.disconnect();
+    });
   }, [product.id]);
 
   const openDetail = (module: string) => {
@@ -186,8 +256,8 @@ function ProductCardInner({
 
   if (isHorizontal) {
     return (
-      <AnimatedSection
-        as="div"
+      <ProductCardShell
+        animate={animate}
         delay={revealDelay}
         className="theme-product-card store-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:128px]"
         onClick={() => openDetail("categories")}
@@ -210,7 +280,7 @@ function ProductCardInner({
               sizes={isListRow ? "(max-width: 768px) 112px, 160px" : "(max-width: 768px) 28vw, 200px"}
               loading={imageLoading}
               fetchPriority={imageFetchPriority}
-              withBlurPlaceholder={index <= 8}
+              withBlurPlaceholder={withBlurPlaceholder}
             />
             {soldOut ? <ProductSoldOutOverlay compact /> : null}
             {ageBadgeLabel ? (
@@ -243,15 +313,15 @@ function ProductCardInner({
             <div className="mt-auto w-full">{metaRow}</div>
           </div>
         </div>
-      </AnimatedSection>
+      </ProductCardShell>
     );
   }
 
   const isPremium = cardVariant === "premium";
 
   return (
-    <AnimatedSection
-      as="div"
+    <ProductCardShell
+      animate={animate}
       delay={revealDelay}
       className="theme-product-card store-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:320px]"
       onClick={() => openDetail("product_grid")}
@@ -274,7 +344,7 @@ function ProductCardInner({
           sizes="(max-width: 768px) 45vw, 320px"
           loading={imageLoading}
           fetchPriority={imageFetchPriority}
-          withBlurPlaceholder={index <= 8}
+          withBlurPlaceholder={withBlurPlaceholder}
         />
         <div className="absolute left-2 top-2 z-[1] flex flex-wrap gap-1">
           {product.active_activity && (
@@ -301,6 +371,6 @@ function ProductCardInner({
         {nameRow}
         {metaRow}
       </div>
-    </AnimatedSection>
+    </ProductCardShell>
   );
 }

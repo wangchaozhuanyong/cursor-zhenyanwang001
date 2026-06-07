@@ -121,6 +121,7 @@ export default function Search() {
   }, [query]);
 
   useEffect(() => {
+    if (!debouncedQuery && activeCat === "all") return;
     loadProducts({
       keyword: debouncedQuery || undefined,
       category_id: activeCat === "all" ? undefined : activeCat,
@@ -186,7 +187,7 @@ export default function Search() {
 
   const allCategories = [{ id: "all", name: "全部", level: 0 }, ...flattenCategories(categories)];
 
-  const shouldShowDiscovery = showHistory && !debouncedQuery && !query.trim();
+  const shouldShowDiscovery = showHistory && !debouncedQuery && !query.trim() && activeCat === "all";
   const shouldShowSuggestions = query.trim().length > 0 && suggestions.length > 0 && query.trim() !== debouncedQuery.trim();
 
   const siteName = siteInfo.siteName || STORE_COPY.brandName;

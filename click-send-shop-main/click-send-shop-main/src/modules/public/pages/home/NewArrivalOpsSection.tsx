@@ -76,7 +76,7 @@ export default function NewArrivalSection({
         product_id: product.id,
         session_id: sessionId,
         meta: { index },
-      });
+      }, { deferMs: 9000 });
     },
     [sessionId],
   );

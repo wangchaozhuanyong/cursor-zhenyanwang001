@@ -24,16 +24,10 @@ export function buildTelegramLink(channel: Pick<SupportDownloadChannel, "account
   return `https://t.me/${encodeURIComponent(username)}`;
 }
 
-export function getDefaultChannelDescription(type: SupportChannelType): string {
-  if (type === "wechat") return "扫码添加官方客服，咨询商品、订单与售后问题。";
-  if (type === "whatsapp") return "通过 WhatsApp 联系官方客服。";
-  return "通过 Telegram 联系官方客服。";
+export function getDefaultChannelDescription(_type: SupportChannelType): string {
+  return "";
 }
 
 export function getChannelTitle(channel: SupportDownloadChannel): string {
-  const name = cleanSupportText(channel.name);
-  if (name) return name;
-  if (channel.type === "wechat") return "微信客服";
-  if (channel.type === "whatsapp") return "WhatsApp 客服";
-  return "Telegram 客服";
+  return cleanSupportText(channel.name);
 }

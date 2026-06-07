@@ -1,31 +1,49 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import {
-  getMotionEnabled,
-  prefersReducedMotion,
-  resolveMotionTier,
-  type MotionTier,
-} from "../motionConfig";
+import type { MotionTier } from "../motionConfig";
+
+type LegacyMediaQueryList = MediaQueryList & {
+  addListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+  removeListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+};
+
+let reducedMotionQuery: LegacyMediaQueryList | null = null;
+
+function getReducedMotionQuery() {
+  if (typeof window === "undefined") return null;
+  if (!reducedMotionQuery) {
+    reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  }
+  return reducedMotionQuery;
+}
+
+function subscribeReducedMotion(onStoreChange: () => void) {
+  const query = getReducedMotionQuery();
+  if (!query) return () => undefined;
+  const onChange = () => onStoreChange();
+  if (typeof query.addEventListener === "function") {
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }
+  query.addListener?.(onChange);
+  return () => query.removeListener?.(onChange);
+}
+
+function getReducedMotionSnapshot() {
+  return getReducedMotionQuery()?.matches ?? false;
+}
 
 export function useMotionConfig() {
   const { themeConfig } = useThemeRuntime();
-  const [reduced, setReduced] = useState(prefersReducedMotion);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => setReduced(mq.matches);
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
+  const reduced = useSyncExternalStore(subscribeReducedMotion, getReducedMotionSnapshot, () => false);
 
   const level: MotionTier = useMemo(
-    () => (reduced ? "none" : resolveMotionTier(themeConfig)),
+    () => (reduced ? "none" : themeConfig.motionLevel),
     [reduced, themeConfig],
   );
 
   const enabled = useMemo(
-    () => !reduced && getMotionEnabled(themeConfig),
+    () => !reduced && themeConfig.motionLevel !== "none",
     [reduced, themeConfig],
   );
 

@@ -20,7 +20,8 @@ import { parseOrderPaymentTimeoutFromSite } from "@/utils/orderPaymentTimeout";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { submitCtaLabel } from "./utils/checkoutText";
 import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
-import PageHeader from "@/components/PageHeader";
+import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
+import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
 
 export default function Checkout() {
   useDocumentTitle("结算");
@@ -75,17 +76,45 @@ export default function Checkout() {
   }
 
   return (
-    <div className="store-conversion-page store-checkout-page store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
-      <PageHeader
-        title="确认订单"
-        onBack={checkout.goBack}
-        contentClassName="max-w-screen-xl md:px-6"
-        rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
-      />
-
-      <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] md:px-6 md:py-8">
-        <div className="md:grid md:grid-cols-[minmax(0,1fr)_400px] md:items-start md:gap-8 lg:gap-10">
-          <div className="space-y-4">
+    <StoreStandardPageShell
+      title="确认订单"
+      onBack={checkout.goBack}
+      backFallback="/cart"
+      desktopBackLabel="返回购物车"
+      className="store-conversion-page store-checkout-page store-bottom-action-space md:pb-0"
+      contentClassName="xl:max-w-screen-xl"
+      rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
+    >
+      <main className="w-full">
+        <DesktopPurchaseTwoColumn
+          contentClassName="space-y-4"
+          aside={
+            <DesktopPurchaseCard eyebrow="确认订单" title="订单摘要" className="store-checkout-card store-checkout-summary">
+              <CheckoutPriceSummary
+                rawTotal={checkout.rawTotal}
+                discountAmount={checkout.discountAmount}
+                discountLines={checkout.discountLines}
+                pointsBonusLines={checkout.pointsBonusLines}
+                shippingFee={checkout.shippingFee}
+                totalPoints={checkout.totalPointsValue}
+                finalTotal={checkout.finalTotal}
+                sstPreview={checkout.sstPreview}
+                sstShowInCatalog={checkout.sstCfg.enabled}
+                sstCustomerNote={checkout.sstCfg.customerNote}
+              />
+              <LoadingButton
+                state={checkout.submitting ? "loading" : "normal"}
+                onClick={checkout.handleSubmit}
+                disabled={checkout.submitting}
+                variant="solid"
+                className="mt-5 w-full rounded-full py-3.5 text-sm font-bold btn-theme-gradient theme-shadow !min-h-0"
+                loadingText={submitCtaLabel(checkout.paymentMethod, true)}
+              >
+                {submitCtaLabel(checkout.paymentMethod, false)}
+              </LoadingButton>
+            </DesktopPurchaseCard>
+          }
+        >
             <MarketingPositionNotices position="checkout_notice" />
             <CheckoutAddressCard
               name={checkout.name}
@@ -159,39 +188,7 @@ export default function Checkout() {
                 sstCustomerNote={checkout.sstCfg.customerNote}
               />
             </div>
-          </div>
-
-          <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
-            <div className="store-checkout-card store-checkout-summary theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-              <div className="mb-4 rounded-2xl bg-[var(--theme-bg)] px-4 py-3">
-                <p className="text-xs font-medium text-muted-foreground">确认订单</p>
-                <h3 className="mt-1 text-lg font-extrabold text-foreground">订单摘要</h3>
-              </div>
-              <CheckoutPriceSummary
-                rawTotal={checkout.rawTotal}
-                discountAmount={checkout.discountAmount}
-                discountLines={checkout.discountLines}
-                pointsBonusLines={checkout.pointsBonusLines}
-                shippingFee={checkout.shippingFee}
-                totalPoints={checkout.totalPointsValue}
-                finalTotal={checkout.finalTotal}
-                sstPreview={checkout.sstPreview}
-                sstShowInCatalog={checkout.sstCfg.enabled}
-                sstCustomerNote={checkout.sstCfg.customerNote}
-              />
-              <LoadingButton
-                state={checkout.submitting ? "loading" : "normal"}
-                onClick={checkout.handleSubmit}
-                disabled={checkout.submitting}
-                variant="solid"
-                className="mt-5 w-full rounded-full py-3.5 text-sm font-bold btn-theme-gradient theme-shadow !min-h-0"
-                loadingText={submitCtaLabel(checkout.paymentMethod, true)}
-              >
-                {submitCtaLabel(checkout.paymentMethod, false)}
-              </LoadingButton>
-            </div>
-          </aside>
-        </div>
+        </DesktopPurchaseTwoColumn>
       </main>
 
       <CheckoutSubmitBar
@@ -208,6 +205,6 @@ export default function Checkout() {
         selectedId={checkout.selectedAddress?.id ?? null}
         onSelect={handlePickAddress}
       />
-    </div>
+    </StoreStandardPageShell>
   );
 }

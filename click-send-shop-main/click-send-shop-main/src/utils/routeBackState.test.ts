@@ -29,4 +29,31 @@ describe("resolveTrackedRouteBackSource", () => {
       }),
     ).toBeUndefined();
   });
+
+  it("does not remember a child detail page or its parent tab as the parent list back source", () => {
+    expect(
+      resolveTrackedRouteBackSource({
+        previousPath: "/orders/order-1",
+        currentPath: "/orders",
+        previousStoredFrom: "/orders?tab=paid",
+      }),
+    ).toBeUndefined();
+
+    expect(
+      resolveTrackedRouteBackSource({
+        previousPath: "/returns/return-1",
+        currentPath: "/returns",
+      }),
+    ).toBeUndefined();
+  });
+
+  it("keeps an external hub source when returning from a child detail page to its parent list", () => {
+    expect(
+      resolveTrackedRouteBackSource({
+        previousPath: "/orders/order-1",
+        currentPath: "/orders",
+        previousStoredFrom: "/profile",
+      }),
+    ).toBe("/profile");
+  });
 });

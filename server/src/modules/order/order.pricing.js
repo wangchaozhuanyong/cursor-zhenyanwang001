@@ -53,6 +53,10 @@ function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
   return 0;
 }
 
+function money(value) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
 function parseJsonArray(raw, fallback = []) {
   if (!raw) return fallback;
   if (Array.isArray(raw)) return raw;
@@ -111,6 +115,40 @@ function lineMatchesActivityScope(oi, product, activity, scopes) {
   return false;
 }
 
+function lineMatchesCouponScope(oi, product, coupon) {
+  const usableScope = coupon.usable_scope_type || coupon.scope_type || 'all';
+  if (usableScope === 'all') return true;
+  const usableProductIds = parseIdList(coupon.usable_product_ids);
+  if (usableScope === 'product') {
+    return !usableProductIds.length || usableProductIds.includes(String(oi.productId));
+  }
+  const usableCategoryIds = parseIdList(coupon.usable_category_ids || coupon.category_ids);
+  if (usableScope === 'category') {
+    const categoryId = product?.category_id;
+    return !!categoryId && usableCategoryIds.includes(String(categoryId));
+  }
+  return true;
+}
+
+function computeCouponEligibleSubtotal(coupon, orderItems, productMap, rawAmount, fullReductionDiscount, goodsAmountAfterFullReduction) {
+  const usableScope = coupon.usable_scope_type || coupon.scope_type || 'all';
+  if (usableScope === 'all') return money(goodsAmountAfterFullReduction);
+
+  let eligibleRaw = 0;
+  for (const oi of orderItems) {
+    const product = productMap[oi.productId];
+    if (lineMatchesCouponScope(oi, product, coupon)) {
+      eligibleRaw += Number(oi.price || 0) * Number(oi.qty || 0);
+    }
+  }
+  if (eligibleRaw <= 0) return 0;
+
+  const allocatedFullReduction = rawAmount > 0
+    ? (Number(fullReductionDiscount || 0) * eligibleRaw) / rawAmount
+    : 0;
+  return money(Math.max(0, eligibleRaw - allocatedFullReduction));
+}
+
 /** 婊″噺锛氭寜娲诲姩鑱氬悎锛岃鍙?activity_config 澶氭。瑙勫垯 */
 function computeFullReductionDiscount(orderItems, productMap, fullReductionActivities) {
   let sum = 0;
@@ -161,6 +199,8 @@ function computeFlashSaleSavings(orderItems, flashByProductId, productMap) {
 
 function assertCouponUsableOnOrder({
   uc,
+  rawAmount = 0,
+  fullReductionDiscount = 0,
   goodsAmountAfterFullReduction,
   shippingFee,
   orderItems,
@@ -175,11 +215,6 @@ function assertCouponUsableOnOrder({
   if (runtimeStatus === 'expired') throw new ValidationError('优惠券已过期');
   if (runtimeStatus === 'invalidated') throw new ValidationError('优惠券已被作废');
   if (runtimeStatus !== 'available') throw new ValidationError('优惠券不可用');
-  const minAmount = Number(effectiveCoupon.min_amount || 0);
-  if (goodsAmountAfterFullReduction < minAmount) {
-    throw new ValidationError('订单金额未满足优惠券使用门槛');
-  }
-
   const usableScope = effectiveCoupon.usable_scope_type || effectiveCoupon.scope_type || 'all';
   const usableProductIds = parseIdList(effectiveCoupon.usable_product_ids);
   const usableCategoryIds = parseIdList(effectiveCoupon.usable_category_ids);
@@ -206,6 +241,19 @@ function assertCouponUsableOnOrder({
     }
   }
 
+  const eligibleSubtotal = computeCouponEligibleSubtotal(
+    effectiveCoupon,
+    orderItems,
+    productMap,
+    rawAmount,
+    fullReductionDiscount,
+    goodsAmountAfterFullReduction,
+  );
+  const minAmount = Number(effectiveCoupon.min_amount || 0);
+  if (eligibleSubtotal < minAmount) {
+    throw new ValidationError('订单金额未满足优惠券使用门槛');
+  }
+
   if (hasActivityDiscount && effectiveCoupon.stackable_with_activity === false) {
     throw new ValidationError('该优惠券不可与营销活动叠加使用');
   }
@@ -213,7 +261,8 @@ function assertCouponUsableOnOrder({
     throw new ValidationError('当前活动不可与优惠券叠加');
   }
 
-  const couponDiscount = calculateCouponDiscount(effectiveCoupon, goodsAmountAfterFullReduction, shippingFee);
+  const discountBase = effectiveCoupon.type === 'shipping' ? goodsAmountAfterFullReduction : eligibleSubtotal;
+  const couponDiscount = calculateCouponDiscount(effectiveCoupon, discountBase, shippingFee);
   if (couponDiscount <= 0) {
     throw new ValidationError(effectiveCoupon.type === 'shipping' ? '当前订单没有可抵扣的运费' : '优惠券无法用于当前订单');
   }
@@ -346,6 +395,8 @@ async function buildOrderPricing(userId, body, conn = null) {
     const effectiveCoupon = getUserApi().buildEffectiveCoupon(uc);
     couponDiscount = assertCouponUsableOnOrder({
       uc,
+      rawAmount,
+      fullReductionDiscount,
       goodsAmountAfterFullReduction,
       shippingFee,
       orderItems,
@@ -643,6 +694,8 @@ module.exports = {
   computeFullReductionDiscount,
   computeFlashSaleSavings,
   lineMatchesActivityScope,
+  lineMatchesCouponScope,
+  computeCouponEligibleSubtotal,
   parseActivityConfig,
   parseIdList,
   assertCouponUsableOnOrder,

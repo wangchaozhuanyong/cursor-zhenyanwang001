@@ -72,7 +72,7 @@ export default function Notifications() {
 
   if (loading && notifications.length === 0) {
     return (
-      <StoreAccountLayout title="消息通知" onBack={goBack} mainClassName="sm:px-4 lg:py-6">
+      <StoreAccountLayout title="消息通知" onBack={goBack} mainClassName="sm:px-4 xl:py-6">
         <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">
           <Loader2 size={28} className="animate-spin text-theme-price" aria-label="加载中" />
           <p className="mt-3 text-sm">消息通知加载中...</p>
@@ -118,7 +118,7 @@ export default function Notifications() {
             </UnifiedButton>
           ) : undefined
         }
-        mainClassName="sm:px-4 lg:py-6"
+        mainClassName="sm:px-4 xl:py-6"
       >
         {!loading && notifications.length === 0 && (
           <div className="flex flex-col items-center py-20 text-muted-foreground">

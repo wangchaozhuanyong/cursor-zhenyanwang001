@@ -181,6 +181,12 @@ async function expireUserCouponsNow(q, options = {}) {
 async function restoreCouponAfterOrderCancelled(q, userCouponId, options = {}) {
   const row = await couponRepo.selectUserCouponForRestore(q, userCouponId);
   if (!row) return { restored: false, status: null };
+  if (options.orderId && row.order_id && String(row.order_id) !== String(options.orderId)) {
+    throw new Error('优惠券不属于当前取消订单，禁止返还');
+  }
+  if (String(row.status || '') !== 'used') {
+    return { restored: false, status: resolveUserCouponRuntimeStatus(row) };
+  }
   let nextStatus = 'available';
   let reason = options.reason || '订单取消返还优惠券';
   const nowStatus = resolveUserCouponRuntimeStatus({ ...row, status: 'available' });
@@ -197,15 +203,22 @@ async function restoreCouponAfterOrderCancelled(q, userCouponId, options = {}) {
     reason = '订单取消时优惠券已失效';
   }
   await couponRepo.updateUserCouponAfterRestore(q, userCouponId, nextStatus, options.reason || reason, reason);
+  if (row.coupon_id) {
+    await couponRepo.decrementUsedCount(q, row.coupon_id);
+  }
   await insertCouponEvent(q, {
     couponId: row.coupon_id,
     userCouponId,
     userId: row.user_id,
-    eventType: nextStatus === 'available' ? 'returned' : nextStatus,
+    eventType: 'returned',
     orderId: options.orderId || row.order_id,
     orderNo: options.orderNo || row.order_no,
     adminUserId: options.adminUserId || null,
     reason,
+    metadata: {
+      restored_status: nextStatus,
+      source: options.source || 'order_cancel',
+    },
   });
   return { restored: nextStatus === 'available', status: nextStatus };
 }

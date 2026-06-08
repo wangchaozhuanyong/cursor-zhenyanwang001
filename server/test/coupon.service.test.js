@@ -66,6 +66,38 @@ test('coupon center hides ended vouchers from claimable list', async () => {
   }
 });
 
+test('getUserCoupons honors requested status and falls back invalid status to available', async () => {
+  const original = {
+    countUserCoupons: couponRepo.countUserCoupons,
+    selectUserCouponsPage: couponRepo.selectUserCouponsPage,
+  };
+  const calls = [];
+
+  try {
+    couponRepo.countUserCoupons = async (_userId, status) => {
+      calls.push(['count', status]);
+      return 0;
+    };
+    couponRepo.selectUserCouponsPage = async (_userId, status) => {
+      calls.push(['list', status]);
+      return [];
+    };
+
+    await couponService.getUserCoupons('user-1', { status: 'used' });
+    await couponService.getUserCoupons('user-1', { status: 'bad-status' });
+
+    assert.deepEqual(calls, [
+      ['count', 'used'],
+      ['list', 'used'],
+      ['count', 'available'],
+      ['list', 'available'],
+    ]);
+  } finally {
+    couponRepo.countUserCoupons = original.countUserCoupons;
+    couponRepo.selectUserCouponsPage = original.selectUserCouponsPage;
+  }
+});
+
 test('claimed voucher validity is clamped by campaign end unless post-end days are configured', () => {
   const now = new Date('2026-06-01T00:00:00Z');
   const base = {

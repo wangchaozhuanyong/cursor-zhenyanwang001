@@ -41,6 +41,7 @@ function formatCampaign(row, items = undefined, audiences = undefined) {
     coupon_count: Number(row.coupon_count || 0),
     claimed_count: Number(row.claimed_count || 0),
     used_count: Number(row.used_count || 0),
+    discount_total: Number(row.discount_total || 0),
     sort_order: Number(row.sort_order || 0),
     status: runtimeStatus(row),
   };

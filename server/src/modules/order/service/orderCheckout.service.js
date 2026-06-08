@@ -32,8 +32,29 @@ function couponUnavailableReason(row) {
   return '';
 }
 
+async function loadCheckoutCouponRows(userId) {
+  const pageSize = 100;
+  const maxRows = Math.max(100, Math.trunc(Number(process.env.CHECKOUT_COUPON_SCAN_LIMIT || 1000)));
+  const rows = [];
+  let offset = 0;
+  let hasMore = false;
+
+  while (offset < maxRows) {
+    const page = await getUserApi().selectUserCouponsPage(userId, 'all', pageSize, offset);
+    rows.push(...page);
+    offset += page.length;
+    if (page.length < pageSize) return { rows, hasMore: false };
+    if (rows.length >= maxRows) {
+      hasMore = true;
+      break;
+    }
+  }
+
+  return { rows, hasMore };
+}
+
 async function getCheckoutCoupons(userId, body) {
-  const rows = await getUserApi().selectUserCouponsPage(userId, 'all', 100, 0);
+  const { rows, hasMore } = await loadCheckoutCouponRows(userId);
   const usable = [];
   const unusable = [];
   for (const row of rows) {
@@ -71,6 +92,7 @@ async function getCheckoutCoupons(userId, body) {
     usable,
     unusable,
     best_coupon_id: usable[0]?.user_coupon_id || null,
+    has_more: hasMore,
   };
 }
 
@@ -112,6 +134,7 @@ async function previewOrder(userId, body) {
 module.exports = {
   assertOrderCapabilityUsage,
   couponUnavailableReason,
+  loadCheckoutCouponRows,
   getCheckoutCoupons,
   previewOrder,
 };

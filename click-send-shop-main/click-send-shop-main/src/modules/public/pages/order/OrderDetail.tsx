@@ -418,7 +418,7 @@ export default function OrderDetail() {
     <StoreAccountLayout
       title={pageTitle}
       onBack={handleBack}
-      mainClassName="pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-0 lg:pb-12"
+      mainClassName="pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-0 xl:pb-12"
     >
       <div className="space-y-3 text-sm">
         <div className="rounded-2xl border border-border bg-card p-3">

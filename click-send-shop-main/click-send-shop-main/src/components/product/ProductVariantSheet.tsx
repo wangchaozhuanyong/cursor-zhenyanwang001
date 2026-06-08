@@ -2,6 +2,7 @@ import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { Product, ProductVariant } from "@/types/product";
 import { AppModal, SquishButton } from "@/modules/micro-interactions";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -51,6 +52,7 @@ export default function ProductVariantSheet({
   const showOriginalPrice = originalPrice > unitPrice;
   const lineTotal = unitPrice * Math.max(0, qty);
   const title = intent === "cart" ? "加入购物车" : "立即购买";
+  const isMobile = useMediaQuery("(max-width: 767px)");
 
   const clampQty = (value: number) => {
     if (maxQty <= 0 || soldOut) return 0;
@@ -135,6 +137,8 @@ export default function ProductVariantSheet({
       onClose={onClose}
       title={title}
       height="auto"
+      presentation={isMobile ? "sheet" : "dialog"}
+      dialogClassName="sm:max-w-xl"
       stickyFooter
       footer={
         <div className="space-y-2">

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { CheckCircle2, Circle, CreditCard, ImagePlus, Loader2, PackageCheck, RotateCcw, Truck, X } from "lucide-react";
 import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { getReturnStatusBadgeClass } from "@/constants/statusDictionary";
 import { formatDateTime } from "@/utils/formatDateTime";
@@ -153,9 +153,8 @@ export default function ReturnDetail() {
   const image = detail ? getReturnItemImage(detail) : "";
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] pb-8 text-[var(--theme-text)]">
-      <PageHeader title="售后详情" onBack={goBack} contentClassName="max-w-3xl" />
-      <main className="mx-auto w-full max-w-3xl space-y-4 px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm sm:p-4">
+    <StoreAccountLayout title="售后详情" onBack={goBack} backFallback="/returns" desktopBackLabel="返回售后进度" mainClassName="sm:px-4 xl:py-6">
+      <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
         {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">加载中...</p> : null}
         {detail ? (
           <>
@@ -379,6 +378,6 @@ export default function ReturnDetail() {
           </>
         ) : null}
       </main>
-    </div>
+    </StoreAccountLayout>
   );
 }

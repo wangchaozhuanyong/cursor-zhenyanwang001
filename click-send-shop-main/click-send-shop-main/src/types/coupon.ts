@@ -115,4 +115,5 @@ export interface CheckoutCouponsResult {
   usable: Array<CheckoutPickerCoupon & { user_coupon_id?: string; discount_amount?: number }>;
   unusable: Array<CheckoutPickerCoupon & { user_coupon_id?: string; reason: string }>;
   best_coupon_id?: string | null;
+  has_more?: boolean;
 }

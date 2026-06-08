@@ -335,6 +335,13 @@ async function incrementUsedCount(q, couponId) {
   ).catch(() => {});
 }
 
+async function decrementUsedCount(q, couponId) {
+  await q.query(
+    'UPDATE coupons SET used_count = GREATEST(0, COALESCE(used_count, 0) - 1) WHERE BINARY id = BINARY ?',
+    [couponId],
+  ).catch(() => {});
+}
+
 async function insertCouponEvent(q, event) {
   await q.query(
     `INSERT INTO coupon_events
@@ -352,7 +359,9 @@ async function insertCouponEvent(q, event) {
       event.reason || null,
       event.metadata ? JSON.stringify(event.metadata) : null,
     ],
-  ).catch(() => {});
+  ).catch((err) => {
+    console.warn('[coupon_events] write failed:', err?.message || err);
+  });
 }
 
 async function selectExpiredUserCoupons(q, limit) {
@@ -412,7 +421,11 @@ async function updateUserCouponAfterRestore(q, userCouponId, status, returnReaso
 async function selectUserOrderCount(userId) {
   const [[row]] = await db.query(
     `SELECT COUNT(*) AS cnt FROM orders
-     WHERE user_id = ? AND status NOT IN ('cancelled')`,
+     WHERE user_id = ?
+       AND (
+         payment_status IN ('paid', 'partially_refunded')
+         OR status IN ('paid', 'shipped', 'completed', 'refunding', 'refunded')
+       )`,
     [userId],
   );
   return Number(row?.cnt || 0);
@@ -435,6 +448,7 @@ module.exports = {
   countTotalClaimsForCoupon,
   incrementClaimedCountIfAvailable,
   incrementUsedCount,
+  decrementUsedCount,
   insertCouponEvent,
   selectExpiredUserCoupons,
   markUserCouponsExpired,

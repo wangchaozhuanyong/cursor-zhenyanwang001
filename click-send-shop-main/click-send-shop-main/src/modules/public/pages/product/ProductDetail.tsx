@@ -51,6 +51,7 @@ import {
 } from "@/utils/regulatedProductNotice";
 import { isRestrictedProduct } from "@/utils/restrictedProduct";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { DesktopPurchaseActionCard } from "@/components/store/DesktopPurchasePattern";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -508,7 +509,7 @@ export default function ProductDetail() {
               ) : null}
               <ProductTagList tags={product.tags} max={6} size="md" className="mt-3" />
               </div>
-              <div className="mt-4 hidden max-w-xl md:block">
+              <DesktopPurchaseActionCard className="mt-4">
                 <DetailPurchaseBar
                   soldOut={soldOut}
                   purchaseBlocked={purchaseAgeBlocked}
@@ -518,7 +519,7 @@ export default function ProductDetail() {
                   onAddToCart={handleAddToCart}
                   onBuyNow={handleBuyNow}
                 />
-              </div>
+              </DesktopPurchaseActionCard>
             </div>
 
             {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}

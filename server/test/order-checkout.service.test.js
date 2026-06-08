@@ -27,3 +27,26 @@ test('assertOrderCapabilityUsage rejects points when capability disabled', async
     if (original) siteCapabilities.api.isCapabilityEnabled = original;
   }
 });
+
+test('loadCheckoutCouponRows scans beyond the first 100 coupons and reports cap', async () => {
+  const userModule = require('../src/modules/user');
+  const original = userModule.api?.selectUserCouponsPage;
+  const previousLimit = process.env.CHECKOUT_COUPON_SCAN_LIMIT;
+
+  try {
+    process.env.CHECKOUT_COUPON_SCAN_LIMIT = '150';
+    userModule.api.selectUserCouponsPage = async (_userId, _status, limit, offset) => {
+      assert.equal(limit, 100);
+      return Array.from({ length: 100 }, (_, index) => ({ id: `uc-${offset + index}` }));
+    };
+
+    const result = await orderCheckout.loadCheckoutCouponRows('user-1');
+
+    assert.equal(result.rows.length, 200);
+    assert.equal(result.hasMore, true);
+  } finally {
+    if (original) userModule.api.selectUserCouponsPage = original;
+    if (previousLimit === undefined) delete process.env.CHECKOUT_COUPON_SCAN_LIMIT;
+    else process.env.CHECKOUT_COUPON_SCAN_LIMIT = previousLimit;
+  }
+});

@@ -280,8 +280,7 @@ export default function GuestHome() {
   const isMagazineLayout = homeLayout === "magazine";
   const showNavGrid = isHomeModuleEnabled(homeModules, "nav_grid", "guest");
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "guest");
-  const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "guest");
-  const showCouponRail = homeModulesReady && (showCouponCenter || showNewUserGift);
+  const showCouponRail = homeModulesReady && showCouponCenter;
   const showPromotionBanner = isHomeModuleEnabled(homeModules, "promotion_banner", "guest");
   const showFlashSaleSection = isHomeModuleEnabled(homeModules, "flash_sale_section", "guest");
   const showFullReductionNotice = isHomeModuleEnabled(homeModules, "full_reduction_notice", "guest");
@@ -290,8 +289,7 @@ export default function GuestHome() {
   const flashSaleTitle = getHomeModuleCustomTitle(homeModules, "flash_sale_section");
   const fullReductionTitle = getHomeModuleCustomTitle(homeModules, "full_reduction_notice");
   const couponCenterTitle = getHomeModuleCustomTitle(homeModules, "coupon_center");
-  const newUserGiftTitle = getHomeModuleCustomTitle(homeModules, "new_user_gift");
-  const couponRailTitle = showCouponCenter ? couponCenterTitle : newUserGiftTitle;
+  const couponRailTitle = couponCenterTitle;
   const guestRecommendTitle = getHomeModuleTitle(homeModules, "guest_recommend", "最新服务与精选好物");
   const showGuestNewArrivals =
     isHomeModuleEnabled(homeModules, "new_arrivals", "guest") && (homeLoading || newProducts.length > 0);
@@ -415,9 +413,8 @@ export default function GuestHome() {
           <LazyHomeSection>
             <MarketingCouponRailSection
               showCouponCenter={showCouponCenter}
-              showNewUserGift={showNewUserGift}
+              showNewUserGift={showCouponCenter}
               title={couponRailTitle}
-              newUserGiftTitle={newUserGiftTitle}
               compactAfterNav={compactCouponRailAfterNav}
             />
           </LazyHomeSection>

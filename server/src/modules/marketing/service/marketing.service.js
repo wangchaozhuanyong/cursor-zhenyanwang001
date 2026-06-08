@@ -13,6 +13,14 @@ function attachCouponSource(coupons, source) {
   }));
 }
 
+function appendStandaloneCoupons(target, standaloneCoupons, seen) {
+  for (const coupon of standaloneCoupons) {
+    if (!coupon?.id || seen.has(coupon.id)) continue;
+    seen.add(coupon.id);
+    target.push(coupon);
+  }
+}
+
 function formatFlashSaleResponse(bundle) {
   if (!bundle) return { data: null };
   const { activity, items, scopes } = bundle;
@@ -78,6 +86,12 @@ async function getCouponCenter(query = {}, context = {}) {
     const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
     const rows = await repo.selectCouponsByIds(couponIds);
     const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), campaign);
+    const seen = new Set(coupons.map((coupon) => coupon.id).filter(Boolean));
+    appendStandaloneCoupons(
+      coupons,
+      (await repo.selectCouponsByPosition(position)).map(repo.mapPublicCoupon),
+      seen,
+    );
     return {
       data: {
         activity: promo.mapCouponCampaignSummary(campaign),
@@ -91,12 +105,27 @@ async function getCouponCenter(query = {}, context = {}) {
   const legacyPosition = query.position || 'home_coupon_center';
   const activities = await repo.selectActivitiesByPosition(legacyPosition, ['coupon_activity']);
   const activity = activities[0];
-  if (!activity) return { data: null };
+  if (!activity) {
+    const coupons = (await repo.selectCouponsByPosition(legacyPosition)).map(repo.mapPublicCoupon);
+    if (!coupons.length) return { data: null };
+    return {
+      data: {
+        activity: null,
+        coupons,
+      },
+    };
+  }
   const couponIds = Array.isArray(activity.activity_config?.coupon_ids)
     ? activity.activity_config.coupon_ids
     : [];
   const rows = await repo.selectCouponsByIds(couponIds);
   const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), activity);
+  const seen = new Set(coupons.map((coupon) => coupon.id).filter(Boolean));
+  appendStandaloneCoupons(
+    coupons,
+    (await repo.selectCouponsByPosition(legacyPosition)).map(repo.mapPublicCoupon),
+    seen,
+  );
   return {
     data: {
       activity: promo.mapActivitySummary(activity),
@@ -174,6 +203,11 @@ async function getCouponZone(query = {}, context = {}) {
     });
     coupons.push(...mapped);
   }
+  appendStandaloneCoupons(
+    coupons,
+    (await repo.selectCouponsByPosition(position)).map(repo.mapPublicCoupon),
+    seen,
+  );
   if (!mappedCampaigns.length && !coupons.length) return { data: null };
   return {
     data: {

@@ -87,15 +87,13 @@ export default function MemberHome() {
   const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "member");
-  const showNewUserGift = isHomeModuleEnabled(homeModules, "new_user_gift", "member");
-  const showCouponRail = homeModulesReady && (showCouponCenter || showNewUserGift);
+  const showCouponRail = homeModulesReady && showCouponCenter;
   const newArrivalsCustomTitle = getHomeModuleCustomTitle(homeModules, "new_arrivals");
   const promotionBannerTitle = getHomeModuleCustomTitle(homeModules, "promotion_banner");
   const flashSaleTitle = getHomeModuleCustomTitle(homeModules, "flash_sale_section");
   const fullReductionTitle = getHomeModuleCustomTitle(homeModules, "full_reduction_notice");
   const couponCenterTitle = getHomeModuleCustomTitle(homeModules, "coupon_center");
-  const newUserGiftTitle = getHomeModuleCustomTitle(homeModules, "new_user_gift");
-  const couponRailTitle = showCouponCenter ? couponCenterTitle : newUserGiftTitle;
+  const couponRailTitle = couponCenterTitle;
   const hotSalesTitle = getHomeModuleTitle(homeModules, "hot_sales", "今日热销");
   const recommendTitle = getHomeModuleTitle(homeModules, "recommend", "猜你喜欢");
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
@@ -246,9 +244,8 @@ export default function MemberHome() {
           <LazyHomeSection>
             <MarketingCouponRailSection
               showCouponCenter={showCouponCenter}
-              showNewUserGift={showNewUserGift}
+              showNewUserGift={showCouponCenter}
               title={couponRailTitle}
-              newUserGiftTitle={newUserGiftTitle}
             />
           </LazyHomeSection>
         ) : null}

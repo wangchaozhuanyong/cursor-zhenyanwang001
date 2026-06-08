@@ -32,7 +32,6 @@ const CLIENT_TITLE_MODULE_KEYS = new Set<HomeModuleKey>([
   "flash_sale_section",
   "full_reduction_notice",
   "coupon_center",
-  "new_user_gift",
   "hot_sales",
   "recommend",
   "guest_recommend",

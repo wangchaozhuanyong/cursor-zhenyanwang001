@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BadgeCheck, ChevronRight, Gift, ShoppingBag, Ticket } from "lucide-react";
+import { BadgeCheck, ChevronRight, ShoppingBag, Ticket } from "lucide-react";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import { ensureStoreSession } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -18,12 +18,6 @@ import {
   type HomeCouponCardItem,
 } from "@/utils/homeCouponPresentation";
 import { hasHomeCouponMarketingPayload } from "@/utils/homeCouponMarketing";
-import {
-  THEME_GIFT_BADGE_SHELL,
-  THEME_INVITE_PROMO_CTA,
-  THEME_INVITE_PROMO_MUTED,
-  THEME_INVITE_PROMO_SHELL,
-} from "@/utils/themeVisuals";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -78,14 +72,12 @@ export default function MarketingCouponRailSection({
   showCouponCenter,
   showNewUserGift,
   title = "",
-  newUserGiftTitle = "",
   compactAfterNav = false,
 }: {
   delay?: number;
   showCouponCenter: boolean;
   showNewUserGift: boolean;
   title?: string;
-  newUserGiftTitle?: string;
   compactAfterNav?: boolean;
 }) {
   const navigate = useNavigate();
@@ -229,20 +221,10 @@ export default function MarketingCouponRailSection({
   }, [couponCenter?.coupons, couponStateReady, coupons, couponZone?.campaigns, couponZone?.coupons, isAuthenticated, newUserGift?.coupons]);
 
   const couponSummary = useMemo(() => summarizeHomeCouponState(coupons), [coupons]);
-  const giftIntroPayload = useMemo<NewUserGiftPayload | null>(() => {
-    const giftCampaign = couponZone?.campaigns?.find((campaign) => campaign.campaign_type === "new_user_gift");
-    if (!giftCampaign) return newUserGift;
-    return {
-      activity: giftCampaign,
-      coupons: giftCampaign.coupons || [],
-      auto_issue_on_register: giftCampaign.issue_mode === "auto_register",
-    };
-  }, [couponZone?.campaigns, newUserGift]);
-  const hasNewUserGift = Boolean(giftIntroPayload?.coupons?.length);
   const hasAnyMarketing = hasHomeCouponMarketingPayload({
     couponCenter,
     couponZone,
-    newUserGift: giftIntroPayload,
+    newUserGift,
   });
 
   if (!shouldLoadMarketing) return null;
@@ -294,7 +276,7 @@ export default function MarketingCouponRailSection({
     void (item.action === "claim" ? handleClaim(item) : goUseCoupon(item));
   };
 
-  const sectionTitle = title || couponZone?.activity?.title || couponCenter?.activity?.title || "优惠券专区";
+  const sectionTitle = title || couponZone?.activity?.title || couponCenter?.activity?.title || "优惠券模块";
   const showFallback = isAuthenticated && couponStateReady && couponItems.length === 0;
   const sectionClassName = compactAfterNav
     ? "store-coupon-rail-section store-coupon-rail-section--after-nav w-full"
@@ -322,15 +304,6 @@ export default function MarketingCouponRailSection({
           <CouponRailSkeleton />
         ) : (
           <div className="store-coupon-rail no-scrollbar -mx-[var(--store-page-x)] flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0" data-syncing={isCouponSyncing ? "true" : undefined}>
-            {hasNewUserGift ? (
-              <GiftIntroCard
-                payload={giftIntroPayload}
-                isAuthenticated={isAuthenticated}
-                title={newUserGiftTitle}
-                onClick={() => navigate(isAuthenticated ? "/coupons" : "/register")}
-              />
-            ) : null}
-
             {showFallback ? (
               <FallbackCard
                 usableCount={couponSummary.usableCount}
@@ -392,43 +365,6 @@ function CouponRailSkeleton() {
         />
       ))}
     </div>
-  );
-}
-
-function GiftIntroCard({
-  payload,
-  isAuthenticated,
-  title = "",
-  onClick,
-}: {
-  payload: NewUserGiftPayload | null;
-  isAuthenticated: boolean;
-  title?: string;
-  onClick: () => void;
-}) {
-  if (!payload) return null;
-  return (
-    <UnifiedButton
-      type="button"
-      onClick={onClick}
-      className={`store-coupon-rail-card flex min-h-[6.75rem] w-[min(86vw,330px)] shrink-0 snap-start items-center gap-3 rounded-xl border border-[var(--theme-border)] p-3 text-left ${THEME_INVITE_PROMO_SHELL}`}
-    >
-      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${THEME_GIFT_BADGE_SHELL}`}>
-        <Gift size={23} className="text-[var(--theme-gift-badge-foreground)]" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-[var(--theme-invite-promo-foreground)]">
-          {title || payload.activity.title || "新人礼包"}
-        </span>
-        <span className={`mt-1 block line-clamp-2 text-xs leading-5 ${THEME_INVITE_PROMO_MUTED}`}>
-          {payload.activity.subtitle || (!isAuthenticated ? `注册即领 ${payload.coupons.length} 张优惠券` : "新人礼权益已同步到你的券包")}
-        </span>
-        <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${THEME_INVITE_PROMO_CTA}`}>
-          {isAuthenticated ? "查看券包" : "注册领取"}
-          <ChevronRight size={13} />
-        </span>
-      </span>
-    </UnifiedButton>
   );
 }
 

@@ -15,6 +15,10 @@ function positionJsonContains(position) {
   return `JSON_CONTAINS(COALESCE(a.display_positions, '[]'), JSON_QUOTE(?), '$')`;
 }
 
+function couponPositionJsonContains(position) {
+  return `JSON_CONTAINS(COALESCE(c.display_positions, '[]'), JSON_QUOTE(?), '$')`;
+}
+
 async function selectFlashSaleActivityByPosition(position) {
   const pos = String(position || 'home_flash_sale').trim();
   const [activities] = await db.query(
@@ -159,6 +163,44 @@ async function selectCouponsByIds(couponIds) {
   }
 }
 
+async function selectCouponsByPosition(position, limit = 12) {
+  const pos = String(position || 'home_coupon_zone').trim();
+  if (!pos) return [];
+  const pageSize = Math.max(1, Math.min(50, Number(limit) || 12));
+  const [rows] = await db.query(
+    `SELECT c.*,
+            (
+              SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
+              FROM coupon_categories cc WHERE BINARY cc.coupon_id = BINARY c.id
+            ) AS category_ids,
+            (
+              SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
+              FROM coupon_categories cc
+              JOIN categories cat ON BINARY cat.id = BINARY cc.category_id
+              WHERE BINARY cc.coupon_id = BINARY c.id
+            ) AS category_names
+     FROM coupons c
+     WHERE c.deleted_at IS NULL
+       AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) = 'active'
+       AND c.status IN ('available', 'active')
+       AND (c.claim_start_at IS NULL OR c.claim_start_at <= NOW())
+       AND (c.claim_end_at IS NULL OR c.claim_end_at >= NOW())
+       AND c.stop_claim_at IS NULL
+       AND c.archived_at IS NULL
+       AND c.invalidated_at IS NULL
+       AND COALESCE(c.auto_issue, 0) = 0
+       AND (
+         c.total_quantity <= 0
+         OR COALESCE(c.claimed_count, 0) < c.total_quantity
+       )
+       AND ${couponPositionJsonContains(pos)}
+     ORDER BY c.created_at DESC
+     LIMIT ?`,
+    [pos, pageSize],
+  );
+  return rows;
+}
+
 function mapPublicCoupon(row) {
   return {
     id: row.id,
@@ -185,5 +227,6 @@ module.exports = {
   selectFlashSaleActivityByPosition,
   selectActivitiesByPosition,
   selectCouponsByIds,
+  selectCouponsByPosition,
   mapPublicCoupon,
 };

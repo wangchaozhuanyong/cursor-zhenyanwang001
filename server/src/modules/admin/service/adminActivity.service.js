@@ -273,10 +273,10 @@ async function validateProductsForFlashSale(items, startAt, endAt, excludeActivi
   const productMap = new Map(products.map((p) => [p.id, p]));
   for (const item of items) {
     const product = productMap.get(item.product_id);
-    if (!product) throw new BusinessError(400, `Product ${item.product_id} not found`);
-    if (Number(product.lifecycle_status) !== 1) throw new BusinessError(400, `Product "${product.name}" is not active`);
+    if (!product) throw new BusinessError(400, `商品不存在：${item.product_id}`);
+    if (Number(product.lifecycle_status) !== 1) throw new BusinessError(400, `商品“${product.name}”未上架，不能参加秒杀`);
     if (item.activity_stock > Number(product.stock || 0)) {
-      throw new BusinessError(400, `Product "${product.name}" activity stock exceeds available stock`);
+      throw new BusinessError(400, `商品“${product.name}”活动库存不能超过可用库存`);
     }
     if (item.activity_price > Number(product.price || 0)) {
       throw new BusinessError(400, `商品“${product.name}”活动价不能高于原价`);
@@ -285,7 +285,8 @@ async function validateProductsForFlashSale(items, startAt, endAt, excludeActivi
   const conflicts = await repo.selectConflictingActivities({ productIds, startAt, endAt, excludeActivityId });
   if (conflicts.length) {
     const first = conflicts[0];
-    throw new BusinessError(400, `Product ${first.product_id} conflicts with activity "${first.title}" time window`);
+    const productName = productMap.get(first.product_id)?.name || first.product_id;
+    throw new BusinessError(409, `商品“${productName}”已在活动“${first.title}”的时间范围内参与秒杀，请调整活动时间或更换商品`);
   }
 }
 
@@ -480,6 +481,5 @@ module.exports = {
   validateActivityBeforePublish,
   searchActivityProducts,
 };
-
 
 

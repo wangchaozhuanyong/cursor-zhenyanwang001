@@ -28,19 +28,6 @@ function invalidateHomeBootstrapCache() {
   inflightHomeBootstrap = null;
 }
 
-function getCouponId(coupon) {
-  return String(coupon?.id || coupon?.coupon_id || '').trim();
-}
-
-function removeCouponsByIds(payload, usedIds) {
-  if (!payload?.coupons?.length) return payload;
-  const coupons = payload.coupons.filter((coupon) => {
-    const id = getCouponId(coupon);
-    return !id || !usedIds.has(id);
-  });
-  return { ...payload, coupons };
-}
-
 function getProductApi() {
   return /** @type {any} */ (require('../../product')).api || {};
 }
@@ -55,7 +42,7 @@ function getCapabilitiesApi() {
 
 async function buildHomeBootstrap() {
   const couponEnabled = getCapabilitiesApi().isCapabilityEnabled('couponEnabled').catch(() => false);
-  const [siteInfo, siteCapabilities, homeOps, banners, categories, products, flashSale, promotionBanners, fullReductionNotices, couponZone, couponCenter, newUserGift] = await Promise.all([
+  const [siteInfo, siteCapabilities, homeOps, banners, categories, products, flashSale, promotionBanners, fullReductionNotices, couponZone] = await Promise.all([
     getProductApi().getPublicSiteInfo(),
     getCapabilitiesApi().getSiteCapabilities(),
     getProductApi().getPublicHomeOps(),
@@ -68,17 +55,9 @@ async function buildHomeBootstrap() {
     couponEnabled.then((enabled) => (enabled
       ? getMarketingApi().getCouponZone({ position: 'home_coupon_zone' }).then((r) => r.data).catch(() => null)
       : null)),
-    couponEnabled.then((enabled) => (enabled
-      ? getMarketingApi().getCouponCenter({ position: 'home_coupon_center' }).then((r) => r.data).catch(() => null)
-      : null)),
-    couponEnabled.then((enabled) => (enabled
-      ? getMarketingApi().getNewUserGift({ position: 'home_new_user_gift' }).then((r) => r.data).catch(() => null)
-      : null)),
   ]);
   const instance = getInstanceInfo();
   const storage = getStorageHealthReport();
-  const newUserGiftCouponIds = new Set((newUserGift?.coupons || []).map(getCouponId).filter(Boolean));
-  const dedupedCouponCenter = removeCouponsByIds(couponCenter, newUserGiftCouponIds);
 
   return {
     siteInfo,
@@ -106,8 +85,8 @@ async function buildHomeBootstrap() {
       promotionBanners,
       fullReductionNotices,
       couponZone,
-      couponCenter: dedupedCouponCenter,
-      newUserGift,
+      couponCenter: null,
+      newUserGift: null,
     },
   };
 }

@@ -13,14 +13,14 @@ export default function MarketingFullReductionSection({ delay = 0, title = "æ»¡å
 
   useEffect(() => {
     let cancelled = false;
-    const cached = homeService.getCachedHomeBootstrap();
-    if (Array.isArray(cached?.marketing?.fullReductionNotices)) {
-      setList(cached?.marketing?.fullReductionNotices as MarketingActivitySummary[]);
+    const cached = homeService.getCachedHomeMarketing();
+    if (Array.isArray(cached?.fullReductionNotices)) {
+      setList(cached.fullReductionNotices as MarketingActivitySummary[]);
     }
-    homeService.fetchHomeBootstrap().then((bootstrap) => {
+    homeService.fetchHomeMarketing().then((marketing) => {
       if (cancelled) return;
-      if (Array.isArray(bootstrap?.marketing?.fullReductionNotices)) {
-        setList(bootstrap.marketing.fullReductionNotices as MarketingActivitySummary[]);
+      if (Array.isArray(marketing?.fullReductionNotices)) {
+        setList(marketing.fullReductionNotices as MarketingActivitySummary[]);
         return;
       }
       return marketingService.fetchFullReductionNotices().then((data) => {

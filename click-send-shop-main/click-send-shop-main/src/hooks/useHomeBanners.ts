@@ -2,17 +2,12 @@ import { useState, useEffect } from "react";
 import * as homeBannerService from "@/services/homeBannerService";
 import * as homeService from "@/services/homeService";
 import type { Banner } from "@/types/banner";
+import { scheduleIdleTask } from "@/utils/idleScheduler";
 
 type UseHomeBannersOpts = { fetchRemote?: boolean };
 const BANNER_CACHE_KEY = "home_banners_cache_v1";
 const BANNER_CACHE_TTL_MS = 60_000;
 const BANNER_BACKGROUND_REFRESH_DELAY_MS = 9_000;
-const BANNER_IDLE_REFRESH_TIMEOUT_MS = 3_000;
-
-type WindowWithIdleCallback = Window & {
-  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
-  cancelIdleCallback?: (id: number) => void;
-};
 
 function sanitizeBanners(list: Banner[]): Banner[] {
   if (!Array.isArray(list)) return [];
@@ -39,20 +34,11 @@ function normalizeBootstrapBanners(raw: unknown): Banner[] {
 }
 
 function scheduleBannerIdleRefresh(callback: () => void) {
-  if (typeof window === "undefined") return () => {};
-  const idleWindow = window as WindowWithIdleCallback;
-  let idleId: number | undefined;
-  const timer = window.setTimeout(() => {
-    if (typeof idleWindow.requestIdleCallback === "function") {
-      idleId = idleWindow.requestIdleCallback(callback, { timeout: BANNER_IDLE_REFRESH_TIMEOUT_MS });
-      return;
-    }
-    callback();
-  }, BANNER_BACKGROUND_REFRESH_DELAY_MS);
-  return () => {
-    window.clearTimeout(timer);
-    if (idleId !== undefined) idleWindow.cancelIdleCallback?.(idleId);
-  };
+  return scheduleIdleTask("home-banner-refresh", callback, {
+    delayMs: BANNER_BACKGROUND_REFRESH_DELAY_MS,
+    timeoutMs: 3000,
+    jitterMs: 2500,
+  });
 }
 
 export function useHomeBanners(opts?: UseHomeBannersOpts) {
@@ -153,7 +139,7 @@ function writeBannerCache(list: Banner[]) {
   try {
     sessionStorage.setItem(BANNER_CACHE_KEY, JSON.stringify({
       cachedAt: Date.now(),
-      items: list.slice(0, 8),
+      items: list.slice(0, 5),
     }));
   } catch {
     // ignore storage quota/privacy failures

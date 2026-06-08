@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as homeService from "@/services/homeService";
 import * as marketingService from "@/services/marketingService";
-import type { HomeBootstrap } from "@/services/homeService";
 import type { CouponCenterPayload, CouponZonePayload, NewUserGiftPayload } from "@/services/marketingService";
 import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import {
@@ -39,21 +38,21 @@ const EMPTY_COUPON_MARKETING_STATE: CouponMarketingState = {
 };
 
 function buildCouponMarketingState(
-  bootstrap: HomeBootstrap | null,
+  marketing: ReturnType<typeof homeService.getCachedHomeMarketing>,
   showCouponCenter: boolean,
   showNewUserGift: boolean,
 ): CouponMarketingState {
   return {
     couponZone: (showCouponCenter || showNewUserGift)
-      ? (bootstrap?.marketing?.couponZone as CouponZonePayload | null) ?? null
+      ? (marketing?.couponZone as CouponZonePayload | null) ?? null
       : null,
     couponCenter: showCouponCenter
-      ? (bootstrap?.marketing?.couponCenter as CouponCenterPayload | null) ?? null
+      ? (marketing?.couponCenter as CouponCenterPayload | null) ?? null
       : null,
     newUserGift: showNewUserGift
-      ? (bootstrap?.marketing?.newUserGift as NewUserGiftPayload | null) ?? null
+      ? (marketing?.newUserGift as NewUserGiftPayload | null) ?? null
       : null,
-    ready: Boolean(bootstrap),
+    ready: Boolean(marketing),
   };
 }
 
@@ -62,7 +61,7 @@ function readCachedCouponMarketingState(
   showNewUserGift: boolean,
 ): CouponMarketingState {
   return buildCouponMarketingState(
-    homeService.getCachedHomeBootstrap(),
+    homeService.getCachedHomeMarketing(),
     showCouponCenter,
     showNewUserGift,
   );
@@ -103,17 +102,17 @@ export default function MarketingCouponRailSection({
     setMarketingState(cachedState.ready ? cachedState : EMPTY_COUPON_MARKETING_STATE);
 
     void (async () => {
-      const bootstrap = await homeService.fetchHomeBootstrap().catch(() => null);
+      const marketing = await homeService.fetchHomeMarketing().catch(() => null);
       if (cancelled) return;
 
       const nextCouponZone = shouldLoadMarketing
-        ? (bootstrap?.marketing?.couponZone as CouponZonePayload | null) ?? await marketingService.fetchCouponZone().catch(() => null)
+        ? (marketing?.couponZone as CouponZonePayload | null) ?? await marketingService.fetchCouponZone().catch(() => null)
         : null;
       const nextCouponCenter = showCouponCenter && !nextCouponZone
-        ? (bootstrap?.marketing?.couponCenter as CouponCenterPayload | null) ?? await marketingService.fetchCouponCenter().catch(() => null)
+        ? (marketing?.couponCenter as CouponCenterPayload | null) ?? await marketingService.fetchCouponCenter().catch(() => null)
         : null;
       const nextNewUserGift = showNewUserGift && !nextCouponZone
-        ? (bootstrap?.marketing?.newUserGift as NewUserGiftPayload | null) ?? await marketingService.fetchNewUserGift().catch(() => null)
+        ? (marketing?.newUserGift as NewUserGiftPayload | null) ?? await marketingService.fetchNewUserGift().catch(() => null)
         : null;
 
       if (cancelled) return;

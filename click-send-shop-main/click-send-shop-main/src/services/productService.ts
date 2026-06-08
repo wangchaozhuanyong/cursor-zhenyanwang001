@@ -4,6 +4,7 @@ import type { Product, ProductListParams, ProductTag } from "@/types/product";
 import type { Category } from "@/types/category";
 import type { PaginatedData } from "@/types/common";
 import { ApiError } from "@/types/common";
+import { scheduleIdleTask } from "@/utils/idleScheduler";
 
 export async function fetchProducts(
   params?: ProductListParams
@@ -58,9 +59,9 @@ export async function trackHomeEngagement(data: {
 }, options: { deferMs?: number } = {}): Promise<void> {
   const { deferMs = 0 } = options;
   if (deferMs > 0 && typeof window !== "undefined") {
-    window.setTimeout(() => {
+    scheduleIdleTask("home-engagement", () => {
       void trackHomeEngagement(data);
-    }, deferMs);
+    }, { delayMs: deferMs, timeoutMs: 5000, jitterMs: 2500 });
     return;
   }
 

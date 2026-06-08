@@ -1,4 +1,5 @@
 import type { AnalyticsEventPayload } from "@/services/analyticsService";
+import { scheduleIdleTask } from "@/utils/idleScheduler";
 
 type LazyTrackEventOptions = {
   beacon?: boolean;
@@ -17,15 +18,21 @@ export function trackEventLazy(payload: AnalyticsEventPayload, options: LazyTrac
     });
   };
 
-  let timeoutId: number | undefined;
   if (deferMs > 0 && typeof window !== "undefined") {
-    timeoutId = window.setTimeout(run, deferMs);
+    const cancelIdle = scheduleIdleTask(`analytics:${payload.event_type}`, run, {
+      delayMs: deferMs,
+      timeoutMs: 5000,
+      jitterMs: 2500,
+    });
+    return () => {
+      cancelled = true;
+      cancelIdle();
+    };
   } else {
     run();
   }
 
   return () => {
     cancelled = true;
-    if (timeoutId) window.clearTimeout(timeoutId);
   };
 }

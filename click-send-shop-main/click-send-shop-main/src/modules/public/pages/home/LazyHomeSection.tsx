@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { getPerfDuration, logPerf, markPerfStart } from "@/utils/performanceDebug";
+import { scheduleIdleTask } from "@/utils/idleScheduler";
 
 const DEFAULT_DEFERRED_HOME_SECTION_DELAY_MS = 9000;
 const SECTION_ROOT_MARGIN = "360px 0px 480px 0px";
@@ -78,14 +79,21 @@ export default function LazyHomeSection({
       setReady(true);
     };
 
+    fallbackDelayOffset = (fallbackDelayOffset + 240) % 1200;
+    const cancelFallback = scheduleIdleTask("lazy-home-section-fallback", reveal, {
+      delayMs: Math.max(0, delayMs + fallbackDelayOffset),
+      timeoutMs: 5000,
+      jitterMs: 1200,
+    });
     const usingObserver = observeLazyHomeSection(node, reveal);
     if (usingObserver) {
-      return () => unobserveLazyHomeSection(node);
+      return () => {
+        cancelFallback();
+        unobserveLazyHomeSection(node);
+      };
     }
 
-    fallbackDelayOffset = (fallbackDelayOffset + 240) % 1200;
-    const timeoutId = window.setTimeout(reveal, Math.max(0, delayMs + fallbackDelayOffset));
-    return () => window.clearTimeout(timeoutId);
+    return () => cancelFallback();
   }, [delayMs, ready]);
 
   return (

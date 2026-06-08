@@ -13,14 +13,14 @@ export default function MarketingPromotionBannerSection({ delay = 0, title = "" 
 
   useEffect(() => {
     let cancelled = false;
-    const cached = homeService.getCachedHomeBootstrap();
-    if (Array.isArray(cached?.marketing?.promotionBanners)) {
-      setBanners(cached.marketing.promotionBanners as MarketingActivitySummary[]);
+    const cached = homeService.getCachedHomeMarketing();
+    if (Array.isArray(cached?.promotionBanners)) {
+      setBanners(cached.promotionBanners as MarketingActivitySummary[]);
     }
-    homeService.fetchHomeBootstrap().then((bootstrap) => {
+    homeService.fetchHomeMarketing().then((marketing) => {
       if (cancelled) return;
-      if (Array.isArray(bootstrap?.marketing?.promotionBanners)) {
-        setBanners(bootstrap.marketing.promotionBanners as MarketingActivitySummary[]);
+      if (Array.isArray(marketing?.promotionBanners)) {
+        setBanners(marketing.promotionBanners as MarketingActivitySummary[]);
         return;
       }
       return marketingService.fetchMarketingNotices("promotion_banner").then((data) => {

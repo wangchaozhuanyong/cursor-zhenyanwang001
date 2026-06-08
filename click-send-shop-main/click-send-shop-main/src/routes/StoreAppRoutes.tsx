@@ -32,6 +32,7 @@ import { detectPwaPlatform, isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
+import { scheduleIdleTask } from "@/utils/idleScheduler";
 import {
   getRememberedStoreScrollPosition,
   getStoreScrollKey,
@@ -203,12 +204,16 @@ function AnalyticsCapabilitySync() {
         setTrafficAnalyticsEnabled(enabled);
       });
     };
-    const timeoutId = analyticsLoadedRef.current
-      ? window.setTimeout(sync, 0)
-      : window.setTimeout(sync, GLOBAL_WIDGET_DELAY_MS);
+    const cancelIdle = analyticsLoadedRef.current
+      ? scheduleIdleTask("analytics-capability-sync-now", sync, { delayMs: 0, timeoutMs: 1200, jitterMs: 0 })
+      : scheduleIdleTask("analytics-capability-sync", sync, {
+        delayMs: GLOBAL_WIDGET_DELAY_MS,
+        timeoutMs: 5000,
+        jitterMs: 2500,
+      });
     return () => {
       cancelled = true;
-      window.clearTimeout(timeoutId);
+      cancelIdle();
     };
   }, [capabilities.trafficAnalyticsEnabled]);
   return null;
@@ -217,8 +222,11 @@ function AnalyticsCapabilitySync() {
 function DeferredGlobalMount({ children, delayMs = GLOBAL_WIDGET_DELAY_MS }: { children: ReactNode; delayMs?: number }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => setMounted(true), delayMs);
-    return () => window.clearTimeout(timeoutId);
+    return scheduleIdleTask("deferred-global-mount", () => setMounted(true), {
+      delayMs,
+      timeoutMs: 5000,
+      jitterMs: 2500,
+    });
   }, [delayMs]);
   return mounted ? <>{children}</> : null;
 }

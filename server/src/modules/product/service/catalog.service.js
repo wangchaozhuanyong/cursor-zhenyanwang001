@@ -1,9 +1,10 @@
-const { parseBool, formatProduct } = require('../../../utils/helpers');
-const { ACTIVE_PRODUCT_WHERE } = require('../productLifecycle');
+const { parseBool, formatProduct, formatProductCard, omitInlineDataUrl } = require('../../../utils/helpers');
+const { ACTIVE_PRODUCT_WHERE, activeProductWhere } = require('../productLifecycle');
 const repo = require('../repository/catalog.repository');
 const tagAssignmentRepo = require('../repository/productTagAssignment.repository');
 const activityRepo = require('../repository/activity.repository');
 const { buildSearchKeywords, normalizeSearchKeyword } = require('../../../utils/searchKeywords');
+const { setCacheHit } = require('../../../utils/requestPerf');
 
 const CACHE_TTL_MS = 60 * 1000;
 const cache = new Map();
@@ -14,9 +15,13 @@ const inFlight = new Map();
 async function getCached(key, loader) {
   const now = Date.now();
   const hit = cache.get(key);
-  if (hit && now - hit.updatedAt < CACHE_TTL_MS) return hit.value;
+  if (hit && now - hit.updatedAt < CACHE_TTL_MS) {
+    setCacheHit(true);
+    return hit.value;
+  }
 
   if (inFlight.has(key)) return inFlight.get(key);
+  setCacheHit(false);
 
   const p = (async () => {
     try {
@@ -37,7 +42,8 @@ async function getCached(key, loader) {
 
 async function getBanners() {
   try {
-    return await getCached('banners', () => repo.selectActiveBanners());
+    const rows = await getCached('banners', () => repo.selectActiveBanners());
+    return rows.map(formatBannerCard).filter(Boolean);
   } catch {
     return [];
   }
@@ -48,6 +54,26 @@ async function getCategories() {
     return await getCached('categories', async () => {
       const rows = await repo.selectActiveCategories();
       return buildCategoryTree(rows);
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function getBannersLite(limit = 3) {
+  try {
+    const rows = await getCached(`banners:lite:${limit}`, () => repo.selectActiveBannersLite(limit));
+    return rows.map(formatBannerCard).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function getCategoriesLite() {
+  try {
+    return await getCached('categories:lite', async () => {
+      const rows = await repo.selectActiveCategoriesLite();
+      return buildCategoryTree(rows, { lite: true });
     });
   } catch {
     return [];
@@ -89,7 +115,8 @@ function normalizeCategoryFaq(value) {
     .filter((item) => item.question && item.answer);
 }
 
-function buildCategoryTree(rows) {
+function buildCategoryTree(rows, options = {}) {
+  const lite = options.lite === true;
   const map = new Map();
   const roots = [];
   rows.forEach((row) => {
@@ -97,11 +124,13 @@ function buildCategoryTree(rows) {
       id: row.id,
       parent_id: row.parent_id || null,
       name: row.name,
-      description: row.description || '',
-      buying_guide: row.buying_guide || '',
-      faq: normalizeCategoryFaq(row.faq_json),
-      seo_title: row.seo_title || '',
-      seo_description: row.seo_description || '',
+      ...(lite ? {} : {
+        description: row.description || '',
+        buying_guide: row.buying_guide || '',
+        faq: normalizeCategoryFaq(row.faq_json),
+        seo_title: row.seo_title || '',
+        seo_description: row.seo_description || '',
+      }),
       icon: row.icon || '',
       icon_url: row.icon_url || row.icon || '',
       sort_order: row.sort_order ?? 0,
@@ -117,6 +146,20 @@ function buildCategoryTree(rows) {
     else roots.push(node);
   });
   return roots;
+}
+
+function formatBannerCard(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    title: row.title || '',
+    description: row.description || row.subtitle || '',
+    cta_text: row.cta_text || '',
+    image: omitInlineDataUrl(row.image_url || row.image || ''),
+    link: row.link || row.url || '',
+    sort_order: Number(row.sort_order || 0),
+    enabled: row.enabled !== undefined ? !!row.enabled : true,
+  };
 }
 
 function collectDescendantCategoryIds(rows, rootId) {
@@ -151,15 +194,15 @@ function buildProductListQuery(query, categoryIds) {
   const minPrice = Number(query.min_price);
   const maxPrice = Number(query.max_price);
 
-  let where = `WHERE ${ACTIVE_PRODUCT_WHERE}`;
+  let where = `WHERE ${activeProductWhere('products')}`;
   const params = [];
 
   if (category_id && category_id !== 'all') {
     if (categoryIds && categoryIds.length) {
-      where += ` AND category_id IN (${categoryIds.map(() => '?').join(',')})`;
+      where += ` AND products.category_id IN (${categoryIds.map(() => '?').join(',')})`;
       params.push(...categoryIds);
     } else {
-      where += ' AND category_id = ?';
+      where += ' AND products.category_id = ?';
       params.push(category_id);
     }
   }
@@ -181,41 +224,41 @@ function buildProductListQuery(query, categoryIds) {
     const like = `%${normalized}%`;
     const expandedLike = `%${expanded}%`;
     where += ` AND (
-      name LIKE ?
-      OR description LIKE ?
-      OR search_keywords LIKE ?
-      OR search_keywords LIKE ?
+      products.name LIKE ?
+      OR products.description LIKE ?
+      OR products.search_keywords LIKE ?
+      OR products.search_keywords LIKE ?
     )`;
     params.push(like, like, like, expandedLike);
   }
   if (isHot !== undefined) {
-    where += ' AND is_hot = ?';
+    where += ' AND products.is_hot = ?';
     params.push(isHot ? 1 : 0);
   }
   if (isNew !== undefined) {
     if (isNew && useHomeNewArrivalsRule) {
-      where += ' AND (is_new = 1 OR created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY))';
+      where += ' AND (products.is_new = 1 OR products.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY))';
       if (newArrivalsOnlyInStock !== undefined) {
-        where += newArrivalsOnlyInStock ? ' AND stock > 0' : '';
+        where += newArrivalsOnlyInStock ? ' AND products.stock > 0' : '';
       }
     } else {
-      where += ' AND is_new = ?';
+      where += ' AND products.is_new = ?';
       params.push(isNew ? 1 : 0);
     }
   }
   if (isRecommended !== undefined) {
-    where += ' AND is_recommended = ?';
+    where += ' AND products.is_recommended = ?';
     params.push(isRecommended ? 1 : 0);
   }
   if (inStock !== undefined) {
-    where += inStock ? ' AND stock > 0' : '';
+    where += inStock ? ' AND products.stock > 0' : '';
   }
   if (Number.isFinite(minPrice) && minPrice >= 0) {
-    where += ' AND price >= ?';
+    where += ' AND products.price >= ?';
     params.push(minPrice);
   }
   if (Number.isFinite(maxPrice) && maxPrice >= 0) {
-    where += ' AND price <= ?';
+    where += ' AND products.price <= ?';
     params.push(maxPrice);
   }
 
@@ -223,23 +266,23 @@ function buildProductListQuery(query, categoryIds) {
   switch (sort) {
     case 'price-asc':
     case 'price_asc':
-      orderBy = 'ORDER BY price ASC';
+      orderBy = 'ORDER BY products.price ASC';
       break;
     case 'price-desc':
     case 'price_desc':
-      orderBy = 'ORDER BY price DESC';
+      orderBy = 'ORDER BY products.price DESC';
       break;
     case 'sales':
-      orderBy = 'ORDER BY sales_count DESC, sort_order ASC, created_at DESC';
+      orderBy = 'ORDER BY products.sales_count DESC, products.sort_order ASC, products.created_at DESC';
       break;
     case 'recommended':
-      orderBy = 'ORDER BY is_recommended DESC, sort_order ASC, created_at DESC';
+      orderBy = 'ORDER BY products.is_recommended DESC, products.sort_order ASC, products.created_at DESC';
       break;
     case 'newest':
-      orderBy = 'ORDER BY created_at DESC';
+      orderBy = 'ORDER BY products.created_at DESC';
       break;
     default:
-      orderBy = 'ORDER BY sort_order ASC, created_at DESC';
+      orderBy = 'ORDER BY products.sort_order ASC, products.created_at DESC';
   }
 
   return { page, pageSize, where, params, orderBy };
@@ -269,6 +312,22 @@ function attachActivity(product, activity) {
   };
 }
 
+function formatActivityCard(activity) {
+  if (!activity) return null;
+  return {
+    id: activity.id,
+    type: activity.type,
+    title: activity.title,
+    activity_price: activity.activity_price == null ? undefined : Number(activity.activity_price),
+    threshold_amount: activity.threshold_amount == null ? undefined : Number(activity.threshold_amount),
+    discount_amount: activity.discount_amount == null ? undefined : Number(activity.discount_amount),
+    start_at: activity.start_at,
+    end_at: activity.end_at,
+    status: activity.status,
+    status_label: activity.status_label,
+  };
+}
+
 async function formatRowsWithTagsAndActivities(rows) {
   const ids = rows.map((r) => r.id);
   const [tagMap, activityMap, defaultVariants, priceRanges] = await Promise.all([
@@ -280,7 +339,7 @@ async function formatRowsWithTagsAndActivities(rows) {
     repo.selectDefaultVariantsByProductIds(ids),
     repo.selectVariantPriceRangesByProductIds(ids),
   ]);
-  const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariant(v)]));
+  const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariantCard(v)]));
   const priceRangeMap = new Map(priceRanges.map((r) => [r.product_id, {
     min_price: Number(r.min_price || 0),
     max_price: Number(r.max_price || 0),
@@ -294,6 +353,34 @@ async function formatRowsWithTagsAndActivities(rows) {
     tags: tagMap.get(r.id) || [],
     default_variant: defaultVariantMap.get(r.id) || null,
   }, activityMap.get(r.id)));
+}
+
+async function formatCardRowsWithTagsAndActivities(rows) {
+  const ids = rows.map((r) => r.id);
+  if (!ids.length) return [];
+  const [tagMap, activityMap, defaultVariants, priceRanges] = await Promise.all([
+    tagAssignmentRepo.selectTagsByProductIds(ids),
+    activityRepo.selectActiveActivitiesByProductIds(ids).catch((e) => {
+      console.warn(`[catalog] activity lookup failed: ${e?.message || e}`);
+      return new Map();
+    }),
+    repo.selectDefaultVariantsByProductIds(ids),
+    repo.selectVariantPriceRangesByProductIds(ids),
+  ]);
+  const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariantCard(v)]));
+  const priceRangeMap = new Map(priceRanges.map((r) => [r.product_id, {
+    min_price: Number(r.min_price || 0),
+    max_price: Number(r.max_price || 0),
+    min_original_price: r.min_original_price == null ? null : Number(r.min_original_price),
+    max_original_price: r.max_original_price == null ? null : Number(r.max_original_price),
+    variant_count: Number(r.variant_count || 0),
+  }]));
+  return rows.map((r) => attachActivity({
+    ...formatProductCard(r),
+    ...(priceRangeMap.get(r.id) || {}),
+    tags: tagMap.get(r.id) || [],
+    default_variant: defaultVariantMap.get(r.id) || null,
+  }, formatActivityCard(activityMap.get(r.id))));
 }
 
 function formatVariant(row) {
@@ -319,6 +406,23 @@ function formatVariant(row) {
   };
 }
 
+function formatVariantCard(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    product_id: row.product_id,
+    sku_code: row.sku_code || '',
+    title: row.title || '',
+    price: Number(row.price || 0),
+    original_price: row.original_price == null ? null : Number(row.original_price),
+    stock: Number(row.stock || 0),
+    image_url: row.image_url || '',
+    enabled: row.enabled !== undefined ? !!row.enabled : true,
+    sort_order: Number(row.sort_order || 0),
+    is_default: !!row.is_default,
+  };
+}
+
 async function getProducts(query) {
   let categoryIds = null;
   const categoryId = query.category_id || query.categoryId || query.category;
@@ -338,7 +442,7 @@ async function getProducts(query) {
   const offset = (page - 1) * pageSize;
   const rows = await repo.selectActiveProductsPage(where, params, orderBy, pageSize, offset);
   return {
-    list: await formatRowsWithTagsAndActivities(rows),
+    list: await formatCardRowsWithTagsAndActivities(rows),
     total,
     page,
     pageSize,
@@ -447,16 +551,29 @@ async function loadHomeProducts() {
 
   const allRows = [...hot, ...newArrivalsUnique, ...recommended];
   const allIds = allRows.map((r) => r.id);
-  const [tagMap, defaultVariants] = await Promise.all([
+  const [tagMap, defaultVariants, priceRanges] = await Promise.all([
     tagAssignmentRepo.selectTagsByProductIds(allIds),
     repo.selectDefaultVariantsByProductIds(allIds),
+    repo.selectVariantPriceRangesByProductIds(allIds),
   ]);
   const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariant(v)]));
+  const priceRangeMap = new Map(priceRanges.map((r) => [r.product_id, {
+    min_price: Number(r.min_price || 0),
+    max_price: Number(r.max_price || 0),
+    min_original_price: r.min_original_price == null ? null : Number(r.min_original_price),
+    max_original_price: r.max_original_price == null ? null : Number(r.max_original_price),
+    variant_count: Number(r.variant_count || 0),
+  }]));
   const activityMap = await activityRepo.selectActiveActivitiesByProductIds(allIds).catch((e) => {
     console.warn('[catalog] activity lookup failed: ' + (e?.message || e));
     return new Map();
   });
-  const fmt = (rows) => rows.map((r) => attachActivity({ ...formatProduct(r), tags: tagMap.get(r.id) || [], default_variant: defaultVariantMap.get(r.id) || null }, activityMap.get(r.id)));
+  const fmt = (rows) => rows.map((r) => attachActivity({
+    ...formatProductCard(r),
+    ...(priceRangeMap.get(r.id) || {}),
+    tags: tagMap.get(r.id) || [],
+    default_variant: defaultVariantMap.get(r.id) || null,
+  }, formatActivityCard(activityMap.get(r.id))));
   return {
     hot: fmt(hot),
     new_arrivals: fmt(newArrivalsUnique),
@@ -469,7 +586,7 @@ async function getRelatedProducts(productId, limit) {
   const product = await repo.selectProductCategoryId(productId);
   if (!product) return [];
   const rows = await repo.selectRelatedByCategory(product.category_id, productId, lim);
-  return formatRowsWithTagsAndActivities(rows);
+  return formatCardRowsWithTagsAndActivities(rows);
 }
 
 async function trackHomeEngagement(payload) {
@@ -499,7 +616,9 @@ function clearCatalogCache() {
 
 module.exports = {
   getBanners,
+  getBannersLite,
   getCategories,
+  getCategoriesLite,
   getCategoryById,
   getProductTags,
   getProducts,

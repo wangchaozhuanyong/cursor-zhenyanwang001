@@ -29,3 +29,11 @@ export type HomeBootstrap = {
 export function getHomeBootstrap() {
   return get<HomeBootstrap>("/home/bootstrap");
 }
+
+export function getHomeBootstrapLite() {
+  return get<HomeBootstrap>("/home/bootstrap-lite");
+}
+
+export function getHomeMarketing() {
+  return get<HomeBootstrap["marketing"]>("/home/marketing");
+}

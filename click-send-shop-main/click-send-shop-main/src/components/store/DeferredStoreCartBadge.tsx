@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import type { StoreCartBadgeCountProps } from "@/components/store/StoreCartBadgeCount";
+import { scheduleIdleTask } from "@/utils/idleScheduler";
 
 const StoreCartBadgeCount = lazy(() => import("@/components/store/StoreCartBadgeCount"));
 const CART_BADGE_DELAY_MS = 9000;
@@ -9,10 +10,14 @@ export default function DeferredStoreCartBadge(props: StoreCartBadgeCountProps) 
 
   useEffect(() => {
     const reveal = () => setMounted(true);
-    const timeoutId = window.setTimeout(reveal, CART_BADGE_DELAY_MS);
+    const cancelIdle = scheduleIdleTask("cart-badge-reveal", reveal, {
+      delayMs: CART_BADGE_DELAY_MS,
+      timeoutMs: 5000,
+      jitterMs: 2500,
+    });
     window.addEventListener("cart:badge-bump", reveal);
     return () => {
-      window.clearTimeout(timeoutId);
+      cancelIdle();
       window.removeEventListener("cart:badge-bump", reveal);
     };
   }, []);

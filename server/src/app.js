@@ -25,10 +25,12 @@ const { registerSeoPrerender } = require('./modules/product/seoPrerender');
 const { registerPwaBrandRoutes } = require('./modules/pwa/routes/pwa.routes');
 const stripeWebhook = require('./modules/payment/controller/stripeWebhook.controller');
 const { ForbiddenError } = require('./errors');
+const { runWithRequestPerf } = require('./utils/requestPerf');
 
 const app = express();
 
 app.use(requestContext);
+app.use((req, res, next) => runWithRequestPerf(next));
 app.use(accessLogger);
 
 app.use((req, res, next) => {

@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const { recordDbDuration } = require('../utils/requestPerf');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const dbUser = process.env.DB_USER || (isProduction ? undefined : 'click_send_app');
@@ -53,6 +54,7 @@ function installSlowQueryLogger(targetPool) {
       return await queryFn(sql, params);
     } finally {
       const elapsedMs = Date.now() - startedAt;
+      recordDbDuration(elapsedMs);
       if (elapsedMs >= thresholdMs) {
         console.warn('[db.slow_query]', JSON.stringify({
           scope,
@@ -82,5 +84,38 @@ function installSlowQueryLogger(targetPool) {
 }
 
 installSlowQueryLogger(pool);
+
+if (!resolveSlowQueryThresholdMs()) {
+  const originalPoolQuery = pool.query.bind(pool);
+  pool.query = async function timedPoolQuery(sql, params) {
+    const startedAt = Date.now();
+    try {
+      return await originalPoolQuery(sql, params);
+    } finally {
+      recordDbDuration(Date.now() - startedAt);
+    }
+  };
+
+  const originalGetConnection = pool.getConnection.bind(pool);
+  pool.getConnection = async function getPerfConnection() {
+    const conn = await originalGetConnection();
+    if (!conn.__requestPerfLoggerInstalled) {
+      const originalConnectionQuery = conn.query.bind(conn);
+      conn.query = async function timedConnectionQuery(sql, params) {
+        const startedAt = Date.now();
+        try {
+          return await originalConnectionQuery(sql, params);
+        } finally {
+          recordDbDuration(Date.now() - startedAt);
+        }
+      };
+      Object.defineProperty(conn, '__requestPerfLoggerInstalled', {
+        value: true,
+        enumerable: false,
+      });
+    }
+    return conn;
+  };
+}
 
 module.exports = pool;

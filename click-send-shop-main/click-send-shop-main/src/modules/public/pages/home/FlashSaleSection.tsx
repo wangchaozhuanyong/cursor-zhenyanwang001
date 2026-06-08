@@ -25,17 +25,17 @@ export default function FlashSaleSection({ delay = 0, title = "" }: { delay?: nu
 
   useEffect(() => {
     let cancelled = false;
-    const cached = homeService.getCachedHomeBootstrap();
-    if (cached?.marketing?.flashSale) {
-      const data = cached.marketing.flashSale as FlashSaleHomeActivity;
+    const cached = homeService.getCachedHomeMarketing();
+    if (cached?.flashSale) {
+      const data = cached.flashSale as FlashSaleHomeActivity;
       setActivity(data);
       setCountdown(data?.countdown_seconds ?? 0);
     }
     homeService
-      .fetchHomeBootstrap()
-      .then((bootstrap) => {
+      .fetchHomeMarketing()
+      .then((marketing) => {
         if (cancelled) return;
-        const data = (bootstrap?.marketing?.flashSale || null) as FlashSaleHomeActivity | null;
+        const data = (marketing?.flashSale || null) as FlashSaleHomeActivity | null;
         if (data) {
           setActivity(data);
           setCountdown(data?.countdown_seconds ?? 0);

@@ -140,9 +140,64 @@ function formatProduct(row) {
   };
 }
 
+function hasInlineDataUrl(value) {
+  if (typeof value !== 'string') return false;
+  return /^\s*data:/i.test(value) || /data:image\//i.test(value);
+}
+
+function omitInlineDataUrl(value) {
+  return hasInlineDataUrl(value) ? '' : value;
+}
+
+function resolveStockStatus(stock) {
+  const n = Number(stock || 0);
+  if (n <= 0) return 'out_of_stock';
+  if (n <= 5) return 'low_stock';
+  return 'in_stock';
+}
+
+function formatProductCard(row) {
+  if (!row) return null;
+  const lifecycleStatus = normalizeLifecycleFromRow(row);
+  const stock = Number(row.stock || 0);
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug || row.id,
+    cover_image: omitInlineDataUrl(row.cover_image || ''),
+    cover_image_alt: row.cover_image_alt || '',
+    price: row.price == null ? 0 : parseFloat(row.price),
+    original_price: row.original_price != null ? parseFloat(row.original_price) : null,
+    min_price: row.min_price == null ? undefined : Number(row.min_price),
+    max_price: row.max_price == null ? undefined : Number(row.max_price),
+    min_original_price: row.min_original_price == null ? null : Number(row.min_original_price),
+    max_original_price: row.max_original_price == null ? null : Number(row.max_original_price),
+    variant_count: row.variant_count == null ? undefined : Number(row.variant_count),
+    sales_count: row.sales_count != null ? Number(row.sales_count) : 0,
+    points: row.points == null ? 0 : Number(row.points),
+    category_id: row.category_id || '',
+    category_name: row.category_name || '',
+    stock,
+    stock_status: row.stock_status || resolveStockStatus(stock),
+    lifecycle_status: lifecycleStatus,
+    status: statusVarcharFromLifecycle(lifecycleStatus),
+    sort_order: row.sort_order,
+    created_at: row.created_at,
+    createdAt: row.created_at,
+    published_at: row.published_at || row.created_at,
+    publishedAt: row.published_at || row.created_at,
+    is_recommended: !!row.is_recommended,
+    is_new: !!row.is_new,
+    isNewArrival: !!row.is_new,
+    newArrival: !!row.is_new,
+    is_hot: !!row.is_hot,
+  };
+}
+
 module.exports = {
   generateId, generateOrderNo, generateInviteCode,
   hashPassword, comparePassword,
   signToken, verifyToken,
-  parseBool, parseProductImages, parseProductImageAlts, formatProduct,
+  parseBool, parseProductImages, parseProductImageAlts, formatProduct, formatProductCard,
+  hasInlineDataUrl, omitInlineDataUrl,
 };

@@ -288,14 +288,17 @@ export default defineConfig(({ mode, command }) => {
           {
             urlPattern: ({ url, request }) =>
               request.method === "GET"
-              && url.pathname === "/api/home/bootstrap",
-            handler: "NetworkFirst",
+              && (
+                url.pathname === "/api/home/bootstrap"
+                || url.pathname === "/api/home/bootstrap-lite"
+                || url.pathname === "/api/home/marketing"
+              ),
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "public-home-bootstrap-cache",
-              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60,
+                maxAgeSeconds: 60 * 2,
               },
             },
           },
@@ -306,10 +309,9 @@ export default defineConfig(({ mode, command }) => {
                 url.pathname === "/api/content/site-info"
                 || url.pathname === "/api/content/home-ops"
               ),
-            handler: "NetworkFirst",
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "public-home-cache",
-              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 30,
                 maxAgeSeconds: 60 * 2,
@@ -323,10 +325,9 @@ export default defineConfig(({ mode, command }) => {
                 url.pathname === "/api/categories"
                 || url.pathname.startsWith("/api/categories/")
               ),
-            handler: "NetworkFirst",
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "public-category-cache",
-              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 60,
                 maxAgeSeconds: 60 * 5,
@@ -341,10 +342,9 @@ export default defineConfig(({ mode, command }) => {
                 || url.pathname === "/api/products/home"
                 || url.pathname === "/api/products/tags"
               ),
-            handler: "NetworkFirst",
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "public-product-list-cache",
-              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 80,
                 maxAgeSeconds: 60 * 2,
@@ -355,10 +355,9 @@ export default defineConfig(({ mode, command }) => {
             urlPattern: ({ url, request }) =>
               request.method === "GET"
               && /^\/api\/products\/[^/]+(\/related)?$/.test(url.pathname),
-            handler: "NetworkFirst",
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "public-product-detail-cache",
-              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 120,
                 maxAgeSeconds: 60 * 5,
@@ -369,10 +368,9 @@ export default defineConfig(({ mode, command }) => {
             urlPattern: ({ url, request }) =>
               request.method === "GET"
               && url.pathname.startsWith("/api/banners"),
-            handler: "NetworkFirst",
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "public-banner-cache",
-              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 20,
                 maxAgeSeconds: 60,
@@ -385,10 +383,9 @@ export default defineConfig(({ mode, command }) => {
               && (
                 url.pathname.startsWith("/api/content/")
               ),
-            handler: "NetworkFirst",
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "public-content-cache",
-              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 80,
                 maxAgeSeconds: 60 * 10,

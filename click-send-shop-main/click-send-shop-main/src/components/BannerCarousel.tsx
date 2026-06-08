@@ -52,6 +52,18 @@ function preloadBannerImage(image: string, priority: "high" | "low" = "low") {
   img.src = responsiveImage.src;
 }
 
+function warnLargeBannerImage(image: string, id?: string) {
+  if (!image || !import.meta.env.DEV) return;
+  const isDataUrl = /^\s*data:/i.test(image);
+  const approxBytes = isDataUrl ? Math.ceil(image.length * 0.75) : image.length;
+  if (!isDataUrl && approxBytes <= 300 * 1024) return;
+  console.warn("[banner.performance]", {
+    id,
+    reason: isDataUrl ? "data_url_banner" : "large_banner_url",
+    approxBytes,
+  });
+}
+
 function resolveBannerLink(link: string): string {
   const value = (link || "").trim();
   if (!value) return "";
@@ -204,12 +216,6 @@ export default function BannerCarousel({
     if (!nextBannerImage || nextBannerImage === activeImage) return;
     const timer = window.setTimeout(() => {
       preloadBannerImage(nextBannerImage);
-      const secondNextImage = banners.length > 2
-        ? banners[(safeIndex + 2) % banners.length]?.image?.trim() || ""
-        : "";
-      if (secondNextImage && secondNextImage !== activeImage && secondNextImage !== nextBannerImage) {
-        preloadBannerImage(secondNextImage);
-      }
     }, 120);
     return () => window.clearTimeout(timer);
   }, [activeImage, banners, nextBannerImage, safeIndex]);
@@ -293,6 +299,8 @@ export default function BannerCarousel({
     const itemResponsiveImage = getResponsiveBannerImage(image);
     const isActive = index === safeIndex;
     const isNext = showControls && index === (safeIndex + 1) % banners.length;
+    if (!isActive && !isNext) return null;
+    warnLargeBannerImage(image, item.id);
     const itemTitle = item.title?.trim() || `${ariaLabelPrefix} ${index + 1}`;
     return (
       <img

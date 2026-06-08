@@ -1,8 +1,8 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
 import AppRouteFallback, { StoreOutletFallback } from "@/components/AppRouteFallback";
+import { StoreAppRoutes } from "@/routes/StoreAppRoutes";
 
-const StoreAppRoutes = lazy(() => import("@/routes/StoreAppRoutes").then((module) => ({ default: module.StoreAppRoutes })));
 const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
 
 function StoreAppContent() {

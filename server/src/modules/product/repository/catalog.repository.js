@@ -2,6 +2,40 @@ const db = require('../../../config/db');
 const { ACTIVE_PRODUCT_WHERE, activeProductWhere } = require('../productLifecycle');
 
 const PUBLIC_QUERY_TIMEOUT_MS = 3000;
+const PRODUCT_CARD_COLUMNS = `
+  p.id,
+  p.name,
+  p.cover_image,
+  p.cover_image_alt,
+  p.price,
+  p.original_price,
+  p.sales_count,
+  p.points,
+  p.category_id,
+  c.name AS category_name,
+  p.stock,
+  p.is_hot,
+  p.is_new,
+  p.is_recommended,
+  p.sort_order,
+  p.created_at,
+  p.status,
+  p.lifecycle_status
+`;
+
+function productCardSelectFrom(alias = 'products') {
+  return PRODUCT_CARD_COLUMNS.replaceAll('p.', `${alias}.`);
+}
+
+function qualifyProductOrderBy(orderBySql) {
+  return String(orderBySql || '')
+    .replace(/\bsales_count\b/g, 'products.sales_count')
+    .replace(/\bis_recommended\b/g, 'products.is_recommended')
+    .replace(/\bsort_order\b/g, 'products.sort_order')
+    .replace(/\bcreated_at\b/g, 'products.created_at')
+    .replace(/\bid\b/g, 'products.id')
+    .replace(/\bprice\b/g, 'products.price');
+}
 
 function isTimeoutError(err) {
   return err?.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || /timeout/i.test(String(err?.message || ''));
@@ -21,7 +55,24 @@ async function publicRows(label, sql, params = []) {
 async function selectActiveBanners() {
   return publicRows(
     'banners',
-    'SELECT * FROM banners WHERE enabled = 1 AND deleted_at IS NULL ORDER BY sort_order ASC',
+    `SELECT id, title, description, cta_text, image, link, sort_order, enabled
+     FROM banners
+     WHERE enabled = 1 AND deleted_at IS NULL
+     ORDER BY sort_order ASC
+     LIMIT 8`,
+  );
+}
+
+async function selectActiveBannersLite(limit = 3) {
+  const lim = Math.min(5, Math.max(1, Number(limit) || 3));
+  return publicRows(
+    'banners:lite',
+    `SELECT id, title, description, cta_text, image, link, sort_order, enabled
+     FROM banners
+     WHERE enabled = 1 AND deleted_at IS NULL
+     ORDER BY sort_order ASC
+     LIMIT ?`,
+    [lim],
   );
 }
 
@@ -29,6 +80,16 @@ async function selectActiveCategories() {
   return publicRows(
     'categories',
     `SELECT id, parent_id, name, description, buying_guide, faq_json, seo_title, seo_description, icon, icon_url, sort_order, is_visible, is_active
+     FROM categories
+     WHERE is_active = 1 AND is_visible = 1 AND deleted_at IS NULL
+     ORDER BY parent_id IS NOT NULL, parent_id ASC, sort_order ASC, id ASC`,
+  );
+}
+
+async function selectActiveCategoriesLite() {
+  return publicRows(
+    'categories:lite',
+    `SELECT id, parent_id, name, icon, icon_url, sort_order, is_visible, is_active
      FROM categories
      WHERE is_active = 1 AND is_visible = 1 AND deleted_at IS NULL
      ORDER BY parent_id IS NOT NULL, parent_id ASC, sort_order ASC, id ASC`,
@@ -59,7 +120,10 @@ async function countActiveProducts(where, params) {
 
 async function selectActiveProductsPage(where, params, orderBy, pageSize, offset) {
   const [rows] = await db.query(
-    `SELECT * FROM products ${where} ${orderBy} LIMIT ? OFFSET ?`,
+    `SELECT ${productCardSelectFrom('products')}
+     FROM products
+     LEFT JOIN categories c ON c.id = products.category_id
+     ${where} ${orderBy} LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
   return rows;
@@ -182,15 +246,27 @@ async function selectVariantSpecValues(productId) {
 
 async function selectHomeProductBlocks(limit) {
   const [hot] = await db.query(
-    `SELECT * FROM products WHERE ${ACTIVE_PRODUCT_WHERE} AND is_hot=1 ORDER BY sort_order LIMIT ?`,
+    `SELECT ${productCardSelectFrom('products')}
+     FROM products
+     LEFT JOIN categories c ON c.id = products.category_id
+     WHERE ${activeProductWhere('products')} AND products.is_hot=1
+     ORDER BY products.sort_order LIMIT ?`,
     [limit],
   );
   const [nw] = await db.query(
-    `SELECT * FROM products WHERE ${ACTIVE_PRODUCT_WHERE} AND is_new=1 ORDER BY sort_order LIMIT ?`,
+    `SELECT ${productCardSelectFrom('products')}
+     FROM products
+     LEFT JOIN categories c ON c.id = products.category_id
+     WHERE ${activeProductWhere('products')} AND products.is_new=1
+     ORDER BY products.sort_order LIMIT ?`,
     [limit],
   );
   const [rec] = await db.query(
-    `SELECT * FROM products WHERE ${ACTIVE_PRODUCT_WHERE} AND is_recommended=1 ORDER BY sort_order LIMIT ?`,
+    `SELECT ${productCardSelectFrom('products')}
+     FROM products
+     LEFT JOIN categories c ON c.id = products.category_id
+     WHERE ${activeProductWhere('products')} AND products.is_recommended=1
+     ORDER BY products.sort_order LIMIT ?`,
     [limit],
   );
   return { hot, new_arrivals: nw, recommended: rec };
@@ -199,20 +275,25 @@ async function selectHomeProductBlocks(limit) {
 async function selectActiveProductsByFlag(flagField, limit) {
   return publicRows(
     `products:${flagField}`,
-    `SELECT * FROM products
-     WHERE ${ACTIVE_PRODUCT_WHERE} AND ${flagField}=1
-     ORDER BY sort_order ASC, created_at DESC
+    `SELECT ${productCardSelectFrom('products')}
+     FROM products
+     LEFT JOIN categories c ON c.id = products.category_id
+     WHERE ${activeProductWhere('products')} AND products.${flagField}=1
+     ORDER BY products.sort_order ASC, products.created_at DESC
      LIMIT ?`,
     [limit],
   );
 }
 
 async function selectActiveProductsFallback(orderBySql, limit) {
+  const orderBy = qualifyProductOrderBy(orderBySql);
   return publicRows(
     `products:fallback:${orderBySql}`,
-    `SELECT * FROM products
-     WHERE ${ACTIVE_PRODUCT_WHERE}
-     ORDER BY ${orderBySql}
+    `SELECT ${productCardSelectFrom('products')}
+     FROM products
+     LEFT JOIN categories c ON c.id = products.category_id
+     WHERE ${activeProductWhere('products')}
+     ORDER BY ${orderBy}
      LIMIT ?`,
     [limit],
   );
@@ -220,14 +301,15 @@ async function selectActiveProductsFallback(orderBySql, limit) {
 
 async function selectActiveProductsRecent(days, limit, onlyInStock = false) {
   const recentDays = Math.max(1, Number(days) || 14);
-  const stockWhere = onlyInStock ? ' AND stock > 0' : '';
   return publicRows(
     `products:recent:${recentDays}:${onlyInStock ? 'instock' : 'all'}`,
-    `SELECT * FROM products
-     WHERE ${ACTIVE_PRODUCT_WHERE}
-       AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
-       ${stockWhere}
-     ORDER BY created_at DESC, sort_order ASC, id DESC
+    `SELECT ${productCardSelectFrom('products')}
+     FROM products
+     LEFT JOIN categories c ON c.id = products.category_id
+     WHERE ${activeProductWhere('products')}
+       AND products.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+       ${onlyInStock ? ' AND products.stock > 0' : ''}
+     ORDER BY products.created_at DESC, products.sort_order ASC, products.id DESC
      LIMIT ?`,
     [recentDays, limit],
   );
@@ -274,7 +356,11 @@ async function selectProductCategoryId(productId) {
 
 async function selectRelatedByCategory(categoryId, excludeProductId, limit) {
   const [rows] = await db.query(
-    `SELECT * FROM products WHERE ${ACTIVE_PRODUCT_WHERE} AND category_id=? AND id!=? ORDER BY sort_order LIMIT ?`,
+    `SELECT ${productCardSelectFrom('products')}
+     FROM products
+     LEFT JOIN categories c ON c.id = products.category_id
+     WHERE ${activeProductWhere('products')} AND products.category_id=? AND products.id!=?
+     ORDER BY products.sort_order LIMIT ?`,
     [categoryId, excludeProductId, limit],
   );
   return rows;
@@ -296,7 +382,9 @@ async function insertHomeEngagementEvent({ module, eventKey, productId, sessionI
 
 module.exports = {
   selectActiveBanners,
+  selectActiveBannersLite,
   selectActiveCategories,
+  selectActiveCategoriesLite,
   selectCategoryById,
   selectVisibleCategoryIds,
   countActiveProducts,
@@ -317,4 +405,3 @@ module.exports = {
   selectRelatedByCategory,
   insertHomeEngagementEvent,
 };
-

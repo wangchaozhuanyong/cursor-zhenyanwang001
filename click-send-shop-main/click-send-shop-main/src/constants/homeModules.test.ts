@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  HOME_MODULE_DEFINITIONS,
   getHomeModuleCustomTitle,
   getHomeModuleTitle,
+  HOME_MODULE_DEFINITIONS,
   mergeHomeModuleSettings,
 } from "./homeModules";
 

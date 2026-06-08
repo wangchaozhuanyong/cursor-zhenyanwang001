@@ -345,7 +345,6 @@ export default function Categories() {
       />
       <div className="store-category-mobile-chrome md:hidden">
         <StorePageHeader
-          sticky={false}
           matchTabHeaderHeight
           className={cn(STORE_MOBILE_PAGE_HEADER_CLASS, "store-category-mobile-header")}
           title={categoryHeaderTitle}

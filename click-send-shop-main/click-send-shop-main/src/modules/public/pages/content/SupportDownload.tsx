@@ -110,7 +110,9 @@ export default function SupportDownload() {
 
   const pwa = usePwaInstallPrompt(handleInstalled);
   const installShownTrackedRef = useRef(false);
-  const canShowInstallView = browserEnv.platform !== "desktop";
+  const queryTab = searchParams.get("tab");
+  const requestedDownloadView = queryTab === "download";
+  const canShowInstallView = browserEnv.platform !== "desktop" || requestedDownloadView;
 
   useEffect(() => {
     if (installShownTrackedRef.current) return;
@@ -142,7 +144,6 @@ export default function SupportDownload() {
     return views;
   }, [canShowInstallView, channelByType, config.download.enabled, config.support.enabled, platforms.length]);
 
-  const queryTab = searchParams.get("tab");
   const requestedView = resolveQueryView(queryTab);
   const queryChannelId = searchParams.get("channelId")?.trim() || "";
   const pinnedChannel = useMemo(

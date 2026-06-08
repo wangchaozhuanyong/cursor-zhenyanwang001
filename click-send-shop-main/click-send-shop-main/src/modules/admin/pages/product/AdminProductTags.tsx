@@ -1,5 +1,5 @@
 import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -23,6 +23,15 @@ const EMPTY_FORM = {
   sort_order: 0,
   enabled: true,
 };
+
+function TagFormField({ label, children, className = "" }: { label: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <div className={`grid gap-2 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center ${className}`}>
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
 
 export default function AdminProductTags() {
   const { tText } = useAdminT();
@@ -120,33 +129,38 @@ export default function AdminProductTags() {
     >
       {showForm && (
         <div className="rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_30%,var(--theme-border))] bg-card p-3 sm:p-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>标签名称</Tx></label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tText("输入标签名称")} className="rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>背景色</Tx></label>
-              <input type="color" value={form.bg_color} onChange={(e) => setForm({ ...form, bg_color: e.target.value })} className="h-10 w-16 rounded-lg bg-secondary p-1" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>文字色</Tx></label>
-              <input type="color" value={form.text_color} onChange={(e) => setForm({ ...form, text_color: e.target.value })} className="h-10 w-16 rounded-lg bg-secondary p-1" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>排序权重</Tx></label>
-              <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-24 rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none" />
-            </div>
-            <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-xs text-muted-foreground">
-              <input type="checkbox" className="accent-[var(--theme-primary)]" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} /><Tx>
-              启用
-            </Tx></label>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>预览</Tx></label>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <TagFormField label={<Tx>标签名称</Tx>} className="lg:col-span-2">
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tText("输入标签名称")} className="w-full rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none" />
+            </TagFormField>
+            <TagFormField label={<Tx>背景色</Tx>}>
+              <div className="flex items-center gap-2">
+                <input type="color" value={form.bg_color} onChange={(e) => setForm({ ...form, bg_color: e.target.value })} className="h-10 w-16 rounded-lg bg-secondary p-1" />
+                <span className="text-xs font-medium uppercase text-muted-foreground">{form.bg_color}</span>
+              </div>
+            </TagFormField>
+            <TagFormField label={<Tx>文字色</Tx>}>
+              <div className="flex items-center gap-2">
+                <input type="color" value={form.text_color} onChange={(e) => setForm({ ...form, text_color: e.target.value })} className="h-10 w-16 rounded-lg bg-secondary p-1" />
+                <span className="text-xs font-medium uppercase text-muted-foreground">{form.text_color}</span>
+              </div>
+            </TagFormField>
+            <TagFormField label={<Tx>排序权重</Tx>}>
+              <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-full max-w-40 rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none" />
+            </TagFormField>
+            <TagFormField label={<Tx>启用状态</Tx>}>
+              <label className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-xs text-muted-foreground">
+                <input type="checkbox" className="accent-[var(--theme-primary)]" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
+                <Tx>启用</Tx>
+              </label>
+            </TagFormField>
+            <TagFormField label={<Tx>预览</Tx>} className="lg:col-span-2">
               <span className="inline-flex rounded-full px-3 py-1 text-xs font-bold" style={{ backgroundColor: form.bg_color, color: form.text_color }}>
                 {form.name || "标签"}
               </span>
-            </div>
+            </TagFormField>
+          </div>
+          <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-border/70 pt-4">
             <PermissionGate permission="tag.manage">
               <LoadingButton
                 type="button"

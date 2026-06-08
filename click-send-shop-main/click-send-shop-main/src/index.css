@@ -4842,6 +4842,7 @@ html[data-app-scope="store"] .store-category-mobile-tabs-shell {
 }
 
 html[data-app-scope="store"] .store-category-mobile-filter-shell {
+  top: calc(var(--store-tab-header-height, 3.25rem) + env(safe-area-inset-top, 0px));
   padding: 0.12rem var(--store-page-x) 0.34rem;
   border-bottom: 0;
   background:
@@ -10878,7 +10879,9 @@ html[data-app-scope="store"] .store-home-topbar {
   box-shadow: none;
 }
 
+html[data-app-scope="store"] .store-fixed-header,
 html[data-app-scope="store"] .store-home-fixed-header,
+html[data-app-scope="store"] .store-fixed-header.store-glass-surface,
 html[data-app-scope="store"] .store-home-fixed-header.store-glass-surface {
   border-bottom-width: 0;
   border-bottom-color: transparent;

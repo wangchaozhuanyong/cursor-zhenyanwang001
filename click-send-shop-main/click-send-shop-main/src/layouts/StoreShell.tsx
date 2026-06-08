@@ -16,15 +16,15 @@ export default function StoreShell({ children }: StoreShellProps) {
   const hideChrome = pathname.startsWith("/checkout");
   const isDesktop = useMediaQuery("(min-width: 1280px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1279px)");
-  const homeHeaderClassName = pathname === "/" ? "store-home-fixed-header" : undefined;
+  const fixedHeaderClassName = "store-fixed-header";
 
   return (
     <div className="store-shell relative min-h-[100dvh]">
       {!hideChrome && isDesktop ? (
-        <StoreDesktopHeader className={homeHeaderClassName} />
+        <StoreDesktopHeader className={fixedHeaderClassName} />
       ) : null}
       {!hideChrome && isTab && isTablet ? (
-        <StoreTabletBar className={homeHeaderClassName} />
+        <StoreTabletBar className={fixedHeaderClassName} />
       ) : null}
       <div>{children}</div>
     </div>

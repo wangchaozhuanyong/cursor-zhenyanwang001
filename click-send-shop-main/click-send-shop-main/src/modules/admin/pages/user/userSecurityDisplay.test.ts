@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatDeviceLabel,
+  formatIpAddressLabel,
   formatIpLocationLabel,
   formatLoginMethodLabel,
   formatRiskLevelLabel,
@@ -30,6 +31,13 @@ describe("userSecurityDisplay", () => {
     expect(formatIpLocationLabel({ country: "马来西亚", city: "吉隆坡" })).toBe("马来西亚 / 吉隆坡");
     expect(formatIpLocationLabel({ label: "美国 / CA / Mountain View" })).toBe("美国 / CA / Mountain View");
     expect(formatIpLocationLabel(null)).toBe("归属地未知");
+  });
+
+  it("把长 IPv6 转成适合表格展示的短格式", () => {
+    expect(formatIpAddressLabel("::1")).toBe("::1");
+    expect(formatIpAddressLabel("0:0:0:0:0:0:0:1")).toBe("::1");
+    expect(formatIpAddressLabel("::ffff:192.168.1.10")).toBe("192.168.1.10");
+    expect(formatIpAddressLabel("2405:3800:8ba:3c1:5c71:8838:bd01:5549")).toBe("2405:3800:...:bd01:5549");
   });
 
   it("把风险来源和触发次数说明清楚", () => {

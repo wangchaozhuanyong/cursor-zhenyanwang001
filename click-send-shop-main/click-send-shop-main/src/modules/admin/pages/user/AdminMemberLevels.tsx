@@ -329,34 +329,25 @@ export default function AdminMemberLevels() {
               className="w-full rounded border px-2 py-1"
             />
           </div>
-          <div className="flex flex-col justify-end gap-2 pt-5">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={newLevel.free_shipping_enabled || false}
-                onChange={(e) => setNewLevel((s) => ({ ...s, free_shipping_enabled: e.target.checked }))}
-              />
-              {L("免邮", "Free shipping")}
-              <AdminFieldHint text={hints.free_shipping_enabled} />
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={newLevel.enabled !== false}
-                onChange={(e) => setNewLevel((s) => ({ ...s, enabled: e.target.checked, is_default: e.target.checked ? s.is_default : false }))}
-              />
-              {L("启用", "Enabled")}
-              <AdminFieldHint text={hints.enabled} />
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={newLevel.is_default || false}
-                onChange={(e) => setNewLevel((s) => ({ ...s, is_default: e.target.checked, enabled: e.target.checked ? true : s.enabled }))}
-              />
-              {L("默认等级", "Default tier")}
-              <AdminFieldHint text={hints.is_default} />
-            </label>
+          <div className="flex min-w-0 flex-wrap items-end gap-2 pt-5">
+            <CompactToggle
+              label={L("免邮", "Free shipping")}
+              hint={hints.free_shipping_enabled}
+              checked={!!newLevel.free_shipping_enabled}
+              onChange={(checked) => setNewLevel((s) => ({ ...s, free_shipping_enabled: checked }))}
+            />
+            <CompactToggle
+              label={L("启用", "Enabled")}
+              hint={hints.enabled}
+              checked={newLevel.enabled !== false}
+              onChange={(checked) => setNewLevel((s) => ({ ...s, enabled: checked, is_default: checked ? s.is_default : false }))}
+            />
+            <CompactToggle
+              label={L("默认等级", "Default tier")}
+              hint={hints.is_default}
+              checked={!!newLevel.is_default}
+              onChange={(checked) => setNewLevel((s) => ({ ...s, is_default: checked, enabled: checked ? true : s.enabled }))}
+            />
           </div>
         </div>
         <LoadingButton

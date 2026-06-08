@@ -38,7 +38,8 @@
 
 ## 项目结构
 
-- 主应用目录：`/Users/wangchao/Desktop/真烟网/cursor-zhenyanwang001-work`
+- 当前 5174 候选测试目录：`/Users/wangchao/Desktop/真烟网/cursor-zhenyanwang001-main-merge`
+- 功能分支 worktree 示例：`/Users/wangchao/Desktop/真烟网/cursor-zhenyanwang001-work`、`/Users/wangchao/Desktop/真烟网/cursor-zhenyanwang001-ui-ux`
 - 前端目录：`click-send-shop-main/click-send-shop-main`
 - 前端页面/路由目录：`click-send-shop-main/click-send-shop-main/src`
 - 前端组件目录：`click-send-shop-main/click-send-shop-main/src/components`
@@ -231,8 +232,10 @@ cd server && npm run arch:check
 - 日常开发使用短分支：`feature/<short-name>`、`fix/<short-name>`、`chore/<short-name>`、`hotfix/<short-name>`。
 - 固定一个本地测试入口：`http://127.0.0.1:5174`。5174 只代表“当前候选测试区”，不是所有功能分支的自动预览。
 - 多窗口开发时，每个窗口可以在自己的 worktree/分支里改代码，但不要各自启动新的“正式测试入口”。某个分支需要用户验收时，必须先把该分支已提交内容合入 5174 候选测试区，再启动/刷新 `5174`。
+- 一个测试网址无法同时显示多个分支的未提交修改。Git 只能稳定合并已经 commit 的内容；未 commit 的改动必须先在对应分支提交，才能进入 5174 候选测试区。
 - 5174 候选测试脚本：`bash scripts/use-5174-test.sh <branch>`。例如 `bash scripts/use-5174-test.sh work-ui-ux work-huo-dong` 会把这些已提交分支合入当前候选区并重启 5174；脚本不会 push、不会部署、不会同步数据库。
 - 功能分支流程：开发修改 → 检查改动 → `commit` → `push` 功能分支。功能分支只保存开发记录，不直接发布线上。
+- 5174 验收流程：功能分支完成 commit → 合入 5174 候选测试区 → 用户只访问 `http://127.0.0.1:5174` 测试 → 确认后再合并到 `main`。
 - 发布流程：合并到 `main` → `push origin main` → CI 通过 → GitHub Actions/服务器从 `origin/main` 发布 → 健康检查。
 - 合并到 `main` 后由 GitHub Actions 自动部署。除非明确修复发布问题，不要在 `main` 上临时改代码再提交。
 - 线上发布只认 `origin/main`，不要从 `work-ui-ux`、`work-huo-dong` 或其他功能分支直接部署。

@@ -33,6 +33,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import {
   formatDeviceLabel,
+  formatIpAddressLabel,
   formatIpLocationLabel,
   formatLoginMethodLabel,
   formatRiskLevelLabel,
@@ -97,9 +98,10 @@ function levelTone(level?: string | null) {
 function IpCell({ ip, location }: { ip?: string | null; location?: RiskIp["ip_location"] }) {
   if (!ip) return <span className="text-muted-foreground">-</span>;
   const locationLabel = formatIpLocationLabel(location);
+  const ipLabel = formatIpAddressLabel(ip);
   return (
     <div className="min-w-0" title={`${ip} · ${locationLabel}`}>
-      <div className="font-mono text-sm text-foreground">{ip}</div>
+      <div className="font-mono text-sm text-foreground">{ipLabel}</div>
       <div className="mt-1 text-xs text-muted-foreground">{locationLabel}</div>
     </div>
   );

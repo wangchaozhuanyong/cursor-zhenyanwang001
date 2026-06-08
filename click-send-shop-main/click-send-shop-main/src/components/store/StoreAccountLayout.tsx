@@ -45,8 +45,8 @@ export default function StoreAccountLayout({
       <div className="md:hidden">
         <PageHeader title={title} onBack={handleBack} rightSlot={rightSlot} />
       </div>
-      <StoreTabletBar />
-      <StoreDesktopHeader />
+      <StoreTabletBar className="store-fixed-header" />
+      <StoreDesktopHeader className="store-fixed-header" />
 
       <main
         className={cn(

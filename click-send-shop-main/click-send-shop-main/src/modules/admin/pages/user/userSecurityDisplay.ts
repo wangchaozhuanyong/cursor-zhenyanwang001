@@ -111,6 +111,22 @@ export function formatIpLocationLabel(location?: IpLocation | null): string {
   return parts.length ? parts.join(" / ") : "归属地未知";
 }
 
+export function formatIpAddressLabel(ip?: string | null): string {
+  let raw = String(ip || "").trim();
+  if (!raw) return "-";
+  if (raw.startsWith("[") && raw.endsWith("]")) raw = raw.slice(1, -1);
+  const zoneIndex = raw.indexOf("%");
+  if (zoneIndex > -1) raw = raw.slice(0, zoneIndex);
+  if (raw.toLowerCase().startsWith("::ffff:")) raw = raw.slice(7);
+
+  if (raw === "0:0:0:0:0:0:0:1") return "::1";
+  if (!raw.includes(":") || raw.length <= 28) return raw;
+
+  const parts = raw.split(":").filter(Boolean);
+  if (parts.length < 5) return raw;
+  return `${parts.slice(0, 2).join(":")}:...:${parts.slice(-2).join(":")}`;
+}
+
 export function formatRiskSourceLabel(source?: string | null): string {
   const raw = String(source || "").trim();
   if (raw === "manual") return "管理员添加";

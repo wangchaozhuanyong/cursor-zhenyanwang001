@@ -48,8 +48,8 @@ export default function StoreStandardPageShell({
           <PageHeader title={title} onBack={handleBack} rightSlot={rightSlot} />
         </div>
       ) : null}
-      <StoreTabletBar />
-      <StoreDesktopHeader />
+      <StoreTabletBar className="store-fixed-header" />
+      <StoreDesktopHeader className="store-fixed-header" />
 
       <main className={cn("mx-auto w-full max-w-lg px-[var(--store-page-x)] py-[var(--store-page-y)] sm:px-4 md:max-w-5xl md:px-6 md:py-5 xl:max-w-7xl xl:px-8 xl:pb-12 xl:pt-6", contentClassName)}>
         <div className="mb-5 hidden items-start justify-between gap-4 md:flex">

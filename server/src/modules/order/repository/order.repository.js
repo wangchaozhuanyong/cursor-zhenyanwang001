@@ -1186,13 +1186,14 @@ async function decrementUserPoints(q, userId, points) {
   await syncUserPointsFromAccount(q, userId);
 }
 
-async function restoreUserCouponById(q, ucId) {
+async function restoreUserCouponById(q, ucId, meta = {}) {
   return /** @type {any} */ (require('../../user')).api.restoreCouponAfterOrderCancelled(q, ucId, {
+    ...meta,
     reason: '订单取消返还优惠券',
   });
 }
 
-async function restoreUserCouponHeuristic(q, userId, createdAt) {
+async function restoreUserCouponHeuristic(q, userId, createdAt, meta = {}) {
   const [[row]] = await q.query(
     `SELECT id FROM user_coupons
      WHERE user_id = ? AND status = 'used'
@@ -1202,6 +1203,8 @@ async function restoreUserCouponHeuristic(q, userId, createdAt) {
   );
   if (row?.id) {
     return /** @type {any} */ (require('../../user')).api.restoreCouponAfterOrderCancelled(q, row.id, {
+      ...meta,
+      source: meta.source || 'order_cancel_heuristic',
       reason: '订单取消返还优惠券',
     });
   }

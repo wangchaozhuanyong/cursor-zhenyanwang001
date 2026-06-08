@@ -101,10 +101,25 @@ function mapCouponEntity(c) {
   };
 }
 
+const USER_COUPON_STATUSES = new Set([
+  'all',
+  'available',
+  'pending',
+  'used',
+  'expired',
+  'invalidated',
+  'returned',
+]);
+
+function normalizeUserCouponListStatus(status) {
+  const value = String(status || 'available').trim();
+  return USER_COUPON_STATUSES.has(value) ? value : 'available';
+}
+
 async function getUserCoupons(userId, query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
-  const status = 'available';
+  const status = normalizeUserCouponListStatus(query.status);
   const total = await repo.countUserCoupons(userId, status);
   const offset = (page - 1) * pageSize;
   const rows = await repo.selectUserCouponsPage(userId, status, pageSize, offset);

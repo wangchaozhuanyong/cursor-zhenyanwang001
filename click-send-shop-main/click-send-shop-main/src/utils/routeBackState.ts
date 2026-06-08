@@ -16,6 +16,12 @@ function basePathOf(path: string): string {
   return path.split(/[?#]/)[0] || "/";
 }
 
+function isChildToParentNavigation(previousPath: string, currentPath: string): boolean {
+  const previousBase = basePathOf(previousPath);
+  const currentBase = basePathOf(currentPath);
+  return currentBase !== "/" && previousBase.startsWith(`${currentBase}/`);
+}
+
 export function normalizeInternalRoutePath(value?: string): string | undefined {
   const raw = (value || "").trim();
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return undefined;
@@ -99,6 +105,16 @@ export function resolveTrackedRouteBackSource(input: {
   previousStoredFrom?: string;
 }): string | undefined {
   if (input.previousPath === input.currentPath) return undefined;
+
+  if (isChildToParentNavigation(input.previousPath, input.currentPath)) {
+    const storedFrom = normalizeInternalRoutePath(input.previousStoredFrom);
+    const currentBase = basePathOf(input.currentPath);
+    const storedBase = storedFrom ? basePathOf(storedFrom) : "";
+    if (!storedFrom || storedBase === currentBase || storedBase.startsWith(`${currentBase}/`)) {
+      return undefined;
+    }
+    return storedFrom;
+  }
 
   if (basePathOf(input.previousPath) === basePathOf(input.currentPath)) {
     return normalizeInternalRoutePath(input.previousStoredFrom);

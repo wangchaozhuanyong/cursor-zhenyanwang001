@@ -79,9 +79,19 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
   }
 
   if (order.coupon_uc_id) {
-    await repo.restoreUserCouponById(conn, order.coupon_uc_id);
+    await repo.restoreUserCouponById(conn, order.coupon_uc_id, {
+      orderId,
+      orderNo,
+      userId: order.user_id,
+      source: 'order_cancel',
+    });
   } else if (order.coupon_title) {
-    await repo.restoreUserCouponHeuristic(conn, order.user_id, order.created_at);
+    await repo.restoreUserCouponHeuristic(conn, order.user_id, order.created_at, {
+      orderId,
+      orderNo,
+      userId: order.user_id,
+      source: 'order_cancel_heuristic',
+    });
   }
 }
 

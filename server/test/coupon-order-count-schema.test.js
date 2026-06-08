@@ -33,4 +33,7 @@ test('coupon claim order-count queries do not depend on orders.deleted_at', () =
 
   assert.doesNotMatch(audienceContextBlock, /\bo\.deleted_at\b/);
   assert.doesNotMatch(userOrderCountBlock, /\bdeleted_at\b/);
+  assert.match(audienceContextBlock, /payment_status IN \('paid', 'partially_refunded'\)/);
+  assert.match(userOrderCountBlock, /payment_status IN \('paid', 'partially_refunded'\)/);
+  assert.doesNotMatch(userOrderCountBlock, /status NOT IN \('cancelled'\)/);
 });

@@ -48,14 +48,26 @@ async function selectCampaignsPage(pageSize, offset, query = {}) {
   const { whereSql, params } = listWhere(query);
   const [rows] = await db.query(
     `SELECT cc.*,
-            COUNT(DISTINCT cci.coupon_id) AS coupon_count,
-            COALESCE(SUM(c.claimed_count), 0) AS claimed_count,
-            COALESCE(SUM(c.used_count), 0) AS used_count
+            COALESCE(items.coupon_count, 0) AS coupon_count,
+            COALESCE(stats.claimed_count, 0) AS claimed_count,
+            COALESCE(stats.used_count, 0) AS used_count,
+            COALESCE(stats.discount_total, 0) AS discount_total
        FROM coupon_campaigns cc
-       LEFT JOIN coupon_campaign_items cci ON cci.campaign_id = cc.id
-       LEFT JOIN coupons c ON BINARY c.id = BINARY cci.coupon_id
+       LEFT JOIN (
+         SELECT campaign_id, COUNT(DISTINCT coupon_id) AS coupon_count
+           FROM coupon_campaign_items
+          GROUP BY campaign_id
+       ) items ON BINARY items.campaign_id = BINARY cc.id
+       LEFT JOIN (
+         SELECT issue_activity_id AS campaign_id,
+                COUNT(*) AS claimed_count,
+                SUM(CASE WHEN status = 'used' THEN 1 ELSE 0 END) AS used_count,
+                SUM(CASE WHEN status = 'used' THEN COALESCE(discount_amount, 0) ELSE 0 END) AS discount_total
+           FROM user_coupons
+          WHERE issue_activity_id IS NOT NULL AND issue_activity_id <> ''
+          GROUP BY issue_activity_id
+       ) stats ON BINARY stats.campaign_id = BINARY cc.id
       WHERE ${whereSql}
-      GROUP BY cc.id
       ORDER BY cc.sort_order ASC, cc.created_at DESC
       LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
@@ -231,7 +243,10 @@ async function selectUserAudienceContext(userId) {
               SELECT COUNT(*)
                 FROM orders o
                WHERE BINARY o.user_id = BINARY u.id
-                 AND o.status NOT IN ('cancelled')
+                 AND (
+                   o.payment_status IN ('paid', 'partially_refunded')
+                   OR o.status IN ('paid', 'shipped', 'completed', 'refunding', 'refunded')
+                 )
             ) AS order_count
        FROM users u
       WHERE BINARY u.id = BINARY ?

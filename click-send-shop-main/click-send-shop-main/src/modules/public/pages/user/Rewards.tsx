@@ -24,7 +24,7 @@ import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { cn } from "@/lib/utils";
 import { formatRewardTransactionLabel, groupRewardRecordsByMonth } from "@/utils/rewardDisplayLabels";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const PAGE_SIZE = 20;
 const DEFAULT_BALANCE_LABEL = "购物可用返现";
@@ -135,7 +135,8 @@ export default function Rewards() {
   ];
 
   return (
-    <StoreAccountLayout title="返现记录" onBack={goBack} className="store-page pb-8" mainClassName="sm:px-4 xl:py-6">
+    <TooltipProvider>
+      <StoreAccountLayout title="返现记录" onBack={goBack} className="store-page pb-8" mainClassName="sm:px-4 xl:py-6">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -419,6 +420,7 @@ export default function Rewards() {
           </div>
         )}
       </div>
-    </StoreAccountLayout>
+      </StoreAccountLayout>
+    </TooltipProvider>
   );
 }

@@ -101,6 +101,36 @@ test('parseSettings reads valid custom home module titles only', () => {
   });
 });
 
+test('parseSettings keeps a single coupon module switch and ignores legacy coupon switches', () => {
+  const { module: homeModuleSettings } = loadHomeModuleSettingsWithMocks();
+  const settings = homeModuleSettings.parseSettings({
+    modules: {
+      coupon_center: false,
+      new_user_gift: false,
+      member_coupons: true,
+    },
+    titles: {
+      coupon_center: '  优惠券专区  ',
+      new_user_gift: '新人礼包',
+      member_coupons: '会员礼包',
+    },
+  });
+
+  assert.equal(settings.modules.coupon_center, false);
+  assert.equal(Object.prototype.hasOwnProperty.call(settings.modules, 'new_user_gift'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(settings.modules, 'member_coupons'), false);
+  assert.deepEqual(settings.titles, {
+    coupon_center: '优惠券专区',
+  });
+});
+
+test('module key registry exposes only one coupon storefront switch', () => {
+  const { module: homeModuleSettings } = loadHomeModuleSettingsWithMocks();
+  const couponKeys = homeModuleSettings.MODULE_KEYS.filter((key) => key.includes('coupon') || key.includes('gift'));
+
+  assert.deepEqual(couponKeys, ['coupon_center']);
+});
+
 test('saveHomeModuleSettings persists and clears custom titles', async () => {
   const { module: homeModuleSettings, getStored, getHomeInvalidated, getCatalogCleared } =
     loadHomeModuleSettingsWithMocks(JSON.stringify({

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getHomeModuleCustomTitle,
   getHomeModuleTitle,
+  HOME_MODULE_DEFINITIONS,
   mergeHomeModuleSettings,
 } from "./homeModules";
 
@@ -28,5 +29,14 @@ describe("home module title settings", () => {
 
     expect(getHomeModuleCustomTitle(settings, "recommend")).toHaveLength(40);
     expect(Object.prototype.hasOwnProperty.call(settings.titles, "not_a_module")).toBe(false);
+  });
+
+  it("only exposes one homepage coupon module", () => {
+    const couponDefinitions = HOME_MODULE_DEFINITIONS.filter((def) => (
+      def.key.includes("coupon") || def.key.includes("gift")
+    ));
+
+    expect(couponDefinitions.map((def) => def.key)).toEqual(["coupon_center"]);
+    expect(couponDefinitions[0].label).toBe("优惠券模块");
   });
 });

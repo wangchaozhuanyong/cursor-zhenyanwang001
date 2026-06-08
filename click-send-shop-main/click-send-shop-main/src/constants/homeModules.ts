@@ -4,14 +4,12 @@ export type HomeModuleKey =
   | "banner"
   | "trust_bar"
   | "nav_grid"
-  | "member_coupons"
   | "new_arrivals"
   | "hot_sales"
   | "recommend"
   | "guest_recommend"
   | "flash_sale_section"
   | "coupon_center"
-  | "new_user_gift"
   | "full_reduction_notice"
   | "promotion_banner";
 
@@ -54,13 +52,6 @@ export const HOME_MODULE_DEFINITIONS: HomeModuleDefinition[] = [
     category: "common",
   },
   {
-    key: "member_coupons",
-    label: "会员专属礼包",
-    description: "登录用户可见的优惠券横滑区",
-    audiences: ["member"],
-    category: "member",
-  },
-  {
     key: "new_arrivals",
     label: "新品专区",
     description: "新品主视觉 + 商品轮播",
@@ -97,15 +88,8 @@ export const HOME_MODULE_DEFINITIONS: HomeModuleDefinition[] = [
   },
   {
     key: "coupon_center",
-    label: "首页领券中心",
-    description: "优惠券活动领取入口",
-    audiences: ["member", "guest"],
-    category: "common",
-  },
-  {
-    key: "new_user_gift",
-    label: "首页新人礼包",
-    description: "新用户优惠券包展示",
+    label: "优惠券模块",
+    description: "统一展示普通券、新人券、会员券和活动券",
     audiences: ["member", "guest"],
     category: "common",
   },
@@ -130,14 +114,12 @@ export const DEFAULT_HOME_MODULE_SETTINGS: HomeModuleSettings = {
     banner: true,
     trust_bar: true,
     nav_grid: true,
-    member_coupons: false,
     new_arrivals: true,
     hot_sales: true,
     recommend: true,
     guest_recommend: true,
     flash_sale_section: true,
     coupon_center: true,
-    new_user_gift: true,
     full_reduction_notice: true,
     promotion_banner: true,
   },
@@ -171,7 +153,6 @@ export function mergeHomeModuleSettings(
       if (typeof v === "boolean") modules[def.key] = v;
     }
   }
-  modules.member_coupons = false;
   const titles: Partial<Record<HomeModuleKey, string>> = {};
   if (partial?.titles && typeof partial.titles === "object") {
     for (const def of HOME_MODULE_DEFINITIONS) {

@@ -153,9 +153,11 @@ test('home bootstrap caches concurrent and repeated reads', async (t) => {
   assert.equal(calls.products, 1);
   assert.equal(calls.couponEnabled, 1);
   assert.equal(calls.couponZone, 1);
-  assert.equal(calls.couponCenter, 1);
-  assert.equal(calls.newUserGift, 1);
-  assert.deepEqual(first.marketing.couponCenter.coupons.map((coupon) => coupon.id), ['center-coupon']);
+  assert.equal(calls.couponCenter, 0);
+  assert.equal(calls.newUserGift, 0);
+  assert.deepEqual(first.marketing.couponZone.coupons.map((coupon) => coupon.id), ['zone-coupon']);
+  assert.equal(first.marketing.couponCenter, null);
+  assert.equal(first.marketing.newUserGift, null);
 
   service.invalidateHomeBootstrapCache();
   await service.getHomeBootstrap();

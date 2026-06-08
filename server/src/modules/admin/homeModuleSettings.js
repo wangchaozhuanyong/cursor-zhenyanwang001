@@ -10,21 +10,18 @@ const MODULE_KEYS = [
   'banner',
   'trust_bar',
   'nav_grid',
-  'member_coupons',
   'new_arrivals',
   'hot_sales',
   'recommend',
   'guest_recommend',
   'flash_sale_section',
   'coupon_center',
-  'new_user_gift',
   'full_reduction_notice',
   'promotion_banner',
 ];
 
 const DEFAULT_MODULES = {
   ...Object.fromEntries(MODULE_KEYS.map((k) => [k, true])),
-  member_coupons: false,
 };
 
 const DEFAULT_SETTINGS = {
@@ -79,7 +76,6 @@ function parseSettings(raw) {
       }
     }
   }
-  modules.member_coupons = false;
   return {
     modules,
     titles: normalizeTitles(parsed.titles),
@@ -120,7 +116,6 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
       const v = body.modules[key];
       next.modules[key] = !(v === false || v === 0 || v === '0');
     }
-    next.modules.member_coupons = false;
   }
   if (body.titles && typeof body.titles === 'object') {
     next.titles = { ...(current.titles || {}) };

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  HOME_MODULE_DEFINITIONS,
   getHomeModuleCustomTitle,
   getHomeModuleTitle,
   mergeHomeModuleSettings,
@@ -28,5 +29,12 @@ describe("home module title settings", () => {
 
     expect(getHomeModuleCustomTitle(settings, "recommend")).toHaveLength(40);
     expect(Object.prototype.hasOwnProperty.call(settings.titles, "not_a_module")).toBe(false);
+  });
+
+  it("exposes a single storefront coupon module switch", () => {
+    const couponDefinitions = HOME_MODULE_DEFINITIONS.filter((def) => def.key.includes("coupon") || def.key.includes("gift"));
+
+    expect(couponDefinitions.map((def) => def.key)).toEqual(["coupon_center"]);
+    expect(couponDefinitions[0].label).toBe("优惠券模块");
   });
 });

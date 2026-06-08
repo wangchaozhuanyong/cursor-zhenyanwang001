@@ -10,10 +10,17 @@ interface PaginationState {
   totalPages: number;
 }
 
+interface OrderListCacheEntry {
+  orders: Order[];
+  pagination: PaginationState;
+  cachedAt: number;
+}
+
 interface OrderState {
   orders: Order[];
   currentOrder: Order | null;
   pagination: PaginationState;
+  orderListCache: Record<string, OrderListCacheEntry>;
   filterStatus: OrderStatus | "all";
   loading: boolean;
   loadingMore: boolean;
@@ -30,10 +37,21 @@ interface OrderState {
   clearError: () => void;
 }
 
+const ORDER_LIST_CACHE_TTL_MS = 60_000;
+
+function buildOrderListCacheKey(params: OrderListParams) {
+  const entries = Object.entries(params)
+    .filter(([key, value]) => key !== "page" && key !== "force" && value !== undefined && value !== null && value !== "")
+    .map(([key, value]) => [key, Array.isArray(value) ? value.join(",") : String(value)])
+    .sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify(entries);
+}
+
 export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [],
   currentOrder: null,
   pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 },
+  orderListCache: {},
   filterStatus: "all",
   loading: false,
   loadingMore: false,
@@ -41,15 +59,31 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   error: null,
 
   loadOrders: async (params) => {
-    const requestPage = params?.page ?? 1;
+    const { force = false, ...requestParams } = params ?? {};
+    const requestPage = requestParams.page ?? 1;
     const loadingKey = requestPage > 1 ? "loadingMore" : "loading";
+    const filter = get().filterStatus;
+    const normalizedParams = {
+      ...requestParams,
+      status: filter === "all" ? undefined : filter,
+    };
+    const cacheKey = buildOrderListCacheKey(normalizedParams);
+    const cached = requestPage === 1 ? get().orderListCache[cacheKey] : undefined;
+
+    if (!force && cached && Date.now() - cached.cachedAt < ORDER_LIST_CACHE_TTL_MS) {
+      set({
+        orders: cached.orders,
+        pagination: cached.pagination,
+        loading: false,
+        loadingMore: false,
+        error: null,
+      });
+      return;
+    }
+
     set({ [loadingKey]: true, error: null });
     try {
-      const filter = get().filterStatus;
-      const data = await orderService.fetchOrders({
-        ...params,
-        status: filter === "all" ? undefined : filter,
-      });
+      const data = await orderService.fetchOrders(normalizedParams);
       set((s) => ({
         orders: requestPage === 1 ? data.list : [...s.orders, ...data.list],
         pagination: {
@@ -58,6 +92,21 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           pageSize: data.pageSize,
           totalPages: data.totalPages,
         },
+        orderListCache: requestPage === 1
+          ? {
+              ...s.orderListCache,
+              [cacheKey]: {
+                orders: data.list,
+                pagination: {
+                  total: data.total,
+                  page: data.page,
+                  pageSize: data.pageSize,
+                  totalPages: data.totalPages,
+                },
+                cachedAt: Date.now(),
+              },
+            }
+          : s.orderListCache,
         loading: false,
         loadingMore: false,
       }));
@@ -88,9 +137,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const order = await orderService.submitOrder(params);
       set((s) => ({
         orders: [order, ...s.orders],
+        orderListCache: {},
         submitting: false,
       }));
-      await get().loadOrders({ page: 1 });
+      await get().loadOrders({ page: 1, force: true });
       return order;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "提交订单失败";
@@ -106,6 +156,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         orders: s.orders.map((o) =>
           o.id === id ? { ...o, status: ORDER_STATUS.CANCELLED as OrderStatus } : o
         ),
+        orderListCache: {},
         currentOrder:
           s.currentOrder?.id === id
             ? { ...s.currentOrder, status: ORDER_STATUS.CANCELLED as OrderStatus }
@@ -124,6 +175,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         orders: s.orders.map((o) =>
           o.id === id ? { ...o, status: ORDER_STATUS.COMPLETED as OrderStatus } : o
         ),
+        orderListCache: {},
         currentOrder:
           s.currentOrder?.id === id
             ? { ...s.currentOrder, status: ORDER_STATUS.COMPLETED as OrderStatus }
@@ -140,6 +192,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       await orderService.deleteOrder(id);
       set((s) => ({
         orders: s.orders.filter((o) => o.id !== id),
+        orderListCache: {},
         currentOrder: s.currentOrder?.id === id ? null : s.currentOrder,
       }));
     } catch (e) {
@@ -148,6 +201,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
-  setFilterStatus: (filterStatus) => set({ filterStatus, orders: [], loadingMore: false, pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 } }),
+  setFilterStatus: (filterStatus) => set({ filterStatus, orders: [], orderListCache: {}, loadingMore: false, pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 } }),
   clearError: () => set({ error: null }),
 }));

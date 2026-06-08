@@ -34,3 +34,11 @@ export function writeCachedAuthFeatures(features: AuthFeaturesSnapshot) {
     /* ignore quota */
   }
 }
+
+export function clearCachedAuthFeatures() {
+  try {
+    sessionStorage.removeItem(CACHE_KEY);
+  } catch {
+    /* ignore unavailable storage */
+  }
+}

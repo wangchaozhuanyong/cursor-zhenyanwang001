@@ -2,8 +2,8 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type Reac
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { TopProgressBar } from "@/components/ui/top-progress-bar";
-import AppRouteFallback, { StoreOutletFallback } from "@/components/AppRouteFallback";
-import SilkPageLoader from "@/components/motion/SilkPageLoader";
+import AppRouteFallback, { HomeShellSkeleton, StoreOutletFallback } from "@/components/AppRouteFallback";
+import AppBootReady from "@/components/AppBootReady";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
 import RouteBackTracker from "@/components/RouteBackTracker";
 import AgeGate from "@/components/compliance/AgeGate";
@@ -32,7 +32,6 @@ import { detectPwaPlatform, isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
-import { isLoggedIn } from "@/utils/token";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
@@ -261,7 +260,7 @@ function HomeRoute() {
   const authHydrated = useAuthStore((s) => s.authHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!authHydrated) {
-    return isLoggedIn() ? <AppRouteFallback /> : <GuestHome />;
+    return <HomeShellSkeleton />;
   }
   return isAuthenticated ? <MemberHome /> : <GuestHome />;
 }
@@ -290,7 +289,6 @@ export function StoreAppRoutes() {
 function MainStoreRoutes() {
   const location = useLocation();
   const capabilities = useSiteCapabilities();
-  const routeFallback = location.pathname === "/" ? <SilkPageLoader variant="home" /> : <SilkPageLoader variant="page" />;
 
   return (
     <ErrorBoundary resetKey={location.pathname}>
@@ -309,7 +307,8 @@ function MainStoreRoutes() {
           <LanguageGate />
           <AgeGate />
           <StoreCardOverlapFix />
-          <Suspense fallback={routeFallback}>
+          <Suspense fallback={<StoreOutletFallback />}>
+            <AppBootReady />
             <Routes>
               <Route path="/zh" element={<Navigate to="/" replace />} />
               <Route path="/en" element={<Navigate to="/" replace />} />

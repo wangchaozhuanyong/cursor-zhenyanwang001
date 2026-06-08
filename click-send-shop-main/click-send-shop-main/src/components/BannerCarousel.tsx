@@ -15,6 +15,7 @@ import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { getBannerCopyToneFromImage, type BannerCopyTone } from "@/utils/bannerTextTone";
+import { hasLoadedImage, markImageLoaded, rememberLoadedImageFromElement } from "@/utils/imageLoadMemory";
 
 interface BannerCarouselProps {
   banners: Banner[];
@@ -30,23 +31,7 @@ const INITIAL_AUTO_ROTATE_DELAY_MS = 2200;
 const USER_INTERACTION_PAUSE_MS = 7200;
 const STATIC_HOME_BANNER_RE = /^(.*\/assets\/home-banners\/home-hero-\d{2}-[^?#]+?)(-mobile)?(\.webp)(\?.*)?$/i;
 const STATIC_HOME_BANNER_VERSION = String(import.meta.env.VITE_STATIC_HOME_BANNER_VERSION || "").trim();
-const loadedBannerImages = new Set<string>();
 type SlideDirection = "forward" | "backward";
-
-function getImageCacheKeys(...values: Array<string | undefined | null>): string[] {
-  return values
-    .flatMap((value) => String(value || "").split(","))
-    .map((value) => value.trim().split(/\s+/)[0])
-    .filter(Boolean);
-}
-
-function hasLoadedImage(...values: Array<string | undefined | null>): boolean {
-  return getImageCacheKeys(...values).some((value) => loadedBannerImages.has(value));
-}
-
-function markImageLoaded(...values: Array<string | undefined | null>) {
-  getImageCacheKeys(...values).forEach((value) => loadedBannerImages.add(value));
-}
 
 function preloadBannerImage(image: string, priority: "high" | "low" = "low") {
   if (!image || hasLoadedImage(image)) return;
@@ -182,8 +167,7 @@ export default function BannerCarousel({
     if (!img || !activeImage) return;
 
     const markLoadedIfReady = () => {
-      if (!img.complete || img.naturalWidth <= 0) return;
-      markImageLoaded(activeImage, responsiveImage.src, responsiveImage.srcSet, img.currentSrc, img.src);
+      if (!rememberLoadedImageFromElement(img, activeImage, responsiveImage.src, responsiveImage.srcSet)) return;
       setActiveImageLoaded(true);
       setActiveImageFailed(false);
       refreshCopyTone();

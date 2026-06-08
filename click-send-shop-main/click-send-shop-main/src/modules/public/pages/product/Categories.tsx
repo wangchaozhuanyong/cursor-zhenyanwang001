@@ -250,7 +250,7 @@ export default function Categories() {
 
   const categoryHeaderTitle = (
     <span className="store-category-brand">
-      <StoreBrandLogo src={logoSrc} siteName={siteName} variant="category" width={38} height={38} />
+      <StoreBrandLogo src={logoSrc} siteName={siteName} variant="category" width={28} height={28} />
       <span className="store-category-brand-name">{renderBrandTitle(siteName)}</span>
     </span>
   );

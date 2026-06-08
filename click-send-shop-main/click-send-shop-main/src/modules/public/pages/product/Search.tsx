@@ -174,13 +174,13 @@ export default function Search() {
           surfaceClass,
         )}
       >
-        <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] sm:px-4 md:px-6">
+        <div className="mx-auto w-full max-w-screen-xl px-[var(--store-header-x)]">
           <div className="flex h-[var(--store-tab-header-height)] items-center gap-2">
             <UnifiedButton
               type="button"
               onClick={goBack}
               aria-label="返回"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-text)] transition active:scale-95 touch-target"
+              className="-ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-text)] transition active:scale-95 touch-target"
             >
               <ArrowLeft size={20} strokeWidth={2.25} />
             </UnifiedButton>

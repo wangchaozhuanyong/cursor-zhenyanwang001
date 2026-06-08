@@ -9,6 +9,7 @@ const DEFAULT_SITE_CAPABILITIES = Object.freeze({
   shippingEnabled: true,
   memberLevelEnabled: true,
   customerServiceDownloadEnabled: true,
+  smsOtpLoginEnabled: true,
   telegramOrderNotifyEnabled: true,
   languageGateEnabled: false,
   restrictedProductComplianceEnabled: true,

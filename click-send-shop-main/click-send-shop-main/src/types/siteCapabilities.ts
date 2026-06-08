@@ -9,6 +9,7 @@ export interface SiteCapabilities {
   shippingEnabled: boolean;
   memberLevelEnabled: boolean;
   customerServiceDownloadEnabled: boolean;
+  smsOtpLoginEnabled: boolean;
   telegramOrderNotifyEnabled: boolean;
   languageGateEnabled: boolean;
   restrictedProductComplianceEnabled: boolean;
@@ -28,6 +29,7 @@ export const DEFAULT_SITE_CAPABILITIES: SiteCapabilities = {
   shippingEnabled: true,
   memberLevelEnabled: true,
   customerServiceDownloadEnabled: true,
+  smsOtpLoginEnabled: true,
   telegramOrderNotifyEnabled: true,
   languageGateEnabled: false,
   restrictedProductComplianceEnabled: true,

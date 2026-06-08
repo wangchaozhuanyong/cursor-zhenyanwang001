@@ -14,6 +14,7 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { clearCachedAuthFeatures } from "@/utils/authFeaturesCache";
 
 type FeatureItem = {
   key: keyof SiteCapabilities;
@@ -37,6 +38,11 @@ const FEATURE_ITEMS: FeatureItem[] = [
   { key: "shippingEnabled", label: "配送", desc: "关闭后隐藏配送设置，后端拒绝配送管理接口。" },
   { key: "memberLevelEnabled", label: "会员等级", desc: "关闭后隐藏会员等级入口，后端拒绝会员等级管理接口。" },
   { key: "customerServiceDownloadEnabled", label: "客服/APP 页", desc: "关闭后隐藏前台客服/APP 页与底部导航入口。" },
+  {
+    key: "smsOtpLoginEnabled",
+    label: "短信验证码登录",
+    desc: "控制登录页「验证码登录」入口和短信验证码登录接口。关闭后用户只能使用密码登录；生产环境仍需短信服务配置完整才会真正开启。",
+  },
   {
     key: "telegramOrderNotifyEnabled",
     label: "Telegram 订单通知",
@@ -111,6 +117,7 @@ export default function AdminFeatureSettings() {
       setValues(nextValues);
       markClean(nextValues);
       await refreshSiteCapabilities();
+      clearCachedAuthFeatures();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteCapabilities() });
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.telegramSettings() });
       toast.success(tText("功能开关已保存"));

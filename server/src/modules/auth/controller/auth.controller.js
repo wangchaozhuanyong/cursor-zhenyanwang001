@@ -26,7 +26,7 @@ exports.login = asyncRoute(async (req, res) => {
 
 exports.features = asyncRoute(async (req, res) => {
   res.success({
-    smsOtpLoginEnabled: otpService.isOtpLoginAvailable(),
+    smsOtpLoginEnabled: await otpService.isOtpLoginAvailable(),
     wechatLoginEnabled: wechatService.isWechatLoginEnabled(),
   });
 });

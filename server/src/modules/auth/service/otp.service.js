@@ -18,6 +18,9 @@ const smsOtp = require('./smsOtp.adapter');
 function getAuthService() {
   return require('../service/auth.service');
 }
+function getSiteCapabilitiesApi() {
+  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+}
 
 const OTP_PURPOSE_LOGIN = 'login';
 const OTP_PURPOSE_WECHAT_BIND = 'wechat_bind';
@@ -45,6 +48,7 @@ async function sendOtp(body, reqMeta) {
 }
 
 async function loginWithOtp(body, reqMeta = {}) {
+  await assertOtpLoginEnabled();
   const { phone, countryCode, code } = body;
   const normalizedPhone = normalizeIntlPhone(phone, countryCode);
   if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
@@ -104,6 +108,9 @@ async function sendOtpForWechatBind(body, reqMeta) {
 }
 
 async function sendOtpWithPurpose(body, reqMeta, purpose) {
+  if (purpose === OTP_PURPOSE_LOGIN) {
+    await assertOtpLoginEnabled();
+  }
   const { phone, countryCode } = body;
   const normalizedPhone = normalizeIntlPhone(phone, countryCode);
   if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
@@ -195,8 +202,22 @@ async function verifyOtpForPurpose({ phone, countryCode, code, purpose }) {
   return normalizedPhone;
 }
 
+async function isOtpLoginAvailable() {
+  const capabilitiesApi = getSiteCapabilitiesApi();
+  if (typeof capabilitiesApi.isCapabilityEnabled === 'function') {
+    const enabledByAdmin = await capabilitiesApi.isCapabilityEnabled('smsOtpLoginEnabled');
+    if (!enabledByAdmin) return false;
+  }
+  return smsOtp.isLoginOtpAvailable();
+}
+
+async function assertOtpLoginEnabled() {
+  if (await isOtpLoginAvailable()) return;
+  throw new ValidationError('当前未开启短信验证码登录');
+}
+
 module.exports = {
-  isOtpLoginAvailable: smsOtp.isLoginOtpAvailable,
+  isOtpLoginAvailable,
   sendOtp,
   loginWithOtp,
   sendOtpForWechatBind,

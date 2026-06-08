@@ -293,6 +293,8 @@ export interface OrderListParams {
   includeSummary?: boolean;
   page?: number;
   pageSize?: number;
+  /** 前端列表缓存控制，不会传给接口 */
+  force?: boolean;
 }
 
 export type CheckoutAbandonmentStatus = "open" | "ordered" | "paid" | "closed";

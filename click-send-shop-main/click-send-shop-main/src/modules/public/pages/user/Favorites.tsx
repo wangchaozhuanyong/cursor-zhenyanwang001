@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { toast } from "sonner";
 import ProductCoverImage from "@/components/ProductCoverImage";
@@ -21,10 +21,8 @@ export default function Favorites() {
   }, [loadFavorites]);
 
   return (
-    <div className="store-page-shell store-bottom-safe bg-background">
-      <PageHeader title="我的收藏" />
-
-      <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
+    <StoreAccountLayout title="我的收藏" backFallback="/profile" desktopBackLabel="返回我的">
+      <div className="mx-auto w-full max-w-lg md:max-w-none">
         {!isLoggedIn() && (
           <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-warning)_10%,var(--theme-surface))] px-4 py-3 text-xs text-[var(--theme-text)]">
             未登录时收藏仅保存在本机，登录后可云端同步。
@@ -35,13 +33,14 @@ export default function Favorites() {
         {loading && favoriteProducts.length === 0 ? (
           <div className="flex justify-center py-20 text-sm text-muted-foreground">加载中...</div>
         ) : favoriteProducts.length === 0 ? (
-          <div className="flex flex-col items-center py-20 text-muted-foreground">
-            <Heart size={48} className="mb-3 opacity-20" />
-            <p className="text-sm">收藏夹还是空的</p>
+          <div className="flex min-h-[360px] flex-col items-center justify-center rounded-3xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-6 py-16 text-center text-muted-foreground md:min-h-[420px]">
+            <Heart size={56} className="mb-4 opacity-20" />
+            <p className="text-base font-semibold text-[var(--theme-text)]">收藏夹还是空的</p>
+            <p className="mt-2 max-w-sm text-sm leading-relaxed text-[var(--theme-text-muted)]">看到喜欢的商品可以先收藏，之后从这里快速回到商品详情。</p>
             <UnifiedButton onClick={() => navigate("/categories")} className="mt-4 rounded-full bg-[var(--theme-primary)] px-6 py-2.5 text-sm font-bold text-[var(--theme-primary-foreground)]">{STORE_COPY.browseAllCategories}</UnifiedButton>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {favoriteProducts.map((p) => (
               <div key={p.id} className={`rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition-opacity ${removingId === p.id ? "opacity-50" : "opacity-100"}`}>
                 <div className="flex gap-3">
@@ -95,7 +94,7 @@ export default function Favorites() {
             ))}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </StoreAccountLayout>
   );
 }

@@ -160,7 +160,7 @@ export default function BottomNav() {
       className={cn(
         "store-bottom-nav",
         getBottomNavShellClassName(navStyle, "fixed"),
-        "lg:hidden translate-y-0 opacity-100",
+        "md:hidden translate-y-0 opacity-100",
       )}
       data-theme-nav-style={navStyle}
       style={{

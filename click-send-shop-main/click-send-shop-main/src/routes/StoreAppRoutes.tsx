@@ -321,9 +321,7 @@ function MainStoreRoutes() {
                 <Route path="/support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><SupportDownload /></CapabilityRoute>} />
                 <Route path="/search" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Search /></CapabilityRoute>} />
                 <Route path="/cart" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Cart /></CapabilityRoute>} />
-                <Route path="/favorites" element={<Favorites />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/feedback" element={<Feedback />} />
                 <Route path="/product/:id" element={<CapabilityRoute enabled={capabilities.mallEnabled}><ProductDetail /></CapabilityRoute>} />
               </Route>
 
@@ -332,6 +330,8 @@ function MainStoreRoutes() {
               <Route path="/login/bind-phone" element={<BindWechatPhone />} />
               <Route path="/help" element={<Help />} />
               <Route path="/about" element={<About />} />
+              <Route path="/feedback" element={<Feedback />} />
+              <Route path="/favorites" element={<Favorites />} />
               <Route path="/install" element={capabilities.customerServiceDownloadEnabled ? <Navigate to="/support-download?tab=download" replace /> : <Navigate to="/" replace />} />
               <Route path="/content/:slug" element={<ContentCmsPage />} />
 

@@ -10,7 +10,7 @@ import { OrderDiscountLines } from "./OrderDiscountLines";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { THEME_ALERT_ERROR_BOX } from "@/utils/themeVisuals";
 import { sanitizeClientInstructions } from "@/utils/paymentClientInstructions";
-import PageHeader from "@/components/PageHeader";
+import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -129,13 +129,16 @@ export function CheckoutOrderSuccess({
         : "";
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader title={headerTitle} onBack={onHome} />
-
-      <motion.main
+    <StoreStandardPageShell
+      title={headerTitle}
+      onBack={onHome}
+      backFallback="/"
+      contentClassName="md:max-w-3xl xl:max-w-4xl"
+    >
+      <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto max-w-lg space-y-3 px-4 py-4 pb-8"
+        className="mx-auto w-full max-w-lg space-y-3 pb-8 md:max-w-none"
       >
         {/* 状态摘要：横向紧凑，避免上半区过高 */}
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -464,7 +467,7 @@ export function CheckoutOrderSuccess({
             继续逛逛
           </UnifiedButton>
         </div>
-      </motion.main>
-    </div>
+      </motion.div>
+    </StoreStandardPageShell>
   );
 }

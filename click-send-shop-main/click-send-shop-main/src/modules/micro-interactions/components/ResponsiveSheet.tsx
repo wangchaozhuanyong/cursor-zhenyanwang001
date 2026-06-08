@@ -29,7 +29,7 @@ function hasAccessibleTitle(title: ReactNode): boolean {
 }
 
 /**
- * 响应式弹层：移动/平板 Bottom Sheet，桌面居中 Dialog。
+ * 响应式弹层：手机 Bottom Sheet，平板及桌面居中 Dialog。
  * 请优先使用 {@link AppModal}；本组件供内部与兼容导出。
  */
 export function ResponsiveSheet({

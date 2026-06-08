@@ -5,8 +5,7 @@ import type { ContentPage } from "@/types/content";
 import { useGoBack } from "@/hooks/useGoBack";
 import ContactUsContent from "./ContactUsContent";
 import SeoHead from "@/components/SeoHead";
-import PageHeader from "@/components/PageHeader";
-import { STORE_READING_MAIN_CLASS } from "@/constants/storeLayout";
+import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
@@ -55,26 +54,27 @@ export default function ContentCmsPage() {
   }, [page?.content, pageSeoDescription, siteInfo.siteDescription]);
   const pageStatus = String((page as any)?.status || "").toLowerCase();
   const isNoindex = Boolean((page as any)?.noindex) || ["draft", "hidden", "private"].includes(pageStatus);
+  const pageTitle = loading ? "加载中..." : page?.title || (isContactUs ? "联系我们" : "内容");
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <StoreStandardPageShell
+      title={pageTitle}
+      onBack={goBack}
+      backFallback="/profile"
+      contentClassName="md:max-w-3xl xl:max-w-4xl"
+      className="pb-8"
+    >
       <SeoHead
         title={title}
         description={description}
         canonical={buildCanonical(`/content/${slug}`)}
         robots={isNoindex ? "noindex,follow" : "index,follow"}
       />
-      <PageHeader
-        title={loading ? "加载中..." : page?.title || (isContactUs ? "联系我们" : "内容")}
-        onBack={goBack}
-        contentClassName="lg:max-w-3xl lg:px-8"
-        backButtonClassName="lg:left-8"
-      />
-      <main className={STORE_READING_MAIN_CLASS}>
+      <div className="mx-auto w-full max-w-lg md:max-w-none">
         {error && !loading ? <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">{error}</p> : null}
         {page?.content && !loading && !error ? <article className="store-body-text max-w-none leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }} /> : null}
         {isContactUs && !loading && !error ? <ContactUsContent intro={!page?.content ? "如需订单、支付、物流、售后等协助，请通过以下方式联系我们。" : undefined} /> : null}
-      </main>
-    </div>
+      </div>
+    </StoreStandardPageShell>
   );
 }

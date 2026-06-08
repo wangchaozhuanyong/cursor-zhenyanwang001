@@ -22,7 +22,7 @@ const TIER_DEFAULT_HEIGHT: Partial<Record<AppModalTier, ResponsiveSheetProps["he
 /**
  * 全局统一弹层入口。
  * - light：全端居中 Dialog
- * - standard / form：移动+平板 Bottom Sheet，电脑居中 Dialog
+ * - standard / form：手机 Bottom Sheet，平板及桌面居中 Dialog
  * - immersive：同上（SKU、加购等沉浸式短流程）
  */
 export function AppModal({

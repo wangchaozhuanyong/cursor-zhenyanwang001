@@ -12,7 +12,7 @@ import {
   UserRound,
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
-import PageHeader from "@/components/PageHeader";
+import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -181,15 +181,19 @@ export default function Feedback() {
 
   if (submittedId) {
     return (
-      <div className="min-h-screen bg-background pb-8 text-[var(--theme-text)]">
+      <StoreStandardPageShell
+        title="意见反馈"
+        backFallback="/profile"
+        contentClassName="md:max-w-3xl xl:max-w-4xl"
+        className="pb-8 text-[var(--theme-text)]"
+      >
         <SeoHead
           title={`意见反馈｜${siteName}`}
           description={`向${siteName}提交意见反馈。`}
           canonical={buildCanonical("/feedback")}
           robots="noindex,follow"
         />
-        <PageHeader title="意见反馈" backFallback="/profile" />
-        <main className="mx-auto max-w-lg px-[var(--store-page-x)] pt-5 sm:px-4">
+        <div className="mx-auto w-full max-w-lg md:max-w-none">
           <section className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 text-center shadow-[var(--theme-shadow)]">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-success)_12%,var(--theme-surface))] text-[var(--theme-success)]">
               <CheckCircle2 size={30} />
@@ -234,22 +238,26 @@ export default function Feedback() {
               </p>
             )}
           </section>
-        </main>
-      </div>
+        </div>
+      </StoreStandardPageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-8 text-[var(--theme-text)]">
+    <StoreStandardPageShell
+      title="意见反馈"
+      backFallback="/profile"
+      contentClassName="md:max-w-3xl xl:max-w-4xl"
+      className="pb-8 text-[var(--theme-text)]"
+    >
       <SeoHead
         title={`意见反馈｜${siteName}`}
         description={`向${siteName}提交意见反馈。`}
         canonical={buildCanonical("/feedback")}
         robots="noindex,follow"
       />
-      <PageHeader title="意见反馈" backFallback="/profile" />
 
-      <main className="mx-auto max-w-lg px-[var(--store-page-x)] pt-4 sm:px-4">
+      <div className="mx-auto w-full max-w-lg md:max-w-none">
         <section className="rounded-2xl bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
           <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
@@ -362,7 +370,7 @@ export default function Feedback() {
             </p>
           )}
         </section>
-      </main>
-    </div>
+      </div>
+    </StoreStandardPageShell>
   );
 }

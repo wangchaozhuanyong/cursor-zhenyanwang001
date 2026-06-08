@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { ArrowRight } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions/hooks/useMotionConfig";
@@ -25,12 +25,13 @@ interface BannerCarouselProps {
   themeConfigOverride?: ThemeConfig;
 }
 
-const AUTO_ROTATE_MS = 3000;
-const INITIAL_AUTO_ROTATE_DELAY_MS = 12000;
+const AUTO_ROTATE_MS = 5200;
+const INITIAL_AUTO_ROTATE_DELAY_MS = 2200;
 const USER_INTERACTION_PAUSE_MS = 7200;
 const STATIC_HOME_BANNER_RE = /^(.*\/assets\/home-banners\/home-hero-\d{2}-[^?#]+?)(-mobile)?(\.webp)(\?.*)?$/i;
 const STATIC_HOME_BANNER_VERSION = String(import.meta.env.VITE_STATIC_HOME_BANNER_VERSION || "").trim();
 const loadedBannerImages = new Set<string>();
+type SlideDirection = "forward" | "backward";
 
 function getImageCacheKeys(...values: Array<string | undefined | null>): string[] {
   return values
@@ -45,6 +46,24 @@ function hasLoadedImage(...values: Array<string | undefined | null>): boolean {
 
 function markImageLoaded(...values: Array<string | undefined | null>) {
   getImageCacheKeys(...values).forEach((value) => loadedBannerImages.add(value));
+}
+
+function preloadBannerImage(image: string, priority: "high" | "low" = "low") {
+  if (!image || hasLoadedImage(image)) return;
+  const responsiveImage = getResponsiveBannerImage(image);
+  if (hasLoadedImage(image, responsiveImage.src, responsiveImage.srcSet)) return;
+
+  const img = new Image();
+  img.decoding = "async";
+  (img as HTMLImageElement & { fetchPriority?: "high" | "low" }).fetchPriority = priority;
+  img.onload = () => {
+    markImageLoaded(image, responsiveImage.src, responsiveImage.srcSet, img.currentSrc, img.src);
+  };
+  if (responsiveImage.srcSet) {
+    img.srcset = responsiveImage.srcSet;
+    img.sizes = responsiveImage.sizes || "100vw";
+  }
+  img.src = responsiveImage.src;
 }
 
 function resolveBannerLink(link: string): string {
@@ -126,6 +145,7 @@ export default function BannerCarousel({
   const [manualPauseUntil, setManualPauseUntil] = useState(0);
   const [hoverPaused, setHoverPaused] = useState(false);
   const [copyTone, setCopyTone] = useState<BannerCopyTone>("light");
+  const [slideDirection, setSlideDirection] = useState<SlideDirection>("forward");
   const activeImageRef = useRef<HTMLImageElement | null>(null);
   const copyPanelRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
@@ -137,11 +157,13 @@ export default function BannerCarousel({
   }, [hasTextLayer]);
 
   const goTo = useCallback((index: number, userDriven = false) => {
-    setCurrent(index);
+    const nextIndex = Math.max(0, Math.min(index, banners.length - 1));
+    setSlideDirection(nextIndex >= current ? "forward" : "backward");
+    setCurrent(nextIndex);
     if (userDriven) {
       setManualPauseUntil(Date.now() + USER_INTERACTION_PAUSE_MS);
     }
-  }, []);
+  }, [banners.length, current]);
 
   useEffect(() => {
     if (banners.length > 0 && current >= banners.length) {
@@ -192,21 +214,16 @@ export default function BannerCarousel({
   useEffect(() => {
     if (!nextBannerImage || nextBannerImage === activeImage) return;
     const timer = window.setTimeout(() => {
-      const img = new Image();
-      img.decoding = "async";
-      (img as HTMLImageElement & { fetchPriority?: "low" }).fetchPriority = "low";
-      const nextResponsiveImage = getResponsiveBannerImage(nextBannerImage);
-      img.onload = () => {
-        markImageLoaded(nextBannerImage, nextResponsiveImage.src, nextResponsiveImage.srcSet, img.currentSrc, img.src);
-      };
-      if (nextResponsiveImage.srcSet) {
-        img.srcset = nextResponsiveImage.srcSet;
-        img.sizes = nextResponsiveImage.sizes || "100vw";
+      preloadBannerImage(nextBannerImage);
+      const secondNextImage = banners.length > 2
+        ? banners[(safeIndex + 2) % banners.length]?.image?.trim() || ""
+        : "";
+      if (secondNextImage && secondNextImage !== activeImage && secondNextImage !== nextBannerImage) {
+        preloadBannerImage(secondNextImage);
       }
-      img.src = nextResponsiveImage.src;
-    }, 800);
+    }, 120);
     return () => window.clearTimeout(timer);
-  }, [activeImage, nextBannerImage]);
+  }, [activeImage, banners, nextBannerImage, safeIndex]);
 
   useEffect(() => {
     if (paused || hoverPaused || !motionEnabled || banners.length <= 1) return;
@@ -215,6 +232,7 @@ export default function BannerCarousel({
     const scheduleNext = () => {
       timer = window.setTimeout(() => {
         if (Date.now() >= manualPauseUntil) {
+          setSlideDirection("forward");
           setCurrent((prev) => (prev + 1) % banners.length);
         }
         delay = AUTO_ROTATE_MS;
@@ -280,47 +298,60 @@ export default function BannerCarousel({
     handleOpenBanner();
   };
 
-  const bannerImageNodes = activeImage ? (
-    <img
-      key={banner.id || activeImage || safeIndex}
-      ref={activeImageRef}
-      src={responsiveImage.src}
-      srcSet={responsiveImage.srcSet}
-      sizes={responsiveImage.sizes}
-      alt={bannerTitle || fallbackLabel}
-      width={BANNER_IMAGE_WIDTH}
-      height={BANNER_IMAGE_HEIGHT}
-      loading="eager"
-      {...({ fetchpriority: "high" } as Record<string, string>)}
-      decoding="async"
-      className={`store-hero-slide-image absolute inset-0 h-full w-full object-cover ${
-        hasTextLayer ? "store-hero-image-with-copy" : "object-center"
-      }`}
-      data-active="true"
-      style={{
-        opacity: activeImageLoaded ? 1 : 0,
-        transform: activeImageLoaded ? "translate3d(0, 0, 0) scale(1.006)" : "translate3d(0, 0, 0) scale(1.02)",
-      }}
-      onLoad={(event) => {
-        if (event.currentTarget.naturalWidth > 0) {
+  const bannerImageNodes = banners.map((item, index) => {
+    const image = item.image?.trim() || "";
+    if (!image) return null;
+    const itemResponsiveImage = getResponsiveBannerImage(image);
+    const isActive = index === safeIndex;
+    const isNext = showControls && index === (safeIndex + 1) % banners.length;
+    const itemTitle = item.title?.trim() || `${ariaLabelPrefix} ${index + 1}`;
+    return (
+      <img
+        key={item.id || image || index}
+        ref={isActive ? activeImageRef : undefined}
+        src={itemResponsiveImage.src}
+        srcSet={itemResponsiveImage.srcSet}
+        sizes={itemResponsiveImage.sizes}
+        alt={isActive ? itemTitle : ""}
+        aria-hidden={!isActive}
+        width={BANNER_IMAGE_WIDTH}
+        height={BANNER_IMAGE_HEIGHT}
+        loading={isActive || isNext ? "eager" : "lazy"}
+        {...({ fetchpriority: isActive ? "high" : "low" } as Record<string, string>)}
+        decoding="async"
+        className={`store-hero-slide-image absolute inset-0 h-full w-full object-cover ${
+          hasTextLayer ? "store-hero-image-with-copy" : "object-center"
+        }`}
+        data-active={isActive ? "true" : "false"}
+        onLoad={(event) => {
+          if (event.currentTarget.naturalWidth <= 0) return;
           markImageLoaded(
-            activeImage,
-            responsiveImage.src,
-            responsiveImage.srcSet,
+            image,
+            itemResponsiveImage.src,
+            itemResponsiveImage.srcSet,
             event.currentTarget.currentSrc,
             event.currentTarget.src,
           );
-          setActiveImageLoaded(true);
-          setActiveImageFailed(false);
-          refreshCopyTone();
-        }
-      }}
-      onError={() => {
-        setActiveImageLoaded(false);
-        setActiveImageFailed(true);
-      }}
-    />
-  ) : null;
+          if (isActive) {
+            setActiveImageLoaded(true);
+            setActiveImageFailed(false);
+            refreshCopyTone();
+          }
+        }}
+        onError={() => {
+          if (isActive) {
+            setActiveImageLoaded(false);
+            setActiveImageFailed(true);
+          }
+        }}
+      />
+    );
+  });
+  const rootStyle = {
+    aspectRatio: BANNER_ASPECT_CSS,
+    borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)",
+    "--store-hero-auto-rotate-ms": `${AUTO_ROTATE_MS}ms`,
+  } as CSSProperties;
 
   return (
     <div
@@ -328,10 +359,9 @@ export default function BannerCarousel({
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
       data-copy-tone={hasTextLayer ? copyTone : undefined}
-      style={{
-        aspectRatio: BANNER_ASPECT_CSS,
-        borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)",
-      }}
+      data-slide-direction={slideDirection}
+      data-auto-paused={paused || hoverPaused || !motionEnabled ? "true" : "false"}
+      style={rootStyle}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onMouseEnter={() => setHoverPaused(true)}
@@ -360,11 +390,7 @@ export default function BannerCarousel({
               key={`copy-${banner.id || safeIndex}`}
               ref={copyPanelRef}
               className="store-hero-copy-panel"
-              style={motionEnabled ? {
-                opacity: 1,
-                transform: activeImageReady ? "translate3d(0, 0, 0)" : "translate3d(-6px, 0, 0)",
-                transition: "opacity 420ms ease-out, transform 420ms ease-out",
-              } : undefined}
+              data-ready={activeImageReady ? "true" : "false"}
             >
               {bannerTitle ? (
                 <h2 className="store-hero-copy-title text-[16px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">

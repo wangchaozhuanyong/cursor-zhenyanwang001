@@ -3,8 +3,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
-import PageHeader from "@/components/PageHeader";
-import { STORE_READING_MAIN_CLASS } from "@/constants/storeLayout";
+import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import * as contentService from "@/services/contentService";
 import type { ContentPage } from "@/types/content";
 import { stripHtml, truncateText } from "@/utils/seo";
@@ -31,20 +30,19 @@ export default function About() {
   const cmsBody = page?.content && !isAboutPlaceholderBody(page.content) ? page.content : null;
 
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <StoreStandardPageShell
+      title="关于我们"
+      onBack={goBack}
+      backFallback="/profile"
+      contentClassName="md:max-w-3xl xl:max-w-4xl"
+    >
       <SeoHead
         title={title}
         description={description}
         canonical={buildCanonical("/about")}
         robots="index,follow"
       />
-      <PageHeader
-        title="关于我们"
-        onBack={goBack}
-        contentClassName="lg:max-w-3xl lg:px-8"
-        backButtonClassName="lg:left-8"
-      />
-      <main className={`${STORE_READING_MAIN_CLASS} space-y-4`}>
+      <div className="space-y-4">
         {cmsBody ? (
           <article className="store-body-text max-w-none rounded-2xl border border-border bg-card p-5 leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />
         ) : (
@@ -58,7 +56,7 @@ export default function About() {
             </section>
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </StoreStandardPageShell>
   );
 }

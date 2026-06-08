@@ -151,14 +151,15 @@
   left: 4.42cqw;
   top: 24.35cqw;
   display: grid;
-  grid-template-columns: repeat(2, 27.4cqw);
-  gap: 1.04cqw;
+  grid-template-columns: repeat(2, 29.49cqw);
+  gap: 1.35cqw;
 }
 
 .ir-stat {
-  width: 27.4cqw;
-  height: 8.1cqw;
-  border-radius: 1.45cqw;
+  width: 29.49cqw;
+  height: 8.5cqw;
+  min-height: 40px;
+  border-radius: 1.55cqw;
   display: flex;
   align-items: center;
   padding: 0 1.9cqw;
@@ -214,12 +215,12 @@
   left: 4.42cqw;
   top: 36.25cqw;
   display: grid;
-  grid-template-columns: repeat(3, 28.55cqw);
+  grid-template-columns: repeat(3, 29.49cqw);
   gap: 1.35cqw;
 }
 
 .ir-action {
-  width: 28.55cqw;
+  width: 29.49cqw;
   height: 8.5cqw;
   border: 0;
   outline: 0;
@@ -271,9 +272,9 @@
 .ir-hero {
   position: absolute;
   z-index: 2;
-  left: 58.2cqw;
+  left: 66.1cqw;
   top: 3.2cqw;
-  width: 38.4cqw;
+  width: 29.49cqw;
   height: 32.4cqw;
   object-fit: contain;
   pointer-events: none;

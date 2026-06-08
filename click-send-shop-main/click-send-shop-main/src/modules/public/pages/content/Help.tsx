@@ -6,8 +6,7 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useGoBack } from "@/hooks/useGoBack";
-import PageHeader from "@/components/PageHeader";
-import { STORE_READING_MAIN_CLASS } from "@/constants/storeLayout";
+import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { STORE_COPY } from "@/constants/storeCopy";
 import type { FaqItem } from "@/constants/help";
 import type { HelpCenterConfig } from "@/types/content";
@@ -76,7 +75,12 @@ export default function Help() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <StoreStandardPageShell
+      title="帮助中心"
+      onBack={goBack}
+      backFallback="/profile"
+      contentClassName="md:max-w-3xl xl:max-w-4xl"
+    >
       <SeoHead
         title={`帮助中心｜${siteName}`}
         description={`查看${siteName}常见问题、下单流程、支付配送、售后退款与账户说明。`}
@@ -84,9 +88,8 @@ export default function Help() {
         robots="index,follow"
         jsonLd={[{ id: "faq-help", data: faqJsonLd }]}
       />
-      <PageHeader title="帮助中心" onBack={goBack} />
 
-      <main className="mx-auto max-w-lg px-4 pt-4">
+      <div className="mx-auto w-full max-w-lg md:max-w-none">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -96,7 +99,7 @@ export default function Help() {
             className="w-full rounded-xl border border-border bg-card py-2.5 pl-9 pr-3 text-sm outline-none"
           />
         </div>
-        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto lg:flex-wrap lg:overflow-visible">
+        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto md:flex-wrap md:overflow-visible">
           <UnifiedButton
             type="button"
             onClick={() => setActiveCategory(null)}
@@ -129,7 +132,7 @@ export default function Help() {
         <div className="mt-6 rounded-xl border border-border bg-card p-4">
           <SupportContactSection />
         </div>
-      </main>
-    </div>
+      </div>
+    </StoreStandardPageShell>
   );
 }

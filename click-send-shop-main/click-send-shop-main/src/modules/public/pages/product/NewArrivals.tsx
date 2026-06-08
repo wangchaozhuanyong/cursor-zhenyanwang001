@@ -9,6 +9,7 @@ import { useCategoryListView } from "@/hooks/useCategoryListView";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { STORE_COPY } from "@/constants/storeCopy";
+import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { useProductStore } from "@/stores/useProductStore";
 import type { ProductSortType } from "@/types/product";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -62,6 +63,7 @@ export default function NewArrivals() {
         robots="index,follow"
       />
       <StorePageHeader
+        className={STORE_MOBILE_PAGE_HEADER_CLASS}
         title="新品上市"
         leftSlot={(
           <UnifiedButton

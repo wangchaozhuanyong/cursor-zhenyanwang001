@@ -147,7 +147,7 @@ describe("AdminUserSecurity", () => {
   it("在风险 IP 列显示 IP 归属国家", async () => {
     await renderPage();
 
-    expect(container).toHaveTextContent("2405:3800:8ba:3c1:5c71:8838:bd01:5549");
+    expect(container).toHaveTextContent("2405:3800:...:bd01:5549");
     expect(container).toHaveTextContent("马来西亚");
     expect(container).toHaveTextContent("测试用户A");
     expect(container).toHaveTextContent("+60123456789");

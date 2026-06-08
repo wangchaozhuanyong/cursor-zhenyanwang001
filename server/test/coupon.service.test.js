@@ -37,9 +37,59 @@ test('getAvailableCoupons only returns coupons currently claimable by the user',
   }
 });
 
+test('guest coupon center still shows audience-limited coupons for login-first claim', async () => {
+  const original = {
+    selectAvailableCoupons: couponRepo.selectAvailableCoupons,
+    selectAvailableCouponsByDisplayPositions: couponRepo.selectAvailableCouponsByDisplayPositions,
+  };
+
+  try {
+    couponRepo.selectAvailableCoupons = async () => [
+      { id: 'welcome', code: 'WELCOME', title: '新用户券', type: 'fixed', value: 10, min_amount: 0, status: 'available', per_user_limit: 1, new_user_only: 1 },
+      { id: 'member', code: 'MEMBER', title: '会员券', type: 'fixed', value: 20, min_amount: 0, status: 'available', per_user_limit: 1, member_only: 1 },
+      { id: 'auto', code: 'AUTO', title: '自动发放券', type: 'fixed', value: 5, min_amount: 0, status: 'available', per_user_limit: 1, auto_issue: 1 },
+      { id: 'public', code: 'PUBLIC', title: '通用券', type: 'fixed', value: 8, min_amount: 0, status: 'available', per_user_limit: 1 },
+    ];
+    couponRepo.selectAvailableCouponsByDisplayPositions = async () => [];
+
+    const list = await couponService.getAvailableCoupons(null);
+
+    assert.deepEqual(list.map((row) => row.coupon.id), ['welcome', 'member', 'public']);
+  } finally {
+    couponRepo.selectAvailableCoupons = original.selectAvailableCoupons;
+    couponRepo.selectAvailableCouponsByDisplayPositions = original.selectAvailableCouponsByDisplayPositions;
+  }
+});
+
+test('coupon center includes coupons configured for storefront coupon display positions', async () => {
+  const original = {
+    selectAvailableCoupons: couponRepo.selectAvailableCoupons,
+    selectAvailableCouponsByDisplayPositions: couponRepo.selectAvailableCouponsByDisplayPositions,
+  };
+
+  try {
+    couponRepo.selectAvailableCoupons = async () => [];
+    couponRepo.selectAvailableCouponsByDisplayPositions = async (positions) => {
+      assert.deepEqual(positions, ['home_coupon_zone', 'home_coupon_center', 'home_new_user_gift']);
+      return [
+        { id: 'display-coupon', code: 'DISPLAY', title: '展示位礼券', type: 'fixed', value: 20, min_amount: 100, status: 'available', per_user_limit: 1, new_user_only: 1 },
+      ];
+    };
+
+    const center = await couponService.getCouponCenter(null);
+
+    assert.equal(center.claimable_count, 1);
+    assert.deepEqual(center.claimable_coupons.map((row) => row.coupon.id), ['display-coupon']);
+  } finally {
+    couponRepo.selectAvailableCoupons = original.selectAvailableCoupons;
+    couponRepo.selectAvailableCouponsByDisplayPositions = original.selectAvailableCouponsByDisplayPositions;
+  }
+});
+
 test('coupon center hides ended vouchers from claimable list', async () => {
   const original = {
     selectAvailableCoupons: couponRepo.selectAvailableCoupons,
+    selectAvailableCouponsByDisplayPositions: couponRepo.selectAvailableCouponsByDisplayPositions,
     selectUserCouponClaimCounts: couponRepo.selectUserCouponClaimCounts,
     countUserCoupons: couponRepo.countUserCoupons,
     selectUserCouponsPage: couponRepo.selectUserCouponsPage,
@@ -50,6 +100,7 @@ test('coupon center hides ended vouchers from claimable list', async () => {
       { id: 'ended', code: 'ENDED', title: '已结束礼券', type: 'fixed', value: 10, min_amount: 0, status: 'available', per_user_limit: 1, campaign_end_at: '2026-01-01 00:00:00' },
       { id: 'active', code: 'ACTIVE', title: '进行中礼券', type: 'fixed', value: 10, min_amount: 0, status: 'available', per_user_limit: 1, campaign_end_at: '2099-01-01 00:00:00' },
     ];
+    couponRepo.selectAvailableCouponsByDisplayPositions = async () => [];
     couponRepo.selectUserCouponClaimCounts = async () => [];
     couponRepo.countUserCoupons = async () => 0;
     couponRepo.selectUserCouponsPage = async () => [];
@@ -60,6 +111,7 @@ test('coupon center hides ended vouchers from claimable list', async () => {
     assert.equal(center.usable_count, 0);
   } finally {
     couponRepo.selectAvailableCoupons = original.selectAvailableCoupons;
+    couponRepo.selectAvailableCouponsByDisplayPositions = original.selectAvailableCouponsByDisplayPositions;
     couponRepo.selectUserCouponClaimCounts = original.selectUserCouponClaimCounts;
     couponRepo.countUserCoupons = original.countUserCoupons;
     couponRepo.selectUserCouponsPage = original.selectUserCouponsPage;

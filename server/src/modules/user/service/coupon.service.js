@@ -116,6 +116,20 @@ function normalizeUserCouponListStatus(status) {
   return USER_COUPON_STATUSES.has(value) ? value : 'available';
 }
 
+const COUPON_CENTER_DISPLAY_POSITIONS = ['home_coupon_zone', 'home_coupon_center', 'home_new_user_gift'];
+
+function mergeCouponRows(primaryRows, extraRows) {
+  const seen = new Set();
+  const merged = [];
+  for (const row of [...(primaryRows || []), ...(extraRows || [])]) {
+    const id = String(row?.id || '').trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    merged.push(row);
+  }
+  return merged;
+}
+
 async function getUserCoupons(userId, query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
@@ -129,7 +143,7 @@ async function getUserCoupons(userId, query) {
 
 async function getCouponCenter(userId) {
   const [claimableCoupons, mine] = await Promise.all([
-    getAvailableCoupons(userId),
+    getAvailableCoupons(userId, { includeDisplayPositions: true, includeAudienceLimited: true }),
     userId ? getUserCoupons(userId, { status: 'available', page: 1, pageSize: 50 }) : Promise.resolve({ list: [], total: 0 }),
   ]);
   return {
@@ -140,16 +154,18 @@ async function getCouponCenter(userId) {
   };
 }
 
-async function getAvailableCoupons(userId) {
-  const coupons = await repo.selectAvailableCoupons();
+async function getAvailableCoupons(userId, options = {}) {
+  const baseCoupons = await repo.selectAvailableCoupons();
+  const displayCoupons = options.includeDisplayPositions && typeof repo.selectAvailableCouponsByDisplayPositions === 'function'
+    ? await repo.selectAvailableCouponsByDisplayPositions(COUPON_CENTER_DISPLAY_POSITIONS)
+    : [];
+  const coupons = mergeCouponRows(baseCoupons, displayCoupons);
 
-  // 未登录：只能展示无需身份判断、无需“每人领取上限统计”的通用可领取券
+  // 未登录先展示可领取入口；真正领取时会登录并重新校验新用户、会员和每人上限。
   if (!userId) {
     const now = new Date();
     return coupons
       .filter((c) => !c.auto_issue)
-      .filter((c) => !c.new_user_only)
-      .filter((c) => !c.member_only)
       .filter((c) => isClaimWindowOpen(c, now))
       .map(mapCouponEntity);
   }
@@ -167,8 +183,8 @@ async function getAvailableCoupons(userId) {
     .filter((c) => isClaimWindowOpen(c, new Date()))
     .filter((c) => Number(claimedCountMap.get(String(c.id)) || 0) < Math.max(1, Number(c.per_user_limit || 1)))
     .filter((c) => !c.auto_issue)
-    .filter((c) => !c.new_user_only || orderCount <= 0)
-    .filter((c) => !c.member_only || hasMemberLevel)
+    .filter((c) => options.includeAudienceLimited || !c.new_user_only || orderCount <= 0)
+    .filter((c) => options.includeAudienceLimited || !c.member_only || hasMemberLevel)
     .map(mapCouponEntity);
 }
 

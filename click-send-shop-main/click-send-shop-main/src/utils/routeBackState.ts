@@ -22,6 +22,14 @@ function isChildToParentNavigation(previousPath: string, currentPath: string): b
   return currentBase !== "/" && previousBase.startsWith(`${currentBase}/`);
 }
 
+function isProductDetailPath(path: string): boolean {
+  return basePathOf(path).startsWith("/product/");
+}
+
+function isSearchPath(path: string): boolean {
+  return basePathOf(path) === "/search";
+}
+
 export function normalizeInternalRoutePath(value?: string): string | undefined {
   const raw = (value || "").trim();
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return undefined;
@@ -105,6 +113,11 @@ export function resolveTrackedRouteBackSource(input: {
   previousStoredFrom?: string;
 }): string | undefined {
   if (input.previousPath === input.currentPath) return undefined;
+
+  if (isProductDetailPath(input.previousPath) && isSearchPath(input.currentPath)) {
+    const storedFrom = normalizeInternalRoutePath(input.previousStoredFrom);
+    return storedFrom && !isSearchPath(storedFrom) && !isProductDetailPath(storedFrom) ? storedFrom : undefined;
+  }
 
   if (isChildToParentNavigation(input.previousPath, input.currentPath)) {
     const storedFrom = normalizeInternalRoutePath(input.previousStoredFrom);

@@ -38,6 +38,14 @@ function resolveBackFallback(pathname: string, explicit?: string, stateFrom?: st
   return "/";
 }
 
+function basePathOf(path?: string): string {
+  return (path || "/").split(/[?#]/)[0] || "/";
+}
+
+function isProductDetailPath(path?: string): boolean {
+  return basePathOf(path).startsWith("/product/");
+}
+
 export type GoBackAction =
   | { kind: "history"; delta: number }
   | { kind: "path"; path: string; replace: true };
@@ -57,19 +65,22 @@ export function resolveGoBackAction(input: {
   const normalizedCurrent = normalizeInternalRoutePath(currentPath);
   const stateFrom = normalizeInternalRoutePath(input.stateFrom);
   const storedFrom = normalizeInternalRoutePath(input.storedFrom);
+  const currentBase = basePathOf(normalizedCurrent);
+  const hasSearchProductBackLoop =
+    currentBase === "/search" && (isProductDetailPath(stateFrom) || isProductDetailPath(storedFrom));
   const canUseHistory = typeof input.historyIndex === "number"
     ? input.historyIndex > 0
     : input.locationKey !== "default";
 
-  if (isUsableBackRoute(stateFrom, currentPath) && stateFrom !== normalizedCurrent) {
+  if (isUsableBackRoute(stateFrom, currentPath) && stateFrom !== normalizedCurrent && !hasSearchProductBackLoop) {
     return { kind: "path", path: stateFrom, replace: true };
   }
 
-  if (isUsableBackRoute(storedFrom, currentPath) && storedFrom !== normalizedCurrent) {
+  if (isUsableBackRoute(storedFrom, currentPath) && storedFrom !== normalizedCurrent && !hasSearchProductBackLoop) {
     return { kind: "path", path: storedFrom, replace: true };
   }
 
-  if (canUseHistory) {
+  if (canUseHistory && !hasSearchProductBackLoop) {
     return { kind: "history", delta: -1 };
   }
 

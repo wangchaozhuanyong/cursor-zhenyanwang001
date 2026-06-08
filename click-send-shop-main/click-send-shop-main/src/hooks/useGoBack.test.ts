@@ -55,4 +55,17 @@ describe("resolveGoBackAction", () => {
       }),
     ).toEqual({ kind: "path", path: "/", replace: true });
   });
+
+  it("does not send search back into a product detail loop", () => {
+    expect(
+      resolveGoBackAction({
+        pathname: "/search",
+        stateFrom: "/product/abc",
+        storedFrom: "/product/abc",
+        locationKey: "abc123",
+        fallback: "/",
+        historyIndex: 3,
+      }),
+    ).toEqual({ kind: "path", path: "/", replace: true });
+  });
 });

@@ -56,4 +56,21 @@ describe("resolveTrackedRouteBackSource", () => {
       }),
     ).toBe("/profile");
   });
+
+  it("does not remember product detail as the search page back source", () => {
+    expect(
+      resolveTrackedRouteBackSource({
+        previousPath: "/product/product-1",
+        currentPath: "/search",
+      }),
+    ).toBeUndefined();
+
+    expect(
+      resolveTrackedRouteBackSource({
+        previousPath: "/product/product-1",
+        currentPath: "/search",
+        previousStoredFrom: "/categories?cat=food",
+      }),
+    ).toBe("/categories?cat=food");
+  });
 });

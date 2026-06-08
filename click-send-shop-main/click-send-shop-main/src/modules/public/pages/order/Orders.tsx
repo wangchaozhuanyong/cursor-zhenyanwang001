@@ -295,11 +295,11 @@ export default function Orders() {
       mainClassName="sm:p-0 xl:py-6"
       rightSlot={renderOrderSearchField("store-order-header-search-field w-[9.5rem] max-w-[44vw] flex-none sm:w-44 xl:hidden")}
     >
-        <div className="store-glass-surface sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b py-2 backdrop-blur-xl sm:-mx-4 xl:top-[calc(var(--store-desktop-header-height,4rem)+0.5rem)] xl:mx-0 xl:rounded-xl xl:border">
-          <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:gap-3">
-            <div className="relative min-w-0 overflow-hidden xl:flex-1 xl:overflow-visible">
+        <div className="store-glass-surface sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b py-2 backdrop-blur-xl sm:-mx-4 md:top-[var(--store-tablet-sticky-top)] md:mx-0 md:rounded-xl md:border md:px-3 xl:top-[var(--store-desktop-sticky-top)]">
+          <div className="flex flex-col gap-2 md:gap-3 xl:flex-row xl:items-center">
+            <div className="relative min-w-0 overflow-hidden md:flex-1 md:overflow-visible">
               <div
-                className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-[var(--store-page-x)] pb-1 [-webkit-overflow-scrolling:touch] sm:px-4 xl:flex-wrap xl:overflow-visible xl:px-0 xl:pb-0"
+                className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-[var(--store-page-x)] pb-1 [-webkit-overflow-scrolling:touch] sm:px-4 md:flex-wrap md:overflow-visible md:px-0 md:pb-0"
                 role="tablist"
                 aria-label="订单状态"
               >
@@ -316,7 +316,7 @@ export default function Orders() {
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    className={`snap-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition-colors xl:snap-none ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
+                    className={`snap-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition-colors md:snap-none ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
                     onClick={() => switchTab(t.key)}
                   >
                     {t.label}{count && count > 0 ? ` ${count}` : ""}
@@ -324,8 +324,8 @@ export default function Orders() {
                 );
               })}
               </div>
-              <span className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-[var(--theme-surface)] to-transparent xl:hidden" aria-hidden />
-              <span className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-[var(--theme-surface)] to-transparent xl:hidden" aria-hidden />
+              <span className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-[var(--theme-surface)] to-transparent md:hidden" aria-hidden />
+              <span className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-[var(--theme-surface)] to-transparent md:hidden" aria-hidden />
             </div>
             {renderOrderSearchField("hidden xl:flex xl:w-72 xl:flex-none")}
           </div>

@@ -291,9 +291,9 @@ export default function Profile() {
 
   return (
     <div className="store-page store-page-shell store-profile-page store-bottom-safe text-[var(--theme-text)]">
-      <main className="mx-auto grid w-full max-w-screen-xl gap-4 px-[var(--store-page-x)] pb-5 pt-2 sm:max-w-lg sm:px-4 sm:pt-3 md:max-w-screen-md md:gap-5 md:px-6 md:pb-8 md:pt-4 xl:max-w-screen-xl xl:grid-cols-[240px_minmax(0,1fr)] xl:items-start xl:gap-8 xl:px-8 xl:pb-12 xl:pt-4">
-        <aside className="hidden xl:block">
-          <StoreAccountNav className="sticky top-[calc(var(--store-desktop-header-height,4rem)+1.5rem)]" />
+      <main className="mx-auto grid w-full max-w-screen-xl gap-4 px-[var(--store-page-x)] pb-5 pt-2 sm:px-4 sm:pt-3 md:max-w-5xl md:gap-5 md:px-6 md:pb-8 md:pt-4 lg:max-w-6xl lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-6 xl:max-w-screen-xl xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-8 xl:px-8 xl:pb-12 xl:pt-4">
+        <aside className="hidden lg:block">
+          <StoreAccountNav className="sticky top-[var(--store-tablet-sticky-top)] xl:top-[var(--store-desktop-sticky-top)]" />
         </aside>
 
         <div className="store-profile-stack min-w-0 space-y-3 sm:space-y-4 xl:max-w-4xl">

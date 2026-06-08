@@ -79,13 +79,13 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   return (
     <header
       className={cn(
-        "store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl lg:flex",
+        "store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl xl:flex",
         surfaceClass,
         className,
       )}
       style={{ height: "var(--store-desktop-header-height, 4rem)" }}
     >
-      <div className="mx-auto flex h-full w-full max-w-screen-xl items-center gap-6 px-6 lg:px-8">
+      <div className="mx-auto flex h-full w-full max-w-7xl min-w-0 items-center gap-4 px-6 xl:px-8">
         <Link
           to="/"
           onClick={(event) => handleRouteLink(event, "/")}

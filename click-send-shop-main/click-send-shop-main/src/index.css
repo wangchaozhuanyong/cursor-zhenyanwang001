@@ -171,7 +171,7 @@
     --store-price-glow: rgba(216, 75, 50, 0.18);
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1280px) {
     :root {
       --store-brand-logo-size: var(--store-brand-logo-size-desktop);
       --store-brand-logo-nav-size: var(--store-brand-logo-size-desktop);
@@ -471,12 +471,25 @@
     );
   }
 
+  @media (min-width: 768px) {
+    :root {
+      --store-page-x: 20px;
+      --store-page-y: 14px;
+    }
+  }
+
   @media (min-width: 1024px) {
+    :root {
+      --store-page-x: 24px;
+    }
+  }
+
+  @media (min-width: 1280px) {
     :root {
       --store-bottom-nav-height: 0px;
       --store-desktop-header-height: 4.75rem;
       --store-tablet-header-height: 3.25rem;
-      --store-page-x: 24px;
+      --store-page-x: 32px;
     }
 
     .store-bottom-safe {
@@ -4777,7 +4790,7 @@ html[data-app-scope="store"] .store-category-mobile-filter-shell .store-category
 }
 
 html[data-app-scope="store"] .store-category-toolbar.store-category-sticky-filter {
-  top: var(--store-tablet-header-height, 4.25rem);
+  top: var(--store-tablet-header-height, 3.25rem);
   z-index: 30;
   margin-inline: -0.35rem;
   padding: 0.35rem;
@@ -4791,7 +4804,7 @@ html[data-app-scope="store"] .store-category-toolbar.store-category-sticky-filte
   box-shadow: 0 16px 30px -30px color-mix(in srgb, var(--theme-price) 26%, transparent);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   html[data-app-scope="store"] .store-category-toolbar.store-category-sticky-filter {
     top: var(--store-desktop-header-height, 4.75rem);
   }
@@ -5791,13 +5804,13 @@ html[data-app-scope="store"] .store-coupon-rail-section--after-nav {
   margin-top: 0.25rem;
 }
 
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1279px) {
   html[data-app-scope="store"] .store-coupon-rail-section--after-nav {
     margin-top: -0.1rem;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   html[data-app-scope="store"] .store-coupon-rail-section--after-nav {
     margin-top: calc(1.25rem - clamp(2.05rem, 3vw, 2.8rem));
   }
@@ -7559,7 +7572,7 @@ html[data-app-scope="store"]:where(
     0 0 0 1px color-mix(in srgb, var(--premium-skin-metal) 18%, transparent);
 }
 
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1279px) {
   html[data-app-scope="store"] .store-home-desktop-hero-copy {
     display: flex;
   }
@@ -7570,11 +7583,10 @@ html[data-app-scope="store"]:where(
   }
 }
 
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1279px) {
   :root {
     --store-bottom-nav-height: 0px;
-    --store-tablet-header-height: 4.25rem;
-    --store-page-x: 24px;
+    --store-tablet-header-height: 3.25rem;
   }
 
   .store-bottom-safe,
@@ -7599,6 +7611,7 @@ html[data-app-scope="store"]:where(
 
   html[data-app-scope="store"] .store-tablet-bar-inner {
     max-width: 56rem;
+    min-width: 0;
   }
 
   html[data-app-scope="store"] .store-tablet-brand .store-brand-logo {
@@ -7610,6 +7623,7 @@ html[data-app-scope="store"]:where(
     display: grid;
     flex: 1 1 auto;
     min-width: 0;
+    overflow: hidden;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: center;
     gap: 0.38rem;
@@ -8045,11 +8059,10 @@ html[data-app-scope="store"]:where(
   }
 }
 
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1279px) {
   :root {
     --store-bottom-nav-height: 0px;
-    --store-page-x: 24px;
-    --store-tablet-header-height: 4.25rem;
+    --store-tablet-header-height: 3.25rem;
   }
 
   .store-bottom-safe,
@@ -8088,7 +8101,8 @@ html[data-app-scope="store"]:where(
     flex: 1 1 auto;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     min-width: 0;
-    max-width: 34rem;
+    max-width: min(42rem, 100%);
+    overflow: hidden;
     gap: 0.28rem;
     margin-inline: auto;
     padding: 0.28rem;
@@ -8261,7 +8275,7 @@ html[data-app-scope="store"]:where(
   }
 }
 
-@media (min-width: 768px) and (max-width: 860px) {
+@media (min-width: 768px) and (max-width: 899px) {
   html[data-app-scope="store"] .store-tablet-brand-name {
     display: none;
   }
@@ -8276,7 +8290,7 @@ html[data-app-scope="store"]:where(
   }
 
   html[data-app-scope="store"] .store-tablet-nav-label {
-    font-size: 0.74rem;
+    display: none;
   }
 }
 
@@ -8327,7 +8341,7 @@ html[data-app-scope="store"] .store-home-section-more {
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   html[data-app-scope="store"] {
     --store-desktop-header-height: 4.75rem;
     --store-home-desktop-max: min(1240px, calc(100vw - 4.5rem));
@@ -8945,7 +8959,7 @@ html[data-app-scope="store"] .store-home-section-more {
   }
 }
 
-@media (min-width: 1024px) and (max-width: 1180px) {
+@media (min-width: 1024px) and (max-width: 1279px) {
   html[data-app-scope="store"] .store-home-desktop-service-grid {
     width: min(22.5rem, 36vw);
     grid-template-columns: repeat(2, minmax(0, 1fr));

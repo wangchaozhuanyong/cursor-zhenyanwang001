@@ -9,13 +9,13 @@ type StoreShellProps = {
   children: ReactNode;
 };
 
-/** 前台宽屏壳层：仅 md/lg 追加顶栏与上内边距，不改变 &lt;768px 布局 */
+/** 前台宽屏壳层：仅 tablet / desktop 追加顶栏，不改变 <768px 布局 */
 export default function StoreShell({ children }: StoreShellProps) {
   const { pathname } = useLocation();
   const isTab = isStoreTabPath(pathname);
   const hideChrome = pathname.startsWith("/checkout");
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
+  const isDesktop = useMediaQuery("(min-width: 1280px)");
+  const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1279px)");
   const homeHeaderClassName = pathname === "/" ? "store-home-fixed-header" : undefined;
 
   return (

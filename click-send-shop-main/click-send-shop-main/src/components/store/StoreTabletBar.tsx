@@ -72,19 +72,19 @@ export default function StoreTabletBar({ className }: { className?: string }) {
     <header
       data-store-tablet-bar
       className={cn(
-        "store-tablet-bar store-tablet-header store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl md:flex lg:hidden",
+        "store-tablet-bar store-tablet-header store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl md:flex xl:hidden",
         surfaceClass,
         className,
       )}
-      style={{ height: "var(--store-tablet-header-height, 4.25rem)" }}
+      style={{ height: "var(--store-tablet-header-height, 3.25rem)" }}
     >
-      <div className="store-tablet-bar-inner store-tablet-header-inner mx-auto flex h-full w-full max-w-screen-xl items-center gap-3 px-6">
+      <div className="store-tablet-bar-inner store-tablet-header-inner mx-auto flex h-full w-full max-w-7xl min-w-0 items-center gap-2 px-4 sm:px-5 md:px-6">
         <Link
           to="/"
           onClick={(event) => handleRouteLink(event, "/")}
           onMouseEnter={() => preloadTabletRoute("/")}
           onFocus={() => preloadTabletRoute("/")}
-          className="store-tablet-brand store-header-brand flex shrink-0 items-center gap-2"
+          className="store-tablet-brand store-header-brand flex min-w-0 shrink-0 items-center gap-2"
           aria-label={`${siteName} \u9996\u9875`}
         >
           {shouldReserveLogoSpace ? (
@@ -94,13 +94,13 @@ export default function StoreTabletBar({ className }: { className?: string }) {
               ) : null}
             </span>
           ) : null}
-          <span className="store-tablet-brand-name hidden max-w-[8rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline">
+          <span className="store-tablet-brand-name hidden max-w-[7rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline md:max-w-[8rem]">
             {siteName}
           </span>
         </Link>
 
         <nav
-          className="store-tablet-nav"
+          className="store-tablet-nav grid min-w-0 flex-1 items-center gap-1 overflow-hidden"
           aria-label="\u4e3b\u5bfc\u822a"
           style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
         >
@@ -121,13 +121,13 @@ export default function StoreTabletBar({ className }: { className?: string }) {
                   <Icon size={17} strokeWidth={active ? 2.35 : 1.9} />
                   {item.badge === "cart" ? <DeferredStoreCartBadge /> : null}
                 </span>
-                <span className="store-tablet-nav-label">{item.label}</span>
+                <span className="store-tablet-nav-label truncate">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="store-tablet-actions flex shrink-0 items-center gap-2">
+        <div className="store-tablet-actions flex shrink-0 items-center gap-1.5">
           {capabilities.mallEnabled ? (
             <UnifiedButton
               type="button"

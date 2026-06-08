@@ -31,7 +31,11 @@ export default function NewArrivals() {
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
-  const { products, loading, listRefreshing, error, loadProducts } = useProductStore();
+  const products = useProductStore((s) => s.products);
+  const loading = useProductStore((s) => s.loading);
+  const listRefreshing = useProductStore((s) => s.listRefreshing);
+  const error = useProductStore((s) => s.error);
+  const loadProducts = useProductStore((s) => s.loadProducts);
   const [sort, setSort] = useState<ProductSortType>("newest");
   const productCardSiteContext = useMemo(
     () => ({

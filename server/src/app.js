@@ -10,6 +10,7 @@ const rateLimit = require('express-rate-limit');
 const requestContext = require('./middleware/requestContext');
 const accessLogger = require('./middleware/accessLogger');
 const apiTimeout = require('./middleware/apiTimeout');
+const serverTiming = require('./middleware/serverTiming');
 const responseMiddleware = require('./middleware/response');
 const errorHandler = require('./middleware/errorHandler');
 const apiNotFound = require('./middleware/apiNotFound');
@@ -357,6 +358,7 @@ app.post(
 );
 
 // Multipart uploads are parsed by multer; keep JSON small to reduce memory pressure.
+app.use('/api', serverTiming());
 app.use('/api', apiTimeout());
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '1mb' }));
 app.use(adminCsrfGuard);

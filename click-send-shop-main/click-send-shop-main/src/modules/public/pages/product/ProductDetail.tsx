@@ -70,13 +70,12 @@ export default function ProductDetail() {
   const trackedProductIdRef = useRef<string | null>(null);
   const headerSentinelRef = useRef<HTMLDivElement>(null);
 
-  const {
-    currentProduct: product,
-    relatedProducts,
-    detailLoading: loading,
-    error,
-    loadProductDetail,
-  } = useProductStore();
+  const product = useProductStore((s) => s.currentProduct);
+  const relatedProducts = useProductStore((s) => s.relatedProducts);
+  const relatedProductsLoading = useProductStore((s) => s.relatedProductsLoading);
+  const loading = useProductStore((s) => s.detailLoading);
+  const error = useProductStore((s) => s.error);
+  const loadProductDetail = useProductStore((s) => s.loadProductDetail);
 
   const headerSolid = useProductDetailHeaderSolid(headerSentinelRef, {
     observe: Boolean(product) && !loading,
@@ -545,16 +544,30 @@ export default function ProductDetail() {
         <ProductReviews vm={reviewsVm} />
 
         {/* 同类推荐 */}
-        {relatedProducts.length > 0 && (
+        {(relatedProductsLoading || relatedProducts.length > 0) && (
           <div className="store-related-section border-t border-[var(--theme-border)] px-[var(--store-page-x)] py-8 md:border-0 md:px-0 md:py-12">
             <h3 className="mb-4 text-sm font-semibold text-foreground md:mb-5 md:text-lg">
               同类推荐
             </h3>
-            <div className={`${productGridClass} md:gap-5`}>
-              {relatedProducts.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} />
-              ))}
-            </div>
+            {relatedProductsLoading ? (
+              <div className={`${productGridClass} md:gap-5`}>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="overflow-hidden rounded-[var(--theme-card-radius)] border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+                    <Skeleton className="aspect-[4/5] w-full" />
+                    <div className="space-y-2 p-3">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={`${productGridClass} md:gap-5`}>
+                {relatedProducts.map((p, i) => (
+                  <ProductCard key={p.id} product={p} index={i} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>

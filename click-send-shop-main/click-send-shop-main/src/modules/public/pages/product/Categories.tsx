@@ -62,7 +62,13 @@ export default function Categories() {
   const [isNew, setIsNew] = useState(searchParams.get("is_new") === "1");
   const [isHot, setIsHot] = useState(searchParams.get("is_hot") === "1");
   const [isRecommended, setIsRecommended] = useState(searchParams.get("is_recommended") === "1");
-  const { products, categories, loading, listRefreshing, error, loadProducts, loadCategories } = useProductStore();
+  const products = useProductStore((s) => s.products);
+  const categories = useProductStore((s) => s.categories);
+  const loading = useProductStore((s) => s.loading);
+  const listRefreshing = useProductStore((s) => s.listRefreshing);
+  const error = useProductStore((s) => s.error);
+  const loadProducts = useProductStore((s) => s.loadProducts);
+  const loadCategories = useProductStore((s) => s.loadCategories);
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
   useEffect(() => { productService.fetchProductTags(20).then(setQuickTags).catch(() => setQuickTags([])); }, []);

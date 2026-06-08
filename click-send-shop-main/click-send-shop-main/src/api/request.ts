@@ -18,6 +18,7 @@ import {
   requestAdminMfaStepUp,
 } from "@/lib/adminMfaStepUp";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
+import { getPerfDuration, logApiPerf, markPerfStart } from "@/utils/performanceDebug";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const ADMIN_SENSITIVE_ACTION_HEADER = "X-Admin-Sensitive-Action-Token";
@@ -370,6 +371,21 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   const isAccountCancel = endpoint.startsWith("/user/account/cancel");
   const token = isAdminEndpoint ? getAdminAccessToken() : getAccessToken();
   const method = String(options.method || "GET").toUpperCase();
+  const requestStart = markPerfStart();
+  let tokenRefreshRetry = !retry;
+  let timedOut = false;
+  const logRequestPerf = (status?: number, extra?: { cache?: boolean }) => {
+    logApiPerf({
+      method,
+      url: endpoint,
+      status,
+      duration: getPerfDuration(requestStart),
+      retry: !retry,
+      tokenRefreshRetry,
+      timeout: timedOut,
+      cache: extra?.cache ?? false,
+    });
+  };
   const needsAdminCsrf = isAdminEndpoint
     && ADMIN_CSRF_METHODS.has(method)
     && !isAdminAuthLogin
@@ -404,8 +420,15 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   try {
     res = await runRequestFetch();
   } catch (err) {
-    if (err instanceof ApiError && !isBrowserOffline()) throw err;
-    if (isAbortError(err)) throw err;
+    timedOut = err instanceof ApiError && err.code === 408;
+    if (err instanceof ApiError && !isBrowserOffline()) {
+      logRequestPerf(err.code);
+      throw err;
+    }
+    if (isAbortError(err)) {
+      logRequestPerf(0);
+      throw err;
+    }
     let retrySucceeded = false;
     if (shouldRetryAdminReadWhenOnline(endpoint, method, retry)) {
       dispatchAdminOfflineRetry("waiting", endpoint);
@@ -429,6 +452,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       }
     }
     if (!retrySucceeded) {
+      logRequestPerf(err instanceof ApiError ? err.code : 0);
       if (err instanceof ApiError) throw err;
       throw new ApiError(0, "网络连接失败，请检查网络设置", err);
     }
@@ -437,10 +461,13 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   }
 
   if (!res) {
+    logRequestPerf(0);
     throw new ApiError(0, "请求未返回响应，请稍后重试");
   }
 
   if (res.status === 401 && retry && !options.skipAuthRetry && !isAdminEndpoint && !isAuthLoginOrRegister) {
+    logRequestPerf(res.status);
+    tokenRefreshRetry = true;
     if (!refreshing) refreshing = tryRefreshToken().finally(() => { refreshing = null; });
     try {
       const newToken = await refreshing;
@@ -465,6 +492,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   }
 
   if (res.status === 401 && retry && isAdminEndpoint && !isAdminAuthLogin && !isAdminAuthRefresh && !isAdminMfaEndpoint && !isAdminPasskeyEndpoint) {
+    logRequestPerf(res.status);
+    tokenRefreshRetry = true;
     if (!adminRefreshing) {
       adminRefreshing = tryRefreshAdminSession().finally(() => { adminRefreshing = null; });
     }
@@ -489,6 +518,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     }
 
     if (retry && needsAdminCsrf && isAdminCsrfInvalidResponse(res.status, body)) {
+      logRequestPerf(res.status);
       clearAdminCsrfToken();
       const refreshedCsrfToken = await getAdminCsrfToken();
       return request<T>(
@@ -515,6 +545,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       && !isAdminPasskeyEndpoint
     ) {
       try {
+        logRequestPerf(res.status);
         const stepUp = await requestAdminMfaStepUp(getAdminMfaActionClassFromResponse(body));
         const retryHeaders: HeadersInit = {
           ...headers,
@@ -538,6 +569,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       clearTokens();
       notifyAuthExpired();
     }
+    logRequestPerf(res.status);
     throw new ApiError(res.status, extractResponseMessage(body, res.status), {
       ...body,
       status: res.status,
@@ -546,6 +578,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   }
 
   const payload = (await res.json()) as T;
+  logRequestPerf(res.status);
   return normalizeMediaUrls(payload, BASE_URL);
 }
 

@@ -205,14 +205,12 @@ export default function GuestHome() {
   const showGuestIntroFallback =
     !bannersLoading && (!guestBannerEnabled || banners.length === 0);
   const guestGridMax = homeModules.guestRecommendMax;
-  const {
-    hotProducts,
-    newProducts,
-    recommendedProducts,
-    loading: homeLoading,
-    error: homeError,
-    loadHomeData,
-  } = useProductStore();
+  const hotProducts = useProductStore((s) => s.hotProducts);
+  const newProducts = useProductStore((s) => s.newProducts);
+  const recommendedProducts = useProductStore((s) => s.recommendedProducts);
+  const homeLoading = useProductStore((s) => s.loading);
+  const homeError = useProductStore((s) => s.error);
+  const loadHomeData = useProductStore((s) => s.loadHomeData);
 
   useEffect(() => {
     const state = useProductStore.getState();

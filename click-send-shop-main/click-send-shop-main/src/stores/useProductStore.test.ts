@@ -63,6 +63,7 @@ describe("useProductStore", () => {
       filters: { page: 1, pageSize: 10 },
       currentProduct: null,
       relatedProducts: [],
+      relatedProductsLoading: false,
       hotProducts: [],
       newProducts: [],
       recommendedProducts: [],
@@ -95,5 +96,56 @@ describe("useProductStore", () => {
 
     expect(useProductStore.getState().products.map((item) => item.id)).toEqual(["new"]);
     expect(useProductStore.getState().listRefreshing).toBe(false);
+  });
+
+  test("shows product detail before related products finish loading", async () => {
+    const mainProduct = product("main");
+    const relatedRequest = deferred<Product[]>();
+    vi.mocked(productService.fetchProductById).mockResolvedValueOnce(mainProduct);
+    vi.mocked(productService.fetchRelatedProducts).mockReturnValueOnce(relatedRequest.promise);
+
+    const pending = useProductStore.getState().loadProductDetail("main");
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(useProductStore.getState().currentProduct?.id).toBe("main");
+    expect(useProductStore.getState().detailLoading).toBe(false);
+    expect(useProductStore.getState().relatedProductsLoading).toBe(true);
+    expect(useProductStore.getState().relatedProducts).toEqual([]);
+
+    relatedRequest.resolve([product("related")]);
+    await pending;
+
+    expect(useProductStore.getState().relatedProducts.map((item) => item.id)).toEqual(["related"]);
+    expect(useProductStore.getState().relatedProductsLoading).toBe(false);
+  });
+
+  test("ignores stale product detail and related responses after switching products", async () => {
+    const firstRelatedRequest = deferred<Product[]>();
+    const secondRelatedRequest = deferred<Product[]>();
+    vi.mocked(productService.fetchProductById)
+      .mockResolvedValueOnce(product("first"))
+      .mockResolvedValueOnce(product("second"));
+    vi.mocked(productService.fetchRelatedProducts)
+      .mockReturnValueOnce(firstRelatedRequest.promise)
+      .mockReturnValueOnce(secondRelatedRequest.promise);
+
+    const firstPending = useProductStore.getState().loadProductDetail("first");
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(useProductStore.getState().currentProduct?.id).toBe("first");
+    expect(useProductStore.getState().relatedProductsLoading).toBe(true);
+
+    const secondPending = useProductStore.getState().loadProductDetail("second");
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(useProductStore.getState().currentProduct?.id).toBe("second");
+
+    firstRelatedRequest.resolve([product("first-related")]);
+    secondRelatedRequest.resolve([product("second-related")]);
+    await Promise.all([firstPending, secondPending]);
+
+    expect(useProductStore.getState().currentProduct?.id).toBe("second");
+    expect(useProductStore.getState().relatedProducts.map((item) => item.id)).toEqual(["second-related"]);
   });
 });

@@ -61,7 +61,11 @@ export default function MemberHome() {
   useDocumentTitle(undefined);
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
-  const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
+  const hotProducts = useProductStore((s) => s.hotProducts);
+  const newProducts = useProductStore((s) => s.newProducts);
+  const recommendedProducts = useProductStore((s) => s.recommendedProducts);
+  const homeLoading = useProductStore((s) => s.loading);
+  const loadHomeData = useProductStore((s) => s.loadHomeData);
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const productCardSiteContext = useMemo(

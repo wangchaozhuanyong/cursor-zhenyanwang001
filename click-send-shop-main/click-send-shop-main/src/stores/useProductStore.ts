@@ -34,6 +34,7 @@ const CATEGORY_CACHE_KEY = "store_categories_cache_v1";
 const PRODUCT_LIST_CACHE_MAX = 24;
 const PRODUCT_DETAIL_CACHE_MAX = 48;
 let productListRequestSeq = 0;
+let productDetailRequestSeq = 0;
 let categoryRequest: Promise<Category[]> | null = null;
 
 /** 有上限的 Map 缓存：写入时淘汰最旧条目，避免筛选/详情浏览导致内存持续增长 */
@@ -120,6 +121,7 @@ interface ProductState {
 
   currentProduct: Product | null;
   relatedProducts: Product[];
+  relatedProductsLoading: boolean;
 
   hotProducts: Product[];
   newProducts: Product[];
@@ -152,6 +154,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   currentProduct: null,
   relatedProducts: [],
+  relatedProductsLoading: false,
 
   hotProducts: [],
   newProducts: [],
@@ -265,26 +268,50 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   loadProductDetail: async (id) => {
+    const requestSeq = ++productDetailRequestSeq;
     const cached = productDetailCache.get(id);
     if (cached && isFresh(cached.cachedAt, PRODUCT_DETAIL_TTL_MS)) {
       set({
         currentProduct: cached.product,
         relatedProducts: cached.relatedProducts,
+        relatedProductsLoading: false,
         detailLoading: false,
         error: null,
       });
+      return;
     } else {
-      set({ detailLoading: true, error: null, currentProduct: null, relatedProducts: [] });
+      set({
+        detailLoading: true,
+        relatedProductsLoading: false,
+        error: null,
+        currentProduct: null,
+        relatedProducts: [],
+      });
     }
 
     try {
       const product = await productService.fetchProductById(id);
+      if (requestSeq !== productDetailRequestSeq) return;
       if (!product) {
-        set({ detailLoading: false, error: "商品不存在" });
+        set({ detailLoading: false, relatedProductsLoading: false, error: "商品不存在" });
         return;
       }
 
-      const related = await productService.fetchRelatedProducts(product);
+      set({
+        currentProduct: product,
+        relatedProducts: [],
+        relatedProductsLoading: true,
+        detailLoading: false,
+        error: null,
+      });
+
+      let related: Product[] = [];
+      try {
+        related = await productService.fetchRelatedProducts(product);
+      } catch {
+        related = [];
+      }
+      if (requestSeq !== productDetailRequestSeq) return;
       setBoundedMapEntry(
         productDetailCache,
         id,
@@ -292,13 +319,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
         PRODUCT_DETAIL_CACHE_MAX,
       );
       set({
-        currentProduct: product,
         relatedProducts: related,
-        detailLoading: false,
+        relatedProductsLoading: false,
       });
     } catch (err) {
+      if (requestSeq !== productDetailRequestSeq) return;
       set({
         detailLoading: false,
+        relatedProductsLoading: false,
         error: err instanceof Error ? err.message : "加载商品详情失败",
       });
     }

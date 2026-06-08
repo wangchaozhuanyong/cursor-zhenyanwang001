@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback, { DelayedRouteFallback, HomeShellSkeleton, StoreOutletFallback } from "@/components/AppRouteFallback";
 import AppBootReady from "@/components/AppBootReady";
@@ -37,6 +37,7 @@ import {
   getStoreScrollKey,
   rememberStoreScrollPosition,
 } from "@/utils/storeScrollRestoration";
+import { logPerf, markPerfStart, observeLongTasksAndLcp } from "@/utils/performanceDebug";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
@@ -58,8 +59,10 @@ const PwaUpdateToast = lazy(() => import("@/components/PwaUpdateToast"));
 
 function StoreScrollRestoration() {
   const location = useLocation();
+  const navigationType = useNavigationType();
   const scrollKey = getStoreScrollKey(location.pathname, location.search);
   const activeScrollKeyRef = useRef(scrollKey);
+  const hasHandledInitialRouteRef = useRef(false);
 
   useLayoutEffect(() => {
     if ("scrollRestoration" in window.history) {
@@ -70,63 +73,12 @@ function StoreScrollRestoration() {
   useLayoutEffect(() => {
     activeScrollKeyRef.current = scrollKey;
 
-    const targetY = getRememberedStoreScrollPosition(scrollKey) ?? 0;
-    const restoreFrameIds: number[] = [];
-    const restoreTimerIds: number[] = [];
-    let userInterrupted = false;
-    let lastProgrammaticY = window.scrollY || document.documentElement.scrollTop || 0;
-    let programmaticRestoreUntil = 0;
-
-    const getScrollY = () => window.scrollY || document.documentElement.scrollTop || 0;
-    const restore = () => {
-      if (userInterrupted) return;
-      const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      const nextY = Math.min(targetY, maxY);
-      programmaticRestoreUntil = window.performance.now() + 120;
-      window.scrollTo({ top: nextY, left: 0, behavior: "auto" });
-      lastProgrammaticY = nextY;
-    };
-    const stopRestore = () => {
-      userInterrupted = true;
-    };
-    const stopRestoreOnScroll = () => {
-      if (window.performance.now() < programmaticRestoreUntil) return;
-      const currentY = getScrollY();
-      if (Math.abs(currentY - lastProgrammaticY) > 2) stopRestore();
-    };
-
-    window.addEventListener("pointerdown", stopRestore, { passive: true });
-    window.addEventListener("touchstart", stopRestore, { passive: true });
-    window.addEventListener("touchmove", stopRestore, { passive: true });
-    window.addEventListener("wheel", stopRestore, { passive: true });
-    window.addEventListener("mousedown", stopRestore);
-    window.addEventListener("keydown", stopRestore);
-    window.addEventListener("scroll", stopRestoreOnScroll, { passive: true });
-
-    restoreFrameIds.push(
-      window.requestAnimationFrame(() => {
-        restore();
-        if (targetY > 0) {
-          restoreFrameIds.push(window.requestAnimationFrame(restore));
-        }
-      }),
-    );
-    if (targetY > 0) {
-      restoreTimerIds.push(window.setTimeout(restore, 160));
-    }
-
-    return () => {
-      restoreFrameIds.forEach((frameId) => window.cancelAnimationFrame(frameId));
-      restoreTimerIds.forEach((timerId) => window.clearTimeout(timerId));
-      window.removeEventListener("pointerdown", stopRestore);
-      window.removeEventListener("touchstart", stopRestore);
-      window.removeEventListener("touchmove", stopRestore);
-      window.removeEventListener("wheel", stopRestore);
-      window.removeEventListener("mousedown", stopRestore);
-      window.removeEventListener("keydown", stopRestore);
-      window.removeEventListener("scroll", stopRestoreOnScroll);
-    };
-  }, [scrollKey]);
+    const shouldRestore = hasHandledInitialRouteRef.current && navigationType === "POP";
+    const targetY = shouldRestore ? getRememberedStoreScrollPosition(scrollKey) ?? 0 : 0;
+    const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    window.scrollTo({ top: Math.min(targetY, maxY), left: 0, behavior: "auto" });
+    hasHandledInitialRouteRef.current = true;
+  }, [navigationType, scrollKey]);
 
   useEffect(() => {
     let ticking = false;
@@ -148,6 +100,36 @@ function StoreScrollRestoration() {
       rememberStoreScrollPosition(activeScrollKeyRef.current);
     };
   }, []);
+
+  return null;
+}
+
+function StorePerformanceDiagnostics() {
+  const location = useLocation();
+  const routeStartRef = useRef(markPerfStart());
+
+  useEffect(() => observeLongTasksAndLcp(), []);
+
+  useEffect(() => {
+    routeStartRef.current = markPerfStart();
+    logPerf("route:start", { pathname: location.pathname, search: location.search });
+    const frameId = window.requestAnimationFrame(() => {
+      logPerf("route:mounted", {
+        pathname: location.pathname,
+        duration: Math.round((performance.now() - routeStartRef.current) * 10) / 10,
+      });
+    });
+    const settledId = window.setTimeout(() => {
+      logPerf("route:settled", {
+        pathname: location.pathname,
+        duration: Math.round((performance.now() - routeStartRef.current) * 10) / 10,
+      });
+    }, 600);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(settledId);
+    };
+  }, [location.pathname, location.search]);
 
   return null;
 }
@@ -401,6 +383,7 @@ function MainStoreRoutes() {
           <SiteIdentitySync />
           <ReferralInviteSync />
           <StoreScrollRestoration />
+          <StorePerformanceDiagnostics />
           <AnalyticsCapabilitySync />
           <PwaStandaloneAnalytics />
           <AppScopeSync />

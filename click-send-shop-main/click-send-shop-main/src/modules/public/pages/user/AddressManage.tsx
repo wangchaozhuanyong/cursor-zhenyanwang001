@@ -115,9 +115,8 @@ export default function AddressManage() {
         onBack={goBack}
         rightSlot={addAddressButton}
         className="store-page text-[var(--theme-text)]"
-        mainClassName="pb-24 sm:py-4 lg:pb-12"
+        mainClassName="pb-24 sm:py-4 md:pb-12"
       >
-        <div className="mb-3 hidden justify-end lg:flex">{addAddressButton}</div>
         {addressLoading && addresses.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-[var(--theme-muted)]">
             <Loader2 size={24} className="mb-3 animate-spin" />

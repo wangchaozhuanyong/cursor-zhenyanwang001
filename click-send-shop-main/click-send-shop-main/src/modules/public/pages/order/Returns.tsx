@@ -4,7 +4,7 @@ import { ChevronRight, FileText, Plus, RefreshCw } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import * as returnService from "@/services/returnService";
 import type { ReturnRequest } from "@/types/return";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { getReturnStatusBadgeClass } from "@/constants/statusDictionary";
 import { formatDateTime } from "@/utils/formatDateTime";
 import ReturnApplySheet from "./ReturnApplySheet";
@@ -76,9 +76,8 @@ export default function Returns() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] pb-8 text-[var(--theme-text)]">
-      <PageHeader title="售后进度" onBack={goBack} contentClassName="max-w-3xl" />
-      <main className="mx-auto w-full max-w-3xl space-y-4 px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm sm:p-4">
+    <StoreAccountLayout title="售后进度" onBack={goBack} mainClassName="sm:px-4 xl:py-6">
+      <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
         <section className="relative overflow-hidden rounded-[28px] border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))_0%,var(--theme-surface)_56%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_100%)] p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_36%,color-mix(in_srgb,var(--theme-primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_18%_16%,rgba(255,255,255,0.9),transparent_34%)]" aria-hidden />
           <img
@@ -210,6 +209,6 @@ export default function Returns() {
           void loadList();
         }}
       />
-    </div>
+    </StoreAccountLayout>
   );
 }

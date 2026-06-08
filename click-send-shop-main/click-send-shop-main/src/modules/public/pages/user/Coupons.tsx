@@ -219,7 +219,7 @@ export default function Coupons() {
 
   if (loading && rawCoupons.length === 0) {
     return (
-      <StoreAccountLayout title="优惠券" onBack={goBack} className="store-page pb-6" mainClassName="sm:px-4 lg:py-6">
+      <StoreAccountLayout title="优惠券" onBack={goBack} className="store-page pb-6" mainClassName="sm:px-4 xl:py-6">
         <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">
           <Loader2 size={28} className="animate-spin text-theme-price" aria-label="加载中" />
           <p className="mt-3 text-sm">优惠券加载中...</p>
@@ -249,24 +249,8 @@ export default function Coupons() {
       onBack={pageView === "claimCenter" ? () => setPageView("mine") : goBack}
       rightSlot={headerRightSlot}
       className="store-page pb-6"
-      mainClassName="sm:px-4 lg:py-6"
+      mainClassName="sm:px-4 xl:py-6"
     >
-      {pageView === "mine" ? (
-        <div className="mb-4 hidden items-center justify-end lg:flex">
-          <ClaimCenterButton count={available.length} onClick={() => setPageView("claimCenter")} />
-        </div>
-      ) : (
-        <div className="mb-4 hidden items-center justify-end lg:flex">
-          <UnifiedButton
-            type="button"
-            onClick={() => setPageView("mine")}
-            className="inline-flex items-center rounded-full px-4 py-2 text-sm font-medium text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
-          >
-            返回我的优惠券
-          </UnifiedButton>
-        </div>
-      )}
-
       {pageView === "mine" ? (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -325,7 +309,7 @@ export default function Coupons() {
         </motion.div>
       ) : null}
 
-      <div className={cn("space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0", pageView === "mine" ? "mt-4" : "mt-0")}>
+      <div className={cn("space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0", pageView === "mine" ? "mt-4" : "mt-0")}>
         <AnimatePresence mode="popLayout">
           {list.length === 0 ? (
             <motion.div
@@ -333,7 +317,7 @@ export default function Coupons() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="lg:col-span-2"
+              className="xl:col-span-2"
             >
               {pageView === "claimCenter" ? (
                 <EmptyState

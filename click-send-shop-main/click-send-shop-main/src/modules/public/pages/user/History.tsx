@@ -27,7 +27,7 @@ export default function History() {
         ) : undefined
       }
       className="pb-6"
-      mainClassName="sm:px-4 lg:py-6"
+      mainClassName="sm:px-4 xl:py-6"
     >
         {!isLoggedIn() && (
           <div className="mb-3 rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_30%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))] px-4 py-3 text-xs text-foreground">

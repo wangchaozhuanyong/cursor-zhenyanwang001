@@ -377,7 +377,7 @@ export default function Points() {
   };
 
   return (
-    <StoreAccountLayout title="我的积分" onBack={goBack} mainClassName="sm:py-6 lg:py-6">
+    <StoreAccountLayout title="我的积分" onBack={goBack} mainClassName="sm:py-6 xl:py-6">
       <div className="flex flex-col gap-6">
         <PointsHeroCard
           balance={displayBalance}

@@ -22,6 +22,7 @@ import MarketingPositionNotices from "@/modules/public/components/marketing/Mark
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
@@ -166,8 +167,58 @@ export default function Cart() {
 
       <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] md:px-6 md:py-4">
         {/* 桌面端：左商品列表 / 右结算摘要 */}
-        <div className={items.length > 0 ? "md:grid md:grid-cols-[minmax(0,1fr)_minmax(16rem,18rem)] md:gap-5 lg:grid-cols-[1fr_360px] lg:gap-8" : "mx-auto max-w-2xl"}>
-          <div>
+        {items.length > 0 ? (
+          <DesktopPurchaseTwoColumn
+            className="xl:grid-cols-[minmax(0,1fr)_360px]"
+            aside={
+              <DesktopPurchaseCard title="结算摘要" className="store-checkout-summary">
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
+                    <span className="text-muted-foreground">下单前可先领券，结算页自动匹配最优优惠</span>
+                    <UnifiedButton
+                      type="button"
+                      onClick={() => navigate("/coupons")}
+                      className="font-semibold text-[var(--theme-price)]"
+                    >
+                      去领券
+                    </UnifiedButton>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>已选商品</span>
+                    <span>{totalItemsSelected()} 件</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>{showSstCartHint ? "商品小计（含税）" : "商品小计"}</span>
+                    <span>RM {totalAmountSelected()}</span>
+                  </div>
+                  {showSstCartHint ? (
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {sstCartNote || "商品价格已含 SST，运费不计税。"}
+                    </p>
+                  ) : null}
+                  <div className="my-3 border-t border-[var(--theme-border)]" />
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-foreground">合计</span>
+                    <span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">
+                      <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
+                    </span>
+                  </div>
+                </div>
+                <SquishButton
+                  type="button"
+                  variant="gold"
+                  onClick={handleCheckout}
+                  disabled={selectedQty === 0}
+                  className="mt-5 w-full rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
+                >
+                  {checkoutLabel}
+                </SquishButton>
+                <div className="mt-4">
+                  <TrustInfo />
+                </div>
+              </DesktopPurchaseCard>
+            }
+          >
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
             {!isLoggedIn() && (
               <div
@@ -234,14 +285,6 @@ export default function Cart() {
                 <Loader2 size={24} className="animate-spin mb-3" />
                 <p className="text-sm">加载中…</p>
               </div>
-            ) : items.length === 0 ? (
-              <EmptyState
-                icon={ShoppingBag}
-                title="暂无商品"
-                description="快去挑选心仪的商品吧"
-                action={{ label: STORE_COPY.browseAllCategories, onClick: () => navigate("/categories") }}
-                className="max-w-none !rounded-none !border-0 !bg-transparent px-4 py-20 !shadow-none"
-              />
             ) : (
               <div
                 className="store-cart-list"
@@ -461,61 +504,26 @@ export default function Cart() {
                 </AnimatePresence>
               </div>
             )}
-          </div>
-
-          {/* 桌面右侧结算摘要 */}
-          {items.length > 0 && (
-            <aside className="mt-6 hidden self-start md:sticky md:top-[calc(var(--store-tablet-header-height,4.25rem)+1rem)] md:mt-0 md:block lg:top-20">
-              <div className="store-checkout-summary theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-                <h3 className="store-section-title mb-4 text-foreground">结算摘要</h3>
-                <div className="space-y-2.5 text-sm">
-                  <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
-                    <span className="text-muted-foreground">下单前可先领券，结算页自动匹配最优优惠</span>
-                    <UnifiedButton
-                      type="button"
-                      onClick={() => navigate("/coupons")}
-                      className="font-semibold text-[var(--theme-price)]"
-                    >
-                      去领券
-                    </UnifiedButton>
-                  </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>已选商品</span>
-                    <span>{totalItemsSelected()} 件</span>
-                  </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>{showSstCartHint ? "商品小计（含税）" : "商品小计"}</span>
-                    <span>RM {totalAmountSelected()}</span>
-                  </div>
-                  {showSstCartHint ? (
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
-                      {sstCartNote || "商品价格已含 SST，运费不计税。"}
-                    </p>
-                  ) : null}
-                  <div className="my-3 border-t border-[var(--theme-border)]" />
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-sm text-foreground">合计</span>
-                    <span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">
-                      <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
-                    </span>
-                  </div>
-                </div>
-                <SquishButton
-                  type="button"
-                  variant="gold"
-                  onClick={handleCheckout}
-                  disabled={selectedQty === 0}
-                  className="mt-5 w-full rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
-                >
-                  {checkoutLabel}
-                </SquishButton>
-                <div className="mt-4">
-                  <TrustInfo />
-                </div>
+          </DesktopPurchaseTwoColumn>
+        ) : (
+          <div className="mx-auto max-w-2xl">
+            <MarketingPositionNotices position="cart_notice" className="mb-3" />
+            {loading ? (
+              <div className="flex flex-col items-center py-20 text-muted-foreground" role="status" aria-live="polite">
+                <Loader2 size={24} className="animate-spin mb-3" />
+                <p className="text-sm">加载中…</p>
               </div>
-            </aside>
-          )}
-        </div>
+            ) : (
+              <EmptyState
+                icon={ShoppingBag}
+                title="暂无商品"
+                description="快去挑选心仪的商品吧"
+                action={{ label: STORE_COPY.browseAllCategories, onClick: () => navigate("/categories") }}
+                className="max-w-none !rounded-none !border-0 !bg-transparent px-4 py-20 !shadow-none"
+              />
+            )}
+          </div>
+        )}
       </main>
       {/* 移动端：底部固定结算栏 */}
       {items.length > 0 && (

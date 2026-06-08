@@ -15,7 +15,7 @@ import { triggerBrowserFileDownload } from "@/utils/fileDownload";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function readThemeCssVar(name: string, fallback: string): string {
@@ -159,10 +159,8 @@ export default function Invite() {
     typeof document !== "undefined" ? readThemeCssVar("--theme-surface", "#ffffff") : "#ffffff";
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)]">
-      <PageHeader title="邀请中心" onBack={goBack} />
-
-      <main className="mx-auto w-full px-[var(--store-page-x)] py-4 sm:max-w-lg sm:px-4 sm:py-6">
+    <StoreAccountLayout title="邀请中心" onBack={goBack} mainClassName="sm:px-4 xl:py-6">
+      <main className="mx-auto w-full space-y-0 sm:max-w-lg xl:max-w-3xl">
         <div className="rounded-2xl border border-[var(--theme-border)] bg-[linear-gradient(110deg,color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface)),var(--theme-surface))] p-5">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-[var(--theme-primary)]/15 p-2 text-[var(--theme-primary)]"><Gift size={22} /></div>
@@ -233,7 +231,7 @@ export default function Invite() {
           )}
         </div>
       </main>
-    </div>
+    </StoreAccountLayout>
   );
 }
 

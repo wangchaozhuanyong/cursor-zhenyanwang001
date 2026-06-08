@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ArrowLeft, Share2, ShoppingCart } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { STORE_COPY } from "@/constants/storeCopy";
@@ -66,8 +66,11 @@ export default function ProductDetailStickyHeader({
   onCart,
 }: ProductDetailStickyHeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { themeConfig } = useThemeRuntime();
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
+  const stateFrom = (location.state as { from?: string } | null)?.from;
+  const searchBackTarget = stateFrom?.startsWith("/") && !stateFrom.startsWith("/search") ? stateFrom : "/";
 
   const BackBtn = solid ? SolidIconButton : ImmersiveIconButton;
   const ActionBtn = solid ? SolidIconButton : ImmersiveIconButton;
@@ -97,8 +100,9 @@ export default function ProductDetailStickyHeader({
         >
           <StoreSearchField
             mode="navigate"
+            size="compact"
             placeholder={STORE_COPY.searchPlaceholder}
-            onNavigate={() => navigate("/search")}
+            onNavigate={() => navigate("/search", { replace: true, state: { from: searchBackTarget } })}
           />
         </div>
 

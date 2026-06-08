@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowLeft, Clock, Search as SearchIcon, TrendingUp, X } from "lucide-react";
-import CategoryTabs from "@/components/CategoryTabs";
+import { ArrowLeft, Search as SearchIcon, TrendingUp } from "lucide-react";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -12,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { useProductStore } from "@/stores/useProductStore";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
-import { flattenCategories } from "@/utils/categoryTree";
 import { fetchHotSearchTerms, fetchSearchSuggestions, trackSearchKeyword } from "@/services/searchService";
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
 import { getProductGridClassName } from "@/utils/productGridClasses";
@@ -32,6 +30,7 @@ function getHistory(): string[] {
     return [];
   }
 }
+
 function saveHistory(list: string[]) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, MAX_HISTORY)));
 }
@@ -54,9 +53,6 @@ export default function Search() {
   const initialKeyword = searchParams.get("keyword")?.trim() || "";
   const [query, setQuery] = useState(initialKeyword);
   const [debouncedQuery, setDebouncedQuery] = useState(initialKeyword);
-  const [activeCat, setActiveCat] = useState("all");
-  const [history, setHistory] = useState<string[]>(getHistory);
-  const [showHistory, setShowHistory] = useState(!initialKeyword);
   const [hotTerms, setHotTerms] = useState<HotSearchTerm[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -64,25 +60,18 @@ export default function Search() {
 
   const {
     products,
-    categories,
     loading,
     listRefreshing,
     error,
     loadProducts,
-    loadCategories,
   } = useProductStore();
   const showFullSkeleton = loading && products.length === 0;
   const showSoftRefreshing = listRefreshing && products.length > 0;
 
   useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
-
-  useEffect(() => {
     const keyword = searchParams.get("keyword")?.trim() || "";
     setQuery(keyword);
     setDebouncedQuery(keyword);
-    setShowHistory(!keyword);
     if (keyword) setSearchAttribution(keyword);
   }, [searchParams]);
 
@@ -96,7 +85,6 @@ export default function Search() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setDebouncedQuery(query);
-      if (query.trim()) setShowHistory(false);
     }, 400);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -121,21 +109,20 @@ export default function Search() {
   }, [query]);
 
   useEffect(() => {
-    if (!debouncedQuery && activeCat === "all") return;
+    const keyword = debouncedQuery.trim();
+    if (!keyword) return;
     loadProducts({
-      keyword: debouncedQuery || undefined,
-      category_id: activeCat === "all" ? undefined : activeCat,
+      keyword,
       page: 1,
       pageSize: 50,
     });
-  }, [debouncedQuery, activeCat, loadProducts]);
+  }, [debouncedQuery, loadProducts]);
 
   const addToHistory = useCallback((term: string) => {
     const trimmed = term.trim();
     if (!trimmed) return;
     const newList = [trimmed, ...getHistory().filter((h) => h !== trimmed)].slice(0, MAX_HISTORY);
     saveHistory(newList);
-    setHistory(newList);
   }, []);
 
   const commitSearch = useCallback((term: string) => {
@@ -146,7 +133,6 @@ export default function Search() {
     setSearchParams(nextParams, { replace: true });
     setQuery(trimmed);
     setDebouncedQuery(trimmed);
-    setShowHistory(false);
     setSuggestions([]);
     addToHistory(trimmed);
     setSearchAttribution(trimmed);
@@ -159,7 +145,8 @@ export default function Search() {
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete("keyword");
       setSearchParams(nextParams, { replace: true });
-      setShowHistory(true);
+      setDebouncedQuery("");
+      setSuggestions([]);
     }
   }, [searchParams, setSearchParams]);
 
@@ -169,27 +156,8 @@ export default function Search() {
     }
   }, [query, commitSearch]);
 
-  const selectHistory = useCallback(
-    (term: string) => {
-      commitSearch(term);
-    },
-    [commitSearch],
-  );
-
-  const clearHistory = useCallback(() => {
-    saveHistory([]);
-    setHistory([]);
-  }, []);
-
-  const handleCatChange = useCallback((id: string) => {
-    setActiveCat(id);
-  }, []);
-
-  const allCategories = [{ id: "all", name: "全部", level: 0 }, ...flattenCategories(categories)];
-
-  const shouldShowDiscovery = showHistory && !debouncedQuery && !query.trim() && activeCat === "all";
+  const shouldShowHotSearch = !debouncedQuery.trim() && !query.trim();
   const shouldShowSuggestions = query.trim().length > 0 && suggestions.length > 0 && query.trim() !== debouncedQuery.trim();
-
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
 
   return (
@@ -218,6 +186,7 @@ export default function Search() {
             </UnifiedButton>
             <StoreSearchField
               mode="filter"
+              size="compact"
               autoFocus
               placeholder={STORE_COPY.searchPlaceholder}
               value={query}
@@ -225,197 +194,85 @@ export default function Search() {
               onSubmit={handleSubmit}
             />
           </div>
-          <div className="pb-2">
-            <CategoryTabs
-              categories={allCategories}
-              activeId={activeCat}
-              onChange={handleCatChange}
-              loading={loading && categories.length === 0}
-              loadingSlots={5}
-            />
-          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] md:px-6 md:py-6">
-        <div className="md:grid md:grid-cols-[280px,1fr] md:gap-6 lg:grid-cols-[320px,1fr]">
-          <aside className="hidden md:block">
-            {(history.length > 0 || hotTerms.length > 0) && (
-              <div className="store-discovery-panel sticky top-[calc(var(--store-tab-header-height)+2.75rem+env(safe-area-inset-top,0px))] space-y-4 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
-                {history.length > 0 && (
-                  <section className="store-discovery-section">
-                    <div className="mb-3 flex items-center justify-between">
-                      <h3 className="store-section-title flex items-center gap-1.5 text-foreground">
-                        <Clock size={14} className="text-muted-foreground" /> 搜索历史
-                      </h3>
-                      <UnifiedButton
-                        type="button"
-                        onClick={clearHistory}
-                        className="text-xs text-muted-foreground hover:text-[var(--theme-danger)]"
-                      >
-                        清空
-                      </UnifiedButton>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {history.map((term) => (
-                        <UnifiedButton
-                          key={`desk-${term}`}
-                          type="button"
-                          onClick={() => selectHistory(term)}
-                          className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-1.5 text-xs text-[var(--theme-text)]"
-                        >
-                          {term}
-                        </UnifiedButton>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {hotTerms.length > 0 && (
-                  <section className="store-discovery-section">
-                    <h3 className="store-section-title mb-3 flex items-center gap-1.5 text-foreground">
-                      <TrendingUp size={14} className="text-theme-price" /> 热门搜索
-                    </h3>
-                    <div className="space-y-2">
-                      {hotTerms.slice(0, 8).map((term, idx) => (
-                        <UnifiedButton
-                          key={`desk-hot-${term.keyword}`}
-                          type="button"
-                          onClick={() => commitSearch(term.keyword)}
-                          className="flex w-full items-center justify-between rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-left text-xs text-[var(--theme-text)]"
-                        >
-                          <span className="truncate">{idx + 1}. {term.keyword}</span>
-                          <span className="text-[10px] text-muted-foreground">{term.search_count}</span>
-                        </UnifiedButton>
-                      ))}
-                    </div>
-                  </section>
-                )}
-              </div>
-            )}
-          </aside>
-
-          <section>
-            {shouldShowDiscovery && (
-              <div className="mb-6 space-y-6 md:hidden">
-                {history.length > 0 && (
-                  <section className="store-discovery-section">
-                    <div className="mb-3 flex items-center justify-between">
-                      <h3 className="store-section-title flex items-center gap-1.5 text-foreground">
-                        <Clock size={14} className="text-muted-foreground" /> 搜索历史
-                      </h3>
-                      <UnifiedButton
-                        type="button"
-                        onClick={clearHistory}
-                        className="text-xs text-muted-foreground hover:text-[var(--theme-danger)]"
-                      >
-                        清空
-                      </UnifiedButton>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {history.map((term) => (
-                        <UnifiedButton
-                          key={term}
-                          type="button"
-                          onClick={() => selectHistory(term)}
-                          className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text)] transition-colors"
-                        >
-                          {term}
-                          <X
-                            size={12}
-                            className="text-muted-foreground hover:text-[var(--theme-danger)]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const newList = history.filter((h) => h !== term);
-                              saveHistory(newList);
-                              setHistory(newList);
-                            }}
-                          />
-                        </UnifiedButton>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {hotTerms.length > 0 && (
-                  <section className="store-discovery-section">
-                    <h3 className="store-section-title mb-3 flex items-center gap-1.5 text-foreground">
-                      <TrendingUp size={14} className="text-theme-price" /> 热门搜索
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {hotTerms.map((term) => (
-                        <UnifiedButton
-                          key={term.keyword}
-                          type="button"
-                          onClick={() => commitSearch(term.keyword)}
-                          className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text)]"
-                        >
-                          {term.keyword}
-                          <span className="ml-1 text-[10px] text-muted-foreground">{term.search_count}</span>
-                        </UnifiedButton>
-                      ))}
-                    </div>
-                  </section>
-                )}
-              </div>
-            )}
-
-            {shouldShowSuggestions && (
-              <div className="store-suggestion-panel mb-5 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]">
-                {suggestions.map((item) => (
-                  <UnifiedButton
-                    key={`${item.source}-${item.keyword}`}
-                    type="button"
-                    onClick={() => commitSearch(item.keyword)}
-                    className="flex w-full items-center gap-2 border-b border-[var(--theme-border)] px-4 py-3 text-left text-sm text-foreground last:border-0"
-                  >
-                    <SearchIcon size={14} className="text-muted-foreground" />
-                    <span className="flex-1">{item.keyword}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {item.source === "term" ? "热搜" : "商品"}
-                    </span>
-                  </UnifiedButton>
-                ))}
-              </div>
-            )}
-
-            {error && (
-              <div className={`mb-4 p-3 text-center text-sm ${THEME_ALERT_ERROR_SOFT}`}>
-                {error}
-              </div>
-            )}
-
-            {!shouldShowDiscovery && (
-              <SilkProductGrid
-                products={products}
-                className={productGridClass}
-                skeletonCount={6}
-                siteContext={productCardSiteContext}
-                showFullSkeleton={showFullSkeleton}
-                showSoftRefreshing={showSoftRefreshing}
-                emptyState={
-                  <div className="store-search-empty py-20 text-center text-sm text-muted-foreground">
-                    <p>没有找到相关商品</p>
-                    <UnifiedButton
-                      type="button"
-                      onClick={() => {
-                        const nextParams = new URLSearchParams(searchParams);
-                        nextParams.delete("keyword");
-                        setSearchParams(nextParams, { replace: true });
-                        setQuery("");
-                        setDebouncedQuery("");
-                        setShowHistory(true);
-                      }}
-                      className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-1.5 text-xs text-[var(--theme-text)]"
-                    >
-                      清空搜索重新查看
-                    </UnifiedButton>
-                  </div>
-                }
-              />
-            )}
+        {shouldShowHotSearch && hotTerms.length > 0 && (
+          <section className="store-discovery-section mb-6">
+            <h3 className="store-section-title mb-3 flex items-center gap-1.5 text-foreground">
+              <TrendingUp size={14} className="text-theme-price" /> 热门搜索
+            </h3>
+            <div className="flex flex-wrap gap-2 md:max-w-2xl">
+              {hotTerms.map((term) => (
+                <UnifiedButton
+                  key={term.keyword}
+                  type="button"
+                  onClick={() => commitSearch(term.keyword)}
+                  className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text)]"
+                >
+                  {term.keyword}
+                  <span className="ml-1 text-[10px] text-muted-foreground">{term.search_count}</span>
+                </UnifiedButton>
+              ))}
+            </div>
           </section>
-        </div>
+        )}
+
+        {shouldShowSuggestions && (
+          <div className="store-suggestion-panel mb-5 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+            {suggestions.map((item) => (
+              <UnifiedButton
+                key={`${item.source}-${item.keyword}`}
+                type="button"
+                onClick={() => commitSearch(item.keyword)}
+                className="flex w-full items-center gap-2 border-b border-[var(--theme-border)] px-4 py-3 text-left text-sm text-foreground last:border-0"
+              >
+                <SearchIcon size={14} className="text-muted-foreground" />
+                <span className="flex-1">{item.keyword}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {item.source === "term" ? "热搜" : "商品"}
+                </span>
+              </UnifiedButton>
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className={`mb-4 p-3 text-center text-sm ${THEME_ALERT_ERROR_SOFT}`}>
+            {error}
+          </div>
+        )}
+
+        {!shouldShowHotSearch && (
+          <SilkProductGrid
+            products={products}
+            className={productGridClass}
+            skeletonCount={6}
+            siteContext={productCardSiteContext}
+            showFullSkeleton={showFullSkeleton}
+            showSoftRefreshing={showSoftRefreshing}
+            emptyState={
+              <div className="store-search-empty py-20 text-center text-sm text-muted-foreground">
+                <p>没有找到相关商品</p>
+                <UnifiedButton
+                  type="button"
+                  onClick={() => {
+                    const nextParams = new URLSearchParams(searchParams);
+                    nextParams.delete("keyword");
+                    setSearchParams(nextParams, { replace: true });
+                    setQuery("");
+                    setDebouncedQuery("");
+                    setSuggestions([]);
+                  }}
+                  className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-1.5 text-xs text-[var(--theme-text)]"
+                >
+                  清空搜索重新查看
+                </UnifiedButton>
+              </div>
+            }
+          />
+        )}
       </main>
     </div>
   );

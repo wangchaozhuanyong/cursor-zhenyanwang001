@@ -160,7 +160,7 @@ export default function Invite() {
 
   return (
     <StoreAccountLayout title="邀请中心" onBack={goBack} mainClassName="sm:px-4 xl:py-6">
-      <main className="mx-auto w-full space-y-0 sm:max-w-lg xl:max-w-3xl">
+      <main className="mx-auto w-full space-y-0 md:max-w-5xl xl:max-w-3xl">
         <div className="rounded-2xl border border-[var(--theme-border)] bg-[linear-gradient(110deg,color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface)),var(--theme-surface))] p-5">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-[var(--theme-primary)]/15 p-2 text-[var(--theme-primary)]"><Gift size={22} /></div>

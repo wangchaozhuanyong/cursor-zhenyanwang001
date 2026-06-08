@@ -50,13 +50,13 @@ export default function StoreAccountLayout({
 
       <main
         className={cn(
-          "mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] sm:max-w-lg sm:px-4 sm:py-4",
-          "md:max-w-5xl md:px-6 md:py-5 xl:grid xl:max-w-screen-xl xl:grid-cols-[240px_minmax(0,1fr)] xl:items-start xl:gap-8 xl:px-8 xl:pb-12 xl:pt-6",
+          "mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] sm:px-4 sm:py-4",
+          "md:max-w-5xl md:px-6 md:py-5 lg:grid lg:max-w-6xl lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-6 xl:max-w-screen-xl xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-8 xl:px-8 xl:pb-12 xl:pt-6",
           mainClassName,
         )}
       >
-        <aside className="hidden xl:block">
-          <StoreAccountNav className="sticky top-[calc(var(--store-desktop-header-height,4rem)+1.5rem)]" />
+        <aside className="hidden lg:block">
+          <StoreAccountNav className="sticky top-[var(--store-tablet-sticky-top)] xl:top-[var(--store-desktop-sticky-top)]" />
         </aside>
         <section className="min-w-0">
           <div className="mb-5 hidden items-start justify-between gap-4 md:flex">

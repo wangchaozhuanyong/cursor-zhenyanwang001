@@ -125,6 +125,11 @@
     --store-bottom-nav-height: 78px;
     --store-action-bar-height: 4.75rem;
     --store-tab-header-height: 3.25rem;
+    --store-mobile-header-height: 3rem;
+    --store-tablet-header-height: 3.25rem;
+    --store-desktop-header-height: 4rem;
+    --store-tablet-sticky-top: calc(var(--store-tablet-header-height) + env(safe-area-inset-top,0px) + 0.75rem);
+    --store-desktop-sticky-top: calc(var(--store-desktop-header-height) + env(safe-area-inset-top,0px) + 1rem);
     --store-brand-logo-size: 2.125rem;
     --store-brand-logo-size-desktop: 2.75rem;
     --store-brand-logo-nav-size: var(--store-brand-logo-size);

@@ -7,7 +7,7 @@ export const STORE_MOBILE_PAGE_HEADER_CLASS = "store-mobile-page-header md:hidde
 
 /** 商详右侧购买区 sticky（平板用 Tab 顶栏高度，桌面用全局顶栏高度） */
 export const STORE_DETAIL_STICKY_TOP_CLASS =
-  "md:top-[calc(var(--store-tab-header-height,3.5rem)+env(safe-area-inset-top,0px)+1.5rem)] lg:top-[calc(var(--store-desktop-header-height,4rem)+1rem)]";
+  "md:top-[var(--store-tablet-sticky-top)] xl:top-[var(--store-desktop-sticky-top)]";
 
 /** 帮助 / 关于等阅读型页面主内容区 */
 export const STORE_READING_MAIN_CLASS =

@@ -10,5 +10,5 @@ import { useAppBreakpoint } from "./useAppBreakpoint";
 export function usePreferBottomSheet(tier: AppModalTier = "standard"): boolean {
   const bp = useAppBreakpoint();
   if (tier === "light") return false;
-  return bp !== "desktop";
+  return bp === "mobile";
 }

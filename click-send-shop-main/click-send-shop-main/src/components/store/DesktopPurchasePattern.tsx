@@ -28,14 +28,15 @@ export function DesktopPurchaseTwoColumn({
   return (
     <div
       className={cn(
-        "md:grid md:grid-cols-[minmax(0,1fr)_minmax(16rem,25rem)] md:items-start md:gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:gap-10",
+        "md:block lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:gap-10",
         className,
       )}
     >
       <div className={cn("min-w-0", contentClassName)}>{children}</div>
+      <div className={cn("mt-6 hidden md:block lg:hidden", asideClassName)}>{aside}</div>
       <aside
         className={cn(
-          "mt-6 hidden self-start md:sticky md:top-[calc(var(--store-tablet-header-height,4.25rem)+1rem)] md:mt-0 md:block xl:top-20",
+          "mt-6 hidden self-start lg:sticky lg:top-[var(--store-tablet-sticky-top)] lg:mt-0 lg:block xl:top-[var(--store-desktop-sticky-top)]",
           asideClassName,
         )}
       >

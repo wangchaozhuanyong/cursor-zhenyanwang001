@@ -16,6 +16,7 @@ import { isLoggedIn } from "@/utils/token";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
+import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 
 type NavItem = { path: string; label: string; icon: typeof Home; enabled?: boolean };
 
@@ -94,13 +95,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
           className="store-header-brand flex shrink-0 items-center gap-2.5"
           aria-label={`${siteName} 首页`}
         >
-          {shouldReserveLogoSpace ? (
-            <span className="store-brand-logo flex shrink-0 items-center justify-center" aria-hidden={!logoSrc}>
-              {logoSrc ? (
-                <img src={logoSrc} alt={`${siteName} Logo`} width={40} height={40} className="h-full w-full object-contain" />
-              ) : null}
-            </span>
-          ) : null}
+          {shouldReserveLogoSpace ? <StoreBrandLogo src={logoSrc} siteName={siteName} width={40} height={40} fallbackText="" /> : null}
           <span className="max-w-[10rem] truncate text-base font-bold tracking-wide text-[var(--theme-text-on-surface)]">
             {siteName}
           </span>

@@ -10,6 +10,7 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { isLoggedIn } from "@/utils/token";
+import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 
 const StoreNotificationAction = lazy(() => import("@/components/store/StoreNotificationAction"));
 
@@ -76,21 +77,7 @@ export default function StoreTabHeader({
           onClick={() => navigate("/")}
           aria-label={`${siteName} 首页`}
         >
-          {shouldReserveLogoSpace ? (
-            <span className="store-brand-logo flex shrink-0 items-center justify-center" aria-hidden={!logoSrc}>
-              {logoSrc ? (
-                <img
-                  src={logoSrc}
-                  alt={`${siteName} Logo`}
-                  width={36}
-                  height={36}
-                  className="h-full w-full object-contain"
-                  loading="eager"
-                  decoding="async"
-                />
-              ) : null}
-            </span>
-          ) : null}
+          {shouldReserveLogoSpace ? <StoreBrandLogo src={logoSrc} siteName={siteName} fallbackText="" /> : null}
           {showSiteName ? <span className={nameClass}>{siteName}</span> : null}
         </UnifiedButton>
 

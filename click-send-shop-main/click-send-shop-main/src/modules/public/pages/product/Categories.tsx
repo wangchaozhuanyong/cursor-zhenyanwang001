@@ -32,6 +32,7 @@ import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { renderBrandTitle } from "@/utils/brand";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -249,19 +250,7 @@ export default function Categories() {
 
   const categoryHeaderTitle = (
     <span className="store-category-brand">
-      {logoSrc ? (
-        <img
-          src={logoSrc}
-          alt={`${siteName} Logo`}
-          width={38}
-          height={38}
-          className="store-category-brand-logo"
-          loading="eager"
-          decoding="async"
-        />
-      ) : (
-        <span className="store-category-brand-logo store-category-brand-logo--fallback" aria-hidden />
-      )}
+      <StoreBrandLogo src={logoSrc} siteName={siteName} variant="category" width={38} height={38} />
       <span className="store-category-brand-name">{renderBrandTitle(siteName)}</span>
     </span>
   );

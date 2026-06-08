@@ -188,7 +188,42 @@
     width: var(--store-brand-logo-size);
     flex-shrink: 0;
     border-radius: 0.375rem;
+    overflow: hidden;
+  }
+
+  .store-brand-logo-image {
+    display: block;
+    height: 100%;
+    width: 100%;
     object-fit: contain;
+    object-position: center;
+  }
+
+  .store-brand-logo-fallback {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--theme-primary) 12%, var(--theme-surface));
+    color: var(--theme-primary);
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .store-brand-logo--category {
+    height: var(--store-brand-logo-nav-size);
+    width: var(--store-brand-logo-nav-size);
+    flex: 0 0 var(--store-brand-logo-nav-size);
+  }
+
+  .store-brand-logo--profile {
+    height: clamp(4.05rem, 17.5vw, var(--store-brand-logo-profile-size));
+    width: clamp(4.05rem, 17.5vw, var(--store-brand-logo-profile-size));
+    border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, var(--theme-border));
+    background: color-mix(in srgb, var(--theme-surface) 92%, transparent);
+    padding: 0.35rem;
   }
 
   .admin-site-logo--sm {
@@ -4980,53 +5015,6 @@ html[data-app-scope="store"] .store-category-brand {
   gap: 0.5rem;
 }
 
-html[data-app-scope="store"] .store-category-brand-logo {
-  width: var(--store-brand-logo-nav-size);
-  height: var(--store-brand-logo-nav-size);
-  flex: 0 0 var(--store-brand-logo-nav-size);
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--theme-price) 30%, var(--theme-border));
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--theme-surface) 90%, transparent), color-mix(in srgb, var(--theme-price) 14%, var(--theme-surface))),
-    var(--store-category-paper);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
-    0 12px 26px -20px color-mix(in srgb, var(--theme-price) 48%, transparent);
-  object-fit: cover;
-}
-
-html[data-app-scope="store"] .store-category-brand-logo--fallback {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--store-category-gold-dark);
-  font-size: 1.1rem;
-  font-weight: 900;
-  position: relative;
-  overflow: hidden;
-}
-
-html[data-app-scope="store"] .store-category-brand-logo--fallback::before,
-html[data-app-scope="store"] .store-category-brand-logo--fallback::after {
-  content: "";
-  position: absolute;
-  border-radius: 999px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 72%, white), var(--store-category-gold-dark));
-  box-shadow: 0 3px 8px -5px color-mix(in srgb, var(--theme-price) 70%, transparent);
-}
-
-html[data-app-scope="store"] .store-category-brand-logo--fallback::before {
-  width: 0.42rem;
-  height: 1.65rem;
-  transform: rotate(-24deg) translateX(-0.18rem);
-}
-
-html[data-app-scope="store"] .store-category-brand-logo--fallback::after {
-  width: 0.42rem;
-  height: 1.35rem;
-  transform: rotate(-24deg) translate(0.38rem, -0.05rem);
-}
-
 html[data-app-scope="store"] .store-category-brand-name {
   min-width: 0;
   overflow: hidden;
@@ -5787,11 +5775,6 @@ html[data-app-scope="store"] .store-category-page .store-badge {
     font-size: 0.98rem;
   }
 
-  html[data-app-scope="store"] .store-category-brand-logo {
-    width: var(--store-brand-logo-nav-size);
-    height: var(--store-brand-logo-nav-size);
-    flex-basis: var(--store-brand-logo-nav-size);
-  }
 }
 
 @media (hover: hover) and (pointer: fine) {

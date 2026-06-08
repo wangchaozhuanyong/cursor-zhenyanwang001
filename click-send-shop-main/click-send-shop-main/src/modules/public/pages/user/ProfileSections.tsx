@@ -9,6 +9,7 @@ import {
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import { formatProfileHeroName } from "./profileHeroName";
 import InviteRewardCard from "./InviteRewardCard.final.jsx";
 import profileVipAvatarImage from "@/assets/profile-vip-avatar-medallion.svg";
@@ -198,13 +199,7 @@ export function ProfileGuestCard({
     <section className="store-profile-vip-card profile-guest-card">
       <span className="profile-vip-watermark" aria-hidden="true">VIP</span>
       <div className="profile-vip-header">
-        <span className="profile-avatar-ring profile-brand-logo-ring">
-          {logoSrc ? (
-            <img src={logoSrc} alt={siteName} className="h-full w-full rounded-full object-cover" />
-          ) : (
-            <span className="profile-avatar-fallback">{siteName.slice(0, 1)}</span>
-          )}
-        </span>
+        <StoreBrandLogo src={logoSrc} siteName={siteName} variant="profile" className="profile-brand-logo-ring" width={70} height={70} />
         <div className="profile-vip-copy">
           <p className="profile-vip-name profile-guest-title">欢迎来到 {siteName}</p>
         </div>

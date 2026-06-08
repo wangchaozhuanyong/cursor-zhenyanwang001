@@ -14,6 +14,7 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
+import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 
 type TabletNavItem = {
   path: string;
@@ -87,13 +88,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
           className="store-tablet-brand store-header-brand flex min-w-0 shrink-0 items-center gap-2"
           aria-label={`${siteName} \u9996\u9875`}
         >
-          {shouldReserveLogoSpace ? (
-            <span className="store-brand-logo flex shrink-0 items-center justify-center" aria-hidden={!logoSrc}>
-              {logoSrc ? (
-                <img src={logoSrc} alt={`${siteName} Logo`} width={36} height={36} className="h-full w-full object-contain" />
-              ) : null}
-            </span>
-          ) : null}
+          {shouldReserveLogoSpace ? <StoreBrandLogo src={logoSrc} siteName={siteName} fallbackText="" /> : null}
           <span className="store-tablet-brand-name hidden max-w-[7rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline md:max-w-[8rem]">
             {siteName}
           </span>

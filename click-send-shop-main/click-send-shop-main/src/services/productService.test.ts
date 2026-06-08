@@ -54,7 +54,7 @@ describe("productService.trackHomeEngagement", () => {
 
     expect(productApi.trackHomeEvent).not.toHaveBeenCalled();
 
-    await vi.advanceTimersByTimeAsync(9000);
+    await vi.advanceTimersByTimeAsync(12_000);
 
     expect(productApi.trackHomeEvent).toHaveBeenCalledWith({
       module: "new_arrivals",

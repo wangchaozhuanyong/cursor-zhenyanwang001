@@ -15,6 +15,18 @@ function isUploadTypeError(message) {
   );
 }
 
+function isDuplicateEntryError(err) {
+  return err?.code === 'ER_DUP_ENTRY' || err?.errno === 1062;
+}
+
+function duplicateEntryMessage(err) {
+  const text = String(err?.sqlMessage || err?.message || '');
+  if (text.includes('coupons.uk_coupon_code')) return '优惠券编码已存在，请换一个编码';
+  if (text.includes('roles.') || text.includes('role')) return '编码已存在，请换一个编码';
+  if (text.includes('phone')) return '手机号已存在，请换一个手机号';
+  return '编码或唯一字段已存在，请检查后重试';
+}
+
 module.exports = function errorHandler(err, req, res, _next) {
   const traceId = req.traceId || '';
 
@@ -33,6 +45,15 @@ module.exports = function errorHandler(err, req, res, _next) {
   }
   if (isUploadTypeError(err?.message)) {
     return res.status(400).json({ code: 400, message: err.message, data: null, traceId });
+  }
+
+  if (isDuplicateEntryError(err)) {
+    return res.status(409).json({
+      code: 409,
+      message: duplicateEntryMessage(err),
+      data: null,
+      traceId,
+    });
   }
 
   if (err instanceof AppError || err?.name === 'BusinessError') {

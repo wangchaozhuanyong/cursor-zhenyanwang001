@@ -164,6 +164,19 @@ async function selectCouponById(id) {
   return row || null;
 }
 
+async function selectCouponByCode(code) {
+  const normalized = String(code || '').trim();
+  if (!normalized) return null;
+  const [[row]] = await db.query(
+    `SELECT id, code, title, deleted_at, archived_at
+       FROM coupons
+      WHERE code = ?
+      LIMIT 1`,
+    [normalized],
+  );
+  return row || null;
+}
+
 async function updateCouponDynamic(setFragments, values, id) {
   await db.query(`UPDATE coupons SET ${setFragments.join(', ')} WHERE BINARY id = BINARY ?`, [...values, id]);
 }
@@ -342,6 +355,7 @@ module.exports = {
   selectCouponsPage,
   insertCoupon,
   selectCouponById,
+  selectCouponByCode,
   updateCouponDynamic,
   deleteCouponById,
   restoreCouponById,

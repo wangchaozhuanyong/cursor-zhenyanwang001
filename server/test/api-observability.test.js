@@ -6,6 +6,7 @@ const request = require('supertest');
 const app = require('../src/app');
 const apiTimeout = require('../src/middleware/apiTimeout');
 const accessLogger = require('../src/middleware/accessLogger');
+const errorHandler = require('../src/middleware/errorHandler');
 const requestContext = require('../src/middleware/requestContext');
 const analyticsService = require('../src/modules/analytics/service/analytics.service');
 const analyticsRepo = require('../src/modules/analytics/repository/analytics.repository');
@@ -81,6 +82,28 @@ describe('API observability guardrails', () => {
 
     assert.equal(res.body.code, 403);
     assert.equal(res.body.message, 'CORS not allowed');
+  });
+
+  test('duplicate database keys return a business conflict instead of 500', async () => {
+    const duplicateApp = express();
+    duplicateApp.use(requestContext);
+    duplicateApp.post('/api/admin/coupons', () => {
+      const err = new Error("Duplicate entry '001' for key 'coupons.uk_coupon_code'");
+      err.code = 'ER_DUP_ENTRY';
+      err.errno = 1062;
+      throw err;
+    });
+    duplicateApp.use(errorHandler);
+
+    const res = await request(duplicateApp)
+      .post('/api/admin/coupons')
+      .set('X-Trace-Id', 'test-duplicate-coupon-code')
+      .expect('Content-Type', /json/)
+      .expect(409);
+
+    assert.equal(res.body.code, 409);
+    assert.equal(res.body.message, '优惠券编码已存在，请换一个编码');
+    assert.equal(res.body.traceId, 'test-duplicate-coupon-code');
   });
 
   test('encoded traversal under uploads returns 404 instead of SPA fallback', async () => {

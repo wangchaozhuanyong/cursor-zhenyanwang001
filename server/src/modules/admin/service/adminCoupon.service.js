@@ -119,6 +119,15 @@ function isCouponClosedForDelete(coupon) {
   return !!end && new Date(end).getTime() < Date.now();
 }
 
+async function assertCouponCodeAvailable(code, currentCouponId) {
+  const normalized = String(code || '').trim();
+  if (!normalized) return;
+  const existing = await repo.selectCouponByCode(normalized);
+  if (existing && String(existing.id) !== String(currentCouponId || '')) {
+    throw new BusinessError(409, '优惠券编码已存在，请换一个编码');
+  }
+}
+
 async function listCoupons(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(query.pageSize, 10) || 20));
@@ -141,6 +150,7 @@ async function createCoupon(body, adminUserId, req) {
   } = body;
   if (!code || !title) throw new BusinessError(400, '编码和标题不能为空');
   assertCouponPayloadValid({ ...body, type: type || 'fixed' });
+  await assertCouponCodeAvailable(code);
   const id = generateId();
   const scopeType = scope_type === 'category' ? 'category' : 'all';
   const normalizedCategoryIds = Array.isArray(category_ids)
@@ -199,6 +209,9 @@ async function updateCoupon(id, body, adminUserId, req) {
   assertCouponPayloadValid(body, { partial: true });
   const existing = await repo.selectCouponById(id);
   if (!existing || existing.deleted_at) throw new BusinessError(404, '优惠券不存在');
+  if (body.code !== undefined) {
+    await assertCouponCodeAvailable(body.code, id);
+  }
   const claimedCount = await repo.countUserCouponsByCouponId(id);
   if (claimedCount > 0) {
     const touchedCore = Object.keys(body).some((key) => CORE_FIELDS.has(key));

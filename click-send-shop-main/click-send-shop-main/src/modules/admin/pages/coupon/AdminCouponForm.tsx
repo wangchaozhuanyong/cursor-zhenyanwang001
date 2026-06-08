@@ -270,9 +270,9 @@ export default function AdminCouponForm() {
 
       invalidateCouponStoreCache();
       invalidateHomeBootstrapCache();
-      await queryClient.invalidateQueries({ queryKey: ["admin", "coupons"] });
-      await queryClient.invalidateQueries({ queryKey: ["admin", "marketing-dashboard"] });
       markClean();
+      void queryClient.invalidateQueries({ queryKey: ["admin", "coupons"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "marketing-dashboard"] });
       navigate("/admin/marketing/coupons");
     } catch (e) {
       toast.error(toastErrorMessage(e, L("保存失败，请重试", "Save failed, please try again")));

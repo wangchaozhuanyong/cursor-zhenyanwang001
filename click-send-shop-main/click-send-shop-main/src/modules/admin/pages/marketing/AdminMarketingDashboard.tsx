@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, CalendarClock, Gift, Link2, PlusCircle, Star, Ticket } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import * as activityService from "@/services/admin/activityService";
 import * as couponService from "@/services/admin/couponService";
 import { fetchAdminPointsRecords } from "@/services/admin/pointsService";
@@ -15,6 +14,7 @@ import type { PointsRecord } from "@/types/points";
 import type { RewardRecord } from "@/types/reward";
 import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 
 const EMPTY_MARKETING_STATS = {
   active: 0,
@@ -27,7 +27,7 @@ const EMPTY_MARKETING_STATS = {
 
 export default function AdminMarketingDashboard() {
   const { tText } = useAdminT();
-  const navigate = useNavigate();
+  const adminNavigate = useAdminNavigation();
 
   const dashboardQuery = useQuery({
     queryKey: adminQueryKeys.marketingDashboard(),
@@ -97,25 +97,25 @@ export default function AdminMarketingDashboard() {
         <h2 className="mb-3 text-sm font-semibold"><Tx>快捷入口</Tx></h2>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <PermissionGate permission="activity.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/activities/new?type=flash_sale")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><CalendarClock className="mr-2 inline h-4 w-4" /><Tx>新建秒杀活动</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => { void adminNavigate("/admin/marketing/activities/new?type=flash_sale"); }} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><CalendarClock className="mr-2 inline h-4 w-4" /><Tx>新建秒杀活动</Tx></UnifiedButton>
           </PermissionGate>
           <PermissionGate permission="activity.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/activities/new?type=full_reduction")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><BarChart3 className="mr-2 inline h-4 w-4" /><Tx>新建满减活动</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => { void adminNavigate("/admin/marketing/activities/new?type=full_reduction"); }} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><BarChart3 className="mr-2 inline h-4 w-4" /><Tx>新建满减活动</Tx></UnifiedButton>
           </PermissionGate>
           <PermissionGate permission="coupon.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Ticket className="mr-2 inline h-4 w-4" /><Tx>新建礼券</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => { void adminNavigate("/admin/marketing/coupons/new"); }} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Ticket className="mr-2 inline h-4 w-4" /><Tx>新建礼券</Tx></UnifiedButton>
           </PermissionGate>
           <PermissionGate permission="points.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/points")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Star className="mr-2 inline h-4 w-4" /><Tx>积分管理</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => { void adminNavigate("/admin/marketing/points"); }} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Star className="mr-2 inline h-4 w-4" /><Tx>积分管理</Tx></UnifiedButton>
           </PermissionGate>
           <PermissionGate permission="referral.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/rewards")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Gift className="mr-2 inline h-4 w-4" /><Tx>返现管理</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => { void adminNavigate("/admin/marketing/rewards"); }} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Gift className="mr-2 inline h-4 w-4" /><Tx>返现管理</Tx></UnifiedButton>
           </PermissionGate>
           <PermissionGate permission="invite.view">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/invites")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Link2 className="mr-2 inline h-4 w-4" /><Tx>邀请奖励</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => { void adminNavigate("/admin/marketing/invites"); }} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><Link2 className="mr-2 inline h-4 w-4" /><Tx>邀请奖励</Tx></UnifiedButton>
           </PermissionGate>
           <PermissionGate permission="activity.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><PlusCircle className="mr-2 inline h-4 w-4" /><Tx>新建活动</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => { void adminNavigate("/admin/marketing/activities/new"); }} className="rounded-lg border border-border px-3 py-2 text-left text-sm"><PlusCircle className="mr-2 inline h-4 w-4" /><Tx>新建活动</Tx></UnifiedButton>
           </PermissionGate>
         </div>
       </div>

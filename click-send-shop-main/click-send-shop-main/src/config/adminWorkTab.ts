@@ -34,5 +34,21 @@ export function shouldTrackAdminWorkTab(pathname: string): boolean {
   return true;
 }
 
+export function isDeprecatedAdminTabPath(pathname: string): boolean {
+  const base = pathname.replace(/\/+$/, "") || "/admin";
+  return (
+    base === "/admin/dashboard"
+    || base === "/admin/invites"
+    || base === "/admin/rewards"
+    || base === "/admin/points/records"
+    || base === "/admin/settings/points"
+    || base === "/admin/settings/referral"
+    || base === "/admin/coupons"
+    || base.startsWith("/admin/coupons/")
+    || base === "/admin/marketing/coupon-campaigns"
+    || base.startsWith("/admin/marketing/coupon-campaigns/")
+  );
+}
+
 export const ADMIN_WORK_TABS_MAX = 20;
-export const ADMIN_WORK_TABS_STORAGE_KEY = "admin.workTabs.v3";
+export const ADMIN_WORK_TABS_STORAGE_KEY = "admin.workTabs.v4";

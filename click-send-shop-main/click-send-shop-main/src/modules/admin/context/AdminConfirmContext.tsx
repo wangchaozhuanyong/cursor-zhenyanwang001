@@ -12,24 +12,43 @@ export type AdminConfirmOptions = {
 
 type AdminConfirmContextValue = {
   confirm: (options: AdminConfirmOptions) => void;
+  confirmAsync: (options: Omit<AdminConfirmOptions, "onConfirm">) => Promise<boolean>;
 };
 
 const AdminConfirmContext = createContext<AdminConfirmContextValue | null>(null);
 
 export function AdminConfirmProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<AdminConfirmOptions | null>(null);
+  const [pendingResolve, setPendingResolve] = useState<((confirmed: boolean) => void) | null>(null);
 
   const confirm = useCallback((options: AdminConfirmOptions) => {
     setPending(options);
+    setPendingResolve(null);
   }, []);
 
+  const confirmAsync = useCallback((options: Omit<AdminConfirmOptions, "onConfirm">) => {
+    return new Promise<boolean>((resolve) => {
+      setPending({
+        ...options,
+        onConfirm: () => resolve(true),
+      });
+      setPendingResolve(() => resolve);
+    });
+  }, []);
+
+  const closePending = useCallback((confirmed: boolean) => {
+    pendingResolve?.(confirmed);
+    setPending(null);
+    setPendingResolve(null);
+  }, [pendingResolve]);
+
   return (
-    <AdminConfirmContext.Provider value={{ confirm }}>
+    <AdminConfirmContext.Provider value={{ confirm, confirmAsync }}>
       {children}
       <AnimatedConfirmDialog
         open={pending !== null}
         onOpenChange={(open) => {
-          if (!open) setPending(null);
+          if (!open) closePending(false);
         }}
         title={pending?.title ?? ""}
         description={pending?.description}
@@ -39,6 +58,7 @@ export function AdminConfirmProvider({ children }: { children: ReactNode }) {
         onConfirm={async () => {
           if (!pending) return;
           await pending.onConfirm();
+          closePending(true);
         }}
       />
     </AdminConfirmContext.Provider>

@@ -13,6 +13,7 @@ import {
   type DisplayPosition,
 } from "@/constants/marketingDisplayPositions";
 import { invalidateHomeBootstrapCache } from "@/services/homeService";
+import { adminSaveDebug } from "@/modules/admin/utils/adminDebug";
 
 export const ACTIVITY_FORM_STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
 export const OBJECT_SCOPE_TYPES = new Set<ActivityPayload["scope_type"]>(["category", "product"]);
@@ -137,6 +138,8 @@ export function useActivitySave({
 }) {
   return useCallback(
     async (targetStatus: ActivityStatus) => {
+      const saveStartedAt = performance.now();
+      let dirtyCleared = false;
       setSaving(true);
       try {
         const payload = normalizePayloadForSubmit(form, targetStatus);
@@ -144,17 +147,25 @@ export function useActivitySave({
         if (isEdit && id) await activityService.updateActivity(id, payload);
         else await activityService.createActivity(payload);
         invalidateHomeBootstrapCache();
-        await Promise.all([
+        markClean();
+        dirtyCleared = true;
+        void Promise.all([
           queryClient.invalidateQueries({ queryKey: adminQueryKeys.activitiesRoot() }),
           queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
         ]);
         toast.success(targetStatus === "draft" ? tText("草稿已保存") : tText("活动已发布"));
-        markClean();
         navigate("/admin/marketing/activities");
       } catch (e) {
         toast.error(toastErrorMessage(e, tText("保存失败")));
       } finally {
         setSaving(false);
+        adminSaveDebug({
+          page: "AdminActivityForm",
+          duration: performance.now() - saveStartedAt,
+          success: dirtyCleared,
+          dirtyCleared,
+          savingReleased: true,
+        });
       }
     },
     [form, id, isEdit, markClean, navigate, queryClient, setSaving, tText],

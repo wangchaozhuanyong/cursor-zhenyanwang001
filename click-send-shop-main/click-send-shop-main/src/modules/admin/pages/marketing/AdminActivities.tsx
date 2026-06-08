@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Copy, Eye, PlusCircle, Trash2 } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
@@ -48,6 +48,7 @@ import {
 } from "@/utils/adminActivityFilters";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import { invalidateHomeBootstrapCache } from "@/services/homeService";
+import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 
 function getActivityPreviewPath(activity: MarketingActivity) {
   const positions = activity.display_positions || [];
@@ -76,7 +77,7 @@ export default function AdminActivities() {
     if (!normalized.length) return "--";
     return normalized.map((p) => tText(DISPLAY_POSITION_LABELS[p] || p)).join(tText("、"));
   };
-  const navigate = useNavigate();
+  const adminNavigate = useAdminNavigation();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState("");
@@ -188,8 +189,8 @@ export default function AdminActivities() {
         </AdminTableMobileCardField>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-        <UnifiedButton type="button" onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>编辑</Tx></UnifiedButton>
-        <UnifiedButton type="button" onClick={() => navigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>查看数据</Tx></UnifiedButton>
+        <UnifiedButton type="button" onClick={() => adminNavigate(`/admin/marketing/activities/${activity.id}/edit`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>编辑</Tx></UnifiedButton>
+        <UnifiedButton type="button" onClick={() => adminNavigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`)} className="touch-manipulation rounded border border-border px-2 py-1.5 text-xs"><Tx>查看数据</Tx></UnifiedButton>
       </div>
     </AdminTableMobileCard>
   );
@@ -199,12 +200,12 @@ export default function AdminActivities() {
       hint={<Tx>活动列表与运营动作入口。</Tx>}
       toolbar={(
         <PermissionGate permission="activity.manage">
-          <UnifiedButton type="button" onClick={() => navigate(type ? `/admin/marketing/activities/new?type=${type}` : "/admin/marketing/activities/new")} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><PlusCircle className="mr-1 inline h-4 w-4" /><Tx>新建活动</Tx></UnifiedButton>
+          <UnifiedButton type="button" onClick={() => adminNavigate(type ? `/admin/marketing/activities/new?type=${type}` : "/admin/marketing/activities/new")} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><PlusCircle className="mr-1 inline h-4 w-4" /><Tx>新建活动</Tx></UnifiedButton>
         </PermissionGate>
       )}
       filters={(
         <>
-          <div className="flex flex-wrap gap-2">{quickButtons.map((button) => <UnifiedButton key={button.label} onClick={() => navigate(button.to)} className="rounded-lg border border-border px-3 py-1.5 text-sm">{button.label}</UnifiedButton>)}</div>
+          <div className="flex flex-wrap gap-2">{quickButtons.map((button) => <UnifiedButton key={button.label} onClick={() => adminNavigate(button.to)} className="rounded-lg border border-border px-3 py-1.5 text-sm">{button.label}</UnifiedButton>)}</div>
           <div className="flex flex-wrap gap-2">{tabsLocalized.map((tab) => <UnifiedButton key={String(tab.value)} type="button" onClick={() => { setStatus(tab.value); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === tab.value ? "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tab.label}</UnifiedButton>)}</div>
           <div className="space-y-2">
             <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
@@ -286,7 +287,7 @@ export default function AdminActivities() {
                   primary={(
                     <UnifiedButton
                       type="button"
-                      onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)}
+                      onClick={() => adminNavigate(`/admin/marketing/activities/${activity.id}/edit`)}
                       className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
                     >
                       <Tx>编辑</Tx>
@@ -299,7 +300,7 @@ export default function AdminActivities() {
                       key: "copy",
                       label: <Tx>复制</Tx>,
                       icon: <Copy className="h-3.5 w-3.5" aria-hidden />,
-                      onClick: () => navigate(`/admin/marketing/activities/new?copy_from=${activity.id}`),
+                      onClick: () => adminNavigate(`/admin/marketing/activities/new?copy_from=${activity.id}`),
                     },
                     {
                       key: "preview",
@@ -310,7 +311,7 @@ export default function AdminActivities() {
                     {
                       key: "report",
                       label: <Tx>查看数据</Tx>,
-                      onClick: () => navigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`),
+                      onClick: () => adminNavigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`),
                     },
                     {
                       key: "toggle",

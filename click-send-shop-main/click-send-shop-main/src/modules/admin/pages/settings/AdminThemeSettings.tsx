@@ -20,7 +20,7 @@ import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeC
 import { applyAutoColorAction, type AutoColorAction } from "@/utils/themeStudioAuto";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { useAdminDirtyForm } from "@/modules/admin/hooks/useAdminDirtyForm";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -87,7 +87,6 @@ export default function AdminThemeSettings() {
   const [selectedSkinId, setSelectedSkinId] = useState(DEFAULT_SKIN_ID);
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(normalizeThemeConfig(THEME_PRESETS[0]?.config));
   const [dirty, setDirty] = useState(false);
-  useAdminTabDirty(dirty);
   const [pendingSkinId, setPendingSkinId] = useState<string | null>(null);
   const [skinSearch, setSkinSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -128,6 +127,7 @@ export default function AdminThemeSettings() {
   });
 
   const loading = themeQuery.isLoading && !themeQuery.data;
+  const { markSaved } = useAdminDirtyForm({ isDirty: dirty, isReady: !loading });
 
   useEffect(() => {
     if (skipServerSyncRef.current) return;
@@ -183,6 +183,7 @@ export default function AdminThemeSettings() {
     queryClient.setQueryData(adminQueryKeys.themeSkins(), saved);
     notifyGlobalThemeUpdated();
     setDirty(false);
+    markSaved();
   };
 
   const persist = async (
@@ -256,6 +257,7 @@ export default function AdminThemeSettings() {
     const target = skins.find((s) => s.id === id);
     setThemeConfig(normalizeThemeConfig(target?.config));
     setDirty(false);
+    markSaved();
     undoSnapshot.current = null;
   };
 

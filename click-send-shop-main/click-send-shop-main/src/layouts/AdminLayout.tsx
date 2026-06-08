@@ -26,6 +26,7 @@ import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContex
 import { AdminDirtyGuardProvider } from "@/modules/admin/context/AdminDirtyGuardContext";
 import { AdminAccountSettingsProvider } from "@/modules/admin/context/AdminAccountSettingsContext";
 import { AdminOrderVoiceProvider } from "@/modules/admin/components/AdminOrderVoiceNotifier";
+import { observeAdminLongTasks } from "@/modules/admin/utils/adminDebug";
 import { AnimatedPage } from "@/modules/micro-interactions/components/AnimatedPage";
 import { preloadAdminRoute } from "@/routes/adminLazyPages";
 import { adminLogout, fetchAdminProfile, isAdminAuthenticated } from "@/services/admin/accountService";
@@ -44,7 +45,7 @@ function isMonitoringSubnavSwitch(previousPath: string, nextPath: string) {
   return previousPath !== nextPath && MONITORING_SUBNAV_PATHS.has(previousPath) && MONITORING_SUBNAV_PATHS.has(nextPath);
 }
 
-function AdminLayoutContent() {
+function AdminLayoutInner() {
   const navigate = useNavigate();
   const adminNavigate = useAdminNavigation();
   const location = useLocation();
@@ -62,6 +63,9 @@ function AdminLayoutContent() {
   const permHydrated = useAdminPermissionStore((s) => s.hydrated);
   const capabilities = useSiteCapabilities();
   useAdminEvents(true);
+  useEffect(() => {
+    observeAdminLongTasks();
+  }, []);
 
   const navItems = useMemo(
     () => resolveNavLabels(filterNav(navItemsRaw, can, canAny, capabilities), t),
@@ -160,12 +164,9 @@ function AdminLayoutContent() {
   }
 
   return (
-    <DownloadConfirmProvider>
-      <AdminConfirmProvider>
-        <AdminDirtyGuardProvider>
-          <AdminAccountSettingsProvider>
-            <AdminOrderVoiceProvider>
-              <div data-admin-shell className="flex min-h-[100dvh] w-full overflow-x-hidden bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <AdminAccountSettingsProvider>
+      <AdminOrderVoiceProvider>
+        <div data-admin-shell className="flex min-h-[100dvh] w-full overflow-x-hidden bg-[var(--theme-bg)] text-[var(--theme-text)]">
                 <aside className="hidden w-[260px] shrink-0 self-start border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:flex-col">
                   <AdminSidebarNav
                     scrollMode="inline"
@@ -236,13 +237,20 @@ function AdminLayoutContent() {
                     onOpenMore={handleOpenMobileSidebar}
                   />
                 </div>
-              </div>
-            </AdminOrderVoiceProvider>
-          </AdminAccountSettingsProvider>
+        </div>
+      </AdminOrderVoiceProvider>
+    </AdminAccountSettingsProvider>
+  );
+}
+
+export default function AdminLayout() {
+  return (
+    <DownloadConfirmProvider>
+      <AdminConfirmProvider>
+        <AdminDirtyGuardProvider>
+          <AdminLayoutInner />
         </AdminDirtyGuardProvider>
       </AdminConfirmProvider>
     </DownloadConfirmProvider>
   );
 }
-
-export default AdminLayoutContent;

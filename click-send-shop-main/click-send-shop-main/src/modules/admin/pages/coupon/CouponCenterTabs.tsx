@@ -1,7 +1,8 @@
 import { ClipboardList, Ticket } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useAdminTOptional } from "@/hooks/useAdminT";
+import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 
 const TABS = [
   {
@@ -32,7 +33,7 @@ function isActiveTab(pathname: string, tabPath: string) {
 }
 
 export default function CouponCenterTabs() {
-  const navigate = useNavigate();
+  const adminNavigate = useAdminNavigation();
   const { pathname } = useLocation();
   const { locale } = useAdminTOptional();
   const isEn = locale === "en";
@@ -46,7 +47,7 @@ export default function CouponCenterTabs() {
           <UnifiedButton
             key={tab.key}
             type="button"
-            onClick={() => navigate(tab.path)}
+            onClick={() => { void adminNavigate(tab.path); }}
             className={`min-h-[40px] flex-1 justify-center gap-2 rounded-md px-3 py-2 text-sm sm:flex-none ${
               active ? "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] font-semibold text-theme-price" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}

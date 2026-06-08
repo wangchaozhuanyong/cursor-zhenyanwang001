@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Archive, Ban, ClipboardList, PauseCircle, Pencil, Plus, Trash2, XCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -31,6 +30,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import CouponCenterTabs from "./CouponCenterTabs";
 import { invalidateHomeBootstrapCache } from "@/services/homeService";
 import { invalidateCouponStoreCache } from "@/stores/useCouponStore";
+import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 
 const COUPON_COLUMN_ALIGNS: AdminTableAlign[] = ["left", "center", "left", "right", "right", "left", "center", "right"];
 
@@ -95,7 +95,7 @@ export default function AdminCoupons() {
   const isEn = locale === "en";
   const L = (zh: string, en: string) => (isEn ? en : zh);
   const { couponType: labelCouponType, couponStatus: labelCouponStatus } = useAdminDisplayLabel();
-  const navigate = useNavigate();
+  const adminNavigate = useAdminNavigation();
   const queryClient = useQueryClient();
   const can = useAdminPermissionStore((s) => s.can);
   const [search, setSearch] = useState("");
@@ -207,7 +207,7 @@ export default function AdminCoupons() {
           </AdminTableMobileCardField>
         </div>
         <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-          <UnifiedButton type="button" onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>编辑</Tx></UnifiedButton>
+          <UnifiedButton type="button" onClick={() => adminNavigate(`/admin/marketing/coupons/${coupon.id}`)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>编辑</Tx></UnifiedButton>
           <PermissionGate permission="coupon.manage">
             <UnifiedButton type="button" onClick={() => setIssueCouponId(coupon.id)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>发券</Tx></UnifiedButton>
             <UnifiedButton type="button" onClick={() => setOperation({ coupon, type: "pause-claim" })} className="touch-manipulation rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><PauseCircle size={13} className="mr-1 inline" /><Tx>暂停领取</Tx></UnifiedButton>
@@ -224,9 +224,9 @@ export default function AdminCoupons() {
       hint={<Tx>这里统一维护每一次礼券发行。礼券规则、领取时间、使用时间、人群和使用范围都在这里一次性设置。</Tx>}
       toolbar={(
         <div className="flex flex-wrap gap-2">
-          <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></UnifiedButton>
+          <UnifiedButton type="button" onClick={() => adminNavigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></UnifiedButton>
           <PermissionGate permission="coupon.manage">
-            <UnifiedButton type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><Plus size={16} /><Tx>新建礼券</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => adminNavigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><Plus size={16} /><Tx>新建礼券</Tx></UnifiedButton>
           </PermissionGate>
         </div>
       )}
@@ -276,7 +276,7 @@ export default function AdminCoupons() {
                   primary={(
                     <UnifiedButton
                       type="button"
-                      onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)}
+                      onClick={() => adminNavigate(`/admin/marketing/coupons/${coupon.id}`)}
                       className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
                       title={L("编辑", "Edit")}
                     >

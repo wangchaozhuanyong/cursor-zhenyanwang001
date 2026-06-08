@@ -18,6 +18,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
+import { adminSaveDebug } from "@/modules/admin/utils/adminDebug";
 import { tempVariantId } from "@/utils/productFormVariantUtils";
 import type { ProductFormPayloadSlice } from "@/modules/admin/pages/product/productFormTypes";
 import { ADMIN_PRODUCT_FORM_CONTROL_CLASS } from "@/modules/admin/pages/product/productFormPresentation";
@@ -126,6 +127,8 @@ export default function AdminProductForm() {
     if (saving || deleting) return;
     const blockMessage = getProductFormSaveBlockMessage({ form, uploadBusy, isNew, productId: id });
     if (blockMessage) { toast.error(tText(blockMessage)); return; }
+    const saveStartedAt = performance.now();
+    let dirtyCleared = false;
     setSaving(true);
     try {
       const result = await submitAdminProductForm({
@@ -136,14 +139,22 @@ export default function AdminProductForm() {
         createProduct,
         updateProduct,
       });
-      toast.success(tText(result === "created" ? "商品创建成功" : "商品更新成功"));
-      await invalidateProductCaches();
       markClean();
+      dirtyCleared = true;
+      toast.success(tText(result === "created" ? "商品创建成功" : "商品更新成功"));
+      void invalidateProductCaches();
       navigate("/admin/products");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请重试"));
     } finally {
       setSaving(false);
+      adminSaveDebug({
+        page: "AdminProductForm",
+        duration: performance.now() - saveStartedAt,
+        success: dirtyCleared,
+        dirtyCleared,
+        savingReleased: true,
+      });
     }
   };
 

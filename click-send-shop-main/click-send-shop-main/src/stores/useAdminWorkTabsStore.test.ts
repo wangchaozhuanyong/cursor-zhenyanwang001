@@ -55,7 +55,7 @@ describe("useAdminWorkTabsStore", () => {
     expect(adminTabPathKey("/admin/marketing/activities/new?type=flash_sale&unused=1")).toBe("/admin/marketing/activities/new?type=flash_sale");
   });
 
-  it("replaces the twentieth tab when reaching limit", () => {
+  it("blocks a new tab when reaching limit", () => {
     const store = useAdminWorkTabsStore.getState();
     for (let i = 0; i < ADMIN_WORK_TABS_MAX; i += 1) {
       const result = store.upsertTab(`/admin/test-${i}`, "", `页面 ${i}`);
@@ -64,16 +64,11 @@ describe("useAdminWorkTabsStore", () => {
 
     const result = useAdminWorkTabsStore.getState().upsertTab("/admin/overflow", "", "超出页面");
     const state = useAdminWorkTabsStore.getState();
-    expect(result).toMatchObject({ ok: true, activeId: "/admin/overflow", path: "/admin/overflow" });
+    expect(result).toMatchObject({ ok: false, reason: "limit", path: "/admin/overflow", max: ADMIN_WORK_TABS_MAX });
     expect(state.tabs).toHaveLength(ADMIN_WORK_TABS_MAX);
-    expect(state.tabs[ADMIN_WORK_TABS_MAX - 1]).toMatchObject({
-      id: "/admin/overflow",
-      path: "/admin/overflow",
-      title: "超出页面",
-    });
-    expect(state.tabs.some((tab) => tab.id === `/admin/test-${ADMIN_WORK_TABS_MAX - 1}`)).toBe(false);
-    expect(state.activeTabId).toBe("/admin/overflow");
-    expect(state.lastLimitNoticeAt).toBeNull();
+    expect(state.tabs.some((tab) => tab.id === "/admin/overflow")).toBe(false);
+    expect(state.activeTabId).toBe(`/admin/test-${ADMIN_WORK_TABS_MAX - 1}`);
+    expect(state.lastLimitNoticeAt).not.toBeNull();
   });
 
   it("prechecks tab capacity without mutating state", () => {
@@ -83,11 +78,11 @@ describe("useAdminWorkTabsStore", () => {
     }
 
     expect(useAdminWorkTabsStore.getState().canOpenTab("/admin/test-1")).toBe(true);
-    expect(useAdminWorkTabsStore.getState().canOpenTab("/admin/overflow")).toBe(true);
+    expect(useAdminWorkTabsStore.getState().canOpenTab("/admin/overflow")).toBe(false);
     expect(useAdminWorkTabsStore.getState().tabs).toHaveLength(ADMIN_WORK_TABS_MAX);
   });
 
-  it("keeps pinned twentieth tab and replaces the nearest unpinned tab", () => {
+  it("keeps existing tabs when the limit is reached even if one is unpinned", () => {
     const store = useAdminWorkTabsStore.getState();
     for (let i = 0; i < ADMIN_WORK_TABS_MAX; i += 1) {
       store.upsertTab(`/admin/test-${i}`, "", `页面 ${i}`);
@@ -96,15 +91,16 @@ describe("useAdminWorkTabsStore", () => {
 
     const result = useAdminWorkTabsStore.getState().upsertTab("/admin/overflow", "", "超出页面");
     const state = useAdminWorkTabsStore.getState();
-    expect(result.ok).toBe(true);
+    expect(result.ok).toBe(false);
     expect(state.tabs[ADMIN_WORK_TABS_MAX - 1]).toMatchObject({
       id: `/admin/test-${ADMIN_WORK_TABS_MAX - 1}`,
       pinned: true,
     });
     expect(state.tabs[ADMIN_WORK_TABS_MAX - 2]).toMatchObject({
-      id: "/admin/overflow",
+      id: `/admin/test-${ADMIN_WORK_TABS_MAX - 2}`,
       pinned: false,
     });
+    expect(state.tabs.some((tab) => tab.id === "/admin/overflow")).toBe(false);
   });
 
   it("updates tab title without changing tab order", () => {

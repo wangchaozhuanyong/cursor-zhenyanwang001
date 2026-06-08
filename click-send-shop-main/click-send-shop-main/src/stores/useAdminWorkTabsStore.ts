@@ -4,6 +4,7 @@ import {
   ADMIN_WORK_TABS_MAX,
   ADMIN_WORK_TABS_STORAGE_KEY,
   adminTabPathKey,
+  isDeprecatedAdminTabPath,
   normalizeAdminTabPath,
   shouldTrackAdminWorkTab,
 } from "@/config/adminWorkTab";
@@ -20,13 +21,27 @@ export type AdminWorkTabUpsertResult =
   | { ok: true; path: string; activeId: string }
   | { ok: false; path: string; activeId: string; reason: "limit"; max: number };
 
-function findReplacementTabIndex(tabs: AdminWorkTab[]): number {
-  const preferredIndex = ADMIN_WORK_TABS_MAX - 1;
-  if (tabs[preferredIndex] && !tabs[preferredIndex].pinned) return preferredIndex;
-  for (let i = tabs.length - 1; i >= 0; i -= 1) {
-    if (!tabs[i].pinned) return i;
-  }
-  return -1;
+function sanitizeTabs(tabs: AdminWorkTab[], activeTabId: string | null) {
+  const seen = new Set<string>();
+  const validTabs = tabs
+    .filter((tab) => {
+      if (!tab || typeof tab.path !== "string" || typeof tab.id !== "string") return false;
+      const pathname = tab.path.split("?")[0] || "";
+      if (!shouldTrackAdminWorkTab(pathname) || isDeprecatedAdminTabPath(pathname)) return false;
+      if (seen.has(tab.id)) return false;
+      seen.add(tab.id);
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      return (b.lastAccessAt || 0) - (a.lastAccessAt || 0);
+    })
+    .slice(0, ADMIN_WORK_TABS_MAX);
+  const activeStillExists = activeTabId && validTabs.some((tab) => tab.id === activeTabId);
+  return {
+    tabs: validTabs,
+    activeTabId: activeStillExists ? activeTabId : validTabs[0]?.id ?? null,
+  };
 }
 
 type AdminWorkTabsState = {
@@ -60,7 +75,6 @@ export const useAdminWorkTabsStore = create<AdminWorkTabsState>()(
         return (
           Boolean(state.tabs.find((t) => t.id === id))
           || state.tabs.length < ADMIN_WORK_TABS_MAX
-          || findReplacementTabIndex(state.tabs) >= 0
         );
       },
 
@@ -71,25 +85,8 @@ export const useAdminWorkTabsStore = create<AdminWorkTabsState>()(
         const state = get();
         const existing = state.tabs.find((t) => t.id === id);
         if (!existing && state.tabs.length >= ADMIN_WORK_TABS_MAX) {
-          const replacementIndex = findReplacementTabIndex(state.tabs);
-          if (replacementIndex < 0) {
-            set({ lastLimitNoticeAt: now });
-            return { ok: false, path: fullPath, activeId: state.activeTabId ?? id, reason: "limit", max: ADMIN_WORK_TABS_MAX };
-          }
-          const nextTabs = state.tabs.slice();
-          nextTabs[replacementIndex] = {
-            id,
-            path: fullPath,
-            title: title.trim() || fullPath,
-            pinned: false,
-            lastAccessAt: now,
-          };
-          set({
-            tabs: nextTabs,
-            activeTabId: id,
-            lastLimitNoticeAt: null,
-          });
-          return { ok: true, path: fullPath, activeId: id };
+          set({ lastLimitNoticeAt: now });
+          return { ok: false, path: fullPath, activeId: state.activeTabId ?? id, reason: "limit", max: ADMIN_WORK_TABS_MAX };
         }
 
         const nextTab: AdminWorkTab = existing
@@ -176,6 +173,11 @@ export const useAdminWorkTabsStore = create<AdminWorkTabsState>()(
       name: ADMIN_WORK_TABS_STORAGE_KEY,
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ tabs: state.tabs, activeTabId: state.activeTabId }),
+      merge: (persisted, current) => {
+        const state = persisted as Partial<AdminWorkTabsState> | undefined;
+        const sanitized = sanitizeTabs(Array.isArray(state?.tabs) ? state.tabs : [], state?.activeTabId ?? null);
+        return { ...current, ...sanitized };
+      },
     },
   ),
 );

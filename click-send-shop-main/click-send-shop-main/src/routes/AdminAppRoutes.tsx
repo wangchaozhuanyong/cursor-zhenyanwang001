@@ -77,7 +77,7 @@ export function AdminAppRoutes() {
   const location = useLocation();
 
   return (
-    <ErrorBoundary resetKey={location.pathname}>
+    <ErrorBoundary resetKey={`${location.pathname}${location.search}`}>
       <QueryClientProvider client={queryClient}>
         <ModalLayerProvider>
           <DeferredAdminToastHost />

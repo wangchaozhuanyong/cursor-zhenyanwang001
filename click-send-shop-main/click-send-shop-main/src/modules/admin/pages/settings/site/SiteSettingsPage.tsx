@@ -30,7 +30,6 @@ import {
 import SiteSettingsLayout from "./SiteSettingsLayout";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Tx } from "@/components/admin/AdminText";
-import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import SiteSettingsHeader from "./SiteSettingsHeader";
 import SiteSettingsSaveBar from "./SiteSettingsSaveBar";
 import SiteSettingsHelpPanel, { SiteSettingsHelpPanelMobile } from "./SiteSettingsHelpPanel";
@@ -41,6 +40,7 @@ import FooterNavEditor from "./FooterNavEditor";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useAdminDirtyForm } from "@/modules/admin/hooks/useAdminDirtyForm";
 
 function mergeSettings(data: Partial<SiteSettings> | null | undefined): SiteSettings {
   return { ...EMPTY_SITE_SETTINGS, ...(data && typeof data === "object" ? data : {}) };
@@ -94,7 +94,7 @@ export default function SiteSettingsPage() {
   }, [settings, saved]);
 
   const anyDirty = useMemo(() => Object.values(dirtyMap).some(Boolean), [dirtyMap]);
-  useAdminTabDirty(anyDirty);
+  const { markSaved } = useAdminDirtyForm({ isDirty: anyDirty, isReady: !loading });
 
   useHydrateFromQuery(settingsQuery.data, hydrateFromServer, anyDirty);
 
@@ -159,6 +159,7 @@ export default function SiteSettingsPage() {
       await updateSiteSettings(payload);
       setSaved((prev) => ({ ...prev, ...payload }));
       setSettings((prev) => ({ ...prev, ...payload }));
+      markSaved();
       await refreshSiteInfo();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
       toast.success(mode === "all" ? "全部设置已保存" : `${activeSection.title}已保存`);

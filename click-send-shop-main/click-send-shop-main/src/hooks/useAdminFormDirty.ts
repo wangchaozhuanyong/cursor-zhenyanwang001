@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { useAdminDirtyForm } from "@/modules/admin/hooks/useAdminDirtyForm";
 
 /**
  * 表单页脏检查：在 `ready` 为 true 后建立基线，与当前值 JSON 对比并同步到工作标签守卫。
@@ -24,11 +24,16 @@ export function useAdminFormDirty<T>(value: T, ready: boolean) {
   }, [ready, serialized]);
 
   const dirty = ready && baselineRef.current !== null && baselineRef.current !== serialized;
-  useAdminTabDirty(dirty);
+  const { markSaved } = useAdminDirtyForm({ isDirty: dirty, isReady: ready });
 
   const markClean = useCallback((nextValue?: T) => {
-    baselineRef.current = JSON.stringify(nextValue ?? valueRef.current);
-  }, []);
+    markSaved({
+      nextBaseline: nextValue,
+      resetBaseline: (value) => {
+        baselineRef.current = JSON.stringify(value ?? valueRef.current);
+      },
+    });
+  }, [markSaved]);
 
   return { dirty, markClean };
 }

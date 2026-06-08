@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, FileDown, Loader2, Pencil, PackageSearch, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +31,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminTableSortHeader from "@/components/admin/AdminTableSortHeader";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 import {
   DEFAULT_PRODUCT_LIST_SORT,
   PRODUCT_SORT_LABELS,
@@ -94,7 +94,7 @@ function skuPrice(product: Product) {
 export default function AdminProducts() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
-  const navigate = useNavigate();
+  const adminNavigate = useAdminNavigation();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -321,7 +321,7 @@ export default function AdminProducts() {
           <PermissionGate permission="product.manage">
           <UnifiedButton
             type="button"
-            onClick={() => navigate(`/admin/products/${product.id}`)}
+            onClick={() => adminNavigate(`/admin/products/${product.id}`)}
             className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary sm:flex-1"
           >
             <Pencil size={13} />
@@ -354,7 +354,7 @@ export default function AdminProducts() {
             </AdminFilterButton>
           </PermissionGate>
           <PermissionGate permission="product.manage">
-            <AdminFilterButton className="px-4 font-semibold" variant="card" onClick={() => navigate("/admin/products/new")}><Tx>新增商品</Tx></AdminFilterButton>
+            <AdminFilterButton className="px-4 font-semibold" variant="card" onClick={() => adminNavigate("/admin/products/new")}><Tx>新增商品</Tx></AdminFilterButton>
           </PermissionGate>
           <AdminFilterButton onClick={() => void productsQuery.refetch()} variant="card" className="font-medium"><Tx>刷新</Tx></AdminFilterButton>
         </div>
@@ -584,7 +584,7 @@ export default function AdminProducts() {
               <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                 <div className="inline-flex max-w-full flex-nowrap items-center justify-end gap-1.5">
                   <PermissionGate permission="product.manage">
-                    <UnifiedButton type="button" onClick={() => navigate(`/admin/products/${product.id}`)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></UnifiedButton>
+                    <UnifiedButton type="button" onClick={() => adminNavigate(`/admin/products/${product.id}`)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></UnifiedButton>
                   </PermissionGate>
                 </div>
               </td>

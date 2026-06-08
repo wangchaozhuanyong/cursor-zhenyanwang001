@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 import { AlertTriangle, DollarSign, Package, RefreshCw, ShoppingCart, Truck, Users } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 import StatsCard from "@/components/admin/StatsCard";
@@ -48,7 +48,7 @@ export default function Dashboard() {
   const { locale } = useAdminTOptional();
   const isEn = locale === "en";
   const L = (zh: string, en: string) => (isEn ? en : zh);
-  const navigate = useNavigate();
+  const adminNavigate = useAdminNavigation();
   const can = useAdminPermissionStore((s) => s.can);
   const [rangePreset, setRangePreset] = useState<DashboardRangePreset>("last_7_days");
   const [dateFrom, setDateFrom] = useState("");
@@ -204,14 +204,14 @@ export default function Dashboard() {
       <section>
         <h2 className="mb-3 text-sm font-semibold text-foreground"><Tx>经营概览</Tx></h2>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <StatsCard icon={DollarSign} label={`${rangeMetricPrefix}${isEn ? " Sales" : "销售额"}`} value={money(today.revenue ?? stats?.todayRevenue)} onClick={() => navigate(overviewReportPath)} />
-          <StatsCard icon={ShoppingCart} label={`${rangeMetricPrefix}${isEn ? " Paid orders" : "支付订单"}`} value={today.paidOrders ?? 0} onClick={() => navigate("/admin/orders?payment_status=paid")} />
-          <StatsCard icon={Package} label={`${rangeMetricPrefix}${isEn ? " Orders" : "下单数"}`} value={today.orderCount ?? stats?.todayOrders ?? 0} onClick={() => navigate("/admin/orders")} />
-          <StatsCard icon={Users} label={`${rangeMetricPrefix}${isEn ? " New users" : "新增用户"}`} value={today.newUsers ?? stats?.todayNewUsers ?? 0} onClick={() => navigate("/admin/users")} />
-          <StatsCard icon={AlertTriangle} label={L("当前待付款", "Pending payment")} value={today.pendingPayment ?? 0} onClick={() => navigate("/admin/orders?payment_status=pending")} />
-          <StatsCard icon={Truck} label={L("当前待发货", "Pending shipment")} value={today.pendingShip ?? stats?.pendingOrders ?? 0} onClick={() => navigate("/admin/orders?status=paid")} />
-          <StatsCard icon={RefreshCw} label={L("当前待售后", "Pending after-sales")} value={today.pendingAfterSale ?? 0} onClick={() => navigate("/admin/returns")} />
-          <StatsCard icon={Package} label={L("当前低库存", "Low stock")} value={today.lowStock ?? 0} onClick={() => navigate("/admin/inventory")} />
+          <StatsCard icon={DollarSign} label={`${rangeMetricPrefix}${isEn ? " Sales" : "销售额"}`} value={money(today.revenue ?? stats?.todayRevenue)} onClick={() => adminNavigate(overviewReportPath)} />
+          <StatsCard icon={ShoppingCart} label={`${rangeMetricPrefix}${isEn ? " Paid orders" : "支付订单"}`} value={today.paidOrders ?? 0} onClick={() => adminNavigate("/admin/orders?payment_status=paid")} />
+          <StatsCard icon={Package} label={`${rangeMetricPrefix}${isEn ? " Orders" : "下单数"}`} value={today.orderCount ?? stats?.todayOrders ?? 0} onClick={() => adminNavigate("/admin/orders")} />
+          <StatsCard icon={Users} label={`${rangeMetricPrefix}${isEn ? " New users" : "新增用户"}`} value={today.newUsers ?? stats?.todayNewUsers ?? 0} onClick={() => adminNavigate("/admin/users")} />
+          <StatsCard icon={AlertTriangle} label={L("当前待付款", "Pending payment")} value={today.pendingPayment ?? 0} onClick={() => adminNavigate("/admin/orders?payment_status=pending")} />
+          <StatsCard icon={Truck} label={L("当前待发货", "Pending shipment")} value={today.pendingShip ?? stats?.pendingOrders ?? 0} onClick={() => adminNavigate("/admin/orders?status=paid")} />
+          <StatsCard icon={RefreshCw} label={L("当前待售后", "Pending after-sales")} value={today.pendingAfterSale ?? 0} onClick={() => adminNavigate("/admin/returns")} />
+          <StatsCard icon={Package} label={L("当前低库存", "Low stock")} value={today.lowStock ?? 0} onClick={() => adminNavigate("/admin/inventory")} />
         </div>
       </section>
 
@@ -225,7 +225,7 @@ export default function Dashboard() {
             { label: L("低库存", "Low stock"), value: todos.lowStock ?? 0, path: "/admin/inventory" },
             { label: L("缺货商品", "Out of stock"), value: todos.outOfStock ?? 0, path: "/admin/inventory" },
           ].map((item) => (
-            <UnifiedButton key={item.label} type="button" onClick={() => navigate(item.path)} className="touch-manipulation rounded-xl border border-[var(--theme-border)] p-3 text-left transition hover:bg-[var(--theme-bg)]">
+            <UnifiedButton key={item.label} type="button" onClick={() => adminNavigate(item.path)} className="touch-manipulation rounded-xl border border-[var(--theme-border)] p-3 text-left transition hover:bg-[var(--theme-bg)]">
               <p className="text-[11px] text-muted-foreground">{item.label}</p>
               <p className="mt-1 text-xl font-bold tabular-nums text-foreground">{item.value}</p>
             </UnifiedButton>
@@ -280,12 +280,12 @@ export default function Dashboard() {
         <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-5 theme-shadow">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-foreground"><Tx>最近订单</Tx></h3>
-            <UnifiedButton type="button" onClick={() => navigate("/admin/orders")} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>查看全部</Tx></UnifiedButton>
+            <UnifiedButton type="button" onClick={() => adminNavigate("/admin/orders")} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>查看全部</Tx></UnifiedButton>
           </div>
           {(stats?.recentOrders ?? []).length > 0 ? (
             <div className="divide-y divide-[var(--theme-border)]">
               {(stats?.recentOrders ?? []).map((o: any) => (
-                <UnifiedButton key={o.id} type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="flex w-full items-center justify-between gap-3 py-3 text-left">
+                <UnifiedButton key={o.id} type="button" onClick={() => adminNavigate(`/admin/orders/${o.id}`)} className="flex w-full items-center justify-between gap-3 py-3 text-left">
                   <div>
                     <p className="font-mono text-xs text-foreground">{o.order_no}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(o.created_at)}</p>

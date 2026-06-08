@@ -23,6 +23,7 @@ interface BannerCarouselProps {
   trackingModule?: string;
   ariaLabelPrefix?: string;
   themeConfigOverride?: ThemeConfig;
+  autoRotateMs?: number;
 }
 
 const AUTO_ROTATE_MS = 5200;
@@ -116,6 +117,7 @@ export default function BannerCarousel({
   trackingModule = "home_banner",
   ariaLabelPrefix = "首页轮播图",
   themeConfigOverride,
+  autoRotateMs,
 }: BannerCarouselProps) {
   const { themeConfig: runtimeConfig } = useThemeRuntime();
   const bannerStyle = themeConfigOverride?.bannerStyle ?? runtimeConfig.bannerStyle;
@@ -150,6 +152,9 @@ export default function BannerCarousel({
   const copyPanelRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
   const activeImageReady = !activeImage || activeImageLoaded || activeImageFailed;
+  const resolvedAutoRotateMs = typeof autoRotateMs === "number" && Number.isFinite(autoRotateMs)
+    ? Math.min(20_000, Math.max(3_000, Math.trunc(Number(autoRotateMs))))
+    : AUTO_ROTATE_MS;
 
   const refreshCopyTone = useCallback(() => {
     if (!hasTextLayer) return;
@@ -235,13 +240,13 @@ export default function BannerCarousel({
           setSlideDirection("forward");
           setCurrent((prev) => (prev + 1) % banners.length);
         }
-        delay = AUTO_ROTATE_MS;
+        delay = resolvedAutoRotateMs;
         scheduleNext();
       }, delay);
     };
     scheduleNext();
     return () => window.clearTimeout(timer);
-  }, [banners.length, hoverPaused, manualPauseUntil, motionEnabled, paused]);
+  }, [banners.length, hoverPaused, manualPauseUntil, motionEnabled, paused, resolvedAutoRotateMs]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX);
@@ -350,7 +355,7 @@ export default function BannerCarousel({
   const rootStyle = {
     aspectRatio: BANNER_ASPECT_CSS,
     borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)",
-    "--store-hero-auto-rotate-ms": `${AUTO_ROTATE_MS}ms`,
+    "--store-hero-auto-rotate-ms": `${resolvedAutoRotateMs}ms`,
   } as CSSProperties;
 
   return (

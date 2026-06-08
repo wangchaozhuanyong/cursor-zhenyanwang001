@@ -27,6 +27,7 @@ const DEFAULT_MODULES = {
 const DEFAULT_SETTINGS = {
   modules: { ...DEFAULT_MODULES },
   titles: {},
+  bannerAutoplaySeconds: 5,
   hotBatchSize: 4,
   recBatchSize: 4,
   guestRecommendMax: 8,
@@ -79,6 +80,12 @@ function parseSettings(raw) {
   return {
     modules,
     titles: normalizeTitles(parsed.titles),
+    bannerAutoplaySeconds: clampInt(
+      parsed.bannerAutoplaySeconds ?? parsed.banner_autoplay_seconds,
+      3,
+      20,
+      DEFAULT_SETTINGS.bannerAutoplaySeconds,
+    ),
     hotBatchSize: clampInt(
       parsed.hotBatchSize ?? parsed.hot_batch_size,
       2,
@@ -134,6 +141,14 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
   }
   if (body.guestRecommendMax !== undefined) {
     next.guestRecommendMax = clampInt(body.guestRecommendMax, 4, 24, current.guestRecommendMax);
+  }
+  if (body.bannerAutoplaySeconds !== undefined || body.banner_autoplay_seconds !== undefined) {
+    next.bannerAutoplaySeconds = clampInt(
+      body.bannerAutoplaySeconds ?? body.banner_autoplay_seconds,
+      3,
+      20,
+      current.bannerAutoplaySeconds || DEFAULT_SETTINGS.bannerAutoplaySeconds,
+    );
   }
 
   await siteSettingsRepo.upsertSetting(SETTING_KEY, JSON.stringify(next));

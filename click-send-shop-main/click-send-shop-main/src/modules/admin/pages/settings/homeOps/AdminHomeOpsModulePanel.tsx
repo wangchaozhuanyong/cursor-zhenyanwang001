@@ -42,7 +42,11 @@ type Props = {
 };
 
 function serializeModuleDraft(value: HomeModuleSettings) {
-  return JSON.stringify({ modules: value.modules, titles: value.titles || {} });
+  return JSON.stringify({
+    modules: value.modules,
+    titles: value.titles || {},
+    bannerAutoplaySeconds: value.bannerAutoplaySeconds,
+  });
 }
 
 export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
@@ -95,6 +99,11 @@ export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
     });
   };
 
+  const setBannerAutoplaySeconds = (value: string) => {
+    const seconds = Math.min(20, Math.max(3, Math.trunc(Number(value) || DEFAULT_HOME_MODULE_SETTINGS.bannerAutoplaySeconds)));
+    setSettings((prev) => ({ ...prev, bannerAutoplaySeconds: seconds }));
+  };
+
   const save = async () => {
     setSaving(true);
     try {
@@ -104,6 +113,7 @@ export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
       const saved = await homeOpsService.updateHomeOpsSettings({
         modules: settings.modules,
         titles: titlePayload,
+        bannerAutoplaySeconds: settings.bannerAutoplaySeconds,
       });
       const merged = mergeHomeModuleSettings(saved);
       setSettings(merged);
@@ -137,6 +147,31 @@ export default function AdminHomeOpsModulePanel({ onDirtyChange }: Props) {
         </div>
       ) : (
         <div className="space-y-6">
+          <div className="rounded-xl border border-border bg-background px-4 py-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="font-medium text-foreground"><Tx>顶部轮播滚动间隔</Tx></p>
+                  <AdminFieldHint text={<Tx>控制首页顶部 Banner 自动切换的时间。用户手动点击或滑动后，仍会短暂停留再继续自动滚动。</Tx>} />
+                </div>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  <Tx>建议 4-8 秒；设置过短会影响图片阅读，过长会降低活动曝光。</Tx>
+                </p>
+              </div>
+              <label className="flex shrink-0 items-center gap-2 text-sm">
+                <input
+                  type="number"
+                  min={3}
+                  max={20}
+                  step={1}
+                  value={settings.bannerAutoplaySeconds}
+                  onChange={(e) => setBannerAutoplaySeconds(e.target.value)}
+                  className="h-10 w-24 rounded-xl border border-border bg-background px-3 text-right text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/15"
+                />
+                <span className="text-muted-foreground"><Tx>秒</Tx></span>
+              </label>
+            </div>
+          </div>
           {categories.map((cat) => {
             const defs = HOME_MODULE_DEFINITIONS.filter((d) => d.category === cat);
             if (!defs.length) return null;

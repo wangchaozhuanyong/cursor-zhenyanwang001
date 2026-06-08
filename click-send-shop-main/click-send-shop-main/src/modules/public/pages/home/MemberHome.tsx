@@ -197,7 +197,12 @@ export default function MemberHome() {
         {isHomeModuleEnabled(homeModules, "banner", "member") ? (
           <AnimatedSection>
             <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
-              <BannerCarousel banners={banners} loading={bannersLoading} themeConfigOverride={themeConfig} />
+              <BannerCarousel
+                banners={banners}
+                loading={bannersLoading}
+                themeConfigOverride={themeConfig}
+                autoRotateMs={homeModules.bannerAutoplaySeconds * 1000}
+              />
             </div>
           </AnimatedSection>
         ) : null}

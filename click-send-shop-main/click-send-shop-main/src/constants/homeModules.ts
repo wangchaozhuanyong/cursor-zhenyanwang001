@@ -16,6 +16,7 @@ export type HomeModuleKey =
 export type HomeModuleSettings = {
   modules: Record<HomeModuleKey, boolean>;
   titles: Partial<Record<HomeModuleKey, string>>;
+  bannerAutoplaySeconds: number;
   hotBatchSize: number;
   recBatchSize: number;
   guestRecommendMax: number;
@@ -124,6 +125,7 @@ export const DEFAULT_HOME_MODULE_SETTINGS: HomeModuleSettings = {
     promotion_banner: true,
   },
   titles: {},
+  bannerAutoplaySeconds: 5,
   hotBatchSize: 4,
   recBatchSize: 4,
   guestRecommendMax: 8,
@@ -141,6 +143,13 @@ function clampHomeBatchSize(value: unknown, fallback: number) {
 
 function clampGuestRecommendMax(value: unknown, fallback: number) {
   return typeof value === "number" && value >= 4 ? Math.min(24, Math.trunc(value)) : fallback;
+}
+
+function clampBannerAutoplaySeconds(value: unknown, fallback: number) {
+  const numeric = typeof value === "string" ? Number(value) : value;
+  return typeof numeric === "number" && Number.isFinite(numeric) && numeric >= 3
+    ? Math.min(20, Math.trunc(numeric))
+    : fallback;
 }
 
 export function mergeHomeModuleSettings(
@@ -163,6 +172,10 @@ export function mergeHomeModuleSettings(
   return {
     modules,
     titles,
+    bannerAutoplaySeconds: clampBannerAutoplaySeconds(
+      partial?.bannerAutoplaySeconds ?? (partial as { banner_autoplay_seconds?: number })?.banner_autoplay_seconds,
+      DEFAULT_HOME_MODULE_SETTINGS.bannerAutoplaySeconds,
+    ),
     hotBatchSize: clampHomeBatchSize(
       partial?.hotBatchSize ?? (partial as { hot_batch_size?: number })?.hot_batch_size,
       DEFAULT_HOME_MODULE_SETTINGS.hotBatchSize,

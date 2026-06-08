@@ -37,4 +37,10 @@ describe("home module title settings", () => {
     expect(couponDefinitions.map((def) => def.key)).toEqual(["coupon_center"]);
     expect(couponDefinitions[0].label).toBe("优惠券模块");
   });
+
+  it("normalizes banner autoplay seconds", () => {
+    expect(mergeHomeModuleSettings({ bannerAutoplaySeconds: 2 }).bannerAutoplaySeconds).toBe(5);
+    expect(mergeHomeModuleSettings({ bannerAutoplaySeconds: 7 }).bannerAutoplaySeconds).toBe(7);
+    expect(mergeHomeModuleSettings({ bannerAutoplaySeconds: 99 }).bannerAutoplaySeconds).toBe(20);
+  });
 });

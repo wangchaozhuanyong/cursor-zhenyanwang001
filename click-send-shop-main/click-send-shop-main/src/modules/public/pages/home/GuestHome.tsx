@@ -359,6 +359,7 @@ export default function GuestHome() {
                   banners={banners}
                   loading={bannersLoading}
                   themeConfigOverride={themeConfig}
+                  autoRotateMs={homeModules.bannerAutoplaySeconds * 1000}
                 />
               </div>
             </div>

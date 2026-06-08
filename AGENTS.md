@@ -229,8 +229,9 @@ cd server && npm run arch:check
 
 - 长期分支只保留 `main`。
 - 日常开发使用短分支：`feature/<short-name>`、`fix/<short-name>`、`chore/<short-name>`、`hotfix/<short-name>`。
-- 固定一个本地测试入口：`http://127.0.0.1:5174`。同一时间只用这个入口验收一个当前候选分支，避免多个窗口看到不同页面。
-- 多窗口开发时，每个窗口可以在自己的 worktree/分支里改代码，但不要各自启动新的“正式测试入口”。需要用户验收时，先把候选分支切到统一测试目录或合并到本地 `main` 候选区，再启动/刷新 `5174`。
+- 固定一个本地测试入口：`http://127.0.0.1:5174`。5174 只代表“当前候选测试区”，不是所有功能分支的自动预览。
+- 多窗口开发时，每个窗口可以在自己的 worktree/分支里改代码，但不要各自启动新的“正式测试入口”。某个分支需要用户验收时，必须先把该分支已提交内容合入 5174 候选测试区，再启动/刷新 `5174`。
+- 5174 候选测试脚本：`bash scripts/use-5174-test.sh <branch>`。例如 `bash scripts/use-5174-test.sh work-ui-ux work-huo-dong` 会把这些已提交分支合入当前候选区并重启 5174；脚本不会 push、不会部署、不会同步数据库。
 - 功能分支流程：开发修改 → 检查改动 → `commit` → `push` 功能分支。功能分支只保存开发记录，不直接发布线上。
 - 发布流程：合并到 `main` → `push origin main` → CI 通过 → GitHub Actions/服务器从 `origin/main` 发布 → 健康检查。
 - 合并到 `main` 后由 GitHub Actions 自动部署。除非明确修复发布问题，不要在 `main` 上临时改代码再提交。

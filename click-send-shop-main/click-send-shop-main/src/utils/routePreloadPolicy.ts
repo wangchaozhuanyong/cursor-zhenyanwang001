@@ -7,9 +7,11 @@ type NavigatorWithConnection = Navigator & {
   connection?: NetworkInformationLike;
   mozConnection?: NetworkInformationLike;
   webkitConnection?: NetworkInformationLike;
+  deviceMemory?: number;
+  hardwareConcurrency?: number;
 };
 
-export type RoutePreloadPriority = "intent" | "idle";
+export type RoutePreloadPriority = "immediate" | "intent" | "idle";
 
 const routePreloadCache = new WeakMap<() => Promise<unknown>, Promise<unknown>>();
 
@@ -20,13 +22,25 @@ function getNetworkInformation(): NetworkInformationLike | undefined {
 }
 
 export function shouldSkipRoutePreload(priority: RoutePreloadPriority = "intent") {
+  if (priority !== "immediate" && typeof document !== "undefined" && document.visibilityState !== "visible") {
+    return true;
+  }
+
   const connection = getNetworkInformation();
-  if (!connection) return false;
+  if (!connection) {
+    if (priority === "idle") return false;
+    const nav = typeof navigator === "undefined" ? undefined : (navigator as NavigatorWithConnection);
+    if (typeof nav?.deviceMemory === "number" && nav.deviceMemory > 0 && nav.deviceMemory <= 2) return true;
+    if (typeof nav?.hardwareConcurrency === "number" && nav.hardwareConcurrency > 0 && nav.hardwareConcurrency <= 4) {
+      return priority !== "immediate";
+    }
+    return false;
+  }
   if (connection.saveData) return true;
 
   const effectiveType = (connection.effectiveType || "").toLowerCase();
   if (effectiveType === "slow-2g" || effectiveType === "2g") return true;
-  return priority === "idle" && effectiveType === "3g";
+  return priority !== "immediate" && priority !== "intent" && effectiveType === "3g";
 }
 
 export function preloadRoute(preload: (() => Promise<unknown>) | undefined, priority: RoutePreloadPriority = "intent") {

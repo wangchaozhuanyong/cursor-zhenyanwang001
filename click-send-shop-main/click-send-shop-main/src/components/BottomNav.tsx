@@ -33,7 +33,7 @@ type ActivePointer = {
 };
 
 function preloadTabRoute(path: string) {
-  preloadStoreRoute(path);
+  preloadStoreRoute(path, "idle");
 }
 
 export default function BottomNav() {
@@ -71,7 +71,6 @@ export default function BottomNav() {
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
       return;
     }
-    preloadTabRoute(path);
     navigateWithStoreTransition(navigate, path);
   }, [location.pathname, location.search, navigate]);
 
@@ -106,7 +105,6 @@ export default function BottomNav() {
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>, path: string) => {
     if (event.button !== 0) return;
-    preloadTabRoute(path);
     const target = event.currentTarget;
     const shouldActivateImmediately = event.pointerType === "touch" || event.pointerType === "pen";
     try {

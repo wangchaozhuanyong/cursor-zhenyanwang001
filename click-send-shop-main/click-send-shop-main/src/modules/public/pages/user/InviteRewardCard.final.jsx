@@ -1,5 +1,5 @@
 import './InviteRewardCard.final.css'
-import heroImage from './assets/reward-hero.png'
+import heroImage from './assets/reward-hero.webp'
 
 export default function InviteRewardCard({
   badgeText = 'INVITE BONUS',

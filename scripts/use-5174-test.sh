@@ -11,6 +11,8 @@ SERVER_SESSION="${SERVER_SESSION:-zhenyan-local-server-3000}"
 NPM_BIN="${NPM_BIN:-npm}"
 NODE_BIN="${NODE_BIN:-node}"
 NPM_CI_FLAGS="${NPM_CI_FLAGS:---ignore-scripts}"
+SKIP_FRONTEND_BUILD="${SKIP_FRONTEND_BUILD:-0}"
+LOCAL_NODE_DIR="$ROOT_DIR/.codex-tmp/native-node"
 
 usage() {
   cat <<USAGE
@@ -20,12 +22,15 @@ Usage:
 Purpose:
   Keep one local test URL only: http://127.0.0.1:${PORT}
   Merge committed branch work into the current candidate worktree, then restart
-  the local frontend/backend used by that URL.
+  the local frontend/backend used by that URL. The frontend is served from a
+  production build preview by default, so 5174 behaves closer to production and
+  avoids slow Vite development-module loading.
 
 Notes:
   - Branches must already be committed.
   - This script does not push to GitHub and does not deploy production.
   - If merge conflicts happen, resolve them manually before testing.
+  - Set SKIP_FRONTEND_BUILD=1 only when dist is already current.
 USAGE
 }
 
@@ -45,15 +50,30 @@ if ! command -v "$NODE_BIN" >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "Refusing to continue: worktree has uncommitted changes."
-  git status --short
-  exit 1
-fi
+prepare_local_node() {
+  local source_node="$1"
+  local local_node="$LOCAL_NODE_DIR/node"
+  mkdir -p "$LOCAL_NODE_DIR"
+  if [[ ! -x "$local_node" ]] || ! cmp -s "$source_node" "$local_node"; then
+    cp "$source_node" "$local_node"
+    codesign --remove-signature "$local_node" >/dev/null 2>&1 || true
+    codesign --force --sign - "$local_node" >/dev/null 2>&1 || true
+    chmod +x "$local_node"
+  fi
+  printf "%s" "$local_node"
+}
+
+NODE_BIN="$(prepare_local_node "$(command -v "$NODE_BIN")")"
 
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
 echo "[5174] candidate worktree: $ROOT_DIR"
 echo "[5174] current branch: $current_branch"
+
+if [[ "$#" -gt 0 && -n "$(git status --porcelain)" ]]; then
+  echo "Refusing to merge branches: worktree has uncommitted changes."
+  git status --short
+  exit 1
+fi
 
 for branch in "$@"; do
   if ! git rev-parse --verify "$branch" >/dev/null 2>&1; then
@@ -79,6 +99,11 @@ if [[ ! -d "$SERVER_DIR/node_modules" ]]; then
   (cd "$SERVER_DIR" && "$NPM_BIN" ci $NPM_CI_FLAGS)
 fi
 
+if [[ "$SKIP_FRONTEND_BUILD" != "1" ]]; then
+  echo "[5174] building production frontend for preview"
+  (cd "$FRONTEND_DIR" && "$NODE_BIN" node_modules/vite/bin/vite.js build)
+fi
+
 screen -S "$FRONTEND_SESSION" -X quit >/dev/null 2>&1 || true
 screen -S "$SERVER_SESSION" -X quit >/dev/null 2>&1 || true
 
@@ -93,7 +118,7 @@ if [[ -n "$existing_api_pids" ]]; then
 fi
 
 screen -dmS "$SERVER_SESSION" bash -lc "cd '$SERVER_DIR' && '$NODE_BIN' -r tsx/cjs src/index.js >> /tmp/${SERVER_SESSION}.log 2>&1"
-screen -dmS "$FRONTEND_SESSION" bash -lc "cd '$FRONTEND_DIR' && '$NODE_BIN' node_modules/vite/bin/vite.js --host 127.0.0.1 --port '$PORT' --strictPort >> /tmp/${FRONTEND_SESSION}.log 2>&1"
+screen -dmS "$FRONTEND_SESSION" bash -lc "cd '$FRONTEND_DIR' && '$NODE_BIN' node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port '$PORT' --strictPort >> /tmp/${FRONTEND_SESSION}.log 2>&1"
 
 echo "[5174] waiting for services"
 for _ in {1..30}; do

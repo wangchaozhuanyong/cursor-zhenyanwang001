@@ -109,7 +109,7 @@ export default function Login() {
   const smsOtpLoginEnabled = authFeatures?.smsOtpLoginEnabled === true;
   const effectiveCredentialMode: CredentialMode =
     authFeaturesReady && smsOtpLoginEnabled ? credentialMode : "password";
-  const { formCompact, keyboardOpen, keyboardInset, visualViewportHeight } = useFormFieldFocus();
+  const { formCompact, keyboardOpen, keyboardInset, visualViewportOffsetTop, visualViewportHeight } = useFormFieldFocus();
   const showHomeTrustBar = isHomeModuleEnabled(homeModules, "trust_bar", "guest");
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
@@ -460,8 +460,9 @@ export default function Login() {
 
   const authShellStyle = useMemo(() => ({
     "--auth-keyboard-inset": `${Math.max(0, Math.round(keyboardInset))}px`,
+    "--auth-visual-offset-top": `${Math.max(0, Math.round(visualViewportOffsetTop))}px`,
     "--auth-visual-height": visualViewportHeight > 0 ? `${Math.round(visualViewportHeight)}px` : "100svh",
-  }) as CSSProperties, [keyboardInset, visualViewportHeight]);
+  }) as CSSProperties, [keyboardInset, visualViewportOffsetTop, visualViewportHeight]);
 
   useEffect(() => {
     if (!keyboardOpen) return;

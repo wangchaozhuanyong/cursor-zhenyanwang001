@@ -11,6 +11,7 @@ import { shouldHideBottomNav } from "./bottomNavVisibility";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
+import { rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
 
 const tabs = [
   { path: "/", label: "\u9996\u9875", icon: Home },
@@ -65,12 +66,14 @@ export default function BottomNav() {
     const targetSearch = path.includes("?") ? `?${path.split("?")[1]}` : "";
     if (location.pathname === base) {
       if (targetSearch && location.search !== targetSearch) {
+        rememberCurrentStoreScrollPosition();
         navigate(path);
         return;
       }
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
       return;
     }
+    rememberCurrentStoreScrollPosition();
     navigateWithStoreTransition(navigate, path);
   }, [location.pathname, location.search, navigate]);
 

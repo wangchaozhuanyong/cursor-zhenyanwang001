@@ -687,6 +687,29 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
   }
 }
 
+@media (min-width: 1024px) {
+  html[data-app-scope="store"] .support-download-shell {
+    width: min(100%, 80rem);
+    padding-inline: 1.5rem;
+  }
+
+  html[data-app-scope="store"] .support-channel-card,
+  html[data-app-scope="store"] .support-install-card,
+  html[data-app-scope="store"] .support-empty-panel,
+  html[data-app-scope="store"] .support-notice-panel {
+    padding: 1.5rem;
+  }
+
+  html[data-app-scope="store"] .support-channel-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+    gap: 1.5rem;
+  }
+
+  html[data-app-scope="store"] .support-qr-media {
+    max-width: 22rem;
+  }
+}
+
 @media (min-width: 768px) and (max-width: 1023px) {
   html[data-app-scope="store"] .support-download-shell {
     width: min(100%, 48rem);

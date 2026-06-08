@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type Reac
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { TopProgressBar } from "@/components/ui/top-progress-bar";
-import AppRouteFallback, { HomeShellSkeleton, StoreOutletFallback } from "@/components/AppRouteFallback";
+import AppRouteFallback, { DelayedRouteFallback, HomeShellSkeleton, StoreOutletFallback } from "@/components/AppRouteFallback";
 import AppBootReady from "@/components/AppBootReady";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
 import RouteBackTracker from "@/components/RouteBackTracker";
@@ -33,6 +33,11 @@ import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
 import {
+  getRememberedStoreScrollPosition,
+  getStoreScrollKey,
+  rememberStoreScrollPosition,
+} from "@/utils/storeScrollRestoration";
+import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
   Cart, Checkout, Orders, OrderDetail, Returns, ReturnDetail, PendingReviews,
@@ -50,6 +55,59 @@ const SonnerToaster = lazy(() => import("@/components/ui/sonner").then((module) 
 const RouteAnalyticsTracker = lazy(() => import("@/components/RouteAnalyticsTracker"));
 const ChinaBrowserCompatNotice = lazy(() => import("@/components/ChinaBrowserCompatNotice"));
 const PwaUpdateToast = lazy(() => import("@/components/PwaUpdateToast"));
+
+function StoreScrollRestoration() {
+  const location = useLocation();
+  const scrollKey = getStoreScrollKey(location.pathname, location.search);
+  const activeScrollKeyRef = useRef(scrollKey);
+
+  useLayoutEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    activeScrollKeyRef.current = scrollKey;
+
+    const targetY = getRememberedStoreScrollPosition(scrollKey) ?? 0;
+    const restore = () => {
+      window.scrollTo({ top: targetY, left: 0, behavior: "auto" });
+    };
+
+    restore();
+    const rafId = window.requestAnimationFrame(restore);
+    const restoreTimers = [80, 180, 360, 700, 1200].map((delay) => window.setTimeout(restore, delay));
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      restoreTimers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, [scrollKey]);
+
+  useEffect(() => {
+    let ticking = false;
+    const save = () => {
+      ticking = false;
+      rememberStoreScrollPosition(activeScrollKeyRef.current);
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(save);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pagehide", save);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pagehide", save);
+      rememberStoreScrollPosition(activeScrollKeyRef.current);
+    };
+  }, []);
+
+  return null;
+}
 
 function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
@@ -299,6 +357,7 @@ function MainStoreRoutes() {
           <AuthSessionSync />
           <SiteIdentitySync />
           <ReferralInviteSync />
+          <StoreScrollRestoration />
           <AnalyticsCapabilitySync />
           <PwaStandaloneAnalytics />
           <AppScopeSync />
@@ -307,7 +366,7 @@ function MainStoreRoutes() {
           <LanguageGate />
           <AgeGate />
           <StoreCardOverlapFix />
-          <Suspense fallback={<StoreOutletFallback />}>
+          <Suspense fallback={<DelayedRouteFallback fallback={<StoreOutletFallback />} delayMs={180} />}>
             <AppBootReady />
             <Routes>
               <Route path="/zh" element={<Navigate to="/" replace />} />

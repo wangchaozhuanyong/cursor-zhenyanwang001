@@ -62,6 +62,13 @@ describe("首页优惠券展示状态", () => {
     expect(items[0].action).toBe("claim");
   });
 
+  it("已登录但券包无记录时仍展示领取入口", () => {
+    const items = buildHomeCouponCardItems([publicCoupon("a")], [], true);
+    expect(items).toHaveLength(1);
+    expect(items[0].action).toBe("claim");
+    expect(items[0].actionLabel).toBe("立即领取");
+  });
+
   it("已使用且不可再领时不再展示券卡", () => {
     const items = buildHomeCouponCardItems([publicCoupon("a")], [userCoupon("a", "used")], true);
     expect(items).toHaveLength(0);
@@ -93,12 +100,13 @@ describe("首页优惠券展示状态", () => {
     expect(items).toHaveLength(0);
   });
 
-  it("首页已登录且券包同步后展示用户可用券", () => {
-    const items = buildVisibleHomeCouponCardItems([publicCoupon("a")], [userCoupon("a", "available")], {
+  it("首页已登录且券包同步后展示用户可用券或可领取券", () => {
+    const items = buildVisibleHomeCouponCardItems([publicCoupon("a"), publicCoupon("b")], [userCoupon("a", "available")], {
       isAuthenticated: true,
       couponStateReady: true,
     });
-    expect(items).toHaveLength(1);
+    expect(items).toHaveLength(2);
     expect(items[0].action).toBe("use");
+    expect(items[1].action).toBe("claim");
   });
 });

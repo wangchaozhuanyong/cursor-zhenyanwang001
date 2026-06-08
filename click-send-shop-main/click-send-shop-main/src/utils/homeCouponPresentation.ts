@@ -123,6 +123,15 @@ export function buildHomeCouponCardItems(
         action: "claim",
         actionLabel: "立即领取",
       });
+      continue;
+    }
+
+    if (related.length === 0) {
+      items.push({
+        coupon,
+        action: "claim",
+        actionLabel: "立即领取",
+      });
     }
   }
 

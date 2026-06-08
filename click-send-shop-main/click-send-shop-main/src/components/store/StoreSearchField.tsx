@@ -22,7 +22,7 @@ const baseFieldClass =
 
 const fieldSizeClass = {
   default: "h-[2.625rem] min-h-[2.625rem] pl-9 pr-3.5",
-  compact: "h-9 min-h-9 pl-8 pr-3 text-[13px]",
+  compact: "!h-9 !min-h-9 pl-8 pr-3 text-[13px]",
 };
 
 const iconSizeClass = {

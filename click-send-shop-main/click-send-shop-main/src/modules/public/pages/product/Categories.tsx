@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
-import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { STORE_COPY } from "@/constants/storeCopy";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { motion } from "framer-motion";
@@ -27,7 +26,6 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
-import { useSmartMobileChrome } from "@/hooks/useSmartMobileChrome";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
@@ -142,16 +140,6 @@ export default function Categories() {
     const root = findCategoryById(categories, activeRootId);
     return root?.children?.filter(Boolean) ?? [];
   }, [activeRootId, categories]);
-  const {
-    chromeRef: mobileChromeRef,
-    mode: mobileChromeMode,
-    isCompact: mobileChromeCompact,
-    isHidden: mobileChromeHidden,
-  } = useSmartMobileChrome({
-    measureKey: `${activeCat}:${subCategories.length}`,
-    compactStart: 64,
-    hideStart: 148,
-  });
   const scrollTabKey = activeCat === "all" ? "all" : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
 
   const rootKingkongItems = useMemo((): CategoryKingkongItem[] => {
@@ -348,12 +336,8 @@ export default function Categories() {
 
   return (
     <div
-      className={cn(
-        "store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]",
-        mobileChromeCompact && "store-category-page--chrome-compact",
-        mobileChromeHidden && "store-category-page--chrome-hidden",
-      )}
-      data-category-mobile-chrome={mobileChromeMode}
+      className="store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      data-category-mobile-chrome="document-flow"
     >
       <SeoHead
         title={title}
@@ -362,17 +346,12 @@ export default function Categories() {
         robots={robots}
       />
       <div
-        ref={mobileChromeRef}
-        className={cn(
-          "store-category-mobile-chrome md:hidden",
-          mobileChromeMode === "expanded" && "is-expanded",
-          mobileChromeCompact && "is-compact",
-          mobileChromeHidden && "is-hidden",
-        )}
+        className="store-category-mobile-chrome md:hidden"
       >
         <StorePageHeader
           matchTabHeaderHeight
-          className={cn(STORE_MOBILE_PAGE_HEADER_CLASS, "store-category-mobile-header")}
+          sticky={false}
+          className="store-category-mobile-header"
           title={categoryHeaderTitle}
           titleInlineSlot={
             <StoreSearchField

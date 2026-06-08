@@ -4849,12 +4849,18 @@ html[data-app-scope="store"] .store-category-sticky-filter {
 }
 
 html[data-app-scope="store"] .store-category-mobile-tabs-shell {
+  position: relative;
+  z-index: 20;
   overflow: hidden;
   padding: 0.16rem var(--store-page-x) 0.2rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 62%, transparent), color-mix(in srgb, var(--theme-bg) 72%, transparent)),
+    color-mix(in srgb, var(--theme-bg) 92%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-filter-shell {
-  top: calc(var(--store-tab-header-height, 3.25rem) + env(safe-area-inset-top, 0px));
+  top: env(safe-area-inset-top, 0px);
+  z-index: 45;
   padding: 0.12rem var(--store-page-x) 0.34rem;
   border-bottom: 0;
   background:
@@ -4867,9 +4873,9 @@ html[data-app-scope="store"] .store-category-mobile-filter-shell {
 
 @media (max-width: 767px) {
   html[data-app-scope="store"] .store-category-page--chrome-hidden .store-category-mobile-header {
-    transform: translate3d(0, calc(-100% - env(safe-area-inset-top, 0px)), 0);
-    opacity: 0;
-    pointer-events: none;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   html[data-app-scope="store"] .store-category-page--chrome-hidden .store-category-mobile-filter-shell {

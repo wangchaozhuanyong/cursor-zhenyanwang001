@@ -3,6 +3,8 @@ const STORE_SCROLL_RESTORE_STORAGE_KEY = "store_scroll_positions_v1";
 const storeScrollPositions = new Map<string, number>();
 
 export function getStoreScrollKey(pathname: string, search = "") {
+  if (pathname === "/categories") return pathname;
+  if (pathname === "/support-download") return pathname;
   return `${pathname}${search}`;
 }
 

@@ -74,16 +74,14 @@ function formatGrowthValue(value: number) {
   return safeValue.toLocaleString("zh-CN");
 }
 
-async function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
+function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
   if (requireAuth && !isLoggedIn()) {
     navigate("/login", { state: { from: path } });
     return;
   }
-  try {
-    await preloadStoreRoute(path);
-  } catch {
-    // If a chunk preload fails, keep the original navigation path so the app-level recovery can handle it.
-  }
+  void preloadStoreRoute(path).catch(() => {
+    // Keep navigation responsive; route-level recovery handles chunk failures after navigation.
+  });
   navigate(path, { state: { from: "/profile" } });
 }
 
@@ -205,6 +203,12 @@ export default function Profile() {
   const pointsEnabled = isLoyaltyFeatureEnabled("points", capabilities, loyaltyConfig);
   const rewardsEnabled = isLoyaltyFeatureEnabled("reward", capabilities, loyaltyConfig);
   const inviteEnabled = isLoyaltyFeatureEnabled("referral", capabilities, loyaltyConfig);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    if (inviteEnabled) preloadStoreRoute("/invite", "idle");
+    if (rewardsEnabled) preloadStoreRoute("/rewards", "idle");
+  }, [inviteEnabled, loggedIn, rewardsEnabled]);
 
   const memberProgress = useMemo(() => {
     const currentGrowth = Number(memberBenefits?.current_growth_value ?? pointsBalance ?? 0);

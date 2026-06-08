@@ -71,17 +71,60 @@ function StoreScrollRestoration() {
     activeScrollKeyRef.current = scrollKey;
 
     const targetY = getRememberedStoreScrollPosition(scrollKey) ?? 0;
+    const restoreFrameIds: number[] = [];
+    const restoreTimerIds: number[] = [];
+    let userInterrupted = false;
+    let lastProgrammaticY = window.scrollY || document.documentElement.scrollTop || 0;
+    let programmaticRestoreUntil = 0;
+
+    const getScrollY = () => window.scrollY || document.documentElement.scrollTop || 0;
     const restore = () => {
-      window.scrollTo({ top: targetY, left: 0, behavior: "auto" });
+      if (userInterrupted) return;
+      const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const nextY = Math.min(targetY, maxY);
+      programmaticRestoreUntil = window.performance.now() + 120;
+      window.scrollTo({ top: nextY, left: 0, behavior: "auto" });
+      lastProgrammaticY = nextY;
+    };
+    const stopRestore = () => {
+      userInterrupted = true;
+    };
+    const stopRestoreOnScroll = () => {
+      if (window.performance.now() < programmaticRestoreUntil) return;
+      const currentY = getScrollY();
+      if (Math.abs(currentY - lastProgrammaticY) > 2) stopRestore();
     };
 
-    restore();
-    const rafId = window.requestAnimationFrame(restore);
-    const restoreTimers = [80, 180, 360, 700, 1200].map((delay) => window.setTimeout(restore, delay));
+    window.addEventListener("pointerdown", stopRestore, { passive: true });
+    window.addEventListener("touchstart", stopRestore, { passive: true });
+    window.addEventListener("touchmove", stopRestore, { passive: true });
+    window.addEventListener("wheel", stopRestore, { passive: true });
+    window.addEventListener("mousedown", stopRestore);
+    window.addEventListener("keydown", stopRestore);
+    window.addEventListener("scroll", stopRestoreOnScroll, { passive: true });
+
+    restoreFrameIds.push(
+      window.requestAnimationFrame(() => {
+        restore();
+        if (targetY > 0) {
+          restoreFrameIds.push(window.requestAnimationFrame(restore));
+        }
+      }),
+    );
+    if (targetY > 0) {
+      restoreTimerIds.push(window.setTimeout(restore, 160));
+    }
 
     return () => {
-      window.cancelAnimationFrame(rafId);
-      restoreTimers.forEach((timer) => window.clearTimeout(timer));
+      restoreFrameIds.forEach((frameId) => window.cancelAnimationFrame(frameId));
+      restoreTimerIds.forEach((timerId) => window.clearTimeout(timerId));
+      window.removeEventListener("pointerdown", stopRestore);
+      window.removeEventListener("touchstart", stopRestore);
+      window.removeEventListener("touchmove", stopRestore);
+      window.removeEventListener("wheel", stopRestore);
+      window.removeEventListener("mousedown", stopRestore);
+      window.removeEventListener("keydown", stopRestore);
+      window.removeEventListener("scroll", stopRestoreOnScroll);
     };
   }, [scrollKey]);
 

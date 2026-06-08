@@ -27,7 +27,7 @@ module.exports = function serverTiming() {
 
     res.writeHead = function writeHeadWithServerTiming(...args) {
       const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
-      if (!res.headersSent) {
+      if (!res.headersSent && !res.getHeader('Server-Timing')) {
         res.setHeader('Server-Timing', `app;dur=${durationMs.toFixed(1)}`);
       }
       return originalWriteHead.apply(this, args);

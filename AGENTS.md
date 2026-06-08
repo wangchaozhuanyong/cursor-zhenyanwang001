@@ -1,205 +1,92 @@
 # AGENTS.md
 
-## Codex 工作总原则
+## 项目基本信息
 
-你是本项目的代码助手。你的目标是用最小必要上下文、最小必要修改，准确完成用户指定任务。
+- 项目名称：大马通 / Click Send Shop
+- 项目用途：马来西亚华人一站式生活服务与优选商城，包含前台商城、用户中心、后台管理、订单、优惠券、积分、内容、上传、备份等能力。
+- 主要技术栈：React + TypeScript + Vite + Express + MySQL
+- 前端框架：React 18、React Router、Vite
+- 后端框架：Node.js、Express 5
+- 包管理器：npm（使用 package-lock.json）
+- 样式方案：Tailwind CSS、shadcn/ui 风格组件、Radix UI、lucide-react
+- 数据库：MySQL 8.0
+- 登录方式：JWT / HttpOnly Cookie，支持短信 OTP、OAuth、WebAuthn/MFA 等扩展
+- 部署平台：AWS EC2 + PM2 + Nginx + GitHub Actions CI/CD
+- 生产域名：https://damatong.net
+- 生产项目目录：`/var/www/click-send-shop`
+- GitHub 仓库：`wangchaozhuanyong/cursor-zhenyanwang001`
 
-除非用户明确要求，不要扩大任务范围，不要主动重构无关代码，不要顺手优化无关功能。
+## 常用命令
 
-`AGENTS.md` 是 Codex 每次工作的总入口。详细规则放在 `docs/` 里的专项文档中；处理任务时先判断任务类型，再只读取相关文档，不要把所有 docs 一次性读完。完整 `Task Scope` 模板和 `/plan` 阶段规则见 `docs/PROJECT_GOVERNANCE.md`。
+- 安装前端依赖：`cd click-send-shop-main/click-send-shop-main && npm ci`
+- 安装后端依赖：`cd server && npm ci`
+- 本地前端开发：`cd click-send-shop-main/click-send-shop-main && npm run dev`
+- 本地后端开发：`cd server && npm run dev`
+- 启动 AWS 数据库隧道：`scripts/start-aws-db-tunnel.sh`
+- 停止 AWS 数据库隧道：`scripts/stop-aws-db-tunnel.sh`
+- 启动本地 MySQL：`scripts/start-local-mysql.sh`
+- 停止本地 MySQL：`scripts/stop-local-mysql.sh`
+- 前端打包构建：`cd click-send-shop-main/click-send-shop-main && npm run build`
+- 前端完整验证：`cd click-send-shop-main/click-send-shop-main && npm run verify`
+- 前端代码检查：`cd click-send-shop-main/click-send-shop-main && npm run lint`
+- 前端类型检查：`cd click-send-shop-main/click-send-shop-main && npm run typecheck`
+- 后端类型检查：`cd server && npm run typecheck`
+- 后端单元测试：`cd server && npm run test:unit`
+- 后端架构检查：`cd server && npm run arch:check`
+- 数据库迁移：`cd server && npm run migrate`
+- 查看迁移状态：`cd server && npm run migrate:status`
 
----
+## 项目结构
 
-## 一、节约 Token 的执行规则
+- 主应用目录：`/Users/wangchao/Desktop/真烟网/cursor-zhenyanwang001-work`
+- 前端目录：`click-send-shop-main/click-send-shop-main`
+- 前端页面/路由目录：`click-send-shop-main/click-send-shop-main/src`
+- 前端组件目录：`click-send-shop-main/click-send-shop-main/src/components`
+- 前端接口/service 目录：`click-send-shop-main/click-send-shop-main/src/services`
+- 前端状态管理目录：`click-send-shop-main/click-send-shop-main/src/stores`
+- 前端静态资源目录：`click-send-shop-main/click-send-shop-main/public`
+- 后端目录：`server`
+- 后端入口：`server/src/index.js`、`server/src/app.js`
+- 后端模块目录：`server/src/modules`
+- 后端接口/路由目录：`server/src/modules/*/routes`、`server/src/routes`
+- 后端服务层目录：`server/src/modules/*/service`
+- 后端数据访问目录：`server/src/modules/*/repository`
+- 数据库迁移目录：`server/migrations`
+- 部署脚本目录：`deploy`、`scripts`
+- GitHub Actions：`.github/workflows`
 
-1. 先判断任务类型，再定位文件。
-   - 每次任务开始前，先判断属于 backend、frontend、UI/UX、API、database、data consistency、concurrency、security、deployment/cache、i18n、docs、CI/checks 中哪一类。
-   - 根据任务类型只读取相关 docs。
-   - 不要为了一个小任务通读全部文档。
+## 工作总原则
 
-2. 先定位，再读取文件。
-   - 优先使用 grep / rg / 文件名搜索定位相关模块。
-   - 不要一开始就全项目扫描。
-   - 不要一次性读取大文件。
-   - 不要重复读取同一个文件，除非确实需要确认上下文。
+- 目标是用最小必要上下文、最小必要修改，准确完成用户指定任务。
+- 除非用户明确要求，不要扩大任务范围，不要主动重构无关代码，不要顺手优化无关功能。
+- 修改前必须先阅读真实代码，禁止根据猜测、记忆或想象的文件结构修改。
+- 优先使用 `rg` / 文件名搜索定位相关模块，再读取最少数量的相关文件。
+- 只看和当前任务直接相关的文件，不要为了小任务通读全部 docs。
+- 不确定就说不确定；没有验证条件必须说明，不能声称已经完全验证。
+- 如果用户只要求计划、审查或解释，不要直接修改代码。
 
-3. 只看和当前任务直接相关的文件。
-   - 用户问上传图片问题，就优先查看上传组件、上传接口、存储配置、提示逻辑。
-   - 用户问 UI 重叠问题，就优先查看对应页面、布局组件、样式文件。
-   - 用户问皮肤功能，就优先查看主题配置、皮肤切换逻辑、CSS 变量、前端状态管理。
+## 任务类型与必读文档
 
-4. 不做无关预防性修改。
-   - 不要为了“可能发生的问题”提前改一堆代码。
-   - 不要把一个小 bug 扩展成全系统重构。
-   - 不要修改没有被要求、没有被证明有问题的模块。
+处理任务时先判断类型，再读取对应文档：
 
-5. 不输出大段无用解释。
-   - 除非用户要求详细解释，否则汇报保持简洁。
-   - 不要粘贴完整文件代码。
-   - 只说明关键修改点、影响范围、验证方式。
+| 任务类型 | 必读或优先读取 |
+| --- | --- |
+| 后端任务 | `docs/ARCHITECTURE.md` |
+| 前端任务 | `docs/FRONTEND_ARCHITECTURE.md` |
+| UI/UX 任务 | `docs/DESIGN_SYSTEM.md` |
+| API 任务 | `docs/API_CONTRACTS.md` |
+| 数据库 / 数据一致性 / 并发 | `docs/DATA_CONSISTENCY_AND_CONCURRENCY.md`，必要时 `docs/ARCHITECTURE.md` |
+| 安全任务 | `docs/SECURITY_GOVERNANCE.md` |
+| 质量检查 / CI | `docs/QUALITY_GATES.md` |
+| 部署 / 缓存 / PWA / 生产白屏 | `docs/WEBSITE_ARCHITECTURE.md`，必要时读取部署和缓存文档 |
+| i18n / 编码 | `docs/encoding-and-i18n-guardrail.md`，必要时 `docs/QUALITY_GATES.md` |
+| 文档任务 | 当前任务相关 docs |
 
----
+更完整治理规则见 `docs/PROJECT_GOVERNANCE.md`，但只在任务需要时读取相关章节。
 
-## 二、代码修改规则
+## 后端架构硬规范
 
-1. 修改前必须先阅读真实代码。
-   - 禁止根据猜测修改。
-   - 禁止根据记忆编造文件结构。
-   - 禁止假设某个文件存在后直接修改。
-
-2. 每次只做最小必要修改。
-   - 优先局部修复。
-   - 避免大范围重命名。
-   - 避免无关格式化。
-   - 避免改动和任务无关的逻辑。
-
-3. 保持现有项目风格。
-   - 使用项目已有的命名方式。
-   - 使用项目已有的组件结构。
-   - 使用项目已有的状态管理方式。
-   - 使用项目已有的 UI 风格和错误提示方式。
-
-4. 不破坏现有功能。
-   - 修改前判断当前逻辑依赖。
-   - 修改后检查是否影响其他页面、接口、组件。
-   - 如果存在风险，必须明确说明。
-
----
-
-## 三、不确定时的处理方式
-
-1. 不知道就说不知道。
-   - 不要编造原因。
-   - 不要编造已经完成的步骤。
-   - 不要编造测试结果。
-
-2. 如果原因不确定，先列出最可能的 2-3 个原因。
-   - 说明每个原因对应需要检查的文件或逻辑。
-   - 然后优先检查最可能的原因。
-   - 不要无限制扩大排查范围。
-
-3. 如果没有验证条件，必须说明。
-   - 例如：没有本地数据库、没有环境变量、没有后端服务、无法启动项目。
-   - 不要声称“已完全验证”。
-
----
-
-## 四、汇报规则
-
-每次完成任务后，只按照下面格式汇报：
-
-### 已完成
-- 修改了什么
-- 修复了什么问题
-
-### 修改文件
-- 列出修改过的文件路径
-
-### 验证情况
-- 运行了哪些检查或测试
-- 哪些没有验证
-- 如果需要用户手动测试，说明具体测试步骤
-
-### 风险提醒
-- 如果没有风险，就写“暂无明显风险”
-- 如果有风险，说明可能影响哪里
-
-不要写长篇总结，不要输出无关解释，不要重复描述用户已经知道的问题。
-
----
-
-## 五、禁止行为
-
-禁止以下行为：
-
-1. 没看文件就修改。
-2. 没验证就说已验证。
-3. 没完成就说已完成。
-4. 为了一个小问题重构整个模块。
-5. 顺手修改无关 UI、样式、文案、配置。
-6. 一次性读取大量无关文件。
-7. 输出完整大文件内容。
-8. 编造项目结构、接口、变量名、函数名。
-9. 把不确定的判断说成确定结论。
-10. 没有用户要求时主动添加新功能。
-11. 为了一个任务顺手修其他无关问题。
-
----
-
-## 六、优先执行方式
-
-处理任何任务时，优先按照这个流程：
-
-1. 先输出 `Task Scope`，说明本次必须做什么、明确不做什么、哪些属于待确认。
-2. 判断任务类型，并按下方规则读取相关 docs。
-3. 使用搜索工具定位相关文件。
-4. 阅读最少数量的相关文件。
-5. 找到真实原因或真实现状。
-6. 输出对应任务计划。
-7. 做最小必要修改。
-8. 运行最小必要验证。
-9. 完成后输出对应 `Compliance Report`。
-
-没有运行测试或检查时，必须明确说明原因，不能声称已经验证。
-
-如果用户使用 `/plan` 或明确要求先规划，本阶段只允许读取、分析和输出计划；不允许创建文件、修改文件或直接写代码，除非用户随后明确确认执行。
-
----
-
-## 七、任务类型和 docs 读取规则
-
-所有任务都先读本文件。更详细的治理总纲见 `docs/PROJECT_GOVERNANCE.md`，但也只在任务需要时读取相关章节。
-
-| 任务类型 | 必读或优先读取 | 开始前必须输出 |
-| --- | --- | --- |
-| 后端任务 | `docs/ARCHITECTURE.md` | `Architecture Decision` |
-| 前端任务 | `docs/FRONTEND_ARCHITECTURE.md` | `Frontend Change Plan` |
-| UI/UX 任务 | `docs/DESIGN_SYSTEM.md` | `UI/UX Change Plan` |
-| API 任务 | `docs/API_CONTRACTS.md` | `API Contract Plan` |
-| 数据库任务 | `docs/DATA_CONSISTENCY_AND_CONCURRENCY.md`，必要时 `docs/ARCHITECTURE.md` | `Data Change Plan` |
-| 数据一致性/并发任务 | `docs/DATA_CONSISTENCY_AND_CONCURRENCY.md` | `Data Consistency / Concurrency Plan` |
-| 安全任务 | `docs/SECURITY_GOVERNANCE.md` | `Security Plan` |
-| 质量检查或 CI 任务 | `docs/QUALITY_GATES.md` | `Quality Gate Plan` |
-| 部署、缓存、PWA、生产白屏 | `docs/WEBSITE_ARCHITECTURE.md`，必要时读取缓存和部署文档 | `Deployment / Cache Plan` |
-| i18n / 编码任务 | `docs/encoding-and-i18n-guardrail.md`，必要时 `docs/QUALITY_GATES.md` | `I18n / Encoding Plan` |
-| 专项审计任务 | `docs/CODEX_TASK_PROMPTS.md` 的对应章节 | 对应专项计划 |
-| 文档任务 | 当前任务相关 docs | `Documentation Scope` |
-
-读取 `docs/CODEX_TASK_PROMPTS.md` 时，只读取本次任务对应章节，不要整份读取。
-
-任务完成后必须输出对应报告：
-
-- 后端任务输出 `Architecture Compliance Report`。
-- 前端任务输出 `Frontend Compliance Report`。
-- UI/UX 任务输出 `UI/UX Compliance Report`。
-- API 任务输出 `API Contract Report`。
-- 数据任务输出 `Data Consistency Report`。
-- 安全任务输出 `Security Report`。
-- 质量检查或 CI 任务输出 `Quality Gate Report`。
-- 文档任务输出本次文档变更报告。
-
----
-
-## 八、用户项目偏好
-
-本项目重视：
-- 稳定性
-- 少改动
-- 少 token 消耗
-- 不破坏现有功能
-- 不重构无关代码
-- 真实汇报
-- 先看源码再判断
-- 客户端 UI 不重叠
-- 上传、提示、皮肤、商品、订单等核心功能要稳定
-
----
-
-## 九、后端应用架构强制规范
-
-本项目后端不是自由结构项目，必须严格遵守 Modular Monolith + Layered Architecture。
-
-后端详细硬规范以 `docs/ARCHITECTURE.md` 为准；本节只保留 Codex 必须随时记住的核心约束。
+本项目后端必须遵守 Modular Monolith + Layered Architecture。详细规范以 `docs/ARCHITECTURE.md` 为准。
 
 后端固定为 24 个模块：
 
@@ -230,7 +117,7 @@ theme
 user
 ```
 
-每个模块必须保留标准四层目录：
+每个模块标准四层目录：
 
 ```text
 routes/
@@ -239,16 +126,14 @@ service/
 repository/
 ```
 
-可按需增加 `schemas/`、`jobs/`、`rules/`、`adapters/`、`providers/` 等辅助目录，但新增请求处理、业务逻辑、数据库访问代码必须回到标准四层。
-
-分层职责必须严格遵守：
+分层职责：
 
 - `routes`：只负责路由绑定和中间件挂载，不写业务逻辑，不查数据库。
 - `controller`：只负责接收参数、调用本模块 service、返回结果，不写业务逻辑，不调用 repository。
 - `service`：只负责业务逻辑、状态流转和流程编排，不直接写 SQL，不直接访问 `db.query / pool.query / conn.execute`。
 - `repository`：只负责数据库读写，不做业务判断，不决定业务状态，不调用 controller/routes。
 
-API 路径必须遵守：
+API 路径规则：
 
 - 所有业务接口必须统一以 `/api` 开头。
 - 管理后台接口必须使用 `/api/admin/*`。
@@ -257,20 +142,11 @@ API 路径必须遵守：
 跨模块规则：
 
 - 写代码前必须先判断模块归属，再判断层级归属。
-- 如果无法判断模块归属，必须停止，不允许自己创建新模块。
-- 如果需要跨模块调用，必须停止说明风险；不允许直接 import 其他模块的 controller/service/repository/routes 内部实现。
+- 如果无法判断模块归属，必须停止并说明，不允许自己创建新模块。
+- 不允许直接 import 其他模块的 controller/service/repository/routes 内部实现。
 - 跨模块协作只能通过目标模块入口暴露的公开能力，或先由用户确认新的编排方案。
-- 如果任务会导致 controller/service/repository/routes 职责混写，必须停止。
 
-允许例外：
-
-- `server/src/app.js` 和 `server/src/index.js` 只用于应用启动、全局中间件和总路由挂载。
-- `server/src/config`、`server/src/middleware`、`server/src/errors`、`server/src/utils` 只放通用能力。
-- `server/scripts`、数据库迁移、备份、恢复、部署脚本不属于业务模块，但不能承载常规业务逻辑。
-
-## 十、Architecture Decision 模板
-
-以后任何后端代码任务，在写代码之前必须先输出：
+后端代码任务开始前输出：
 
 ```text
 Architecture Decision:
@@ -286,11 +162,7 @@ Architecture Decision:
 10. Business behavior impact:
 ```
 
-如果本次任务不属于后端业务模块，也必须明确写清楚原因，例如“项目级文档 / 架构检查脚本 / CI 配置，不进入业务模块”。
-
-## 十一、Architecture Compliance Report 模板
-
-每次完成后必须补充架构合规报告：
+后端代码任务完成后输出：
 
 ```text
 Architecture Compliance Report:
@@ -305,57 +177,42 @@ Architecture Compliance Report:
 9. Remaining architecture risks:
 ```
 
-后端相关改动完成后，优先在 `server` 目录运行：
+后端相关改动完成后，优先运行：
 
 ```bash
-npm run arch:check
+cd server && npm run arch:check
 ```
 
 如果没有运行，必须明确说明原因。
 
----
+## 前端与页面规则
 
-## 十二、整站架构参考规范
-
-处理前端、管理后台、API 调用、部署、缓存、CI、静态资源、PWA、CDN、生产白屏、chunk 加载失败、路由异常等问题时，必须先参考：
-
-```text
-docs/WEBSITE_ARCHITECTURE.md
-```
-
-专项任务继续读取对应文档：
-
-```text
-docs/FRONTEND_ARCHITECTURE.md
-docs/DESIGN_SYSTEM.md
-docs/API_CONTRACTS.md
-docs/DATA_CONSISTENCY_AND_CONCURRENCY.md
-docs/SECURITY_GOVERNANCE.md
-docs/QUALITY_GATES.md
-```
-
-使用规则：
-
-- 如果是用户端页面问题，先判断是否属于 `src/modules/public`、用户端 routes、用户端 services、用户端 stores 或通用组件。
-- 如果是用户端首页或公共端响应式布局问题，必须以同一套公共内容为基准：手机、平板、电脑只允许做布局密度、间距、列数、顶部壳层等适配，不允许某个端单独新增、删除、改名或隐藏首页模块、金刚区导航入口；后台新增或调整首页模块/导航后，必须验证三端 public render path 是否同步。
-- 如果是管理后台问题，先判断是否属于 `src/modules/admin`、后台 routes、后台 services、后台 layout、权限或后台 i18n。
-- 如果是 API 调用问题，先确认前端是否通过 `VITE_API_BASE_URL=/api` 和 `src/api/request.ts` 调用后端。
+- 页面风格必须和当前项目保持一致。
+- 必须适配手机端和桌面端。
+- 需要考虑加载状态、错误状态、空状态。
+- 表单要有基础校验。
+- 注意基础无障碍体验，例如语义化标签、按钮可点击、输入框有 label。
+- 前端 UI 不得出现明显重叠、溢出、按钮文字被截断等问题。
+- 后台管理页优先保持信息密度、清晰表格、稳定操作流。
+- 前台商城页优先保证移动端体验、商品浏览、下单路径清晰。
+- 如果是 API 调用问题，先确认前端是否通过 `VITE_API_BASE_URL=/api` 和统一 request/service 层调用后端。
 - 如果是生产白屏、chunk 加载失败、路由异常，必须同时检查前端代码、构建产物、HTML 缓存头、assets 缓存、CDN、部署脚本和运行时恢复逻辑。
-- 如果是部署或缓存问题，不要只改页面代码；必须先判断影响范围和回滚方式。
 - 如果问题涉及订单、支付、库存、优惠券、积分、权限、安全、用户数据，最终规则必须以后端为准，不能只在前端修。
 
-本文档和 `docs/ARCHITECTURE.md` 的关系：
+## 代码规范
 
-- `docs/ARCHITECTURE.md` 是后端硬规范。
-- `docs/WEBSITE_ARCHITECTURE.md` 是整站总览和前后端边界规范。
-- 后端业务改动必须优先遵守 `docs/ARCHITECTURE.md`。
-- 前端、部署、缓存、CI 类问题必须同时参考 `docs/WEBSITE_ARCHITECTURE.md`。
+- 遵守当前项目已有的文件结构和命名方式。
+- 优先复用已有组件，不要重复造轮子。
+- 优先复用已有工具函数、hooks、services。
+- 保持代码简单、清晰、可维护。
+- 只修改和当前任务有关的文件。
+- 不做无关重构。
+- 不随意格式化无关文件。
+- 修改后按影响范围运行最小必要验证。
 
-## 十三、新增和修复的验证要求
+## 高风险验证要求
 
-新增功能或修复功能时，必须按影响范围选择验证方式。
-
-涉及以下高风险业务时，必须运行对应测试或明确说明为什么无法验证：
+涉及以下业务时，必须运行对应测试或明确说明为什么无法验证：
 
 - 订单：订单创建、取消、支付状态、发货、收货、售后、超时任务。
 - 支付：支付渠道、支付意图、支付回调、退款、对账。
@@ -366,37 +223,82 @@ docs/QUALITY_GATES.md
 - 报表和导出：金额、数量、时间范围、CSV 导出、统计口径。
 - 上传和媒体：图片上传、视频转码、对象存储、公开访问 URL。
 
-如果修改只涉及文档或纯检查脚本，可以不跑完整业务测试，但必须至少运行对应的静态检查，并说明没有改业务代码。
+文档或纯检查脚本改动可以不跑完整业务测试，但必须至少做静态检查或说明未改业务代码。
 
-常用验证命令：
+## 分支、发布、存档规则
+
+- 长期分支只保留 `main`。
+- 日常开发使用短分支：`feature/<short-name>`、`fix/<short-name>`、`chore/<short-name>`、`hotfix/<short-name>`。
+- 合并到 `main` 后由 GitHub Actions 自动部署。
+- 发布成功后可打 release tag：`release/YYYYMMDD-<short-name>`。
+- 大整理或高风险操作前打 archive tag：`archive/pre-cleanup-YYYYMMDD`、`archive/pre-hotfix-YYYYMMDD-HHMM`。
+- 详细规则见：`docs/BRANCH_RELEASE_GUIDE.md`。
+
+## 本地数据库说明
+
+- 本地可使用 MySQL 8.0。
+- 也可通过 SSH 隧道连接 AWS MySQL。
+- AWS 数据库隧道本地地址：`127.0.0.1:3307`。
+- 启动命令：`scripts/start-aws-db-tunnel.sh`。
+- 注意：如果本地后端连接 AWS 数据库，本地后台操作会影响线上真实数据。
+
+## 部署说明
+
+- 自动部署：推送 `main` 后，GitHub Actions CI 成功会触发 Deploy gc-api。
+- 手动部署：
 
 ```bash
-cd server && npm run arch:check
-cd click-send-shop-main/click-send-shop-main && npm run check:api-paths
+cd /var/www/click-send-shop
+git fetch --prune origin
+git checkout main
+git reset --hard origin/main
+AUTO_ROLLBACK=1 bash deploy/ci-deploy.sh
 ```
 
-## 十四、固定审查清单
+- 生产健康检查：
 
-每次大功能、新模块倾向改动、跨层问题、生产问题、部署缓存问题开始前，必须先对照入口文件和相关 docs：
+```bash
+curl -fsS https://damatong.net/api/health/ready
+```
+
+## 禁止事项
+
+- 不要未经允许新增依赖。
+- 不要未经允许修改数据库结构。
+- 不要未经允许修改登录、支付、部署、环境变量配置。
+- 不要硬编码任何密钥。
+- 不要把 `.env`、私钥、数据库密码提交到仓库。
+- 不要修改无关功能。
+- 不要删除重要文件，除非用户明确同意。
+- 不要直接操作生产数据库，除非用户明确要求并说明风险。
+- 不要强推 `main`。
+- 不要保留长期 release 分支，除非用户明确需要。
+- 不要与其他助手同时在服务器跑 `ci-deploy`。
+
+## 汇报与完成标准
+
+完成后按以下结构简洁汇报：
 
 ```text
-AGENTS.md
-docs/PROJECT_GOVERNANCE.md
-本次任务对应的专项文档
+已完成
+- 修改了什么
+
+修改文件
+- 文件路径
+
+验证情况
+- 运行了哪些检查或测试
+- 哪些没有验证及原因
+
+风险提醒
+- 暂无明显风险 / 具体风险
 ```
 
-审查重点：
+完成标准：
 
-- 是否属于现有 24 个后端模块。
-- 是否会破坏 routes/controller/service/repository 分层。
-- 是否会新增或改变 API 路径。
-- 是否涉及前端用户端、管理后台、部署、缓存或 CI。
-- 是否涉及订单、支付、库存、优惠券、积分、权限等高风险业务。
-- 是否需要运行专项测试，或说明无法验证的原因。
-
----
-
-## 十五、与 Cursor 助手的发布分工
-
-- **Codex**：日常开发，push 开发分支即可；不要与 Cursor 同时在服务器跑 `ci-deploy`。
-- **Cursor**：只提交/发布本会话改动的文件；线上统一 **`main`**，细则见 `.cursor/rules/cursor-release-workflow.mdc`。
+- 功能已经实现。
+- 代码风格和项目一致。
+- 已运行相关检查命令，或说明未运行原因。
+- 已说明修改了哪些文件。
+- 已说明验证情况。
+- 已说明是否还有风险或后续事项。

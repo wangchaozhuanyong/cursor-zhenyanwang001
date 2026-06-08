@@ -94,6 +94,51 @@ export function StoreOutletFallback() {
   );
 }
 
+export function HomeShellSkeleton() {
+  return (
+    <div
+      data-route-fallback="home-shell"
+      className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      aria-busy="true"
+      aria-label="首页加载中"
+    >
+      <div className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-screen-xl items-center gap-3 px-[var(--store-page-x)] py-2 md:px-6 md:py-3">
+          <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+          <Skeleton className="h-9 min-w-0 flex-1 rounded-full md:h-10 md:max-w-xl" />
+          <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+        </div>
+      </div>
+      <main className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 px-[var(--store-page-x)] pt-[var(--store-page-y)] pb-6 md:px-6 lg:px-8">
+        <Skeleton className={`${BANNER_SKELETON_HEIGHT_CLASS} w-full rounded-2xl`} />
+        <div className="grid grid-cols-4 gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 sm:grid-cols-8">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="flex flex-col items-center gap-2">
+              <Skeleton className="h-12 w-12 rounded-2xl" />
+              <Skeleton className="h-3 w-12 rounded-full" />
+            </div>
+          ))}
+        </div>
+        <section className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
+          <div className="mb-3 flex items-center justify-between">
+            <Skeleton className="h-5 w-24 rounded-full" />
+            <Skeleton className="h-4 w-16 rounded-full" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="space-y-2">
+                <Skeleton className="aspect-square w-full rounded-xl" />
+                <Skeleton className="h-4 w-4/5 rounded-full" />
+                <Skeleton className="h-4 w-1/2 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
 export function DelayedRouteFallback({
   fallback,
   delayMs = 120,

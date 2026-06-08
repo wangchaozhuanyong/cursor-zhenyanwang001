@@ -11,7 +11,25 @@ type AnimatedSectionProps = HTMLAttributes<HTMLElement> & {
   delay?: number;
   as?: AnimatedSectionAs;
   once?: boolean;
+  persistKey?: string;
 };
+
+const visibleSectionKeys = new Set<string>();
+
+function getVisibleSectionKey({
+  as,
+  className,
+  delay,
+  persistKey,
+}: {
+  as: AnimatedSectionAs;
+  className?: string;
+  delay: number;
+  persistKey?: string;
+}) {
+  if (persistKey) return persistKey;
+  return `${as}:${delay}:${String(className || "").trim() || "default"}`;
+}
 
 export function AnimatedSection({
   children,
@@ -19,12 +37,14 @@ export function AnimatedSection({
   delay = 0,
   as = "section",
   once = true,
+  persistKey,
   style,
   ...rest
 }: AnimatedSectionProps) {
   const { level, enabled } = useMotionConfig();
   const ref = useRef<HTMLElement | null>(null);
-  const [visible, setVisible] = useState(!enabled);
+  const sectionKey = getVisibleSectionKey({ as, className, delay, persistKey });
+  const [visible, setVisible] = useState(() => !enabled || (once && visibleSectionKeys.has(sectionKey)));
 
   useEffect(() => {
     if (!enabled) {
@@ -40,6 +60,7 @@ export function AnimatedSection({
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
+          if (once) visibleSectionKeys.add(sectionKey);
           setVisible(true);
           if (once) observer.disconnect();
         } else if (!once) {
@@ -50,7 +71,7 @@ export function AnimatedSection({
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [enabled, once]);
+  }, [enabled, once, sectionKey]);
 
   const Tag = as === "section" ? "section" : "div";
   const y = level === "rich" ? 12 : 6;

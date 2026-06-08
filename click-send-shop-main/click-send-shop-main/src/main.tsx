@@ -5,7 +5,6 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import "@/styles/store-tablet-visual.css";
 import { initPwaOfflineNavigation, markStoreSpaReady } from "@/lib/pwaOfflineNavigation";
-import SilkPageLoader from "@/components/motion/SilkPageLoader";
 import AppVersionReadyMarker from "@/components/AppVersionReadyMarker";
 import { initPwaInstallPromptCapture } from "@/lib/pwaInstallPromptStore";
 
@@ -39,7 +38,7 @@ if (!isTikTokLanding) {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <Suspense fallback={<SilkPageLoader />}>
+  <Suspense fallback={null}>
     {isTikTokLanding ? (
       <>
         <AppVersionReadyMarker appName="storefront" />

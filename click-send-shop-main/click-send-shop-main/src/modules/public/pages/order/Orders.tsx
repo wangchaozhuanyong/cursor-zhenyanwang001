@@ -164,7 +164,7 @@ export default function Orders() {
   }, [searchText, updateKeywordParam]);
 
   const loadCurrentOrders = useCallback(
-    () => loadOrders({ page: 1, tab, status: undefined, keyword: keyword || undefined }),
+    (options?: { force?: boolean }) => loadOrders({ page: 1, tab, status: undefined, keyword: keyword || undefined, force: options?.force }),
     [keyword, loadOrders, tab],
   );
 
@@ -255,7 +255,7 @@ export default function Orders() {
       await deleteOrder(order.id);
       toast.success("订单已删除");
       setSummary(null);
-      await loadCurrentOrders();
+      await loadCurrentOrders({ force: true });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "删除订单失败");
     } finally {
@@ -362,7 +362,7 @@ export default function Orders() {
                       order={order}
                       compact
                       onExpired={() => {
-                        void loadCurrentOrders();
+                        void loadCurrentOrders({ force: true });
                       }}
                     />
                   </div>
@@ -435,7 +435,7 @@ export default function Orders() {
                         onClick={(e) => {
                           e.stopPropagation();
                           setActingId(order.id);
-                          void payPendingOrder(order, loadCurrentOrders).finally(() => setActingId(""));
+                          void payPendingOrder(order, () => loadCurrentOrders({ force: true })).finally(() => setActingId(""));
                         }}
                       >
                         {paying && actingId === order.id ? "处理中..." : labelPendingPaymentAction(order.payment_method, order.order_type)}
@@ -656,7 +656,7 @@ export default function Orders() {
             setActingId(cancelConfirmOrder.id);
             try {
               await cancelOrder(cancelConfirmOrder.id);
-              await loadCurrentOrders();
+              await loadCurrentOrders({ force: true });
               toast.success("订单已取消");
               setCancelConfirmOrder(null);
             } catch (e) {
@@ -680,7 +680,7 @@ export default function Orders() {
             setActingId(confirmReceiveOrder.id);
             try {
               await confirmReceive(confirmReceiveOrder.id);
-              await loadCurrentOrders();
+              await loadCurrentOrders({ force: true });
               toast.success("已确认收货");
               setConfirmReceiveOrder(null);
             } catch (e) {
@@ -696,7 +696,7 @@ export default function Orders() {
           open={Boolean(returnApplyOrderId)}
           onClose={() => setReturnApplyOrderId(null)}
           onSuccess={() => {
-            void loadCurrentOrders();
+            void loadCurrentOrders({ force: true });
           }}
         />
 

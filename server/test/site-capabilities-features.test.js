@@ -137,4 +137,18 @@ describe('admin settings features API', () => {
     const get = await withAdminGatewayHeaders(admin.get('/api/admin/settings/features')).expect(200);
     assert.equal(get.body.data.couponEnabled, false);
   });
+
+  test('sms OTP login feature follows admin capability switch', async () => {
+    await siteCapabilities.saveSiteCapabilities({ ...savedCapabilities, smsOtpLoginEnabled: false });
+
+    const features = await request(app).get('/api/auth/features').expect(200);
+    assert.equal(features.body.code, 0);
+    assert.equal(features.body.data.smsOtpLoginEnabled, false);
+
+    const otpSend = await request(app)
+      .post('/api/auth/otp/send')
+      .send({ phone: malaysiaTestPhone(), countryCode });
+    assert.notEqual(otpSend.status, 200);
+    assert.match(JSON.stringify(otpSend.body), /当前未开启短信验证码登录/);
+  });
 });

@@ -27,6 +27,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ensureMediaUrl } from "@/utils/mediaUrl";
+import { hasLoadedImage, markImageLoaded, rememberLoadedImageFromElement } from "@/utils/imageLoadMemory";
 import { resolveNavIconThumbUrl } from "@/utils/navIconThumbUrl";
 
 const ICON_TOKENS = {
@@ -82,22 +83,6 @@ const ICON_TOKENS = {
   migration: Landmark,
 } as const;
 
-const loadedHomeNavImages = new Set<string>();
-
-function hasLoadedImage(...values: Array<string | undefined | null>): boolean {
-  return values
-    .map((value) => String(value || "").trim())
-    .filter(Boolean)
-    .some((value) => loadedHomeNavImages.has(value));
-}
-
-function markImageLoaded(...values: Array<string | undefined | null>) {
-  values
-    .map((value) => String(value || "").trim())
-    .filter(Boolean)
-    .forEach((value) => loadedHomeNavImages.add(value));
-}
-
 type HomeNavIconProps = {
   value: string;
   className?: string;
@@ -145,11 +130,22 @@ export default function HomeNavIcon({
 
   useEffect(() => {
     const img = imgRef.current;
-    if (img?.complete && img.naturalWidth > 0) {
-      markImageLoaded(src, img.currentSrc, img.src, imageSource);
-      setLoaded(true);
-    }
-  }, [imageSource, src]);
+    if (!img) return;
+
+    const markLoadedIfReady = () => {
+      if (rememberLoadedImageFromElement(img, src, imageSource, displayImageSource)) {
+        setLoaded(true);
+      }
+    };
+
+    markLoadedIfReady();
+    const frame = window.requestAnimationFrame(markLoadedIfReady);
+    const timer = window.setTimeout(markLoadedIfReady, 120);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [displayImageSource, imageSource, src]);
 
   if (!iconValue) {
     return <span className={cn("text-sm font-semibold text-[var(--theme-text-muted)]", className)}>·</span>;
@@ -190,7 +186,7 @@ export default function HomeNavIcon({
           decoding="async"
           onLoad={(event) => {
             if (event.currentTarget.naturalWidth > 0) {
-              markImageLoaded(src, event.currentTarget.currentSrc, event.currentTarget.src, imageSource);
+              markImageLoaded(src, imageSource, displayImageSource, event.currentTarget.currentSrc, event.currentTarget.src);
               setLoaded(true);
             }
           }}

@@ -1,8 +1,9 @@
 .member-page-shell {
-  min-height: 100vh;
+  width: 100%;
+  min-width: 0;
+  border-radius: 22px;
+  overflow: hidden;
   background: #000;
-  display: flex;
-  justify-content: center;
 }
 
 .member-page,
@@ -34,8 +35,8 @@
   --shadow-card: 0 18px 40px rgba(0, 0, 0, 0.42);
 
   position: relative;
-  width: min(100vw, 430px);
-  min-height: 100vh;
+  width: 100%;
+  min-height: calc(100dvh - var(--store-tab-header-height, 2.875rem));
   overflow: hidden;
   color: var(--text-main);
   font-family:
@@ -80,7 +81,7 @@
 .member-page .page-inner {
   position: relative;
   z-index: 1;
-  padding: 18px 16px 22px;
+  padding: 18px var(--store-page-x, 16px) 22px;
 }
 
 .member-page .nav {
@@ -127,7 +128,7 @@
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-xl);
-  padding: 19px 18px 16px;
+  padding: 18px 18px 15px;
   border: 1px solid rgba(255, 208, 122, 0.78);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 36%),
@@ -175,11 +176,9 @@
   z-index: 1;
   display: grid;
   grid-template-areas:
-    "emblem main stats"
-    "copy copy copy";
+    "emblem main stats";
   grid-template-columns: 68px minmax(0, 1fr) 104px;
-  column-gap: 9px;
-  row-gap: 8px;
+  column-gap: 10px;
   align-items: start;
 }
 
@@ -310,27 +309,30 @@
 }
 
 .member-page .hero-copy {
-  grid-area: copy;
+  grid-column: 2 / 4;
+  grid-row: 1;
+  align-self: end;
   min-width: 0;
   margin: 0;
-  padding-left: 77px;
-  padding-right: 4px;
+  padding: 0 0 3px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 13px;
-  line-height: 1.42;
+  gap: 3px;
+  font-size: 12px;
+  line-height: 1.38;
   color: var(--text-muted);
+  z-index: 2;
 }
 
 .member-page .upgrade-line {
   display: block;
   min-width: 0;
+  white-space: nowrap;
 }
 
 .member-page .upgrade-line--intro {
   color: rgba(255, 246, 218, 0.82);
-  white-space: nowrap;
+  max-width: 100%;
 }
 
 .member-page .upgrade-line--next {
@@ -344,18 +346,22 @@
 
 .member-page .hero-stats {
   grid-area: stats;
+  position: relative;
+  z-index: 3;
   justify-self: end;
   width: 104px;
   padding-top: 4px;
   text-align: right;
   display: flex;
+  min-height: 116px;
   flex-direction: column;
   align-items: flex-end;
+  justify-content: space-between;
 }
 
 .member-page .stat-label {
   width: 100%;
-  margin: 0 0 6px;
+  margin: 0 0 5px;
   font-size: 13px;
   color: var(--text-muted);
   white-space: nowrap;
@@ -363,7 +369,7 @@
 }
 
 .member-page .stat-money {
-  margin: 0 0 17px;
+  margin: 0;
   font-size: 21px;
   line-height: 1;
   font-weight: 800;
@@ -386,7 +392,7 @@
   position: relative;
   z-index: 1;
   height: 1px;
-  margin: 16px 0 13px;
+  margin: 12px 0 11px;
   background: linear-gradient(
     90deg,
     transparent,
@@ -836,7 +842,6 @@
   .member-page .hero-top {
     grid-template-columns: 62px minmax(0, 1fr) 100px;
     column-gap: 7px;
-    row-gap: 8px;
   }
 
   .member-page .rank-emblem {
@@ -860,7 +865,7 @@
   }
 
   .member-page .hero-copy {
-    padding-left: 69px;
+    padding-left: 0;
     font-size: 12px;
     line-height: 1.4;
   }
@@ -915,7 +920,7 @@
   }
 
   .member-page .hero-copy {
-    padding-left: 65px;
+    padding-left: 0;
     font-size: 11.5px;
   }
 
@@ -940,5 +945,56 @@
   .member-page .tier-icon {
     width: 48px;
     height: 48px;
+  }
+}
+
+@media (max-width: 767px) {
+  .member-account-shell {
+    background: #000;
+  }
+
+  .member-account-main {
+    padding: 0 !important;
+  }
+
+  .member-page-shell {
+    min-height: calc(100dvh - var(--store-tab-header-height, 2.875rem));
+    border-radius: 0;
+  }
+
+  .member-page {
+    min-height: calc(100dvh - var(--store-tab-header-height, 2.875rem));
+  }
+
+  .member-page .nav {
+    display: none;
+  }
+
+  .member-page .page-inner {
+    padding-top: var(--store-page-y, 14px);
+  }
+}
+
+@media (min-width: 768px) {
+  .member-page-shell {
+    box-shadow: 0 24px 70px -46px rgba(0, 0, 0, 0.48);
+  }
+
+  .member-page {
+    min-height: auto;
+  }
+
+  .member-page .nav {
+    display: none;
+  }
+
+  .member-page .page-inner {
+    padding: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .member-page .page-inner {
+    padding: 22px;
   }
 }

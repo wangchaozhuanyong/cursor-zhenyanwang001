@@ -49,7 +49,7 @@ export default function StorePageHeader({
         className,
       )}
     >
-      <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] sm:px-4 md:px-6">
+      <div className="mx-auto w-full max-w-screen-xl px-[var(--store-header-x)]">
         <div
           className={cn(
             "flex items-center gap-3",
@@ -63,6 +63,7 @@ export default function StorePageHeader({
             <div
               className={cn(
                 "flex shrink-0 items-center",
+                titleInlineSlot && "-ml-3",
                 centerTitle && !titleInlineSlot && "absolute left-0 top-1/2 z-10 -translate-y-1/2",
               )}
             >

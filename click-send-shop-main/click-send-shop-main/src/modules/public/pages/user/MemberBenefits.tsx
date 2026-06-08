@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { useGoBack } from "@/hooks/useGoBack";
 import * as memberBenefitsService from "@/services/memberBenefitsService";
 import type { MemberBenefitsLevel, MemberBenefitsOverview } from "@/services/memberBenefitsService";
@@ -332,7 +333,13 @@ export default function MemberBenefits() {
   const upgradeIntro = buildUpgradeIntro(currentLevel, nextLevel);
 
   return (
-    <div className="member-page-shell store-bottom-safe">
+    <StoreAccountLayout
+      title="会员权益"
+      onBack={goBack}
+      className="member-account-shell"
+      mainClassName="member-account-main"
+    >
+      <div className="member-page-shell">
       <main className="member-page">
         <div className="page-inner">
           <header className="nav">
@@ -473,6 +480,7 @@ export default function MemberBenefits() {
           ) : null}
         </div>
       </main>
-    </div>
+      </div>
+    </StoreAccountLayout>
   );
 }

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { hasLoadedImage, markImageLoaded, rememberLoadedImageFromElement } from "@/utils/imageLoadMemory";
 import { toFullUploadImageUrl } from "@/utils/uploadImageVariant";
 import { ImageOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,22 +20,6 @@ export type ProgressiveImageProps = {
   withBlurPlaceholder?: boolean;
 };
 
-const loadedProgressiveImages = new Set<string>();
-
-function hasLoadedImage(...values: Array<string | undefined | null>): boolean {
-  return values
-    .map((value) => String(value || "").trim())
-    .filter(Boolean)
-    .some((value) => loadedProgressiveImages.has(value));
-}
-
-function markImageLoaded(...values: Array<string | undefined | null>) {
-  values
-    .map((value) => String(value || "").trim())
-    .filter(Boolean)
-    .forEach((value) => loadedProgressiveImages.add(value));
-}
-
 /**
  * Blur-up reveal: LQIP 垫底，高清图加载完成后淡入；失败时回退 full 或保持可见占位。
  */
@@ -51,29 +36,28 @@ export function ProgressiveImage({
   withBlurPlaceholder = true,
 }: ProgressiveImageProps) {
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const [hiResLoaded, setHiResLoaded] = useState(() => hasLoadedImage(src));
-  const [loadFailed, setLoadFailed] = useState(false);
   const fallbackSources = useMemo(() => {
     const full = toFullUploadImageUrl(src);
     return [fallbackSrc, full !== src ? full : undefined]
       .filter((item): item is string => !!item && item !== src);
   }, [fallbackSrc, src]);
+  const [hiResLoaded, setHiResLoaded] = useState(() => hasLoadedImage(src, fallbackSrc, ...fallbackSources));
+  const [loadFailed, setLoadFailed] = useState(false);
   const [sourceIndex, setSourceIndex] = useState(0);
   const activeSrc = sourceIndex === 0 ? src : fallbackSources[sourceIndex - 1] || "";
 
   useEffect(() => {
     setSourceIndex(0);
-    setHiResLoaded(hasLoadedImage(src));
+    setHiResLoaded(hasLoadedImage(src, fallbackSrc, ...fallbackSources));
     setLoadFailed(false);
-  }, [src]);
+  }, [fallbackSrc, fallbackSources, src]);
 
   useEffect(() => {
     const img = imgRef.current;
     if (!img) return;
 
     const markLoadedIfReady = () => {
-      if (img.complete && img.naturalWidth > 0) {
-        markImageLoaded(activeSrc, img.currentSrc, img.src);
+      if (rememberLoadedImageFromElement(img, src, activeSrc, fallbackSrc, ...fallbackSources)) {
         setHiResLoaded(true);
         setLoadFailed(false);
       }
@@ -86,7 +70,7 @@ export function ProgressiveImage({
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timer);
     };
-  }, [activeSrc]);
+  }, [activeSrc, fallbackSrc, fallbackSources, src]);
 
   const showHiRes = hiResLoaded && !loadFailed;
   const showLoadingPlate = !showHiRes && !loadFailed;
@@ -145,7 +129,7 @@ export function ProgressiveImage({
           {...fetchPriorityProps}
           draggable={false}
           onLoad={(event) => {
-            markImageLoaded(activeSrc, event.currentTarget.currentSrc, event.currentTarget.src);
+            markImageLoaded(src, activeSrc, fallbackSrc, ...fallbackSources, event.currentTarget.currentSrc, event.currentTarget.src);
             setHiResLoaded(true);
             setLoadFailed(false);
           }}

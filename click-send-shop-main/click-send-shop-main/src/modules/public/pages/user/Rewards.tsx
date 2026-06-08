@@ -4,7 +4,6 @@ import { ArrowRight, CircleHelp, Clock, Gift, Loader2, ShoppingBag, TrendingDown
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useMotionConfig } from "@/modules/micro-interactions";
 import * as rewardService from "@/services/rewardService";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import type { RewardConfig, RewardTransaction, RewardTransactionCategory } from "@/types/reward";
@@ -46,7 +45,6 @@ function money(value: unknown) {
 }
 
 export default function Rewards() {
-  const { enabled: motionEnabled } = useMotionConfig();
   const goBack = useGoBack();
   const navigate = useNavigate();
   const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
@@ -140,7 +138,7 @@ export default function Rewards() {
     <TooltipProvider>
       <StoreAccountLayout title="返现记录" onBack={goBack} className="store-page pb-8" mainClassName="sm:px-4 xl:py-6">
       <motion.div
-        initial={motionEnabled ? { opacity: 0, y: 8 } : false}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18, ease: "easeOut" }}
         className={cn("relative overflow-hidden rounded-[28px] px-5 py-6 shadow-[0_18px_42px_-24px_rgba(238,54,26,0.72)] sm:px-7 sm:py-7", THEME_ACCENT_HERO_SHELL)}

@@ -22,6 +22,10 @@ const COUPON_CATEGORY_SELECT = `
 const COUPON_CAMPAIGN_START_EXPR = "COALESCE(c.campaign_start_at, c.claim_start_at, CONCAT(c.start_date, ' 00:00:00'))";
 const COUPON_CAMPAIGN_END_EXPR = "COALESCE(c.campaign_end_at, c.claim_end_at, CONCAT(c.end_date, ' 23:59:59'))";
 
+function couponPositionJsonContains() {
+  return "JSON_CONTAINS(COALESCE(c.display_positions, '[]'), JSON_QUOTE(?), '$')";
+}
+
 function legacyStatusWhere(status, params) {
   if (!status || status === 'all') return '';
   if (status === 'available') {
@@ -168,6 +172,40 @@ async function selectAvailableCoupons() {
   } catch (err) {
     if (!isSchemaDriftError(err)) throw err;
     return selectAvailableCouponsLegacy();
+  }
+}
+
+async function selectAvailableCouponsByDisplayPositions(positions, limit = 50) {
+  const normalized = [...new Set((positions || []).map((x) => String(x || '').trim()).filter(Boolean))];
+  if (!normalized.length) return [];
+  const pageSize = Math.max(1, Math.min(50, Number(limit) || 50));
+  const positionWhere = normalized.map(() => couponPositionJsonContains()).join(' OR ');
+  try {
+    const [rows] = await db.query(
+      `SELECT c.*, ${COUPON_CATEGORY_SELECT}
+       FROM coupons c
+       WHERE c.deleted_at IS NULL
+         AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) = 'active'
+         AND c.status IN ('available', 'active')
+         AND (c.claim_start_at IS NULL OR c.claim_start_at <= NOW())
+         AND (c.claim_end_at IS NULL OR c.claim_end_at >= NOW())
+         AND c.stop_claim_at IS NULL
+         AND c.archived_at IS NULL
+         AND c.invalidated_at IS NULL
+         AND COALESCE(c.auto_issue, 0) = 0
+         AND (
+           c.total_quantity <= 0
+           OR COALESCE(c.claimed_count, 0) < c.total_quantity
+         )
+         AND (${positionWhere})
+       ORDER BY c.created_at DESC
+       LIMIT ?`,
+      [...normalized, pageSize],
+    );
+    return rows;
+  } catch (err) {
+    if (!isSchemaDriftError(err)) throw err;
+    return [];
   }
 }
 
@@ -436,6 +474,7 @@ module.exports = {
   countUserCoupons,
   selectUserCouponsPage,
   selectAvailableCoupons,
+  selectAvailableCouponsByDisplayPositions,
   selectClaimedCouponIds,
   selectUserCouponClaimCounts,
   selectCouponByCodeOrId,

@@ -4,6 +4,7 @@ const VIEWPORT_SYNC_DELAY_MS = 320;
 
 type KeyboardViewportState = {
   keyboardInset: number;
+  visualViewportOffsetTop: number;
   visualViewportHeight: number;
 };
 
@@ -22,13 +23,13 @@ function isCoarsePointerDevice(): boolean {
 }
 
 function readKeyboardViewportState(): KeyboardViewportState {
-  if (typeof window === "undefined") return { keyboardInset: 0, visualViewportHeight: 0 };
+  if (typeof window === "undefined") return { keyboardInset: 0, visualViewportOffsetTop: 0, visualViewportHeight: 0 };
   const layoutHeight = window.innerHeight || 0;
   const visualViewport = window.visualViewport;
   const visualViewportHeight = Math.max(0, Math.round(visualViewport?.height || layoutHeight));
   const visualViewportOffsetTop = Math.max(0, Math.round(visualViewport?.offsetTop || 0));
   const keyboardInset = Math.max(0, Math.round(layoutHeight - visualViewportHeight - visualViewportOffsetTop));
-  return { keyboardInset, visualViewportHeight };
+  return { keyboardInset, visualViewportOffsetTop, visualViewportHeight };
 }
 
 /** 迟滞阈值，避免 iOS Chrome visualViewport 微抖导致布局来回切换 */
@@ -82,6 +83,7 @@ export function useFormFieldFocus(enabled = true) {
       setViewportState((prev) => {
         if (
           Math.abs(prev.keyboardInset - next.keyboardInset) < 2
+          && Math.abs(prev.visualViewportOffsetTop - next.visualViewportOffsetTop) < 2
           && Math.abs(prev.visualViewportHeight - next.visualViewportHeight) < 2
         ) {
           return prev;
@@ -170,6 +172,7 @@ export function useFormFieldFocus(enabled = true) {
     textFieldFocused,
     keyboardOpen,
     keyboardInset: keyboardOpen ? viewportState.keyboardInset : 0,
+    visualViewportOffsetTop: keyboardOpen ? viewportState.visualViewportOffsetTop : 0,
     visualViewportHeight: viewportState.visualViewportHeight,
     /** 仅触屏 + 软键盘：收起轮播等，桌面 Chrome 不触发 */
     layoutCompact,

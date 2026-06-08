@@ -27,6 +27,7 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSmartMobileChrome } from "@/hooks/useSmartMobileChrome";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
@@ -141,6 +142,16 @@ export default function Categories() {
     const root = findCategoryById(categories, activeRootId);
     return root?.children?.filter(Boolean) ?? [];
   }, [activeRootId, categories]);
+  const {
+    chromeRef: mobileChromeRef,
+    mode: mobileChromeMode,
+    isCompact: mobileChromeCompact,
+    isHidden: mobileChromeHidden,
+  } = useSmartMobileChrome({
+    measureKey: `${activeCat}:${subCategories.length}`,
+    compactStart: 64,
+    hideStart: 148,
+  });
   const scrollTabKey = activeCat === "all" ? "all" : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
 
   const rootKingkongItems = useMemo((): CategoryKingkongItem[] => {
@@ -336,14 +347,29 @@ export default function Categories() {
   );
 
   return (
-    <div className="store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div
+      className={cn(
+        "store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]",
+        mobileChromeCompact && "store-category-page--chrome-compact",
+        mobileChromeHidden && "store-category-page--chrome-hidden",
+      )}
+      data-category-mobile-chrome={mobileChromeMode}
+    >
       <SeoHead
         title={title}
         description={description}
         canonical={canonical}
         robots={robots}
       />
-      <div className="store-category-mobile-chrome md:hidden">
+      <div
+        ref={mobileChromeRef}
+        className={cn(
+          "store-category-mobile-chrome md:hidden",
+          mobileChromeMode === "expanded" && "is-expanded",
+          mobileChromeCompact && "is-compact",
+          mobileChromeHidden && "is-hidden",
+        )}
+      >
         <StorePageHeader
           matchTabHeaderHeight
           className={cn(STORE_MOBILE_PAGE_HEADER_CLASS, "store-category-mobile-header")}

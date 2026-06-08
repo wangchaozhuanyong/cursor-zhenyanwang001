@@ -1,5 +1,5 @@
-import React, { lazy, Suspense, useEffect, useLayoutEffect } from "react";
-import { Outlet, useLocation, useNavigationType } from "react-router-dom";
+import React, { lazy, Suspense, useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import { DelayedRouteFallback, StoreOutletFallback } from "@/components/AppRouteFallback";
 import FrontPageTransition from "@/components/FrontPageTransition";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -14,13 +14,7 @@ const BottomNav = lazy(() => import("@/components/BottomNav"));
  */
 const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
   const location = useLocation();
-  const navigationType = useNavigationType();
   const isMobile = useMediaQuery("(max-width: 767px)");
-
-  useLayoutEffect(() => {
-    if (navigationType === "POP") return;
-    window.scrollTo(0, 0);
-  }, [location.pathname, navigationType]);
 
   useEffect(() => {
     const path = location.pathname;

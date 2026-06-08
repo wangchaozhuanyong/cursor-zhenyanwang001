@@ -246,7 +246,7 @@ export default function MemberHome() {
           </LazyHomeSection>
         ) : null}
         {showCouponRail ? (
-          <LazyHomeSection>
+          <LazyHomeSection delayMs={0}>
             <MarketingCouponRailSection
               showCouponCenter={showCouponCenter}
               showNewUserGift={showCouponCenter}

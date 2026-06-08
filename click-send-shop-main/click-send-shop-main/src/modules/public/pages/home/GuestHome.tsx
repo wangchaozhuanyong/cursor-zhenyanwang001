@@ -411,7 +411,7 @@ export default function GuestHome() {
         ) : null}
 
         {showCouponRail ? (
-          <LazyHomeSection>
+          <LazyHomeSection delayMs={0}>
             <MarketingCouponRailSection
               showCouponCenter={showCouponCenter}
               showNewUserGift={showCouponCenter}

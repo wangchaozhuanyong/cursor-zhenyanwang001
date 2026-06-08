@@ -8,6 +8,7 @@ interface PageHeaderProps {
   onBack?: () => void;
   backFallback?: string;
   rightSlot?: React.ReactNode;
+  className?: string;
   contentClassName?: string;
   backButtonClassName?: string;
 }
@@ -17,6 +18,7 @@ export default function PageHeader({
   onBack,
   backFallback,
   rightSlot,
+  className,
   contentClassName,
   backButtonClassName,
 }: PageHeaderProps) {
@@ -45,7 +47,7 @@ export default function PageHeader({
   );
 
   return (
-    <header className="header-safe-top store-glass-surface sticky top-0 z-header border-b backdrop-blur-xl">
+    <header className={cn("header-safe-top store-glass-surface sticky top-0 z-header border-b backdrop-blur-xl", className)}>
       <div className={cn("relative mx-auto flex h-11 w-full max-w-screen-xl items-center justify-between gap-2 px-[var(--store-header-x)]", contentClassName)}>
         {hasRightSlot ? (
           <>

@@ -5,6 +5,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StoreAccountNav from "@/components/store/StoreAccountNav";
 import StoreDesktopHeader from "@/components/store/StoreDesktopHeader";
 import StoreTabletBar from "@/components/store/StoreTabletBar";
+import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { useGoBack } from "@/hooks/useGoBack";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +44,7 @@ export default function StoreAccountLayout({
   return (
     <div className={cn("store-page-shell store-bottom-safe min-h-screen bg-background text-foreground", className)}>
       <div className="md:hidden">
-        <PageHeader title={title} onBack={handleBack} rightSlot={rightSlot} />
+        <PageHeader className={STORE_MOBILE_PAGE_HEADER_CLASS} title={title} onBack={handleBack} rightSlot={rightSlot} />
       </div>
       <StoreTabletBar className="store-fixed-header" />
       <StoreDesktopHeader className="store-fixed-header" />

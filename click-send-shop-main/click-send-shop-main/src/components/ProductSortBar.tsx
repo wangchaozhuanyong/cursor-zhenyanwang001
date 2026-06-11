@@ -80,6 +80,7 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
             else buttonRefs.current.delete(item.value);
           }}
           type="button"
+          aria-pressed={value === item.value}
           onClick={() => {
             onChange(item.value);
             scrollButtonIntoView(item.value);
@@ -95,6 +96,7 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
           else buttonRefs.current.delete(PRICE_SORT_KEY);
         }}
         type="button"
+        aria-pressed={isPriceActive}
         onClick={() => {
           onChange(cyclePriceSort(value));
           scrollButtonIntoView(PRICE_SORT_KEY);

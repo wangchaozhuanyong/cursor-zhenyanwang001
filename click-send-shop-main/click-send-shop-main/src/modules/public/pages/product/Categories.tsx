@@ -529,10 +529,12 @@ function CategoryTabButton({
     <UnifiedButton
       ref={btnRef}
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
         "relative flex-shrink-0 overflow-hidden rounded-full px-4 py-1.5 text-xs font-medium",
         active ? "border border-transparent" : "border border-[var(--theme-border)] bg-[var(--theme-surface)]",
+        active && "is-active",
         className,
       )}
     >

@@ -5252,9 +5252,34 @@ html[data-app-scope="store"] .store-category-subtabs {
 }
 
 html[data-app-scope="store"] .store-category-subtab {
+  position: relative;
+  min-height: 2rem;
   border-color: color-mix(in srgb, var(--theme-price) 22%, var(--theme-border));
   background: color-mix(in srgb, var(--theme-surface) 76%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 62%, transparent);
+}
+
+html[data-app-scope="store"] .store-category-subtab::after {
+  position: absolute;
+  right: 0.78rem;
+  bottom: 0.18rem;
+  left: 0.78rem;
+  height: 2px;
+  border-radius: 999px;
+  background: transparent;
+  content: "";
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+html[data-app-scope="store"] .store-category-subtab.is-active {
+  border-color: color-mix(in srgb, var(--theme-price) 50%, var(--theme-border));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 38%, transparent),
+    0 10px 20px -18px color-mix(in srgb, var(--theme-price) 58%, transparent);
+}
+
+html[data-app-scope="store"] .store-category-subtab.is-active::after {
+  background: color-mix(in srgb, var(--theme-price-foreground) 82%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools {
@@ -5382,8 +5407,11 @@ html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-r
 
 html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-rail--plain .store-category-tile.is-active {
   border-color: transparent !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 12%, transparent), color-mix(in srgb, var(--theme-surface) 38%, transparent)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 58%, transparent),
+    0 8px 18px -20px color-mix(in srgb, var(--theme-price) 36%, transparent) !important;
 }
 
 html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-rail--plain .store-category-tile-icon {
@@ -5439,6 +5467,16 @@ html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-r
 
 html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-rail--plain .store-category-tile.is-active .store-category-tile-label {
   color: var(--theme-primary);
+}
+
+html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-rail--plain .store-category-tile.is-active .store-category-tile-label::after {
+  display: block;
+  width: 1.2rem;
+  height: 2px;
+  margin: 0.12rem auto 0;
+  border-radius: 999px;
+  background: var(--theme-primary);
+  content: "";
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail {
@@ -5556,8 +5594,11 @@ html[data-app-scope="store"] .store-category-rail--plain .store-category-tile-sk
 
 html[data-app-scope="store"] .store-category-rail--plain .store-category-tile.is-active {
   border-color: transparent !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 11%, transparent), color-mix(in srgb, var(--theme-surface) 34%, transparent)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 54%, transparent),
+    0 8px 18px -20px color-mix(in srgb, var(--theme-price) 34%, transparent) !important;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile,
@@ -5580,8 +5621,11 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-rail-
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile.is-active {
   border-color: transparent !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 12%, transparent), color-mix(in srgb, var(--theme-surface) 36%, transparent)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 58%, transparent),
+    0 8px 18px -20px color-mix(in srgb, var(--theme-price) 36%, transparent) !important;
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile-icon {
@@ -5632,6 +5676,16 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-rail-
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile.is-active .store-category-tile-label {
   color: var(--theme-primary);
+}
+
+html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile.is-active .store-category-tile-label::after {
+  display: block;
+  width: 1.2rem;
+  height: 2px;
+  margin: 0.12rem auto 0;
+  border-radius: 999px;
+  background: var(--theme-primary);
+  content: "";
 }
 
 html[data-app-scope="store"] .store-category-mobile-header .store-category-rail--plain .store-category-tile-skeleton {
@@ -5702,6 +5756,7 @@ html[data-app-scope="store"] .store-category-sortbar-icon {
 }
 
 html[data-app-scope="store"] .store-category-sort-pill.is-active {
+  position: relative;
   color: var(--theme-price-foreground);
   font-weight: var(--store-emphasis-weight);
   background:
@@ -5710,6 +5765,17 @@ html[data-app-scope="store"] .store-category-sort-pill.is-active {
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
     0 9px 16px -14px color-mix(in srgb, var(--theme-price) 58%, transparent);
+}
+
+html[data-app-scope="store"] .store-category-sort-pill.is-active::after {
+  position: absolute;
+  right: 0.76rem;
+  bottom: 0.18rem;
+  left: 0.76rem;
+  height: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-price-foreground) 84%, transparent);
+  content: "";
 }
 
 html[data-app-scope="store"] .store-category-tool-icon,

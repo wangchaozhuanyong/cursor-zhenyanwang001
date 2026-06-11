@@ -151,7 +151,11 @@ export default function AdminActivityForm() {
   const activityLoading = (isEdit && activityQuery.isLoading && !activityQuery.data)
     || (!!copyFromId && copySourceQuery.isLoading && !copySourceQuery.data);
   const [formHydrated, setFormHydrated] = useState(!isEdit && !copyFromId);
-  const { markClean } = useAdminFormDirty(form, formHydrated && !activityLoading);
+  const {
+    dirty: formDirty,
+    hasDraft,
+    markClean,
+  } = useAdminFormDirty(form, formHydrated && !activityLoading, { restoreDraft: setForm });
 
   useEffect(() => {
     if (isEdit || copyFromId || !LEGACY_COUPON_ACTIVITY_TYPES.has(requestedCreateType)) return;
@@ -167,6 +171,10 @@ export default function AdminActivityForm() {
 
   useEffect(() => {
     if (isEdit || copyFromId) return;
+    if (hasDraft || formDirty) {
+      setFormHydrated(true);
+      return;
+    }
     const nextForm = createInitialActivityForm(createType);
     setForm(nextForm);
     setStep(0);
@@ -174,10 +182,14 @@ export default function AdminActivityForm() {
     setScopeKeyword("");
     setFormHydrated(true);
     markClean(nextForm);
-  }, [copyFromId, createType, isEdit, markClean]);
+  }, [copyFromId, createType, formDirty, hasDraft, isEdit, markClean]);
 
   useEffect(() => {
     if (!activityQuery.data) return;
+    if (hasDraft || formDirty) {
+      setFormHydrated(true);
+      return;
+    }
     const d = activityQuery.data;
     setForm({
       type: d.type,
@@ -207,10 +219,14 @@ export default function AdminActivityForm() {
     });
     setStatusLabel(d.status_label || "草稿");
     setFormHydrated(true);
-  }, [activityQuery.data]);
+  }, [activityQuery.data, formDirty, hasDraft]);
 
   useEffect(() => {
     if (!copySourceQuery.data) return;
+    if (hasDraft || formDirty) {
+      setFormHydrated(true);
+      return;
+    }
     const d = copySourceQuery.data;
     setForm({
       type: d.type,
@@ -238,7 +254,7 @@ export default function AdminActivityForm() {
     setStatusLabel("草稿");
     toast.success(tText("已载入复制活动内容，请重新设置活动时间后发布"));
     setFormHydrated(true);
-  }, [copySourceQuery.data, tText]);
+  }, [copySourceQuery.data, formDirty, hasDraft, tText]);
 
   const fullReductionRules = useMemo(
     () => (Array.isArray((form.activity_config as unknown as Record<string, unknown>)?.full_reduction_rules)

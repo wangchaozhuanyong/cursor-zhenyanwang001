@@ -7,6 +7,7 @@ import { useAdminDirtyGuard } from "@/modules/admin/context/AdminDirtyGuardConte
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { adminNavDebug } from "@/modules/admin/utils/adminDebug";
 import { preloadAdminRoute } from "@/routes/adminLazyPages";
+import { clearAdminDraft } from "@/stores/useAdminDraftStore";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -65,24 +66,17 @@ export function useAdminNavigation() {
         return false;
       }
 
-      if (currentDirty) {
-        const currentTab = tabs.find((tab) => tab.id === currentTabId);
-        const proceed = await guard.confirmDiscardTab(currentTabId, currentTab?.title || tText("当前页面"));
-        if (!proceed) {
-          adminNavDebug({ stage: "blocked", reason: "dirty", from: currentFullPath, to: target.fullPath });
-          return false;
-        }
-        guard.setTabDirty(currentTabId, false);
-      }
-
       if (!targetCanOpen) {
+        const hasClosableTab = tabs.some((tab) => !tab.pinned);
         const victim = tabs
-          .filter((tab) => !tab.pinned)
+          .filter((tab) => !tab.pinned && !guard.isTabDirty(tab.id))
           .sort((a, b) => (a.lastAccessAt || 0) - (b.lastAccessAt || 0))[0];
         if (!victim) {
           await confirmAsync({
             title: tText("页面已达上限"),
-            description: tText("所有页面都已固定，请先取消固定或关闭一个页面。"),
+            description: hasClosableTab
+              ? tText("页面已达上限，且可关闭的页面都有未保存修改。请先保存或手动关闭一个页面。")
+              : tText("所有页面都已固定，请先取消固定或关闭一个页面。"),
             confirmText: tText("知道了"),
             cancelText: tText("取消"),
           });
@@ -106,6 +100,7 @@ export function useAdminNavigation() {
           return false;
         }
         guard.setTabDirty(victim.id, false);
+        clearAdminDraft(victim.id);
         closeTab(victim.id);
       }
 

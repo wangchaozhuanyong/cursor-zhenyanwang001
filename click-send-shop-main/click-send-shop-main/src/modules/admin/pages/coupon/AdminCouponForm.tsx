@@ -127,7 +127,11 @@ export default function AdminCouponForm() {
 
   const loading = isNew ? false : couponQuery.isLoading && !couponQuery.data;
   const [formHydrated, setFormHydrated] = useState(isNew);
-  const { markClean } = useAdminFormDirty(form, formHydrated && !loading);
+  const {
+    dirty: formDirty,
+    hasDraft,
+    markClean,
+  } = useAdminFormDirty(form, formHydrated && !loading, { restoreDraft: setForm });
 
   const tabTitle = useMemo(() => {
     if (isNew) return null;
@@ -158,6 +162,10 @@ export default function AdminCouponForm() {
 
   useEffect(() => {
     if (!couponQuery.data) return;
+    if (hasDraft || formDirty) {
+      setFormHydrated(true);
+      return;
+    }
     const coupon = couponQuery.data;
     setForm({
       title: coupon.title || "",
@@ -190,7 +198,7 @@ export default function AdminCouponForm() {
       stackable_with_activity: coupon.stackable_with_activity !== false,
     });
     setFormHydrated(true);
-  }, [couponQuery.data]);
+  }, [couponQuery.data, formDirty, hasDraft]);
 
   const handleSave = async () => {
     if (!form.title.trim()) {

@@ -6,6 +6,7 @@ import { useAdminDirtyGuardOptional } from "@/modules/admin/context/AdminDirtyGu
 type UseAdminDirtyFormInput = {
   isDirty: boolean;
   isReady?: boolean;
+  clearOnUnmount?: boolean;
 };
 
 type MarkSavedOptions<T> = {
@@ -13,7 +14,7 @@ type MarkSavedOptions<T> = {
   resetBaseline?: (nextBaseline?: T) => void;
 };
 
-export function useAdminDirtyForm({ isDirty, isReady = true }: UseAdminDirtyFormInput) {
+export function useAdminDirtyForm({ isDirty, isReady = true, clearOnUnmount = false }: UseAdminDirtyFormInput) {
   const location = useLocation();
   const guard = useAdminDirtyGuardOptional();
   const tabId = useMemo(
@@ -25,15 +26,12 @@ export function useAdminDirtyForm({ isDirty, isReady = true }: UseAdminDirtyForm
   useEffect(() => {
     const previousTabId = latestTabIdRef.current;
     if (!guard) return undefined;
-    if (previousTabId !== tabId) {
-      guard.setTabDirty(previousTabId, false);
-      latestTabIdRef.current = tabId;
-    }
+    if (previousTabId !== tabId) latestTabIdRef.current = tabId;
     guard.setTabDirty(tabId, Boolean(isReady && isDirty));
     return () => {
-      guard.setTabDirty(tabId, false);
+      if (clearOnUnmount) guard.setTabDirty(tabId, false);
     };
-  }, [guard, isDirty, isReady, tabId]);
+  }, [clearOnUnmount, guard, isDirty, isReady, tabId]);
 
   const markSaved = useCallback(
     <T,>(options?: MarkSavedOptions<T>) => {

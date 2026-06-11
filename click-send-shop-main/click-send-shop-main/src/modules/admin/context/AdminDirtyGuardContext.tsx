@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -47,6 +48,16 @@ export function AdminDirtyGuardProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isTabDirty = useCallback((tabId: string) => Boolean(dirtyByTab[tabId]), [dirtyByTab]);
+
+  useEffect(() => {
+    if (!Object.values(dirtyByTab).some(Boolean)) return undefined;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [dirtyByTab]);
 
   const confirmDiscardTab = useCallback(
     (tabId: string, tabTitle: string) => {

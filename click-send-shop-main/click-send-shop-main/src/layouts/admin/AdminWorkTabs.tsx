@@ -14,6 +14,7 @@ import AnchoredMenu from "@/components/admin/AnchoredMenu";
 import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 import { preloadAdminRoute } from "@/routes/adminLazyPages";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { clearAdminDraft, clearAdminDrafts } from "@/stores/useAdminDraftStore";
 
 type TabMenuState = {
   tabId: string;
@@ -45,7 +46,7 @@ export default function AdminWorkTabs() {
   const togglePinTab = useAdminWorkTabsStore((s) => s.togglePinTab);
   const can = useAdminPermissionStore((s) => s.can);
   const canAny = useAdminPermissionStore((s) => s.canAny);
-  const { confirmDiscardTab, confirmDiscardTabs, setTabDirty } = useAdminDirtyGuard();
+  const { confirmDiscardTab, confirmDiscardTabs, isTabDirty, setTabDirty } = useAdminDirtyGuard();
 
   const currentKey = adminTabPathKey(`${location.pathname}${location.search}`);
   const isFull = tabs.length >= ADMIN_WORK_TABS_MAX;
@@ -124,6 +125,7 @@ export default function AdminWorkTabs() {
       const proceed = await confirmDiscardTab(tab.id, tab.title);
       if (!proceed) return;
       setTabDirty(tab.id, false);
+      clearAdminDraft(tab.id);
       const fallbackPath = closeTab(tab.id);
       if (fallbackPath) {
         void adminNavigate(fallbackPath);
@@ -142,6 +144,7 @@ export default function AdminWorkTabs() {
       const proceed = await confirmDiscardTabs(victims);
       if (!proceed) return;
       let navPath: string | null = null;
+      clearAdminDrafts(victims.map((tab) => tab.id));
       for (const tab of victims) {
         setTabDirty(tab.id, false);
         const path = closeTab(tab.id);
@@ -198,6 +201,7 @@ export default function AdminWorkTabs() {
         >
           {tabs.map((tab) => {
             const active = tab.id === activeTabId || tab.id === currentKey;
+            const dirty = isTabDirty(tab.id);
             return (
               <div
                 key={tab.id}
@@ -222,6 +226,7 @@ export default function AdminWorkTabs() {
                 >
                   {tab.pinned ? <Pin size={11} className="shrink-0 opacity-70" /> : null}
                   <span className="truncate">{tab.title}</span>
+                  {dirty ? <span aria-label={tText("未保存")} className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" /> : null}
                 </UnifiedButton>
               </div>
             );
@@ -264,6 +269,7 @@ export default function AdminWorkTabs() {
               <div className="max-h-64 overflow-y-auto py-1 text-sm" onClick={(e) => e.stopPropagation()}>
                 {tabs.map((tab) => {
                   const active = tab.id === activeTabId || tab.id === currentKey;
+                  const dirty = isTabDirty(tab.id);
                   return (
                     <UnifiedButton
                       key={tab.id}
@@ -281,6 +287,7 @@ export default function AdminWorkTabs() {
                     >
                       {tab.pinned ? <Pin size={12} className="shrink-0 opacity-70" /> : <span className="w-3 shrink-0" />}
                       <span className="min-w-0 flex-1 truncate">{tab.title}</span>
+                      {dirty ? <span aria-label={tText("未保存")} className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" /> : null}
                     </UnifiedButton>
                   );
                 })}

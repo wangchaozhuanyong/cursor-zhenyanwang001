@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image, Plus, Trash2, GripVertical, Eye, EyeOff, ExternalLink, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -25,11 +25,24 @@ import type { Banner } from "@/types/banner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { invalidateHomeBannersCache } from "@/hooks/useHomeBanners";
 import { useAdminT } from "@/hooks/useAdminT";
-import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
+import { useAdminFormDirty } from "@/hooks/useAdminFormDirty";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const BANNER_RATIO_LABEL = `${BANNER_ASPECT_RATIO.toFixed(2)}:1`;
 const EMPTY_FORM = { title: "", description: "", cta_text: "", link: "", image: "" };
+type BannerDraftState = {
+  showForm: boolean;
+  editingId: string | null;
+  strictRatioCheck: boolean;
+  form: typeof EMPTY_FORM;
+};
+
+const CLOSED_BANNER_DRAFT: BannerDraftState = {
+  showForm: false,
+  editingId: null,
+  strictRatioCheck: false,
+  form: EMPTY_FORM,
+};
 
 export default function AdminBanners() {
   const { tText } = useAdminT();
@@ -51,12 +64,18 @@ export default function AdminBanners() {
 
   const banners = bannersQuery.data ?? [];
   const loading = bannersQuery.isLoading && !bannersQuery.data;
-  const editingBanner = editingId ? banners.find((b) => b.id === editingId) ?? null : null;
-  const formBaseline = editingBanner
-    ? { title: editingBanner.title || "", description: editingBanner.description || "", cta_text: editingBanner.cta_text || "", link: editingBanner.link || "", image: editingBanner.image || "" }
-    : EMPTY_FORM;
-  const formDirty = showForm && JSON.stringify(form) !== JSON.stringify(formBaseline);
-  useAdminTabDirty(formDirty);
+  const bannerDraftValue = useMemo<BannerDraftState>(
+    () => ({ showForm, editingId, strictRatioCheck, form }),
+    [editingId, form, showForm, strictRatioCheck],
+  );
+  const { markClean: markBannerDraftClean } = useAdminFormDirty(bannerDraftValue, !loading, {
+    restoreDraft: (draft) => {
+      setShowForm(Boolean(draft.showForm));
+      setEditingId(draft.editingId ?? null);
+      setStrictRatioCheck(Boolean(draft.strictRatioCheck));
+      setForm(draft.form || EMPTY_FORM);
+    },
+  });
 
   const invalidateBanners = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.banners() });
 
@@ -88,10 +107,12 @@ export default function AdminBanners() {
   };
 
   const openEdit = (b: Banner) => {
+    const nextForm = { title: b.title || "", description: b.description || "", cta_text: b.cta_text || "", link: b.link || "", image: b.image || "" };
     setEditingId(b.id);
-    setForm({ title: b.title || "", description: b.description || "", cta_text: b.cta_text || "", link: b.link || "", image: b.image || "" });
+    setForm(nextForm);
     setStrictRatioCheck(false);
     setShowForm(true);
+    markBannerDraftClean({ showForm: true, editingId: b.id, strictRatioCheck: false, form: nextForm });
   };
 
   const closeForm = () => {
@@ -99,6 +120,7 @@ export default function AdminBanners() {
     setEditingId(null);
     setStrictRatioCheck(false);
     setForm(EMPTY_FORM);
+    markBannerDraftClean(CLOSED_BANNER_DRAFT);
   };
 
   const handleSave = async () => {
@@ -188,10 +210,12 @@ export default function AdminBanners() {
         <PermissionGate permission="banner.manage">
           <UnifiedButton
             onClick={() => {
+              const nextDraft = { showForm: true, editingId: null, strictRatioCheck: false, form: EMPTY_FORM };
               setEditingId(null);
               setForm(EMPTY_FORM);
               setStrictRatioCheck(false);
               setShowForm(true);
+              markBannerDraftClean(nextDraft);
             }}
             className="flex items-center gap-2 rounded-xl bg-[var(--theme-price)] px-4 py-2.5 text-sm font-bold text-[var(--theme-price-foreground)]"
           >

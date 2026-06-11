@@ -99,7 +99,11 @@ export default function AdminProductForm() {
 
   const loading = !isNew && productQuery.isLoading && !productQuery.data;
   const [formHydrated, setFormHydrated] = useState(isNew);
-  const { markClean } = useAdminFormDirty(form, formHydrated && !loading);
+  const {
+    dirty: formDirty,
+    hasDraft,
+    markClean,
+  } = useAdminFormDirty(form, formHydrated && !loading, { restoreDraft: setForm });
 
   const tabTitle = useMemo(() => {
     if (isNew) return null;
@@ -112,9 +116,13 @@ export default function AdminProductForm() {
   useEffect(() => {
     const data = productQuery.data;
     if (!data) return;
+    if (hasDraft || formDirty) {
+      setFormHydrated(true);
+      return;
+    }
     setForm(buildProductFormFromProduct(data));
     setFormHydrated(true);
-  }, [productQuery.data]);
+  }, [formDirty, hasDraft, productQuery.data]);
 
   useEffect(() => {
     if (!productQuery.isError) return;

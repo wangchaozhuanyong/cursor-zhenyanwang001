@@ -107,6 +107,17 @@ async function deleteAllCartItems(userId) {
   await db.query('DELETE FROM cart_items WHERE user_id = ?', [userId]);
 }
 
+async function deleteUnavailableCartItems(userId) {
+  await db.query(
+    `DELETE ci
+     FROM cart_items ci
+     LEFT JOIN products p ON ci.product_id = p.id
+     WHERE ci.user_id = ?
+       AND (p.id IS NULL OR NOT (${activeProductWhere('p')}))`,
+    [userId],
+  );
+}
+
 module.exports = {
   selectCartLinesWithProducts,
   selectActiveProductId,
@@ -118,4 +129,5 @@ module.exports = {
   pinCartItemToTop,
   deleteCartItem,
   deleteAllCartItems,
+  deleteUnavailableCartItems,
 };

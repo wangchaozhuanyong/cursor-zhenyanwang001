@@ -336,7 +336,7 @@ function TikTokStandaloneRoutes() {
   }, []);
 
   return (
-    <ErrorBoundary resetKey={location.pathname}>
+    <ErrorBoundary resetKey={`${location.pathname}${location.search}`}>
       <SiteIdentitySync />
       <Suspense fallback={<AppRouteFallback />}>
         <Routes>
@@ -385,7 +385,7 @@ function MainStoreRoutes() {
   const capabilities = useSiteCapabilities();
 
   return (
-    <ErrorBoundary resetKey={location.pathname}>
+    <ErrorBoundary resetKey={`${location.pathname}${location.search}`}>
       <QueryClientProvider client={queryClient}>
         <ModalLayerProvider>
         <DownloadConfirmProvider>

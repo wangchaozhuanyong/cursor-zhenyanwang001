@@ -27,6 +27,7 @@ import { FormFieldShake } from "@/modules/micro-interactions";
 import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
 import {
   authErrorMessage,
+  inferCountryCodeFromPhone,
   validatePhoneForCountry,
   validateStrongPassword,
 } from "@/utils/authValidation";
@@ -165,7 +166,7 @@ export default function Login() {
     }
     const savedCc = localStorage.getItem(REMEMBER_COUNTRY_CODE_KEY);
     if (savedCc === "+60" || savedCc === "+86") setCountryCode(savedCc);
-    else setCountryCode("+60");
+    else setCountryCode(inferCountryCodeFromPhone(saved || "") || "+60");
   }, []);
 
   useEffect(() => {
@@ -678,6 +679,7 @@ export default function Login() {
             phoneInputId="auth-phone"
             phoneInputName="tel"
             phoneAutoComplete="tel"
+            autoDetectCountryCode
             enterKeyHint="next"
             onPhoneKeyDown={handlePhoneKeyDown}
           />

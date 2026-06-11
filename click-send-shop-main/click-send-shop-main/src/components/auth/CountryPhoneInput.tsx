@@ -2,7 +2,11 @@ import { Check, ChevronDown, Phone } from "lucide-react";
 import { useId, useState, type KeyboardEventHandler } from "react";
 import { cn } from "@/lib/utils";
 import { AppModal } from "@/modules/micro-interactions";
-import type { SupportedCountryCode } from "@/utils/authValidation";
+import {
+  inferCountryCodeFromPhone,
+  normalizePhoneDigits,
+  type SupportedCountryCode,
+} from "@/utils/authValidation";
 
 const PHONE_INPUT_CLASS =
   "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground transition-[border-color,box-shadow] focus:border-[var(--theme-primary)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_22%,transparent)]";
@@ -35,6 +39,7 @@ type CountryPhoneInputProps = {
   hasError?: boolean;
   showErrorText?: boolean;
   variant?: "split" | "joined";
+  autoDetectCountryCode?: boolean;
 };
 
 export default function CountryPhoneInput({
@@ -58,12 +63,13 @@ export default function CountryPhoneInput({
   hasError,
   showErrorText = true,
   variant = "split",
+  autoDetectCountryCode = false,
 }: CountryPhoneInputProps) {
   const generatedId = useId();
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const resolvedPhonePlaceholder =
     phonePlaceholder ?? (countryCode === "+60" ? "例如 123456789" : "例如 13800138000");
-  const phoneMaxLength = 11;
+  const phoneMaxLength = autoDetectCountryCode ? 16 : countryCode === "+86" ? 11 : 10;
   const invalid = hasError ?? Boolean(errorText);
   const errorId = phoneInputId ? `${phoneInputId}-error` : `country-phone-error-${generatedId}`;
   const pickerTitleId = `country-picker-title-${generatedId}`;
@@ -74,6 +80,19 @@ export default function CountryPhoneInput({
   const chooseCountryCode = (value: SupportedCountryCode) => {
     onCountryCodeChange(value);
     setCountryPickerOpen(false);
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const nextPhone = value.replace(/\D/g, "");
+    let nextCountryCode = countryCode;
+    if (autoDetectCountryCode) {
+      const inferred = inferCountryCodeFromPhone(nextPhone);
+      if (inferred && inferred !== countryCode) {
+        onCountryCodeChange(inferred);
+        nextCountryCode = inferred;
+      }
+    }
+    onPhoneChange(autoDetectCountryCode ? normalizePhoneDigits(nextPhone, nextCountryCode) : nextPhone);
   };
 
   return (
@@ -133,7 +152,7 @@ export default function CountryPhoneInput({
             disabled={disabled}
             aria-invalid={invalid || undefined}
             onKeyDown={onPhoneKeyDown}
-            onChange={(e) => onPhoneChange(e.target.value.replace(/\D/g, ""))}
+            onChange={(e) => handlePhoneChange(e.target.value)}
             className={cn(
               joined
                 ? "h-12 w-full bg-transparent px-4 text-base text-foreground placeholder:text-muted-foreground outline-none disabled:cursor-default disabled:opacity-80"

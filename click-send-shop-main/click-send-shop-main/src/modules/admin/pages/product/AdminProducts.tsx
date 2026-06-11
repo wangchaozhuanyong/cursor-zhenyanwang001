@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { Download, FileDown, Loader2, Pencil, PackageSearch, Upload } from "lucide-react";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
@@ -31,7 +32,6 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminTableSortHeader from "@/components/admin/AdminTableSortHeader";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
-import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 import {
   DEFAULT_PRODUCT_LIST_SORT,
   PRODUCT_SORT_LABELS,
@@ -48,6 +48,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 
 const PAGE_SIZE = 20;
+const ACTION_COLUMN_CLASS = "sticky right-0 z-[2] bg-[var(--theme-surface)] shadow-[-8px_0_14px_-14px_rgba(15,23,42,0.45)]";
 
 type StockFilter = "" | "normal" | "low" | "out";
 type CostFilter = "" | "normal" | "missing";
@@ -84,6 +85,26 @@ function percent(value: unknown) {
   return `${Number(value || 0).toFixed(2)}%`;
 }
 
+function getDisplayMargin(product: Product) {
+  const salesAmount = Number(product.sales_amount_30d || 0);
+  if (salesAmount > 0 && product.gross_margin_30d != null) {
+    return Number(product.gross_margin_30d || 0);
+  }
+  const price = Number(product.min_sku_price ?? product.price ?? 0);
+  const cost = Number(product.min_cost_price ?? 0);
+  if (price > 0 && cost > 0) return ((price - cost) / price) * 100;
+  return null;
+}
+
+function getMarginClass(margin: number | null) {
+  if (margin == null) return THEME_BADGE_MUTED;
+  return margin < 0 ? THEME_BADGE_DANGER : margin < 15 ? THEME_BADGE_WARNING : THEME_BADGE_SUCCESS;
+}
+
+function marginText(margin: number | null) {
+  return margin == null ? "-" : percent(margin);
+}
+
 function skuPrice(product: Product) {
   if (product.min_sku_price !== product.max_sku_price && product.max_sku_price) {
     return `${money(product.min_sku_price)} - ${money(product.max_sku_price)}`;
@@ -94,7 +115,6 @@ function skuPrice(product: Product) {
 export default function AdminProducts() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
-  const adminNavigate = useAdminNavigation();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -273,8 +293,8 @@ export default function AdminProducts() {
     const checked = selected.includes(product.id);
     const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
     const outOfStock = Number(product.out_of_stock_sku_count || 0) > 0 || Number(product.stock || 0) <= 0;
-    const margin = Number(product.gross_margin_30d || 0);
-    const marginClass = margin < 0 ? THEME_BADGE_DANGER : margin < 15 ? THEME_BADGE_WARNING : THEME_BADGE_SUCCESS;
+    const margin = getDisplayMargin(product);
+    const marginClass = getMarginClass(margin);
 
     return (
       <AdminTableMobileCard>
@@ -310,7 +330,7 @@ export default function AdminProducts() {
             {missingCost ? <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺成本</Tx></span> : null}
           </AdminTableMobileCardField>
           <AdminTableMobileCardField label={tText("毛利率")}>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${marginClass}`}>{percent(margin)}</span>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${marginClass}`}>{marginText(margin)}</span>
           </AdminTableMobileCardField>
           <AdminTableMobileCardField label={tText("近30天")}>
             <span className="text-xs">{Number(product.sales_qty_30d || 0)} 件 · {money(product.sales_amount_30d)}</span>
@@ -319,14 +339,13 @@ export default function AdminProducts() {
 
         <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row">
           <PermissionGate permission="product.manage">
-          <UnifiedButton
-            type="button"
-            onClick={() => adminNavigate(`/admin/products/${product.id}`)}
+          <Link
+            to={`/admin/products/${product.id}`}
             className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary sm:flex-1"
           >
             <Pencil size={13} />
             <Tx>编辑</Tx>
-          </UnifiedButton>
+          </Link>
           </PermissionGate>
         </div>
       </AdminTableMobileCard>
@@ -354,7 +373,7 @@ export default function AdminProducts() {
             </AdminFilterButton>
           </PermissionGate>
           <PermissionGate permission="product.manage">
-            <AdminFilterButton className="px-4 font-semibold" variant="card" onClick={() => adminNavigate("/admin/products/new")}><Tx>新增商品</Tx></AdminFilterButton>
+            <Link className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground transition hover:bg-secondary" to="/admin/products/new"><Tx>新增商品</Tx></Link>
           </PermissionGate>
           <AdminFilterButton onClick={() => void productsQuery.refetch()} variant="card" className="font-medium"><Tx>刷新</Tx></AdminFilterButton>
         </div>
@@ -524,7 +543,7 @@ export default function AdminProducts() {
               onSort={() => handleColumnSort("gross_profit_30d")}
             />
             <AdminTableSortHeader label={tText("状态")} sortable={false} align="center" />
-            <AdminTableSortHeader label={tText("操作")} sortable={false} align="right" />
+            <AdminTableSortHeader label={tText("操作")} sortable={false} align="right" className={ACTION_COLUMN_CLASS} />
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} showPageSizeSelect={false} />}
@@ -535,8 +554,8 @@ export default function AdminProducts() {
           const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
           const stockWarning = Number(product.stock_warning_sku_count || 0) > 0;
           const outOfStock = Number(product.out_of_stock_sku_count || 0) > 0 || Number(product.stock || 0) <= 0;
-          const margin = Number(product.gross_margin_30d || 0);
-          const marginClass = margin < 0 ? THEME_BADGE_DANGER : margin < 15 ? THEME_BADGE_WARNING : THEME_BADGE_SUCCESS;
+          const margin = getDisplayMargin(product);
+          const marginClass = getMarginClass(margin);
 
           return (
             <>
@@ -566,7 +585,7 @@ export default function AdminProducts() {
                 </div>
               </td>
               <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
-                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${marginClass}`}>{percent(margin)}</span>
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${marginClass}`}>{marginText(margin)}</span>
               </td>
               <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                 <div className="inline-flex max-w-full flex-nowrap items-center justify-end gap-1.5">
@@ -581,10 +600,10 @@ export default function AdminProducts() {
               <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}>
                 <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span>
               </td>
-              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
+              <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} ${ACTION_COLUMN_CLASS}`, "right")}>
                 <div className="inline-flex max-w-full flex-nowrap items-center justify-end gap-1.5">
                   <PermissionGate permission="product.manage">
-                    <UnifiedButton type="button" onClick={() => adminNavigate(`/admin/products/${product.id}`)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></UnifiedButton>
+                    <Link to={`/admin/products/${product.id}`} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></Link>
                   </PermissionGate>
                 </div>
               </td>

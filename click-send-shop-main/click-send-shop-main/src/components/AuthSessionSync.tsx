@@ -2,7 +2,7 @@ import { useLayoutEffect } from "react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
 
-const AUTH_HYDRATE_TIMEOUT_MS = 8_000;
+const AUTH_HYDRATE_TIMEOUT_MS = 2_500;
 
 function stripWechatLoginQuery(): void {
   if (typeof window === "undefined") return;

@@ -131,6 +131,8 @@ function AdminShellRouteContent() {
             <Route path="home-ops" element={<AdminHomeOps />} />
             <Route path="settings/shipping" element={<CapabilityRoute enabled={capabilities.shippingEnabled}><AdminShipping /></CapabilityRoute>} />
             <Route path="settings/roles" element={<AdminRoles />} />
+            <Route path="rbac/admin-users" element={<Navigate to="/admin/accounts" replace />} />
+            <Route path="rbac/roles" element={<Navigate to="/admin/settings/roles" replace />} />
             <Route path="coupons" element={<Navigate to="/admin/marketing/coupons" replace />} />
             <Route path="coupons/new" element={<Navigate to="/admin/marketing/coupons/new" replace />} />
             <Route path="coupons/records" element={<Navigate to="/admin/marketing/coupons/records" replace />} />

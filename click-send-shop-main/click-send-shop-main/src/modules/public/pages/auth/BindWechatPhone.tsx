@@ -113,6 +113,7 @@ export default function BindWechatPhone() {
             onPhoneChange={setPhone}
             phoneInputId="bind-wechat-phone"
             phoneAutoComplete="tel"
+            autoDetectCountryCode
           />
 
           <div className="relative">

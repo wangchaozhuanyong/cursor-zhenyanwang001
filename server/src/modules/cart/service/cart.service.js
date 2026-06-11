@@ -15,6 +15,7 @@ function formatCartItem(row) {
 }
 
 async function getCart(userId) {
+  await repo.deleteUnavailableCartItems(userId);
   const rows = await repo.selectCartLinesWithProducts(userId);
   return rows.map(formatCartItem);
 }

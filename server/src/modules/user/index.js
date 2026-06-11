@@ -73,6 +73,7 @@ router.use('/upload', require('./routes/upload.routes'));
   issueCouponToUsers: couponAdminIssueService.issueCouponToUsers,
   getAvailableCoupons: couponService.getAvailableCoupons,
   getCouponCenter: couponService.getCouponCenter,
+  decorateCouponsWithClaimability: couponService.decorateCouponsWithClaimability,
   buildEffectiveCoupon: couponLifecycle.buildEffectiveCoupon,
   resolveUserCouponRuntimeStatus: couponLifecycle.resolveUserCouponRuntimeStatus,
   restoreCouponAfterOrderCancelled: couponLifecycle.restoreCouponAfterOrderCancelled,

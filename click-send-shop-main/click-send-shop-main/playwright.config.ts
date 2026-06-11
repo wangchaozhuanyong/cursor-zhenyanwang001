@@ -4,7 +4,7 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:8080";
 const webServerCommand = process.env.PLAYWRIGHT_WEB_SERVER_COMMAND || "npm run dev";
 
 export default defineConfig({
-  testDir: "./src/test",
+  testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

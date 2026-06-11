@@ -1,9 +1,12 @@
 const repo = require('../repository/marketing.repository');
 const promo = require('../marketingPromo');
-const userCouponService = require('../../user/service/coupon.service');
 
 function getAdminApi() {
   return /** @type {any} */ (require('../../admin')).api || {};
+}
+
+function getUserApi() {
+  return /** @type {any} */ (require('../../user')).api || {};
 }
 
 function attachCouponSource(coupons, source) {
@@ -17,7 +20,7 @@ function attachCouponSource(coupons, source) {
 }
 
 async function decorateCoupons(coupons, context = {}) {
-  return userCouponService.decorateCouponsWithClaimability(coupons, context.userId || null);
+  return getUserApi().decorateCouponsWithClaimability(coupons, context.userId || null);
 }
 
 function appendStandaloneCoupons(target, standaloneCoupons, seen) {

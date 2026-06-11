@@ -45,7 +45,7 @@ describe("首页优惠券展示状态", () => {
     const items = buildHomeCouponCardItems([publicCoupon("a")], [], false);
     expect(items).toHaveLength(1);
     expect(items[0].action).toBe("claim");
-    expect(items[0].actionLabel).toBe("立即领取");
+    expect(items[0].actionLabel).toBe("登录领取");
   });
 
   it("已领取且可用时展示去使用", () => {

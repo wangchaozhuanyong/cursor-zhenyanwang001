@@ -78,6 +78,7 @@ router.use('/upload', require('./routes/upload.routes'));
   resolveUserCouponRuntimeStatus: couponLifecycle.resolveUserCouponRuntimeStatus,
   restoreCouponAfterOrderCancelled: couponLifecycle.restoreCouponAfterOrderCancelled,
   selectUserCouponsPage: couponRepo.selectUserCouponsPage,
+  selectCheckoutCandidateUserCoupons: couponRepo.selectCheckoutCandidateUserCoupons,
   selectUserPointsBalance: pointsRepo.selectUserPointsBalance,
   hasPendingReverse: pointsRepo.hasPendingReverse,
   sumUserRewardTransactions: rewardRepo.sumUserRewardTransactions,

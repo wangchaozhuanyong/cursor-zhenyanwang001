@@ -58,6 +58,23 @@ function statusWhere(status, params) {
   return ' AND BINARY uc.status = BINARY ?';
 }
 
+const ACTIVE_COUPON_TEMPLATE_WHERE = `
+      AND c.deleted_at IS NULL
+      AND c.archived_at IS NULL
+      AND c.invalidated_at IS NULL
+      AND c.stop_use_at IS NULL
+      AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) = 'active'
+      AND c.status IN ('available', 'active')`;
+
+const CLAIMABLE_COUPON_TEMPLATE_WHERE = `
+      AND c.deleted_at IS NULL
+      AND c.archived_at IS NULL
+      AND c.invalidated_at IS NULL
+      AND c.stop_claim_at IS NULL
+      AND c.stop_use_at IS NULL
+      AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) = 'active'
+      AND c.status IN ('available', 'active')`;
+
 async function countUserCoupons(userId, status) {
   let where = 'WHERE BINARY uc.user_id = BINARY ?';
   const params = [userId];
@@ -130,6 +147,40 @@ async function selectUserCouponsPage(userId, status, pageSize, offset) {
   }
 }
 
+async function selectCheckoutCandidateUserCoupons(userId, limit = 1000) {
+  const pageSize = Math.max(1, Math.min(1000, Number(limit) || 1000));
+  try {
+    const [rows] = await db.query(
+      `SELECT uc.id, uc.claimed_at, uc.used_at, uc.status,
+              uc.coupon_snapshot, uc.valid_from, uc.valid_until, uc.issue_channel,
+              uc.issue_activity_id, uc.source_admin_id, uc.order_id, uc.order_no,
+              uc.discount_amount, uc.invalid_reason, uc.returned_at, uc.return_reason, uc.locked_at,
+              c.id AS coupon_id, c.code, c.title, c.type, c.value,
+              c.min_amount, c.start_date, c.end_date, c.status AS coupon_status,
+              c.publish_status AS coupon_publish_status, c.description,
+              c.scope_type, c.display_badge, c.usable_scope_type, c.usable_product_ids,
+              c.usable_category_ids, c.stackable_with_activity,
+              c.deleted_at, c.archived_at, c.invalidated_at, c.stop_use_at,
+              c.campaign_start_at, c.campaign_end_at, c.post_end_valid_days,
+              ${COUPON_CATEGORY_SELECT}
+       FROM user_coupons uc
+       JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+       WHERE BINARY uc.user_id = BINARY ?
+         AND uc.status IN ('available', 'pending')
+         AND (uc.valid_from IS NULL OR uc.valid_from <= UTC_TIMESTAMP())
+         AND (uc.valid_until IS NULL OR uc.valid_until >= UTC_TIMESTAMP())
+         ${ACTIVE_COUPON_TEMPLATE_WHERE}
+       ORDER BY uc.claimed_at DESC, uc.id DESC
+       LIMIT ?`,
+      [userId, pageSize],
+    );
+    return rows;
+  } catch (err) {
+    if (!isSchemaDriftError(err)) throw err;
+    return selectUserCouponsPage(userId, 'available', pageSize, 0);
+  }
+}
+
 async function selectAvailableCouponsLegacy() {
   const [rows] = await db.query(
     `SELECT c.*, ${COUPON_CATEGORY_SELECT}
@@ -190,6 +241,7 @@ async function selectAvailableCouponsByDisplayPositions(positions, limit = 50) {
          AND (c.claim_start_at IS NULL OR c.claim_start_at <= NOW())
          AND (c.claim_end_at IS NULL OR c.claim_end_at >= NOW())
          AND c.stop_claim_at IS NULL
+         AND c.stop_use_at IS NULL
          AND c.archived_at IS NULL
          AND c.invalidated_at IS NULL
          AND COALESCE(c.auto_issue, 0) = 0
@@ -255,6 +307,7 @@ async function selectCouponByCodeOrIdForUpdate(q, code) {
     `SELECT c.*, ${COUPON_CATEGORY_SELECT}
      FROM coupons c
      WHERE (BINARY c.code = BINARY ? OR BINARY c.id = BINARY ?)
+       ${CLAIMABLE_COUPON_TEMPLATE_WHERE}
      FOR UPDATE`,
     [code, code],
   );
@@ -473,6 +526,7 @@ module.exports = {
   getPool,
   countUserCoupons,
   selectUserCouponsPage,
+  selectCheckoutCandidateUserCoupons,
   selectAvailableCoupons,
   selectAvailableCouponsByDisplayPositions,
   selectClaimedCouponIds,

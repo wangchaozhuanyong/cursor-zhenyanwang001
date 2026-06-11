@@ -51,9 +51,30 @@ function claimError(code, reason, message) {
   return { error: { code, reason, message } };
 }
 
+function claimabilityForUserCouponStatus(status) {
+  if (status === 'available' || status === 'pending' || status === 'locked') {
+    return {
+      claimable: false,
+      claim_status: 'already_claimed',
+      claim_reason: '已领取',
+      requires_login: false,
+      requires_member: false,
+      requires_new_user: false,
+    };
+  }
+  if (status === 'expired') {
+    return { claimable: false, claim_status: 'ended', claim_reason: '优惠券已过期', requires_login: false, requires_member: false, requires_new_user: false };
+  }
+  if (status === 'invalidated' || status === 'cancelled') {
+    return { claimable: false, claim_status: 'disabled', claim_reason: '优惠券已失效', requires_login: false, requires_member: false, requires_new_user: false };
+  }
+  return { claimable: false, claim_status: 'already_claimed', claim_reason: '已领取', requires_login: false, requires_member: false, requires_new_user: false };
+}
+
 function mapUserCouponRow(r) {
   const coupon = lifecycle.buildEffectiveCoupon(r);
   const status = lifecycle.resolveUserCouponRuntimeStatus(r);
+  const claimState = claimabilityForUserCouponStatus(status);
   return {
     id: r.id,
     claimed_at: r.claimed_at || '',
@@ -64,12 +85,20 @@ function mapUserCouponRow(r) {
     issue_channel: r.issue_channel || undefined,
     order_id: r.order_id || undefined,
     order_no: r.order_no || undefined,
-    issue_activity_id: r.issue_activity_id || undefined,
     discount_amount: r.discount_amount == null ? undefined : Number(r.discount_amount),
     invalid_reason: r.invalid_reason || undefined,
     returned_at: r.returned_at || undefined,
     return_reason: r.return_reason || undefined,
-    coupon: { ...coupon, status: normalizeCouponStatus(coupon.status, coupon.end_date) },
+    ...claimState,
+    issue_activity_id: r.issue_activity_id || undefined,
+    campaign_id: r.issue_activity_id || undefined,
+    coupon: {
+      ...coupon,
+      ...claimState,
+      issue_activity_id: r.issue_activity_id || coupon.issue_activity_id || undefined,
+      campaign_id: r.issue_activity_id || coupon.campaign_id || undefined,
+      status: normalizeCouponStatus(coupon.status, coupon.end_date),
+    },
   };
 }
 

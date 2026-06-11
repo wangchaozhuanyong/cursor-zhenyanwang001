@@ -30,23 +30,48 @@ test('assertOrderCapabilityUsage rejects points when capability disabled', async
 
 test('loadCheckoutCouponRows scans beyond the first 100 coupons and reports cap', async () => {
   const userModule = require('../src/modules/user');
-  const original = userModule.api?.selectUserCouponsPage;
+  const original = userModule.api?.selectCheckoutCandidateUserCoupons;
   const previousLimit = process.env.CHECKOUT_COUPON_SCAN_LIMIT;
 
   try {
     process.env.CHECKOUT_COUPON_SCAN_LIMIT = '150';
-    userModule.api.selectUserCouponsPage = async (_userId, _status, limit, offset) => {
-      assert.equal(limit, 100);
-      return Array.from({ length: 100 }, (_, index) => ({ id: `uc-${offset + index}` }));
+    userModule.api.selectCheckoutCandidateUserCoupons = async (_userId, limit) => {
+      assert.equal(limit, 151);
+      return Array.from({ length: 151 }, (_, index) => ({ id: `uc-${index}` }));
     };
 
     const result = await orderCheckout.loadCheckoutCouponRows('user-1');
 
-    assert.equal(result.rows.length, 200);
+    assert.equal(result.rows.length, 150);
     assert.equal(result.hasMore, true);
   } finally {
-    if (original) userModule.api.selectUserCouponsPage = original;
+    if (original) userModule.api.selectCheckoutCandidateUserCoupons = original;
     if (previousLimit === undefined) delete process.env.CHECKOUT_COUPON_SCAN_LIMIT;
     else process.env.CHECKOUT_COUPON_SCAN_LIMIT = previousLimit;
+  }
+});
+
+test('loadCheckoutCouponRows uses checkout-only candidate query', async () => {
+  const userModule = require('../src/modules/user');
+  const originalCandidate = userModule.api?.selectCheckoutCandidateUserCoupons;
+  const originalPage = userModule.api?.selectUserCouponsPage;
+
+  try {
+    let calledCandidate = false;
+    userModule.api.selectCheckoutCandidateUserCoupons = async () => {
+      calledCandidate = true;
+      return [{ id: 'active-candidate' }];
+    };
+    userModule.api.selectUserCouponsPage = async () => {
+      throw new Error('checkout must not scan all user coupons');
+    };
+
+    const result = await orderCheckout.loadCheckoutCouponRows('user-1');
+
+    assert.equal(calledCandidate, true);
+    assert.deepEqual(result.rows.map((row) => row.id), ['active-candidate']);
+  } finally {
+    if (originalCandidate) userModule.api.selectCheckoutCandidateUserCoupons = originalCandidate;
+    if (originalPage) userModule.api.selectUserCouponsPage = originalPage;
   }
 });

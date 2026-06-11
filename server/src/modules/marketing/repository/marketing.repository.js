@@ -124,6 +124,7 @@ async function selectCouponsByIds(couponIds) {
        AND (c.claim_start_at IS NULL OR c.claim_start_at <= NOW())
        AND (c.claim_end_at IS NULL OR c.claim_end_at >= NOW())
        AND c.stop_claim_at IS NULL
+       AND c.stop_use_at IS NULL
        AND c.archived_at IS NULL
        AND c.invalidated_at IS NULL
        AND COALESCE(c.auto_issue, 0) = 0
@@ -186,6 +187,7 @@ async function selectCouponsByPosition(position, limit = 12) {
        AND (c.claim_start_at IS NULL OR c.claim_start_at <= NOW())
        AND (c.claim_end_at IS NULL OR c.claim_end_at >= NOW())
        AND c.stop_claim_at IS NULL
+       AND c.stop_use_at IS NULL
        AND c.archived_at IS NULL
        AND c.invalidated_at IS NULL
        AND COALESCE(c.auto_issue, 0) = 0

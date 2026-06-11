@@ -51,6 +51,7 @@ function formatCampaign(row, items = undefined, audiences = undefined) {
       ...item,
       coupon_value: item.coupon_value == null ? null : Number(item.coupon_value),
       coupon_min_amount: item.coupon_min_amount == null ? null : Number(item.coupon_min_amount),
+      coupon_unavailable: !!item.coupon_unavailable,
     }));
   }
   if (audiences) {
@@ -118,8 +119,9 @@ async function assertCampaignPublishable(payload, couponIds) {
   if (!couponIds.length) throw new BusinessError(400, '优惠券活动至少要选择一张优惠券');
   for (const couponId of couponIds) {
     const coupon = await couponRepo.selectCouponBaseById(couponId);
-    if (!coupon || coupon.deleted_at || coupon.archived_at) {
-      throw new BusinessError(400, `优惠券不存在或已归档：${couponId}`);
+    const publishStatus = String(coupon?.publish_status || (coupon?.status === 'available' ? 'active' : coupon?.status || ''));
+    if (!coupon || coupon.deleted_at || coupon.archived_at || coupon.invalidated_at || coupon.stop_claim_at || coupon.stop_use_at || publishStatus !== 'active' || !['available', 'active'].includes(String(coupon.status || ''))) {
+      throw new BusinessError(400, `优惠券不可用于领券活动：${couponId}`);
     }
   }
   if (['member_level', 'user_tag'].includes(payload.audience_type) && !payload.audience_ids?.length) {

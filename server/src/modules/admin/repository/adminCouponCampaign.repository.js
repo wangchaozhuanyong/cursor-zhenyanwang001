@@ -88,7 +88,16 @@ async function selectCampaignItems(campaignId) {
     `SELECT cci.id, cci.campaign_id, cci.coupon_id, cci.sort_order,
             c.title AS coupon_title, c.code AS coupon_code, c.type AS coupon_type,
             c.value AS coupon_value, c.min_amount AS coupon_min_amount,
-            c.publish_status AS coupon_publish_status, c.status AS coupon_status
+            c.publish_status AS coupon_publish_status, c.status AS coupon_status,
+            c.deleted_at AS coupon_deleted_at, c.archived_at AS coupon_archived_at,
+            c.invalidated_at AS coupon_invalidated_at, c.stop_claim_at AS coupon_stop_claim_at,
+            c.stop_use_at AS coupon_stop_use_at,
+            CASE
+              WHEN c.deleted_at IS NOT NULL OR c.archived_at IS NOT NULL OR c.invalidated_at IS NOT NULL OR c.stop_use_at IS NOT NULL
+                OR COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) <> 'active'
+                OR c.status NOT IN ('available','active')
+              THEN 1 ELSE 0
+            END AS coupon_unavailable
        FROM coupon_campaign_items cci
        JOIN coupons c ON BINARY c.id = BINARY cci.coupon_id
       WHERE BINARY cci.campaign_id = BINARY ?
@@ -373,10 +382,18 @@ async function resolveCouponCampaignClaim(campaignId, couponId, userId) {
 
 async function selectCouponIdsByCampaignId(campaignId) {
   const [rows] = await db.query(
-    `SELECT coupon_id
-       FROM coupon_campaign_items
-      WHERE BINARY campaign_id = BINARY ?
-      ORDER BY sort_order ASC, created_at ASC`,
+    `SELECT cci.coupon_id
+       FROM coupon_campaign_items cci
+       INNER JOIN coupons c ON BINARY c.id = BINARY cci.coupon_id
+      WHERE BINARY cci.campaign_id = BINARY ?
+        AND c.deleted_at IS NULL
+        AND c.archived_at IS NULL
+        AND c.invalidated_at IS NULL
+        AND c.stop_claim_at IS NULL
+        AND c.stop_use_at IS NULL
+        AND COALESCE(c.publish_status, CASE WHEN c.status = 'available' THEN 'active' ELSE c.status END) = 'active'
+        AND c.status IN ('available','active')
+      ORDER BY cci.sort_order ASC, cci.created_at ASC`,
     [campaignId],
   );
   return rows.map((row) => row.coupon_id).filter(Boolean);

@@ -33,24 +33,12 @@ function couponUnavailableReason(row) {
 }
 
 async function loadCheckoutCouponRows(userId) {
-  const pageSize = 100;
   const maxRows = Math.max(100, Math.trunc(Number(process.env.CHECKOUT_COUPON_SCAN_LIMIT || 1000)));
-  const rows = [];
-  let offset = 0;
-  let hasMore = false;
-
-  while (offset < maxRows) {
-    const page = await getUserApi().selectUserCouponsPage(userId, 'all', pageSize, offset);
-    rows.push(...page);
-    offset += page.length;
-    if (page.length < pageSize) return { rows, hasMore: false };
-    if (rows.length >= maxRows) {
-      hasMore = true;
-      break;
-    }
-  }
-
-  return { rows, hasMore };
+  const rows = await getUserApi().selectCheckoutCandidateUserCoupons(userId, maxRows + 1);
+  return {
+    rows: rows.slice(0, maxRows),
+    hasMore: rows.length > maxRows,
+  };
 }
 
 async function getCheckoutCoupons(userId, body) {

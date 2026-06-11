@@ -13,6 +13,7 @@ interface CouponPickerProps {
   selectedCouponId: string | null;
   onSelect: (coupon: CheckoutPickerCoupon | null) => void;
   coupons: CheckoutPickerCoupon[];
+  unusableCoupons?: CheckoutPickerCoupon[];
   loading: boolean;
   embedded?: boolean;
 }
@@ -39,6 +40,7 @@ function useCouponHelpers(totalAmount: number, shippingFee: number) {
 
 function CouponListBody(props: {
   coupons: CheckoutPickerCoupon[];
+  unusableCoupons: CheckoutPickerCoupon[];
   selectedCouponId: string | null;
   selected: CheckoutPickerCoupon | null;
   totalAmount: number;
@@ -49,7 +51,8 @@ function CouponListBody(props: {
   getAmountParts: (c: CheckoutPickerCoupon) => string;
   getMinSpendText: (c: CheckoutPickerCoupon) => string;
 }) {
-  const { coupons, selectedCouponId, selected, totalAmount, onSelect, onClose, getDiscountAmount, isUsable, getAmountParts, getMinSpendText } = props;
+  const { coupons, unusableCoupons, selectedCouponId, selected, totalAmount, onSelect, onClose, getDiscountAmount, isUsable, getAmountParts, getMinSpendText } = props;
+  const [showUnusable, setShowUnusable] = useState(false);
   return (
     <div className="space-y-2">
       <UnifiedButton
@@ -102,19 +105,47 @@ function CouponListBody(props: {
         );
       })}
 
+      {unusableCoupons.length > 0 ? (
+        <div className="pt-1">
+          <UnifiedButton
+            type="button"
+            onClick={() => setShowUnusable((value) => !value)}
+            className="flex w-full items-center justify-between rounded-xl border border-dashed border-[var(--theme-border)] px-4 py-3 text-left text-xs font-medium text-[var(--theme-text-muted-on-surface)]"
+          >
+            <span>{unusableCoupons.length} 张暂不可用优惠券</span>
+            <ChevronRight size={14} className={`transition-transform ${showUnusable ? "rotate-90" : ""}`} />
+          </UnifiedButton>
+          {showUnusable ? (
+            <div className="mt-2 space-y-2">
+              {unusableCoupons.map((coupon) => (
+                <div key={coupon.id} className="rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-text-muted)_5%,var(--theme-surface))] px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[var(--theme-text-on-surface)]">{coupon.title}</p>
+                      <p className="mt-1 text-xs text-[var(--theme-text-muted-on-surface)]">{coupon.scopeText || "当前订单不可用"}</p>
+                    </div>
+                    <span className="shrink-0 text-xs font-semibold text-[var(--theme-danger)]">{coupon.reason || "不可用"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       {selected ? <p className="pt-1 text-center text-xs text-theme-price">已为您节省 RM {getDiscountAmount(selected)}</p> : null}
     </div>
   );
 }
 
-export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCouponId, onSelect, coupons, loading, embedded = false }: CouponPickerProps) {
+export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCouponId, onSelect, coupons, unusableCoupons = [], loading, embedded = false }: CouponPickerProps) {
   const [open, setOpen] = useState(false);
   const isMobileSheet = usePreferBottomSheet("standard");
   const selected = coupons.find((c) => c.id === selectedCouponId) ?? null;
   const { getDiscountAmount, isUsable, getAmountParts, getMinSpendText } = useCouponHelpers(totalAmount, shippingFee);
   const usableCount = coupons.filter(isUsable).length;
   const close = () => setOpen(false);
-  const listProps = { coupons, selectedCouponId, selected, totalAmount, onSelect, onClose: close, getDiscountAmount, isUsable, getAmountParts, getMinSpendText };
+  const listProps = { coupons, unusableCoupons, selectedCouponId, selected, totalAmount, onSelect, onClose: close, getDiscountAmount, isUsable, getAmountParts, getMinSpendText };
   const statusLabel = loading ? "加载中..." : selected ? `-RM ${getDiscountAmount(selected)}` : usableCount > 0 ? `${usableCount} 张可用` : "暂无可用";
 
   return (

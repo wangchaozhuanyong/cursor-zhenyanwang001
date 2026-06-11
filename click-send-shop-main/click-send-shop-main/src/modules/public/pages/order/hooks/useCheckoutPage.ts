@@ -68,6 +68,7 @@ export function useCheckoutPage() {
     selectedCoupon,
     setSelectedCoupon,
     pickerCoupons,
+    pickerUnusableCoupons,
     pickerCouponsLoading,
     clientCouponDiscount,
   } = useCheckoutCouponSelection({
@@ -271,6 +272,7 @@ export function useCheckoutPage() {
     shippingQuoteError: shipping.shippingQuoteError,
     rawTotal,
     pickerCoupons,
+    pickerUnusableCoupons,
     pickerCouponsLoading,
     shippingRulesLoading: shipping.shippingRulesLoading,
     shippingRulesError: shipping.shippingRulesError,

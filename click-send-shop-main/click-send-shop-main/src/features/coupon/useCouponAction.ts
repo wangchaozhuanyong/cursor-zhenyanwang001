@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { ensureStoreSession } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCouponStore } from "@/stores/useCouponStore";
+import { invalidateCouponCenterStoreCache } from "@/stores/useCouponCenterStore";
+import { invalidateMyCouponsStoreCache } from "@/stores/useMyCouponsStore";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import type { CouponClaimStatus } from "@/types/coupon";
 
@@ -110,6 +112,8 @@ export function useCouponAction(defaultFrom = "/coupons") {
     }
     try {
       const claimed = await claimCoupon(coupon.code || coupon.id, getIssueActivityId(coupon));
+      invalidateCouponCenterStoreCache();
+      invalidateMyCouponsStoreCache();
       toast.success(options.successMessage || "领取成功", toastPresetQuickSuccess);
       return claimed;
     } catch (error) {

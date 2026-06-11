@@ -148,6 +148,7 @@ export default function Checkout() {
               selectedCoupon={checkout.selectedCoupon}
               onSelect={checkout.setSelectedCoupon}
               coupons={checkout.pickerCoupons}
+              unusableCoupons={checkout.pickerUnusableCoupons}
               loading={checkout.pickerCouponsLoading}
             />
             <CheckoutLoyaltySection

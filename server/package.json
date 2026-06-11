@@ -29,6 +29,8 @@
     "check:migrations": "node scripts/check-migration-prefix-conflicts.js",
     "content:audit": "node scripts/audit-content-health.js",
     "content:audit:strict": "node scripts/audit-content-health.js --strict",
+    "audit:coupons": "node scripts/auditCouponClosedLoop.js",
+    "repair:coupons": "node scripts/auditCouponClosedLoop.js --repair",
     "verify-schema": "node scripts/verify-critical-schema.js",
     "backup:full": "node scripts/backup/backup-full.js",
     "backup:binlog": "node scripts/backup/backup-binlog-sync.js",

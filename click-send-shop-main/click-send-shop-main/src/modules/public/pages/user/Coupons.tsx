@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Ticket, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { motion, AnimatePresence } from "framer-motion";
-import { useCouponStore } from "@/stores/useCouponStore";
+import { useCouponCenterStore } from "@/stores/useCouponCenterStore";
+import { useMyCouponsStore } from "@/stores/useMyCouponsStore";
 import { useCartStore } from "@/stores/useCartStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import EmptyState from "@/components/EmptyState";
@@ -46,6 +47,8 @@ interface DisplayCoupon {
   claim_reason?: string;
   requires_member?: boolean;
   requires_login?: boolean;
+  source_campaign_id?: string;
+  audience_type?: string;
 }
 
 function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
@@ -71,6 +74,8 @@ function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
     invalidReason: uc.invalid_reason,
     issue_activity_id: uc.issue_activity_id || uc.coupon?.issue_activity_id,
     campaign_id: uc.campaign_id || uc.coupon?.campaign_id || uc.coupon?.source_campaign_id,
+    source_campaign_id: uc.coupon?.source_campaign_id,
+    audience_type: uc.audience_type || uc.coupon?.audience_type,
     claimable: uc.claimable ?? uc.coupon?.claimable,
     claim_status: uc.claim_status || uc.coupon?.claim_status,
     claim_reason: uc.claim_reason || uc.coupon?.claim_reason,
@@ -110,7 +115,7 @@ const COUPON_ACTION_LABELS: Record<DisplayStatus, string> = {
 };
 
 function filterByTab(coupons: DisplayCoupon[], tab: Tab): DisplayCoupon[] {
-  const owned = coupons.filter((c) => c.status !== "available");
+  const owned = coupons;
   switch (tab) {
     case "all":
       return owned;
@@ -133,7 +138,19 @@ export default function Coupons() {
   const navigate = useNavigate();
   const location = useLocation() as { state?: { pageView?: PageView } | null };
   const goBack = useGoBack();
-  const { coupons: rawCoupons, loading, error, loadCoupons } = useCouponStore();
+  const {
+    claimableCoupons,
+    myUsableCount,
+    loading: centerLoading,
+    error: centerError,
+    loadCenter,
+  } = useCouponCenterStore();
+  const {
+    coupons: myCoupons,
+    loading: myLoading,
+    error: myError,
+    loadCoupons: loadMyCoupons,
+  } = useMyCouponsStore();
   const { claim: claimCouponAction, getActionState } = useCouponAction("/coupons");
   const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const loadCart = useCartStore((s) => s.loadCart);
@@ -145,8 +162,13 @@ export default function Coupons() {
   const canViewOwnedCoupons = isAuthenticated;
 
   useEffect(() => {
-    loadCoupons();
-  }, [loadCoupons]);
+    void loadCenter();
+  }, [loadCenter]);
+
+  useEffect(() => {
+    if (!canViewOwnedCoupons || pageView !== "mine") return;
+    void loadMyCoupons(tab === "mine" ? "available" : tab);
+  }, [canViewOwnedCoupons, loadMyCoupons, pageView, tab]);
 
   useEffect(() => {
     if (canViewOwnedCoupons) void loadCart();
@@ -164,8 +186,11 @@ export default function Coupons() {
     }
   }, [location.state?.pageView]);
 
+  const rawCoupons = pageView === "claimCenter" ? claimableCoupons : myCoupons;
+  const loading = pageView === "claimCenter" ? centerLoading : myLoading;
+  const error = pageView === "claimCenter" ? centerError : myError;
   const coupons = rawCoupons.map((uc) => toDisplayCoupon(uc));
-  const available = coupons.filter((c) => c.status === "available");
+  const available = claimableCoupons.map((uc) => toDisplayCoupon(uc));
   const isSessionExpired = error === STORE_SESSION_EXPIRED_MESSAGE;
 
   const handleRetry = useCallback(() => {
@@ -173,9 +198,12 @@ export default function Coupons() {
       navigate("/login", { state: { from: "/coupons", fromState: { pageView: pageView === "claimCenter" ? "claimCenter" : "mine" } }, replace: true });
       return;
     }
-    void loadCoupons();
-  }, [isSessionExpired, loadCoupons, navigate, pageView]);
-  const usableCount = coupons.filter((c) => c.status === "claimed").length;
+    if (pageView === "claimCenter") void loadCenter({ force: true });
+    else void loadMyCoupons(tab === "mine" ? "available" : tab, { force: true });
+  }, [isSessionExpired, loadCenter, loadMyCoupons, navigate, pageView, tab]);
+  const usableCount = pageView === "mine" && tab === "mine"
+    ? coupons.filter((c) => c.status === "claimed").length
+    : myUsableCount;
   const list = pageView === "claimCenter" ? available : filterByTab(coupons, tab);
 
   const handleClaim = async (coupon: DisplayCoupon) => {
@@ -190,6 +218,8 @@ export default function Coupons() {
         successMessage: "领取成功！已添加到我的优惠券",
       });
       if (claimed) {
+        void loadCenter({ force: true });
+        void loadMyCoupons("available", { force: true });
         setPageView("mine");
         setTab("mine");
       }

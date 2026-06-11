@@ -8,15 +8,15 @@ const TABS = [
   {
     key: "vouchers",
     path: "/admin/marketing/coupons",
-    zh: "礼券管理",
-    en: "Voucher management",
+    zh: "优惠券模板",
+    en: "Coupon templates",
     icon: Ticket,
   },
   {
     key: "records",
     path: "/admin/marketing/coupons/records",
-    zh: "领取记录",
-    en: "Claim records",
+    zh: "用户券记录",
+    en: "User coupon records",
     icon: ClipboardList,
   },
 ] as const;

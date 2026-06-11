@@ -6,6 +6,7 @@ interface CheckoutCouponSectionProps {
   shippingFee: number;
   selectedCoupon: CheckoutPickerCoupon | null;
   coupons: CheckoutPickerCoupon[];
+  unusableCoupons?: CheckoutPickerCoupon[];
   loading: boolean;
   onSelect: (coupon: CheckoutPickerCoupon | null) => void;
 }
@@ -18,6 +19,7 @@ export function CheckoutCouponSection({
   shippingFee,
   selectedCoupon,
   coupons,
+  unusableCoupons = [],
   loading,
   onSelect,
 }: CheckoutCouponSectionProps) {
@@ -37,6 +39,7 @@ export function CheckoutCouponSection({
         selectedCouponId={selectedCoupon?.id ?? null}
         onSelect={onSelect}
         coupons={coupons}
+        unusableCoupons={unusableCoupons}
         loading={loading}
       />
     </div>

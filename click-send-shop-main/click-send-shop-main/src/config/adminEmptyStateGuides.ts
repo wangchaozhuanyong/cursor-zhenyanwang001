@@ -187,7 +187,7 @@ export const ADMIN_EMPTY_GUIDES = {
     icon: ClipboardList,
     title: "暂无领券记录",
     description: "客户领取优惠券或使用后会在此展示。",
-    primaryLabel: "礼券管理",
+    primaryLabel: "优惠券模板",
     primaryPath: "/admin/marketing/coupons",
   },
   couponRecordsFiltered: {

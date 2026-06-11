@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import * as couponService from "@/services/couponService";
 import * as orderService from "@/services/orderService";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 import type { SubmitOrderParams } from "@/types/order";
@@ -43,23 +42,31 @@ function mapServerCoupon(row: Record<string, unknown>, idx: number, usable: bool
 
 export function useCheckoutPickerCoupons(orderAmount: number, checkoutParams?: SubmitOrderParams | null) {
   const [coupons, setCoupons] = useState<CheckoutPickerCoupon[]>([]);
+  const [unusableCoupons, setUnusableCoupons] = useState<CheckoutPickerCoupon[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    if (!checkoutParams) {
+      setCoupons([]);
+      setUnusableCoupons([]);
+      setLoading(orderAmount > 0);
+      return () => {
+        cancelled = true;
+      };
+    }
     setLoading(true);
-    const request = checkoutParams
-      ? orderService.checkoutCoupons(checkoutParams).then((res) => [
-        ...(res.usable || []).map((row, idx) => mapServerCoupon(row as unknown as Record<string, unknown>, idx, true)),
-        ...(res.unusable || []).map((row, idx) => mapServerCoupon(row as unknown as Record<string, unknown>, idx + (res.usable?.length || 0), false)),
-      ])
-      : couponService.fetchCheckoutPickerCoupons(orderAmount);
-    request
-      .then((list) => {
-        if (!cancelled) setCoupons(list);
+    orderService.checkoutCoupons(checkoutParams)
+      .then((res) => {
+        if (cancelled) return;
+        setCoupons((res.usable || []).map((row, idx) => mapServerCoupon(row as unknown as Record<string, unknown>, idx, true)));
+        setUnusableCoupons((res.unusable || []).map((row, idx) => mapServerCoupon(row as unknown as Record<string, unknown>, idx, false)));
       })
       .catch(() => {
-        if (!cancelled) setCoupons([]);
+        if (!cancelled) {
+          setCoupons([]);
+          setUnusableCoupons([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -69,5 +76,5 @@ export function useCheckoutPickerCoupons(orderAmount: number, checkoutParams?: S
     };
   }, [orderAmount, checkoutParams]);
 
-  return { coupons, loading };
+  return { coupons, unusableCoupons, loading };
 }

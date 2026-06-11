@@ -76,6 +76,9 @@ export interface UserCoupon extends CouponClaimability {
   valid_until?: string;
   issue_channel?: string;
   issue_activity_id?: string;
+  campaign_id?: string;
+  source_campaign_id?: string;
+  audience_type?: string;
   order_id?: string;
   order_no?: string;
   discount_amount?: number;

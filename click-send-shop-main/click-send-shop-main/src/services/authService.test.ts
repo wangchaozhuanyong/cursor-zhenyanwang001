@@ -50,6 +50,32 @@ describe("restoreSessionFromCookie", () => {
     expect(calls.some((url) => url.endsWith("/user/profile"))).toBe(true);
   });
 
+  test("restores cookie session without local login hint when explicitly allowed", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.endsWith("/auth/session")) {
+        return jsonResponse({ code: 0, data: { authenticated: true } });
+      }
+      if (url.endsWith("/auth/refresh/session")) {
+        return jsonResponse({ code: 0, data: { authenticated: true } });
+      }
+      if (url.endsWith("/auth/refresh")) {
+        return jsonResponse({ code: 0, data: {} });
+      }
+      if (url.endsWith("/user/profile")) {
+        return jsonResponse({ code: 0, data: profilePayload });
+      }
+      return jsonResponse({}, 404);
+    }));
+
+    await expect(restoreSessionFromCookie({ allowWithoutLoginHint: true })).resolves.toBe(true);
+    expect(localStorage.getItem("user_authenticated")).toBe("1");
+    expect(calls.filter((url) => url.endsWith("/auth/refresh"))).toHaveLength(1);
+    expect(calls.filter((url) => url.endsWith("/user/profile"))).toHaveLength(1);
+  });
+
   test("reuses the same inflight session restore request", async () => {
     localStorage.setItem("user_authenticated", "1");
     let resolveRefresh!: (value: Response) => void;

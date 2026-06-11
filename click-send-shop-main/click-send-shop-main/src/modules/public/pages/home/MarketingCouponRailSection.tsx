@@ -238,7 +238,7 @@ export default function MarketingCouponRailSection({
       navigate("/coupons");
       return;
     }
-    const ok = await ensureStoreSession();
+    const ok = await ensureStoreSession({ allowCookieProbe: true });
     if (!ok) {
       navigate("/login", { state: { from: "/" } });
       return;

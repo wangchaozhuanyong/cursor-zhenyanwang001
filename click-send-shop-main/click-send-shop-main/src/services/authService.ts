@@ -221,6 +221,7 @@ async function restoreSessionFromCookieOnce(): Promise<boolean> {
 
     if (refreshSessionAvailable === false) {
       if (serverSessionAvailable && await canUseExistingSession()) {
+        setAccessToken("");
         return true;
       }
       clearTokens();
@@ -233,6 +234,7 @@ async function restoreSessionFromCookieOnce(): Promise<boolean> {
         return true;
       }
       if (serverSessionAvailable && await canUseExistingSession()) {
+        setAccessToken("");
         return true;
       }
       clearTokens();
@@ -249,14 +251,15 @@ async function restoreSessionFromCookieOnce(): Promise<boolean> {
     }
 
     await getProfile({ sessionProbe: true });
+    if (!isLoggedIn()) setAccessToken("");
     return true;
   } catch {
-    return true;
+    return isLoggedIn();
   }
 }
 
-export async function restoreSessionFromCookie(): Promise<boolean> {
-  if (!isLoggedIn()) return false;
+export async function restoreSessionFromCookie(options?: { allowWithoutLoginHint?: boolean }): Promise<boolean> {
+  if (!isLoggedIn() && !options?.allowWithoutLoginHint) return false;
   if (restoreSessionInflight) return restoreSessionInflight;
 
   restoreSessionInflight = restoreSessionFromCookieOnce().finally(() => {

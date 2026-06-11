@@ -51,11 +51,16 @@ type RiskSignalRow = {
 };
 
 type IpLocation = {
+  ip?: string | null;
+  ip_type?: string | null;
   label?: string | null;
   country?: string | null;
   country_code?: string | null;
   region?: string | null;
   city?: string | null;
+  timezone?: string | null;
+  city_missing_reason?: string | null;
+  source?: string | null;
 };
 
 export function humanizeCode(value?: string | null): string {
@@ -111,13 +116,19 @@ export function formatIpLocationLabel(location?: IpLocation | null): string {
   return label || "归属地未知";
 }
 
-export function formatIpAddressLabel(ip?: string | null): string {
+export function normalizeIpAddress(ip?: string | null): string {
   let raw = String(ip || "").trim();
   if (!raw) return "-";
   if (raw.startsWith("[") && raw.endsWith("]")) raw = raw.slice(1, -1);
   const zoneIndex = raw.indexOf("%");
   if (zoneIndex > -1) raw = raw.slice(0, zoneIndex);
   if (raw.toLowerCase().startsWith("::ffff:")) raw = raw.slice(7);
+  return raw || "-";
+}
+
+export function formatIpAddressLabel(ip?: string | null): string {
+  const raw = normalizeIpAddress(ip);
+  if (raw === "-") return raw;
 
   if (raw === "0:0:0:0:0:0:0:1") return "::1";
   if (!raw.includes(":") || raw.length <= 28) return raw;
@@ -125,6 +136,21 @@ export function formatIpAddressLabel(ip?: string | null): string {
   const parts = raw.split(":").filter(Boolean);
   if (parts.length < 5) return raw;
   return `${parts.slice(0, 2).join(":")}:...:${parts.slice(-2).join(":")}`;
+}
+
+export function formatIpTypeLabel(ip?: string | null, location?: IpLocation | null): string {
+  const fromLocation = String(location?.ip_type || "").trim();
+  if (fromLocation) return fromLocation;
+  const raw = normalizeIpAddress(ip);
+  if (raw === "-") return "未知";
+  return raw.includes(":") ? "IPv6" : "IPv4";
+}
+
+export function formatIpLocationCityLine(location?: IpLocation | null): string {
+  const city = String(location?.city || "").trim();
+  if (city) return city;
+  const reason = String(location?.city_missing_reason || "").trim();
+  return reason ? `未知（${reason}）` : "未知";
 }
 
 export function formatRiskSourceLabel(source?: string | null): string {

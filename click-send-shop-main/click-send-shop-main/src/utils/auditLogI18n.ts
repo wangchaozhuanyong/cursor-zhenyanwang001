@@ -41,11 +41,21 @@ const OBJECT_TYPE_ZH: Record<string, string> = {
   payment_event: "支付事件",
   payment_reconciliation: "支付对账",
   marketing_activity: "营销活动",
+  coupon_campaign: "优惠券活动",
   member_level: "会员等级",
   user_tag: "用户标签",
+  user_feedback: "用户反馈",
   upload: "上传",
   notification_batch: "通知批次",
   inventory: "库存",
+  inventory_pack_rule: "组装拆包规则",
+  inventory_conversion_order: "库存转换单",
+  inventory_daily_snapshot: "库存每日快照",
+  inventory_replenishment_profile: "智能补货配置",
+  inventory_replenishment_run: "智能补货任务",
+  loyalty_points_settings: "积分设置",
+  loyalty_points_product_rule: "商品积分规则",
+  operating_expense: "经营支出",
   data_cleanup: "数据清理",
   admin_api: "管理端 API",
   frontend_asset: "前端资源",
@@ -109,6 +119,9 @@ const ACTION_ZH: Record<string, string> = {
   "coupon.create": "创建优惠券",
   "coupon.update": "更新优惠券",
   "coupon.delete": "删除优惠券",
+  "coupon_campaign.create": "创建优惠券活动",
+  "coupon_campaign.update": "更新优惠券活动",
+  "coupon_campaign.delete": "删除优惠券活动",
   "banner.create": "创建 Banner",
   "banner.update": "更新 Banner",
   "banner.delete": "删除 Banner",
@@ -200,6 +213,20 @@ const ACTION_ZH: Record<string, string> = {
   "points.product_rule.create": "创建商品积分规则",
   "points.product_rule.update": "更新商品积分规则",
   "points.product_rule.delete": "删除商品积分规则",
+  "points.expire.run": "执行积分过期扣减",
+  "feedback.update": "处理用户反馈",
+  "operating_expense.create": "创建经营支出",
+  "operating_expense.update": "更新经营支出",
+  "operating_expense.delete": "删除经营支出",
+  "inventory.smart_replenishment.preview": "生成智能补货预览",
+  "inventory.smart_replenishment.apply": "应用智能补货建议",
+  "inventory.smart_replenishment.create_purchase_order": "智能补货生成采购单",
+  "inventory.smart_replenishment.execute_unpack": "智能补货执行拆包",
+  "inventory.replenishment_profile.batch_upsert": "保存智能补货配置",
+  "inventory.daily_snapshot.generate": "生成库存每日快照",
+  "inventory.warning_batch_update": "批量更新库存预警",
+  "inventory.conversion.unpack": "手动拆包",
+  "inventory.conversion.assemble": "手动组装",
   "inventory.pack_rule.create": "创建组装拆包规则",
   "inventory.pack_rule.update": "更新组装拆包规则",
   "inventory.pack_rule.delete": "删除组装拆包规则",
@@ -230,6 +257,7 @@ const MODULE_ZH: Record<string, string> = {
   review: "评价",
   notification: "通知",
   content: "内容",
+  feedback: "反馈",
   home_ops: "首页运营",
   recycle_bin: "回收站",
   member_level: "会员等级",
@@ -363,6 +391,18 @@ const TOKEN_ZH: Record<string, string> = {
   test: "测试",
   send: "发送",
   api: "API",
+  smart: "智能",
+  replenishment: "补货",
+  profile: "配置",
+  purchase: "采购",
+  order: "订单",
+  daily: "每日",
+  snapshot: "快照",
+  conversion: "转换",
+  assemble: "组装",
+  unpack: "拆包",
+  operating: "经营",
+  expense: "支出",
 };
 
 const FIELD_ZH: Record<string, string> = {
@@ -491,6 +531,12 @@ const SUMMARY_EXACT_ZH: Record<string, string> = {
   "admin MFA reverify failed": "管理员 MFA 重新验证失败",
   "admin MFA reverify success": "管理员 MFA 重新验证成功",
   "restore job approved after MFA": "MFA 验证后批准备份恢复",
+  "manual full backup requested": "手动创建全量备份",
+  "pre-cleanup full backup requested": "数据清理前创建全量备份",
+  "manual config backup requested": "手动创建配置备份",
+  "manual uploads backup requested": "手动创建上传文件备份",
+  "production database switch requested": "申请切换生产数据库备份",
+  "admin passkey registered": "管理员注册通行密钥",
 };
 
 const ERROR_MSG_ZH: Record<string, string> = {
@@ -593,6 +639,30 @@ function translateStatusToken(token: string) {
   return token;
 }
 
+function isAuditIdLike(value: string) {
+  const s = String(value || "").trim();
+  if (!s) return false;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)) return true;
+  if (/^[0-9a-f]{16,}$/i.test(s)) return true;
+  if (/^[a-z0-9_-]{20,}$/i.test(s) && /\d/i.test(s)) return true;
+  return false;
+}
+
+function zhAuditIdLabel(id: string, label = "对象") {
+  const short = shortAuditId(id);
+  return short ? `${label}尾号 ${short}` : label;
+}
+
+function compactAuditIdentifiers(text: string) {
+  let out = text;
+  out = out.replace(
+    /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+    (m) => zhAuditIdLabel(m),
+  );
+  out = out.replace(/\b[0-9a-f]{24,64}\b/gi, (m) => zhAuditIdLabel(m));
+  return out;
+}
+
 /** 将摘要中的英文状态码替换为中文（如 pending->paid） */
 export function zhAuditSummary(summary?: string) {
   const raw = String(summary || "").trim();
@@ -668,6 +738,61 @@ export function zhAuditSummary(summary?: string) {
     if (match) return format(match);
   }
 
+  const businessPatterns: Array<{ test: RegExp; format: (m: RegExpMatchArray) => string }> = [
+    {
+      test: /^(创建|更新|删除)(分类|商品|优惠券活动|优惠券|会员等级|用户标签|经营支出|商品积分规则|组装拆包规则)\s+(.+)$/i,
+      format: (m) => {
+        const target = m[3].trim();
+        return isAuditIdLike(target)
+          ? `${m[1]}${m[2]}（${zhAuditIdLabel(target)}）`
+          : `${m[1]}${m[2]} ${compactAuditIdentifiers(target)}`;
+      },
+    },
+    {
+      test: /^更新SKU库存预警阈值\s+(.+)$/i,
+      format: (m) => `更新 SKU 库存预警阈值（${zhAuditIdLabel(m[1])}）`,
+    },
+    {
+      test: /^批量更新 SKU 预警阈值\s+(\d+)\s+个$/i,
+      format: (m) => `批量更新 SKU 预警阈值 ${m[1]} 个`,
+    },
+    {
+      test: /^用户上传\s+(.+)$/i,
+      format: (m) => {
+        const target = m[1].trim();
+        return isAuditIdLike(target) ? `用户上传文件（${zhAuditIdLabel(target)}）` : `用户上传文件 ${compactAuditIdentifiers(target)}`;
+      },
+    },
+    {
+      test: /^上传站点品牌图片\s+(.+)$/i,
+      format: (m) => `上传站点品牌图片 ${compactAuditIdentifiers(m[1])}`,
+    },
+    {
+      test: /^Save replenishment profiles\s+(\d+)$/i,
+      format: (m) => `保存智能补货配置 ${m[1]} 项`,
+    },
+    {
+      test: /^Generate inventory daily snapshot\s+(.+)$/i,
+      format: (m) => `生成库存每日快照 ${m[1]}`,
+    },
+    {
+      test: /^restore job requested:\s*(.+)$/i,
+      format: (m) => `申请备份恢复：${m[1] === "database" ? "数据库" : m[1] === "uploads" ? "上传文件" : m[1]}`,
+    },
+    {
+      test: /^admin MFA satisfied by\s+(.+)$/i,
+      format: (m) => `管理员 MFA 验证通过（方式：${m[1] === "none" ? "未记录" : m[1]}）`,
+    },
+    {
+      test: /^admin MFA step-up success actionClass=(.+)$/i,
+      format: (m) => `管理员敏感操作二次验证通过（${m[1]}）`,
+    },
+  ];
+  for (const { test, format } of businessPatterns) {
+    const match = raw.match(test);
+    if (match) return format(match);
+  }
+
   let out = raw;
   // 订单状态 pending -> paid 或 pending->paid
   out = out.replace(
@@ -680,7 +805,7 @@ export function zhAuditSummary(summary?: string) {
     return zh || m;
   });
 
-  return out;
+  return compactAuditIdentifiers(out);
 }
 
 export function zhAuditErrorMessage(msg?: string) {
@@ -984,6 +1109,20 @@ function getAuditZhGlossary(): string[] {
     "Windows 电脑",
     "其他浏览器",
     "用户提交订单",
+    "用户上传文件",
+    "对象尾号",
+    "创建优惠券活动",
+    "更新优惠券活动",
+    "删除优惠券活动",
+    "应用智能补货建议",
+    "保存智能补货配置",
+    "生成智能补货预览",
+    "生成库存每日快照",
+    "执行积分过期扣减",
+    "处理用户反馈",
+    "创建经营支出",
+    "更新经营支出",
+    "删除经营支出",
     "列表",
     "项",
     "个字段",

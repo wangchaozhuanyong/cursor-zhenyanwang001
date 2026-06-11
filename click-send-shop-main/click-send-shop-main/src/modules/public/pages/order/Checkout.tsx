@@ -48,6 +48,20 @@ export default function Checkout() {
     checkout.setSelectedAddress(addr);
   };
 
+  const itemCount = checkout.items.reduce((sum, item) => sum + item.qty, 0);
+  const missingContact = !checkout.name.trim() || !checkout.phone.trim() || !checkout.address.trim();
+  const shippingBlocked =
+    checkout.shippingRulesLoading ||
+    checkout.shippingQuoteLoading ||
+    !checkout.hasShippingTemplate ||
+    Boolean(checkout.shippingRulesError || checkout.shippingQuoteError);
+  const submitDisabled = checkout.submitting || missingContact || shippingBlocked;
+  const submitDisabledHint = missingContact
+    ? "请先填写收货信息"
+    : shippingBlocked
+      ? "运费规则同步中"
+      : undefined;
+
   if (checkout.isEmpty) {
     return null;
   }
@@ -81,7 +95,7 @@ export default function Checkout() {
       onBack={checkout.goBack}
       backFallback="/cart"
       desktopBackLabel="返回购物车"
-      className="store-conversion-page store-checkout-page store-bottom-action-space md:pb-0"
+      className="store-conversion-page store-checkout-page store-bottom-action-space bg-[color-mix(in_srgb,var(--theme-bg)_82%,#f7f1e8)] md:pb-0"
       contentClassName="xl:max-w-screen-xl"
       rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
     >
@@ -89,7 +103,15 @@ export default function Checkout() {
         <DesktopPurchaseTwoColumn
           contentClassName="space-y-4"
           aside={
-            <DesktopPurchaseCard eyebrow="确认订单" title="订单摘要" className="store-checkout-card store-checkout-summary">
+            <DesktopPurchaseCard
+              title="订单摘要"
+              className="store-checkout-card store-checkout-summary rounded-[22px] border-[color-mix(in_srgb,var(--theme-border)_75%,transparent)] shadow-[0_18px_46px_rgba(65,45,28,0.12)]"
+              bodyClassName="space-y-4"
+            >
+              <div className="flex items-center justify-between border-b border-[var(--theme-border)] pb-3 text-sm">
+                <span className="text-muted-foreground">商品数量</span>
+                <span className="font-bold text-foreground">{itemCount} 件</span>
+              </div>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}
@@ -105,12 +127,12 @@ export default function Checkout() {
               <LoadingButton
                 state={checkout.submitting ? "loading" : "normal"}
                 onClick={checkout.handleSubmit}
-                disabled={checkout.submitting}
+                disabled={submitDisabled}
                 variant="solid"
-                className="mt-5 w-full rounded-full py-3.5 text-sm font-bold btn-theme-gradient theme-shadow !min-h-0"
+                className="mt-1 min-h-12 w-full rounded-full py-3 text-sm font-bold btn-theme-gradient theme-shadow disabled:opacity-60"
                 loadingText={submitCtaLabel(checkout.paymentMethod, true)}
               >
-                {submitCtaLabel(checkout.paymentMethod, false)}
+                {submitDisabled && submitDisabledHint ? submitDisabledHint : submitCtaLabel(checkout.paymentMethod, false)}
               </LoadingButton>
             </DesktopPurchaseCard>
           }
@@ -120,27 +142,14 @@ export default function Checkout() {
               name={checkout.name}
               phone={checkout.phone}
               address={checkout.address}
-              note={checkout.note}
               onNameChange={checkout.setName}
               onPhoneChange={checkout.setPhone}
               onAddressChange={checkout.setAddress}
-              onNoteChange={checkout.setNote}
               onSelectedAddressChange={checkout.setSelectedAddress}
               onChooseAddress={handleChooseAddress}
             />
 
-            <CheckoutPaymentMethod
-              paymentMethod={checkout.paymentMethod}
-              onPaymentMethodChange={checkout.setPaymentMethod}
-              paymentTimeoutHint={paymentTimeoutHint}
-              paymentConfigLoaded={checkout.paymentConfigLoaded}
-              paymentChannels={checkout.paymentChannels}
-              rewardBalance={checkout.rewardBalance}
-              selectedPaymentChannelCode={checkout.selectedPaymentChannelCode}
-              onPaymentChannelChange={checkout.setSelectedPaymentChannelCode}
-              showOnline={checkout.showOnline}
-              showCustomerService={checkout.showCustomerService}
-            />
+            <CheckoutItemsList items={checkout.items} />
 
             <CheckoutCouponSection
               rawTotal={checkout.rawTotal}
@@ -167,15 +176,29 @@ export default function Checkout() {
 
             <CheckoutShippingSection
               shippingName={checkout.selectedShippingName}
+              note={checkout.note}
               shippingRulesLoading={checkout.shippingRulesLoading}
               shippingQuoteLoading={checkout.shippingQuoteLoading}
               shippingRulesError={checkout.shippingRulesError}
               shippingQuoteError={checkout.shippingQuoteError}
+              onNoteChange={checkout.setNote}
             />
 
-            <CheckoutItemsList items={checkout.items} />
+            <CheckoutPaymentMethod
+              paymentMethod={checkout.paymentMethod}
+              onPaymentMethodChange={checkout.setPaymentMethod}
+              paymentTimeoutHint={paymentTimeoutHint}
+              paymentConfigLoaded={checkout.paymentConfigLoaded}
+              paymentChannels={checkout.paymentChannels}
+              rewardBalance={checkout.rewardBalance}
+              selectedPaymentChannelCode={checkout.selectedPaymentChannelCode}
+              onPaymentChannelChange={checkout.setSelectedPaymentChannelCode}
+              showOnline={checkout.showOnline}
+              showCustomerService={checkout.showCustomerService}
+            />
 
-            <div className="store-checkout-card store-checkout-summary theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 md:hidden theme-shadow">
+            <div className="store-checkout-card store-checkout-summary rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:hidden">
+              <h3 className="mb-3 text-[15px] font-bold text-foreground">金额明细</h3>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}
@@ -196,6 +219,8 @@ export default function Checkout() {
         finalTotal={checkout.finalTotal}
         paymentMethod={checkout.paymentMethod}
         submitting={checkout.submitting}
+        disabled={submitDisabled}
+        disabledHint={submitDisabledHint}
         onSubmit={checkout.handleSubmit}
       />
 

@@ -1,5 +1,6 @@
 const auditLogRepo = require('../modules/admin/repository/auditLog.repository');
 const { generateId } = require('./helpers');
+const { getClientIp } = require('./clientIp');
 
 const MAX_JSON_CHARS = 8000;
 const MAX_OBJECT_ID_CHARS = 191;
@@ -48,8 +49,7 @@ function getReqContext(req) {
     return { ip: '', userAgent: '', path: '', method: '' };
   }
   const headers = req.headers && typeof req.headers === 'object' ? req.headers : {};
-  const xf = headers['x-forwarded-for'];
-  const ipRaw = req.ip || (typeof xf === 'string' ? xf.split(',')[0].trim() : '') || req.socket?.remoteAddress || '';
+  const ipRaw = getClientIp(req);
   const ua = String(headers['user-agent'] || '').slice(0, 500);
   return {
     ip: String(ipRaw).slice(0, 45),

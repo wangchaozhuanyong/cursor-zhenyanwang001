@@ -46,6 +46,7 @@ const logCtrl = require('../controller/adminLog.controller');
 const rbacCtrl = require('../controller/adminRbac.controller');
 const shippingCtrl = require('../controller/adminShipping.controller');
 const reportCtrl = require('../controller/adminReport.controller');
+const searchCtrl = require('../controller/adminSearch.controller');
 const settingsCtrl = require('../controller/adminSettings.controller');
 const themeCtrl = require('../controller/adminTheme.controller');
 const exportCtrl = require('../controller/adminExport.controller');
@@ -707,6 +708,12 @@ router.get('/reports/coupons/analysis', adminAuth, couponFeature, requirePermiss
 router.get('/reports/inventory/analysis', adminAuth, inventoryFeature, requirePermission('report.view'), reportCtrl.getInventoryAnalysis);
 router.get('/reports/search/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getSearchAnalysis);
 router.get('/reports/traffic', adminAuth, requireSiteCapability('trafficAnalyticsEnabled', '流量分析功能已关闭'), requirePermission('report.view'), reportCtrl.getTrafficAnalysis);
+
+/* ---- Search Ops ---- */
+router.get('/search-terms', adminAuth, requirePermission('report.view'), searchCtrl.listTerms);
+router.post('/search-terms', adminAuth, requirePermission('settings.manage'), searchCtrl.createTerm);
+router.patch('/search-terms/:id', adminAuth, requirePermission('settings.manage'), searchCtrl.updateTerm);
+router.delete('/search-terms/:id', adminAuth, requirePermission('settings.manage'), searchCtrl.deleteTerm);
 
 // 兼容旧接口
 router.get('/reports/sales/export', adminAuth, requirePermission('report.export'), reportCtrl.exportByType);

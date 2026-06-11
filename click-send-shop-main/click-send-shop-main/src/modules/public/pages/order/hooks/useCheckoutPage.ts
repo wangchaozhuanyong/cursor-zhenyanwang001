@@ -270,6 +270,7 @@ export function useCheckoutPage() {
     orderPreview: preview.orderPreview,
     payingWallet: submission.payingWallet,
     selectedShippingName: shipping.selectedTemplate?.name || "平台默认运费模板",
+    hasShippingTemplate: Boolean(shipping.selectedTemplate),
     shippingQuoteLoading: shipping.shippingQuoteLoading,
     shippingQuoteError: shipping.shippingQuoteError,
     rawTotal,

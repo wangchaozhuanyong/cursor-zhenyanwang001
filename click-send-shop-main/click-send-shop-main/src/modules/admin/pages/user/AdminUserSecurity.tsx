@@ -35,7 +35,9 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import {
   formatDeviceLabel,
   formatIpAddressLabel,
+  formatIpLocationCityLine,
   formatIpLocationLabel,
+  formatIpTypeLabel,
   formatLoginMethodLabel,
   formatRiskLevelLabel,
   formatRiskSignalSummary,
@@ -43,6 +45,7 @@ import {
   formatRiskStatusLabel,
   formatUserSecurityEventDescription,
   formatUserSecurityEventTitle,
+  normalizeIpAddress,
 } from "./userSecurityDisplay";
 
 type TabKey = "ips" | "devices" | "login" | "events";
@@ -100,12 +103,14 @@ function IpCell({ ip, location }: { ip?: string | null; location?: RiskIp["ip_lo
   if (!ip) return <span className="text-muted-foreground">-</span>;
   const locationLabel = formatIpLocationLabel(location);
   const ipLabel = formatIpAddressLabel(ip);
+  const fullIp = normalizeIpAddress(location?.ip || ip);
   const display = `${ipLabel} · ${locationLabel}`;
   const detail = [
-    `IP：${ipLabel}`,
+    `IP 类型：${formatIpTypeLabel(fullIp, location)}`,
+    `完整 IP：${fullIp}`,
     `国家：${location?.country || location?.country_code || "未知"}`,
     `地区：${location?.region || "未知"}`,
-    `城市：${location?.city || "未知"}`,
+    `城市：${formatIpLocationCityLine(location)}`,
     location?.timezone ? `时区：${location.timezone}` : "",
     location?.source ? `来源：${location.source}` : "",
   ].filter(Boolean).join("\n");

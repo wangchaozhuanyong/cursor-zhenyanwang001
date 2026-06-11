@@ -3,6 +3,7 @@ const { BusinessError } = require('../../../errors/BusinessError');
 const { generateId, signToken } = require('../../../utils/helpers');
 const { randomBase32, verifyTotp, buildOtpAuthUrl } = require('../../../utils/totp');
 const { writeAuditLog } = require('../../../utils/auditLog');
+const { getClientIp } = require('../../../utils/clientIp');
 const repo = require('../repository/adminMfa.repository');
 const rbacService = require('./rbac.service');
 const {
@@ -76,11 +77,6 @@ function decryptSecret(value) {
 
 function hashValue(value) {
   return crypto.createHash('sha256').update(String(value || '')).digest('hex');
-}
-
-function getClientIp(req) {
-  const xf = req?.headers?.['x-forwarded-for'];
-  return String(req?.ip || (typeof xf === 'string' ? xf.split(',')[0].trim() : '') || req?.socket?.remoteAddress || '');
 }
 
 function getIpRiskKey(req) {

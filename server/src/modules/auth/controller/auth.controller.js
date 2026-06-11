@@ -11,6 +11,7 @@ const {
   getRefreshTokenFromRequest,
   getAccessTokenFromRequest,
 } = require('../../../utils/authCookies');
+const { getClientIp } = require('../../../utils/clientIp');
 
 exports.register = asyncRoute(async (req, res) => {
   const result = await authApiService.register(req.body);
@@ -129,7 +130,7 @@ exports.wechatCallback = asyncRoute(async (req, res) => {
 
 exports.wechatBindPhone = asyncRoute(async (req, res) => {
   const result = await wechatService.bindPhone(req.body, {
-    ip: req.ip,
+    ip: getClientIp(req),
     userAgent: req.get('user-agent'),
   });
   setAuthCookies(req, res, result.data.token);
@@ -138,7 +139,7 @@ exports.wechatBindPhone = asyncRoute(async (req, res) => {
 
 exports.wechatOtpSend = asyncRoute(async (req, res) => {
   const result = await otpService.sendOtpForWechatBind(req.body, {
-    ip: req.ip,
+    ip: getClientIp(req),
     userAgent: req.get('user-agent'),
   });
   res.success(result.data, result.message);
@@ -152,7 +153,7 @@ exports.oauthExchange = asyncRoute(async (req, res) => {
 
 exports.otpSend = asyncRoute(async (req, res) => {
   const result = await otpService.sendOtp(req.body, {
-    ip: req.ip,
+    ip: getClientIp(req),
     userAgent: req.get('user-agent'),
   });
   res.success(result.data, result.message);
@@ -160,7 +161,7 @@ exports.otpSend = asyncRoute(async (req, res) => {
 
 exports.otpLogin = asyncRoute(async (req, res) => {
   const result = await otpService.loginWithOtp(req.body, {
-    ip: req.ip,
+    ip: getClientIp(req),
     userAgent: req.get('user-agent'),
   });
   setAuthCookies(req, res, result.data.token);

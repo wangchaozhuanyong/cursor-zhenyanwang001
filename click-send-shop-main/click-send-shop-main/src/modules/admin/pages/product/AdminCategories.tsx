@@ -9,10 +9,12 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Grid3X3,
   GripVertical,
   Image as ImageIcon,
   Pencil,
   Plus,
+  Sparkles,
   Trash2,
   Upload,
   X,
@@ -43,6 +45,8 @@ import {
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
+import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
+import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 
 type CategoryForm = {
   name: string;
@@ -64,6 +68,12 @@ type FlatCategory = Category & {
 };
 
 type CategoryDrawerMode = "create" | "edit";
+type SystemCategoryIconKey = "categorySystemAllIconUrl" | "categorySystemNewIconUrl";
+
+type SystemCategoryIconForm = {
+  categorySystemAllIconUrl: string;
+  categorySystemNewIconUrl: string;
+};
 
 const EMPTY_FORM: CategoryForm = {
   name: "",
@@ -79,6 +89,34 @@ const EMPTY_FORM: CategoryForm = {
   is_visible: true,
 };
 
+const EMPTY_SYSTEM_CATEGORY_ICON_FORM: SystemCategoryIconForm = {
+  categorySystemAllIconUrl: "",
+  categorySystemNewIconUrl: "",
+};
+
+const SYSTEM_CATEGORY_ENTRIES: Array<{
+  key: SystemCategoryIconKey;
+  title: string;
+  description: string;
+  fallbackIcon: ReactNode;
+  fallbackText: string;
+}> = [
+  {
+    key: "categorySystemAllIconUrl",
+    title: "全部",
+    description: "分类页固定入口，点击后展示全部商品，不能删除。",
+    fallbackIcon: <Grid3X3 size={24} />,
+    fallbackText: "默认全部图标",
+  },
+  {
+    key: "categorySystemNewIconUrl",
+    title: "新品",
+    description: "分类页固定入口，点击后展示新品商品，不能删除。",
+    fallbackIcon: <Sparkles size={24} />,
+    fallbackText: "默认新品图标",
+  },
+];
+
 function serializeCategoryForm(value: CategoryForm) {
   return JSON.stringify({
     name: value.name,
@@ -93,6 +131,18 @@ function serializeCategoryForm(value: CategoryForm) {
     sort_order: Number(value.sort_order || 0),
     is_visible: value.is_visible !== false,
   });
+}
+
+function serializeSystemCategoryIconForm(value: SystemCategoryIconForm) {
+  return JSON.stringify({
+    categorySystemAllIconUrl: value.categorySystemAllIconUrl.trim(),
+    categorySystemNewIconUrl: value.categorySystemNewIconUrl.trim(),
+  });
+}
+
+function isImageIconUrl(value: string) {
+  const clean = value.trim();
+  return clean.startsWith("http") || clean.startsWith("/") || clean.startsWith("data:image/");
 }
 
 function formatCategoryFaq(faq: Category["faq"] = []) {
@@ -259,6 +309,121 @@ function CategoryDrawerSection({ title, children }: { title: string; children: R
   );
 }
 
+function SystemCategoryIconPreview({
+  value,
+  fallback,
+}: {
+  value: string;
+  fallback: ReactNode;
+}) {
+  const clean = value.trim();
+  if (isImageIconUrl(clean)) {
+    return <img src={clean} alt="" className="h-full w-full object-contain object-center" />;
+  }
+  return <span className="flex h-full w-full items-center justify-center text-[var(--theme-primary)]">{fallback}</span>;
+}
+
+function CategorySystemEntrySettings({
+  value,
+  loading,
+  saving,
+  dirty,
+  onChange,
+  onUpload,
+  onReset,
+  onSave,
+}: {
+  value: SystemCategoryIconForm;
+  loading: boolean;
+  saving: boolean;
+  dirty: boolean;
+  onChange: (patch: Partial<SystemCategoryIconForm>) => void;
+  onUpload: (file: File, key: SystemCategoryIconKey) => void;
+  onReset: (key: SystemCategoryIconKey) => void;
+  onSave: () => void;
+}) {
+  return (
+    <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground"><Tx>系统入口图片</Tx></p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            <Tx>这里管理客户分类页固定的「全部」「新品」入口图片；入口本身是系统默认功能，不能删除。</Tx>
+          </p>
+        </div>
+        <PermissionGate permission="category.manage">
+          <LoadingButton
+            type="button"
+            state={saving ? "loading" : "normal"}
+            disabled={loading || saving || !dirty}
+            loadingText="保存中..."
+            onClick={onSave}
+            className="h-10 shrink-0 rounded-xl bg-[var(--theme-price)] px-4 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            保存系统入口
+          </LoadingButton>
+        </PermissionGate>
+      </div>
+
+      <div className="mt-4 grid gap-3 xl:grid-cols-2">
+        {SYSTEM_CATEGORY_ENTRIES.map((entry) => {
+          const iconUrl = value[entry.key];
+          return (
+            <div key={entry.key} className="rounded-2xl border border-border bg-muted/20 p-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-background">
+                  <SystemCategoryIconPreview value={iconUrl} fallback={entry.fallbackIcon} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground"><Tx>{entry.title}</Tx></p>
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground"><Tx>系统固定</Tx></span>
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground"><Tx>{entry.description}</Tx></p>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-1">
+                <AdminLabelWithHint
+                  label={<Tx>显示图片 URL</Tx>}
+                  hint={<Tx>建议上传 128x128 正方形透明图；留空时使用系统默认图标。</Tx>}
+                />
+                <div className="flex gap-2">
+                  <input
+                    disabled={loading || saving}
+                    value={iconUrl}
+                    onChange={(event) => onChange({ [entry.key]: event.target.value })}
+                    placeholder={entry.fallbackText}
+                    className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)] disabled:opacity-60"
+                  />
+                  <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:bg-secondary hover:text-foreground">
+                    <Upload size={16} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={loading || saving}
+                      onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0], entry.key)}
+                    />
+                  </label>
+                  <UnifiedButton
+                    type="button"
+                    disabled={loading || saving || !iconUrl.trim()}
+                    onClick={() => onReset(entry.key)}
+                    className="h-11 shrink-0 rounded-xl border border-border bg-background px-3 text-xs font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    恢复默认
+                  </UnifiedButton>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function CategoryDrawerFields({
   mode,
   value,
@@ -388,6 +553,9 @@ export default function AdminCategories() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [systemIconForm, setSystemIconForm] = useState<SystemCategoryIconForm>(EMPTY_SYSTEM_CATEGORY_ICON_FORM);
+  const [systemIconBaseline, setSystemIconBaseline] = useState(() => serializeSystemCategoryIconForm(EMPTY_SYSTEM_CATEGORY_ICON_FORM));
+  const [systemIconSaving, setSystemIconSaving] = useState(false);
 
   const categoriesQuery = useQuery({
     queryKey: adminQueryKeys.categories(),
@@ -395,8 +563,15 @@ export default function AdminCategories() {
     staleTime: 60_000,
   });
 
+  const siteSettingsQuery = useQuery({
+    queryKey: adminQueryKeys.siteSettings(),
+    queryFn: fetchSiteSettings,
+    staleTime: 60_000,
+  });
+
   const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
   const loading = categoriesQuery.isLoading && !categoriesQuery.data;
+  const systemSettingsLoading = siteSettingsQuery.isLoading && !siteSettingsQuery.data;
 
   const invalidateCategories = async () => {
     invalidatePublicProductStoreCache({ categories: true });
@@ -439,7 +614,18 @@ export default function AdminCategories() {
   ), [editingCategory]);
   const createDirty = showForm && serializeCategoryForm(formData) !== serializeCategoryForm(EMPTY_FORM);
   const editDirty = !!editingId && serializeCategoryForm(editData) !== serializeCategoryForm(editBaseline);
-  useAdminTabDirty(createDirty || editDirty);
+  const systemIconDirty = !systemSettingsLoading && serializeSystemCategoryIconForm(systemIconForm) !== systemIconBaseline;
+  useAdminTabDirty(createDirty || editDirty || systemIconDirty);
+
+  useEffect(() => {
+    if (!siteSettingsQuery.data || systemIconDirty) return;
+    const nextForm = {
+      categorySystemAllIconUrl: siteSettingsQuery.data.categorySystemAllIconUrl ?? "",
+      categorySystemNewIconUrl: siteSettingsQuery.data.categorySystemNewIconUrl ?? "",
+    };
+    setSystemIconForm(nextForm);
+    setSystemIconBaseline(serializeSystemCategoryIconForm(nextForm));
+  }, [siteSettingsQuery.data, systemIconDirty]);
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -485,6 +671,50 @@ export default function AdminCategories() {
       toast.success(autoMatted ? iconMatteSuccessToast(method) : "图标已上传");
     } catch (e) {
       toast.error(toastErrorMessage(e, "上传失败"));
+    }
+  };
+
+  const uploadSystemIcon = async (file: File, key: SystemCategoryIconKey) => {
+    try {
+      const matteToastId = "category-system-icon-matte";
+      const { file: prepared, autoMatted, method } = await ensureTransparentIconFile(file, {
+        onProgress: (message) => {
+          toast.loading(message, { id: matteToastId });
+        },
+      });
+      if (autoMatted) toast.info(iconMatteProgressToast(method, "done"), { id: matteToastId });
+      else toast.dismiss(matteToastId);
+      const res = await uploadService.uploadSingle(prepared, { mode: "thumb" });
+      const url = res.url || "";
+      if (!url) throw new Error("服务器未返回图片地址");
+      setSystemIconForm((prev) => ({ ...prev, [key]: url }));
+      toast.success(autoMatted ? iconMatteSuccessToast(method) : "系统入口图片已上传");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "上传失败"));
+    }
+  };
+
+  const resetSystemIcon = (key: SystemCategoryIconKey) => {
+    setSystemIconForm((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  const saveSystemIcons = async () => {
+    setSystemIconSaving(true);
+    try {
+      const nextForm = {
+        categorySystemAllIconUrl: systemIconForm.categorySystemAllIconUrl.trim(),
+        categorySystemNewIconUrl: systemIconForm.categorySystemNewIconUrl.trim(),
+      };
+      await updateSiteSettings(nextForm);
+      setSystemIconForm(nextForm);
+      setSystemIconBaseline(serializeSystemCategoryIconForm(nextForm));
+      await refreshSiteInfo();
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
+      toast.success(tText("系统入口图片已保存"));
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
+    } finally {
+      setSystemIconSaving(false);
     }
   };
 
@@ -677,6 +907,17 @@ export default function AdminCategories() {
         </PermissionGate>
       )}
     >
+      <CategorySystemEntrySettings
+        value={systemIconForm}
+        loading={systemSettingsLoading}
+        saving={systemIconSaving}
+        dirty={systemIconDirty}
+        onChange={(patch) => setSystemIconForm((prev) => ({ ...prev, ...patch }))}
+        onUpload={(file, key) => void uploadSystemIcon(file, key)}
+        onReset={resetSystemIcon}
+        onSave={() => void saveSystemIcons()}
+      />
+
       <AdminSideDrawer
         open={Boolean(drawerMode)}
         onOpenChange={(open) => {

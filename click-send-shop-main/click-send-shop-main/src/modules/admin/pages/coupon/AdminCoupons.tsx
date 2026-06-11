@@ -224,7 +224,7 @@ export default function AdminCoupons() {
       hint={<Tx>这里统一维护每一次礼券发行。礼券规则、领取时间、使用时间、人群和使用范围都在这里一次性设置。</Tx>}
       toolbar={(
         <div className="flex flex-wrap gap-2">
-          <UnifiedButton type="button" onClick={() => adminNavigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></UnifiedButton>
+          <UnifiedButton type="button" onClick={() => adminNavigate("/admin/marketing/coupons/records")} className="touch-manipulation inline-flex min-h-[44px] flex-row items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} className="shrink-0" /><Tx>领券记录</Tx></UnifiedButton>
           <PermissionGate permission="coupon.manage">
             <UnifiedButton type="button" onClick={() => adminNavigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><Plus size={16} /><Tx>新建礼券</Tx></UnifiedButton>
           </PermissionGate>

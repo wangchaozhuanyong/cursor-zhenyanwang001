@@ -54,6 +54,8 @@ const PUBLIC_SITE_KEYS = [
   'footerNav',
   // 首页新品运营主视觉
   'newArrivalSectionTitle', 'newArrivalSectionSubtitle', 'newArrivalDisplayCount', 'newArrivalShowPrice', 'newArrivalOnlyInStock',
+  // 分类页系统入口图片
+  'categorySystemAllIconUrl', 'categorySystemNewIconUrl',
   // 客服下载页配置
   'supportDownloadConfig',
   // Cookie 同意后才会由前端读取并加载的分析/广告追踪配置

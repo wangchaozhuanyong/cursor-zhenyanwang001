@@ -199,6 +199,8 @@ export default function Categories() {
     : activeCat === "all"
       ? "all"
       : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
+  const systemAllIconValue = siteInfo.categorySystemAllIconUrl?.trim() || "📋";
+  const systemNewIconValue = siteInfo.categorySystemNewIconUrl?.trim() || "🆕";
 
   const rootKingkongItems = useMemo((): CategoryKingkongItem[] => {
     const row: RootRowItem[] = [{ kind: "all" }, { kind: "new" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
@@ -207,7 +209,7 @@ export default function Categories() {
         return {
           id: "all",
           label: "全部",
-          iconValue: "📋",
+          iconValue: systemAllIconValue,
           active: activeCat === "all" && !isNew,
           onClick: handleSelectAll,
         };
@@ -216,7 +218,7 @@ export default function Categories() {
         return {
           id: "new",
           label: NEW_ARRIVAL_CATEGORY_LABEL,
-          iconValue: "🆕",
+          iconValue: systemNewIconValue,
           active: isNew,
           onClick: handleSelectNewArrivals,
         };
@@ -230,7 +232,7 @@ export default function Categories() {
         onClick: () => handleRootCategoryClick(node),
       };
     });
-  }, [activeCat, categories, handleRootCategoryClick, handleSelectAll, handleSelectNewArrivals, isNew]);
+  }, [activeCat, categories, handleRootCategoryClick, handleSelectAll, handleSelectNewArrivals, isNew, systemAllIconValue, systemNewIconValue]);
 
   const activeFilterCount = useMemo(() => {
     let c = 0;

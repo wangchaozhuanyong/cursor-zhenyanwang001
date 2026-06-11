@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CouponCenterData, UserCoupon } from "@/types/coupon";
+import { ApiError } from "@/types/common";
 import * as couponService from "@/services/couponService";
 import { ensureStoreSession, STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
-import { restoreSessionFromCookie } from "@/services/authService";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { isLoggedIn, setTokens } from "@/utils/token";
 import { useCouponStore } from "./useCouponStore";
 
 vi.mock("@/services/couponService", () => ({
@@ -121,13 +122,38 @@ describe("useCouponStore", () => {
 
   it("keeps claimable coupons visible when a stale session cannot be restored", async () => {
     useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
+    setTokens("access", "refresh");
     vi.mocked(ensureStoreSession).mockResolvedValue(false);
-    vi.mocked(restoreSessionFromCookie).mockResolvedValue(false);
     vi.mocked(couponService.fetchCouponCenter).mockResolvedValue(couponCenter([coupon("public")]));
 
     await useCouponStore.getState().loadCoupons();
 
     expect(useCouponStore.getState().coupons.map((row) => row.coupon.id)).toEqual(["public"]);
     expect(useCouponStore.getState().error).toBe(STORE_SESSION_EXPIRED_MESSAGE);
+    expect(isLoggedIn()).toBe(true);
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+  });
+
+  it("does not clear storefront auth when coupon center returns 401", async () => {
+    useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
+    setTokens("access", "refresh");
+    vi.mocked(couponService.fetchCouponCenter).mockRejectedValue(new ApiError(401, "请先登录"));
+
+    await useCouponStore.getState().loadCoupons();
+
+    expect(useCouponStore.getState().error).toBe(STORE_SESSION_EXPIRED_MESSAGE);
+    expect(isLoggedIn()).toBe(true);
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+  });
+
+  it("adds claimed coupon without forcing a legacy coupon center reload", async () => {
+    const claimed = coupon("claimed", true);
+    vi.mocked(couponService.claimCoupon).mockResolvedValue(claimed);
+
+    await useCouponStore.getState().claimCoupon("CODE_claimed");
+
+    expect(couponService.claimCoupon).toHaveBeenCalledWith("CODE_claimed", undefined);
+    expect(couponService.fetchCouponCenter).not.toHaveBeenCalled();
+    expect(useCouponStore.getState().coupons.map((row) => row.id)).toEqual([claimed.id]);
   });
 });

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { UserCoupon } from "@/types/coupon";
 import * as couponService from "@/services/couponService";
-import { clearTokens, isLoggedIn } from "@/utils/token";
+import { isLoggedIn } from "@/utils/token";
 import { ApiError } from "@/types/common";
 import { ensureStoreSession, STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -61,36 +61,15 @@ export const useCouponStore = create<CouponState>((set, get) => ({
 
         const sessionReady = await ensureStoreSession();
         if (!sessionReady) {
-          clearTokens();
-          useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
           couponCacheLoadedAt = Date.now();
           set({ coupons: availableCoupons, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
           return;
         }
 
-        try {
-          couponCacheLoadedAt = Date.now();
-          set({ coupons: [...availableCoupons, ...ownedCoupons], loading: false });
-          return;
-        } catch (err) {
-          if (!isAuthError(err)) throw err;
-          const { restoreSessionFromCookie } = await import("@/services/authService");
-          const restored = await restoreSessionFromCookie();
-          if (!restored) {
-            clearTokens();
-            useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
-            couponCacheLoadedAt = Date.now();
-            set({ coupons: availableCoupons, loading: false, error: STORE_SESSION_EXPIRED_MESSAGE });
-            return;
-          }
-          useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
-          couponCacheLoadedAt = Date.now();
-          set({ coupons: [...availableCoupons, ...ownedCoupons], loading: false });
-        }
+        couponCacheLoadedAt = Date.now();
+        set({ coupons: [...availableCoupons, ...ownedCoupons], loading: false });
       } catch (err) {
         if (isAuthError(err)) {
-          clearTokens();
-          useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
           if (availableCoupons.length > 0) couponCacheLoadedAt = Date.now();
           set({
             coupons: availableCoupons.length > 0 ? availableCoupons : previousCoupons,
@@ -127,11 +106,6 @@ export const useCouponStore = create<CouponState>((set, get) => ({
         ],
         error: null,
       }));
-      try {
-        await get().loadCoupons({ force: true });
-      } catch {
-        // 领取已成功，列表刷新失败不应让用户误以为领取失败
-      }
       return claimed;
     } catch (err) {
       set({

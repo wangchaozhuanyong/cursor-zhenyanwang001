@@ -8,6 +8,7 @@ import { invalidateCouponCenterStoreCache } from "@/stores/useCouponCenterStore"
 import { invalidateMyCouponsStoreCache } from "@/stores/useMyCouponsStore";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import type { CouponClaimStatus } from "@/types/coupon";
+import { ApiError } from "@/types/common";
 
 export type CouponActionSource = {
   id: string;
@@ -47,6 +48,10 @@ function getIssueActivityId(coupon: CouponActionSource): string | undefined {
 
 function getClaimReason(coupon: CouponActionSource, fallback: string): string {
   return coupon.claim_reason || coupon.claimReason || fallback;
+}
+
+function isAuthExpiredError(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 401;
 }
 
 export function getCouponActionState(coupon: CouponActionSource, isAuthenticated: boolean): CouponActionState {
@@ -91,6 +96,14 @@ export function useCouponAction(defaultFrom = "/coupons") {
 
   const claim = useCallback(async (coupon: CouponActionSource, options: { from?: string; successMessage?: string } = {}) => {
     const from = options.from || defaultFrom;
+    const couponCode = coupon.code || coupon.id;
+    const issueActivityId = getIssueActivityId(coupon);
+    const finalizeClaim = (claimed: Awaited<ReturnType<typeof claimCoupon>>) => {
+      invalidateCouponCenterStoreCache();
+      invalidateMyCouponsStoreCache();
+      toast.success(options.successMessage || "领取成功", toastPresetQuickSuccess);
+      return claimed;
+    };
     const state = getCouponActionState(coupon, isAuthenticated);
     if (state.claimStatus === "login_required" || !isAuthenticated) {
       navigate("/login", { state: { from } });
@@ -111,12 +124,27 @@ export function useCouponAction(defaultFrom = "/coupons") {
       return null;
     }
     try {
-      const claimed = await claimCoupon(coupon.code || coupon.id, getIssueActivityId(coupon));
-      invalidateCouponCenterStoreCache();
-      invalidateMyCouponsStoreCache();
-      toast.success(options.successMessage || "领取成功", toastPresetQuickSuccess);
-      return claimed;
+      const claimed = await claimCoupon(couponCode, issueActivityId);
+      return finalizeClaim(claimed);
     } catch (error) {
+      if (isAuthExpiredError(error)) {
+        const restored = await ensureStoreSession();
+        if (!restored) {
+          navigate("/login", { state: { from } });
+          return null;
+        }
+        try {
+          const claimed = await claimCoupon(couponCode, issueActivityId);
+          return finalizeClaim(claimed);
+        } catch (retryError) {
+          if (isAuthExpiredError(retryError)) {
+            navigate("/login", { state: { from } });
+            return null;
+          }
+          toast.error(retryError instanceof Error ? retryError.message : "领取失败");
+          throw retryError;
+        }
+      }
       toast.error(error instanceof Error ? error.message : "领取失败");
       throw error;
     }

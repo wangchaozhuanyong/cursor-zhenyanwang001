@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronRight, Minus, Plus, Ticket } from "lucide-react";
+import { CheckCircle2, ChevronRight, Minus, Plus, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import CouponPicker from "@/components/CouponPicker";
 import type { Product, ProductVariant } from "@/types/product";
@@ -9,6 +9,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { ensureMediaUrl } from "@/utils/mediaUrl";
+import { stripHtml } from "@/utils/seo";
 
 type PurchaseIntent = "cart" | "buy";
 
@@ -40,6 +41,16 @@ function formatMoney(value: number) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "0";
   return n.toFixed(2).replace(/\.00$/, "");
+}
+
+function buildProductDetailItems(description?: string) {
+  const raw = stripHtml(description || "").trim();
+  if (!raw) return ["商品详情正在完善，下单前可联系客服确认规格、配送和售后说明。"];
+  const parts = raw
+    .split(/\n+|[；;。]/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return parts.length ? parts : [raw];
 }
 
 export default function ProductVariantSheet({
@@ -81,6 +92,12 @@ export default function ProductVariantSheet({
     selected?.image_url || selectedValueImage || product.cover_image || product.images?.[0] || "",
   );
   const selectedSpecLabel = selected?.spec_text || selected?.title || selected?.sku_code || "默认规格";
+  const productDetailItems = buildProductDetailItems(product.description);
+  const selectedCouponLabel = couponEnabled
+    ? purchaseCoupon?.selectedCoupon?.title || (purchaseCoupon?.loading ? "优惠加载中" : "未使用优惠")
+    : "";
+  const currentPrice = intent === "buy" ? payableTotal : lineTotal;
+  const footerActionLabel = soldOut ? "已售罄" : intent === "buy" ? "立即购买" : "加入购物车";
 
   const clampQty = (value: number) => {
     if (maxQty <= 0 || soldOut) return 0;
@@ -206,197 +223,265 @@ export default function ProductVariantSheet({
     </div>
   );
 
+  const productSummary = (
+    <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 md:border-0 md:bg-transparent md:p-0">
+      <div className="flex gap-3 md:block">
+        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] md:mx-auto md:flex md:h-[210px] md:w-full md:max-w-[320px] md:items-center md:justify-center md:rounded-[22px]">
+          {heroImage ? (
+            <img
+              src={heroImage}
+              alt={`${product.name} ${selectedSpecLabel}`}
+              className="h-full w-full object-cover md:max-h-full md:max-w-full md:object-contain"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-xs text-[var(--theme-text-muted)]">
+              暂无图片
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 md:hidden">
+          <p className="line-clamp-2 text-sm font-semibold leading-snug text-[var(--theme-text)]">{product.name}</p>
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className="text-2xl font-black tabular-nums text-[var(--theme-price)]">
+              RM {formatMoney(currentPrice)}
+            </span>
+            {showOriginalPrice ? (
+              <span className="text-xs text-[var(--theme-text-muted)] line-through">
+                RM {formatMoney(originalTotal)}
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-text-muted)]">
+            已选：{selectedSpecLabel}
+            {selectedCouponLabel ? ` / ${selectedCouponLabel}` : ""}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const variantSelector = hasMatrix ? (
+    <div className="space-y-4">
+      {specGroups.map((group) => (
+        <div key={group.id}>
+          <p className="mb-2 text-sm font-semibold text-[var(--theme-text)]">{group.name}</p>
+          <div className="flex flex-wrap gap-2">
+            {(group.values ?? []).map((value) => {
+              const active = selectedValueIds.has(value.id);
+              const disabled = !isValueAvailable(group.id, value.id);
+              const outOfStock = disabled && isValueOutOfStock(group.id, value.id);
+              return (
+                <UnifiedButton
+                  key={value.id}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => selectSpecValue(group.id, value.id)}
+                  className={cn(
+                    "relative min-h-10 rounded-xl border px-3 py-1.5 text-sm transition disabled:opacity-45",
+                    active
+                      ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] font-semibold text-[var(--theme-price)]"
+                      : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] hover:border-[color-mix(in_srgb,var(--theme-price)_45%,var(--theme-border))]",
+                  )}
+                >
+                  {value.image_url ? (
+                    <img
+                      src={ensureMediaUrl(value.image_url)}
+                      alt={`${group.name} ${value.value}`}
+                      className="mr-2 inline-block h-7 w-7 rounded-full object-cover align-middle"
+                    />
+                  ) : null}
+                  {value.value}
+                  {active ? <CheckCircle2 size={13} className="ml-1 inline-block align-[-2px]" /> : null}
+                  {outOfStock ? (
+                    <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
+                      缺货
+                    </span>
+                  ) : null}
+                </UnifiedButton>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : variants.length > 0 ? (
+    <div>
+      <p className="mb-2 text-sm font-semibold text-[var(--theme-text)]">规格</p>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+        {variants.map((variant) => {
+          const active = variant.id === selectedVariantId;
+          const disabled = variant.enabled === false || variant.stock <= 0;
+          return (
+            <UnifiedButton
+              key={variant.id}
+              type="button"
+              disabled={disabled}
+              onClick={() => onSelectVariant(variant.id)}
+              className={cn(
+                "relative flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-xs transition disabled:opacity-45",
+                active
+                  ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] font-semibold text-[var(--theme-price)]"
+                  : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] hover:border-[color-mix(in_srgb,var(--theme-price)_45%,var(--theme-border))]",
+              )}
+            >
+              {variant.image_url ? (
+                <img
+                  src={ensureMediaUrl(variant.image_url)}
+                  alt={variant.spec_text || variant.title || variant.sku_code || "规格图"}
+                  className="h-8 w-8 shrink-0 rounded-lg object-cover"
+                />
+              ) : null}
+              <span className="min-w-0 truncate">
+                {variant.spec_text || variant.title || variant.sku_code || "默认规格"}
+              </span>
+              {active ? <CheckCircle2 size={13} className="shrink-0" /> : null}
+              {variant.stock <= 0 ? (
+                <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
+                  缺货
+                </span>
+              ) : null}
+            </UnifiedButton>
+          );
+        })}
+      </div>
+    </div>
+  ) : null;
+
+  const couponSelector = couponEnabled && purchaseCoupon ? (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-sm font-semibold text-[var(--theme-text)]">
+        <Ticket size={16} className="text-[var(--theme-price)]" />
+        优惠
+      </div>
+      <CouponPicker
+        embedded
+        totalAmount={lineTotal}
+        selectedCouponId={purchaseCoupon.selectedCoupon?.id ?? null}
+        onSelect={purchaseCoupon.onSelect}
+        coupons={purchaseCoupon.coupons}
+        unusableCoupons={purchaseCoupon.unusableCoupons}
+        loading={purchaseCoupon.loading}
+      />
+    </div>
+  ) : null;
+
+  const selectedSummary = (
+    <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-xs leading-relaxed text-[var(--theme-text-muted)]">
+      已选：
+      <span className="font-semibold text-[var(--theme-text)]"> {selectedSpecLabel}</span>
+      {selectedCouponLabel ? <span>，{selectedCouponLabel}</span> : null}
+      <span>，{qty}件</span>
+    </div>
+  );
+
+  const productDetailList = (
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold text-[var(--theme-text)]">商品详情</h3>
+      <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3">
+        <ul className="space-y-2">
+          {productDetailItems.map((item, index) => (
+            <li key={`${item}-${index}`} className="flex gap-2 text-xs leading-relaxed text-[var(--theme-text)]">
+              <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-600" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+
+  const purchaseControls = (
+    <div className="space-y-4">
+      <div className="hidden md:block">
+        <p className="line-clamp-2 text-lg font-bold leading-snug text-[var(--theme-text)]">{product.name}</p>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="text-3xl font-black tabular-nums text-[var(--theme-price)]">
+            RM {formatMoney(currentPrice)}
+          </span>
+          {showOriginalPrice ? (
+            <span className="text-sm text-[var(--theme-text-muted)] line-through">
+              RM {formatMoney(originalTotal)}
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
+          已选：{selectedSpecLabel}
+          {selectedCouponLabel ? ` / ${selectedCouponLabel}` : ""}
+        </p>
+        {intent === "buy" && totalDiscount > 0 ? (
+          <UnifiedButton
+            type="button"
+            onClick={() => setDiscountDetailOpen(true)}
+            className="mt-2 inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2.5 py-1 text-xs font-semibold text-[var(--theme-price)]"
+          >
+            共减 RM {formatMoney(totalDiscount)}
+            <ChevronRight size={12} />
+          </UnifiedButton>
+        ) : null}
+      </div>
+
+      {variantSelector}
+
+      {selected ? (
+        <p className="text-xs text-[var(--theme-text-muted)]">
+          {selected.spec_text || selected.title || selected.sku_code || "默认规格"} · 库存 {selected.stock}
+        </p>
+      ) : null}
+
+      {couponSelector}
+
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-semibold text-[var(--theme-text)]">数量</span>
+        {qtyStepper}
+      </div>
+
+      {selectedSummary}
+    </div>
+  );
+
   return (
     <>
       <AppModal
-      tier="immersive"
-      open={open}
-      onClose={onClose}
-      title={title}
-      height="auto"
-      presentation={isMobile ? "sheet" : "dialog"}
-      dialogClassName="sm:max-w-xl"
-      stickyFooter
-      footer={
-        <div className="space-y-2">
-          <div className="flex items-baseline justify-between gap-3 px-0.5">
-            <span className="text-sm text-[var(--theme-text-muted)]">{intent === "buy" ? "实付" : "合计"}</span>
-            <span className="text-xl font-bold tabular-nums text-[var(--theme-price)]">
-              RM {formatMoney(intent === "buy" ? payableTotal : lineTotal)}
-            </span>
-          </div>
-          <SquishButton
-            type="button"
-            variant="gold"
-            disabled={soldOut || maxQty <= 0 || (hasMatrix && !selected)}
-            onClick={onConfirm}
-            className="min-h-12 w-full rounded-full text-sm font-semibold"
-          >
-            {soldOut ? "已售罄" : intent === "buy" ? `${title} RM ${formatMoney(payableTotal)}` : title}
-          </SquishButton>
-        </div>
-      }
-    >
-      <div className="space-y-4 pb-2">
-        <div className="flex gap-3 border-b border-[var(--theme-border)] pb-4">
-          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)]">
-            {heroImage ? (
-              <img
-                src={heroImage}
-                alt={`${product.name} ${selectedSpecLabel}`}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs text-[var(--theme-text-muted)]">
-                暂无图片
-              </div>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-medium leading-snug text-[var(--theme-text)]">{product.name}</p>
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className="text-xs font-medium text-[var(--theme-text-muted)]">
-                {intent === "buy" ? "实付" : "单价"}
-              </span>
-              <span className="text-2xl font-black tabular-nums text-[var(--theme-price)]">
-                RM {formatMoney(intent === "buy" ? payableTotal : unitPrice)}
-              </span>
-              {showOriginalPrice ? (
-                <span className="text-xs text-[var(--theme-text-muted)] line-through">
-                  优惠前 RM {formatMoney(originalTotal)}
-                </span>
-              ) : null}
-            </div>
-            {intent === "buy" && totalDiscount > 0 ? (
-              <UnifiedButton
-                type="button"
-                onClick={() => setDiscountDetailOpen(true)}
-                className="mt-2 inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2.5 py-1 text-xs font-semibold text-[var(--theme-price)]"
-              >
-                共减 RM {formatMoney(totalDiscount)}
-                <ChevronRight size={12} />
-              </UnifiedButton>
-            ) : null}
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <span className="shrink-0 whitespace-nowrap text-xs text-[var(--theme-text-muted)]">数量</span>
-              {qtyStepper}
-            </div>
-          </div>
-        </div>
-
-        {couponEnabled && purchaseCoupon ? (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--theme-text)]">
-              <Ticket size={16} className="text-[var(--theme-price)]" />
-              优惠券
-            </div>
-            <CouponPicker
-              embedded
-              totalAmount={lineTotal}
-              selectedCouponId={purchaseCoupon.selectedCoupon?.id ?? null}
-              onSelect={purchaseCoupon.onSelect}
-              coupons={purchaseCoupon.coupons}
-              unusableCoupons={purchaseCoupon.unusableCoupons}
-              loading={purchaseCoupon.loading}
-            />
-          </div>
-        ) : null}
-
-        {hasMatrix ? (
-          <div className="space-y-4">
-            {specGroups.map((group) => (
-              <div key={group.id}>
-                <p className="mb-2 text-xs font-medium text-[var(--theme-text-muted)]">{group.name}</p>
-                <div className="flex flex-wrap gap-2">
-                  {(group.values ?? []).map((value) => {
-                    const active = selectedValueIds.has(value.id);
-                    const disabled = !isValueAvailable(group.id, value.id);
-                    const outOfStock = disabled && isValueOutOfStock(group.id, value.id);
-                    return (
-                      <UnifiedButton
-                        key={value.id}
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => selectSpecValue(group.id, value.id)}
-                        className={cn(
-                          "relative min-h-10 rounded-full border px-3 py-1.5 text-sm disabled:opacity-45",
-                          active
-                            ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_12%,transparent)] font-semibold"
-                            : "border-[var(--theme-border)] bg-[var(--theme-bg)]",
-                        )}
-                      >
-                        {value.image_url ? (
-                          <img
-                            src={ensureMediaUrl(value.image_url)}
-                            alt={`${group.name} ${value.value}`}
-                            className="mr-2 inline-block h-7 w-7 rounded-full object-cover align-middle"
-                          />
-                        ) : null}
-                        {value.value}
-                        {outOfStock ? (
-                          <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
-                            缺货
-                          </span>
-                        ) : null}
-                      </UnifiedButton>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-            {selected ? (
-              <p className="text-xs text-[var(--theme-text-muted)]">
-                {selected.spec_text || selected.title || selected.sku_code || "默认规格"} · 库存 {selected.stock}
+        tier="immersive"
+        open={open}
+        onClose={onClose}
+        title={title}
+        height="90vh"
+        presentation={isMobile ? "sheet" : "dialog"}
+        dialogClassName="sm:max-w-[860px]"
+        className="bg-[var(--theme-surface)]"
+        stickyFooter
+        footer={
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-[var(--theme-text-muted)]">{intent === "buy" ? "实付" : "合计"}</p>
+              <p className="truncate text-2xl font-black tabular-nums text-[var(--theme-price)]">
+                RM {formatMoney(currentPrice)}
               </p>
-            ) : null}
-          </div>
-        ) : variants.length > 0 ? (
-          <div>
-            <p className="mb-2 text-xs font-medium text-[var(--theme-text-muted)]">规格</p>
-            <div className="grid grid-cols-2 gap-2">
-              {variants.map((variant) => {
-                const active = variant.id === selectedVariantId;
-                const disabled = variant.enabled === false || variant.stock <= 0;
-                return (
-                  <UnifiedButton
-                    key={variant.id}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => onSelectVariant(variant.id)}
-                    className={cn(
-                      "relative flex min-h-14 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs disabled:opacity-45",
-                      active
-                        ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)]"
-                        : "border-[var(--theme-border)] bg-[var(--theme-bg)]",
-                    )}
-                  >
-                    {variant.image_url ? (
-                      <img
-                        src={ensureMediaUrl(variant.image_url)}
-                        alt={variant.spec_text || variant.title || variant.sku_code || "规格图"}
-                        className="h-9 w-9 shrink-0 rounded-lg object-cover"
-                      />
-                    ) : null}
-                    <span className="min-w-0">
-                      <span className="block truncate font-semibold">
-                        {variant.spec_text || variant.title || variant.sku_code || "默认"}
-                      </span>
-                      <span className="mt-1 block text-[var(--theme-text-muted)]">库存 {variant.stock}</span>
-                    </span>
-                    {variant.stock <= 0 ? (
-                      <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
-                        缺货
-                      </span>
-                    ) : null}
-                  </UnifiedButton>
-                );
-              })}
             </div>
+            <SquishButton
+              type="button"
+              variant="gold"
+              disabled={soldOut || maxQty <= 0 || (hasMatrix && !selected)}
+              onClick={onConfirm}
+              className="min-h-12 w-[46%] min-w-[9rem] rounded-full text-sm font-semibold md:w-[14rem]"
+            >
+              {footerActionLabel}
+            </SquishButton>
           </div>
-        ) : null}
-
-      </div>
-    </AppModal>
+        }
+      >
+        <div className="space-y-5 pb-2 md:grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:gap-6 md:space-y-0">
+          <div className="space-y-4 md:rounded-[24px] md:bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))] md:p-4">
+            {productSummary}
+            <div className="hidden md:block">{productDetailList}</div>
+          </div>
+          <div className="space-y-5">
+            {purchaseControls}
+            <div className="md:hidden">{productDetailList}</div>
+          </div>
+        </div>
+      </AppModal>
 
       <AppModal
         tier="standard"

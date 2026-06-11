@@ -48,12 +48,12 @@ export default function CouponCenterTabs() {
             key={tab.key}
             type="button"
             onClick={() => { void adminNavigate(tab.path); }}
-            className={`min-h-[40px] flex-1 justify-center gap-2 rounded-md px-3 py-2 text-sm sm:flex-none ${
+            className={`inline-flex min-h-[40px] flex-1 flex-row items-center justify-center gap-2 rounded-md px-3 py-2 text-sm sm:flex-none ${
               active ? "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] font-semibold text-theme-price" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            <Icon size={16} />
-            {isEn ? tab.en : tab.zh}
+            <Icon size={16} className="shrink-0" />
+            <span className="min-w-0 truncate">{isEn ? tab.en : tab.zh}</span>
           </UnifiedButton>
         );
       })}

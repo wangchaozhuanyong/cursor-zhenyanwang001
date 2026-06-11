@@ -28,6 +28,8 @@ const FALLBACK: SiteInfo = {
   newArrivalDisplayCount: "8",
   newArrivalShowPrice: "1",
   newArrivalOnlyInStock: "1",
+  categorySystemAllIconUrl: "",
+  categorySystemNewIconUrl: "",
   supportDownloadConfig: "",
   supportText: "大马通客服在线，咨询更省心",
   shippingNotice: "全站商品支持配送，具体以结算页说明为准",

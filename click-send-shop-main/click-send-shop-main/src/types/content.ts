@@ -86,6 +86,10 @@ export interface SiteInfo {
   newArrivalShowPrice?: string;
   newArrivalOnlyInStock?: string;
 
+  /* ─ 分类页系统入口图片 ─ */
+  categorySystemAllIconUrl?: string;
+  categorySystemNewIconUrl?: string;
+
   /* ─ 客服/APP 页配置（supportDownloadConfig JSON） ─ */
   supportDownloadConfig?: string;
 

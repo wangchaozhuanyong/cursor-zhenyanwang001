@@ -229,6 +229,8 @@ export interface SiteSettings {
   newArrivalDisplayCount?: string;
   newArrivalShowPrice?: string;
   newArrivalOnlyInStock?: string;
+  categorySystemAllIconUrl?: string;
+  categorySystemNewIconUrl?: string;
 
   /* 客服/APP 页配置 */
   supportDownloadConfig?: string;

@@ -237,10 +237,9 @@ function buildProductListQuery(query, categoryIds) {
   }
   if (isNew !== undefined) {
     if (isNew && useHomeNewArrivalsRule) {
-      where += ' AND (products.is_new = 1 OR products.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY))';
-      if (newArrivalsOnlyInStock !== undefined) {
-        where += newArrivalsOnlyInStock ? ' AND products.stock > 0' : '';
-      }
+      where += newArrivalsOnlyInStock === true
+        ? ' AND (products.is_new = 1 OR (products.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND products.stock > 0))'
+        : ' AND (products.is_new = 1 OR products.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY))';
     } else {
       where += ' AND products.is_new = ?';
       params.push(isNew ? 1 : 0);

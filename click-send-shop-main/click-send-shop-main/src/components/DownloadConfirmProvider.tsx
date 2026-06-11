@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Download, X } from "lucide-react";
 import {
   registerDownloadConfirmDialog,
   type DownloadConfirmRequest,
@@ -65,17 +66,19 @@ export function DownloadConfirmProvider({ children }: { children: ReactNode }) {
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted"
                 onClick={() => close(false)}
               >
-                {pending.cancelText ?? "\u53d6\u6d88"}
+                <X className="h-4 w-4 shrink-0" aria-hidden />
+                <span>{pending.cancelText ?? "\u53d6\u6d88"}</span>
               </button>
               <button
                 type="button"
-                className="rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition hover:bg-[var(--theme-primary-hover,var(--theme-primary))]"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition hover:bg-[var(--theme-primary-hover,var(--theme-primary))]"
                 onClick={() => close(true)}
               >
-                {pending.confirmText ?? "\u4e0b\u8f7d"}
+                <Download className="h-4 w-4 shrink-0" aria-hidden />
+                <span>{pending.confirmText ?? "\u4e0b\u8f7d"}</span>
               </button>
             </div>
           </div>

@@ -6,6 +6,7 @@ import * as productService from "@/services/productService";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 import { HOME_SECTION_HEADER_MB } from "@/constants/homeLayout";
+import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import type { NewArrivalClickTarget } from "./newArrivalOps";
 import HomeNewArrivalCard from "./HomeNewArrivalCard";
 import {
@@ -28,6 +29,11 @@ interface NewArrivalSectionProps {
 }
 
 const DEFAULT_TITLE = "新品上市";
+const DEFAULT_DISPLAY_COUNT = 8;
+
+function normalizeNewArrivalDisplayCount(value: number | undefined) {
+  return Math.min(16, Math.max(1, Number(value) || DEFAULT_DISPLAY_COUNT));
+}
 
 export default function NewArrivalSection({
   products,
@@ -49,9 +55,10 @@ export default function NewArrivalSection({
       : trimmedTitle;
 
   const items = useMemo(
-    () => products.slice(0, Math.min(8, Math.max(6, Number(displayCount) || 8))),
+    () => products.slice(0, normalizeNewArrivalDisplayCount(displayCount)),
     [displayCount, products],
   );
+  const skeletonCount = normalizeNewArrivalDisplayCount(displayCount);
 
   const trackClick = useCallback(
     (target: NewArrivalClickTarget, productId?: string, index?: number) => {
@@ -98,7 +105,7 @@ export default function NewArrivalSection({
           type="button"
           onClick={() => {
             trackClick("new_arrivals_page");
-            navigate("/new-arrivals");
+            navigate(NEW_ARRIVAL_CATEGORY_PATH);
           }}
           className="inline-flex min-h-9 shrink-0 items-center rounded-full px-2 text-xs font-semibold text-[var(--theme-text-muted)]"
         >
@@ -109,7 +116,7 @@ export default function NewArrivalSection({
 
       <div className="no-scrollbar flex items-start snap-x snap-mandatory gap-2 overflow-x-auto px-2 pb-1">
         {loading
-          ? Array.from({ length: 4 }).map((_, i) => (
+          ? Array.from({ length: skeletonCount }).map((_, i) => (
               <div
                 key={i}
                 className={cn(

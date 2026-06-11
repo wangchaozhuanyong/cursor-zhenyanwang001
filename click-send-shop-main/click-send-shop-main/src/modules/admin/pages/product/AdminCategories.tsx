@@ -665,7 +665,7 @@ export default function AdminCategories() {
 
   return (
     <AdminPageShell
-      hint={<Tx>支持最多 3 级分类；有子分类或已关联商品的分类禁止删除。</Tx>}
+      hint={<Tx>支持最多 3 级分类；前台分类页固定显示「全部」「新品」两个系统入口，普通分类从第三个入口开始展示。有子分类或已关联商品的分类禁止删除。</Tx>}
       toolbar={(
         <PermissionGate permission="category.manage">
           <UnifiedButton
@@ -692,8 +692,9 @@ export default function AdminCategories() {
               type="button"
               disabled={saving}
               onClick={closeCategoryDrawer}
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
             >
+              <X className="h-4 w-4 shrink-0" aria-hidden />
               <Tx>取消</Tx>
             </UnifiedButton>
             <PermissionGate permission="category.manage">
@@ -704,6 +705,7 @@ export default function AdminCategories() {
                 loadingText={drawerMode === "edit" ? "保存中..." : "新增中..."}
                 onClick={() => void submitCategoryDrawer()}
                 className="inline-flex h-11 min-w-32 items-center justify-center rounded-xl bg-[var(--theme-price)] px-5 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:cursor-not-allowed disabled:opacity-55"
+                leftIcon={drawerMode === "edit" ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <Plus className="h-4 w-4 shrink-0" aria-hidden />}
               >
                 {drawerMode === "edit" ? "保存修改" : "新增分类"}
               </LoadingButton>

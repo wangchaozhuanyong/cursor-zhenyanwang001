@@ -8,6 +8,7 @@ export type LoadingButtonState = "normal" | "loading" | "success" | "error" | "d
 export type LoadingButtonProps = {
   state?: LoadingButtonState;
   children: ReactNode;
+  leftIcon?: ReactNode;
   loadingText?: string;
   successText?: string;
   errorText?: string;
@@ -29,6 +30,7 @@ const variantClass: Record<SquishButtonVariant, string> = {
 export function LoadingButton({
   state = "normal",
   children,
+  leftIcon,
   loadingText,
   successText,
   errorText,
@@ -74,6 +76,7 @@ export function LoadingButton({
       {showLoading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden /> : null}
       {showSuccess ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : null}
       {showError ? <AlertCircle className="h-4 w-4 shrink-0" aria-hidden /> : null}
+      {!showLoading && !showSuccess && !showError ? leftIcon : null}
       <span>{label}</span>
     </SquishButton>
   );

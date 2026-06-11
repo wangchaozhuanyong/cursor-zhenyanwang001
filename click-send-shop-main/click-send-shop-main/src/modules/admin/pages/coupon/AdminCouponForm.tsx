@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Save, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -588,11 +588,15 @@ export default function AdminCouponForm() {
                 state={saving ? "loading" : "normal"}
                 onClick={() => adminConfirmSave(confirm, isEdit ? L("优惠券修改", "Update coupon") : L("新优惠券", "New coupon"), () => handleSave())}
                 className="rounded-lg px-6 py-2.5 text-sm font-semibold"
+                leftIcon={<Save className="h-4 w-4 shrink-0" aria-hidden />}
               >
                 {L("保存", "Save")}
               </LoadingButton>
             </PermissionGate>
-            <UnifiedButton type="button" onClick={goBack} className="rounded-lg border border-border px-6 py-2.5 text-sm text-muted-foreground">{L("取消", "Cancel")}</UnifiedButton>
+            <UnifiedButton type="button" onClick={goBack} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-6 py-2.5 text-sm text-muted-foreground">
+              <X className="h-4 w-4 shrink-0" aria-hidden />
+              <span>{L("取消", "Cancel")}</span>
+            </UnifiedButton>
           </div>
         </div>
       )}

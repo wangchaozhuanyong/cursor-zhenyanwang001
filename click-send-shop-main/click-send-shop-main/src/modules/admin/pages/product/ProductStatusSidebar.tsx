@@ -145,7 +145,7 @@ export default function ProductStatusSidebar({
         {(
           [
             { label: tText("热门"), desc: "显示热门标签", key: "is_hot" as const },
-            { label: tText("是否标记为新品"), desc: "显示新品标签并进入新品上市专题页", key: "is_new" as const },
+            { label: tText("是否标记为新品"), desc: "显示新品标签，并进入分类页「新品」入口", key: "is_new" as const },
             { label: tText("推荐"), desc: "首页推荐展示", key: "is_recommended" as const },
           ] as const
         ).map((t) => (

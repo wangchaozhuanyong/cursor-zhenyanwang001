@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { AlertTriangle, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LoadingButton } from "./LoadingButton";
 import { AppModal } from "./AppModal";
@@ -52,9 +53,10 @@ export function BottomSheetConfirm({
         type="button"
         disabled={loading}
         onClick={onClose}
-        className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-bg)] disabled:opacity-50"
+        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-bg)] disabled:opacity-50"
       >
-        {cancelText}
+        <X className="h-4 w-4 shrink-0" aria-hidden />
+        <span>{cancelText}</span>
       </UnifiedButton>
       <LoadingButton
         state={loading ? "loading" : "normal"}
@@ -66,6 +68,11 @@ export function BottomSheetConfirm({
         )}
         onClick={() => void handleConfirm()}
         loadingText={confirmText}
+        leftIcon={
+          danger
+            ? <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+            : <Check className="h-4 w-4 shrink-0" aria-hidden />
+        }
       >
         {confirmText}
       </LoadingButton>

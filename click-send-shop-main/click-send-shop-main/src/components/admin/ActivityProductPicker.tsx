@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import type { ActivityProductItem } from "@/types/activity";
 import type { ActivityProductOption } from "@/api/admin/activity";
@@ -135,8 +135,14 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
       height="90vh"
       footer={(
         <div className="flex gap-2">
-          <UnifiedButton type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation flex-1 rounded-lg bg-[var(--theme-price)] px-3 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-50">{L("加入活动", "Add to promotion")}</UnifiedButton>
-          <UnifiedButton type="button" onClick={onClose} className="touch-manipulation rounded-lg border border-border px-3 py-2.5 text-sm">{L("取消", "Cancel")}</UnifiedButton>
+          <UnifiedButton type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--theme-price)] px-3 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-50">
+            <Check className="h-4 w-4 shrink-0" aria-hidden />
+            <span>{L("加入活动", "Add to promotion")}</span>
+          </UnifiedButton>
+          <UnifiedButton type="button" onClick={onClose} className="touch-manipulation inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm">
+            <X className="h-4 w-4 shrink-0" aria-hidden />
+            <span>{L("取消", "Cancel")}</span>
+          </UnifiedButton>
         </div>
       )}
       stickyFooter

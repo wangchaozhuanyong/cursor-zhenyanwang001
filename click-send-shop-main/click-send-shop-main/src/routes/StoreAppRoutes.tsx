@@ -33,6 +33,7 @@ import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
+import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import {
   getRememberedStoreScrollPosition,
   getStoreScrollKey,
@@ -41,7 +42,7 @@ import {
 import { logPerf, markPerfStart, observeLongTasksAndLcp } from "@/utils/performanceDebug";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
-  Categories, ProductDetail, NewArrivals, Search,
+  Categories, ProductDetail, Search,
   Cart, Checkout, Orders, OrderDetail, Returns, ReturnDetail, PendingReviews,
   Profile, Feedback, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
   Help, About, ContentCmsPage, SupportDownload, TikTokLanding, NotFound,
@@ -411,7 +412,7 @@ function MainStoreRoutes() {
               <Route element={<FrontLayout />}>
                 <Route path="/" element={<HomeRoute />} />
                 <Route path="/categories" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Categories /></CapabilityRoute>} />
-                <Route path="/new-arrivals" element={<CapabilityRoute enabled={capabilities.mallEnabled}><NewArrivals /></CapabilityRoute>} />
+                <Route path="/new-arrivals" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Navigate to={NEW_ARRIVAL_CATEGORY_PATH} replace /></CapabilityRoute>} />
                 <Route path="/support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><SupportDownload /></CapabilityRoute>} />
                 <Route path="/search" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Search /></CapabilityRoute>} />
                 <Route path="/cart" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Cart /></CapabilityRoute>} />

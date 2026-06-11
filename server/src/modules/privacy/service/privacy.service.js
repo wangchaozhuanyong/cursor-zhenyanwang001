@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { generateId } = require('../../../utils/helpers');
+const { getClientIp } = require('../../../utils/clientIp');
 const repo = require('../repository/privacy.repository');
 
 function hashIp(ip) {
@@ -29,7 +30,7 @@ async function recordConsent(userId, body, req) {
     consentVersion: body.consent_version || 'v1',
     analyticsAllowed: Boolean(body.analytics_allowed),
     adsAllowed: Boolean(body.ads_allowed),
-    ipHash: hashIp(req.ip),
+    ipHash: hashIp(getClientIp(req)),
     userAgent: String(req.get('user-agent') || '').slice(0, 255),
   });
   return { data: formatConsent(await repo.selectLatestConsent({ userId, anonymousId: body.anonymous_id })) };

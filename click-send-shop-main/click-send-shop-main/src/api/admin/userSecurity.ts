@@ -10,12 +10,14 @@ export type UserSecurityPaginated<T> = {
 
 export type IpLocation = {
   ip?: string | null;
+  ip_type?: string | null;
   country_code?: string | null;
   country?: string | null;
   region?: string | null;
   city?: string | null;
   timezone?: string | null;
   label?: string | null;
+  city_missing_reason?: string | null;
   source?: string | null;
 };
 

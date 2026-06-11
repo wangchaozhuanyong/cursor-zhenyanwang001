@@ -75,9 +75,12 @@ describe("AdminUserSecurity", () => {
           {
             ip: "2405:3800:8ba:3c1:5c71:8838:bd01:5549",
             ip_location: {
+              ip: "2405:3800:8ba:3c1:5c71:8838:bd01:5549",
+              ip_type: "IPv6",
               country_code: "MY",
               country: "马来西亚",
               label: "马来西亚",
+              city_missing_reason: "当前 IP 库未提供城市级数据",
               source: "geoip-lite",
             },
             risk_level: "medium",

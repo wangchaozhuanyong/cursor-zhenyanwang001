@@ -8,11 +8,9 @@ interface CheckoutAddressCardProps {
   name: string;
   phone: string;
   address: string;
-  note: string;
   onNameChange: (value: string) => void;
   onPhoneChange: (value: string) => void;
   onAddressChange: (value: string) => void;
-  onNoteChange: (value: string) => void;
   onSelectedAddressChange: (value: Address | null) => void;
   onChooseAddress: () => void;
 }
@@ -21,162 +19,81 @@ export function CheckoutAddressCard({
   name,
   phone,
   address,
-  note,
   onNameChange,
   onPhoneChange,
   onAddressChange,
-  onNoteChange,
   onSelectedAddressChange,
   onChooseAddress,
 }: CheckoutAddressCardProps) {
   const isMobileSheet = usePreferBottomSheet("standard");
   const [addressSheetOpen, setAddressSheetOpen] = useState(false);
-  const [noteSheetOpen, setNoteSheetOpen] = useState(false);
 
   const inputClass =
-    "w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-[var(--theme-primary)] focus:ring-2 placeholder:text-muted-foreground";
+    "w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3.5 text-sm text-foreground outline-none ring-[var(--theme-primary)] focus:ring-2 placeholder:text-muted-foreground";
 
-  const addressSummary =
-    [name, phone].filter(Boolean).join(" · ") || "请填写收货人信息";
-  const addressLine = address || "请填写详细收货地址";
+  const hasContact = Boolean(name.trim() && phone.trim());
+  const hasAddress = Boolean(address.trim());
+  const addressSummary = hasContact ? `${name}  ${phone}` : "请选择收货信息";
+  const addressLine = hasAddress ? address : "添加收货地址后才能提交订单";
 
   const openAddressBook = () => {
     setAddressSheetOpen(false);
     onChooseAddress();
   };
 
+  const openEditor = () => setAddressSheetOpen(true);
+
   return (
-    <div className="store-checkout-card theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-[var(--theme-price-foreground)]">1</span>
-          <div>
-            <h3 className="text-[15px] font-semibold text-foreground">收货信息</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">用于配送员联系和确认送达地址</p>
-          </div>
+    <div className="store-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-[15px] font-bold text-foreground md:text-base">收货信息</h3>
+          <p className="mt-2 text-sm font-semibold text-foreground">{addressSummary}</p>
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground md:text-sm">{addressLine}</p>
         </div>
-        {!isMobileSheet ? (
-          <UnifiedButton
-            type="button"
-            onClick={onChooseAddress}
-            className="flex items-center gap-1 rounded-full bg-[var(--theme-bg)] px-3 py-1.5 text-xs font-medium text-[var(--theme-price)]"
-          >
-            <MapPin size={12} /> 选择地址
-          </UnifiedButton>
-        ) : null}
+        <UnifiedButton
+          type="button"
+          onClick={openEditor}
+          className="shrink-0 rounded-full px-2 py-1 text-xs font-semibold text-[var(--theme-price)] hover:bg-[color-mix(in_srgb,var(--theme-price)_9%,transparent)]"
+        >
+          {hasContact && hasAddress ? "修改" : "填写"} <ChevronRight size={12} />
+        </UnifiedButton>
       </div>
 
-      {isMobileSheet ? (
-        <div className="space-y-3">
-          <UnifiedButton
-            type="button"
-            onClick={() => setAddressSheetOpen(true)}
-            className="store-choice-row flex w-full items-center justify-between gap-2 rounded-xl bg-secondary px-4 py-3.5 text-left"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground">收货人</p>
-              <p className="mt-0.5 truncate text-sm font-medium text-foreground">{addressSummary}</p>
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{addressLine}</p>
-            </div>
-            <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
-          </UnifiedButton>
-
-          <UnifiedButton
-            type="button"
-            onClick={() => setNoteSheetOpen(true)}
-            className="store-choice-row flex w-full items-center justify-between gap-2 rounded-xl bg-secondary px-4 py-3.5 text-left"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground">订单备注</p>
-              <p className={note ? "mt-0.5 truncate text-sm text-foreground" : "mt-0.5 text-sm text-muted-foreground"}>
-                {note || "选填，可备注配送要求"}
-              </p>
-            </div>
-            <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
-          </UnifiedButton>
-
-          <AppModal
-            tier="form"
-            open={addressSheetOpen}
-            onClose={() => setAddressSheetOpen(false)}
-            title="编辑收货信息"
-            height="auto"
-            stickyFooter
-            footer={
-              <div className="grid grid-cols-2 gap-2">
-                <UnifiedButton
-                  type="button"
-                  onClick={openAddressBook}
-                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm font-semibold text-[var(--theme-text)]"
-                >
-                  地址簿
-                </UnifiedButton>
-                <SquishButton
-                  type="button"
-                  variant="gold"
-                  className="min-h-12 w-full rounded-full text-sm font-semibold"
-                  onClick={() => setAddressSheetOpen(false)}
-                >
-                  完成
-                </SquishButton>
-              </div>
-            }
-          >
-            <div className="space-y-3 pb-2">
-              <input
-                value={name}
-                onChange={(e) => onNameChange(e.target.value)}
-                placeholder="姓名 *"
-                className={inputClass}
-              />
-              <input
-                value={phone}
-                onChange={(e) => onPhoneChange(e.target.value)}
-                placeholder="电话 *"
-                type="tel"
-                className={inputClass}
-              />
-              <input
-                value={address}
-                onChange={(e) => {
-                  onAddressChange(e.target.value);
-                  onSelectedAddressChange(null);
-                }}
-                placeholder="收货地址 *"
-                className={inputClass}
-              />
-            </div>
-          </AppModal>
-
-          <AppModal
-            tier="form"
-            open={noteSheetOpen}
-            onClose={() => setNoteSheetOpen(false)}
-            title="订单备注"
-            height="auto"
-            stickyFooter
-            footer={
-              <SquishButton
-                type="button"
-                variant="gold"
-                className="min-h-12 w-full rounded-full text-sm font-semibold"
-                onClick={() => setNoteSheetOpen(false)}
-              >
-                完成
-              </SquishButton>
-            }
-          >
-            <textarea
-              value={note}
-              onChange={(e) => onNoteChange(e.target.value)}
-              placeholder="选填，可备注配送要求、门禁信息等"
-              rows={4}
-              className={inputClass}
-            />
-          </AppModal>
+      {!hasAddress ? (
+        <div className="mt-3 rounded-2xl bg-[color-mix(in_srgb,var(--theme-price)_8%,var(--theme-surface))] px-3 py-2 text-xs text-[var(--theme-price)]">
+          请先补全收货信息，提交按钮会自动可用。
         </div>
-      ) : (
-        <div className="space-y-3">
+      ) : null}
+
+      <AppModal
+        tier="form"
+        open={addressSheetOpen}
+        onClose={() => setAddressSheetOpen(false)}
+        title="编辑收货信息"
+        height={isMobileSheet ? "auto" : "70vh"}
+        stickyFooter
+        footer={
+          <div className="grid grid-cols-2 gap-2">
+            <UnifiedButton
+              type="button"
+              onClick={openAddressBook}
+              className="inline-flex min-h-12 items-center justify-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm font-semibold text-[var(--theme-text)]"
+            >
+              <MapPin size={14} /> 地址簿
+            </UnifiedButton>
+            <SquishButton
+              type="button"
+              variant="gold"
+              className="min-h-12 w-full rounded-full text-sm font-semibold"
+              onClick={() => setAddressSheetOpen(false)}
+            >
+              完成
+            </SquishButton>
+          </div>
+        }
+      >
+        <div className="space-y-3 pb-2">
           <input
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
@@ -199,15 +116,8 @@ export function CheckoutAddressCard({
             placeholder="收货地址"
             className={inputClass}
           />
-          <textarea
-            value={note}
-            onChange={(e) => onNoteChange(e.target.value)}
-            placeholder="备注（可选）"
-            rows={2}
-            className={inputClass}
-          />
         </div>
-      )}
+      </AppModal>
     </div>
   );
 }

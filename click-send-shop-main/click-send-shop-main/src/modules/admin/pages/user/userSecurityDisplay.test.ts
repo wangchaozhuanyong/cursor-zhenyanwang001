@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   formatDeviceLabel,
   formatIpAddressLabel,
+  formatIpLocationCityLine,
   formatIpLocationLabel,
+  formatIpTypeLabel,
   formatLoginMethodLabel,
+  normalizeIpAddress,
   formatRiskLevelLabel,
   formatRiskSignalSummary,
   formatRiskSourceLabel,
@@ -43,6 +46,14 @@ describe("userSecurityDisplay", () => {
     expect(formatIpAddressLabel("0:0:0:0:0:0:0:1")).toBe("::1");
     expect(formatIpAddressLabel("::ffff:192.168.1.10")).toBe("192.168.1.10");
     expect(formatIpAddressLabel("2405:3800:8ba:3c1:5c71:8838:bd01:5549")).toBe("2405:3800:...:bd01:5549");
+  });
+
+  it("详情弹窗使用完整 IP 与城市缺失说明", () => {
+    const ip = "2405:3800:8ba:3c1:5c71:8838:bd01:5549";
+    expect(normalizeIpAddress(ip)).toBe(ip);
+    expect(formatIpTypeLabel(ip, { ip_type: "IPv6" })).toBe("IPv6");
+    expect(formatIpLocationCityLine({ city_missing_reason: "当前 IP 库未提供城市级数据" }))
+      .toBe("未知（当前 IP 库未提供城市级数据）");
   });
 
   it("把风险来源和触发次数说明清楚", () => {

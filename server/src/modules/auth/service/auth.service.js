@@ -24,6 +24,7 @@ const wechatService = require('./wechat.service');
 const { formatUserResponse } = require('../../../utils/formatUserResponse');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
+const { getClientIp, getHeader } = require('../../../utils/clientIp');
 
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 
@@ -32,17 +33,11 @@ function getAdminApi() {
 }
 
 function getReqHeader(req, name) {
-  if (!req) return '';
-  if (typeof req.get === 'function') return req.get(name) || '';
-  const headers = req.headers && typeof req.headers === 'object' ? req.headers : {};
-  return headers[String(name).toLowerCase()] || headers[name] || '';
+  return getHeader(req, name);
 }
 
 function getReqIp(req) {
-  if (!req) return '';
-  const xf = getReqHeader(req, 'x-forwarded-for');
-  const raw = req.ip || (typeof xf === 'string' ? xf.split(',')[0].trim() : '') || req.socket?.remoteAddress || '';
-  return String(raw || '').slice(0, 45);
+  return getClientIp(req).slice(0, 45);
 }
 
 function hashUserAgent(userAgent) {

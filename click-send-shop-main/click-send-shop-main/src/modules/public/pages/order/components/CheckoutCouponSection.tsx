@@ -12,7 +12,7 @@ interface CheckoutCouponSectionProps {
 }
 
 const SECTION_SHELL =
-  "store-checkout-card theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow";
+  "store-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5";
 
 export function CheckoutCouponSection({
   rawTotal,
@@ -25,12 +25,16 @@ export function CheckoutCouponSection({
 }: CheckoutCouponSectionProps) {
   return (
     <div className={SECTION_SHELL}>
-      <div className="mb-3 flex items-center gap-3">
-        <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-[var(--theme-price-foreground)]">3</span>
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-[15px] font-semibold text-foreground">优惠券</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">选择当前订单可用的优惠券</p>
+          <h3 className="text-[15px] font-bold text-foreground md:text-base">优惠</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">优惠只在这里选择，金额明细只展示结果</p>
         </div>
+        {selectedCoupon ? (
+          <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,transparent)] px-3 py-1 text-xs font-semibold text-[var(--theme-price)]">
+            已使用
+          </span>
+        ) : null}
       </div>
       <CouponPicker
         embedded

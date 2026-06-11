@@ -1,4 +1,5 @@
 const repo = require('../repository/monitoring.repository');
+const { getClientIp } = require('../../../utils/clientIp');
 
 async function trackChange(payload) {
   return repo.trackChange(payload);
@@ -10,7 +11,7 @@ function trackFromRequest(req, payload) {
     actorType: 'admin',
     actorId: req.user?.id,
     source: 'admin',
-    ip: req.ip,
+    ip: getClientIp(req),
     userAgent: req.get ? req.get('user-agent') : undefined,
     ...payload,
   }).catch((error) => {

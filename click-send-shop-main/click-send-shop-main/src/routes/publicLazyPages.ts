@@ -1,4 +1,4 @@
-import { lazy, type ComponentType } from "react";
+import { lazy } from "react";
 
 export type PreloadableLazy<T extends React.ComponentType<never>> = T & { preload?: () => Promise<unknown> };
 export function lazyWithPreload<T extends React.ComponentType<never>>(factory: () => Promise<{ default: T }>) {

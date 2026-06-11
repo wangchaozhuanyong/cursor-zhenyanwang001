@@ -253,7 +253,7 @@ export default function MarketingCouponRailSection({
     try {
       setClaimingKey(item.railKey);
       await claimCouponAction(item.coupon, { from: "/", successMessage: "领取成功，已放入你的券包" });
-    } catch (e) {
+    } catch {
       // useCouponAction / store 已统一错误提示，这里只负责释放 loading
     } finally {
       setClaimingKey(null);

@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play } from "lucide-react";
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { ProgressiveImage } from "@/modules/micro-interactions";

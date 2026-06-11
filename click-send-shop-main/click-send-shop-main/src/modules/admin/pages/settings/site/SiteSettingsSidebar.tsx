@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { SiteSettingsSectionId } from "./siteSettingsSections";
 import { SITE_SETTINGS_SECTIONS } from "./siteSettingsSections";
-import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 

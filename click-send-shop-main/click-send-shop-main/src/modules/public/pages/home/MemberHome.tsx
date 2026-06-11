@@ -88,7 +88,6 @@ export default function MemberHome() {
   const { settings: homeModules, ready: homeModulesReady } = useHomeModuleSettings();
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
-  const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
   const showCouponCenter = isHomeModuleEnabled(homeModules, "coupon_center", "member");
   const showCouponRail = homeModulesReady && showCouponCenter;

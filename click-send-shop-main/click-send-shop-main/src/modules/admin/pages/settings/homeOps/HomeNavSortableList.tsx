@@ -1,7 +1,6 @@
 import { Tx } from "@/components/admin/AdminText";
 import type { HomeNavItem } from "@/types/content";
 import HomeNavSortRow from "./HomeNavSortRow";
-import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   loading: boolean;

@@ -2,7 +2,6 @@ import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import type { ThemeConfig } from "@/types/theme";
 import { getThemeHealthChecks } from "@/utils/themeContrast";
 import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {

@@ -13,7 +13,6 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 import {
   DISPLAY_POSITION_LABELS,
   normalizeDisplayPositions,

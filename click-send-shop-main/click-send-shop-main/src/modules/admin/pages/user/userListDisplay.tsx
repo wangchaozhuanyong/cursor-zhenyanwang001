@@ -23,7 +23,7 @@ export function UserTagBadges({ tags }: { tags?: UserTag[] }) {
 }
 
 export function UserStatusBadges({ user }: { user: UserProfile }) {
-  const { locale, tText } = useAdminTOptional();
+  const { locale } = useAdminTOptional();
   const isEn = locale === "en";
   const L = (zh: string, en: string) => (isEn ? en : zh);
   const accountStatus = String(user.account_status || "normal");

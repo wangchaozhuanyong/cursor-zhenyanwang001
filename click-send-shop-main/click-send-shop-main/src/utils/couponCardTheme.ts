@@ -1,6 +1,5 @@
 import type { CouponStyle } from "@/types/theme";
 import {
-  THEME_COUPON_ICON_ON_DEAL_CLASS,
   THEME_COUPON_ICON_ON_LIGHT_CLASS,
   THEME_COUPON_ICON_ON_SURFACE_CLASS,
 } from "@/utils/themeVisuals";

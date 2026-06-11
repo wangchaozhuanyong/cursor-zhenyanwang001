@@ -35,7 +35,7 @@ export default function AdminCouponRecords() {
   const { locale } = useAdminTOptional();
   const isEn = locale === "en";
   const L = (zh: string, en: string) => (isEn ? en : zh);
-  const { couponRecordStatus: labelCouponRecordStatus, text: label } = useAdminDisplayLabel();
+  const { couponRecordStatus: labelCouponRecordStatus } = useAdminDisplayLabel();
 
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");

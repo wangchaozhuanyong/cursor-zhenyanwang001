@@ -4,7 +4,6 @@ import { getThemeHealthChecks, type ThemeHealthStatus } from "@/utils/themeContr
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { getThemeHealthFixHint, getThemeHealthFixTarget, type ThemeHealthFixTarget } from "./themeHealthFixMeta";
 import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const statusIcon: Record<ThemeHealthStatus, typeof CheckCircle2> = {

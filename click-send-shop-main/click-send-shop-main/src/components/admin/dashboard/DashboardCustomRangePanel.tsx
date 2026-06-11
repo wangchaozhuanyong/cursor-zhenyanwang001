@@ -2,7 +2,6 @@ import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import AnchoredPopover from "@/components/admin/AnchoredPopover";
 import type { RefObject } from "react";
 import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {

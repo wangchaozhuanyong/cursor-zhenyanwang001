@@ -2,7 +2,6 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
 import { THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
-import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type Props = {

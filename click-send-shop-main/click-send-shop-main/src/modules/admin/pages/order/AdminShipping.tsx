@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Truck, Plus, Trash2, Edit2, MapPin, Loader2 } from "lucide-react";
+import { Truck, Plus, Trash2, Edit2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as shippingService from "@/services/admin/shippingService";

@@ -7,7 +7,6 @@ import {
   AdminTableMobileCard,
   AdminTableMobileCardField,
 } from "@/components/admin/AdminTableMobileCard";
-import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useLocalizedAdminEmptyGuide } from "@/hooks/useLocalizedAdminEmptyGuide";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";

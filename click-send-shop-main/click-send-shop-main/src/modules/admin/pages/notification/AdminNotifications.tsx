@@ -5,7 +5,7 @@ import { Bell, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
-import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import { AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import {
   AdminTableMobileCard,
   AdminTableMobileCardField,
@@ -108,7 +108,7 @@ function getRowAction(row: Notification): { action: RowAction; label: string; pe
 }
 
 export default function AdminNotifications() {
-  const { locale, tText } = useAdminTOptional();
+  const { locale } = useAdminTOptional();
   const isEn = locale === "en";
   const L = (zh: string, en: string) => (isEn ? en : zh);
   const typeLabels: Record<string, string> = isEn

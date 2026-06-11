@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
-import { Loader2, RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import { AdminFilterSelect } from "@/components/admin/AdminFilterControls";

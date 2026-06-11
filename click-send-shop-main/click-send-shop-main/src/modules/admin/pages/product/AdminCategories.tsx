@@ -838,7 +838,7 @@ export default function AdminCategories() {
               <div className="skeleton-base skeleton-shimmer h-8 w-20 rounded-lg justify-self-end" />
             </div>
           ))
-          : flatRows.map((cat, i) => {
+          : flatRows.map((cat) => {
           const hasChildren = cat.children.length > 0;
           const isEditing = editingId === cat.id;
           return (

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Scale } from "lucide-react";
+import { Plus } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import {
   AdminTableMobileCard,

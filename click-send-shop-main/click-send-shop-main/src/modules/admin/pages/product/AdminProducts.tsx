@@ -77,6 +77,18 @@ function statusMeta(status: ProductStatus | string, tText: (zh: string) => strin
   return { label: tText("下架"), className: THEME_BADGE_WARNING };
 }
 
+function getProductDisplayStatus(product: Product): ProductStatus {
+  const lifecycleStatus = Number(product.lifecycle_status);
+  if (lifecycleStatus === 2) return "inactive";
+  if (lifecycleStatus === 1) return "active";
+  if (lifecycleStatus === 0) return "draft";
+  return product.status;
+}
+
+function isOffShelfProduct(product: Product) {
+  return getProductDisplayStatus(product) === "inactive";
+}
+
 function money(value: unknown) {
   return `RM ${Number(value || 0).toFixed(2)}`;
 }
@@ -173,6 +185,20 @@ export default function AdminProducts() {
   );
   const pageIds = useMemo(() => products.map((product) => product.id), [products]);
   const allSelectedOnPage = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
+  const selectedProductsOnPage = useMemo(
+    () => products.filter((product) => selected.includes(product.id)),
+    [products, selected],
+  );
+  const selectedOffShelfProductsOnPage = useMemo(
+    () => selectedProductsOnPage.filter(isOffShelfProduct),
+    [selectedProductsOnPage],
+  );
+  const selectedOffShelfIdsOnPage = useMemo(
+    () => selectedOffShelfProductsOnPage.map((product) => product.id),
+    [selectedOffShelfProductsOnPage],
+  );
+  const selectedOffShelfCount = selectedOffShelfIdsOnPage.length;
+  const selectedNonOffShelfCountOnPage = Math.max(0, selectedProductsOnPage.length - selectedOffShelfCount);
   const hasProductFilters = Boolean(
     search.trim() || statusFilter || stockFilter || costFilter || sort !== DEFAULT_PRODUCT_LIST_SORT,
   );
@@ -281,7 +307,8 @@ export default function AdminProducts() {
   const batchDeleteMutation = useMutation({
     mutationFn: async () => {
       if (!selected.length) throw new Error(tText("请先勾选商品"));
-      return batchDeleteProducts(selected);
+      if (!selectedOffShelfIdsOnPage.length) throw new Error(tText("已选商品中没有下架商品"));
+      return batchDeleteProducts(selectedOffShelfIdsOnPage);
     },
     onSuccess: async (result) => {
       const parts = [`${tText("已删除")} ${result.deleted} ${tText("个下架商品")}`];
@@ -294,7 +321,8 @@ export default function AdminProducts() {
         parts.push(`${tText("跳过")} ${missingCount} ${tText("个不存在或已删除商品")}`);
       }
       toast.success(parts.join(tText("，")));
-      setSelected([]);
+      const deletedIds = new Set(selectedOffShelfIdsOnPage);
+      setSelected((prev) => prev.filter((id) => !deletedIds.has(id)));
       await refreshProductLists();
     },
     onError: (error) => toast.error(toastErrorMessage(error, tText("批量删除失败"))),
@@ -335,14 +363,16 @@ export default function AdminProducts() {
       toast.warning(tText("请先勾选商品"));
       return;
     }
-    const selectedRowsOnPage = products.filter((product) => selected.includes(product.id));
-    const blockedOnPage = selectedRowsOnPage.filter((product) => product.status !== "inactive").length;
+    if (!selectedOffShelfCount) {
+      toast.warning(tText("已选商品中没有下架商品"));
+      return;
+    }
     const descriptionParts = [
-      tText(`确定删除已选商品中的下架商品吗？本次共选择 ${selected.length} 个商品。`),
-      tText("上架或草稿商品不会被删除，会自动跳过。"),
+      tText(`确定删除已选的 ${selectedOffShelfCount} 个下架商品吗？`),
+      tText("只会删除当前已选中的下架商品，上架或草稿商品不会提交删除。"),
     ];
-    if (blockedOnPage > 0) {
-      descriptionParts.push(tText(`当前页已选中 ${blockedOnPage} 个非下架商品，将被跳过。`));
+    if (selectedNonOffShelfCountOnPage > 0) {
+      descriptionParts.push(tText(`当前页还有 ${selectedNonOffShelfCountOnPage} 个已选商品不是下架状态，已自动排除。`));
     }
     confirm({
       title: tText("批量删除下架商品"),
@@ -356,7 +386,7 @@ export default function AdminProducts() {
   };
 
   const confirmDeleteProduct = (product: Product) => {
-    if (product.status !== "inactive") {
+    if (!isOffShelfProduct(product)) {
       toast.warning(tText("请先下架商品后再删除"));
       return;
     }
@@ -372,7 +402,9 @@ export default function AdminProducts() {
   };
 
   const renderMobileCard = (product: Product) => {
-    const meta = statusMeta(product.status, tText);
+    const displayStatus = getProductDisplayStatus(product);
+    const canDeleteProduct = isOffShelfProduct(product);
+    const meta = statusMeta(displayStatus, tText);
     const checked = selected.includes(product.id);
     const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
     const outOfStock = Number(product.out_of_stock_sku_count || 0) > 0 || Number(product.stock || 0) <= 0;
@@ -432,10 +464,10 @@ export default function AdminProducts() {
             </UnifiedButton>
             <UnifiedButton
               type="button"
-              disabled={product.status !== "inactive" || deleteOneMutation.isPending}
+              disabled={!canDeleteProduct || deleteOneMutation.isPending}
               onClick={() => confirmDeleteProduct(product)}
               className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1"
-              title={product.status !== "inactive" ? tText("请先下架商品后再删除") : tText("删除商品")}
+              title={!canDeleteProduct ? tText("请先下架商品后再删除") : tText("删除商品")}
             >
               <Trash2 size={13} />
               <Tx>删除</Tx>
@@ -529,12 +561,13 @@ export default function AdminProducts() {
         <PermissionGate permission="product.manage">
           <UnifiedButton
             type="button"
-            disabled={batchStatusMutation.isPending || batchDeleteMutation.isPending || selected.length === 0}
+            disabled={batchStatusMutation.isPending || batchDeleteMutation.isPending || selectedOffShelfCount === 0}
             onClick={confirmBatchDelete}
             className="inline-flex items-center gap-1 rounded-lg border border-destructive/35 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive transition hover:bg-destructive/15 disabled:opacity-60"
+            title={selectedOffShelfCount === 0 ? tText("当前已选商品中没有下架商品") : tText("删除已选下架商品")}
           >
             {batchDeleteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            {batchDeleteMutation.isPending ? tText("删除中...") : tText("删除下架商品")} ({selected.length})
+            {batchDeleteMutation.isPending ? tText("删除中...") : tText("删除下架商品")} ({selectedOffShelfCount})
           </UnifiedButton>
         </PermissionGate>
       </div>
@@ -681,7 +714,9 @@ export default function AdminProducts() {
         footer={<Pagination total={total} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} showPageSizeSelect={false} />}
         renderMobileCard={renderMobileCard}
         renderRow={(product) => {
-          const meta = statusMeta(product.status, tText);
+          const displayStatus = getProductDisplayStatus(product);
+          const canDeleteProduct = isOffShelfProduct(product);
+          const meta = statusMeta(displayStatus, tText);
           const checked = selected.includes(product.id);
           const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
           const stockWarning = Number(product.stock_warning_sku_count || 0) > 0;
@@ -738,10 +773,10 @@ export default function AdminProducts() {
                     <UnifiedButton type="button" onClick={() => openProductDrawer(product.id)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></UnifiedButton>
                     <UnifiedButton
                       type="button"
-                      disabled={product.status !== "inactive" || deleteOneMutation.isPending}
+                      disabled={!canDeleteProduct || deleteOneMutation.isPending}
                       onClick={() => confirmDeleteProduct(product)}
                       className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
-                      title={product.status !== "inactive" ? tText("请先下架商品后再删除") : tText("删除商品")}
+                      title={!canDeleteProduct ? tText("请先下架商品后再删除") : tText("删除商品")}
                     >
                       <Trash2 size={13} />
                       <Tx>删除</Tx>

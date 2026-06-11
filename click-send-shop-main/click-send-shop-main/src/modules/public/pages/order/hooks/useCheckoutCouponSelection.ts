@@ -8,6 +8,7 @@ import type { CartItem } from "@/types/cart";
 import type { PaymentMethod } from "@/components/PaymentMethodPicker";
 import { estimateCheckoutCouponDiscount } from "../utils/checkoutCouponDiscount";
 import { resolveEffectivePaymentMethod } from "@/utils/checkoutPaymentMethod";
+import type { BuyNowCouponChoice } from "@/stores/useCartStore";
 
 type UseCheckoutCouponSelectionParams = {
   items: CartItem[];
@@ -21,6 +22,7 @@ type UseCheckoutCouponSelectionParams = {
   paymentMethod: PaymentMethod;
   couponEnabled: boolean;
   onlinePaymentEnabled: boolean;
+  initialCouponChoice?: BuyNowCouponChoice | null;
 };
 
 export function useCheckoutCouponSelection({
@@ -35,6 +37,7 @@ export function useCheckoutCouponSelection({
   paymentMethod,
   couponEnabled,
   onlinePaymentEnabled,
+  initialCouponChoice,
 }: UseCheckoutCouponSelectionParams) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
@@ -111,6 +114,14 @@ export function useCheckoutCouponSelection({
         && (coupon.discountType !== "shipping" || shippingFee > 0),
     );
 
+    const selectBest = () => {
+      if (candidates.length === 0) return;
+      const best = candidates.reduce((max, current) =>
+        estimateCouponDiscount(current) > estimateCouponDiscount(max) ? current : max,
+      );
+      setSelectedCoupon(best);
+    };
+
     if (preferredCouponId) {
       const preferred = candidates.find((coupon) => matchesPreferredCoupon(coupon, preferredCouponId)) ?? null;
       if (preferred) {
@@ -130,12 +141,28 @@ export function useCheckoutCouponSelection({
       return;
     }
 
-    if (candidates.length > 0) {
-      const best = candidates.reduce((max, current) =>
-        estimateCouponDiscount(current) > estimateCouponDiscount(max) ? current : max,
-      );
-      setSelectedCoupon(best);
+    if (initialCouponChoice?.mode === "none") {
+      setSelectedCoupon(null);
+      setCouponInitDone(true);
+      return;
     }
+
+    if (initialCouponChoice?.couponId) {
+      const inherited = candidates.find((coupon) => matchesPreferredCoupon(coupon, initialCouponChoice.couponId || "")) ?? null;
+      if (inherited) {
+        setSelectedCoupon(inherited);
+        setCouponInitDone(true);
+        return;
+      }
+      if (initialCouponChoice.mode === "manual") {
+        toast.message("上一页选择的优惠券当前不可用，已为你重新匹配可用优惠");
+      }
+      selectBest();
+      setCouponInitDone(true);
+      return;
+    }
+
+    selectBest();
     setCouponInitDone(true);
   }, [
     couponInitDone,
@@ -148,6 +175,7 @@ export function useCheckoutCouponSelection({
     setSearchParams,
     estimateCouponDiscount,
     matchesPreferredCoupon,
+    initialCouponChoice,
   ]);
 
   useEffect(() => {

@@ -27,6 +27,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { trackAddToCart, trackProductView } from "@/utils/tracking";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useProductPurchaseCouponChoice } from "@/hooks/useProductPurchaseCouponChoice";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
 import { THEME_ALERT_DANGER_SHELL, THEME_BTN_ACCENT_SOLID } from "@/utils/themeVisuals";
@@ -91,6 +92,25 @@ export default function ProductDetail() {
   const siteCapabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
+  const purchaseAvailableVariants = product
+    ? (product.variants ?? []).filter((v) => v.id && v.enabled !== false)
+    : [];
+  const purchaseSelectedVariant = product && purchaseAvailableVariants.length
+    ? selectedVariantId
+      ? purchaseAvailableVariants.find((v) => v.id === selectedVariantId) ?? null
+      : purchaseAvailableVariants.length === 1
+        ? purchaseAvailableVariants[0]
+        : null
+    : null;
+  const purchaseDefaultVariant = product
+    ? product.default_variant ?? purchaseAvailableVariants.find((v) => v.is_default) ?? purchaseAvailableVariants[0] ?? null
+    : null;
+  const purchaseCoupon = useProductPurchaseCouponChoice({
+    enabled: Boolean(product && variantSheetOpen && purchaseIntent === "buy" && siteCapabilities.couponEnabled),
+    product,
+    variant: purchaseSelectedVariant ?? purchaseDefaultVariant,
+    qty,
+  });
 
   useDocumentTitle(product?.name);
 
@@ -186,16 +206,10 @@ export default function ProductDetail() {
   }
 
   const activeActivity = product.active_activity;
-  const availableVariants = (product.variants ?? []).filter((v) => v.id && v.enabled !== false);
-  const selectedVariant = availableVariants.length
-    ? selectedVariantId
-      ? availableVariants.find((v) => v.id === selectedVariantId) ?? null
-      : availableVariants.length === 1
-        ? availableVariants[0]
-        : null
-    : null;
+  const availableVariants = purchaseAvailableVariants;
+  const selectedVariant = purchaseSelectedVariant;
   const hasMultipleVariants = availableVariants.length > 1;
-  const defaultVariant = product.default_variant ?? availableVariants.find((v) => v.is_default) ?? availableVariants[0] ?? null;
+  const defaultVariant = purchaseDefaultVariant;
   const productForCart = selectedVariant
     ? { ...product, price: selectedVariant.price, stock: selectedVariant.stock }
     : product;
@@ -340,7 +354,7 @@ export default function ProductDetail() {
       return;
     }
     const p = variant ? { ...product, price: variant.price, stock: variant.stock } : productForCart;
-    useCartStore.getState().setBuyNow(p, qty, variant ?? defaultVariant);
+    useCartStore.getState().setBuyNow(p, qty, variant ?? defaultVariant, purchaseCoupon.checkoutChoice);
     void trackEvent({
       event_type: "checkout_start",
       module: "product_detail",
@@ -598,6 +612,15 @@ export default function ProductDetail() {
         maxQty={maxQty}
         soldOut={soldOut}
         intent={purchaseIntent}
+        purchaseCoupon={{
+          enabled: purchaseCoupon.enabled,
+          selectedCoupon: purchaseCoupon.selectedCoupon,
+          coupons: purchaseCoupon.coupons,
+          unusableCoupons: purchaseCoupon.unusableCoupons,
+          loading: purchaseCoupon.loading,
+          discountAmount: purchaseCoupon.couponDiscount,
+          onSelect: purchaseCoupon.selectCoupon,
+        }}
         onConfirm={() => {
           setVariantSheetOpen(false);
           if (purchaseIntent === "cart") void commitAddToCart();

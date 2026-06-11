@@ -49,6 +49,7 @@ describe("useCartStore", () => {
     useCartStore.setState({
       items: [],
       buyNowItem: null,
+      buyNowCouponChoice: null,
       selection: {},
       loading: false,
       error: null,
@@ -68,6 +69,24 @@ describe("useCartStore", () => {
       unit_price: 12,
     };
     expect(getCartLinePrice(line)).toBe(36);
+  });
+
+  test("setBuyNow stores coupon choice for checkout handoff", () => {
+    const product = sampleProduct("buy-now-1", 20);
+    useCartStore.getState().setBuyNow(product, 2, null, {
+      mode: "manual",
+      couponId: "coupon-1",
+      couponTitle: "测试优惠券",
+      estimatedDiscount: 5,
+    });
+    const { buyNowItem, buyNowCouponChoice } = useCartStore.getState();
+    expect(buyNowItem?.product.id).toBe(product.id);
+    expect(buyNowItem?.qty).toBe(2);
+    expect(buyNowCouponChoice).toMatchObject({
+      mode: "manual",
+      couponId: "coupon-1",
+      estimatedDiscount: 5,
+    });
   });
 
   test("addItem updates local cart when guest", async () => {

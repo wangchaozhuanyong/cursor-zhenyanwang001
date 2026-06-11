@@ -1,10 +1,14 @@
-import { Minus, Plus } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight, Minus, Plus, Ticket } from "lucide-react";
 import { toast } from "sonner";
+import CouponPicker from "@/components/CouponPicker";
 import type { Product, ProductVariant } from "@/types/product";
+import type { CheckoutPickerCoupon } from "@/types/coupon";
 import { AppModal, SquishButton } from "@/modules/micro-interactions";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { ensureMediaUrl } from "@/utils/mediaUrl";
 
 type PurchaseIntent = "cart" | "buy";
 
@@ -20,6 +24,15 @@ export type ProductVariantSheetProps = {
   maxQty: number;
   soldOut: boolean;
   intent: PurchaseIntent;
+  purchaseCoupon?: {
+    enabled: boolean;
+    selectedCoupon: CheckoutPickerCoupon | null;
+    coupons: CheckoutPickerCoupon[];
+    unusableCoupons: CheckoutPickerCoupon[];
+    loading: boolean;
+    discountAmount: number;
+    onSelect: (coupon: CheckoutPickerCoupon | null) => void;
+  };
   onConfirm: () => void;
 };
 
@@ -41,8 +54,10 @@ export default function ProductVariantSheet({
   maxQty,
   soldOut,
   intent,
+  purchaseCoupon,
   onConfirm,
 }: ProductVariantSheetProps) {
+  const [discountDetailOpen, setDiscountDetailOpen] = useState(false);
   const selected = variants.find((v) => v.id === selectedVariantId) ?? null;
   const specGroups = product.spec_groups ?? [];
   const hasMatrix = specGroups.length > 0;
@@ -51,8 +66,21 @@ export default function ProductVariantSheet({
   const originalPrice = Number(selected?.original_price ?? product.original_price ?? 0) || 0;
   const showOriginalPrice = originalPrice > unitPrice;
   const lineTotal = unitPrice * Math.max(0, qty);
+  const originalTotal = (showOriginalPrice ? originalPrice : unitPrice) * Math.max(0, qty);
+  const productDiscount = Math.max(0, originalTotal - lineTotal);
+  const couponEnabled = intent === "buy" && purchaseCoupon?.enabled;
+  const couponDiscount = couponEnabled ? Math.max(0, purchaseCoupon?.discountAmount ?? 0) : 0;
+  const payableTotal = Math.max(0, lineTotal - couponDiscount);
+  const totalDiscount = productDiscount + couponDiscount;
   const title = intent === "cart" ? "加入购物车" : "立即购买";
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const selectedValueImage = specGroups
+    .flatMap((group) => group.values ?? [])
+    .find((value) => selectedValueIds.has(value.id) && value.image_url)?.image_url;
+  const heroImage = ensureMediaUrl(
+    selected?.image_url || selectedValueImage || product.cover_image || product.images?.[0] || "",
+  );
+  const selectedSpecLabel = selected?.spec_text || selected?.title || selected?.sku_code || "默认规格";
 
   const clampQty = (value: number) => {
     if (maxQty <= 0 || soldOut) return 0;
@@ -130,8 +158,57 @@ export default function ProductVariantSheet({
     return matched.length > 0 && matched.every((variant) => Number(variant.stock || 0) <= 0);
   };
 
+  const qtyStepper = (
+    <div className="grid w-36 shrink-0 grid-cols-[2.25rem_1fr_2.25rem] overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+      <UnifiedButton
+        type="button"
+        disabled={qty <= 1 || soldOut}
+        onClick={() => tryChangeQty(qty - 1, "minus")}
+        className="flex h-9 min-w-[2.25rem] items-center justify-center p-0 disabled:opacity-40"
+        aria-label="减少"
+      >
+        <Minus size={16} />
+      </UnifiedButton>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={qty > 0 ? String(qty) : ""}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^\d]/g, "");
+          if (!raw) {
+            onQtyChange(1);
+            return;
+          }
+          const parsed = Number.parseInt(raw, 10);
+          tryChangeQty(parsed, "input");
+        }}
+        onBlur={(e) => {
+          const parsed = Number.parseInt(e.target.value.replace(/[^\d]/g, ""), 10);
+          if (!Number.isFinite(parsed) || parsed < 1) {
+            onQtyChange(1);
+            return;
+          }
+          if (parsed > maxQty) onQtyChange(clampQty(parsed));
+        }}
+        className="h-9 min-w-0 bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none"
+        aria-label="数量"
+      />
+      <UnifiedButton
+        type="button"
+        disabled={soldOut || qty >= maxQty}
+        onClick={() => tryChangeQty(qty + 1, "plus")}
+        className="flex h-9 min-w-[2.25rem] items-center justify-center p-0 disabled:opacity-40"
+        aria-label="增加"
+      >
+        <Plus size={16} />
+      </UnifiedButton>
+    </div>
+  );
+
   return (
-    <AppModal
+    <>
+      <AppModal
       tier="immersive"
       open={open}
       onClose={onClose}
@@ -143,9 +220,9 @@ export default function ProductVariantSheet({
       footer={
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-3 px-0.5">
-            <span className="text-sm text-[var(--theme-text-muted)]">合计</span>
+            <span className="text-sm text-[var(--theme-text-muted)]">{intent === "buy" ? "实付" : "合计"}</span>
             <span className="text-xl font-bold tabular-nums text-[var(--theme-price)]">
-              RM {formatMoney(lineTotal)}
+              RM {formatMoney(intent === "buy" ? payableTotal : lineTotal)}
             </span>
           </div>
           <SquishButton
@@ -155,21 +232,75 @@ export default function ProductVariantSheet({
             onClick={onConfirm}
             className="min-h-12 w-full rounded-full text-sm font-semibold"
           >
-            {soldOut ? "已售罄" : title}
+            {soldOut ? "已售罄" : intent === "buy" ? `${title} RM ${formatMoney(payableTotal)}` : title}
           </SquishButton>
         </div>
       }
     >
       <div className="space-y-4 pb-2">
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="line-clamp-2 text-sm font-medium text-[var(--theme-text)]">{product.name}</p>
-          <div className="shrink-0 text-right">
-            <p className="text-lg font-bold tabular-nums text-[var(--theme-price)]">RM {formatMoney(unitPrice)}</p>
-            {showOriginalPrice ? (
-              <p className="text-xs text-[var(--theme-text-muted)] line-through">RM {formatMoney(originalPrice)}</p>
+        <div className="flex gap-3 border-b border-[var(--theme-border)] pb-4">
+          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)]">
+            {heroImage ? (
+              <img
+                src={heroImage}
+                alt={`${product.name} ${selectedSpecLabel}`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs text-[var(--theme-text-muted)]">
+                暂无图片
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-sm font-medium leading-snug text-[var(--theme-text)]">{product.name}</p>
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="text-xs font-medium text-[var(--theme-text-muted)]">
+                {intent === "buy" ? "实付" : "单价"}
+              </span>
+              <span className="text-2xl font-black tabular-nums text-[var(--theme-price)]">
+                RM {formatMoney(intent === "buy" ? payableTotal : unitPrice)}
+              </span>
+              {showOriginalPrice ? (
+                <span className="text-xs text-[var(--theme-text-muted)] line-through">
+                  优惠前 RM {formatMoney(originalTotal)}
+                </span>
+              ) : null}
+            </div>
+            {intent === "buy" && totalDiscount > 0 ? (
+              <UnifiedButton
+                type="button"
+                onClick={() => setDiscountDetailOpen(true)}
+                className="mt-2 inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2.5 py-1 text-xs font-semibold text-[var(--theme-price)]"
+              >
+                共减 RM {formatMoney(totalDiscount)}
+                <ChevronRight size={12} />
+              </UnifiedButton>
             ) : null}
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <span className="shrink-0 whitespace-nowrap text-xs text-[var(--theme-text-muted)]">数量</span>
+              {qtyStepper}
+            </div>
           </div>
         </div>
+
+        {couponEnabled && purchaseCoupon ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--theme-text)]">
+              <Ticket size={16} className="text-[var(--theme-price)]" />
+              优惠券
+            </div>
+            <CouponPicker
+              embedded
+              totalAmount={lineTotal}
+              selectedCouponId={purchaseCoupon.selectedCoupon?.id ?? null}
+              onSelect={purchaseCoupon.onSelect}
+              coupons={purchaseCoupon.coupons}
+              unusableCoupons={purchaseCoupon.unusableCoupons}
+              loading={purchaseCoupon.loading}
+            />
+          </div>
+        ) : null}
 
         {hasMatrix ? (
           <div className="space-y-4">
@@ -188,12 +319,19 @@ export default function ProductVariantSheet({
                         disabled={disabled}
                         onClick={() => selectSpecValue(group.id, value.id)}
                         className={cn(
-                          "relative min-h-10 rounded-full border px-4 py-2 text-sm disabled:opacity-45",
+                          "relative min-h-10 rounded-full border px-3 py-1.5 text-sm disabled:opacity-45",
                           active
                             ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_12%,transparent)] font-semibold"
                             : "border-[var(--theme-border)] bg-[var(--theme-bg)]",
                         )}
                       >
+                        {value.image_url ? (
+                          <img
+                            src={ensureMediaUrl(value.image_url)}
+                            alt={`${group.name} ${value.value}`}
+                            className="mr-2 inline-block h-7 w-7 rounded-full object-cover align-middle"
+                          />
+                        ) : null}
                         {value.value}
                         {outOfStock ? (
                           <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
@@ -226,16 +364,25 @@ export default function ProductVariantSheet({
                     disabled={disabled}
                     onClick={() => onSelectVariant(variant.id)}
                     className={cn(
-                      "relative min-h-14 rounded-xl border px-3 py-2 text-left text-xs disabled:opacity-45",
+                      "relative flex min-h-14 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs disabled:opacity-45",
                       active
                         ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)]"
                         : "border-[var(--theme-border)] bg-[var(--theme-bg)]",
                     )}
                   >
-                    <span className="block truncate font-semibold">
-                      {variant.spec_text || variant.title || variant.sku_code || "默认"}
+                    {variant.image_url ? (
+                      <img
+                        src={ensureMediaUrl(variant.image_url)}
+                        alt={variant.spec_text || variant.title || variant.sku_code || "规格图"}
+                        className="h-9 w-9 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : null}
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold">
+                        {variant.spec_text || variant.title || variant.sku_code || "默认"}
+                      </span>
+                      <span className="mt-1 block text-[var(--theme-text-muted)]">库存 {variant.stock}</span>
                     </span>
-                    <span className="mt-1 block text-[var(--theme-text-muted)]">库存 {variant.stock}</span>
                     {variant.stock <= 0 ? (
                       <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
                         缺货
@@ -248,55 +395,55 @@ export default function ProductVariantSheet({
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">数量</span>
-          <div className="flex items-center gap-2 rounded-full border border-[var(--theme-border)]">
-            <UnifiedButton
-              type="button"
-              disabled={qty <= 1 || soldOut}
-              onClick={() => tryChangeQty(qty - 1, "minus")}
-              className="flex h-9 w-9 items-center justify-center disabled:opacity-40"
-              aria-label="减少"
-            >
-              <Minus size={16} />
-            </UnifiedButton>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={qty > 0 ? String(qty) : ""}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^\d]/g, "");
-                if (!raw) {
-                  onQtyChange(1);
-                  return;
-                }
-                const parsed = Number.parseInt(raw, 10);
-                tryChangeQty(parsed, "input");
-              }}
-              onBlur={(e) => {
-                const parsed = Number.parseInt(e.target.value.replace(/[^\d]/g, ""), 10);
-                if (!Number.isFinite(parsed) || parsed < 1) {
-                  onQtyChange(1);
-                  return;
-                }
-                if (parsed > maxQty) onQtyChange(clampQty(parsed));
-              }}
-              className="h-9 min-w-[2.25rem] bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none"
-              aria-label="数量"
-            />
-            <UnifiedButton
-              type="button"
-              disabled={soldOut || qty >= maxQty}
-              onClick={() => tryChangeQty(qty + 1, "plus")}
-              className="flex h-9 w-9 items-center justify-center disabled:opacity-40"
-              aria-label="增加"
-            >
-              <Plus size={16} />
-            </UnifiedButton>
-          </div>
-        </div>
       </div>
     </AppModal>
+
+      <AppModal
+        tier="standard"
+        open={discountDetailOpen}
+        onClose={() => setDiscountDetailOpen(false)}
+        title="优惠明细"
+        height="auto"
+      >
+        <div className="space-y-3 text-sm">
+          <div className="flex items-center justify-between rounded-xl bg-[var(--theme-bg)] px-4 py-3">
+            <span className="text-[var(--theme-text-muted)]">商品小计</span>
+            <span className="font-semibold tabular-nums text-[var(--theme-text)]">
+              RM {formatMoney(originalTotal)}
+            </span>
+          </div>
+          {productDiscount > 0 ? (
+            <div className="flex items-center justify-between rounded-xl bg-[color-mix(in_srgb,var(--theme-price)_8%,var(--theme-surface))] px-4 py-3">
+              <span className="text-[var(--theme-text-muted)]">商品优惠</span>
+              <span className="font-semibold tabular-nums text-[var(--theme-price)]">
+                -RM {formatMoney(productDiscount)}
+              </span>
+            </div>
+          ) : null}
+          {couponDiscount > 0 ? (
+            <div className="flex items-start justify-between gap-3 rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[var(--theme-text-muted)]">优惠券</p>
+                <p className="mt-0.5 truncate text-xs text-[var(--theme-text-muted)]">
+                  {purchaseCoupon?.selectedCoupon?.title || "已使用优惠券"}
+                </p>
+              </div>
+              <span className="shrink-0 font-semibold tabular-nums text-[var(--theme-price)]">
+                -RM {formatMoney(couponDiscount)}
+              </span>
+            </div>
+          ) : null}
+          <div className="flex items-center justify-between border-t border-[var(--theme-border)] px-1 pt-3">
+            <span className="font-semibold text-[var(--theme-text)]">预计实付</span>
+            <span className="text-xl font-black tabular-nums text-[var(--theme-price)]">
+              RM {formatMoney(payableTotal)}
+            </span>
+          </div>
+          <p className="text-xs leading-relaxed text-[var(--theme-text-muted)]">
+            实际优惠和应付金额以结算页后端校验结果为准。
+          </p>
+        </div>
+      </AppModal>
+    </>
   );
 }

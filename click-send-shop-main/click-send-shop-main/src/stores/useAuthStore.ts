@@ -125,7 +125,7 @@ export const useAuthStore = create<AuthState>()(
         clearStorefrontUserQueryCache();
         clearCartSessionLoad();
         useUserStore.getState().clearProfile();
-        useCartStore.setState({ buyNowItem: null, selection: {}, hasLoaded: false });
+        useCartStore.setState({ buyNowItem: null, buyNowCouponChoice: null, selection: {}, hasLoaded: false });
         useOrderStore.setState({ orders: [], currentOrder: null });
         set({ isAuthenticated: false, error: null });
       },

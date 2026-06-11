@@ -5,8 +5,7 @@ import PremiumCouponCard from "@/components/PremiumCouponCard";
 import { ensureStoreSession } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCouponStore } from "@/stores/useCouponStore";
-import { toast } from "sonner";
-import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import { useCouponAction } from "@/features/coupon/useCouponAction";
 import * as homeService from "@/services/homeService";
 import * as marketingService from "@/services/marketingService";
 import type { CouponCenterPayload, CouponZonePayload, NewUserGiftPayload } from "@/services/marketingService";
@@ -83,7 +82,7 @@ export default function MarketingCouponRailSection({
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const coupons = useCouponStore((s) => s.coupons);
   const loadCoupons = useCouponStore((s) => s.loadCoupons);
-  const claimCoupon = useCouponStore((s) => s.claimCoupon);
+  const { claim: claimCouponAction } = useCouponAction("/");
   const shouldLoadMarketing = showCouponCenter || showNewUserGift;
   const [marketingState, setMarketingState] = useState<CouponMarketingState>(() =>
     readCachedCouponMarketingState(showCouponCenter, showNewUserGift),
@@ -251,21 +250,11 @@ export default function MarketingCouponRailSection({
   };
 
   const handleClaim = async (item: CouponRailItem) => {
-    if (!isAuthenticated) {
-      navigate(item.source === "newUserGift" ? "/register" : "/login", { state: { from: "/" } });
-      return;
-    }
-    const ok = await ensureStoreSession();
-    if (!ok) {
-      navigate("/login", { state: { from: "/" } });
-      return;
-    }
     try {
       setClaimingKey(item.railKey);
-      await claimCoupon(item.coupon.code || item.coupon.id, item.coupon.issue_activity_id);
-      toast.success("领取成功，已放入你的券包", toastPresetQuickSuccess);
+      await claimCouponAction(item.coupon, { from: "/", successMessage: "领取成功，已放入你的券包" });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "领取失败");
+      // useCouponAction / store 已统一错误提示，这里只负责释放 loading
     } finally {
       setClaimingKey(null);
     }
@@ -324,8 +313,8 @@ export default function MarketingCouponRailSection({
                     scopeText={item.source === "newUserGift" && !isAuthenticated ? "新人专享" : display.scopeText}
                     statusLabel={item.statusLabel}
                     actionLabel={actionLabel}
-                    actionLoading={item.action === "claim" && (claimingKey === item.railKey || isCouponSyncing)}
-                    actionDisabled={item.action === "claim" && (claimingKey === item.railKey || isCouponSyncing)}
+                    actionLoading={item.action === "claim" && claimingKey === item.railKey}
+                    actionDisabled={item.action === "claim" && (item.actionDisabled || claimingKey === item.railKey || isCouponSyncing)}
                     onAction={() => handleCouponAction(item)}
                   />
                 </div>

@@ -26,10 +26,9 @@ exports.getCouponCenter = async (req, res, next) => {
 exports.claimCoupon = async (req, res, next) => {
   try {
     const result = await couponService.claimCoupon(req.user.id, req.body);
-    if (result.error) return res.fail(result.error.code, result.error.message);
+    if (result.error) return res.fail(result.error.code, result.error.message, { reason: result.error.reason });
     res.success(result.data, result.message);
   } catch (err) { next(err); }
 };
-
 
 

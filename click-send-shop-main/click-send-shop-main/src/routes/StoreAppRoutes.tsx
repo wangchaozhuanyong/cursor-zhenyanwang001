@@ -24,7 +24,7 @@ import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
-import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { useSiteCapabilities, useSiteCapabilitiesReady } from "@/hooks/useSiteCapabilities";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
 import { ModalLayerProvider } from "@/modules/micro-interactions/modal/ModalLayerProvider";
 import { trackEventLazy } from "@/services/trackEventLazy";
@@ -366,6 +366,8 @@ function LoyaltyRouteGuard({ feature, children }: { feature: "points" | "reward"
 }
 
 function CapabilityRoute({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+  const ready = useSiteCapabilitiesReady();
+  if (!ready) return <AppRouteFallback />;
   if (!enabled) return <FeatureUnavailable />;
   return <>{children}</>;
 }

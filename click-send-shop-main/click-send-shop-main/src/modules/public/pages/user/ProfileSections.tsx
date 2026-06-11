@@ -19,6 +19,7 @@ export const PROFILE_MENU_TAP = "store-profile-tap transition-transform active:s
 const PROFILE_SECTION_PADDING = "px-[var(--store-card-x)] py-[var(--store-card-y)]";
 
 export type ProfileOrderAction = {
+  key?: string;
   label: string;
   icon: LucideIcon;
   count?: number;
@@ -232,6 +233,7 @@ export function ProfileOrderPanel({
             <UnifiedButton
               key={item.label}
               type="button"
+              data-feature-key={item.key}
               onClick={() => onNavigate(item)}
               className={cn("profile-order-action", PROFILE_MENU_TAP)}
             >
@@ -265,6 +267,7 @@ export function ProfileAssetPanel({
           <UnifiedButton
             key={item.key}
             type="button"
+            data-feature-key={item.key}
             onClick={() => onNavigate(item)}
             className={cn("profile-asset-action", PROFILE_MENU_TAP)}
           >
@@ -346,6 +349,7 @@ export function ProfileServiceGrid({
           <UnifiedButton
             key={item.key}
             type="button"
+            data-feature-key={item.key}
             onClick={() => onNavigate(item)}
             className={cn("profile-service-action", PROFILE_MENU_TAP)}
           >
@@ -378,6 +382,7 @@ export function ProfileSecondaryLinkPanel({
           <UnifiedButton
             key={item.key}
             type="button"
+            data-feature-key={item.key}
             onClick={() => onNavigate(item)}
             className={cn("profile-secondary-action", PROFILE_MENU_TAP)}
           >
@@ -410,7 +415,7 @@ export function ProfileInstallShortcut({
         <span className="profile-install-title">{item.label}</span>
         <span className="profile-install-desc">手机端快捷访问</span>
       </span>
-      <UnifiedButton type="button" onClick={() => onNavigate(item)} className="profile-install-button">
+      <UnifiedButton type="button" data-feature-key={item.key} onClick={() => onNavigate(item)} className="profile-install-button">
         去添加
       </UnifiedButton>
     </section>

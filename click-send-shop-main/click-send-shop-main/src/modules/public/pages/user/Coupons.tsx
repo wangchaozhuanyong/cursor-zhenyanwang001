@@ -2,8 +2,6 @@ import { useState, useEffect, forwardRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Ticket, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
-import { toast } from "sonner";
-import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -13,9 +11,11 @@ import type { UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { cn } from "@/lib/utils";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
-import { ensureStoreSession, STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
+import { STORE_SESSION_EXPIRED_MESSAGE } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
+import { useCouponAction, type CouponActionState } from "@/features/coupon/useCouponAction";
+import type { CouponClaimStatus } from "@/types/coupon";
 import {
   THEME_ACCENT_HERO_LABEL,
   THEME_ACCENT_HERO_MUTED,
@@ -39,6 +39,13 @@ interface DisplayCoupon {
   code: string;
   orderNo?: string;
   invalidReason?: string;
+  issue_activity_id?: string;
+  campaign_id?: string;
+  claimable?: boolean;
+  claim_status?: CouponClaimStatus;
+  claim_reason?: string;
+  requires_member?: boolean;
+  requires_login?: boolean;
 }
 
 function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
@@ -62,6 +69,13 @@ function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
     code: d.code,
     orderNo: uc.order_no,
     invalidReason: uc.invalid_reason,
+    issue_activity_id: uc.issue_activity_id || uc.coupon?.issue_activity_id,
+    campaign_id: uc.campaign_id || uc.coupon?.campaign_id || uc.coupon?.source_campaign_id,
+    claimable: uc.claimable ?? uc.coupon?.claimable,
+    claim_status: uc.claim_status || uc.coupon?.claim_status,
+    claim_reason: uc.claim_reason || uc.coupon?.claim_reason,
+    requires_member: uc.requires_member ?? uc.coupon?.requires_member,
+    requires_login: uc.requires_login ?? uc.coupon?.requires_login,
   };
 }
 
@@ -119,7 +133,8 @@ export default function Coupons() {
   const navigate = useNavigate();
   const location = useLocation() as { state?: { pageView?: PageView } | null };
   const goBack = useGoBack();
-  const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
+  const { coupons: rawCoupons, loading, error, loadCoupons } = useCouponStore();
+  const { claim: claimCouponAction, getActionState } = useCouponAction("/coupons");
   const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const loadCart = useCartStore((s) => s.loadCart);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -168,19 +183,18 @@ export default function Coupons() {
       navigate("/login", { state: { from: "/coupons", fromState: { pageView: "claimCenter" } } });
       return;
     }
-    const sessionReady = await ensureStoreSession();
-    if (!sessionReady) {
-      navigate("/login", { state: { from: "/coupons", fromState: { pageView: "claimCenter" } } });
-      return;
-    }
     setClaimingId(coupon.id);
     try {
-      await claimCoupon(coupon.code || coupon.id);
-      toast.success("领取成功！已添加到我的优惠券", toastPresetQuickSuccess);
-      setPageView("mine");
-      setTab("mine");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "领取失败");
+      const claimed = await claimCouponAction(coupon, {
+        from: "/coupons",
+        successMessage: "领取成功！已添加到我的优惠券",
+      });
+      if (claimed) {
+        setPageView("mine");
+        setTab("mine");
+      }
+    } catch {
+      // 统一错误提示在 useCouponAction 内处理
     } finally {
       setClaimingId(null);
     }
@@ -345,6 +359,7 @@ export default function Coupons() {
               coupon={coupon}
               index={i}
               claiming={claimingId === coupon.id}
+              actionState={getActionState(coupon)}
               onClaim={() => handleClaim(coupon)}
               onUse={() => handleUseCoupon(coupon)}
             />
@@ -359,17 +374,19 @@ type CouponCardProps = {
   coupon: DisplayCoupon;
   index: number;
   claiming: boolean;
+  actionState: CouponActionState;
   onClaim: () => void;
   onUse: () => void;
 };
 
 const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCard(
-  { coupon, index, claiming, onClaim, onUse },
+  { coupon, index, claiming, actionState, onClaim, onUse },
   ref,
 ) {
   const isDisabled = coupon.status === "used" || coupon.status === "expired" || coupon.status === "pending" || coupon.status === "invalidated";
-  const actionLabel = COUPON_ACTION_LABELS[coupon.status];
+  const actionLabel = coupon.status === "available" ? actionState.actionLabel : COUPON_ACTION_LABELS[coupon.status];
   const onAction = coupon.status === "available" ? onClaim : coupon.status === "claimed" ? onUse : undefined;
+  const actionDisabled = claiming || isDisabled || (coupon.status === "available" && actionState.disabled);
 
   return (
     <motion.div
@@ -389,9 +406,10 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
         expireText={coupon.expire}
         scopeText={coupon.scopeText}
         disabled={isDisabled}
+        statusLabel={coupon.status === "available" ? actionState.statusLabel : undefined}
         actionLabel={actionLabel}
         actionLoading={claiming}
-        actionDisabled={claiming || isDisabled}
+        actionDisabled={actionDisabled}
         onAction={onAction}
       />
       {coupon.orderNo ? <p className="mt-1 px-3 text-xs text-theme-muted">使用订单：{coupon.orderNo}</p> : null}

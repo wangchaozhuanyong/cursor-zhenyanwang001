@@ -1,17 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CircleHelp,
-  Coins,
-  MessageSquare,
-  Package,
-  ShieldCheck,
-  Star,
-  Ticket,
-  Truck,
-  Wallet,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ShieldCheck, Smartphone, Truck, Wallet } from "lucide-react";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
@@ -46,6 +35,12 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import { computeUpgradeProgress } from "@/utils/memberBenefitPresentation";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import {
+  buildAccountFeaturesByKeys,
+  type AccountFeatureContext,
+  type AccountFeatureKey,
+} from "@/features/account/accountFeatureRegistry";
+import { useStoreNavigationGuard } from "@/features/navigation/useStoreNavigationGuard";
+import {
   PROFILE_CARD_CLASS,
   PROFILE_MENU_TAP,
   ProfileAssetPanel,
@@ -63,7 +58,6 @@ import {
   type ProfileServiceItem,
   type ProfileTrustItem,
 } from "./ProfileSections";
-import { buildInstallShortcutItem, buildProfileSecondaryItems, buildShoppingServiceItems } from "./profileQuickLinks";
 
 const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
   ? lazy(() => import("./ProfileWechatBindSection"))
@@ -74,19 +68,8 @@ function formatGrowthValue(value: number) {
   return safeValue.toLocaleString("zh-CN");
 }
 
-function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
-  if (requireAuth && !isLoggedIn()) {
-    navigate("/login", { state: { from: path } });
-    return;
-  }
-  void preloadStoreRoute(path).catch(() => {
-    // Keep navigation responsive; route-level recovery handles chunk failures after navigation.
-  });
-  navigate(path, { state: { from: "/profile" } });
-}
-
 export default function Profile() {
-  const navigate = useNavigate();
+  const { navigateFeature, navigateStorePath } = useStoreNavigationGuard();
   const loggedIn = isLoggedIn();
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
@@ -157,7 +140,7 @@ export default function Profile() {
   const handleLogout = async () => {
     await authStore.logout();
     toast.success("已退出登录", toastPresetQuickSuccess);
-    navigate("/login");
+    navigateStorePath("/login", { from: "/profile" });
   };
 
   const handleAvatarUpload = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -242,50 +225,76 @@ export default function Profile() {
     };
   }, [memberBenefits, pointsBalance]);
 
-  const assetItems = useMemo<ProfileAssetItem[]>(() => [
-    { key: "points", label: "我的积分", value: String(pointsBalance), icon: Coins, path: "/points", auth: true },
-    { key: "favorites", label: "我的收藏", value: String(favoriteCount), icon: Star, path: "/favorites", auth: false },
-    { key: "coupons", label: "优惠券", value: String(couponCount), icon: Ticket, path: "/coupons", auth: true },
-    { key: "reward", label: "返现余额", value: `RM ${rewardBalance.toFixed(2)}`, icon: Wallet, path: "/rewards", auth: true },
-  ].filter((item) => (
-    (item.key !== "points" || pointsEnabled)
-    && (item.key !== "coupons" || capabilities.couponEnabled)
-    && (item.key !== "reward" || rewardsEnabled)
-  )), [capabilities.couponEnabled, couponCount, favoriteCount, pointsBalance, pointsEnabled, rewardBalance, rewardsEnabled]);
-
-  const orderActions = useMemo<ProfileOrderAction[]>(() => {
-    const items: ProfileOrderAction[] = loggedIn
-      ? [
-        { label: "待付款", icon: Wallet, count: orderSummary?.pending_payment ?? orderPending, path: "/orders?tab=pending_payment", auth: true },
-        { label: "待发货", icon: Package, count: orderSummary?.pending_ship ?? orderShipping, path: "/orders?tab=paid", auth: true },
-        { label: "待收货", icon: Truck, count: orderSummary?.pending_receive ?? orderReceiving, path: "/orders?tab=shipped", auth: true },
-        { label: "待评价", icon: MessageSquare, count: orderSummary?.pending_review ?? pendingReviewCount, path: "/orders?tab=pending_review", auth: true },
-        { label: "退款/售后", icon: CircleHelp, count: orderSummary?.after_sale ?? afterSaleCount, path: "/orders?tab=after_sale", auth: true },
-      ]
-      : [
-        { label: "待付款", icon: Wallet, count: 0, path: "/orders?tab=pending_payment", auth: true },
-        { label: "待发货", icon: Package, count: 0, path: "/orders?tab=paid", auth: true },
-        { label: "待收货", icon: Truck, count: 0, path: "/orders?tab=shipped", auth: true },
-        { label: "待评价", icon: MessageSquare, count: 0, path: "/orders?tab=pending_review", auth: true },
-        { label: "退款/售后", icon: CircleHelp, count: 0, path: "/orders?tab=after_sale", auth: true },
-      ];
-    return items.filter((item) => item.label !== "待评价" || capabilities.reviewEnabled);
-  }, [afterSaleCount, capabilities.reviewEnabled, loggedIn, orderPending, orderReceiving, orderShipping, orderSummary, pendingReviewCount]);
-
   const notificationBadgeText = formatUnreadBadge(unreadCount);
   const showInstallShortcut = browserEnv.platform !== "desktop";
-  const shoppingServiceItems = useMemo<ProfileServiceItem[]>(
-    () => buildShoppingServiceItems(capabilities.customerServiceDownloadEnabled),
-    [capabilities.customerServiceDownloadEnabled],
-  );
-  const secondaryItems = useMemo<ProfileServiceItem[]>(
-    () => buildProfileSecondaryItems(notificationBadgeText),
-    [notificationBadgeText],
-  );
   const installShortcutItem = useMemo<ProfileServiceItem | null>(
-    () => buildInstallShortcutItem(showInstallShortcut, capabilities.customerServiceDownloadEnabled),
+    () => showInstallShortcut && capabilities.customerServiceDownloadEnabled
+      ? { key: "install", label: "添加桌面", icon: Smartphone, path: "/support-download?tab=download", auth: false }
+      : null,
     [capabilities.customerServiceDownloadEnabled, showInstallShortcut],
   );
+
+  const accountFeatureCtx = useMemo<AccountFeatureContext>(() => ({
+    capabilities,
+    loyaltyConfig,
+    notificationBadgeText,
+    values: {
+      points: String(pointsBalance),
+      favorites: String(favoriteCount),
+      coupons: String(couponCount),
+      rewards: `RM ${rewardBalance.toFixed(2)}`,
+    },
+    counts: {
+      orderPendingPayment: loggedIn ? orderSummary?.pending_payment ?? orderPending : 0,
+      orderPaid: loggedIn ? orderSummary?.pending_ship ?? orderShipping : 0,
+      orderShipped: loggedIn ? orderSummary?.pending_receive ?? orderReceiving : 0,
+      orderPendingReview: loggedIn ? orderSummary?.pending_review ?? pendingReviewCount : 0,
+      orderAfterSale: loggedIn ? orderSummary?.after_sale ?? afterSaleCount : 0,
+    },
+  }), [
+    afterSaleCount,
+    capabilities,
+    couponCount,
+    favoriteCount,
+    loggedIn,
+    loyaltyConfig,
+    notificationBadgeText,
+    orderPending,
+    orderReceiving,
+    orderShipping,
+    orderSummary,
+    pendingReviewCount,
+    pointsBalance,
+    rewardBalance,
+  ]);
+
+  const assetItems = useMemo<ProfileAssetItem[]>(
+    () => buildAccountFeaturesByKeys(["points", "favorites", "coupons", "rewards"], accountFeatureCtx, "mobile"),
+    [accountFeatureCtx],
+  );
+  const orderActions = useMemo<ProfileOrderAction[]>(
+    () => buildAccountFeaturesByKeys([
+      "orderPendingPayment",
+      "orderPaid",
+      "orderShipped",
+      "orderPendingReview",
+      "orderAfterSale",
+    ], accountFeatureCtx, "mobile"),
+    [accountFeatureCtx],
+  );
+  const shoppingServiceItems = useMemo<ProfileServiceItem[]>(
+    () => buildAccountFeaturesByKeys(["address", "returns", "support", "history"], accountFeatureCtx, "mobile"),
+    [accountFeatureCtx],
+  );
+  const secondaryItems = useMemo<ProfileServiceItem[]>(
+    () => buildAccountFeaturesByKeys(["help", "feedback", "about", "settings", "notifications"], accountFeatureCtx, "mobile"),
+    [accountFeatureCtx],
+  );
+
+  const handleFeatureNavigate = (key: string, fallbackPath: string, requireAuth?: boolean) => {
+    if (key && navigateFeature(key as AccountFeatureKey)) return;
+    navigateStorePath(fallbackPath, { requireAuth, from: "/profile" });
+  };
 
   const trustItems = useMemo<ProfileTrustItem[]>(() => [
     { title: "正品保障", desc: "100% 正品保证", icon: ShieldCheck },
@@ -302,10 +311,10 @@ export default function Profile() {
 
         <div className="store-profile-stack min-w-0 space-y-3 sm:space-y-4 xl:max-w-4xl">
           {!loggedIn ? (
-            <ProfileGuestCard
-              logoSrc={logoSrc}
-              siteName={siteName}
-              onLogin={() => navigate("/login", { state: { from: "/profile" } })}
+              <ProfileGuestCard
+                logoSrc={logoSrc}
+                siteName={siteName}
+              onLogin={() => navigateStorePath("/login", { from: "/profile" })}
             />
           ) : (
             <>
@@ -316,10 +325,10 @@ export default function Profile() {
                 memberLevelName={memberLevelName}
                 progress={memberProgress}
                 unreadCount={unreadCount}
-                onMessageClick={() => gateNavigate(navigate, "/notifications", true)}
-                onMemberLevelClick={() => gateNavigate(navigate, "/member/benefits", true)}
-                onProfileClick={() => gateNavigate(navigate, "/settings", true)}
-                onViewAllBenefits={() => gateNavigate(navigate, "/member/benefits", true)}
+                onMessageClick={() => navigateFeature("notifications")}
+                onMemberLevelClick={() => navigateFeature("memberBenefits")}
+                onProfileClick={() => navigateFeature("settings")}
+                onViewAllBenefits={() => navigateFeature("memberBenefits")}
                 onAvatarClick={() => avatarInputRef.current?.click()}
               />
               <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
@@ -327,7 +336,7 @@ export default function Profile() {
                 <Suspense fallback={null}>
                   <ProfileWechatBindSection
                     wechatLogin={wechatLogin}
-                    onNavigateSettings={() => gateNavigate(navigate, "/settings", true)}
+                    onNavigateSettings={() => navigateFeature("settings")}
                     cardClass={PROFILE_CARD_CLASS}
                     menuTapClass={PROFILE_MENU_TAP}
                   />
@@ -338,14 +347,14 @@ export default function Profile() {
 
           <ProfileOrderPanel
             items={orderActions}
-            onViewAll={() => gateNavigate(navigate, "/orders", true)}
-            onNavigate={(item) => gateNavigate(navigate, item.path, item.auth)}
+            onViewAll={() => navigateFeature("orders")}
+            onNavigate={(item) => handleFeatureNavigate(item.key || "", item.path, item.auth)}
           />
 
           {loggedIn ? (
             <ProfileAssetPanel
               items={assetItems}
-              onNavigate={(item) => gateNavigate(navigate, item.path, item.auth)}
+              onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
             />
           ) : null}
 
@@ -356,29 +365,29 @@ export default function Profile() {
               rewardBalance={rewardBalance}
               inviteCode={code}
               inviteCodeVisible={inviteCodeVisible}
-              onPrimaryClick={() => loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } })}
-              onToggleInviteCode={() => loggedIn ? setInviteCodeVisible((v) => !v) : navigate("/login", { state: { from: "/profile" } })}
+              onPrimaryClick={() => loggedIn ? navigateFeature("invite") : navigateStorePath("/login", { from: "/profile" })}
+              onToggleInviteCode={() => loggedIn ? setInviteCodeVisible((v) => !v) : navigateStorePath("/login", { from: "/profile" })}
               onCopyInviteCode={handleCopyInviteCode}
-              onRecordClick={() => gateNavigate(navigate, "/invite", true)}
+              onRecordClick={() => navigateFeature("invite")}
             />
           ) : null}
 
           <ProfileServiceGrid
             title="购物服务"
             items={shoppingServiceItems}
-            onNavigate={(item) => gateNavigate(navigate, item.path, item.auth)}
+            onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
           />
 
           {installShortcutItem ? (
             <ProfileInstallShortcut
               item={installShortcutItem}
-              onNavigate={(item) => gateNavigate(navigate, item.path, item.auth)}
+              onNavigate={(item) => navigateStorePath(item.path, { requireAuth: item.auth, from: "/profile" })}
             />
           ) : null}
 
           <ProfileSecondaryLinkPanel
             items={secondaryItems}
-            onNavigate={(item) => gateNavigate(navigate, item.path, item.auth)}
+            onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
           />
 
           <ProfileTrustStrip items={trustItems} />

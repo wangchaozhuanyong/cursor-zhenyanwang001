@@ -1,7 +1,31 @@
 export type CouponType = "fixed" | "percentage" | "shipping";
 export type CouponStatus = "pending" | "available" | "locked" | "used" | "expired" | "invalidated" | "cancelled";
+export type CouponClaimStatus =
+  | "claimable"
+  | "login_required"
+  | "member_required"
+  | "new_user_only"
+  | "old_user_only"
+  | "not_in_audience"
+  | "already_claimed"
+  | "sold_out"
+  | "not_started"
+  | "ended"
+  | "disabled";
 
-export interface Coupon {
+export interface CouponClaimability {
+  claimable?: boolean;
+  claim_status?: CouponClaimStatus;
+  claim_reason?: string;
+  requires_login?: boolean;
+  requires_member?: boolean;
+  requires_new_user?: boolean;
+  issue_activity_id?: string;
+  campaign_id?: string;
+  audience_type?: "all" | "new_user" | "old_user" | "member_level" | "user_tag" | string;
+}
+
+export interface Coupon extends CouponClaimability {
   id: string;
   code: string;
   title: string;
@@ -39,9 +63,10 @@ export interface Coupon {
   used_count?: number;
   remaining_quantity?: number | null;
   usage_rate?: number;
+  source_campaign_id?: string;
 }
 
-export interface UserCoupon {
+export interface UserCoupon extends CouponClaimability {
   id: string;
   coupon: Coupon;
   claimed_at: string;

@@ -1,7 +1,8 @@
 import * as marketingApi from "@/api/modules/marketing";
 import type { FlashSaleHomeActivity } from "@/api/modules/marketing";
+import type { CouponClaimability } from "@/types/coupon";
 
-export type MarketingCouponPublic = {
+export type MarketingCouponPublic = CouponClaimability & {
   id: string;
   code: string;
   title: string;
@@ -16,7 +17,15 @@ export type MarketingCouponPublic = {
   category_ids: string[];
   category_names?: string[];
   issue_activity_id?: string;
+  campaign_id?: string;
   campaign_type?: string;
+  member_only?: boolean;
+  new_user_only?: boolean;
+  auto_issue?: boolean;
+  per_user_limit?: number;
+  total_quantity?: number;
+  claimed_count?: number;
+  source_campaign_id?: string;
 };
 
 export type MarketingActivitySummary = {

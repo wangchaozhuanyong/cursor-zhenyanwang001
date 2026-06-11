@@ -1,5 +1,6 @@
 const repo = require('../repository/marketing.repository');
 const promo = require('../marketingPromo');
+const userCouponService = require('../../user/service/coupon.service');
 
 function getAdminApi() {
   return /** @type {any} */ (require('../../admin')).api || {};
@@ -9,8 +10,14 @@ function attachCouponSource(coupons, source) {
   return coupons.map((coupon) => ({
     ...coupon,
     issue_activity_id: source?.id || null,
+    campaign_id: source?.id || null,
     campaign_type: source?.campaign_type || source?.type || null,
+    audience_type: source?.audience_type || null,
   }));
+}
+
+async function decorateCoupons(coupons, context = {}) {
+  return userCouponService.decorateCouponsWithClaimability(coupons, context.userId || null);
 }
 
 function appendStandaloneCoupons(target, standaloneCoupons, seen) {
@@ -85,11 +92,11 @@ async function getCouponCenter(query = {}, context = {}) {
   if (campaign) {
     const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
     const rows = await repo.selectCouponsByIds(couponIds);
-    const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), campaign);
+    const coupons = await decorateCoupons(attachCouponSource(rows.map(repo.mapPublicCoupon), campaign), context);
     const seen = new Set(coupons.map((coupon) => coupon.id).filter(Boolean));
     appendStandaloneCoupons(
       coupons,
-      (await repo.selectCouponsByPosition(position)).map(repo.mapPublicCoupon),
+      await decorateCoupons((await repo.selectCouponsByPosition(position)).map(repo.mapPublicCoupon), context),
       seen,
     );
     return {
@@ -106,7 +113,7 @@ async function getCouponCenter(query = {}, context = {}) {
   const activities = await repo.selectActivitiesByPosition(legacyPosition, ['coupon_activity']);
   const activity = activities[0];
   if (!activity) {
-    const coupons = (await repo.selectCouponsByPosition(legacyPosition)).map(repo.mapPublicCoupon);
+    const coupons = await decorateCoupons((await repo.selectCouponsByPosition(legacyPosition)).map(repo.mapPublicCoupon), context);
     if (!coupons.length) return { data: null };
     return {
       data: {
@@ -119,11 +126,11 @@ async function getCouponCenter(query = {}, context = {}) {
     ? activity.activity_config.coupon_ids
     : [];
   const rows = await repo.selectCouponsByIds(couponIds);
-  const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), activity);
+  const coupons = await decorateCoupons(attachCouponSource(rows.map(repo.mapPublicCoupon), activity), context);
   const seen = new Set(coupons.map((coupon) => coupon.id).filter(Boolean));
   appendStandaloneCoupons(
     coupons,
-    (await repo.selectCouponsByPosition(legacyPosition)).map(repo.mapPublicCoupon),
+    await decorateCoupons((await repo.selectCouponsByPosition(legacyPosition)).map(repo.mapPublicCoupon), context),
     seen,
   );
   return {
@@ -146,7 +153,7 @@ async function getNewUserGift(query = {}, context = {}) {
   if (campaign) {
     const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
     const rows = await repo.selectCouponsByIds(couponIds);
-    const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), campaign);
+    const coupons = await decorateCoupons(attachCouponSource(rows.map(repo.mapPublicCoupon), campaign), context);
     return {
       data: {
         activity: promo.mapCouponCampaignSummary(campaign),
@@ -166,7 +173,7 @@ async function getNewUserGift(query = {}, context = {}) {
     ? activity.activity_config.coupon_ids
     : [];
   const rows = await repo.selectCouponsByIds(couponIds);
-  const coupons = attachCouponSource(rows.map(repo.mapPublicCoupon), activity);
+  const coupons = await decorateCoupons(attachCouponSource(rows.map(repo.mapPublicCoupon), activity), context);
   return {
     data: {
       activity: promo.mapActivitySummary(activity),
@@ -191,7 +198,7 @@ async function getCouponZone(query = {}, context = {}) {
   for (const campaign of campaigns) {
     const couponIds = await adminApi.selectCouponCampaignCouponIds(campaign.id);
     const rows = await repo.selectCouponsByIds(couponIds);
-    const mapped = attachCouponSource(rows.map(repo.mapPublicCoupon), campaign).filter((coupon) => {
+    const mapped = (await decorateCoupons(attachCouponSource(rows.map(repo.mapPublicCoupon), campaign), context)).filter((coupon) => {
       if (!coupon?.id || seen.has(coupon.id)) return false;
       seen.add(coupon.id);
       return true;
@@ -205,7 +212,7 @@ async function getCouponZone(query = {}, context = {}) {
   }
   appendStandaloneCoupons(
     coupons,
-    (await repo.selectCouponsByPosition(position)).map(repo.mapPublicCoupon),
+    await decorateCoupons((await repo.selectCouponsByPosition(position)).map(repo.mapPublicCoupon), context),
     seen,
   );
   if (!mappedCampaigns.length && !coupons.length) return { data: null };

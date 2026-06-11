@@ -220,6 +220,13 @@ function mapPublicCoupon(row) {
     category_names: typeof row.category_names === 'string' && row.category_names
       ? row.category_names.split(',').filter(Boolean)
       : [],
+    member_only: !!row.member_only,
+    new_user_only: !!row.new_user_only,
+    auto_issue: !!row.auto_issue,
+    per_user_limit: row.per_user_limit == null ? undefined : Number(row.per_user_limit),
+    total_quantity: row.total_quantity == null ? undefined : Number(row.total_quantity),
+    claimed_count: row.claimed_count == null ? undefined : Number(row.claimed_count),
+    source_campaign_id: row.source_campaign_id || '',
   };
 }
 

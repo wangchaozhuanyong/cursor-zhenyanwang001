@@ -1,9 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { STORE_ACCOUNT_NAV_ITEMS } from "@/constants/storeAccountNav";
-import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
-import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
-import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
+import { buildAccountFeaturesByKeys, type AccountFeatureKey } from "@/features/account/accountFeatureRegistry";
+import { useStoreNavigationGuard } from "@/features/navigation/useStoreNavigationGuard";
 import { isLoggedIn } from "@/utils/token";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -17,28 +15,23 @@ function isNavActive(pathname: string, path: string): boolean {
 export default function StoreAccountNav({ className }: { className?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const capabilities = useSiteCapabilities();
-  const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
+  const { capabilities, loyaltyConfig, navigateFeature } = useStoreNavigationGuard();
   const loggedIn = isLoggedIn();
 
-  const items = STORE_ACCOUNT_NAV_ITEMS.filter((item) => {
-    if (item.capability === "points") {
-      if (!capabilities.pointsEnabled) return false;
-      if (!loyaltyLoading && loyaltyConfig && !isLoyaltyFeatureEnabled("points", capabilities, loyaltyConfig)) {
-        return false;
-      }
-    }
-    if (item.capability === "invite" && !capabilities.inviteEnabled) return false;
-    return true;
-  });
-
-  const go = (path: string, requireAuth?: boolean) => {
-    if (requireAuth && !loggedIn) {
-      navigate("/login", { state: { from: path } });
-      return;
-    }
-    navigate(path);
-  };
+  const navKeys: AccountFeatureKey[] = [
+    "profile",
+    "orders",
+    "returns",
+    "address",
+    "coupons",
+    "points",
+    "favorites",
+    "history",
+    "notifications",
+    "feedback",
+    "settings",
+  ];
+  const items = buildAccountFeaturesByKeys(navKeys, { capabilities, loyaltyConfig }, "desktop");
 
   return (
     <nav className={cn("space-y-1", className)} aria-label="账户导航">
@@ -48,7 +41,9 @@ export default function StoreAccountNav({ className }: { className?: string }) {
           <UnifiedButton
             key={item.path}
             type="button"
-            onClick={() => go(item.path, item.requireAuth)}
+            data-feature-key={item.key}
+            aria-disabled={false}
+            onClick={() => navigateFeature(item.key)}
             className={cn(
               "flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors",
               active

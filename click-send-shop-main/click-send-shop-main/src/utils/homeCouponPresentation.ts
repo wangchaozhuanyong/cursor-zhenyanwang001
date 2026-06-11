@@ -1,5 +1,6 @@
 import type { MarketingCouponPublic } from "@/services/marketingService";
 import type { UserCoupon } from "@/types/coupon";
+import { getCouponActionState } from "@/features/coupon/useCouponAction";
 
 export type HomeCouponAction = "claim" | "use" | "view";
 
@@ -9,6 +10,7 @@ export interface HomeCouponCardItem {
   action: HomeCouponAction;
   actionLabel: string;
   statusLabel?: string;
+  actionDisabled?: boolean;
 }
 
 export interface HomeCouponSummary {
@@ -94,7 +96,8 @@ export function buildHomeCouponCardItems(
     return publicCoupons.map((coupon) => ({
       coupon,
       action: "claim",
-      actionLabel: "立即领取",
+      actionLabel: getCouponActionState(coupon, false).actionLabel,
+      actionDisabled: false,
     }));
   }
 
@@ -127,10 +130,13 @@ export function buildHomeCouponCardItems(
     }
 
     if (related.length === 0) {
+      const state = getCouponActionState(coupon, isAuthenticated);
       items.push({
         coupon,
         action: "claim",
-        actionLabel: "立即领取",
+        actionLabel: state.actionLabel,
+        statusLabel: state.statusLabel,
+        actionDisabled: state.disabled,
       });
     }
   }

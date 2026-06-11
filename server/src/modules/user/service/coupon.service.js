@@ -2,6 +2,7 @@ const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/coupon.repository');
 const lifecycle = require('./couponLifecycle.service');
 const memberLevelService = require('./memberLevel.service');
+const claimability = require('./couponClaimability.service');
 const { klDateString } = require('../../../utils/klDateRange');
 
 function normalizeCouponType(type) {
@@ -46,6 +47,10 @@ function isClaimWindowOpen(coupon, now = new Date()) {
   return true;
 }
 
+function claimError(code, reason, message) {
+  return { error: { code, reason, message } };
+}
+
 function mapUserCouponRow(r) {
   const coupon = lifecycle.buildEffectiveCoupon(r);
   const status = lifecycle.resolveUserCouponRuntimeStatus(r);
@@ -79,6 +84,14 @@ function mapCouponEntity(c) {
     id: c.id,
     claimed_at: '',
     status: 'available',
+    issue_activity_id: c.issue_activity_id || c.source_campaign_id || undefined,
+    campaign_id: c.campaign_id || c.source_campaign_id || undefined,
+    claimable: c.claimable,
+    claim_status: c.claim_status,
+    claim_reason: c.claim_reason,
+    requires_login: c.requires_login,
+    requires_member: c.requires_member,
+    requires_new_user: c.requires_new_user,
     coupon: {
       id: c.id,
       code: c.code,
@@ -97,6 +110,13 @@ function mapCouponEntity(c) {
       display_badge: c.display_badge || '',
       category_ids: categoryIds,
       category_names: categoryNames,
+      member_only: !!c.member_only,
+      new_user_only: !!c.new_user_only,
+      auto_issue: !!c.auto_issue,
+      per_user_limit: c.per_user_limit == null ? undefined : Number(c.per_user_limit),
+      total_quantity: c.total_quantity == null ? undefined : Number(c.total_quantity),
+      claimed_count: c.claimed_count == null ? undefined : Number(c.claimed_count),
+      source_campaign_id: c.source_campaign_id || c.campaign_id || undefined,
     },
   };
 }
@@ -161,63 +181,44 @@ async function getAvailableCoupons(userId, options = {}) {
     : [];
   const coupons = mergeCouponRows(baseCoupons, displayCoupons);
 
-  // 未登录先展示可领取入口；真正领取时会登录并重新校验新用户、会员和每人上限。
-  if (!userId) {
-    const now = new Date();
-    return coupons
-      .filter((c) => !c.auto_issue)
-      .filter((c) => isClaimWindowOpen(c, now))
-      .map(mapCouponEntity);
-  }
-
-  const claimed = await repo.selectUserCouponClaimCounts(userId);
-  const claimedCountMap = new Map(claimed.map((r) => [String(r.coupon_id), Number(r.cnt || 0)]));
-  const needsOrderCount = coupons.some((c) => !!c.new_user_only);
-  const needsMemberLevel = coupons.some((c) => !!c.member_only);
-  const [orderCount, memberContext] = await Promise.all([
-    needsOrderCount ? repo.selectUserOrderCount(userId) : Promise.resolve(0),
-    needsMemberLevel ? memberLevelService.getUserMemberLevel(userId) : Promise.resolve({ level: null }),
-  ]);
-  const hasMemberLevel = hasCouponMemberPrivilege(memberContext);
-  return coupons
+  const decorated = await claimability.decorateCouponsWithClaimability(repo, coupons, userId);
+  return decorated
     .filter((c) => isClaimWindowOpen(c, new Date()))
-    .filter((c) => Number(claimedCountMap.get(String(c.id)) || 0) < Math.max(1, Number(c.per_user_limit || 1)))
     .filter((c) => !c.auto_issue)
-    .filter((c) => options.includeAudienceLimited || !c.new_user_only || orderCount <= 0)
-    .filter((c) => options.includeAudienceLimited || !c.member_only || hasMemberLevel)
+    .filter((c) => options.includeAudienceLimited || c.claimable)
     .map(mapCouponEntity);
 }
 
 async function assertCouponClaimable(userId, coupon) {
-  if (!coupon) return { error: { code: 404, message: '优惠券不存在或不在有效期内' } };
+  if (!coupon) return claimError(404, 'disabled', '优惠券不存在或不在有效期内');
   if (!isClaimWindowOpen(coupon)) {
-    return { error: { code: 400, message: '该优惠券暂不可领取' } };
+    return claimError(400, 'disabled', '该优惠券暂不可领取');
   }
   if (coupon.auto_issue) {
-    return { error: { code: 400, message: '该优惠券为系统自动发放，不可手动领取' } };
+    return claimError(400, 'disabled', '该优惠券为系统自动发放，不可手动领取');
   }
   if (coupon.new_user_only) {
     const orderCount = await repo.selectUserOrderCount(userId);
     if (orderCount > 0) {
-      return { error: { code: 403, message: '该优惠券仅限新用户' } };
+      return claimError(403, 'new_user_only', '该优惠券仅限新用户领取');
     }
   }
   if (coupon.member_only) {
     const memberContext = await memberLevelService.getUserMemberLevel(userId);
     if (!hasCouponMemberPrivilege(memberContext)) {
-      return { error: { code: 403, message: '该优惠券仅限会员领取' } };
+      return claimError(403, 'member_required', '该优惠券仅限会员领取');
     }
   }
   const perUserLimit = Math.max(1, Number(coupon.per_user_limit || 1));
   const userClaims = await repo.countUserClaimsForCoupon(userId, coupon.id);
   if (userClaims >= perUserLimit) {
-    return { error: { code: 409, message: '已达到每人领取上限' } };
+    return claimError(409, 'already_claimed', '已达到每人领取上限');
   }
   const totalQty = Number(coupon.total_quantity || 0);
   if (totalQty > 0) {
     const totalClaims = Number(coupon.claimed_count ?? await repo.countTotalClaimsForCoupon(coupon.id));
     if (totalClaims >= totalQty) {
-      return { error: { code: 409, message: '优惠券已领完' } };
+      return claimError(409, 'sold_out', '优惠券已领完');
     }
   }
   return null;
@@ -229,7 +230,7 @@ async function resolveCampaignClaim(userId, couponId, issueActivityId) {
   if (typeof adminApi.resolveCouponCampaignClaim === 'function') {
     const resolved = await adminApi.resolveCouponCampaignClaim(issueActivityId, couponId, userId);
     if (!resolved) {
-      return { error: { code: 403, message: '该优惠券活动不适合当前用户，不能领取' } };
+      return claimError(403, 'not_in_audience', '该优惠券活动不适合当前用户');
     }
     return { issueActivityId: resolved.campaignId || null };
   }
@@ -237,7 +238,7 @@ async function resolveCampaignClaim(userId, couponId, issueActivityId) {
   if (typeof adminApi.isCouponCampaignClaimAllowed !== 'function') return null;
   const allowed = await adminApi.isCouponCampaignClaimAllowed(issueActivityId, couponId, userId);
   if (!allowed) {
-    return { error: { code: 403, message: '该优惠券活动不适合当前用户，不能领取' } };
+    return claimError(403, 'not_in_audience', '该优惠券活动不适合当前用户');
   }
   return { issueActivityId };
 }
@@ -245,7 +246,7 @@ async function resolveCampaignClaim(userId, couponId, issueActivityId) {
 async function claimCoupon(userId, body) {
   const { code } = body;
   let issueActivityId = String(body.activity_id || '').trim() || null;
-  if (!code) return { error: { code: 400, message: '请提供优惠券码或ID' } };
+  if (!code) return claimError(400, 'disabled', '请提供优惠券码或ID');
 
   const conn = await repo.getPool().getConnection();
   try {
@@ -269,12 +270,12 @@ async function claimCoupon(userId, body) {
     const userClaims = await repo.countUserClaimsForCouponInConn(conn, userId, coupon.id);
     if (userClaims >= perUserLimit) {
       await conn.rollback();
-      return { error: { code: 409, message: '已达到每人领取上限' } };
+      return claimError(409, 'already_claimed', '已达到每人领取上限');
     }
     const claimed = await repo.incrementClaimedCountIfAvailable(conn, coupon.id);
     if (!claimed) {
       await conn.rollback();
-      return { error: { code: 409, message: '优惠券已领完' } };
+      return claimError(409, 'sold_out', '优惠券已领完');
     }
     const id = generateId();
     const now = new Date();
@@ -332,4 +333,5 @@ module.exports = {
   getCouponCenter,
   claimCoupon,
   expireUserCouponsNow,
+  decorateCouponsWithClaimability: (coupons, userId) => claimability.decorateCouponsWithClaimability(repo, coupons, userId),
 };

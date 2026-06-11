@@ -93,6 +93,7 @@ jobs:
       - run: npm ci
       - run: npm audit --omit=dev
       - run: npm run arch:check
+      - run: npm run check:no-new-ts-nocheck
       - run: npm run check:migrations
       - run: npm run check:report-registry
       - run: npm run typecheck

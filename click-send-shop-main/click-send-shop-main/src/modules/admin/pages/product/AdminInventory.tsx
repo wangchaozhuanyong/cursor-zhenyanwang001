@@ -49,7 +49,6 @@ type AdminInventoryProps = {
 
 export default function AdminInventory({
   initialTab = "skus",
-  pageTitle,
   pageHint,
 }: AdminInventoryProps = {}) {
   const inv = useAdminInventory(initialTab);

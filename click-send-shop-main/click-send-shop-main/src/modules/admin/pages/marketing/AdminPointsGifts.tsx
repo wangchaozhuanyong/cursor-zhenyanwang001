@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchProducts } from "@/services/admin/productService";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";

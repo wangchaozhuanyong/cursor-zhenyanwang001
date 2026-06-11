@@ -331,7 +331,6 @@ type GuestMobileFooterProps = {
 export default function GuestMobileFooter({
   siteName,
   logoSrc,
-  slogan,
   description,
   supportNav,
   policyNav,
@@ -347,7 +346,6 @@ export default function GuestMobileFooter({
   const { buildSupportPageUrl, channels, openChannel, workingHours: serviceHours } = useSupportRuntime();
   const brandName = resolveFooterBrand(siteName || siteInfo.siteName || STORE_COPY.brandName);
   const footerLogoSrc = cleanFooterText(logoSrc) || resolveSiteLogoUrl(siteInfo);
-  const headline = resolveFooterCopy(slogan, STORE_COPY.siteSlogan, STORE_LEGACY_GENERIC_COPY.siteSlogans);
   const intro = resolveFooterCopy(description, STORE_COPY.siteDescription, STORE_LEGACY_GENERIC_COPY.siteDescriptions);
 
   const whatsappChannel = channels.find((channel) => channel.type === "whatsapp");

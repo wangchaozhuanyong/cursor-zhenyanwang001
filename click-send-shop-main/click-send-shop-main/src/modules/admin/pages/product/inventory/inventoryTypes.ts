@@ -1,13 +1,9 @@
 import type {
-  InventoryConversionOrder,
   InventoryPackRule,
   InventoryReplenishmentAlert,
   InventorySku,
-  InventoryStockRecord,
   PurchaseOrder,
-  SmartReplenishmentPreviewResult,
 } from "@/types/inventory";
-import type { InventoryChangeType } from "@/types/inventory";
 import type { InventoryTabKey, SmartViewKey } from "@/modules/admin/pages/product/inventory/inventoryConstants";
 
 export type { InventoryTabKey, SmartViewKey };

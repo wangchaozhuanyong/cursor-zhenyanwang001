@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type AdminFilterChip = {

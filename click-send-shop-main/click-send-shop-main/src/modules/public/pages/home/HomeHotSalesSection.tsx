@@ -38,7 +38,7 @@ export default function HomeHotSalesSection({
   }, [products]);
 
   const registerImpression = useCallback(
-    (product: Product, index: number) => {
+    (product: Product, _index: number) => {
       if (!product.id || exposedProductIdsRef.current.has(product.id)) return;
       exposedProductIdsRef.current.add(product.id);
       trackEventLazy({

@@ -59,11 +59,6 @@ function SupportChannelVisualIcon({ type }: { type: SupportDownloadChannel["type
   return <TelegramIcon size={26} />;
 }
 
-function getQrActionHint(channel: SupportDownloadChannel) {
-  if (channel.type === "wechat") return "长按二维码保存或识别";
-  return "扫码或保存二维码后联系客服";
-}
-
 export default function SupportChannelCard({ channel }: Props) {
   const account = cleanSupportText(channel.account);
   const qrUrl = cleanSupportText(channel.qrUrl);

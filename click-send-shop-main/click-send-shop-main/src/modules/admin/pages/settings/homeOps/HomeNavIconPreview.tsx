@@ -1,4 +1,3 @@
-import { useAdminT } from "@/hooks/useAdminT";
 import { Tx } from "@/components/admin/AdminText";
 
 export default function HomeNavIconPreview({ value, compact = false }: { value: string; compact?: boolean }) {

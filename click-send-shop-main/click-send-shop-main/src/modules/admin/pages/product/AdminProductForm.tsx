@@ -10,7 +10,6 @@ import { useAdminGoBack } from "@/hooks/useAdminGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { flattenCategories } from "@/utils/categoryTree";
-import type { Category } from "@/types/category";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { AnimatedConfirmDialog } from "@/modules/micro-interactions";

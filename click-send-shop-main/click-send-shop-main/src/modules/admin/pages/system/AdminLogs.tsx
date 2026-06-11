@@ -18,7 +18,6 @@ import {
   removeAuditLogFilterChip,
 } from "@/utils/adminAuditLogFilters";
 import Pagination from "@/components/admin/Pagination";
-import { toast } from "sonner";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { fetchAuditLogs } from "@/services/admin/logService";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";

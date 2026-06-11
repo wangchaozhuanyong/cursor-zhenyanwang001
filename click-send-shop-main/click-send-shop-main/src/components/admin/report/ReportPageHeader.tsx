@@ -19,7 +19,6 @@ export function ReportExportButton({
   exportLabel = "导出当前报表",
   onExport,
 }: Pick<Props, "exporting" | "exportLabel" | "onExport"> & { onExport: () => void }) {
-  const { tText } = useAdminT();
   return (
     <PermissionGate permission="report.export">
       <UnifiedButton

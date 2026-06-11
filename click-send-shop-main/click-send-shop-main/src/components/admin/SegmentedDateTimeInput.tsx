@@ -3,14 +3,10 @@ import { CalendarClock } from "lucide-react";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import {
   SEGMENT_DAY_LEN,
-  SEGMENT_HOUR_LEN,
   SEGMENT_MINUTE_LEN,
   SEGMENT_MONTH_LEN,
-  SEGMENT_YEAR_INPUT_CLASS,
-  SEGMENT_YEAR_LEN,
   applyYearSegmentInput,
   focusNextAfterDayComplete,
-  focusNextAfterHourComplete,
   focusNextAfterMonthComplete,
   handleYearSegmentPaste,
   segmentDigits,
@@ -32,7 +28,6 @@ function parseDateTimeLocal(v: string): { y: string; m: string; d: string; h: st
   }
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) {
-    const pad = (n: number) => String(n).padStart(2, "0");
     return {
       y: String(d.getFullYear()),
       m: String(d.getMonth() + 1),

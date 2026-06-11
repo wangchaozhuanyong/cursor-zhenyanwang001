@@ -11,7 +11,6 @@ import {
   monitoringSecondaryButtonClass,
   monitoringTableHeadClass,
 } from "./monitoringUi";
-import { MONITORING_RUN_STATUS_LABELS } from "./monitoringLabels";
 import { formatSystemErrorMessage } from "@/utils/systemErrorMessage";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";

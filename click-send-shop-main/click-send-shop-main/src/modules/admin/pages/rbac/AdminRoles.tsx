@@ -17,7 +17,6 @@ import AdminPermissionPicker from "@/components/admin/AdminPermissionPicker";
 import AdminRolePicker from "@/components/admin/AdminRolePicker";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
-import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";

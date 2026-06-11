@@ -10,7 +10,6 @@ import { DEVICE_WIDTH } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
 import InvitePromoCard from "@/components/store/InvitePromoCard";
 import { THEME_MEMBER_CARD_MUTED, THEME_MEMBER_CARD_SHELL } from "@/utils/themeVisuals";
-import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   config: ThemeConfig;

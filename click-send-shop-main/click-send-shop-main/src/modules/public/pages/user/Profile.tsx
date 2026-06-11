@@ -183,7 +183,6 @@ export default function Profile() {
   );
   const afterSaleCount = Math.max(orderSummary?.after_sale ?? orderRefundCount, activeReturnCount);
 
-  const pointsEnabled = isLoyaltyFeatureEnabled("points", capabilities, loyaltyConfig);
   const rewardsEnabled = isLoyaltyFeatureEnabled("reward", capabilities, loyaltyConfig);
   const inviteEnabled = isLoyaltyFeatureEnabled("referral", capabilities, loyaltyConfig);
 

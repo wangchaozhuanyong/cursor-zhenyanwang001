@@ -134,7 +134,7 @@ export default function Categories() {
 
   const handleSelectAll = useCallback(() => { setActiveCat("all"); }, []);
 
-  const rootRow: Array<{ kind: "all" } | { kind: "root"; node: Category }> = [{ kind: "all" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
+  type RootRowItem = { kind: "all" } | { kind: "root"; node: Category };
 
   const activeRootId = useMemo(() => {
     if (activeCat === "all") return null;
@@ -149,7 +149,7 @@ export default function Categories() {
   const scrollTabKey = activeCat === "all" ? "all" : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
 
   const rootKingkongItems = useMemo((): CategoryKingkongItem[] => {
-    const row: typeof rootRow = [{ kind: "all" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
+    const row: RootRowItem[] = [{ kind: "all" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
     return row.map((item) => {
       if (item.kind === "all") {
         return {

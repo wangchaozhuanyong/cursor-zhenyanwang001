@@ -16,7 +16,6 @@ import {
   Login,
   MemberBenefits,
   MemberHome,
-  NewArrivals,
   Notifications,
   OrderDetail,
   Orders,
@@ -39,7 +38,7 @@ type Preloadable = { preload?: () => Promise<unknown> };
 
 const exactPreloaders = new Map<string, Preloadable>([
   ["/categories", Categories],
-  ["/new-arrivals", NewArrivals],
+  ["/new-arrivals", Categories],
   ["/support-download", SupportDownload],
   ["/search", Search],
   ["/cart", Cart],

@@ -11,6 +11,7 @@ import {
   HOME_NAV_ITEM_CLASS,
   HOME_NAV_LABEL_CLASS,
 } from "@/constants/homeLayout";
+import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { filterVisibleHomeNavItems, isHomeNavItemVisible } from "@/utils/homeNavCapabilities";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -77,7 +78,7 @@ function normalizeText(value: string | undefined, fallback = ""): string {
 
 const fallbackNavItems: HomeNavItem[] = [
   { id: "fallback-1", title: "全部分类", icon_url: "📚", link_url: "/categories", target_type: "categories", target_category_id: null, target_support_channel_id: null, sort_order: 1, enabled: true },
-  { id: "fallback-2", title: "新品上新", icon_url: "🆕", link_url: "/new-arrivals", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 2, enabled: true },
+  { id: "fallback-2", title: "新品上新", icon_url: "🆕", link_url: NEW_ARRIVAL_CATEGORY_PATH, target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 2, enabled: true },
   { id: "fallback-3", title: "热销好物", icon_url: "🔥", link_url: "/categories?sort=sales_desc", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 3, enabled: true },
   { id: "fallback-4", title: "优惠券", icon_url: "🎟️", link_url: "/coupons", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 4, enabled: true },
   { id: "fallback-5", title: "我的订单", icon_url: "🧾", link_url: "/orders", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 5, enabled: true },

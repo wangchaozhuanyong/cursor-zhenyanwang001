@@ -19,6 +19,7 @@ import { isProductNewArrival } from "@/utils/productNewArrival";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { ThemeConfig } from "@/types/theme";
+import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 
 export type ProductCardSiteContext = {
   restrictedComplianceEnabled: boolean;
@@ -204,7 +205,7 @@ function ProductCardInner({
   };
   const openNewArrivals = (event: MouseEvent) => {
     event.stopPropagation();
-    navigate("/new-arrivals");
+    navigate(NEW_ARRIVAL_CATEGORY_PATH);
   };
   const badgeButtonClass = "m-0 inline-flex h-[22px] border-0 bg-transparent p-0 leading-none shadow-none";
 

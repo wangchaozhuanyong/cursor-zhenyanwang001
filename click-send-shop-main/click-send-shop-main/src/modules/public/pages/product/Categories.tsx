@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
@@ -28,6 +28,11 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import {
+  NEW_ARRIVAL_CATEGORY_CANONICAL_SEARCH,
+  NEW_ARRIVAL_CATEGORY_LABEL,
+  isNewArrivalCategoryParams,
+} from "@/constants/newArrivalNavigation";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -42,11 +47,14 @@ export default function Categories() {
   );
   const { viewMode, setViewMode } = useCategoryListView();
   const [searchParams, setSearchParams] = useSearchParams();
+  const syncedSearchKeyRef = useRef(searchParams.toString());
+  const syncingFromUrlRef = useRef(false);
   const productGridClass = getCategoryProductsGridClass(viewMode, themeConfig.productCardVariant);
   const emptyColSpan = getCategoryProductsEmptyColSpan(viewMode, themeConfig.productCardVariant);
   const isListView = viewMode === "list";
 
-  const [activeCat, setActiveCat] = useState(searchParams.get("cat") || "all");
+  const initialIsNew = isNewArrivalCategoryParams(searchParams);
+  const [activeCat, setActiveCat] = useState(initialIsNew ? "all" : searchParams.get("cat") || "all");
   const [activeTagId, setActiveTagId] = useState(searchParams.get("tag_id") || "");
   const [quickTags, setQuickTags] = useState<ProductTag[]>([]);
   const [sort, setSort] = useState<ProductSortType>(normalizeSort(searchParams.get("sort")));
@@ -55,7 +63,7 @@ export default function Categories() {
   const [minPrice, setMinPrice] = useState(searchParams.get("min_price") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("max_price") || "");
   const [inStock, setInStock] = useState(searchParams.get("in_stock") === "1");
-  const [isNew, setIsNew] = useState(searchParams.get("is_new") === "1");
+  const [isNew, setIsNew] = useState(initialIsNew);
   const [isHot, setIsHot] = useState(searchParams.get("is_hot") === "1");
   const [isRecommended, setIsRecommended] = useState(searchParams.get("is_recommended") === "1");
   const products = useProductStore((s) => s.products);
@@ -68,6 +76,28 @@ export default function Categories() {
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
   useEffect(() => { productService.fetchProductTags(20).then(setQuickTags).catch(() => setQuickTags([])); }, []);
+
+  useEffect(() => {
+    const currentSearchKey = searchParams.toString();
+    if (currentSearchKey === syncedSearchKeyRef.current) return;
+
+    const nextIsNew = isNewArrivalCategoryParams(searchParams);
+    const keyword = searchParams.get("keyword") || "";
+    syncingFromUrlRef.current = true;
+    syncedSearchKeyRef.current = currentSearchKey;
+    setActiveCat(nextIsNew ? "all" : searchParams.get("cat") || "all");
+    setActiveTagId(searchParams.get("tag_id") || "");
+    setSort(normalizeSort(searchParams.get("sort")));
+    setQuery(keyword);
+    setSubmittedQuery(keyword);
+    setMinPrice(searchParams.get("min_price") || "");
+    setMaxPrice(searchParams.get("max_price") || "");
+    setInStock(searchParams.get("in_stock") === "1");
+    setIsNew(nextIsNew);
+    setIsHot(searchParams.get("is_hot") === "1");
+    setIsRecommended(searchParams.get("is_recommended") === "1");
+  }, [searchParams]);
+
   const syncQuery = useCallback(() => {
     const next = new URLSearchParams();
     if (activeCat && activeCat !== "all") next.set("cat", activeCat);
@@ -75,16 +105,25 @@ export default function Categories() {
     if (minPrice) next.set("min_price", minPrice);
     if (maxPrice) next.set("max_price", maxPrice);
     if (inStock) next.set("in_stock", "1");
-    if (isNew) next.set("is_new", "1");
+    if (isNew) {
+      next.set("is_new", "1");
+      next.set("home_new_arrivals_rule", "1");
+    }
     if (isHot) next.set("is_hot", "1");
     if (isRecommended) next.set("is_recommended", "1");
     if (sort && sort !== "default") next.set("sort", sort);
     if (submittedQuery) next.set("keyword", submittedQuery);
-    if (next.toString() === searchParams.toString()) return;
+    const nextSearchKey = next.toString();
+    if (nextSearchKey === searchParams.toString()) return;
+    syncedSearchKeyRef.current = nextSearchKey;
     setSearchParams(next, { replace: true });
   }, [activeCat, activeTagId, inStock, isHot, isNew, isRecommended, maxPrice, minPrice, searchParams, setSearchParams, sort, submittedQuery]);
 
   useEffect(() => {
+    if (syncingFromUrlRef.current) {
+      syncingFromUrlRef.current = false;
+      return;
+    }
     syncQuery();
   }, [syncQuery]);
 
@@ -99,23 +138,27 @@ export default function Categories() {
       is_new: isNew ? true : undefined,
       is_hot: isHot ? true : undefined,
       is_recommended: isRecommended ? true : undefined,
+      home_new_arrivals_rule: isNew ? 1 : undefined,
+      new_arrivals_only_in_stock: isNew ? (siteInfo.newArrivalOnlyInStock !== "0" ? 1 : 0) : undefined,
       in_stock: inStock ? true : undefined,
       min_price: min,
       max_price: max,
-      sort: sort === "default" ? undefined : sort,
+      sort: sort === "default" ? (isNew ? "newest" : undefined) : sort,
       include_descendants: true,
       page: 1,
       pageSize: 24,
     });
-  }, [activeCat, activeTagId, inStock, isHot, isNew, isRecommended, loadProducts, maxPrice, minPrice, sort, submittedQuery]);
+  }, [activeCat, activeTagId, inStock, isHot, isNew, isRecommended, loadProducts, maxPrice, minPrice, siteInfo.newArrivalOnlyInStock, sort, submittedQuery]);
 
   const handleSelectChild = useCallback((childId: string) => {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: childId });
+    setIsNew(false);
     setActiveCat(childId);
   }, []);
 
   const handleRootCategoryClick = useCallback((cat: Category) => {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: cat.id });
+    setIsNew(false);
     setActiveCat(cat.id);
   }, []);
 
@@ -127,32 +170,55 @@ export default function Categories() {
     setSubmittedQuery(query.trim());
   }, [query]);
 
-  const handleSelectAll = useCallback(() => { setActiveCat("all"); }, []);
+  const handleSelectAll = useCallback(() => {
+    setIsNew(false);
+    setActiveCat("all");
+  }, []);
 
-  type RootRowItem = { kind: "all" } | { kind: "root"; node: Category };
+  const handleSelectNewArrivals = useCallback(() => {
+    void trackEvent({ event_type: "category_click", module: "categories", category_id: "system:new_arrivals" });
+    setActiveCat("all");
+    setIsNew(true);
+  }, []);
+
+  type RootRowItem = { kind: "all" } | { kind: "new" } | { kind: "root"; node: Category };
 
   const activeRootId = useMemo(() => {
+    if (isNew) return null;
     if (activeCat === "all") return null;
     return findRootCategoryIdForActive(categories, activeCat);
-  }, [activeCat, categories]);
+  }, [activeCat, categories, isNew]);
 
   const subCategories = useMemo(() => {
     if (!activeRootId) return [];
     const root = findCategoryById(categories, activeRootId);
     return root?.children?.filter(Boolean) ?? [];
   }, [activeRootId, categories]);
-  const scrollTabKey = activeCat === "all" ? "all" : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
+  const scrollTabKey = isNew
+    ? "new"
+    : activeCat === "all"
+      ? "all"
+      : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
 
   const rootKingkongItems = useMemo((): CategoryKingkongItem[] => {
-    const row: RootRowItem[] = [{ kind: "all" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
+    const row: RootRowItem[] = [{ kind: "all" }, { kind: "new" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
     return row.map((item) => {
       if (item.kind === "all") {
         return {
           id: "all",
           label: "全部",
           iconValue: "📋",
-          active: activeCat === "all",
+          active: activeCat === "all" && !isNew,
           onClick: handleSelectAll,
+        };
+      }
+      if (item.kind === "new") {
+        return {
+          id: "new",
+          label: NEW_ARRIVAL_CATEGORY_LABEL,
+          iconValue: "🆕",
+          active: isNew,
+          onClick: handleSelectNewArrivals,
         };
       }
       const { node } = item;
@@ -160,11 +226,11 @@ export default function Categories() {
         id: node.id,
         label: node.name,
         iconValue: getCategoryNavIconValue(node),
-        active: isCategoryOrDescendantActive(node, activeCat),
+        active: !isNew && isCategoryOrDescendantActive(node, activeCat),
         onClick: () => handleRootCategoryClick(node),
       };
     });
-  }, [activeCat, categories, handleRootCategoryClick, handleSelectAll]);
+  }, [activeCat, categories, handleRootCategoryClick, handleSelectAll, handleSelectNewArrivals, isNew]);
 
   const activeFilterCount = useMemo(() => {
     let c = 0;
@@ -198,17 +264,23 @@ export default function Categories() {
     || searchParams.get("is_recommended")
     || searchParams.get("page"),
   );
-  const activeCategory = useMemo(() => (activeCat === "all" ? null : findCategoryById(categories, activeCat)), [activeCat, categories]);
+  const activeCategory = useMemo(() => (activeCat === "all" || isNew ? null : findCategoryById(categories, activeCat)), [activeCat, categories, isNew]);
   const activeCategoryName = activeCategory?.name || "";
   const categoryDescription = activeCategory?.description?.trim() || "";
   const siteName = (siteInfo.siteName || STORE_COPY.brandName).trim();
-  const pageHeading = activeCategoryName || "全部分类";
-  const title = activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`);
-  const description = activeCategory?.seo_description?.trim() || (activeCategoryName
+  const pageHeading = isNew ? NEW_ARRIVAL_CATEGORY_LABEL : activeCategoryName || "全部分类";
+  const title = isNew
+    ? `新品上市｜${siteName}`
+    : activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`);
+  const description = isNew
+    ? `查看${siteName}新品商品，发现最近上架的商品和服务。`
+    : activeCategory?.seo_description?.trim() || (activeCategoryName
     ? categoryDescription || `查看${siteName}${activeCategoryName}分类，发现更多相关商品和服务。`
     : `查看${siteName}全部分类，快速找到更多商品和服务。`);
   const robots = hasComplexParams ? "noindex,follow" : "index,follow";
-  const canonical = activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
+  const canonical = isNew
+    ? buildCanonical("/categories", NEW_ARRIVAL_CATEGORY_CANONICAL_SEARCH, { keepParams: ["is_new"] })
+    : activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
   const showFullSkeleton = loading && products.length === 0;
   const showSoftRefreshing = listRefreshing && products.length > 0;
 

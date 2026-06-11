@@ -150,8 +150,20 @@ describe("AdminUserSecurity", () => {
     expect(container).toHaveTextContent("2405:3800:...:bd01:5549");
     expect(container).toHaveTextContent("马来西亚");
     expect(container).toHaveTextContent("测试用户A");
-    expect(container).toHaveTextContent("+60123456789");
     expect(container).toHaveTextContent("+60198765432");
     expect(container).toHaveTextContent("登录行为触发观察");
+
+    const relatedUsersCell = Array.from(container?.querySelectorAll("td") ?? []).find((cell) =>
+      cell.textContent?.includes("测试用户A"),
+    );
+    const moreButton = relatedUsersCell?.querySelector("button");
+    expect(moreButton).toHaveTextContent("更多");
+
+    await act(async () => {
+      moreButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(document.body).toHaveTextContent("+60123456789");
+    expect(document.body).toHaveTextContent("+60198765432");
   });
 });

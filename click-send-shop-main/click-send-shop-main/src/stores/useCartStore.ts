@@ -17,6 +17,13 @@ type LoadCartOptions = {
   force?: boolean;
 };
 
+export type BuyNowCouponChoice = {
+  mode: "auto" | "manual" | "none";
+  couponId?: string;
+  couponTitle?: string;
+  estimatedDiscount?: number;
+};
+
 function hasSessionCartLoad() {
   if (typeof sessionStorage === "undefined") return false;
   return sessionStorage.getItem(CART_SESSION_LOAD_KEY) === "1";
@@ -52,6 +59,7 @@ export function getCartLinePrice(item: CartItem) {
 interface CartState {
   items: CartItem[];
   buyNowItem: CartItem | null;
+  buyNowCouponChoice: BuyNowCouponChoice | null;
   selection: Record<string, boolean>;
   loading: boolean;
   error: string | null;
@@ -66,7 +74,12 @@ interface CartState {
   pinItemToTop: (productId: string, variantId?: string) => Promise<void>;
   clearCart: () => Promise<void>;
   removeOrderedItems: (lines: Array<{ product_id: string; variant_id?: string }>) => void;
-  setBuyNow: (product: Product, qty: number, variant?: ProductVariant | null) => void;
+  setBuyNow: (
+    product: Product,
+    qty: number,
+    variant?: ProductVariant | null,
+    couponChoice?: BuyNowCouponChoice | null,
+  ) => void;
   clearBuyNow: () => void;
 
   isSelected: (productId: string, variantId?: string) => boolean;
@@ -102,6 +115,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       buyNowItem: null,
+      buyNowCouponChoice: null,
       selection: {},
       loading: false,
       error: null,
@@ -279,8 +293,18 @@ export const useCartStore = create<CartState>()(
         });
       },
 
-      setBuyNow: (product, qty, variant = null) => set({ buyNowItem: { product, variant_id: variant?.id, sku_code: variant?.sku_code ?? undefined, variant_name: variant?.title, unit_price: variant?.price ?? product.price, qty } }),
-      clearBuyNow: () => set({ buyNowItem: null }),
+      setBuyNow: (product, qty, variant = null, couponChoice = null) => set({
+        buyNowItem: {
+          product,
+          variant_id: variant?.id,
+          sku_code: variant?.sku_code ?? undefined,
+          variant_name: variant?.title,
+          unit_price: variant?.price ?? product.price,
+          qty,
+        },
+        buyNowCouponChoice: couponChoice,
+      }),
+      clearBuyNow: () => set({ buyNowItem: null, buyNowCouponChoice: null }),
 
       isSelected: (productId, variantId = "") => get().selection[cartLineKey(productId, variantId)] !== false,
       toggleSelect: (productId, variantId = "") => set((s) => ({ selection: { ...s.selection, [cartLineKey(productId, variantId)]: s.selection[cartLineKey(productId, variantId)] === false } })),
@@ -305,7 +329,12 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "cart-storage",
-      partialize: (s) => ({ items: s.items, selection: s.selection, buyNowItem: s.buyNowItem }),
+      partialize: (s) => ({
+        items: s.items,
+        selection: s.selection,
+        buyNowItem: s.buyNowItem,
+        buyNowCouponChoice: s.buyNowCouponChoice,
+      }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         state.items = normalizeCartItems(state.items || []);

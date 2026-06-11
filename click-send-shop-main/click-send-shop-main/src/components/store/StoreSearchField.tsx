@@ -11,6 +11,9 @@ type StoreSearchFieldProps = {
   onNavigate?: () => void;
   /** filter 模式下按 Enter 触发 */
   onSubmit?: () => void;
+  showSubmitButton?: boolean;
+  submitButtonLabel?: string;
+  submitOnly?: boolean;
   autoFocus?: boolean;
   className?: string;
   onFocus?: () => void;
@@ -23,6 +26,11 @@ const baseFieldClass =
 const fieldSizeClass = {
   default: "h-[2.625rem] min-h-[2.625rem] pl-9 pr-3.5",
   compact: "!h-9 !min-h-9 pl-8 pr-3 text-[13px]",
+};
+
+const fieldWithButtonSizeClass = {
+  default: "pr-[3.05rem]",
+  compact: "pr-[2.65rem]",
 };
 
 const iconSizeClass = {
@@ -43,11 +51,23 @@ export default function StoreSearchField({
   onValueChange,
   onNavigate,
   onSubmit,
+  showSubmitButton = false,
+  submitButtonLabel = "搜索",
+  submitOnly = false,
   autoFocus,
   className,
   onFocus,
   onBlur,
 }: StoreSearchFieldProps) {
+  const canEdit = mode === "filter" || submitOnly;
+  const handleSubmit = () => {
+    if (mode === "navigate" && !submitOnly) {
+      onNavigate?.();
+      return;
+    }
+    onSubmit?.();
+  };
+
   return (
     <div className={cn("relative min-w-0 flex-1", className)}>
       <div className={cn("pointer-events-none absolute inset-y-0 flex items-center", iconSizeClass[size])} aria-hidden>
@@ -55,30 +75,49 @@ export default function StoreSearchField({
       </div>
       <input
         type="search"
-        readOnly={mode === "navigate"}
-        value={mode === "filter" ? value : undefined}
+        readOnly={!canEdit}
+        value={canEdit ? value : undefined}
         placeholder={placeholder}
-        onChange={mode === "filter" ? (e) => onValueChange?.(e.target.value) : undefined}
+        onChange={canEdit ? (e) => onValueChange?.(e.target.value) : undefined}
         onKeyDown={
-          mode === "filter" && onSubmit
+          canEdit && onSubmit
             ? (e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  onSubmit();
+                  handleSubmit();
                 }
               }
             : undefined
         }
         onFocus={() => {
-          if (mode === "navigate") onNavigate?.();
+          if (mode === "navigate" && !submitOnly) onNavigate?.();
           onFocus?.();
         }}
         onBlur={onBlur}
-        onClick={mode === "navigate" ? onNavigate : undefined}
-        autoFocus={mode === "filter" ? autoFocus : undefined}
-        className={cn(baseFieldClass, fieldSizeClass[size], mode === "navigate" && "cursor-pointer")}
+        onClick={mode === "navigate" && !submitOnly ? onNavigate : undefined}
+        autoFocus={canEdit ? autoFocus : undefined}
+        className={cn(
+          baseFieldClass,
+          fieldSizeClass[size],
+          showSubmitButton && "store-search-field--with-submit",
+          showSubmitButton && fieldWithButtonSizeClass[size],
+          mode === "navigate" && !submitOnly && "cursor-pointer",
+        )}
         aria-label={placeholder}
       />
+      {showSubmitButton ? (
+        <button
+          type="button"
+          onClick={handleSubmit}
+          aria-label={submitButtonLabel}
+          className={cn(
+            "store-search-submit-button absolute right-1 top-1/2 inline-flex shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-transparent bg-[var(--theme-price)] text-[var(--theme-price-foreground)] shadow-sm transition active:scale-95",
+            size === "compact" ? "h-7 w-7" : "h-8 w-8",
+          )}
+        >
+          <Search className={size === "compact" ? "h-3.5 w-3.5" : "h-4 w-4"} />
+        </button>
+      ) : null}
     </div>
   );
 }

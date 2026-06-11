@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
-import StorePageHeader from "@/components/store/StorePageHeader";
+import StoreTabHeader from "@/components/store/StoreTabHeader";
 import { STORE_COPY } from "@/constants/storeCopy";
-import StoreSearchField from "@/components/store/StoreSearchField";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
@@ -28,10 +27,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
-import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
-import { renderBrandTitle } from "@/utils/brand";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -55,7 +51,7 @@ export default function Categories() {
   const [quickTags, setQuickTags] = useState<ProductTag[]>([]);
   const [sort, setSort] = useState<ProductSortType>(normalizeSort(searchParams.get("sort")));
   const [query, setQuery] = useState(searchParams.get("keyword") || "");
-  const [debouncedQuery, setDebouncedQuery] = useState(searchParams.get("keyword") || "");
+  const [submittedQuery, setSubmittedQuery] = useState(searchParams.get("keyword") || "");
   const [minPrice, setMinPrice] = useState(searchParams.get("min_price") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("max_price") || "");
   const [inStock, setInStock] = useState(searchParams.get("in_stock") === "1");
@@ -72,11 +68,6 @@ export default function Categories() {
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
   useEffect(() => { productService.fetchProductTags(20).then(setQuickTags).catch(() => setQuickTags([])); }, []);
-  useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
-    return () => window.clearTimeout(t);
-  }, [query]);
-
   const syncQuery = useCallback(() => {
     const next = new URLSearchParams();
     if (activeCat && activeCat !== "all") next.set("cat", activeCat);
@@ -88,10 +79,10 @@ export default function Categories() {
     if (isHot) next.set("is_hot", "1");
     if (isRecommended) next.set("is_recommended", "1");
     if (sort && sort !== "default") next.set("sort", sort);
-    if (debouncedQuery) next.set("keyword", debouncedQuery);
+    if (submittedQuery) next.set("keyword", submittedQuery);
     if (next.toString() === searchParams.toString()) return;
     setSearchParams(next, { replace: true });
-  }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, maxPrice, minPrice, searchParams, setSearchParams, sort]);
+  }, [activeCat, activeTagId, inStock, isHot, isNew, isRecommended, maxPrice, minPrice, searchParams, setSearchParams, sort, submittedQuery]);
 
   useEffect(() => {
     syncQuery();
@@ -104,7 +95,7 @@ export default function Categories() {
     void loadProducts({
       category_id: activeCat === "all" ? undefined : activeCat,
       tag_id: activeTagId || undefined,
-      keyword: debouncedQuery || undefined,
+      keyword: submittedQuery || undefined,
       is_new: isNew ? true : undefined,
       is_hot: isHot ? true : undefined,
       is_recommended: isRecommended ? true : undefined,
@@ -116,7 +107,7 @@ export default function Categories() {
       page: 1,
       pageSize: 24,
     });
-  }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, loadProducts, maxPrice, minPrice, sort]);
+  }, [activeCat, activeTagId, inStock, isHot, isNew, isRecommended, loadProducts, maxPrice, minPrice, sort, submittedQuery]);
 
   const handleSelectChild = useCallback((childId: string) => {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: childId });
@@ -129,8 +120,12 @@ export default function Categories() {
   }, []);
 
   const clearFilters = useCallback(() => {
-    setActiveTagId(""); setSort("default"); setQuery(""); setMinPrice(""); setMaxPrice(""); setInStock(false); setIsNew(false); setIsHot(false); setIsRecommended(false);
+    setActiveTagId(""); setSort("default"); setQuery(""); setSubmittedQuery(""); setMinPrice(""); setMaxPrice(""); setInStock(false); setIsNew(false); setIsHot(false); setIsRecommended(false);
   }, []);
+
+  const handleTopSearchSubmit = useCallback(() => {
+    setSubmittedQuery(query.trim());
+  }, [query]);
 
   const handleSelectAll = useCallback(() => { setActiveCat("all"); }, []);
 
@@ -207,7 +202,6 @@ export default function Categories() {
   const activeCategoryName = activeCategory?.name || "";
   const categoryDescription = activeCategory?.description?.trim() || "";
   const siteName = (siteInfo.siteName || STORE_COPY.brandName).trim();
-  const logoSrc = resolveSiteLogoUrl(siteInfo);
   const pageHeading = activeCategoryName || "全部分类";
   const title = activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`);
   const description = activeCategory?.seo_description?.trim() || (activeCategoryName
@@ -251,13 +245,6 @@ export default function Categories() {
         </div>
       </div>
     </ProductFilterDrawer>
-  );
-
-  const categoryHeaderTitle = (
-    <span className="store-category-brand">
-      <StoreBrandLogo src={logoSrc} siteName={siteName} variant="category" width={28} height={28} />
-      <span className="store-category-brand-name">{renderBrandTitle(siteName)}</span>
-    </span>
   );
 
   const mobileCategoryTabs = (
@@ -354,20 +341,15 @@ export default function Categories() {
       <div
         className="store-category-mobile-chrome md:hidden"
       >
-        <StorePageHeader
-          matchTabHeaderHeight
-          sticky={false}
-          className="store-category-mobile-header"
-          title={categoryHeaderTitle}
-          titleInlineSlot={
-            <StoreSearchField
-              mode="filter"
-              placeholder={STORE_COPY.searchPlaceholder}
-              value={query}
-              onValueChange={setQuery}
-              className="store-category-search-field"
-            />
-          }
+        <StoreTabHeader
+          searchMode="filter"
+          searchValue={query}
+          onSearchChange={setQuery}
+          onSearchSubmit={handleTopSearchSubmit}
+          searchPlaceholder={STORE_COPY.searchPlaceholder}
+          showSiteNameMobile
+          position="static"
+          className="store-home-topbar store-category-mobile-header store-category-topbar"
         />
       </div>
       <div className="store-category-mobile-tabs-shell md:hidden">
@@ -424,13 +406,13 @@ export default function Categories() {
                   !error ? (
                   <div className={cn(emptyColSpan, "store-listing-empty py-12 text-center text-muted-foreground")}>
                     <p>
-                      {activeFilterCount > 0 || debouncedQuery
+                      {activeFilterCount > 0 || submittedQuery
                         ? "当前筛选条件无结果"
                         : activeCat !== "all"
                           ? "当前分类暂无商品"
                           : "暂无商品上架"}
                     </p>
-                    {(activeFilterCount > 0 || debouncedQuery) ? (
+                    {(activeFilterCount > 0 || submittedQuery) ? (
                       <UnifiedButton type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">
                         清空筛选
                       </UnifiedButton>

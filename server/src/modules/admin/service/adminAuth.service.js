@@ -8,6 +8,7 @@ const adminMfaService = require('./adminMfa.service');
 const { buildPhoneLookupCandidates, inferCountryCodeForPhone } = require('../../../utils/phone');
 const { sortUsersForAdminLogin } = require('./rbac.service');
 const adminLoginRiskStore = require('./adminLoginRiskStore');
+const { getClientIp } = require('../../../utils/clientIp');
 
 const PUBLIC_LOGIN_FAILURE_MESSAGE = '账号或密码错误';
 /** 仅当服务端配置了 Turnstile 且登录页可提交 token 时才启用验证码门槛 */
@@ -39,11 +40,6 @@ function normalizeLoginAccount(input) {
     .replace(/[！-～]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
     .replace(/\s+/g, '')
     .trim();
-}
-
-function getClientIp(req) {
-  const xf = req?.headers?.['x-forwarded-for'];
-  return String(req?.ip || (typeof xf === 'string' ? xf.split(',')[0].trim() : '') || req?.socket?.remoteAddress || 'unknown');
 }
 
 function riskKey(scope, value) {

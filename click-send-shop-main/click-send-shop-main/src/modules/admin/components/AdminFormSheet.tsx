@@ -1,5 +1,6 @@
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
+import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LoadingButton, type AppModalTier, type BottomSheetHeight } from "@/modules/micro-interactions";
 import { AdminResponsiveSheet, type AdminResponsiveSheetSize } from "./AdminResponsiveSheet";
@@ -23,7 +24,7 @@ export type AdminFormSheetProps = {
   onSubmit: () => void | Promise<void>;
 };
 
-/** 管理端表单弹层：取消 + 主操作，布局与 C 端 BottomSheetConfirm 一致 */
+/** 管理端表单弹层：少内容自适应，中大型内容由调用方显式指定高度或使用右侧抽屉 */
 export function AdminFormSheet({
   open,
   onOpenChange,
@@ -36,7 +37,7 @@ export function AdminFormSheet({
   submitDisabled = false,
   danger = false,
   size = "md",
-  height = "70vh",
+  height = "auto",
   tier = "form",
   className,
   onSubmit,
@@ -63,22 +64,24 @@ export function AdminFormSheet({
         type="button"
         disabled={loading}
         onClick={() => onOpenChange(false)}
-        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
+        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-foreground transition hover:bg-secondary disabled:opacity-50"
       >
-        {cancelText}
+        <X className="h-4 w-4 shrink-0" aria-hidden />
+        <span>{cancelText}</span>
       </UnifiedButton>
       <LoadingButton
         type="button"
         state={loading ? "loading" : "normal"}
         disabled={submitDisabled}
         className={cn(
-          "min-h-11 w-full rounded-lg text-sm font-semibold",
+          "min-h-12 w-full rounded-full text-sm font-semibold",
           danger
             ? "!bg-destructive !text-destructive-foreground"
             : "btn-theme-price !text-[var(--theme-price-foreground)]",
         )}
         onClick={() => void handleSubmit()}
         loadingText={submitText}
+        leftIcon={<Check className="h-4 w-4 shrink-0" aria-hidden />}
       >
         {submitText}
       </LoadingButton>

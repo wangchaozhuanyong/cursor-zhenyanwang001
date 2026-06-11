@@ -64,14 +64,11 @@ export function CheckoutPaymentMethod({
       : null;
 
   return (
-    <div className="store-checkout-card theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
+    <div className="store-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="store-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-[var(--theme-price-foreground)]">2</span>
-          <div>
-            <h3 className="text-[15px] font-semibold text-foreground">支付方式</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">选择适合你的付款方式</p>
-          </div>
+        <div>
+          <h3 className="text-[15px] font-bold text-foreground md:text-base">支付方式</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">选择适合你的付款方式</p>
         </div>
         <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
           <ShieldCheck size={12} className="text-[var(--theme-success)]" /> 安全支付

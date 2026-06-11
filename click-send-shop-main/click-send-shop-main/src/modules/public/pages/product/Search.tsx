@@ -57,9 +57,11 @@ export default function Search() {
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const suggestDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const pendingTrackKeywordRef = useRef(initialKeyword);
 
   const {
     products,
+    pagination,
     loading,
     listRefreshing,
     error,
@@ -118,6 +120,16 @@ export default function Search() {
     });
   }, [debouncedQuery, loadProducts]);
 
+  useEffect(() => {
+    const pendingKeyword = pendingTrackKeywordRef.current.trim();
+    const keyword = debouncedQuery.trim();
+    const urlKeyword = searchParams.get("keyword")?.trim() || "";
+    if (!pendingKeyword || pendingKeyword !== keyword || pendingKeyword !== urlKeyword) return;
+    if (loading || listRefreshing) return;
+    trackSearchKeyword(pendingKeyword, pagination.total).catch(() => {});
+    pendingTrackKeywordRef.current = "";
+  }, [debouncedQuery, listRefreshing, loading, pagination.total, searchParams]);
+
   const addToHistory = useCallback((term: string) => {
     const trimmed = term.trim();
     if (!trimmed) return;
@@ -136,7 +148,7 @@ export default function Search() {
     setSuggestions([]);
     addToHistory(trimmed);
     setSearchAttribution(trimmed);
-    trackSearchKeyword(trimmed).catch(() => {});
+    pendingTrackKeywordRef.current = trimmed;
   }, [addToHistory, searchParams, setSearchParams]);
 
   const handleSearch = useCallback((val: string) => {

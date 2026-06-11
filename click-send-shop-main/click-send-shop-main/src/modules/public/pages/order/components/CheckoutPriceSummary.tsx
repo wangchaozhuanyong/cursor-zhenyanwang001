@@ -53,34 +53,34 @@ export function CheckoutPriceSummary({
       {sstShowInCatalog && sstCustomerNote ? (
         <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">{sstCustomerNote}</p>
       ) : null}
-      <div className="store-body-small flex justify-between">
+      <div className="store-body-small flex justify-between gap-4">
         <span className="text-muted-foreground">{sstShowInCatalog ? "商品总额（含税）" : "商品总额"}</span>
         <span className="font-medium text-foreground">RM {rawTotal}</span>
       </div>
       {discountLines.length > 0
         ? discountLines.map((line) => (
-            <div key={`${line.type}-${line.label}`} className="mt-2 flex justify-between text-sm">
+            <div key={`${line.type}-${line.label}`} className="mt-2 flex justify-between gap-4 text-sm">
               <span className="text-muted-foreground">{line.label}</span>
               <span className="font-medium text-[var(--theme-danger)]">-RM {line.amount}</span>
             </div>
           ))
         : discountAmount > 0 ? (
-          <div className="mt-2 flex justify-between text-sm">
+          <div className="mt-2 flex justify-between gap-4 text-sm">
             <span className="text-muted-foreground">优惠抵扣</span>
             <span className="font-medium text-[var(--theme-danger)]">-RM {discountAmount}</span>
           </div>
         ) : null}
       {sstPreview ? (
         <>
-          <div className="mt-2 flex justify-between text-sm">
+          <div className="mt-2 flex justify-between gap-4 text-sm">
             <span className="text-muted-foreground">应税商品金额（含税）</span>
             <span className="font-medium text-foreground">RM {sstPreview.taxable}</span>
           </div>
-          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+          <div className="mt-1 flex justify-between gap-4 text-xs text-muted-foreground">
             <span>其中商品不含税净额</span>
             <span>RM {sstPreview.exclusiveAmount}</span>
           </div>
-          <div className="mt-1 flex justify-between text-sm">
+          <div className="mt-1 flex justify-between gap-4 text-sm">
             <span className="text-muted-foreground">
               含 {sstPreview.label}（{rateStr}%）
             </span>
@@ -88,13 +88,13 @@ export function CheckoutPriceSummary({
           </div>
         </>
       ) : null}
-      <div className="mt-2 flex justify-between text-sm">
+      <div className="mt-2 flex justify-between gap-4 text-sm">
         <span className="text-muted-foreground">运费{sstShowInCatalog ? "（不计税）" : ""}</span>
         <span className={`font-medium ${shippingFee === 0 ? "text-[var(--theme-success)]" : "text-foreground"}`}>
           {shippingFee === 0 ? "包邮" : `RM ${shippingFee}`}
         </span>
       </div>
-      <div className="mt-2 flex justify-between text-sm">
+      <div className="mt-2 flex justify-between gap-4 text-sm">
         <span className="text-muted-foreground">预计获得积分</span>
         <span className="font-medium text-foreground">{totalPoints}</span>
       </div>
@@ -107,11 +107,11 @@ export function CheckoutPriceSummary({
           ))}
         </div>
       ) : null}
-      <div className="mt-3 flex items-baseline justify-between border-t border-[var(--theme-border)] pt-3">
-        <span className="text-sm font-medium text-foreground">应付金额</span>
+      <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-[var(--theme-border)] pt-4">
+        <span className="text-sm font-bold text-foreground">实付金额</span>
         <StorePriceAmount
           amount={finalTotal}
-          amountClassName="text-[18px] font-extrabold leading-none sm:text-xl"
+          amountClassName="text-[22px] font-extrabold leading-none sm:text-2xl"
         />
       </div>
     </div>

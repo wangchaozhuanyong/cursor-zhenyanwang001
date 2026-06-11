@@ -1,5 +1,11 @@
 const net = require('net');
+const fs = require('fs');
 const geoip = require('geoip-lite');
+const maxmind = require('maxmind');
+
+let maxmindReader = null;
+let maxmindLoadAttempted = false;
+let maxmindWarned = false;
 
 let regionNameFormatter = null;
 try {
@@ -80,14 +86,122 @@ function uniqueParts(parts) {
   });
 }
 
+/**
+ * @param {Record<string, unknown> | null | undefined} names
+ */
+function pickName(names = {}) {
+  if (!names || typeof names !== 'object') return '';
+  const nameMap = /** @type {Record<string, unknown>} */ (names);
+  return cleanText(
+    nameMap['zh-CN']
+      || nameMap.zh
+      || nameMap.en
+      || Object.values(nameMap).find(Boolean),
+    120,
+  );
+}
+
+function getMaxmindDbPath() {
+  return cleanText(process.env.MAXMIND_CITY_DB_PATH || process.env.GEOIP_CITY_DB_PATH, 500);
+}
+
+function getMaxmindReader() {
+  if (maxmindLoadAttempted) return maxmindReader;
+  maxmindLoadAttempted = true;
+
+  const dbPath = getMaxmindDbPath();
+  if (!dbPath) return null;
+
+  try {
+    if (!fs.existsSync(dbPath)) {
+      if (!maxmindWarned) {
+        maxmindWarned = true;
+        console.warn(`[ipLocation] MaxMind city database not found: ${dbPath}`);
+      }
+      return null;
+    }
+    const database = fs.readFileSync(dbPath);
+    maxmindReader = new maxmind.Reader(database);
+  } catch (error) {
+    if (!maxmindWarned) {
+      maxmindWarned = true;
+      console.warn('[ipLocation] Failed to open MaxMind city database:', error?.message || error);
+    }
+    maxmindReader = null;
+  }
+
+  return maxmindReader;
+}
+
+function mapMaxmindCityRecord(record, ip, ipType) {
+  if (!record) return null;
+  const countryCode = cleanText(record.country?.iso_code || record.registered_country?.iso_code, 8).toUpperCase();
+  const country = pickName(record.country?.names) || formatCountryName(countryCode);
+  const regionRecord = Array.isArray(record.subdivisions) ? record.subdivisions[0] : null;
+  const region = pickName(regionRecord?.names) || cleanText(regionRecord?.iso_code, 80);
+  const city = pickName(record.city?.names);
+  const timezone = cleanText(record.location?.time_zone, 80);
+  const label = uniqueParts([country, region, city]).join(' / ') || '归属地未知';
+
+  return {
+    ip,
+    ip_type: ipType,
+    country_code: countryCode || null,
+    country: country || null,
+    region: region || null,
+    city: city || null,
+    timezone: timezone || null,
+    label,
+    city_missing_reason: !city ? 'MaxMind 城市库未提供该 IP 的城市级数据' : null,
+    source: 'maxmind-geolite2-city',
+  };
+}
+
+function lookupMaxmindLocation(ip, ipType) {
+  const reader = getMaxmindReader();
+  if (!reader) return null;
+  try {
+    return mapMaxmindCityRecord(reader.get(ip), ip, ipType);
+  } catch (error) {
+    if (!maxmindWarned) {
+      maxmindWarned = true;
+      console.warn('[ipLocation] MaxMind lookup failed:', error?.message || error);
+    }
+    return null;
+  }
+}
+
+function mapGeoipLiteRecord(found, ip, ipType) {
+  const countryCode = cleanText(found?.country, 8).toUpperCase();
+  const country = formatCountryName(countryCode);
+  const region = cleanText(found?.region, 80);
+  const city = cleanText(found?.city, 120);
+  const label = uniqueParts([country, region, city]).join(' / ') || '归属地未知';
+
+  return {
+    ip,
+    ip_type: ipType,
+    country_code: countryCode || null,
+    country: country || null,
+    region: region || null,
+    city: city || null,
+    timezone: cleanText(found?.timezone, 80) || null,
+    label,
+    city_missing_reason: found && !city ? '当前 IP 库未提供城市级数据' : null,
+    source: found ? 'geoip-lite' : 'unknown',
+  };
+}
+
 function resolveIpLocation(value) {
   const ip = normalizeIpForLookup(value);
   if (!ip) return null;
 
   const family = net.isIP(ip);
+  const ipType = family === 6 ? 'IPv6' : family === 4 ? 'IPv4' : null;
   if (!family) {
     return {
       ip,
+      ip_type: null,
       country_code: null,
       country: null,
       region: null,
@@ -102,6 +216,7 @@ function resolveIpLocation(value) {
   if (specialLabel) {
     return {
       ip,
+      ip_type: ipType,
       country_code: null,
       country: null,
       region: null,
@@ -112,26 +227,11 @@ function resolveIpLocation(value) {
     };
   }
 
-  const found = geoip.lookup(ip);
-  const countryCode = cleanText(found?.country, 8).toUpperCase();
-  const country = formatCountryName(countryCode);
-  const region = cleanText(found?.region, 80);
-  const city = cleanText(found?.city, 120);
-  const label = uniqueParts([country, region, city]).join(' / ') || '归属地未知';
-
-  return {
-    ip,
-    country_code: countryCode || null,
-    country: country || null,
-    region: region || null,
-    city: city || null,
-    timezone: cleanText(found?.timezone, 80) || null,
-    label,
-    source: found ? 'geoip-lite' : 'unknown',
-  };
+  return lookupMaxmindLocation(ip, ipType) || mapGeoipLiteRecord(geoip.lookup(ip), ip, ipType);
 }
 
 module.exports = {
+  mapMaxmindCityRecord,
   normalizeIpForLookup,
   resolveIpLocation,
 };

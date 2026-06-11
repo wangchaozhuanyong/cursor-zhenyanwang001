@@ -4,7 +4,6 @@ import StorePrice from "@/components/ui/StorePrice";
 import type { ThemeConfig } from "@/types/theme";
 import { previewProduct } from "./themePreviewData";
 import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 function PreviewBtn({

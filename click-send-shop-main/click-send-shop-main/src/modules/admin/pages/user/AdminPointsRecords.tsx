@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useSearchParams } from "react-router-dom";
-import { Loader2, Star, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { Star, TrendingDown, TrendingUp, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import { AdminFilterSelect } from "@/components/admin/AdminFilterControls";
 import Pagination from "@/components/admin/Pagination";

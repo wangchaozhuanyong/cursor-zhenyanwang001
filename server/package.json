@@ -14,6 +14,7 @@
     "check:module-structure": "node scripts/check-module-structure.js",
     "audit:module-boundaries": "node scripts/check-module-boundaries.js",
     "check:module-boundaries": "cross-env STRICT_MODULE_BOUNDARIES=1 node scripts/check-module-boundaries.js",
+    "check:no-new-ts-nocheck": "node scripts/check-no-new-ts-nocheck.js",
     "check:tracked-artifacts": "node scripts/check-tracked-artifacts.js",
     "check:report-registry": "node scripts/check-report-registry.js",
     "db:init": "node scripts/migrate-cli.js up",

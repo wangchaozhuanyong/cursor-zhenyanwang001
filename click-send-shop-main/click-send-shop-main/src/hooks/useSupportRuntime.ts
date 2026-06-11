@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
-import type { SiteInfo, SupportDownloadChannel, SupportDownloadConfig } from "@/types/content";
+import type { SiteInfo, SupportDownloadChannel } from "@/types/content";
 import {
   buildSupportPageUrl,
   getEnabledSupportChannels,

@@ -1,6 +1,5 @@
 import { Tx } from "@/components/admin/AdminText";
 import type { SiteSettings } from "@/types/admin";
-import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   settings: SiteSettings;

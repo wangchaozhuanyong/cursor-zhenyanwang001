@@ -38,7 +38,6 @@ import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import {
   THEME_BADGE_DANGER,
-  THEME_BADGE_MUTED,
   THEME_BADGE_PRIMARY,
   THEME_BADGE_SUCCESS,
   THEME_BADGE_WARNING,
@@ -47,7 +46,6 @@ import {
   THEME_TEXT_SUCCESS_SOFT,
   THEME_STAR_FILLED,
   THEME_TEXT_DANGER,
-  THEME_HOVER_TEXT_DANGER,
   THEME_BORDER_DANGER_SOFT,
   THEME_HOVER_BG_DANGER,
 } from "@/utils/themeVisuals";
@@ -83,7 +81,6 @@ const COMPLAINT_OPTIONS = [
   { value: "dismissed", label: "无需处理" },
 ];
 
-const REVIEW_VIEW = ["review.view", "review.manage"];
 const REVIEW_REPLY = ["review.reply", "review.manage"];
 const REVIEW_MODERATE = ["review.moderate", "review.manage"];
 const REVIEW_FEATURE = ["review.feature", "review.manage"];

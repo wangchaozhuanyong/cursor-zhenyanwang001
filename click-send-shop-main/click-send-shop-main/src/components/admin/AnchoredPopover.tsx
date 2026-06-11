@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useLayoutEffect, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useModalStackSignal } from "@/modules/micro-interactions/modal/ModalLayerProvider";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";

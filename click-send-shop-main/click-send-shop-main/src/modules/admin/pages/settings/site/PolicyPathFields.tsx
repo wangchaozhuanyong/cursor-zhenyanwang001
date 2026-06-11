@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
 import { Tx } from "@/components/admin/AdminText";
 import type { SiteSettings } from "@/types/admin";
-import { useAdminT } from "@/hooks/useAdminT";
 
 const PATH_FIELDS: { key: keyof SiteSettings; label: string; placeholder: string }[] = [
   { key: "privacyPolicyPath", label: "隐私政策路径", placeholder: "/content/privacy-policy" },
@@ -17,7 +16,6 @@ type Props = {
 };
 
 export default function PolicyPathFields({ settings, onChange }: Props) {
-  const { tText } = useAdminT();
   return (
     <div id="policy-paths" className="scroll-mt-24 space-y-3">
       <p className="text-xs text-muted-foreground">

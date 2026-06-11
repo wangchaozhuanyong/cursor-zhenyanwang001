@@ -1,6 +1,4 @@
-import { Tx } from "@/components/admin/AdminText";
 import { NavLink } from "react-router-dom";
-import { useAdminT } from "@/hooks/useAdminT";
 import { monitoringSecondaryButtonClass } from "./monitoringUi";
 
 const tabs = [
@@ -12,7 +10,6 @@ const tabs = [
 ];
 
 export default function MonitoringSubnav() {
-  const { tText } = useAdminT();
   return (
     <div className="-mx-1 overflow-x-auto pb-1">
       <div className="flex w-max min-w-full gap-2 px-1 sm:flex-wrap sm:w-auto">

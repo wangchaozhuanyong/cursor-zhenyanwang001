@@ -1,4 +1,3 @@
-// @ts-nocheck
 const { getRedisClient, getRedisKeyPrefix } = require('../config/redis');
 
 let warnedCacheError = false;

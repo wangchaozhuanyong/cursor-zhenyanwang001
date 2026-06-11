@@ -73,7 +73,7 @@ function getActiveHolidayRuleIds(rules: ThemeHolidayRule[], date = new Date()) {
 }
 
 export default function AdminThemeSettings() {
-  const { locale, tText } = useAdminTOptional();
+  const { locale } = useAdminTOptional();
   const isEn = locale === "en";
   const L = useCallback((zh: string, en: string) => (isEn ? en : zh), [isEn]);
   const queryClient = useQueryClient();

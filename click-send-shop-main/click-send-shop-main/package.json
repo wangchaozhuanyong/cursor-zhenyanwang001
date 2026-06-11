@@ -39,7 +39,7 @@
     "check:migrations": "node ../../server/scripts/check-migration-prefix-conflicts.js",
     "verify:dist": "node ../../scripts/verify_frontend_dist_assets.js dist && node ../../scripts/verify_frontend_dist_assets.js admin-dist && npm run verify:pwa",
     "verify:legacy-dist": "node scripts/verify-legacy-dist.mjs",
-    "verify": "npm run typecheck && npm run test:storefront-products && npm run check:text && npm run build",
+    "verify": "npm run typecheck && npm run typecheck:strict-api && npm run typecheck:strict-admin && npm run test:storefront-products && npm run check:text && npm run build",
     "prepare": "node scripts/install-git-hooks.mjs",
     "audit:overlap": "node scripts/audit-ui-overlap.mjs",
     "audit:overlap:full": "node scripts/audit-ui-overlap.mjs --full",

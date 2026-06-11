@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type { ReportQuery } from "@/services/admin/reportService";
 import { exportTrafficAnalysisCsv, fetchTrafficAnalysisReport } from "@/services/admin/reportService";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
+import { adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import { getReportColumnAlign } from "@/utils/adminTableColumnPolicy";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";

@@ -1,4 +1,3 @@
-import { Tx } from "@/components/admin/AdminText";
 import { NavLink } from "react-router-dom";
 import { useAdminT } from "@/hooks/useAdminT";
 import { preloadAdminRoute } from "@/routes/adminLazyPages";

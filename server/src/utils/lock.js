@@ -1,4 +1,3 @@
-// @ts-nocheck
 const crypto = require('crypto');
 const { getRedisClient, getRedisKeyPrefix } = require('../config/redis');
 
@@ -101,6 +100,7 @@ async function withLock(resource, options, fn) {
 
   const lock = await acquireLock(resource, lockOptions);
   if (!lock) {
+    /** @type {Error & { code?: string }} */
     const err = new Error(`Failed to acquire lock: ${resource}`);
     err.code = 'LOCK_NOT_ACQUIRED';
     throw err;

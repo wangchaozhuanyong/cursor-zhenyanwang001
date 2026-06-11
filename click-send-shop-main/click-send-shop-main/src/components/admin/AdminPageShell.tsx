@@ -3,7 +3,6 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { Tx } from "@/components/admin/AdminText";
-import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type AdminPageShellProps = {
@@ -25,7 +24,6 @@ function AdminPageHintCollapse({
   hint: ReactNode;
   className?: string;
 }) {
-  const { tText } = useAdminT();
   const [open, setOpen] = useState(false);
   return (
     <div className={cn("rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)]", className)}>

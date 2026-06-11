@@ -26,6 +26,7 @@ export function useCheckoutPage() {
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
   const goBack = useGoBack("/cart");
   const clearBuyNow = useCartStore((s) => s.clearBuyNow);
+  const buyNowCouponChoice = useCartStore((s) => s.buyNowCouponChoice);
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
 
@@ -83,6 +84,7 @@ export function useCheckoutPage() {
     paymentMethod,
     couponEnabled: capabilities.couponEnabled,
     onlinePaymentEnabled: showOnline,
+    initialCouponChoice: isBuyNow ? buyNowCouponChoice : null,
   });
 
   const preview = useCheckoutOrderPreview({

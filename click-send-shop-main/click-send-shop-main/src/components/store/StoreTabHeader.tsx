@@ -1,5 +1,5 @@
 import { Bell } from "lucide-react";
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
@@ -21,14 +21,15 @@ type StoreTabHeaderProps = {
   searchMode?: StoreTabHeaderSearchMode;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  onSearchSubmit?: () => void;
   searchPlaceholder?: string;
   /** 覆盖右侧区域；不传则显示通知按钮 */
   rightSlot?: ReactNode;
   /** 是否在 Logo 旁显示站名（sm 及以上）；游客首页可在小屏也显示 */
   showSiteName?: boolean;
   showSiteNameMobile?: boolean;
-  /** 首页顶栏统一 sticky；fixed 仅保留兼容旧用法 */
-  position?: "sticky" | "fixed";
+  /** 首页顶栏统一 sticky；fixed 保留兼容旧用法；static 用于分类页原有滚动编排 */
+  position?: "sticky" | "fixed" | "static";
   className?: string;
 };
 
@@ -36,6 +37,7 @@ export default function StoreTabHeader({
   searchMode = "navigate",
   searchValue = "",
   onSearchChange,
+  onSearchSubmit,
   searchPlaceholder,
   rightSlot,
   showSiteName = true,
@@ -47,13 +49,17 @@ export default function StoreTabHeader({
   const siteInfo = useSiteInfo();
   const siteInfoLoaded = useSiteInfoLoaded();
   const { themeConfig } = useThemeRuntime();
+  const [navigateSearchValue, setNavigateSearchValue] = useState("");
 
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const shouldReserveLogoSpace = Boolean(logoSrc) || !siteInfoLoaded;
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
 
-  const goSearch = () => navigate("/search");
+  const goSearch = () => {
+    const keyword = navigateSearchValue.trim();
+    navigate(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search");
+  };
   const goNotifications = () => navigate("/notifications");
 
   const nameClass = cn(
@@ -64,7 +70,9 @@ export default function StoreTabHeader({
   return (
     <header
       className={cn(
-        position === "fixed" ? "fixed left-0 right-0 top-0" : "sticky top-0",
+        position === "fixed" && "fixed left-0 right-0 top-0",
+        position === "sticky" && "sticky top-0",
+        position === "static" && "relative",
         "z-header border-b backdrop-blur-xl pt-[env(safe-area-inset-top,0px)] md:hidden",
         surfaceClass,
         className,
@@ -86,6 +94,11 @@ export default function StoreTabHeader({
             mode="navigate"
             placeholder={searchPlaceholder ?? STORE_COPY.searchPlaceholder}
             onNavigate={goSearch}
+            value={navigateSearchValue}
+            onValueChange={setNavigateSearchValue}
+            onSubmit={goSearch}
+            showSubmitButton
+            submitOnly
           />
         ) : null}
 
@@ -95,6 +108,8 @@ export default function StoreTabHeader({
             placeholder={searchPlaceholder ?? STORE_COPY.searchPlaceholder}
             value={searchValue}
             onValueChange={onSearchChange}
+            onSubmit={onSearchSubmit}
+            showSubmitButton
           />
         ) : null}
 

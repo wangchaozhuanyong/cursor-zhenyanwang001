@@ -541,14 +541,22 @@ export default function ProductDetail() {
             </div>
 
             {/* 描述 */}
-            <div className="store-detail-section mt-8 border-t border-[var(--theme-border)] px-[var(--store-page-x)] pt-6 md:mt-10 md:theme-rounded md:border md:bg-[var(--theme-surface)]/40 md:p-6">
-              <h3 className="mb-3 text-sm font-semibold text-foreground md:mb-4">商品详情</h3>
-              <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+            <div className="store-detail-section mt-7 px-[var(--store-page-x)] pb-7 md:mt-10 md:px-0 md:pb-0">
+              <div className="rounded-[22px] border border-[var(--theme-border)]/80 bg-[var(--theme-surface)]/88 p-4 shadow-[0_10px_32px_rgba(15,23,42,0.06)] md:rounded-[var(--theme-card-radius)] md:p-6">
+                <div className="mb-2.5 flex items-center gap-3 md:mb-3">
+                  <h3 className="text-sm font-semibold text-foreground md:text-base">商品详情</h3>
+                  <span aria-hidden="true" className="h-px flex-1 bg-[var(--theme-border)]/65" />
+                </div>
+                <div className="divide-y divide-[var(--theme-border)]/55">
                 {detailSections.map((section, idx) => (
-                  <div key={`${section.slice(0, 12)}-${idx}`} className="rounded-lg border border-[var(--theme-border)]/60 bg-[var(--theme-surface)]/50 p-3">
-                    {section}
+                  <div key={`${section.slice(0, 12)}-${idx}`} className="flex gap-3 py-3.5 first:pt-2 last:pb-2 md:py-4">
+                    <span className="mt-[0.62rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--theme-primary)]/75 ring-4 ring-[var(--theme-primary)]/10" />
+                    <p className="min-w-0 text-sm leading-7 text-[var(--theme-text)]/82 md:text-[15px]">
+                      {section}
+                    </p>
                   </div>
                 ))}
+                </div>
               </div>
             </div>
           </div>

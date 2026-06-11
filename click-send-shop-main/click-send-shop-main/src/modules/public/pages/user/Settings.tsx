@@ -72,6 +72,10 @@ export default function Settings() {
     setWhatsappPhone(parsed.phone);
   }, [whatsapp]);
 
+  useEffect(() => {
+    loadProfile().catch(() => {});
+  }, [loadProfile]);
+
   const loadWechatBinding = async () => {
     try {
       const data = await meService.fetchWechatBinding();
@@ -346,6 +350,7 @@ export default function Settings() {
                   phonePlaceholder="WhatsApp 号码"
                   variant="joined"
                   className="mt-2"
+                  autoDetectCountryCode
                 />
               </div>
             </div>

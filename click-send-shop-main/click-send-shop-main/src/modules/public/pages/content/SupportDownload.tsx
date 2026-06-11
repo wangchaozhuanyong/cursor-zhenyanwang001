@@ -164,9 +164,10 @@ export default function SupportDownload() {
     if (waitingForConfiguredView) return;
     if (!activeView) return;
     const next = new URLSearchParams(searchParams);
+    const nextTab = queryTab === "support" && activeView !== "download" ? "support" : activeView;
     let changed = false;
-    if (next.get("tab") !== activeView) {
-      next.set("tab", activeView);
+    if (next.get("tab") !== nextTab) {
+      next.set("tab", nextTab);
       changed = true;
     }
     if (pinnedChannel) {
@@ -179,7 +180,7 @@ export default function SupportDownload() {
       changed = true;
     }
     if (changed) setSearchParams(next, { replace: true });
-  }, [activeView, pinnedChannel, queryChannelId, searchParams, setSearchParams, waitingForConfiguredView]);
+  }, [activeView, pinnedChannel, queryChannelId, queryTab, searchParams, setSearchParams, waitingForConfiguredView]);
 
   const setActiveView = (view: SupportDownloadView) => {
     const next = new URLSearchParams(searchParams);

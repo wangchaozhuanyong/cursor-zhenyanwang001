@@ -80,7 +80,7 @@ export default function Cart() {
     );
 
   useEffect(() => {
-    loadCart();
+    loadCart({ force: true });
   }, [loadCart]);
 
   const handleCheckout = () => {
@@ -487,6 +487,39 @@ export default function Cart() {
                                   <Plus size={14} className="text-foreground" />
                                 </SquishButton>
                               </div>
+                            </div>
+                            <div className="mt-3 hidden flex-wrap items-center gap-2 md:flex">
+                              <UnifiedButton
+                                type="button"
+                                onClick={() => handlePinToTop(item)}
+                                className="inline-flex h-8 items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs font-semibold text-[var(--theme-text-muted)] transition hover:text-[var(--theme-text)]"
+                              >
+                                <Pin size={13} />
+                                置顶
+                              </UnifiedButton>
+                              <UnifiedButton
+                                type="button"
+                                onClick={() => handleMoveToFavorite(item)}
+                                className="inline-flex h-8 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--theme-price)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_6%,var(--theme-surface))] px-3 text-xs font-semibold text-[var(--theme-price)] transition hover:bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]"
+                              >
+                                <Heart size={13} />
+                                移入收藏
+                              </UnifiedButton>
+                              <UnifiedButton
+                                type="button"
+                                onClick={() => {
+                                  closeItemActions();
+                                  setDeleteTarget({
+                                    productId: item.product.id,
+                                    variantId: item.variant_id,
+                                    name: item.product.name,
+                                  });
+                                }}
+                                className="inline-flex h-8 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--theme-danger)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-danger)_6%,var(--theme-surface))] px-3 text-xs font-semibold text-[var(--theme-danger)] transition hover:bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]"
+                              >
+                                <Trash2 size={13} />
+                                删除
+                              </UnifiedButton>
                             </div>
                           </div>
                         </motion.div>

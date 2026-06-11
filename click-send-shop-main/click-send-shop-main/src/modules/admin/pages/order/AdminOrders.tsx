@@ -1,5 +1,5 @@
 import { Copy, Download, Loader2, Package, Truck } from "lucide-react";
-import { useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -49,7 +49,6 @@ import {
 } from "@/utils/adminTableClasses";
 import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
-import AdminOrderDetailDrawer from "@/modules/admin/pages/order/AdminOrderDetailDrawer";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 const ORDER_COLUMN_ALIGNS: AdminTableAlign[] = [
@@ -67,8 +66,10 @@ const ORDER_COLUMN_ALIGNS: AdminTableAlign[] = [
   "right",
 ];
 
+const ACTION_COLUMN_CLASS = "sticky right-0 z-[2] bg-[var(--theme-surface)] shadow-[-8px_0_14px_-14px_rgba(15,23,42,0.45)]";
+const ACTION_COLUMN_HEADER_CLASS = `${ACTION_COLUMN_CLASS} z-[3]`;
+
 export default function AdminOrders() {
-  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
   const can = useAdminPermissionStore((s) => s.can);
   const orderStatusFilterOptions = useAdminOrderStatusFilterOptions();
   const paymentStatusFilterOptions = useAdminPaymentStatusFilterOptions();
@@ -144,10 +145,6 @@ export default function AdminOrders() {
     confirmStatusChange,
     reloadAfterAction,
   } = useAdminOrders();
-
-  const openOrderDetail = (orderId: string) => {
-    setDetailOrderId(orderId);
-  };
 
   const buildOrderActionItems = (o: Order) => {
     const items: Parameters<typeof AdminRowActionsMenu>[0]["items"] = [];
@@ -228,14 +225,13 @@ export default function AdminOrders() {
     const buttons: React.ReactNode[] = [];
 
     buttons.push(
-      <UnifiedButton
+      <Link
         key="detail"
-        type="button"
-        onClick={() => openOrderDetail(o.id)}
+        to={`/admin/orders/${o.id}`}
         className={`${baseBtn} border border-[var(--theme-border)] bg-[var(--theme-surface)] text-foreground hover:bg-[var(--theme-bg)]`}
       >
         <Tx>详情</Tx>
-      </UnifiedButton>,
+      </Link>,
     );
 
     if (o.status === ORDER_STATUS.PENDING) {
@@ -373,14 +369,13 @@ export default function AdminOrders() {
           />
         </td>
         <td className={`max-w-[10rem] whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("left")}`}>
-          <UnifiedButton
-            type="button"
-            onClick={() => openOrderDetail(o.id)}
+          <Link
+            to={`/admin/orders/${o.id}`}
             title={`${tText("订单号")}：${o.order_no}`}
             className="block min-w-0 max-w-[9.5rem] truncate text-left font-mono text-xs font-semibold text-[var(--theme-price)] hover:underline"
           >
             {o.order_no}
-          </UnifiedButton>
+          </Link>
         </td>
         <td className={`max-w-[9rem] whitespace-nowrap px-4 py-2.5 align-middle text-xs text-muted-foreground ${adminTableAlignClass("left")}`}>
           <AdminTableCell value={formatDateTime(o.created_at)} columnKey="created_at" maxWidth="8.5rem" />
@@ -436,16 +431,15 @@ export default function AdminOrders() {
             Number(o.refund_amount || 0) > 0 ? tText(`退款 RM ${money(o.refund_amount)}`) : "",
           ].filter(Boolean).join("\n")}>{afterSale.text}</span>
         </td>
-        <td className={`whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("right")}`}>
+        <td className={`whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("right")} ${ACTION_COLUMN_CLASS}`}>
           <AdminRowActionsMenu
             primary={(
-              <UnifiedButton
-                type="button"
-                onClick={() => openOrderDetail(o.id)}
+              <Link
+                to={`/admin/orders/${o.id}`}
                 className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 text-xs font-medium text-foreground hover:bg-[var(--theme-bg)]"
               >
                 <Tx>详情</Tx>
-              </UnifiedButton>
+              </Link>
             )}
             moreLabel={<Tx>更多</Tx>}
             items={buildOrderActionItems(o)}
@@ -481,13 +475,12 @@ export default function AdminOrders() {
                 <p className="truncate font-mono text-sm font-semibold">{o.order_no}</p>
                 <p className="text-xs text-muted-foreground">{formatDateTime(o.created_at)}</p>
               </div>
-              <UnifiedButton
-                type="button"
-                onClick={() => openOrderDetail(o.id)}
+              <Link
+                to={`/admin/orders/${o.id}`}
                 className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
               >
                 <Tx>详情</Tx>
-              </UnifiedButton>
+              </Link>
             </div>
           </div>
         </div>
@@ -685,7 +678,7 @@ export default function AdminOrders() {
             {tableHeaders.map((h, index) => (
               <th
                 key={h}
-                className={`whitespace-nowrap px-4 py-3 text-xs font-semibold text-muted-foreground ${adminTableAlignClass(ORDER_COLUMN_ALIGNS[index] ?? "left")}`}
+                className={`whitespace-nowrap px-4 py-3 text-xs font-semibold text-muted-foreground ${adminTableAlignClass(ORDER_COLUMN_ALIGNS[index] ?? "left")} ${index === tableHeaders.length - 1 ? ACTION_COLUMN_HEADER_CLASS : ""}`}
               >
                 {h}
               </th>
@@ -715,16 +708,6 @@ export default function AdminOrders() {
             toast.error(toastErrorMessage(e, tText("发货失败")));
             throw e;
           }
-        }}
-      />
-      <AdminOrderDetailDrawer
-        open={Boolean(detailOrderId)}
-        orderId={detailOrderId}
-        onOpenChange={(open) => {
-          if (!open) setDetailOrderId(null);
-        }}
-        onUpdated={async () => {
-          await refetchOrders();
         }}
       />
       </AdminPageShell>

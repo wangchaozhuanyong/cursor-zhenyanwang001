@@ -27,7 +27,7 @@ export function AdminSideDrawer({
   footer,
   className,
   bodyClassName,
-  closeOnOverlay = true,
+  closeOnOverlay = false,
   showCloseButton = true,
 }: AdminSideDrawerProps) {
   const { overlayZ, contentZ, isTop } = useModalLayer(open);

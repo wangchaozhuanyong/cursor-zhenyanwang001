@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { AppModal } from "@/modules/micro-interactions";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import {
   getColumnPreset,
   getReportColumnKind,
@@ -145,5 +147,70 @@ export function AdminTableCellGroup({
         </TooltipContent>
       ) : null}
     </Tooltip>
+  );
+}
+
+export type AdminTableMoreCellProps = {
+  value: ReactNode;
+  fullText?: string;
+  modalTitle?: ReactNode;
+  maxWidth?: string;
+  maxChars?: number;
+  mono?: boolean;
+  muted?: boolean;
+  className?: string;
+};
+
+/** 数据表长内容：行内单行展示，过长时点击「更多」查看完整内容 */
+export function AdminTableMoreCell({
+  value,
+  fullText,
+  modalTitle = "完整内容",
+  maxWidth = "14rem",
+  maxChars = 18,
+  mono,
+  muted,
+  className,
+}: AdminTableMoreCellProps) {
+  const [open, setOpen] = useState(false);
+  const text = (fullText ?? (typeof value === "string" || typeof value === "number" ? String(value) : "")).trim();
+  const shouldShowMore = text.length > maxChars || text.includes("\n");
+
+  return (
+    <>
+      <div className={cn("flex min-w-0 max-w-full items-center gap-1.5 whitespace-nowrap", className)} style={{ maxWidth }}>
+        <span
+          className={cn(
+            "min-w-0 flex-1 truncate",
+            mono && "font-mono text-[11px]",
+            muted && "text-muted-foreground",
+          )}
+          title={shouldShowMore ? undefined : text || undefined}
+        >
+          {value}
+        </span>
+        {shouldShowMore ? (
+          <UnifiedButton
+            type="button"
+            onClick={() => setOpen(true)}
+            className="shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium text-[var(--theme-primary)] hover:bg-secondary"
+          >
+            更多
+          </UnifiedButton>
+        ) : null}
+      </div>
+      <AppModal
+        tier="light"
+        open={open}
+        onClose={() => setOpen(false)}
+        title={modalTitle}
+        height="auto"
+        closeOnOverlay={false}
+      >
+        <div className="max-h-[min(65vh,520px)] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+          {text || "-"}
+        </div>
+      </AppModal>
+    </>
   );
 }

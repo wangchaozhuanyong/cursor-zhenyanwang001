@@ -3,10 +3,10 @@ import { AppModal, type AppModalTier, type BottomSheetHeight } from "@/modules/m
 import { cn } from "@/lib/utils";
 
 const SIZE_CLASS = {
-  sm: "sm:max-w-md",
-  md: "sm:max-w-lg",
-  lg: "sm:max-w-2xl",
-  xl: "sm:max-w-3xl",
+  sm: "max-w-md",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  xl: "max-w-3xl",
 } as const;
 
 export type AdminResponsiveSheetSize = keyof typeof SIZE_CLASS;

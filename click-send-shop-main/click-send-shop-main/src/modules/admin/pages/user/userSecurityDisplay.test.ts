@@ -30,10 +30,15 @@ describe("userSecurityDisplay", () => {
   it("把 IP 归属地转成国家和城市显示", () => {
     expect(formatIpLocationLabel({ country: "马来西亚", city: "吉隆坡" })).toBe("马来西亚 / 吉隆坡");
     expect(formatIpLocationLabel({ label: "美国 / CA / Mountain View" })).toBe("美国 / CA / Mountain View");
+    expect(formatIpLocationLabel({ label: "原始归属地", country: "新加坡", city: "Singapore" })).toBe("新加坡 / Singapore");
+    expect(formatIpLocationLabel({ country_code: "US", region: "CA", city: "Mountain View" })).toBe("US / CA / Mountain View");
     expect(formatIpLocationLabel(null)).toBe("归属地未知");
   });
 
   it("把长 IPv6 转成适合表格展示的短格式", () => {
+    expect(formatIpAddressLabel("13.212.179.213")).toBe("13.212.179.213");
+    expect(formatIpAddressLabel("192.168.1.1")).toBe("192.168.1.1");
+    expect(formatIpAddressLabel("8.8.8.8")).toBe("8.8.8.8");
     expect(formatIpAddressLabel("::1")).toBe("::1");
     expect(formatIpAddressLabel("0:0:0:0:0:0:0:1")).toBe("::1");
     expect(formatIpAddressLabel("::ffff:192.168.1.10")).toBe("192.168.1.10");

@@ -102,13 +102,13 @@ export function formatDeviceLabel(deviceId?: string | null, deviceLabel?: string
 
 export function formatIpLocationLabel(location?: IpLocation | null): string {
   if (!location) return "归属地未知";
-  const label = String(location.label || "").trim();
-  if (label) return label;
-  const parts = [location.country, location.region, location.city]
+  const parts = [location.country || location.country_code, location.region, location.city]
     .map((item) => String(item || "").trim())
     .filter(Boolean)
     .filter((item, index, list) => list.findIndex((other) => other.toLowerCase() === item.toLowerCase()) === index);
-  return parts.length ? parts.join(" / ") : "归属地未知";
+  if (parts.length) return parts.join(" / ");
+  const label = String(location.label || "").trim();
+  return label || "归属地未知";
 }
 
 export function formatIpAddressLabel(ip?: string | null): string {

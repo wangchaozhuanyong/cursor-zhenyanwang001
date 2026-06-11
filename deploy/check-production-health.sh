@@ -116,6 +116,99 @@ read_cpu_used_percent() {
   }'
 }
 
+memory_snapshot() {
+  if [[ -r /proc/meminfo ]]; then
+    awk '
+      function mib(kb) { return int((kb + 1023) / 1024); }
+      /MemTotal:/ { mem_total=$2 }
+      /MemFree:/ { mem_free=$2 }
+      /MemAvailable:/ { mem_available=$2 }
+      /Buffers:/ { buffers=$2 }
+      /^Cached:/ { cached=$2 }
+      /SReclaimable:/ { sreclaimable=$2 }
+      /SwapTotal:/ { swap_total=$2 }
+      /SwapFree:/ { swap_free=$2 }
+      END {
+        if (mem_total <= 0) exit 1;
+        if (mem_available <= 0) mem_available = mem_free + buffers + cached + sreclaimable;
+        mem_used_percent = (1 - mem_available / mem_total) * 100;
+        if (mem_used_percent < 0) mem_used_percent = 0;
+        if (mem_used_percent > 100) mem_used_percent = 100;
+        swap_used = swap_total - swap_free;
+        swap_used_percent = swap_total > 0 ? (swap_used / swap_total) * 100 : 0;
+        printf "used_percent=%0.0f total_mb=%d available_mb=%d free_mb=%d cache_mb=%d reclaimable_mb=%d swap_total_mb=%d swap_used_mb=%d swap_used_percent=%0.0f",
+          mem_used_percent,
+          mib(mem_total),
+          mib(mem_available),
+          mib(mem_free),
+          mib(cached + buffers),
+          mib(sreclaimable),
+          mib(swap_total),
+          mib(swap_used),
+          swap_used_percent;
+      }' /proc/meminfo
+    return
+  fi
+
+  if ! command -v free >/dev/null 2>&1; then
+    return 1
+  fi
+  free -m | awk '
+    /Mem:/ {
+      total=$2; used=$3; available=$7;
+      if (available <= 0) available = total - used;
+      printf "used_percent=%0.0f total_mb=%d available_mb=%d free_mb=%d cache_mb=%d reclaimable_mb=0 swap_total_mb=0 swap_used_mb=0 swap_used_percent=0",
+        (1 - available / total) * 100, total, available, $4, $6;
+    }'
+}
+
+snapshot_value() {
+  local snapshot="$1"
+  local key="$2"
+  local item
+  for item in ${snapshot}; do
+    if [[ "${item}" == "${key}="* ]]; then
+      echo "${item#*=}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+top_memory_processes() {
+  ps -eo pid,user,rss,args --sort=-rss 2>/dev/null \
+    | awk 'NR==1 { next } NR<=6 { printf "%s/%s/%s/%0.1fMB; ", $1, $2, $4, $3/1024 }'
+}
+
+pm2_memory_snapshot() {
+  if ! command -v pm2 >/dev/null 2>&1 || ! command -v node >/dev/null 2>&1; then
+    return 0
+  fi
+  PM2_APP="${PM2_APP}" pm2 jlist 2>/dev/null | node -e "
+let raw = '';
+process.stdin.on('data', (chunk) => raw += chunk);
+process.stdin.on('end', () => {
+  try {
+    const apps = JSON.parse(raw);
+    const rows = apps
+      .filter((item) => item && (!process.env.PM2_APP || item.name === process.env.PM2_APP || item.name === 'gc-media-worker'))
+      .map((item) => {
+        const memory = Math.round((item.monit?.memory || 0) / 1024 / 1024);
+        const restarts = item.pm2_env?.restart_time ?? 0;
+        return item.name + '=' + memory + 'MB(restarts=' + restarts + ')';
+      });
+    process.stdout.write(rows.join('; '));
+  } catch {}
+});
+" || true
+}
+
+heavy_job_snapshot() {
+  pgrep -af 'backup|mysqldump|mysqlbinlog|tar |gzip|ffmpeg|node .*backup|mediaTran' 2>/dev/null \
+    | head -5 \
+    | awk '{ line=$0; gsub(/[[:space:]]+/, " ", line); printf "%s; ", line }'
+}
+
 format_cn_time() {
   TZ=Asia/Shanghai date '+%Y年%m月%d日 %H:%M:%S（北京时间）' 2>/dev/null || date '+%Y年%m月%d日 %H:%M:%S'
 }
@@ -267,11 +360,23 @@ else
   ok "磁盘使用率 ${disk_used}% <= ${MAX_DISK_PERCENT}%"
 fi
 
-mem_used="$(free | awk '/Mem:/ {printf "%.0f", ($3/$2)*100}')"
+mem_snapshot="$(memory_snapshot || true)"
+mem_used="$(snapshot_value "${mem_snapshot}" "used_percent" || echo "100")"
+mem_total_mb="$(snapshot_value "${mem_snapshot}" "total_mb" || echo "?")"
+mem_available_mb="$(snapshot_value "${mem_snapshot}" "available_mb" || echo "?")"
+mem_cache_mb="$(snapshot_value "${mem_snapshot}" "cache_mb" || echo "?")"
+mem_reclaimable_mb="$(snapshot_value "${mem_snapshot}" "reclaimable_mb" || echo "?")"
+swap_used_mb="$(snapshot_value "${mem_snapshot}" "swap_used_mb" || echo "?")"
+swap_total_mb="$(snapshot_value "${mem_snapshot}" "swap_total_mb" || echo "?")"
+swap_used_percent="$(snapshot_value "${mem_snapshot}" "swap_used_percent" || echo "?")"
+mem_detail="总内存=${mem_total_mb}MB，可用=${mem_available_mb}MB，缓存=${mem_cache_mb}MB，可回收=${mem_reclaimable_mb}MB，Swap=${swap_used_mb}/${swap_total_mb}MB(${swap_used_percent}%)"
 if [[ "${mem_used}" -gt "${MAX_MEM_PERCENT}" ]]; then
-  alert "内存使用率 ${mem_used}% > ${MAX_MEM_PERCENT}%"
+  top_mem="$(top_memory_processes || true)"
+  pm2_mem="$(pm2_memory_snapshot || true)"
+  heavy_jobs="$(heavy_job_snapshot || true)"
+  alert "内存使用率 ${mem_used}% > ${MAX_MEM_PERCENT}%（${mem_detail}；Top进程=${top_mem:-无}；PM2=${pm2_mem:-无}；备份/重任务=${heavy_jobs:-无}）"
 else
-  ok "内存使用率 ${mem_used}% <= ${MAX_MEM_PERCENT}%"
+  ok "内存使用率 ${mem_used}% <= ${MAX_MEM_PERCENT}%（${mem_detail}）"
 fi
 
 cpu_values=()

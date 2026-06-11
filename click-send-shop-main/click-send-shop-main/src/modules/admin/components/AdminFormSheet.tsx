@@ -1,7 +1,7 @@
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { LoadingButton } from "@/modules/micro-interactions";
+import { LoadingButton, type AppModalTier, type BottomSheetHeight } from "@/modules/micro-interactions";
 import { AdminResponsiveSheet, type AdminResponsiveSheetSize } from "./AdminResponsiveSheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -17,6 +17,9 @@ export type AdminFormSheetProps = {
   submitDisabled?: boolean;
   danger?: boolean;
   size?: AdminResponsiveSheetSize;
+  height?: BottomSheetHeight;
+  tier?: AppModalTier;
+  className?: string;
   onSubmit: () => void | Promise<void>;
 };
 
@@ -33,6 +36,9 @@ export function AdminFormSheet({
   submitDisabled = false,
   danger = false,
   size = "md",
+  height = "70vh",
+  tier = "form",
+  className,
   onSubmit,
 }: AdminFormSheetProps) {
   const [busy, setBusy] = useState(false);
@@ -81,14 +87,15 @@ export function AdminFormSheet({
 
   return (
     <AdminResponsiveSheet
-      tier="form"
+      tier={tier}
       open={open}
       onOpenChange={onOpenChange}
       title={title}
       description={description}
       footer={footer}
       size={size}
-      height="70vh"
+      height={height}
+      className={className}
       stickyFooter
     >
       <form className="admin-form-sheet-form space-y-3" onSubmit={(e) => void handleSubmit(e)}>

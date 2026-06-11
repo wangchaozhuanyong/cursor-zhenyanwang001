@@ -9886,11 +9886,13 @@ html[data-app-scope="store"] .store-hero-loading-dots > span:first-child {
   }
 
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) tbody td {
-    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow-wrap: normal;
     word-break: normal;
   }
 
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) tbody td.admin-table-wrap {
+    white-space: normal;
     word-break: break-word;
     overflow-wrap: anywhere;
   }

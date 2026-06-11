@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import type { AppModalTier, BottomSheetHeight } from "@/modules/micro-interactions";
+import { cn } from "@/lib/utils";
 import { AdminFormSheet } from "./AdminFormSheet";
+import type { AdminResponsiveSheetSize } from "./AdminResponsiveSheet";
 
 export type AdminInputSheetProps = {
   open: boolean;
@@ -14,6 +17,10 @@ export type AdminInputSheetProps = {
   multiline?: boolean;
   rows?: number;
   defaultValue?: string;
+  size?: AdminResponsiveSheetSize;
+  height?: BottomSheetHeight;
+  tier?: AppModalTier;
+  className?: string;
   onSubmit: (value: string) => void | Promise<void>;
 };
 
@@ -30,6 +37,10 @@ export function AdminInputSheet({
   multiline = true,
   rows = 3,
   defaultValue = "",
+  size = "sm",
+  height = "auto",
+  tier = "light",
+  className,
   onSubmit,
 }: AdminInputSheetProps) {
   const [value, setValue] = useState(defaultValue);
@@ -64,7 +75,10 @@ export function AdminInputSheet({
       submitText={submitText}
       cancelText={cancelText}
       onSubmit={handleSubmit}
-      size="sm"
+      size={size}
+      height={height}
+      tier={tier}
+      className={cn("admin-input-sheet max-w-sm", className)}
     >
       {multiline ? (
         <textarea

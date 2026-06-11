@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { AdminTableMoreCell } from "@/components/admin/AdminTableCell";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Tx } from "@/components/admin/AdminText";
@@ -99,11 +100,24 @@ function IpCell({ ip, location }: { ip?: string | null; location?: RiskIp["ip_lo
   if (!ip) return <span className="text-muted-foreground">-</span>;
   const locationLabel = formatIpLocationLabel(location);
   const ipLabel = formatIpAddressLabel(ip);
+  const display = `${ipLabel} · ${locationLabel}`;
+  const detail = [
+    `IP：${ipLabel}`,
+    `国家：${location?.country || location?.country_code || "未知"}`,
+    `地区：${location?.region || "未知"}`,
+    `城市：${location?.city || "未知"}`,
+    location?.timezone ? `时区：${location.timezone}` : "",
+    location?.source ? `来源：${location.source}` : "",
+  ].filter(Boolean).join("\n");
   return (
-    <div className="min-w-0" title={`${ip} · ${locationLabel}`}>
-      <div className="font-mono text-sm text-foreground">{ipLabel}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{locationLabel}</div>
-    </div>
+    <AdminTableMoreCell
+      value={display}
+      fullText={detail}
+      modalTitle="IP 完整信息"
+      maxWidth="16rem"
+      maxChars={24}
+      mono
+    />
   );
 }
 
@@ -129,26 +143,27 @@ function RelatedUsersCell({
   const total = Number(count || 0);
   const list = Array.isArray(users) ? users.filter((user) => user?.user_id).slice(0, 3) : [];
   if (!total && !list.length) return <span className="text-muted-foreground">-</span>;
+  const fullList = Array.isArray(users) ? users.filter((user) => user?.user_id) : [];
+  const summary = list
+    .map((user) => relatedUserTitle(user).name)
+    .filter(Boolean)
+    .join("、") || `${total} 人`;
+  const display = total > list.length ? `${summary} 等 ${total} 人` : summary;
+  const fullText = fullList.length
+    ? fullList.map((user, index) => {
+        const item = relatedUserTitle(user);
+        return `${index + 1}. ${item.name}${item.meta ? ` · ${item.meta}` : ""}`;
+      }).join("\n")
+    : `${total} 人，暂无用户明细`;
 
   return (
-    <div className="min-w-44 space-y-1 text-left">
-      {list.map((user) => {
-        const item = relatedUserTitle(user);
-        return (
-          <div key={user.user_id} className="min-w-0">
-            <Link className="block truncate font-medium text-[var(--theme-primary)] hover:underline" to={`/admin/users/${user.user_id}`}>
-              {item.name}
-            </Link>
-            {item.meta ? <div className="truncate text-xs text-muted-foreground">{item.meta}</div> : null}
-          </div>
-        );
-      })}
-      {total > list.length ? (
-        <div className="text-xs text-muted-foreground">
-          {list.length ? `另 ${total - list.length} 人` : `${total} 人，暂无用户明细`}
-        </div>
-      ) : null}
-    </div>
+    <AdminTableMoreCell
+      value={display}
+      fullText={fullText}
+      modalTitle="涉及用户"
+      maxWidth="13rem"
+      maxChars={12}
+    />
   );
 }
 
@@ -382,15 +397,23 @@ export default function AdminUserSecurity() {
             <tbody>
               {riskIps.map((row) => (
                 <tr key={row.ip} className="border-t border-[var(--theme-border)]">
-                  <td className={adminTdClassName("min-w-56 text-foreground", "left")}><IpCell ip={row.ip} location={row.ip_location} /></td>
+                  <td className={adminTdClassName("text-foreground", "left")}><IpCell ip={row.ip} location={row.ip_location} /></td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskStatusLabel(row.status)} tone={statusTone(row.status)} /></td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskLevelLabel(row.risk_level)} tone={levelTone(row.risk_level)} /></td>
-                  <td className={adminTdClassName("min-w-40 text-muted-foreground", "left")}>
-                    <div className="font-medium text-foreground">{formatRiskSourceLabel(row.source)}</div>
-                    <div className="mt-1 text-xs">{formatRiskSignalSummary(row)}</div>
+                  <td className={adminTdClassName("text-muted-foreground", "left")}>
+                    <AdminTableMoreCell
+                      value={`${formatRiskSourceLabel(row.source)} · ${formatRiskSignalSummary(row)}`}
+                      fullText={`触发来源：${formatRiskSourceLabel(row.source)}\n风险信号：${formatRiskSignalSummary(row)}`}
+                      modalTitle="触发来源"
+                      maxWidth="13rem"
+                      maxChars={16}
+                      muted
+                    />
                   </td>
-                  <td className={adminTdClassName("min-w-44", "left")}><RelatedUsersCell count={row.related_user_count} users={row.related_users} /></td>
-                  <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
+                  <td className={adminTdClassName(undefined, "left")}><RelatedUsersCell count={row.related_user_count} users={row.related_users} /></td>
+                  <td className={adminTdClassName("text-muted-foreground", "left")}>
+                    <AdminTableMoreCell value={row.reason || "-"} fullText={row.reason || ""} modalTitle="风险原因" maxWidth="12rem" maxChars={12} muted />
+                  </td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                     <UnifiedButton className="text-[var(--theme-primary)] disabled:text-muted-foreground" disabled={actioning === `ip:${row.ip}`} onClick={() => setActionTarget({ type: "ip", row })}>
@@ -423,15 +446,32 @@ export default function AdminUserSecurity() {
             <tbody>
               {riskDevices.map((row) => (
                 <tr key={row.device_id} className="border-t border-[var(--theme-border)]">
-                  <td className={adminTdClassName("font-mono text-foreground", "left")} title={row.device_id}>{formatDeviceLabel(row.device_id, row.device_label)}</td>
+                  <td className={adminTdClassName("text-foreground", "left")}>
+                    <AdminTableMoreCell
+                      value={formatDeviceLabel(row.device_id, row.device_label)}
+                      fullText={[row.device_label, row.device_id].filter(Boolean).join("\n")}
+                      modalTitle="设备完整信息"
+                      maxWidth="13rem"
+                      maxChars={16}
+                      mono
+                    />
+                  </td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskStatusLabel(row.status)} tone={statusTone(row.status)} /></td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskLevelLabel(row.risk_level)} tone={levelTone(row.risk_level)} /></td>
-                  <td className={adminTdClassName("min-w-40 text-muted-foreground", "left")}>
-                    <div className="font-medium text-foreground">{formatRiskSourceLabel(row.source)}</div>
-                    <div className="mt-1 text-xs">{formatRiskSignalSummary(row)}</div>
+                  <td className={adminTdClassName("text-muted-foreground", "left")}>
+                    <AdminTableMoreCell
+                      value={`${formatRiskSourceLabel(row.source)} · ${formatRiskSignalSummary(row)}`}
+                      fullText={`触发来源：${formatRiskSourceLabel(row.source)}\n风险信号：${formatRiskSignalSummary(row)}`}
+                      modalTitle="触发来源"
+                      maxWidth="13rem"
+                      maxChars={16}
+                      muted
+                    />
                   </td>
-                  <td className={adminTdClassName("min-w-44", "left")}><RelatedUsersCell count={row.related_user_count} users={row.related_users} /></td>
-                  <td className={adminTdClassName("text-muted-foreground", "left")}>{row.reason || "-"}</td>
+                  <td className={adminTdClassName(undefined, "left")}><RelatedUsersCell count={row.related_user_count} users={row.related_users} /></td>
+                  <td className={adminTdClassName("text-muted-foreground", "left")}>
+                    <AdminTableMoreCell value={row.reason || "-"} fullText={row.reason || ""} modalTitle="风险原因" maxWidth="12rem" maxChars={12} muted />
+                  </td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.last_seen_at || row.updated_at)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                     <UnifiedButton className="text-[var(--theme-primary)] disabled:text-muted-foreground" disabled={actioning === `device:${row.device_id}`} onClick={() => setActionTarget({ type: "device", row })}>
@@ -463,8 +503,10 @@ export default function AdminUserSecurity() {
                 <tr key={row.id} className="border-t border-[var(--theme-border)]">
                   <td className={adminTdClassName("text-foreground", "left")}>{userLabel(row)}</td>
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{formatLoginMethodLabel(row.login_method)}</td>
-                  <td className={adminTdClassName("min-w-56", "left")}><IpCell ip={row.ip} location={row.ip_location} /></td>
-                  <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{formatDeviceLabel(row.device_id)}</td>
+                  <td className={adminTdClassName(undefined, "left")}><IpCell ip={row.ip} location={row.ip_location} /></td>
+                  <td className={adminTdClassName("text-muted-foreground", "left")}>
+                    <AdminTableMoreCell value={formatDeviceLabel(row.device_id)} fullText={row.device_id || ""} modalTitle="设备标识" maxWidth="13rem" maxChars={16} mono muted />
+                  </td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.created_at)}</td>
                 </tr>
               ))}
@@ -492,12 +534,19 @@ export default function AdminUserSecurity() {
                 <tr key={row.id} className="border-t border-[var(--theme-border)]">
                   <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={formatRiskLevelLabel(row.severity)} tone={levelTone(row.severity)} /></td>
                   <td className={adminTdClassName("text-foreground", "left")}>
-                    <div className="font-medium">{formatUserSecurityEventTitle(row.title, row.event_type)}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{formatUserSecurityEventDescription(row.description, row.event_type, row.title)}</div>
+                    <AdminTableMoreCell
+                      value={formatUserSecurityEventTitle(row.title, row.event_type)}
+                      fullText={`${formatUserSecurityEventTitle(row.title, row.event_type)}\n${formatUserSecurityEventDescription(row.description, row.event_type, row.title)}`}
+                      modalTitle="安全事件"
+                      maxWidth="14rem"
+                      maxChars={14}
+                    />
                   </td>
                   <td className={adminTdClassName("text-muted-foreground", "left")}>{userLabel(row)}</td>
-                  <td className={adminTdClassName("min-w-56", "left")}><IpCell ip={row.ip} location={row.ip_location} /></td>
-                  <td className={adminTdClassName("font-mono text-muted-foreground", "left")} title={row.device_id || undefined}>{formatDeviceLabel(row.device_id)}</td>
+                  <td className={adminTdClassName(undefined, "left")}><IpCell ip={row.ip} location={row.ip_location} /></td>
+                  <td className={adminTdClassName("text-muted-foreground", "left")}>
+                    <AdminTableMoreCell value={formatDeviceLabel(row.device_id)} fullText={row.device_id || ""} modalTitle="设备标识" maxWidth="13rem" maxChars={16} mono muted />
+                  </td>
                   <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-muted-foreground`, "left")}>{formatTime(row.created_at)}</td>
                 </tr>
               ))}

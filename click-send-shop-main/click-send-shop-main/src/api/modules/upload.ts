@@ -354,7 +354,7 @@ async function authorizedJsonPost<T>(
     } catch {
       clearAdminTokens();
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
-        window.location.href = "/admin/login";
+        window.location.replace("/admin/login");
       }
       throw new Error(extractMessageFromBody((result.payload ?? {}) as Record<string, unknown>) || "管理员登录已过期，请重新登录");
     }
@@ -390,14 +390,14 @@ async function doUpload<T>(url: string, formData: FormData, options: UploadReque
     } catch {
       clearAdminTokens();
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
-        window.location.href = "/admin/login";
+        window.location.replace("/admin/login");
       }
       throw new Error(extractMessageFromBody((result.payload ?? {}) as Record<string, unknown>) || "管理员登录已过期，请重新登录");
     }
     if (result.status === 401) {
       clearAdminTokens();
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
-        window.location.href = "/admin/login";
+        window.location.replace("/admin/login");
       }
       throw new Error(extractMessageFromBody((result.payload ?? {}) as Record<string, unknown>) || "管理员登录已过期，请重新登录");
     }

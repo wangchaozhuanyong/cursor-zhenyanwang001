@@ -84,6 +84,7 @@ export default function ProductVariantSheet({
   const payableTotal = Math.max(0, lineTotal - couponDiscount);
   const totalDiscount = productDiscount + couponDiscount;
   const title = intent === "cart" ? "加入购物车" : "立即购买";
+  const modalTitle = intent === "buy" ? <span className="sr-only">确认购买</span> : title;
   const isMobile = useMediaQuery("(max-width: 767px)");
   const selectedValueImage = specGroups
     .flatMap((group) => group.values ?? [])
@@ -97,7 +98,10 @@ export default function ProductVariantSheet({
     ? purchaseCoupon?.selectedCoupon?.title || (purchaseCoupon?.loading ? "优惠加载中" : "未使用优惠")
     : "";
   const currentPrice = intent === "buy" ? payableTotal : lineTotal;
-  const footerActionLabel = soldOut ? "已售罄" : intent === "buy" ? "立即购买" : "加入购物车";
+  const footerActionLabel = soldOut ? "已售罄" : intent === "buy" ? "立即支付" : "加入购物车";
+  const footerActionText = intent === "buy" && !soldOut
+    ? `${footerActionLabel} RM ${formatMoney(currentPrice)}`
+    : footerActionLabel;
 
   const clampQty = (value: number) => {
     if (maxQty <= 0 || soldOut) return 0;
@@ -445,30 +449,46 @@ export default function ProductVariantSheet({
         tier="immersive"
         open={open}
         onClose={onClose}
-        title={title}
+        title={modalTitle}
         height="90vh"
         presentation={isMobile ? "sheet" : "dialog"}
         dialogClassName="sm:max-w-[860px]"
-        className="bg-[var(--theme-surface)]"
+        className={cn(
+          "bg-[var(--theme-surface)]",
+          intent === "buy" &&
+            "[&_.app-bottom-sheet-header]:px-4 [&_.app-bottom-sheet-header]:pb-2 [&_.app-bottom-sheet-header]:pt-1 [&_.app-bottom-sheet-content]:pt-1",
+        )}
         stickyFooter
         footer={
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-[var(--theme-text-muted)]">{intent === "buy" ? "实付" : "合计"}</p>
-              <p className="truncate text-2xl font-black tabular-nums text-[var(--theme-price)]">
-                RM {formatMoney(currentPrice)}
-              </p>
-            </div>
+          intent === "buy" ? (
             <SquishButton
               type="button"
               variant="gold"
               disabled={soldOut || maxQty <= 0 || (hasMatrix && !selected)}
               onClick={onConfirm}
-              className="min-h-12 w-[46%] min-w-[9rem] rounded-full text-sm font-semibold md:w-[14rem]"
+              className="min-h-12 w-full rounded-full px-5 text-base font-bold"
             >
-              {footerActionLabel}
+              {footerActionText}
             </SquishButton>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-[var(--theme-text-muted)]">合计</p>
+                <p className="truncate text-2xl font-black tabular-nums text-[var(--theme-price)]">
+                  RM {formatMoney(currentPrice)}
+                </p>
+              </div>
+              <SquishButton
+                type="button"
+                variant="gold"
+                disabled={soldOut || maxQty <= 0 || (hasMatrix && !selected)}
+                onClick={onConfirm}
+                className="min-h-12 w-[46%] min-w-[9rem] rounded-full text-sm font-semibold md:w-[14rem]"
+              >
+                {footerActionText}
+              </SquishButton>
+            </div>
+          )
         }
       >
         <div className="space-y-5 pb-2 md:grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:gap-6 md:space-y-0">

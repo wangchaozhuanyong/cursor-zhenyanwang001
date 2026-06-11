@@ -1,6 +1,7 @@
 import { ArrowLeft, Home, LockKeyhole, SearchX, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useStableBack } from "@/hooks/useStableBack";
 
 type AdminRouteFallbackProps = {
   type?: "not-found" | "feature-disabled" | "forbidden";
@@ -32,6 +33,7 @@ const copy = {
 
 export default function AdminRouteFallback({ type = "not-found" }: AdminRouteFallbackProps) {
   const navigate = useNavigate();
+  const stableBack = useStableBack({ fallbackPath: "/admin" });
   const item = copy[type];
   const Icon = item.icon;
 
@@ -54,7 +56,7 @@ export default function AdminRouteFallback({ type = "not-found" }: AdminRouteFal
           </UnifiedButton>
           <UnifiedButton
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={stableBack}
             className="inline-flex items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]"
           >
             <ArrowLeft size={15} />

@@ -297,7 +297,7 @@ export default function AdminMfaStepUpHost() {
               className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-[var(--theme-price-foreground)]"
               onClick={() => {
                 handleClose();
-                navigate("/admin/login");
+                navigate("/admin/login", { replace: true });
               }}
             >
               {isEnglish ? "Back to login" : "前往登录页"}

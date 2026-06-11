@@ -4,9 +4,11 @@ import { ArrowLeft, Home, SearchX } from "lucide-react";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useStableBack } from "@/hooks/useStableBack";
 
 export default function NotFound() {
   const navigate = useNavigate();
+  const stableBack = useStableBack({ fallbackPath: "/" });
 
   useEffect(() => {
     void trackEvent({ event_type: "error_404", module: "router", path: window.location.pathname, url: window.location.href, title: "页面不存在" });
@@ -28,14 +30,14 @@ export default function NotFound() {
         <div className="mt-7 grid gap-2 sm:grid-cols-2">
           <UnifiedButton
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={stableBack}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-bg)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
           >
             <ArrowLeft size={16} aria-hidden /> 返回上一页
           </UnifiedButton>
           <UnifiedButton
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/", { replace: true })}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full btn-theme-price px-5 text-sm font-bold text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)] transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2"
           >
             <Home size={16} aria-hidden /> 返回首页

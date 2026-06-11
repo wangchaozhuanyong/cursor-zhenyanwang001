@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
 import AppRouteFallback, { StoreOutletFallback } from "@/components/AppRouteFallback";
+import { NavigationHistoryRecorder } from "@/components/NavigationHistoryRecorder";
 import { StoreAppRoutes } from "@/routes/StoreAppRoutes";
 
 const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
@@ -23,6 +24,7 @@ const StoreApp = () => (
       v7_relativeSplatPath: true,
     }}
   >
+    <NavigationHistoryRecorder />
     <StoreAppContent />
   </BrowserRouter>
 );

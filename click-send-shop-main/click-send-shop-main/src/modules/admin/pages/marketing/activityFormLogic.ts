@@ -154,7 +154,7 @@ export function useActivitySave({
           queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
         ]);
         toast.success(targetStatus === "draft" ? tText("草稿已保存") : tText("活动已发布"));
-        navigate("/admin/marketing/activities");
+        navigate("/admin/marketing/activities", { replace: true });
       } catch (e) {
         toast.error(toastErrorMessage(e, tText("保存失败")));
       } finally {

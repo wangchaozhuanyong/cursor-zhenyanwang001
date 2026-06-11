@@ -177,7 +177,7 @@ export default function AdminProductForm({
         onClose?.();
       } else {
         void invalidatePromise;
-        navigate("/admin/products");
+        navigate("/admin/products", { replace: true });
       }
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请重试"));
@@ -206,7 +206,7 @@ export default function AdminProductForm({
         await onDeleted?.();
         onClose?.();
       } else {
-        navigate("/admin/products");
+        navigate("/admin/products", { replace: true });
       }
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除失败"));

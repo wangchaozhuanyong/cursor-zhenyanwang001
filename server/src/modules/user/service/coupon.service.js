@@ -185,7 +185,7 @@ async function getAvailableCoupons(userId, options = {}) {
   return decorated
     .filter((c) => isClaimWindowOpen(c, new Date()))
     .filter((c) => !c.auto_issue)
-    .filter((c) => options.includeAudienceLimited || c.claimable)
+    .filter((c) => !userId || options.includeAudienceLimited || c.claimable)
     .map(mapCouponEntity);
 }
 

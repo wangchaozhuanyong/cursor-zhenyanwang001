@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, FileDown, Loader2, Pencil, PackageSearch, Upload } from "lucide-react";
+import { Download, FileDown, Loader2, Pencil, PackageSearch, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -21,7 +21,7 @@ import { AdminFilterButton, AdminFilterSelect } from "@/components/admin/AdminFi
 import AdminCsvImportDialog from "@/components/admin/AdminCsvImportDialog";
 import PermissionGate from "@/components/admin/PermissionGate";
 import SafeImage from "@/components/admin/SafeImage";
-import { batchUpdateProductStatus, exportProductsCsv, fetchProducts, importProductsCsv, previewProductsImport } from "@/services/admin/productService";
+import { batchDeleteProducts, batchUpdateProductStatus, deleteProduct, exportProductsCsv, fetchProducts, importProductsCsv, previewProductsImport } from "@/services/admin/productService";
 import { downloadProductCsvTemplate } from "@/utils/productCsvTemplate";
 import type { Product, ProductListParams, ProductStatus } from "@/types/product";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -31,7 +31,8 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminTableSortHeader from "@/components/admin/AdminTableSortHeader";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
-import { useAdminNavigation } from "@/hooks/useAdminNavigation";
+import { AdminSideDrawer } from "@/modules/admin/components/AdminSideDrawer";
+import AdminProductForm from "@/modules/admin/pages/product/AdminProductForm";
 import {
   DEFAULT_PRODUCT_LIST_SORT,
   PRODUCT_SORT_LABELS,
@@ -94,7 +95,6 @@ function skuPrice(product: Product) {
 export default function AdminProducts() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
-  const adminNavigate = useAdminNavigation();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -105,6 +105,7 @@ export default function AdminProducts() {
   const [sort, setSort] = useState<SortValue>(DEFAULT_PRODUCT_LIST_SORT);
   const [exportingScope, setExportingScope] = useState<"filtered" | "selected" | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState("");
 
   const queryParams = useMemo<ProductListParams>(() => ({
     page,
@@ -127,6 +128,14 @@ export default function AdminProducts() {
     refetchIntervalInBackground: false,
   });
 
+  const refreshProductLists = async () => {
+    invalidatePublicProductStoreCache({ categories: true });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
+    ]);
+  };
+
   const batchStatusMutation = useMutation({
     mutationFn: async (status: ProductStatus) => {
       if (!selected.length) throw new Error(tText("请先勾选商品"));
@@ -139,7 +148,12 @@ export default function AdminProducts() {
       if (result.skipped > 0) {
         parts.push(`${tText("跳过")} ${result.skipped} ${tText("个（不存在或已删除）")}`);
       }
-      toast.success(parts.join(tText("，")));
+      const message = parts.join(tText("，"));
+      if (result.deleted > 0) {
+        toast.success(message);
+      } else {
+        toast.warning(message);
+      }
       setSelected([]);
       invalidatePublicProductStoreCache();
       await Promise.all([
@@ -152,6 +166,11 @@ export default function AdminProducts() {
 
   const products = useMemo(() => productsQuery.data?.list || [], [productsQuery.data?.list]);
   const total = productsQuery.data?.total || 0;
+  const drawerOpen = Boolean(editingProductId);
+  const editingProduct = useMemo(
+    () => products.find((product) => product.id === editingProductId) || null,
+    [editingProductId, products],
+  );
   const pageIds = useMemo(() => products.map((product) => product.id), [products]);
   const allSelectedOnPage = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
   const hasProductFilters = Boolean(
@@ -180,6 +199,14 @@ export default function AdminProducts() {
 
   const togglePageSelection = () => {
     setSelected((prev) => allSelectedOnPage ? prev.filter((id) => !pageIds.includes(id)) : pageIds);
+  };
+
+  const openProductDrawer = (productId: string) => {
+    setEditingProductId(productId);
+  };
+
+  const closeProductDrawer = () => {
+    setEditingProductId("");
   };
 
   const clearFilters = () => {
@@ -251,6 +278,41 @@ export default function AdminProducts() {
     setSelected([]);
   };
 
+  const batchDeleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!selected.length) throw new Error(tText("请先勾选商品"));
+      return batchDeleteProducts(selected);
+    },
+    onSuccess: async (result) => {
+      const parts = [`${tText("已删除")} ${result.deleted} ${tText("个下架商品")}`];
+      const blockedCount = Number(result.blocked_active_ids?.length || 0);
+      if (blockedCount > 0) {
+        parts.push(`${tText("跳过")} ${blockedCount} ${tText("个非下架商品")}`);
+      }
+      const missingCount = Math.max(0, Number(result.skipped || 0) - blockedCount);
+      if (missingCount > 0) {
+        parts.push(`${tText("跳过")} ${missingCount} ${tText("个不存在或已删除商品")}`);
+      }
+      toast.success(parts.join(tText("，")));
+      setSelected([]);
+      await refreshProductLists();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, tText("批量删除失败"))),
+  });
+
+  const deleteOneMutation = useMutation({
+    mutationFn: async (product: Product) => {
+      await deleteProduct(product.id);
+      return product;
+    },
+    onSuccess: async (product) => {
+      toast.success(tText("已删除"));
+      setSelected((prev) => prev.filter((id) => id !== product.id));
+      await refreshProductLists();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, tText("删除失败"))),
+  });
+
   const confirmBatchStatus = (status: ProductStatus) => {
     if (!selected.length) {
       toast.warning(tText("请先勾选商品"));
@@ -264,6 +326,47 @@ export default function AdminProducts() {
       danger: status === "inactive",
       onConfirm: async () => {
         await batchStatusMutation.mutateAsync(status);
+      },
+    });
+  };
+
+  const confirmBatchDelete = () => {
+    if (!selected.length) {
+      toast.warning(tText("请先勾选商品"));
+      return;
+    }
+    const selectedRowsOnPage = products.filter((product) => selected.includes(product.id));
+    const blockedOnPage = selectedRowsOnPage.filter((product) => product.status !== "inactive").length;
+    const descriptionParts = [
+      tText(`确定删除已选商品中的下架商品吗？本次共选择 ${selected.length} 个商品。`),
+      tText("上架或草稿商品不会被删除，会自动跳过。"),
+    ];
+    if (blockedOnPage > 0) {
+      descriptionParts.push(tText(`当前页已选中 ${blockedOnPage} 个非下架商品，将被跳过。`));
+    }
+    confirm({
+      title: tText("批量删除下架商品"),
+      description: descriptionParts.join("\n"),
+      confirmText: tText("删除下架商品"),
+      danger: true,
+      onConfirm: async () => {
+        await batchDeleteMutation.mutateAsync();
+      },
+    });
+  };
+
+  const confirmDeleteProduct = (product: Product) => {
+    if (product.status !== "inactive") {
+      toast.warning(tText("请先下架商品后再删除"));
+      return;
+    }
+    confirm({
+      title: tText("删除商品"),
+      description: tText(`确定删除「${product.name}」吗？删除后商品会从商品管理列表移除，可在回收站恢复。`),
+      confirmText: tText("删除"),
+      danger: true,
+      onConfirm: async () => {
+        await deleteOneMutation.mutateAsync(product);
       },
     });
   };
@@ -319,14 +422,24 @@ export default function AdminProducts() {
 
         <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row">
           <PermissionGate permission="product.manage">
-          <UnifiedButton
-            type="button"
-            onClick={() => adminNavigate(`/admin/products/${product.id}`)}
-            className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary sm:flex-1"
-          >
-            <Pencil size={13} />
-            <Tx>编辑</Tx>
-          </UnifiedButton>
+            <UnifiedButton
+              type="button"
+              onClick={() => openProductDrawer(product.id)}
+              className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary sm:flex-1"
+            >
+              <Pencil size={13} />
+              <Tx>编辑</Tx>
+            </UnifiedButton>
+            <UnifiedButton
+              type="button"
+              disabled={product.status !== "inactive" || deleteOneMutation.isPending}
+              onClick={() => confirmDeleteProduct(product)}
+              className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1"
+              title={product.status !== "inactive" ? tText("请先下架商品后再删除") : tText("删除商品")}
+            >
+              <Trash2 size={13} />
+              <Tx>删除</Tx>
+            </UnifiedButton>
           </PermissionGate>
         </div>
       </AdminTableMobileCard>
@@ -354,7 +467,7 @@ export default function AdminProducts() {
             </AdminFilterButton>
           </PermissionGate>
           <PermissionGate permission="product.manage">
-            <AdminFilterButton className="px-4 font-semibold" variant="card" onClick={() => adminNavigate("/admin/products/new")}><Tx>新增商品</Tx></AdminFilterButton>
+            <AdminFilterButton className="px-4 font-semibold" variant="card" onClick={() => openProductDrawer("new")}><Tx>新增商品</Tx></AdminFilterButton>
           </PermissionGate>
           <AdminFilterButton onClick={() => void productsQuery.refetch()} variant="card" className="font-medium"><Tx>刷新</Tx></AdminFilterButton>
         </div>
@@ -411,8 +524,19 @@ export default function AdminProducts() {
             <Tx>清空选择</Tx>
           </UnifiedButton>
         ) : null}
-        <UnifiedButton type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量上架")} ({selected.length})</UnifiedButton>
-        <UnifiedButton type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量下架")} ({selected.length})</UnifiedButton>
+        <UnifiedButton type="button" disabled={batchStatusMutation.isPending || batchDeleteMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量上架")} ({selected.length})</UnifiedButton>
+        <UnifiedButton type="button" disabled={batchStatusMutation.isPending || batchDeleteMutation.isPending || selected.length === 0} onClick={() => confirmBatchStatus("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{batchStatusMutation.isPending ? tText("处理中...") : tText("批量下架")} ({selected.length})</UnifiedButton>
+        <PermissionGate permission="product.manage">
+          <UnifiedButton
+            type="button"
+            disabled={batchStatusMutation.isPending || batchDeleteMutation.isPending || selected.length === 0}
+            onClick={confirmBatchDelete}
+            className="inline-flex items-center gap-1 rounded-lg border border-destructive/35 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive transition hover:bg-destructive/15 disabled:opacity-60"
+          >
+            {batchDeleteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            {batchDeleteMutation.isPending ? tText("删除中...") : tText("删除下架商品")} ({selected.length})
+          </UnifiedButton>
+        </PermissionGate>
       </div>
 
       <AdminCsvImportDialog
@@ -437,6 +561,33 @@ export default function AdminProducts() {
         }}
       />
 
+      <AdminSideDrawer
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          if (!open) closeProductDrawer();
+        }}
+        title={editingProductId === "new" ? tText("新增商品") : editingProduct?.name || tText("编辑商品")}
+        closeOnOverlay={false}
+        className="lg:w-[min(86vw,1180px)] xl:w-[min(82vw,1280px)]"
+        bodyClassName="bg-[var(--theme-bg)] px-3 py-4 sm:px-5"
+      >
+        {drawerOpen ? (
+          <AdminProductForm
+            key={editingProductId}
+            productId={editingProductId}
+            embedded
+            onClose={closeProductDrawer}
+            onSaved={async () => {
+              await productsQuery.refetch();
+            }}
+            onDeleted={async () => {
+              setSelected((prev) => prev.filter((id) => id !== editingProductId));
+              await productsQuery.refetch();
+            }}
+          />
+        ) : null}
+      </AdminSideDrawer>
+
       <AnimatedTable
         loading={productsQuery.isLoading && !productsQuery.data}
         error={productsQuery.isError && !productsQuery.data}
@@ -452,7 +603,7 @@ export default function AdminProducts() {
         emptyDescription={emptyGuide.description}
         emptyAction={<AdminEmptyGuideActions guide={emptyGuide} showClearFilters={hasProductFilters} onClearFilters={clearFilters} />}
         className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
-        tableClassName={adminTableClassName("w-full min-w-[1280px] text-left text-sm")}
+        tableClassName={adminTableClassName("w-full min-w-[1360px] text-left text-sm")}
         theadClassName="border-b border-border text-xs text-muted-foreground"
         thead={(
           <tr>
@@ -584,7 +735,17 @@ export default function AdminProducts() {
               <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                 <div className="inline-flex max-w-full flex-nowrap items-center justify-end gap-1.5">
                   <PermissionGate permission="product.manage">
-                    <UnifiedButton type="button" onClick={() => adminNavigate(`/admin/products/${product.id}`)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></UnifiedButton>
+                    <UnifiedButton type="button" onClick={() => openProductDrawer(product.id)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></UnifiedButton>
+                    <UnifiedButton
+                      type="button"
+                      disabled={product.status !== "inactive" || deleteOneMutation.isPending}
+                      onClick={() => confirmDeleteProduct(product)}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                      title={product.status !== "inactive" ? tText("请先下架商品后再删除") : tText("删除商品")}
+                    >
+                      <Trash2 size={13} />
+                      <Tx>删除</Tx>
+                    </UnifiedButton>
                   </PermissionGate>
                 </div>
               </td>

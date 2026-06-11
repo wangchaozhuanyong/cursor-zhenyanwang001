@@ -119,6 +119,7 @@ router.use([
   '/products/export',
   '/products/import',
   '/products/batch-status',
+  '/products/batch-delete',
   '/orders/export',
   '/orders/batch-ship',
   '/inventory/replenishment-alerts/generate',
@@ -304,6 +305,13 @@ router.post(
   requirePermission('product.manage'),
   validate({ body: productSchemas.adminProductBatchStatusBodySchema }),
   productCtrl.batchUpdateStatus,
+);
+router.post(
+  '/products/batch-delete',
+  adminAuth,
+  requirePermission('product.manage'),
+  validate({ body: productSchemas.adminProductBatchDeleteBodySchema }),
+  productCtrl.batchDelete,
 );
 /** 管理端图片上传：要求具备商品、轮播图或站点配置权限，避免低权限账号滥用上传通道 */
 const uploadPermission = requireAnyPermission(['product.manage', 'settings.manage', 'banner.manage']);

@@ -31,6 +31,7 @@ const RULES = [
 
   { method: 'POST', pattern: /^\/exports$/, actionClass: 'customer_export' },
   { method: 'POST', pattern: /^\/products\/batch-status$/, actionClass: 'bulk_price' },
+  { method: 'POST', pattern: /^\/products\/batch-delete$/, actionClass: 'bulk_delete' },
   { method: 'POST', pattern: /^\/reviews\/batch-delete$/, actionClass: 'bulk_delete' },
   { method: 'POST', pattern: /^\/reviews\/batch-hide$/, actionClass: 'bulk_delete' },
   { method: '*', pattern: /^\/recycle-bin\/[^/]+\/permanent-delete$/, actionClass: 'bulk_delete' },

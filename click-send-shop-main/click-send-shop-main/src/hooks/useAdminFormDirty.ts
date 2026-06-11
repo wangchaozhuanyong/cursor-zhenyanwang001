@@ -7,6 +7,8 @@ import { useAdminDraftStore, type AdminDraftRecord } from "@/stores/useAdminDraf
 type UseAdminFormDirtyOptions<T> = {
   restoreDraft?: (value: T) => void;
   draftEnabled?: boolean;
+  draftId?: string;
+  clearDirtyOnUnmount?: boolean;
 };
 
 function serializeAdminFormValue(value: unknown) {
@@ -28,10 +30,11 @@ export function useAdminFormDirty<T>(
   const location = useLocation();
   const draftEnabled = options.draftEnabled !== false;
   const restoreDraft = options.restoreDraft;
-  const tabId = useMemo(
+  const locationTabId = useMemo(
     () => adminTabPathKey(normalizeAdminTabPath(location.pathname, location.search)),
     [location.pathname, location.search],
   );
+  const tabId = options.draftId || locationTabId;
   const baselineRef = useRef<string | null>(null);
   const valueRef = useRef(value);
   const latestTabIdRef = useRef(tabId);
@@ -41,7 +44,7 @@ export function useAdminFormDirty<T>(
   const draftRecord = useAdminDraftStore((state) => state.drafts[tabId] as AdminDraftRecord<T> | undefined);
   const saveDraft = useAdminDraftStore((state) => state.saveDraft);
   const clearDraft = useAdminDraftStore((state) => state.clearDraft);
-  const hasDraft = Boolean(draftRecord?.dirty);
+  const hasDraft = draftEnabled && Boolean(draftRecord?.dirty);
 
   if (latestTabIdRef.current !== tabId) {
     latestTabIdRef.current = tabId;
@@ -73,7 +76,11 @@ export function useAdminFormDirty<T>(
   }, [ready, serialized]);
 
   const dirty = ready && baselineRef.current !== null && baselineRef.current !== serialized;
-  const { markSaved } = useAdminDirtyForm({ isDirty: dirty, isReady: ready });
+  const { markSaved } = useAdminDirtyForm({
+    isDirty: dirty,
+    isReady: ready,
+    clearOnUnmount: Boolean(options.clearDirtyOnUnmount),
+  });
 
   useEffect(() => {
     if (!draftEnabled || !ready || baselineRef.current === null) return;

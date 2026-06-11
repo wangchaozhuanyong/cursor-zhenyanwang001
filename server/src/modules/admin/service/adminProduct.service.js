@@ -865,8 +865,12 @@ async function patchProductLifecycle(id, lifecycleStatus, adminUserId, req) {
 async function deleteProduct(id, adminUserId, req) {
   const before = await repo.selectProductById(id);
   if (!before) throw new BusinessError(404, '商品不存在或已删除');
+  if (normalizeLifecycleFromRow(before) !== LIFECYCLE.OFF_SHELF) {
+    throw new BusinessError(400, '请先下架商品后再删除');
+  }
   try {
-    await repo.deleteProductById(id, adminUserId);
+    const deleted = await repo.deleteProductById(id, adminUserId);
+    if (!deleted) throw new BusinessError(400, '请先下架商品后再删除');
     await writeAuditLog({
       req,
       operatorId: adminUserId,
@@ -892,6 +896,70 @@ async function deleteProduct(id, adminUserId, req) {
     });
     throw err;
   }
+}
+
+async function batchDeleteProducts(ids, adminUserId, req) {
+  if (!Array.isArray(ids) || ids.length === 0) return { error: { code: 400, message: '请选择商品' } };
+  const uniqueIds = [...new Set(ids.map((id) => String(id || '').trim()).filter(Boolean))];
+  if (!uniqueIds.length) return { error: { code: 400, message: '请选择商品' } };
+  if (uniqueIds.length > 1000) return { error: { code: 400, message: '单次最多删除 1000 个商品' } };
+
+  const rows = await repo.selectProductsByIds(uniqueIds);
+  const rowMap = new Map(rows.map((row) => [row.id, row]));
+  const missingIds = uniqueIds.filter((id) => !rowMap.has(id));
+  const blockedIds = [];
+  const deleteIds = [];
+
+  for (const row of rows) {
+    if (normalizeLifecycleFromRow(row) === LIFECYCLE.OFF_SHELF) {
+      deleteIds.push(row.id);
+    } else {
+      blockedIds.push(row.id);
+    }
+  }
+
+  const deleted = deleteIds.length ? await repo.batchDeleteProductsByIds(deleteIds, adminUserId) : 0;
+  const skippedIds = [...missingIds, ...blockedIds];
+  const skipped = uniqueIds.length - deleted;
+
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'product.batch_delete',
+    objectType: 'product',
+    objectId: uniqueIds.length <= 3 ? uniqueIds.join(',') : `${uniqueIds.slice(0, 3).join(',')}…(+${uniqueIds.length})`,
+    summary: `批量删除下架商品：成功 ${deleted}，跳过 ${skipped}`,
+    before: {
+      requested: uniqueIds.length,
+      inactive_ids: deleteIds,
+      blocked_ids: blockedIds,
+      missing_ids: missingIds,
+    },
+    after: {
+      requested: uniqueIds.length,
+      deleted,
+      skipped,
+      skipped_ids: skippedIds,
+      blocked_active_ids: blockedIds,
+    },
+    result: skipped && !deleted ? 'failure' : (skipped ? 'partial' : 'success'),
+  });
+
+  if (deleted > 0) bumpCatalogCache();
+
+  const parts = [`已删除 ${deleted} 个下架商品`];
+  if (blockedIds.length) parts.push(`跳过 ${blockedIds.length} 个非下架商品`);
+  if (missingIds.length) parts.push(`跳过 ${missingIds.length} 个不存在或已删除商品`);
+  return {
+    data: {
+      requested: uniqueIds.length,
+      deleted,
+      skipped,
+      skipped_ids: skippedIds,
+      blocked_active_ids: blockedIds,
+    },
+    message: parts.join('，'),
+  };
 }
 
 /** 一行一 SKU（ERP 整表同步） */
@@ -1918,4 +1986,5 @@ module.exports = {
   previewProductsImportFile,
   importProductsFile,
   batchUpdateStatus,
+  batchDeleteProducts,
 };

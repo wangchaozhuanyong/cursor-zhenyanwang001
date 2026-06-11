@@ -251,6 +251,14 @@ export interface ProductBatchStatusResult {
   requested: number;
 }
 
+export interface ProductBatchDeleteResult {
+  deleted: number;
+  skipped: number;
+  skipped_ids?: string[];
+  blocked_active_ids?: string[];
+  requested: number;
+}
+
 export interface ProductTag {
   id: string;
   name: string;

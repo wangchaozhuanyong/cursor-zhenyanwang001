@@ -15,6 +15,7 @@ describe('admin sensitive action routes', () => {
 
   test('batch product mutation is classified', () => {
     assert.equal(getSensitiveActionClass(req('POST', '/products/batch-status')), 'bulk_price');
+    assert.equal(getSensitiveActionClass(req('POST', '/products/batch-delete')), 'bulk_delete');
   });
 
   test('customer exports are classified', () => {

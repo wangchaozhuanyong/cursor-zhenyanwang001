@@ -36,13 +36,29 @@ import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 
 const tempId = tempVariantId;
 
-export default function AdminProductForm() {
+type AdminProductFormProps = {
+  productId?: string;
+  embedded?: boolean;
+  onClose?: () => void;
+  onSaved?: () => void | Promise<void>;
+  onDeleted?: () => void | Promise<void>;
+};
+
+export default function AdminProductForm({
+  productId,
+  embedded = false,
+  onClose,
+  onSaved,
+  onDeleted,
+}: AdminProductFormProps = {}) {
   const { tText } = useAdminT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const goBack = useAdminGoBack("/admin/products");
-  const { id } = useParams();
+  const routeGoBack = useAdminGoBack("/admin/products");
+  const { id: routeId } = useParams();
+  const id = productId ?? routeId;
   const isNew = id === "new";
+  const goBack = embedded && onClose ? onClose : routeGoBack;
 
   const invalidateProductCaches = async () => {
     invalidatePublicProductStoreCache({ productId: id && id !== "new" ? id : undefined });
@@ -98,11 +114,16 @@ export default function AdminProductForm() {
 
   const loading = !isNew && productQuery.isLoading && !productQuery.data;
   const [formHydrated, setFormHydrated] = useState(isNew);
+  const draftId = embedded && id ? `/admin/products?edit=${id}` : undefined;
   const {
     dirty: formDirty,
     hasDraft,
     markClean,
-  } = useAdminFormDirty(form, formHydrated && !loading, { restoreDraft: setForm });
+  } = useAdminFormDirty(form, formHydrated && !loading, {
+    restoreDraft: setForm,
+    draftId,
+    clearDirtyOnUnmount: embedded,
+  });
 
   const tabTitle = useMemo(() => {
     if (isNew) return null;
@@ -110,7 +131,7 @@ export default function AdminProductForm() {
     if (id) return tText(`编辑商品 #${id}`);
     return null;
   }, [form.name, id, isNew, tText]);
-  useAdminTabTitle(tabTitle, formHydrated && !loading && Boolean(tabTitle));
+  useAdminTabTitle(tabTitle, !embedded && formHydrated && !loading && Boolean(tabTitle));
 
   useEffect(() => {
     const data = productQuery.data;
@@ -149,8 +170,15 @@ export default function AdminProductForm() {
       markClean();
       dirtyCleared = true;
       toast.success(tText(result === "created" ? "商品创建成功" : "商品更新成功"));
-      void invalidateProductCaches();
-      navigate("/admin/products");
+      const invalidatePromise = invalidateProductCaches();
+      if (embedded) {
+        await invalidatePromise;
+        await onSaved?.();
+        onClose?.();
+      } else {
+        void invalidatePromise;
+        navigate("/admin/products");
+      }
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请重试"));
     } finally {
@@ -171,9 +199,15 @@ export default function AdminProductForm() {
     setDeleting(true);
     try {
       await deleteAdminProduct({ productId: id, deleteProduct });
+      markClean();
       toast.success(tText("已删除"));
       await invalidateProductCaches();
-      navigate("/admin/products");
+      if (embedded) {
+        await onDeleted?.();
+        onClose?.();
+      } else {
+        navigate("/admin/products");
+      }
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除失败"));
     } finally {
@@ -190,12 +224,14 @@ export default function AdminProductForm() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <UnifiedButton onClick={goBack}>
-          <ArrowLeft size={20} className="text-foreground" />
-        </UnifiedButton>
-        <h2 className="text-lg font-semibold text-foreground">{isNew ? "新增商品" : "编辑商品"}</h2>
-      </div>
+      {!embedded ? (
+        <div className="flex items-center gap-3">
+          <UnifiedButton onClick={goBack}>
+            <ArrowLeft size={20} className="text-foreground" />
+          </UnifiedButton>
+          <h2 className="text-lg font-semibold text-foreground">{isNew ? "新增商品" : "编辑商品"}</h2>
+        </div>
+      ) : null}
 
       {loading ? (
         <AdminFormSectionsSkeleton sections={4} />
@@ -311,6 +347,8 @@ export default function AdminProductForm() {
           onSave={handleSave}
           onCancel={goBack}
           setDeleteConfirmOpen={setDeleteConfirmOpen}
+          deleteDisabled={!isNew && productQuery.data?.status !== "inactive"}
+          deleteDisabledReason={tText("请先下架商品后再删除")}
           tText={tText}
         />
       </div>
@@ -321,8 +359,8 @@ export default function AdminProductForm() {
         onOpenChange={setDeleteConfirmOpen}
         danger
         title={tText("删除商品")}
-        description={`确定删除「${form.name || id}」？删除后可在回收站恢复。`}
-        confirmText="删除"
+        description={`确定删除「${form.name || id}」？仅下架商品允许删除，删除后可在回收站恢复。`}
+        confirmText={tText("删除")}
         onConfirm={handleDelete}
       />
     </div>

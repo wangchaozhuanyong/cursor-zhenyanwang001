@@ -24,6 +24,8 @@ type Props = {
   onSave: (publish?: boolean) => void | Promise<void>;
   onCancel: () => void;
   setDeleteConfirmOpen: Dispatch<SetStateAction<boolean>>;
+  deleteDisabled?: boolean;
+  deleteDisabledReason?: string;
   tText: (s: string) => string;
 };
 
@@ -38,6 +40,8 @@ export default function ProductStatusSidebar({
   onSave,
   onCancel,
   setDeleteConfirmOpen,
+  deleteDisabled = false,
+  deleteDisabledReason,
   tText,
 }: Props) {
   const { complianceType: labelComplianceType, text: L } = useAdminDisplayLabel();
@@ -223,17 +227,22 @@ export default function ProductStatusSidebar({
           保存并上架
         </Tx></LoadingButton>
         {!isNew && (
-          <LoadingButton
-            type="button"
-            variant="outline"
-            state={deleting ? "loading" : "normal"}
-            loadingText="删除中..."
-            disabled={deleting || saving || uploadBusy}
-            onClick={() => setDeleteConfirmOpen(true)}
-            className={`w-full rounded-lg border px-6 py-3 text-sm font-semibold ${THEME_OUTLINE_DANGER}`}
-          ><Tx>
-            删除商品
-          </Tx></LoadingButton>
+          <div className="space-y-1.5">
+            <LoadingButton
+              type="button"
+              variant="outline"
+              state={deleting ? "loading" : "normal"}
+              loadingText="删除中..."
+              disabled={deleting || saving || uploadBusy || deleteDisabled}
+              onClick={() => setDeleteConfirmOpen(true)}
+              className={`w-full rounded-lg border px-6 py-3 text-sm font-semibold ${THEME_OUTLINE_DANGER}`}
+            ><Tx>
+              删除商品
+            </Tx></LoadingButton>
+            {deleteDisabled && deleteDisabledReason ? (
+              <p className="text-center text-[11px] text-muted-foreground">{deleteDisabledReason}</p>
+            ) : null}
+          </div>
         )}
         <UnifiedButton onClick={onCancel} className="w-full rounded-lg border border-border px-6 py-3 text-sm text-muted-foreground"><Tx>取消</Tx></UnifiedButton>
       </div>

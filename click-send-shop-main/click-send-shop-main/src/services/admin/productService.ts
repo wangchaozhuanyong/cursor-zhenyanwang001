@@ -2,6 +2,7 @@ import * as productApi from "@/api/admin/product";
 import type {
   AdminProductUpsertPayload,
   Product,
+  ProductBatchDeleteResult,
   ProductBatchStatusResult,
   ProductImportPreview,
   ProductImportResult,
@@ -51,6 +52,11 @@ export async function patchProductLifecycle(id: string, lifecycleStatus: Product
 
 export async function batchUpdateProductStatus(ids: string[], status: ProductStatus): Promise<ProductBatchStatusResult> {
   const res = await productApi.batchUpdateProductStatus(ids, status);
+  return res.data;
+}
+
+export async function batchDeleteProducts(ids: string[]): Promise<ProductBatchDeleteResult> {
+  const res = await productApi.batchDeleteProducts(ids);
   return res.data;
 }
 

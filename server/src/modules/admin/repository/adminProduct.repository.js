@@ -114,6 +114,18 @@ async function selectProductById(id, opts = {}) {
   return row || null;
 }
 
+async function selectProductsByIds(ids) {
+  if (!ids.length) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const [rows] = await db.query(
+    `SELECT *
+     FROM products
+     WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
+    ids,
+  );
+  return rows;
+}
+
 async function selectProductsByNamesAndCategoryIds(names, categoryIds) {
   const cleanNames = [...new Set((names || []).map((item) => String(item || '').trim()).filter(Boolean))];
   const cleanCategoryIds = [...new Set((categoryIds || []).map((item) => String(item || '').trim()).filter(Boolean))];
@@ -169,7 +181,15 @@ async function updateProductDynamicWithVersion(setFragments, values, id, version
 }
 
 async function deleteProductById(id, deletedBy) {
-  await db.query('UPDATE products SET deleted_at = NOW(), deleted_by = ? WHERE id = ?', [deletedBy || null, id]);
+  const [result] = await db.query(
+    `UPDATE products
+     SET deleted_at = NOW(), deleted_by = ?
+     WHERE id = ?
+       AND deleted_at IS NULL
+       AND (lifecycle_status = 2 OR (lifecycle_status IS NULL AND status = 'inactive'))`,
+    [deletedBy || null, id],
+  );
+  return result.affectedRows || 0;
 }
 
 async function restoreProductById(id) {
@@ -186,12 +206,27 @@ async function batchUpdateStatus(ids, status, lifecycleStatus) {
   return result.affectedRows || 0;
 }
 
+async function batchDeleteProductsByIds(ids, deletedBy) {
+  if (!ids.length) return 0;
+  const placeholders = ids.map(() => '?').join(',');
+  const [result] = await db.query(
+    `UPDATE products
+     SET deleted_at = NOW(), deleted_by = ?
+     WHERE id IN (${placeholders})
+       AND deleted_at IS NULL
+       AND (lifecycle_status = 2 OR (lifecycle_status IS NULL AND status = 'inactive'))`,
+    [deletedBy || null, ...ids],
+  );
+  return result.affectedRows || 0;
+}
+
 module.exports = {
   countProducts,
   refreshProductSalesMetricsCacheIfStale,
   selectProductsPage,
   selectProductsForExport,
   selectProductById,
+  selectProductsByIds,
   selectProductsByNamesAndCategoryIds,
   insertProduct,
   updateProductDynamic,
@@ -199,4 +234,5 @@ module.exports = {
   deleteProductById,
   restoreProductById,
   batchUpdateStatus,
+  batchDeleteProductsByIds,
 };

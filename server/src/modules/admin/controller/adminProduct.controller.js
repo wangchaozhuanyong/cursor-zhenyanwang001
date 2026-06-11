@@ -98,6 +98,13 @@ exports.batchUpdateStatus = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.batchDelete = asyncRoute(async (req, res) => {
+  const { ids } = req.body;
+  const r = await svc.batchDeleteProducts(ids, req.user?.id, req);
+  if (r.error) return res.fail(r.error.code, r.error.message);
+  res.success(r.data, r.message);
+});
+
 /* tags */
 
 exports.listTags = asyncRoute(async (_req, res) => {

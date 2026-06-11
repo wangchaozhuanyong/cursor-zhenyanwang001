@@ -2,6 +2,7 @@ import { get, post, put, patch, del } from "@/api/request";
 import type {
   AdminProductUpsertPayload,
   Product,
+  ProductBatchDeleteResult,
   ProductLifecycleStatus,
   ProductListParams,
   ProductStatus,
@@ -36,6 +37,10 @@ export function batchUpdateProductStatus(ids: string[], status: ProductStatus) {
   );
 }
 
+export function batchDeleteProducts(ids: string[]) {
+  return post<ProductBatchDeleteResult>("/admin/products/batch-delete", { ids });
+}
+
 export function deleteProduct(id: string) {
   return del<void>(`/admin/products/${id}`);
 }
@@ -59,4 +64,3 @@ export function deleteProductTag(id: string) {
 export function updateProductTags(id: string, tagIds: string[]) {
   return put<{ product_id: string; tags: ProductTag[] }>(`/admin/products/${id}/tags`, { tag_ids: tagIds });
 }
-

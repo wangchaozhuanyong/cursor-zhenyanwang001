@@ -39,6 +39,26 @@ const MOCK_SKIN_CONFIG = {
   adminThemeMode: "follow_store",
 };
 
+const MOCK_PRODUCT = {
+  id: "verify-product",
+  name: "验证商品",
+  subtitle: "主题预览真实商品",
+  image_url: "",
+  images: [],
+  price: 90,
+  original_price: 120,
+  points: 0,
+  category_id: "verify-category",
+  stock: 12,
+  status: "active",
+  sort_order: 1,
+  description: "用于 Theme Studio 真实路由预览验证。",
+  is_recommended: true,
+  is_new: true,
+  is_hot: false,
+  variants: [],
+};
+
 function apiOk(data) {
   return JSON.stringify({ code: 0, message: "ok", data });
 }
@@ -79,6 +99,63 @@ async function installApiMocks(context, baseUrl) {
               config: MOCK_SKIN_CONFIG,
             },
           ],
+        }),
+      });
+    }
+    if (!url.includes("/admin/") && /\/api\/products(\?|$)/.test(url)) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: apiOk({
+          list: [MOCK_PRODUCT],
+          total: 1,
+          page: 1,
+          pageSize: 1,
+          totalPages: 1,
+        }),
+      });
+    }
+    if (!url.includes("/admin/") && url.includes("/api/products/verify-product/related")) {
+      return route.fulfill({ status: 200, contentType: "application/json", body: apiOk([]) });
+    }
+    if (!url.includes("/admin/") && url.includes("/api/products/verify-product")) {
+      return route.fulfill({ status: 200, contentType: "application/json", body: apiOk(MOCK_PRODUCT) });
+    }
+    if (!url.includes("/admin/") && url.includes("/api/reviews/product/verify-product/stats")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: apiOk({
+          total: 0,
+          avg_rating: 5,
+          rating_distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+          image_review_count: 0,
+        }),
+      });
+    }
+    if (!url.includes("/admin/") && url.includes("/api/reviews/product/verify-product/eligibility")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: apiOk({
+          can_review: false,
+          reason: "login_required",
+          message: "购买并确认收货后可评价",
+          pending_items: [],
+          reviewed_count: 0,
+        }),
+      });
+    }
+    if (!url.includes("/admin/") && url.includes("/api/reviews/product/verify-product")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: apiOk({
+          list: [],
+          total: 0,
+          page: 1,
+          pageSize: 10,
+          totalPages: 0,
         }),
       });
     }
@@ -126,8 +203,16 @@ async function main() {
 
   const preview = page.locator("aside").filter({ has: page.getByText("实时预览", { exact: true }) }).first();
   await preview.waitFor({ state: "visible", timeout: 15000 });
-  const themeScope = preview.locator(".theme-preview-store[data-theme-admin-mode]").first();
-  await themeScope.waitFor({ state: "visible", timeout: 15000 });
+  const routeIframe = preview.locator('iframe[title="Theme live route preview"]').first();
+  await routeIframe.waitFor({ state: "visible", timeout: 15000 });
+  const routeFrame = page.frameLocator('aside iframe[title="Theme live route preview"]');
+  await routeFrame.locator("body").waitFor({ state: "visible", timeout: 15000 });
+  await page.waitForFunction(() => {
+    const frame = document.querySelector('aside iframe[title="Theme live route preview"]');
+    const root = frame?.contentDocument?.documentElement;
+    return root?.getAttribute("data-theme-admin-mode") === "fixed";
+  }, null, { timeout: 15000 });
+  const initialIframeSrc = await routeIframe.getAttribute("src");
 
   const editorTabs = await page.locator("[data-theme-editor-tab]").evaluateAll((tabs) =>
     tabs.map((tab) => tab.getAttribute("data-theme-editor-tab")),
@@ -137,7 +222,7 @@ async function main() {
     (await page.locator("#theme-section-components, #theme-section-product, #theme-section-home, #theme-section-advanced").count()) === 0;
   const designLockSummaryOk = await page.getByTestId("theme-design-lock-summary").isVisible();
   const lockedFieldCount = await page.locator("[data-theme-lock-field]").count();
-  const designLocksApplied = await themeScope.evaluate((el) => ({
+  const designLocksApplied = await routeFrame.locator("html").evaluate((el) => ({
     navStyle: el.getAttribute("data-theme-nav-style"),
     productCardVariant: el.getAttribute("data-theme-product-card-variant"),
     couponStyle: el.getAttribute("data-theme-coupon-style"),
@@ -157,33 +242,29 @@ async function main() {
   await primaryHex.fill("#2563EB");
   await page.waitForTimeout(400);
 
-  const previewPrimary = await themeScope.evaluate((el) =>
+  const previewPrimary = await routeFrame.locator("html").evaluate((el) =>
     getComputedStyle(el).getPropertyValue("--theme-primary").trim(),
   );
 
-  await page.getByRole("button", { name: "前台首页" }).click().catch(() => page.getByRole("button", { name: "首页" }).click());
+  await preview.getByRole("button", { name: "前台首页" }).click().catch(() => preview.getByRole("button", { name: "首页" }).click());
   await page.waitForTimeout(300);
+  const homeIframeSrc = await routeIframe.getAttribute("src");
 
   const healthSummaryOk = await page.getByText(/健康检查|Theme health/i).first().isVisible();
-  const homePreviewVisible = await preview.getByText(/热门推荐|Hot picks/i).first().isVisible();
+  const routeHealthOk = await preview.getByText("页面加载").first().isVisible();
+  const homePreviewVisible = await routeFrame.locator("body").isVisible();
 
-  await page.getByRole("button", { name: "商品详情" }).click();
-  await page.waitForTimeout(300);
-  const productVisible = await preview.getByText("加入购物车").isVisible();
-  const actionBar = preview.locator('[data-testid="product-detail-preview-action-bar"]');
-  const actionBarPosition = await actionBar.evaluate((el) => getComputedStyle(el).position);
-  const actionBarInPreview = await actionBar.evaluate((bar) => {
-    const previewRoot = bar.closest(".theme-preview-store");
-    if (!previewRoot) return false;
-    const barRect = bar.getBoundingClientRect();
-    const rootRect = previewRoot.getBoundingClientRect();
-    return barRect.bottom <= rootRect.bottom + 2 && barRect.top >= rootRect.top;
-  });
+  await preview.getByRole("button", { name: "商品详情" }).click();
+  await page.waitForTimeout(800);
+  const productIframeSrc = await routeIframe.getAttribute("src");
+  const productVisible = productIframeSrc?.includes("/product/verify-product") || false;
 
   await page.getByTitle("全屏预览").click();
   const fullscreenDialog = page.getByRole("dialog", { name: /全屏预览/i });
   await fullscreenDialog.waitFor({ state: "visible", timeout: 5000 });
   const fullscreenOk = await fullscreenDialog.isVisible();
+  const fullscreenIframeOk =
+    (await fullscreenDialog.locator('iframe[title="Theme live route preview"]').count()) === 1;
   await page.getByLabel("关闭").click().catch(() => page.keyboard.press("Escape"));
 
   const result = {
@@ -200,12 +281,14 @@ async function main() {
       designLocksApplied.productCardVariant === "premium" &&
       designLocksApplied.couponStyle === "premium" &&
       designLocksApplied.adminMode === "fixed" &&
+      !!initialIframeSrc?.includes("themePreview=1") &&
+      !!homeIframeSrc?.includes("previewScene=home") &&
       homePreviewVisible &&
       healthSummaryOk &&
+      routeHealthOk &&
       productVisible &&
-      actionBarPosition === "sticky" &&
-      actionBarInPreview &&
-      fullscreenOk,
+      fullscreenOk &&
+      fullscreenIframeOk,
     sticky,
     previewPrimary,
     editorTabs,
@@ -214,12 +297,15 @@ async function main() {
     designLockSummaryOk,
     lockedFieldCount,
     designLocksApplied,
+    initialIframeSrc,
+    homeIframeSrc,
     homePreviewVisible,
     healthSummaryOk,
+    routeHealthOk,
+    productIframeSrc,
     productVisible,
-    actionBarPosition,
-    actionBarInPreview,
     fullscreenOk,
+    fullscreenIframeOk,
     url: page.url(),
   };
 

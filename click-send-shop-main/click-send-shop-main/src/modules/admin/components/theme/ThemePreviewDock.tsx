@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import type { ThemeConfig } from "@/types/theme";
 import ThemeHealthCheck from "./ThemeHealthCheck";
 import ThemeHealthSummary from "./ThemeHealthSummary";
-import ThemePreviewCanvas from "./ThemePreviewCanvas";
-import ThemePreviewToolbar from "./ThemePreviewToolbar";
+import ThemeRealRoutePreview from "./ThemeRealRoutePreview";
 import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -58,7 +57,7 @@ export default function ThemePreviewDock({
   }
 
   return (
-    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card shadow-sm 2xl:sticky 2xl:top-24 2xl:flex 2xl:h-[calc(100vh-112px)] 2xl:w-[clamp(430px,28vw,540px)] 2xl:flex-col 2xl:overflow-hidden">
+    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card shadow-sm 2xl:sticky 2xl:top-24 2xl:flex 2xl:h-[calc(100vh-112px)] 2xl:w-[clamp(560px,36vw,760px)] 2xl:flex-col 2xl:overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <p className="text-sm font-semibold text-foreground"><Tx>实时预览</Tx></p>
         <div className="flex items-center gap-1">
@@ -73,15 +72,15 @@ export default function ThemePreviewDock({
         </div>
       </div>
 
-      <ThemePreviewToolbar mode={mode} device={device} onModeChange={onModeChange} onDeviceChange={onDeviceChange} />
-
       <div className="p-2 2xl:min-h-0 2xl:flex-1 2xl:overflow-hidden">
-            <ThemePreviewCanvas
-              config={config}
-              mode={mode}
-              device={device}
-              skinKey={`${skinKey}-${config.couponStyle}-${config.memberCardStyle}-${config.primaryColor}`}
-            />
+        <ThemeRealRoutePreview
+          config={config}
+          skinKey={skinKey}
+          mode={mode}
+          device={device}
+          onModeChange={onModeChange}
+          onDeviceChange={onDeviceChange}
+        />
       </div>
 
       <div className="border-t border-border p-2">

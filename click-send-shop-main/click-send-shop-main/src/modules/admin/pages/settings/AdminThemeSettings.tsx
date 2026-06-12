@@ -479,7 +479,7 @@ export default function AdminThemeSettings() {
             </div>
           </AdminSideDrawer>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(430px,28vw,540px)]">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(560px,36vw,760px)]">
             <ThemeSkinSidebar
               skins={skins}
               selectedSkinId={selectedSkinId}
@@ -541,7 +541,12 @@ export default function AdminThemeSettings() {
             }}
           />
 
-          <ThemeFullscreenPreview open={fullscreenOpen} config={themeConfig} onClose={() => setFullscreenOpen(false)} />
+          <ThemeFullscreenPreview
+            open={fullscreenOpen}
+            config={themeConfig}
+            skinKey={selectedSkinId}
+            onClose={() => setFullscreenOpen(false)}
+          />
         </>
       )}
     </div>

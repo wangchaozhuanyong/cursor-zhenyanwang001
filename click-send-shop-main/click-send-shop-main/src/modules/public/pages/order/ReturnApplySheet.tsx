@@ -9,6 +9,7 @@ import type { Order } from "@/types/order";
 import type { CreateReturnParams, ReturnType } from "@/types/return";
 import { BottomSheetForm } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StableImage from "@/components/ui/StableImage";
 
 const RETURN_TYPES: Array<{ value: ReturnType; label: string }> = [
   { value: "refund", label: "仅退款" },
@@ -245,7 +246,12 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
               <div className="grid grid-cols-3 gap-2">
                 {images.map((url) => (
                   <div key={url} className="relative overflow-hidden rounded-lg border border-border bg-secondary">
-                    <img src={url} alt="售后凭证" className="aspect-square w-full object-cover" />
+                    <StableImage
+                      src={url}
+                      alt="售后凭证"
+                      className="aspect-square w-full"
+                      imgClassName="object-cover"
+                    />
                     <UnifiedButton
                       type="button"
                       aria-label="删除图片"

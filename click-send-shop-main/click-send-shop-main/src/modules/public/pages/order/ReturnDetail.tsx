@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import ProductCoverImage from "@/components/ProductCoverImage";
+import StableImage from "@/components/ui/StableImage";
 import { getReturnStatusBadgeClass } from "@/constants/statusDictionary";
 import { formatDateTime } from "@/utils/formatDateTime";
 import * as returnService from "@/services/returnService";
@@ -161,7 +163,14 @@ export default function ReturnDetail() {
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-secondary">
-                  {image ? <img src={image} alt={getReturnItemName(detail)} className="h-full w-full object-cover" /> : null}
+                  {image ? (
+                    <ProductCoverImage
+                      url={image}
+                      alt={getReturnItemName(detail)}
+                      className="h-full w-full"
+                      imgClassName="object-cover"
+                    />
+                  ) : null}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -230,7 +239,12 @@ export default function ReturnDetail() {
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     {evidenceImages.map((url) => (
                       <div key={url} className="relative overflow-hidden rounded-lg border border-border">
-                        <img src={url} alt="售后补充凭证" className="aspect-square w-full object-cover" />
+                        <StableImage
+                          src={url}
+                          alt="售后补充凭证"
+                          className="aspect-square w-full"
+                          imgClassName="object-cover"
+                        />
                         <UnifiedButton type="button" aria-label="删除图片" onClick={() => setEvidenceImages((prev) => prev.filter((item) => item !== url))} className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white">
                           <X size={13} />
                         </UnifiedButton>
@@ -323,7 +337,13 @@ export default function ReturnDetail() {
               {detail.images?.length ? (
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   {detail.images.map((url) => (
-                    <img key={url} src={url} alt="售后凭证" className="aspect-square w-full rounded-lg object-cover" />
+                    <StableImage
+                      key={url}
+                      src={url}
+                      alt="售后凭证"
+                      className="aspect-square w-full rounded-lg"
+                      imgClassName="object-cover"
+                    />
                   ))}
                 </div>
               ) : null}

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { AppModal, LoadingButton } from "@/modules/micro-interactions";
 import * as reviewService from "@/services/reviewService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StableImage from "@/components/ui/StableImage";
 
 interface ReviewComposerSheetProps {
   open: boolean;
@@ -135,7 +136,13 @@ export default function ReviewComposerSheet({
         {images.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {images.map((url) => (
-              <img key={url} src={url} alt="" className="h-14 w-14 rounded-lg object-cover" />
+              <StableImage
+                key={url}
+                src={url}
+                alt=""
+                className="h-14 w-14 rounded-lg"
+                imgClassName="object-cover"
+              />
             ))}
           </div>
         ) : null}

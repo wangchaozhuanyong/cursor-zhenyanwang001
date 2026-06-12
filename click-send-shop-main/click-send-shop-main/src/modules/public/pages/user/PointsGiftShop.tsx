@@ -20,6 +20,7 @@ import {
   THEME_ACCENT_HERO_VALUE,
 } from "@/utils/themeVisuals";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StableImage from "@/components/ui/StableImage";
 
 function GiftCard({
   gift,
@@ -41,7 +42,13 @@ function GiftCard({
   return (
     <article className="flex gap-3 rounded-2xl border border-border bg-card p-4">
       {gift.image ? (
-        <img src={gift.image} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
+        <StableImage
+          src={gift.image}
+          alt=""
+          className="h-20 w-20 shrink-0 rounded-lg"
+          imgClassName="object-cover"
+          loading="lazy"
+        />
       ) : (
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-secondary">
           <Gift size={24} className="text-muted-foreground" aria-hidden />

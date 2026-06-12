@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StableImage from "@/components/ui/StableImage";
 
 function withViteBase(path: string): string {
   const base = String(import.meta.env.BASE_URL || "/");
@@ -276,14 +277,16 @@ function BrandMark({ brandLogoSrc, compact = false }: { brandLogoSrc: string; co
           compact ? "h-8 w-8" : "h-10 w-10 sm:h-11 sm:w-11"
         }`}
       >
-        <img
+        <StableImage
           src={brandLogoSrc}
           alt="大马通"
           width={compact ? 32 : 44}
           height={compact ? 32 : 44}
           className="h-full w-full object-contain"
+          imgClassName="object-contain"
           loading="eager"
-          decoding="async"
+          fetchPriority="high"
+          objectFit="contain"
         />
       </span>
       <span className="min-w-0">
@@ -351,12 +354,13 @@ function PlatformPreview({ brandLogoSrc }: { brandLogoSrc: string }) {
 
             <div className="grid gap-3">
               <div className="relative min-h-[132px] overflow-hidden rounded-lg bg-[#007f6d] sm:min-h-[175px] lg:min-h-[210px]">
-                <img
+                <StableImage
                   src={HERO_IMAGE}
                   alt=""
-                  className="absolute inset-0 h-full w-full object-cover object-right opacity-90"
+                  className="absolute inset-0 h-full w-full opacity-90"
+                  imgClassName="object-cover object-right"
                   loading="eager"
-                  decoding="async"
+                  fetchPriority="high"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,111,97,0.9),rgba(0,111,97,0.12))]" />
                 <div className="relative max-w-[250px] p-3 text-white sm:p-5 lg:max-w-[330px] lg:p-7">
@@ -665,7 +669,13 @@ export default function TikTokLanding() {
               return (
                 <article key={item.title} className="overflow-hidden rounded-lg border border-[#dfe9e6] bg-white shadow-sm">
                   <div className="aspect-[16/8.5] overflow-hidden">
-                    <img src={item.image} alt={item.title} className="h-full w-full object-cover object-right" loading="lazy" decoding="async" />
+                    <StableImage
+                      src={item.image}
+                      alt={item.title}
+                      className="h-full w-full"
+                      imgClassName="object-cover object-right"
+                      loading="lazy"
+                    />
                   </div>
                   <div className="flex min-h-[108px] gap-3 p-4">
                     <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${item.tone}`}>
@@ -729,7 +739,13 @@ export default function TikTokLanding() {
 
       <section id={sectionIds.contact} className="px-5 pb-8 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl overflow-hidden rounded-lg border border-[#008775] bg-[#e9f8f4] shadow-[0_18px_44px_rgba(0,127,109,0.12)] md:grid-cols-[280px_1fr]">
-          <img src={HERO_IMAGE} alt="" className="hidden h-full min-h-[190px] w-full object-cover md:block" loading="lazy" decoding="async" />
+          <StableImage
+            src={HERO_IMAGE}
+            alt=""
+            className="hidden h-full min-h-[190px] w-full md:block"
+            imgClassName="object-cover"
+            loading="lazy"
+          />
           <div className="flex flex-col items-center justify-between gap-5 p-5 text-center sm:p-6 md:flex-row md:text-left lg:p-8">
             <div>
               <h2 className="text-[28px] font-black leading-tight text-[#007064] sm:text-4xl">把高频问题，变成清晰入口</h2>

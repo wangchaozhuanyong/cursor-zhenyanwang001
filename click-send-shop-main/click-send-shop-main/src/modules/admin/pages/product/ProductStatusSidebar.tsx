@@ -174,9 +174,15 @@ export default function ProductStatusSidebar({
         <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>预览</Tx></h3>
         <div className="rounded-lg border border-border p-3">
           {form.cover_image ? (
-            <img src={form.cover_image} alt={form.cover_image_alt || `${form.name || "商品"} 卡片预览图`} className="mb-2 h-32 w-full rounded-md object-cover" />
+            <div className="mb-3 aspect-[4/3] w-full overflow-hidden rounded-md border border-border bg-secondary/50">
+              <img
+                src={form.cover_image}
+                alt={form.cover_image_alt || `${form.name || "商品"} 卡片预览图`}
+                className="h-full w-full object-contain object-center"
+              />
+            </div>
           ) : (
-            <div className="mb-2 h-32 rounded-md bg-secondary" />
+            <div className="mb-3 aspect-[4/3] rounded-md border border-dashed border-border bg-secondary/50" />
           )}
           <div className="mb-1 flex flex-wrap gap-1">
             {form.tag_ids.length > 0 &&

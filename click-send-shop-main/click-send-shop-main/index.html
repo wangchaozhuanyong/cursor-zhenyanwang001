@@ -176,6 +176,21 @@
         letter-spacing: 0;
         box-shadow: inset 0 0 0 1px rgba(255, 244, 205, 0.38);
       }
+      .app-preboot-logo {
+        display: block;
+        width: 4.55rem;
+        height: 4.55rem;
+        border-radius: 999px;
+        object-fit: contain;
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: inset 0 0 0 1px rgba(255, 244, 205, 0.38);
+      }
+      .app-preboot-logo[hidden] {
+        display: none;
+      }
+      .app-preboot-orbit[data-logo-ready="true"] .app-preboot-mark {
+        display: none;
+      }
       .app-preboot-title {
         margin: 0;
         color: #143b31;
@@ -412,6 +427,7 @@
     <div id="app-preboot" aria-busy="true" aria-label="大马通 Silk Aurora 正在启动">
       <div class="app-preboot-card">
         <div class="app-preboot-orbit" aria-hidden="true">
+          <img class="app-preboot-logo" alt="" decoding="async" fetchpriority="high" hidden />
           <div class="app-preboot-mark">马</div>
         </div>
         <h1 class="app-preboot-title">大马通</h1>
@@ -428,6 +444,117 @@
         var minVisibleMs = 650;
         var maxVisibleMs = 6000;
         var leaving = false;
+
+        (function syncPrebootLogo() {
+          var orbit = preboot.querySelector(".app-preboot-orbit");
+          var logo = preboot.querySelector(".app-preboot-logo");
+          if (!orbit || !logo) return;
+
+          var logoCacheKey = "site:brand:preboot-logo";
+          var faviconCacheKey = "site:brand:favicon";
+          var maxAge = 7 * 24 * 60 * 60 * 1000;
+          var apiCandidates = ["/api/home/bootstrap-lite", "/api/content/site-info"];
+
+          function trim(value) {
+            return typeof value === "string" ? value.trim() : "";
+          }
+
+          function normalizeAssetUrl(value) {
+            var href = trim(value);
+            if (!href || /lovable/i.test(href)) return "";
+            if (href.indexOf("//") === 0) return window.location.protocol + href;
+            if (/^(?:https?:|data:|blob:)/i.test(href)) return href;
+            if (href.charAt(0) === "/") return window.location.origin + href;
+            return href;
+          }
+
+          function readCachedLogo(key) {
+            try {
+              var raw = window.localStorage && window.localStorage.getItem(key);
+              if (!raw) return "";
+              var payload = JSON.parse(raw);
+              var href = normalizeAssetUrl(payload && payload.href);
+              var savedAt = Number((payload && payload.savedAt) || 0);
+              if (!href || !savedAt || Date.now() - savedAt > maxAge) {
+                window.localStorage.removeItem(key);
+                return "";
+              }
+              return href;
+            } catch (_e) {
+              return "";
+            }
+          }
+
+          function rememberLogo(href) {
+            try {
+              if (!href || !window.localStorage) return;
+              window.localStorage.setItem(logoCacheKey, JSON.stringify({ href: href, savedAt: Date.now() }));
+            } catch (_e) {}
+          }
+
+          function applyLogo(href) {
+            var next = normalizeAssetUrl(href);
+            if (!next || logo.getAttribute("src") === next) return;
+            logo.onload = function () {
+              logo.hidden = false;
+              orbit.setAttribute("data-logo-ready", "true");
+            };
+            logo.onerror = function () {
+              logo.hidden = true;
+              orbit.removeAttribute("data-logo-ready");
+            };
+            logo.hidden = true;
+            orbit.removeAttribute("data-logo-ready");
+            logo.setAttribute("src", next);
+          }
+
+          function resolveSiteInfo(body) {
+            if (!body || typeof body !== "object") return null;
+            if (body.siteInfo && typeof body.siteInfo === "object") return body.siteInfo;
+            if (body.data && body.data.siteInfo && typeof body.data.siteInfo === "object") return body.data.siteInfo;
+            if (body.data && typeof body.data === "object") return body.data;
+            if (body.result && body.result.siteInfo && typeof body.result.siteInfo === "object") return body.result.siteInfo;
+            if (body.payload && body.payload.siteInfo && typeof body.payload.siteInfo === "object") return body.payload.siteInfo;
+            return null;
+          }
+
+          function resolveLogoFromSiteInfo(siteInfo) {
+            if (!siteInfo) return "";
+            return normalizeAssetUrl(
+              siteInfo.logoUrl ||
+                siteInfo.logo_url ||
+                siteInfo.siteLogoUrl ||
+                siteInfo.site_logo_url ||
+                siteInfo.faviconUrl ||
+                siteInfo.favicon_url,
+            );
+          }
+
+          function fetchLogo(index) {
+            if (index >= apiCandidates.length) return;
+            window
+              .fetch(apiCandidates[index], { credentials: "same-origin", cache: "no-cache" })
+              .then(function (response) {
+                if (!response.ok) throw new Error("preboot brand request failed");
+                return response.json();
+              })
+              .then(function (body) {
+                var href = resolveLogoFromSiteInfo(resolveSiteInfo(body));
+                if (!href) {
+                  fetchLogo(index + 1);
+                  return;
+                }
+                rememberLogo(href);
+                applyLogo(href);
+              })
+              .catch(function () {
+                fetchLogo(index + 1);
+              });
+          }
+
+          applyLogo(readCachedLogo(logoCacheKey) || readCachedLogo(faviconCacheKey));
+          fetchLogo(0);
+        })();
 
         function leave() {
           if (leaving) return;

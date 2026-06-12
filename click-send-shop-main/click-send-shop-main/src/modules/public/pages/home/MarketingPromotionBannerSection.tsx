@@ -60,9 +60,9 @@ export default function MarketingPromotionBannerSection({ delay = 0, title = "" 
         ) : (
           <div className="h-28 w-full bg-gradient-to-r from-[var(--theme-primary)]/20 to-[var(--theme-bg)] md:h-36" />
         )}
-        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/55 to-transparent p-4">
-          <p className="text-sm font-bold text-white">{title || banner.title}</p>
-          {banner.promo_label ? <p className="text-xs text-white/85">{banner.promo_label}</p> : null}
+        <div className="absolute inset-0 flex flex-col justify-end bg-[linear-gradient(to_top,color-mix(in_srgb,var(--overlay-color)_55%,transparent),transparent)] p-4">
+          <p className="text-sm font-bold text-[var(--hero-foreground)]">{title || banner.title}</p>
+          {banner.promo_label ? <p className="text-xs text-[color-mix(in_srgb,var(--hero-foreground)_85%,transparent)]">{banner.promo_label}</p> : null}
         </div>
       </UnifiedButton>
     </section>

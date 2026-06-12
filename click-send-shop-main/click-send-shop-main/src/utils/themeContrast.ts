@@ -592,6 +592,16 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     text: parseColor(text),
     isDarkBg,
   });
+  const shadowTone = isDarkBg ? BLACK : mixColors(primary, BLACK, 0.76);
+  const glassSurface = parseColor(storefrontSurface["--store-surface-raised"], surface);
+  const navBorder = storefrontSurface["--store-header-border"];
+  const heroOverlayStart = isDarkBg ? mixColors(bg, BLACK, 0.2) : mixColors(primary, BLACK, 0.68);
+  const heroOverlayEnd = isDarkBg ? mixColors(primary, bg, 0.36) : mixColors(primary, secondary, 0.34);
+  const heroBg = isDarkBg ? mixColors(bg, BLACK, 0.12) : mixColors(surface, bg, 0.28);
+  const footerBg = isDarkBg ? mixColors(bg, BLACK, 0.22) : mixColors(primary, BLACK, 0.78);
+  const surfaceDark = isDarkBg ? mixColors(bg, BLACK, 0.32) : mixColors(primary, BLACK, 0.82);
+  const heroForeground = getReadableTextColor(heroOverlayStart, surfaceText);
+  const footerForeground = getReadableTextColor(footerBg, surfaceText);
 
   return {
     "--theme-primary": primaryCss,
@@ -693,6 +703,32 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-density-row": config.density === "compact" ? "2.25rem" : "2.75rem",
     ...getCardShellVariables(config.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
     ...storefrontSurface,
+    "--shadow-color": rgbToRgba(shadowTone, isDarkBg ? 0.7 : 0.26),
+    "--glass-bg": rgbToRgba(glassSurface, isDarkBg ? 0.72 : 0.8),
+    "--glass-border": navBorder,
+    "--overlay-color": rgbToCss(heroOverlayStart),
+    "--gradient-start": rgbToCss(heroOverlayStart),
+    "--gradient-end": rgbToCss(heroOverlayEnd),
+    "--highlight-color": rgbToRgba(isDarkBg ? WHITE : mixColors(WHITE, surface, 0.22), isDarkBg ? 0.16 : 0.72),
+    "--surface-dark": rgbToCss(surfaceDark),
+    "--nav-bg": storefrontSurface["--store-header-bg"],
+    "--nav-foreground": surfaceText,
+    "--nav-border": navBorder,
+    "--hero-bg": rgbToCss(heroBg),
+    "--hero-foreground": heroForeground,
+    "--hero-overlay-start": rgbToCss(heroOverlayStart),
+    "--hero-overlay-end": rgbToCss(heroOverlayEnd),
+    "--hero-accent": accentCss,
+    "--section-bg": storefrontSurface["--store-page-base"],
+    "--section-bg-alt": storefrontSurface["--store-page-tint"],
+    "--footer-bg": rgbToCss(footerBg),
+    "--footer-foreground": footerForeground,
+    "--cta-bg": priceCss,
+    "--cta-foreground": priceText,
+    "--button-primary": primaryCss,
+    "--button-primary-foreground": primaryText,
+    "--button-secondary": secondaryCss,
+    "--button-secondary-foreground": secondaryText,
 
     "--background": rgbToHslChannels(bg),
     "--foreground": rgbToHslChannels(parseColor(text)),

@@ -108,13 +108,17 @@ function ProductSoldOutOverlay({ compact = false }: { compact?: boolean }) {
   return (
     <>
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/10"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(to top, color-mix(in srgb, var(--overlay-color) 62%, transparent), color-mix(in srgb, var(--overlay-color) 28%, transparent), color-mix(in srgb, var(--overlay-color) 10%, transparent))",
+        }}
         aria-hidden
       />
       <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center p-1.5 sm:p-3">
         <span
           className={cn(
-            "rounded-full border border-white/35 bg-black/65 font-bold tracking-wide text-white shadow-[0_4px_16px_rgba(0,0,0,0.35)] backdrop-blur-sm",
+            "rounded-full border border-[color-mix(in_srgb,var(--hero-foreground)_35%,transparent)] bg-[color-mix(in_srgb,var(--overlay-color)_68%,transparent)] font-bold tracking-wide text-[var(--hero-foreground)] shadow-[0_4px_16px_var(--shadow-color)] backdrop-blur-sm",
             compact ? "px-2 py-0.5 text-[10px]" : "px-4 py-1.5 text-sm",
           )}
         >
@@ -285,7 +289,7 @@ function ProductCardInner({
             />
             {soldOut ? <ProductSoldOutOverlay compact /> : null}
             {ageBadgeLabel ? (
-              <span className="pointer-events-none absolute left-1.5 top-1.5 z-[3] rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+              <span className="pointer-events-none absolute left-1.5 top-1.5 z-[3] rounded-full bg-[color-mix(in_srgb,var(--overlay-color)_70%,transparent)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--hero-foreground)]">
                 {ageBadgeLabel}
               </span>
             ) : null}
@@ -363,7 +367,7 @@ function ProductCardInner({
         </div>
         {soldOut ? <ProductSoldOutOverlay /> : null}
         {ageBadgeLabel ? (
-          <span className="pointer-events-none absolute right-2 top-2 z-[3] rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+          <span className="pointer-events-none absolute right-2 top-2 z-[3] rounded-full bg-[color-mix(in_srgb,var(--overlay-color)_70%,transparent)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--hero-foreground)]">
             {ageBadgeLabel}
           </span>
         ) : null}

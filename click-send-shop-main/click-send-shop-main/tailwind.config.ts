@@ -62,6 +62,38 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        surface: {
+          DEFAULT: "var(--theme-surface)",
+          soft: "var(--section-bg-alt)",
+          strong: "var(--store-surface-raised)",
+          dark: "var(--surface-dark)",
+        },
+        section: {
+          DEFAULT: "var(--section-bg)",
+          alt: "var(--section-bg-alt)",
+        },
+        nav: {
+          DEFAULT: "var(--nav-bg)",
+          foreground: "var(--nav-foreground)",
+          border: "var(--nav-border)",
+        },
+        footer: {
+          DEFAULT: "var(--footer-bg)",
+          foreground: "var(--footer-foreground)",
+        },
+        hero: {
+          DEFAULT: "var(--hero-bg)",
+          foreground: "var(--hero-foreground)",
+          accent: "var(--hero-accent)",
+        },
+        cta: {
+          DEFAULT: "var(--cta-bg)",
+          foreground: "var(--cta-foreground)",
+        },
+        price: "var(--theme-price)",
+        success: "var(--theme-success)",
+        warning: "var(--theme-warning)",
+        danger: "var(--theme-danger)",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

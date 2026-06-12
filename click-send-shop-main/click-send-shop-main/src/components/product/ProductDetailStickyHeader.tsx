@@ -30,7 +30,7 @@ function ImmersiveIconButton({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/60 text-white shadow-sm [text-shadow:0_1px_2px_rgba(0,0,0,0.55)] backdrop-blur-md transition active:scale-95 touch-target"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--overlay-color)_60%,transparent)] text-[var(--hero-foreground)] shadow-sm [text-shadow:0_1px_2px_var(--shadow-color)] backdrop-blur-md transition active:scale-95 touch-target"
     >
       {children}
     </UnifiedButton>

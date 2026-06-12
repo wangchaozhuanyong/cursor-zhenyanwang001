@@ -179,16 +179,16 @@ export function getBottomNavShellClassName(
     case "floating":
       return `${base} border-0 bg-transparent px-[var(--store-page-x)] pb-2 pt-1 shadow-none`;
     case "glass":
-      return `${base} border-t border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_rgba(0,0,0,0.3)] backdrop-blur-xl`;
+      return `${base} border-t border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_var(--shadow-color)] backdrop-blur-xl`;
     case "clean":
     default:
-      return `${base} border-t border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_rgba(0,0,0,0.28)] backdrop-blur-xl`;
+      return `${base} border-t border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_var(--shadow-color)] backdrop-blur-xl`;
   }
 }
 
 export function getBottomNavInnerClassName(navStyle: ThemeConfig["navStyle"]): string {
   if (navStyle === "floating") {
-    return "w-full overflow-hidden rounded-2xl border border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_16px_42px_-24px_rgba(0,0,0,0.36)] backdrop-blur-xl md:mx-auto md:max-w-lg";
+    return "w-full overflow-hidden rounded-2xl border border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_16px_42px_-24px_var(--shadow-color)] backdrop-blur-xl md:mx-auto md:max-w-lg";
   }
   return "w-full md:mx-auto md:max-w-lg";
 }
@@ -212,13 +212,13 @@ export function getBannerContainerClassName(bannerStyle: ThemeConfig["bannerStyl
 export function getBannerOverlayClassName(bannerStyle: ThemeConfig["bannerStyle"]): string | null {
   switch (bannerStyle) {
     case "premium":
-      return "pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent";
+      return "pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,color-mix(in_srgb,var(--overlay-color)_40%,transparent),color-mix(in_srgb,var(--overlay-color)_10%,transparent),transparent)]";
     case "deal":
       return "pointer-events-none absolute inset-0 bg-gradient-to-r from-[color-mix(in_srgb,var(--theme-danger)_28%,transparent)] to-transparent";
     case "dark":
-      return "pointer-events-none absolute inset-0 bg-black/35";
+      return "pointer-events-none absolute inset-0 bg-[color-mix(in_srgb,var(--overlay-color)_35%,transparent)]";
     case "fresh":
-      return "pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 to-[color-mix(in_srgb,var(--theme-primary)_8%,transparent)]";
+      return "pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--highlight-color)_10%,transparent),color-mix(in_srgb,var(--theme-primary)_8%,transparent))]";
     default:
       return null;
   }

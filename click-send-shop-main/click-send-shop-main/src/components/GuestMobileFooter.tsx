@@ -29,6 +29,7 @@ import {
   STORE_COPY,
   STORE_LEGACY_GENERIC_COPY,
 } from "@/constants/storeCopy";
+import { LOCKED_BRAND_COLOR_CLASSNAMES } from "@/constants/themeColorLocks";
 
 function cleanFooterText(value?: string) {
   return String(value || "").trim();
@@ -267,18 +268,9 @@ function getChannelIcon(type: SupportDownloadChannel["type"]) {
 }
 
 const FOOTER_CHANNEL_BUTTON_TONE: Record<SupportDownloadChannel["type"], { button: string; icon: string }> = {
-  wechat: {
-    button: "border-[#07C160]/35 text-[#047857] hover:border-[#07C160] hover:bg-[#07C160]/10 hover:text-[#047857]",
-    icon: "text-[#07C160]",
-  },
-  whatsapp: {
-    button: "border-[#128C7E]/35 text-[#075E54] hover:border-[#128C7E] hover:bg-[#128C7E]/10 hover:text-[#075E54]",
-    icon: "text-[#128C7E]",
-  },
-  telegram: {
-    button: "border-[#229ED9]/35 text-[#0369A1] hover:border-[#229ED9] hover:bg-[#229ED9]/10 hover:text-[#0369A1]",
-    icon: "text-[#229ED9]",
-  },
+  wechat: LOCKED_BRAND_COLOR_CLASSNAMES.wechat,
+  whatsapp: LOCKED_BRAND_COLOR_CLASSNAMES.whatsapp,
+  telegram: LOCKED_BRAND_COLOR_CLASSNAMES.telegram,
 };
 
 function FollowButton({

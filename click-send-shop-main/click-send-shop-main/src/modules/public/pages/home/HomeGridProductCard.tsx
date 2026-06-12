@@ -103,8 +103,8 @@ function HomeGridProductCard({
           </div>
         ) : null}
         {soldOut ? (
-          <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-black/35">
-            <span className="rounded-full border border-white/30 bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white">
+          <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-[color-mix(in_srgb,var(--overlay-color)_35%,transparent)]">
+            <span className="rounded-full border border-[color-mix(in_srgb,var(--hero-foreground)_30%,transparent)] bg-[color-mix(in_srgb,var(--overlay-color)_60%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--hero-foreground)]">
               已售罄
             </span>
           </div>

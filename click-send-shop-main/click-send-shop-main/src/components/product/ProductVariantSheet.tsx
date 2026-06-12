@@ -385,7 +385,7 @@ export default function ProductVariantSheet({
         <ul className="space-y-2">
           {productDetailItems.map((item, index) => (
             <li key={`${item}-${index}`} className="flex gap-2 text-xs leading-relaxed text-[var(--theme-text)]">
-              <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-600" />
+              <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[var(--theme-success)]" />
               <span>{item}</span>
             </li>
           ))}

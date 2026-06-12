@@ -6,6 +6,7 @@ import {
   THEME_PRESETS,
 } from "@/constants/themePresets";
 import { THEME_REVISION_KEY } from "@/lib/themeRevision";
+import { resolvePublicThemeFromSkin } from "@/lib/publicTheme";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { generateThemePalette } from "@/utils/themeContrast";
 import { normalizeThemeConfig, normalizeThemeSkinsPayload, resolveRuntimeThemeSkinId } from "@/utils/themeConfig";
@@ -39,6 +40,8 @@ function resolveThemeConfigForScope(config: ThemeConfig, inAdmin: boolean): Them
 }
 
 function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?: ThemeSkin | null) {
+  root.setAttribute("data-public-theme", resolvePublicThemeFromSkin(skin, config));
+  root.setAttribute("data-admin-theme", config.adminThemeMode);
   if (skin?.id) root.setAttribute("data-theme-skin-id", skin.id);
   else root.removeAttribute("data-theme-skin-id");
   if (skin?.category) root.setAttribute("data-theme-category", skin.category);

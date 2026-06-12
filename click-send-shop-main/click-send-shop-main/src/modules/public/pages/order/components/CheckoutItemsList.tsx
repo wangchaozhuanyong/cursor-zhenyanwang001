@@ -1,5 +1,6 @@
 import { getCartLinePrice } from "@/stores/useCartStore";
 import type { CartItem } from "@/types/cart";
+import ProductCoverImage from "@/components/ProductCoverImage";
 
 interface CheckoutItemsListProps {
   items: CartItem[];
@@ -17,15 +18,13 @@ export function CheckoutItemsList({ items }: CheckoutItemsListProps) {
       </div>
       {items.map((item, index) => (
         <div key={`${item.product.id}:${item.variant_id || ""}`} className="store-checkout-item flex items-center gap-3 border-b border-[var(--theme-border)] py-3 last:border-0">
-          <img
-            src={item.product.cover_image}
+          <ProductCoverImage
+            url={item.product.cover_image}
             alt={item.product.name}
-            width={64}
-            height={64}
             className="store-checkout-media h-16 w-16 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] object-cover"
+            imgClassName="object-cover"
             loading={index === 0 ? "eager" : "lazy"}
             fetchPriority={index === 0 ? "high" : "low"}
-            decoding="async"
           />
           <div className="flex-1 min-w-0">
             <p className="store-card-title line-clamp-2 text-foreground">{item.product.name}</p>

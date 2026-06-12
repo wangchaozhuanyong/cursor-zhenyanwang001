@@ -25,6 +25,7 @@ import { AppModal, BottomSheetConfirm } from "@/modules/micro-interactions";
 import ReturnApplySheet from "./ReturnApplySheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StoreSearchField from "@/components/store/StoreSearchField";
+import ProductCoverImage from "@/components/ProductCoverImage";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
   { key: "all", label: "全部" },
@@ -376,15 +377,13 @@ export default function Orders() {
                 <div className="space-y-2">
                   {shownItems.map((item, itemIndex) => (
                     <div key={item.order_item_id || item.id || item.product.id} className="flex gap-2">
-                      <img
-                        src={item.product.cover_image}
+                      <ProductCoverImage
+                        url={item.product.cover_image}
                         alt={item.product.name}
-                        width={72}
-                        height={72}
                         className="h-[72px] w-[72px] rounded-lg object-cover"
+                        imgClassName="object-cover"
                         loading={orderIndex === 0 && itemIndex === 0 ? "eager" : "lazy"}
                         fetchPriority={orderIndex === 0 && itemIndex === 0 ? "high" : "low"}
-                        decoding="async"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="store-card-title line-clamp-2">{item.product.name}</p>

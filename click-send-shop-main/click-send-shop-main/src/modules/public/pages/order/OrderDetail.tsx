@@ -35,6 +35,7 @@ import ReturnApplySheet from "./ReturnApplySheet";
 import { SUPPORT_PAGE_PATH } from "@/utils/supportDownloadConfig";
 import { useGoBack } from "@/hooks/useGoBack";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import ProductCoverImage from "@/components/ProductCoverImage";
 
 const steps = ["待付款", "已付款", "已发货", "已完成"];
 
@@ -454,7 +455,12 @@ export default function OrderDetail() {
             const lineTotal = Number(item.subtotal ?? Number(item.unit_price || 0) * Number(item.qty || 0));
             return (
               <div key={item.order_item_id || item.id || `${item.product.id}-${item.variant_id}`} className="flex gap-2">
-                <img src={item.product.cover_image} alt={item.product.name} className="h-[72px] w-[72px] rounded-lg object-cover" />
+                <ProductCoverImage
+                  url={item.product.cover_image}
+                  alt={item.product.name}
+                  className="h-[72px] w-[72px] rounded-lg object-cover"
+                  imgClassName="object-cover"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="store-card-title line-clamp-2">{item.product.name}</p>
                   <p className="store-caption mt-1 truncate text-muted-foreground">{item.variant_name || item.sku_code || "默认规格"}</p>

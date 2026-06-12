@@ -48,7 +48,7 @@ export function getNextSmartMobileChromeMode({
 }: SmartMobileChromeTransitionInput): SmartMobileChromeMode {
   if (currentY <= expandTop) return "expanded";
 
-  if (delta < -revealDelta) return "expanded";
+  if (currentY <= compactStart) return "compact";
 
   if (Math.abs(delta) < Math.min(hideDelta, revealDelta)) {
     if (currentMode === "expanded" && currentY > compactStart) return "compact";
@@ -185,11 +185,6 @@ export function useSmartMobileChrome({
 
       lastScrollYRef.current = getScrollY();
 
-      if (event.deltaY < 0) {
-        revealChrome();
-        return;
-      }
-
       applyMode(resolveTransition(lastScrollYRef.current, event.deltaY));
     };
 
@@ -206,11 +201,6 @@ export function useSmartMobileChrome({
 
       lastScrollYRef.current = getScrollY();
       touchStartYRef.current = currentTouchY;
-
-      if (gestureDelta < 0) {
-        revealChrome();
-        return;
-      }
 
       applyMode(resolveTransition(lastScrollYRef.current, gestureDelta));
     };

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /** 首页横滑 / 网格商品卡统一外壳 */
 export const HOME_PRODUCT_CARD_SHELL =
-  "store-product-card store-art-product-card flex flex-col overflow-hidden rounded-[var(--store-card-radius)] border border-[var(--store-card-border)] bg-[var(--store-card-bg)] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5";
+  "store-product-card store-art-product-card flex flex-col overflow-hidden rounded-[var(--store-card-radius)] border border-product-border bg-product-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5";
 
 /** 首页新品横滑单卡宽度（约一屏 3 张） */
 export const HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS =
@@ -11,7 +11,7 @@ export const HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS =
 
 /** 图片区容器 */
 export const HOME_PRODUCT_CARD_MEDIA =
-  "store-art-product-media relative w-full shrink-0 overflow-hidden bg-[var(--store-product-media-bg)]";
+  "store-art-product-media relative w-full shrink-0 overflow-hidden bg-product-image";
 
 export const HOME_PRODUCT_IMAGE_PRODUCT_CLASS = "aspect-square w-full max-h-none";
 export const HOME_PRODUCT_IMAGE_SERVICE_CLASS = HOME_PRODUCT_IMAGE_PRODUCT_CLASS;

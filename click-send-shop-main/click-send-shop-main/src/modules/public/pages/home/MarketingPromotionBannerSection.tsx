@@ -6,6 +6,7 @@ import type { MarketingActivitySummary } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { trackEventLazy } from "@/services/trackEventLazy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StableImage from "@/components/ui/StableImage";
 
 export default function MarketingPromotionBannerSection({ delay = 0, title = "" }: { delay?: number; title?: string }) {
   const navigate = useNavigate();
@@ -48,14 +49,14 @@ export default function MarketingPromotionBannerSection({ delay = 0, title = "" 
         className="relative block w-full overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-left theme-shadow"
       >
         {banner.cover_image ? (
-          <img
+          <StableImage
             src={banner.cover_image}
             alt=""
             width={960}
             height={360}
             className="h-28 w-full object-cover md:h-36"
+            imgClassName="object-cover"
             loading="lazy"
-            decoding="async"
           />
         ) : (
           <div className="h-28 w-full bg-gradient-to-r from-[var(--theme-primary)]/20 to-[var(--theme-bg)] md:h-36" />

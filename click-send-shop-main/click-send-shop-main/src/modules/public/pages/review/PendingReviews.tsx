@@ -4,6 +4,7 @@ import * as reviewService from "@/services/reviewService";
 import type { PendingReviewItem } from "@/types/review";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import ProductCoverImage from "@/components/ProductCoverImage";
 
 export default function PendingReviews() {
   const navigate = useNavigate();
@@ -46,12 +47,19 @@ export default function PendingReviews() {
             <p className="mb-2 text-xs text-muted-foreground">订单号：{list[0].order_no}</p>
             {list.map((it) => (
               <div key={it.order_item_id} className="mb-2 flex items-center gap-3">
-                <img
-                  src={it.product_image}
-                  className="h-12 w-12 rounded object-cover"
-                  alt={it.product_name}
+                <UnifiedButton
+                  type="button"
+                  className="h-12 w-12 overflow-hidden rounded p-0"
                   onClick={() => navigate(`/product/${it.product_id}`)}
-                />
+                  aria-label={`查看 ${it.product_name}`}
+                >
+                  <ProductCoverImage
+                    url={it.product_image}
+                    className="h-full w-full object-cover"
+                    imgClassName="object-cover"
+                    alt={it.product_name}
+                  />
+                </UnifiedButton>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">{it.product_name}</p>
                   <p className="text-xs text-muted-foreground">{it.variant_name || it.sku_code || "默认规格"}</p>

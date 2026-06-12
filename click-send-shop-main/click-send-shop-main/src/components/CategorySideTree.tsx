@@ -6,6 +6,7 @@ import { useMotionConfig } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { resolveNavIconThumbUrl } from "@/utils/navIconThumbUrl";
+import StableImage from "@/components/ui/StableImage";
 
 type CategorySideTreeProps = {
   categories: Category[];
@@ -72,20 +73,17 @@ export default function CategorySideTree({
     if (category.icon_url) {
       const iconSrc = resolveNavIconThumbUrl(category.icon_url);
       return (
-        <img
+        <StableImage
           src={iconSrc}
+          fallbackSrc={category.icon_url}
           alt=""
           width={16}
           height={16}
+          sizes="16px"
           loading="lazy"
-          decoding="async"
           className="mr-1 inline-block h-4 w-4 object-contain align-text-bottom"
-          onError={(event) => {
-            if (iconSrc && iconSrc !== category.icon_url && event.currentTarget.dataset.fallbackSrc !== "1") {
-              event.currentTarget.dataset.fallbackSrc = "1";
-              event.currentTarget.src = category.icon_url;
-            }
-          }}
+          imgClassName="object-contain"
+          objectFit="contain"
         />
       );
     }

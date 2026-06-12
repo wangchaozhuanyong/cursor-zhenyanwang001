@@ -20,6 +20,7 @@ import {
   getReturnTypeLabel,
   shouldShowReturnInFilter,
 } from "./returnProgress";
+import ProductCoverImage from "@/components/ProductCoverImage";
 
 export default function Returns() {
   const goBack = useGoBack();
@@ -170,7 +171,14 @@ export default function Returns() {
                   className="grid w-full grid-cols-[64px_1fr_auto] items-center gap-3 text-left"
                 >
                   <div className="h-16 w-16 overflow-hidden rounded-xl bg-secondary">
-                    {image ? <img src={image} alt={getReturnItemName(item)} className="h-full w-full object-cover" /> : null}
+                    {image ? (
+                      <ProductCoverImage
+                        url={image}
+                        alt={getReturnItemName(item)}
+                        className="h-full w-full object-cover"
+                        imgClassName="object-cover"
+                      />
+                    ) : null}
                   </div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">

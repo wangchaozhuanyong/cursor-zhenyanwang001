@@ -602,6 +602,11 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   const surfaceDark = isDarkBg ? mixColors(bg, BLACK, 0.32) : mixColors(primary, BLACK, 0.82);
   const heroForeground = getReadableTextColor(heroOverlayStart, surfaceText);
   const footerForeground = getReadableTextColor(footerBg, surfaceText);
+  const productShell = mixColors(bg, WHITE, 0.18);
+  const productCard = mixColors(surface, WHITE, 0.5);
+  const productImageBg = mixColors(bg, surface, 0.42);
+  const promoBg = mixColors(price, WHITE, 0.86);
+  const promoForeground = getReadableTextColor(promoBg, priceCss, 3.2);
 
   return {
     "--theme-primary": primaryCss,
@@ -729,6 +734,16 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--button-primary-foreground": primaryText,
     "--button-secondary": secondaryCss,
     "--button-secondary-foreground": secondaryText,
+    "--product-shell": rgbToHslChannels(productShell),
+    "--product-card": rgbToHslChannels(productCard),
+    "--product-border": rgbToHslChannels(border),
+    "--product-image-bg": rgbToHslChannels(productImageBg),
+    "--promo-bg": rgbToHslChannels(promoBg),
+    "--promo-foreground": rgbToHslChannels(parseColor(promoForeground)),
+    "--price": rgbToHslChannels(price),
+    "--success": rgbToHslChannels(success),
+    "--warning": rgbToHslChannels(warning),
+    "--danger": rgbToHslChannels(danger),
 
     "--background": rgbToHslChannels(bg),
     "--foreground": rgbToHslChannels(parseColor(text)),

@@ -3,70 +3,72 @@ import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 export const PUBLIC_THEME_STORAGE_KEY = "flashcast:public-theme";
 
 export const PUBLIC_THEMES = [
-  "classic-luxury",
-  "modern-light",
-  "dark-premium",
-  "warm-home",
-  "brand-red",
+  "ivory-gold",
+  "pearl-slate",
+  "linen-walnut",
+  "sage-stone",
+  "ruby-cream",
 ] as const;
 
 export type PublicTheme = (typeof PUBLIC_THEMES)[number];
 
-export const DEFAULT_PUBLIC_THEME: PublicTheme = "classic-luxury";
+export const DEFAULT_PUBLIC_THEME: PublicTheme = "ivory-gold";
 
-const SKIN_PUBLIC_THEME_MAP: Record<string, PublicTheme> = {
-  premium_champagne_ivory: "classic-luxury",
-  premium_pearl_blush: "warm-home",
-  premium_porcelain_jade: "classic-luxury",
-  premium_sky_silk: "modern-light",
-  premium_apricot_sand: "warm-home",
-  festival_spring_ruby_gold: "brand-red",
-  festival_moon_orange_gold: "brand-red",
+export const PUBLIC_THEME_LABELS: Record<PublicTheme, string> = {
+  "ivory-gold": "象牙白金",
+  "pearl-slate": "珍珠蓝灰",
+  "linen-walnut": "亚麻胡桃",
+  "sage-stone": "鼠尾草石",
+  "ruby-cream": "赤金奶油",
 };
 
-function parseHexColor(value?: string | null) {
-  const raw = (value || "").replace("#", "").trim();
-  if (/^[0-9a-f]{3}$/i.test(raw)) {
-    return raw.split("").map((char) => Number.parseInt(`${char}${char}`, 16));
-  }
-  if (/^[0-9a-f]{6}$/i.test(raw)) {
-    return [raw.slice(0, 2), raw.slice(2, 4), raw.slice(4, 6)].map((part) => Number.parseInt(part, 16));
-  }
-  return null;
-}
+export const PUBLIC_THEME_DESCRIPTIONS: Record<PublicTheme, string> = {
+  "ivory-gold": "默认推荐，适合装修官网和材料商城，干净、高级、温暖。",
+  "pearl-slate": "现代专业风，适合办公室、商业空间、工程装修。",
+  "linen-walnut": "温馨家装风，适合家庭装修、软装、木质空间。",
+  "sage-stone": "自然环保风，适合环保材料、原木风、侘寂风空间。",
+  "ruby-cream": "商品转化风，适合材料商城、购买页、优惠活动。",
+};
 
-function isDarkColor(value?: string | null) {
-  const rgb = parseHexColor(value);
-  if (!rgb) return false;
-  const [r, g, b] = rgb.map((channel) => channel / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.34;
-}
+const SKIN_PUBLIC_THEME_MAP: Record<string, PublicTheme> = {
+  premium_champagne_ivory: "ivory-gold",
+  premium_sky_silk: "pearl-slate",
+  premium_apricot_sand: "linen-walnut",
+  premium_porcelain_jade: "sage-stone",
+  premium_pearl_blush: "ruby-cream",
+  festival_spring_ruby_gold: "ruby-cream",
+  festival_moon_orange_gold: "linen-walnut",
+};
 
-function isRedFamily(value?: string | null) {
-  const rgb = parseHexColor(value);
-  if (!rgb) return false;
-  const [r, g, b] = rgb;
-  return r > 150 && g < 120 && b < 120;
-}
+const LEGACY_PUBLIC_THEME_MAP: Record<string, PublicTheme> = {
+  "classic-luxury": "ivory-gold",
+  "modern-light": "pearl-slate",
+  "warm-home": "linen-walnut",
+  "brand-red": "ruby-cream",
+  "obsidian-gold": "ivory-gold",
+  "dark-premium": "ivory-gold",
+  "black-gold": "ivory-gold",
+  "luxury-dark": "ivory-gold",
+};
 
 export function isPublicTheme(value: unknown): value is PublicTheme {
   return typeof value === "string" && PUBLIC_THEMES.includes(value as PublicTheme);
 }
 
 export function resolvePublicTheme(value: unknown): PublicTheme {
-  return isPublicTheme(value) ? value : DEFAULT_PUBLIC_THEME;
+  if (isPublicTheme(value)) return value;
+  if (typeof value === "string" && LEGACY_PUBLIC_THEME_MAP[value]) {
+    return LEGACY_PUBLIC_THEME_MAP[value];
+  }
+  return DEFAULT_PUBLIC_THEME;
 }
 
 export function resolvePublicThemeFromSkin(skin?: ThemeSkin | null, config?: ThemeConfig | null): PublicTheme {
   if (skin?.id && SKIN_PUBLIC_THEME_MAP[skin.id]) {
     return SKIN_PUBLIC_THEME_MAP[skin.id];
   }
-  if (skin?.sceneTag === "holiday" || isRedFamily(config?.primaryColor) || isRedFamily(config?.priceColor)) {
-    return "brand-red";
-  }
-  if (isDarkColor(config?.bgColor) || isDarkColor(config?.surfaceColor)) {
-    return "dark-premium";
-  }
+  const legacyName = config?.skinName;
+  if (legacyName) return resolvePublicTheme(legacyName);
   return DEFAULT_PUBLIC_THEME;
 }
 

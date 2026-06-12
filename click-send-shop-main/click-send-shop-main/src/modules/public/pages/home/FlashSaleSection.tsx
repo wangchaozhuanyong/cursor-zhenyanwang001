@@ -5,6 +5,7 @@ import * as homeService from "@/services/homeService";
 import { fetchFlashSaleHome, type FlashSaleHomeActivity } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import ProductCoverImage from "@/components/ProductCoverImage";
 
 function formatCountdown(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
@@ -88,14 +89,12 @@ export default function FlashSaleSection({ delay = 0, title = "" }: { delay?: nu
             onClick={() => navigate(`/product/${item.product_id}`)}
             className="w-[140px] shrink-0 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-left theme-shadow"
           >
-            <img
-              src={item.cover_image}
+            <ProductCoverImage
+              url={item.cover_image}
               alt={item.product_name}
-              width={280}
-              height={280}
               className="aspect-square w-full object-cover"
+              imgClassName="object-cover"
               loading="lazy"
-              decoding="async"
             />
             <div className="space-y-1 p-2.5">
               <p className="line-clamp-2 text-xs font-medium text-[var(--theme-text)]">{item.product_name}</p>

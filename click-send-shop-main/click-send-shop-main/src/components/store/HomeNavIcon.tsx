@@ -24,11 +24,11 @@ import {
   Ticket,
   Wine,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { ensureMediaUrl } from "@/utils/mediaUrl";
-import { hasLoadedImage, markImageLoaded, rememberLoadedImageFromElement } from "@/utils/imageLoadMemory";
 import { resolveNavIconThumbUrl } from "@/utils/navIconThumbUrl";
+import StableImage from "@/components/ui/StableImage";
 
 const ICON_TOKENS = {
   all: Grid3X3,
@@ -118,34 +118,6 @@ export default function HomeNavIcon({
     () => (imageSource ? resolveNavIconThumbUrl(imageSource) : null),
     [imageSource],
   );
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const [src, setSrc] = useState(displayImageSource || imageSource || "");
-  const [loaded, setLoaded] = useState(() => hasLoadedImage(displayImageSource, imageSource));
-
-  useEffect(() => {
-    const nextSrc = displayImageSource || imageSource || "";
-    setSrc(nextSrc);
-    setLoaded(hasLoadedImage(nextSrc, imageSource));
-  }, [displayImageSource, imageSource]);
-
-  useEffect(() => {
-    const img = imgRef.current;
-    if (!img) return;
-
-    const markLoadedIfReady = () => {
-      if (rememberLoadedImageFromElement(img, src, imageSource, displayImageSource)) {
-        setLoaded(true);
-      }
-    };
-
-    markLoadedIfReady();
-    const frame = window.requestAnimationFrame(markLoadedIfReady);
-    const timer = window.setTimeout(markLoadedIfReady, 120);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(timer);
-    };
-  }, [displayImageSource, imageSource, src]);
 
   if (!iconValue) {
     return <span className={cn("text-sm font-semibold text-[var(--theme-text-muted)]", className)}>·</span>;
@@ -159,47 +131,22 @@ export default function HomeNavIcon({
     );
   }
 
-  if (imageSource && src) {
+  if (imageSource) {
     return (
-      <span className={cn("relative flex h-full w-full items-center justify-center", className)}>
-        <span
-          className={cn(
-            "absolute inset-1 rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] transition-opacity duration-150",
-            loaded ? "opacity-0" : "opacity-100",
-          )}
-          aria-hidden
-        />
-        <img
-          ref={imgRef}
-          src={src}
-          alt="首页导航图标"
-          width={48}
-          height={48}
-          sizes="48px"
-          className={cn(
-            "relative z-10 h-full w-full object-contain object-center transition-opacity duration-150",
-            loaded ? "opacity-100" : "opacity-0",
-            imageClassName,
-          )}
-          loading={loading}
-          {...({ fetchpriority: fetchPriority } as Record<string, string>)}
-          decoding="async"
-          onLoad={(event) => {
-            if (event.currentTarget.naturalWidth > 0) {
-              markImageLoaded(src, imageSource, displayImageSource, event.currentTarget.currentSrc, event.currentTarget.src);
-              setLoaded(true);
-            }
-          }}
-          onError={() => {
-            if (imageSource && src !== imageSource) {
-              setSrc(imageSource);
-              setLoaded(hasLoadedImage(imageSource));
-              return;
-            }
-            setLoaded(false);
-          }}
-        />
-      </span>
+      <StableImage
+        src={displayImageSource || imageSource}
+        fallbackSrc={imageSource}
+        alt="首页导航图标"
+        width={48}
+        height={48}
+        sizes="48px"
+        className={cn("h-full w-full rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)]", className)}
+        imgClassName={cn("object-contain object-center", imageClassName)}
+        loading={loading}
+        fetchPriority={fetchPriority}
+        objectFit="contain"
+        placeholderClassName="rounded-xl"
+      />
     );
   }
 

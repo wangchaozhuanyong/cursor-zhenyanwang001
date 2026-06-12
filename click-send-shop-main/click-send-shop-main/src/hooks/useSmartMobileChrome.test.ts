@@ -19,9 +19,14 @@ function next(currentMode: SmartMobileChromeMode, currentY: number, delta: numbe
 }
 
 describe("getNextSmartMobileChromeMode", () => {
-  test("reveals the full chrome on upward page movement before reaching the top", () => {
-    expect(next("hidden", 360, -9)).toBe("expanded");
-    expect(next("compact", 260, -12)).toBe("expanded");
+  test("does not reveal the full chrome on upward page movement before reaching the top", () => {
+    expect(next("hidden", 360, -9)).toBe("hidden");
+    expect(next("compact", 260, -12)).toBe("compact");
+  });
+
+  test("only restores compact or expanded chrome near the top", () => {
+    expect(next("hidden", 40, -12)).toBe("compact");
+    expect(next("hidden", 8, -12)).toBe("expanded");
   });
 
   test("hides or compacts while the user keeps browsing downward", () => {
@@ -29,7 +34,7 @@ describe("getNextSmartMobileChromeMode", () => {
     expect(next("expanded", 90, 12)).toBe("compact");
   });
 
-  test("keeps the chrome expanded near the top", () => {
+  test("keeps the chrome expanded at the top", () => {
     expect(next("hidden", 8, 2)).toBe("expanded");
   });
 

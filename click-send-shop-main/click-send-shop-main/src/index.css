@@ -205,6 +205,16 @@
     --button-primary-foreground: var(--theme-primary-foreground);
     --button-secondary: var(--theme-secondary);
     --button-secondary-foreground: var(--theme-secondary-foreground);
+    --product-shell: 38 34% 97%;
+    --product-card: 38 38% 99%;
+    --product-border: 34 22% 82%;
+    --product-image-bg: 36 30% 94%;
+    --promo-bg: 39 56% 91%;
+    --promo-foreground: 28 24% 18%;
+    --price: 8 62% 40%;
+    --success: 142 42% 34%;
+    --warning: 36 82% 46%;
+    --danger: 0 65% 44%;
   }
 
   @media (min-width: 1280px) {
@@ -1732,12 +1742,12 @@ html[data-app-scope="store"] .store-tab-route-transition {
 html[data-app-scope="store"] .store-card,
 html[data-app-scope="store"] .theme-product-card,
 html[data-app-scope="store"] .store-product-card {
-  border: 1px solid var(--store-card-border);
+  border: 1px solid hsl(var(--product-border));
   background:
-    linear-gradient(180deg, color-mix(in srgb, white 64%, transparent), color-mix(in srgb, var(--store-card-bg) 36%, transparent) 46%, transparent 100%),
+    linear-gradient(180deg, color-mix(in srgb, white 64%, transparent), color-mix(in srgb, hsl(var(--product-card)) 36%, transparent) 46%, transparent 100%),
     linear-gradient(124deg, color-mix(in srgb, var(--theme-primary) 5%, transparent), transparent 36%),
     linear-gradient(304deg, color-mix(in srgb, var(--theme-accent) 5%, transparent), transparent 40%),
-    var(--store-card-bg);
+    hsl(var(--product-card));
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 9%, transparent),
@@ -1771,12 +1781,12 @@ html[data-app-scope="store"] .store-product-card::before {
 
 html[data-app-scope="store"] .theme-product-card:hover,
 html[data-app-scope="store"] .store-product-card:hover {
-  border-color: color-mix(in srgb, var(--theme-primary) 24%, var(--store-card-border));
+  border-color: color-mix(in srgb, var(--theme-primary) 24%, hsl(var(--product-border)));
   box-shadow: var(--store-card-shadow-hover);
 }
 
 html[data-app-scope="store"] .theme-product-card img {
-  background-color: var(--store-product-media-bg);
+  background-color: hsl(var(--product-image-bg));
   filter: saturate(1.04) contrast(1.015);
   transition: filter 220ms ease, transform 220ms ease;
 }
@@ -1786,7 +1796,7 @@ html[data-app-scope="store"] .store-product-media {
   background:
     linear-gradient(145deg, color-mix(in srgb, white 48%, transparent), transparent 46%),
     linear-gradient(315deg, color-mix(in srgb, var(--theme-accent) 6%, transparent), transparent 42%),
-    var(--store-product-media-bg);
+    hsl(var(--product-image-bg));
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
     inset 0 -18px 32px -30px color-mix(in srgb, var(--theme-primary) 36%, transparent);
@@ -4862,26 +4872,38 @@ html[data-app-scope="store"] .store-category-mobile-chrome {
   filter: none;
   backface-visibility: hidden;
   transform-origin: top center;
-  transition: none;
-  will-change: auto;
+  max-height: 8rem;
+  overflow: hidden;
+  transition:
+    max-height 360ms var(--store-category-mobile-ease),
+    opacity 220ms ease,
+    transform 360ms var(--store-category-mobile-ease),
+    padding 360ms var(--store-category-mobile-ease);
+  will-change: max-height, opacity, transform;
 }
 
 html[data-app-scope="store"] .store-category-mobile-chrome.is-expanded {
+  max-height: 8rem;
   transform: none;
   opacity: 1;
   filter: none;
+  pointer-events: auto;
 }
 
 html[data-app-scope="store"] .store-category-mobile-chrome.is-compact {
-  transform: none;
-  opacity: 1;
+  max-height: 0;
+  transform: translate3d(0, -0.5rem, 0);
+  opacity: 0;
   filter: none;
+  pointer-events: none;
 }
 
 html[data-app-scope="store"] .store-category-mobile-chrome.is-hidden {
-  transform: none;
-  opacity: 1;
+  max-height: 0;
+  transform: translate3d(0, -0.5rem, 0);
+  opacity: 0;
   filter: none;
+  pointer-events: none;
 }
 
 html[data-app-scope="store"] .store-category-mobile-spacer {
@@ -4899,10 +4921,35 @@ html[data-app-scope="store"] .store-category-mobile-tabs-shell {
   position: relative;
   z-index: 20;
   overflow: hidden;
+  max-height: 20rem;
   padding: 0.16rem var(--store-page-x) 0.2rem;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 62%, transparent), color-mix(in srgb, var(--theme-bg) 72%, transparent)),
     color-mix(in srgb, var(--theme-bg) 92%, transparent);
+  transform-origin: top center;
+  transition:
+    max-height 360ms var(--store-category-mobile-ease),
+    opacity 220ms ease,
+    transform 360ms var(--store-category-mobile-ease),
+    padding 360ms var(--store-category-mobile-ease);
+  will-change: max-height, opacity, transform;
+}
+
+html[data-app-scope="store"] .store-category-mobile-tabs-shell.is-expanded {
+  max-height: 20rem;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+html[data-app-scope="store"] .store-category-mobile-tabs-shell.is-compact,
+html[data-app-scope="store"] .store-category-mobile-tabs-shell.is-hidden {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  transform: translate3d(0, -0.45rem, 0);
+  pointer-events: none;
 }
 
 html[data-app-scope="store"] .store-category-mobile-filter-shell {
@@ -5892,19 +5939,19 @@ html[data-app-scope="store"] .store-category-page .store-product-grid {
 
 html[data-app-scope="store"] .store-category-page .store-product-card {
   border-radius: 1.35rem;
-  border-color: rgba(201, 161, 92, 0.22);
+  border-color: color-mix(in srgb, hsl(var(--product-border)) 82%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 251, 243, 0.82)),
-    rgba(255, 253, 248, 0.9);
+    linear-gradient(180deg, color-mix(in srgb, hsl(var(--product-card)) 94%, white), color-mix(in srgb, hsl(var(--product-card)) 82%, transparent)),
+    hsl(var(--product-card));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 20px 42px -34px rgba(91, 63, 23, 0.42);
+    inset 0 1px 0 color-mix(in srgb, white 90%, transparent),
+    0 20px 42px -34px color-mix(in srgb, var(--shadow-color) 42%, transparent);
 }
 
 html[data-app-scope="store"] .store-category-page .store-product-card::before {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 34%),
-    radial-gradient(circle at 82% 0%, rgba(214, 172, 85, 0.12), transparent 42%);
+    linear-gradient(180deg, color-mix(in srgb, white 42%, transparent), transparent 34%),
+    radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--highlight-color) 12%, transparent), transparent 42%);
   opacity: 0.48;
 }
 
@@ -5913,7 +5960,7 @@ html[data-app-scope="store"] .store-category-page .store-product-card > .store-p
   margin: 0;
   border: 0;
   border-radius: 0;
-  background: var(--store-product-media-bg);
+  background: hsl(var(--product-image-bg));
 }
 
 html[data-app-scope="store"] .store-category-page .store-product-card > .store-product-media img {
@@ -7513,93 +7560,93 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__ro
 
 /* Customer-side texture tuning for the 7 premium light skins. */
 html[data-app-scope="store"][data-theme-skin-id="premium_champagne_ivory"] {
-  --home-hero-jade: #6a481b;
-  --home-hero-jade-deep: #352512;
-  --home-hero-gold: #d6ab5c;
-  --home-hero-ivory: #fff7e8;
-  --premium-skin-ink: #5a3916;
-  --premium-skin-deep: #2f2418;
-  --premium-skin-metal: #d6ab5c;
-  --premium-skin-metal-soft: #fff0be;
-  --premium-skin-paper: #fff7e8;
-  --premium-skin-paper-deep: #ebd6aa;
-  --premium-skin-wash: #f7f1e6;
-  --premium-skin-line: #cdaa70;
-  --premium-skin-ticket-main: #9b6a24;
-  --premium-skin-ticket-deep: #55380f;
-  --premium-skin-ticket-soft: #ba8a3e;
+  --home-hero-jade: #b99a52;
+  --home-hero-jade-deep: #2a211b;
+  --home-hero-gold: #b99a52;
+  --home-hero-ivory: #fffdf8;
+  --premium-skin-ink: #211812;
+  --premium-skin-deep: #2a211b;
+  --premium-skin-metal: #b99a52;
+  --premium-skin-metal-soft: #f5e7be;
+  --premium-skin-paper: #fffdf8;
+  --premium-skin-paper-deep: #e9ddcb;
+  --premium-skin-wash: #f4efe7;
+  --premium-skin-line: #d7bf88;
+  --premium-skin-ticket-main: #b99a52;
+  --premium-skin-ticket-deep: #6e552a;
+  --premium-skin-ticket-soft: #d7bf88;
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_pearl_blush"] {
-  --home-hero-jade: #a84f5e;
-  --home-hero-jade-deep: #3b1c26;
-  --home-hero-gold: #dca8a5;
-  --home-hero-ivory: #fff5f3;
-  --premium-skin-ink: #6e2f3d;
-  --premium-skin-deep: #3b1c26;
-  --premium-skin-metal: #dca8a5;
-  --premium-skin-metal-soft: #ffe2de;
-  --premium-skin-paper: #fff5f3;
-  --premium-skin-paper-deep: #f0cbc8;
-  --premium-skin-wash: #fbf5f2;
-  --premium-skin-line: #dea4a9;
-  --premium-skin-ticket-main: #a84f5e;
-  --premium-skin-ticket-deep: #612331;
-  --premium-skin-ticket-soft: #c97380;
+  --home-hero-jade: #b52d35;
+  --home-hero-jade-deep: #2a1714;
+  --home-hero-gold: #c49a4a;
+  --home-hero-ivory: #ffffff;
+  --premium-skin-ink: #2a1714;
+  --premium-skin-deep: #531a19;
+  --premium-skin-metal: #c49a4a;
+  --premium-skin-metal-soft: #f5ddb0;
+  --premium-skin-paper: #ffffff;
+  --premium-skin-paper-deep: #eadbd0;
+  --premium-skin-wash: #f8f1ea;
+  --premium-skin-line: #d9b06a;
+  --premium-skin-ticket-main: #b52d35;
+  --premium-skin-ticket-deep: #701118;
+  --premium-skin-ticket-soft: #d35860;
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_porcelain_jade"] {
-  --home-hero-jade: #0c5d4b;
-  --home-hero-jade-deep: #032a25;
-  --home-hero-gold: #c9aa69;
-  --home-hero-ivory: #f7faf3;
-  --premium-skin-ink: #073f36;
-  --premium-skin-deep: #032a25;
-  --premium-skin-metal: #c9aa69;
-  --premium-skin-metal-soft: #f4e4b3;
-  --premium-skin-paper: #f7faf3;
-  --premium-skin-paper-deep: #dce9da;
-  --premium-skin-wash: #f5f8f2;
-  --premium-skin-line: #afcfba;
-  --premium-skin-ticket-main: #0c5d4b;
-  --premium-skin-ticket-deep: #06352e;
-  --premium-skin-ticket-soft: #248371;
+  --home-hero-jade: #5a6f45;
+  --home-hero-jade-deep: #26301f;
+  --home-hero-gold: #a58f58;
+  --home-hero-ivory: #fbfaf3;
+  --premium-skin-ink: #26301f;
+  --premium-skin-deep: #303a28;
+  --premium-skin-metal: #a58f58;
+  --premium-skin-metal-soft: #e8ddbd;
+  --premium-skin-paper: #fbfaf3;
+  --premium-skin-paper-deep: #deddd2;
+  --premium-skin-wash: #f0efe7;
+  --premium-skin-line: #c8bf9c;
+  --premium-skin-ticket-main: #5a6f45;
+  --premium-skin-ticket-deep: #34402a;
+  --premium-skin-ticket-soft: #7f9568;
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_sky_silk"] {
-  --home-hero-jade: #1e6fb3;
-  --home-hero-jade-deep: #0b2545;
-  --home-hero-gold: #a7c7df;
-  --home-hero-ivory: #f4faff;
-  --premium-skin-ink: #123a66;
-  --premium-skin-deep: #0b2545;
-  --premium-skin-metal: #a7c7df;
-  --premium-skin-metal-soft: #e3f3ff;
-  --premium-skin-paper: #f4faff;
-  --premium-skin-paper-deep: #d7eaf8;
-  --premium-skin-wash: #f4f9fd;
-  --premium-skin-line: #b6d3e8;
-  --premium-skin-ticket-main: #1e6fb3;
-  --premium-skin-ticket-deep: #103e68;
-  --premium-skin-ticket-soft: #4a95cf;
+  --home-hero-jade: #2e5f90;
+  --home-hero-jade-deep: #172033;
+  --home-hero-gold: #a9955e;
+  --home-hero-ivory: #ffffff;
+  --premium-skin-ink: #172033;
+  --premium-skin-deep: #243247;
+  --premium-skin-metal: #a9955e;
+  --premium-skin-metal-soft: #e5d9b8;
+  --premium-skin-paper: #ffffff;
+  --premium-skin-paper-deep: #dbe4ed;
+  --premium-skin-wash: #f4f7fa;
+  --premium-skin-line: #c4ced8;
+  --premium-skin-ticket-main: #2e5f90;
+  --premium-skin-ticket-deep: #1d3e62;
+  --premium-skin-ticket-soft: #5f8fbb;
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_apricot_sand"] {
-  --home-hero-jade: #b8663c;
-  --home-hero-jade-deep: #3c2115;
-  --home-hero-gold: #e1a66c;
-  --home-hero-ivory: #fff6ec;
-  --premium-skin-ink: #6a351d;
-  --premium-skin-deep: #3c2115;
-  --premium-skin-metal: #e1a66c;
-  --premium-skin-metal-soft: #ffe1b9;
-  --premium-skin-paper: #fff6ec;
-  --premium-skin-paper-deep: #f0d1b3;
-  --premium-skin-wash: #fff6ec;
-  --premium-skin-line: #dca87d;
-  --premium-skin-ticket-main: #b8663c;
-  --premium-skin-ticket-deep: #6b321c;
-  --premium-skin-ticket-soft: #d78355;
+  --home-hero-jade: #8a4a31;
+  --home-hero-jade-deep: #2f1f16;
+  --home-hero-gold: #b98a49;
+  --home-hero-ivory: #fff8ef;
+  --premium-skin-ink: #2f1f16;
+  --premium-skin-deep: #4f2c1e;
+  --premium-skin-metal: #b98a49;
+  --premium-skin-metal-soft: #f1d6ac;
+  --premium-skin-paper: #fff8ef;
+  --premium-skin-paper-deep: #e8d6c0;
+  --premium-skin-wash: #f3e7d7;
+  --premium-skin-line: #d2a86e;
+  --premium-skin-ticket-main: #8a4a31;
+  --premium-skin-ticket-deep: #56301f;
+  --premium-skin-ticket-soft: #ad6b4b;
 }
 
 html[data-app-scope="store"][data-theme-skin-id="festival_spring_ruby_gold"] {

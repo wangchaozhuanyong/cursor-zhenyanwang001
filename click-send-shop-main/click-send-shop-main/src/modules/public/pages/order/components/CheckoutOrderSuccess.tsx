@@ -13,6 +13,7 @@ import { sanitizeClientInstructions } from "@/utils/paymentClientInstructions";
 import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import ProductCoverImage from "@/components/ProductCoverImage";
 
 /* ----- Order Success Page ----- */
 export function CheckoutOrderSuccess({
@@ -417,7 +418,12 @@ export function CheckoutOrderSuccess({
           <h3 className="mb-4 text-sm font-semibold text-foreground">订单详情</h3>
           {order.items.map((item) => (
             <div key={item.product.id} className="flex items-center gap-3 border-b border-border py-3 last:border-0">
-              <img src={item.product.cover_image} alt={item.product.name} className="h-14 w-14 rounded-lg object-cover" />
+              <ProductCoverImage
+                url={item.product.cover_image}
+                alt={item.product.name}
+                className="h-14 w-14 rounded-lg object-cover"
+                imgClassName="object-cover"
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-foreground truncate">{item.product.name}</p>
                 <p className="text-xs text-muted-foreground">x{item.qty}</p>

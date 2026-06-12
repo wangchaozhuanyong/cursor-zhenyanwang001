@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { ensureMediaUrl } from "@/utils/mediaUrl";
 import { stripHtml } from "@/utils/seo";
+import StableImage from "@/components/ui/StableImage";
 
 type PurchaseIntent = "cart" | "buy";
 
@@ -232,10 +233,14 @@ export default function ProductVariantSheet({
       <div className="flex gap-3 md:block">
         <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] md:mx-auto md:flex md:h-[210px] md:w-full md:max-w-[320px] md:items-center md:justify-center md:rounded-[22px]">
           {heroImage ? (
-            <img
+            <StableImage
               src={heroImage}
               alt={`${product.name} ${selectedSpecLabel}`}
-              className="h-full w-full object-cover md:max-h-full md:max-w-full md:object-contain"
+              className="h-full w-full"
+              imgClassName="object-cover md:object-contain"
+              sizes="(max-width: 767px) 96px, 320px"
+              loading="eager"
+              fetchPriority="high"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-xs text-[var(--theme-text-muted)]">
@@ -288,10 +293,15 @@ export default function ProductVariantSheet({
                   )}
                 >
                   {value.image_url ? (
-                    <img
+                    <StableImage
                       src={ensureMediaUrl(value.image_url)}
                       alt={`${group.name} ${value.value}`}
-                      className="mr-2 inline-block h-7 w-7 rounded-full object-cover align-middle"
+                      width={28}
+                      height={28}
+                      className="mr-2 inline-block h-7 w-7 rounded-full align-middle"
+                      imgClassName="object-cover"
+                      sizes="28px"
+                      loading="lazy"
                     />
                   ) : null}
                   {value.value}
@@ -329,10 +339,15 @@ export default function ProductVariantSheet({
               )}
             >
               {variant.image_url ? (
-                <img
+                <StableImage
                   src={ensureMediaUrl(variant.image_url)}
                   alt={variant.spec_text || variant.title || variant.sku_code || "规格图"}
-                  className="h-8 w-8 shrink-0 rounded-lg object-cover"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 shrink-0 rounded-lg"
+                  imgClassName="object-cover"
+                  sizes="32px"
+                  loading="lazy"
                 />
               ) : null}
               <span className="min-w-0 truncate">

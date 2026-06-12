@@ -29,6 +29,7 @@ import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPane
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { hasMorePaginatedItems } from "@/lib/pagination";
+import { useSmartMobileChrome } from "@/hooks/useSmartMobileChrome";
 import {
   NEW_ARRIVAL_CATEGORY_CANONICAL_SEARCH,
   NEW_ARRIVAL_CATEGORY_LABEL,
@@ -198,6 +199,14 @@ export default function Categories() {
     const root = findCategoryById(categories, activeRootId);
     return root?.children?.filter(Boolean) ?? [];
   }, [activeRootId, categories]);
+  const mobileChrome = useSmartMobileChrome({
+    measureKey: `${activeCat}:${isNew ? "new" : "normal"}:${subCategories.length}`,
+    expandTop: 18,
+    compactStart: 72,
+    hideStart: 148,
+    hideDelta: 18,
+    revealDelta: 10,
+  });
   const scrollTabKey = isNew
     ? "new"
     : activeCat === "all"
@@ -439,8 +448,14 @@ export default function Categories() {
 
   return (
     <div
-      className="store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      className={cn(
+        "store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]",
+        mobileChrome.mode === "expanded" && "store-category-page--chrome-expanded",
+        mobileChrome.mode === "compact" && "store-category-page--chrome-compact",
+        mobileChrome.mode === "hidden" && "store-category-page--chrome-hidden",
+      )}
       data-category-mobile-chrome="document-flow"
+      data-category-mobile-chrome-mode={mobileChrome.mode}
     >
       <SeoHead
         title={title}
@@ -449,7 +464,13 @@ export default function Categories() {
         robots={robots}
       />
       <div
-        className="store-category-mobile-chrome md:hidden"
+        ref={mobileChrome.chromeRef}
+        className={cn(
+          "store-category-mobile-chrome md:hidden",
+          mobileChrome.mode === "expanded" && "is-expanded",
+          mobileChrome.mode === "compact" && "is-compact",
+          mobileChrome.mode === "hidden" && "is-hidden",
+        )}
       >
         <StoreTabHeader
           searchMode="filter"
@@ -462,7 +483,14 @@ export default function Categories() {
           className="store-home-topbar store-category-mobile-header store-category-topbar"
         />
       </div>
-      <div className="store-category-mobile-tabs-shell md:hidden">
+      <div
+        className={cn(
+          "store-category-mobile-tabs-shell md:hidden",
+          mobileChrome.mode === "expanded" && "is-expanded",
+          mobileChrome.mode === "compact" && "is-compact",
+          mobileChrome.mode === "hidden" && "is-hidden",
+        )}
+      >
         {mobileCategoryTabs}
       </div>
       {mobileFilterBar}

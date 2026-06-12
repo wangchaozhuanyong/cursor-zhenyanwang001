@@ -1,4 +1,5 @@
 import { BrowserRouter } from "react-router-dom";
+import { NavigationHistoryRecorder } from "@/components/NavigationHistoryRecorder";
 import { AdminAppRoutes } from "@/routes/AdminAppRoutes";
 
 const AdminApp = () => (
@@ -8,6 +9,7 @@ const AdminApp = () => (
       v7_relativeSplatPath: true,
     }}
   >
+    <NavigationHistoryRecorder />
     <AdminAppRoutes />
   </BrowserRouter>
 );

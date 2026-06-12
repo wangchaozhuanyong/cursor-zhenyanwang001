@@ -84,7 +84,7 @@ export function useProductReviews(productId: string) {
 
   const openReview = () => {
     if (!isLoggedIn()) {
-      window.location.href = "/login";
+      window.location.replace("/login");
       return;
     }
     if (!eligibility.can_review) {

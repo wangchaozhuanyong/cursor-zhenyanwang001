@@ -6,6 +6,7 @@ import "./index.css";
 import "@/styles/store-tablet-visual.css";
 import { initPwaOfflineNavigation, markStoreSpaReady } from "@/lib/pwaOfflineNavigation";
 import AppVersionReadyMarker from "@/components/AppVersionReadyMarker";
+import { NavigationHistoryRecorder } from "@/components/NavigationHistoryRecorder";
 import { initPwaInstallPromptCapture } from "@/lib/pwaInstallPromptStore";
 
 const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
@@ -48,6 +49,7 @@ createRoot(document.getElementById("root")!).render(
             v7_relativeSplatPath: true,
           }}
         >
+          <NavigationHistoryRecorder />
           <TikTokLanding />
         </BrowserRouter>
       </>

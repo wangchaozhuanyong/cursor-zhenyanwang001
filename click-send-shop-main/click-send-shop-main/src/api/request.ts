@@ -338,7 +338,7 @@ function expireAdminSession(reason: string, data?: Record<string, unknown>): voi
 function redirectToAdminLogin(reason: string): void {
   if (typeof window === "undefined" || window.location.pathname.startsWith("/admin/login")) return;
   expireAdminSession(reason);
-  window.location.assign("/admin/login");
+  window.location.replace("/admin/login");
 }
 
 async function safeJson(res: Response): Promise<Record<string, unknown>> {
@@ -484,7 +484,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
         clearTokens();
         notifyAuthExpired();
         if (shouldRedirectToLogin(options, isAuthLogout, isAccountCancel)) {
-          window.location.href = "/login";
+          window.location.replace("/login");
         }
       }
       throw new ApiError(401, "登录已过期，请重新登录");

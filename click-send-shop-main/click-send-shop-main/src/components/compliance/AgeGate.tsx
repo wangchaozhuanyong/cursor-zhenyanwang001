@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useSiteCapabilitiesReady } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useStableBack } from "@/hooks/useStableBack";
 import {
   getSiteMinimumAge,
   isAgeConfirmedFor,
@@ -16,7 +17,7 @@ function isAgeGateExemptPath(pathname: string): boolean {
 
 export default function AgeGate() {
   const location = useLocation();
-  const navigate = useNavigate();
+  const stableBack = useStableBack({ fallbackPath: "/about" });
   const siteInfo = useSiteInfo();
   const capabilitiesReady = useSiteCapabilitiesReady();
   const minimumAge = getSiteMinimumAge(siteInfo);
@@ -61,11 +62,7 @@ export default function AgeGate() {
   };
 
   const handleDecline = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    navigate("/about", { replace: true });
+    stableBack();
   };
 
   return (

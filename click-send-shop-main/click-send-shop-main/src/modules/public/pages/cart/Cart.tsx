@@ -30,7 +30,8 @@ const CART_ACTION_REVEAL_THRESHOLD = 64;
 export default function Cart() {
   useDocumentTitle("购物车");
   const navigate = useNavigate();
-  const location = useLocation() as { state?: { coupon_id?: string } };
+  const location = useLocation();
+  const currentPath = `${location.pathname}${location.search}${location.hash}`;
   const {
     items,
     loading,
@@ -88,8 +89,8 @@ export default function Cart() {
       toast.error("请先勾选要结算的商品");
       return;
     }
-    const couponId = location.state?.coupon_id;
-    navigate(couponId ? `/checkout?coupon_id=${couponId}` : "/checkout");
+    const couponId = (location.state as { coupon_id?: string } | null)?.coupon_id;
+    navigate(couponId ? `/checkout?coupon_id=${couponId}` : "/checkout", { state: { from: currentPath } });
   };
 
   const closeItemActions = () => setOpenActionKey(null);
@@ -420,7 +421,7 @@ export default function Cart() {
                             type="button"
                             onClick={() => {
                               closeItemActions();
-                              navigate(`/product/${item.product.id}`);
+                              navigate(`/product/${item.product.id}`, { state: { from: currentPath } });
                             }}
                             className="store-cart-media h-[88px] w-[88px] flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:h-24 sm:w-24 md:h-24 md:w-24 lg:h-28 lg:w-28"
                             aria-label={`查看 ${item.product.name}`}
@@ -439,7 +440,7 @@ export default function Cart() {
                               <h3
                                 onClick={() => {
                                   closeItemActions();
-                                  navigate(`/product/${item.product.id}`);
+                                  navigate(`/product/${item.product.id}`, { state: { from: currentPath } });
                                 }}
                                 className="store-card-title cursor-pointer break-words leading-tight text-foreground line-clamp-2 hover:text-theme-price"
                               >

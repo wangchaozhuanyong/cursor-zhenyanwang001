@@ -28,6 +28,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { hasMorePaginatedItems } from "@/lib/pagination";
 import {
   NEW_ARRIVAL_CATEGORY_CANONICAL_SEARCH,
   NEW_ARRIVAL_CATEGORY_LABEL,
@@ -67,12 +68,15 @@ export default function Categories() {
   const [isHot, setIsHot] = useState(searchParams.get("is_hot") === "1");
   const [isRecommended, setIsRecommended] = useState(searchParams.get("is_recommended") === "1");
   const products = useProductStore((s) => s.products);
+  const pagination = useProductStore((s) => s.pagination);
   const categories = useProductStore((s) => s.categories);
   const loading = useProductStore((s) => s.loading);
   const listRefreshing = useProductStore((s) => s.listRefreshing);
   const error = useProductStore((s) => s.error);
   const loadProducts = useProductStore((s) => s.loadProducts);
+  const loadMoreProducts = useProductStore((s) => s.loadMoreProducts);
   const loadCategories = useProductStore((s) => s.loadCategories);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
   useEffect(() => { productService.fetchProductTags(20).then(setQuickTags).catch(() => setQuickTags([])); }, []);
@@ -285,6 +289,38 @@ export default function Categories() {
     : activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
   const showFullSkeleton = loading && products.length === 0;
   const showSoftRefreshing = listRefreshing && products.length > 0;
+  const hasMoreProducts = hasMorePaginatedItems({
+    loadedCount: products.length,
+    total: pagination.total,
+    page: pagination.page,
+    totalPages: pagination.totalPages,
+  });
+
+  useEffect(() => {
+    if (!hasMoreProducts || loading || listRefreshing) return;
+
+    const node = loadMoreRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          void loadMoreProducts();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "420px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMoreProducts, listRefreshing, loadMoreProducts, loading]);
 
   const filterDrawer = (
     <ProductFilterDrawer
@@ -495,6 +531,34 @@ export default function Categories() {
                   ) : null
                 }
               />
+              {products.length > 0 ? (
+                <div ref={loadMoreRef} className="py-8 text-center text-xs text-[var(--theme-text-muted)]" aria-live="polite">
+                  {listRefreshing && hasMoreProducts ? (
+                    "正在加载更多..."
+                  ) : hasMoreProducts ? (
+                    <UnifiedButton
+                      type="button"
+                      onClick={() => void loadMoreProducts()}
+                      className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-xs font-semibold text-[var(--theme-text-muted)]"
+                    >
+                      继续滑动加载更多
+                    </UnifiedButton>
+                  ) : pagination.total > 0 ? (
+                    `已加载全部 ${products.length}/${pagination.total} 款`
+                  ) : null}
+                  {error && products.length > 0 && hasMoreProducts ? (
+                    <div className="mt-3">
+                      <UnifiedButton
+                        type="button"
+                        onClick={() => void loadMoreProducts()}
+                        className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
+                      >
+                        加载失败，点击重试
+                      </UnifiedButton>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </section>
           </div>
         </div>
@@ -529,10 +593,12 @@ function CategoryTabButton({
     <UnifiedButton
       ref={btnRef}
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
         "relative flex-shrink-0 overflow-hidden rounded-full px-4 py-1.5 text-xs font-medium",
         active ? "border border-transparent" : "border border-[var(--theme-border)] bg-[var(--theme-surface)]",
+        active && "is-active",
         className,
       )}
     >

@@ -3,6 +3,7 @@ import { ArrowLeft, Home, LockKeyhole } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useStableBack } from "@/hooks/useStableBack";
 
 type Props = {
   /** 单一权限码 */
@@ -18,6 +19,7 @@ type Props = {
 
 function AdminPermissionDeniedPanel() {
   const navigate = useNavigate();
+  const stableBack = useStableBack({ fallbackPath: "/admin" });
 
   return (
     <div className="flex min-h-[48vh] items-center justify-center px-4 py-10">
@@ -40,7 +42,7 @@ function AdminPermissionDeniedPanel() {
           </UnifiedButton>
           <UnifiedButton
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={stableBack}
             className="inline-flex items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-sm font-semibold text-[var(--theme-text)]"
           >
             <ArrowLeft size={15} aria-hidden />

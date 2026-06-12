@@ -139,6 +139,7 @@ interface ProductState {
   error: string | null;
 
   loadProducts: (params?: Partial<ProductListParams>) => Promise<void>;
+  loadMoreProducts: () => Promise<void>;
   loadProductDetail: (id: string) => Promise<void>;
   loadHomeData: (options?: { force?: boolean; background?: boolean }) => Promise<void>;
   loadCategories: () => Promise<void>;
@@ -263,6 +264,87 @@ export const useProductStore = create<ProductState>((set, get) => ({
         loading: false,
         listRefreshing: false,
         error: err instanceof Error ? err.message : "加载商品失败",
+      });
+    }
+  },
+
+  loadMoreProducts: async () => {
+    const state = get();
+    const { pagination, products, filters, loading, listRefreshing } = state;
+    if (loading || listRefreshing) return;
+    if (pagination.total > 0 && products.length >= pagination.total) return;
+    if (pagination.totalPages > 0 && pagination.page >= pagination.totalPages) return;
+
+    const nextPage = Math.max(1, Number(pagination.page || 1)) + 1;
+    const nextParams: ProductListParams = {
+      ...filters,
+      page: nextPage,
+      pageSize: pagination.pageSize || filters.pageSize || INITIAL_FILTERS.pageSize,
+    };
+    const cacheKey = buildProductListCacheKey(nextParams);
+    const requestSeq = ++productListRequestSeq;
+
+    set({
+      listRefreshing: true,
+      error: null,
+      currentListCacheKey: cacheKey,
+    });
+
+    try {
+      let request = productListRequestCache.get(cacheKey);
+      if (!request) {
+        request = productService.fetchProducts(nextParams).finally(() => {
+          productListRequestCache.delete(cacheKey);
+        });
+        productListRequestCache.set(cacheKey, request);
+      }
+      const data = await request;
+      if (requestSeq !== productListRequestSeq) return;
+
+      const current = get().products;
+      const seen = new Set(current.map((product) => product.id));
+      const nextProducts = [
+        ...current,
+        ...data.list.filter((product) => {
+          if (seen.has(product.id)) return false;
+          seen.add(product.id);
+          return true;
+        }),
+      ];
+      const pagination = {
+        total: data.total,
+        page: data.page,
+        pageSize: data.pageSize,
+        totalPages: data.totalPages,
+      };
+      const mergedParams = {
+        ...filters,
+        page: data.page,
+        pageSize: data.pageSize,
+      };
+      const mergedCacheKey = buildProductListCacheKey(mergedParams);
+
+      setBoundedMapEntry(productListCache, mergedCacheKey, {
+        data: {
+          products: nextProducts,
+          pagination,
+        },
+        cachedAt: Date.now(),
+      }, PRODUCT_LIST_CACHE_MAX);
+      set({
+        products: nextProducts,
+        pagination,
+        filters: mergedParams,
+        loading: false,
+        listRefreshing: false,
+        currentListCacheKey: mergedCacheKey,
+      });
+    } catch (err) {
+      if (requestSeq !== productListRequestSeq) return;
+      set({
+        loading: false,
+        listRefreshing: false,
+        error: err instanceof Error ? err.message : "加载更多商品失败",
       });
     }
   },

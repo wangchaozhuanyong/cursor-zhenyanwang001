@@ -92,7 +92,7 @@ export default function AdminLogin() {
 
   const finishLogin = () => {
     showLoginToast("success", t("login.loginSuccess"));
-    navigate("/admin");
+    navigate("/admin", { replace: true });
   };
 
   const handleLogin = async () => {

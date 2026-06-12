@@ -281,7 +281,7 @@ export default function AdminCouponForm() {
       markClean();
       void queryClient.invalidateQueries({ queryKey: ["admin", "coupons"] });
       void queryClient.invalidateQueries({ queryKey: ["admin", "marketing-dashboard"] });
-      navigate("/admin/marketing/coupons");
+      navigate("/admin/marketing/coupons", { replace: true });
     } catch (e) {
       toast.error(toastErrorMessage(e, L("保存失败，请重试", "Save failed, please try again")));
     } finally {

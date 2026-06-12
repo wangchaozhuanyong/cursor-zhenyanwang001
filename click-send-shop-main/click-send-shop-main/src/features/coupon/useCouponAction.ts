@@ -98,16 +98,24 @@ export function useCouponAction(defaultFrom = "/coupons") {
     const from = options.from || defaultFrom;
     const couponCode = coupon.code || coupon.id;
     const issueActivityId = getIssueActivityId(coupon);
+    let sessionVerified = false;
     const finalizeClaim = (claimed: Awaited<ReturnType<typeof claimCoupon>>) => {
       invalidateCouponCenterStoreCache();
       invalidateMyCouponsStoreCache();
       toast.success(options.successMessage || "领取成功", toastPresetQuickSuccess);
       return claimed;
     };
-    const state = getCouponActionState(coupon, isAuthenticated);
+    let state = getCouponActionState(coupon, isAuthenticated);
     if (state.claimStatus === "login_required" || !isAuthenticated) {
-      navigate("/login", { state: { from } });
-      return null;
+      const ok = await ensureStoreSession({ allowCookieProbe: true });
+      if (!ok) {
+        navigate("/login", { state: { from } });
+        return null;
+      }
+      sessionVerified = true;
+      state = state.claimStatus === "login_required"
+        ? { actionLabel: "立即领取", disabled: false, claimStatus: "claimable" }
+        : getCouponActionState(coupon, true);
     }
     if (state.claimStatus === "member_required") {
       toast.info(state.reason || "该优惠券仅限会员领取");
@@ -118,10 +126,12 @@ export function useCouponAction(defaultFrom = "/coupons") {
       toast.info(state.reason || "该优惠券暂不可领取");
       return null;
     }
-    const ok = await ensureStoreSession();
-    if (!ok) {
-      navigate("/login", { state: { from } });
-      return null;
+    if (!sessionVerified) {
+      const ok = await ensureStoreSession({ allowCookieProbe: true });
+      if (!ok) {
+        navigate("/login", { state: { from } });
+        return null;
+      }
     }
     try {
       const claimed = await claimCoupon(couponCode, issueActivityId);

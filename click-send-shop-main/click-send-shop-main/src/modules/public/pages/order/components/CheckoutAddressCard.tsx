@@ -45,18 +45,24 @@ export function CheckoutAddressCard({
 
   return (
     <div className="store-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
           <h3 className="text-[15px] font-bold text-foreground md:text-base">收货信息</h3>
-          <p className="mt-2 text-sm font-semibold text-foreground">{addressSummary}</p>
-          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground md:text-sm">{addressLine}</p>
+          <p className="mt-2 truncate text-sm font-semibold leading-5 text-foreground">{addressSummary}</p>
+          <p
+            className="mt-1 line-clamp-2 break-words text-xs leading-5 text-muted-foreground no-underline md:text-sm"
+            style={{ WebkitTextDecorationLine: "none", textDecorationLine: "none" }}
+          >
+            {addressLine}
+          </p>
         </div>
         <UnifiedButton
           type="button"
           onClick={openEditor}
-          className="shrink-0 rounded-full px-2 py-1 text-xs font-semibold text-[var(--theme-price)] hover:bg-[color-mix(in_srgb,var(--theme-price)_9%,transparent)]"
+          className="inline-flex min-h-9 w-14 shrink-0 items-center justify-center gap-0.5 whitespace-nowrap rounded-full px-0 text-xs font-semibold leading-none text-[var(--theme-price)] hover:bg-[color-mix(in_srgb,var(--theme-price)_9%,transparent)]"
         >
-          {hasContact && hasAddress ? "修改" : "填写"} <ChevronRight size={12} />
+          <span>{hasContact && hasAddress ? "修改" : "填写"}</span>
+          <ChevronRight size={12} className="shrink-0" />
         </UnifiedButton>
       </div>
 

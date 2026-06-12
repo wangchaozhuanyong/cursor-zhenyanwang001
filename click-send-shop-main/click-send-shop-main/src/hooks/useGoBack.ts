@@ -1,6 +1,6 @@
-import { useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { buildRoutePath, isUsableBackRoute, normalizeInternalRoutePath, readRouteBack } from "@/utils/routeBackState";
+import { useLocation } from "react-router-dom";
+import { useStableBack } from "@/hooks/useStableBack";
+import { buildRoutePath, isUsableBackRoute, normalizeInternalRoutePath } from "@/utils/routeBackState";
 
 type LocationState = { from?: string };
 
@@ -92,34 +92,10 @@ export function resolveGoBackAction(input: {
 }
 
 export function useGoBack(fallback?: string) {
-  const navigate = useNavigate();
   const location = useLocation();
-  const currentPath = buildRoutePath(location);
-  const locationKey = location.key;
-  const locationState = location.state;
-  const pathname = location.pathname;
-  const search = location.search;
-  const hash = location.hash;
+  const stateFrom = (location.state as LocationState | null)?.from;
 
-  return useCallback(() => {
-    const stateFrom = (locationState as LocationState | null)?.from;
-    const storedFrom = readRouteBack(locationKey, currentPath);
-    const action = resolveGoBackAction({
-      pathname,
-      search,
-      hash,
-      stateFrom,
-      storedFrom,
-      locationKey,
-      fallback,
-      historyIndex: typeof window !== "undefined" ? window.history.state?.idx : undefined,
-    });
-
-    if (action.kind === "history") {
-      navigate(action.delta);
-      return;
-    }
-
-    navigate(action.path, { replace: action.replace });
-  }, [currentPath, fallback, hash, locationKey, locationState, navigate, pathname, search]);
+  return useStableBack({
+    fallbackPath: resolveBackFallback(location.pathname, fallback, stateFrom),
+  });
 }

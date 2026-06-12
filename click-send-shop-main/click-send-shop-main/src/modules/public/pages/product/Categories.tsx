@@ -373,18 +373,18 @@ export default function Categories() {
         scrollKey={scrollTabKey}
         loading={loading && categories.length === 0}
         variant="plain"
-        className="store-category-showcase store-category-showcase--plain -mx-[var(--store-page-x)] rounded-none border-x-0"
+        className="store-category-showcase store-category-showcase--plain store-category-switcher"
       />
       {subCategories.length > 0 ? (
-        <div className="store-category-subtabs flex flex-wrap gap-1.5">
+        <div className="store-category-subtabs no-scrollbar flex flex-wrap gap-1.5">
           {subCategories.map((child) => (
             <CategoryTabButton
               key={child.id}
               active={activeCat === child.id}
               onClick={() => handleSelectChild(child.id)}
               layoutId="category-sub-tab"
-              activeClassName="bg-[var(--theme-price)]"
-              activeTextClass="text-[var(--theme-price-foreground)]"
+              activeClassName="store-category-subtab-active-bg"
+              activeTextClass="store-category-subtab-active-label"
               className="store-category-subtab px-3"
             >
               {child.name}
@@ -424,18 +424,18 @@ export default function Categories() {
         scrollKey={scrollTabKey}
         loading={loading && categories.length === 0}
         variant="plain"
-        className="store-category-showcase store-category-showcase--plain"
+        className="store-category-showcase store-category-showcase--plain store-category-switcher store-category-switcher--wide"
       />
       {subCategories.length > 0 ? (
-        <div className="store-category-tablet-subtabs flex flex-wrap gap-1.5">
+        <div className="store-category-tablet-subtabs store-category-subtabs flex flex-wrap gap-1.5">
           {subCategories.map((child) => (
             <CategoryTabButton
               key={child.id}
               active={activeCat === child.id}
               onClick={() => handleSelectChild(child.id)}
               layoutId="category-tablet-sub-tab"
-              activeClassName="bg-[var(--theme-price)]"
-              activeTextClass="text-[var(--theme-price-foreground)]"
+              activeClassName="store-category-subtab-active-bg"
+              activeTextClass="store-category-subtab-active-label"
               className="store-category-subtab px-3"
             >
               {child.name}
@@ -623,6 +623,7 @@ function CategoryTabButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
         "relative flex-shrink-0 overflow-hidden rounded-full px-4 py-1.5 text-xs font-medium",
         active ? "border border-transparent" : "border border-[var(--theme-border)] bg-[var(--theme-surface)]",

@@ -5,7 +5,7 @@ import type { ActivityProductItem } from "@/types/activity";
 import type { ActivityProductOption } from "@/api/admin/activity";
 import * as activityService from "@/services/admin/activityService";
 import { getProducts } from "@/api/admin/product";
-import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
+import { AdminSideDrawer } from "@/modules/admin/components/AdminSideDrawer";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -127,27 +127,26 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
   };
 
   return (
-    <AdminResponsiveSheet
+    <AdminSideDrawer
       open={open}
       onOpenChange={(next) => !next && onClose()}
       title={L("选择活动商品", "Select products for promotion")}
-      size="xl"
-      height="90vh"
+      className="lg:w-[min(82vw,1280px)] xl:w-[min(76vw,1360px)]"
+      bodyClassName="flex min-h-0 flex-col"
       footer={(
-        <div className="flex gap-2">
-          <UnifiedButton type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--theme-price)] px-3 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-50">
-            <Check className="h-4 w-4 shrink-0" aria-hidden />
-            <span>{L("加入活动", "Add to promotion")}</span>
-          </UnifiedButton>
-          <UnifiedButton type="button" onClick={onClose} className="touch-manipulation inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <UnifiedButton type="button" onClick={onClose} className="touch-manipulation inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm sm:min-w-28">
             <X className="h-4 w-4 shrink-0" aria-hidden />
             <span>{L("取消", "Cancel")}</span>
           </UnifiedButton>
+          <UnifiedButton type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--theme-price)] px-3 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-50 sm:min-w-40">
+            <Check className="h-4 w-4 shrink-0" aria-hidden />
+            <span>{L("加入活动", "Add to promotion")}</span>
+          </UnifiedButton>
         </div>
       )}
-      stickyFooter
     >
-      <div className="grid min-h-0 gap-3 lg:grid-cols-[1fr_280px]">
+      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1fr_280px]">
         <div className="min-h-0 overflow-hidden rounded-lg border border-border">
           <div className="border-b border-border p-3">
             <AdminSearchInput
@@ -158,7 +157,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
               className="min-h-[40px] border-0 bg-secondary"
             />
           </div>
-          <div className="max-h-[50vh] lg:max-h-[60vh] overflow-auto p-3">
+          <div className="max-h-[50vh] overflow-auto p-3 lg:max-h-[calc(100vh-15rem)]">
             {loading ? <div className="text-sm text-muted-foreground">{L("加载中...", "Loading...")}</div> : null}
             {!loading && filtered.length === 0 ? <div className="text-sm text-muted-foreground">{L("暂无可选商品", "No selectable products")}</div> : null}
             <div className="space-y-2">
@@ -204,6 +203,6 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
           </div>
         </div>
       </div>
-    </AdminResponsiveSheet>
+    </AdminSideDrawer>
   );
 }

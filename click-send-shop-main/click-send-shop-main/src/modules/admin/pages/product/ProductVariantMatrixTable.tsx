@@ -30,6 +30,8 @@ export default function ProductVariantMatrixTable<T extends ProductVariantMatrix
   onVariantImageUpload,
   tText,
 }: Props<T>) {
+  const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
+
   return (
     <AdminNativeTable tableClassName="min-w-[520px] text-xs">
       <thead>
@@ -164,7 +166,7 @@ export default function ProductVariantMatrixTable<T extends ProductVariantMatrix
               <input
                 type="number"
                 min={0}
-                value={v.is_default ? form.stock : v.stock}
+                value={v.is_default && isSingleDefaultSku ? form.stock : v.stock}
                 onChange={(e) => setForm((f) => updateProductVariantField(f, idx, "stock", e.target.value))}
                 className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
               />

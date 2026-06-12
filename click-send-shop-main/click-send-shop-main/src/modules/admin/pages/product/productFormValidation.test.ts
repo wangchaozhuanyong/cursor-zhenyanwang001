@@ -27,6 +27,14 @@ describe("getProductFormSaveBlockMessage", () => {
     const form = {
       ...createEmptyProductForm(),
       name: "Product",
+      stock: "7",
+      spec_groups: [
+        {
+          name: "规格",
+          sort_order: 0,
+          values: [{ value: "1g*10 / 条", sort_order: 0 }],
+        },
+      ],
       variants: [
         {
           ...createEmptyProductForm().variants[0],
@@ -38,6 +46,52 @@ describe("getProductFormSaveBlockMessage", () => {
 
     expect(getProductFormSaveBlockMessage({ form, uploadBusy: false, isNew: true })).toBe(
       "第 1 行 SKU 库存不能小于 0",
+    );
+  });
+
+  it("validates single default SKU stock by the product-level stock field", () => {
+    const form = {
+      ...createEmptyProductForm(),
+      name: "Product",
+      stock: "7",
+      variants: [
+        {
+          ...createEmptyProductForm().variants[0],
+          stock: "-1",
+          is_default: true,
+        },
+      ],
+    };
+
+    expect(getProductFormSaveBlockMessage({ form, uploadBusy: false, isNew: false, productId: "p1" })).toBeNull();
+  });
+
+  it("blocks negative product-level stock for the single default SKU", () => {
+    const form = {
+      ...createEmptyProductForm(),
+      name: "Product",
+      stock: "-1",
+    };
+
+    expect(getProductFormSaveBlockMessage({ form, uploadBusy: false, isNew: false, productId: "p1" })).toBe(
+      "默认 SKU 库存不能小于 0",
+    );
+  });
+
+  it("blocks negative SKU warning threshold before backend schema validation", () => {
+    const form = {
+      ...createEmptyProductForm(),
+      name: "Product",
+      variants: [
+        {
+          ...createEmptyProductForm().variants[0],
+          stock_warning_threshold: "-1",
+        },
+      ],
+    };
+
+    expect(getProductFormSaveBlockMessage({ form, uploadBusy: false, isNew: true })).toBe(
+      "第 1 行 SKU 预警值不能小于 0",
     );
   });
 

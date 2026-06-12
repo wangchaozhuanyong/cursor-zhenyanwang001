@@ -90,6 +90,17 @@ function isOffShelfProduct(product: Product) {
   return getProductDisplayStatus(product) === "inactive";
 }
 
+function getProductStockBadge(product: Product): { label: string; className: string } | null {
+  const stock = Number(product.stock || 0);
+  const outOfStockSkuCount = Number(product.out_of_stock_sku_count || 0);
+  const stockWarningSkuCount = Number(product.stock_warning_sku_count || 0);
+
+  if (stock <= 0) return { label: "缺货", className: THEME_BADGE_DANGER };
+  if (outOfStockSkuCount > 0) return { label: "部分缺货", className: THEME_BADGE_WARNING };
+  if (stockWarningSkuCount > 0) return { label: "库存预警", className: THEME_BADGE_WARNING };
+  return null;
+}
+
 function money(value: unknown) {
   return `RM ${Number(value || 0).toFixed(2)}`;
 }
@@ -428,7 +439,7 @@ export default function AdminProducts() {
     const meta = statusMeta(displayStatus, tText);
     const checked = selected.includes(product.id);
     const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
-    const outOfStock = Number(product.out_of_stock_sku_count || 0) > 0 || Number(product.stock || 0) <= 0;
+    const stockBadge = getProductStockBadge(product);
     const margin = getDisplayMargin(product);
     const marginClass = getMarginClass(margin);
 
@@ -462,7 +473,7 @@ export default function AdminProducts() {
           </AdminTableMobileCardField>
           <AdminTableMobileCardField label={tText("库存")}>
             <span className="font-medium">{Number(product.stock || 0)}</span>
-            {outOfStock ? <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺货</Tx></span> : null}
+            {stockBadge ? <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${stockBadge.className}`}><Tx>{stockBadge.label}</Tx></span> : null}
             {missingCost ? <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺成本</Tx></span> : null}
           </AdminTableMobileCardField>
           <AdminTableMobileCardField label={tText("毛利率")}>
@@ -739,8 +750,7 @@ export default function AdminProducts() {
           const meta = statusMeta(displayStatus, tText);
           const checked = selected.includes(product.id);
           const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
-          const stockWarning = Number(product.stock_warning_sku_count || 0) > 0;
-          const outOfStock = Number(product.out_of_stock_sku_count || 0) > 0 || Number(product.stock || 0) <= 0;
+          const stockBadge = getProductStockBadge(product);
           const margin = getDisplayMargin(product);
           const marginClass = getMarginClass(margin);
 
@@ -777,7 +787,7 @@ export default function AdminProducts() {
               <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>
                 <div className="inline-flex max-w-full flex-nowrap items-center justify-end gap-1.5">
                   <span className="font-medium text-foreground">{Number(product.stock || 0)}</span>
-                  {outOfStock ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺货</Tx></span> : stockWarning ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>库存预警</Tx></span> : null}
+                  {stockBadge ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${stockBadge.className}`}><Tx>{stockBadge.label}</Tx></span> : null}
                 </div>
               </td>
               <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "right")}>{Number(product.sales_qty_7d || 0)}</td>

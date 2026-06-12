@@ -23,6 +23,24 @@ describe("getProductFormSaveBlockMessage", () => {
     expect(getProductFormSaveBlockMessage({ form, uploadBusy: false, isNew: true })).toBe("至少保留一条规格");
   });
 
+  it("blocks negative SKU stock before backend schema validation", () => {
+    const form = {
+      ...createEmptyProductForm(),
+      name: "Product",
+      variants: [
+        {
+          ...createEmptyProductForm().variants[0],
+          stock: "-1",
+          image_url: "https://example.com/sku.webp",
+        },
+      ],
+    };
+
+    expect(getProductFormSaveBlockMessage({ form, uploadBusy: false, isNew: true })).toBe(
+      "第 1 行 SKU 库存不能小于 0",
+    );
+  });
+
   it("requires an id when editing an existing product", () => {
     const form = { ...createEmptyProductForm(), name: "Product" };
 

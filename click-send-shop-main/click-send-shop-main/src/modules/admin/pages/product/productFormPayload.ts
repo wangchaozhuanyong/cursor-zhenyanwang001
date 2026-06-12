@@ -7,36 +7,60 @@ type BuildAdminProductUpsertPayloadOptions = {
   includeStock?: boolean;
 };
 
+function parseNonnegativeInt(value: string | undefined, fallback = 0): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function parseNonnegativeFloat(value: string | undefined, fallback = 0): number {
+  const parsed = Number.parseFloat(value ?? "");
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function parseOptionalNonnegativeInt(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function parseOptionalNonnegativeFloat(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
 export function buildAdminProductUpsertPayload(
   form: ProductFormPayloadSlice,
   options: BuildAdminProductUpsertPayloadOptions = {},
 ): AdminProductUpsertPayload {
-  const opNum = parseFloat(form.original_price);
-  const costNum = parseFloat(form.cost_price);
-  const scNum = parseInt(form.sales_count, 10);
-  const mainPrice = parseFloat(form.price) || 0;
-  const mainStock = parseInt(form.stock, 10) || 0;
+  const opNum = parseOptionalNonnegativeFloat(form.original_price);
+  const costNum = parseOptionalNonnegativeFloat(form.cost_price);
+  const scNum = parseNonnegativeInt(form.sales_count, 0);
+  const mainPrice = parseNonnegativeFloat(form.price, 0);
+  const mainStock = parseNonnegativeInt(form.stock, 0);
   const mainStockWarningThreshold = form.stock_warning_threshold
-    ? parseInt(form.stock_warning_threshold, 10) || 0
+    ? parseNonnegativeInt(form.stock_warning_threshold, 5)
     : 5;
-  const mainStockLowerLimit = form.stock_lower_limit ? parseInt(form.stock_lower_limit, 10) || 0 : null;
-  const mainStockUpperLimit = form.stock_upper_limit ? parseInt(form.stock_upper_limit, 10) || 0 : null;
+  const mainStockLowerLimit = parseOptionalNonnegativeInt(form.stock_lower_limit);
+  const mainStockUpperLimit = parseOptionalNonnegativeInt(form.stock_upper_limit);
   const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
 
   const variantsPayload: NonNullable<AdminProductUpsertPayload["variants"]> = form.variants.map((variant, index) => ({
     id: variant.id,
     title: (variant.title || (isSingleDefaultSku && variant.is_default ? DEFAULT_VARIANT_TITLE : "")).trim(),
     sku_code: variant.sku_code.trim() || null,
-    price: parseFloat(variant.price) || 0,
-    original_price: variant.original_price ? parseFloat(variant.original_price) : null,
-    cost_price: variant.cost_price ? parseFloat(variant.cost_price) : null,
-    stock: parseInt(variant.stock, 10) || 0,
-    stock_warning_threshold: variant.stock_warning_threshold ? parseInt(variant.stock_warning_threshold, 10) || 0 : 5,
-    stock_lower_limit: variant.stock_lower_limit ? parseInt(variant.stock_lower_limit, 10) || 0 : null,
-    stock_upper_limit: variant.stock_upper_limit ? parseInt(variant.stock_upper_limit, 10) || 0 : null,
+    price: parseNonnegativeFloat(variant.price, 0),
+    original_price: parseOptionalNonnegativeFloat(variant.original_price),
+    cost_price: parseOptionalNonnegativeFloat(variant.cost_price),
+    stock: parseNonnegativeInt(variant.stock, 0),
+    stock_warning_threshold: variant.stock_warning_threshold
+      ? parseNonnegativeInt(variant.stock_warning_threshold, 5)
+      : 5,
+    stock_lower_limit: parseOptionalNonnegativeInt(variant.stock_lower_limit),
+    stock_upper_limit: parseOptionalNonnegativeInt(variant.stock_upper_limit),
     barcode: variant.barcode?.trim() || null,
     image_url: variant.image_url?.trim() || null,
-    weight: variant.weight ? parseFloat(variant.weight) : null,
+    weight: parseOptionalNonnegativeFloat(variant.weight),
     enabled: variant.enabled !== false,
     sort_order: variant.sort_order ?? index,
     is_default: variant.is_default,
@@ -48,9 +72,9 @@ export function buildAdminProductUpsertPayload(
     variantsPayload[defaultVariantIndex] = {
       ...variantsPayload[defaultVariantIndex],
       price: mainPrice,
-      original_price: form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
+      original_price: opNum,
       cost_price:
-        form.cost_price === "" || !Number.isFinite(costNum)
+        costNum == null
           ? variantsPayload[defaultVariantIndex].cost_price
           : costNum,
       stock: isSingleDefaultSku ? mainStock : variantsPayload[defaultVariantIndex].stock,
@@ -84,7 +108,7 @@ export function buildAdminProductUpsertPayload(
     isNewArrival: form.is_new,
     is_recommended: form.is_recommended,
     is_age_restricted: form.is_age_restricted,
-    minimum_age: form.minimum_age ? Number(form.minimum_age) : null,
+    minimum_age: form.minimum_age ? parseNonnegativeInt(form.minimum_age, 0) : null,
     compliance_type: complianceType,
     region_notice: form.region_notice?.trim() || null,
     compliance_notice: form.compliance_notice?.trim() || null,

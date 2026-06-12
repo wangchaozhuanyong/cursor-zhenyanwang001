@@ -205,7 +205,6 @@ export function AdminTableMoreCell({
         onClose={() => setOpen(false)}
         title={modalTitle}
         height="auto"
-        closeOnOverlay={false}
       >
         <div className="max-h-[min(65vh,520px)] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
           {text || "-"}

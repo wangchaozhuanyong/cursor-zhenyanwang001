@@ -621,7 +621,6 @@ export default function AdminProducts() {
           if (!open) closeProductDrawer();
         }}
         title={editingProductId === "new" ? tText("新增商品") : editingProduct?.name || tText("编辑商品")}
-        closeOnOverlay={false}
         className="lg:w-[min(86vw,1180px)] xl:w-[min(82vw,1280px)]"
         bodyClassName="bg-[var(--theme-bg)] px-3 py-4 sm:px-5"
       >

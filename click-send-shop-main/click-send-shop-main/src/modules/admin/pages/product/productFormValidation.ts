@@ -7,6 +7,12 @@ type ProductFormSaveValidationInput = {
   productId?: string;
 };
 
+function isNegativeNumber(value: string | undefined): boolean {
+  if (!value?.trim()) return false;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed < 0;
+}
+
 export function getProductFormSaveBlockMessage({
   form,
   uploadBusy,
@@ -16,6 +22,11 @@ export function getProductFormSaveBlockMessage({
   if (uploadBusy) return "图片仍在上传中，请等待上传完成后再保存商品。";
   if (!form.name.trim()) return "请输入商品名称";
   if (!form.variants.length) return "至少保留一条规格";
+  if (isNegativeNumber(form.stock)) return "默认 SKU 库存不能小于 0";
+  const negativeStockIndex = form.variants.findIndex((variant) => isNegativeNumber(variant.stock));
+  if (negativeStockIndex >= 0) return `第 ${negativeStockIndex + 1} 行 SKU 库存不能小于 0`;
+  const negativeWarningIndex = form.variants.findIndex((variant) => isNegativeNumber(variant.stock_warning_threshold));
+  if (negativeWarningIndex >= 0) return `第 ${negativeWarningIndex + 1} 行 SKU 预警值不能小于 0`;
   if (!isNew && !productId) return "商品编号缺失，请返回商品列表重新进入";
   return null;
 }

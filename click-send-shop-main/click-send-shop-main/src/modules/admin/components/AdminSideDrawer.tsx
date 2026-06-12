@@ -14,6 +14,7 @@ export type AdminSideDrawerProps = {
   footer?: ReactNode;
   className?: string;
   bodyClassName?: string;
+  /** @deprecated 后台右侧抽屉统一支持点击遮罩关闭，保留字段仅兼容旧调用。 */
   closeOnOverlay?: boolean;
   showCloseButton?: boolean;
 };
@@ -27,7 +28,6 @@ export function AdminSideDrawer({
   footer,
   className,
   bodyClassName,
-  closeOnOverlay = true,
   showCloseButton = true,
 }: AdminSideDrawerProps) {
   const { overlayZ, contentZ, isTop } = useModalLayer(open);
@@ -39,7 +39,7 @@ export function AdminSideDrawer({
         <DialogPrimitive.Overlay
           className="fixed inset-0 bg-black/45 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:pointer-events-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
           style={{ zIndex: overlayZ }}
-          onClick={closeOnOverlay ? () => onOpenChange(false) : undefined}
+          onClick={() => onOpenChange(false)}
         />
         <DialogPrimitive.Content
           className={cn(
@@ -48,12 +48,6 @@ export function AdminSideDrawer({
           )}
           style={{ zIndex: contentZ }}
           {...(description ? {} : { "aria-describedby": undefined })}
-          onPointerDownOutside={(e) => {
-            if (!closeOnOverlay) e.preventDefault();
-          }}
-          onInteractOutside={(e) => {
-            if (!closeOnOverlay) e.preventDefault();
-          }}
         >
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="admin-side-drawer-header safe-area-pt flex shrink-0 items-start justify-between gap-3 border-b border-[var(--theme-border)] px-4 py-3 sm:px-5 sm:py-4">

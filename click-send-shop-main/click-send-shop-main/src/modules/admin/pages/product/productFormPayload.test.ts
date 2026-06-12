@@ -106,4 +106,26 @@ describe("buildAdminProductUpsertPayload", () => {
     expect(payload.compliance_notice).toBe("Restricted");
     expect(payload.stock).toBeUndefined();
   });
+
+  it("normalizes invalid negative SKU numbers before submit", () => {
+    const payload = buildAdminProductUpsertPayload({
+      ...baseForm,
+      stock: "-7",
+      stock_warning_threshold: "-1",
+      variants: [
+        {
+          ...baseForm.variants[0],
+          stock: "-7",
+          stock_warning_threshold: "-1",
+          image_url: " https://example.com/sku-upload.webp ",
+        },
+      ],
+    });
+
+    expect(payload.variants?.[0]).toMatchObject({
+      stock: 0,
+      stock_warning_threshold: 5,
+      image_url: "https://example.com/sku-upload.webp",
+    });
+  });
 });

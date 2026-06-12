@@ -22,6 +22,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { buildWhatsAppLink } from "@/utils/supportChannels";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import StableImage from "@/components/ui/StableImage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import {
   buildStoreCopyright,
@@ -71,15 +72,16 @@ export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { 
       )}
     >
       {showLogo ? (
-        <img
+        <StableImage
           src={cleanLogoSrc}
           alt=""
           width={40}
           height={40}
           className="store-footer-brand-logo-image object-contain"
+          imgClassName="object-contain"
           loading="lazy"
-          decoding="async"
-          aria-hidden="true"
+          objectFit="contain"
+          ariaHidden
           onError={() => setFailedLogoSrc(cleanLogoSrc)}
         />
       ) : (

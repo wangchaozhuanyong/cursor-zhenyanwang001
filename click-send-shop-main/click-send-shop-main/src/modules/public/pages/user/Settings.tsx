@@ -25,6 +25,7 @@ import {
 } from "@/utils/authValidation";
 import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birthday";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StableImage from "@/components/ui/StableImage";
 
 const CARD =
   "rounded-[1.25rem] border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]";
@@ -218,7 +219,7 @@ export default function Settings() {
           >
             <span className="block h-16 w-16 overflow-hidden rounded-full ring-1 ring-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))]">
               {avatar ? (
-                <img src={avatar} alt="头像" className="h-full w-full object-cover" />
+                <StableImage src={avatar} alt="头像" className="h-full w-full" imgClassName="object-cover" />
               ) : (
                 <span className="flex h-full w-full items-center justify-center bg-[var(--theme-primary)] text-2xl font-bold text-[var(--theme-primary-foreground)]">
                   {avatarInitial}
@@ -384,7 +385,12 @@ export default function Settings() {
               </div>
             </div>
             {wechatBinding.bound && wechatBinding.avatarUrl ? (
-              <img src={wechatBinding.avatarUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+              <StableImage
+                src={wechatBinding.avatarUrl}
+                alt=""
+                className="h-10 w-10 shrink-0 rounded-full"
+                imgClassName="rounded-full object-cover"
+              />
             ) : null}
           </div>
 

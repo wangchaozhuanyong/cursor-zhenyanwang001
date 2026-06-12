@@ -17,6 +17,7 @@ import {
 import { safeOpenExternal } from "@/utils/safeOpen";
 import { trackEvent } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StableImage from "@/components/ui/StableImage";
 
 type Props = {
   channel: SupportDownloadChannel;
@@ -142,10 +143,12 @@ export default function SupportChannelCard({ channel }: Props) {
         <div className="support-qr-block">
           <div className="support-qr-media">
             {qrUrl ? (
-              <img
+              <StableImage
                 src={qrUrl}
                 alt={`${title}二维码`}
                 className="support-qr-image"
+                imgClassName="object-cover"
+                objectFit="cover"
               />
             ) : (
               <div className="support-qr-placeholder">暂未配置二维码</div>

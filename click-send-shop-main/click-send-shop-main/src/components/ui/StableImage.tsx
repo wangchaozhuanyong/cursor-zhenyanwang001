@@ -32,6 +32,8 @@ type StableImageProps = {
   objectFit?: CSSProperties["objectFit"];
   withPlaceholder?: boolean;
   fallbackLabel?: string;
+  ariaHidden?: boolean;
+  onError?: () => void;
 };
 
 export function StableImage({
@@ -54,6 +56,8 @@ export function StableImage({
   objectFit,
   withPlaceholder = true,
   fallbackLabel = "图片暂不可用",
+  ariaHidden = false,
+  onError,
 }: StableImageProps) {
   const resolvedSrc = useMemo(() => {
     return String(src || resolveStableImageUrl(source, variant) || "").trim();
@@ -61,9 +65,14 @@ export function StableImage({
   const fallback = String(fallbackSrc || "").trim();
   const lastGoodSrcRef = useRef("");
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const onErrorRef = useRef(onError);
   const [displaySrc, setDisplaySrc] = useState(() => resolvedSrc || fallback);
   const [isLoaded, setIsLoaded] = useState(() => hasImageLoaded(resolvedSrc) || hasImageLoaded(fallback));
   const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,11 +123,13 @@ export function StableImage({
               if (cancelled) return;
               setHasError(true);
               setIsLoaded(Boolean(lastGoodSrcRef.current));
+              onErrorRef.current?.();
             });
           return;
         }
         setHasError(true);
         setIsLoaded(Boolean(lastGoodSrcRef.current));
+        onErrorRef.current?.();
       });
 
     return () => {
@@ -157,6 +168,7 @@ export function StableImage({
       style={rootStyle}
       role={!displaySrc || hasError ? "img" : undefined}
       aria-label={!displaySrc || hasError ? alt : undefined}
+      aria-hidden={ariaHidden || undefined}
     >
       {withPlaceholder ? (
         <div
@@ -203,6 +215,7 @@ export function StableImage({
               return;
             }
             setHasError(true);
+            onErrorRef.current?.();
           }}
         />
       ) : null}

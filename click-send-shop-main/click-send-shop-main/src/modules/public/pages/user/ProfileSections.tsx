@@ -10,6 +10,7 @@ import NotificationIconButton from "@/components/NotificationIconButton";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
+import StableImage from "@/components/ui/StableImage";
 import { formatProfileHeroName } from "./profileHeroName";
 import InviteRewardCard from "./InviteRewardCard.final.jsx";
 import profileVipAvatarImage from "@/assets/profile-vip-avatar-medallion.svg";
@@ -121,7 +122,12 @@ export function ProfileHeroCard({
         <UnifiedButton type="button" onClick={onAvatarClick} className="profile-avatar-button" aria-label="更换头像">
           <span className="profile-avatar-ring">
             {avatarSrc ? (
-              <img src={avatarSrc} alt={userName} className="profile-avatar-image h-full w-full rounded-full object-cover" />
+              <StableImage
+                src={avatarSrc}
+                alt={userName}
+                className="profile-avatar-image h-full w-full rounded-full"
+                imgClassName="rounded-full object-cover"
+              />
             ) : (
               <span className="profile-avatar-fallback">{userName.slice(0, 1)}</span>
             )}

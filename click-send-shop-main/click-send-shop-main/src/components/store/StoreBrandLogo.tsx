@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import StableImage from "@/components/ui/StableImage";
 
 type StoreBrandLogoVariant = "nav" | "category" | "profile";
 
@@ -34,14 +35,16 @@ export default function StoreBrandLogo({
       aria-hidden={!hasVisual}
     >
       {src ? (
-        <img
+        <StableImage
           src={src}
           alt={`${siteName} Logo`}
           width={width}
           height={height}
           className="store-brand-logo-image"
+          imgClassName="object-contain"
           loading="eager"
-          decoding="async"
+          fetchPriority="high"
+          objectFit="contain"
         />
       ) : fallback ? (
         <span className="store-brand-logo-fallback">{fallback}</span>

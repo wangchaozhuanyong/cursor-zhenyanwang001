@@ -42,6 +42,46 @@ function toNumber(v, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function formatUtcDateTime(date) {
+  return [
+    date.getUTCFullYear(),
+    pad2(date.getUTCMonth() + 1),
+    pad2(date.getUTCDate()),
+  ].join('-') + ' ' + [
+    pad2(date.getUTCHours()),
+    pad2(date.getUTCMinutes()),
+    pad2(date.getUTCSeconds()),
+  ].join(':');
+}
+
+function normalizeDateTimeForMysql(value) {
+  if (value == null || value === '') return '';
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return '';
+    return formatUtcDateTime(value);
+  }
+
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const localMatch = raw.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(?::(\d{2})(?:\.\d{1,6})?)?$/);
+  if (localMatch) {
+    return `${localMatch[1]} ${localMatch[2]}:${localMatch[3] || '00'}`;
+  }
+
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw);
+  if (hasTimezone) {
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) return formatUtcDateTime(parsed);
+  }
+
+  return raw.replace('T', ' ').replace(/\.\d{1,6}(?:Z)?$/i, '').replace(/Z$/i, '');
+}
+
 function computeStatus(row) {
   if (Number(row.disabled) === 1 || row.status === 'disabled') return 'disabled';
   const now = Date.now();
@@ -210,8 +250,8 @@ function normalizePayload(body, partial = false) {
   }
   if (body.subtitle !== undefined || !partial) out.subtitle = String(body.subtitle || '').trim();
   if (body.cover_image !== undefined || !partial) out.cover_image = String(body.cover_image || '').trim();
-  if (!partial || body.start_at !== undefined) out.start_at = String(body.start_at || '').replace('T', ' ');
-  if (!partial || body.end_at !== undefined) out.end_at = String(body.end_at || '').replace('T', ' ');
+  if (!partial || body.start_at !== undefined) out.start_at = normalizeDateTimeForMysql(body.start_at);
+  if (!partial || body.end_at !== undefined) out.end_at = normalizeDateTimeForMysql(body.end_at);
   if (body.description !== undefined || !partial) out.description = String(body.description || '').trim();
   if (body.disabled !== undefined || !partial) out.disabled = !!body.disabled;
   if (body.sort_order !== undefined || !partial) out.sort_order = Math.floor(toNumber(body.sort_order, 0));
@@ -220,7 +260,7 @@ function normalizePayload(body, partial = false) {
   if (body.allow_coupon_stack !== undefined || !partial) out.allow_coupon_stack = !!body.allow_coupon_stack;
   if (body.allow_points_stack !== undefined || !partial) out.allow_points_stack = !!body.allow_points_stack;
   if (body.allow_reward !== undefined || !partial) out.allow_reward = !!body.allow_reward;
-  if (body.publish_at !== undefined || !partial) out.publish_at = body.publish_at ? String(body.publish_at).replace('T', ' ') : null;
+  if (body.publish_at !== undefined || !partial) out.publish_at = body.publish_at ? normalizeDateTimeForMysql(body.publish_at) : null;
   if (body.internal_note !== undefined || !partial) out.internal_note = String(body.internal_note || '').trim();
   if (body.activity_config !== undefined || !partial) out.activity_config = body.activity_config || null;
   if (body.display_positions !== undefined || !partial) {
@@ -481,5 +521,4 @@ module.exports = {
   validateActivityBeforePublish,
   searchActivityProducts,
 };
-
 

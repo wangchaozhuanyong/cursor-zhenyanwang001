@@ -1,20 +1,27 @@
 import type { ThemeConfig, ThemeSceneTag } from "@/types/theme";
 
-export type PreviewMode = "home" | "product" | "admin" | "components" | "mobile";
-export type PreviewDevice = "phone" | "tablet" | "desktop";
-export type FullscreenPreviewMode =
+export type PreviewRouteMode =
   | "home"
-  | "product"
   | "category"
+  | "product"
   | "cart"
   | "profile"
   | "admin_home"
   | "admin_products"
   | "admin_orders";
+export type PreviewMode = PreviewRouteMode | "admin" | "components" | "mobile";
+export type PreviewDevice = "phone" | "tablet" | "desktop";
+export type FullscreenPreviewMode = PreviewRouteMode;
 
 export const PREVIEW_MODE_LABELS: Record<PreviewMode, string> = {
   home: "前台首页",
+  category: "分类页",
   product: "商品详情",
+  cart: "购物车",
+  profile: "我的页面",
+  admin_home: "后台首页",
+  admin_products: "后台商品",
+  admin_orders: "后台订单",
   admin: "后台管理",
   components: "组件库",
   mobile: "移动端",
@@ -31,6 +38,21 @@ export const DEVICE_WIDTH: Record<PreviewDevice, number | "100%"> = {
   tablet: 768,
   desktop: "100%",
 };
+
+export const PREVIEW_ROUTE_SCENES: Array<{
+  id: PreviewRouteMode;
+  label: string;
+  group: "store" | "admin";
+}> = [
+  { id: "home", label: "前台首页", group: "store" },
+  { id: "category", label: "分类页", group: "store" },
+  { id: "product", label: "商品详情", group: "store" },
+  { id: "cart", label: "购物车", group: "store" },
+  { id: "profile", label: "我的页面", group: "store" },
+  { id: "admin_home", label: "后台首页", group: "admin" },
+  { id: "admin_products", label: "后台商品", group: "admin" },
+  { id: "admin_orders", label: "后台订单", group: "admin" },
+];
 
 export const SCENE_FILTER_OPTIONS: Array<{ id: "all" | ThemeSceneTag; label: string }> = [
   { id: "all", label: "全部" },

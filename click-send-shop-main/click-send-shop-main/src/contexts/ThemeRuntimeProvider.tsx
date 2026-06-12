@@ -5,6 +5,11 @@ import {
   DEFAULT_SKIN_ID,
   THEME_PRESETS,
 } from "@/constants/themePresets";
+import {
+  THEME_PREVIEW_READY,
+  isThemePreviewApplyMessage,
+  isThemePreviewFrame,
+} from "@/lib/themePreviewBridge";
 import { THEME_REVISION_KEY } from "@/lib/themeRevision";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { generateThemePalette } from "@/utils/themeContrast";
@@ -76,6 +81,8 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const [themeReady, setThemeReady] = useState(initial.ready);
   const [themeSynced, setThemeSynced] = useState(false);
   const [inAdminScope, setInAdminScope] = useState(() => isAdminScope());
+  const [previewOverride, setPreviewOverride] = useState<{ config: ThemeConfig; skinKey?: string } | null>(null);
+  const previewFrame = useMemo(() => isThemePreviewFrame(), []);
 
   useEffect(() => {
     const syncScope = () => setInAdminScope(isAdminScope());
@@ -83,6 +90,32 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     window.addEventListener("app:scope-changed", syncScope);
     return () => window.removeEventListener("app:scope-changed", syncScope);
   }, []);
+
+  useEffect(() => {
+    if (!previewFrame) return undefined;
+    const targetOrigin = window.location.origin;
+    const notifyReady = () => {
+      window.parent?.postMessage({ type: THEME_PREVIEW_READY }, targetOrigin);
+    };
+    const onPreviewMessage = (event: MessageEvent) => {
+      if (event.origin !== targetOrigin) return;
+      if (!isThemePreviewApplyMessage(event.data)) return;
+      setPreviewOverride({
+        config: normalizeThemeConfig(event.data.config),
+        skinKey: event.data.skinKey,
+      });
+      setThemeReady(true);
+      setThemeSynced(true);
+    };
+
+    window.addEventListener("message", onPreviewMessage);
+    notifyReady();
+    const readyTimer = window.setTimeout(notifyReady, 120);
+    return () => {
+      window.clearTimeout(readyTimer);
+      window.removeEventListener("message", onPreviewMessage);
+    };
+  }, [previewFrame]);
 
   const loadTheme = useCallback(async () => {
     const base = import.meta.env.VITE_API_BASE_URL ?? "/api";
@@ -161,12 +194,30 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     setThemeConfig(normalizeThemeConfig(active?.config));
   }, [skinId, skins]);
 
+  const effectiveThemeConfig = previewOverride?.config ?? themeConfig;
+  const effectiveSkinId = previewOverride?.skinKey ? `preview-${previewOverride.skinKey}` : skinId;
+
   const appliedConfig = useMemo(
-    () => resolveThemeConfigForScope(themeConfig, inAdminScope),
-    [themeConfig, inAdminScope],
+    () => resolveThemeConfigForScope(effectiveThemeConfig, inAdminScope),
+    [effectiveThemeConfig, inAdminScope],
   );
 
-  const appliedSkin = useMemo(() => skins.find((skin) => skin.id === skinId) ?? skins[0] ?? null, [skinId, skins]);
+  const appliedSkin = useMemo(() => {
+    const active = skins.find((skin) => skin.id === skinId) ?? skins[0] ?? null;
+    if (!previewOverride) return active;
+    return {
+      ...(active ?? {
+        id: effectiveSkinId,
+        name: "Theme preview draft",
+        config: previewOverride.config,
+      }),
+      id: effectiveSkinId,
+      name: active?.name ? `${active.name} · 预览草稿` : "预览草稿",
+      category: active?.category ?? (inAdminScope ? "admin" : "preview"),
+      sceneTag: inAdminScope ? "admin" : active?.sceneTag,
+      config: previewOverride.config,
+    } satisfies ThemeSkin;
+  }, [effectiveSkinId, inAdminScope, previewOverride, skinId, skins]);
 
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -182,7 +233,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     const syncScope = () => {
       const root = document.documentElement;
-      const scoped = resolveThemeConfigForScope(themeConfig, isAdminScope());
+      const scoped = resolveThemeConfigForScope(effectiveThemeConfig, isAdminScope());
       const palette = generateThemePalette(scoped);
       Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
       applyThemeDataAttributes(root, scoped, appliedSkin);
@@ -190,21 +241,21 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     syncScope();
     window.addEventListener("app:scope-changed", syncScope);
     return () => window.removeEventListener("app:scope-changed", syncScope);
-  }, [themeConfig, appliedSkin]);
+  }, [effectiveThemeConfig, appliedSkin]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme: "light",
-      skinId,
+      skinId: effectiveSkinId,
       skins,
       switchableSkins: [],
       pickerSkins: [],
       setSkinId: () => {},
-      themeConfig,
+      themeConfig: effectiveThemeConfig,
       themeReady,
       themeSynced,
     }),
-    [skinId, skins, themeConfig, themeReady, themeSynced],
+    [effectiveSkinId, skins, effectiveThemeConfig, themeReady, themeSynced],
   );
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;

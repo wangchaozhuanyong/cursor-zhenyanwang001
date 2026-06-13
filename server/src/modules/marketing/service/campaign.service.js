@@ -198,11 +198,18 @@ async function recordCampaignEvent(id, action, body = {}, req) {
   }
 
   const eventType = action === 'impression' ? 'activity_impression' : 'activity_click';
+  const position = body.position || body.campaign_position || '';
+  const sourcePath = body.source_path || body.sourcePath || body.path || body.page || '';
   await analyticsApi.trackEvent({
     ...body,
     event_type: eventType,
     module: body.module || 'storefront_campaign',
     activity_id: id,
+    path: body.path || sourcePath,
+    page: body.page || sourcePath,
+    keyword: body.keyword || position,
+    utm_campaign: body.utm_campaign || body.campaign_type || body.campaignType || '',
+    utm_content: body.utm_content || position,
   }, req);
 
   return { data: { accepted: true }, message: 'ok' };

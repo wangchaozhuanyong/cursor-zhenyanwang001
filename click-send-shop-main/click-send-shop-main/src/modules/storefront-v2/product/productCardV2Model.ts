@@ -1,4 +1,5 @@
 import { isProductNewArrival } from "@/utils/productNewArrival";
+import { formatProductSales, getProductSalesCount, productSalesLabel } from "@/utils/productSales";
 import type { Product } from "@/types/product";
 
 export type ProductCardV2Badge = {
@@ -20,18 +21,65 @@ export type ProductCardV2Model = {
   badges: ProductCardV2Badge[];
   href: string;
   salesText?: string;
+  variantText?: string;
+  activityText?: string;
+  decisionTexts: string[];
 };
 
 type ProductPriceFields = Product & {
   min_price?: number | null;
   max_price?: number | null;
   max_original_price?: number | null;
+  variant_count?: number | null;
 };
 
 export function money(value: unknown) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "0";
   return n.toFixed(2).replace(/\.00$/, "");
+}
+
+function positiveInteger(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
+}
+
+function buildSalesText(product: Product) {
+  const totalSales = getProductSalesCount(product.sales_count);
+  if (totalSales > 0) return productSalesLabel(totalSales);
+
+  const sales30d = positiveInteger(product.sales_qty_30d);
+  if (sales30d > 0) return `30天售 ${formatProductSales(sales30d)}`;
+
+  const sales7d = positiveInteger(product.sales_qty_7d);
+  if (sales7d > 0) return `7天售 ${formatProductSales(sales7d)}`;
+
+  return undefined;
+}
+
+function buildVariantText(product: ProductPriceFields) {
+  const explicitCount = positiveInteger(product.enabled_sku_count ?? product.sku_count ?? product.variant_count);
+  const variantCount = explicitCount || positiveInteger(product.variants?.filter((variant) => variant.enabled !== false).length);
+  return variantCount > 1 ? `${variantCount}种规格` : undefined;
+}
+
+function buildActivityText(product: Product) {
+  const promoLabel = String(product.activity_promo_label || "").trim();
+  if (promoLabel) return promoLabel.slice(0, 18);
+
+  const activity = product.active_activity;
+  if (!activity) return undefined;
+
+  if (activity.type === "flash_sale") {
+    const remaining = positiveInteger(activity.remaining_stock);
+    return remaining > 0 ? `秒杀剩余 ${remaining}` : "限时秒杀价";
+  }
+
+  const threshold = Number(activity.threshold_amount || 0);
+  const discount = Number(activity.discount_amount || 0);
+  if (threshold > 0 && discount > 0) return `满 RM ${money(threshold)} 减 RM ${money(discount)}`;
+
+  return activity.title ? String(activity.title).trim().slice(0, 18) : undefined;
 }
 
 export function buildProductCardV2Model(product: Product): ProductCardV2Model {
@@ -65,6 +113,11 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
     badges.push({ key: "new", label: "新品", tone: "new" });
   }
 
+  const salesText = buildSalesText(product);
+  const variantText = buildVariantText(pricedProduct);
+  const activityText = buildActivityText(product);
+  const decisionTexts = [salesText, variantText, activityText].filter(Boolean).slice(0, 3) as string[];
+
   return {
     id: product.id,
     name: product.name,
@@ -77,5 +130,9 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
     soldOut,
     badges: badges.slice(0, 2),
     href: `/product/${product.id}`,
+    salesText,
+    variantText,
+    activityText,
+    decisionTexts,
   };
 }

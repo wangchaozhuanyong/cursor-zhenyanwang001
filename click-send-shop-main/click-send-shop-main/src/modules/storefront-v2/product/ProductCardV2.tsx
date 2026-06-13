@@ -57,6 +57,7 @@ export default function ProductCardV2({
         <div className="flex min-w-0 flex-1 flex-col">
           <h3 className={t.text.productTitle}>{vm.name}</h3>
           <BadgeRow badges={vm.badges} subtle />
+          <DecisionMetaRow items={vm.decisionTexts} />
           {showPrice ? (
             <div className="mt-auto pt-2">
               <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
@@ -101,8 +102,9 @@ export default function ProductCardV2({
         {vm.soldOut ? <SoldOutMask /> : null}
       </div>
 
-      <div className="flex min-h-[104px] flex-1 flex-col p-2.5">
+      <div className="flex min-h-[126px] flex-1 flex-col p-2.5">
         <h3 className={t.text.productTitle}>{vm.name}</h3>
+        <DecisionMetaRow items={vm.decisionTexts} />
         {showPrice ? (
           <div className="mt-auto pt-2">
             <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
@@ -110,6 +112,19 @@ export default function ProductCardV2({
         ) : null}
       </div>
     </Link>
+  );
+}
+
+function DecisionMetaRow({ items }: { items: string[] }) {
+  return (
+    <div className="mt-1.5 flex min-h-[1rem] min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-4 text-[var(--theme-text-muted)]">
+      {items.map((item, index) => (
+        <span key={`${item}-${index}`} className="inline-flex min-w-0 items-center gap-1">
+          {index > 0 ? <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--theme-border)]" aria-hidden /> : null}
+          <span className="truncate">{item}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 

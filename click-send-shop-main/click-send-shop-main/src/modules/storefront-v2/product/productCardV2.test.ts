@@ -73,4 +73,41 @@ describe("buildProductCardV2Model", () => {
 
     expect(vm.soldOut).toBe(true);
   });
+
+  it("builds compact decision texts from sales, variants, and activity", () => {
+    const vm = buildProductCardV2Model(product({
+      sales_count: 1280,
+      enabled_sku_count: 3,
+      activity_promo_label: "满100减10",
+    }));
+
+    expect(vm.salesText).toBe("销量 1.3k+");
+    expect(vm.variantText).toBe("3种规格");
+    expect(vm.activityText).toBe("满100减10");
+    expect(vm.decisionTexts).toEqual(["销量 1.3k+", "3种规格", "满100减10"]);
+  });
+
+  it("falls back to recent sales and flash sale inventory hints", () => {
+    const vm = buildProductCardV2Model(product({
+      sales_qty_30d: 28,
+      active_activity: {
+        id: "a1",
+        type: "flash_sale",
+        title: "秒杀",
+        start_at: "",
+        end_at: "",
+        activity_price: 8,
+        limit_per_user: 1,
+        activity_stock: 10,
+        sold_count: 6,
+        remaining_stock: 4,
+        status: "active",
+        status_label: "进行中",
+      },
+    }));
+
+    expect(vm.salesText).toBe("30天售 28");
+    expect(vm.activityText).toBe("秒杀剩余 4");
+    expect(vm.decisionTexts).toEqual(["30天售 28", "秒杀剩余 4"]);
+  });
 });

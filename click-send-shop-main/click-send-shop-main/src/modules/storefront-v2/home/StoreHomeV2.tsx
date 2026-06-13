@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
@@ -30,7 +30,11 @@ import { getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules
 import { STORE_COPY } from "@/constants/storeCopy";
 import type { FooterNavItem } from "@/types/content";
 import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
-import { fetchStorefrontCampaigns } from "../campaign/campaignService";
+import {
+  fetchStorefrontCampaigns,
+  recordStorefrontCampaignClick,
+  recordStorefrontCampaignImpression,
+} from "../campaign/campaignService";
 import { storefrontPageClassName } from "../design/classes";
 import HomeHeroV2 from "./HomeHeroV2";
 import HomePrimaryCampaignV2 from "./HomePrimaryCampaignV2";
@@ -177,6 +181,31 @@ export default function StoreHomeV2() {
     navigate(path);
   };
 
+  const buildCampaignEventContext = useCallback(
+    (campaign: StorefrontCampaignVm, position: string) => ({
+      campaignType: campaign.type,
+      position,
+      audience,
+      title: campaign.title,
+      href: campaign.href,
+    }),
+    [audience],
+  );
+
+  const handleCampaignImpression = useCallback(
+    (campaign: StorefrontCampaignVm, position: string) => {
+      void recordStorefrontCampaignImpression(campaign.id, buildCampaignEventContext(campaign, position));
+    },
+    [buildCampaignEventContext],
+  );
+
+  const handleCampaignClick = useCallback(
+    (campaign: StorefrontCampaignVm, position: string) => {
+      void recordStorefrontCampaignClick(campaign.id, buildCampaignEventContext(campaign, position));
+    },
+    [buildCampaignEventContext],
+  );
+
   const showBanner = isHomeModuleEnabled(homeModules, "banner", audience);
   const showTrustBar = isHomeModuleEnabled(homeModules, "trust_bar", audience);
   const showNavGrid = isHomeModuleEnabled(homeModules, "nav_grid", audience);
@@ -231,6 +260,8 @@ export default function StoreHomeV2() {
           campaigns={enabledCampaigns}
           loading={campaignsLoading && homeModulesReady}
           onNavigate={navigatePath}
+          onCampaignImpression={handleCampaignImpression}
+          onCampaignClick={handleCampaignClick}
         />
 
         {showTrustBar ? <HomeTrustBar className="store-home-desktop-trust" /> : null}

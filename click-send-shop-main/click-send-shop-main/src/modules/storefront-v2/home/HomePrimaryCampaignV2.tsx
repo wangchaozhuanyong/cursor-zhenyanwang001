@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef } from "react";
 import { ArrowRight, Clock, Gift, Tag } from "lucide-react";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -9,11 +10,40 @@ type HomePrimaryCampaignV2Props = {
   campaigns: StorefrontCampaignVm[];
   loading: boolean;
   onNavigate: (path: string) => void;
+  onCampaignImpression?: (campaign: StorefrontCampaignVm, position: string) => void;
+  onCampaignClick?: (campaign: StorefrontCampaignVm, position: string) => void;
 };
 
-export default function HomePrimaryCampaignV2({ campaigns, loading, onNavigate }: HomePrimaryCampaignV2Props) {
-  const primary = pickPrimaryCampaign(campaigns);
-  const secondary = campaigns.filter((campaign) => campaign.id !== primary?.id).slice(0, 3);
+export default function HomePrimaryCampaignV2({
+  campaigns,
+  loading,
+  onNavigate,
+  onCampaignImpression,
+  onCampaignClick,
+}: HomePrimaryCampaignV2Props) {
+  const trackedImpressionsRef = useRef<Set<string>>(new Set());
+  const primary = useMemo(() => pickPrimaryCampaign(campaigns), [campaigns]);
+  const secondary = useMemo(
+    () => campaigns.filter((campaign) => campaign.id !== primary?.id).slice(0, 3),
+    [campaigns, primary?.id],
+  );
+  const visibleCampaigns = useMemo(() => (primary ? [primary, ...secondary] : []), [primary, secondary]);
+
+  useEffect(() => {
+    if (loading || !onCampaignImpression) return;
+    visibleCampaigns.forEach((campaign, index) => {
+      const position = index === 0 ? "home_primary_campaign" : `home_secondary_campaign_${index}`;
+      const key = `${position}:${campaign.type}:${campaign.id}`;
+      if (trackedImpressionsRef.current.has(key)) return;
+      trackedImpressionsRef.current.add(key);
+      onCampaignImpression(campaign, position);
+    });
+  }, [loading, onCampaignImpression, visibleCampaigns]);
+
+  const handleCampaignNavigate = (campaign: StorefrontCampaignVm, position: string) => {
+    onCampaignClick?.(campaign, position);
+    onNavigate(campaign.href || "/categories");
+  };
 
   if (loading && !primary) {
     return (
@@ -29,14 +59,13 @@ export default function HomePrimaryCampaignV2({ campaigns, loading, onNavigate }
 
   if (!primary) return null;
 
-  const actionHref = primary.href || "/categories";
   const hasCover = Boolean(primary.coverImage);
 
   return (
     <section className="grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
       <UnifiedButton
         type="button"
-        onClick={() => onNavigate(actionHref)}
+        onClick={() => handleCampaignNavigate(primary, "home_primary_campaign")}
         className="group relative min-h-[15rem] overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_24%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface)),var(--theme-surface)_46%,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-bg)))] p-0 text-left shadow-[var(--theme-shadow)]"
       >
         {hasCover ? (
@@ -83,7 +112,7 @@ export default function HomePrimaryCampaignV2({ campaigns, loading, onNavigate }
             <UnifiedButton
               key={`${campaign.type}-${campaign.id}`}
               type="button"
-              onClick={() => onNavigate(campaign.href || "/categories")}
+              onClick={() => handleCampaignNavigate(campaign, `home_secondary_campaign_${index + 1}`)}
               className="flex min-h-[6.75rem] items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-left shadow-sm transition hover:border-[color-mix(in_srgb,var(--theme-price)_32%,var(--theme-border))]"
             >
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-price)_11%,var(--theme-surface))] text-[var(--theme-price)]">

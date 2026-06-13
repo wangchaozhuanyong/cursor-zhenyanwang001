@@ -9,13 +9,11 @@ import {
   Coupons,
   Favorites,
   Feedback,
-  GuestHome,
   Help,
   History,
   Invite,
   Login,
   MemberBenefits,
-  MemberHome,
   Notifications,
   OrderDetail,
   Orders,
@@ -29,10 +27,10 @@ import {
   Rewards,
   Search,
   Settings,
+  StoreHomeV2,
   SupportDownload,
 } from "@/routes/publicLazyPages";
 import { preloadRoute, type RoutePreloadPriority } from "@/utils/routePreloadPolicy";
-import { isLoggedIn } from "@/utils/token";
 
 type Preloadable = { preload?: () => Promise<unknown> };
 
@@ -86,7 +84,7 @@ function normalizePath(to: string) {
 export function preloadStoreRoute(to: string, priority: RoutePreloadPriority = "intent") {
   const pathname = normalizePath(to);
   if (pathname === "/") {
-    return preloadRoute(isLoggedIn() ? MemberHome.preload : GuestHome.preload, priority);
+    return preloadRoute(StoreHomeV2.preload, priority);
   }
 
   const component =

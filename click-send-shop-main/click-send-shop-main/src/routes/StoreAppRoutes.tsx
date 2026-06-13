@@ -41,7 +41,7 @@ import {
 } from "@/utils/storeScrollRestoration";
 import { logPerf, markPerfStart, observeLongTasksAndLcp } from "@/utils/performanceDebug";
 import {
-  MemberHome, GuestHome, Login, BindWechatPhone,
+  StoreHomeV2, Login, BindWechatPhone,
   Categories, ProductDetail, Search,
   Cart, Checkout, Orders, OrderDetail, Returns, ReturnDetail, PendingReviews,
   Profile, Feedback, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
@@ -359,11 +359,10 @@ function TikTokStandaloneRoutes() {
 
 function HomeRoute() {
   const authHydrated = useAuthStore((s) => s.authHydrated);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!authHydrated) {
     return <HomeShellSkeleton />;
   }
-  return isAuthenticated ? <MemberHome /> : <GuestHome />;
+  return <StoreHomeV2 />;
 }
 
 function LoyaltyRouteGuard({ feature, children }: { feature: "points" | "reward" | "referral"; children: ReactNode }) {

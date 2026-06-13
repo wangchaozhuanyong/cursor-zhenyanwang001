@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { usePreferBottomSheet } from "@/modules/micro-interactions";
@@ -23,6 +23,8 @@ import MarketingPositionNotices from "@/modules/public/components/marketing/Mark
 import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
 import CheckoutPromotionExplanation from "@/modules/storefront-v2/checkout/CheckoutPromotionExplanation";
+import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
+import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
 
 export default function Checkout() {
   useDocumentTitle("结算");
@@ -36,6 +38,21 @@ export default function Checkout() {
   const isMobileSheet = usePreferBottomSheet("standard");
   const addresses = useUserStore((s) => s.addresses);
   const [addressSheetOpen, setAddressSheetOpen] = useState(false);
+  const [fullReductionCampaign, setFullReductionCampaign] = useState<StorefrontCampaignVm | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPrimaryFullReductionCampaign()
+      .then((campaign) => {
+        if (!cancelled) setFullReductionCampaign(campaign);
+      })
+      .catch(() => {
+        if (!cancelled) setFullReductionCampaign(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleChooseAddress = () => {
     if (isMobileSheet) setAddressSheetOpen(true);
@@ -128,6 +145,8 @@ export default function Checkout() {
               <CheckoutPromotionExplanation
                 discountLines={checkout.discountLines}
                 pointsBonusLines={checkout.pointsBonusLines}
+                fullReductionCampaign={fullReductionCampaign}
+                currentAmount={checkout.rawTotal}
               />
               <LoadingButton
                 state={checkout.submitting ? "loading" : "normal"}
@@ -219,6 +238,8 @@ export default function Checkout() {
               <CheckoutPromotionExplanation
                 discountLines={checkout.discountLines}
                 pointsBonusLines={checkout.pointsBonusLines}
+                fullReductionCampaign={fullReductionCampaign}
+                currentAmount={checkout.rawTotal}
                 className="mt-4"
               />
             </div>

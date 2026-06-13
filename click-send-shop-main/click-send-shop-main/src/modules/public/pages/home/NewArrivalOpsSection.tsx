@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useHomeTrackingSessionId } from "@/hooks/useHomeTrackingSessionId";
@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 import { HOME_SECTION_HEADER_MB } from "@/constants/homeLayout";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import type { NewArrivalClickTarget } from "./newArrivalOps";
-import HomeNewArrivalCard from "./HomeNewArrivalCard";
+import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
+import { observeHomeCardImpression } from "./homeCardImpressionObserver";
 import {
   HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS,
   HOME_PRODUCT_CARD_SHELL,
@@ -133,16 +134,52 @@ export default function NewArrivalSection({
               </div>
             ))
           : items.map((product, index) => (
-              <HomeNewArrivalCard
+              <TrackedNewArrivalProductCard
                 key={product.id}
                 product={product}
                 index={index}
                 showPrice={showPrice}
                 registerImpression={registerImpression}
-                onClick={(item, i) => trackClick("product", item.id, i)}
+                onClick={() => {
+                  trackClick("product", product.id, index);
+                }}
               />
             ))}
       </div>
     </section>
+  );
+}
+
+function TrackedNewArrivalProductCard({
+  product,
+  index,
+  showPrice,
+  registerImpression,
+  onClick,
+}: {
+  product: Product;
+  index: number;
+  showPrice: boolean;
+  registerImpression: (product: Product, index: number) => void;
+  onClick: () => void;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return undefined;
+    return observeHomeCardImpression(ref.current, () => registerImpression(product, index));
+  }, [index, product, registerImpression]);
+
+  return (
+    <div ref={ref}>
+      <ProductCardV2
+        product={product}
+        index={index}
+        variant="compact"
+        className={HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS}
+        showPrice={showPrice}
+        onClick={onClick}
+      />
+    </div>
   );
 }

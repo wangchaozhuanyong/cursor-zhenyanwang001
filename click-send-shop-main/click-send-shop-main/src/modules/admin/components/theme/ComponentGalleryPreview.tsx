@@ -1,5 +1,5 @@
 import PremiumCouponCard from "@/components/PremiumCouponCard";
-import ProductCard from "@/components/ProductCard";
+import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
 import StoreBadge from "@/components/ui/StoreBadge";
 import StorePrice from "@/components/ui/StorePrice";
 import type { ThemeConfig } from "@/types/theme";
@@ -65,7 +65,7 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
         actionLabel="立即领取"
       />
       <div className="store-card p-2 text-xs"><Tx>会员卡骨架预览</Tx></div>
-      <ProductCard product={previewProduct} />
+      <ProductCardV2 product={previewProduct} />
       <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 text-xs"><Tx>Toast / 提示样式区域</Tx></div>
       <div className="rounded-t-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-xs shadow-lg">
         <p className="font-medium">Bottom Sheet</p>

@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 import { HOME_PRODUCT_GRID_CLASS, HOME_SECTION_HEADER_MB } from "@/constants/homeLayout";
 import { useHomeTrackingSessionId } from "@/hooks/useHomeTrackingSessionId";
 import { trackEventLazy } from "@/services/trackEventLazy";
-import HomeGridProductCard from "./HomeGridProductCard";
-import HomeGridProductCardSkeleton from "./HomeGridProductCardSkeleton";
+import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
+import ProductCardV2Skeleton from "@/modules/storefront-v2/product/ProductCardV2Skeleton";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { observeHomeCardImpression } from "./homeCardImpressionObserver";
 
 interface HomeHotSalesSectionProps {
   products: Product[];
@@ -74,10 +75,10 @@ export default function HomeHotSalesSection({
       <div className={HOME_PRODUCT_GRID_CLASS}>
         {loading
           ? Array.from({ length: skeletonCount }).map((_, i) => (
-              <HomeGridProductCardSkeleton key={`hot-skeleton-${i}`} />
+              <ProductCardV2Skeleton key={`hot-skeleton-${i}`} />
             ))
           : products.map((product, index) => (
-              <HomeGridProductCard
+              <TrackedHotProductCard
                 key={product.id}
                 product={product}
                 index={index}
@@ -87,5 +88,30 @@ export default function HomeHotSalesSection({
             ))}
       </div>
     </section>
+  );
+}
+
+function TrackedHotProductCard({
+  product,
+  index,
+  showPrice,
+  registerImpression,
+}: {
+  product: Product;
+  index: number;
+  showPrice: boolean;
+  registerImpression: (product: Product, index: number) => void;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return undefined;
+    return observeHomeCardImpression(ref.current, () => registerImpression(product, index));
+  }, [index, product, registerImpression]);
+
+  return (
+    <div ref={ref}>
+      <ProductCardV2 product={product} index={index} showPrice={showPrice} />
+    </div>
   );
 }

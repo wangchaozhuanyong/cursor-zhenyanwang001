@@ -7,8 +7,7 @@ export function lazyWithPreload<T extends React.ComponentType<never>>(factory: (
   return Component;
 }
 
-export const MemberHome = lazyWithPreload(() => import("@/modules/public/pages/home/MemberHome"));
-export const GuestHome = lazyWithPreload(() => import("@/modules/public/pages/home/GuestHome"));
+export const StoreHomeV2 = lazyWithPreload(() => import("@/modules/storefront-v2/home/StoreHomeV2"));
 export const Login = lazyWithPreload(() => import("@/modules/public/pages/auth/Login"));
 export const BindWechatPhone = lazyWithPreload(() => import("@/modules/public/pages/auth/BindWechatPhone"));
 

@@ -5,7 +5,7 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
-import ProductCard from "@/components/ProductCard";
+import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
@@ -583,7 +583,7 @@ export default function ProductDetail() {
             ) : (
               <div className={`${productGridClass} md:gap-5`}>
                 {relatedProducts.map((p, i) => (
-                  <ProductCard key={p.id} product={p} index={i} />
+                  <ProductCardV2 key={p.id} product={p} index={i} />
                 ))}
               </div>
             )}

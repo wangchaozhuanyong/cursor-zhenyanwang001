@@ -1,7 +1,7 @@
 import { Home, ShoppingBag, User } from "lucide-react";
 import BannerCarousel from "@/components/BannerCarousel";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
-import ProductCard from "@/components/ProductCard";
+import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
 import type { ThemeConfig } from "@/types/theme";
 import { Tx } from "@/components/admin/AdminText";
@@ -62,8 +62,8 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
       <div>
         <p className="mb-2 text-sm font-semibold text-[var(--theme-text)]"><Tx>热门推荐</Tx></p>
         <div className={getProductGridClassName(config.productCardVariant)}>
-          <ProductCard product={previewProduct} />
-          <ProductCard product={{ ...previewProduct, id: "preview-2", name: "限时特惠商品" }} />
+          <ProductCardV2 product={previewProduct} />
+          <ProductCardV2 product={{ ...previewProduct, id: "preview-2", name: "限时特惠商品" }} />
         </div>
       </div>
       <nav

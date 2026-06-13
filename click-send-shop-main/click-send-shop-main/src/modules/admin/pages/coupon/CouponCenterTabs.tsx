@@ -1,4 +1,4 @@
-import { ClipboardList, Ticket } from "lucide-react";
+import { ClipboardList, Megaphone, Ticket } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useAdminTOptional } from "@/hooks/useAdminT";
@@ -11,6 +11,13 @@ const TABS = [
     zh: "优惠券模板",
     en: "Coupon templates",
     icon: Ticket,
+  },
+  {
+    key: "campaigns",
+    path: "/admin/marketing/coupon-campaigns",
+    zh: "领券活动",
+    en: "Voucher campaigns",
+    icon: Megaphone,
   },
   {
     key: "records",
@@ -28,6 +35,9 @@ function isActiveTab(pathname: string, tabPath: string) {
       || pathname === `${tabPath}/`
       || (/^\/admin\/marketing\/coupons\/[^/]+$/.test(pathname) && pathname !== "/admin/marketing/coupons/records")
     );
+  }
+  if (tabPath === "/admin/marketing/coupon-campaigns") {
+    return pathname === tabPath || pathname.startsWith(`${tabPath}/`);
   }
   return pathname === tabPath || pathname.startsWith(`${tabPath}/`);
 }

@@ -291,7 +291,6 @@ export default defineConfig(({ mode, command }) => {
               && (
                 url.pathname === "/api/home/bootstrap"
                 || url.pathname === "/api/home/bootstrap-lite"
-                || url.pathname === "/api/home/marketing"
               ),
             handler: "StaleWhileRevalidate",
             options: {
@@ -299,6 +298,26 @@ export default defineConfig(({ mode, command }) => {
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 2,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url, request }) =>
+              request.method === "GET"
+              && (
+                url.pathname === "/api/home/marketing"
+                || /^\/api\/marketing\/campaigns(\/|$)/.test(url.pathname)
+                || /^\/api\/marketing\/activities\/flash-sale(\/|$)/.test(url.pathname)
+                || /^\/api\/marketing\/(coupon-center|coupon-zone|new-user-gift|notices|full-reduction-notices)(\/|$)/.test(url.pathname)
+                || /^\/api\/coupons(\/|$)/.test(url.pathname)
+              ),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "public-campaign-cache",
+              networkTimeoutSeconds: 2,
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 30,
               },
             },
           },

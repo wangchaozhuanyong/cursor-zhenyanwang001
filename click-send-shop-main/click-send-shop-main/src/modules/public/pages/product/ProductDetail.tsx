@@ -30,7 +30,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useProductPurchaseCouponChoice } from "@/hooks/useProductPurchaseCouponChoice";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
-import { THEME_ALERT_DANGER_SHELL, THEME_BTN_ACCENT_SOLID } from "@/utils/themeVisuals";
+import { THEME_BTN_ACCENT_SOLID } from "@/utils/themeVisuals";
 import { trackEvent } from "@/services/analyticsService";
 import { buildProductSharePayload } from "@/utils/productShare";
 import { getProductSalesCount, hasProductSales, productSalesDetailLabel } from "@/utils/productSales";
@@ -53,6 +53,7 @@ import {
 import { isRestrictedProduct } from "@/utils/restrictedProduct";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseActionCard } from "@/components/store/DesktopPurchasePattern";
+import ProductActivityPanel from "@/modules/storefront-v2/product-detail/ProductActivityPanel";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -509,11 +510,7 @@ export default function ProductDetail() {
               <h1 className="mt-3 font-display text-lg font-semibold leading-snug text-foreground md:text-[22px] md:leading-tight">
                 {product.name}
               </h1>
-              {activeActivity ? (
-                <div className={`mt-3 theme-rounded px-3 py-2 text-xs ${THEME_ALERT_DANGER_SHELL}`}>
-                  <div className="font-bold">{activeActivity.title}</div>
-                </div>
-              ) : null}
+              <ProductActivityPanel activity={activeActivity} />
               {showRegulatedNotice ? <RegulatedProductNotice {...regulatedNoticeProps} /> : null}
               {purchaseAgeBlocked ? (
                 <p className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--theme-warning)_34%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_14%,var(--theme-surface))] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-warning)_78%,var(--theme-text-on-surface))]">

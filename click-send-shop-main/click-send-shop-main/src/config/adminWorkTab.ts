@@ -45,8 +45,6 @@ export function isDeprecatedAdminTabPath(pathname: string): boolean {
     || base === "/admin/settings/referral"
     || base === "/admin/coupons"
     || base.startsWith("/admin/coupons/")
-    || base === "/admin/marketing/coupon-campaigns"
-    || base.startsWith("/admin/marketing/coupon-campaigns/")
   );
 }
 

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import ProductCard, { type ProductCardSiteContext } from "@/components/ProductCard";
-import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import SilkRefreshOverlay from "@/components/motion/SilkRefreshOverlay";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
+import ProductCardV2Skeleton from "@/modules/storefront-v2/product/ProductCardV2Skeleton";
+import type { ProductCardSiteContext } from "@/components/ProductCard";
 
 const INITIAL_PRODUCT_RENDER_LIMIT = 24;
 const DEFERRED_PRODUCT_REVEAL_MS = 650;
@@ -34,10 +34,8 @@ export default function SilkProductGrid({
   showFullSkeleton = false,
   showSoftRefreshing = false,
   emptyState,
-  siteContext,
 }: SilkProductGridProps) {
   const isListView = displayMode === "list";
-  const { themeConfig } = useThemeRuntime();
   const shouldDeferList = products.length > INITIAL_PRODUCT_RENDER_LIMIT;
   const [renderAll, setRenderAll] = useState(!shouldDeferList);
 
@@ -71,18 +69,15 @@ export default function SilkProductGrid({
       <div className={cn(className, showSoftRefreshing && "opacity-95")}>
         {showFullSkeleton
           ? Array.from({ length: skeletonCount }).map((_, i) => (
-              <ProductCardSkeleton key={`silk-skeleton-${i}`} list={isListView} />
+              <ProductCardV2Skeleton key={`silk-skeleton-${i}`} variant={isListView ? "list" : "grid"} />
             ))
           : visibleProducts.map((product, index) => (
-              <ProductCard
+              <ProductCardV2
                 key={product.id}
                 product={product}
                 index={index}
-                displayMode={displayMode}
-                siteContext={siteContext}
-                themeConfig={themeConfig}
-                animate={!shouldDeferList || index < 8}
-                lightMedia={shouldDeferList && index >= 4}
+                variant={isListView ? "list" : "grid"}
+                className="[content-visibility:auto] [contain-intrinsic-size:280px]"
               />
             ))}
         {!showFullSkeleton && products.length === 0 ? emptyState : null}

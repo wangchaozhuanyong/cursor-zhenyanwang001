@@ -1,10 +1,12 @@
 const { Router } = require('express');
 const ctrl = require('../controller/marketing.controller');
+const campaignRoutes = require('./campaign.routes');
 const { requireSiteCapability } = require('../../../middleware/siteCapabilityGuard');
 const authOptional = require('../../../middleware/authOptional');
 
 const router = Router();
 
+router.use('/campaigns', campaignRoutes);
 router.get('/activities/flash-sale', ctrl.getFlashSale);
 router.get('/activities/by-position', ctrl.getByPosition);
 router.get('/coupon-center', authOptional, requireSiteCapability('couponEnabled', '本站未启用优惠券功能'), ctrl.getCouponCenter);

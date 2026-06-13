@@ -51,6 +51,7 @@ import {
 const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "store-card-equal-mobile-fix";
 const GLOBAL_WIDGET_DELAY_MS = 9000;
 const PRIVACY_TRACKING_DELAY_MS = 1000;
+const ENABLE_LEGACY_CARD_OVERLAP_FIX = false;
 
 const CookieConsentBanner = lazy(() => import("@/components/CookieConsentBanner"));
 const TrackingManager = lazy(() => import("@/components/TrackingManager"));
@@ -58,6 +59,14 @@ const SonnerToaster = lazy(() => import("@/components/ui/sonner").then((module) 
 const RouteAnalyticsTracker = lazy(() => import("@/components/RouteAnalyticsTracker"));
 const ChinaBrowserCompatNotice = lazy(() => import("@/components/ChinaBrowserCompatNotice"));
 const PwaUpdateToast = lazy(() => import("@/components/PwaUpdateToast"));
+
+function shouldDeferNonCriticalWidgets(pathname: string) {
+  return !/^\/(cart|checkout|orders|payment|login)(\/|$)/.test(pathname);
+}
+
+function shouldSuppressMarketingPopups(pathname: string) {
+  return /^\/(checkout|cart|orders|payment)(\/|$)/.test(pathname);
+}
 
 function StoreScrollRestoration() {
   const location = useLocation();
@@ -383,6 +392,9 @@ export function StoreAppRoutes() {
 function MainStoreRoutes() {
   const location = useLocation();
   const capabilities = useSiteCapabilities();
+  const suppressMarketingPopups = shouldSuppressMarketingPopups(location.pathname);
+  const deferNonCriticalWidgets = shouldDeferNonCriticalWidgets(location.pathname);
+  const nonCriticalWidgetDelayMs = deferNonCriticalWidgets ? GLOBAL_WIDGET_DELAY_MS : 3000;
 
   return (
     <ErrorBoundary resetKey={`${location.pathname}${location.search}`}>
@@ -402,7 +414,7 @@ function MainStoreRoutes() {
           <RouteSeoGuard />
           <LanguageGate />
           <AgeGate />
-          <StoreCardOverlapFix />
+          {ENABLE_LEGACY_CARD_OVERLAP_FIX ? <StoreCardOverlapFix /> : null}
           <Suspense fallback={<DelayedRouteFallback fallback={<StoreOutletFallback />} delayMs={180} />}>
             <AppBootReady />
             <Routes>
@@ -469,16 +481,22 @@ function MainStoreRoutes() {
           <DeferredGlobalMount delayMs={PRIVACY_TRACKING_DELAY_MS}>
             <Suspense fallback={null}>
               <SonnerToaster />
-              <TrackingManager />
-              <CookieConsentBanner />
             </Suspense>
           </DeferredGlobalMount>
-          <DeferredGlobalMount>
+          <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
             <Suspense fallback={null}>
+              <TrackingManager />
+            </Suspense>
+          </DeferredGlobalMount>
+          {!suppressMarketingPopups ? (
+          <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
+            <Suspense fallback={null}>
+              <CookieConsentBanner />
               <PwaUpdateToast />
             </Suspense>
           </DeferredGlobalMount>
-          <DeferredGlobalMount>
+          ) : null}
+          <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
             <Suspense fallback={null}>
               {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
               <ChinaBrowserCompatNotice />

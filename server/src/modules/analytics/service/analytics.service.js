@@ -14,6 +14,7 @@ const ALLOWED_EVENT_TYPES = new Set([
   'search',
   'category_click',
   'banner_click',
+  'activity_impression',
   'activity_click',
   'checkout_start',
   'order_submit',

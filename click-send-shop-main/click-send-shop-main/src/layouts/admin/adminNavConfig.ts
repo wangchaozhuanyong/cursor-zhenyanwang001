@@ -223,6 +223,7 @@ export const navItemsRaw: NavItem[] = [
     children: [
       { icon: LayoutGrid, labelKey: "nav.marketingOverview", path: "/admin/marketing", permission: { anyOf: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
       { icon: Ticket, label: "优惠券模板", path: "/admin/marketing/coupons", permission: "coupon.view", capability: "couponEnabled" },
+      { icon: Megaphone, label: "领券活动", path: "/admin/marketing/coupon-campaigns", permission: "coupon.view", capability: "couponEnabled" },
       { icon: Megaphone, label: "秒杀活动", path: "/admin/marketing/activities?type=flash_sale", permission: "activity.manage" },
       { icon: ShoppingCart, label: "满减活动", path: "/admin/marketing/activities?type=full_reduction", permission: "activity.manage" },
       { icon: Star, label: "多倍积分", path: "/admin/marketing/activities?type=points_bonus", permission: "activity.manage", capability: "pointsEnabled" },

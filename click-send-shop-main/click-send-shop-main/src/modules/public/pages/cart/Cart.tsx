@@ -23,6 +23,9 @@ import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
+import CartPromotionNudge from "@/modules/storefront-v2/cart/CartPromotionNudge";
+import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
+import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
@@ -55,6 +58,7 @@ export default function Cart() {
   const showSstCartHint = parseSstEnabled(siteInfo.sstEnabled);
   const [deleteTarget, setDeleteTarget] = useState<{ productId: string; variantId?: string; name: string } | null>(null);
   const [openActionKey, setOpenActionKey] = useState<string | null>(null);
+  const [fullReductionCampaign, setFullReductionCampaign] = useState<StorefrontCampaignVm | null>(null);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
@@ -83,6 +87,21 @@ export default function Cart() {
   useEffect(() => {
     loadCart({ force: true });
   }, [loadCart]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPrimaryFullReductionCampaign()
+      .then((campaign) => {
+        if (!cancelled) setFullReductionCampaign(campaign);
+      })
+      .catch(() => {
+        if (!cancelled) setFullReductionCampaign(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleCheckout = () => {
     if (totalItemsSelected() === 0) {
@@ -174,6 +193,11 @@ export default function Cart() {
             aside={
               <DesktopPurchaseCard title="结算摘要" className="store-checkout-summary">
                 <div className="space-y-2.5 text-sm">
+                  <CartPromotionNudge
+                    campaign={fullReductionCampaign}
+                    amount={Number(totalAmountSelected() || 0)}
+                    onBrowse={() => navigate("/categories")}
+                  />
                   <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
                     <span className="text-muted-foreground">下单前可先领券，结算页自动匹配最优优惠</span>
                     <UnifiedButton
@@ -221,6 +245,12 @@ export default function Cart() {
             }
           >
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
+            <CartPromotionNudge
+              campaign={fullReductionCampaign}
+              amount={Number(totalAmountSelected() || 0)}
+              className="mb-3 md:hidden"
+              onBrowse={() => navigate("/categories")}
+            />
             {!isLoggedIn() && (
               <div
                 className="relative mb-4 mt-3 overflow-hidden rounded-[22px] border px-4 py-4 text-[var(--theme-text)]"
@@ -563,6 +593,12 @@ export default function Cart() {
       {items.length > 0 && (
         <div className="store-mobile-submit-bar fixed bottom-[calc(var(--store-bottom-nav-height,78px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
           <div className="mx-auto flex w-full flex-col gap-2 px-[var(--store-page-x)] py-2.5 sm:max-w-lg sm:px-4">
+            <CartPromotionNudge
+              campaign={fullReductionCampaign}
+              amount={Number(totalAmountSelected() || 0)}
+              className="mb-0"
+              onBrowse={() => navigate("/categories")}
+            />
             <SquishButton
               type="button"
               variant="ghost"

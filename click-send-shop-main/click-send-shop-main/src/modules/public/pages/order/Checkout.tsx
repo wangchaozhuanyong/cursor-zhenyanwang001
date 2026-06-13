@@ -22,6 +22,7 @@ import { submitCtaLabel } from "./utils/checkoutText";
 import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
 import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
+import CheckoutPromotionExplanation from "@/modules/storefront-v2/checkout/CheckoutPromotionExplanation";
 
 export default function Checkout() {
   useDocumentTitle("结算");
@@ -124,6 +125,10 @@ export default function Checkout() {
                 sstShowInCatalog={checkout.sstCfg.enabled}
                 sstCustomerNote={checkout.sstCfg.customerNote}
               />
+              <CheckoutPromotionExplanation
+                discountLines={checkout.discountLines}
+                pointsBonusLines={checkout.pointsBonusLines}
+              />
               <LoadingButton
                 state={checkout.submitting ? "loading" : "normal"}
                 onClick={checkout.handleSubmit}
@@ -210,6 +215,11 @@ export default function Checkout() {
                 sstPreview={checkout.sstPreview}
                 sstShowInCatalog={checkout.sstCfg.enabled}
                 sstCustomerNote={checkout.sstCfg.customerNote}
+              />
+              <CheckoutPromotionExplanation
+                discountLines={checkout.discountLines}
+                pointsBonusLines={checkout.pointsBonusLines}
+                className="mt-4"
               />
             </div>
         </DesktopPurchaseTwoColumn>

@@ -183,7 +183,7 @@ test('coupon campaign datetime is interpreted as Malaysia time', () => {
   assert.equal(validity.validUntil.toISOString(), '2026-06-07T15:59:59.000Z');
 });
 
-test('member_only coupons exclude users with only default member level', async () => {
+test('member_only coupons include users with a default member level', async () => {
   const original = {
     selectAvailableCoupons: couponRepo.selectAvailableCoupons,
     selectUserCouponClaimCounts: couponRepo.selectUserCouponClaimCounts,
@@ -202,10 +202,72 @@ test('member_only coupons exclude users with only default member level', async (
 
     const list = await couponService.getAvailableCoupons('user-1');
 
-    assert.deepEqual(list.map((row) => row.coupon.id), ['public']);
+    assert.deepEqual(list.map((row) => row.coupon.id), ['member', 'public']);
   } finally {
     couponRepo.selectAvailableCoupons = original.selectAvailableCoupons;
     couponRepo.selectUserCouponClaimCounts = original.selectUserCouponClaimCounts;
+    memberLevelService.getUserMemberLevel = original.getUserMemberLevel;
+  }
+});
+
+test('claimCoupon allows member_only coupon for a user with a default member level', async () => {
+  const original = {
+    getPool: couponRepo.getPool,
+    selectCouponByCodeOrIdForUpdate: couponRepo.selectCouponByCodeOrIdForUpdate,
+    countUserClaimsForCoupon: couponRepo.countUserClaimsForCoupon,
+    countUserClaimsForCouponInConn: couponRepo.countUserClaimsForCouponInConn,
+    incrementClaimedCountIfAvailable: couponRepo.incrementClaimedCountIfAvailable,
+    insertUserCouponWithMeta: couponRepo.insertUserCouponWithMeta,
+    insertCouponEvent: couponRepo.insertCouponEvent,
+    getUserMemberLevel: memberLevelService.getUserMemberLevel,
+  };
+  const conn = {
+    beginTransaction: async () => {},
+    rollback: async () => {},
+    commit: async () => {},
+    release: () => {},
+  };
+  const inserted = [];
+
+  try {
+    couponRepo.getPool = () => ({ getConnection: async () => conn });
+    couponRepo.selectCouponByCodeOrIdForUpdate = async () => ({
+      id: 'member-coupon',
+      code: 'MEMBER',
+      title: '会员券',
+      type: 'fixed',
+      value: 20,
+      min_amount: 0,
+      status: 'available',
+      publish_status: 'active',
+      per_user_limit: 1,
+      total_quantity: 0,
+      claimed_count: 0,
+      member_only: 1,
+    });
+    couponRepo.countUserClaimsForCoupon = async () => 0;
+    couponRepo.countUserClaimsForCouponInConn = async () => 0;
+    couponRepo.incrementClaimedCountIfAvailable = async () => 1;
+    couponRepo.insertUserCouponWithMeta = async (_conn, row) => inserted.push(row);
+    couponRepo.insertCouponEvent = async () => {};
+    memberLevelService.getUserMemberLevel = async () => ({
+      level: { id: 'default-level', is_default: true },
+    });
+
+    const result = await couponService.claimCoupon('user-1', { code: 'MEMBER' });
+
+    assert.equal(result.error, undefined);
+    assert.equal(result.message, '领取成功');
+    assert.equal(inserted.length, 1);
+    assert.equal(inserted[0].couponId, 'member-coupon');
+  } finally {
+    couponRepo.getPool = original.getPool;
+    couponRepo.selectCouponByCodeOrIdForUpdate = original.selectCouponByCodeOrIdForUpdate;
+    couponRepo.countUserClaimsForCoupon = original.countUserClaimsForCoupon;
+    couponRepo.countUserClaimsForCouponInConn = original.countUserClaimsForCouponInConn;
+    couponRepo.incrementClaimedCountIfAvailable = original.incrementClaimedCountIfAvailable;
+    couponRepo.insertUserCouponWithMeta = original.insertUserCouponWithMeta;
+    couponRepo.insertCouponEvent = original.insertCouponEvent;
     memberLevelService.getUserMemberLevel = original.getUserMemberLevel;
   }
 });

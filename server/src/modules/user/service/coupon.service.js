@@ -23,8 +23,7 @@ function normalizeCouponStatus(status, endDate) {
 
 function hasCouponMemberPrivilege(memberContext) {
   const level = memberContext?.level;
-  if (!level?.id) return false;
-  return level.is_default !== true;
+  return Boolean(level?.id);
 }
 
 function isClaimWindowOpen(coupon, now = new Date()) {

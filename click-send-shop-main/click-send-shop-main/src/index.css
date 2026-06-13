@@ -4869,23 +4869,20 @@ html[data-app-scope="store"] .store-category-mobile-tabs-shell {
   position: relative;
   z-index: 20;
   overflow: hidden;
-  padding: 0.16rem var(--store-page-x) 0.2rem;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 62%, transparent), color-mix(in srgb, var(--theme-bg) 72%, transparent)),
-    color-mix(in srgb, var(--theme-bg) 92%, transparent);
+  padding: 0.08rem var(--store-page-x) 0;
+  background: transparent;
 }
 
 html[data-app-scope="store"] .store-category-mobile-filter-shell {
-  top: env(safe-area-inset-top, 0px);
-  z-index: 45;
-  padding: 0.12rem var(--store-page-x) 0.34rem;
+  position: relative;
+  top: auto;
+  z-index: 25;
+  padding: 0 var(--store-page-x) 0.42rem;
   border-bottom: 0;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 94%, transparent), color-mix(in srgb, var(--theme-bg) 86%, transparent)),
-    color-mix(in srgb, var(--theme-surface) 88%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(1.08);
-  backdrop-filter: blur(18px) saturate(1.08);
-  box-shadow: 0 14px 26px -28px color-mix(in srgb, var(--theme-price) 28%, transparent);
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 @media (max-width: 767px) {
@@ -4903,6 +4900,13 @@ html[data-app-scope="store"] .store-category-mobile-filter-shell {
 
 html[data-app-scope="store"] .store-category-mobile-filter-shell .store-category-mobile-tools {
   margin-top: 0;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"] .store-category-mobile-filter-shell.store-category-sticky-filter {
+    position: relative;
+    top: auto;
+  }
 }
 
 html[data-app-scope="store"] .store-category-toolbar.store-category-sticky-filter {
@@ -5320,7 +5324,7 @@ html[data-app-scope="store"] .store-category-mobile-tabs {
 }
 
 html[data-app-scope="store"] .store-category-mobile-tabs > :not([hidden]) ~ :not([hidden]) {
-  margin-top: 0.34rem !important;
+  margin-top: 0.22rem !important;
 }
 
 html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-showcase--plain {
@@ -5359,7 +5363,7 @@ html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-r
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
-  padding: 0.22rem 0.5rem 0.24rem;
+  padding: 0.18rem 0.5rem 0.18rem;
   scroll-padding-inline: 0.5rem;
 }
 
@@ -5655,34 +5659,25 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-rail-
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools {
-  margin-top: var(--store-category-mobile-tool-gap);
-  padding-inline: 0.26rem;
-  border: 1px solid color-mix(in srgb, var(--theme-price) 8%, transparent);
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 18% 0%, color-mix(in srgb, white 72%, transparent), transparent 52%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 64%, transparent), color-mix(in srgb, var(--theme-bg) 42%, transparent)),
-    color-mix(in srgb, var(--theme-surface) 62%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 62%, transparent),
-    0 8px 18px -22px color-mix(in srgb, var(--theme-price) 16%, transparent);
+  margin-top: 0;
+  padding-inline: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-sortbar {
-  border-color: transparent;
+  border: 0;
   background: transparent;
   box-shadow: none;
 }
 
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-tool-icon,
 html[data-app-scope="store"] .store-category-mobile-tools .store-category-filter-button {
-  border-color: color-mix(in srgb, var(--theme-price) 7%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 62%, transparent), color-mix(in srgb, var(--theme-bg) 38%, transparent)),
-    color-mix(in srgb, var(--theme-surface) 46%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 58%, transparent),
-    0 6px 14px -16px color-mix(in srgb, var(--theme-price) 12%, transparent);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-app-scope="store"] .store-category-sortbar {
@@ -8071,14 +8066,12 @@ html[data-app-scope="store"]:where(
 
   html[data-app-scope="store"] .store-category-tablet-rail {
     margin-bottom: 1rem;
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--theme-primary) 12%, var(--theme-border));
-    border-radius: 1.25rem;
-    background:
-      linear-gradient(180deg, color-mix(in srgb, white 62%, transparent), transparent),
-      color-mix(in srgb, var(--theme-surface) 92%, var(--theme-bg));
-    padding: 0.76rem;
-    box-shadow: 0 16px 36px -32px color-mix(in srgb, var(--theme-primary) 28%, transparent);
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
   }
 
   html[data-app-scope="store"] .store-category-showcase--tablet {

@@ -6083,6 +6083,12 @@ html[data-app-scope="store"] .store-category-tablet-rail .store-category-switche
   box-shadow: none !important;
 }
 
+html[data-app-scope="store"] .store-category-switcher .store-category-tile::after,
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active::after {
+  display: none !important;
+  content: none !important;
+}
+
 html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active,
 html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile.is-active,
 html[data-app-scope="store"] .store-category-tablet-rail .store-category-switcher.store-category-rail--plain .store-category-tile.is-active {
@@ -6096,6 +6102,36 @@ html[data-app-scope="store"] .store-category-switcher .store-category-tile-icon,
 html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active .store-category-tile-icon {
   background: transparent !important;
   box-shadow: none !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active .store-category-tile-icon {
+  transform: translateY(-1px) scale(1.04);
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-label {
+  position: relative;
+  display: block !important;
+  min-height: 1.22rem;
+  padding-bottom: 0.35rem;
+  overflow: hidden;
+  text-align: center;
+}
+
+html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile.is-active .store-category-tile-label::after,
+html[data-app-scope="store"] .store-category-tablet-rail .store-category-switcher.store-category-rail--plain .store-category-tile.is-active .store-category-tile-label::after {
+  position: absolute;
+  right: auto;
+  bottom: 0.08rem;
+  left: 50%;
+  display: block;
+  width: 0.32rem;
+  height: 0.32rem;
+  margin: 0;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+  opacity: 0.88;
+  transform: translateX(-50%);
 }
 
 html[data-app-scope="store"] .store-category-subtabs,

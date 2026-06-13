@@ -5658,6 +5658,370 @@ html[data-app-scope="store"] .store-category-mobile-header .store-category-rail-
   height: 0.46rem;
 }
 
+html[data-app-scope="store"] .store-category-switcher.store-category-showcase--plain {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0;
+  margin-inline: 0 !important;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-price) 18%, var(--theme-border)) !important;
+  border-radius: 1.28rem !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 94%, transparent), color-mix(in srgb, var(--theme-bg) 78%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 88%, var(--theme-bg)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 70%, transparent),
+    0 16px 32px -30px color-mix(in srgb, var(--theme-price) 32%, transparent) !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher.store-category-rail--plain::before,
+html[data-app-scope="store"] .store-category-switcher.store-category-rail--plain::after {
+  display: block !important;
+  width: 1.4rem !important;
+  pointer-events: none;
+}
+
+html[data-app-scope="store"] .store-category-switcher.store-category-rail--plain::before {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-surface) 94%, var(--theme-bg)), transparent);
+}
+
+html[data-app-scope="store"] .store-category-switcher.store-category-rail--plain::after {
+  background: linear-gradient(270deg, color-mix(in srgb, var(--theme-surface) 94%, var(--theme-bg)), transparent);
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-rail-scroll {
+  gap: 0.42rem !important;
+  padding: 0.42rem !important;
+  padding-right: 1.2rem !important;
+  scroll-padding-inline: 0.42rem !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile,
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-skeleton {
+  width: clamp(4.62rem, 20.6vw, 5.35rem) !important;
+  height: 4.1rem !important;
+  min-height: 4.1rem !important;
+  border: 1px solid color-mix(in srgb, var(--theme-border) 78%, transparent) !important;
+  border-radius: 1rem !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 92%, transparent), color-mix(in srgb, var(--theme-bg) 70%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 82%, var(--theme-bg)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 64%, transparent),
+    0 10px 18px -18px color-mix(in srgb, var(--theme-price) 18%, transparent) !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile {
+  position: relative;
+  justify-content: center;
+  gap: 0.18rem;
+  overflow: hidden;
+  padding: 0.42rem 0.32rem 0.58rem;
+  color: color-mix(in srgb, var(--theme-text-muted) 84%, var(--theme-text));
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile::after {
+  content: "";
+  position: absolute;
+  right: 1.05rem;
+  bottom: 0.34rem;
+  left: 1.05rem;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--theme-price);
+  opacity: 0;
+  transform: scaleX(0.42);
+  transition:
+    opacity 180ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active {
+  border-color: color-mix(in srgb, var(--theme-price) 52%, var(--theme-border)) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 98%, transparent), color-mix(in srgb, var(--theme-price) 18%, var(--theme-surface))),
+    color-mix(in srgb, var(--theme-price) 12%, var(--theme-surface)) !important;
+  color: var(--theme-price);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-price) 12%, transparent),
+    0 14px 24px -20px color-mix(in srgb, var(--theme-price) 42%, transparent) !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-icon {
+  width: 2.18rem !important;
+  height: 2.18rem !important;
+  border-radius: 0.82rem !important;
+  color: color-mix(in srgb, var(--theme-price) 76%, var(--theme-text));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 92%, transparent), color-mix(in srgb, var(--theme-price) 7%, var(--theme-surface)));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 68%, transparent);
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active .store-category-tile-icon {
+  color: var(--theme-price);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 68%, var(--theme-surface)), color-mix(in srgb, var(--theme-price) 12%, var(--theme-surface)));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 76%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-price) 18%, transparent);
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-icon img,
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-image--plain {
+  width: 1.95rem !important;
+  height: 1.95rem !important;
+  object-fit: contain;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-icon svg {
+  width: 1.58rem !important;
+  height: 1.58rem !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-label {
+  min-height: 0;
+  color: currentColor !important;
+  font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.15;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active .store-category-tile-label {
+  color: currentColor !important;
+  font-weight: 880;
+}
+
+html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile,
+html[data-app-scope="store"] .store-category-tablet-rail .store-category-switcher.store-category-rail--plain .store-category-tile {
+  border: 1px solid color-mix(in srgb, var(--theme-border) 78%, transparent) !important;
+  border-radius: 1rem !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 92%, transparent), color-mix(in srgb, var(--theme-bg) 70%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 82%, var(--theme-bg)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 64%, transparent),
+    0 10px 18px -18px color-mix(in srgb, var(--theme-price) 18%, transparent) !important;
+}
+
+html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile.is-active,
+html[data-app-scope="store"] .store-category-tablet-rail .store-category-switcher.store-category-rail--plain .store-category-tile.is-active {
+  border-color: color-mix(in srgb, var(--theme-price) 52%, var(--theme-border)) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 98%, transparent), color-mix(in srgb, var(--theme-price) 18%, var(--theme-surface))),
+    color-mix(in srgb, var(--theme-price) 12%, var(--theme-surface)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-price) 12%, transparent),
+    0 14px 24px -20px color-mix(in srgb, var(--theme-price) 42%, transparent) !important;
+}
+
+html[data-app-scope="store"] .store-category-subtabs {
+  min-width: 0;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--theme-price) 14%, var(--theme-border));
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 90%, transparent), color-mix(in srgb, var(--theme-bg) 70%, transparent)),
+    color-mix(in srgb, var(--theme-surface) 82%, var(--theme-bg));
+  padding: 0.24rem;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 64%, transparent),
+    0 10px 22px -24px color-mix(in srgb, var(--theme-price) 22%, transparent);
+}
+
+html[data-app-scope="store"] .store-category-mobile-tabs .store-category-subtabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-padding-inline: 0.24rem;
+}
+
+html[data-app-scope="store"] .store-category-subtab {
+  min-height: 2rem;
+  border-color: transparent;
+  background: transparent;
+  color: color-mix(in srgb, var(--theme-text-muted) 86%, var(--theme-text));
+  font-weight: 760;
+  box-shadow: none;
+}
+
+html[data-app-scope="store"] .store-category-subtab-active-bg {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 94%, transparent), color-mix(in srgb, var(--theme-price) 12%, var(--theme-surface)));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-price) 26%, transparent),
+    0 8px 18px -18px color-mix(in srgb, var(--theme-price) 34%, transparent);
+}
+
+html[data-app-scope="store"] .store-category-subtab-active-bg::after {
+  content: "";
+  position: absolute;
+  right: 0.82rem;
+  bottom: 0.24rem;
+  left: 0.82rem;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--theme-price);
+}
+
+html[data-app-scope="store"] .store-category-subtab-active-label {
+  color: var(--theme-price);
+  font-weight: 880;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-app-scope="store"] .store-category-switcher .store-category-tile:hover {
+    border-color: color-mix(in srgb, var(--theme-price) 30%, var(--theme-border)) !important;
+    color: var(--theme-text);
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 70%, transparent),
+      0 16px 26px -22px color-mix(in srgb, var(--theme-price) 30%, transparent) !important;
+  }
+
+  html[data-app-scope="store"] .store-category-subtab:hover {
+    color: var(--theme-text);
+    background: color-mix(in srgb, var(--theme-surface) 72%, transparent);
+  }
+}
+
+@media (min-width: 768px) {
+  html[data-app-scope="store"] .store-category-switcher.store-category-showcase--plain {
+    border-radius: 1.18rem !important;
+  }
+
+  html[data-app-scope="store"] .store-category-switcher .store-category-rail-scroll {
+    gap: 0.5rem !important;
+    padding: 0.5rem !important;
+    padding-right: 1.35rem !important;
+    scroll-padding-inline: 0.5rem !important;
+  }
+
+  html[data-app-scope="store"] .store-category-switcher .store-category-tile,
+  html[data-app-scope="store"] .store-category-switcher .store-category-tile-skeleton {
+    width: 5.35rem !important;
+    height: 4.4rem !important;
+    min-height: 4.4rem !important;
+  }
+
+  html[data-app-scope="store"] .store-category-tablet-subtabs.store-category-subtabs {
+    margin-top: 0.62rem;
+    border-top: 1px solid color-mix(in srgb, var(--theme-price) 14%, var(--theme-border));
+    border-radius: 1rem;
+    padding: 0.3rem;
+  }
+}
+
+html[data-app-scope="store"] .store-category-switcher.store-category-showcase--plain {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher.store-category-rail--plain::before,
+html[data-app-scope="store"] .store-category-switcher.store-category-rail--plain::after {
+  display: none !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-rail-scroll {
+  gap: 0.48rem !important;
+  padding: 0.18rem 0.5rem !important;
+  scroll-padding-inline: 0.5rem !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile,
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-skeleton,
+html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile,
+html[data-app-scope="store"] .store-category-tablet-rail .store-category-switcher.store-category-rail--plain .store-category-tile {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile::after,
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active::after {
+  display: none !important;
+  content: none !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active,
+html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile.is-active,
+html[data-app-scope="store"] .store-category-tablet-rail .store-category-switcher.store-category-rail--plain .store-category-tile.is-active {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--theme-primary);
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-icon,
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active .store-category-tile-icon {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile.is-active .store-category-tile-icon {
+  transform: translateY(-1px) scale(1.04);
+}
+
+html[data-app-scope="store"] .store-category-switcher .store-category-tile-label {
+  position: relative;
+  display: block !important;
+  min-height: 1.22rem;
+  padding-bottom: 0.35rem;
+  overflow: hidden;
+  text-align: center;
+}
+
+html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile.is-active .store-category-tile-label::after,
+html[data-app-scope="store"] .store-category-tablet-rail .store-category-switcher.store-category-rail--plain .store-category-tile.is-active .store-category-tile-label::after {
+  position: absolute;
+  right: auto;
+  bottom: 0.08rem;
+  left: 50%;
+  display: block;
+  width: 0.32rem;
+  height: 0.32rem;
+  margin: 0;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+  opacity: 0.88;
+  transform: translateX(-50%);
+}
+
+html[data-app-scope="store"] .store-category-subtabs,
+html[data-app-scope="store"] .store-category-tablet-subtabs.store-category-subtabs {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"] .store-category-subtab {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"] .store-category-subtab-active-bg {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 html[data-app-scope="store"] .store-category-mobile-tools {
   margin-top: 0;
   padding-inline: 0;

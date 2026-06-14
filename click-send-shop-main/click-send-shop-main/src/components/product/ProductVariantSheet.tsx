@@ -101,9 +101,21 @@ export default function ProductVariantSheet({
     : "";
   const currentPrice = intent === "buy" ? payableTotal : lineTotal;
   const footerActionLabel = soldOut ? "已售罄" : intent === "buy" ? "立即支付" : "加入购物车";
-  const footerActionText = intent === "buy" && !soldOut
-    ? `${footerActionLabel} RM ${formatMoney(currentPrice)}`
-    : footerActionLabel;
+  const footerActionContent = intent === "buy" && !soldOut ? (
+    <>
+      <span className="shrink-0 text-[var(--theme-price-foreground)]">{footerActionLabel}</span>
+      <span
+        className="h-5 w-px shrink-0 bg-[color-mix(in_srgb,var(--theme-price-foreground)_30%,transparent)]"
+        aria-hidden
+      />
+      <span className="inline-flex shrink-0 items-baseline gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-price-foreground)_14%,transparent)] px-2.5 py-1 text-[color-mix(in_srgb,var(--theme-price-foreground)_78%,rgb(250,204,21))]">
+        <span className="text-[11px] font-bold leading-none">RM</span>
+        <span className="text-base font-black leading-none tabular-nums">{formatMoney(currentPrice)}</span>
+      </span>
+    </>
+  ) : (
+    footerActionLabel
+  );
 
   const clampQty = (value: number) => {
     if (maxQty <= 0 || soldOut) return 0;
@@ -230,36 +242,47 @@ export default function ProductVariantSheet({
   );
 
   const productSummary = (
-    <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 md:border-0 md:bg-transparent md:p-0">
-      <div className="flex gap-3 md:block">
-        <RatioImage
-          src={heroImage || undefined}
-          alt={`${product.name} ${selectedSpecLabel}`}
-          ratio={THEME_PRODUCT_MEDIA_RATIO}
-          rounded="xl"
-          className="w-16 shrink-0 self-start border border-[var(--theme-border)] bg-[var(--theme-bg)] md:mx-auto md:w-full md:max-w-[220px]"
-          imgClassName="object-cover md:object-contain"
-          sizes="(max-width: 767px) 64px, 220px"
-          loading="eager"
-          fetchPriority="high"
-        />
-        <div className="min-w-0 flex-1 md:hidden">
-          <p className="line-clamp-2 text-sm font-semibold leading-snug text-[var(--theme-text)]">{product.name}</p>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="text-2xl font-black tabular-nums text-[var(--theme-price)]">
-              RM {formatMoney(currentPrice)}
+    <div className="overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 lg:p-4">
+      <RatioImage
+        src={heroImage || undefined}
+        alt={`${product.name} ${selectedSpecLabel}`}
+        ratio={THEME_PRODUCT_MEDIA_RATIO}
+        rounded="xl"
+        className="mx-auto w-full max-w-[24rem] border border-[var(--theme-border)] bg-[var(--theme-bg)]"
+        imgClassName="object-contain"
+        sizes="(max-width: 767px) calc(100vw - 4rem), 384px"
+        loading="eager"
+        fetchPriority="high"
+      />
+      <div className="mt-3 min-w-0">
+        <p className="line-clamp-2 text-sm font-semibold leading-snug text-[var(--theme-text)] lg:text-base">
+          {product.name}
+        </p>
+        <div className="mt-2 flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
+          <span className="pb-1 text-xs font-bold leading-none text-[var(--theme-price)]">RM</span>
+          <span className="text-[1.85rem] font-black leading-none tabular-nums text-[var(--theme-price)]">
+            {formatMoney(currentPrice)}
+          </span>
+          {showOriginalPrice ? (
+            <span className="pb-1 text-xs text-[var(--theme-text-muted)] line-through">
+              RM {formatMoney(originalTotal)}
             </span>
-            {showOriginalPrice ? (
-              <span className="text-xs text-[var(--theme-text-muted)] line-through">
-                RM {formatMoney(originalTotal)}
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-text-muted)]">
-            已选：{selectedSpecLabel}
-            {selectedCouponLabel ? ` / ${selectedCouponLabel}` : ""}
-          </p>
+          ) : null}
         </div>
+        {intent === "buy" && totalDiscount > 0 ? (
+          <UnifiedButton
+            type="button"
+            onClick={() => setDiscountDetailOpen(true)}
+            className="mt-2 inline-flex min-h-7 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2.5 py-1 text-xs font-semibold text-[var(--theme-price)]"
+          >
+            共减 RM {formatMoney(totalDiscount)}
+            <ChevronRight size={12} />
+          </UnifiedButton>
+        ) : null}
+        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[var(--theme-text-muted)]">
+          已选：{selectedSpecLabel}
+          {selectedCouponLabel ? ` / ${selectedCouponLabel}` : ""}
+        </p>
       </div>
     </div>
   );
@@ -408,34 +431,6 @@ export default function ProductVariantSheet({
 
   const purchaseControls = (
     <div className="space-y-4">
-      <div className="hidden md:block">
-        <p className="line-clamp-2 text-lg font-bold leading-snug text-[var(--theme-text)]">{product.name}</p>
-        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="text-3xl font-black tabular-nums text-[var(--theme-price)]">
-            RM {formatMoney(currentPrice)}
-          </span>
-          {showOriginalPrice ? (
-            <span className="text-sm text-[var(--theme-text-muted)] line-through">
-              RM {formatMoney(originalTotal)}
-            </span>
-          ) : null}
-        </div>
-        <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
-          已选：{selectedSpecLabel}
-          {selectedCouponLabel ? ` / ${selectedCouponLabel}` : ""}
-        </p>
-        {intent === "buy" && totalDiscount > 0 ? (
-          <UnifiedButton
-            type="button"
-            onClick={() => setDiscountDetailOpen(true)}
-            className="mt-2 inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2.5 py-1 text-xs font-semibold text-[var(--theme-price)]"
-          >
-            共减 RM {formatMoney(totalDiscount)}
-            <ChevronRight size={12} />
-          </UnifiedButton>
-        ) : null}
-      </div>
-
       {variantSelector}
 
       {selected ? (
@@ -465,6 +460,12 @@ export default function ProductVariantSheet({
         height="90vh"
         presentation={isMobile ? "sheet" : "dialog"}
         dialogClassName="sm:max-w-[860px]"
+        closeButtonPlacement={intent === "buy" ? "outside" : "inside"}
+        closeButtonClassName={
+          intent === "buy"
+            ? "bg-[var(--theme-surface)] shadow-[var(--theme-shadow-control)] hover:bg-[var(--theme-bg)]"
+            : undefined
+        }
         className={cn(
           "bg-[var(--theme-surface)]",
           intent === "buy" &&
@@ -478,9 +479,9 @@ export default function ProductVariantSheet({
               variant="gold"
               disabled={soldOut || maxQty <= 0 || (hasMatrix && !selected)}
               onClick={onConfirm}
-              className="min-h-12 w-full rounded-full px-5 text-base font-bold"
+              className="min-h-12 w-full gap-3 rounded-full px-5 text-base font-bold"
             >
-              {footerActionText}
+              {footerActionContent}
             </SquishButton>
           ) : (
             <div className="flex items-center gap-3">
@@ -497,20 +498,20 @@ export default function ProductVariantSheet({
                 onClick={onConfirm}
                 className="min-h-12 w-[46%] min-w-[9rem] rounded-full text-sm font-semibold md:w-[14rem]"
               >
-                {footerActionText}
+                {footerActionContent}
               </SquishButton>
             </div>
           )
         }
       >
-        <div className="space-y-5 pb-2 md:grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:gap-6 md:space-y-0">
-          <div className="space-y-4 md:rounded-[24px] md:bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))] md:p-4">
+        <div className="space-y-5 pb-2 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-6 lg:space-y-0">
+          <div className="space-y-4">
             {productSummary}
-            <div className="hidden md:block">{productDetailList}</div>
+            <div className="hidden lg:block">{productDetailList}</div>
           </div>
           <div className="space-y-5">
             {purchaseControls}
-            <div className="md:hidden">{productDetailList}</div>
+            <div className="lg:hidden">{productDetailList}</div>
           </div>
         </div>
       </AppModal>

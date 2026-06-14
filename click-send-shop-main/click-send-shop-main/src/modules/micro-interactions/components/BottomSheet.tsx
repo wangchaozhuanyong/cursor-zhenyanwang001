@@ -22,6 +22,8 @@ export type BottomSheetProps = {
   height?: BottomSheetHeight;
   showHandle?: boolean;
   showCloseButton?: boolean;
+  closeButtonPlacement?: "inside" | "outside";
+  closeButtonClassName?: string;
   closeOnOverlay?: boolean;
   stickyFooter?: boolean;
   className?: string;
@@ -55,6 +57,8 @@ export function BottomSheet({
   height = "auto",
   showHandle = true,
   showCloseButton = true,
+  closeButtonPlacement = "inside",
+  closeButtonClassName,
   closeOnOverlay = true,
   stickyFooter = Boolean(footer),
   className,
@@ -107,6 +111,8 @@ export function BottomSheet({
   const childInitial = reduced ? false : { opacity: 0, y: 10 };
   const childAnimate = open || reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 };
   const childExit = reduced ? { opacity: 0 } : { opacity: 0, y: 8 };
+  const showInsideCloseButton = showCloseButton && closeButtonPlacement === "inside";
+  const showOutsideCloseButton = showCloseButton && closeButtonPlacement === "outside";
 
   const dragConstraints = useMemo(() => ({ top: 0, bottom: 0 }), []);
 
@@ -140,6 +146,21 @@ export function BottomSheet({
             transition={overlayTransition}
             onClick={closeOnOverlay ? onClose : undefined}
           />
+
+          {showOutsideCloseButton ? (
+            <UnifiedButton
+              type="button"
+              onClick={onClose}
+              className={cn(
+                "app-bottom-sheet-close absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full border text-[var(--theme-text-muted)] transition",
+                closeButtonClassName,
+              )}
+              style={{ zIndex: contentZ + 1 }}
+              aria-label="关闭"
+            >
+              <X size={19} />
+            </UnifiedButton>
+          ) : null}
 
           <motion.section
             ref={sheetRef}
@@ -189,7 +210,7 @@ export function BottomSheet({
                 </UnifiedButton>
               ) : null}
 
-              {(hasTitle || showCloseButton) && (
+              {(hasTitle || showInsideCloseButton) && (
                 <motion.div
                   className="app-bottom-sheet-header flex shrink-0 items-start justify-between gap-3 px-5 pb-3 pt-2"
                   drag={false}
@@ -210,7 +231,7 @@ export function BottomSheet({
                       </p>
                     ) : null}
                   </motion.div>
-                  {showCloseButton ? (
+                  {showInsideCloseButton ? (
                     <UnifiedButton
                       type="button"
                       onClick={onClose}

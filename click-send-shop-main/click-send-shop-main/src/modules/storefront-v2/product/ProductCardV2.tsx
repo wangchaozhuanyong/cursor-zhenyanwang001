@@ -1,9 +1,12 @@
 import { Link } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { cn } from "@/lib/utils";
+import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { storefrontCardClassName } from "../design/classes";
 import { storefrontV2Tokens as t } from "../design/tokens";
+import { useClientDesignStyle } from "../design/useClientDesignStyle";
 import StorefrontBadge from "../components/StorefrontBadge";
 import StorefrontPrice from "../components/StorefrontPrice";
 import { buildProductCardV2Model } from "./productCardV2Model";
@@ -27,23 +30,42 @@ export default function ProductCardV2({
   onClick,
 }: ProductCardV2Props) {
   const vm = buildProductCardV2Model(product);
+  const href = appendThemePreviewParams(vm.href);
+  const clientStyle = useClientDesignStyle();
+  const cardToneClassName = cn(
+    clientStyle === "black_gold" && "border-[color-mix(in_srgb,var(--theme-primary)_22%,var(--theme-border))] bg-[var(--theme-surface)] shadow-[0_14px_38px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
+    clientStyle === "deep_enterprise" && "rounded-[0.875rem] shadow-[0_10px_28px_rgba(15,23,42,0.07)]",
+    clientStyle === "blue_portal" && "shadow-[0_12px_34px_rgba(37,99,235,0.08)]",
+  );
+  const imageClassName = cn(
+    "relative overflow-hidden bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-bg))]",
+    clientStyle === "deep_enterprise" ? "rounded-[0.75rem]" : "rounded-[0.95rem]",
+    clientStyle === "black_gold" && "bg-[linear-gradient(145deg,#F8F5EA,#FFFFFF)]",
+  );
+  const actionClassName = cn(
+    "grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--theme-primary)] transition group-hover:bg-[var(--theme-primary)] group-hover:text-[var(--theme-primary-foreground)]",
+    clientStyle === "black_gold"
+      ? "bg-[color-mix(in_srgb,var(--theme-primary)_16%,var(--theme-surface))] ring-1 ring-[color-mix(in_srgb,var(--theme-primary)_28%,transparent)]"
+      : "bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]",
+  );
   const loading = index < 4 ? "eager" : "lazy";
   const fetchPriority = index === 0 ? "high" : undefined;
 
   if (variant === "list") {
     return (
       <Link
-        to={vm.href}
+        to={href}
         onClick={onClick}
         className={cn(
           storefrontCardClassName(),
-          "flex min-w-0 gap-3 p-3",
+          "group flex min-w-0 gap-3 p-2.5 hover:-translate-y-0.5 sm:p-3",
+          cardToneClassName,
           className,
         )}
         aria-label={`查看 ${vm.name}`}
       >
         <div
-          className="relative w-16 shrink-0 self-start overflow-hidden rounded-xl bg-[var(--theme-bg)] sm:w-20"
+          className={cn(imageClassName, "w-[5.25rem] shrink-0 self-start sm:w-24")}
           style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
         >
           <ProductCoverImage
@@ -63,8 +85,15 @@ export default function ProductCardV2({
           <BadgeRow badges={vm.badges} subtle />
           <DecisionMetaRow items={vm.decisionTexts} />
           {showPrice ? (
-            <div className="mt-auto pt-2">
+            <div className="mt-auto flex items-end justify-between gap-2 pt-3">
               <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
+              <span className={cn(
+                "hidden h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] font-black text-[var(--theme-primary)] sm:inline-flex",
+                clientStyle === "black_gold" ? "bg-[color-mix(in_srgb,var(--theme-primary)_15%,var(--theme-surface))]" : "bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]",
+              )}>
+                查看
+                <ArrowUpRight size={12} />
+              </span>
             </div>
           ) : null}
         </div>
@@ -74,17 +103,21 @@ export default function ProductCardV2({
 
   return (
     <Link
-      to={vm.href}
+      to={href}
       onClick={onClick}
       className={cn(
         storefrontCardClassName(),
-        "group flex min-w-0 flex-col overflow-hidden",
+        "group flex min-w-0 flex-col overflow-hidden p-1.5 hover:-translate-y-0.5",
+        cardToneClassName,
         variant === "compact" && "max-w-[13rem]",
         className,
       )}
       aria-label={`查看 ${vm.name}`}
     >
-      <div className="relative w-full overflow-hidden bg-[var(--theme-bg)]" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
+      <div
+        className={cn(imageClassName, "w-full")}
+        style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
+      >
         <ProductCoverImage
           url={vm.imageUrl}
           alt={vm.imageAlt}
@@ -106,12 +139,15 @@ export default function ProductCardV2({
         {vm.soldOut ? <SoldOutMask /> : null}
       </div>
 
-      <div className="flex min-h-[126px] flex-1 flex-col p-2.5">
+      <div className="flex min-h-[132px] flex-1 flex-col px-1.5 pb-2 pt-3 sm:px-2">
         <h3 className={t.text.productTitle}>{vm.name}</h3>
         <DecisionMetaRow items={vm.decisionTexts} />
         {showPrice ? (
-          <div className="mt-auto pt-2">
+          <div className="mt-auto flex items-end justify-between gap-2 pt-3">
             <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
+            <span className={actionClassName}>
+              <ArrowUpRight size={14} />
+            </span>
           </div>
         ) : null}
       </div>

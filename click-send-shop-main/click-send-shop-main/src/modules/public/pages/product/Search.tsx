@@ -4,6 +4,7 @@ import { ArrowLeft, Search as SearchIcon, TrendingUp } from "lucide-react";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -40,6 +41,7 @@ export default function Search() {
   const goBack = useGoBack("/");
   const [searchParams, setSearchParams] = useSearchParams();
   const { themeConfig } = useThemeRuntime();
+  const clientStyle = useClientDesignStyle();
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
@@ -174,7 +176,17 @@ export default function Search() {
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
 
   return (
-    <div className="store-page-shell store-search-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div
+      className={cn(
+        "store-page-shell store-search-page store-bottom-safe text-[var(--theme-text)]",
+        clientStyle === "black_gold"
+          ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_0%,var(--theme-bg)_22rem,var(--theme-bg)_100%)]"
+          : clientStyle === "deep_enterprise"
+            ? "bg-[linear-gradient(180deg,#101B34_0%,#101B34_6rem,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_6rem,var(--theme-bg)_24rem,var(--theme-bg)_100%)]"
+            : "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))_0%,var(--theme-bg)_22rem,color-mix(in_srgb,var(--theme-primary)_3%,var(--theme-bg))_100%)]",
+      )}
+      data-storefront-client-style={clientStyle}
+    >
       <SeoHead
         title={`搜索结果｜${siteName}`}
         description={`查看${siteName}站内搜索结果，快速查找相关服务、商品和帮助内容。`}
@@ -213,8 +225,9 @@ export default function Search() {
       <main className="mx-auto max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] md:px-6 md:py-6">
         {shouldShowHotSearch && hotTerms.length > 0 && (
           <section className="store-discovery-section mb-6">
+            <div className="mb-3 h-1 w-8 rounded-full bg-[var(--theme-primary)]" aria-hidden />
             <h3 className="store-section-title mb-3 flex items-center gap-1.5 text-foreground">
-              <TrendingUp size={14} className="text-theme-price" /> 热门搜索
+              <TrendingUp size={14} className="text-[var(--theme-primary)]" /> 热门搜索
             </h3>
             <div className="flex flex-wrap gap-2 md:max-w-2xl">
               {hotTerms.map((term) => (
@@ -222,7 +235,7 @@ export default function Search() {
                   key={term.keyword}
                   type="button"
                   onClick={() => commitSearch(term.keyword)}
-                  className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text)]"
+                  className="rounded-full border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[var(--theme-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-text)] shadow-sm"
                 >
                   {term.keyword}
                   <span className="ml-1 text-[10px] text-muted-foreground">{term.search_count}</span>
@@ -233,7 +246,7 @@ export default function Search() {
         )}
 
         {shouldShowSuggestions && (
-          <div className="store-suggestion-panel mb-5 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+          <div className="store-suggestion-panel mb-5 overflow-hidden rounded-[1.125rem] border border-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-border))] bg-[var(--theme-surface)] shadow-[0_12px_36px_color-mix(in_srgb,var(--theme-primary)_8%,transparent)]">
             {suggestions.map((item) => (
               <UnifiedButton
                 key={`${item.source}-${item.keyword}`}

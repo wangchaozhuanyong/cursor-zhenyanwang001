@@ -6,10 +6,14 @@ export const PREMIUM_PEARL_BLUSH_SKIN_ID = "premium_pearl_blush";
 export const PREMIUM_PORCELAIN_JADE_SKIN_ID = "premium_porcelain_jade";
 export const PREMIUM_SKY_SILK_SKIN_ID = "premium_sky_silk";
 export const PREMIUM_APRICOT_SAND_SKIN_ID = "premium_apricot_sand";
+export const CLIENT_BLUE_PORTAL_SKIN_ID = "client_blue_portal";
+export const CLIENT_SKY_TECH_SKIN_ID = "client_sky_tech";
+export const CLIENT_BLACK_GOLD_SKIN_ID = "client_black_gold";
+export const CLIENT_DEEP_ENTERPRISE_SKIN_ID = "client_deep_enterprise";
 export const FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID = "festival_spring_ruby_gold";
 export const FESTIVAL_MOON_ORANGE_GOLD_SKIN_ID = "festival_moon_orange_gold";
 
-export const DEFAULT_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
+export const DEFAULT_SKIN_ID = CLIENT_SKY_TECH_SKIN_ID;
 export const DEFAULT_HOLIDAY_SKIN_ID = FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID;
 
 export const RETIRED_SYSTEM_SKIN_IDS = new Set([
@@ -23,7 +27,7 @@ export const RETIRED_SYSTEM_SKIN_IDS = new Set([
   "organic_sandstone",
 ]);
 
-export const DAILY_COMMERCE_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
+export const DAILY_COMMERCE_SKIN_ID = CLIENT_SKY_TECH_SKIN_ID;
 export const FESTIVAL_SKIN_ID = FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID;
 
 export const PREMIUM_CHAMPAGNE_IVORY_CONFIG: ThemeConfig = {
@@ -111,6 +115,74 @@ export const PREMIUM_APRICOT_SAND_CONFIG: ThemeConfig = {
   ...STOREFRONT_DESIGN_LOCKS,
 };
 
+export const CLIENT_BLUE_PORTAL_CONFIG: ThemeConfig = {
+  skinName: "蓝白内容门户·知识商城",
+  bgColor: "#F5F8FF",
+  surfaceColor: "#FFFFFF",
+  primaryColor: "#2563EB",
+  secondaryColor: "#E8F1FF",
+  accentColor: "#10B981",
+  priceColor: "#D94A34",
+  textColor: "#0F172A",
+  mutedTextColor: "#64748B",
+  borderColor: "#D9E6F7",
+  successColor: "#0F8A63",
+  warningColor: "#B7791F",
+  dangerColor: "#C24132",
+  ...STOREFRONT_DESIGN_LOCKS,
+};
+
+export const CLIENT_SKY_TECH_CONFIG: ThemeConfig = {
+  skinName: "浅蓝科技专业·高效客户端",
+  bgColor: "#F7FBFF",
+  surfaceColor: "#FFFFFF",
+  primaryColor: "#0EA5E9",
+  secondaryColor: "#E7F4FF",
+  accentColor: "#1D4ED8",
+  priceColor: "#C84A33",
+  textColor: "#111827",
+  mutedTextColor: "#64748B",
+  borderColor: "#D8E7F5",
+  successColor: "#0F8A63",
+  warningColor: "#B7791F",
+  dangerColor: "#C24132",
+  ...STOREFRONT_DESIGN_LOCKS,
+};
+
+export const CLIENT_BLACK_GOLD_CONFIG: ThemeConfig = {
+  skinName: "黑金高端·臻选商城",
+  bgColor: "#F5F5F3",
+  surfaceColor: "#FFFFFF",
+  primaryColor: "#D4AF37",
+  secondaryColor: "#F1E8D2",
+  accentColor: "#A47A22",
+  priceColor: "#A47A22",
+  textColor: "#1A1A1A",
+  mutedTextColor: "#6F6658",
+  borderColor: "#E3D9C6",
+  successColor: "#69A67D",
+  warningColor: "#D0A23A",
+  dangerColor: "#D56A4A",
+  ...STOREFRONT_DESIGN_LOCKS,
+};
+
+export const CLIENT_DEEP_ENTERPRISE_CONFIG: ThemeConfig = {
+  skinName: "深蓝企业系统·全站规范",
+  bgColor: "#F5F8FD",
+  surfaceColor: "#FFFFFF",
+  primaryColor: "#1D4ED8",
+  secondaryColor: "#E8EEF8",
+  accentColor: "#0F766E",
+  priceColor: "#C2412D",
+  textColor: "#0F172A",
+  mutedTextColor: "#5F6F85",
+  borderColor: "#D9E3F2",
+  successColor: "#0F8A63",
+  warningColor: "#B7791F",
+  dangerColor: "#C24132",
+  ...STOREFRONT_DESIGN_LOCKS,
+};
+
 export const FESTIVAL_SPRING_RUBY_GOLD_CONFIG: ThemeConfig = {
   skinName: "新春红金·喜庆大促",
   bgColor: "#FFF5EC",
@@ -190,6 +262,42 @@ export const PREMIUM_APRICOT_SAND_SKIN: ThemeSkin = {
   config: PREMIUM_APRICOT_SAND_CONFIG,
 };
 
+export const CLIENT_BLUE_PORTAL_SKIN: ThemeSkin = {
+  id: CLIENT_BLUE_PORTAL_SKIN_ID,
+  name: "蓝白内容门户",
+  description: "参考 1111。大面积留白、蓝色导航、内容平台式卡片与清晰信息层级，适合知识型商城和综合客户端。",
+  category: "客户端重构",
+  sceneTag: "mall",
+  config: CLIENT_BLUE_PORTAL_CONFIG,
+};
+
+export const CLIENT_SKY_TECH_SKIN: ThemeSkin = {
+  id: CLIENT_SKY_TECH_SKIN_ID,
+  name: "浅蓝科技专业",
+  description: "参考 444。浅蓝科技感、干净高效、桌面和移动端都偏专业工具型，作为新版客户端默认风格。",
+  category: "客户端重构",
+  sceneTag: "mall",
+  config: CLIENT_SKY_TECH_CONFIG,
+};
+
+export const CLIENT_BLACK_GOLD_SKIN: ThemeSkin = {
+  id: CLIENT_BLACK_GOLD_SKIN_ID,
+  name: "黑金高端",
+  description: "参考 222。黑金高端生活方式视觉，强调质感、价格价值感和高客单商品浏览体验。",
+  category: "客户端重构",
+  sceneTag: "premium",
+  config: CLIENT_BLACK_GOLD_CONFIG,
+};
+
+export const CLIENT_DEEP_ENTERPRISE_SKIN: ThemeSkin = {
+  id: CLIENT_DEEP_ENTERPRISE_SKIN_ID,
+  name: "深蓝企业系统",
+  description: "参考 333。深蓝企业级规范、蓝白内容页面和系统化组件节奏，适合可信、专业、全站式客户端。",
+  category: "客户端重构",
+  sceneTag: "visa",
+  config: CLIENT_DEEP_ENTERPRISE_CONFIG,
+};
+
 export const FESTIVAL_SPRING_RUBY_GOLD_SKIN: ThemeSkin = {
   id: FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID,
   name: "新春红金·喜庆大促",
@@ -210,16 +318,20 @@ export const FESTIVAL_MOON_ORANGE_GOLD_SKIN: ThemeSkin = {
 
 export const DEFAULT_LIFE_GREEN_CONFIG = PREMIUM_CHAMPAGNE_IVORY_CONFIG;
 export const PREMIUM_IVORY_JADE_CONFIG = PREMIUM_CHAMPAGNE_IVORY_CONFIG;
-export const DAILY_COMMERCE_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
+export const DAILY_COMMERCE_SKIN = CLIENT_SKY_TECH_SKIN;
 export const FESTIVAL_RUBY_GOLD_SKIN = FESTIVAL_SPRING_RUBY_GOLD_SKIN;
 export const PREMIUM_IVORY_JADE_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
 
-export const FALLBACK_THEME_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
+export const FALLBACK_THEME_SKIN = CLIENT_SKY_TECH_SKIN;
 export const THEME_PRESETS: ThemeSkin[] = [
+  CLIENT_SKY_TECH_SKIN,
+  CLIENT_BLUE_PORTAL_SKIN,
+  CLIENT_DEEP_ENTERPRISE_SKIN,
+  CLIENT_BLACK_GOLD_SKIN,
+  PREMIUM_SKY_SILK_SKIN,
   PREMIUM_CHAMPAGNE_IVORY_SKIN,
   PREMIUM_PEARL_BLUSH_SKIN,
   PREMIUM_PORCELAIN_JADE_SKIN,
-  PREMIUM_SKY_SILK_SKIN,
   PREMIUM_APRICOT_SAND_SKIN,
   FESTIVAL_SPRING_RUBY_GOLD_SKIN,
   FESTIVAL_MOON_ORANGE_GOLD_SKIN,

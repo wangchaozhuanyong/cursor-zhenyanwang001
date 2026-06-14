@@ -12,6 +12,8 @@ export type ModalDialogProps = {
   className?: string;
   closeOnOverlay?: boolean;
   showCloseButton?: boolean;
+  closeButtonPlacement?: "inside" | "outside";
+  closeButtonClassName?: string;
   hasTitle?: boolean;
   hasDescription?: boolean;
   ariaLabel?: string;
@@ -25,6 +27,8 @@ export function ModalDialog({
   className,
   closeOnOverlay = true,
   showCloseButton = true,
+  closeButtonPlacement = "inside",
+  closeButtonClassName,
   hasTitle = true,
   hasDescription = true,
   ariaLabel,
@@ -36,6 +40,8 @@ export function ModalDialog({
     ...(hasTitle ? {} : { "aria-labelledby": undefined, "aria-label": resolvedAriaLabel }),
     ...(hasDescription ? {} : { "aria-describedby": undefined }),
   };
+  const showInsideCloseButton = showCloseButton && closeButtonPlacement === "inside";
+  const showOutsideCloseButton = showCloseButton && closeButtonPlacement === "outside";
 
   useEffect(() => {
     if (!open || hasTitle || ariaLabel || !import.meta.env.DEV) return;
@@ -57,7 +63,8 @@ export function ModalDialog({
         />
         <DialogPrimitive.Content
           className={cn(
-            "fixed left-1/2 top-1/2 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-0 text-[var(--theme-text)] shadow-[var(--theme-shadow-hover)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+            "fixed left-1/2 top-1/2 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-0 text-[var(--theme-text)] shadow-[var(--theme-shadow-hover)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+            showOutsideCloseButton ? "overflow-visible" : "overflow-hidden",
             "data-[state=closed]:pointer-events-none",
             className,
           )}
@@ -74,7 +81,13 @@ export function ModalDialog({
           {showCloseButton ? (
             <DialogPrimitive.Close
               type="button"
-              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)]"
+              className={cn(
+                "absolute flex items-center justify-center rounded-full border border-[var(--theme-border)] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)]",
+                showInsideCloseButton && "right-4 top-4 h-9 w-9",
+                showOutsideCloseButton &&
+                  "-right-3 -top-3 h-11 w-11 bg-[var(--theme-surface)] shadow-[var(--theme-shadow-control)]",
+                closeButtonClassName,
+              )}
               aria-label="关闭"
             >
               <X size={18} />

@@ -70,6 +70,10 @@ const SCENE_TAG_VALUES: ThemeSceneTag[] = [
 ];
 
 const PRESET_SCENE_BY_ID: Record<string, ThemeSceneTag> = {
+  client_blue_portal: "mall",
+  client_sky_tech: "mall",
+  client_black_gold: "premium",
+  client_deep_enterprise: "visa",
   premium_champagne_ivory: "premium",
   premium_pearl_blush: "premium",
   premium_porcelain_jade: "premium",

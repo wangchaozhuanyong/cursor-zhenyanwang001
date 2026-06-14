@@ -13,8 +13,10 @@ import {
 import { THEME_REVISION_KEY } from "@/lib/themeRevision";
 import { resolvePublicThemeFromSkin } from "@/lib/publicTheme";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
+import { getClientDesignStyleBySkinId } from "@/utils/clientDesignStyle";
 import { generateThemePalette } from "@/utils/themeContrast";
 import { normalizeThemeConfig, normalizeThemeSkinsPayload, resolveRuntimeThemeSkinId } from "@/utils/themeConfig";
+import { readThemePreviewSkinId } from "@/utils/themePreviewParams";
 import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 
 type ThemeMode = "light" | "dark";
@@ -49,6 +51,7 @@ function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?:
   root.setAttribute("data-admin-theme", config.adminThemeMode);
   if (skin?.id) root.setAttribute("data-theme-skin-id", skin.id);
   else root.removeAttribute("data-theme-skin-id");
+  root.setAttribute("data-client-design-style", getClientDesignStyleBySkinId(skin?.id));
   if (skin?.category) root.setAttribute("data-theme-category", skin.category);
   else root.removeAttribute("data-theme-category");
   if (skin?.sceneTag) root.setAttribute("data-theme-scene", skin.sceneTag);
@@ -84,6 +87,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const [themeReady, setThemeReady] = useState(initial.ready);
   const [themeSynced, setThemeSynced] = useState(false);
   const [inAdminScope, setInAdminScope] = useState(() => isAdminScope());
+  const [urlSkinId, setUrlSkinId] = useState(() => readThemePreviewSkinId());
   const [previewOverride, setPreviewOverride] = useState<{ config: ThemeConfig; skinKey?: string } | null>(null);
   const previewFrame = useMemo(() => isThemePreviewFrame(), []);
 
@@ -92,6 +96,17 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     syncScope();
     window.addEventListener("app:scope-changed", syncScope);
     return () => window.removeEventListener("app:scope-changed", syncScope);
+  }, []);
+
+  useEffect(() => {
+    const syncUrlSkin = () => setUrlSkinId(readThemePreviewSkinId());
+    syncUrlSkin();
+    window.addEventListener("popstate", syncUrlSkin);
+    window.addEventListener("app:scope-changed", syncUrlSkin);
+    return () => {
+      window.removeEventListener("popstate", syncUrlSkin);
+      window.removeEventListener("app:scope-changed", syncUrlSkin);
+    };
   }, []);
 
   useEffect(() => {
@@ -197,8 +212,12 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     setThemeConfig(normalizeThemeConfig(active?.config));
   }, [skinId, skins]);
 
-  const effectiveThemeConfig = previewOverride?.config ?? themeConfig;
-  const effectiveSkinId = previewOverride?.skinKey ? `preview-${previewOverride.skinKey}` : skinId;
+  const urlSkin = useMemo(
+    () => (urlSkinId ? skins.find((skin) => skin.id === urlSkinId) ?? null : null),
+    [skins, urlSkinId],
+  );
+  const effectiveThemeConfig = previewOverride?.config ?? urlSkin?.config ?? themeConfig;
+  const effectiveSkinId = previewOverride?.skinKey ? `preview-${previewOverride.skinKey}` : urlSkin?.id ?? skinId;
 
   const appliedConfig = useMemo(
     () => resolveThemeConfigForScope(effectiveThemeConfig, inAdminScope),
@@ -206,7 +225,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   );
 
   const appliedSkin = useMemo(() => {
-    const active = skins.find((skin) => skin.id === skinId) ?? skins[0] ?? null;
+    const active = skins.find((skin) => skin.id === effectiveSkinId) ?? skins.find((skin) => skin.id === skinId) ?? skins[0] ?? null;
     if (!previewOverride) return active;
     return {
       ...(active ?? {
@@ -281,7 +300,8 @@ function getInitialThemeState() {
     skins: cachedSkins.length > 0 ? cachedSkins : THEME_PRESETS,
   });
   const sourceSkins = normalized.skins;
-  const active = sourceSkins.find((skin) => skin.id === DEFAULT_SKIN_ID) ?? sourceSkins[0];
+  const previewSkinId = readThemePreviewSkinId();
+  const active = sourceSkins.find((skin) => skin.id === previewSkinId) ?? sourceSkins.find((skin) => skin.id === DEFAULT_SKIN_ID) ?? sourceSkins[0];
 
   return {
     skins: sourceSkins,

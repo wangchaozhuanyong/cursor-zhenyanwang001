@@ -31,6 +31,10 @@ export const PUBLIC_THEME_DESCRIPTIONS: Record<PublicTheme, string> = {
 };
 
 const SKIN_PUBLIC_THEME_MAP: Record<string, PublicTheme> = {
+  client_blue_portal: "pearl-slate",
+  client_sky_tech: "pearl-slate",
+  client_black_gold: "ivory-gold",
+  client_deep_enterprise: "pearl-slate",
   premium_champagne_ivory: "ivory-gold",
   premium_sky_silk: "pearl-slate",
   premium_apricot_sand: "linen-walnut",

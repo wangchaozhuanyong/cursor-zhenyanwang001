@@ -11,6 +11,7 @@ export default function StorefrontTitleRow({ title, subtitle, action }: Storefro
   return (
     <div className="mb-3 flex items-end justify-between gap-3 md:mb-4">
       <div className="min-w-0">
+        <div className="mb-2 h-1 w-8 rounded-full bg-[var(--theme-primary)]" aria-hidden />
         <h2 className={t.text.sectionTitle}>{title}</h2>
         {subtitle ? <p className={t.text.sectionSubtitle}>{subtitle}</p> : null}
       </div>

@@ -42,6 +42,8 @@ export function ResponsiveSheet({
   children,
   showHandle,
   showCloseButton,
+  closeButtonPlacement,
+  closeButtonClassName,
   closeOnOverlay = true,
   stickyFooter,
   className,
@@ -78,6 +80,8 @@ export function ResponsiveSheet({
         height={height}
         showHandle={showHandle}
         showCloseButton={showCloseButton}
+        closeButtonPlacement={closeButtonPlacement}
+        closeButtonClassName={closeButtonClassName}
         closeOnOverlay={closeOnOverlay}
         stickyFooter={stickyFooter}
         className={className}
@@ -94,6 +98,8 @@ export function ResponsiveSheet({
       onClose={onClose}
       closeOnOverlay={closeOnOverlay}
       showCloseButton={showCloseButton}
+      closeButtonPlacement={closeButtonPlacement}
+      closeButtonClassName={closeButtonClassName}
       hasTitle={hasTitle}
       hasDescription={Boolean(description)}
       ariaLabel={ariaLabel}

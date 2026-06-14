@@ -30,6 +30,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useProductPurchaseCouponChoice } from "@/hooks/useProductPurchaseCouponChoice";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 import { getProductGridClassName } from "@/utils/productGridClasses";
 import { THEME_BTN_ACCENT_SOLID } from "@/utils/themeVisuals";
 import { trackEvent } from "@/services/analyticsService";
@@ -94,7 +95,15 @@ export default function ProductDetail() {
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
+  const clientStyle = useClientDesignStyle();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
+  const pageBgClass = cn(
+    clientStyle === "black_gold"
+      ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_0%,var(--theme-bg)_24rem,var(--theme-bg)_100%)]"
+      : clientStyle === "deep_enterprise"
+        ? "bg-[linear-gradient(180deg,#101B34_0%,#101B34_7rem,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_7rem,var(--theme-bg)_24rem,var(--theme-bg)_100%)]"
+        : "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))_0%,var(--theme-bg)_24rem,color-mix(in_srgb,var(--theme-primary)_3%,var(--theme-bg))_100%)]",
+  );
   const purchaseAvailableVariants = product
     ? (product.variants ?? []).filter((v) => v.id && v.enabled !== false)
     : [];
@@ -160,7 +169,7 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="store-bottom-action-space min-h-screen bg-background md:pb-0">
+      <div className={cn("store-bottom-action-space min-h-screen md:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
         <ProductDetailStickyHeader
           solid={false}
           onBack={goBack}
@@ -183,7 +192,7 @@ export default function ProductDetail() {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-[var(--theme-bg)]">
+      <div className={cn("min-h-screen", pageBgClass)} data-storefront-client-style={clientStyle}>
         <ProductDetailStickyHeader
           solid
           onBack={goBack}
@@ -424,7 +433,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="store-conversion-page store-product-detail-page store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
+    <div className={cn("store-conversion-page store-product-detail-page store-bottom-action-space min-h-screen text-[var(--theme-text)] md:pb-0 lg:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
       <SeoHead
         title={`${product.name}｜${siteName}`}
         description={productDescription}
@@ -569,15 +578,16 @@ export default function ProductDetail() {
         {/* 同类推荐 */}
         {(relatedProductsLoading || relatedProducts.length > 0) && (
           <div className="store-related-section border-t border-[var(--theme-border)] px-[var(--store-page-x)] py-8 md:border-0 md:px-0 md:py-12">
-            <h3 className="mb-4 text-sm font-semibold text-foreground md:mb-5 md:text-lg">
+            <div className="mb-2 h-1 w-8 rounded-full bg-[var(--theme-primary)]" aria-hidden />
+            <h3 className="mb-4 text-sm font-black text-foreground md:mb-5 md:text-lg">
               同类推荐
             </h3>
             {relatedProductsLoading ? (
               <div className={`${productGridClass} md:gap-5`}>
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="overflow-hidden rounded-[var(--theme-card-radius)] border border-[var(--theme-border)] bg-[var(--theme-surface)]">
-                    <Skeleton className="w-full" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
-                    <div className="space-y-2 p-3">
+                  <div key={index} className="overflow-hidden rounded-[1.125rem] border border-[color-mix(in_srgb,var(--theme-border)_84%,transparent)] bg-[var(--theme-surface)] p-1.5 shadow-sm">
+                    <Skeleton className="w-full rounded-[0.95rem]" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
+                    <div className="space-y-2 px-1.5 pb-2 pt-3">
                       <Skeleton className="h-4 w-3/4" />
                       <Skeleton className="h-4 w-1/2" />
                     </div>

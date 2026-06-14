@@ -18,6 +18,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { cn } from "@/lib/utils";
 import { isLoggedIn } from "@/utils/token";
 import * as authService from "@/services/authService";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
@@ -25,10 +26,12 @@ import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
+import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules";
 import { STORE_COPY } from "@/constants/storeCopy";
 import type { FooterNavItem } from "@/types/content";
+import { useClientDesignStyle } from "../design/useClientDesignStyle";
 import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
 import {
   fetchStorefrontCampaigns,
@@ -52,6 +55,7 @@ export default function StoreHomeV2() {
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
+  const clientStyle = useClientDesignStyle();
   const { settings: homeModules, ready: homeModulesReady } = useHomeModuleSettings();
   const { banners, loading: bannersLoading } = useHomeBanners();
 
@@ -178,7 +182,7 @@ export default function StoreHomeV2() {
       window.open(path, "_blank", "noopener,noreferrer");
       return;
     }
-    navigate(path);
+    navigate(appendThemePreviewParams(path));
   };
 
   const buildCampaignEventContext = useCallback(
@@ -215,7 +219,20 @@ export default function StoreHomeV2() {
   const showGuestRecommend = !isAuthenticated && isHomeModuleEnabled(homeModules, "guest_recommend", "guest");
 
   return (
-    <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]" data-store-home-version="v2">
+    <div
+      className={cn(
+        "store-page-shell store-bottom-safe text-[var(--theme-text)]",
+        clientStyle === "black_gold"
+          ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))_0%,var(--theme-bg)_26rem,var(--theme-bg)_100%)]"
+          : clientStyle === "deep_enterprise"
+            ? "bg-[linear-gradient(180deg,#101B34_0%,#101B34_10rem,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))_10rem,var(--theme-bg)_32rem,var(--theme-bg)_100%)]"
+            : clientStyle === "blue_portal"
+              ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_8%,white)_0%,var(--theme-bg)_24rem,color-mix(in_srgb,var(--theme-accent)_3%,var(--theme-bg))_100%)]"
+              : "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_0%,var(--theme-bg)_28rem,color-mix(in_srgb,var(--theme-primary)_3%,var(--theme-bg))_100%)]",
+      )}
+      data-store-home-version="v2"
+      data-storefront-client-style={clientStyle}
+    >
       <SeoHead
         title={seoTitle}
         description={seoDescription}
@@ -239,7 +256,7 @@ export default function StoreHomeV2() {
         className="store-home-topbar"
       />
 
-      <main className={storefrontPageClassName("space-y-4 pt-[var(--store-page-y)] md:space-y-6")}>
+      <main className={storefrontPageClassName("space-y-5 pt-[var(--store-page-y)] md:space-y-7")}>
         <h1 className="sr-only">{slogan}</h1>
         <p className="sr-only">{description}</p>
 
@@ -267,7 +284,7 @@ export default function StoreHomeV2() {
         {showTrustBar ? <HomeTrustBar className="store-home-desktop-trust" /> : null}
 
         {showNavGrid ? (
-          <div className="overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-sm">
+          <div className="overflow-hidden rounded-[1.125rem] border border-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] shadow-[0_12px_36px_color-mix(in_srgb,var(--theme-primary)_8%,transparent)]">
             <HomeOpsBlocks />
           </div>
         ) : null}
@@ -325,7 +342,7 @@ export default function StoreHomeV2() {
         ) : null}
 
         {homeError ? (
-          <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
+          <div className="rounded-[1.125rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
             部分首页内容暂时无法刷新。
             <UnifiedButton
               type="button"

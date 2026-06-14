@@ -4,7 +4,9 @@ import RatioImage from "@/components/client/RatioImage";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { cn } from "@/lib/utils";
 import StorefrontBadge from "../components/StorefrontBadge";
+import { useClientDesignStyle } from "../design/useClientDesignStyle";
 import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
 import { CAMPAIGN_TYPE_LABELS, campaignActionLabel, formatHomeV2Money, pickPrimaryCampaign } from "./homeV2Utils";
 
@@ -23,6 +25,7 @@ export default function HomePrimaryCampaignV2({
   onCampaignImpression,
   onCampaignClick,
 }: HomePrimaryCampaignV2Props) {
+  const clientStyle = useClientDesignStyle();
   const trackedImpressionsRef = useRef<Set<string>>(new Set());
   const primary = useMemo(() => pickPrimaryCampaign(campaigns), [campaigns]);
   const secondary = useMemo(
@@ -49,11 +52,11 @@ export default function HomePrimaryCampaignV2({
 
   if (loading && !primary) {
     return (
-      <section className="grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
-        <div className="h-56 animate-pulse rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
+      <section className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+        <div className="h-56 animate-pulse rounded-[1.125rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
         <div className="grid gap-3">
-          <div className="h-24 animate-pulse rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
-          <div className="h-24 animate-pulse rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
+          <div className="h-24 animate-pulse rounded-[1.125rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
+          <div className="h-24 animate-pulse rounded-[1.125rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
         </div>
       </section>
     );
@@ -64,11 +67,15 @@ export default function HomePrimaryCampaignV2({
   const hasCover = Boolean(primary.coverImage);
 
   return (
-    <section className="grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+    <section className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
       <UnifiedButton
         type="button"
         onClick={() => handleCampaignNavigate(primary, "home_primary_campaign")}
-        className="group relative min-h-[15rem] overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_24%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface)),var(--theme-surface)_46%,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-bg)))] p-0 text-left shadow-[var(--theme-shadow)]"
+        className={cn(
+          "group relative min-h-[15rem] overflow-hidden border border-[color-mix(in_srgb,var(--theme-primary)_16%,var(--theme-border))] p-0 text-left shadow-[0_14px_40px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
+          clientStyle === "deep_enterprise" ? "rounded-[0.875rem]" : "rounded-[1.125rem]",
+          "bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface)),var(--theme-surface)_48%,color-mix(in_srgb,var(--theme-price)_7%,var(--theme-bg)))]",
+        )}
       >
         {hasCover ? (
           <RatioImage
@@ -76,24 +83,24 @@ export default function HomePrimaryCampaignV2({
             alt=""
             ratio="16 / 9"
             rounded="none"
-            className="absolute inset-0 h-full w-full object-cover opacity-20 transition duration-300 group-hover:scale-[1.02]"
+            className="absolute inset-0 h-full w-full object-cover opacity-[0.18] transition duration-300 group-hover:scale-[1.02]"
             imgClassName="object-cover"
             loading="lazy"
           />
         ) : null}
-        <div className="relative flex min-h-[15rem] flex-col justify-between gap-5 p-4 md:p-5">
+        <div className="relative flex min-h-[15rem] flex-col justify-between gap-5 p-4 md:p-5 lg:p-6">
           <div className="max-w-2xl">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <StorefrontBadge tone={primary.type === "flash_sale" ? "hot" : "sale"}>
                 {CAMPAIGN_TYPE_LABELS[primary.type]}
               </StorefrontBadge>
               {primary.promoLabel ? (
-                <span className="rounded-full bg-[var(--theme-surface)]/82 px-2.5 py-1 text-xs font-bold text-[var(--theme-price)] ring-1 ring-[color-mix(in_srgb,var(--theme-price)_24%,transparent)]">
+                <span className="rounded-full bg-[var(--theme-surface)]/82 px-2.5 py-1 text-xs font-black text-[var(--theme-price)] ring-1 ring-[color-mix(in_srgb,var(--theme-price)_24%,transparent)]">
                   {primary.promoLabel}
                 </span>
               ) : null}
             </div>
-            <h2 className="line-clamp-2 text-2xl font-extrabold leading-tight text-[var(--theme-text)] md:text-3xl">{primary.title}</h2>
+            <h2 className="line-clamp-2 text-2xl font-black leading-tight text-[var(--theme-text)] md:text-3xl">{primary.title}</h2>
             {primary.subtitle || primary.description ? (
               <p className="mt-2 line-clamp-2 max-w-xl text-sm leading-6 text-[var(--theme-text-muted)]">
                 {primary.subtitle || primary.description}
@@ -103,7 +110,7 @@ export default function HomePrimaryCampaignV2({
 
           <div className="flex flex-wrap items-end justify-between gap-4">
             <CampaignMetric campaign={primary} />
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-price)] px-4 py-2 text-sm font-bold text-[var(--theme-price-foreground)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-sm font-black text-[var(--theme-primary-foreground)] shadow-[var(--theme-shadow-control)]">
               {campaignActionLabel(primary)}
               <ArrowRight size={15} />
             </span>
@@ -118,21 +125,28 @@ export default function HomePrimaryCampaignV2({
               key={`${campaign.type}-${campaign.id}`}
               type="button"
               onClick={() => handleCampaignNavigate(campaign, `home_secondary_campaign_${index + 1}`)}
-              className="flex min-h-[6.75rem] items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-left shadow-sm transition hover:border-[color-mix(in_srgb,var(--theme-price)_32%,var(--theme-border))]"
+              className={cn(
+                "flex min-h-[6.75rem] items-center gap-3 border border-[color-mix(in_srgb,var(--theme-border)_84%,transparent)] bg-[var(--theme-surface)] p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))] hover:shadow-[0_12px_34px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
+                clientStyle === "deep_enterprise" ? "rounded-[0.875rem]" : "rounded-[1.125rem]",
+                clientStyle === "black_gold" && "border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))]",
+              )}
             >
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-price)_11%,var(--theme-surface))] text-[var(--theme-price)]">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[0.875rem] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">
                 {campaign.type === "coupon" || campaign.type === "new_user_gift" ? <Gift size={20} /> : <Tag size={20} />}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-xs font-bold text-[var(--theme-price)]">{CAMPAIGN_TYPE_LABELS[campaign.type]}</span>
-                <span className="mt-1 line-clamp-2 text-sm font-bold leading-5 text-[var(--theme-text)]">{campaign.title}</span>
+                <span className="block text-xs font-black text-[var(--theme-primary)]">{CAMPAIGN_TYPE_LABELS[campaign.type]}</span>
+                <span className="mt-1 line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</span>
                 {campaign.promoLabel ? <span className="mt-1 block truncate text-xs text-[var(--theme-text-muted)]">{campaign.promoLabel}</span> : null}
               </span>
               <ArrowRight size={16} className="shrink-0 text-[var(--theme-text-muted)]" />
             </UnifiedButton>
           ))
         ) : (
-          <div className="flex min-h-[6.75rem] items-center gap-3 rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-sm text-[var(--theme-text-muted)]">
+          <div className={cn(
+            "flex min-h-[6.75rem] items-center gap-3 border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-sm text-[var(--theme-text-muted)]",
+            clientStyle === "deep_enterprise" ? "rounded-[0.875rem]" : "rounded-[1.125rem]",
+          )}>
             后台发布更多活动后，这里会自动展示辅助活动。
           </div>
         )}

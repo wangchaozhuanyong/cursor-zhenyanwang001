@@ -17,10 +17,12 @@ import { findCategoryById, findRootCategoryIdForActive, isCategoryOrDescendantAc
 import { trackEvent } from "@/services/analyticsService";
 import { toast } from "sonner";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 import ProductListViewToggle from "@/components/ProductListViewToggle";
 import { useCategoryListView } from "@/hooks/useCategoryListView";
 import { getCategoryProductsEmptyColSpan, getCategoryProductsGridClass } from "@/utils/productGridClasses";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
+import { THEME_PREVIEW_PARAM_NAMES } from "@/utils/themePreviewParams";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -39,6 +41,7 @@ import {
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
+  const clientStyle = useClientDesignStyle();
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const productCardSiteContext = useMemo(
@@ -106,6 +109,10 @@ export default function Categories() {
 
   const syncQuery = useCallback(() => {
     const next = new URLSearchParams();
+    THEME_PREVIEW_PARAM_NAMES.forEach((name) => {
+      const value = searchParams.get(name)?.trim();
+      if (value) next.set(name, value);
+    });
     if (activeCat && activeCat !== "all") next.set("cat", activeCat);
     if (activeTagId) next.set("tag_id", activeTagId);
     if (minPrice) next.set("min_price", minPrice);
@@ -451,12 +458,18 @@ export default function Categories() {
     <div
       className={cn(
         "store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]",
+        clientStyle === "black_gold"
+          ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_0%,var(--theme-bg)_24rem,var(--theme-bg)_100%)]"
+          : clientStyle === "deep_enterprise"
+            ? "bg-[linear-gradient(180deg,#101B34_0%,#101B34_7rem,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_7rem,var(--theme-bg)_28rem,var(--theme-bg)_100%)]"
+            : "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))_0%,var(--theme-bg)_24rem,color-mix(in_srgb,var(--theme-primary)_3%,var(--theme-bg))_100%)]",
         mobileChrome.mode === "expanded" && "store-category-page--chrome-expanded",
         mobileChrome.mode === "compact" && "store-category-page--chrome-compact",
         mobileChrome.mode === "hidden" && "store-category-page--chrome-hidden",
       )}
       data-category-mobile-chrome="document-flow"
       data-category-mobile-chrome-mode={mobileChrome.mode}
+      data-storefront-client-style={clientStyle}
     >
       <SeoHead
         title={title}
@@ -500,9 +513,10 @@ export default function Categories() {
         <div className="px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6">
           <div>
             <section className="store-category-content min-w-0">
-              <div className="store-category-desktop-title mb-4 hidden rounded-3xl border px-5 py-4 md:block">
-                <p className="text-xs font-semibold tracking-[0.22em] text-[var(--theme-text-muted)]">分类目录</p>
-                <h1 className="mt-1 text-2xl font-black tracking-tight text-[var(--theme-text)]">{pageHeading}</h1>
+              <div className="store-category-desktop-title mb-4 hidden rounded-[1.125rem] border border-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] px-5 py-4 shadow-[0_12px_36px_color-mix(in_srgb,var(--theme-primary)_8%,transparent)] md:block">
+                <div className="mb-2 h-1 w-8 rounded-full bg-[var(--theme-primary)]" aria-hidden />
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--theme-primary)]">分类目录</p>
+                <h1 className="mt-1 text-2xl font-black tracking-normal text-[var(--theme-text)]">{pageHeading}</h1>
                 {categoryDescription ? (
                   <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{categoryDescription}</p>
                 ) : null}

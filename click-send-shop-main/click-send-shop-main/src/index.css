@@ -8044,6 +8044,107 @@ html[data-app-scope="store"][data-theme-skin-id="festival_moon_orange_gold"] {
   --premium-skin-ticket-soft: #f0783c;
 }
 
+html[data-app-scope="store"][data-theme-skin-id="client_blue_portal"] {
+  --premium-skin-ink: #0f172a;
+  --premium-skin-deep: #1e3a8a;
+  --premium-skin-metal: #2563eb;
+  --premium-skin-metal-soft: #dbeafe;
+  --premium-skin-paper: #ffffff;
+  --premium-skin-paper-deep: #e8f1ff;
+  --premium-skin-wash: #f5f8ff;
+  --premium-skin-line: #bcd3f7;
+  --premium-skin-ticket-main: #2563eb;
+  --premium-skin-ticket-deep: #1d4ed8;
+  --premium-skin-ticket-soft: #60a5fa;
+}
+
+html[data-app-scope="store"][data-theme-skin-id="client_sky_tech"] {
+  --premium-skin-ink: #111827;
+  --premium-skin-deep: #0f4770;
+  --premium-skin-metal: #0ea5e9;
+  --premium-skin-metal-soft: #dff4ff;
+  --premium-skin-paper: #ffffff;
+  --premium-skin-paper-deep: #e7f4ff;
+  --premium-skin-wash: #f7fbff;
+  --premium-skin-line: #bde4f9;
+  --premium-skin-ticket-main: #0ea5e9;
+  --premium-skin-ticket-deep: #0369a1;
+  --premium-skin-ticket-soft: #67d3ff;
+}
+
+html[data-app-scope="store"][data-theme-skin-id="client_black_gold"] {
+  --premium-skin-ink: #1a1a1a;
+  --premium-skin-deep: #0a0a0a;
+  --premium-skin-metal: #d4af37;
+  --premium-skin-metal-soft: #f4df96;
+  --premium-skin-paper: #ffffff;
+  --premium-skin-paper-deep: #f1e8d2;
+  --premium-skin-wash: #f5f5f3;
+  --premium-skin-line: #d9c799;
+  --premium-skin-ticket-main: #d4af37;
+  --premium-skin-ticket-deep: #7a5b19;
+  --premium-skin-ticket-soft: #f1cf67;
+}
+
+html[data-app-scope="store"][data-theme-skin-id="client_deep_enterprise"] {
+  --premium-skin-ink: #0f172a;
+  --premium-skin-deep: #101b34;
+  --premium-skin-metal: #1d4ed8;
+  --premium-skin-metal-soft: #dbeafe;
+  --premium-skin-paper: #ffffff;
+  --premium-skin-paper-deep: #e8eef8;
+  --premium-skin-wash: #f5f8fd;
+  --premium-skin-line: #bfd0eb;
+  --premium-skin-ticket-main: #1d4ed8;
+  --premium-skin-ticket-deep: #1e3a8a;
+  --premium-skin-ticket-soft: #60a5fa;
+}
+
+html[data-app-scope="store"][data-client-design-style="blue_portal"] body,
+html[data-app-scope="store"][data-client-design-style="sky_tech"] body,
+html[data-app-scope="store"][data-client-design-style="deep_enterprise"] body {
+  background:
+    radial-gradient(ellipse at 10% 0%, color-mix(in srgb, var(--premium-skin-metal) 10%, transparent), transparent 28rem),
+    linear-gradient(180deg, var(--premium-skin-wash) 0%, var(--theme-bg) 30rem, var(--theme-bg) 100%);
+}
+
+html[data-app-scope="store"][data-client-design-style="black_gold"] body {
+  background:
+    radial-gradient(ellipse at 18% 0%, color-mix(in srgb, var(--premium-skin-metal) 12%, transparent), transparent 30rem),
+    linear-gradient(180deg, var(--premium-skin-wash) 0%, var(--theme-bg) 30rem, var(--theme-bg) 100%);
+}
+
+html[data-app-scope="store"][data-client-design-style="black_gold"] .store-home-hero-v2 :is(h1, h2, h3, h4, h5, h6),
+html[data-app-scope="store"][data-client-design-style="black_gold"] .store-home-hero-v2 .store-hero-copy-title {
+  color: #f8f1dd;
+}
+
+html[data-app-scope="store"][data-client-design-style="black_gold"] .store-home-hero-v2 .store-hero-copy-subtitle,
+html[data-app-scope="store"][data-client-design-style="black_gold"] .store-home-hero-v2 .store-hero-copy-desc {
+  color: #ded3b9;
+}
+
+html[data-app-scope="store"][data-client-design-style="black_gold"] .store-home-hero-v2 .store-hero-copy-panel {
+  border-color: rgba(212, 175, 55, 0.22);
+  background:
+    linear-gradient(135deg, rgba(22, 18, 12, 0.82), rgba(22, 18, 12, 0.5)),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.12), transparent);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
+}
+
+html[data-app-scope="store"][data-client-design-style="black_gold"] .store-home-hero-v2 .store-home-hero-pill {
+  border-color: rgba(212, 175, 55, 0.24);
+  background: rgba(33, 29, 23, 0.86);
+}
+
+html[data-app-scope="store"][data-client-design-style="black_gold"] .store-home-hero-v2 .store-home-hero-pill-title {
+  color: #f8f1dd;
+}
+
+html[data-app-scope="store"][data-client-design-style="black_gold"] .store-home-hero-v2 .store-home-hero-pill-detail {
+  color: #d9c9a0;
+}
+
 html[data-app-scope="store"]:where(
   [data-theme-skin-id="premium_champagne_ivory"],
   [data-theme-skin-id="premium_pearl_blush"],

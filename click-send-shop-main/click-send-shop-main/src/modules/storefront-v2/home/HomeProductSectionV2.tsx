@@ -33,7 +33,7 @@ export default function HomeProductSectionV2({
   if (!loading && products.length === 0) return null;
 
   return (
-    <section>
+    <section className="min-w-0">
       <StorefrontTitleRow
         title={title}
         subtitle={subtitle}
@@ -41,14 +41,14 @@ export default function HomeProductSectionV2({
           <UnifiedButton
             type="button"
             onClick={() => onNavigate(actionPath)}
-            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold text-[var(--theme-price)]"
+            className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-2.5 py-1.5 text-xs font-black text-[var(--theme-primary)]"
           >
             {actionLabel}
             <ArrowRight size={14} />
           </UnifiedButton>
         )}
       />
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
         {loading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
               <ProductCardV2Skeleton key={`home-v2-skeleton-${title}-${index}`} />
@@ -64,7 +64,7 @@ export default function HomeProductSectionV2({
             ))}
       </div>
       {!loading && products.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-8 text-center text-sm text-[var(--theme-text-muted)]">
+        <div className="rounded-[1.125rem] border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-8 text-center text-sm text-[var(--theme-text-muted)]">
           {emptyText}
         </div>
       ) : null}

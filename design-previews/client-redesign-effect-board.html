@@ -1,0 +1,1724 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>真言网001客户端 UI 重构效果图</title>
+  <style>
+    :root {
+      --client-primary: #2563eb;
+      --client-primary-600: #1d4ed8;
+      --client-primary-50: #eff6ff;
+      --client-bg: #f8fafc;
+      --client-surface: #ffffff;
+      --client-surface-muted: #f1f5f9;
+      --client-text: #0f172a;
+      --client-muted: #64748b;
+      --client-border: #e2e8f0;
+      --client-price: #ef4444;
+      --client-success: #10b981;
+      --client-warning: #f59e0b;
+      --client-danger: #ef4444;
+      --client-gold: #d4af37;
+      --client-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --client-shadow-md: 0 12px 32px rgba(15, 23, 42, 0.08);
+      --client-shadow-lg: 0 24px 60px rgba(15, 23, 42, 0.12);
+      --client-radius-button: 12px;
+      --client-radius-input: 14px;
+      --client-radius-card: 20px;
+      --client-radius-hero: 28px;
+      --client-font: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 14% 6%, rgba(37, 99, 235, 0.12), transparent 28%),
+        radial-gradient(circle at 86% 12%, rgba(16, 185, 129, 0.08), transparent 26%),
+        linear-gradient(180deg, #f8fbff 0%, #eef4ff 42%, #f8fafc 100%);
+      color: var(--client-text);
+      font-family: var(--client-font);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .board {
+      width: min(100% - 48px, 1680px);
+      margin: 0 auto;
+      padding: 36px 0 72px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: stretch;
+      margin-bottom: 28px;
+    }
+
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 420px;
+      border: 1px solid rgba(37, 99, 235, 0.16);
+      border-radius: 32px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--client-shadow-lg);
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      right: -18%;
+      bottom: -34%;
+      width: 72%;
+      aspect-ratio: 1;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.22), transparent 68%);
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      padding: 42px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 34px;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, var(--client-primary), #60a5fa);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+      box-shadow: 0 14px 32px rgba(37, 99, 235, 0.28);
+    }
+
+    .brand-name {
+      display: grid;
+      gap: 2px;
+    }
+
+    .brand-name strong {
+      font-size: 18px;
+      line-height: 24px;
+    }
+
+    .brand-name span {
+      color: var(--client-muted);
+      font-size: 12px;
+      line-height: 18px;
+      font-weight: 600;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      margin-bottom: 14px;
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      border-radius: 999px;
+      background: var(--client-primary-50);
+      padding: 8px 12px;
+      color: var(--client-primary-600);
+      font-size: 12px;
+      line-height: 18px;
+      font-weight: 800;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 650px;
+      font-size: 40px;
+      line-height: 48px;
+      font-weight: 800;
+    }
+
+    .hero-copy > p {
+      margin-top: 16px;
+      max-width: 620px;
+      color: var(--client-muted);
+      font-size: 16px;
+      line-height: 26px;
+    }
+
+    .repo-pill {
+      display: inline-flex;
+      max-width: 100%;
+      margin-top: 26px;
+      border: 1px solid var(--client-border);
+      border-radius: 999px;
+      background: #fff;
+      padding: 10px 16px;
+      color: var(--client-text);
+      font-size: 13px;
+      line-height: 20px;
+      box-shadow: var(--client-shadow-sm);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      border: 1px solid transparent;
+      border-radius: var(--client-radius-button);
+      padding: 0 18px;
+      font-size: 14px;
+      line-height: 20px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      background: var(--client-primary);
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
+    }
+
+    .btn.secondary {
+      border-color: rgba(37, 99, 235, 0.28);
+      background: #fff;
+      color: var(--client-primary);
+    }
+
+    .token-panel {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      align-content: start;
+      border: 1px solid var(--client-border);
+      border-radius: 32px;
+      background: rgba(255, 255, 255, 0.84);
+      padding: 24px;
+      box-shadow: var(--client-shadow-md);
+    }
+
+    .token-item {
+      min-height: 132px;
+      border: 1px solid var(--client-border);
+      border-radius: var(--client-radius-card);
+      background: #fff;
+      padding: 18px;
+      box-shadow: var(--client-shadow-sm);
+    }
+
+    .token-item strong {
+      display: block;
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .token-item small {
+      display: block;
+      margin-top: 6px;
+      color: var(--client-muted);
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    .swatches {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .swatch {
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--client-border);
+      border-radius: 10px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .swatch.blue { background: var(--client-primary); }
+    .swatch.green { background: var(--client-success); }
+    .swatch.amber { background: var(--client-warning); }
+    .swatch.slate { background: var(--client-text); }
+    .swatch.soft { background: var(--client-surface-muted); }
+
+    .ratio-demo {
+      display: grid;
+      grid-template-columns: 36px 44px 70px;
+      gap: 10px;
+      align-items: end;
+      margin-top: 14px;
+    }
+
+    .ratio-demo span {
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(37, 99, 235, 0.18);
+      border-radius: 10px;
+      background: linear-gradient(135deg, #eff6ff, #fff);
+      color: var(--client-primary);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .ratio-poster { aspect-ratio: 1 / 2; }
+    .ratio-square { aspect-ratio: 1 / 1; }
+    .ratio-wide { aspect-ratio: 16 / 9; }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 34px 0 16px;
+    }
+
+    .section-title h2 {
+      font-size: 28px;
+      line-height: 36px;
+      font-weight: 800;
+    }
+
+    .section-title p {
+      max-width: 760px;
+      color: var(--client-muted);
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .frame-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.65fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .frame-grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .frame-grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .browser {
+      overflow: hidden;
+      border: 1px solid var(--client-border);
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: var(--client-shadow-md);
+    }
+
+    .browser-bar {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      height: 38px;
+      border-bottom: 1px solid var(--client-border);
+      background: #f8fafc;
+      padding: 0 14px;
+      color: var(--client-muted);
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    .browser-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #cbd5e1;
+    }
+
+    .browser-dot:nth-child(2) { background: #bfdbfe; }
+    .browser-dot:nth-child(3) { background: #93c5fd; }
+
+    .browser-label {
+      margin-left: 8px;
+      color: var(--client-text);
+      font-weight: 700;
+    }
+
+    .site-page {
+      min-height: 640px;
+      background: var(--client-bg);
+    }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+      border-bottom: 1px solid var(--client-border);
+      background: rgba(255, 255, 255, 0.86);
+      padding: 0 28px;
+    }
+
+    .site-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 140px;
+    }
+
+    .site-logo .mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: var(--client-primary);
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .site-logo b {
+      font-size: 15px;
+      line-height: 22px;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+    }
+
+    .site-nav a,
+    .site-actions span {
+      color: var(--client-muted);
+      font-size: 13px;
+      line-height: 20px;
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .site-nav .active {
+      color: var(--client-primary);
+    }
+
+    .site-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--client-text);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .login-btn {
+      height: 40px;
+      border-radius: 12px;
+      background: var(--client-primary);
+      padding: 0 18px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .page-inner {
+      width: min(100% - 56px, 1184px);
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .home-hero {
+      display: grid;
+      grid-template-columns: 5fr 7fr;
+      gap: 24px;
+      overflow: hidden;
+      min-height: 330px;
+      border: 1px solid rgba(37, 99, 235, 0.16);
+      border-radius: var(--client-radius-hero);
+      background: linear-gradient(135deg, #eff6ff, #ffffff 50%, #dbeafe);
+      box-shadow: var(--client-shadow-md);
+    }
+
+    .home-hero-copy {
+      padding: 46px;
+    }
+
+    .kicker {
+      display: inline-flex;
+      border-radius: 999px;
+      background: var(--client-primary-50);
+      padding: 7px 11px;
+      color: var(--client-primary);
+      font-size: 12px;
+      line-height: 18px;
+      font-weight: 800;
+    }
+
+    .home-hero h2 {
+      margin-top: 16px;
+      font-size: 36px;
+      line-height: 44px;
+      font-weight: 800;
+    }
+
+    .home-hero p {
+      margin-top: 12px;
+      color: var(--client-muted);
+      font-size: 15px;
+      line-height: 24px;
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 56px;
+      margin-top: 26px;
+      border: 1px solid var(--client-border);
+      border-radius: 999px;
+      background: #fff;
+      padding: 6px 6px 6px 18px;
+      box-shadow: var(--client-shadow-md);
+    }
+
+    .search-bar span {
+      min-width: 0;
+      flex: 1;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .hero-visual {
+      position: relative;
+      min-height: 100%;
+      background:
+        linear-gradient(180deg, rgba(37, 99, 235, 0.06), rgba(255, 255, 255, 0.12)),
+        linear-gradient(135deg, #1e3a8a, #60a5fa 46%, #fef3c7);
+    }
+
+    .hero-visual::before,
+    .hero-visual::after,
+    .photo::after {
+      content: "";
+      position: absolute;
+      left: -8%;
+      right: -8%;
+      bottom: -1%;
+      height: 62%;
+      background:
+        linear-gradient(135deg, transparent 8%, rgba(255, 255, 255, 0.92) 8% 15%, transparent 15% 24%, rgba(15, 23, 42, 0.18) 24% 35%, rgba(255, 255, 255, 0.8) 35% 45%, rgba(15, 23, 42, 0.14) 45%);
+      clip-path: polygon(0 82%, 16% 45%, 30% 72%, 47% 16%, 67% 79%, 82% 48%, 100% 86%, 100% 100%, 0 100%);
+    }
+
+    .hero-visual::after {
+      top: 18%;
+      right: 8%;
+      left: auto;
+      bottom: auto;
+      width: 120px;
+      height: 120px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.28);
+      clip-path: none;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .quick-card {
+      display: grid;
+      place-items: center;
+      min-height: 96px;
+      border: 1px solid var(--client-border);
+      border-radius: var(--client-radius-card);
+      background: var(--client-surface);
+      box-shadow: var(--client-shadow-sm);
+      text-align: center;
+    }
+
+    .quick-card i {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      margin-bottom: 8px;
+      border-radius: 14px;
+      background: var(--client-primary-50);
+      color: var(--client-primary);
+      font-style: normal;
+      font-weight: 900;
+    }
+
+    .quick-card b {
+      font-size: 14px;
+      line-height: 20px;
+    }
+
+    .block {
+      margin-top: 28px;
+    }
+
+    .block-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .block-head h3 {
+      font-size: 24px;
+      line-height: 32px;
+      font-weight: 800;
+    }
+
+    .block-head span {
+      color: var(--client-primary);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .article-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      border: 1px solid var(--client-border);
+      border-radius: var(--client-radius-card);
+      background: #fff;
+      box-shadow: var(--client-shadow-sm);
+    }
+
+    .article-card {
+      padding: 12px;
+    }
+
+    .article-card .photo {
+      aspect-ratio: 16 / 9;
+      border-radius: 16px;
+    }
+
+    .article-card h4,
+    .product-card h4 {
+      display: -webkit-box;
+      margin-top: 12px;
+      overflow: hidden;
+      color: var(--client-text);
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 720;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .article-card p,
+    .product-card p {
+      margin-top: 6px;
+      overflow: hidden;
+      color: var(--client-muted);
+      font-size: 12px;
+      line-height: 18px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .split-block {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      margin-top: 26px;
+    }
+
+    .list-card,
+    .tag-card {
+      padding: 18px;
+    }
+
+    .row-item {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      border-top: 1px solid var(--client-border);
+      padding: 12px 0;
+    }
+
+    .row-item:first-of-type {
+      border-top: 0;
+    }
+
+    .row-item .photo {
+      width: 72px;
+      aspect-ratio: 4 / 3;
+      border-radius: 14px;
+    }
+
+    .row-item b {
+      display: block;
+      overflow: hidden;
+      font-size: 14px;
+      line-height: 22px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-item small {
+      color: var(--client-muted);
+      font-size: 12px;
+    }
+
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    .tag-cloud span {
+      border-radius: 999px;
+      background: var(--client-primary-50);
+      padding: 7px 11px;
+      color: var(--client-primary);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .photo {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #1e3a8a, #60a5fa 46%, #a7f3d0);
+    }
+
+    .photo.dawn { background: linear-gradient(135deg, #312e81, #f59e0b 56%, #fee2e2); }
+    .photo.valley { background: linear-gradient(135deg, #0f766e, #93c5fd 48%, #fde68a); }
+    .photo.mist { background: linear-gradient(135deg, #334155, #cbd5e1 58%, #f8fafc); }
+    .photo.night { background: linear-gradient(135deg, #0f172a, #2563eb 48%, #64748b); }
+    .photo.sky { background: linear-gradient(135deg, #0369a1, #7dd3fc 48%, #fef9c3); }
+
+    .phone-wrap {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .phone {
+      overflow: hidden;
+      height: 690px;
+      border: 9px solid #0f172a;
+      border-radius: 34px;
+      background: var(--client-bg);
+      box-shadow: var(--client-shadow-lg);
+    }
+
+    .phone-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      border-bottom: 1px solid var(--client-border);
+      background: #fff;
+      padding: 0 16px;
+    }
+
+    .phone-top b {
+      overflow: hidden;
+      font-size: 15px;
+      line-height: 22px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .phone-icons {
+      color: var(--client-muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .phone-hero {
+      margin: 14px;
+      border: 1px solid rgba(37, 99, 235, 0.16);
+      border-radius: 22px;
+      background: linear-gradient(135deg, #eff6ff, #fff 52%, #dbeafe);
+      padding: 20px 16px;
+    }
+
+    .phone-hero h3 {
+      font-size: 22px;
+      line-height: 30px;
+      font-weight: 800;
+    }
+
+    .phone-hero p {
+      margin-top: 7px;
+      color: var(--client-muted);
+      font-size: 13px;
+      line-height: 20px;
+    }
+
+    .phone-search {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+      margin-top: 15px;
+      border: 1px solid var(--client-border);
+      border-radius: 16px;
+      background: #fff;
+      padding-left: 12px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .phone-search button {
+      height: 34px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--client-primary);
+      padding: 0 12px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .phone-quick {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0 14px 14px;
+    }
+
+    .phone-quick div {
+      display: grid;
+      place-items: center;
+      min-height: 70px;
+      border: 1px solid var(--client-border);
+      border-radius: 16px;
+      background: #fff;
+      text-align: center;
+    }
+
+    .phone-quick i {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 4px;
+      border-radius: 10px;
+      background: var(--client-primary-50);
+      color: var(--client-primary);
+      font-style: normal;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .phone-quick b {
+      font-size: 11px;
+      line-height: 16px;
+    }
+
+    .phone-section {
+      margin: 14px;
+      border: 1px solid var(--client-border);
+      border-radius: 18px;
+      background: #fff;
+      padding: 12px;
+    }
+
+    .phone-section h4 {
+      margin-bottom: 12px;
+      font-size: 17px;
+      line-height: 24px;
+    }
+
+    .phone-card .photo {
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+    }
+
+    .phone-card b {
+      display: -webkit-box;
+      margin-top: 10px;
+      overflow: hidden;
+      font-size: 14px;
+      line-height: 20px;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .phone-product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 14px 14px 86px;
+    }
+
+    .phone-product-grid .product-card {
+      padding: 8px;
+    }
+
+    .phone-product-grid .product-card h4 {
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    .bottom-nav {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      align-items: center;
+      height: 68px;
+      margin-top: auto;
+      border-top: 1px solid var(--client-border);
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .phone .bottom-nav {
+      position: absolute;
+      left: 9px;
+      right: 9px;
+      bottom: 9px;
+      border-radius: 0 0 25px 25px;
+    }
+
+    .bottom-nav span {
+      display: grid;
+      place-items: center;
+      color: var(--client-muted);
+      font-size: 11px;
+      line-height: 16px;
+      font-weight: 650;
+    }
+
+    .bottom-nav .active {
+      color: var(--client-primary);
+    }
+
+    .listing-layout {
+      display: grid;
+      grid-template-columns: 230px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      border: 1px solid var(--client-border);
+      border-radius: 18px;
+      background: #fff;
+      padding: 14px;
+    }
+
+    .toolbar span,
+    .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 34px;
+      border: 1px solid var(--client-border);
+      border-radius: 12px;
+      background: #fff;
+      padding: 0 12px;
+      color: var(--client-muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .toolbar .active {
+      border-color: var(--client-primary);
+      background: var(--client-primary);
+      color: #fff;
+    }
+
+    .toolbar .search-input {
+      margin-left: auto;
+      min-width: 260px;
+      color: #94a3b8;
+      justify-content: start;
+    }
+
+    .filter-card {
+      padding: 16px;
+    }
+
+    .filter-card h4 {
+      margin-bottom: 12px;
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    .filter-card label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0;
+      color: var(--client-muted);
+      font-size: 13px;
+      line-height: 20px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .product-card {
+      padding: 12px;
+    }
+
+    .product-media {
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      background: var(--client-surface-muted);
+    }
+
+    .product-media.poster {
+      aspect-ratio: 1 / 2;
+    }
+
+    .product-media.square {
+      aspect-ratio: 1 / 1;
+    }
+
+    .product-media .photo {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+    }
+
+    .product-card .price {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .price strong {
+      color: var(--client-price);
+      font-size: 18px;
+      line-height: 24px;
+      font-weight: 820;
+    }
+
+    .add-btn {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: var(--client-primary);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .product-detail {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+      gap: 26px;
+      padding: 28px;
+    }
+
+    .gallery-main {
+      aspect-ratio: 1 / 1;
+      border-radius: 24px;
+    }
+
+    .thumb-row {
+      display: grid;
+      grid-template-columns: repeat(4, 72px);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .thumb-row .photo {
+      aspect-ratio: 1 / 1;
+      border: 2px solid #fff;
+      border-radius: 14px;
+      box-shadow: var(--client-shadow-sm);
+    }
+
+    .purchase-panel {
+      border: 1px solid var(--client-border);
+      border-radius: 24px;
+      background: #fff;
+      padding: 28px;
+      box-shadow: var(--client-shadow-sm);
+    }
+
+    .purchase-panel h2 {
+      margin-top: 14px;
+      font-size: 28px;
+      line-height: 36px;
+      font-weight: 800;
+    }
+
+    .rating {
+      margin-top: 10px;
+      color: var(--client-warning);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .detail-price {
+      margin-top: 18px;
+      color: var(--client-price);
+      font-size: 32px;
+      line-height: 40px;
+      font-weight: 850;
+    }
+
+    .spec-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .spec-list span {
+      border: 1px solid var(--client-border);
+      border-radius: 14px;
+      background: var(--client-bg);
+      padding: 12px;
+      color: var(--client-muted);
+      font-size: 13px;
+    }
+
+    .cta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .tabs-line {
+      display: flex;
+      gap: 30px;
+      margin: 0 28px;
+      border-bottom: 1px solid var(--client-border);
+    }
+
+    .tabs-line span {
+      padding: 16px 0;
+      color: var(--client-muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .tabs-line .active {
+      border-bottom: 2px solid var(--client-primary);
+      color: var(--client-primary);
+    }
+
+    .content-panel {
+      margin: 20px 28px 28px;
+      border: 1px solid var(--client-border);
+      border-radius: 20px;
+      background: #fff;
+      padding: 22px;
+      color: var(--client-muted);
+      font-size: 14px;
+      line-height: 24px;
+    }
+
+    .article-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 22px;
+    }
+
+    .article-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .article-row {
+      display: grid;
+      grid-template-columns: 190px minmax(0, 1fr);
+      gap: 16px;
+      padding: 14px;
+    }
+
+    .article-row .photo {
+      aspect-ratio: 16 / 9;
+      border-radius: 16px;
+    }
+
+    .article-row h4 {
+      display: -webkit-box;
+      overflow: hidden;
+      font-size: 16px;
+      line-height: 24px;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .article-row p {
+      display: -webkit-box;
+      margin-top: 8px;
+      overflow: hidden;
+      color: var(--client-muted);
+      font-size: 13px;
+      line-height: 20px;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .side-panel {
+      padding: 16px;
+    }
+
+    .side-panel h4 {
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    .article-page {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 34px 0 46px;
+    }
+
+    .article-page h2 {
+      font-size: 34px;
+      line-height: 42px;
+      font-weight: 820;
+    }
+
+    .article-page .meta {
+      margin-top: 10px;
+      color: var(--client-muted);
+      font-size: 13px;
+    }
+
+    .article-hero {
+      aspect-ratio: 16 / 9;
+      margin-top: 22px;
+      border-radius: 22px;
+    }
+
+    .article-page h3 {
+      margin-top: 34px;
+      font-size: 20px;
+      line-height: 28px;
+    }
+
+    .article-page p {
+      margin-top: 14px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 28px;
+    }
+
+    .compact-card {
+      min-height: 430px;
+      padding: 26px;
+    }
+
+    .profile-hero {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      overflow: hidden;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #0f172a, #1d4ed8);
+      padding: 24px;
+      color: #fff;
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 66px;
+      height: 66px;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--client-primary);
+      font-weight: 900;
+    }
+
+    .profile-hero h3 {
+      font-size: 22px;
+      line-height: 30px;
+    }
+
+    .profile-hero p {
+      margin-top: 4px;
+      color: #bfdbfe;
+      font-size: 13px;
+    }
+
+    .gold-badge {
+      border-radius: 999px;
+      background: linear-gradient(135deg, #fbbf24, var(--client-gold));
+      padding: 9px 13px;
+      color: #111827;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .metric-grid div {
+      border: 1px solid var(--client-border);
+      border-radius: 18px;
+      background: #fff;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .metric-grid b {
+      display: block;
+      color: var(--client-primary);
+      font-size: 22px;
+      line-height: 28px;
+    }
+
+    .metric-grid span {
+      color: var(--client-muted);
+      font-size: 12px;
+    }
+
+    .service-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .service-list div {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      align-items: center;
+      min-height: 48px;
+      border-bottom: 1px solid var(--client-border);
+      color: var(--client-text);
+      font-size: 14px;
+    }
+
+    .auth-card {
+      max-width: 420px;
+      margin: 16px auto;
+      border: 1px solid var(--client-border);
+      border-radius: 24px;
+      background: #fff;
+      padding: 32px;
+      text-align: center;
+      box-shadow: var(--client-shadow-md);
+    }
+
+    .auth-card .brand-mark {
+      margin: 0 auto 14px;
+    }
+
+    .auth-card h3 {
+      font-size: 24px;
+      line-height: 32px;
+    }
+
+    .auth-card p {
+      margin-top: 6px;
+      color: var(--client-muted);
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .field {
+      display: block;
+      width: 100%;
+      height: 48px;
+      margin-top: 14px;
+      border: 1px solid var(--client-border);
+      border-radius: var(--client-radius-input);
+      background: #fff;
+      padding: 0 14px;
+      color: var(--client-muted);
+      text-align: left;
+      font-size: 14px;
+      line-height: 48px;
+    }
+
+    .error-preview {
+      display: grid;
+      place-items: center;
+      min-height: 390px;
+      text-align: center;
+    }
+
+    .error-illustration {
+      color: #bfdbfe;
+      font-size: 82px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .error-preview h3 {
+      margin-top: 12px;
+      font-size: 24px;
+      line-height: 32px;
+    }
+
+    .error-preview p {
+      margin: 8px auto 20px;
+      max-width: 360px;
+      color: var(--client-muted);
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .footer-note {
+      margin-top: 34px;
+      border: 1px solid var(--client-border);
+      border-radius: 24px;
+      background: #fff;
+      padding: 22px;
+      color: var(--client-muted);
+      font-size: 14px;
+      line-height: 24px;
+      box-shadow: var(--client-shadow-sm);
+    }
+
+    @media (max-width: 1280px) {
+      .hero,
+      .frame-grid,
+      .frame-grid.two,
+      .frame-grid.three {
+        grid-template-columns: 1fr;
+      }
+
+      .phone-wrap {
+        grid-template-columns: repeat(2, 330px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="hero-copy">
+          <div class="brand-row">
+            <div class="brand-mark">真</div>
+            <div class="brand-name">
+              <strong>真言网001</strong>
+              <span>ZhenYanWang001 Client Redesign</span>
+            </div>
+          </div>
+          <span class="eyebrow">客户端 UI 重构效果图 · 按交付文档制作</span>
+          <h1>探索真理，开启智慧之门。统一组件、统一比例、统一响应式体验。</h1>
+          <p>本效果图按 specs、tokens、client-redesign.css 和 HTML 原型整理，不修改 API、字段、后台规则、订单/支付/库存/权限逻辑。商品、文章、Banner、活动图片在后续实现中统一收口到 RatioImage。</p>
+          <div class="repo-pill">github.com/wangchaozhuanyong/cursor-zhenyanwang001.git</div>
+          <div class="hero-actions">
+            <span class="btn primary">主按钮样式</span>
+            <span class="btn secondary">次按钮样式</span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="token-panel">
+        <div class="token-item">
+          <strong>色彩系统</strong>
+          <small>蓝白主调，保留成功、警告、价格、深色文字。</small>
+          <div class="swatches">
+            <i class="swatch blue"></i>
+            <i class="swatch green"></i>
+            <i class="swatch amber"></i>
+            <i class="swatch slate"></i>
+            <i class="swatch soft"></i>
+          </div>
+        </div>
+        <div class="token-item">
+          <strong>图片比例硬规则</strong>
+          <small>商品默认 1:2，文章默认 16:9，后台配置优先。</small>
+          <div class="ratio-demo">
+            <span class="ratio-poster">1:2</span>
+            <span class="ratio-square">1:1</span>
+            <span class="ratio-wide">16:9</span>
+          </div>
+        </div>
+        <div class="token-item">
+          <strong>页面容器</strong>
+          <small>Desktop max-width 1184px；32/24/16px 页面边距。</small>
+        </div>
+        <div class="token-item">
+          <strong>状态完整</strong>
+          <small>Loading、empty、error、disabled、loading button 都要落地。</small>
+        </div>
+      </aside>
+    </section>
+
+    <div class="section-title">
+      <div>
+        <h2>首页 Home + 移动端</h2>
+        <p>桌面端宽幅 Hero、搜索、快捷入口、精选推荐、最新文章和热门标签；移动端保持同样内容顺序，底部导航避开 safe-area。</p>
+      </div>
+    </div>
+
+    <section class="frame-grid">
+      <article class="browser">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-label">首页 /</span></div>
+        <div class="site-page">
+          <header class="site-header">
+            <div class="site-logo"><span class="mark">真</span><b>真言网001</b></div>
+            <nav class="site-nav"><a class="active">首页</a><a>分类</a><a>新品</a><a>文章</a><a>活动</a><a>关于</a></nav>
+            <div class="site-actions"><span class="icon-btn">⌕</span><span class="icon-btn">♡</span><span class="icon-btn">袋</span><span class="login-btn">登录 / 注册</span></div>
+          </header>
+          <div class="page-inner">
+            <section class="home-hero">
+              <div class="home-hero-copy">
+                <span class="kicker">智慧内容与精选好物平台</span>
+                <h2>探索真理 · 开启智慧之门</h2>
+                <p>把知识文章、课程资料和精选商品组织成清晰可信的浏览体验。</p>
+                <div class="search-bar"><span>搜索文章、课程、商品…</span><span class="btn primary">搜索</span></div>
+              </div>
+              <div class="hero-visual" aria-hidden="true"></div>
+            </section>
+            <section class="quick-grid">
+              <div class="quick-card"><i>文</i><b>精选文章</b></div>
+              <div class="quick-card"><i>课</i><b>精品课程</b></div>
+              <div class="quick-card"><i>资</i><b>实用资料</b></div>
+              <div class="quick-card"><i>社</i><b>互动社区</b></div>
+            </section>
+            <section class="block">
+              <div class="block-head"><h3>精选推荐</h3><span>查看更多</span></div>
+              <div class="article-grid">
+                <article class="article-card card"><div class="photo"></div><h4>如何提升自我认知与思维能力</h4><p>作者 · 阅读 35</p></article>
+                <article class="article-card card"><div class="photo valley"></div><h4>深度思考：从认知到行动</h4><p>作者 · 阅读 52</p></article>
+                <article class="article-card card"><div class="photo dawn"></div><h4>时间管理的艺术与科学</h4><p>作者 · 阅读 40</p></article>
+                <article class="article-card card"><div class="photo mist"></div><h4>高效学习方法与实践</h4><p>作者 · 阅读 36</p></article>
+              </div>
+            </section>
+            <section class="split-block">
+              <div class="list-card card">
+                <div class="block-head"><h3>最新文章</h3><span>全部</span></div>
+                <div class="row-item"><div class="photo sky"></div><div><b>建立稳定的个人成长系统</b><small>2026-06-14 · 阅读 51</small></div><small>今天</small></div>
+                <div class="row-item"><div class="photo dawn"></div><div><b>高效学习资料包使用指南</b><small>2026-06-13 · 阅读 42</small></div><small>昨天</small></div>
+              </div>
+              <div class="tag-card card">
+                <h3>热门标签</h3>
+                <div class="tag-cloud"><span>思维</span><span>学习</span><span>成长</span><span>心理学</span><span>时间管理</span><span>认知</span><span>效率</span></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <div class="phone-wrap">
+        <article class="phone">
+          <header class="phone-top"><b>真言网001</b><span class="phone-icons">⌕ 袋</span></header>
+          <section class="phone-hero">
+            <h3>探索真理 · 开启智慧之门</h3>
+            <p>专业知识分享平台</p>
+            <div class="phone-search">搜索文章、课程、商品… <button>搜索</button></div>
+          </section>
+          <section class="phone-quick">
+            <div><i>文</i><b>文章</b></div>
+            <div><i>课</i><b>课程</b></div>
+            <div><i>资</i><b>资料</b></div>
+            <div><i>社</i><b>社区</b></div>
+          </section>
+          <section class="phone-section">
+            <h4>精选推荐</h4>
+            <div class="phone-card"><div class="photo"></div><b>如何提升自我认知与思维能力</b></div>
+          </section>
+          <nav class="bottom-nav"><span class="active">首页</span><span>分类</span><span>购物车</span><span>订单</span><span>我的</span></nav>
+        </article>
+
+        <article class="phone">
+          <header class="phone-top"><b>分类</b><span class="phone-icons">筛选</span></header>
+          <div class="toolbar" style="margin: 12px 14px 0; overflow: hidden;"><span class="active">全部</span><span>新品</span><span>课程</span></div>
+          <section class="phone-product-grid">
+            <article class="product-card card"><div class="product-media poster"><div class="photo"></div></div><h4>认知成长课程套装</h4><p>默认商品海报 1:2</p><div class="price"><strong>RM 29.90</strong></div></article>
+            <article class="product-card card"><div class="product-media poster"><div class="photo dawn"></div></div><h4>高效学习资料包</h4><p>后台比例优先</p><div class="price"><strong>RM 49.00</strong></div></article>
+            <article class="product-card card"><div class="product-media poster"><div class="photo valley"></div></div><h4>时间管理电子书</h4><p>标题两行省略</p><div class="price"><strong>RM 19.90</strong></div></article>
+            <article class="product-card card"><div class="product-media poster"><div class="photo mist"></div></div><h4>思维训练卡片</h4><p>空图用占位</p><div class="price"><strong>RM 39.90</strong></div></article>
+          </section>
+          <nav class="bottom-nav"><span>首页</span><span class="active">分类</span><span>购物车</span><span>订单</span><span>我的</span></nav>
+        </article>
+      </div>
+    </section>
+
+    <div class="section-title">
+      <div>
+        <h2>商品列表与详情</h2>
+        <p>列表筛选写入 URL query；商品图默认 1:2。详情页主图按后台规则，价格、库存、优惠、购买限制只展示 API 结果。</p>
+      </div>
+    </div>
+
+    <section class="frame-grid two">
+      <article class="browser">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-label">分类 /categories</span></div>
+        <div class="site-page">
+          <header class="site-header"><div class="site-logo"><span class="mark">真</span><b>真言网001</b></div><nav class="site-nav"><a>首页</a><a class="active">分类</a><a>文章</a></nav><div class="site-actions"><span class="icon-btn">⌕</span><span class="icon-btn">袋</span></div></header>
+          <div class="page-inner">
+            <div class="toolbar"><span class="active">全部</span><span>新品</span><span>课程</span><span>资料</span><span>热销</span><span class="search-input">搜索关键词…</span></div>
+            <div class="listing-layout">
+              <aside class="filter-card card">
+                <h4>筛选</h4>
+                <label><input checked type="checkbox" /> 有库存</label>
+                <label><input type="checkbox" /> 新品</label>
+                <label><input type="checkbox" /> 促销</label>
+                <h4 style="margin-top: 20px;">价格</h4>
+                <span class="filter-pill">RM 0 - 50</span>
+                <span class="filter-pill" style="margin-top: 8px;">RM 50 - 200</span>
+              </aside>
+              <section class="product-grid">
+                <article class="product-card card"><div class="product-media poster"><div class="photo"></div></div><h4>认知成长课程套装</h4><p>课程资料 · 有库存</p><div class="price"><strong>RM 29.90</strong><span class="add-btn">+</span></div></article>
+                <article class="product-card card"><div class="product-media poster"><div class="photo dawn"></div></div><h4>高效学习资料包</h4><p>电子资料 · 新品</p><div class="price"><strong>RM 49.00</strong><span class="add-btn">+</span></div></article>
+                <article class="product-card card"><div class="product-media poster"><div class="photo valley"></div></div><h4>时间管理电子书</h4><p>实用资料</p><div class="price"><strong>RM 19.90</strong><span class="add-btn">+</span></div></article>
+                <article class="product-card card"><div class="product-media poster"><div class="photo mist"></div></div><h4>思维训练卡片</h4><p>热销商品</p><div class="price"><strong>RM 39.90</strong><span class="add-btn">+</span></div></article>
+                <article class="product-card card"><div class="product-media poster"><div class="photo sky"></div></div><h4>深度阅读计划</h4><p>组合包</p><div class="price"><strong>RM 59.00</strong><span class="add-btn">+</span></div></article>
+                <article class="product-card card"><div class="product-media poster"><div class="photo night"></div></div><h4>入门知识地图</h4><p>限时优惠</p><div class="price"><strong>RM 9.90</strong><span class="add-btn">+</span></div></article>
+              </section>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="browser">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-label">商品详情 /product/:id</span></div>
+        <div class="site-page">
+          <header class="site-header"><div class="site-logo"><span class="mark">真</span><b>真言网001</b></div><nav class="site-nav"><a>首页</a><a>分类</a><a class="active">详情</a></nav><div class="site-actions"><span class="icon-btn">♡</span><span class="icon-btn">袋</span></div></header>
+          <section class="product-detail">
+            <div>
+              <div class="photo gallery-main"></div>
+              <div class="thumb-row"><div class="photo"></div><div class="photo dawn"></div><div class="photo valley"></div><div class="photo mist"></div></div>
+            </div>
+            <aside class="purchase-panel">
+              <span class="kicker">新品 · 有库存</span>
+              <h2>深度思考：从认知到行动</h2>
+              <div class="rating">★★★★★ 4.9 · 128 条评价</div>
+              <div class="detail-price">RM 29.90</div>
+              <p style="margin-top: 12px; color: var(--client-muted); line-height: 24px;">系统化提升思考、学习和行动效率，适合个人成长和知识管理场景。</p>
+              <div class="spec-list"><span>规格：标准版</span><span>库存：以后端为准</span><span>优惠：API 返回</span><span>配送：公开规则</span></div>
+              <div class="cta-row"><span class="btn secondary">加入购物车</span><span class="btn primary">立即购买</span></div>
+            </aside>
+          </section>
+          <div class="tabs-line"><span class="active">详情</span><span>规格</span><span>评价</span><span>常见问题</span></div>
+          <div class="content-panel">后台返回的富文本详情在这里展示。前端只负责排版、图片比例和交互体验，不伪造价格、库存、优惠和购买限制。</div>
+        </div>
+      </article>
+    </section>
+
+    <div class="section-title">
+      <div>
+        <h2>内容页、登录、个人中心、错误页</h2>
+        <p>文章封面默认 16:9；登录卡片 420px；个人中心保留订单、资产、邀请奖励和服务模块语义；404 使用 EmptyState 结构。</p>
+      </div>
+    </div>
+
+    <section class="frame-grid two">
+      <article class="browser">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-label">文章列表 /content</span></div>
+        <div class="site-page">
+          <header class="site-header"><div class="site-logo"><span class="mark">真</span><b>真言网001</b></div><nav class="site-nav"><a>首页</a><a class="active">文章</a><a>标签</a></nav><div class="site-actions"><span class="icon-btn">⌕</span></div></header>
+          <div class="page-inner">
+            <div class="article-layout">
+              <main class="article-list">
+                <article class="article-row card"><div class="photo"></div><div><h4>如何提升自我认知与思维能力</h4><p>文章摘要最多两行，超出省略，保持列表高度稳定，优先保证阅读和点击区域。</p><p>作者 · 2026-06-14 · 阅读 35</p></div></article>
+                <article class="article-row card"><div class="photo dawn"></div><div><h4>时间管理的艺术与科学</h4><p>文章列表保持清晰层级，移动端右侧内容下移。</p><p>作者 · 2026-06-13</p></div></article>
+                <article class="article-row card"><div class="photo valley"></div><div><h4>建立稳定的个人成长系统</h4><p>内容列表要优先保证可读性和点击区域。</p><p>作者 · 2026-06-12</p></div></article>
+              </main>
+              <aside class="side-panel card"><h4>热门标签</h4><div class="tag-cloud"><span>认知</span><span>学习</span><span>成长</span><span>效率</span></div><h4 style="margin-top: 20px;">热门文章</h4><div class="row-item"><div class="photo"></div><b>从认知到行动</b></div><div class="row-item"><div class="photo dawn"></div><b>高效学习方法</b></div></aside>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="browser">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-label">文章详情 /content/:slug</span></div>
+        <div class="site-page">
+          <header class="site-header"><div class="site-logo"><span class="mark">真</span><b>真言网001</b></div><nav class="site-nav"><a>首页</a><a class="active">文章</a></nav><div class="site-actions"><span class="icon-btn">♡</span></div></header>
+          <article class="article-page">
+            <h2>如何提升自我认知与思维能力</h2>
+            <div class="meta">作者 · 2026-06-14 · 阅读 1.2k</div>
+            <div class="photo article-hero"></div>
+            <h3>一、先建立观察框架</h3>
+            <p>文章正文区域保持舒适行宽，桌面端不超过 760px，移动端保持 16px 页边距。段落之间保留清晰间距。</p>
+            <h3>二、形成复盘闭环</h3>
+            <p>详情页支持收藏、点赞、评论等交互，但最终状态以 API 返回为准。</p>
+          </article>
+        </div>
+      </article>
+    </section>
+
+    <section class="frame-grid three" style="margin-top: 22px;">
+      <article class="browser compact-card">
+        <div class="profile-hero"><div class="avatar">王</div><div><h3>用户名称</h3><p>VIP 会员 · 尊享会员服务</p></div><span class="gold-badge">会员权益</span></div>
+        <div class="metric-grid"><div><b>128</b><span>文章</span></div><div><b>56</b><span>订单</span></div><div><b>89</b><span>收藏</span></div><div><b>45</b><span>优惠券</span></div></div>
+        <div class="service-list"><div><span>地</span><b>收货地址</b><span>›</span></div><div><span>安</span><b>安全设置</b><span>›</span></div><div><span>奖</span><b>邀请奖励</b><span>›</span></div><div><span>客</span><b>客服中心</b><span>›</span></div></div>
+      </article>
+
+      <article class="browser compact-card">
+        <div class="auth-card">
+          <div class="brand-mark">真</div>
+          <h3>欢迎回来</h3>
+          <p>登录后同步订单、收藏和会员权益</p>
+          <span class="field">手机号 / 邮箱</span>
+          <span class="field">密码</span>
+          <span class="btn primary" style="width: 100%; margin-top: 16px;">登录</span>
+          <p>还没有账号？立即注册</p>
+        </div>
+      </article>
+
+      <article class="browser compact-card">
+        <div class="error-preview">
+          <div>
+            <div class="error-illustration">404</div>
+            <h3>页面不存在</h3>
+            <p>你访问的内容可能已下架或地址错误。</p>
+            <span class="btn primary">返回首页</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="footer-note">
+      验收边界：本效果图只表达用户端视觉方向和组件系统，不修改现有网站代码。后续真正实现时，必须先从现有页面扫描 API 字段和图片比例，再逐页把商品、文章、Banner、活动图片替换为 RatioImage。
+    </div>
+  </main>
+</body>
+</html>

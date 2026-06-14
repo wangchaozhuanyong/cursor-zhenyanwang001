@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import {
   HOME_PRODUCT_CARD_MEDIA,
   HOME_PRODUCT_CARD_SHELL,
@@ -9,7 +10,7 @@ import {
 export default function HomeGridProductCardSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn(HOME_PRODUCT_CARD_SHELL, "animate-pulse", className)} aria-hidden>
-      <div className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS)}>
+      <div className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS)} style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
         <div className="h-full w-full bg-[var(--theme-bg)]" />
       </div>
       <div className={HOME_PRODUCT_INFO_CLASS}>

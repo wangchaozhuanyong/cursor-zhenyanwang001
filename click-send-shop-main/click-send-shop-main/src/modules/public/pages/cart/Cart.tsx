@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { STORE_COPY } from "@/constants/storeCopy";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import ProductCoverImage from "@/components/ProductCoverImage";
@@ -453,7 +454,8 @@ export default function Cart() {
                               closeItemActions();
                               navigate(`/product/${item.product.id}`, { state: { from: currentPath } });
                             }}
-                            className="store-cart-media aspect-[1/2] w-14 flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:w-16 md:w-16 lg:w-20"
+                            className="store-cart-media w-14 flex-shrink-0 self-start cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:w-16 md:w-16 lg:w-20"
+                            style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
                             aria-label={`查看 ${item.product.name}`}
                           >
                             <ProductCoverImage

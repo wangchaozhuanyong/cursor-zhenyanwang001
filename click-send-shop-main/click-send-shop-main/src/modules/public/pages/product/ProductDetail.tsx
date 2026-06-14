@@ -11,6 +11,7 @@ import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import ProductDetailStickyHeader from "@/components/product/ProductDetailStickyHeader";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { STORE_DETAIL_STICKY_TOP_CLASS } from "@/constants/storeLayout";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid";
@@ -167,7 +168,7 @@ export default function ProductDetail() {
           onCart={() => navigate("/cart")}
         />
         <div className="relative">
-          <Skeleton className="w-full" style={{ aspectRatio: "var(--theme-image-ratio)" }} />
+          <Skeleton className="w-full" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
         </div>
         <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pt-[var(--store-page-y)] md:px-6 md:py-10">
           <div className="space-y-3 md:max-w-xl">
@@ -575,7 +576,7 @@ export default function ProductDetail() {
               <div className={`${productGridClass} md:gap-5`}>
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div key={index} className="overflow-hidden rounded-[var(--theme-card-radius)] border border-[var(--theme-border)] bg-[var(--theme-surface)]">
-                    <Skeleton className="aspect-[1/2] w-full" />
+                    <Skeleton className="w-full" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
                     <div className="space-y-2 p-3">
                       <Skeleton className="h-4 w-3/4" />
                       <Skeleton className="h-4 w-1/2" />

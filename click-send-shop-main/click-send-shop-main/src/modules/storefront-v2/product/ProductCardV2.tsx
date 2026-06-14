@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { cn } from "@/lib/utils";
 import { storefrontCardClassName } from "../design/classes";
 import { storefrontV2Tokens as t } from "../design/tokens";
@@ -41,7 +42,10 @@ export default function ProductCardV2({
         )}
         aria-label={`查看 ${vm.name}`}
       >
-        <div className="relative aspect-[1/2] w-16 shrink-0 overflow-hidden rounded-xl bg-[var(--theme-bg)] sm:w-20">
+        <div
+          className="relative w-16 shrink-0 self-start overflow-hidden rounded-xl bg-[var(--theme-bg)] sm:w-20"
+          style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
+        >
           <ProductCoverImage
             url={vm.imageUrl}
             alt={vm.imageAlt}
@@ -80,7 +84,7 @@ export default function ProductCardV2({
       )}
       aria-label={`查看 ${vm.name}`}
     >
-      <div className="relative aspect-[1/2] w-full overflow-hidden bg-[var(--theme-bg)]">
+      <div className="relative w-full overflow-hidden bg-[var(--theme-bg)]" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
         <ProductCoverImage
           url={vm.imageUrl}
           alt={vm.imageAlt}

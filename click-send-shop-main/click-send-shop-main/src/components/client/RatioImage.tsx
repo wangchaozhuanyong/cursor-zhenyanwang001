@@ -3,6 +3,7 @@ import { ImageOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ClientImageRatio =
+  | "var(--theme-image-ratio, 1 / 1)"
   | "1 / 2"
   | "3 / 4"
   | "4 / 3"

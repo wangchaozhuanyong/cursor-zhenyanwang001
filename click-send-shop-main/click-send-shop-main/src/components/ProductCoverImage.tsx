@@ -1,4 +1,5 @@
 import RatioImage, { type ClientImageRatio } from "@/components/client/RatioImage";
+import { THEME_PRODUCT_MEDIA_RATIO } from "@/constants/productMediaAspect";
 import { resolveProductImageSrc, type UploadImageVariant } from "@/utils/uploadImageVariant";
 
 type ProductCoverImageProps = {
@@ -19,7 +20,7 @@ type ProductCoverImageProps = {
 export default function ProductCoverImage({
   url,
   alt,
-  ratio = "1 / 2",
+  ratio = THEME_PRODUCT_MEDIA_RATIO,
   fit = "cover",
   className,
   imgClassName,

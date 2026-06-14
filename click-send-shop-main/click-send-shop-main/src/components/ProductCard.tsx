@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { isProductNewArrival } from "@/utils/productNewArrival";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import type { ThemeConfig } from "@/types/theme";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 
@@ -271,8 +272,9 @@ function ProductCardInner({
           <div
             className={cn(
               "store-product-media theme-rounded relative shrink-0 overflow-hidden border border-[var(--theme-border)] bg-[var(--store-product-media-bg)]",
-              isListRow ? "aspect-[1/2] w-20 sm:w-[5.5rem]" : "aspect-[1/2] w-16 sm:w-20",
+              isListRow ? "w-20 self-start sm:w-[5.5rem]" : "w-16 self-start sm:w-20",
             )}
+            style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
           >
             <ProductCoverImage
               url={product.cover_image}
@@ -334,7 +336,7 @@ function ProductCardInner({
       <div
         ref={impressionRef}
         className="store-product-media theme-rounded relative overflow-hidden bg-[var(--store-product-media-bg)]"
-        style={{ aspectRatio: "1 / 2" }}
+        style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
       >
         <ProductCoverImage
           url={product.cover_image}

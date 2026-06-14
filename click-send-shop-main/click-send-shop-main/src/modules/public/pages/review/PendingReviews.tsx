@@ -5,6 +5,7 @@ import type { PendingReviewItem } from "@/types/review";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 export default function PendingReviews() {
@@ -58,7 +59,8 @@ export default function PendingReviews() {
               <div key={it.order_item_id} className="mb-2 flex items-center gap-3">
                 <UnifiedButton
                   type="button"
-                  className="aspect-[1/2] w-10 overflow-hidden rounded p-0"
+                  className="w-10 overflow-hidden rounded p-0"
+                  style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
                   onClick={() => navigate(`/product/${it.product_id}`)}
                   aria-label={`查看 ${it.product_name}`}
                 >

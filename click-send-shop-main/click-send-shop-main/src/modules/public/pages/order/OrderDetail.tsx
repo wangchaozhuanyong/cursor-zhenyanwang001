@@ -467,7 +467,7 @@ export default function OrderDetail() {
                 <ProductCoverImage
                   url={item.product.cover_image}
                   alt={item.product.name}
-                  className="aspect-[1/2] w-12 rounded-lg object-cover"
+                  className="w-12 self-start rounded-lg object-cover"
                   imgClassName="object-cover"
                 />
                 <div className="min-w-0 flex-1">

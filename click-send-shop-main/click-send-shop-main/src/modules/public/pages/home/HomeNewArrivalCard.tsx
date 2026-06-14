@@ -6,6 +6,7 @@ import { resolveNewArrivalImage } from "./newArrivalOps";
 import StoreBadge from "@/components/ui/StoreBadge";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { observeHomeCardImpression } from "./homeCardImpressionObserver";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import {
   HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS,
   HOME_PRODUCT_BADGE_CLASS,
@@ -53,7 +54,7 @@ export default function HomeNewArrivalCard({
       className={cn(HOME_PRODUCT_CARD_SHELL, HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS)}
       aria-label={`查看 ${product.name}`}
     >
-      <div className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS)}>
+      <div className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS)} style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
         <ProductCoverImage
           url={imageUrl || undefined}
           alt={`${product.name} 商品图片`}

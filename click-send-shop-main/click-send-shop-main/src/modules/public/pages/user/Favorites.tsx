@@ -52,7 +52,7 @@ export default function Favorites() {
                   <ProductCoverImage
                     url={p.cover_image}
                     alt={p.cover_image_alt || p.name}
-                    className="aspect-[1/2] w-16 rounded-xl"
+                    className="w-16 self-start rounded-xl"
                     imgClassName="h-full w-full rounded-xl object-cover"
                   />
                   <div className="min-w-0 flex-1">

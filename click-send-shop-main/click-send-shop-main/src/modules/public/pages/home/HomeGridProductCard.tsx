@@ -8,6 +8,7 @@ import { trackEventLazy } from "@/services/trackEventLazy";
 import { cn } from "@/lib/utils";
 import { isProductNewArrival } from "@/utils/productNewArrival";
 import { observeHomeCardImpression } from "./homeCardImpressionObserver";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import {
   HOME_PRODUCT_BADGE_CLASS,
   HOME_PRODUCT_CARD_MEDIA,
@@ -68,7 +69,7 @@ function HomeGridProductCard({
       )}
       aria-label={`查看 ${product.name}`}
     >
-      <div className={cn(HOME_PRODUCT_CARD_MEDIA, homeProductImageAspectClass(product))}>
+      <div className={cn(HOME_PRODUCT_CARD_MEDIA, homeProductImageAspectClass(product))} style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
         <ProductCoverImage
           url={product.cover_image}
           alt={cardImageAlt}

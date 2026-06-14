@@ -13,7 +13,7 @@ export const HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS =
 export const HOME_PRODUCT_CARD_MEDIA =
   "store-art-product-media relative w-full shrink-0 overflow-hidden bg-product-image";
 
-export const HOME_PRODUCT_IMAGE_PRODUCT_CLASS = "aspect-[1/2] w-full max-h-none";
+export const HOME_PRODUCT_IMAGE_PRODUCT_CLASS = "w-full max-h-none";
 export const HOME_PRODUCT_IMAGE_SERVICE_CLASS = HOME_PRODUCT_IMAGE_PRODUCT_CLASS;
 
 export const HOME_PRODUCT_IMAGE_IMG_CLASS = "h-full w-full object-cover";

@@ -10,6 +10,7 @@ import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import type { NewArrivalClickTarget } from "./newArrivalOps";
 import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
 import { observeHomeCardImpression } from "./homeCardImpressionObserver";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import {
   HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS,
   HOME_PRODUCT_CARD_SHELL,
@@ -126,7 +127,10 @@ export default function NewArrivalSection({
                   "animate-pulse",
                 )}
               >
-                <div className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS, "bg-[var(--theme-bg)]")} />
+                <div
+                  className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS, "bg-[var(--theme-bg)]")}
+                  style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
+                />
                 <div className={cn(HOME_PRODUCT_INFO_CLASS, "space-y-2")}>
                   <div className="h-3 w-4/5 rounded bg-[var(--theme-surface)]" />
                   <div className="h-3 w-1/2 rounded bg-[var(--theme-surface)]" />

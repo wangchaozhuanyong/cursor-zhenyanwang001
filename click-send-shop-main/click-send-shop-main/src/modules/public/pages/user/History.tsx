@@ -70,7 +70,7 @@ export default function History() {
                   <ProductCoverImage
                     url={product.cover_image}
                     alt={product.cover_image_alt || product.name}
-                    className="aspect-[1/2] w-12 flex-shrink-0 rounded-xl object-cover"
+                    className="w-12 flex-shrink-0 rounded-xl object-cover"
                     imgClassName="object-cover"
                     loading={i === 0 ? "eager" : "lazy"}
                     fetchPriority={i === 0 ? "high" : "low"}

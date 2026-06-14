@@ -9,6 +9,7 @@ import { getReturnStatusBadgeClass } from "@/constants/statusDictionary";
 import { formatDateTime } from "@/utils/formatDateTime";
 import ReturnApplySheet from "./ReturnApplySheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import afterSaleProgressHero from "./assets/after-sale-progress-hero.webp";
 import {
   RETURN_FILTERS,
@@ -174,7 +175,7 @@ export default function Returns() {
                   onClick={() => navigate(`/returns/${item.id}`)}
                   className="grid w-full grid-cols-[48px_1fr_auto] items-center gap-3 text-left"
                 >
-                  <div className="aspect-[1/2] w-12 overflow-hidden rounded-xl bg-secondary">
+                  <div className="w-12 overflow-hidden rounded-xl bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
                     {image ? (
                       <ProductCoverImage
                         url={image}

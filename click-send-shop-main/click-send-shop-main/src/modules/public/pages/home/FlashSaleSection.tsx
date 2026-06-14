@@ -5,6 +5,7 @@ import * as homeService from "@/services/homeService";
 import { fetchFlashSaleHome, type FlashSaleHomeActivity } from "@/services/marketingService";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -158,7 +159,7 @@ export default function FlashSaleSection({ delay = 0, title = "" }: { delay?: nu
                 onClick={() => navigate(`/product/${item.product_id}`)}
                 className="group flex w-[176px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--theme-border)_86%,white)] bg-[var(--theme-surface)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-price)_42%,var(--theme-border))] hover:shadow-[var(--theme-shadow-hover)]"
               >
-                <div className="relative aspect-[1/2] w-full overflow-hidden bg-[var(--store-product-media-bg)]">
+                <div className="relative w-full overflow-hidden bg-[var(--store-product-media-bg)]" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
                   <ProductCoverImage
                     url={item.cover_image}
                     alt={item.product_name}

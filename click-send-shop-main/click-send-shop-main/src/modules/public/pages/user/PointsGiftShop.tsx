@@ -21,6 +21,7 @@ import {
 } from "@/utils/themeVisuals";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import RatioImage from "@/components/client/RatioImage";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE, THEME_PRODUCT_MEDIA_RATIO } from "@/constants/productMediaAspect";
 
 function GiftCard({
   gift,
@@ -45,14 +46,17 @@ function GiftCard({
         <RatioImage
           src={gift.image}
           alt=""
-          ratio="1 / 2"
+          ratio={THEME_PRODUCT_MEDIA_RATIO}
           rounded="md"
-          className="w-12 shrink-0"
+          className="w-12 shrink-0 self-start"
           imgClassName="object-cover"
           loading="lazy"
         />
       ) : (
-        <div className="flex aspect-[1/2] w-12 shrink-0 items-center justify-center rounded-lg bg-secondary">
+        <div
+          className="flex w-12 shrink-0 self-start items-center justify-center rounded-lg bg-secondary"
+          style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
+        >
           <Gift size={24} className="text-muted-foreground" aria-hidden />
         </div>
       )}

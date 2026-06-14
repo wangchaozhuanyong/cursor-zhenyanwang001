@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { ArrowRight, Clock, Gift, Tag } from "lucide-react";
 import RatioImage from "@/components/client/RatioImage";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StorefrontBadge from "../components/StorefrontBadge";
 import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
@@ -145,7 +146,11 @@ function CampaignMetric({ campaign }: { campaign: StorefrontCampaignVm }) {
     return (
       <div className="flex min-w-0 items-center gap-2">
         {campaign.products.slice(0, 3).map((product) => (
-          <span key={product.product_id} className="relative aspect-[1/2] w-7 overflow-hidden rounded-xl border border-white/70 bg-[var(--theme-surface)]">
+          <span
+            key={product.product_id}
+            className="relative w-7 overflow-hidden rounded-xl border border-white/70 bg-[var(--theme-surface)]"
+            style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
+          >
             <ProductCoverImage
               url={product.cover_image}
               alt={product.product_name}

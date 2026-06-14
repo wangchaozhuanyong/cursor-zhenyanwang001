@@ -6,6 +6,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import StableImage from "@/components/ui/StableImage";
 import { getReturnStatusBadgeClass } from "@/constants/statusDictionary";
 import { formatDateTime } from "@/utils/formatDateTime";
@@ -162,7 +163,7 @@ export default function ReturnDetail() {
           <>
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="flex items-start gap-3">
-                <div className="aspect-[1/2] w-14 shrink-0 overflow-hidden rounded-xl bg-secondary">
+                <div className="w-14 shrink-0 overflow-hidden rounded-xl bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
                   {image ? (
                     <ProductCoverImage
                       url={image}

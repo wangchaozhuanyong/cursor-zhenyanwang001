@@ -11,6 +11,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { ensureMediaUrl } from "@/utils/mediaUrl";
 import { stripHtml } from "@/utils/seo";
 import RatioImage from "@/components/client/RatioImage";
+import { THEME_PRODUCT_MEDIA_RATIO } from "@/constants/productMediaAspect";
 
 type PurchaseIntent = "cart" | "buy";
 
@@ -234,9 +235,9 @@ export default function ProductVariantSheet({
         <RatioImage
           src={heroImage || undefined}
           alt={`${product.name} ${selectedSpecLabel}`}
-          ratio="1 / 2"
+          ratio={THEME_PRODUCT_MEDIA_RATIO}
           rounded="xl"
-          className="w-16 shrink-0 border border-[var(--theme-border)] bg-[var(--theme-bg)] md:mx-auto md:w-full md:max-w-[220px]"
+          className="w-16 shrink-0 self-start border border-[var(--theme-border)] bg-[var(--theme-bg)] md:mx-auto md:w-full md:max-w-[220px]"
           imgClassName="object-cover md:object-contain"
           sizes="(max-width: 767px) 64px, 220px"
           loading="eager"
@@ -291,7 +292,7 @@ export default function ProductVariantSheet({
                       <RatioImage
                         src={ensureMediaUrl(value.image_url)}
                         alt={`${group.name} ${value.value}`}
-                        ratio="1 / 2"
+                        ratio={THEME_PRODUCT_MEDIA_RATIO}
                         rounded="sm"
                         imgClassName="object-cover"
                         sizes="20px"
@@ -338,7 +339,7 @@ export default function ProductVariantSheet({
                   <RatioImage
                     src={ensureMediaUrl(variant.image_url)}
                     alt={variant.spec_text || variant.title || variant.sku_code || "规格图"}
-                    ratio="1 / 2"
+                    ratio={THEME_PRODUCT_MEDIA_RATIO}
                     rounded="sm"
                     imgClassName="object-cover"
                     sizes="24px"

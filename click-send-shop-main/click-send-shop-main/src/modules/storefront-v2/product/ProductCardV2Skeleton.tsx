@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { storefrontCardClassName } from "../design/classes";
 
 type ProductCardV2SkeletonProps = {
@@ -9,7 +10,7 @@ export default function ProductCardV2Skeleton({ variant = "grid" }: ProductCardV
   if (variant === "list") {
     return (
       <div className={`${storefrontCardClassName()} flex gap-3 p-3`} aria-hidden>
-        <Skeleton className="aspect-[1/2] w-16 shrink-0 rounded-xl sm:w-20" />
+        <Skeleton className="w-16 shrink-0 self-start rounded-xl sm:w-20" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
         <div className="flex flex-1 flex-col gap-2">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-2/3" />
@@ -22,7 +23,7 @@ export default function ProductCardV2Skeleton({ variant = "grid" }: ProductCardV
 
   return (
     <div className={`${storefrontCardClassName()} overflow-hidden`} aria-hidden>
-      <Skeleton className="aspect-[1/2] w-full" />
+      <Skeleton className="w-full" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
       <div className="space-y-2 p-2.5">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />

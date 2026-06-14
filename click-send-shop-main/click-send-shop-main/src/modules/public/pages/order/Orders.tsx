@@ -410,7 +410,7 @@ export default function Orders() {
                       <ProductCoverImage
                         url={item.product.cover_image}
                         alt={item.product.name}
-                        className="aspect-[1/2] w-12 rounded-lg object-cover"
+                        className="w-12 self-start rounded-lg object-cover"
                         imgClassName="object-cover"
                         loading={orderIndex === 0 && itemIndex === 0 ? "eager" : "lazy"}
                         fetchPriority={orderIndex === 0 && itemIndex === 0 ? "high" : "low"}

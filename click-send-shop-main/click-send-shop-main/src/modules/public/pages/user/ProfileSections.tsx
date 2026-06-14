@@ -15,7 +15,7 @@ import { formatProfileHeroName } from "./profileHeroName";
 import InviteRewardCard from "./InviteRewardCard.final.jsx";
 import profileVipAvatarImage from "@/assets/profile-vip-avatar-medallion.svg";
 
-export const PROFILE_CARD_CLASS = "store-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
+export const PROFILE_CARD_CLASS = "store-profile-card client-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
 export const PROFILE_MENU_TAP = "store-profile-tap transition-transform active:scale-[0.98]";
 const PROFILE_SECTION_PADDING = "px-[var(--store-card-x)] py-[var(--store-card-y)]";
 
@@ -74,7 +74,7 @@ function ProfileSectionTitle({
   onRightClick?: () => void;
 }) {
   return (
-    <div className="profile-section-title">
+    <div className="profile-section-title client-profile-section-title">
       <h3>{title}</h3>
       {rightLabel ? (
         <UnifiedButton type="button" onClick={onRightClick} className="profile-section-more">
@@ -116,7 +116,7 @@ export function ProfileHeroCard({
   const avatarSrc = avatar || profileVipAvatarImage || logoSrc;
 
   return (
-    <section className="store-profile-vip-card">
+    <section className="store-profile-vip-card client-profile-hero-card">
       <span className="profile-vip-watermark" aria-hidden="true" />
       <div className="profile-vip-header">
         <UnifiedButton type="button" onClick={onAvatarClick} className="profile-avatar-button" aria-label="更换头像">
@@ -203,12 +203,13 @@ export function ProfileGuestCard({
   onLogin: () => void;
 }) {
   return (
-    <section className="store-profile-vip-card profile-guest-card">
+    <section className="store-profile-vip-card profile-guest-card client-profile-hero-card client-profile-guest-card">
       <span className="profile-vip-watermark" aria-hidden="true">VIP</span>
       <div className="profile-vip-header">
         <StoreBrandLogo src={logoSrc} siteName={siteName} variant="profile" className="profile-brand-logo-ring" width={70} height={70} />
         <div className="profile-vip-copy">
           <p className="profile-vip-name profile-guest-title">欢迎来到 {siteName}</p>
+          <p className="profile-guest-desc">登录后查看订单、优惠券、会员权益与邀请奖励</p>
         </div>
       </div>
       <div className="profile-vip-actions">
@@ -230,7 +231,7 @@ export function ProfileOrderPanel({
   onViewAll: () => void;
 }) {
   return (
-    <section className={cn(PROFILE_CARD_CLASS, PROFILE_SECTION_PADDING)}>
+    <section className={cn(PROFILE_CARD_CLASS, "client-profile-order-panel", PROFILE_SECTION_PADDING)}>
       <ProfileSectionTitle title="我的订单" rightLabel="全部订单" onRightClick={onViewAll} />
       <div className="profile-order-grid">
         {items.map((item) => {
@@ -266,9 +267,9 @@ export function ProfileAssetPanel({
   if (!items.length) return null;
 
   return (
-    <section className={cn(PROFILE_CARD_CLASS, PROFILE_SECTION_PADDING)}>
+    <section className={cn(PROFILE_CARD_CLASS, "client-profile-asset-panel", PROFILE_SECTION_PADDING)}>
       <ProfileSectionTitle title="我的资产" />
-      <div className="profile-asset-grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+      <div className="profile-asset-grid">
         {items.map((item) => (
           <UnifiedButton
             key={item.key}
@@ -315,7 +316,7 @@ export function ProfileInviteRewardCard({
   const cashbackAmount = "RM " + safeRewardBalance.toFixed(2);
 
   return (
-    <div className="profile-invite-reward-card">
+    <div className="profile-invite-reward-card client-profile-invite-panel">
       <InviteRewardCard
         invitedCount={safeInviteCount}
         cashbackAmount={cashbackAmount}
@@ -348,7 +349,7 @@ export function ProfileServiceGrid({
   title?: string;
 }) {
   return (
-    <section className={cn(PROFILE_CARD_CLASS, PROFILE_SECTION_PADDING)}>
+    <section className={cn(PROFILE_CARD_CLASS, "client-profile-service-panel", PROFILE_SECTION_PADDING)}>
       <ProfileSectionTitle title={title} />
       <div className="profile-service-grid">
         {items.map((item) => (
@@ -381,7 +382,7 @@ export function ProfileSecondaryLinkPanel({
   if (!items.length) return null;
 
   return (
-    <section className={cn(PROFILE_CARD_CLASS, PROFILE_SECTION_PADDING)}>
+    <section className={cn(PROFILE_CARD_CLASS, "client-profile-more-panel", PROFILE_SECTION_PADDING)}>
       <ProfileSectionTitle title="更多功能" />
       <div className="profile-secondary-list">
         {items.map((item) => (
@@ -413,7 +414,7 @@ export function ProfileInstallShortcut({
   onNavigate: (item: ProfileServiceItem) => void;
 }) {
   return (
-    <section className="profile-install-shortcut">
+    <section className="profile-install-shortcut client-profile-install-shortcut">
       <span className="profile-install-icon">
         <item.icon size={19} strokeWidth={2.1} />
       </span>
@@ -430,7 +431,7 @@ export function ProfileInstallShortcut({
 
 export function ProfileTrustStrip({ items }: { items: ProfileTrustItem[] }) {
   return (
-    <section className="profile-trust-strip">
+    <section className="profile-trust-strip client-profile-trust-strip">
       {items.map((item) => (
         <div key={item.title} className="profile-trust-entry">
           <span className="profile-trust-icon">
@@ -448,7 +449,7 @@ export function ProfileTrustStrip({ items }: { items: ProfileTrustItem[] }) {
 
 export function ProfileLogoutButton({ onClick }: { onClick: () => void }) {
   return (
-    <UnifiedButton type="button" onClick={onClick} className="profile-logout-button">
+    <UnifiedButton type="button" onClick={onClick} className="profile-logout-button client-profile-logout-button">
       <LogOut size={19} />
       退出登录
     </UnifiedButton>

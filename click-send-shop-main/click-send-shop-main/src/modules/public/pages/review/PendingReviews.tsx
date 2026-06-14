@@ -5,6 +5,7 @@ import type { PendingReviewItem } from "@/types/review";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 export default function PendingReviews() {
   const navigate = useNavigate();
@@ -37,9 +38,17 @@ export default function PendingReviews() {
   return (
     <div className="min-h-screen bg-background p-4">
       <h1 className="mb-4 text-lg font-semibold">待评价</h1>
-      {loading ? <p>加载中...</p> : null}
+      {loading ? <p className="rounded-2xl border border-border bg-card p-4 text-center text-sm text-muted-foreground">加载中...</p> : null}
       {!loading && items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">暂无待评价商品，确认收货后可评价。</p>
+        <ClientEmptyState
+          title="暂无待评价商品"
+          description="确认收货后，可评价的商品会显示在这里。"
+          action={
+            <ClientButton type="button" variant="secondary" onClick={() => navigate("/orders?tab=pending_review")}>
+              查看订单
+            </ClientButton>
+          }
+        />
       ) : null}
       <div className="space-y-4">
         {grouped.map(([orderId, list]) => (
@@ -49,7 +58,7 @@ export default function PendingReviews() {
               <div key={it.order_item_id} className="mb-2 flex items-center gap-3">
                 <UnifiedButton
                   type="button"
-                  className="h-12 w-12 overflow-hidden rounded p-0"
+                  className="aspect-[1/2] w-10 overflow-hidden rounded p-0"
                   onClick={() => navigate(`/product/${it.product_id}`)}
                   aria-label={`查看 ${it.product_name}`}
                 >

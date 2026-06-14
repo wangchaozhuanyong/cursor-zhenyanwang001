@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { EmptyState as ClientEmptyState } from "@/components/client";
 
 export default function History() {
   const navigate = useNavigate();
@@ -49,10 +50,11 @@ export default function History() {
             <p className="text-sm">加载中…</p>
           </div>
         ) : history.length === 0 ? (
-          <div className="flex flex-col items-center py-20 text-muted-foreground">
-            <Clock size={48} className="mb-3 opacity-30" />
-            <p className="text-sm">暂无浏览记录</p>
-          </div>
+          <ClientEmptyState
+            title="暂无浏览记录"
+            description="浏览过的商品会自动保存在这里，方便你回看。"
+            icon={<Clock size={30} />}
+          />
         ) : (
           <div className="space-y-2">
             <AnimatePresence>
@@ -68,7 +70,7 @@ export default function History() {
                   <ProductCoverImage
                     url={product.cover_image}
                     alt={product.cover_image_alt || product.name}
-                    className="h-16 w-16 flex-shrink-0 rounded-xl object-cover"
+                    className="aspect-[1/2] w-12 flex-shrink-0 rounded-xl object-cover"
                     imgClassName="object-cover"
                     loading={i === 0 ? "eager" : "lazy"}
                     fetchPriority={i === 0 ? "high" : "low"}

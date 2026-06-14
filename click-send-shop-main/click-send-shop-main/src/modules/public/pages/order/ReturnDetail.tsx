@@ -162,7 +162,7 @@ export default function ReturnDetail() {
           <>
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="flex items-start gap-3">
-                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-secondary">
+                <div className="aspect-[1/2] w-14 shrink-0 overflow-hidden rounded-xl bg-secondary">
                   {image ? (
                     <ProductCoverImage
                       url={image}

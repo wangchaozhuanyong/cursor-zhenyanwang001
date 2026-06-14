@@ -7,7 +7,7 @@ import type { MarketingActivitySummary } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { trackEventLazy } from "@/services/trackEventLazy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import StableImage from "@/components/ui/StableImage";
+import RatioImage from "@/components/client/RatioImage";
 
 export default function MarketingPromotionBannerSection({ delay = 0, title = "" }: { delay?: number; title?: string }) {
   const navigate = useNavigate();
@@ -54,11 +54,11 @@ export default function MarketingPromotionBannerSection({ delay = 0, title = "" 
         >
           {banner.cover_image ? (
             <>
-              <StableImage
+              <RatioImage
                 src={banner.cover_image}
                 alt=""
-                width={960}
-                height={360}
+                ratio="16 / 9"
+                rounded="none"
                 className="absolute inset-0 h-full w-full"
                 imgClassName="object-cover transition duration-300 group-hover:scale-[1.02]"
                 loading="lazy"

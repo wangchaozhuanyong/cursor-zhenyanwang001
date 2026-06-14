@@ -7,7 +7,6 @@ import { useCouponCenterStore } from "@/stores/useCouponCenterStore";
 import { useMyCouponsStore } from "@/stores/useMyCouponsStore";
 import { useCartStore } from "@/stores/useCartStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
-import EmptyState from "@/components/EmptyState";
 import type { UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { cn } from "@/lib/utils";
@@ -26,6 +25,7 @@ import {
   THEME_BTN_PRICE,
 } from "@/utils/themeVisuals";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 type DisplayStatus = "available" | "claimed" | "pending" | "used" | "expired" | "invalidated";
 
@@ -274,15 +274,17 @@ export default function Coupons() {
 
   if (error && rawCoupons.length === 0) {
     return (
-      <div className="store-page flex min-h-screen flex-col items-center justify-center gap-3 px-[var(--store-page-x)] sm:px-4">
-        <p className="text-sm text-[var(--theme-danger)]">{error}</p>
-        <UnifiedButton
-          type="button"
-          onClick={handleRetry}
-          className={cn("rounded-full px-6 py-2.5 text-sm font-bold", THEME_BTN_PRICE)}
-        >
-          {isSessionExpired ? "去登录" : "重试"}
-        </UnifiedButton>
+      <div className="store-page flex min-h-screen items-center justify-center px-[var(--store-page-x)] sm:px-4">
+        <ClientEmptyState
+          title="优惠券加载失败"
+          description={error}
+          icon={<Ticket size={30} />}
+          action={
+            <ClientButton type="button" onClick={handleRetry}>
+              {isSessionExpired ? "去登录" : "重试"}
+            </ClientButton>
+          }
+        />
       </div>
     );
   }
@@ -364,20 +366,24 @@ export default function Coupons() {
               className="xl:col-span-2"
             >
               {pageView === "claimCenter" ? (
-                <EmptyState
-                  icon={Ticket}
+                <ClientEmptyState
+                  icon={<Ticket size={30} />}
                   title="暂无可领取优惠券"
                   description="新优惠券上线后会出现在这里"
                 />
               ) : (
-                <EmptyState
-                  icon={Ticket}
+                <ClientEmptyState
+                  icon={<Ticket size={30} />}
                   title={EMPTY_STATE_COPY[tab].title}
                   description={EMPTY_STATE_COPY[tab].description}
                   action={
                     tab === "mine" && available.length > 0
-                      ? { label: "去领券中心", onClick: () => setPageView("claimCenter") }
-                      : undefined
+                      ? (
+                        <ClientButton type="button" variant="secondary" onClick={() => setPageView("claimCenter")}>
+                          去领券中心
+                        </ClientButton>
+                      )
+                      : null
                   }
                 />
               )}

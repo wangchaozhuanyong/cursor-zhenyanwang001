@@ -36,6 +36,7 @@ import { SUPPORT_PAGE_PATH } from "@/utils/supportDownloadConfig";
 import { useGoBack } from "@/hooks/useGoBack";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 const steps = ["待付款", "已付款", "已发货", "已完成"];
 
@@ -368,7 +369,7 @@ export default function OrderDetail() {
   if (loading) {
     return (
       <StoreAccountLayout title="订单详情" onBack={handleBack}>
-        <div className="text-sm text-muted-foreground">加载中...</div>
+        <div className="rounded-2xl border border-border bg-card p-4 text-center text-sm text-muted-foreground">加载中...</div>
       </StoreAccountLayout>
     );
   }
@@ -376,7 +377,15 @@ export default function OrderDetail() {
   if (error || !order) {
     return (
       <StoreAccountLayout title="订单详情" onBack={handleBack}>
-        <div className="text-sm text-muted-foreground">{error || "订单不存在"}</div>
+        <ClientEmptyState
+          title={error ? "订单加载失败" : "订单不存在"}
+          description={error || "该订单可能已删除，或当前链接不可用。"}
+          action={
+            <ClientButton type="button" onClick={() => id && loadOrderDetail(id)}>
+              重试
+            </ClientButton>
+          }
+        />
       </StoreAccountLayout>
     );
   }
@@ -458,7 +467,7 @@ export default function OrderDetail() {
                 <ProductCoverImage
                   url={item.product.cover_image}
                   alt={item.product.name}
-                  className="h-[72px] w-[72px] rounded-lg object-cover"
+                  className="aspect-[1/2] w-12 rounded-lg object-cover"
                   imgClassName="object-cover"
                 />
                 <div className="min-w-0 flex-1">

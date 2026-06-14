@@ -21,7 +21,7 @@ export function CheckoutItemsList({ items }: CheckoutItemsListProps) {
           <ProductCoverImage
             url={item.product.cover_image}
             alt={item.product.name}
-            className="store-checkout-media h-16 w-16 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] object-cover"
+            className="store-checkout-media aspect-[1/2] w-12 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] object-cover"
             imgClassName="object-cover"
             loading={index === 0 ? "eager" : "lazy"}
             fetchPriority={index === 0 ? "high" : "low"}

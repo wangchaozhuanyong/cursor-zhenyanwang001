@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { ensureMediaUrl } from "@/utils/mediaUrl";
 import { stripHtml } from "@/utils/seo";
-import StableImage from "@/components/ui/StableImage";
+import RatioImage from "@/components/client/RatioImage";
 
 type PurchaseIntent = "cart" | "buy";
 
@@ -231,23 +231,17 @@ export default function ProductVariantSheet({
   const productSummary = (
     <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 md:border-0 md:bg-transparent md:p-0">
       <div className="flex gap-3 md:block">
-        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] md:mx-auto md:flex md:h-[210px] md:w-full md:max-w-[320px] md:items-center md:justify-center md:rounded-[22px]">
-          {heroImage ? (
-            <StableImage
-              src={heroImage}
-              alt={`${product.name} ${selectedSpecLabel}`}
-              className="h-full w-full"
-              imgClassName="object-cover md:object-contain"
-              sizes="(max-width: 767px) 96px, 320px"
-              loading="eager"
-              fetchPriority="high"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-[var(--theme-text-muted)]">
-              暂无图片
-            </div>
-          )}
-        </div>
+        <RatioImage
+          src={heroImage || undefined}
+          alt={`${product.name} ${selectedSpecLabel}`}
+          ratio="1 / 2"
+          rounded="xl"
+          className="w-16 shrink-0 border border-[var(--theme-border)] bg-[var(--theme-bg)] md:mx-auto md:w-full md:max-w-[220px]"
+          imgClassName="object-cover md:object-contain"
+          sizes="(max-width: 767px) 64px, 220px"
+          loading="eager"
+          fetchPriority="high"
+        />
         <div className="min-w-0 flex-1 md:hidden">
           <p className="line-clamp-2 text-sm font-semibold leading-snug text-[var(--theme-text)]">{product.name}</p>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -293,16 +287,17 @@ export default function ProductVariantSheet({
                   )}
                 >
                   {value.image_url ? (
-                    <StableImage
-                      src={ensureMediaUrl(value.image_url)}
-                      alt={`${group.name} ${value.value}`}
-                      width={28}
-                      height={28}
-                      className="mr-2 inline-block h-7 w-7 rounded-full align-middle"
-                      imgClassName="object-cover"
-                      sizes="28px"
-                      loading="lazy"
-                    />
+                    <span className="mr-2 inline-block w-5 align-middle">
+                      <RatioImage
+                        src={ensureMediaUrl(value.image_url)}
+                        alt={`${group.name} ${value.value}`}
+                        ratio="1 / 2"
+                        rounded="sm"
+                        imgClassName="object-cover"
+                        sizes="20px"
+                        loading="lazy"
+                      />
+                    </span>
                   ) : null}
                   {value.value}
                   {active ? <CheckCircle2 size={13} className="ml-1 inline-block align-[-2px]" /> : null}
@@ -339,16 +334,17 @@ export default function ProductVariantSheet({
               )}
             >
               {variant.image_url ? (
-                <StableImage
-                  src={ensureMediaUrl(variant.image_url)}
-                  alt={variant.spec_text || variant.title || variant.sku_code || "规格图"}
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 shrink-0 rounded-lg"
-                  imgClassName="object-cover"
-                  sizes="32px"
-                  loading="lazy"
-                />
+                <span className="w-6 shrink-0">
+                  <RatioImage
+                    src={ensureMediaUrl(variant.image_url)}
+                    alt={variant.spec_text || variant.title || variant.sku_code || "规格图"}
+                    ratio="1 / 2"
+                    rounded="sm"
+                    imgClassName="object-cover"
+                    sizes="24px"
+                    loading="lazy"
+                  />
+                </span>
               ) : null}
               <span className="min-w-0 truncate">
                 {variant.spec_text || variant.title || variant.sku_code || "默认规格"}

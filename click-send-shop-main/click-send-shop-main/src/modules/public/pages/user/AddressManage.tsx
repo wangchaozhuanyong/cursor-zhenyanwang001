@@ -10,6 +10,7 @@ import { formatAddressForDisplay } from "@/services/addressService";
 import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 type AddressForm = Omit<Address, "id">;
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
@@ -123,11 +124,16 @@ export default function AddressManage() {
             <p className="text-sm">加载中...</p>
           </div>
         ) : addresses.length === 0 ? (
-          <div className={`${CARD} flex flex-col items-center py-12`}>
-            <MapPin size={40} className="text-[var(--theme-muted)]" />
-            <p className="mt-3 text-sm text-[var(--theme-muted)]">暂无收货地址</p>
-            <UnifiedButton type="button" onClick={openAdd} className="mt-4 rounded-full bg-[var(--theme-primary)] px-6 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]">添加地址</UnifiedButton>
-          </div>
+          <ClientEmptyState
+            title="暂无收货地址"
+            description="添加常用地址后，结算时可以快速选择。"
+            icon={<MapPin size={30} />}
+            action={
+              <ClientButton type="button" onClick={openAdd}>
+                添加地址
+              </ClientButton>
+            }
+          />
         ) : (
           <div className="space-y-3">
             {addresses.map((addr) => (

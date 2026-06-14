@@ -421,7 +421,7 @@ export function CheckoutOrderSuccess({
               <ProductCoverImage
                 url={item.product.cover_image}
                 alt={item.product.name}
-                className="h-14 w-14 rounded-lg object-cover"
+                className="aspect-[1/2] w-10 rounded-lg object-cover"
                 imgClassName="object-cover"
               />
               <div className="flex-1 min-w-0">

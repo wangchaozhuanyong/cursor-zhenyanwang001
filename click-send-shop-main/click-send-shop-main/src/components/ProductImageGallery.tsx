@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
+import RatioImage from "@/components/client/RatioImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
-import { ProgressiveImage } from "@/modules/micro-interactions";
 import { productCoverForDetail } from "@/utils/uploadImageVariant";
 
 interface ProductImageGalleryProps {
@@ -79,10 +78,11 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
                 aria-label={`${name} 视频`}
               />
             ) : (
-              <ProgressiveImage
+              <RatioImage
                 src={productCoverForDetail(currentItem.url)}
-                blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
                 alt={currentItem.alt || (current === 0 ? `${name} 主图` : `${name} 详情图 ${current + 1}`)}
+                ratio="1 / 1"
+                rounded="none"
                 className="h-full w-full bg-transparent"
                 imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
                 sizes="100vw"

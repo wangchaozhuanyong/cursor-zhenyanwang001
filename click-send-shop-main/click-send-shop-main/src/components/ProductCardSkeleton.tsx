@@ -15,7 +15,7 @@ export default function ProductCardSkeleton({ list = false }: ProductCardSkeleto
     return (
       <div className="theme-product-card overflow-hidden theme-rounded p-3 transform-gpu" aria-hidden>
         <div className="flex gap-3">
-          <Skeleton className={cn("theme-rounded shrink-0", list ? "h-28 w-28" : "h-24 w-24")} />
+          <Skeleton className={cn("theme-rounded aspect-[1/2] shrink-0", list ? "w-20 sm:w-[5.5rem]" : "w-16 sm:w-20")} />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/5" />
@@ -33,7 +33,7 @@ export default function ProductCardSkeleton({ list = false }: ProductCardSkeleto
 
   return (
     <div className="theme-product-card overflow-hidden theme-rounded transform-gpu" aria-hidden>
-      <Skeleton className="w-full" style={{ aspectRatio: isPremium ? "1 / 1" : "var(--theme-image-ratio)" }} />
+      <Skeleton className="aspect-[1/2] w-full" />
       <div className={`p-3 space-y-2 ${isPremium ? "p-3.5" : ""} ${cardCenter ? "flex flex-col items-center" : ""}`}>
         <Skeleton className={`h-4 ${cardCenter ? "w-4/5" : "w-full"}`} />
         <Skeleton className={`h-4 ${cardCenter ? "w-3/5" : "w-2/3"}`} />

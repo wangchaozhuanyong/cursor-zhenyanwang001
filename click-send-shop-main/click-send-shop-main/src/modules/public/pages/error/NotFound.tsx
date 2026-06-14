@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { trackEvent } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useStableBack } from "@/hooks/useStableBack";
+import { ClientButton } from "@/components/client";
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function NotFound() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--theme-text-muted)]">404</p>
         <h1 className="mt-2 text-2xl font-bold text-foreground">页面不存在</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">这个页面可能已移动、删除，或链接输入有误。你可以返回上一页，或者回到首页继续浏览。</p>
-        <div className="mt-7 grid gap-2 sm:grid-cols-2">
+        <div className="mt-7 grid gap-2 sm:grid-cols-3">
           <UnifiedButton
             type="button"
             onClick={stableBack}
@@ -35,6 +36,14 @@ export default function NotFound() {
           >
             <ArrowLeft size={16} aria-hidden /> 返回上一页
           </UnifiedButton>
+          <ClientButton
+            type="button"
+            variant="secondary"
+            className="min-h-11 rounded-full"
+            onClick={() => window.location.reload()}
+          >
+            重新加载
+          </ClientButton>
           <UnifiedButton
             type="button"
             onClick={() => navigate("/", { replace: true })}

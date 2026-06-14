@@ -19,6 +19,7 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { setSearchAttribution } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -265,23 +266,28 @@ export default function Search() {
             showFullSkeleton={showFullSkeleton}
             showSoftRefreshing={showSoftRefreshing}
             emptyState={
-              <div className="store-search-empty py-20 text-center text-sm text-muted-foreground">
-                <p>没有找到相关商品</p>
-                <UnifiedButton
-                  type="button"
-                  onClick={() => {
-                    const nextParams = new URLSearchParams(searchParams);
-                    nextParams.delete("keyword");
-                    setSearchParams(nextParams, { replace: true });
-                    setQuery("");
-                    setDebouncedQuery("");
-                    setSuggestions([]);
-                  }}
-                  className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-1.5 text-xs text-[var(--theme-text)]"
-                >
-                  清空搜索重新查看
-                </UnifiedButton>
-              </div>
+              <ClientEmptyState
+                className="store-search-empty"
+                title="没有找到相关商品"
+                description="可以换个关键词，或清空搜索后查看全部分类。"
+                action={
+                  <ClientButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const nextParams = new URLSearchParams(searchParams);
+                      nextParams.delete("keyword");
+                      setSearchParams(nextParams, { replace: true });
+                      setQuery("");
+                      setDebouncedQuery("");
+                      setSuggestions([]);
+                    }}
+                  >
+                    清空搜索
+                  </ClientButton>
+                }
+              />
             }
           />
         )}

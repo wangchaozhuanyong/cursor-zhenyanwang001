@@ -14,6 +14,7 @@ import {
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import RatioImage, { type ClientImageRatio } from "@/components/client/RatioImage";
 import { getBannerCopyToneFromImage, type BannerCopyTone } from "@/utils/bannerTextTone";
 import { hasLoadedImage, markImageLoaded, rememberLoadedImageFromElement } from "@/utils/imageLoadMemory";
 
@@ -303,23 +304,24 @@ export default function BannerCarousel({
     warnLargeBannerImage(image, item.id);
     const itemTitle = item.title?.trim() || `${ariaLabelPrefix} ${index + 1}`;
     return (
-      <img
+      <RatioImage
         key={item.id || image || index}
-        ref={isActive ? activeImageRef : undefined}
+        imgRef={isActive ? activeImageRef : undefined}
         src={itemResponsiveImage.src}
         srcSet={itemResponsiveImage.srcSet}
         sizes={itemResponsiveImage.sizes}
         alt={isActive ? itemTitle : ""}
-        aria-hidden={!isActive}
+        ariaHidden={!isActive}
+        ratio={BANNER_ASPECT_CSS as ClientImageRatio}
+        fit="cover"
+        rounded="none"
         width={BANNER_IMAGE_WIDTH}
         height={BANNER_IMAGE_HEIGHT}
         loading={isActive || isNext ? "eager" : "lazy"}
-        {...({ fetchpriority: isActive ? "high" : "low" } as Record<string, string>)}
-        decoding="async"
-        className={`store-hero-slide-image absolute inset-0 h-full w-full object-cover ${
-          hasTextLayer ? "store-hero-image-with-copy" : "object-center"
-        }`}
-        data-active={isActive ? "true" : "false"}
+        fetchPriority={isActive ? "high" : "low"}
+        className="store-hero-slide-image absolute inset-0 h-full w-full"
+        imgClassName={hasTextLayer ? "store-hero-image-with-copy object-cover" : "object-cover object-center"}
+        dataActive={isActive ? "true" : "false"}
         onLoad={(event) => {
           if (event.currentTarget.naturalWidth <= 0) return;
           markImageLoaded(

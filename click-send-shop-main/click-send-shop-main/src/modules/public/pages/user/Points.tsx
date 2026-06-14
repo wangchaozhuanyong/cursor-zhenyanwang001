@@ -31,6 +31,7 @@ import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 const POINTS_ERROR_LABELS: Record<string, string> = {
   "Already signed in today": "今天已经签到过了",
@@ -174,25 +175,26 @@ function PointsRecordsLoading() {
 
 function PointsRecordsError({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <div className="space-y-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-8 text-center">
-      <p className="text-sm text-[var(--theme-danger)]">{error}</p>
-      <UnifiedButton
-        type="button"
-        onClick={onRetry}
-        className="rounded-full border border-border px-5 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
-      >
-        重试
-      </UnifiedButton>
-    </div>
+    <ClientEmptyState
+      title="积分记录加载失败"
+      description={error}
+      icon={<Star size={30} />}
+      action={
+        <ClientButton type="button" onClick={onRetry}>
+          重试
+        </ClientButton>
+      }
+    />
   );
 }
 
 function PointsRecordsEmpty() {
   return (
-    <div className="rounded-xl border border-border bg-card px-6 py-12 text-center">
-      <p className="text-sm font-medium text-foreground">暂无积分记录</p>
-      <p className="mt-2 text-xs text-muted-foreground">完成签到或获得积分后，记录会显示在这里。</p>
-    </div>
+    <ClientEmptyState
+      title="暂无积分记录"
+      description="完成签到或获得积分后，记录会显示在这里。"
+      icon={<Star size={30} />}
+    />
   );
 }
 

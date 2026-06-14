@@ -32,6 +32,7 @@ import {
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { AppModal } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   order: { icon: Package, color: THEME_BADGE_PRIMARY },
@@ -83,15 +84,18 @@ export default function Notifications() {
 
   if (error && notifications.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
-        <p className="text-sm text-[var(--theme-danger)]">{error}</p>
-        <UnifiedButton
-          onClick={() => loadNotifications()}
-          className="rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-[var(--theme-price-foreground)]"
-        >
-          重试
-        </UnifiedButton>
-      </div>
+      <StoreAccountLayout title="消息通知" onBack={goBack} mainClassName="sm:px-4 xl:py-6">
+        <ClientEmptyState
+          title="消息加载失败"
+          description={error}
+          icon={<Bell size={30} />}
+          action={
+            <ClientButton type="button" onClick={() => loadNotifications()}>
+              重试
+            </ClientButton>
+          }
+        />
+      </StoreAccountLayout>
     );
   }
 
@@ -121,10 +125,11 @@ export default function Notifications() {
         mainClassName="sm:px-4 xl:py-6"
       >
         {!loading && notifications.length === 0 && (
-          <div className="flex flex-col items-center py-20 text-muted-foreground">
-            <Bell size={48} className="mb-3 opacity-20" />
-            <p className="text-sm">暂无消息通知</p>
-          </div>
+          <ClientEmptyState
+            title="暂无消息通知"
+            description="订单、优惠和系统提醒会显示在这里。"
+            icon={<Bell size={30} />}
+          />
         )}
         <div className="space-y-2">
           <AnimatePresence>

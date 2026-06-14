@@ -9,7 +9,7 @@ export default function ProductCardV2Skeleton({ variant = "grid" }: ProductCardV
   if (variant === "list") {
     return (
       <div className={`${storefrontCardClassName()} flex gap-3 p-3`} aria-hidden>
-        <Skeleton className="h-24 w-24 shrink-0 rounded-xl" />
+        <Skeleton className="aspect-[1/2] w-16 shrink-0 rounded-xl sm:w-20" />
         <div className="flex flex-1 flex-col gap-2">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-2/3" />
@@ -22,7 +22,7 @@ export default function ProductCardV2Skeleton({ variant = "grid" }: ProductCardV
 
   return (
     <div className={`${storefrontCardClassName()} overflow-hidden`} aria-hidden>
-      <Skeleton className="aspect-square w-full" />
+      <Skeleton className="aspect-[1/2] w-full" />
       <div className="space-y-2 p-2.5">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />

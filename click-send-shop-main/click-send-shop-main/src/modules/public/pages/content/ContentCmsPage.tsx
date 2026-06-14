@@ -10,6 +10,7 @@ import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { STORE_COPY } from "@/constants/storeCopy";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 const CONTACT_US_SLUG = "contact-us";
 
@@ -71,7 +72,22 @@ export default function ContentCmsPage() {
         robots={isNoindex ? "noindex,follow" : "index,follow"}
       />
       <div className="mx-auto w-full max-w-lg md:max-w-none">
-        {error && !loading ? <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">{error}</p> : null}
+        {error && !loading ? (
+          <ClientEmptyState
+            title={error}
+            description="你可以返回上一页，或稍后刷新重试。"
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <ClientButton type="button" variant="secondary" onClick={goBack}>
+                  返回上一页
+                </ClientButton>
+                <ClientButton type="button" onClick={() => window.location.reload()}>
+                  重新加载
+                </ClientButton>
+              </div>
+            }
+          />
+        ) : null}
         {page?.content && !loading && !error ? <article className="store-body-text max-w-none leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }} /> : null}
         {isContactUs && !loading && !error ? <ContactUsContent intro={!page?.content ? "如需订单、支付、物流、售后等协助，请通过以下方式联系我们。" : undefined} /> : null}
       </div>

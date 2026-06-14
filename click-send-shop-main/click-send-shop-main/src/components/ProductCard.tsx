@@ -271,7 +271,7 @@ function ProductCardInner({
           <div
             className={cn(
               "store-product-media theme-rounded relative shrink-0 overflow-hidden border border-[var(--theme-border)] bg-[var(--store-product-media-bg)]",
-              isListRow ? "h-28 w-28 sm:h-[7.25rem] sm:w-[7.25rem]" : "h-[5.25rem] w-[5.25rem] sm:h-24 sm:w-24",
+              isListRow ? "aspect-[1/2] w-20 sm:w-[5.5rem]" : "aspect-[1/2] w-16 sm:w-20",
             )}
           >
             <ProductCoverImage
@@ -334,7 +334,7 @@ function ProductCardInner({
       <div
         ref={impressionRef}
         className="store-product-media theme-rounded relative overflow-hidden bg-[var(--store-product-media-bg)]"
-        style={{ aspectRatio: isPremium ? "1 / 1" : "var(--theme-image-ratio)" }}
+        style={{ aspectRatio: "1 / 2" }}
       >
         <ProductCoverImage
           url={product.cover_image}

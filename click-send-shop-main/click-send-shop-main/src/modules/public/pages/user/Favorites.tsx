@@ -9,6 +9,7 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import { toast } from "sonner";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 export default function Favorites() {
   const navigate = useNavigate();
@@ -33,12 +34,16 @@ export default function Favorites() {
         {loading && favoriteProducts.length === 0 ? (
           <div className="flex justify-center py-20 text-sm text-muted-foreground">加载中...</div>
         ) : favoriteProducts.length === 0 ? (
-          <div className="flex min-h-[360px] flex-col items-center justify-center rounded-3xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-6 py-16 text-center text-muted-foreground md:min-h-[420px]">
-            <Heart size={56} className="mb-4 opacity-20" />
-            <p className="text-base font-semibold text-[var(--theme-text)]">收藏夹还是空的</p>
-            <p className="mt-2 max-w-sm text-sm leading-relaxed text-[var(--theme-text-muted)]">看到喜欢的商品可以先收藏，之后从这里快速回到商品详情。</p>
-            <UnifiedButton onClick={() => navigate("/categories")} className="mt-4 rounded-full bg-[var(--theme-primary)] px-6 py-2.5 text-sm font-bold text-[var(--theme-primary-foreground)]">{STORE_COPY.browseAllCategories}</UnifiedButton>
-          </div>
+          <ClientEmptyState
+            title="收藏夹还是空的"
+            description="看到喜欢的商品可以先收藏，之后从这里快速回到商品详情。"
+            icon={<Heart size={30} />}
+            action={
+              <ClientButton type="button" onClick={() => navigate("/categories")}>
+                {STORE_COPY.browseAllCategories}
+              </ClientButton>
+            }
+          />
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {favoriteProducts.map((p) => (
@@ -47,7 +52,7 @@ export default function Favorites() {
                   <ProductCoverImage
                     url={p.cover_image}
                     alt={p.cover_image_alt || p.name}
-                    className="h-24 w-24 rounded-xl"
+                    className="aspect-[1/2] w-16 rounded-xl"
                     imgClassName="h-full w-full rounded-xl object-cover"
                   />
                   <div className="min-w-0 flex-1">

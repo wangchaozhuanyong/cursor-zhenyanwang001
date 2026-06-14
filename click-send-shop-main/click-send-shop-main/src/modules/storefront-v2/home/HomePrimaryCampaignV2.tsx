@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { ArrowRight, Clock, Gift, Tag } from "lucide-react";
+import RatioImage from "@/components/client/RatioImage";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StorefrontBadge from "../components/StorefrontBadge";
@@ -69,10 +70,13 @@ export default function HomePrimaryCampaignV2({
         className="group relative min-h-[15rem] overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_24%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface)),var(--theme-surface)_46%,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-bg)))] p-0 text-left shadow-[var(--theme-shadow)]"
       >
         {hasCover ? (
-          <img
+          <RatioImage
             src={primary.coverImage}
             alt=""
+            ratio="16 / 9"
+            rounded="none"
             className="absolute inset-0 h-full w-full object-cover opacity-20 transition duration-300 group-hover:scale-[1.02]"
+            imgClassName="object-cover"
             loading="lazy"
           />
         ) : null}
@@ -108,7 +112,7 @@ export default function HomePrimaryCampaignV2({
 
       <div className="grid gap-3">
         {secondary.length > 0 ? (
-          secondary.map((campaign) => (
+          secondary.map((campaign, index) => (
             <UnifiedButton
               key={`${campaign.type}-${campaign.id}`}
               type="button"
@@ -141,7 +145,7 @@ function CampaignMetric({ campaign }: { campaign: StorefrontCampaignVm }) {
     return (
       <div className="flex min-w-0 items-center gap-2">
         {campaign.products.slice(0, 3).map((product) => (
-          <span key={product.product_id} className="relative h-11 w-11 overflow-hidden rounded-xl border border-white/70 bg-[var(--theme-surface)]">
+          <span key={product.product_id} className="relative aspect-[1/2] w-7 overflow-hidden rounded-xl border border-white/70 bg-[var(--theme-surface)]">
             <ProductCoverImage
               url={product.cover_image}
               alt={product.product_name}

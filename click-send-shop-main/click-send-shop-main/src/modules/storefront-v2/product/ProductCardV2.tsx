@@ -41,7 +41,7 @@ export default function ProductCardV2({
         )}
         aria-label={`查看 ${vm.name}`}
       >
-        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[var(--theme-bg)]">
+        <div className="relative aspect-[1/2] w-16 shrink-0 overflow-hidden rounded-xl bg-[var(--theme-bg)] sm:w-20">
           <ProductCoverImage
             url={vm.imageUrl}
             alt={vm.imageAlt}
@@ -80,7 +80,7 @@ export default function ProductCardV2({
       )}
       aria-label={`查看 ${vm.name}`}
     >
-      <div className="relative aspect-square w-full overflow-hidden bg-[var(--theme-bg)]">
+      <div className="relative aspect-[1/2] w-full overflow-hidden bg-[var(--theme-bg)]">
         <ProductCoverImage
           url={vm.imageUrl}
           alt={vm.imageAlt}

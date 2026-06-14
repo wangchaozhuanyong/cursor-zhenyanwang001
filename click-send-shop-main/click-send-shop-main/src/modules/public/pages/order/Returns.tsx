@@ -21,6 +21,7 @@ import {
   shouldShowReturnInFilter,
 } from "./returnProgress";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 export default function Returns() {
   const goBack = useGoBack();
@@ -148,15 +149,18 @@ export default function Returns() {
           </div>
         </section>
 
-        {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">加载中...</p> : null}
+        {loading ? <p className="rounded-xl border border-border bg-card p-4 text-center text-muted-foreground">加载中...</p> : null}
         {!loading && filteredList.length === 0 ? (
-          <section className="rounded-[28px] border border-border bg-card px-6 py-12 text-center shadow-[0_14px_34px_rgba(15,23,42,0.06)] sm:py-14">
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] text-muted-foreground">
-              <FileText size={44} strokeWidth={1.6} />
-            </div>
-            <p className="mt-5 text-lg font-medium text-foreground">暂无售后记录</p>
-            <p className="mt-1 text-xs text-muted-foreground">可以从已发货或已完成订单发起售后申请。</p>
-          </section>
+          <ClientEmptyState
+            title="暂无售后记录"
+            description="可以从已发货或已完成订单发起售后申请。"
+            icon={<FileText size={30} strokeWidth={1.8} />}
+            action={
+              <ClientButton type="button" variant="secondary" onClick={() => setApplyOpen(true)}>
+                发起售后
+              </ClientButton>
+            }
+          />
         ) : null}
 
         <section className="space-y-3">
@@ -168,9 +172,9 @@ export default function Returns() {
                 <UnifiedButton
                   type="button"
                   onClick={() => navigate(`/returns/${item.id}`)}
-                  className="grid w-full grid-cols-[64px_1fr_auto] items-center gap-3 text-left"
+                  className="grid w-full grid-cols-[48px_1fr_auto] items-center gap-3 text-left"
                 >
-                  <div className="h-16 w-16 overflow-hidden rounded-xl bg-secondary">
+                  <div className="aspect-[1/2] w-12 overflow-hidden rounded-xl bg-secondary">
                     {image ? (
                       <ProductCoverImage
                         url={image}

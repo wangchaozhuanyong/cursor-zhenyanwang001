@@ -54,6 +54,7 @@ import { isRestrictedProduct } from "@/utils/restrictedProduct";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseActionCard } from "@/components/store/DesktopPurchasePattern";
 import ProductActivityPanel from "@/modules/storefront-v2/product-detail/ProductActivityPanel";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -189,18 +190,20 @@ export default function ProductDetail() {
           onCart={() => navigate("/cart")}
         />
         <div
-          className="p-8 text-center text-muted-foreground"
+          className="mx-auto w-full max-w-screen-sm px-[var(--store-page-x)]"
           style={{
             paddingTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px) + 2rem)",
           }}
         >
-          <p>{error ?? "商品不存在"}</p>
-          <UnifiedButton
-            onClick={() => id && loadProductDetail(id)}
-            className="mt-4 rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-[var(--theme-price-foreground)]"
-          >
-            重试
-          </UnifiedButton>
+          <ClientEmptyState
+            title={error ? "商品加载失败" : "商品不存在"}
+            description={error ?? "该商品可能已下架，或当前链接不可用。"}
+            action={
+              <ClientButton type="button" onClick={() => id && loadProductDetail(id)}>
+                重试
+              </ClientButton>
+            }
+          />
         </div>
       </div>
     );
@@ -572,7 +575,7 @@ export default function ProductDetail() {
               <div className={`${productGridClass} md:gap-5`}>
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div key={index} className="overflow-hidden rounded-[var(--theme-card-radius)] border border-[var(--theme-border)] bg-[var(--theme-surface)]">
-                    <Skeleton className="aspect-[4/5] w-full" />
+                    <Skeleton className="aspect-[1/2] w-full" />
                     <div className="space-y-2 p-3">
                       <Skeleton className="h-4 w-3/4" />
                       <Skeleton className="h-4 w-1/2" />

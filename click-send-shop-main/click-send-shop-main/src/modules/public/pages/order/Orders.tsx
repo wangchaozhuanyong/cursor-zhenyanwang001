@@ -26,6 +26,7 @@ import ReturnApplySheet from "./ReturnApplySheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
   { key: "all", label: "全部" },
@@ -332,13 +333,42 @@ export default function Orders() {
           </div>
         </div>
 
-        {loading ? <p className="text-sm text-muted-foreground">加载中...</p> : null}
-        {error ? <p className="text-sm text-[var(--theme-danger)]">{error}</p> : null}
+        {loading ? <p className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-muted-foreground">加载中...</p> : null}
+        {error ? (
+          <ClientEmptyState
+            title="订单加载失败"
+            description={error}
+            action={
+              <ClientButton type="button" onClick={() => void loadCurrentOrders({ force: true })}>
+                重试
+              </ClientButton>
+            }
+          />
+        ) : null}
 
         {!loading && displayOrders.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
-            {emptyOrderText}
-          </div>
+          <ClientEmptyState
+            title={emptyOrderText}
+            description={keyword ? "可以清空关键词后重新查看订单。" : "下单后，订单状态会显示在这里。"}
+            action={
+              keyword ? (
+                <ClientButton
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setSearchText("");
+                    updateKeywordParam("");
+                  }}
+                >
+                  清空搜索
+                </ClientButton>
+              ) : (
+                <ClientButton type="button" variant="secondary" onClick={() => navigate("/categories")}>
+                  去逛逛
+                </ClientButton>
+              )
+            }
+          />
         ) : null}
 
         <div className="space-y-3">
@@ -380,7 +410,7 @@ export default function Orders() {
                       <ProductCoverImage
                         url={item.product.cover_image}
                         alt={item.product.name}
-                        className="h-[72px] w-[72px] rounded-lg object-cover"
+                        className="aspect-[1/2] w-12 rounded-lg object-cover"
                         imgClassName="object-cover"
                         loading={orderIndex === 0 && itemIndex === 0 ? "eager" : "lazy"}
                         fetchPriority={orderIndex === 0 && itemIndex === 0 ? "high" : "low"}

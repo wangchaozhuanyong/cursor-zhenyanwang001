@@ -28,6 +28,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { hasMorePaginatedItems } from "@/lib/pagination";
 import { useSmartMobileChrome } from "@/hooks/useSmartMobileChrome";
 import {
@@ -542,20 +543,24 @@ export default function Categories() {
                 showSoftRefreshing={showSoftRefreshing}
                 emptyState={
                   !error ? (
-                  <div className={cn(emptyColSpan, "store-listing-empty py-12 text-center text-muted-foreground")}>
-                    <p>
-                      {activeFilterCount > 0 || submittedQuery
-                        ? "当前筛选条件无结果"
-                        : activeCat !== "all"
-                          ? "当前分类暂无商品"
-                          : "暂无商品上架"}
-                    </p>
-                    {(activeFilterCount > 0 || submittedQuery) ? (
-                      <UnifiedButton type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">
-                        清空筛选
-                      </UnifiedButton>
-                    ) : null}
-                  </div>
+                    <ClientEmptyState
+                      className={cn(emptyColSpan, "store-listing-empty")}
+                      title={
+                        activeFilterCount > 0 || submittedQuery
+                          ? "当前筛选条件无结果"
+                          : activeCat !== "all"
+                            ? "当前分类暂无商品"
+                            : "暂无商品上架"
+                      }
+                      description={(activeFilterCount > 0 || submittedQuery) ? "可以清空筛选后重新浏览全部商品。" : "商品上架后会自动显示在这里。"}
+                      action={
+                        (activeFilterCount > 0 || submittedQuery) ? (
+                          <ClientButton type="button" variant="secondary" size="sm" onClick={clearFilters}>
+                            清空筛选
+                          </ClientButton>
+                        ) : null
+                      }
+                    />
                   ) : null
                 }
               />

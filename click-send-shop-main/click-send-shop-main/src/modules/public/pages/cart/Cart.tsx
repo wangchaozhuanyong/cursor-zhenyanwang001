@@ -10,7 +10,6 @@ import ProductCoverImage from "@/components/ProductCoverImage";
 import type { CartItem } from "@/types/cart";
 import { isLoggedIn } from "@/utils/token";
 import { copyToClipboard } from "@/utils/clipboard";
-import EmptyState from "@/components/EmptyState";
 import TrustInfo from "@/components/TrustInfo";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedNumber, BottomSheetConfirm, SquishButton } from "@/modules/micro-interactions";
@@ -26,6 +25,7 @@ import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/stor
 import CartPromotionNudge from "@/modules/storefront-v2/cart/CartPromotionNudge";
 import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
 import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
+import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
@@ -453,7 +453,7 @@ export default function Cart() {
                               closeItemActions();
                               navigate(`/product/${item.product.id}`, { state: { from: currentPath } });
                             }}
-                            className="store-cart-media h-[88px] w-[88px] flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:h-24 sm:w-24 md:h-24 md:w-24 lg:h-28 lg:w-28"
+                            className="store-cart-media aspect-[1/2] w-14 flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:w-16 md:w-16 lg:w-20"
                             aria-label={`查看 ${item.product.name}`}
                           >
                             <ProductCoverImage
@@ -578,12 +578,16 @@ export default function Cart() {
                 <p className="text-sm">加载中…</p>
               </div>
             ) : (
-              <EmptyState
-                icon={ShoppingBag}
+              <ClientEmptyState
+                icon={<ShoppingBag size={30} />}
                 title="暂无商品"
                 description="快去挑选心仪的商品吧"
-                action={{ label: STORE_COPY.browseAllCategories, onClick: () => navigate("/categories") }}
-                className="max-w-none !rounded-none !border-0 !bg-transparent px-4 py-20 !shadow-none"
+                action={
+                  <ClientButton type="button" onClick={() => navigate("/categories")}>
+                    {STORE_COPY.browseAllCategories}
+                  </ClientButton>
+                }
+                className="max-w-none"
               />
             )}
           </div>

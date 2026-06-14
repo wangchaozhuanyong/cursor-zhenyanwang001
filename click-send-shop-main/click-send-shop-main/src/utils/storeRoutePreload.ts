@@ -30,9 +30,11 @@ import {
   StoreHomeV2,
   SupportDownload,
 } from "@/routes/publicLazyPages";
+import { suppressAppVersionRecovery } from "@/lib/appVersionRecovery";
 import { preloadRoute, type RoutePreloadPriority } from "@/utils/routePreloadPolicy";
 
 type Preloadable = { preload?: () => Promise<unknown> };
+const STORE_PRELOAD_RECOVERY_SUPPRESS_MS = 2_500;
 
 const exactPreloaders = new Map<string, Preloadable>([
   ["/categories", Categories],
@@ -84,6 +86,7 @@ function normalizePath(to: string) {
 export function preloadStoreRoute(to: string, priority: RoutePreloadPriority = "intent") {
   const pathname = normalizePath(to);
   if (pathname === "/") {
+    suppressAppVersionRecovery(STORE_PRELOAD_RECOVERY_SUPPRESS_MS);
     return preloadRoute(StoreHomeV2.preload, priority);
   }
 
@@ -91,5 +94,8 @@ export function preloadStoreRoute(to: string, priority: RoutePreloadPriority = "
     exactPreloaders.get(pathname)
     ?? patternPreloaders.find(([pattern]) => pattern.test(pathname))?.[1];
 
+  if (component?.preload) {
+    suppressAppVersionRecovery(STORE_PRELOAD_RECOVERY_SUPPRESS_MS);
+  }
   return preloadRoute(component?.preload, priority);
 }

@@ -146,6 +146,16 @@
     }
   }
 
+  function isAppBootReady() {
+    try {
+      if (html.getAttribute("data-app-boot") === "ok") return true;
+      var root = doc.getElementById("root");
+      return !!root && root.getAttribute("data-boot-status") === "ok";
+    } catch (_e5ready) {
+      return false;
+    }
+  }
+
   function withTimeout(task, timeoutMs) {
     return new Promise(function (resolve, reject) {
       var timer = global.setTimeout(function () {
@@ -291,6 +301,7 @@
 
   function recoverFromChunkLoadError(reason) {
     if (!isChunkLoadFailure(reason)) return false;
+    if (isAppBootReady()) return false;
     if (isRecoverySuppressed()) return false;
     if (global[GLOBAL_RECOVERY_FLAG]) return true;
 

@@ -21,12 +21,13 @@ const theme = require('../modules/theme');
 const monitoring = require('../modules/monitoring');
 const dataRetention = require('../modules/dataRetention');
 const media = require('../modules/media');
+const { ROBOTS_NOINDEX_NOFOLLOW } = require('../utils/seoHeaders');
 
 const router = Router();
 
 router.use((req, res, next) => {
   if (req.path.startsWith('/api') || req.originalUrl.startsWith('/api/')) {
-    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    res.setHeader('X-Robots-Tag', ROBOTS_NOINDEX_NOFOLLOW);
   }
   next();
 });

@@ -17,6 +17,7 @@ type IdleWindow = Window & {
 type SilkProductGridProps = {
   products: Product[];
   className: string;
+  shellClassName?: string;
   displayMode?: "theme" | "list";
   skeletonCount?: number;
   showFullSkeleton?: boolean;
@@ -29,6 +30,7 @@ type SilkProductGridProps = {
 export default function SilkProductGrid({
   products,
   className,
+  shellClassName,
   displayMode = "theme",
   skeletonCount = 8,
   showFullSkeleton = false,
@@ -64,7 +66,7 @@ export default function SilkProductGrid({
   );
 
   return (
-    <div className="relative min-h-[12rem]">
+    <div className={cn("relative min-h-[12rem]", shellClassName)}>
       <SilkRefreshOverlay show={showSoftRefreshing} />
       <div className={cn(className, showSoftRefreshing && "opacity-95")}>
         {showFullSkeleton

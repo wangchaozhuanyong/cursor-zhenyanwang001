@@ -292,6 +292,7 @@ export default function Categories() {
   const categoryDescription = activeCategory?.description?.trim() || "";
   const siteName = (siteInfo.siteName || STORE_COPY.brandName).trim();
   const pageHeading = isNew ? NEW_ARRIVAL_CATEGORY_LABEL : activeCategoryName || "全部分类";
+  const categoryDescriptionText = categoryDescription || "分类说明占位";
   const title = isNew
     ? `新品上市｜${siteName}`
     : activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`);
@@ -517,16 +518,31 @@ export default function Categories() {
                 <div className="mb-2 h-1 w-8 rounded-full bg-[var(--theme-primary)]" aria-hidden />
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--theme-primary)]">分类目录</p>
                 <h1 className="mt-1 text-2xl font-black tracking-normal text-[var(--theme-text)]">{pageHeading}</h1>
-                {categoryDescription ? (
-                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{categoryDescription}</p>
-                ) : null}
+                <p
+                  className={cn(
+                    "mt-2 min-h-[2.75rem] line-clamp-2 text-sm leading-relaxed text-[var(--theme-text-muted)]",
+                    !categoryDescription && "invisible",
+                  )}
+                  aria-hidden={!categoryDescription}
+                >
+                  {categoryDescriptionText}
+                </p>
               </div>
 
               {wideCategoryRail}
 
               {desktopFilterBar}
 
-              {filterSummary ? <div className="store-filter-summary mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">当前筛选：{filterSummary}</div> : null}
+              <div
+                className={cn(
+                  "store-filter-summary mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]",
+                  "min-h-[2.25rem]",
+                  !filterSummary && "hidden md:block md:invisible",
+                )}
+                aria-hidden={!filterSummary}
+              >
+                当前筛选：{filterSummary || "无筛选"}
+              </div>
 
               {error && products.length === 0 ? (
                 <div className="mb-3">
@@ -550,6 +566,7 @@ export default function Categories() {
               <SilkProductGrid
                 products={products}
                 className={productGridClass}
+                shellClassName="md:min-h-[28rem]"
                 displayMode={isListView ? "list" : "theme"}
                 skeletonCount={8}
                 siteContext={productCardSiteContext}

@@ -15,6 +15,11 @@ const {
   redactString,
   sanitizeLogValue,
 } = require('../src/utils/logRedaction');
+const {
+  ROBOTS_NOINDEX_FOLLOW,
+  ROBOTS_NOINDEX_NOFOLLOW,
+  resolvePublicSpaRobotsHeader,
+} = require('../src/utils/seoHeaders');
 
 describe('API observability guardrails', () => {
   test('unknown /api routes return the unified JSON 404 envelope with traceId', async () => {
@@ -123,6 +128,18 @@ describe('API observability guardrails', () => {
     assert.equal(classification.categoryCode, 'FRONTEND_STALE_HTML_MISSING_CHUNK');
     assert.equal(classification.category, '前端缓存不一致');
     assert.match(classification.message, /旧 SPA 入口 HTML/);
+  });
+
+  test('public SPA robots headers keep open pages indexable and private routes noindex', () => {
+    assert.equal(resolvePublicSpaRobotsHeader('/'), '');
+    assert.equal(resolvePublicSpaRobotsHeader('/categories'), '');
+    assert.equal(resolvePublicSpaRobotsHeader('/about'), '');
+    assert.equal(resolvePublicSpaRobotsHeader('/content/privacy-policy'), '');
+    assert.equal(resolvePublicSpaRobotsHeader('/search?keyword=test'), ROBOTS_NOINDEX_FOLLOW);
+    assert.equal(resolvePublicSpaRobotsHeader('/cart'), ROBOTS_NOINDEX_NOFOLLOW);
+    assert.equal(resolvePublicSpaRobotsHeader('/checkout'), ROBOTS_NOINDEX_NOFOLLOW);
+    assert.equal(resolvePublicSpaRobotsHeader('/profile'), ROBOTS_NOINDEX_NOFOLLOW);
+    assert.equal(resolvePublicSpaRobotsHeader('/admin'), ROBOTS_NOINDEX_NOFOLLOW);
   });
 
   test('frontend chunk failure analytics is accepted even on admin pages', async () => {

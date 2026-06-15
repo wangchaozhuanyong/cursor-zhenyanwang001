@@ -7,23 +7,18 @@ const ADMIN_ENTRY_URL = (process.env.ADMIN_ENTRY_URL || "").replace(/\/$/, "");
 const ADMIN_ENTRY_PATH = process.env.ADMIN_ENTRY_PATH || "/admin-index.html";
 const API_ORIGIN = (process.env.API_ORIGIN || "http://127.0.0.1:3000").replace(/\/$/, "");
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
-const ADMIN_PASSWORD = requireEnv("ADMIN_PASSWORD");
+const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "").trim();
 const MAX_LAYOUT_SHIFT = Number(process.env.ROUTE_AUDIT_MAX_CLS || "0.05");
 const MAX_PREHEATED_FALLBACK_MS = Number(process.env.ROUTE_AUDIT_MAX_FALLBACK_MS || "80");
 const SAMPLE_INTERVAL_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_INTERVAL_MS || "40");
 const SAMPLE_WINDOW_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_WINDOW_MS || "920");
+const NEW_ARRIVAL_CATEGORY_PATH = "/categories?is_new=1&home_new_arrivals_rule=1";
 
-const publicRoutes = ["/", "/categories", "/cart", "/profile", "/search", "/new-arrivals"];
+const publicRoutes = ["/", "/categories", "/cart", "/profile", "/search", NEW_ARRIVAL_CATEGORY_PATH];
 const adminRoutes = ["/admin", "/admin/products", "/admin/orders", "/admin/settings/theme"];
 
 const issues = [];
 const warnings = [];
-
-function requireEnv(name) {
-  const value = String(process.env[name] || "").trim();
-  if (!value) throw new Error(`Missing ${name} env; do not use hardcoded admin credentials.`);
-  return value;
-}
 
 function addIssue(area, message, extra = {}) {
   issues.push({ area, message, ...extra });
@@ -282,10 +277,23 @@ async function routeByPopstate(page, path) {
   }, path);
 }
 
+function getRouteWaitTarget(path) {
+  const url = new URL(path, "http://route-audit.local");
+  return {
+    pathname: url.pathname,
+    search: url.search,
+  };
+}
+
 async function waitForRouteSettle(page, path) {
+  const target = getRouteWaitTarget(path);
   await page.waitForFunction(
-    (targetPath) => window.location.pathname === targetPath && !document.querySelector("[data-route-fallback]"),
-    path,
+    ({ pathname, search }) => (
+      window.location.pathname === pathname
+      && (!search || window.location.search === search)
+      && !document.querySelector("[data-route-fallback]")
+    ),
+    target,
     { timeout: 8000 },
   ).catch(() => {});
   await page.waitForTimeout(220);
@@ -436,7 +444,7 @@ async function auditPublicDesktop(browser, baseUrl) {
   await waitForRouteSettle(page, "/");
 
   const results = [];
-  for (const path of ["/categories", "/new-arrivals", "/search", "/"]) {
+  for (const path of ["/categories", NEW_ARRIVAL_CATEGORY_PATH, "/search", "/"]) {
     results.push(await auditTransition(page, `public-desktop ${path}`, path, { scope: "store", viewport: "desktop" }));
   }
 
@@ -515,10 +523,17 @@ async function main() {
   const adminBaseUrl = ADMIN_BASE || baseUrl;
   const adminLaunch = await resolveAdminLaunch(adminBaseUrl);
   let adminSession = null;
-  try {
-    adminSession = await apiAdminLogin();
-  } catch (error) {
-    addWarning("admin-authenticated", `admin API login unavailable: ${error instanceof Error ? error.message : String(error)}`);
+  if (ADMIN_PASSWORD) {
+    try {
+      adminSession = await apiAdminLogin();
+    } catch (error) {
+      addWarning("admin-authenticated", `admin API login unavailable: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  } else {
+    addWarning(
+      "admin-authenticated",
+      "ADMIN_PASSWORD env is missing; public route audit and admin login-page audit will run, authenticated admin transitions will be skipped",
+    );
   }
 
   const browser = await chromium.launch({ headless: true });

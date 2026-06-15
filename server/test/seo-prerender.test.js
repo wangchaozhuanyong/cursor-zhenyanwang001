@@ -24,7 +24,7 @@ describe('SEO prerender HTML injection', () => {
       ogImage: 'https://example.test/cover.jpg',
       canonical: 'https://example.test/product/p1',
       ogType: 'product',
-      robots: 'index,nofollow',
+      robots: 'index,follow',
       prerenderH1: 'Test Product',
       prerenderText: 'Test product description',
       jsonLd: [{ '@context': 'https://schema.org', '@type': 'Product', name: 'Test Product' }],
@@ -33,7 +33,7 @@ describe('SEO prerender HTML injection', () => {
     assert.match(html, /<title>Test Product \| Store<\/title>/);
     assert.match(html, /<meta name="description" content="Test product description">/);
     assert.match(html, /<meta name="keywords" content="test product, category">/);
-    assert.match(html, /<meta name="robots" content="index,nofollow">/);
+    assert.match(html, /<meta name="robots" content="index,follow">/);
     assert.match(html, /<meta property="og:type" content="product">/);
     assert.match(html, /<link rel="canonical" href="https:\/\/example\.test\/product\/p1">/);
     assert.match(html, /<h1>Test Product<\/h1>/);

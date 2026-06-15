@@ -4,7 +4,7 @@ const catalogService = require('./service/catalog.service');
 const contentService = require('./service/content.service');
 const { NEUTRAL_SITE_DESCRIPTION, resolveSiteDescription, resolveSiteName } = require('../../config/instance');
 
-const INDEXABLE_ROBOTS = 'index,nofollow';
+const INDEXABLE_ROBOTS = 'index,follow';
 const NOINDEX_ROBOTS = 'noindex,nofollow';
 
 const RESTRICTED_KEYWORDS = [
@@ -52,6 +52,22 @@ function isRestrictedProduct(product) {
   const compliance = String(product.compliance_type || '').trim().toLowerCase();
   if (compliance && compliance !== 'normal') return true;
   return containsRestrictedText(`${product.name || ''} ${product.description || ''}`);
+}
+
+function isTruthyFlag(value) {
+  if (value === true) return true;
+  const raw = String(value ?? '').trim().toLowerCase();
+  return raw === '1' || raw === 'true' || raw === 'yes';
+}
+
+function canIndexProduct(product, siteInfo) {
+  if (!product) return false;
+  const allowIndex = product.allow_index === undefined || product.allow_index === null
+    ? true
+    : Number(product.allow_index) === 1;
+  if (!allowIndex) return false;
+  if (!isRestrictedProduct(product)) return true;
+  return String(siteInfo?.restrictedProductNoindexEnabled ?? '') === '0';
 }
 
 function getBaseUrl(req) {
@@ -262,7 +278,7 @@ function buildHomePayload(baseUrl, siteInfo) {
     ogType: 'website',
     ogSiteName: siteName,
     googleSiteVerification: siteInfo.googleSiteVerification || '',
-    robots: NOINDEX_ROBOTS,
+    robots: INDEXABLE_ROBOTS,
     prerenderH1: siteName,
     prerenderText: description,
     jsonLd: [],
@@ -403,12 +419,14 @@ async function registerSeoPrerender(app, { frontendDist }) {
     const seoTitle = page.seo_title || '';
     const seoDesc = page.seo_description || '';
     const contentText = stripHtml(page.content || NEUTRAL_SITE_DESCRIPTION);
+    const pageStatus = String(page.status || '').trim().toLowerCase();
+    const noindex = isTruthyFlag(page.noindex) || ['draft', 'hidden', 'private'].includes(pageStatus);
     return {
       ...buildHomePayload(baseUrl, siteInfo),
       title: seoTitle || `${page.title}｜${resolveSiteName(siteInfo)}`,
       description: seoDesc || truncate(contentText, 150),
       canonical: `${baseUrl}/content/${encodeURIComponent(req.params.slug)}`,
-      robots: NOINDEX_ROBOTS,
+      robots: noindex ? NOINDEX_ROBOTS : INDEXABLE_ROBOTS,
       prerenderH1: page.title,
       prerenderText: truncate(contentText, 260),
     };
@@ -416,7 +434,8 @@ async function registerSeoPrerender(app, { frontendDist }) {
   app.get('/product/:id', (req, res) => render(req, res, async (baseUrl, siteInfo) => {
     const product = await catalogService.getProductById(req.params.id);
     if (!product) return null;
-    const restricted = isRestrictedProduct(product) || Number(product.allow_index || 1) !== 1;
+    const restricted = isRestrictedProduct(product);
+    const indexableProduct = canIndexProduct(product, siteInfo);
     const title = `${product.name}｜${resolveSiteName(siteInfo)}`;
     const description = restricted
       ? '本页面包含受年龄、地区或当地法规限制的商品或服务信息，仅面向符合法定年龄并符合当地规定的用户展示。具体适用范围以当地法律法规、平台规则和客服确认为准。'
@@ -430,7 +449,7 @@ async function registerSeoPrerender(app, { frontendDist }) {
       canonical: `${baseUrl}/product/${encodeURIComponent(product.id)}`,
       ogType: 'product',
       ogImage: toAbsolute(baseUrl, product.cover_image || (Array.isArray(product.images) ? product.images[0] : '') || siteInfo.ogImageUrl || '/og-default.png'),
-      robots: NOINDEX_ROBOTS,
+      robots: indexableProduct ? INDEXABLE_ROBOTS : NOINDEX_ROBOTS,
       prerenderH1: product.name,
       prerenderText: description,
       jsonLd: productJsonLd ? [...basePayload.jsonLd, productJsonLd] : basePayload.jsonLd,

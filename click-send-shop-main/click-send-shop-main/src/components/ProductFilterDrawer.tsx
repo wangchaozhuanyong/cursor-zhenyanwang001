@@ -45,11 +45,12 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
       >
         <Filter size={14} />
         筛选
-        {activeFilterCount > 0 ? (
-          <span className="rounded-full bg-[var(--theme-price)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-price-foreground)]">
-            {activeFilterCount}
-          </span>
-        ) : null}
+        <span
+          className={`min-w-[1rem] rounded-full bg-[var(--theme-price)] px-1.5 py-0.5 text-center text-[10px] leading-none text-[var(--theme-price-foreground)] ${activeFilterCount > 0 ? "" : "invisible"}`}
+          aria-hidden={activeFilterCount === 0}
+        >
+          {activeFilterCount || 0}
+        </span>
       </UnifiedButton>
 
       <AppModal

@@ -26,6 +26,11 @@ const { registerPwaBrandRoutes } = require('./modules/pwa/routes/pwa.routes');
 const stripeWebhook = require('./modules/payment/controller/stripeWebhook.controller');
 const { ForbiddenError } = require('./errors');
 const { runWithRequestPerf } = require('./utils/requestPerf');
+const {
+  ROBOTS_NOINDEX_NOFOLLOW,
+  resolvePublicSpaRobotsHeader,
+  setNoStoreHtmlHeaders,
+} = require('./utils/seoHeaders');
 
 const app = express();
 
@@ -36,7 +41,7 @@ app.use(accessLogger);
 app.use((req, res, next) => {
   res.charset = 'utf-8';
   if (req.path.startsWith('/api/')) {
-    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    res.setHeader('X-Robots-Tag', ROBOTS_NOINDEX_NOFOLLOW);
   }
   next();
 });
@@ -132,7 +137,6 @@ const viteInlineScriptHashes = Array.from(new Set([
   ...getInlineScriptHashesFromHtml(adminDistIndexHtml),
 ]));
 
-const HTML_NO_STORE_CACHE_CONTROL = 'no-store, no-cache, must-revalidate, proxy-revalidate';
 const HASHED_ASSET_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const SHORT_STATIC_CACHE_CONTROL = 'public, max-age=300';
 
@@ -157,14 +161,6 @@ function isUnsafeUploadsPath(req) {
   return decodedPath.split('/').some((segment) => segment === '..');
 }
 
-function setNoStoreHtmlHeaders(res) {
-  res.setHeader('Cache-Control', HTML_NO_STORE_CACHE_CONTROL);
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
-  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
-}
-
 function setHashedAssetHeaders(res) {
   res.setHeader('Cache-Control', HASHED_ASSET_CACHE_CONTROL);
 }
@@ -176,6 +172,22 @@ function setSpaStaticHeaders(res, filePath) {
   }
   if (path.basename(filePath) === 'sw.js') {
     setNoStoreHtmlHeaders(res);
+    return;
+  }
+  if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+    setHashedAssetHeaders(res);
+    return;
+  }
+  res.setHeader('Cache-Control', SHORT_STATIC_CACHE_CONTROL);
+}
+
+function setAdminSpaStaticHeaders(res, filePath) {
+  if (filePath.endsWith('.html')) {
+    setNoStoreHtmlHeaders(res, { robots: ROBOTS_NOINDEX_NOFOLLOW });
+    return;
+  }
+  if (path.basename(filePath) === 'sw.js') {
+    setNoStoreHtmlHeaders(res, { robots: ROBOTS_NOINDEX_NOFOLLOW });
     return;
   }
   if (filePath.includes(`${path.sep}assets${path.sep}`)) {
@@ -476,7 +488,7 @@ if (serveAdminFromAdminDist) {
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path !== '/admin' && !req.path.startsWith('/admin/')) return next();
-    setNoStoreHtmlHeaders(res);
+    setNoStoreHtmlHeaders(res, { robots: ROBOTS_NOINDEX_NOFOLLOW });
     return res.sendFile(adminDistIndexHtml, (err) => next(err));
   });
 }
@@ -525,7 +537,7 @@ if (serveSpa) {
     // dynamic import failures harder to diagnose and can cache the wrong MIME.
     if (req.path.startsWith('/assets/')) return next();
     if (isSensitiveFileProbe(req)) return next();
-    setNoStoreHtmlHeaders(res);
+    setNoStoreHtmlHeaders(res, { robots: resolvePublicSpaRobotsHeader(req.path) });
     res.sendFile(path.join(frontendDist, 'index.html'), (err) => next(err));
   });
   console.log(`Frontend static assets: ${frontendDist}`);
@@ -554,7 +566,7 @@ if (serveAdminFromAdminDist && !serveSpa) {
   }
   app.use(
     express.static(adminDist, {
-      setHeaders: setSpaStaticHeaders,
+      setHeaders: setAdminSpaStaticHeaders,
     }),
   );
   app.use((req, res, next) => {
@@ -562,7 +574,7 @@ if (serveAdminFromAdminDist && !serveSpa) {
     if (req.path.startsWith('/api')) return next();
     if (req.path.startsWith('/assets/')) return next();
     if (isSensitiveFileProbe(req)) return next();
-    setNoStoreHtmlHeaders(res);
+    setNoStoreHtmlHeaders(res, { robots: ROBOTS_NOINDEX_NOFOLLOW });
     res.sendFile(adminDistIndexHtml, (err) => next(err));
   });
 }

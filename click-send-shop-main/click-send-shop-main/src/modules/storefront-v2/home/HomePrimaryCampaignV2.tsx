@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useRef } from "react";
-import { ArrowRight, Clock, Gift, Tag } from "lucide-react";
-import RatioImage from "@/components/client/RatioImage";
-import ProductCoverImage from "@/components/ProductCoverImage";
-import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
+import { ArrowRight, Clock, Gift, Tag, TicketPercent } from "lucide-react";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { cn } from "@/lib/utils";
 import StorefrontBadge from "../components/StorefrontBadge";
+import StorefrontTitleRow from "../components/StorefrontTitleRow";
 import { useClientDesignStyle } from "../design/useClientDesignStyle";
 import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
 import { CAMPAIGN_TYPE_LABELS, campaignActionLabel, formatHomeV2Money, pickPrimaryCampaign } from "./homeV2Utils";
 
 type HomePrimaryCampaignV2Props = {
   campaigns: StorefrontCampaignVm[];
+  fallbackCampaigns?: StorefrontCampaignVm[];
   loading: boolean;
   onNavigate: (path: string) => void;
   onCampaignImpression?: (campaign: StorefrontCampaignVm, position: string) => void;
@@ -20,6 +19,7 @@ type HomePrimaryCampaignV2Props = {
 
 export default function HomePrimaryCampaignV2({
   campaigns,
+  fallbackCampaigns = [],
   loading,
   onNavigate,
   onCampaignImpression,
@@ -32,11 +32,17 @@ export default function HomePrimaryCampaignV2({
     () => campaigns.filter((campaign) => campaign.id !== primary?.id).slice(0, 3),
     [campaigns, primary?.id],
   );
-  const visibleCampaigns = useMemo(() => (primary ? [primary, ...secondary] : []), [primary, secondary]);
+  const visibleCampaigns = useMemo(() => {
+    const configured = primary ? [primary, ...secondary] : [];
+    const configuredTypes = new Set(configured.map((campaign) => campaign.type));
+    const fallbackFillers = fallbackCampaigns.filter((campaign) => !configuredTypes.has(campaign.type));
+    return [...configured, ...fallbackFillers].slice(0, 4);
+  }, [fallbackCampaigns, primary, secondary]);
 
   useEffect(() => {
     if (loading || !onCampaignImpression) return;
     visibleCampaigns.forEach((campaign, index) => {
+      if (campaign.source === "local") return;
       const position = index === 0 ? "home_primary_campaign" : `home_secondary_campaign_${index}`;
       const key = `${position}:${campaign.type}:${campaign.id}`;
       if (trackedImpressionsRef.current.has(key)) return;
@@ -46,143 +52,112 @@ export default function HomePrimaryCampaignV2({
   }, [loading, onCampaignImpression, visibleCampaigns]);
 
   const handleCampaignNavigate = (campaign: StorefrontCampaignVm, position: string) => {
-    onCampaignClick?.(campaign, position);
+    if (campaign.source !== "local") onCampaignClick?.(campaign, position);
     onNavigate(campaign.href || "/categories");
   };
 
   if (loading && !primary) {
     return (
-      <section className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-        <div className="h-56 animate-pulse rounded-[1.125rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
-        <div className="grid gap-3">
-          <div className="h-24 animate-pulse rounded-[1.125rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
-          <div className="h-24 animate-pulse rounded-[1.125rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
+      <section className="min-w-0" aria-busy="true" aria-label="活动优惠加载中">
+        <div className="mb-3 h-6 w-28 animate-pulse rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))]" />
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-24 animate-pulse rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
+          ))}
         </div>
       </section>
     );
   }
 
-  if (!primary) return null;
-
-  const hasCover = Boolean(primary.coverImage);
+  if (!visibleCampaigns.length) return null;
 
   return (
-    <section className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-      <UnifiedButton
-        type="button"
-        onClick={() => handleCampaignNavigate(primary, "home_primary_campaign")}
-        className={cn(
-          "group relative min-h-[15rem] overflow-hidden border border-[color-mix(in_srgb,var(--theme-primary)_16%,var(--theme-border))] p-0 text-left shadow-[0_14px_40px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
-          clientStyle === "deep_enterprise" ? "rounded-[0.875rem]" : "rounded-[1.125rem]",
-          "bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface)),var(--theme-surface)_48%,color-mix(in_srgb,var(--theme-price)_7%,var(--theme-bg)))]",
-        )}
-      >
-        {hasCover ? (
-          <RatioImage
-            src={primary.coverImage}
-            alt=""
-            ratio="16 / 9"
-            rounded="none"
-            className="absolute inset-0 h-full w-full object-cover opacity-[0.18] transition duration-300 group-hover:scale-[1.02]"
-            imgClassName="object-cover"
-            loading="lazy"
+    <section className="store-home-v4-campaigns min-w-0">
+      <StorefrontTitleRow title="今日优惠" subtitle="活动、券和满减集中查看" />
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {visibleCampaigns.map((campaign, index) => (
+          <CampaignCard
+            key={`${campaign.source}-${campaign.type}-${campaign.id}`}
+            campaign={campaign}
+            clientStyle={clientStyle}
+            position={index === 0 ? "home_primary_campaign" : `home_secondary_campaign_${index}`}
+            onClick={handleCampaignNavigate}
           />
-        ) : null}
-        <div className="relative flex min-h-[15rem] flex-col justify-between gap-5 p-4 md:p-5 lg:p-6">
-          <div className="max-w-2xl">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <StorefrontBadge tone={primary.type === "flash_sale" ? "hot" : "sale"}>
-                {CAMPAIGN_TYPE_LABELS[primary.type]}
-              </StorefrontBadge>
-              {primary.promoLabel ? (
-                <span className="rounded-full bg-[var(--theme-surface)]/82 px-2.5 py-1 text-xs font-black text-[var(--theme-price)] ring-1 ring-[color-mix(in_srgb,var(--theme-price)_24%,transparent)]">
-                  {primary.promoLabel}
-                </span>
-              ) : null}
-            </div>
-            <h2 className="line-clamp-2 text-2xl font-black leading-tight text-[var(--theme-text)] md:text-3xl">{primary.title}</h2>
-            {primary.subtitle || primary.description ? (
-              <p className="mt-2 line-clamp-2 max-w-xl text-sm leading-6 text-[var(--theme-text-muted)]">
-                {primary.subtitle || primary.description}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <CampaignMetric campaign={primary} />
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-sm font-black text-[var(--theme-primary-foreground)] shadow-[var(--theme-shadow-control)]">
-              {campaignActionLabel(primary)}
-              <ArrowRight size={15} />
-            </span>
-          </div>
-        </div>
-      </UnifiedButton>
-
-      <div className="grid gap-3">
-        {secondary.length > 0 ? (
-          secondary.map((campaign, index) => (
-            <UnifiedButton
-              key={`${campaign.type}-${campaign.id}`}
-              type="button"
-              onClick={() => handleCampaignNavigate(campaign, `home_secondary_campaign_${index + 1}`)}
-              className={cn(
-                "flex min-h-[6.75rem] items-center gap-3 border border-[color-mix(in_srgb,var(--theme-border)_84%,transparent)] bg-[var(--theme-surface)] p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))] hover:shadow-[0_12px_34px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
-                clientStyle === "deep_enterprise" ? "rounded-[0.875rem]" : "rounded-[1.125rem]",
-                clientStyle === "black_gold" && "border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))]",
-              )}
-            >
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[0.875rem] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">
-                {campaign.type === "coupon" || campaign.type === "new_user_gift" ? <Gift size={20} /> : <Tag size={20} />}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-black text-[var(--theme-primary)]">{CAMPAIGN_TYPE_LABELS[campaign.type]}</span>
-                <span className="mt-1 line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</span>
-                {campaign.promoLabel ? <span className="mt-1 block truncate text-xs text-[var(--theme-text-muted)]">{campaign.promoLabel}</span> : null}
-              </span>
-              <ArrowRight size={16} className="shrink-0 text-[var(--theme-text-muted)]" />
-            </UnifiedButton>
-          ))
-        ) : (
-          <div className={cn(
-            "flex min-h-[6.75rem] items-center gap-3 border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-sm text-[var(--theme-text-muted)]",
-            clientStyle === "deep_enterprise" ? "rounded-[0.875rem]" : "rounded-[1.125rem]",
-          )}>
-            后台发布更多活动后，这里会自动展示辅助活动。
-          </div>
-        )}
+        ))}
       </div>
     </section>
+  );
+}
+
+function CampaignCard({
+  campaign,
+  clientStyle,
+  position,
+  onClick,
+}: {
+  campaign: StorefrontCampaignVm;
+  clientStyle: ReturnType<typeof useClientDesignStyle>;
+  position: string;
+  onClick: (campaign: StorefrontCampaignVm, position: string) => void;
+}) {
+  const isHighlight = campaign.type === "flash_sale" || campaign.type === "full_reduction";
+  return (
+    <UnifiedButton
+      type="button"
+      onClick={() => onClick(campaign, position)}
+      data-campaign-type={campaign.type}
+      className={cn(
+        "store-home-v4-campaign-card group flex min-h-[7.25rem] min-w-0 items-center gap-3 border bg-[var(--theme-surface)] p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))] hover:shadow-[0_12px_34px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
+        clientStyle === "deep_enterprise" ? "rounded-[0.875rem]" : "rounded-[1rem]",
+        isHighlight
+          ? "border-[color-mix(in_srgb,var(--theme-price)_18%,var(--theme-border))]"
+          : "border-[color-mix(in_srgb,var(--theme-border)_84%,transparent)]",
+        clientStyle === "black_gold" && "border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))]",
+      )}
+    >
+      <span className={cn(
+        "store-home-v4-campaign-icon grid h-12 w-12 shrink-0 place-items-center rounded-[0.875rem] text-[var(--theme-primary)]",
+        isHighlight
+          ? "bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-[var(--theme-price)]"
+          : "bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))]",
+      )}>
+        {campaign.type === "coupon" || campaign.type === "new_user_gift" ? <Gift size={20} /> : campaign.type === "full_reduction" ? <TicketPercent size={20} /> : <Tag size={20} />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="mb-1 flex min-w-0 items-center gap-1.5">
+          <StorefrontBadge tone={campaign.type === "flash_sale" ? "hot" : "sale"}>
+            {CAMPAIGN_TYPE_LABELS[campaign.type]}
+          </StorefrontBadge>
+          {campaign.promoLabel ? <span className="truncate text-xs font-black text-[var(--theme-price)]">{campaign.promoLabel}</span> : null}
+        </span>
+        <span className="line-clamp-1 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</span>
+        <CampaignMetric campaign={campaign} />
+        {campaign.subtitle || campaign.description ? (
+          <span className="mt-1 line-clamp-1 text-xs text-[var(--theme-text-muted)]">
+            {campaign.subtitle || campaign.description}
+          </span>
+        ) : null}
+      </span>
+      <span className="store-home-v4-campaign-action inline-flex shrink-0 items-center gap-1 text-xs font-black text-[var(--theme-primary)]">
+        {campaignActionLabel(campaign)}
+        <ArrowRight size={14} className="transition group-hover:translate-x-0.5" />
+      </span>
+    </UnifiedButton>
   );
 }
 
 function CampaignMetric({ campaign }: { campaign: StorefrontCampaignVm }) {
   if (campaign.type === "flash_sale" && campaign.products.length > 0) {
     return (
-      <div className="flex min-w-0 items-center gap-2">
-        {campaign.products.slice(0, 3).map((product) => (
-          <span
-            key={product.product_id}
-            className="relative w-7 overflow-hidden rounded-xl border border-white/70 bg-[var(--theme-surface)]"
-            style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
-          >
-            <ProductCoverImage
-              url={product.cover_image}
-              alt={product.product_name}
-              className="h-full w-full"
-              imgClassName="h-full w-full object-cover"
-              sizes="44px"
-              loading="lazy"
-            />
-          </span>
-        ))}
-        <span className="text-xs font-semibold text-[var(--theme-text-muted)]">精选秒杀商品</span>
-      </div>
+      <span className="mt-1 block truncate text-xs text-[var(--theme-text-muted)]">
+        {campaign.products.length} 件精选秒杀商品
+      </span>
     );
   }
 
   if (campaign.type === "full_reduction" && campaign.thresholdAmount) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-surface)]/88 px-3 py-2 text-sm font-bold text-[var(--theme-text)] ring-1 ring-[var(--theme-border)]">
+      <span className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate text-xs font-semibold text-[var(--theme-text-muted)]">
         <Tag size={15} />
         满 RM {formatHomeV2Money(campaign.thresholdAmount)} 减 RM {formatHomeV2Money(campaign.discountAmount)}
       </span>
@@ -191,7 +166,7 @@ function CampaignMetric({ campaign }: { campaign: StorefrontCampaignVm }) {
 
   if (campaign.endsAt) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-surface)]/88 px-3 py-2 text-xs font-semibold text-[var(--theme-text-muted)] ring-1 ring-[var(--theme-border)]">
+      <span className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--theme-text-muted)]">
         <Clock size={14} />
         限时活动
       </span>

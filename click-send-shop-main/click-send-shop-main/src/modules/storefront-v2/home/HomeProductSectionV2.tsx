@@ -14,6 +14,7 @@ type HomeProductSectionV2Props = {
   actionLabel?: string;
   actionPath?: string;
   emptyText?: string;
+  emptyActionLabel?: string;
   showPrice?: boolean;
   onNavigate: (path: string) => void;
 };
@@ -27,11 +28,10 @@ export default function HomeProductSectionV2({
   actionLabel = "更多",
   actionPath = "/categories",
   emptyText = "暂无商品",
+  emptyActionLabel = "去全部分类",
   showPrice = true,
   onNavigate,
 }: HomeProductSectionV2Props) {
-  if (!loading && products.length === 0) return null;
-
   return (
     <section className="min-w-0">
       <StorefrontTitleRow
@@ -64,8 +64,16 @@ export default function HomeProductSectionV2({
             ))}
       </div>
       {!loading && products.length === 0 ? (
-        <div className="rounded-[1.125rem] border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-8 text-center text-sm text-[var(--theme-text-muted)]">
-          {emptyText}
+        <div className="rounded-[1.125rem] border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-8 text-center">
+          <p className="text-sm font-medium text-[var(--theme-text-muted)]">{emptyText}</p>
+          <UnifiedButton
+            type="button"
+            onClick={() => onNavigate(actionPath)}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-3 py-2 text-xs font-black text-[var(--theme-primary)]"
+          >
+            {emptyActionLabel}
+            <ArrowRight size={14} />
+          </UnifiedButton>
         </div>
       ) : null}
     </section>

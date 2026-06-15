@@ -4,7 +4,7 @@ import heroImage from './assets/reward-hero.webp'
 export default function InviteRewardCard({
   badgeText = 'INVITE BONUS',
   title = '邀请好友得奖励',
-  subtitle = '好友完成有效任务后，现金奖励自动入账',
+  subtitle = '好友完成首单后，返现自动入账；奖励明细、邀请码和邀请记录集中管理。',
   invitedCount = 0,
   cashbackAmount = 'RM 0.00',
   heroSrc = heroImage,

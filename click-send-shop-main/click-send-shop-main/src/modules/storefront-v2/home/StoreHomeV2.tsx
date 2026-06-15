@@ -2,7 +2,6 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react
 import { RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
-import StoreTabHeader from "@/components/store/StoreTabHeader";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import HomeOpsBlocks from "@/modules/public/pages/home/HomeOpsBlocks";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -41,9 +40,8 @@ import {
 import { storefrontPageClassName } from "../design/classes";
 import HomeHeroV2 from "./HomeHeroV2";
 import HomePrimaryCampaignV2 from "./HomePrimaryCampaignV2";
-import HomeCategoryRailV2 from "./HomeCategoryRailV2";
 import HomeProductSectionV2 from "./HomeProductSectionV2";
-import { dedupeFooterNav, parseFooterNav, uniqueProducts } from "./homeV2Utils";
+import { buildHomeCampaignEntrances, dedupeFooterNav, parseFooterNav, uniqueProducts } from "./homeV2Utils";
 
 const GuestMobileFooter = lazy(() => import("@/components/GuestMobileFooter"));
 
@@ -62,11 +60,9 @@ export default function StoreHomeV2() {
   const hotProducts = useProductStore((state) => state.hotProducts);
   const newProducts = useProductStore((state) => state.newProducts);
   const recommendedProducts = useProductStore((state) => state.recommendedProducts);
-  const categories = useProductStore((state) => state.categories);
   const homeLoading = useProductStore((state) => state.loading);
   const homeError = useProductStore((state) => state.error);
   const loadHomeData = useProductStore((state) => state.loadHomeData);
-  const loadCategories = useProductStore((state) => state.loadCategories);
 
   const cartItems = useCartStore((state) => state.items);
   const loadCart = useCartStore((state) => state.loadCart);
@@ -85,8 +81,7 @@ export default function StoreHomeV2() {
     const state = useProductStore.getState();
     const hasHomeData = state.hotProducts.length > 0 || state.newProducts.length > 0 || state.recommendedProducts.length > 0;
     void loadHomeData({ background: hasHomeData });
-    void loadCategories();
-  }, [loadCategories, loadHomeData]);
+  }, [loadHomeData]);
 
   useEffect(() => {
     if (!isAuthenticated || !isLoggedIn()) return;
@@ -141,6 +136,14 @@ export default function StoreHomeV2() {
     () => campaigns.filter((campaign) => isCampaignEnabled(campaign, homeModules, audience)),
     [audience, campaigns, homeModules],
   );
+  const fallbackCampaignEntrances = useMemo(() => {
+    if (!homeModulesReady) return [];
+    const types: Parameters<typeof buildHomeCampaignEntrances>[0] = [];
+    if (isHomeModuleEnabled(homeModules, "flash_sale_section", audience)) types.push("flash_sale");
+    if (isHomeModuleEnabled(homeModules, "coupon_center", audience)) types.push("coupon", "new_user_gift");
+    if (isHomeModuleEnabled(homeModules, "full_reduction_notice", audience)) types.push("full_reduction");
+    return buildHomeCampaignEntrances(types);
+  }, [audience, homeModules, homeModulesReady]);
 
   const newArrivalProducts = useMemo(() => uniqueProducts(newProducts, 8), [newProducts]);
   const hotHomeProducts = useMemo(() => uniqueProducts(hotProducts, homeModules.hotBatchSize * 2), [homeModules.hotBatchSize, hotProducts]);
@@ -214,7 +217,7 @@ export default function StoreHomeV2() {
   const showTrustBar = isHomeModuleEnabled(homeModules, "trust_bar", audience);
   const showNavGrid = isHomeModuleEnabled(homeModules, "nav_grid", audience);
   const showNewArrivals = isHomeModuleEnabled(homeModules, "new_arrivals", audience);
-  const showHotSales = isAuthenticated && isHomeModuleEnabled(homeModules, "hot_sales", "member");
+  const showHotSales = isHomeModuleEnabled(homeModules, "hot_sales", audience);
   const showRecommend = isAuthenticated && isHomeModuleEnabled(homeModules, "recommend", "member");
   const showGuestRecommend = !isAuthenticated && isHomeModuleEnabled(homeModules, "guest_recommend", "guest");
 
@@ -249,14 +252,7 @@ export default function StoreHomeV2() {
           { id: "organization", data: buildOrganizationJsonLd(siteInfo) },
         ]}
       />
-      <StoreTabHeader
-        searchMode="navigate"
-        searchPlaceholder={STORE_COPY.searchPlaceholder}
-        showSiteNameMobile
-        className="store-home-topbar"
-      />
-
-      <main className={storefrontPageClassName("space-y-5 pt-[var(--store-page-y)] md:space-y-7")}>
+      <main className={storefrontPageClassName("space-y-4 pt-[var(--store-page-y)] md:space-y-5 lg:space-y-6")}>
         <h1 className="sr-only">{slogan}</h1>
         <p className="sr-only">{description}</p>
 
@@ -273,25 +269,22 @@ export default function StoreHomeV2() {
           onNavigate={navigatePath}
         />
 
+        {showNavGrid ? (
+          <div className="store-home-v4-nav-panel overflow-hidden">
+            <HomeOpsBlocks />
+          </div>
+        ) : null}
+
+        {showTrustBar ? <HomeTrustBar className="store-home-trust-compact" /> : null}
+
         <HomePrimaryCampaignV2
           campaigns={enabledCampaigns}
+          fallbackCampaigns={fallbackCampaignEntrances}
           loading={campaignsLoading && homeModulesReady}
           onNavigate={navigatePath}
           onCampaignImpression={handleCampaignImpression}
           onCampaignClick={handleCampaignClick}
         />
-
-        {showTrustBar ? <HomeTrustBar className="store-home-desktop-trust" /> : null}
-
-        {showNavGrid ? (
-          <div className="overflow-hidden rounded-[1.125rem] border border-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] shadow-[0_12px_36px_color-mix(in_srgb,var(--theme-primary)_8%,transparent)]">
-            <HomeOpsBlocks />
-          </div>
-        ) : null}
-
-        {siteCapabilities.mallEnabled ? (
-          <HomeCategoryRailV2 categories={categories} onNavigate={navigatePath} />
-        ) : null}
 
         {siteCapabilities.mallEnabled && showNewArrivals ? (
           <HomeProductSectionV2
@@ -302,6 +295,8 @@ export default function StoreHomeV2() {
             skeletonCount={8}
             actionLabel="查看新品"
             actionPath={NEW_ARRIVAL_CATEGORY_PATH}
+            emptyText="新品正在整理中，可以先看全部分类。"
+            emptyActionLabel="去全部分类"
             showPrice={siteInfo.newArrivalShowPrice !== "0"}
             onNavigate={navigatePath}
           />
@@ -314,6 +309,9 @@ export default function StoreHomeV2() {
             products={guestProducts}
             loading={homeLoading && guestProducts.length === 0}
             skeletonCount={homeModules.guestRecommendMax}
+            actionLabel="全部商品"
+            emptyText="精选商品暂时没有更新，可以先进入分类浏览。"
+            emptyActionLabel="浏览分类"
             onNavigate={navigatePath}
           />
         ) : null}
@@ -325,7 +323,10 @@ export default function StoreHomeV2() {
             products={hotHomeProducts}
             loading={homeLoading && hotHomeProducts.length === 0}
             skeletonCount={homeModules.hotBatchSize}
+            actionLabel="热销榜"
             actionPath="/categories?sort=sales_desc"
+            emptyText="热销榜暂时没有数据，可以先看全部商品。"
+            emptyActionLabel="全部商品"
             onNavigate={navigatePath}
           />
         ) : null}
@@ -337,6 +338,9 @@ export default function StoreHomeV2() {
             products={memberRecommendations}
             loading={homeLoading && memberRecommendations.length === 0}
             skeletonCount={homeModules.recBatchSize}
+            actionLabel="更多推荐"
+            emptyText="还没有足够的浏览记录生成推荐，可以先看看热销商品。"
+            emptyActionLabel="看热销"
             onNavigate={navigatePath}
           />
         ) : null}

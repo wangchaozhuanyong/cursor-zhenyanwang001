@@ -20,6 +20,62 @@ const CAMPAIGN_PRIORITY: StorefrontCampaignType[] = [
   "notice",
 ];
 
+const HOME_CAMPAIGN_ENTRANCES: StorefrontCampaignVm[] = [
+  {
+    id: "local-home-flash-sale",
+    type: "flash_sale",
+    title: "限时秒杀专区",
+    subtitle: "热销商品和限时活动集中查看",
+    promoLabel: "马上抢",
+    href: "/categories?activity=flash_sale",
+    tone: "danger",
+    products: [],
+    coupons: [],
+    source: "local",
+  },
+  {
+    id: "local-home-coupon",
+    type: "coupon",
+    title: "领取优惠券",
+    subtitle: "下单前先领券，优惠集中在这里",
+    promoLabel: "先领券",
+    href: "/coupons",
+    tone: "success",
+    products: [],
+    coupons: [],
+    source: "local",
+  },
+  {
+    id: "local-home-full-reduction",
+    type: "full_reduction",
+    title: "满减优惠",
+    subtitle: "凑单优惠和组合活动一处查看",
+    promoLabel: "自动结算",
+    href: "/categories",
+    tone: "price",
+    products: [],
+    coupons: [],
+    source: "local",
+  },
+  {
+    id: "local-home-new-user-gift",
+    type: "new_user_gift",
+    title: "新人福利",
+    subtitle: "新会员专属优惠入口",
+    promoLabel: "新人专享",
+    href: "/coupons",
+    tone: "primary",
+    products: [],
+    coupons: [],
+    source: "local",
+  },
+];
+
+export function buildHomeCampaignEntrances(types: StorefrontCampaignType[]) {
+  const allowed = new Set(types);
+  return HOME_CAMPAIGN_ENTRANCES.filter((campaign) => allowed.has(campaign.type));
+}
+
 export function formatHomeV2Money(value: number | string | null | undefined) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "0";

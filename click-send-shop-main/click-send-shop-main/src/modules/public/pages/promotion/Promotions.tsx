@@ -21,9 +21,11 @@ import * as marketingService from "@/services/marketingService";
 import { buildCanonical } from "@/utils/seo";
 import { cn } from "@/lib/utils";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import type { PromotionType, StorefrontPromotion } from "@/services/marketingService";
+import type { PromotionType, StorefrontHomeCampaign, StorefrontPromotion } from "@/services/marketingService";
 
 type PromotionFilter = PromotionType | "";
+const DEALS_BASE_PATH = "/deals";
+const LEGACY_PROMOTION_BASE_PATH = "/promotions";
 
 const FILTERABLE_PROMOTION_TYPES: PromotionType[] = [
   "coupon",
@@ -70,12 +72,51 @@ function formatCount(value: number) {
 }
 
 function buildFilterHref(type: PromotionFilter) {
-  return type ? `/promotions?type=${type}` : "/promotions";
+  return type ? `${DEALS_BASE_PATH}?type=${type}` : DEALS_BASE_PATH;
+}
+
+function toDealsHref(href?: string) {
+  const raw = String(href || "").trim();
+  if (!raw) return DEALS_BASE_PATH;
+  if (raw.startsWith(LEGACY_PROMOTION_BASE_PATH)) {
+    return `${DEALS_BASE_PATH}${raw.slice(LEGACY_PROMOTION_BASE_PATH.length)}`;
+  }
+  return raw;
+}
+
+function campaignFallbackHref(campaign: StorefrontHomeCampaign) {
+  if (campaign.type === "coupon" || campaign.type === "new_user_gift") return "/coupons";
+  if (campaign.type === "promotion" || campaign.type === "notice") return DEALS_BASE_PATH;
+  if (FILTERABLE_PROMOTION_TYPES.includes(campaign.type as PromotionType)) {
+    return buildFilterHref(campaign.type as PromotionType);
+  }
+  return "/categories";
+}
+
+function CampaignShortcut({ campaign }: { campaign: StorefrontHomeCampaign }) {
+  const { localizedPath, t } = usePublicLocale();
+  const href = localizedPath(toDealsHref(campaign.href || campaignFallbackHref(campaign)));
+  const metric = campaign.coupons?.length
+    ? `${campaign.coupons.length} ${t("promotion.couponUnit")}`
+    : campaign.products?.length
+      ? `${campaign.products.length} ${t("promotion.items")}`
+      : campaign.promoLabel || campaign.type;
+
+  return (
+    <Link
+      to={href}
+      className="group flex min-w-[11rem] flex-col justify-between rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_30%,var(--theme-border))] sm:min-w-0"
+    >
+      <span className="text-[11px] font-black uppercase tracking-[0.08em] text-[var(--theme-primary)]">{metric}</span>
+      <strong className="mt-2 line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</strong>
+      <span className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--theme-text-muted)]">{campaign.subtitle || campaign.description || campaign.promoLabel}</span>
+    </Link>
+  );
 }
 
 function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
   const { formatDate, localizedPath, promotionTypeLabel, t } = usePublicLocale();
-  const detailPath = localizedPath(`/promotions/${promotion.slug}`);
+  const detailPath = localizedPath(`${DEALS_BASE_PATH}/${promotion.slug}`);
   const itemCount = promotion.items?.length || 0;
   const couponCount = promotion.coupons?.length || 0;
   const description = promotion.description || promotion.subtitle || t("promotion.detailFallback");
@@ -174,6 +215,7 @@ function PromotionSkeleton() {
 
 export default function Promotions() {
   const [list, setList] = useState<StorefrontPromotion[]>([]);
+  const [campaigns, setCampaigns] = useState<StorefrontHomeCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchParams] = useSearchParams();
@@ -187,8 +229,12 @@ export default function Promotions() {
     setLoading(true);
     setError("");
     try {
-      const data = await marketingService.fetchPromotions({ pageSize: 60, type: selectedType });
+      const [data, homeCampaigns] = await Promise.all([
+        marketingService.fetchPromotions({ pageSize: 60, type: selectedType }),
+        marketingService.fetchHomeCampaigns().catch(() => []),
+      ]);
       setList(data.list || []);
+      setCampaigns(homeCampaigns);
     } catch {
       setError(t("promotion.errorFallback"));
     } finally {
@@ -212,7 +258,7 @@ export default function Promotions() {
       <SeoHead
         title={t("promotion.headerTitle")}
         description={t("promotion.headerSubtitle")}
-        canonical={buildCanonical("/promotions")}
+        canonical={buildCanonical(DEALS_BASE_PATH)}
         robots="index,follow"
       />
       <StorePageHeader
@@ -256,6 +302,27 @@ export default function Promotions() {
             </div>
           </div>
         </section>
+
+        {campaigns.length ? (
+          <section className="mt-4 rounded-[1.1rem] border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-black text-[var(--theme-text)]">{t("common.allPromotions")}</h2>
+                <p className="text-xs text-[var(--theme-text-muted)]">{t("promotion.headerSubtitle")}</p>
+              </div>
+              <Link
+                to={localizedPath("/coupons")}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs font-black text-[var(--theme-text)]"
+              >
+                {t("common.coupons")}
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+            <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4">
+              {campaigns.slice(0, 4).map((campaign) => <CampaignShortcut key={`${campaign.type}:${campaign.id}`} campaign={campaign} />)}
+            </div>
+          </section>
+        ) : null}
 
         <section className="mt-4 grid gap-3 rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div className="flex min-w-0 items-center gap-3">

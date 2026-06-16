@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, BadgePercent, CalendarDays, Clock3, Loader2, PackageSearch, ShoppingBag, TicketPercent } from "lucide-react";
 import * as marketingService from "@/services/marketingService";
@@ -141,14 +141,15 @@ export default function PromotionDetail() {
   const { slug = "" } = useParams();
   const navigate = useNavigate();
   const { formatDate, localizedPath, promotionTypeLabel, t } = usePublicLocale();
-  const { claim: claimCoupon, getActionState } = useCouponAction(localizedPath(`/promotions/${slug}`));
+  const detailPath = localizedPath(`/deals/${slug}`);
+  const { claim: claimCoupon, getActionState } = useCouponAction(detailPath);
   const [promotion, setPromotion] = useState<StorefrontPromotion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [countdownSeconds, setCountdownSeconds] = useState(0);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!slug) {
       setError(t("promotion.detailUnavailable"));
       setLoading(false);
@@ -165,11 +166,11 @@ export default function PromotionDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug, t]);
 
   useEffect(() => {
     void load();
-  }, [slug]);
+  }, [load]);
 
   useEffect(() => {
     if (countdownSeconds <= 0) return undefined;
@@ -186,7 +187,7 @@ export default function PromotionDetail() {
     setClaimingId(coupon.id);
     try {
       const claimed = await claimCoupon(coupon, {
-        from: localizedPath(`/promotions/${slug}`),
+        from: detailPath,
         successMessage: t("promotion.couponClaimed"),
       });
       if (claimed) {
@@ -224,7 +225,7 @@ export default function PromotionDetail() {
               <ArrowLeft size={16} />
               {t("common.back")}
             </UnifiedButton>
-            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath("/promotions")}>
+            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath("/deals")}>
               {t("common.allPromotions")}
             </Link>
           </div>
@@ -291,7 +292,7 @@ export default function PromotionDetail() {
               <ShoppingBag size={16} />
               {promotion.type === "coupon" ? t("promotion.goCoupons") : t("common.browseProducts")}
             </Link>
-            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-5 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath("/promotions")}>
+            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-5 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath("/deals")}>
               {t("common.allPromotions")}
             </Link>
           </div>

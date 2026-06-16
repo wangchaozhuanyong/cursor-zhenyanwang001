@@ -58,13 +58,13 @@ describe("campaignNormalize", () => {
           promo_label: "满100打9折",
           start_at: "2026-06-01T00:00:00Z",
           end_at: "2026-06-03T00:00:00Z",
-          link_url: "/promotions/discount-1",
+          link_url: "/deals/discount-1",
         },
       ],
     });
 
     expect(campaigns.map((campaign) => campaign.type)).toEqual(["flash_sale", "full_reduction", "full_discount"]);
-    expect(campaigns[0]?.href).toBe("/promotions/flash-slug");
+    expect(campaigns[0]?.href).toBe("/deals/flash-slug");
     expect(campaigns[0]?.products[0]?.href).toBe("/product/p1");
     expect(campaigns[1]?.thresholdAmount).toBe(100);
     expect(campaigns[2]?.discountPercent).toBe(90);

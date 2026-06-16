@@ -108,13 +108,13 @@ describe("BottomNav", () => {
   it("navigates on touch pointer down so inertial scrolling cannot swallow the tab switch", async () => {
     await renderBottomNav();
 
-    const cartButton = container?.querySelector<HTMLButtonElement>("button[aria-label='购物车']");
-    expect(cartButton).not.toBeNull();
+    const dealsButton = container?.querySelector<HTMLButtonElement>("button[aria-label='优惠活动']");
+    expect(dealsButton).not.toBeNull();
 
     await act(async () => {
-      dispatchPointerDown(cartButton!, "touch");
+      dispatchPointerDown(dealsButton!, "touch");
     });
 
-    expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/cart");
+    expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/deals");
   });
 });

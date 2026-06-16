@@ -38,10 +38,10 @@ describe("campaignService", () => {
   });
 
   it("uses the campaign API when the contract is valid", async () => {
-    const apiCampaign = campaign({ id: "api-1", title: "接口活动" });
+    const apiCampaign = campaign({ id: "api-1", title: "接口活动", href: "/promotions/api-1" });
     requestMocks.get.mockResolvedValue({ data: { campaigns: [apiCampaign] } });
 
-    await expect(fetchStorefrontCampaigns()).resolves.toEqual([apiCampaign]);
+    await expect(fetchStorefrontCampaigns()).resolves.toEqual([{ ...apiCampaign, href: "/deals/api-1" }]);
     expect(requestMocks.get).toHaveBeenCalledWith("/marketing/campaigns/home");
     expect(homeServiceMocks.fetchHomeMarketing).not.toHaveBeenCalled();
   });
@@ -80,7 +80,7 @@ describe("campaignService", () => {
       position: "home_primary_campaign",
       audience: "guest",
       title: "今日秒杀",
-      href: "/promotions?type=flash_sale",
+      href: "/deals?type=flash_sale",
     })).resolves.toBe(true);
 
     expect(requestMocks.post).toHaveBeenCalledWith(
@@ -91,7 +91,7 @@ describe("campaignService", () => {
         audience: "guest",
         campaign_type: "flash_sale",
         title: "今日秒杀",
-        href: "/promotions?type=flash_sale",
+        href: "/deals?type=flash_sale",
       }),
       expect.objectContaining({
         skipGlobalLoading: true,

@@ -36,6 +36,9 @@ export function isHomeNavItemVisible(item: HomeNavItem, caps: SiteCapabilities):
   }
 
   const base = pathBase(item.link_url);
+  if (base.startsWith("/deals") || base.startsWith("/promotions")) {
+    return caps.mallEnabled && (caps.couponEnabled || caps.pointsEnabled);
+  }
   if (base.startsWith("/coupons")) return caps.couponEnabled;
   if (base.startsWith("/support-download")) return false;
   if (base.startsWith("/points")) return caps.pointsEnabled;

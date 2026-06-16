@@ -49,7 +49,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
   const navItems: TabletNavItem[] = [
     { path: "/", label: t("common.home"), icon: Home, enabled: true },
     { path: "/categories", label: t("common.categories"), icon: LayoutGrid, enabled: capabilities.mallEnabled },
-    { path: "/coupons", label: t("common.coupons"), icon: BadgePercent, enabled: capabilities.couponEnabled },
+    { path: "/deals", label: t("common.promotions"), icon: BadgePercent, enabled: capabilities.mallEnabled },
     { path: "/cart", label: t("common.cart"), icon: ShoppingCart, enabled: capabilities.mallEnabled, badge: "cart" },
     { path: "/profile", label: t("common.myAccount"), icon: User, enabled: true },
   ].filter((item) => item.enabled !== false && isStoreNavPathVisible(item.path, capabilities));

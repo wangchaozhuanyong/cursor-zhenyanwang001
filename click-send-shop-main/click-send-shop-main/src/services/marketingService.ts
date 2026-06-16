@@ -67,6 +67,11 @@ export async function fetchFlashSaleHome(position = "home_flash_sale") {
   return res.data;
 }
 
+export async function fetchHomeCampaigns() {
+  const res = await marketingApi.getHomeCampaigns();
+  return res.data?.campaigns || [];
+}
+
 export async function fetchCouponCenter(position = "home_coupon_center") {
   const res = await marketingApi.getCouponCenter(position);
   return res.data as CouponCenterPayload | null;
@@ -106,6 +111,8 @@ export type { FlashSaleHomeActivity };
 export type {
   StorefrontPromotion,
   StorefrontPromotionCoupon,
+  StorefrontHomeCampaign,
+  StorefrontHomeCampaignsPayload,
   StorefrontPromotionItem,
   StorefrontPromotionList,
   PromotionType,

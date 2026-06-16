@@ -117,7 +117,7 @@ function normalizeFlashSale(value: unknown): StorefrontCampaignVm | null {
     title: activity.title,
     subtitle: activity.subtitle,
     coverImage: activity.cover_image,
-    href: activity.href || `/promotions/${slug}`,
+    href: activity.href || `/deals/${slug}`,
     startsAt: activity.start_at,
     endsAt: activity.end_at,
     countdownSeconds: activity.countdown_seconds,
@@ -225,7 +225,7 @@ function normalizeCoupons(coupons: MarketingCouponPublic[] | undefined): Storefr
 function resolveCampaignHref(type: StorefrontCampaignType, activity: ActivityLike) {
   const detailSlug = String(activity.slug || activity.id || "").trim();
   if (detailSlug && type !== "coupon" && type !== "new_user_gift" && type !== "notice") {
-    return `/promotions/${encodeURIComponent(detailSlug)}`;
+    return `/deals/${encodeURIComponent(detailSlug)}`;
   }
 
   const linkUrl = String(activity.link_url || "").trim();
@@ -235,7 +235,7 @@ function resolveCampaignHref(type: StorefrontCampaignType, activity: ActivityLik
 
 function defaultCampaignHref(type: StorefrontCampaignType) {
   if (type === "coupon" || type === "new_user_gift") return "/coupons";
-  if (type === "flash_sale" || type === "full_reduction" || type === "full_discount" || type === "promotion") return `/promotions?type=${type}`;
+  if (type === "flash_sale" || type === "full_reduction" || type === "full_discount" || type === "promotion") return `/deals?type=${type}`;
   return "/categories";
 }
 

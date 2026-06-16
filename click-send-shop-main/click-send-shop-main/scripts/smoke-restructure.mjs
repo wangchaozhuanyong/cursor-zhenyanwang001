@@ -14,8 +14,8 @@ import { chromium } from "@playwright/test";
 
 const DEFAULT_ROUTES = [
   { path: "/", name: "store home", minRootChars: 80, expectAny: ["大马通", "首页", "Home", "Official"] },
-  { path: "/promotions", name: "promotion center", minRootChars: 60, expectAny: ["活动", "优惠", "Promotions", "Promosi"] },
-  { path: "/promotions/smoke-slug", name: "promotion detail fallback", minRootChars: 20 },
+  { path: "/deals", name: "deals center", minRootChars: 60, expectAny: ["活动", "优惠", "Deals", "Promosi"] },
+  { path: "/deals/smoke-slug", name: "deals detail fallback", minRootChars: 20 },
   { path: "/cart", name: "cart", minRootChars: 30, expectAny: ["购物车", "Cart", "Troli"] },
   { path: "/checkout", name: "checkout guard", minRootChars: 20 },
   { path: "/payment/result?order_no=SMOKE", name: "payment result", minRootChars: 24, expectAny: ["支付", "付款", "Payment", "Bayaran", "订单"] },
@@ -38,8 +38,8 @@ const LOCALIZED_PUBLIC_ROUTES = [
     locale: "en",
     routes: [
       { path: "/en", name: "store home en", minRootChars: 80, expectAny: ["One-stop", "Home", "Official", "Browse"] },
-      { path: "/en/promotions", name: "promotion center en", minRootChars: 60, expectAny: ["All promotions", "Promotions", "Failed to load promotions"] },
-      { path: "/en/promotions/smoke-slug", name: "promotion detail fallback en", minRootChars: 20, expectAny: ["Promotion unavailable", "All promotions"] },
+      { path: "/en/deals", name: "deals center en", minRootChars: 60, expectAny: ["All promotions", "Deals", "Failed to load promotions"] },
+      { path: "/en/deals/smoke-slug", name: "deals detail fallback en", minRootChars: 20, expectAny: ["Promotion unavailable", "All promotions"] },
       { path: "/en/cart", name: "cart en", minRootChars: 30, expectAny: ["Cart", "No items"] },
       { path: "/en/checkout", name: "checkout guard en", minRootChars: 20, expectAny: ["Welcome back", "Login"] },
       { path: "/en/payment/result?order_no=SMOKE", name: "payment result en", minRootChars: 24, expectAny: ["Payment", "Order"] },
@@ -50,8 +50,8 @@ const LOCALIZED_PUBLIC_ROUTES = [
     locale: "ms",
     routes: [
       { path: "/ms", name: "store home ms", minRootChars: 80, expectAny: ["Damatong", "Laman", "Rasmi", "Produk"] },
-      { path: "/ms/promotions", name: "promotion center ms", minRootChars: 60, expectAny: ["Semua promosi", "Promosi", "Gagal memuatkan promosi"] },
-      { path: "/ms/promotions/smoke-slug", name: "promotion detail fallback ms", minRootChars: 20, expectAny: ["Promosi tidak tersedia", "Semua promosi"] },
+      { path: "/ms/deals", name: "deals center ms", minRootChars: 60, expectAny: ["Semua promosi", "Promosi", "Gagal memuatkan promosi"] },
+      { path: "/ms/deals/smoke-slug", name: "deals detail fallback ms", minRootChars: 20, expectAny: ["Promosi tidak tersedia", "Semua promosi"] },
       { path: "/ms/cart", name: "cart ms", minRootChars: 30, expectAny: ["Troli", "Tiada item"] },
       { path: "/ms/checkout", name: "checkout guard ms", minRootChars: 20, expectAny: ["Selamat kembali", "Log masuk"] },
       { path: "/ms/payment/result?order_no=SMOKE", name: "payment result ms", minRootChars: 24, expectAny: ["Bayaran", "Pesanan"] },
@@ -164,7 +164,7 @@ async function pickBaseUrls() {
 function isExpectedNetworkNoise(message, route = null) {
   if (/favicon|manifest\.webmanifest|apple-touch-icon/i.test(message)) return true;
   if (/googletagmanager\.com|google-analytics\.com/i.test(message)) return true;
-  if (route?.path?.includes("/promotions/smoke-slug") && /\b404\b|Not Found/i.test(message)) return true;
+  if (route?.path?.includes("/deals/smoke-slug") && /\b404\b|Not Found/i.test(message)) return true;
   if (!REQUIRE_API && /ERR_CONNECTION_REFUSED|Failed to load resource|NetworkError|Load failed/i.test(message)) return true;
   if (!REQUIRE_API && /\/api\/|\/admin\/api\//i.test(message)) return true;
   if (!REQUIRE_API && /\b(401|403)\b/.test(message)) return true;

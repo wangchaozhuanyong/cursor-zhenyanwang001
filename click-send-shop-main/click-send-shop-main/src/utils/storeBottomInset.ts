@@ -6,6 +6,7 @@ export const STORE_TAB_PATHS = new Set([
   "/categories",
   "/new-arrivals",
   "/search",
+  "/deals",
   "/cart",
   "/favorites",
   "/profile",

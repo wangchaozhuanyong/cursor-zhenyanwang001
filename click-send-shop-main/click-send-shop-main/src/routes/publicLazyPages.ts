@@ -15,6 +15,7 @@ export const Categories = lazyWithPreload(() => import("@/modules/public/pages/p
 export const ProductDetail = lazyWithPreload(() => import("@/modules/public/pages/product/ProductDetail"));
 export const NewArrivals = lazyWithPreload(() => import("@/modules/public/pages/product/NewArrivals"));
 export const Search = lazyWithPreload(() => import("@/modules/public/pages/product/Search"));
+export const Deals = lazyWithPreload(() => import("@/modules/public/pages/marketing/Deals"));
 export const Promotions = lazyWithPreload(() => import("@/modules/public/pages/promotion/Promotions"));
 export const PromotionDetail = lazyWithPreload(() => import("@/modules/public/pages/promotion/PromotionDetail"));
 

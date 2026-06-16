@@ -75,6 +75,8 @@ export type StorefrontPromotionCoupon = CouponClaimability & {
   per_user_limit?: number;
   total_quantity?: number;
   claimed_count?: number;
+  campaign_id?: string;
+  campaign_type?: string;
   source_campaign_id?: string;
 };
 
@@ -116,8 +118,41 @@ export type StorefrontPromotionList = {
   totalPages: number;
 };
 
+export type StorefrontHomeCampaignType = PromotionType | "new_user_gift" | "promotion" | "notice";
+
+export type StorefrontHomeCampaignTone = "danger" | "price" | "success" | "primary" | "neutral";
+
+export type StorefrontHomeCampaign = {
+  id: string;
+  type: StorefrontHomeCampaignType;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  promoLabel?: string;
+  coverImage?: string;
+  href?: string;
+  startsAt?: string;
+  endsAt?: string;
+  countdownSeconds?: number;
+  thresholdAmount?: number;
+  discountAmount?: number;
+  discountPercent?: number;
+  tone?: StorefrontHomeCampaignTone;
+  products?: Array<FlashSaleHomeItem & { href?: string }>;
+  coupons?: Array<Pick<StorefrontPromotionCoupon, "id" | "title" | "type" | "value" | "min_amount" | "end_date" | "campaign_id" | "campaign_type">>;
+  source?: "home-marketing" | "campaign-api" | "local";
+};
+
+export type StorefrontHomeCampaignsPayload = {
+  campaigns: StorefrontHomeCampaign[];
+};
+
 export function getFlashSaleHome(position = "home_flash_sale") {
   return get<FlashSaleHomeActivity | null>("/marketing/activities/flash-sale", { position });
+}
+
+export function getHomeCampaigns() {
+  return get<StorefrontHomeCampaignsPayload>("/marketing/campaigns/home");
 }
 
 export function getPromotions(params?: { page?: number; pageSize?: number; type?: PromotionType | "" }) {

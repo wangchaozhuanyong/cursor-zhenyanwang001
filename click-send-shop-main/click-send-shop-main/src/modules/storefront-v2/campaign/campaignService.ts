@@ -22,12 +22,26 @@ type CampaignEventResponse = {
   accepted?: boolean;
 };
 
+function toDealsHref(href?: string) {
+  const raw = String(href || "").trim();
+  if (!raw) return raw;
+  if (raw.startsWith("/promotions")) return `/deals${raw.slice("/promotions".length)}`;
+  return raw;
+}
+
+function normalizeCampaignHref(campaign: StorefrontCampaignVm): StorefrontCampaignVm {
+  return {
+    ...campaign,
+    href: toDealsHref(campaign.href),
+  };
+}
+
 export async function fetchStorefrontCampaigns(options?: { force?: boolean }): Promise<StorefrontCampaignVm[]> {
-  const fallback = async () => normalizeHomeMarketingCampaigns(await fetchHomeMarketing(options));
+  const fallback = async () => normalizeHomeMarketingCampaigns(await fetchHomeMarketing(options)).map(normalizeCampaignHref);
 
   try {
     const res = await get<CampaignApiPayload>("/marketing/campaigns/home");
-    if (Array.isArray(res.data?.campaigns)) return res.data.campaigns;
+    if (Array.isArray(res.data?.campaigns)) return res.data.campaigns.map(normalizeCampaignHref);
     return fallback();
   } catch {
     return fallback();

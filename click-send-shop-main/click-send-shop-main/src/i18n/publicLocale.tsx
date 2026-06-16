@@ -39,7 +39,7 @@ const messages: Record<PublicLocale, Record<PublicMessageKey, string>> = {
     "common.member": "会员",
     "common.myAccount": "我的",
     "common.points": "积分",
-    "common.promotions": "优惠",
+    "common.promotions": "优惠活动",
     "common.retry": "重试",
     "common.search": "搜索",
     "common.searchScopeAll": "全部内容",

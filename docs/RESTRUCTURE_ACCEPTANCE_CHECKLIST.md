@@ -19,6 +19,7 @@
 - Phase 6 相关后端专项已通过：`node -r tsx/cjs --test test/billplz-provider.test.js test/billplz-webhook-security.test.js test/payment-reconciliation-review.test.js test/inventory-lock-v2.test.js test/admin-inventory-occupancy.test.js test/shipping-fee-rules.test.js test/logistics-snapshot.test.js`。
 - 前台桌面/移动端只读 smoke 已通过：`cd click-send-shop-main/click-send-shop-main && npm run smoke:restructure`，脚本自动识别本地大马通前端并检查 32 个重构关键入口 x 2 个视口，共 64 项，0 失败；覆盖中文、English、Bahasa Melayu 的活动中心、活动详情异常态、购物车、结算守卫、支付结果和订单守卫，无白屏、无 Vite 编译错误、无页面运行时致命错误。
 - 连接本地测试后端的同源 smoke 已通过：`cd click-send-shop-main/click-send-shop-main && SMOKE_REQUIRE_API=1 BASE_URL=http://127.0.0.1:3100 npm run smoke:restructure`，共 64 项，0 失败；覆盖后端静态前台 dist、独立 admin-dist、API 联通和三语言路由。
+- 已补已登录后台只读 smoke：`cd click-send-shop-main/click-send-shop-main && ADMIN_USERNAME=<test-admin> ADMIN_PASSWORD=<secret> BASE_URL=<store-url> ADMIN_BASE_URL=<admin-url> npm run smoke:admin-auth-restructure`；覆盖活动管理、新建活动、领券活动、积分、库存、智能补货、运费、订单、活动转化、优惠成本、库存占用、订单取消原因和审计日志，支付页面明确排除。
 - 本地测试数据库已建立：使用独立 MySQL 测试实例 `127.0.0.1:33310`，`server/.env.test` 指向 `click_send_shop_test`，文件被 `.gitignore` 忽略。
 - 重构迁移演练已通过：先准备 `click_send_shop_drill_test` 到迁移 `156`，再执行 `cd server && DB_NAME=click_send_shop_drill_test TEST_DB_NAME=click_send_shop_drill_test npm run migration:restructure-drill`，完成 `157 -> 162` 应用、`162 -> 157` 回滚、再次应用。
 - 本地测试后台账号已创建并验证：使用账号 `15111122221` 登录 `http://127.0.0.1:3100/api/admin/auth/login` 返回 token 和 CSRF，`/api/admin/account/profile` 返回 `super_admin`。
@@ -27,12 +28,18 @@
 - 后台订单详情已补物流运营检查：物流单号、承运商、当前状态、轨迹数量、最新轨迹、最后同步、异常提示和刷新物流。
 - 前台在线支付渠道排序已补 Billplz / FPX 优先；Stripe 保留为备用。
 
+## 当前线上只读证据（2026-06-16）
+
+- 线上健康检查已通过：`https://damatong.net/api/health/ready` 返回 `database=true`、`redis=true`。
+- 线上未登录/前台重构 smoke 已通过：`cd click-send-shop-main/click-send-shop-main && SMOKE_REQUIRE_API=1 BASE_URL=https://damatong.net ADMIN_BASE_URL=https://console.damatong.net npm run smoke:restructure`，共 64 项，0 失败；覆盖前台三语言核心路径、活动中心、购物车、结算/订单登录守卫、支付结果外壳、后台未登录守卫。
+- 线上已登录后台只读 smoke 已通过：`cd click-send-shop-main/click-send-shop-main && ADMIN_USERNAME=<test-admin> ADMIN_PASSWORD=<secret> BASE_URL=https://damatong.net ADMIN_BASE_URL=https://console.damatong.net npm run smoke:admin-auth-restructure`，共 30 项，0 失败；登录账号为 `super_admin`，覆盖活动管理、新建活动、领券活动、积分、库存、智能补货、配送设置、订单、活动转化、优惠成本、库存占用、订单取消原因和审计日志。支付页面已按本轮要求排除。
+
 仍需额外证据：
 
-- AWS/staging 数据库迁移演练和线上 smoke；本地测试库已完成，不代表 AWS 已执行。
-- 已登录后台的浏览器人工巡检仍建议做一次，自动化已覆盖未登录后台守卫和后端 flow smoke。
+- AWS/staging 数据库迁移演练；本地测试库已完成，不代表 AWS/staging 临时库已执行迁移 drill。
+- 已登录后台自动化巡检脚本已补；上线前仍建议做一次人工巡检，重点看活动发布表单、库存调整表单、运费规则编辑和长表单离开提醒。
 - Billplz sandbox 真实创建 bill、真实回调签名、失败回调、重复回调和对账复核；本地已通过 provider/webhook/reconciliation 单元测试，但真实 sandbox 仍需要 Billplz Sandbox 账号的 API Key、Collection ID、X-Signature Key 和可公网回调地址。
-- 生产发布、Cloudflare 清缓存和线上 smoke；未获明确指令前不得执行。
+- 后续如果把本轮新增脚本和文档发布到线上，再按发布流程执行 commit、push、部署、Cloudflare 清缓存和发布后 smoke；未获明确指令前不得执行。
 
 ## 1. 本地代码门禁
 
@@ -47,6 +54,7 @@
 - 后台构建：`cd click-send-shop-main/click-send-shop-main && npm run build:admin`
 - 重构页面 smoke：`cd click-send-shop-main/click-send-shop-main && npm run smoke:restructure`
 - 连接测试后端 smoke：`cd click-send-shop-main/click-send-shop-main && SMOKE_REQUIRE_API=1 BASE_URL=<staging-url> ADMIN_BASE_URL=<admin-url-if-split> npm run smoke:restructure`
+- 已登录后台只读 smoke：`cd click-send-shop-main/click-send-shop-main && ADMIN_USERNAME=<test-admin> ADMIN_PASSWORD=<secret> BASE_URL=<staging-url> ADMIN_BASE_URL=<admin-url-if-split> npm run smoke:admin-auth-restructure`
 - 空白检查：`git diff --check`
 
 ## 2. 前台浏览器 smoke
@@ -64,6 +72,7 @@
 
 - `/admin/login` 能打开。
 - 未登录访问活动管理、支付事件、对账、库存、报表路由时必须回到登录页，不得前台 404 或白屏。
+- 已登录只读 smoke 能打开活动、库存、智能补货、运费、订单、营销报表和审计日志页面，不得跳回登录、前台 404、功能关闭、权限不足或白屏。
 - 已登录后能打开统一活动管理，支持创建、编辑、复制、暂停、结束、归档。
 - 活动规则冲突检测、规则版本、效果统计可见。
 - 高风险操作有二次确认，并在后端写审计日志。

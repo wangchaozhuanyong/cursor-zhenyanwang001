@@ -15,6 +15,7 @@ const nodeArgs = [
   '-r',
   'tsx/cjs',
   '--test',
+  '--test-concurrency=1',
   '--test-force-exit',
   ...tests,
 ];

@@ -11,6 +11,7 @@ const request = require('supertest');
 const { randomUUID } = require('crypto');
 const app = require('../src/app');
 const db = require('../src/config/db');
+const mfaRepo = require('../src/modules/admin/repository/adminMfa.repository');
 
 const phone = `01${`${Date.now()}${process.pid}${Math.random().toString(36).slice(2, 9)}`.replace(/\D/g, '').slice(0, 8)}`;
 const countryCode = '+60';
@@ -23,6 +24,7 @@ let smokeProductId;
 let orderId;
 let shippingTemplateId;
 let variantId;
+let savedMfaPolicy;
 
 function withAdminGatewayHeaders(req) {
   return req
@@ -33,6 +35,9 @@ function withAdminGatewayHeaders(req) {
 
 describe('local flow smoke', () => {
   before(async () => {
+    savedMfaPolicy = await mfaRepo.selectMfaPolicy();
+    await mfaRepo.upsertMfaPolicy({ enabled: false });
+
     const reg = await request(app)
       .post('/api/auth/register')
       .send({ phone, countryCode, password, nickname: 'smoke' });
@@ -174,6 +179,10 @@ describe('local flow smoke', () => {
     assert.equal(order.status, 200, `create order failed: ${JSON.stringify(order.body)}`);
     assert.equal(order.body.code, 0, `create order failed: ${JSON.stringify(order.body)}`);
     orderId = order.body.data.id;
+  });
+
+  after(async () => {
+    if (savedMfaPolicy) await mfaRepo.upsertMfaPolicy(savedMfaPolicy);
   });
 
   test('admin: dedicated login + list orders + update status pending -> paid', async () => {

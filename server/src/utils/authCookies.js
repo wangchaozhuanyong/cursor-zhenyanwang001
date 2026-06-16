@@ -13,7 +13,15 @@ function parseCookies(req) {
     if (!key) return acc;
     if (Object.prototype.hasOwnProperty.call(acc, key)) {
       // Browsers send more specific cookie paths first; keep that value if a
-      // stale broader-path cookie with the same name is also present.
+      // stale broader-path cookie with the same name is also present. Test
+      // clients can also echo an expired empty cookie before the fresh one.
+      if (!acc[key] && value) {
+        try {
+          acc[key] = decodeURIComponent(value);
+        } catch {
+          acc[key] = value;
+        }
+      }
       return acc;
     }
     try {

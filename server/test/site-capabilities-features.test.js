@@ -12,6 +12,7 @@ const { DEFAULT_SITE_CAPABILITIES } = require('../src/config/siteCapabilities');
 const siteCapabilities = require('../src/modules/siteCapabilities/service/siteCapabilities.service');
 const rbac = require('../src/modules/admin/service/rbac.service');
 const rbacRepo = require('../src/modules/admin/repository/rbac.repository');
+const mfaRepo = require('../src/modules/admin/repository/adminMfa.repository');
 const { signToken } = require('../src/utils/helpers');
 
 function withAdminGatewayHeaders(req) {
@@ -53,9 +54,12 @@ describe('admin settings features API', () => {
   let admin;
   let adminAccessToken;
   let savedCapabilities;
+  let savedMfaPolicy;
 
   before(async () => {
     savedCapabilities = await siteCapabilities.getSiteCapabilities();
+    savedMfaPolicy = await mfaRepo.selectMfaPolicy();
+    await mfaRepo.upsertMfaPolicy({ enabled: false });
 
     const reg = await request(app)
       .post('/api/auth/register')
@@ -104,6 +108,7 @@ describe('admin settings features API', () => {
 
   after(async () => {
     await siteCapabilities.saveSiteCapabilities(savedCapabilities);
+    if (savedMfaPolicy) await mfaRepo.upsertMfaPolicy(savedMfaPolicy);
   });
 
   test('GET /api/admin/settings/features returns all capability keys', async () => {

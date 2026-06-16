@@ -2,7 +2,7 @@
 
 本文档用于验收订单、支付、库存、定价、活动、后台和马来西亚本地化重构。它不替代自动化测试；所有勾选项必须有命令输出、浏览器结果、后台操作记录或三方平台事件作为证据。
 
-## 当前本地证据（2026-06-15）
+## 当前本地证据（2026-06-16）
 
 以下仅代表本地工作树已验证，不代表已部署生产：
 
@@ -12,21 +12,26 @@
 - 后端架构门禁已通过：`cd server && npm run arch:check`。
 - 后端类型检查已通过：`cd server && npm run typecheck`。
 - 后端完整单元测试已通过：`cd server && npm run test:unit`。
+- 后端 DB 集成测试已通过：`cd server && npm run test:integration`。
+- 后端订单/后台 flow smoke 已通过：`cd server && npm run test:smoke`。
 - 后端迁移编号检查已通过：`cd server && npm run check:migrations`。
 - 后端报表注册检查已通过：`cd server && npm run check:report-registry`。
 - Phase 6 相关后端专项已通过：`node -r tsx/cjs --test test/billplz-provider.test.js test/billplz-webhook-security.test.js test/payment-reconciliation-review.test.js test/inventory-lock-v2.test.js test/admin-inventory-occupancy.test.js test/shipping-fee-rules.test.js test/logistics-snapshot.test.js`。
 - 前台桌面/移动端只读 smoke 已通过：`cd click-send-shop-main/click-send-shop-main && npm run smoke:restructure`，脚本自动识别本地大马通前端并检查 32 个重构关键入口 x 2 个视口，共 64 项，0 失败；覆盖中文、English、Bahasa Melayu 的活动中心、活动详情异常态、购物车、结算守卫、支付结果和订单守卫，无白屏、无 Vite 编译错误、无页面运行时致命错误。
+- 连接本地测试后端的同源 smoke 已通过：`cd click-send-shop-main/click-send-shop-main && SMOKE_REQUIRE_API=1 BASE_URL=http://127.0.0.1:3100 npm run smoke:restructure`，共 64 项，0 失败；覆盖后端静态前台 dist、独立 admin-dist、API 联通和三语言路由。
+- 本地测试数据库已建立：使用独立 MySQL 测试实例 `127.0.0.1:33310`，`server/.env.test` 指向 `click_send_shop_test`，文件被 `.gitignore` 忽略。
+- 重构迁移演练已通过：先准备 `click_send_shop_drill_test` 到迁移 `156`，再执行 `cd server && DB_NAME=click_send_shop_drill_test TEST_DB_NAME=click_send_shop_drill_test npm run migration:restructure-drill`，完成 `157 -> 162` 应用、`162 -> 157` 回滚、再次应用。
+- 本地测试后台账号已创建并验证：使用账号 `15111122221` 登录 `http://127.0.0.1:3100/api/admin/auth/login` 返回 token 和 CSRF，`/api/admin/account/profile` 返回 `super_admin`。
 - 后台库存页已补库存健康检查：可售库存、锁定库存、待支付占用、缺货/低库存、补货预警和库存流水审计入口。
 - 后台运费页已补马来西亚规则覆盖检查：默认模板、West/East Malaysia、州/城市/邮编、重量规则、金额门槛。
 - 后台订单详情已补物流运营检查：物流单号、承运商、当前状态、轨迹数量、最新轨迹、最后同步、异常提示和刷新物流。
 - 前台在线支付渠道排序已补 Billplz / FPX 优先；Stripe 保留为备用。
-- 重构迁移演练命令已执行但安全跳过：`cd server && npm run migration:restructure-drill` 输出 `server/.env.test not found`；当前机器未发现 Docker、`mysql` 或 `mysqladmin`，且当前仓库未发现可直接使用的 bundled local MySQL，必须配置非生产测试库后再跑真实演练。
 
 仍需额外证据：
 
-- staging 或临时库迁移演练。
-- 连接后端测试库后的完整桌面/移动端浏览器 smoke，尤其是结算页、已登录后台活动/支付/库存/物流页。
-- Billplz sandbox 真实创建 bill、真实回调签名、失败回调、重复回调和对账复核。
+- AWS/staging 数据库迁移演练和线上 smoke；本地测试库已完成，不代表 AWS 已执行。
+- 已登录后台的浏览器人工巡检仍建议做一次，自动化已覆盖未登录后台守卫和后端 flow smoke。
+- Billplz sandbox 真实创建 bill、真实回调签名、失败回调、重复回调和对账复核；本地已通过 provider/webhook/reconciliation 单元测试，但真实 sandbox 仍需要 Billplz Sandbox 账号的 API Key、Collection ID、X-Signature Key 和可公网回调地址。
 - 生产发布、Cloudflare 清缓存和线上 smoke；未获明确指令前不得执行。
 
 ## 1. 本地代码门禁
@@ -41,7 +46,7 @@
 - 前端完整：`cd click-send-shop-main/click-send-shop-main && npm run verify`
 - 后台构建：`cd click-send-shop-main/click-send-shop-main && npm run build:admin`
 - 重构页面 smoke：`cd click-send-shop-main/click-send-shop-main && npm run smoke:restructure`
-- 连接测试后端 smoke：`cd click-send-shop-main/click-send-shop-main && SMOKE_REQUIRE_API=1 BASE_URL=<staging-url> npm run smoke:restructure`
+- 连接测试后端 smoke：`cd click-send-shop-main/click-send-shop-main && SMOKE_REQUIRE_API=1 BASE_URL=<staging-url> ADMIN_BASE_URL=<admin-url-if-split> npm run smoke:restructure`
 - 空白检查：`git diff --check`
 
 ## 2. 前台浏览器 smoke

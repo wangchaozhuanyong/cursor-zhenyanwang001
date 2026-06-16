@@ -185,8 +185,7 @@ async function deleteProductById(id, deletedBy) {
     `UPDATE products
      SET deleted_at = NOW(), deleted_by = ?
      WHERE id = ?
-       AND deleted_at IS NULL
-       AND (lifecycle_status = 2 OR (lifecycle_status IS NULL AND status = 'inactive'))`,
+       AND deleted_at IS NULL`,
     [deletedBy || null, id],
   );
   return result.affectedRows || 0;

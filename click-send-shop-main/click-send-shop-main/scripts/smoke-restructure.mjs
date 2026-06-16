@@ -4,6 +4,7 @@
  * Usage:
  *   BASE_URL=http://127.0.0.1:5177 npm run smoke:restructure
  *   SMOKE_REQUIRE_API=1 BASE_URL=https://staging.example.com npm run smoke:restructure
+ *   SMOKE_REQUIRE_API=1 BASE_URL=https://damatong.net ADMIN_BASE_URL=https://console.damatong.net npm run smoke:restructure
  *
  * Default mode is read-only and tolerates API connection failures so it can run
  * against a frontend-only dev server. Set SMOKE_REQUIRE_API=1 when a safe test
@@ -90,21 +91,47 @@ function isExpectedAppHtml(html) {
   return html.includes('data-app-scope="store"') && html.includes("大马通");
 }
 
-async function pickBaseUrl() {
+function isExpectedAdminHtml(html) {
+  if (SKIP_APP_ID_CHECK) return true;
+  return isExpectedAppHtml(html) || html.includes("管理后台") || html.includes("<title>Admin");
+}
+
+function isAdminRoute(route) {
+  return route.path.startsWith("/admin/");
+}
+
+async function assertAdminBaseUrl(adminBaseUrl) {
+  const adminResponse = await fetch(`${adminBaseUrl}/admin/login`, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(3000),
+  });
+  const adminHtml = await adminResponse.text().catch(() => "");
+  if (!adminResponse.ok || !adminHtml.includes("id=\"root\"")) {
+    throw new Error(`ADMIN_BASE_URL does not look like an admin app: ${adminBaseUrl}`);
+  }
+  if (!isExpectedAdminHtml(adminHtml)) {
+    throw new Error(`ADMIN_BASE_URL is not the expected 大马通 admin app: ${adminBaseUrl}`);
+  }
+}
+
+async function pickBaseUrls() {
   if (process.env.BASE_URL) {
     const baseUrl = normalizeBaseUrl(process.env.BASE_URL);
-    const response = await fetch(`${baseUrl}/admin/login`, {
+    const adminBaseUrl = normalizeBaseUrl(process.env.ADMIN_BASE_URL || process.env.BASE_URL);
+    const storeResponse = await fetch(`${baseUrl}/`, {
       redirect: "manual",
       signal: AbortSignal.timeout(3000),
     });
-    const html = await response.text().catch(() => "");
-    if (!response.ok || !html.includes("id=\"root\"")) {
-      throw new Error(`BASE_URL does not look like a Vite app: ${baseUrl}`);
+    const storeHtml = await storeResponse.text().catch(() => "");
+    if (!storeResponse.ok || !storeHtml.includes("id=\"root\"")) {
+      throw new Error(`BASE_URL does not look like a storefront app: ${baseUrl}`);
     }
-    if (!isExpectedAppHtml(html)) {
-      throw new Error(`BASE_URL is not the expected 大马通 storefront/admin app: ${baseUrl}`);
+    if (!isExpectedAppHtml(storeHtml)) {
+      throw new Error(`BASE_URL is not the expected 大马通 storefront app: ${baseUrl}`);
     }
-    return baseUrl;
+
+    await assertAdminBaseUrl(adminBaseUrl);
+    return { baseUrl, adminBaseUrl };
   }
 
   const candidates = [
@@ -123,7 +150,9 @@ async function pickBaseUrl() {
         signal: AbortSignal.timeout(1200),
       });
       const html = await response.text().catch(() => "");
-      if (response.ok && html.includes("id=\"root\"") && isExpectedAppHtml(html)) return candidate;
+      if (response.ok && html.includes("id=\"root\"") && isExpectedAppHtml(html)) {
+        return { baseUrl: candidate, adminBaseUrl: candidate };
+      }
     } catch {
       // Try the next local frontend port.
     }
@@ -132,9 +161,10 @@ async function pickBaseUrl() {
   throw new Error("No 大马通 frontend server found. Start Vite/preview or set BASE_URL.");
 }
 
-function isExpectedNetworkNoise(message) {
+function isExpectedNetworkNoise(message, route = null) {
   if (/favicon|manifest\.webmanifest|apple-touch-icon/i.test(message)) return true;
   if (/googletagmanager\.com|google-analytics\.com/i.test(message)) return true;
+  if (route?.path?.includes("/promotions/smoke-slug") && /\b404\b|Not Found/i.test(message)) return true;
   if (!REQUIRE_API && /ERR_CONNECTION_REFUSED|Failed to load resource|NetworkError|Load failed/i.test(message)) return true;
   if (!REQUIRE_API && /\/api\/|\/admin\/api\//i.test(message)) return true;
   if (!REQUIRE_API && /\b(401|403)\b/.test(message)) return true;
@@ -146,7 +176,7 @@ function routeHasExpectedText(route, pageText) {
   return route.expectAny.some((token) => pageText.toLowerCase().includes(token.toLowerCase()));
 }
 
-async function inspectRoute(page, baseUrl, route, viewportLabel) {
+async function inspectRoute(page, baseUrl, adminBaseUrl, route, viewportLabel) {
   const consoleErrors = [];
   const pageErrors = [];
   const onConsole = (message) => {
@@ -159,7 +189,7 @@ async function inspectRoute(page, baseUrl, route, viewportLabel) {
   page.on("console", onConsole);
   page.on("pageerror", onPageError);
 
-  const url = `${baseUrl}${route.path}`;
+  const url = `${isAdminRoute(route) ? adminBaseUrl : baseUrl}${route.path}`;
   let responseStatus = -1;
   try {
     const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
@@ -209,7 +239,7 @@ async function inspectRoute(page, baseUrl, route, viewportLabel) {
   const pageText = `${state.title} ${state.headings.join(" ")} ${state.bodyText}`;
   if (!routeHasExpectedText(route, pageText)) failures.push(`missing expected text: ${route.expectAny.join(" / ")}`);
   failures.push(...pageErrors.map((message) => `page error: ${message}`));
-  failures.push(...consoleErrors.filter((message) => !isExpectedNetworkNoise(message)).map((message) => `console error: ${message.slice(0, 240)}`));
+  failures.push(...consoleErrors.filter((message) => !isExpectedNetworkNoise(message, route)).map((message) => `console error: ${message.slice(0, 240)}`));
 
   return {
     viewport: viewportLabel,
@@ -221,13 +251,13 @@ async function inspectRoute(page, baseUrl, route, viewportLabel) {
     rootChars: state.rootChars,
     headings: state.headings,
     bodySample: state.bodySample,
-    warnings: consoleErrors.filter(isExpectedNetworkNoise).slice(0, 4),
+    warnings: consoleErrors.filter((message) => isExpectedNetworkNoise(message, route)).slice(0, 4),
     failures,
   };
 }
 
 async function main() {
-  const baseUrl = await pickBaseUrl();
+  const { baseUrl, adminBaseUrl } = await pickBaseUrls();
   const browser = await chromium.launch({ headless: true });
   const results = [];
 
@@ -238,7 +268,7 @@ async function main() {
         viewport: { width: viewport.width, height: viewport.height },
       });
       for (const route of ROUTES) {
-        results.push(await inspectRoute(page, baseUrl, route, viewport.label));
+        results.push(await inspectRoute(page, baseUrl, adminBaseUrl, route, viewport.label));
       }
       await page.close();
     }
@@ -258,6 +288,7 @@ async function main() {
 
   const summary = {
     baseUrl,
+    adminBaseUrl,
     requireApi: REQUIRE_API,
     checked: results.length,
     failed: failures.length,

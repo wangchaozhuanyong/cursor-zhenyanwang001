@@ -59,6 +59,17 @@ test('getRefreshTokenFromRequest keeps the first duplicate cookie value', () => 
   assert.equal(token, 'specific-token');
 });
 
+test('getRefreshTokenFromRequest ignores an empty expired duplicate before a valid cookie', () => {
+  const req = {
+    headers: {
+      cookie: 'refresh_token=; other=1; refresh_token=fresh-token',
+    },
+  };
+
+  const token = getRefreshTokenFromRequest(req);
+  assert.equal(token, 'fresh-token');
+});
+
 test('setAuthCookies clears legacy storefront refresh cookie path', () => {
   const cleared = [];
   const cookies = [];

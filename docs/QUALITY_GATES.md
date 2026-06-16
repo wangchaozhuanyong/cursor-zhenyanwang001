@@ -91,6 +91,16 @@ npm run check:report-registry
 
 涉及迁移或报表注册时必须运行。
 
+涉及数据库联调、认证、订单、支付、RBAC 或站点能力开关时运行：
+
+```bash
+cd server
+npm run test:integration
+npm run test:smoke
+```
+
+DB 集成测试共享 `server/.env.test` 指向的测试库，当前测试 runner 会串行执行，避免手机号、站点开关和后台策略互相污染。
+
 涉及订单/活动/支付/库存/物流重构迁移 `157` 至 `162` 时，在测试库或 staging 临时库运行：
 
 ```bash
@@ -194,7 +204,7 @@ npm run audit:overlap:full
 npm run smoke:restructure
 ```
 
-涉及移动端、后台表格、弹窗、底部栏、Toast、按钮遮挡、页面布局时建议运行。涉及订单/活动/支付/库存/物流重构入口时，必须运行 `npm run smoke:restructure`；该命令会自动识别大马通前端，覆盖中文、English、Bahasa Melayu 的核心前台路径和未登录后台守卫。连接安全测试后端或 staging 时可设置 `SMOKE_REQUIRE_API=1 BASE_URL=<staging-url>`，把 API 失败也纳入失败项。视觉任务还应使用浏览器实际查看。
+涉及移动端、后台表格、弹窗、底部栏、Toast、按钮遮挡、页面布局时建议运行。涉及订单/活动/支付/库存/物流重构入口时，必须运行 `npm run smoke:restructure`；该命令会自动识别大马通前端，覆盖中文、English、Bahasa Melayu 的核心前台路径和未登录后台守卫。连接安全测试后端或 staging 时可设置 `SMOKE_REQUIRE_API=1 BASE_URL=<staging-url>`，把 API 失败也纳入失败项；如果前台和后台分域，再加 `ADMIN_BASE_URL=<admin-url>`。视觉任务还应使用浏览器实际查看。
 
 ## 17. PWA 和 dist 验证
 
@@ -248,7 +258,7 @@ npm run test:report-export
 - 报表注册、导出、数据口径：`cd server && npm run check:report-registry && npm run test:report-contract`
 - 迁移文件新增或编号变化：`cd server && npm run check:migrations`
 - 前台活动中心、商品卡片、购物车、结算页、支付结果页、物流弹窗：`cd click-send-shop-main/click-send-shop-main && npm run typecheck && npm run build && npm run smoke:restructure`
-- 已登录后台活动、支付、库存、运费、报表页：先连安全测试后端，再运行 `cd click-send-shop-main/click-send-shop-main && SMOKE_REQUIRE_API=1 BASE_URL=<staging-url> npm run smoke:restructure`
+- 已登录后台活动、支付、库存、运费、报表页：先连安全测试后端，再运行 `cd click-send-shop-main/click-send-shop-main && SMOKE_REQUIRE_API=1 BASE_URL=<staging-url> ADMIN_BASE_URL=<admin-url-if-split> npm run smoke:restructure`
 
 本地完成但未部署时，必须在交付说明里明确“未 commit、未 push、未部署、未改生产配置”。
 

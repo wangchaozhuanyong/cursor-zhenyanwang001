@@ -22,6 +22,8 @@ interface CheckoutPriceSummaryProps {
   rawTotal: number;
   discountAmount: number;
   discountLines?: CheckoutDiscountLine[];
+  estimatedCouponDiscount?: number;
+  pricingReady?: boolean;
   pointsBonusLines?: PointsBonusLine[];
   shippingFee: number;
   totalPoints: number;
@@ -37,6 +39,8 @@ export function CheckoutPriceSummary({
   rawTotal,
   discountAmount,
   discountLines = [],
+  estimatedCouponDiscount = 0,
+  pricingReady = true,
   pointsBonusLines = [],
   shippingFee,
   totalPoints,
@@ -70,6 +74,12 @@ export function CheckoutPriceSummary({
             <span className="font-medium text-[var(--theme-danger)]">-RM {discountAmount}</span>
           </div>
         ) : null}
+      {!pricingReady && estimatedCouponDiscount > 0 ? (
+        <div className="mt-2 flex justify-between gap-4 text-xs text-muted-foreground">
+          <span>优惠预估（待后端确认）</span>
+          <span>-RM {estimatedCouponDiscount}</span>
+        </div>
+      ) : null}
       {sstPreview ? (
         <>
           <div className="mt-2 flex justify-between gap-4 text-sm">

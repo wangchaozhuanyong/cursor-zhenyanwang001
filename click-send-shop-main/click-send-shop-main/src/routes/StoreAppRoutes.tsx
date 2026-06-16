@@ -48,7 +48,7 @@ import {
 } from "@/i18n/publicLocale";
 import {
   StoreHomeV2, Login, BindWechatPhone,
-  Categories, ProductDetail, Search, Deals, PromotionDetail,
+  Categories, ProductDetail, Search, Promotions, PromotionDetail,
   Cart, Checkout, PaymentResult, Orders, OrderDetail, Returns, ReturnDetail, PendingReviews,
   Profile, Feedback, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
   Help, About, ContentCmsPage, SupportDownload, TikTokLanding, NotFound,
@@ -388,11 +388,11 @@ function CapabilityRoute({ enabled, children }: { enabled: boolean; children: Re
   return <>{children}</>;
 }
 
-function LegacyPromotionsRedirect({ detail = false }: { detail?: boolean }) {
+function LegacyDealsRedirect({ detail = false }: { detail?: boolean }) {
   const location = useLocation();
   const { slug = "" } = useParams();
   const { localizedPath } = usePublicLocale();
-  const target = detail ? `/deals/${slug}` : "/deals";
+  const target = detail ? `/promotions/${slug}` : "/promotions";
   return <Navigate to={`${localizedPath(target)}${location.search}`} replace />;
 }
 
@@ -420,10 +420,10 @@ function renderFrontLayoutRoutes(capabilities: ReturnType<typeof useSiteCapabili
       <Route path={publicRoutePath("/new-arrivals", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><Navigate to={publicNavigatePath(NEW_ARRIVAL_CATEGORY_PATH, localized)} replace /></CapabilityRoute>} />
       <Route path={publicRoutePath("/support-download", localized)} element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><SupportDownload /></CapabilityRoute>} />
       <Route path={publicRoutePath("/search", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><Search /></CapabilityRoute>} />
-      <Route path={publicRoutePath("/deals", localized)} element={<CapabilityRoute enabled={dealsEnabled}><Deals /></CapabilityRoute>} />
-      <Route path={publicRoutePath("/deals/:slug", localized)} element={<CapabilityRoute enabled={dealsEnabled}><PromotionDetail /></CapabilityRoute>} />
-      <Route path={publicRoutePath("/promotions", localized)} element={<LegacyPromotionsRedirect />} />
-      <Route path={publicRoutePath("/promotions/:slug", localized)} element={<LegacyPromotionsRedirect detail />} />
+      <Route path={publicRoutePath("/promotions", localized)} element={<CapabilityRoute enabled={dealsEnabled}><Promotions /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/promotions/:slug", localized)} element={<CapabilityRoute enabled={dealsEnabled}><PromotionDetail /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/deals", localized)} element={<LegacyDealsRedirect />} />
+      <Route path={publicRoutePath("/deals/:slug", localized)} element={<LegacyDealsRedirect detail />} />
       <Route path={publicRoutePath("/cart", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><Cart /></CapabilityRoute>} />
       <Route path={publicRoutePath("/profile", localized)} element={<Profile />} />
       <Route path={publicRoutePath("/product/:id", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><ProductDetail /></CapabilityRoute>} />

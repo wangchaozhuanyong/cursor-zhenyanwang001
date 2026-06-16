@@ -24,8 +24,8 @@ import { usePublicLocale } from "@/i18n/publicLocale";
 import type { PromotionType, StorefrontHomeCampaign, StorefrontPromotion } from "@/services/marketingService";
 
 type PromotionFilter = PromotionType | "";
-const DEALS_BASE_PATH = "/deals";
-const LEGACY_PROMOTION_BASE_PATH = "/promotions";
+const PROMOTIONS_BASE_PATH = "/promotions";
+const LEGACY_DEALS_BASE_PATH = "/deals";
 
 const FILTERABLE_PROMOTION_TYPES: PromotionType[] = [
   "coupon",
@@ -45,7 +45,11 @@ const FILTERS: Array<{ type: PromotionFilter; icon: typeof Gift; fallbackLabel: 
   { type: "flash_sale", icon: Zap, fallbackLabel: "秒杀" },
   { type: "full_reduction", icon: TicketPercent, fallbackLabel: "满减" },
   { type: "full_discount", icon: TicketPercent, fallbackLabel: "满折" },
+  { type: "limited_time_discount", icon: Timer, fallbackLabel: "限时折扣" },
   { type: "member_price", icon: Gem, fallbackLabel: "会员价" },
+  { type: "points_reward", icon: Sparkles, fallbackLabel: "积分奖励" },
+  { type: "checkin_reward", icon: CalendarDays, fallbackLabel: "签到奖励" },
+  { type: "campaign", icon: Gift, fallbackLabel: "主题活动" },
 ];
 
 function typeTone(type: PromotionType) {
@@ -72,21 +76,21 @@ function formatCount(value: number) {
 }
 
 function buildFilterHref(type: PromotionFilter) {
-  return type ? `${DEALS_BASE_PATH}?type=${type}` : DEALS_BASE_PATH;
+  return type ? `${PROMOTIONS_BASE_PATH}?type=${type}` : PROMOTIONS_BASE_PATH;
 }
 
-function toDealsHref(href?: string) {
+function toPromotionsHref(href?: string) {
   const raw = String(href || "").trim();
-  if (!raw) return DEALS_BASE_PATH;
-  if (raw.startsWith(LEGACY_PROMOTION_BASE_PATH)) {
-    return `${DEALS_BASE_PATH}${raw.slice(LEGACY_PROMOTION_BASE_PATH.length)}`;
+  if (!raw) return PROMOTIONS_BASE_PATH;
+  if (raw.startsWith(LEGACY_DEALS_BASE_PATH)) {
+    return `${PROMOTIONS_BASE_PATH}${raw.slice(LEGACY_DEALS_BASE_PATH.length)}`;
   }
   return raw;
 }
 
 function campaignFallbackHref(campaign: StorefrontHomeCampaign) {
   if (campaign.type === "coupon" || campaign.type === "new_user_gift") return "/coupons";
-  if (campaign.type === "promotion" || campaign.type === "notice") return DEALS_BASE_PATH;
+  if (campaign.type === "promotion" || campaign.type === "notice") return PROMOTIONS_BASE_PATH;
   if (FILTERABLE_PROMOTION_TYPES.includes(campaign.type as PromotionType)) {
     return buildFilterHref(campaign.type as PromotionType);
   }
@@ -95,7 +99,7 @@ function campaignFallbackHref(campaign: StorefrontHomeCampaign) {
 
 function CampaignShortcut({ campaign }: { campaign: StorefrontHomeCampaign }) {
   const { localizedPath, t } = usePublicLocale();
-  const href = localizedPath(toDealsHref(campaign.href || campaignFallbackHref(campaign)));
+  const href = localizedPath(toPromotionsHref(campaign.href || campaignFallbackHref(campaign)));
   const metric = campaign.coupons?.length
     ? `${campaign.coupons.length} ${t("promotion.couponUnit")}`
     : campaign.products?.length
@@ -116,7 +120,7 @@ function CampaignShortcut({ campaign }: { campaign: StorefrontHomeCampaign }) {
 
 function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
   const { formatDate, localizedPath, promotionTypeLabel, t } = usePublicLocale();
-  const detailPath = localizedPath(`${DEALS_BASE_PATH}/${promotion.slug}`);
+  const detailPath = localizedPath(`${PROMOTIONS_BASE_PATH}/${promotion.slug}`);
   const itemCount = promotion.items?.length || 0;
   const couponCount = promotion.coupons?.length || 0;
   const description = promotion.description || promotion.subtitle || t("promotion.detailFallback");
@@ -140,7 +144,7 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
             {promotionTypeLabel(promotion.type)}
           </span>
           <span className={cn("inline-flex shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold", statusTone(promotion.runtime_status))}>
-            {promotion.runtime_status === "scheduled" ? t("promotion.startsIn") : promotion.runtime_status === "ended" ? t("promotion.soldOut") : t("promotion.active")}
+            {promotion.runtime_status === "scheduled" ? t("promotion.notStarted") : promotion.runtime_status === "ended" ? t("promotion.ended") : t("promotion.active")}
           </span>
         </div>
 
@@ -248,6 +252,7 @@ export default function Promotions() {
 
   const summary = useMemo(() => ({
     total: list.length,
+    active: list.filter((item) => item.runtime_status === "active").length,
     coupon: list.filter((item) => item.type === "coupon").length,
     flash: list.filter((item) => item.type === "flash_sale" || item.type === "limited_time_discount").length,
     member: list.filter((item) => ["member_price", "points_reward", "checkin_reward"].includes(item.type)).length,
@@ -258,7 +263,7 @@ export default function Promotions() {
       <SeoHead
         title={t("promotion.headerTitle")}
         description={t("promotion.headerSubtitle")}
-        canonical={buildCanonical(DEALS_BASE_PATH)}
+        canonical={buildCanonical(PROMOTIONS_BASE_PATH)}
         robots="index,follow"
       />
       <StorePageHeader
@@ -289,7 +294,7 @@ export default function Promotions() {
 
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-[0.95rem] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] px-2 py-3 backdrop-blur">
-              <strong className="block text-xl font-black text-[var(--theme-text)]">{formatCount(summary.total)}</strong>
+              <strong className="block text-xl font-black text-[var(--theme-text)]">{formatCount(summary.active)}</strong>
               <span className="text-[11px] font-medium text-[var(--theme-text-muted)]">{t("promotion.active")}</span>
             </div>
             <div className="rounded-[0.95rem] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] px-2 py-3 backdrop-blur">

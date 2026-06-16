@@ -22,17 +22,17 @@ type CampaignEventResponse = {
   accepted?: boolean;
 };
 
-function toDealsHref(href?: string) {
+function toPromotionsHref(href?: string) {
   const raw = String(href || "").trim();
   if (!raw) return raw;
-  if (raw.startsWith("/promotions")) return `/deals${raw.slice("/promotions".length)}`;
+  if (raw.startsWith("/deals")) return `/promotions${raw.slice("/deals".length)}`;
   return raw;
 }
 
 function normalizeCampaignHref(campaign: StorefrontCampaignVm): StorefrontCampaignVm {
   return {
     ...campaign,
-    href: toDealsHref(campaign.href),
+    href: toPromotionsHref(campaign.href),
   };
 }
 

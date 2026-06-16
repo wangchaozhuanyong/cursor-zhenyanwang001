@@ -44,6 +44,8 @@ describe("buildProductCardV2Model", () => {
     }));
 
     expect(vm.badges.map((badge) => badge.label)).toEqual(["秒杀", "热销"]);
+    expect(vm.priceText).toBe("8");
+    expect(vm.originalPriceText).toBe("12");
   });
 
   it("formats range and original price", () => {
@@ -108,6 +110,8 @@ describe("buildProductCardV2Model", () => {
 
     expect(vm.salesText).toBe("30天售 28");
     expect(vm.activityText).toBe("秒杀剩余 4");
+    expect(vm.activityProgressPercent).toBe(60);
+    expect(vm.activityProgressText).toBe("剩 4 · 限购 1");
     expect(vm.decisionTexts).toEqual(["30天售 28", "秒杀剩余 4"]);
   });
 });

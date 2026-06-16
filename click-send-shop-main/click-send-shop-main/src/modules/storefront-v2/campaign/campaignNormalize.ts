@@ -39,6 +39,13 @@ const CAMPAIGN_TONE: Record<StorefrontCampaignType, StorefrontCampaignTone> = {
   notice: "neutral",
 };
 
+function toPromotionsHref(href?: string) {
+  const raw = String(href || "").trim();
+  if (!raw) return raw;
+  if (raw.startsWith("/deals")) return `/promotions${raw.slice("/deals".length)}`;
+  return raw;
+}
+
 export function normalizeHomeMarketingCampaigns(marketing: HomeMarketingPayload | null | undefined): StorefrontCampaignVm[] {
   if (!marketing) return [];
 
@@ -117,7 +124,7 @@ function normalizeFlashSale(value: unknown): StorefrontCampaignVm | null {
     title: activity.title,
     subtitle: activity.subtitle,
     coverImage: activity.cover_image,
-    href: activity.href || `/deals/${slug}`,
+    href: toPromotionsHref(activity.href) || `/promotions/${slug}`,
     startsAt: activity.start_at,
     endsAt: activity.end_at,
     countdownSeconds: activity.countdown_seconds,
@@ -225,17 +232,17 @@ function normalizeCoupons(coupons: MarketingCouponPublic[] | undefined): Storefr
 function resolveCampaignHref(type: StorefrontCampaignType, activity: ActivityLike) {
   const detailSlug = String(activity.slug || activity.id || "").trim();
   if (detailSlug && type !== "coupon" && type !== "new_user_gift" && type !== "notice") {
-    return `/deals/${encodeURIComponent(detailSlug)}`;
+    return `/promotions/${encodeURIComponent(detailSlug)}`;
   }
 
   const linkUrl = String(activity.link_url || "").trim();
-  if (linkUrl && !linkUrl.startsWith("/categories")) return linkUrl;
+  if (linkUrl && !linkUrl.startsWith("/categories")) return toPromotionsHref(linkUrl);
   return defaultCampaignHref(type);
 }
 
 function defaultCampaignHref(type: StorefrontCampaignType) {
   if (type === "coupon" || type === "new_user_gift") return "/coupons";
-  if (type === "flash_sale" || type === "full_reduction" || type === "full_discount" || type === "promotion") return `/deals?type=${type}`;
+  if (type === "flash_sale" || type === "full_reduction" || type === "full_discount" || type === "promotion") return `/promotions?type=${type}`;
   return "/categories";
 }
 

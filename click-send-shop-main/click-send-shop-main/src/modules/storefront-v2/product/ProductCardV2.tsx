@@ -85,6 +85,7 @@ export default function ProductCardV2({
           <h3 className={t.text.productTitle}>{vm.name}</h3>
           <BadgeRow badges={vm.badges} subtle />
           <DecisionMetaRow items={vm.decisionTexts} />
+          <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
           {showPrice ? (
             <div className="mt-auto flex items-end justify-between gap-2 pt-3">
               <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
@@ -144,6 +145,7 @@ export default function ProductCardV2({
       <div className="flex min-h-[132px] flex-1 flex-col px-1.5 pb-2 pt-3 sm:px-2">
         <h3 className={t.text.productTitle}>{vm.name}</h3>
         <DecisionMetaRow items={vm.decisionTexts} />
+        <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
         {showPrice ? (
           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
             <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
@@ -154,6 +156,22 @@ export default function ProductCardV2({
         ) : null}
       </div>
     </Link>
+  );
+}
+
+function ActivityProgressBar({ percent, text }: { percent?: number; text?: string }) {
+  if (!percent && !text) return null;
+  const safePercent = Math.max(0, Math.min(100, Math.round(Number(percent || 0))));
+  return (
+    <div className="mt-2 min-h-[1.1rem]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-border)_70%,transparent)]">
+        <div
+          className="h-full rounded-full bg-[var(--theme-price)] transition-[width]"
+          style={{ width: `${safePercent}%` }}
+        />
+      </div>
+      {text ? <p className="mt-1 truncate text-[11px] leading-4 text-[var(--theme-text-muted)]">{text}</p> : null}
+    </div>
   );
 }
 

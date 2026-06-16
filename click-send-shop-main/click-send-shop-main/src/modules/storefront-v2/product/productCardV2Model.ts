@@ -1,6 +1,6 @@
 import { isProductNewArrival } from "@/utils/productNewArrival";
 import { formatProductSales, getProductSalesCount, productSalesLabel } from "@/utils/productSales";
-import type { Product } from "@/types/product";
+import type { Product, ProductActiveActivity } from "@/types/product";
 
 export type ProductCardV2Badge = {
   key: string;
@@ -23,6 +23,8 @@ export type ProductCardV2Model = {
   salesText?: string;
   variantText?: string;
   activityText?: string;
+  activityProgressPercent?: number;
+  activityProgressText?: string;
   decisionTexts: string[];
 };
 
@@ -42,6 +44,25 @@ export function money(value: unknown) {
 function positiveInteger(value: unknown) {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
+}
+
+function positiveNumber(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function firstPositiveNumber(...values: unknown[]) {
+  for (const value of values) {
+    const n = positiveNumber(value);
+    if (n > 0) return n;
+  }
+  return 0;
+}
+
+function clampPercent(value: unknown) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
 }
 
 function buildSalesText(product: Product) {
@@ -70,6 +91,13 @@ function buildActivityText(product: Product) {
   const activity = product.active_activity;
   if (!activity) return undefined;
 
+  const activityPromoLabel = String(activity.promo_label || "").trim();
+  if (activityPromoLabel) return activityPromoLabel.slice(0, 18);
+
+  if (activity.status !== "active" && activity.status_label) {
+    return String(activity.status_label).trim().slice(0, 18);
+  }
+
   if (activity.type === "flash_sale" || activity.type === "limited_time_discount") {
     const remaining = positiveInteger(activity.remaining_stock);
     const label = activity.type === "limited_time_discount" ? "折扣" : "秒杀";
@@ -80,17 +108,64 @@ function buildActivityText(product: Product) {
   const discount = Number(activity.discount_amount || 0);
   if (threshold > 0 && discount > 0) return `满 RM ${money(threshold)} 减 RM ${money(discount)}`;
 
+  const percent = Number(activity.discount_percent || 0);
+  if (threshold > 0 && percent > 0) return `满 RM ${money(threshold)} 享 ${money(percent)}%`;
+
   return activity.title ? String(activity.title).trim().slice(0, 18) : undefined;
+}
+
+function activityBadgeLabel(type: ProductActiveActivity["type"]) {
+  if (type === "flash_sale") return "秒杀";
+  if (type === "limited_time_discount") return "限时折扣";
+  if (type === "member_price") return "会员价";
+  if (type === "full_discount") return "满折";
+  if (type === "points_reward") return "积分";
+  if (type === "checkin_reward") return "签到";
+  if (type === "campaign") return "活动";
+  return "满减";
+}
+
+function buildActivityProgress(product: Product) {
+  const activity = product.active_activity;
+  if (!activity) return {};
+
+  const stock = positiveInteger(activity.activity_stock);
+  const sold = positiveInteger(activity.sold_count);
+  const remaining = positiveInteger(activity.remaining_stock);
+  const explicitPercent = clampPercent(activity.stock_progress_percent);
+  const computedPercent = stock > 0 ? clampPercent((sold / stock) * 100) : 0;
+  const percent = explicitPercent || computedPercent;
+
+  if (!percent && !remaining && !stock) return {};
+
+  const limit = positiveInteger(activity.limit_per_user);
+  const stockText = remaining > 0 ? `剩 ${remaining}` : stock > 0 ? "库存紧张" : "";
+  const limitText = limit > 0 ? `限购 ${limit}` : "";
+
+  return {
+    activityProgressPercent: percent,
+    activityProgressText: [stockText, limitText].filter(Boolean).join(" · "),
+  };
 }
 
 export function buildProductCardV2Model(product: Product): ProductCardV2Model {
   const pricedProduct = product as ProductPriceFields;
-  const price = Number(pricedProduct.min_price ?? product.price ?? 0);
+  const backendActivityPrice = firstPositiveNumber(
+    product.active_activity?.activity_price,
+    product.activity_price,
+    product.active_activity ? product.effective_price : 0,
+  );
+  const basePrice = Number(pricedProduct.min_price ?? product.price ?? 0);
+  const price = backendActivityPrice || basePrice;
   const maxPrice = Number(pricedProduct.max_price ?? product.price ?? price);
-  const hasRange = Number.isFinite(maxPrice) && maxPrice > price;
-  const displayComparePrice = hasRange ? maxPrice : Number(product.price || price);
+  const hasRange = !backendActivityPrice && Number.isFinite(maxPrice) && maxPrice > price;
+  const displayComparePrice = hasRange ? maxPrice : price;
 
-  const original = Number(pricedProduct.max_original_price ?? product.original_price ?? 0);
+  const original = firstPositiveNumber(
+    pricedProduct.max_original_price,
+    product.original_price,
+    backendActivityPrice ? product.price : 0,
+  );
   const showOriginal = Number.isFinite(original) && original > displayComparePrice;
 
   const stock = Number(product.default_variant?.stock ?? product.stock ?? 0);
@@ -99,16 +174,9 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
   const badges: ProductCardV2Badge[] = [];
 
   if (product.active_activity) {
-    const activityTypeLabel = product.active_activity.type === "flash_sale"
-      ? "秒杀"
-      : product.active_activity.type === "limited_time_discount"
-        ? "折扣"
-        : product.active_activity.type === "member_price"
-          ? "会员"
-          : "满减";
     badges.push({
       key: "activity",
-      label: activityTypeLabel,
+      label: activityBadgeLabel(product.active_activity.type),
       tone: "sale",
     });
   }
@@ -125,6 +193,7 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
   const variantText = buildVariantText(pricedProduct);
   const activityText = buildActivityText(product);
   const decisionTexts = [salesText, variantText, activityText].filter(Boolean).slice(0, 3) as string[];
+  const activityProgress = buildActivityProgress(product);
 
   return {
     id: product.id,
@@ -132,7 +201,7 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
     imageUrl: product.cover_image,
     imageAlt: product.cover_image_alt || `${product.name} 商品图片`,
     price,
-    priceText: hasRange ? `${money(price)}-${money(maxPrice)}` : money(product.price || price),
+    priceText: hasRange ? `${money(price)}-${money(maxPrice)}` : money(price),
     originalPrice: showOriginal ? original : undefined,
     originalPriceText: showOriginal ? money(original) : undefined,
     soldOut,
@@ -141,6 +210,7 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
     salesText,
     variantText,
     activityText,
+    ...activityProgress,
     decisionTexts,
   };
 }

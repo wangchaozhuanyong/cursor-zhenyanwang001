@@ -115,6 +115,6 @@ describe("BottomNav", () => {
       dispatchPointerDown(dealsButton!, "touch");
     });
 
-    expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/deals");
+    expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/promotions");
   });
 });

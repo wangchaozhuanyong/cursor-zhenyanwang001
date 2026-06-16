@@ -47,7 +47,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   const navItems: NavItem[] = [
     { path: "/", label: t("common.home"), icon: Home, enabled: true },
     { path: "/categories", label: t("common.categories"), icon: LayoutGrid, enabled: capabilities.mallEnabled },
-    { path: "/deals", label: t("common.promotions"), icon: BadgePercent, enabled: capabilities.mallEnabled },
+    { path: "/promotions", label: t("common.promotions"), icon: BadgePercent, enabled: capabilities.mallEnabled },
     { path: "/support-download?tab=support", label: t("common.support"), icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled },
   ].filter((item) => item.enabled !== false && isStoreNavPathVisible(item.path, capabilities));
 

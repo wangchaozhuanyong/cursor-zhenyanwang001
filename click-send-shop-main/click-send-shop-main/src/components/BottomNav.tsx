@@ -44,7 +44,7 @@ export default function BottomNav() {
   const tabs = [
     { path: "/", label: t("common.home"), icon: Home },
     { path: "/categories", label: t("common.categories"), icon: LayoutGrid },
-    { path: "/deals", label: t("common.promotions"), icon: BadgePercent },
+    { path: "/promotions", label: t("common.promotions"), icon: BadgePercent },
     { path: "/cart", label: t("common.cart"), icon: ShoppingCart },
     { path: "/profile", label: t("common.myAccount"), icon: User },
   ];

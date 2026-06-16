@@ -168,17 +168,18 @@ export function useCheckoutOrderPreview({
     setUseRewardCash,
   ]);
 
-  const shippingFee = orderPreview?.shipping_fee ?? baseShippingFee;
-  const discountAmount = orderPreview?.discount_amount ?? clientCouponDiscount;
-  const discountLines = orderPreview?.discount_lines ?? [];
-  const pointsBonusLines = orderPreview?.points_bonus_lines ?? [];
-  const promotionEvaluation = orderPreview?.promotion_evaluation ?? null;
-  const orderSnapshot = orderPreview?.order_snapshot ?? promotionEvaluation?.order_snapshot ?? null;
-  const finalTotal = orderPreview?.final_amount ?? Math.max(0, rawTotal - clientCouponDiscount + shippingFee);
   const backendPricingReady = Boolean(orderPreview && !orderPreviewLoading && !orderPreviewError);
+  const shippingFee = backendPricingReady ? Number(orderPreview?.shipping_fee ?? 0) : baseShippingFee;
+  const discountAmount = backendPricingReady ? Number(orderPreview?.discount_amount ?? 0) : 0;
+  const discountLines = backendPricingReady ? orderPreview?.discount_lines ?? [] : [];
+  const pointsBonusLines = backendPricingReady ? orderPreview?.points_bonus_lines ?? [] : [];
+  const promotionEvaluation = backendPricingReady ? orderPreview?.promotion_evaluation ?? null : null;
+  const orderSnapshot = backendPricingReady ? orderPreview?.order_snapshot ?? promotionEvaluation?.order_snapshot ?? null : null;
+  const finalTotal = backendPricingReady ? Number(orderPreview?.final_amount ?? rawTotal + shippingFee) : Math.max(0, rawTotal + shippingFee);
+  const estimatedCouponDiscount = backendPricingReady ? 0 : clientCouponDiscount;
   const totalPointsValue = useMemo(
-    () => Number(orderPreview?.earned_points || orderPreview?.total_points || 0),
-    [orderPreview?.earned_points, orderPreview?.total_points],
+    () => backendPricingReady ? Number(orderPreview?.earned_points || orderPreview?.total_points || 0) : 0,
+    [backendPricingReady, orderPreview?.earned_points, orderPreview?.total_points],
   );
 
   return {
@@ -186,6 +187,7 @@ export function useCheckoutOrderPreview({
     orderPreviewLoading,
     orderPreviewError,
     backendPricingReady,
+    estimatedCouponDiscount,
     shippingFee,
     discountAmount,
     discountLines,

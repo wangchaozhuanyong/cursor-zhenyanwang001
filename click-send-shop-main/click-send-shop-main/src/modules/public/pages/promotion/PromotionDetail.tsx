@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, BadgePercent, CalendarDays, Clock3, Loader2, PackageSearch, ShoppingBag, TicketPercent } from "lucide-react";
+import SeoHead from "@/components/SeoHead";
 import * as marketingService from "@/services/marketingService";
 import type { StorefrontPromotion, StorefrontPromotionCoupon } from "@/services/marketingService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useCouponAction } from "@/features/coupon/useCouponAction";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import type { CouponClaimStatus } from "@/types/coupon";
+import { buildCanonical } from "@/utils/seo";
+
+const PROMOTIONS_BASE_PATH = "/promotions";
 
 function toNumber(value: unknown, fallback = 0) {
   const n = Number(value);
@@ -124,6 +128,47 @@ function ruleEntries(promotion: StorefrontPromotion | null, t: (key: string) => 
   return entries.slice(0, 8);
 }
 
+function policyEntries(
+  promotion: StorefrontPromotion | null,
+  t: (key: string) => string,
+  promotionTypeLabel: (type: string) => string,
+) {
+  if (!promotion) return [];
+  const entries = [
+    {
+      key: t("promotion.status"),
+      value: promotion.runtime_status === "scheduled"
+        ? t("promotion.notStarted")
+        : promotion.runtime_status === "ended"
+          ? t("promotion.ended")
+          : t("promotion.active"),
+    },
+    {
+      key: t("promotion.stackable"),
+      value: promotion.stackable ? t("promotion.stackableYes") : t("promotion.stackableNo"),
+    },
+    {
+      key: t("promotion.exclusiveWith"),
+      value: promotion.exclusive_with?.length
+        ? promotion.exclusive_with.map((type) => promotionTypeLabel(type)).join(" / ")
+        : t("promotion.noExclusive"),
+    },
+    {
+      key: t("promotion.usageLimitTotal"),
+      value: promotion.usage_limit_total ? String(promotion.usage_limit_total) : t("promotion.unlimited"),
+    },
+    {
+      key: t("promotion.usageLimitPerUser"),
+      value: promotion.usage_limit_per_user ? String(promotion.usage_limit_per_user) : t("promotion.unlimited"),
+    },
+    {
+      key: t("promotion.ruleVersion"),
+      value: `v${promotion.version || 1}`,
+    },
+  ];
+  return entries;
+}
+
 function formatCouponValue(coupon: StorefrontPromotionCoupon, t: (key: string) => string) {
   if (coupon.type === "percentage") return `${toNumber(coupon.value)}%`;
   if (coupon.type === "shipping") return t("promotion.freeShipping");
@@ -141,7 +186,7 @@ export default function PromotionDetail() {
   const { slug = "" } = useParams();
   const navigate = useNavigate();
   const { formatDate, localizedPath, promotionTypeLabel, t } = usePublicLocale();
-  const detailPath = localizedPath(`/deals/${slug}`);
+  const detailPath = localizedPath(`${PROMOTIONS_BASE_PATH}/${slug}`);
   const { claim: claimCoupon, getActionState } = useCouponAction(detailPath);
   const [promotion, setPromotion] = useState<StorefrontPromotion | null>(null);
   const [loading, setLoading] = useState(true);
@@ -181,7 +226,18 @@ export default function PromotionDetail() {
   }, [countdownSeconds]);
 
   const rules = useMemo(() => ruleEntries(promotion, t), [promotion, t]);
+  const policies = useMemo(() => policyEntries(promotion, t, promotionTypeLabel), [promotion, promotionTypeLabel, t]);
   const coupons = promotion?.coupons || [];
+  const primaryCta = useMemo(() => {
+    if (!promotion) return { path: "/categories", label: t("common.browseProducts") };
+    if (promotion.type === "coupon") return { path: "/coupons", label: t("promotion.goCoupons") };
+    if (promotion.type === "points_reward" || promotion.type === "checkin_reward") return { path: "/points", label: t("common.points") };
+    const firstProductId = promotion.items?.find((item) => item.product_id)?.product_id;
+    if (firstProductId && ["flash_sale", "limited_time_discount", "member_price"].includes(promotion.type)) {
+      return { path: `/product/${firstProductId}`, label: t("common.browseProducts") };
+    }
+    return { path: "/categories", label: t("common.browseProducts") };
+  }, [promotion, t]);
 
   const handleClaimCoupon = async (coupon: StorefrontPromotionCoupon) => {
     setClaimingId(coupon.id);
@@ -225,7 +281,7 @@ export default function PromotionDetail() {
               <ArrowLeft size={16} />
               {t("common.back")}
             </UnifiedButton>
-            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath("/deals")}>
+            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath(PROMOTIONS_BASE_PATH)}>
               {t("common.allPromotions")}
             </Link>
           </div>
@@ -235,6 +291,13 @@ export default function PromotionDetail() {
   }
 
   return (
+    <>
+    <SeoHead
+      title={promotion.title}
+      description={promotion.description || promotion.subtitle || t("promotion.detailFallback")}
+      canonical={buildCanonical(`${PROMOTIONS_BASE_PATH}/${promotion.slug || slug}`)}
+      robots="index,follow"
+    />
     <main className="mx-auto max-w-6xl px-4 py-8">
       <button
         type="button"
@@ -288,16 +351,37 @@ export default function PromotionDetail() {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link className="inline-flex items-center gap-2 rounded-full bg-[var(--theme-primary)] px-5 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]" to={localizedPath(promotion.type === "coupon" ? "/coupons" : "/categories")}>
+            {promotion.runtime_status === "ended" ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--theme-muted)] px-5 py-2 text-sm font-semibold text-[var(--theme-text-muted)]">
+                <ShoppingBag size={16} />
+                {t("promotion.ended")}
+              </span>
+            ) : (
+            <Link className="inline-flex items-center gap-2 rounded-full bg-[var(--theme-primary)] px-5 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]" to={localizedPath(primaryCta.path)}>
               <ShoppingBag size={16} />
-              {promotion.type === "coupon" ? t("promotion.goCoupons") : t("common.browseProducts")}
+              {primaryCta.label}
             </Link>
-            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-5 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath("/deals")}>
+            )}
+            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-5 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath(PROMOTIONS_BASE_PATH)}>
               {t("common.allPromotions")}
             </Link>
           </div>
         </div>
       </section>
+
+      {policies.length ? (
+        <section className="mt-6 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5">
+          <h2 className="text-lg font-semibold text-[var(--theme-text)]">{t("promotion.policyEntries")}</h2>
+          <dl className="mt-4 grid gap-3 md:grid-cols-3">
+            {policies.map((policy) => (
+              <div className="rounded-lg bg-[var(--theme-muted)] p-3" key={policy.key}>
+                <dt className="text-xs uppercase text-[var(--theme-text-muted)]">{policy.key}</dt>
+                <dd className="mt-1 break-words text-sm text-[var(--theme-text)]">{policy.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
 
       {rules.length ? (
         <section className="mt-6 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5">
@@ -405,5 +489,6 @@ export default function PromotionDetail() {
         </section>
       ) : null}
     </main>
+    </>
   );
 }

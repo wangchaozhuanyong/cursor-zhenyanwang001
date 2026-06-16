@@ -274,6 +274,7 @@ export function useCheckoutPage() {
     orderPreviewLoading: preview.orderPreviewLoading,
     orderPreviewError: preview.orderPreviewError,
     backendPricingReady: preview.backendPricingReady,
+    estimatedCouponDiscount: preview.estimatedCouponDiscount,
     payingWallet: submission.payingWallet,
     selectedShippingName: shipping.selectedTemplateName || shipping.selectedTemplate?.name || t("checkout.defaultShippingTemplate"),
     hasShippingTemplate: Boolean(shipping.selectedTemplate),

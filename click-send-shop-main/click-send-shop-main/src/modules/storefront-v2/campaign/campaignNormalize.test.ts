@@ -64,10 +64,11 @@ describe("campaignNormalize", () => {
     });
 
     expect(campaigns.map((campaign) => campaign.type)).toEqual(["flash_sale", "full_reduction", "full_discount"]);
-    expect(campaigns[0]?.href).toBe("/deals/flash-slug");
+    expect(campaigns[0]?.href).toBe("/promotions/flash-slug");
     expect(campaigns[0]?.products[0]?.href).toBe("/product/p1");
     expect(campaigns[1]?.thresholdAmount).toBe(100);
     expect(campaigns[2]?.discountPercent).toBe(90);
+    expect(campaigns[2]?.href).toBe("/promotions/discount-1");
   });
 
   it("builds cart progress from full reduction campaign", () => {

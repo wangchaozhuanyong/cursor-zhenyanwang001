@@ -105,9 +105,16 @@ export interface ProductActiveActivity {
   activity_stock: number;
   sold_count: number;
   remaining_stock: number;
+  stock_progress_percent?: number | null;
   threshold_amount?: number | null;
   discount_amount?: number | null;
-  status: "active";
+  discount_percent?: number | null;
+  countdown_seconds?: number | null;
+  starts_in_seconds?: number | null;
+  promo_label?: string | null;
+  saving_amount?: number | null;
+  saving_percent?: number | null;
+  status: "scheduled" | "active" | "ended";
   status_label: string;
 }
 

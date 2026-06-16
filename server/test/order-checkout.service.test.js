@@ -75,3 +75,52 @@ test('loadCheckoutCouponRows uses checkout-only candidate query', async () => {
     if (originalPage) userModule.api.selectUserCouponsPage = originalPage;
   }
 });
+
+test('previewOrder exposes pricing engine version and backend order snapshot', async () => {
+  const siteCapabilitiesPublicApi = require('../src/modules/siteCapabilities/publicApi');
+  const pricingService = require('../src/modules/order/service/pricing.service');
+  const originalCapability = siteCapabilitiesPublicApi.isCapabilityEnabled;
+  const originalPricing = pricingService.buildCheckoutPricing;
+
+  try {
+    siteCapabilitiesPublicApi.isCapabilityEnabled = async () => true;
+    pricingService.buildCheckoutPricing = async () => ({
+      rawAmount: 100,
+      flashSaleDiscount: 0,
+      fullReductionDiscount: 10,
+      couponDiscount: 5,
+      discountAmount: 15,
+      shippingFee: 7,
+      finalTotal: 92,
+      totalPoints: 9,
+      discount_lines: [{ type: 'full_reduction', label: '满减优惠', amount: 10 }],
+      points_bonus_lines: [],
+      loyalty: { earned_points: 9 },
+      pricing_engine_version: 'pricing_v2_test',
+      source: 'order_pricing_compat',
+      promotion_evaluation: {
+        engine_version: 'promotion_engine_v2_test',
+        order_snapshot: {
+          goods_amount: 100,
+          total_discount_amount: 15,
+          shipping_fee: 7,
+          final_amount: 92,
+        },
+      },
+      taxSnap: null,
+    });
+
+    const result = await orderCheckout.previewOrder('u1', {
+      items: [{ product_id: 'p1', qty: 1 }],
+      payment_method: 'online',
+    });
+
+    assert.equal(result.data.pricing_engine_version, 'pricing_v2_test');
+    assert.equal(result.data.pricing_engine_source, 'order_pricing_compat');
+    assert.equal(result.data.promotion_engine_version, 'promotion_engine_v2_test');
+    assert.equal(result.data.order_snapshot.final_amount, 92);
+  } finally {
+    siteCapabilitiesPublicApi.isCapabilityEnabled = originalCapability;
+    pricingService.buildCheckoutPricing = originalPricing;
+  }
+});

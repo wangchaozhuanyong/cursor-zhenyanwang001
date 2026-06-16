@@ -4,6 +4,7 @@ import {
   filterUsableOnlinePaymentChannels,
   hasUsableOnlinePaymentChannel,
   resolveEffectivePaymentMethod,
+  sortPreferredOnlinePaymentChannels,
 } from "./checkoutPaymentMethod";
 
 describe("resolveEffectivePaymentMethod", () => {
@@ -43,13 +44,29 @@ describe("online payment channel availability", () => {
   it("requires Stripe checkout readiness for Stripe channels", () => {
     expect(filterUsableOnlinePaymentChannels(channels, false).map((channel) => channel.code)).toEqual(["fpx"]);
     expect(filterUsableOnlinePaymentChannels(channels, true).map((channel) => channel.code)).toEqual([
-      "stripe_checkout",
       "fpx",
+      "stripe_checkout",
     ]);
   });
 
   it("treats empty or internal-only channels as unavailable", () => {
     expect(hasUsableOnlinePaymentChannel([], true)).toBe(false);
     expect(hasUsableOnlinePaymentChannel([{ provider: "internal" }], true)).toBe(false);
+  });
+
+  it("prioritizes Billplz and FPX before card fallback for Malaysia checkout", () => {
+    const mixed = [
+      { code: "stripe_checkout", provider: "stripe", sort_order: 1 },
+      { code: "bank_transfer", provider: "malaysia_local", sort_order: 2 },
+      { code: "billplz_fpx", provider: "billplz", sort_order: 99 },
+      { code: "fpx_direct", provider: "fpx", sort_order: 100 },
+    ];
+
+    expect(sortPreferredOnlinePaymentChannels(mixed).map((channel) => channel.code)).toEqual([
+      "billplz_fpx",
+      "fpx_direct",
+      "bank_transfer",
+      "stripe_checkout",
+    ]);
   });
 });

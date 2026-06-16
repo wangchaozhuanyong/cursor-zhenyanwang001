@@ -262,8 +262,15 @@ export function labelComplianceType(type: string | null | undefined): string {
 }
 
 export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
+  campaign: "普通活动",
+  coupon: "优惠券活动",
   flash_sale: "限时秒杀",
+  limited_time_discount: "限时折扣",
   full_reduction: "满减活动",
+  full_discount: "满折活动",
+  member_price: "会员专享",
+  checkin_reward: "签到奖励",
+  points_reward: "积分奖励",
   coupon_activity: "礼券发行",
   new_user_gift: "新人礼包",
   member_activity: "会员活动",

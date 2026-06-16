@@ -15,14 +15,21 @@ const CAMPAIGN_TYPES = new Set([
 ]);
 
 const AUDIENCE_TYPES = new Set(['all', 'new_user', 'member_level', 'user_tag', 'old_user']);
+const DISPLAY_CATEGORIES = new Set(['', 'recommended', 'new_user', 'member', 'shipping', 'fixed', 'percentage']);
+const MANUAL_STATUS_ACTIONS = new Set(['pause', 'resume', 'end', 'archive', 'disable', 'enable']);
+const PUBLISHABLE_STATUSES = new Set(['active', 'scheduled']);
+const NON_PUBLISH_STATUSES = new Set(['draft', 'disabled', 'paused', 'ended', 'archived']);
 
 function parseDateTime(value) {
   return String(value || '').trim().replace('T', ' ');
 }
 
 function runtimeStatus(row) {
+  if (row.status === 'archived') return 'archived';
   if (Number(row.disabled) === 1 || row.status === 'disabled') return 'disabled';
   if (row.status === 'draft') return 'draft';
+  if (row.status === 'paused') return 'paused';
+  if (row.status === 'ended') return 'ended';
   const now = Date.now();
   const start = new Date(row.start_at).getTime();
   const end = new Date(row.end_at).getTime();
@@ -82,6 +89,10 @@ function normalizePayload(body = {}, partial = false) {
   if (body.display_positions !== undefined || !partial) {
     out.display_positions = ['home_coupon_zone'];
   }
+  if (body.display_category !== undefined || body.displayCategory !== undefined || !partial) {
+    const displayCategory = String(body.display_category ?? body.displayCategory ?? '').trim();
+    out.display_category = DISPLAY_CATEGORIES.has(displayCategory) ? displayCategory : '';
+  }
   if (body.audience_type !== undefined || !partial) {
     const audienceType = String(body.audience_type || 'all');
     out.audience_type = AUDIENCE_TYPES.has(audienceType) ? audienceType : 'all';
@@ -95,6 +106,9 @@ function normalizePayload(body = {}, partial = false) {
   }
   if (out.campaign_type === 'new_user_gift' && (!partial || body.issue_mode === undefined)) {
     out.issue_mode = 'auto_register';
+  }
+  if (out.campaign_type === 'new_user_gift' && (!partial || (body.display_category === undefined && body.displayCategory === undefined))) {
+    out.display_category = 'new_user';
   }
   return out;
 }
@@ -127,6 +141,29 @@ async function assertCampaignPublishable(payload, couponIds) {
   if (['member_level', 'user_tag'].includes(payload.audience_type) && !payload.audience_ids?.length) {
     throw new BusinessError(400, '当前活动人群需要选择至少一个目标');
   }
+}
+
+function shouldValidatePublish(existing, payload) {
+  if (payload.status && NON_PUBLISH_STATUSES.has(payload.status)) return false;
+  const existingStatus = runtimeStatus(existing);
+  const targetStatus = payload.status || existingStatus || existing.status;
+  return PUBLISHABLE_STATUSES.has(targetStatus) || PUBLISHABLE_STATUSES.has(existingStatus);
+}
+
+function normalizeStatusAction(body = {}) {
+  const action = String(body.action || '').trim();
+  if (MANUAL_STATUS_ACTIONS.has(action)) {
+    if (action === 'pause') return { status: 'paused', disabled: false };
+    if (action === 'resume') return { status: 'active', disabled: false };
+    if (action === 'end') return { status: 'ended', disabled: false };
+    if (action === 'archive') return { status: 'archived', disabled: true };
+    if (action === 'disable') return { status: 'disabled', disabled: true };
+    if (action === 'enable') return { status: 'active', disabled: false };
+  }
+  return {
+    status: body.status,
+    disabled: body.disabled,
+  };
 }
 
 async function listCampaigns(query) {
@@ -189,7 +226,7 @@ async function updateCampaign(id, body, adminUserId, req) {
     ...payload,
     audience_ids: nextAudienceIds,
   };
-  if ((payload.status && payload.status !== 'draft') || existing.status !== 'draft') {
+  if (shouldValidatePublish(existing, payload)) {
     await assertCampaignPublishable(mergedPayload, nextCouponIds);
   }
   const fragments = [];
@@ -197,7 +234,7 @@ async function updateCampaign(id, body, adminUserId, req) {
   const jsonFields = new Set(['display_positions', 'audience_config']);
   for (const field of [
     'campaign_type', 'title', 'subtitle', 'description', 'cover_image', 'start_at', 'end_at',
-    'status', 'disabled', 'display_positions', 'audience_type', 'audience_config', 'issue_mode',
+    'status', 'disabled', 'display_positions', 'display_category', 'audience_type', 'audience_config', 'issue_mode',
     'sort_order', 'internal_note',
   ]) {
     if (payload[field] === undefined) continue;
@@ -224,10 +261,13 @@ async function updateCampaign(id, body, adminUserId, req) {
 }
 
 async function updateCampaignStatus(id, body, adminUserId, req) {
-  return updateCampaign(id, {
-    status: body.status,
-    disabled: body.disabled,
-  }, adminUserId, req);
+  const payload = normalizeStatusAction(body);
+  const result = await updateCampaign(id, payload, adminUserId, req);
+  const action = String(body.action || '').trim();
+  return {
+    ...result,
+    message: action ? '活动状态已更新' : result.message,
+  };
 }
 
 async function deleteCampaign(id, adminUserId, req) {
@@ -254,4 +294,5 @@ module.exports = {
   updateCampaignStatus,
   deleteCampaign,
   formatCampaign,
+  runtimeStatus,
 };

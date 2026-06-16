@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 type LoginAgreementFooterProps = {
   mode: "login" | "register";
@@ -19,6 +20,7 @@ export function LoginAgreementFooter({
   className,
 }: LoginAgreementFooterProps) {
   const navigate = useNavigate();
+  const { localizedPath, t } = usePublicLocale();
 
   return (
     <footer
@@ -28,21 +30,22 @@ export function LoginAgreementFooter({
         className,
       )}
     >
-      {mode === "login" ? "登录" : "注册"}即代表您同意
+      {mode === "login" ? t("auth.loginAgreementAction") : t("auth.registerAgreementAction")}{" "}
+      {t("auth.termsPrefix")}{" "}
       <UnifiedButton
         type="button"
-        onClick={() => navigate(termsPath)}
+        onClick={() => navigate(localizedPath(termsPath))}
         className="mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle text-theme-price hover:underline"
       >
-        《用户协议》
+        {t("auth.terms")}
       </UnifiedButton>
-      和
+      {" "}{t("auth.termsJoiner")}{" "}
       <UnifiedButton
         type="button"
-        onClick={() => navigate(privacyPath)}
+        onClick={() => navigate(localizedPath(privacyPath))}
         className="mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle text-theme-price hover:underline"
       >
-        《隐私政策》
+        {t("auth.privacyPolicy")}
       </UnifiedButton>
     </footer>
   );

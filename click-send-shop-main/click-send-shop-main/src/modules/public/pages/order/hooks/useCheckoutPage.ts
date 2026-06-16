@@ -19,12 +19,14 @@ import { useCheckoutOrderPreview } from "./useCheckoutOrderPreview";
 import { useCheckoutAbandonment } from "./useCheckoutAbandonment";
 import { useCheckoutSstPreview } from "./useCheckoutSstPreview";
 import { hasUsableOnlinePaymentChannel } from "@/utils/checkoutPaymentMethod";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 export function useCheckoutPage() {
   const navigate = useNavigate();
+  const { localizedPath, t } = usePublicLocale();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
-  const goBack = useGoBack("/cart");
+  const goBack = useGoBack(localizedPath("/cart"));
   const clearBuyNow = useCartStore((s) => s.clearBuyNow);
   const buyNowCouponChoice = useCartStore((s) => s.buyNowCouponChoice);
   const siteInfo = useSiteInfo();
@@ -58,7 +60,7 @@ export function useCheckoutPage() {
   const [rewardCashAmount, setRewardCashAmount] = useState(0);
   const beginCheckoutTrackedRef = useRef("");
 
-  const shipping = useCheckoutShipping(items, rawTotal);
+  const shipping = useCheckoutShipping(items, rawTotal, selectedAddress);
   const [shippingFeeForCoupons, setShippingFeeForCoupons] = useState(shipping.baseShippingFee);
 
   useEffect(() => {
@@ -93,9 +95,10 @@ export function useCheckoutPage() {
     name,
     phone,
     address,
+    selectedAddress,
     selectedCoupon,
     selectedTemplateId: shipping.selectedTemplateId,
-    selectedTemplateName: shipping.selectedTemplate?.name,
+    selectedTemplateName: shipping.selectedTemplateName || shipping.selectedTemplate?.name,
     weightKg: shipping.weightKg,
     baseShippingFee: shipping.baseShippingFee,
     clientCouponDiscount,
@@ -177,9 +180,9 @@ export function useCheckoutPage() {
 
   useEffect(() => {
     if (items.length === 0 && !submittedOrder && !orderFinalizing) {
-      navigate("/cart", { replace: true });
+      navigate(localizedPath("/cart"), { replace: true });
     }
-  }, [items.length, submittedOrder, orderFinalizing, navigate]);
+  }, [items.length, submittedOrder, orderFinalizing, navigate, localizedPath]);
 
   const submission = useCheckoutSubmission({
     items,
@@ -268,8 +271,11 @@ export function useCheckoutPage() {
     rewardCashAmount,
     setRewardCashAmount,
     orderPreview: preview.orderPreview,
+    orderPreviewLoading: preview.orderPreviewLoading,
+    orderPreviewError: preview.orderPreviewError,
+    backendPricingReady: preview.backendPricingReady,
     payingWallet: submission.payingWallet,
-    selectedShippingName: shipping.selectedTemplate?.name || "平台默认运费模板",
+    selectedShippingName: shipping.selectedTemplateName || shipping.selectedTemplate?.name || t("checkout.defaultShippingTemplate"),
     hasShippingTemplate: Boolean(shipping.selectedTemplate),
     shippingQuoteLoading: shipping.shippingQuoteLoading,
     shippingQuoteError: shipping.shippingQuoteError,
@@ -283,6 +289,8 @@ export function useCheckoutPage() {
     discountAmount: preview.discountAmount,
     discountLines: preview.discountLines,
     pointsBonusLines: preview.pointsBonusLines,
+    promotionEvaluation: preview.promotionEvaluation,
+    orderSnapshot: preview.orderSnapshot,
     finalTotal: preview.finalTotal,
     totalPointsValue: preview.totalPointsValue,
     sstCfg,
@@ -295,10 +303,10 @@ export function useCheckoutPage() {
     payOnlineNow: submission.payOnlineNow,
     payByRewardWallet: submission.payByRewardWallet,
     refreshSubmittedOrder: submission.refreshSubmittedOrder,
-    goHome: () => navigate("/"),
-    goOrders: () => navigate("/orders"),
-    goOrderDetail: (orderId: string) => navigate(`/orders/${orderId}`),
-    goAddress: () => navigate("/address"),
-    goNotifications: () => navigate("/notifications"),
+    goHome: () => navigate(localizedPath("/")),
+    goOrders: () => navigate(localizedPath("/orders")),
+    goOrderDetail: (orderId: string) => navigate(localizedPath(`/orders/${orderId}`)),
+    goAddress: () => navigate(localizedPath("/address")),
+    goNotifications: () => navigate(localizedPath("/notifications")),
   };
 }

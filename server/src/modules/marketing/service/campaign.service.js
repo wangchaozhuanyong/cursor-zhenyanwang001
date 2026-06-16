@@ -1,7 +1,7 @@
 const marketingService = require('./marketing.service');
 
 function getAnalyticsApi() {
-  return /** @type {any} */ (require('../../analytics')).api || {};
+  return /** @type {any} */ (require('../../analytics/publicApi')) || {};
 }
 
 function money(value) {
@@ -43,7 +43,7 @@ function campaignTone(type) {
 
 function defaultHref(type) {
   if (type === 'coupon' || type === 'new_user_gift') return '/coupons';
-  if (type === 'flash_sale') return '/categories?activity=flash_sale';
+  if (type === 'flash_sale') return '/promotions';
   return '/categories';
 }
 
@@ -75,6 +75,7 @@ function normalizeSummaryCampaign(summary, type, coupons = []) {
 
 function normalizeFlashSale(activity) {
   if (!activity?.id || !activity?.title) return null;
+  const slug = activity.slug || activity.id;
   return {
     id: String(activity.id),
     type: 'flash_sale',
@@ -82,7 +83,7 @@ function normalizeFlashSale(activity) {
     subtitle: activity.subtitle || '',
     promoLabel: '限时秒杀',
     coverImage: activity.cover_image || '',
-    href: '/categories?activity=flash_sale',
+    href: activity.href || `/promotions/${slug}`,
     startsAt: activity.start_at,
     endsAt: activity.end_at,
     countdownSeconds: Number(activity.countdown_seconds || 0),

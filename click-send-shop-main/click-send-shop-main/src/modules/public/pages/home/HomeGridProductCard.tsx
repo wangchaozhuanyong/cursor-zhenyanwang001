@@ -29,6 +29,14 @@ interface HomeGridProductCardProps {
   registerImpression?: (product: Product, index: number) => void;
 }
 
+function activityBadgeLabel(type: string | undefined) {
+  if (type === "flash_sale") return "秒杀";
+  if (type === "limited_time_discount") return "折扣";
+  if (type === "member_price") return "会员";
+  if (type === "points_reward" || type === "checkin_reward") return "积分";
+  return "满减";
+}
+
 function HomeGridProductCard({
   product,
   index,
@@ -88,7 +96,7 @@ function HomeGridProductCard({
           <div className="pointer-events-none absolute left-1.5 top-1.5 z-[1] flex max-w-[calc(100%-0.75rem)] flex-wrap gap-1">
             {product.active_activity ? (
               <StoreBadge type="sale" onMedia className={HOME_PRODUCT_BADGE_CLASS}>
-                {product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}
+                {activityBadgeLabel(product.active_activity.type)}
               </StoreBadge>
             ) : null}
             {product.is_hot ? (

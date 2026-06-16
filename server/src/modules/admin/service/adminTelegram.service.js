@@ -1,7 +1,7 @@
-const telegramModule = require('../../telegram');
+const telegramApi = /** @type {any} */ (require('../../telegram/publicApi'));
 
 function getTelegramApi() {
-  return /** @type {any} */ (telegramModule).api || {};
+  return telegramApi || {};
 }
 
 function requireTelegramApi(name) {

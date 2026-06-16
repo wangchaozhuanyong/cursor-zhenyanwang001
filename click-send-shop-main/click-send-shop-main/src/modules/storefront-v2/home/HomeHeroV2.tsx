@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type FormEvent, type MouseEvent } from "react";
-import { Bell, ChevronDown, Grid3X3, Search, UserRound } from "lucide-react";
+import { ChevronDown, Grid3X3, Search, UserRound } from "lucide-react";
 import BannerCarousel from "@/components/BannerCarousel";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ import { isDarkClientDesignStyle, type ClientDesignStyle } from "@/utils/clientD
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
 import { STORE_COPY } from "@/constants/storeCopy";
+import { usePublicLocale } from "@/i18n/publicLocale";
 import { useClientDesignStyle } from "../design/useClientDesignStyle";
 
 type HomeHeroV2Props = {
@@ -37,6 +38,9 @@ export default function HomeHeroV2({
   const hasBanner = bannerEnabled && (bannersLoading || banners.length > 0);
   const [keyword, setKeyword] = useState("");
   const clientStyle = useClientDesignStyle();
+  const { locale, localizedPath, t } = usePublicLocale();
+  const displaySlogan = locale !== "zh" && containsCjk(slogan) ? t("hero.siteSlogan") : slogan;
+  const displayDescription = locale !== "zh" && containsCjk(description) ? t("hero.siteDescription") : description;
   const isBlackGold = clientStyle === "black_gold";
   const blackGoldHeroVars: CSSProperties | undefined = isBlackGold
     ? {
@@ -52,7 +56,7 @@ export default function HomeHeroV2({
     event.preventDefault();
     event.stopPropagation();
     const value = keyword.trim();
-    onNavigate(value ? `/search?keyword=${encodeURIComponent(value)}` : "/search");
+    onNavigate(localizedPath(value ? `/search?keyword=${encodeURIComponent(value)}` : "/search"));
   };
 
   return (
@@ -82,10 +86,10 @@ export default function HomeHeroV2({
         ) : (
           <HeroFallbackVisual
             siteName={siteName}
-            slogan={slogan}
-            description={description}
             logoSrc={logoSrc}
             clientStyle={clientStyle}
+            slogan={displaySlogan}
+            description={displayDescription}
           />
         )}
 
@@ -98,46 +102,46 @@ export default function HomeHeroV2({
           <div className="store-home-v4-copy pointer-events-auto mt-auto w-full px-4 pb-5 sm:px-6 sm:pb-6 lg:px-9 lg:pb-8">
             {!hasBanner ? (
               <div className="store-home-v4-title-wrap mb-4 max-w-2xl text-white">
-                <span className="store-home-v4-kicker">首页 Banner 轮播</span>
-                <h2 className="store-home-v4-title">{slogan}</h2>
-                <p className="store-home-v4-desc">{description}</p>
+                <span className="store-home-v4-kicker">{t("hero.bannerKicker")}</span>
+                <h2 className="store-home-v4-title">{displaySlogan}</h2>
+                <p className="store-home-v4-desc">{displayDescription}</p>
               </div>
             ) : null}
             <form
               onSubmit={submitSearch}
               className="store-home-v4-search-dock"
               onClick={stopPropagation}
-              aria-label="首页搜索"
+              aria-label={t("hero.searchAria")}
             >
               <button
                 type="button"
                 className="store-home-v4-search-scope"
-                onClick={() => onNavigate("/search")}
+                onClick={() => onNavigate(localizedPath("/search"))}
               >
-                全部内容
+                {t("common.searchScopeAll")}
                 <ChevronDown size={14} aria-hidden />
               </button>
               <Search size={19} className="store-home-v4-search-icon" aria-hidden />
-              <label className="sr-only" htmlFor="home-v4-search">搜索商品、服务、品牌、优惠券</label>
+              <label className="sr-only" htmlFor="home-v4-search">{t("hero.searchLabel")}</label>
               <input
                 id="home-v4-search"
                 type="search"
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
-                placeholder="搜索商品、服务、优惠券"
+                placeholder={t("hero.searchPlaceholder")}
                 className="store-home-v4-search-input"
               />
               <UnifiedButton
                 type="submit"
                 className="store-home-v4-search-submit"
               >
-                搜索
+                {t("common.searchSubmit")}
               </UnifiedButton>
             </form>
-            <div className="store-home-v4-hot-terms" aria-label="热门搜索">
-              <UnifiedButton type="button" onClick={() => onNavigate("/categories?sort=sales_desc")}>热销</UnifiedButton>
-              <UnifiedButton type="button" onClick={() => onNavigate("/coupons")}>优惠券</UnifiedButton>
-              <UnifiedButton type="button" onClick={() => onNavigate("/categories?keyword=%E6%9C%AC%E5%9C%B0%E9%85%8D%E9%80%81")}>本地配送</UnifiedButton>
+            <div className="store-home-v4-hot-terms" aria-label={t("hero.searchLabel")}>
+              <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories?sort=sales_desc"))}>{t("hero.hotSales")}</UnifiedButton>
+              <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/coupons"))}>{t("common.coupons")}</UnifiedButton>
+              <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories?keyword=%E6%9C%AC%E5%9C%B0%E9%85%8D%E9%80%81"))}>{t("hero.hotLocalDelivery")}</UnifiedButton>
             </div>
           </div>
         </div>
@@ -150,6 +154,10 @@ function stopPropagation(event: MouseEvent<HTMLElement>) {
   event.stopPropagation();
 }
 
+function containsCjk(value: string) {
+  return /[\u3400-\u9fff]/.test(value);
+}
+
 function HeroChrome({
   siteName,
   logoSrc,
@@ -159,41 +167,34 @@ function HeroChrome({
   logoSrc?: string;
   onNavigate: (path: string) => void;
 }) {
+  const { localizedPath, t } = usePublicLocale();
   return (
     <div className="store-home-v4-chrome pointer-events-auto mx-4 mt-4 flex items-center gap-3 rounded-[1.15rem] border px-3 py-2 text-white backdrop-blur-xl sm:mx-6 sm:mt-5 lg:mx-9">
       <UnifiedButton
         type="button"
-        onClick={() => onNavigate("/")}
+        onClick={() => onNavigate(localizedPath("/"))}
         className="store-home-v4-brand flex min-w-0 shrink-0 items-center gap-2 border-0 bg-transparent p-0 text-white"
-        aria-label={`${siteName || STORE_COPY.brandName} 首页`}
+        aria-label={`${siteName || STORE_COPY.brandName} ${t("common.home")}`}
       >
         <span className="store-home-v4-brand-mark">
           {logoSrc ? <img src={logoSrc} alt="" className="h-5 w-5 object-contain" /> : <Grid3X3 size={18} aria-hidden />}
         </span>
         <span className="truncate">{siteName || STORE_COPY.brandName}</span>
       </UnifiedButton>
-      <nav className="store-home-v4-links hidden min-w-0 flex-1 items-center justify-center gap-5 text-xs font-black lg:flex" aria-label="首页快速导航">
-        <UnifiedButton type="button" onClick={() => onNavigate("/")}>首页</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate("/categories")}>分类</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate("/categories?sort=sales_desc")}>秒杀</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate("/coupons")}>优惠券</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate("/support-download?tab=support")}>本地服务</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate("/profile")}>会员</UnifiedButton>
+      <nav className="store-home-v4-links hidden min-w-0 flex-1 items-center justify-center gap-5 text-xs font-black lg:flex" aria-label={t("hero.quickNav")}>
+        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/"))}>{t("common.home")}</UnifiedButton>
+        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories"))}>{t("common.categories")}</UnifiedButton>
+        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories?sort=sales_desc"))}>{t("common.flashSale")}</UnifiedButton>
+        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/coupons"))}>{t("common.coupons")}</UnifiedButton>
+        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/cart"))}>{t("common.cart")}</UnifiedButton>
+        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/profile"))}>{t("common.member")}</UnifiedButton>
       </nav>
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <UnifiedButton
           type="button"
           className="store-home-v4-icon-button"
-          onClick={() => onNavigate("/notifications")}
-          aria-label="消息通知"
-        >
-          <Bell size={16} aria-hidden />
-        </UnifiedButton>
-        <UnifiedButton
-          type="button"
-          className="store-home-v4-icon-button"
-          onClick={() => onNavigate("/profile")}
-          aria-label="我的"
+          onClick={() => onNavigate(localizedPath("/profile"))}
+          aria-label={t("common.myAccount")}
         >
           <UserRound size={16} aria-hidden />
         </UnifiedButton>

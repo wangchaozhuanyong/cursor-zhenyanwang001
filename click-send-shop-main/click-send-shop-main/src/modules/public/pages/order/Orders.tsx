@@ -9,8 +9,8 @@ import type { ProductVariant } from "@/types/product";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useCartStore } from "@/stores/useCartStore";
 import * as orderService from "@/services/orderService";
-import { canApplyAfterSale, canRepurchaseOrder, canUserCancelOrder, getBuyerOrderStatusText, hasPendingReview, isPendingPayment, matchOrderTab, orderInAfterSaleTab } from "@/utils/orderBuyerStatus";
-import { isGiftOrder, labelPendingPaymentAction } from "@/utils/orderPaymentLabels";
+import { canApplyAfterSale, canRepurchaseOrder, canUserCancelOrder, hasPendingReview, isPendingPayment, matchOrderTab, orderInAfterSaleTab } from "@/utils/orderBuyerStatus";
+import { isGiftOrder } from "@/utils/orderPaymentLabels";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { LogisticsInfoModal } from "@/components/order/LogisticsInfoModal";
@@ -27,21 +27,19 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
+import { usePublicLocale } from "@/i18n/publicLocale";
+import {
+  getBuyerOrderStatusTextLocalized,
+  getOrderCopy,
+  getOrderTabs,
+  labelPendingPaymentActionLocalized,
+} from "./orderPageLocale";
 
-const TABS: Array<{ key: OrderTab; label: string }> = [
-  { key: "all", label: "全部" },
-  { key: "pending_payment", label: "待付款" },
-  { key: "paid", label: "待发货" },
-  { key: "shipped", label: "待收货" },
-  { key: "pending_review", label: "待评价" },
-  { key: "completed", label: "已完成" },
-  { key: "after_sale", label: "退款/售后" },
-  { key: "cancelled", label: "已取消" },
-];
+const ORDER_TAB_KEYS: OrderTab[] = ["all", "pending_payment", "paid", "shipped", "pending_review", "completed", "after_sale", "cancelled"];
 
 function parseTab(searchParams: URLSearchParams): OrderTab {
   const tab = (searchParams.get("tab") || "").trim() as OrderTab;
-  if (TABS.some((t) => t.key === tab)) return tab;
+  if (ORDER_TAB_KEYS.includes(tab)) return tab;
   const status = (searchParams.get("status") || "").trim();
   if (status === "pending") return "pending_payment";
   if (status === "paid") return "paid";
@@ -121,6 +119,8 @@ function canViewLogistics(order: Order) {
 
 export default function Orders() {
   const navigate = useNavigate();
+  const { localizedPath, locale } = usePublicLocale();
+  const copy = getOrderCopy(locale);
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams);
@@ -128,7 +128,7 @@ export default function Orders() {
   const tabButtonRefs = useRef<Map<OrderTab, HTMLButtonElement>>(new Map());
   const capabilities = useSiteCapabilities();
   const { paying, payPendingOrder } = usePayPendingOrder();
-  const tabs = useMemo(() => TABS.filter((t) => t.key !== "pending_review" || capabilities.reviewEnabled), [capabilities.reviewEnabled]);
+  const tabs = useMemo(() => getOrderTabs(locale).filter((t) => t.key !== "pending_review" || capabilities.reviewEnabled), [capabilities.reviewEnabled, locale]);
 
   const { orders, pagination, loading, loadingMore, error, loadOrders, cancelOrder, confirmReceive, deleteOrder } = useOrderStore();
   const { addToCart, clearBuyNow, setSelectAll } = useCartStore();
@@ -180,7 +180,7 @@ export default function Orders() {
       setLogisticsInfo(getOrderLogisticsSnapshot(order));
       return;
     }
-    toast.info("暂无物流信息");
+    toast.info(copy.noLogistics);
   };
 
   useEffect(() => {
@@ -230,8 +230,8 @@ export default function Orders() {
   };
 
   const openDetail = (order: Order) => {
-    navigate(`/orders/${order.id}`, {
-      state: { from: `/orders${location.search || ""}` },
+    navigate(localizedPath(`/orders/${order.id}`), {
+      state: { from: localizedPath(`/orders${location.search || ""}`) },
     });
   };
 
@@ -242,12 +242,12 @@ export default function Orders() {
       for (const item of order.items) {
         await addToCart(buildRepurchaseProduct(item), item.qty, buildVariantFromOrderItem(item));
       }
-      toast.success("已为你重新加入购物车");
-      navigate("/checkout", {
-        state: { from: `/orders/${order.id}`, repurchaseOrderId: order.id },
+      toast.success(copy.cartReadded);
+      navigate(localizedPath("/checkout"), {
+        state: { from: localizedPath(`/orders/${order.id}`), repurchaseOrderId: order.id },
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "再买一单失败");
+      toast.error(e instanceof Error ? e.message : copy.repurchaseFailed);
     }
   };
 
@@ -255,27 +255,17 @@ export default function Orders() {
     setActingId(order.id);
     try {
       await deleteOrder(order.id);
-      toast.success("订单已删除");
+      toast.success(copy.orderDeleted);
       setSummary(null);
       await loadCurrentOrders({ force: true });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "删除订单失败");
+      toast.error(e instanceof Error ? e.message : copy.deleteFailed);
     } finally {
       setActingId("");
     }
   };
 
-  const emptyText: Record<OrderTab, string> = {
-    all: "暂无订单",
-    pending_payment: "暂无待付款订单",
-    paid: "暂无待发货订单",
-    shipped: "暂无待收货订单",
-    pending_review: "暂无待评价订单",
-    completed: "暂无已完成订单",
-    after_sale: "暂无退款/售后订单",
-    cancelled: "暂无已取消订单",
-  };
-  const emptyOrderText = keyword ? `没有找到“${keyword}”相关订单` : emptyText[tab];
+  const emptyOrderText = keyword ? copy.emptyKeyword(keyword) : copy.emptyByTab[tab];
 
   const actionBtn = "min-h-8 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs leading-none whitespace-nowrap";
   const primaryActionBtn = "min-h-8 rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1.5 text-xs leading-none whitespace-nowrap text-[var(--theme-primary-foreground)]";
@@ -283,7 +273,7 @@ export default function Orders() {
   const renderOrderSearchField = (className: string) => (
     <StoreSearchField
       mode="filter"
-      placeholder="搜索订单"
+      placeholder={copy.searchPlaceholder}
       value={searchText}
       onValueChange={setSearchText}
       onSubmit={() => updateKeywordParam(searchText)}
@@ -293,7 +283,7 @@ export default function Orders() {
 
   return (
     <StoreAccountLayout
-      title="我的订单"
+      title={copy.accountTitle}
       mainClassName="sm:p-0 xl:py-6"
       rightSlot={renderOrderSearchField("store-order-header-search-field w-[9.5rem] max-w-[44vw] flex-none sm:w-44 xl:hidden")}
     >
@@ -303,7 +293,7 @@ export default function Orders() {
               <div
                 className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-[var(--store-page-x)] pb-1 [-webkit-overflow-scrolling:touch] sm:px-4 md:flex-wrap md:overflow-visible md:px-0 md:pb-0"
                 role="tablist"
-                aria-label="订单状态"
+                aria-label={copy.tabsAria}
               >
               {tabs.map((t) => {
                 const active = t.key === tab;
@@ -333,14 +323,14 @@ export default function Orders() {
           </div>
         </div>
 
-        {loading ? <p className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-muted-foreground">加载中...</p> : null}
+        {loading ? <p className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-muted-foreground">{copy.loading}</p> : null}
         {error ? (
           <ClientEmptyState
-            title="订单加载失败"
+            title={copy.loadFailed}
             description={error}
             action={
               <ClientButton type="button" onClick={() => void loadCurrentOrders({ force: true })}>
-                重试
+                {copy.retry}
               </ClientButton>
             }
           />
@@ -349,7 +339,7 @@ export default function Orders() {
         {!loading && displayOrders.length === 0 ? (
           <ClientEmptyState
             title={emptyOrderText}
-            description={keyword ? "可以清空关键词后重新查看订单。" : "下单后，订单状态会显示在这里。"}
+            description={keyword ? copy.emptyKeywordDescription : copy.emptyDescription}
             action={
               keyword ? (
                 <ClientButton
@@ -360,11 +350,11 @@ export default function Orders() {
                     updateKeywordParam("");
                   }}
                 >
-                  清空搜索
+                  {copy.clearSearch}
                 </ClientButton>
               ) : (
-                <ClientButton type="button" variant="secondary" onClick={() => navigate("/categories")}>
-                  去逛逛
+                <ClientButton type="button" variant="secondary" onClick={() => navigate(localizedPath("/categories"))}>
+                  {copy.browse}
                 </ClientButton>
               )
             }
@@ -379,12 +369,12 @@ export default function Orders() {
               <article key={order.id} className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3" onClick={() => openDetail(order)}>
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className="text-sm font-medium">
-                    {isGiftOrder(order.order_type) ? "积分礼品" : "订单商品"}
+                    {isGiftOrder(order.order_type) ? copy.giftOrder : copy.orderProducts}
                   </span>
-                  <span className={`text-xs font-medium ${getStatusTone(order)}`}>{getBuyerOrderStatusText(order)}</span>
+                  <span className={`text-xs font-medium ${getStatusTone(order)}`}>{getBuyerOrderStatusTextLocalized(order, locale)}</span>
                 </div>
                 {isGiftOrder(order.order_type) && Number(order.points_used || 0) > 0 ? (
-                  <p className="mb-2 text-xs text-muted-foreground">消耗积分 {order.points_used}</p>
+                  <p className="mb-2 text-xs text-muted-foreground">{copy.pointsUsed} {order.points_used}</p>
                 ) : null}
 
                 {order.status === "pending" ? (
@@ -417,7 +407,7 @@ export default function Orders() {
                       />
                       <div className="min-w-0 flex-1">
                         <p className="store-card-title line-clamp-2">{item.product.name}</p>
-                        <p className="store-caption mt-1 truncate text-[var(--theme-text-muted)]">{item.variant_name || item.sku_code || "默认规格"}</p>
+                        <p className="store-caption mt-1 truncate text-[var(--theme-text-muted)]">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-[15px] font-semibold text-[var(--theme-price)]">RM {Number(item.unit_price ?? item.product.price ?? 0).toFixed(2)}</p>
@@ -427,10 +417,10 @@ export default function Orders() {
                   ))}
                 </div>
 
-                {order.items.length > 3 ? <p className="mt-2 text-xs text-[var(--theme-text-muted)]">共 {totalItems} 件商品</p> : null}
+                {order.items.length > 3 ? <p className="mt-2 text-xs text-[var(--theme-text-muted)]">{copy.itemCount(totalItems)}</p> : null}
 
                 <div className="mt-3 flex justify-end text-sm">
-                  <span className="store-body-small">共 {totalItems} 件商品，实付款 <span className="text-[15px] font-semibold text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></span>
+                  <span className="store-body-small">{copy.itemCount(totalItems)}，{copy.paidTotal} <span className="text-[15px] font-semibold text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></span>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between gap-2">
@@ -442,7 +432,7 @@ export default function Orders() {
                       setMoreOrder(order);
                     }}
                   >
-                    更多
+                    {copy.more}
                   </UnifiedButton>
                   <div className="flex min-w-0 flex-1 flex-wrap justify-end gap-2">
                     {canUserCancelOrder(order) ? (
@@ -454,7 +444,7 @@ export default function Orders() {
                           setCancelConfirmOrder(order);
                         }}
                       >
-                        取消订单
+                        {copy.cancelOrder}
                       </UnifiedButton>
                     ) : null}
                     {isPendingPayment(order) ? (
@@ -467,12 +457,12 @@ export default function Orders() {
                           void payPendingOrder(order, () => loadCurrentOrders({ force: true })).finally(() => setActingId(""));
                         }}
                       >
-                        {paying && actingId === order.id ? "处理中..." : labelPendingPaymentAction(order.payment_method, order.order_type)}
+                        {paying && actingId === order.id ? copy.applying : labelPendingPaymentActionLocalized(order.payment_method, order.order_type, locale)}
                       </UnifiedButton>
                     ) : null}
 
                     {order.status === "paid" ? (
-                      <UnifiedButton className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(SUPPORT_PAGE_PATH); }}>联系客服</UnifiedButton>
+                      <UnifiedButton className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(localizedPath(SUPPORT_PAGE_PATH)); }}>{copy.support}</UnifiedButton>
                     ) : null}
 
                     {order.status === "shipped" ? (
@@ -485,7 +475,7 @@ export default function Orders() {
                               setReturnApplyOrderId(order.id);
                             }}
                           >
-                            申请售后
+                            {copy.applyAfterSale}
                           </UnifiedButton>
                         ) : null}
                         <UnifiedButton
@@ -496,7 +486,7 @@ export default function Orders() {
                             setConfirmReceiveOrder(order);
                           }}
                         >
-                          确认收货
+                          {copy.receive}
                         </UnifiedButton>
                       </>
                     ) : null}
@@ -511,7 +501,7 @@ export default function Orders() {
                               setReturnApplyOrderId(order.id);
                             }}
                           >
-                            申请售后
+                            {copy.applyAfterSale}
                           </UnifiedButton>
                         ) : null}
                         {canRepurchaseOrder(order) ? (
@@ -522,7 +512,7 @@ export default function Orders() {
                               setRepurchaseConfirmOrder(order);
                             }}
                           >
-                            再买一单
+                            {copy.repurchase}
                           </UnifiedButton>
                         ) : null}
                       </>
@@ -536,12 +526,12 @@ export default function Orders() {
                           setRepurchaseConfirmOrder(order);
                         }}
                       >
-                        再买一单
+                        {copy.repurchase}
                       </UnifiedButton>
                     ) : null}
 
                     {orderInAfterSaleTab(order) ? (
-                      <UnifiedButton className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>查看售后</UnifiedButton>
+                      <UnifiedButton className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(localizedPath("/returns")); }}>{copy.viewAfterSale}</UnifiedButton>
                     ) : null}
                   </div>
                 </div>
@@ -559,10 +549,10 @@ export default function Orders() {
                 disabled={loading || loadingMore}
                 onClick={loadMoreOrders}
               >
-                {loadingMore ? "加载中..." : "加载更多"}
+                {loadingMore ? copy.loadingMore : copy.loadMore}
               </UnifiedButton>
             ) : (
-              <p className="text-xs text-[var(--theme-text-muted)]">已全部加载</p>
+              <p className="text-xs text-[var(--theme-text-muted)]">{copy.allLoaded}</p>
             )}
           </div>
         ) : null}
@@ -570,7 +560,7 @@ export default function Orders() {
           tier="standard"
           open={Boolean(moreOrder)}
           onClose={() => setMoreOrder(null)}
-          title="更多操作"
+          title={copy.moreActions}
           height="auto"
         >
           {moreOrder ? (
@@ -585,8 +575,8 @@ export default function Orders() {
                     openDetail(order);
                   }}
                 >
-                  <span>评价</span>
-                  <span className="text-xs font-normal text-[var(--theme-text-muted)]">去订单详情评价</span>
+                  <span>{copy.review}</span>
+                  <span className="text-xs font-normal text-[var(--theme-text-muted)]">{copy.reviewHint}</span>
                 </UnifiedButton>
               ) : null}
               {canApplyAfterSale(moreOrder) && (moreOrder.status === "shipped" || moreOrder.status === "completed") ? (
@@ -599,7 +589,7 @@ export default function Orders() {
                     setReturnApplyOrderId(target.id);
                   }}
                 >
-                  <span>申请售后</span>
+                  <span>{copy.applyAfterSale}</span>
                 </UnifiedButton>
               ) : null}
               {canViewLogistics(moreOrder) ? (
@@ -612,7 +602,7 @@ export default function Orders() {
                     viewLogistics(target);
                   }}
                 >
-                  <span>查看物流</span>
+                  <span>{copy.viewLogistics}</span>
                 </UnifiedButton>
               ) : null}
               {canRepurchaseOrder(moreOrder) ? (
@@ -625,8 +615,8 @@ export default function Orders() {
                     setRepurchaseConfirmOrder(target);
                   }}
                 >
-                  <span>再买一单</span>
-                  <span className="text-xs font-normal text-[var(--theme-text-muted)]">重新加入购物车并结算</span>
+                  <span>{copy.repurchase}</span>
+                  <span className="text-xs font-normal text-[var(--theme-text-muted)]">{copy.repurchaseHint}</span>
                 </UnifiedButton>
               ) : null}
               {canBuyerDeleteOrder(moreOrder) ? (
@@ -638,8 +628,8 @@ export default function Orders() {
                     setMoreOrder(null);
                   }}
                 >
-                  <span>删除订单</span>
-                  <span className="text-xs font-normal text-[var(--theme-text-muted)]">仅从我的订单隐藏</span>
+                  <span>{copy.deleteOrder}</span>
+                  <span className="text-xs font-normal text-[var(--theme-text-muted)]">{copy.deleteHint}</span>
                 </UnifiedButton>
               ) : null}
               {!(
@@ -650,7 +640,7 @@ export default function Orders() {
                 || canBuyerDeleteOrder(moreOrder)
               ) ? (
                 <p className="rounded-2xl bg-[var(--theme-bg)] px-4 py-5 text-center text-sm text-[var(--theme-text-muted)]">
-                  当前订单暂无更多操作
+                  {copy.noMoreActions}
                 </p>
               ) : null}
             </div>
@@ -659,10 +649,10 @@ export default function Orders() {
         <BottomSheetConfirm
           open={Boolean(deleteConfirmOrder)}
           onClose={() => setDeleteConfirmOrder(null)}
-          title="删除订单"
-          description="删除后该订单将不再显示在你的订单列表中，后台仍会保留必要记录用于售后、财务和审计。"
-          confirmText="删除"
-          cancelText="取消"
+          title={copy.deleteConfirmTitle}
+          description={copy.deleteConfirmDescription}
+          confirmText={copy.deleteConfirmText}
+          cancelText={copy.cancelText}
           danger
           loading={Boolean(deleteConfirmOrder && actingId === deleteConfirmOrder.id)}
           onConfirm={async () => {
@@ -674,10 +664,10 @@ export default function Orders() {
         <BottomSheetConfirm
           open={Boolean(cancelConfirmOrder)}
           onClose={() => setCancelConfirmOrder(null)}
-          title="取消订单"
-          description="取消后订单将关闭，如需购买请重新下单。"
-          confirmText="确认取消"
-          cancelText="再想想"
+          title={copy.cancelConfirmTitle}
+          description={copy.cancelConfirmDescription}
+          confirmText={copy.cancelConfirmText}
+          cancelText={copy.rethink}
           danger
           loading={Boolean(cancelConfirmOrder && actingId === cancelConfirmOrder.id)}
           onConfirm={async () => {
@@ -686,10 +676,10 @@ export default function Orders() {
             try {
               await cancelOrder(cancelConfirmOrder.id);
               await loadCurrentOrders({ force: true });
-              toast.success("订单已取消");
+              toast.success(copy.orderCancelled);
               setCancelConfirmOrder(null);
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "取消失败");
+              toast.error(e instanceof Error ? e.message : copy.cancelFailed);
             } finally {
               setActingId("");
             }
@@ -699,10 +689,10 @@ export default function Orders() {
         <BottomSheetConfirm
           open={Boolean(confirmReceiveOrder)}
           onClose={() => setConfirmReceiveOrder(null)}
-          title="确认收货"
-          description="请确认已收到商品且无误。确认后将无法撤销。"
-          confirmText="确认收货"
-          cancelText="取消"
+          title={copy.receiveConfirmTitle}
+          description={copy.receiveConfirmDescription}
+          confirmText={copy.receiveConfirmText}
+          cancelText={copy.cancelText}
           loading={Boolean(confirmReceiveOrder && actingId === confirmReceiveOrder.id)}
           onConfirm={async () => {
             if (!confirmReceiveOrder) return;
@@ -710,10 +700,10 @@ export default function Orders() {
             try {
               await confirmReceive(confirmReceiveOrder.id);
               await loadCurrentOrders({ force: true });
-              toast.success("已确认收货");
+              toast.success(copy.received);
               setConfirmReceiveOrder(null);
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "确认收货失败");
+              toast.error(e instanceof Error ? e.message : copy.receiveFailed);
             } finally {
               setActingId("");
             }
@@ -734,15 +724,19 @@ export default function Orders() {
           onClose={() => setLogisticsInfo(null)}
           carrier={logisticsInfo?.carrier}
           trackingNo={logisticsInfo?.trackingNo}
+          statusLabel={logisticsInfo?.statusLabel}
+          exceptionMessage={logisticsInfo?.exceptionMessage}
+          hasException={logisticsInfo?.hasException}
+          timeline={logisticsInfo?.timeline}
         />
 
         <BottomSheetConfirm
           open={Boolean(repurchaseConfirmOrder)}
           onClose={() => setRepurchaseConfirmOrder(null)}
-          title="再买一单"
-          description="将把该订单商品加入购物车并前往结算页，是否继续？"
-          confirmText="前往结算"
-          cancelText="取消"
+          title={copy.repurchaseConfirmTitle}
+          description={copy.repurchaseConfirmDescription}
+          confirmText={copy.checkoutText}
+          cancelText={copy.cancelText}
           loading={Boolean(repurchaseConfirmOrder && actingId === repurchaseConfirmOrder.id)}
           onConfirm={async () => {
             if (!repurchaseConfirmOrder) return;

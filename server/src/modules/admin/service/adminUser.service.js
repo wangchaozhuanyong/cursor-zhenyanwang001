@@ -10,7 +10,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function requireAdjustUserPoints() {

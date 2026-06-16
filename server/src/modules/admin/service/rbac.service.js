@@ -14,7 +14,7 @@ const {
 } = require('../../../utils/phone');
 
 function getAuthApi() {
-  return /** @type {any} */ (require('../../auth')).api || {};
+  return /** @type {any} */ (require('../../auth/publicApi')) || {};
 }
 
 function requireAuthApi(name) {

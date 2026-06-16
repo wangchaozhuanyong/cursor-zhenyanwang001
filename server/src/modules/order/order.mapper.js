@@ -102,6 +102,20 @@ function buildPointsSummary(row, discountLines, loyaltyMeta) {
   };
 }
 
+function buildLogisticsSnapshot(row) {
+  const status = row.logistics_status || '';
+  const exceptionType = row.logistics_exception_type || '';
+  return {
+    status,
+    status_label: row.logistics_status_label || '',
+    exception_type: exceptionType,
+    exception_message: row.logistics_exception_message || '',
+    has_exception: Boolean(exceptionType),
+    latest_event_at: row.logistics_latest_event_at || null,
+    last_synced_at: row.logistics_last_synced_at || null,
+  };
+}
+
 function formatOrder(row, items, returnMeta = null) {
   const discountMeta = parseDiscountMeta(row.discount_meta);
   const discountLines = buildDiscountLines(row, discountMeta);
@@ -167,6 +181,13 @@ function formatOrder(row, items, returnMeta = null) {
     payment_transaction_no: row.payment_transaction_no || '',
     tracking_no: row.tracking_no || '',
     carrier: row.carrier || '',
+    logistics_status: row.logistics_status || '',
+    logistics_status_label: row.logistics_status_label || '',
+    logistics_exception_type: row.logistics_exception_type || '',
+    logistics_exception_message: row.logistics_exception_message || '',
+    logistics_latest_event_at: row.logistics_latest_event_at || null,
+    logistics_last_synced_at: row.logistics_last_synced_at || null,
+    logistics_snapshot: buildLogisticsSnapshot(row),
     note: row.note || '',
     created_at: row.created_at,
     shipped_at: row.shipped_at || null,

@@ -13,6 +13,10 @@ describe('site capabilities config', () => {
   test('normalize applies defaults and languageGateEnabled defaults to false', () => {
     const caps = normalizeSiteCapabilities({});
     assert.equal(caps.languageGateEnabled, false);
+    assert.equal(caps.promotionEngineV2, false);
+    assert.equal(caps.pricingEngineV2, false);
+    assert.equal(caps.inventoryLockV2, false);
+    assert.equal(caps.billplzEnabled, false);
     assert.equal(caps.mallEnabled, true);
     assert.equal(caps.smsOtpLoginEnabled, true);
     assert.equal(caps.telegramOrderNotifyEnabled, true);
@@ -39,5 +43,24 @@ describe('createOrderBodySchema optional ids', () => {
 
     const withNull = createOrderBodySchema.safeParse({ ...base, shipping_template_id: null });
     assert.equal(withNull.success, true);
+  });
+
+  test('accepts a bounded idempotency key', () => {
+    const base = {
+      items: [{ product_id: 'p1', qty: 1 }],
+      contact_name: 'Test',
+      contact_phone: '0123456789',
+    };
+    const ok = createOrderBodySchema.safeParse({
+      ...base,
+      idempotency_key: 'checkout:session-1:payload-1',
+    });
+    assert.equal(ok.success, true);
+
+    const tooShort = createOrderBodySchema.safeParse({
+      ...base,
+      idempotency_key: 'short',
+    });
+    assert.equal(tooShort.success, false);
   });
 });

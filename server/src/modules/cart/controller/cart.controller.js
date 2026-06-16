@@ -10,6 +10,10 @@ exports.getCart = asyncRoute(async (req, res) => {
   res.success(await cartService.getCart(req.user.id));
 });
 
+exports.getCartPreview = asyncRoute(async (req, res) => {
+  res.success(await cartService.getCartPreview(req.user.id));
+});
+
 exports.addToCart = asyncRoute(async (req, res) => {
   const r = await cartService.addToCart(req.user.id, req.body);
   res.success(r.data);

@@ -1,23 +1,10 @@
 const { Router } = require('express');
+const publicApi = require('./publicApi');
 
 const router = Router();
 
 /** Public module API for payment consumers. */
-/** @type {any} */ (router).api = {
-  payWithRewardWallet: (...args) => require('./service/payments.service').payWithRewardWallet(...args),
-  createStripeCheckoutForOrder: (...args) =>
-    require('./service/payments.service').createStripeCheckoutForOrder(...args),
-  recordRefundByAdmin: (...args) => require('./service/payments.service').recordRefundByAdmin(...args),
-  listChannelsAdmin: () => require('./service/payments.service').listChannelsAdmin(),
-  updateChannelAdmin: (...args) => require('./service/payments.service').updateChannelAdmin(...args),
-  listPaymentOrdersAdmin: (...args) => require('./service/payments.service').listPaymentOrdersAdmin(...args),
-  listPaymentEventsAdmin: (...args) => require('./service/payments.service').listPaymentEventsAdmin(...args),
-  listRefundEventsForReturn: (...args) => require('./service/payments.service').listRefundEventsForReturn(...args),
-  markOrderPaidByAdmin: (...args) => require('./service/payments.service').markOrderPaidByAdmin(...args),
-  replayEvent: (...args) => require('./service/payments.service').replayEvent(...args),
-  listReconciliations: (...args) => require('./service/payments.service').listReconciliations(...args),
-  createReconciliation: (...args) => require('./service/payments.service').createReconciliation(...args),
-};
+/** @type {any} */ (router).api = publicApi;
 
 router.use('/payment', require('./routes/paymentPublic.routes'));
 router.use('/payments', require('./routes/payments.webhook.routes'));

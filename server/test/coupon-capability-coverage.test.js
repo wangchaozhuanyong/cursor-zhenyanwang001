@@ -7,9 +7,9 @@ function loadNewUserGiftServiceWithMocks(t, options = {}) {
   const couponCapabilityEnabled = options.couponEnabled !== false;
   const servicePath = require.resolve('../src/modules/marketing/service/newUserGift.service');
   const repoPath = require.resolve('../src/modules/marketing/repository/marketing.repository');
-  const adminPath = require.resolve('../src/modules/admin');
-  const userPath = require.resolve('../src/modules/user');
-  const capabilitiesPath = require.resolve('../src/modules/siteCapabilities');
+  const adminPath = require.resolve('../src/modules/admin/publicApi');
+  const userPath = require.resolve('../src/modules/user/publicApi');
+  const capabilitiesPath = require.resolve('../src/modules/siteCapabilities/publicApi');
 
   for (const cachePath of [servicePath, repoPath, adminPath, userPath, capabilitiesPath]) {
     delete require.cache[cachePath];
@@ -28,12 +28,10 @@ function loadNewUserGiftServiceWithMocks(t, options = {}) {
     filename: capabilitiesPath,
     loaded: true,
     exports: {
-      api: {
-        async isCapabilityEnabled(key) {
-          assert.equal(key, 'couponEnabled');
-          calls.capability += 1;
-          return couponCapabilityEnabled;
-        },
+      async isCapabilityEnabled(key) {
+        assert.equal(key, 'couponEnabled');
+        calls.capability += 1;
+        return couponCapabilityEnabled;
       },
     },
   };
@@ -43,15 +41,13 @@ function loadNewUserGiftServiceWithMocks(t, options = {}) {
     filename: adminPath,
     loaded: true,
     exports: {
-      api: {
-        async selectPublicCouponCampaignsByPosition() {
-          calls.campaigns += 1;
-          return [{ id: 'campaign-1', campaign_type: 'new_user_gift' }];
-        },
-        async selectCouponCampaignCouponIds() {
-          calls.couponIds += 1;
-          return ['coupon-1'];
-        },
+      async selectPublicCouponCampaignsByPosition() {
+        calls.campaigns += 1;
+        return [{ id: 'campaign-1', campaign_type: 'new_user_gift' }];
+      },
+      async selectCouponCampaignCouponIds() {
+        calls.couponIds += 1;
+        return ['coupon-1'];
       },
     },
   };
@@ -61,11 +57,9 @@ function loadNewUserGiftServiceWithMocks(t, options = {}) {
     filename: userPath,
     loaded: true,
     exports: {
-      api: {
-        async issueCouponToUsers() {
-          calls.issue += 1;
-          return { issued: 1 };
-        },
+      async issueCouponToUsers() {
+        calls.issue += 1;
+        return { issued: 1 };
       },
     },
   };

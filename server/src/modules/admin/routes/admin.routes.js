@@ -378,6 +378,14 @@ router.post(
   validate({ params: paySchemas.adminEventIdParamSchema }),
   adminPayCtrl.replayEvent,
 );
+router.patch(
+  '/payments/events/:eventId/review',
+  adminAuth,
+  onlinePaymentFeature,
+  requirePermission('payment.manage'),
+  validate({ params: paySchemas.adminEventIdParamSchema, body: paySchemas.reviewPaymentEventBodySchema }),
+  adminPayCtrl.reviewPaymentEvent,
+);
 router.get(
   '/payments/reconciliations',
   adminAuth,
@@ -393,6 +401,14 @@ router.post(
   requirePermission('payment.manage'),
   validate({ body: paySchemas.createReconciliationBodySchema }),
   adminPayCtrl.createReconciliation,
+);
+router.patch(
+  '/payments/reconciliations/:id/review',
+  adminAuth,
+  onlinePaymentFeature,
+  requirePermission('payment.manage'),
+  validate({ params: paySchemas.adminReconciliationIdParamSchema, body: paySchemas.reviewReconciliationBodySchema }),
+  adminPayCtrl.reviewReconciliation,
 );
 
 /* ---- Orders ---- */
@@ -498,9 +514,12 @@ router.post(
 router.get('/activities', adminAuth, requirePermission('activity.manage'), activityCtrl.list);
 router.get('/activities/products/options', adminAuth, requirePermission('activity.manage'), activityCtrl.searchProducts);
 router.post('/activities', adminAuth, requirePermission('activity.manage'), activityCtrl.create);
+router.post('/activities/precheck', adminAuth, requirePermission('activity.manage'), activityCtrl.precheckBeforePublish);
 router.post('/activities/validate', adminAuth, requirePermission('activity.manage'), activityCtrl.validateBeforePublish);
 router.get('/activities/:id', adminAuth, requirePermission('activity.manage'), activityCtrl.getById);
 router.put('/activities/:id', adminAuth, requirePermission('activity.manage'), activityCtrl.update);
+router.post('/activities/:id/copy', adminAuth, requirePermission('activity.manage'), activityCtrl.copy);
+router.post('/activities/:id/precheck', adminAuth, requirePermission('activity.manage'), activityCtrl.precheckBeforePublish);
 router.post('/activities/:id/validate', adminAuth, requirePermission('activity.manage'), activityCtrl.validateBeforePublish);
 router.patch('/activities/:id/status', adminAuth, requirePermission('activity.manage'), activityCtrl.updateStatus);
 router.delete('/activities/:id', adminAuth, requirePermission('activity.manage'), activityCtrl.remove);
@@ -704,8 +723,13 @@ router.get('/reports/categories/analysis', adminAuth, requirePermission('report.
 router.get('/reports/orders/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getOrdersAnalysis);
 router.get('/reports/customers/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getCustomersAnalysis);
 router.get('/reports/activities/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getActivitiesAnalysis);
+router.get('/reports/promotions/conversion', adminAuth, requirePermission('report.view'), reportCtrl.getPromotionConversionReport);
 router.get('/reports/coupons/analysis', adminAuth, couponFeature, requirePermission('report.view'), reportCtrl.getCouponsAnalysis);
+router.get('/reports/discounts/cost', adminAuth, requirePermission('report.view'), reportCtrl.getDiscountCostReport);
+router.get('/reports/payments/failures', adminAuth, requirePermission('report.view'), reportCtrl.getPaymentFailureReport);
 router.get('/reports/inventory/analysis', adminAuth, inventoryFeature, requirePermission('report.view'), reportCtrl.getInventoryAnalysis);
+router.get('/reports/inventory/occupancy', adminAuth, inventoryFeature, requirePermission('report.view'), reportCtrl.getInventoryOccupancyReport);
+router.get('/reports/orders/cancel-reasons', adminAuth, requirePermission('report.view'), reportCtrl.getOrderCancelReasonReport);
 router.get('/reports/search/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getSearchAnalysis);
 router.get('/reports/traffic', adminAuth, requireSiteCapability('trafficAnalyticsEnabled', '流量分析功能已关闭'), requirePermission('report.view'), reportCtrl.getTrafficAnalysis);
 

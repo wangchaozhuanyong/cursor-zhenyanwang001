@@ -73,6 +73,13 @@ async function loadSchemaCapabilities() {
     orderItemsDiscountAllocated,
     operatingExpenses,
     notificationLogs,
+    ordersLogisticsStatus,
+    ordersLogisticsStatusLabel,
+    ordersLogisticsException,
+    ordersLogisticsExceptionMessage,
+    ordersLogisticsLatestEvent,
+    ordersLogisticsLastSynced,
+    logisticsTracksException,
   ] = await Promise.all([
     columnExists('orders', 'refunded_amount'),
     tableExists('return_requests'),
@@ -108,6 +115,13 @@ async function loadSchemaCapabilities() {
     columnExists('order_items', 'discount_allocated'),
     tableExists('operating_expense_records'),
     tableExists('notification_logs'),
+    columnExists('orders', 'logistics_status'),
+    columnExists('orders', 'logistics_status_label'),
+    columnExists('orders', 'logistics_exception_type'),
+    columnExists('orders', 'logistics_exception_message'),
+    columnExists('orders', 'logistics_latest_event_at'),
+    columnExists('orders', 'logistics_last_synced_at'),
+    columnExists('logistics_tracks', 'exception_type'),
   ]);
 
   capabilitiesCache = {
@@ -145,6 +159,13 @@ async function loadSchemaCapabilities() {
     orderItemsDiscountAllocated,
     operatingExpenses,
     notificationLogs,
+    ordersLogisticsStatus,
+    ordersLogisticsStatusLabel,
+    ordersLogisticsException,
+    ordersLogisticsExceptionMessage,
+    ordersLogisticsLatestEvent,
+    ordersLogisticsLastSynced,
+    logisticsTracksException,
   };
   return capabilitiesCache;
 }

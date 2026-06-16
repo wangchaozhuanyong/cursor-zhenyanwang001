@@ -3,9 +3,10 @@ const { ValidationError } = require('../../../errors');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const repo = require('../repository/order.repository');
 const orderPoints = require('./orderPoints.service');
+const inventoryLockService = require('./inventoryLock.service');
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function requireUserApi(name) {
@@ -82,20 +83,18 @@ async function applyOrderRefundCompensation(conn, params) {
   const lineItems = await repo.selectOrderItemQtyRows(conn, order.id);
 
   if (restoreStock) {
-    for (const item of lineItems) {
-      if (!item.variant_id) {
+    const restoreResult = await inventoryLockService.restoreOrderInventoryAfterRefund(conn, {
+      orderId: order.id,
+      orderNo: order.order_no,
+      items: lineItems,
+      reason: reason || `订单退款恢复库存 ${order.order_no}`,
+      operatorId,
+    });
+    if (!restoreResult.ok) {
+      if (restoreResult.reason === 'missing_variant') {
         throw new ValidationError(`订单 ${order.order_no} 存在缺失 SKU 的明细，无法恢复库存`);
       }
-      await repo.restoreVariantStock(conn, item.variant_id, item.qty, {
-        refType: 'order',
-        refId: order.id,
-        orderNo: order.order_no,
-        operatorId,
-        reason: reason || `订单退款恢复库存 ${order.order_no}`,
-      });
-      if (item.activity_id) {
-        await repo.decrementActivitySold(conn, item.activity_id, item.product_id, item.qty);
-      }
+      throw new ValidationError(`订单 ${order.order_no} 库存恢复失败，请人工复核`);
     }
   }
 

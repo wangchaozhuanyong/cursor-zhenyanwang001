@@ -1,8 +1,8 @@
 import { Building2, CreditCard, MessageSquare, Smartphone, Wallet } from "lucide-react";
-import { STORE_COPY } from "@/constants/storeCopy";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { shouldShowPaymentOption } from "@/utils/checkoutPaymentMethod";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 
 export type PaymentMethod = "online" | "reward_wallet" | "whatsapp";
 
@@ -21,6 +21,56 @@ interface PaymentMethodPickerProps {
   showCustomerService?: boolean;
 }
 
+const PAYMENT_PICKER_COPY: Record<PublicLocale, {
+  online: string;
+  onlineDescLocal: string;
+  onlineDescCard: string;
+  onlineDisabled: string;
+  rewardWallet: string;
+  rewardDesc: (balance: number) => string;
+  support: string;
+  supportDesc: string;
+  recommended: string;
+  selectChannel: string;
+}> = {
+  zh: {
+    online: "在线支付",
+    onlineDescLocal: "支持 FPX 网上银行 / 电子钱包 / Stripe，支付完成自动确认",
+    onlineDescCard: "支持银行卡 / Visa / Mastercard，支付完成自动确认",
+    onlineDisabled: "在线支付暂不可用，请联系客服",
+    rewardWallet: "返现钱包",
+    rewardDesc: (balance) => `使用返现余额直接支付（可用 RM ${balance.toFixed(2)}）`,
+    support: "联系客服",
+    supportDesc: "通过 WhatsApp / 微信 与客服确认订单与付款",
+    recommended: "推荐",
+    selectChannel: "选择支付渠道",
+  },
+  en: {
+    online: "Online payment",
+    onlineDescLocal: "Supports FPX online banking / e-wallet / Stripe, and confirms automatically after payment",
+    onlineDescCard: "Supports bank card / Visa / Mastercard, and confirms automatically after payment",
+    onlineDisabled: "Online payment is unavailable. Please contact support.",
+    rewardWallet: "Reward wallet",
+    rewardDesc: (balance) => `Pay with reward balance (available RM ${balance.toFixed(2)})`,
+    support: "Contact support",
+    supportDesc: "Confirm the order and payment with support via WhatsApp / WeChat",
+    recommended: "Recommended",
+    selectChannel: "Select payment channel",
+  },
+  ms: {
+    online: "Bayaran dalam talian",
+    onlineDescLocal: "Menyokong FPX perbankan dalam talian / e-dompet / Stripe, bayaran disahkan automatik",
+    onlineDescCard: "Menyokong kad bank / Visa / Mastercard, bayaran disahkan automatik",
+    onlineDisabled: "Bayaran dalam talian tidak tersedia. Sila hubungi sokongan.",
+    rewardWallet: "Dompet ganjaran",
+    rewardDesc: (balance) => `Bayar dengan baki ganjaran (tersedia RM ${balance.toFixed(2)})`,
+    support: "Hubungi sokongan",
+    supportDesc: "Sahkan pesanan dan bayaran dengan sokongan melalui WhatsApp / WeChat",
+    recommended: "Disyorkan",
+    selectChannel: "Pilih saluran bayaran",
+  },
+};
+
 export default function PaymentMethodPicker({
   value,
   onChange,
@@ -33,23 +83,28 @@ export default function PaymentMethodPicker({
   showOnline = true,
   showCustomerService = true,
 }: PaymentMethodPickerProps) {
+  const { locale } = usePublicLocale();
+  const copy = PAYMENT_PICKER_COPY[locale];
+  const disabledHint = onlineDisabledHint === undefined || onlineDisabledHint === "在线支付暂不可用，请联系客服"
+    ? copy.onlineDisabled
+    : onlineDisabledHint;
   const options = [
     {
       id: "online" as const,
       icon: CreditCard,
-      title: "在线支付",
+      title: copy.online,
       desc: onlineChannels.length > 0
-        ? "支持 FPX 网上银行 / 电子钱包 / Stripe，支付完成自动确认"
-        : "支持银行卡 / Visa / Mastercard，支付完成自动确认",
+        ? copy.onlineDescLocal
+        : copy.onlineDescCard,
       recommended: true,
       disabled: onlineDisabled,
-      disabledHint: onlineDisabledHint,
+      disabledHint,
     },
     {
       id: "reward_wallet" as const,
       icon: Wallet,
-      title: "返现钱包",
-      desc: `使用返现余额直接支付（可用 RM ${rewardBalance.toFixed(2)}）`,
+      title: copy.rewardWallet,
+      desc: copy.rewardDesc(rewardBalance),
       recommended: false,
       disabled: false,
       disabledHint: "",
@@ -57,8 +112,8 @@ export default function PaymentMethodPicker({
     {
       id: "whatsapp" as const,
       icon: MessageSquare,
-      title: STORE_COPY.contactSupport,
-      desc: "通过 WhatsApp / 微信 与客服确认订单与付款",
+      title: copy.support,
+      desc: copy.supportDesc,
       recommended: false,
       disabled: false,
       disabledHint: "",
@@ -99,7 +154,7 @@ export default function PaymentMethodPicker({
                   </p>
                   {opt.recommended && !isDisabled && (
                     <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2 py-0.5 text-[10px] font-bold text-theme-price">
-                      推荐
+                      {copy.recommended}
                     </span>
                   )}
                 </div>
@@ -115,12 +170,15 @@ export default function PaymentMethodPicker({
             </UnifiedButton>
             {showChannels ? (
               <div className="border-t border-border/70 px-3.5 pb-3.5 pt-2">
-                <p className="mb-2 text-[11px] font-semibold text-muted-foreground">选择支付渠道</p>
+                <p className="mb-2 text-[11px] font-semibold text-muted-foreground">{copy.selectChannel}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {onlineChannels.map((channel) => {
                     const selected = selectedOnlineChannelCode === channel.code;
-                    const Icon = channel.provider === "malaysia_local"
-                      ? channel.code === "fpx" ? Building2 : Smartphone
+                    const provider = String(channel.provider || "").toLowerCase();
+                    const code = String(channel.code || "").toLowerCase();
+                    const isLocalBankChannel = provider === "malaysia_local" || provider === "malaysia-local" || provider === "billplz" || provider === "fpx" || code.includes("fpx");
+                    const Icon = isLocalBankChannel
+                      ? code.includes("fpx") || provider === "billplz" || provider === "fpx" ? Building2 : Smartphone
                       : CreditCard;
                     return (
                       <UnifiedButton

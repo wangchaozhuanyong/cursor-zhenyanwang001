@@ -1,14 +1,14 @@
 const orderService = require('../service/order.service');
-const authModule = require('../../auth');
-const productModule = require('../../product');
+const authPublicApi = /** @type {any} */ (require('../../auth/publicApi'));
+const productPublicApi = /** @type {any} */ (require('../../product/publicApi'));
 const { BusinessError } = require('../../../errors/BusinessError');
 
 function getAuthApi() {
-  return /** @type {any} */ (authModule).api || {};
+  return authPublicApi || {};
 }
 
 function getProductApi() {
-  return /** @type {any} */ (productModule).api || {};
+  return productPublicApi || {};
 }
 
 function requireApiMethod(api, name) {

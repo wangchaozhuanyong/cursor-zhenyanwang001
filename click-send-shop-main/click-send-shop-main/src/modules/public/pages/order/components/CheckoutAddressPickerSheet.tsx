@@ -5,6 +5,7 @@ import { formatAddressForDisplay } from "@/services/addressService";
 import { AppModal } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 type Props = {
   open: boolean;
@@ -16,6 +17,7 @@ type Props = {
 
 export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedId, onSelect }: Props) {
   const navigate = useNavigate();
+  const { localizedPath, t } = usePublicLocale();
 
   const pick = (addr: Address) => {
     onSelect(addr);
@@ -28,10 +30,10 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
       className="flex min-h-12 w-full items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-sm font-semibold text-[var(--theme-text)]"
       onClick={() => {
         onClose();
-        navigate("/address");
+        navigate(localizedPath("/address"));
       }}
     >
-      管理收货地址
+      {t("checkout.addressManage")}
     </UnifiedButton>
   );
 
@@ -40,14 +42,14 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
       tier="form"
       open={open}
       onClose={onClose}
-      title="选择收货地址"
-      description="选择后将自动填入结算信息"
+      title={t("checkout.addressPickerTitle")}
+      description={t("checkout.addressPickerDescription")}
       height="70vh"
       stickyFooter
       footer={footer}
     >
       {addresses.length === 0 ? (
-        <p className="pb-4 text-sm text-[var(--theme-text-muted)]">暂无保存的地址，请点击下方添加。</p>
+        <p className="pb-4 text-sm text-[var(--theme-text-muted)]">{t("checkout.addressEmpty")}</p>
       ) : (
         <ul className="space-y-2 pb-2">
           {addresses.map((addr) => {
@@ -70,7 +72,7 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
                       <span className="font-normal text-[var(--theme-text-muted)]">{addr.phone}</span>
                       {addr.isDefault ? (
                         <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_12%,transparent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-primary)]">
-                          默认
+                          {t("checkout.addressDefault")}
                         </span>
                       ) : null}
                     </span>

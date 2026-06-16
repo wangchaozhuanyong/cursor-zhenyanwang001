@@ -31,11 +31,26 @@ exports.getCustomersAnalysis = asyncRoute(async (req, res) => {
 exports.getActivitiesAnalysis = asyncRoute(async (req, res) => {
   res.success(await svc.getActivitiesAnalysis(req.query));
 });
+exports.getPromotionConversionReport = asyncRoute(async (req, res) => {
+  res.success(await svc.getPromotionConversionReport(req.query));
+});
 exports.getCouponsAnalysis = asyncRoute(async (req, res) => {
   res.success(await svc.getCouponsAnalysis(req.query));
 });
+exports.getDiscountCostReport = asyncRoute(async (req, res) => {
+  res.success(await svc.getDiscountCostReport(req.query));
+});
+exports.getPaymentFailureReport = asyncRoute(async (req, res) => {
+  res.success(await svc.getPaymentFailureReport(req.query));
+});
 exports.getInventoryAnalysis = asyncRoute(async (req, res) => {
   res.success(await svc.getInventoryAnalysis(req.query));
+});
+exports.getInventoryOccupancyReport = asyncRoute(async (req, res) => {
+  res.success(await svc.getInventoryOccupancyReport(req.query));
+});
+exports.getOrderCancelReasonReport = asyncRoute(async (req, res) => {
+  res.success(await svc.getOrderCancelReasonReport(req.query));
 });
 exports.getSearchAnalysis = asyncRoute(async (req, res) => {
   res.success(await svc.getSearchAnalysis(req.query));
@@ -79,4 +94,3 @@ exports.getHomeEngagement = exports.getOverview;
 exports.exportSales = exports.exportByType;
 exports.exportUsers = exports.exportByType;
 exports.exportProducts = exports.exportByType;
-

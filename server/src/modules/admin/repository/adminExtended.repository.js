@@ -282,7 +282,24 @@ async function selectShippingTemplatesRaw() {
 }
 
 async function insertShippingTemplate(params) {
-  const [name, regions, baseFee, freeAbove, extraPerKg, enabled] = params;
+  const [
+    name,
+    regions,
+    baseFee,
+    freeAbove,
+    extraPerKg,
+    enabled,
+    countryCode,
+    regionGroup,
+    stateCodes,
+    cityNames,
+    postcodePatterns,
+    minWeightKg,
+    maxWeightKg,
+    minOrderAmount,
+    maxOrderAmount,
+    ruleConfig,
+  ] = params;
   const [[col]] = await db.query(
     `
       SELECT DATA_TYPE AS dataType
@@ -299,14 +316,26 @@ async function insertShippingTemplate(params) {
   if (idType === 'varchar' || idType === 'char') {
     const createdId = generateId();
     await db.query(
-      `INSERT INTO shipping_templates (id, name, regions, base_fee, free_above, extra_per_kg, enabled) VALUES (?,?,?,?,?,?,?)`,
-      [createdId, name, regions, baseFee, freeAbove, extraPerKg, enabled],
+      `INSERT INTO shipping_templates
+         (id, name, regions, base_fee, free_above, extra_per_kg, enabled,
+          country_code, region_group, state_codes, city_names, postcode_patterns,
+          min_weight_kg, max_weight_kg, min_order_amount, max_order_amount, rule_config)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        createdId, name, regions, baseFee, freeAbove, extraPerKg, enabled,
+        countryCode, regionGroup, stateCodes, cityNames, postcodePatterns,
+        minWeightKg, maxWeightKg, minOrderAmount, maxOrderAmount, ruleConfig,
+      ],
     );
     return createdId;
   }
 
   const [result] = await db.query(
-    `INSERT INTO shipping_templates (name, regions, base_fee, free_above, extra_per_kg, enabled) VALUES (?,?,?,?,?,?)`,
+    `INSERT INTO shipping_templates
+       (name, regions, base_fee, free_above, extra_per_kg, enabled,
+        country_code, region_group, state_codes, city_names, postcode_patterns,
+        min_weight_kg, max_weight_kg, min_order_amount, max_order_amount, rule_config)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     params,
   );
   return result.insertId;

@@ -1,7 +1,7 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 
 function getThemeApi() {
-  return /** @type {any} */ (require('../../theme')).api || {};
+  return /** @type {any} */ (require('../../theme/publicApi')) || {};
 }
 
 exports.updateTheme = asyncRoute(async (req, res) => {

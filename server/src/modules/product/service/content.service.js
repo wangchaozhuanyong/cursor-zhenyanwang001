@@ -1,6 +1,6 @@
 const contentRepo = require('../repository/content.repository');
 function getAdminApi() {
-  return /** @type {any} */ (require('../../admin')).api || {};
+  return /** @type {any} */ (require('../../admin/publicApi')) || {};
 }
 
 function requireAdminApi(name) {

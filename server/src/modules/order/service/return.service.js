@@ -3,8 +3,8 @@ const { BusinessError } = require('../../../errors/BusinessError');
 const repo = require('../repository/return.repository');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../../constants/status');
 const { assertReturnTransition } = require('../returnStateMachine');
-const logisticsModule = require('../../logistics');
-const paymentModule = require('../../payment');
+const logisticsPublicApi = /** @type {any} */ (require('../../logistics/publicApi'));
+const paymentPublicApi = /** @type {any} */ (require('../../payment/publicApi'));
 
 const USER_CANCELABLE_STATUSES = new Set([
   RETURN_STATUS.PENDING,
@@ -19,11 +19,11 @@ function safeJson(value) {
 }
 
 function getLogisticsApi() {
-  return /** @type {any} */ (logisticsModule).api || {};
+  return logisticsPublicApi || {};
 }
 
 function getPaymentApi() {
-  return /** @type {any} */ (paymentModule).api || {};
+  return paymentPublicApi || {};
 }
 
 async function listReturnTracksQuietly(returnId) {

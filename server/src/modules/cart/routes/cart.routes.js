@@ -16,6 +16,7 @@ router.use(auth);
 router.use(mallFeature);
 
 router.get('/', ctrl.getCart);
+router.get('/preview', ctrl.getCartPreview);
 router.post('/', validate({ body: addToCartBodySchema }), ctrl.addToCart);
 router.put(
   '/:productId/pin',

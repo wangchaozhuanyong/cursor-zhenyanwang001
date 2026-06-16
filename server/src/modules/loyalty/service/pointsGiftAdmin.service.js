@@ -1,10 +1,10 @@
 const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const giftRepo = require('../repository/pointsGift.repository');
-const productModule = require('../../product');
+const productPublicApi = /** @type {any} */ (require('../../product/publicApi'));
 
 function getProductApi() {
-  return /** @type {any} */ (productModule).api || {};
+  return productPublicApi || {};
 }
 
 function requireProductApi(name) {

@@ -3,6 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import BottomNav from "./BottomNav";
+import { PublicLocaleProvider } from "@/i18n/publicLocale";
 
 vi.mock("@/contexts/ThemeRuntimeProvider", () => ({
   useThemeRuntime: () => ({
@@ -74,8 +75,10 @@ describe("BottomNav", () => {
     await act(async () => {
       root?.render(
         <MemoryRouter initialEntries={[initialPath]}>
-          <BottomNav />
-          <LocationProbe />
+          <PublicLocaleProvider>
+            <BottomNav />
+            <LocationProbe />
+          </PublicLocaleProvider>
         </MemoryRouter>,
       );
     });

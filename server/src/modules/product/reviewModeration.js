@@ -1,5 +1,5 @@
 function getAdminApi() {
-  return /** @type {any} */ (require('../admin')).api || {};
+  return /** @type {any} */ (require('../admin/publicApi')) || {};
 }
 
 const DEFAULT_SENSITIVE_WORDS = ['wechat', 'qrcode', 'fake', 'scam', 'complaint'];

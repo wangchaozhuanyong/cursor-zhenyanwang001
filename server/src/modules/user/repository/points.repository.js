@@ -110,6 +110,28 @@ async function findSignInToday(userId, dateStr) {
   return row || null;
 }
 
+async function countSignInActivityUsage(activityId, userId = '') {
+  const id = String(activityId || '').trim();
+  if (!id) return { total_count: 0, user_count: 0 };
+  const activityWhere = "action = 'sign_in' AND status = 'success' AND JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.activity_id')) = ?";
+  const [[totalRow]] = await db.query(
+    `SELECT COUNT(*) AS total_count FROM points_records WHERE ${activityWhere}`,
+    [id],
+  );
+  let userCount = 0;
+  if (userId) {
+    const [[userRow]] = await db.query(
+      `SELECT COUNT(*) AS user_count FROM points_records WHERE ${activityWhere} AND user_id = ?`,
+      [id, userId],
+    );
+    userCount = Number(userRow?.user_count || 0);
+  }
+  return {
+    total_count: Number(totalRow?.total_count || 0),
+    user_count: userCount,
+  };
+}
+
 async function selectSignInRule() {
   const [[rule]] = await db.query(
     `SELECT points, enabled FROM points_rules
@@ -278,6 +300,7 @@ module.exports = {
   selectUserIdsWithPositiveBalance,
   selectSuccessLedgerForUser,
   findSignInToday,
+  countSignInActivityUsage,
   selectSignInRule,
   selectPointsRuleByAction,
   ensureAccount,
@@ -290,5 +313,4 @@ module.exports = {
   insertLedgerRecord,
   addUserPoints,
 };
-
 

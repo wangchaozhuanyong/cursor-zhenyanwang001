@@ -1,15 +1,15 @@
 const marketingRepo = require('../repository/marketing.repository');
 
 function getAdminApi() {
-  return /** @type {any} */ (require('../../admin')).api || {};
+  return /** @type {any} */ (require('../../admin/publicApi')) || {};
 }
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function getCapabilitiesApi() {
-  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+  return /** @type {any} */ (require('../../siteCapabilities/publicApi')) || {};
 }
 
 function requireUserApi(name) {

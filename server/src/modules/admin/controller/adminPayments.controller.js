@@ -2,7 +2,7 @@ const { asyncRoute } = require('../../../middleware/asyncRoute');
 const dataChangeTracker = require('../service/adminDataChange.service');
 
 function getPaymentApi() {
-  return /** @type {any} */ (require('../../payment')).api || {};
+  return /** @type {any} */ (require('../../payment/publicApi'));
 }
 
 function requirePaymentApi(name) {
@@ -76,6 +76,19 @@ exports.replayEvent = asyncRoute(async (req, res) => {
   res.success(result.data, result.message);
 });
 
+exports.reviewPaymentEvent = asyncRoute(async (req, res) => {
+  const result = await requirePaymentApi('reviewPaymentEvent')(req, req.params.eventId, req.body);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'payment',
+    entityType: 'payment_event',
+    entityId: req.params.eventId,
+    action: 'payment.event_review',
+    beforeData: {},
+    afterData: result.data,
+  });
+  res.success(result.data, result.message);
+});
+
 exports.listReconciliations = asyncRoute(async (req, res) => {
   const { list, total } = await requirePaymentApi('listReconciliations')(req.query);
   const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
@@ -85,5 +98,18 @@ exports.listReconciliations = asyncRoute(async (req, res) => {
 
 exports.createReconciliation = asyncRoute(async (req, res) => {
   const result = await requirePaymentApi('createReconciliation')(req, req.body);
+  res.success(result.data, result.message);
+});
+
+exports.reviewReconciliation = asyncRoute(async (req, res) => {
+  const result = await requirePaymentApi('reviewReconciliation')(req, req.params.id, req.body);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'payment',
+    entityType: 'payment_reconciliation',
+    entityId: req.params.id,
+    action: 'payment.reconciliation_review',
+    beforeData: {},
+    afterData: result.data,
+  });
   res.success(result.data, result.message);
 });

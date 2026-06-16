@@ -40,6 +40,7 @@ server/src/routes/index.js
 ```
 
 各业务模块必须通过 `server/src/modules/<module>/index.js` 和模块内 `routes/` 暴露。不得绕开模块架构直接散落业务 API。
+跨模块业务协作必须通过 `server/src/modules/<module>/publicApi.js` 暴露稳定 service facade；`index.js` 可继续把同一对象挂到 `router.api` 以兼容旧调用，但新代码不得新增 `require(...).api`。
 
 ## 3. 前端请求入口
 
@@ -217,6 +218,61 @@ cd click-send-shop-main/click-send-shop-main
 npm run check:api-paths
 npm run typecheck:strict-api
 ```
+
+## 13. 交易重构新增契约
+
+以下接口属于订单、定价、活动、支付和物流主链，前端只能展示后端结果，不能自行计算最终金额、优惠资格、库存扣减或支付成功状态。
+
+### 订单幂等
+
+`POST /api/orders` 支持 `idempotency_key`。同一用户、同一 key、同一请求指纹重复提交时必须返回同一订单；同一 key 但请求参数不一致必须返回冲突语义，不允许重复创建订单。
+
+### 结算预览和定价
+
+购物车、结算页、创建订单必须以后端 pricing service 的输出为准。前端展示字段包括但不限于：
+
+- 商品原价、活动价、会员价。
+- 优惠明细 `discount_lines`。
+- 满减差额和不可用原因。
+- 后端订单快照金额。
+
+### 活动中心
+
+活动公共入口：
+
+```text
+GET /api/marketing/promotions
+GET /api/marketing/promotions/:slug
+```
+
+后台活动 V2 需要保留旧活动类型 adapter，不得直接删除旧类型数据。结算和下单必须重新校验活动时间、商品范围、SKU、会员等级、限购、库存和叠加规则。
+
+后台运营入口已按兼容式收敛：
+
+- 主入口：`/admin/marketing`
+- 统一活动列表：`/admin/marketing/activities`
+- 优惠券模板：`/admin/marketing/coupons`
+- 领券活动：`/admin/marketing/coupon-campaigns`
+- 积分/返现/邀请继续保留在营销中心下。
+
+旧链接如 `/admin/coupons`、`/admin/settings/points`、`/admin/rewards` 继续做 redirect，不允许直接删除，避免运营收藏链接失效。
+
+### 支付结果页
+
+`/payment/result` 页面外壳允许公开访问，便于 Billplz / FPX / Stripe redirect 回站点；订单详情、支付状态和金额仍必须来自后端受保护接口。URL 参数只能作为跳转上下文，不能作为支付成功依据。未登录或无权访问订单时，前端只能提示登录/刷新失败，不得展示成功态。
+
+### 物流状态
+
+订单详情可能返回：
+
+- `logistics_provider`
+- `logistics_timeline`
+- `logistics_snapshot`
+- `logistics_status`
+- `logistics_exception_type`
+- `logistics_exception_message`
+
+后台发货会先写入平台发货轨迹，承运商轨迹刷新后再同步订单物流快照。前端应展示异常状态和异常说明，但不能自行改订单履约状态。
 
 ## 13. 禁止为了前端方便改变业务规则
 

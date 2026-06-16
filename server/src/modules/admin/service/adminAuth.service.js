@@ -27,7 +27,7 @@ const ADMIN_ACCESS_EXPIRES_IN = process.env.ADMIN_JWT_EXPIRES_IN || '15m';
 const ADMIN_ACCESS_EXPIRES_SECONDS = Number(process.env.ADMIN_JWT_EXPIRES_SECONDS || 15 * 60);
 
 function requireAuthApi(name) {
-  const authApi = /** @type {any} */ (require('../../auth')).api || {};
+  const authApi = /** @type {any} */ (require('../../auth/publicApi')) || {};
   const fn = authApi[name];
   if (typeof fn !== 'function') {
     throw new Error(`Auth module API is missing method: ${name}`);

@@ -27,11 +27,11 @@ const {
 const { writeAuditLog } = require('../../../utils/auditLog');
 
 function getProductApi() {
-  return /** @type {any} */ (require('../../product')).api || {};
+  return /** @type {any} */ (require('../../product/publicApi')) || {};
 }
 
 function getHomeApi() {
-  return /** @type {any} */ (require('../../home')).api || {};
+  return /** @type {any} */ (require('../../home/publicApi')) || {};
 }
 
 function requireProductApi(name) {

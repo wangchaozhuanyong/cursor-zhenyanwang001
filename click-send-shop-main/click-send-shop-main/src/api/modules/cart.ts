@@ -1,8 +1,16 @@
 import { get, post, put, del } from "@/api/request";
-import type { CartItem } from "@/types/cart";
+import type { CartItem, CartPromotionPreview } from "@/types/cart";
 
 export function getCart() {
   return get<CartItem[]>("/cart", undefined, { skipAuthRetry: true, suppressAuthExpired: true });
+}
+
+export function getCartPreview() {
+  return get<CartPromotionPreview>("/cart/preview", undefined, {
+    skipAuthRetry: true,
+    suppressAuthExpired: true,
+    loadingMode: "silent",
+  });
 }
 
 export function addToCart(productId: string, qty: number, variantId = "", skuCode = "") {

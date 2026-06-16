@@ -1,18 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { Ban, Megaphone, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, Ban, BarChart3, Copy, Megaphone, PauseCircle, Pencil, PlayCircle, Plus, Square, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import AdminRowActionsMenu from "@/components/admin/AdminRowActionsMenu";
 import Pagination from "@/components/admin/Pagination";
 import SearchBar from "@/components/SearchBar";
 import { Tx } from "@/components/admin/AdminText";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { AnimatedConfirmDialog } from "@/modules/micro-interactions";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateRange } from "@/utils/formatDateTime";
 import { useAdminNavigation } from "@/hooks/useAdminNavigation";
 import * as campaignService from "@/services/admin/couponCampaignService";
-import type { CouponCampaign, CouponCampaignStatus, CouponCampaignType } from "@/types/couponCampaign";
+import type {
+  CouponCampaign,
+  CouponCampaignStatus,
+  CouponCampaignStatusAction,
+  CouponCampaignType,
+} from "@/types/couponCampaign";
 import CouponCenterTabs from "./CouponCenterTabs";
 
 const campaignTypeOptions: Array<{ value: CouponCampaignType | ""; label: string }> = [
@@ -30,16 +37,42 @@ const statusOptions: Array<{ value: CouponCampaignStatus | ""; label: string }> 
   { value: "draft", label: "草稿" },
   { value: "scheduled", label: "未开始" },
   { value: "active", label: "进行中" },
+  { value: "paused", label: "已暂停" },
   { value: "ended", label: "已结束" },
   { value: "disabled", label: "已停用" },
+  { value: "archived", label: "已归档" },
 ];
 
 const statusClass: Record<CouponCampaignStatus, string> = {
   draft: "bg-muted text-muted-foreground",
   scheduled: "bg-blue-100 text-blue-700",
   active: "bg-green-100 text-green-700",
+  paused: "bg-amber-100 text-amber-700",
   ended: "bg-slate-100 text-slate-600",
   disabled: "bg-red-100 text-red-700",
+  archived: "bg-zinc-100 text-zinc-600",
+};
+
+const displayCategoryLabels: Record<string, string> = {
+  recommended: "推荐",
+  new_user: "新人",
+  member: "会员",
+  shipping: "运费",
+  fixed: "满减",
+  percentage: "折扣",
+};
+
+function formatMoney(value: unknown) {
+  return `RM ${Number(value || 0).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+type StatusConfirmState = {
+  campaign: CouponCampaign;
+  action: CouponCampaignStatusAction;
+  title: string;
+  description: string;
+  confirmText: string;
+  danger?: boolean;
 };
 
 export default function AdminCouponCampaigns() {
@@ -50,6 +83,8 @@ export default function AdminCouponCampaigns() {
   const [status, setStatus] = useState<CouponCampaignStatus | "">("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [statusConfirm, setStatusConfirm] = useState<StatusConfirmState | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CouponCampaign | null>(null);
 
   const filters = useMemo(
     () => ({
@@ -80,13 +115,13 @@ export default function AdminCouponCampaigns() {
     void queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponCampaignsRoot() });
   };
 
-  const statusMutation = useMutation({
-    mutationFn: (campaign: CouponCampaign) => campaignService.setCouponCampaignDisabled(
-      campaign.id,
-      campaign.status !== "disabled" && !campaign.disabled,
+  const statusActionMutation = useMutation({
+    mutationFn: ({ campaign, action }: { campaign: CouponCampaign; action: CouponCampaignStatusAction }) => (
+      campaignService.updateCouponCampaignAction(campaign.id, action)
     ),
     onSuccess: () => {
       toast.success("活动状态已更新");
+      setStatusConfirm(null);
       invalidateCampaigns();
     },
     onError: (error) => toast.error(toastErrorMessage(error, "更新活动状态失败")),
@@ -96,10 +131,15 @@ export default function AdminCouponCampaigns() {
     mutationFn: (campaign: CouponCampaign) => campaignService.deleteCouponCampaign(campaign.id),
     onSuccess: () => {
       toast.success("活动已删除");
+      setDeleteTarget(null);
       invalidateCampaigns();
     },
     onError: (error) => toast.error(toastErrorMessage(error, "删除活动失败")),
   });
+
+  const requestStatusAction = (campaign: CouponCampaign, action: CouponCampaignStatusAction) => {
+    setStatusConfirm(buildStatusConfirm(campaign, action));
+  };
 
   return (
     <AdminPageShell
@@ -162,7 +202,7 @@ export default function AdminCouponCampaigns() {
           <span>类型</span>
           <span>状态</span>
           <span>时间</span>
-          <span className="text-right">券数 / 领取</span>
+          <span className="text-right">券数 / 领取 / 核销</span>
           <span className="text-right">操作</span>
         </div>
 
@@ -183,10 +223,11 @@ export default function AdminCouponCampaigns() {
                 key={campaign.id}
                 campaign={campaign}
                 onEdit={() => { void adminNavigate(`/admin/marketing/coupon-campaigns/${campaign.id}`); }}
-                onToggle={() => statusMutation.mutate(campaign)}
-                onDelete={() => {
-                  if (window.confirm(`确定删除「${campaign.title}」吗？`)) deleteMutation.mutate(campaign);
-                }}
+                onCopy={() => { void adminNavigate(`/admin/marketing/coupon-campaigns/new?copy_from=${campaign.id}`); }}
+                onReport={() => { void adminNavigate(`/admin/reports/coupons?coupon_campaign_id=${encodeURIComponent(campaign.id)}`); }}
+                onStatusAction={(action) => requestStatusAction(campaign, action)}
+                onDelete={() => setDeleteTarget(campaign)}
+                actionBusy={statusActionMutation.isPending || deleteMutation.isPending}
               />
             ))}
           </div>
@@ -200,6 +241,31 @@ export default function AdminCouponCampaigns() {
           onPageSizeChange={setPageSize}
         />
       </div>
+
+      <AnimatedConfirmDialog
+        open={!!statusConfirm}
+        onOpenChange={(open) => !open && setStatusConfirm(null)}
+        danger={!!statusConfirm?.danger}
+        title={statusConfirm?.title || ""}
+        description={statusConfirm?.description || ""}
+        confirmText={statusConfirm?.confirmText || "确认"}
+        onConfirm={() => {
+          if (!statusConfirm) return;
+          statusActionMutation.mutate({ campaign: statusConfirm.campaign, action: statusConfirm.action });
+        }}
+      />
+      <AnimatedConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        danger
+        title="删除领券活动"
+        description={deleteTarget ? `确认删除「${deleteTarget.title}」吗？已有领取数据会继续保留在统计里。` : ""}
+        confirmText="删除"
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          deleteMutation.mutate(deleteTarget);
+        }}
+      />
     </AdminPageShell>
   );
 }
@@ -207,17 +273,28 @@ export default function AdminCouponCampaigns() {
 function CampaignRow({
   campaign,
   onEdit,
-  onToggle,
+  onCopy,
+  onReport,
+  onStatusAction,
   onDelete,
+  actionBusy,
 }: {
   campaign: CouponCampaign;
   onEdit: () => void;
-  onToggle: () => void;
+  onCopy: () => void;
+  onReport: () => void;
+  onStatusAction: (action: CouponCampaignStatusAction) => void;
   onDelete: () => void;
+  actionBusy?: boolean;
 }) {
   const typeLabel = campaignTypeOptions.find((item) => item.value === campaign.campaign_type)?.label || campaign.campaign_type;
+  const displayCategoryLabel = campaign.display_category ? displayCategoryLabels[campaign.display_category] || campaign.display_category : "";
   const statusLabel = statusOptions.find((item) => item.value === campaign.status)?.label || campaign.status;
-  const disabled = campaign.status === "disabled" || campaign.disabled;
+  const canResume = campaign.status === "paused" || campaign.status === "disabled" || campaign.status === "archived" || Boolean(campaign.disabled);
+  const pauseResumeAction: CouponCampaignStatusAction = canResume ? "resume" : "pause";
+  const isEnded = campaign.status === "ended";
+  const isArchived = campaign.status === "archived";
+  const isDisabled = campaign.status === "disabled" || Boolean(campaign.disabled);
 
   return (
     <div className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[minmax(180px,1.5fr)_120px_120px_160px_120px_180px] lg:items-center">
@@ -225,7 +302,10 @@ function CampaignRow({
         <p className="truncate font-semibold text-foreground">{campaign.title}</p>
         {campaign.subtitle ? <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{campaign.subtitle}</p> : null}
       </div>
-      <div className="text-muted-foreground">{typeLabel}</div>
+      <div className="text-muted-foreground">
+        <div>{typeLabel}</div>
+        {displayCategoryLabel ? <div className="mt-1 text-xs text-muted-foreground">前台：{displayCategoryLabel}</div> : null}
+      </div>
       <div>
         <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${statusClass[campaign.status] || "bg-muted text-muted-foreground"}`}>
           {statusLabel}
@@ -233,22 +313,117 @@ function CampaignRow({
       </div>
       <div className="text-xs leading-5 text-muted-foreground">{formatDateRange(campaign.start_at, campaign.end_at)}</div>
       <div className="text-right text-muted-foreground">
-        {campaign.coupon_count ?? 0} / {campaign.claimed_count ?? 0}
+        <div>{campaign.coupon_count ?? 0} / {campaign.claimed_count ?? 0} / {campaign.used_count ?? 0}</div>
+        <div className="text-xs">{formatMoney(campaign.discount_total)}</div>
       </div>
       <div className="flex flex-wrap justify-end gap-2">
-        <UnifiedButton type="button" onClick={onEdit} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs hover:bg-secondary">
-          <Pencil size={13} />
-          编辑
-        </UnifiedButton>
-        <UnifiedButton type="button" onClick={onToggle} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs hover:bg-secondary">
-          {disabled ? <RotateCcw size={13} /> : <Ban size={13} />}
-          {disabled ? "启用" : "停用"}
-        </UnifiedButton>
-        <UnifiedButton type="button" onClick={onDelete} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--theme-danger)]/30 px-3 text-xs text-[var(--theme-danger)] hover:bg-[var(--theme-danger)]/10">
-          <Trash2 size={13} />
-          删除
-        </UnifiedButton>
+        <AdminRowActionsMenu
+          primary={(
+            <UnifiedButton type="button" onClick={onEdit} className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center gap-1 rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-secondary">
+              <Pencil size={13} />
+              编辑
+            </UnifiedButton>
+          )}
+          menuDisabled={actionBusy}
+          moreLabel="更多"
+          items={[
+            {
+              key: "copy",
+              label: "复制",
+              icon: <Copy className="h-3.5 w-3.5" aria-hidden />,
+              onClick: onCopy,
+            },
+            {
+              key: "report",
+              label: "查看数据",
+              icon: <BarChart3 className="h-3.5 w-3.5" aria-hidden />,
+              onClick: onReport,
+            },
+            {
+              key: pauseResumeAction,
+              label: canResume ? "恢复" : "暂停",
+              icon: canResume
+                ? <PlayCircle className="h-3.5 w-3.5" aria-hidden />
+                : <PauseCircle className="h-3.5 w-3.5" aria-hidden />,
+              disabled: actionBusy || isEnded,
+              onClick: () => onStatusAction(pauseResumeAction),
+            },
+            {
+              key: "end",
+              label: "结束",
+              icon: <Square className="h-3.5 w-3.5" aria-hidden />,
+              disabled: actionBusy || isEnded || isArchived,
+              onClick: () => onStatusAction("end"),
+            },
+            {
+              key: "archive",
+              label: "归档",
+              icon: <Archive className="h-3.5 w-3.5" aria-hidden />,
+              disabled: actionBusy || isArchived,
+              onClick: () => onStatusAction("archive"),
+            },
+            {
+              key: "disable",
+              label: "停用",
+              icon: <Ban className="h-3.5 w-3.5" aria-hidden />,
+              disabled: actionBusy || isDisabled || isArchived,
+              onClick: () => onStatusAction("disable"),
+            },
+            {
+              key: "delete",
+              label: "删除",
+              icon: <Trash2 className="h-3.5 w-3.5" aria-hidden />,
+              danger: true,
+              separatorBefore: true,
+              onClick: onDelete,
+            },
+          ]}
+        />
       </div>
     </div>
   );
+}
+
+function buildStatusConfirm(campaign: CouponCampaign, action: CouponCampaignStatusAction): StatusConfirmState {
+  const title = campaign.title || campaign.id;
+  const copy: Record<CouponCampaignStatusAction, Omit<StatusConfirmState, "campaign" | "action">> = {
+    pause: {
+      title: "暂停领券活动",
+      description: `暂停「${title}」后，前台活动中心和领券入口将不再展示该活动。`,
+      confirmText: "暂停",
+    },
+    resume: {
+      title: "恢复领券活动",
+      description: `恢复「${title}」会重新校验活动时间和优惠券可用性，校验通过后才会重新展示。`,
+      confirmText: "恢复",
+    },
+    end: {
+      title: "结束领券活动",
+      description: `结束「${title}」后用户不能继续通过该活动领券，已有领取记录保留。`,
+      confirmText: "结束",
+      danger: true,
+    },
+    archive: {
+      title: "归档领券活动",
+      description: `归档「${title}」后会从常规运营列表和前台展示中移出，可通过已归档状态筛选查看。`,
+      confirmText: "归档",
+      danger: true,
+    },
+    disable: {
+      title: "停用领券活动",
+      description: `停用「${title}」后，前台不能继续展示或领取该活动。`,
+      confirmText: "停用",
+      danger: true,
+    },
+    enable: {
+      title: "启用领券活动",
+      description: `启用「${title}」会重新校验活动规则和优惠券可用性。`,
+      confirmText: "启用",
+    },
+  };
+  return {
+    campaign,
+    action,
+    ...copy[action],
+  };
 }

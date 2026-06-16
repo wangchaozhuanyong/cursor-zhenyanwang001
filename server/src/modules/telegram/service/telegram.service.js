@@ -1,11 +1,11 @@
 const repo = require('../repository/telegram.repository');
 const templates = require('../telegram.templates');
 function getAdminApi() {
-  return /** @type {any} */ (require('../../admin')).api || {};
+  return /** @type {any} */ (require('../../admin/publicApi')) || {};
 }
 
 function getSiteCapabilitiesApi() {
-  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+  return /** @type {any} */ (require('../../siteCapabilities/publicApi')) || {};
 }
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { BusinessError, ValidationError } = require('../../../errors');

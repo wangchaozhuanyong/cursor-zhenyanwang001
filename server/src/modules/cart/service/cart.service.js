@@ -2,6 +2,10 @@ const { generateId, formatProduct } = require('../../../utils/helpers');
 const { NotFoundError, ValidationError } = require('../../../errors');
 const repo = require('../repository/cart.repository');
 
+function getOrderApi() {
+  return /** @type {any} */ (require('../../order/publicApi')) || {};
+}
+
 function formatCartItem(row) {
   return {
     product: formatProduct(row),
@@ -14,10 +18,80 @@ function formatCartItem(row) {
   };
 }
 
+function buildCartPreviewBody(rows) {
+  return {
+    items: rows.map((row) => ({
+      product_id: row.id,
+      variant_id: row.variant_id || undefined,
+      sku_code: row.sku_code || undefined,
+      qty: Number(row.qty || 0),
+    })),
+    payment_method: 'online',
+  };
+}
+
 async function getCart(userId) {
   await repo.deleteUnavailableCartItems(userId);
   const rows = await repo.selectCartLinesWithProducts(userId);
   return rows.map(formatCartItem);
+}
+
+async function getCartPreview(userId) {
+  await repo.deleteUnavailableCartItems(userId);
+  const rows = await repo.selectCartLinesWithProducts(userId);
+  const items = rows.map(formatCartItem);
+  if (!rows.length) {
+    return {
+      items,
+      goods_amount: 0,
+      discount_amount: 0,
+      shipping_fee: 0,
+      final_amount: 0,
+      discount_lines: [],
+      promotion_evaluation: null,
+      promotion_engine_version: '',
+      pricing_engine_version: '',
+      pricing_engine_source: '',
+      order_snapshot: null,
+    };
+  }
+
+  const buildCheckoutPricing = getOrderApi().buildCheckoutPricing;
+  if (typeof buildCheckoutPricing !== 'function') {
+    return {
+      items,
+      goods_amount: items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0),
+      discount_amount: 0,
+      shipping_fee: 0,
+      final_amount: items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0),
+      discount_lines: [],
+      promotion_evaluation: null,
+      promotion_engine_version: '',
+      pricing_engine_version: '',
+      pricing_engine_source: '',
+      order_snapshot: null,
+      promotion_error: 'pricing_service_unavailable',
+    };
+  }
+
+  const pricing = await buildCheckoutPricing(userId, buildCartPreviewBody(rows), null);
+  return {
+    items,
+    goods_amount: pricing.rawAmount,
+    flash_sale_discount: pricing.flashSaleDiscount,
+    full_reduction_discount: pricing.fullReductionDiscount,
+    coupon_discount: pricing.couponDiscount,
+    discount_amount: pricing.discountAmount,
+    shipping_fee: pricing.shippingFee,
+    final_amount: pricing.finalTotal,
+    discount_lines: pricing.discount_lines || [],
+    reward_lines: pricing.promotion_evaluation?.reward_lines || [],
+    promotion_evaluation: pricing.promotion_evaluation || null,
+    promotion_engine_version: pricing.promotion_evaluation?.engine_version || '',
+    pricing_engine_version: pricing.pricing_engine_version || '',
+    pricing_engine_source: pricing.source || '',
+    order_snapshot: pricing.promotion_evaluation?.order_snapshot || null,
+  };
 }
 
 async function resolveVariant(productId, variantId) {
@@ -100,6 +174,8 @@ async function clearCart(userId) {
 
 module.exports = {
   getCart,
+  getCartPreview,
+  buildCartPreviewBody,
   addToCart,
   updateCartItem,
   pinCartItemToTop,

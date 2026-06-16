@@ -4,6 +4,7 @@ import { buildAccountFeaturesByKeys, type AccountFeatureKey } from "@/features/a
 import { useStoreNavigationGuard } from "@/features/navigation/useStoreNavigationGuard";
 import { isLoggedIn } from "@/utils/token";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 
 function isNavActive(pathname: string, path: string): boolean {
   const base = path.split("?")[0];
@@ -15,8 +16,10 @@ function isNavActive(pathname: string, path: string): boolean {
 export default function StoreAccountNav({ className }: { className?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { localizedPath, t } = usePublicLocale();
   const { capabilities, loyaltyConfig, navigateFeature } = useStoreNavigationGuard();
   const loggedIn = isLoggedIn();
+  const currentPathname = stripPublicLocaleFromPathname(location.pathname);
 
   const navKeys: AccountFeatureKey[] = [
     "profile",
@@ -36,7 +39,7 @@ export default function StoreAccountNav({ className }: { className?: string }) {
   return (
     <nav className={cn("space-y-1", className)} aria-label="账户导航">
       {items.map((item) => {
-        const active = isNavActive(location.pathname, item.path);
+        const active = isNavActive(currentPathname, item.path);
         return (
           <UnifiedButton
             key={item.path}
@@ -58,10 +61,10 @@ export default function StoreAccountNav({ className }: { className?: string }) {
       {!loggedIn ? (
         <UnifiedButton
           type="button"
-          onClick={() => navigate("/login", { state: { from: "/profile" } })}
+          onClick={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/profile") } })}
           className="mt-2 w-full rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]"
         >
-          登录 / 注册
+          {t("common.loginRegister")}
         </UnifiedButton>
       ) : null}
     </nav>

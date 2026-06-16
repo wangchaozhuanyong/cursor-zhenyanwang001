@@ -1,9 +1,7 @@
 const { BusinessError } = require('../../../errors/BusinessError');
 const repo = require('../repository/adminAccount.repository');
-const authModule = require('../../auth');
+const authApi = /** @type {any} */ (require('../../auth/publicApi'));
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
-
-const authApi = /** @type {any} */ (authModule).api || {};
 
 function requireAuthApi(name) {
   const fn = authApi[name];
@@ -94,7 +92,6 @@ module.exports = {
   getOrderVoiceSettings,
   updateOrderVoiceSettings,
 };
-
 
 
 

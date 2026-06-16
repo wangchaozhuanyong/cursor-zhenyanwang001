@@ -80,7 +80,7 @@ describe("campaignService", () => {
       position: "home_primary_campaign",
       audience: "guest",
       title: "今日秒杀",
-      href: "/categories?activity=flash_sale",
+      href: "/promotions?type=flash_sale",
     })).resolves.toBe(true);
 
     expect(requestMocks.post).toHaveBeenCalledWith(
@@ -91,7 +91,7 @@ describe("campaignService", () => {
         audience: "guest",
         campaign_type: "flash_sale",
         title: "今日秒杀",
-        href: "/categories?activity=flash_sale",
+        href: "/promotions?type=flash_sale",
       }),
       expect.objectContaining({
         skipGlobalLoading: true,

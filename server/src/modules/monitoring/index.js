@@ -1,13 +1,10 @@
 const { Router } = require('express');
 const routes = require('./routes/monitoring.routes');
-const dataChangeTracker = require('./service/dataChangeTracker.service');
+const publicApi = require('./publicApi');
 
 const router = Router();
 router.use('/admin/monitoring', routes);
 
-/** @type {any} */ (router).api = {
-  trackChange: dataChangeTracker.trackChange,
-  trackFromRequest: dataChangeTracker.trackFromRequest,
-};
+/** @type {any} */ (router).api = publicApi;
 
 module.exports = router;

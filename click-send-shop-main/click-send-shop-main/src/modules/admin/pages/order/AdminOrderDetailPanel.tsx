@@ -2,7 +2,7 @@ import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { fetchOrderById, applyShortageAdjustment, previewShortageAdjustment } from "@/services/admin/orderService";
+import { fetchOrderById, applyShortageAdjustment, previewShortageAdjustment, refreshOrderLogistics } from "@/services/admin/orderService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { adminRealtimeQueryOptions } from "@/lib/adminRealtimeQueryOptions";
 import { formatDateTime } from "@/utils/formatDateTime";
@@ -10,6 +10,7 @@ import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useAdminTabTitle } from "@/hooks/useAdminTabTitle";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
+import PermissionGate from "@/components/admin/PermissionGate";
 import { cn } from "@/lib/utils";
 import type { Order, ShortageAdjustmentPreview, ShortageAdjustmentRequest } from "@/types/order";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -23,6 +24,72 @@ function canAdjustShortage(order: Order) {
   if (order.shipped_at || ["shipped", "completed", "cancelled", "refunded"].includes(order.status)) return false;
   if (order.status === "pending") return paymentStatus === "pending";
   return order.status === "paid" && ["paid", "partially_refunded"].includes(paymentStatus);
+}
+
+type LogisticsAlertTone = "danger" | "warning" | "info";
+
+function getOrderTrackingNo(order: Order) {
+  return order.logistics_provider?.tracking_no || order.tracking_no || "";
+}
+
+function getOrderCarrier(order: Order) {
+  return order.logistics_provider?.carrier || order.carrier || "";
+}
+
+function getLogisticsStatusLabel(order: Order) {
+  return order.logistics_snapshot?.status_label || order.logistics_status_label || "";
+}
+
+function getLogisticsLatestEventAt(order: Order) {
+  return order.logistics_snapshot?.latest_event_at || order.logistics_latest_event_at || order.logistics_timeline?.[0]?.event_time || null;
+}
+
+function getLogisticsLastSyncedAt(order: Order) {
+  return order.logistics_snapshot?.last_synced_at || order.logistics_last_synced_at || null;
+}
+
+function isOlderThanHours(value: string | null | undefined, hours: number) {
+  if (!value) return false;
+  const time = Date.parse(value);
+  return Number.isFinite(time) && Date.now() - time > hours * 60 * 60 * 1000;
+}
+
+function buildLogisticsAlerts(order: Order, L: (zh: string, en: string) => string): Array<{ tone: LogisticsAlertTone; text: string }> {
+  const alerts: Array<{ tone: LogisticsAlertTone; text: string }> = [];
+  const trackingNo = getOrderTrackingNo(order);
+  const carrier = getOrderCarrier(order);
+  const hasTimeline = Boolean(order.logistics_timeline?.length);
+  const hasException = Boolean(order.logistics_snapshot?.has_exception || order.logistics_exception_type);
+  const lastSyncedAt = getLogisticsLastSyncedAt(order);
+  const latestEventAt = getLogisticsLatestEventAt(order);
+  const shouldHaveTracking = ["shipped", "completed", "refunded"].includes(order.status);
+
+  if (hasException) {
+    alerts.push({
+      tone: "danger",
+      text: order.logistics_snapshot?.exception_message || order.logistics_exception_message || L("物流存在异常，请联系承运商或客户确认。", "Logistics exception detected. Contact the carrier or customer."),
+    });
+  }
+  if (shouldHaveTracking && !trackingNo) {
+    alerts.push({ tone: "danger", text: L("订单已进入发货/完成状态，但缺少物流单号。", "The order is shipped/completed but has no tracking number.") });
+  }
+  if (trackingNo && !carrier) {
+    alerts.push({ tone: "warning", text: L("已填写物流单号，但缺少承运商。", "Tracking number exists, but the carrier is missing.") });
+  }
+  if (trackingNo && !hasTimeline) {
+    alerts.push({ tone: "warning", text: L("暂无物流轨迹，可刷新物流或检查承运商 API。", "No logistics timeline yet. Refresh tracking or check the carrier API.") });
+  }
+  if (trackingNo && !lastSyncedAt) {
+    alerts.push({ tone: "info", text: L("该订单尚未记录物流同步时间。", "This order has no logistics sync timestamp yet.") });
+  }
+  if (trackingNo && !order.logistics_provider?.tracking_url) {
+    alerts.push({ tone: "info", text: L("当前承运商未配置外部查询链接，客户侧会展示站内物流信息。", "This carrier has no external tracking link, so customers will see in-site tracking info.") });
+  }
+  if (order.status === "shipped" && isOlderThanHours(latestEventAt, 72)) {
+    alerts.push({ tone: "warning", text: L("最新物流轨迹超过 72 小时未更新，建议人工复核。", "The latest logistics event is older than 72 hours. Operator review is recommended.") });
+  }
+
+  return alerts;
 }
 
 type LineDraft = {
@@ -143,6 +210,17 @@ export default function AdminOrderDetailPanel({
       await onUpdated?.();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : L("调整失败", "Adjustment failed")),
+  });
+
+  const refreshLogisticsMutation = useMutation({
+    mutationFn: () => refreshOrderLogistics(orderId),
+    onSuccess: async () => {
+      toast.success(L("物流信息已刷新", "Logistics information refreshed"));
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.orderDetail(orderId) });
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.ordersRoot() });
+      await onUpdated?.();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : L("刷新物流失败", "Failed to refresh logistics")),
   });
 
   const openShortageDialog = () => {
@@ -285,6 +363,12 @@ export default function AdminOrderDetailPanel({
 
   const renderShipping = () => (
     <div className="grid gap-3 xl:grid-cols-[1fr_1fr]">
+      <LogisticsHealthPanel
+        order={order}
+        L={L}
+        refreshing={refreshLogisticsMutation.isPending}
+        onRefresh={() => refreshLogisticsMutation.mutate()}
+      />
       <InfoCard title={L("收货信息", "Shipping info")}>
         <DetailLine label={L("收货人", "Recipient")} value={order.contact_name || "-"} />
         <DetailLine label={L("联系电话", "Phone")} value={order.shipping_phone || order.contact_phone || "-"} />
@@ -292,6 +376,8 @@ export default function AdminOrderDetailPanel({
         <DetailLine label={L("配送方式", "Shipping method")} value={order.shipping_name || "-"} />
         <DetailLine label={L("物流单号", "Tracking no")} value={order.tracking_no || order.logistics_provider?.tracking_no || "-"} />
         <DetailLine label={L("承运商", "Carrier")} value={order.carrier || order.logistics_provider?.carrier || "-"} />
+        <DetailLine label={L("物流状态", "Logistics status")} value={order.logistics_snapshot?.status_label || order.logistics_status_label || "-"} />
+        <DetailLine label={L("最后同步", "Last synced")} value={order.logistics_snapshot?.last_synced_at || order.logistics_last_synced_at ? formatDateTime(order.logistics_snapshot?.last_synced_at || order.logistics_last_synced_at || "") : "-"} />
       </InfoCard>
       <InfoCard title={L("时间节点", "Timeline")}>
         <DetailLine label={L("下单时间", "Created at")} value={order.created_at ? formatDateTime(order.created_at) : "-"} />
@@ -301,13 +387,22 @@ export default function AdminOrderDetailPanel({
         <DetailLine label={L("取消时间", "Cancelled at")} value={order.cancelled_at ? formatDateTime(order.cancelled_at) : "-"} />
         {order.note ? <DetailLine label={L("买家备注", "Buyer note")} value={order.note} wide /> : null}
       </InfoCard>
+      {order.logistics_snapshot?.has_exception || order.logistics_exception_type ? (
+        <InfoCard title={L("物流异常", "Logistics exception")} className="xl:col-span-2">
+          <p className="rounded-lg bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] px-3 py-2 text-xs text-[var(--theme-danger)]">
+            {order.logistics_snapshot?.exception_message || order.logistics_exception_message || L("物流出现异常，请联系承运商或客户确认。", "Logistics exception detected.")}
+          </p>
+        </InfoCard>
+      ) : null}
       {order.logistics_timeline?.length ? (
         <InfoCard title={L("物流轨迹", "Logistics timeline")} className="xl:col-span-2">
           <div className="space-y-2">
             {order.logistics_timeline.map((item) => (
               <div key={item.id} className="rounded-lg border border-border bg-background/50 px-3 py-2 text-xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium text-foreground">{item.title || item.status || "-"}</span>
+                  <span className={item.severity === "warning" || item.severity === "error" ? "font-medium text-destructive" : "font-medium text-foreground"}>
+                    {item.title || item.status_label || item.status || "-"}
+                  </span>
                   <span className="text-muted-foreground">{item.event_time ? formatDateTime(item.event_time) : "-"}</span>
                 </div>
                 <p className="mt-1 text-muted-foreground">{item.description || item.location || "-"}</p>
@@ -519,6 +614,82 @@ function MetricCard({ label, value, accent }: { label: string; value: ReactNode;
       <p className="truncate text-[11px] text-muted-foreground">{label}</p>
       <p className={cn("mt-1 truncate text-sm font-semibold text-foreground", accent && "text-[var(--theme-price)]")}>{value}</p>
     </div>
+  );
+}
+
+function LogisticsHealthPanel({
+  order,
+  L,
+  refreshing,
+  onRefresh,
+}: {
+  order: Order;
+  L: (zh: string, en: string) => string;
+  refreshing: boolean;
+  onRefresh: () => void;
+}) {
+  const trackingNo = getOrderTrackingNo(order);
+  const carrier = getOrderCarrier(order);
+  const statusLabel = getLogisticsStatusLabel(order);
+  const lastSyncedAt = getLogisticsLastSyncedAt(order);
+  const latestEventAt = getLogisticsLatestEventAt(order);
+  const alerts = buildLogisticsAlerts(order, L);
+
+  return (
+    <InfoCard
+      title={L("物流运营检查", "Logistics operations")}
+      className="xl:col-span-2"
+      action={(
+        <PermissionGate permission="order.ship">
+          <UnifiedButton
+            type="button"
+            disabled={!trackingNo || refreshing}
+            onClick={onRefresh}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {refreshing ? L("刷新中...", "Refreshing...") : L("刷新物流", "Refresh tracking")}
+          </UnifiedButton>
+        </PermissionGate>
+      )}
+    >
+      <div className="grid gap-2 md:grid-cols-4">
+        <StatusBlock label={L("承运配置", "Carrier setup")} value={carrier || L("未填写", "Missing")} />
+        <StatusBlock label={L("物流单号", "Tracking no")} value={trackingNo || L("未填写", "Missing")} />
+        <StatusBlock label={L("当前状态", "Current status")} value={statusLabel || L("暂无轨迹", "No timeline")} />
+        <StatusBlock label={L("轨迹条数", "Timeline events")} value={order.logistics_timeline?.length || 0} />
+      </div>
+      <div className="mt-2 grid gap-2 text-xs md:grid-cols-2">
+        <div className="rounded-lg border border-border bg-background/50 px-3 py-2 text-muted-foreground">
+          {L("最新轨迹：", "Latest event: ")}
+          <span className="text-foreground">{latestEventAt ? formatDateTime(latestEventAt) : "-"}</span>
+        </div>
+        <div className="rounded-lg border border-border bg-background/50 px-3 py-2 text-muted-foreground">
+          {L("最后同步：", "Last synced: ")}
+          <span className="text-foreground">{lastSyncedAt ? formatDateTime(lastSyncedAt) : "-"}</span>
+        </div>
+      </div>
+      {alerts.length ? (
+        <div className="mt-3 grid gap-2 md:grid-cols-2">
+          {alerts.map((alert) => (
+            <p
+              key={alert.text}
+              className={cn(
+                "rounded-lg border px-3 py-2 text-xs",
+                alert.tone === "danger" && "border-red-200 bg-red-50 text-red-700",
+                alert.tone === "warning" && "border-amber-200 bg-amber-50 text-amber-800",
+                alert.tone === "info" && "border-blue-200 bg-blue-50 text-blue-800",
+              )}
+            >
+              {alert.text}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+          {L("物流基础信息完整，暂无异常提醒。", "Logistics basics look complete. No alerts for now.")}
+        </p>
+      )}
+    </InfoCard>
   );
 }
 

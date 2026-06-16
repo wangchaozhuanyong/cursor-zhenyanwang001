@@ -1,4 +1,5 @@
 export type CouponType = "fixed" | "percentage" | "shipping";
+export type CouponDisplayCategory = "recommended" | "new_user" | "member" | "shipping" | "fixed" | "percentage";
 export type CouponStatus = "pending" | "available" | "locked" | "used" | "expired" | "invalidated" | "cancelled";
 export type CouponClaimStatus =
   | "claimable"
@@ -41,6 +42,7 @@ export interface Coupon extends CouponClaimability {
   description?: string;
   scope_type?: "all" | "category";
   display_badge?: string;
+  display_category?: CouponDisplayCategory | string;
   category_ids?: string[];
   category_names?: string[];
   total_quantity?: number;
@@ -78,6 +80,7 @@ export interface UserCoupon extends CouponClaimability {
   issue_activity_id?: string;
   campaign_id?: string;
   source_campaign_id?: string;
+  display_category?: CouponDisplayCategory | string;
   audience_type?: string;
   order_id?: string;
   order_no?: string;

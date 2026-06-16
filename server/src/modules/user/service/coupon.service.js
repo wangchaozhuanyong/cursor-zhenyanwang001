@@ -89,11 +89,13 @@ function mapUserCouponRow(r) {
     returned_at: r.returned_at || undefined,
     return_reason: r.return_reason || undefined,
     ...claimState,
+    display_category: r.source_display_category || coupon.display_category || undefined,
     issue_activity_id: r.issue_activity_id || undefined,
     campaign_id: r.issue_activity_id || undefined,
     coupon: {
       ...coupon,
       ...claimState,
+      display_category: r.source_display_category || coupon.display_category || '',
       issue_activity_id: r.issue_activity_id || coupon.issue_activity_id || undefined,
       campaign_id: r.issue_activity_id || coupon.campaign_id || undefined,
       status: normalizeCouponStatus(coupon.status, coupon.end_date),
@@ -120,6 +122,7 @@ function mapCouponEntity(c) {
     requires_login: c.requires_login,
     requires_member: c.requires_member,
     requires_new_user: c.requires_new_user,
+    display_category: c.display_category || c.source_display_category || undefined,
     coupon: {
       id: c.id,
       code: c.code,
@@ -136,6 +139,7 @@ function mapCouponEntity(c) {
       description: c.description || undefined,
       scope_type: c.scope_type || 'all',
       display_badge: c.display_badge || '',
+      display_category: c.display_category || c.source_display_category || '',
       category_ids: categoryIds,
       category_names: categoryNames,
       member_only: !!c.member_only,
@@ -253,14 +257,17 @@ async function assertCouponClaimable(userId, coupon) {
 }
 
 async function resolveCampaignClaim(userId, couponId, issueActivityId) {
-  const adminApi = /** @type {any} */ (require('../../admin')).api || {};
+  const adminApi = /** @type {any} */ (require('../../admin/publicApi')) || {};
   if (!issueActivityId) return { issueActivityId: null };
   if (typeof adminApi.resolveCouponCampaignClaim === 'function') {
     const resolved = await adminApi.resolveCouponCampaignClaim(issueActivityId, couponId, userId);
     if (!resolved) {
       return claimError(403, 'not_in_audience', '该优惠券活动不适合当前用户');
     }
-    return { issueActivityId: resolved.campaignId || null };
+    return {
+      issueActivityId: resolved.campaignId || null,
+      displayCategory: resolved.campaign?.display_category || '',
+    };
   }
   if (!issueActivityId) return { issueActivityId: null };
   if (typeof adminApi.isCouponCampaignClaimAllowed !== 'function') return null;
@@ -307,6 +314,7 @@ async function claimCoupon(userId, body) {
     }
     const id = generateId();
     const now = new Date();
+    if (campaignClaim?.displayCategory) coupon.display_category = campaignClaim.displayCategory;
     const snapshot = lifecycle.buildCouponSnapshot(coupon, now);
     const validity = lifecycle.resolveUserCouponValidity(coupon, now);
     const status = validity.validFrom && validity.validFrom > now ? 'pending' : 'available';
@@ -339,6 +347,7 @@ async function claimCoupon(userId, body) {
         valid_until: validity.validUntil ? validity.validUntil.toISOString() : undefined,
         issue_channel: 'self_claim',
         issue_activity_id: issueActivityId || undefined,
+        display_category: coupon.display_category || undefined,
         coupon: lifecycle.buildEffectiveCoupon({ ...coupon, coupon_snapshot: snapshot, coupon_id: coupon.id }),
       },
       message: '领取成功',

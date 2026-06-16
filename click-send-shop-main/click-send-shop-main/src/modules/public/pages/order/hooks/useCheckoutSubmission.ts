@@ -1,4 +1,4 @@
-import { useState, useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import { useState, useCallback, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import { flushSync } from "react-dom";
 import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
@@ -26,6 +26,36 @@ import { validateCheckoutSubmit } from "../utils/checkoutSubmitValidation";
 import { safeOpenExternal } from "@/utils/safeOpen";
 import { resolveEffectivePaymentMethod } from "@/utils/checkoutPaymentMethod";
 import type { PaymentMethod } from "@/components/PaymentMethodPicker";
+import { usePublicLocale } from "@/i18n/publicLocale";
+
+function createClientId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (!value || typeof value !== "object") return value;
+  return Object.keys(value as Record<string, unknown>)
+    .filter((key) => (value as Record<string, unknown>)[key] !== undefined && key !== "idempotency_key")
+    .sort()
+    .reduce<Record<string, unknown>>((acc, key) => {
+      acc[key] = canonicalize((value as Record<string, unknown>)[key]);
+      return acc;
+    }, {});
+}
+
+function hashPayload(value: unknown) {
+  const text = JSON.stringify(canonicalize(value));
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
 
 export type UseCheckoutSubmissionParams = {
   items: CartItem[];
@@ -96,6 +126,7 @@ export function useCheckoutSubmission({
   setOrderFinalizing,
   setRewardBalance,
 }: UseCheckoutSubmissionParams) {
+  const { localizedPath } = usePublicLocale();
   const removeOrderedItems = useCartStore((s) => s.removeOrderedItems);
   const clearCart = useCartStore((s) => s.clearCart);
   const clearBuyNow = useCartStore((s) => s.clearBuyNow);
@@ -106,6 +137,7 @@ export function useCheckoutSubmission({
   const [postSubmitOnlineNote, setPostSubmitOnlineNote] = useState<string | null>(null);
   const [postSubmitWalletError, setPostSubmitWalletError] = useState<string | null>(null);
   const [payingWallet, setPayingWallet] = useState(false);
+  const checkoutSessionIdRef = useRef(createClientId());
   const onlinePaymentUnavailableMessage = "商户暂未开通在线支付，请选择其他方式或联系客服";
 
   const buildSubmitPayload = useCallback((): SubmitOrderParams => {
@@ -115,7 +147,7 @@ export function useCheckoutSubmission({
       sku_code: i.sku_code,
       qty: i.qty,
     }));
-    return {
+    const payload: SubmitOrderParams = {
       items: payloadItems,
       contact_name: name,
       contact_phone: phone,
@@ -144,6 +176,10 @@ export function useCheckoutSubmission({
       use_reward_cash: useRewardCash,
       reward_cash_amount: useRewardCash ? rewardCashAmount : 0,
       search_keyword: getSearchAttributionKeyword() || undefined,
+    };
+    return {
+      ...payload,
+      idempotency_key: `checkout:${checkoutSessionIdRef.current}:${hashPayload(payload)}`.slice(0, 128),
     };
   }, [
     items,
@@ -196,7 +232,7 @@ export function useCheckoutSubmission({
         const intent = await paymentService.createPaymentIntent({
           orderId: order.id,
           channelCode,
-          returnUrl: `${window.location.origin}/orders/${order.id}`,
+          returnUrl: `${window.location.origin}${localizedPath(`/payment/result?order_id=${encodeURIComponent(order.id)}`)}`,
         });
         if (intent.redirect_url) {
           window.location.assign(intent.redirect_url);
@@ -211,7 +247,7 @@ export function useCheckoutSubmission({
         toast.error(msg);
       }
     },
-    [onlinePaymentEnabled, onlinePaymentUnavailableMessage, paymentChannels, selectedPaymentChannelCode],
+    [localizedPath, onlinePaymentEnabled, onlinePaymentUnavailableMessage, paymentChannels, selectedPaymentChannelCode],
   );
 
   const handleRewardWalletPaymentAfterSubmit = useCallback(
@@ -368,7 +404,7 @@ export function useCheckoutSubmission({
       const intent = await paymentService.createPaymentIntent({
         orderId: submittedOrder.id,
         channelCode,
-        returnUrl: `${window.location.origin}/orders/${submittedOrder.id}`,
+        returnUrl: `${window.location.origin}${localizedPath(`/payment/result?order_id=${encodeURIComponent(submittedOrder.id)}`)}`,
       });
       if (intent.redirect_url) {
         window.location.assign(intent.redirect_url);
@@ -382,7 +418,7 @@ export function useCheckoutSubmission({
       setPostSubmitOnlineError(msg);
       toast.error(msg);
     }
-  }, [submittedOrder, onlinePaymentEnabled, onlinePaymentUnavailableMessage, paymentChannels, selectedPaymentChannelCode]);
+  }, [localizedPath, submittedOrder, onlinePaymentEnabled, onlinePaymentUnavailableMessage, paymentChannels, selectedPaymentChannelCode]);
 
   const refreshSubmittedOrder = useCallback(async () => {
     if (!submittedOrder?.id) return;

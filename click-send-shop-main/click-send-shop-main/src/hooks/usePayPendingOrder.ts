@@ -10,9 +10,11 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { safeOpenExternal } from "@/utils/safeOpen";
 import { paymentInstructionToastMessage } from "@/utils/paymentClientInstructions";
 import { canStartOnlinePayment, filterUsableOnlinePaymentChannels } from "@/utils/checkoutPaymentMethod";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 export function usePayPendingOrder() {
   const capabilities = useSiteCapabilities();
+  const { localizedPath } = usePublicLocale();
   const [paying, setPaying] = useState(false);
 
   const payPendingOrder = useCallback(async (order: Order, onPaid?: () => void | Promise<void>) => {
@@ -41,7 +43,7 @@ export function usePayPendingOrder() {
         const intent = await paymentService.createPaymentIntent({
           orderId: order.id,
           channelCode,
-          returnUrl: `${window.location.origin}/orders/${order.id}`,
+          returnUrl: `${window.location.origin}${localizedPath(`/payment/result?order_id=${encodeURIComponent(order.id)}`)}`,
         });
         if (intent.redirect_url) {
           window.location.assign(intent.redirect_url);
@@ -75,7 +77,7 @@ export function usePayPendingOrder() {
     } finally {
       setPaying(false);
     }
-  }, [capabilities.onlinePaymentEnabled]);
+  }, [capabilities.onlinePaymentEnabled, localizedPath]);
 
   return { paying, payPendingOrder, canPay: isPendingPayment };
 }

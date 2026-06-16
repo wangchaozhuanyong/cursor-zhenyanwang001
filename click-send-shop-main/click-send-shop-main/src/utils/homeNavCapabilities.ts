@@ -29,7 +29,7 @@ export function isHomeNavItemVisible(item: HomeNavItem, caps: SiteCapabilities):
   if (item.enabled === false) return false;
 
   if (item.target_type === "support") {
-    return caps.customerServiceDownloadEnabled;
+    return false;
   }
   if (requiresMall(item)) {
     return caps.mallEnabled;
@@ -37,7 +37,7 @@ export function isHomeNavItemVisible(item: HomeNavItem, caps: SiteCapabilities):
 
   const base = pathBase(item.link_url);
   if (base.startsWith("/coupons")) return caps.couponEnabled;
-  if (base.startsWith("/support-download")) return caps.customerServiceDownloadEnabled;
+  if (base.startsWith("/support-download")) return false;
   if (base.startsWith("/points")) return caps.pointsEnabled;
   if (base.startsWith("/reviews")) return caps.reviewEnabled;
 

@@ -25,15 +25,19 @@ function listWhere(query = {}) {
   }
   const status = String(query.status || '').trim();
   if (status === 'disabled') {
-    where.push("(cc.disabled = 1 OR cc.status = 'disabled')");
+    where.push("(cc.disabled = 1 OR cc.status = 'disabled') AND cc.status <> 'archived'");
   } else if (status === 'draft') {
     where.push("cc.status = 'draft'");
+  } else if (status === 'paused') {
+    where.push("cc.status = 'paused'");
+  } else if (status === 'archived') {
+    where.push("cc.status = 'archived'");
   } else if (status === 'scheduled') {
-    where.push("cc.disabled = 0 AND cc.status NOT IN ('draft','disabled') AND cc.start_at > NOW()");
+    where.push("cc.disabled = 0 AND cc.status NOT IN ('draft','disabled','paused','ended','archived') AND cc.start_at > NOW()");
   } else if (status === 'active') {
-    where.push("cc.disabled = 0 AND cc.status NOT IN ('draft','disabled') AND cc.start_at <= NOW() AND cc.end_at >= NOW()");
+    where.push("cc.disabled = 0 AND cc.status NOT IN ('draft','disabled','paused','ended','archived') AND cc.start_at <= NOW() AND cc.end_at >= NOW()");
   } else if (status === 'ended') {
-    where.push('cc.end_at < NOW()');
+    where.push("(cc.status = 'ended' OR (cc.status NOT IN ('draft','disabled','paused','archived') AND cc.end_at < NOW()))");
   }
   return { whereSql: where.join(' AND '), params };
 }
@@ -122,9 +126,9 @@ async function insertCampaign(row) {
   await db.query(
     `INSERT INTO coupon_campaigns
       (id, campaign_type, title, subtitle, description, cover_image, start_at, end_at,
-       status, disabled, display_positions, audience_type, audience_config, issue_mode,
+       status, disabled, display_positions, display_category, audience_type, audience_config, issue_mode,
        sort_order, internal_note, created_by, updated_by)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       row.id,
       row.campaign_type,
@@ -137,6 +141,7 @@ async function insertCampaign(row) {
       row.status || 'draft',
       row.disabled ? 1 : 0,
       JSON.stringify(row.display_positions || []),
+      row.display_category || '',
       row.audience_type || 'all',
       row.audience_config ? JSON.stringify(row.audience_config) : null,
       row.issue_mode || 'self_claim',
@@ -323,7 +328,7 @@ async function selectPublicCampaignsByPosition(position, types = [], options = {
        FROM coupon_campaigns cc
       WHERE cc.deleted_at IS NULL
         AND cc.disabled = 0
-        AND cc.status NOT IN ('draft','disabled')
+        AND cc.status NOT IN ('draft','disabled','paused','ended','archived')
         AND cc.start_at <= NOW()
         AND cc.end_at >= NOW()
         AND JSON_CONTAINS(COALESCE(cc.display_positions, '[]'), JSON_QUOTE(?), '$')
@@ -357,7 +362,7 @@ async function selectActiveCampaignsForCoupon(couponId, campaignId = '', manualO
         ${campaignFilter}
         AND cc.deleted_at IS NULL
         AND cc.disabled = 0
-        AND cc.status NOT IN ('draft','disabled')
+        AND cc.status NOT IN ('draft','disabled','paused','ended','archived')
         AND cc.start_at <= NOW()
         AND cc.end_at >= NOW()
         ${issueModeFilter}

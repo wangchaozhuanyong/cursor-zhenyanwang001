@@ -1,10 +1,9 @@
-import { Headphones, Home, LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
+import { BadgePercent, Home, LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
 import type { MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
-import { parseSupportDownloadConfig } from "@/utils/supportDownloadConfig";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
@@ -15,6 +14,8 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
+import StoreLanguageSwitcher from "@/components/store/StoreLanguageSwitcher";
+import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 
 type TabletNavItem = {
   path: string;
@@ -39,28 +40,29 @@ export default function StoreTabletBar({ className }: { className?: string }) {
   const siteInfoLoaded = useSiteInfoLoaded();
   const capabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
+  const { localizedPath, t } = usePublicLocale();
+  const currentPathname = stripPublicLocaleFromPathname(location.pathname);
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const shouldReserveLogoSpace = Boolean(logoSrc) || !siteInfoLoaded;
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
-  const supportNavLabel = parseSupportDownloadConfig(siteInfo.supportDownloadConfig).title.trim();
   const navItems: TabletNavItem[] = [
-    { path: "/", label: "\u9996\u9875", icon: Home, enabled: true },
-    { path: "/categories", label: "\u5206\u7c7b", icon: LayoutGrid, enabled: capabilities.mallEnabled },
-    { path: "/support-download?tab=support", label: supportNavLabel, icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled && Boolean(supportNavLabel) },
-    { path: "/cart", label: "\u8d2d\u7269\u8f66", icon: ShoppingCart, enabled: capabilities.mallEnabled, badge: "cart" },
-    { path: "/profile", label: "\u6211\u7684", icon: User, enabled: true },
+    { path: "/", label: t("common.home"), icon: Home, enabled: true },
+    { path: "/categories", label: t("common.categories"), icon: LayoutGrid, enabled: capabilities.mallEnabled },
+    { path: "/coupons", label: t("common.coupons"), icon: BadgePercent, enabled: capabilities.couponEnabled },
+    { path: "/cart", label: t("common.cart"), icon: ShoppingCart, enabled: capabilities.mallEnabled, badge: "cart" },
+    { path: "/profile", label: t("common.myAccount"), icon: User, enabled: true },
   ].filter((item) => item.enabled !== false && isStoreNavPathVisible(item.path, capabilities));
 
   const isActive = (path: string) => {
     const base = path.split("?")[0];
-    if (base === "/") return location.pathname === "/";
-    return location.pathname === base || location.pathname.startsWith(`${base}/`);
+    if (base === "/") return currentPathname === "/";
+    return currentPathname === base || currentPathname.startsWith(`${base}/`);
   };
 
   const openRoute = (path: string) => {
     preloadTabletRoute(path);
-    navigateWithStoreTransition(navigate, path);
+    navigateWithStoreTransition(navigate, localizedPath(path));
   };
 
   const handleRouteLink = (event: MouseEvent<HTMLAnchorElement>, path: string) => {
@@ -81,12 +83,12 @@ export default function StoreTabletBar({ className }: { className?: string }) {
     >
       <div className="store-tablet-bar-inner store-tablet-header-inner mx-auto flex h-full w-full max-w-7xl min-w-0 items-center gap-2 px-4 sm:px-5 md:px-6">
         <Link
-          to="/"
+          to={localizedPath("/")}
           onClick={(event) => handleRouteLink(event, "/")}
           onMouseEnter={() => preloadTabletRoute("/")}
           onFocus={() => preloadTabletRoute("/")}
           className="store-tablet-brand store-header-brand flex min-w-0 shrink-0 items-center gap-2"
-          aria-label={`${siteName} \u9996\u9875`}
+          aria-label={`${siteName} ${t("common.home")}`}
         >
           {shouldReserveLogoSpace ? <StoreBrandLogo src={logoSrc} siteName={siteName} fallbackText="" /> : null}
           <span className="store-tablet-brand-name hidden max-w-[7rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline md:max-w-[8rem]">
@@ -105,7 +107,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
             return (
               <Link
                 key={item.path}
-                to={item.path}
+                to={localizedPath(item.path)}
                 onClick={(event) => handleRouteLink(event, item.path)}
                 onMouseEnter={() => preloadTabletRoute(item.path)}
                 onFocus={() => preloadTabletRoute(item.path)}
@@ -130,11 +132,12 @@ export default function StoreTabletBar({ className }: { className?: string }) {
               onFocus={() => preloadTabletRoute("/search")}
               onClick={() => openRoute("/search")}
               className="store-tablet-search-button store-header-icon-button flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
-              aria-label="\u641c\u7d22"
+              aria-label={t("common.search")}
             >
               <Search size={18} />
             </UnifiedButton>
           ) : null}
+          <StoreLanguageSwitcher compact />
         </div>
       </div>
     </header>

@@ -25,3 +25,18 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+## 交易重构相关前端入口
+
+- 活动中心：`/promotions`
+- 活动详情：`/promotions/:slug`
+- 支付结果页：`/payment/result`
+- 商品/购物车/结算金额以服务端 pricing service 和 promotion rule engine 返回为准。
+- 物流弹窗展示后端 `logistics_snapshot` 和 `logistics_timeline`，前端不自行修改订单履约状态。
+
+涉及活动、购物车、结算、支付结果、订单详情、后台报表或物流展示时，至少运行：
+
+```bash
+npm run typecheck
+npm run build
+```

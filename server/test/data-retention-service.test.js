@@ -37,7 +37,7 @@ function loadServiceWithMocks(options = {}) {
   const auditPath = require.resolve('../src/utils/auditLog');
   const exportPath = require.resolve('../src/modules/dataRetention/service/exportCleanup.service');
   const uploadedAssetCleanupPath = require.resolve('../src/modules/dataRetention/service/uploadedAssetCleanup.service');
-  const adminModulePath = require.resolve('../src/modules/admin');
+  const adminModulePath = require.resolve('../src/modules/admin/publicApi');
 
   delete require.cache[servicePath];
   delete require.cache[repoPath];
@@ -252,12 +252,10 @@ function loadServiceWithMocks(options = {}) {
     id: adminModulePath,
     filename: adminModulePath,
     loaded: true,
-    exports: {
-      api: options.adminApi || options.backupService || {
-        createPreCleanupBackup: async (payload) => {
-          backupCalls.push(payload);
-          return { id: 'backup-1', status: 'success' };
-        },
+    exports: options.adminApi || options.backupService || {
+      createPreCleanupBackup: async (payload) => {
+        backupCalls.push(payload);
+        return { id: 'backup-1', status: 'success' };
       },
     },
   };

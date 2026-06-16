@@ -2,22 +2,28 @@ const { ForbiddenError, ValidationError } = require('../../errors');
 const repo = require('./repository/order.repository');
 const siteSettingsRepo = require('./repository/siteSettings.repository');
 const sstTax = require('./sstTax');
-const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
+const {
+  computeShippingFee,
+  estimateWeightFromItems,
+  normalizeShippingDestination,
+  matchesShippingTemplate,
+  pickBestShippingTemplate,
+} = require('../../utils/shippingFee');
 
 function getUserApi() {
-  return /** @type {any} */ (require('../user')).api || {};
+  return /** @type {any} */ (require('../user/publicApi')) || {};
 }
 
 function getLoyaltyApi() {
-  return /** @type {any} */ (require('../loyalty')).api || {};
+  return /** @type {any} */ (require('../loyalty/publicApi')) || {};
 }
 
 function getSiteCapabilitiesApi() {
-  return /** @type {any} */ (require('../siteCapabilities')).api || {};
+  return /** @type {any} */ (require('../siteCapabilities/publicApi')) || {};
 }
 
 function getAuthApi() {
-  return /** @type {any} */ (require('../auth')).api || {};
+  return /** @type {any} */ (require('../auth/publicApi')) || {};
 }
 
 function parseActivityConfig(raw) {
@@ -28,6 +34,21 @@ function parseActivityConfig(raw) {
   } catch {
     return null;
   }
+}
+
+async function resolveShippingTemplateForPricing(q, shippingTemplateId, destination, rawAmount, estimatedWeightKg) {
+  const templates = await repo.selectEnabledShippingTemplates(q);
+  const requestedId = shippingTemplateId == null ? '' : String(shippingTemplateId).trim();
+  const requested = requestedId
+    ? templates.find((tpl) => String(tpl.id) === requestedId) || null
+    : null;
+  if (requested && matchesShippingTemplate(requested, destination, rawAmount, estimatedWeightKg)) {
+    return requested;
+  }
+  return pickBestShippingTemplate(templates, destination, rawAmount, estimatedWeightKg)
+    || requested
+    || templates[0]
+    || null;
 }
 
 function parseIdList(raw) {
@@ -130,6 +151,212 @@ function lineMatchesCouponScope(oi, product, coupon) {
   return true;
 }
 
+function normalizeDiscountPercent(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  if (n > 0 && n <= 1) return n * 100;
+  return n;
+}
+
+function formatDiscountFold(percent) {
+  const fold = Number(percent || 0) / 10;
+  return fold.toFixed(2).replace(/\.?0+$/, '');
+}
+
+function buildFullPromotionRules(activity) {
+  const type = String(activity?.type || 'full_reduction') === 'full_discount' ? 'full_discount' : 'full_reduction';
+  const activityCfg = parseActivityConfig(activity.activity_config) || {};
+  const ruleCfg = parseActivityConfig(activity.rule_config) || {};
+  const cfg = { ...activityCfg, ...ruleCfg };
+  const rules = [];
+  if (type === 'full_discount') {
+    const rawRules = Array.isArray(cfg.full_discount_rules) ? cfg.full_discount_rules : [];
+    for (const rule of rawRules) {
+      const threshold = Number(rule.threshold_amount || rule.threshold || 0);
+      const discountPercent = normalizeDiscountPercent(rule.discount_percent ?? rule.discount_rate ?? rule.rate ?? 0);
+      if (threshold > 0 && discountPercent > 0 && discountPercent < 100) {
+        rules.push({ type, threshold, discountPercent });
+      }
+    }
+    if (!rules.length) {
+      const threshold = Number(cfg.threshold_amount || activity.threshold_amount || 0);
+      const discountPercent = normalizeDiscountPercent(cfg.discount_percent ?? cfg.discount_rate ?? cfg.rate ?? 0);
+      if (threshold > 0 && discountPercent > 0 && discountPercent < 100) {
+        rules.push({ type, threshold, discountPercent });
+      }
+    }
+    return rules.sort((a, b) => a.threshold - b.threshold || b.discountPercent - a.discountPercent);
+  }
+
+  if (Array.isArray(cfg.full_reduction_rules) && cfg.full_reduction_rules.length) {
+    for (const rule of cfg.full_reduction_rules) {
+      const threshold = Number(rule.threshold_amount || rule.threshold || 0);
+      const discount = Number(rule.discount_amount || rule.discount || 0);
+      if (threshold > 0 && discount > 0) rules.push({ type, threshold, discount });
+    }
+  } else {
+    const threshold = activity.threshold_amount != null && activity.threshold_amount !== ''
+      ? Number(activity.threshold_amount)
+      : Number(cfg.threshold_amount || 0);
+    const discount = activity.discount_amount != null && activity.discount_amount !== ''
+      ? Number(activity.discount_amount)
+      : Number(cfg.discount_amount || 0);
+    if (threshold > 0 && discount > 0) rules.push({ type, threshold, discount });
+  }
+  return rules.sort((a, b) => a.threshold - b.threshold || Number(a.discount || 0) - Number(b.discount || 0));
+}
+
+function computeRuleDiscount(rule, subtotal) {
+  if (!rule || subtotal < Number(rule.threshold || 0)) return 0;
+  if (rule.type === 'full_discount') {
+    return money(subtotal * ((100 - Number(rule.discountPercent || 0)) / 100));
+  }
+  return money(Math.min(Number(rule.discount || 0), subtotal));
+}
+
+function buildFullPromotionLine(activity, rule, amount) {
+  const type = rule.type === 'full_discount' ? 'full_discount' : 'full_reduction';
+  const fallbackLabel = type === 'full_discount'
+    ? `满${money(rule.threshold)}打${formatDiscountFold(rule.discountPercent)}折`
+    : `满${money(rule.threshold)}减${money(rule.discount)}`;
+  return {
+    promotion_id: activity.activity_id || activity.id || null,
+    activity_id: activity.activity_id || activity.id || null,
+    type,
+    label: activity.title ? `${type === 'full_discount' ? '满折优惠' : '满减优惠'}：${activity.title}` : fallbackLabel,
+    amount: money(amount),
+  };
+}
+
+function buildMemberPriceRules(activity) {
+  const activityCfg = parseActivityConfig(activity?.activity_config) || {};
+  const ruleCfg = parseActivityConfig(activity?.rule_config) || {};
+  const cfg = { ...activityCfg, ...ruleCfg };
+  const rawRules = Array.isArray(cfg.member_price_rules) ? cfg.member_price_rules : [];
+  const rules = [];
+  for (const rule of rawRules) {
+    const discountPercent = normalizeDiscountPercent(rule.discount_percent ?? rule.discount_rate ?? rule.rate ?? 0);
+    const minOrderAmount = Number(rule.min_order_amount ?? rule.minOrderAmount ?? 0);
+    if (discountPercent > 0 && discountPercent < 100 && minOrderAmount >= 0) {
+      rules.push({
+        discountPercent,
+        minOrderAmount,
+        memberLevelIds: parseIdList(rule.member_level_ids ?? rule.memberLevelIds),
+      });
+    }
+  }
+  if (!rules.length) {
+    const discountPercent = normalizeDiscountPercent(cfg.discount_percent ?? cfg.discount_rate ?? cfg.rate ?? 0);
+    const minOrderAmount = Number(cfg.min_order_amount ?? cfg.minOrderAmount ?? 0);
+    if (discountPercent > 0 && discountPercent < 100 && minOrderAmount >= 0) {
+      rules.push({
+        discountPercent,
+        minOrderAmount,
+        memberLevelIds: parseIdList(cfg.member_level_ids ?? cfg.memberLevelIds),
+      });
+    }
+  }
+  return rules.sort((a, b) => a.minOrderAmount - b.minOrderAmount || a.discountPercent - b.discountPercent);
+}
+
+function memberLevelMatchesRule(memberLevel, rule) {
+  if (!memberLevel) return false;
+  const ids = rule?.memberLevelIds || [];
+  if (!ids.length) return true;
+  const candidates = [
+    memberLevel.id,
+    memberLevel.level_id,
+    memberLevel.member_level_id,
+    memberLevel.code,
+    memberLevel.name,
+  ].map((value) => String(value || '').trim()).filter(Boolean);
+  return ids.some((id) => candidates.includes(String(id)));
+}
+
+function buildMemberPriceLine(activity, rule, amount) {
+  return {
+    promotion_id: activity.activity_id || activity.id || null,
+    activity_id: activity.activity_id || activity.id || null,
+    type: 'member_price',
+    label: activity.title ? `会员价：${activity.title}` : `${formatDiscountFold(rule.discountPercent)}折会员价`,
+    amount: money(amount),
+    discount_percent: money(rule.discountPercent),
+    discount_label: `${formatDiscountFold(rule.discountPercent)}折`,
+  };
+}
+
+function computeMemberPriceDiscounts(orderItems, productMap, memberPriceActivities = [], memberLevel = null, options = {}) {
+  if (!memberLevel) return { total: 0, lines: [] };
+  const rawAmount = Number(options.rawAmount == null
+    ? orderItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0)
+    : options.rawAmount);
+  const priorGoodsDiscount = Number(options.priorGoodsDiscount || 0);
+  const lines = [];
+  let total = 0;
+  for (const act of memberPriceActivities || []) {
+    const scopes = act.scopes || [];
+    let eligibleRaw = 0;
+    for (const oi of orderItems) {
+      const product = productMap[oi.productId];
+      if (!lineMatchesActivityScope(oi, product, act, scopes)) continue;
+      eligibleRaw += Number(oi.price || 0) * Number(oi.qty || 0);
+    }
+    if (eligibleRaw <= 0) continue;
+
+    const allocatedPriorDiscount = rawAmount > 0 ? (priorGoodsDiscount * eligibleRaw) / rawAmount : 0;
+    const discountBase = money(Math.max(0, eligibleRaw - allocatedPriorDiscount));
+    if (discountBase <= 0) continue;
+
+    let bestRule = null;
+    let bestAmount = 0;
+    for (const rule of buildMemberPriceRules(act)) {
+      if (!memberLevelMatchesRule(memberLevel, rule)) continue;
+      if (rawAmount < Number(rule.minOrderAmount || 0)) continue;
+      const amount = money(discountBase * ((100 - Number(rule.discountPercent || 0)) / 100));
+      if (amount <= 0) continue;
+      if (amount > bestAmount || (amount === bestAmount && Number(rule.minOrderAmount || 0) > Number(bestRule?.minOrderAmount || 0))) {
+        bestRule = rule;
+        bestAmount = amount;
+      }
+    }
+    if (!bestRule || bestAmount <= 0) continue;
+    const lineAmount = money(Math.min(bestAmount, discountBase));
+    total += lineAmount;
+    lines.push(buildMemberPriceLine(act, bestRule, lineAmount));
+  }
+  return { total: money(total), lines };
+}
+
+function computeFullPromotionDiscounts(orderItems, productMap, fullReductionActivities = []) {
+  const lines = [];
+  let total = 0;
+  for (const act of fullReductionActivities || []) {
+    const scopes = act.scopes || [];
+    let subtotal = 0;
+    for (const oi of orderItems) {
+      const product = productMap[oi.productId];
+      if (!lineMatchesActivityScope(oi, product, act, scopes)) continue;
+      subtotal += Number(oi.price || 0) * Number(oi.qty || 0);
+    }
+    if (subtotal <= 0) continue;
+
+    let bestRule = null;
+    let bestAmount = 0;
+    for (const rule of buildFullPromotionRules(act)) {
+      const amount = computeRuleDiscount(rule, subtotal);
+      if (amount <= 0) continue;
+      if (amount > bestAmount || (amount === bestAmount && Number(rule.threshold || 0) > Number(bestRule?.threshold || 0))) {
+        bestRule = rule;
+        bestAmount = amount;
+      }
+    }
+    if (!bestRule || bestAmount <= 0) continue;
+    total += Math.min(bestAmount, subtotal);
+    lines.push(buildFullPromotionLine(act, bestRule, Math.min(bestAmount, subtotal)));
+  }
+  return { total: money(total), lines };
+}
+
 function computeCouponEligibleSubtotal(coupon, orderItems, productMap, rawAmount, fullReductionDiscount, goodsAmountAfterFullReduction) {
   const usableScope = coupon.usable_scope_type || coupon.scope_type || 'all';
   if (usableScope === 'all') return money(goodsAmountAfterFullReduction);
@@ -149,39 +376,8 @@ function computeCouponEligibleSubtotal(coupon, orderItems, productMap, rawAmount
   return money(Math.max(0, eligibleRaw - allocatedFullReduction));
 }
 
-/** 婊″噺锛氭寜娲诲姩鑱氬悎锛岃鍙?activity_config 澶氭。瑙勫垯 */
 function computeFullReductionDiscount(orderItems, productMap, fullReductionActivities) {
-  let sum = 0;
-  for (const act of fullReductionActivities) {
-    const scopes = act.scopes || [];
-    let subtotal = 0;
-    for (const oi of orderItems) {
-      const product = productMap[oi.productId];
-      if (!lineMatchesActivityScope(oi, product, act, scopes)) continue;
-      subtotal += oi.price * oi.qty;
-    }
-    if (subtotal <= 0) continue;
-
-    const cfg = parseActivityConfig(act.activity_config);
-    const rules = [];
-    if (Array.isArray(cfg?.full_reduction_rules) && cfg.full_reduction_rules.length) {
-      for (const r of cfg.full_reduction_rules) {
-        const th = Number(r.threshold_amount || 0);
-        const disc = Number(r.discount_amount || 0);
-        if (th > 0 && disc > 0) rules.push({ th, disc });
-      }
-    } else {
-      const th = act.threshold_amount != null && act.threshold_amount !== '' ? Number(act.threshold_amount) : 0;
-      const disc = act.discount_amount != null && act.discount_amount !== '' ? Number(act.discount_amount) : 0;
-      if (th > 0 && disc > 0) rules.push({ th, disc });
-    }
-    let best = 0;
-    for (const r of rules) {
-      if (subtotal >= r.th) best = Math.max(best, r.disc);
-    }
-    if (best > 0) sum += Math.min(best, subtotal);
-  }
-  return sum;
+  return computeFullPromotionDiscounts(orderItems, productMap, fullReductionActivities).total;
 }
 
 function computeFlashSaleSavings(orderItems, flashByProductId, productMap) {
@@ -317,6 +513,9 @@ async function buildOrderPricing(userId, body, conn = null) {
   const pointsBonusActivitiesRaw = conn
     ? await repo.selectActivePointsBonusActivitiesForUpdate(conn)
     : await repo.selectActivePointsBonusActivitiesRead(q);
+  const memberPriceActivities = conn
+    ? await repo.selectActiveMemberPriceActivitiesForUpdate(conn)
+    : await repo.selectActiveMemberPriceActivitiesRead(q);
   let pointsBonusUserContext = {};
   if (userId) {
     const { klYear } = require('../../utils/birthdayWindow');
@@ -356,33 +555,45 @@ async function buildOrderPricing(userId, body, conn = null) {
       qty: item.qty,
       activityId: flash?.activity_id || null,
       activityTitle: flash?.title || null,
-      activityType: flash ? 'flash_sale' : null,
+      activityType: flash?.type || null,
     };
   });
 
   const flashSaleDiscount = computeFlashSaleSavings(orderItems, flashByProductId, productMap);
-  const fullReductionDiscount = computeFullReductionDiscount(orderItems, productMap, fullReductionActivities);
+  const fullPromotionDiscounts = computeFullPromotionDiscounts(orderItems, productMap, fullReductionActivities);
+  const fullReductionDiscount = fullPromotionDiscounts.total;
   const goodsAmountAfterFullReduction = Math.max(0, rawAmount - fullReductionDiscount);
 
   let shippingFee = 0;
-  const tpl = shipping_template_id
-    ? (conn
-      ? await repo.selectShippingTemplate(conn, shipping_template_id)
-      : await repo.selectShippingTemplate(q, shipping_template_id))
-    : (conn
-      ? await repo.selectDefaultEnabledShippingTemplate(conn)
-      : await repo.selectDefaultEnabledShippingTemplate(q));
+  const destination = normalizeShippingDestination(typeof body.address === 'object' ? body.address : {});
+  const w = estimated_weight_kg != null && Number.isFinite(Number(estimated_weight_kg))
+    ? Number(estimated_weight_kg)
+    : estimateWeightFromItems(items);
+  const tpl = await resolveShippingTemplateForPricing(q, shipping_template_id, destination, rawAmount, w);
   if (tpl) {
-    const w = estimated_weight_kg != null && Number.isFinite(Number(estimated_weight_kg))
-      ? Number(estimated_weight_kg)
-      : estimateWeightFromItems(items);
     shippingFee = computeShippingFee(tpl, rawAmount, w);
   }
   const originalShippingFee = shippingFee;
 
-  const hasActivityDiscount = flashSaleDiscount > 0 || fullReductionDiscount > 0;
+  const loyaltyApi = getLoyaltyApi();
+  const memberLevel = await loyaltyApi.selectUserMemberLevel(q, userId);
+  const memberPriceCouponPreview = computeMemberPriceDiscounts(
+    orderItems,
+    productMap,
+    memberPriceActivities,
+    memberLevel,
+    { rawAmount, priorGoodsDiscount: fullReductionDiscount },
+  );
+  const memberPriceActivityById = new Map(
+    (memberPriceActivities || []).map((act) => [String(act.activity_id || act.id || ''), act]),
+  );
+  const couponPreviewMemberActivities = memberPriceCouponPreview.lines
+    .map((line) => memberPriceActivityById.get(String(line.activity_id || line.promotion_id || '')))
+    .filter(Boolean);
+  const hasActivityDiscount = flashSaleDiscount > 0 || fullReductionDiscount > 0 || memberPriceCouponPreview.total > 0;
   const activityAllowsCoupon = fullReductionActivities.every((a) => !!a.allow_coupon_stack)
-    && [...flashByProductId.values()].every((f) => f.allow_coupon_stack !== 0);
+    && [...flashByProductId.values()].every((f) => f.allow_coupon_stack !== 0)
+    && couponPreviewMemberActivities.every((a) => a.allow_coupon_stack !== 0);
 
   let couponDiscount = 0;
   let couponTitle = null;
@@ -409,11 +620,9 @@ async function buildOrderPricing(userId, body, conn = null) {
   }
 
   const nonShippingGoodsCoupon = couponType === 'shipping' ? 0 : couponDiscount;
-  const loyaltyApi = getLoyaltyApi();
   const pointsSettings = await loyaltyApi.selectPointsSettings();
   const rewardSettings = await loyaltyApi.selectRewardSettings();
   const productRules = await loyaltyApi.selectProductRules(q);
-  const memberLevel = await loyaltyApi.selectUserMemberLevel(q, userId);
   const memberDiscountRate = memberLevel
     ? Math.min(1, Math.max(0.01, Number(memberLevel.discount_rate || 1)))
     : 1;
@@ -442,22 +651,35 @@ async function buildOrderPricing(userId, body, conn = null) {
   const memberLevelDiscount = memberDiscountRate < 1
     ? loyaltyApi.pointsMoney(memberLevelDiscountBase * (1 - memberDiscountRate))
     : 0;
+  const memberPriceDiscounts = computeMemberPriceDiscounts(
+    orderItems,
+    productMap,
+    memberPriceActivities,
+    memberLevel,
+    {
+      rawAmount,
+      priorGoodsDiscount: fullReductionDiscount + nonShippingGoodsCoupon + memberLevelDiscount,
+    },
+  );
+  const memberActivityDiscount = loyaltyApi.pointsMoney(memberPriceDiscounts.total);
+  const totalMemberDiscount = memberLevelDiscount + memberActivityDiscount;
   const memberShippingDiscount = memberFreeShipping ? loyaltyApi.pointsMoney(originalShippingFee) : 0;
-  const totalGoodsDiscount = fullReductionDiscount + couponDiscount + memberLevelDiscount;
+  const totalGoodsDiscount = fullReductionDiscount + couponDiscount + totalMemberDiscount;
   const basePayableBeforeLoyaltyWithMember = Math.max(0, rawAmount - totalGoodsDiscount + shippingFee);
-  const goodsInclusiveTaxable = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon - memberLevelDiscount);
+  const goodsInclusiveTaxable = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon - totalMemberDiscount);
   const sstRows = await siteSettingsRepo.selectSiteSettingsByKeys(['sstEnabled', 'sstRatePercent', 'sstLabel']);
   const sstSettings = sstTax.parseSstSettingsFromSiteSettingsRows(sstRows);
   const taxSnap = sstTax.buildOrderTaxSnapshot(sstSettings, goodsInclusiveTaxable);
-  const goodsDiscountForAllocation = fullReductionDiscount + nonShippingGoodsCoupon + memberLevelDiscount;
+  const goodsDiscountForAllocation = fullReductionDiscount + nonShippingGoodsCoupon + totalMemberDiscount;
   const loyaltyItems = orderItems.map((oi) => {
     const lineSubtotal = oi.price * oi.qty;
     const discountShare = rawAmount > 0 ? (goodsDiscountForAllocation * lineSubtotal) / rawAmount : 0;
-    const memberDiscountShare = rawAmount > 0 && memberLevelDiscount > 0
-      ? (memberLevelDiscount * lineSubtotal) / rawAmount
+    const memberDiscountShare = rawAmount > 0 && totalMemberDiscount > 0
+      ? (totalMemberDiscount * lineSubtotal) / rawAmount
       : 0;
     const product = productMap[oi.productId] || {};
     const fullReductionBlocksPoints = fullReductionActivities.some((act) => act.allow_points_stack === 0 && lineMatchesActivityScope(oi, product, act, act.scopes || []));
+    const memberPriceBlocksPoints = memberPriceActivities.some((act) => act.allow_points_stack === 0 && lineMatchesActivityScope(oi, product, act, act.scopes || []));
     const flash = flashByProductId.get(oi.productId);
     return {
       product_id: oi.productId,
@@ -467,7 +689,7 @@ async function buildOrderPricing(userId, body, conn = null) {
       line_paid_amount: Math.max(0, lineSubtotal - discountShare),
       member_discount_share: loyaltyApi.pointsMoney(memberDiscountShare),
       activity_id: oi.activityId,
-      allow_points_stack: flash ? flash.allow_points_stack !== 0 : !fullReductionBlocksPoints,
+      allow_points_stack: flash ? flash.allow_points_stack !== 0 : !(fullReductionBlocksPoints || memberPriceBlocksPoints),
     };
   });
   const pointsBonusResolved = loyaltyApi.resolvePointsBonusForPricing({
@@ -509,7 +731,12 @@ async function buildOrderPricing(userId, body, conn = null) {
       productMap,
       productRules,
       coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
-      discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
+      discounts: {
+        coupon_amount: couponDiscount,
+        full_reduction_amount: fullReductionDiscount,
+        member_level_discount: totalMemberDiscount,
+        member_price_activity_discount: memberActivityDiscount,
+      },
       useRewardCash: useRewardCashRequested,
       pointsToUse: pointsEnabled && usePoints ? (requestPointsToUse > 0 ? requestPointsToUse : pointsBalance) : 0,
     });
@@ -548,7 +775,12 @@ async function buildOrderPricing(userId, body, conn = null) {
       productMap,
       memberLevel,
       coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
-      discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
+      discounts: {
+        coupon_amount: couponDiscount,
+        full_reduction_amount: fullReductionDiscount,
+        member_level_discount: totalMemberDiscount,
+        member_price_activity_discount: memberActivityDiscount,
+      },
       pointsBonusSnapshots: pointsBonusResolved.points_bonus_snapshots || [],
       maxBonusPoints: pointsBonusResolved.max_bonus_points || 0,
     })
@@ -578,7 +810,9 @@ async function buildOrderPricing(userId, body, conn = null) {
     discount_lines.push({ type: 'flash_sale', label: '秒杀优惠', amount: loyaltyApi.pointsMoney(flashSaleDiscount) });
   }
   if (fullReductionDiscount > 0) {
-    discount_lines.push({ type: 'full_reduction', label: '满减优惠', amount: loyaltyApi.pointsMoney(fullReductionDiscount) });
+    for (const line of fullPromotionDiscounts.lines) {
+      discount_lines.push({ ...line, amount: loyaltyApi.pointsMoney(line.amount) });
+    }
   }
   if (couponDiscount > 0) {
     discount_lines.push({
@@ -593,6 +827,11 @@ async function buildOrderPricing(userId, body, conn = null) {
       label: memberLevel?.name ? `会员折扣：${memberLevel.name}` : '会员折扣',
       amount: loyaltyApi.pointsMoney(memberLevelDiscount),
     });
+  }
+  if (memberActivityDiscount > 0) {
+    for (const line of memberPriceDiscounts.lines) {
+      discount_lines.push({ ...line, amount: loyaltyApi.pointsMoney(line.amount) });
+    }
   }
   if (memberShippingDiscount > 0) {
     discount_lines.push({
@@ -612,14 +851,19 @@ async function buildOrderPricing(userId, body, conn = null) {
     rawAmount,
     flashSaleDiscount,
     fullReductionDiscount,
+    memberActivityDiscount,
+    memberPriceDiscount: memberActivityDiscount,
     couponDiscount,
     discountAmount: totalGoodsDiscount,
-    activityDiscountAmount: flashSaleDiscount + fullReductionDiscount + memberLevelDiscount,
+    activityDiscountAmount: flashSaleDiscount + fullReductionDiscount + totalMemberDiscount,
     shippingOriginalFee: originalShippingFee,
+    shippingTemplateId: tpl?.id || null,
+    shippingName: tpl?.name || '',
+    shippingDestination: destination,
     shippingDiscountAmount: memberShippingDiscount,
     totalDiscountAmount: flashSaleDiscount
       + fullReductionDiscount
-      + memberLevelDiscount
+      + totalMemberDiscount
       + couponDiscount
       + points_discount_amount
       + reward_cash_discount_amount
@@ -634,6 +878,8 @@ async function buildOrderPricing(userId, body, conn = null) {
     productMap,
     flashByProductId,
     fullReductionActivities,
+    memberPriceActivities,
+    pointsBonusActivities,
     couponTitle,
     couponType,
     discount_lines,
@@ -659,6 +905,8 @@ async function buildOrderPricing(userId, body, conn = null) {
       max_usable_reward_cash,
       earned_points,
       member_level_discount: memberLevelDiscount,
+      member_price_discount: memberActivityDiscount,
+      member_total_discount: totalMemberDiscount,
       member_free_shipping_discount: memberShippingDiscount,
       points_summary: {
         earned_points,
@@ -690,7 +938,10 @@ async function buildOrderPricing(userId, body, conn = null) {
 
 module.exports = {
   buildOrderPricing,
+  resolveShippingTemplateForPricing,
   calculateCouponDiscount,
+  computeFullPromotionDiscounts,
+  computeMemberPriceDiscounts,
   computeFullReductionDiscount,
   computeFlashSaleSavings,
   lineMatchesActivityScope,

@@ -24,9 +24,11 @@ describe('marketing campaign service', () => {
       getFlashSaleForHome: async () => ({
         data: {
           id: 'flash-1',
+          slug: 'flash-slug',
           title: '今日秒杀',
           subtitle: '限时',
           cover_image: '/flash.jpg',
+          href: '/promotions/flash-slug',
           start_at: '2026-06-01 00:00:00',
           end_at: '2026-06-01 02:00:00',
           countdown_seconds: 120,
@@ -47,7 +49,7 @@ describe('marketing campaign service', () => {
             id: 'full-1',
             title: '满减专场',
             promo_label: '满100减10',
-            link_url: '/categories',
+            link_url: '/promotions/full-slug',
           },
         ],
       }),
@@ -94,7 +96,9 @@ describe('marketing campaign service', () => {
 
     assert.equal(Array.isArray(campaigns), true);
     assert.deepEqual(campaigns.map((campaign) => campaign.type), ['flash_sale', 'full_reduction', 'coupon']);
+    assert.equal(campaigns.find((campaign) => campaign.id === 'flash-1').href, '/promotions/flash-slug');
     assert.equal(campaigns.find((campaign) => campaign.id === 'flash-1').products[0].href, '/product/p1');
+    assert.equal(campaigns.find((campaign) => campaign.id === 'full-1').href, '/promotions/full-slug');
     assert.equal(campaigns.find((campaign) => campaign.id === 'full-1').thresholdAmount, 100);
     assert.equal(campaigns.find((campaign) => campaign.id === 'full-1').discountAmount, 10);
     assert.equal(campaigns.filter((campaign) => campaign.id === 'coupon-1').length, 1);

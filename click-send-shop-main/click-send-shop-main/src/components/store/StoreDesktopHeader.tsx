@@ -1,11 +1,10 @@
-import { Headphones, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
+import { BadgePercent, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
 import type { MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
-import { parseSupportDownloadConfig } from "@/utils/supportDownloadConfig";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
@@ -17,6 +16,8 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
+import StoreLanguageSwitcher from "@/components/store/StoreLanguageSwitcher";
+import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 
 type NavItem = { path: string; label: string; icon: typeof Home; enabled?: boolean };
 
@@ -35,40 +36,41 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   const siteInfoLoaded = useSiteInfoLoaded();
   const capabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
+  const { localizedPath, t } = usePublicLocale();
+  const currentPathname = stripPublicLocaleFromPathname(location.pathname);
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const shouldReserveLogoSpace = Boolean(logoSrc) || !siteInfoLoaded;
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
   const loggedIn = isLoggedIn();
-  const supportNavLabel = parseSupportDownloadConfig(siteInfo.supportDownloadConfig).title.trim();
 
   const navItems: NavItem[] = [
-    { path: "/", label: "首页", icon: Home, enabled: true },
-    { path: "/categories", label: "全部分类", icon: LayoutGrid, enabled: capabilities.mallEnabled },
-    { path: "/support-download?tab=support", label: supportNavLabel, icon: Headphones, enabled: capabilities.customerServiceDownloadEnabled && Boolean(supportNavLabel) },
+    { path: "/", label: t("common.home"), icon: Home, enabled: true },
+    { path: "/categories", label: t("common.categories"), icon: LayoutGrid, enabled: capabilities.mallEnabled },
+    { path: "/coupons", label: t("common.coupons"), icon: BadgePercent, enabled: capabilities.couponEnabled },
   ].filter((item) => item.enabled !== false && isStoreNavPathVisible(item.path, capabilities));
 
   const isActive = (path: string) => {
     const [base, query = ""] = path.split("?");
-    if (base === "/") return location.pathname === "/";
+    if (base === "/") return currentPathname === "/";
     if (query) {
       const expected = new URLSearchParams(query);
       const current = new URLSearchParams(location.search);
       for (const [key, value] of expected.entries()) {
         if (current.get(key) !== value) return false;
       }
-      return location.pathname === base;
+      return currentPathname === base;
     }
     if (base === "/categories") {
       const current = new URLSearchParams(location.search);
-      return location.pathname === base && !current.has("keyword");
+      return currentPathname === base && !current.has("keyword");
     }
-    return location.pathname === base || location.pathname.startsWith(`${base}/`);
+    return currentPathname === base || currentPathname.startsWith(`${base}/`);
   };
 
   const openRoute = (path: string) => {
     preloadHeaderRoute(path);
-    navigateWithStoreTransition(navigate, path);
+    navigateWithStoreTransition(navigate, localizedPath(path));
   };
 
   const handleRouteLink = (event: MouseEvent<HTMLAnchorElement>, path: string) => {
@@ -88,12 +90,12 @@ export default function StoreDesktopHeader({ className }: { className?: string }
     >
       <div className="mx-auto flex h-full w-full max-w-7xl min-w-0 items-center gap-4 px-6 xl:px-8">
         <Link
-          to="/"
+          to={localizedPath("/")}
           onClick={(event) => handleRouteLink(event, "/")}
           onMouseEnter={() => preloadHeaderRoute("/")}
           onFocus={() => preloadHeaderRoute("/")}
           className="store-header-brand flex shrink-0 items-center gap-2.5"
-          aria-label={`${siteName} 首页`}
+          aria-label={`${siteName} ${t("common.home")}`}
         >
           {shouldReserveLogoSpace ? <StoreBrandLogo src={logoSrc} siteName={siteName} width={40} height={40} fallbackText="" /> : null}
           <span className="max-w-[10rem] truncate text-base font-bold tracking-wide text-[var(--theme-text-on-surface)]">
@@ -108,7 +110,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
             return (
               <Link
                 key={item.path}
-                to={item.path}
+                to={localizedPath(item.path)}
                 onClick={(event) => handleRouteLink(event, item.path)}
                 onMouseEnter={() => preloadHeaderRoute(item.path)}
                 onFocus={() => preloadHeaderRoute(item.path)}
@@ -128,13 +130,14 @@ export default function StoreDesktopHeader({ className }: { className?: string }
 
         <div className="min-w-0 flex-1 max-w-xl">
           {capabilities.mallEnabled ? (
-            <StoreSearchField mode="navigate" placeholder={STORE_COPY.searchPlaceholder} onNavigate={() => openRoute("/search")} />
+            <StoreSearchField mode="navigate" placeholder={t("hero.searchPlaceholder")} onNavigate={() => openRoute("/search")} />
           ) : (
             <div className="h-9" />
           )}
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          <StoreLanguageSwitcher />
           {capabilities.mallEnabled ? (
             <UnifiedButton
               type="button"
@@ -142,7 +145,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
               onFocus={() => preloadHeaderRoute("/cart")}
               onClick={() => openRoute("/cart")}
               className="store-header-icon-button relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
-              aria-label="购物车"
+              aria-label={t("common.cart")}
             >
               <ShoppingCart size={18} />
               <DeferredStoreCartBadge />
@@ -163,15 +166,15 @@ export default function StoreDesktopHeader({ className }: { className?: string }
               )}
             >
               <User size={16} />
-              我的
+              {t("common.myAccount")}
             </UnifiedButton>
           ) : (
             <UnifiedButton
               type="button"
-              onClick={() => navigateWithStoreTransition(navigate, "/login", { state: { from: location.pathname } })}
+              onClick={() => navigateWithStoreTransition(navigate, localizedPath("/login"), { state: { from: `${location.pathname}${location.search}` } })}
               className="store-header-login-button rounded-full bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
             >
-              登录 / 注册
+              {t("common.loginRegister")}
             </UnifiedButton>
           )}
         </div>

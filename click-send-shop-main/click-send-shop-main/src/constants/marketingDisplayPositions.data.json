@@ -24,22 +24,46 @@
     "promotion_banner": "营销横幅"
   },
   "publishableActivityTypes": [
+    "campaign",
+    "coupon",
     "flash_sale",
+    "limited_time_discount",
     "full_reduction",
-    "points_bonus"
+    "full_discount",
+    "member_price",
+    "points_reward",
+    "points_bonus",
+    "checkin_reward"
   ],
   "wipActivityTypes": [
-    "member_activity",
-    "cashback_activity"
+    "member_activity"
   ],
   "activityTypeDisplayPositions": {
+    "campaign": ["promotion_banner", "profile_center"],
     "flash_sale": ["home_flash_sale", "product_detail", "promotion_banner"],
+    "limited_time_discount": ["home_flash_sale", "product_detail", "category_badge", "promotion_banner"],
     "full_reduction": ["full_reduction_notice", "cart_notice", "checkout_notice", "promotion_banner"],
-    "points_bonus": ["checkout_notice", "profile_center", "product_detail", "promotion_banner"]
+    "full_discount": ["full_reduction_notice", "cart_notice", "checkout_notice", "promotion_banner"],
+    "coupon": ["home_coupon_center", "cart_notice", "checkout_notice", "profile_center", "promotion_banner"],
+    "member_price": ["product_detail", "category_badge", "profile_center", "promotion_banner"],
+    "checkin_reward": ["profile_center", "promotion_banner"],
+    "points_reward": ["checkout_notice", "profile_center", "product_detail", "promotion_banner"],
+    "points_bonus": ["checkout_notice", "profile_center", "product_detail", "promotion_banner"],
+    "member_activity": ["product_detail", "category_badge", "profile_center", "promotion_banner"],
+    "cashback_activity": ["promotion_banner", "profile_center"]
   },
   "activityTypeDefaultDisplayPositions": {
+    "campaign": ["promotion_banner"],
     "flash_sale": ["home_flash_sale"],
+    "limited_time_discount": ["home_flash_sale"],
     "full_reduction": ["full_reduction_notice"],
-    "points_bonus": ["checkout_notice"]
+    "full_discount": ["full_reduction_notice"],
+    "coupon": ["home_coupon_center"],
+    "member_price": ["product_detail"],
+    "checkin_reward": ["profile_center"],
+    "points_reward": ["checkout_notice"],
+    "points_bonus": ["checkout_notice"],
+    "member_activity": ["product_detail"],
+    "cashback_activity": ["promotion_banner"]
   }
 }

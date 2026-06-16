@@ -26,8 +26,8 @@ async function selectFlashSaleActivityByPosition(position) {
      FROM marketing_activities a
      WHERE a.deleted_at IS NULL
        AND a.disabled = 0
-       AND a.type = 'flash_sale'
-       AND a.status != 'draft'
+       AND a.type IN ('flash_sale', 'limited_time_discount')
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
        AND NOW() BETWEEN a.start_at AND a.end_at
        AND ${positionJsonContains(pos)}
      ORDER BY a.sort_order ASC, a.start_at DESC
@@ -82,12 +82,12 @@ async function selectActivitiesByPosition(position, types = []) {
     : '';
   const params = types.length ? [pos, ...types] : [pos];
   const [rows] = await db.query(
-    `SELECT a.id, a.type, a.title, a.subtitle, a.cover_image, a.display_positions,
+    `SELECT a.id, a.slug, a.type, a.title, a.subtitle, a.cover_image, a.display_positions,
             a.start_at, a.end_at, a.activity_config, a.threshold_amount, a.discount_amount
      FROM marketing_activities a
      WHERE a.deleted_at IS NULL
        AND a.disabled = 0
-       AND a.status != 'draft'
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
        AND NOW() BETWEEN a.start_at AND a.end_at
        AND ${positionJsonContains(pos)}
        ${typeFilter}
@@ -99,6 +99,140 @@ async function selectActivitiesByPosition(position, types = []) {
     display_positions: parseJson(r.display_positions, []),
     activity_config: parseJson(r.activity_config, null),
   }));
+}
+
+/**
+ * @param {{ page?: number|string, pageSize?: number|string, type?: string|string[] }} [input]
+ */
+async function selectActivePromotions({ page = 1, pageSize = 40, type = '' } = {}) {
+  const normalizedPage = Math.max(1, Number(page) || 1);
+  const normalizedPageSize = Math.max(1, Math.min(80, Number(pageSize) || 40));
+  const offset = (normalizedPage - 1) * normalizedPageSize;
+  const params = [];
+  let typeSql = '';
+  const types = Array.isArray(type)
+    ? [...new Set(type.map((item) => String(item || '').trim()).filter(Boolean))]
+    : String(type || '').trim()
+      ? [String(type).trim()]
+      : [];
+  if (types.length) {
+    typeSql = `AND a.type IN (${types.map(() => '?').join(',')})`;
+    params.push(...types);
+  }
+  const runtimeWhere = `
+    a.deleted_at IS NULL
+    AND a.disabled = 0
+    AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
+    AND NOW() BETWEEN a.start_at AND a.end_at
+    ${typeSql}
+  `;
+  const [[countRow]] = await db.query(
+    `SELECT COUNT(*) AS total
+       FROM marketing_activities a
+      WHERE ${runtimeWhere}`,
+    params,
+  );
+  const [rows] = await db.query(
+    `SELECT a.id, a.slug, a.type, a.title, a.subtitle, a.description, a.cover_image,
+            a.display_positions, a.start_at, a.end_at, a.sort_order, a.priority,
+            a.scope_type, a.activity_config, a.rule_config, a.allow_coupon_stack,
+            a.allow_points_stack, a.allow_reward, a.stackable, a.exclusive_with,
+            a.usage_limit_total, a.usage_limit_per_user, a.version
+       FROM marketing_activities a
+      WHERE ${runtimeWhere}
+      ORDER BY COALESCE(a.priority, 0) DESC, a.sort_order ASC, a.start_at DESC
+      LIMIT ? OFFSET ?`,
+    [...params, normalizedPageSize, offset],
+  );
+  return {
+    list: rows.map((r) => ({
+      ...r,
+      display_positions: parseJson(r.display_positions, []),
+      activity_config: parseJson(r.activity_config, null),
+      rule_config: parseJson(r.rule_config, parseJson(r.activity_config, null)),
+      exclusive_with: parseJson(r.exclusive_with, []),
+    })),
+    total: Number(countRow?.total || 0),
+    page: normalizedPage,
+    pageSize: normalizedPageSize,
+  };
+}
+
+async function selectActiveCheckinRewardActivities() {
+  const [rows] = await db.query(
+    `SELECT a.id, a.id AS activity_id, a.slug, a.type, a.title, a.subtitle, a.description,
+            a.activity_config, a.rule_config, a.priority, a.sort_order,
+            a.usage_limit_total, a.usage_limit_per_user, a.version,
+            a.start_at, a.end_at
+       FROM marketing_activities a
+      WHERE a.deleted_at IS NULL
+        AND a.disabled = 0
+        AND a.type = 'checkin_reward'
+        AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
+        AND NOW() BETWEEN a.start_at AND a.end_at
+      ORDER BY COALESCE(a.priority, 0) DESC, a.sort_order ASC, a.start_at DESC`,
+  );
+  return rows.map((r) => ({
+    ...r,
+    activity_config: parseJson(r.activity_config, null),
+    rule_config: parseJson(r.rule_config, parseJson(r.activity_config, null)),
+  }));
+}
+
+async function selectActivePromotionBySlug(slug) {
+  const key = String(slug || '').trim();
+  if (!key) return null;
+  const [rows] = await db.query(
+    `SELECT a.id, a.slug, a.type, a.title, a.subtitle, a.description, a.cover_image,
+            a.display_positions, a.start_at, a.end_at, a.sort_order, a.priority,
+            a.scope_type, a.activity_config, a.rule_config, a.allow_coupon_stack,
+            a.allow_points_stack, a.allow_reward, a.stackable, a.exclusive_with,
+            a.usage_limit_total, a.usage_limit_per_user, a.version
+       FROM marketing_activities a
+      WHERE a.deleted_at IS NULL
+        AND a.disabled = 0
+        AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
+        AND NOW() BETWEEN a.start_at AND a.end_at
+        AND (a.slug = ? OR a.id = ?)
+      LIMIT 1`,
+    [key, key],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  const [items] = await db.query(
+    `SELECT ap.product_id, ap.activity_price, ap.activity_stock, ap.sold_count,
+            ap.limit_per_user, p.name AS product_name, p.cover_image,
+            p.price AS product_price, p.stock AS product_stock
+       FROM marketing_activity_products ap
+       JOIN products p ON p.id = ap.product_id
+      WHERE ap.activity_id = ?
+        AND ${activeProductWhere('p')}
+      ORDER BY ap.sort_order ASC, ap.created_at ASC
+      LIMIT 80`,
+    [row.id],
+  );
+  const [scopes] = await db.query(
+    'SELECT scope_type, scope_id FROM marketing_activity_scopes WHERE activity_id = ? ORDER BY created_at ASC',
+    [row.id],
+  );
+  return {
+    ...row,
+    display_positions: parseJson(row.display_positions, []),
+    activity_config: parseJson(row.activity_config, null),
+    rule_config: parseJson(row.rule_config, parseJson(row.activity_config, null)),
+    exclusive_with: parseJson(row.exclusive_with, []),
+    items: items.map((item) => ({
+      ...item,
+      activity_price: Number(item.activity_price || 0),
+      activity_stock: Number(item.activity_stock || 0),
+      sold_count: Number(item.sold_count || 0),
+      remaining_stock: Math.max(0, Number(item.activity_stock || 0) - Number(item.sold_count || 0)),
+      limit_per_user: Number(item.limit_per_user || 0),
+      product_price: Number(item.product_price || 0),
+      product_stock: Number(item.product_stock || 0),
+    })),
+    scopes,
+  };
 }
 
 async function selectCouponsByIds(couponIds) {
@@ -235,6 +369,9 @@ function mapPublicCoupon(row) {
 module.exports = {
   selectFlashSaleActivityByPosition,
   selectActivitiesByPosition,
+  selectActivePromotions,
+  selectActiveCheckinRewardActivities,
+  selectActivePromotionBySlug,
   selectCouponsByIds,
   selectCouponsByPosition,
   mapPublicCoupon,

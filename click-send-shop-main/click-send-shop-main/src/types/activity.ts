@@ -1,5 +1,19 @@
-export type ActivityType = "flash_sale" | "full_reduction" | "coupon_activity" | "new_user_gift" | "member_activity" | "points_bonus" | "cashback_activity";
-export type ActivityStatus = "draft" | "scheduled" | "active" | "ended" | "disabled";
+export type ActivityType =
+  | "campaign"
+  | "coupon"
+  | "full_reduction"
+  | "full_discount"
+  | "limited_time_discount"
+  | "flash_sale"
+  | "member_price"
+  | "checkin_reward"
+  | "points_reward"
+  | "coupon_activity"
+  | "new_user_gift"
+  | "member_activity"
+  | "points_bonus"
+  | "cashback_activity";
+export type ActivityStatus = "draft" | "scheduled" | "active" | "paused" | "ended" | "archived" | "disabled";
 export type ActivityScopeType = "all" | "category" | "product" | "member_level" | "user_tag" | "new_user" | "old_user";
 
 export interface ActivityProductItem {
@@ -37,10 +51,31 @@ export interface MarketingActivity {
   internal_note?: string;
   display_positions?: string[];
   activity_config?: Record<string, unknown> | null;
+  rule_config?: Record<string, unknown> | null;
+  slug?: string | null;
+  priority?: number;
+  stackable?: boolean;
+  exclusive_with?: string[];
+  usage_limit_total?: number | null;
+  usage_limit_per_user?: number | null;
   sort_order: number;
   product_count?: number;
   activity_stock_total?: number;
   sold_count_total?: number;
+  version?: number;
+  effect_stats?: {
+    active_order_count: number;
+    confirmed_order_count: number;
+    locked_order_count: number;
+    active_usage_count: number;
+    total_usage_count: number;
+    active_discount_amount: number;
+    confirmed_discount_amount: number;
+    stock_usage_rate: number | null;
+    limit_usage_rate: number | null;
+    risk_level: "ok" | "limit_reached" | "limit_warning" | "stock_warning" | string;
+    risk_label: string;
+  };
   status: ActivityStatus;
   status_label: string;
   items?: ActivityProductItem[];
@@ -69,6 +104,14 @@ export interface ActivityPayload {
   internal_note?: string;
   display_positions?: string[];
   activity_config?: Record<string, unknown> | null;
+  rule_config?: Record<string, unknown> | null;
+  slug?: string | null;
+  priority?: number;
+  stackable?: boolean;
+  exclusive_with?: string[];
+  usage_limit_total?: number | null;
+  usage_limit_per_user?: number | null;
+  version?: number;
   sort_order?: number;
   items: ActivityProductItem[];
 }

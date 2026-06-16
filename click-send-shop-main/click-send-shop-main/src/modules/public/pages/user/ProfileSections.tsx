@@ -420,7 +420,7 @@ export function ProfileInstallShortcut({
       </span>
       <span className="profile-install-copy">
         <span className="profile-install-title">{item.label}</span>
-        <span className="profile-install-desc">手机端快捷访问</span>
+        <span className="profile-install-desc">添加到手机桌面，打开更快</span>
       </span>
       <UnifiedButton type="button" data-feature-key={item.key} onClick={() => onNavigate(item)} className="profile-install-button">
         去添加

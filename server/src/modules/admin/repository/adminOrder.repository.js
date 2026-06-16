@@ -255,6 +255,14 @@ async function selectOrdersAdminPage(where, params, pageSize, offset) {
     schema.ordersOutstandingAmount ? 'o.outstanding_amount' : "CASE WHEN o.payment_status IN ('paid','partially_refunded','refunded') THEN 0 ELSE COALESCE(o.total_amount, 0) END AS outstanding_amount",
     schema.ordersAmountSnapshot ? 'o.amount_snapshot' : 'NULL AS amount_snapshot',
   ].join(',\n       ');
+  const logisticsFields = [
+    schema.ordersLogisticsStatus ? 'o.logistics_status' : "'' AS logistics_status",
+    schema.ordersLogisticsStatusLabel ? 'o.logistics_status_label' : "'' AS logistics_status_label",
+    schema.ordersLogisticsException ? 'o.logistics_exception_type' : "'' AS logistics_exception_type",
+    schema.ordersLogisticsExceptionMessage ? 'o.logistics_exception_message' : "'' AS logistics_exception_message",
+    schema.ordersLogisticsLatestEvent ? 'o.logistics_latest_event_at' : 'NULL AS logistics_latest_event_at',
+    schema.ordersLogisticsLastSynced ? 'o.logistics_last_synced_at' : 'NULL AS logistics_last_synced_at',
+  ].join(',\n       ');
 
   const pageJoinSql = requiresUserJoinForOrderPage(where)
     ? '\n      LEFT JOIN users u ON u.id = o.user_id'
@@ -269,6 +277,7 @@ async function selectOrdersAdminPage(where, params, pageSize, offset) {
        o.id, o.user_id, o.order_no, o.raw_amount, o.discount_amount, o.coupon_title,
        o.shipping_fee, o.shipping_name, o.tracking_no, o.carrier, o.total_amount,
        ${amountFields},
+       ${logisticsFields},
        o.goods_cost_amount, o.gross_profit_amount, o.shipping_cost_amount, o.payment_fee_amount, o.net_profit_amount,
        o.total_points, o.status, o.payment_status, o.refund_status, o.refunded_amount,
        o.note, o.contact_name, o.contact_phone, o.shipping_phone, o.address,

@@ -200,7 +200,7 @@ export default function Feedback() {
             </div>
             <h2 className="mt-4 text-lg font-semibold text-[var(--theme-text)]">已收到你的反馈</h2>
             <p className="mt-2 text-sm leading-relaxed text-[var(--theme-muted)]">
-              编号 {submittedId.slice(0, 8)}，后台会按状态跟进处理。
+              编号 {submittedId.slice(0, 8)}，我们会尽快跟进处理。
             </p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <UnifiedButton

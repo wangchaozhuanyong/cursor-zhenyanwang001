@@ -32,6 +32,7 @@ type ActivityLike = Partial<MarketingActivitySummary> & {
 const CAMPAIGN_TONE: Record<StorefrontCampaignType, StorefrontCampaignTone> = {
   flash_sale: "danger",
   full_reduction: "price",
+  full_discount: "price",
   coupon: "success",
   new_user_gift: "primary",
   promotion: "primary",
@@ -46,7 +47,8 @@ export function normalizeHomeMarketingCampaigns(marketing: HomeMarketingPayload 
   if (flashSale) campaigns.push(flashSale);
 
   for (const item of asArray(marketing.fullReductionNotices)) {
-    const campaign = normalizeSummaryCampaign(item, "full_reduction");
+    const activity = item as ActivityLike | null;
+    const campaign = normalizeSummaryCampaign(item, activity?.type === "full_discount" ? "full_discount" : "full_reduction");
     if (campaign) campaigns.push(campaign);
   }
 
@@ -78,8 +80,19 @@ export function parseFullReductionText(text: string | null | undefined) {
   };
 }
 
+export function parseFullDiscountText(text: string | null | undefined) {
+  if (!text) return {};
+  const normalized = String(text).replace(/\s+/g, "");
+  const matched = normalized.match(/满([0-9]+(?:\.[0-9]+)?)打([0-9]+(?:\.[0-9]+)?)折/);
+  if (!matched) return {};
+  return {
+    thresholdAmount: Number(matched[1]),
+    discountPercent: Number(matched[2]) * 10,
+  };
+}
+
 export function buildCampaignProgress(campaign: StorefrontCampaignVm | null | undefined, amount: number): CampaignProgress | null {
-  if (!campaign || campaign.type !== "full_reduction" || !campaign.thresholdAmount) return null;
+  if (!campaign || (campaign.type !== "full_reduction" && campaign.type !== "full_discount") || !campaign.thresholdAmount) return null;
   const currentAmount = Math.max(0, Number(amount) || 0);
   const thresholdAmount = Number(campaign.thresholdAmount);
   const missingAmount = Math.max(0, thresholdAmount - currentAmount);
@@ -89,12 +102,14 @@ export function buildCampaignProgress(campaign: StorefrontCampaignVm | null | un
     missingAmount,
     thresholdAmount,
     discountAmount: campaign.discountAmount,
+    discountPercent: campaign.discountPercent,
   };
 }
 
 function normalizeFlashSale(value: unknown): StorefrontCampaignVm | null {
   const activity = value as Partial<FlashSaleHomeActivity> | null;
   if (!activity || !activity.id || !activity.title) return null;
+  const slug = activity.slug || activity.id;
 
   return {
     id: activity.id,
@@ -102,7 +117,7 @@ function normalizeFlashSale(value: unknown): StorefrontCampaignVm | null {
     title: activity.title,
     subtitle: activity.subtitle,
     coverImage: activity.cover_image,
-    href: "/categories?activity=flash_sale",
+    href: activity.href || `/promotions/${slug}`,
     startsAt: activity.start_at,
     endsAt: activity.end_at,
     countdownSeconds: activity.countdown_seconds,
@@ -165,8 +180,12 @@ function normalizeSummaryCampaign(
 ): StorefrontCampaignVm | null {
   const activity = value as ActivityLike | null;
   if (!activity || !activity.id || !activity.title) return null;
+  const parsedText = `${activity.promo_label || ""} ${activity.subtitle || ""} ${activity.title || ""}`;
   const parsedFullReduction = type === "full_reduction"
-    ? parseFullReductionText(`${activity.promo_label || ""} ${activity.subtitle || ""} ${activity.title || ""}`)
+    ? parseFullReductionText(parsedText)
+    : {};
+  const parsedFullDiscount = type === "full_discount"
+    ? parseFullDiscountText(parsedText)
     : {};
 
   return {
@@ -177,11 +196,12 @@ function normalizeSummaryCampaign(
     description: activity.subtitle,
     promoLabel: activity.promo_label,
     coverImage: activity.cover_image,
-    href: activity.link_url || defaultCampaignHref(type),
+    href: resolveCampaignHref(type, activity),
     startsAt: activity.start_at,
     endsAt: activity.end_at,
-    thresholdAmount: parsedFullReduction.thresholdAmount,
+    thresholdAmount: parsedFullReduction.thresholdAmount ?? parsedFullDiscount.thresholdAmount,
     discountAmount: parsedFullReduction.discountAmount,
+    discountPercent: parsedFullDiscount.discountPercent,
     tone: CAMPAIGN_TONE[type],
     products: [],
     coupons: normalizeCoupons(coupons.length ? coupons : activity.coupons),
@@ -202,9 +222,20 @@ function normalizeCoupons(coupons: MarketingCouponPublic[] | undefined): Storefr
   }));
 }
 
+function resolveCampaignHref(type: StorefrontCampaignType, activity: ActivityLike) {
+  const detailSlug = String(activity.slug || activity.id || "").trim();
+  if (detailSlug && type !== "coupon" && type !== "new_user_gift" && type !== "notice") {
+    return `/promotions/${encodeURIComponent(detailSlug)}`;
+  }
+
+  const linkUrl = String(activity.link_url || "").trim();
+  if (linkUrl && !linkUrl.startsWith("/categories")) return linkUrl;
+  return defaultCampaignHref(type);
+}
+
 function defaultCampaignHref(type: StorefrontCampaignType) {
   if (type === "coupon" || type === "new_user_gift") return "/coupons";
-  if (type === "flash_sale") return "/categories?activity=flash_sale";
+  if (type === "flash_sale" || type === "full_reduction" || type === "full_discount" || type === "promotion") return `/promotions?type=${type}`;
   return "/categories";
 }
 

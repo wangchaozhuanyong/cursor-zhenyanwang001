@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 
 const homeModuleSettingsPath = require.resolve('../src/modules/admin/homeModuleSettings');
 const siteSettingsRepoPath = require.resolve('../src/modules/admin/repository/adminSiteSettings.repository');
-const productModulePath = require.resolve('../src/modules/product');
-const homeModulePath = require.resolve('../src/modules/home');
+const productModulePath = require.resolve('../src/modules/product/publicApi');
+const homeModulePath = require.resolve('../src/modules/home/publicApi');
 const auditLogPath = require.resolve('../src/utils/auditLog');
 
 function clearHomeModuleSettingsCache() {
@@ -44,10 +44,8 @@ function loadHomeModuleSettingsWithMocks(initialRaw = null) {
     filename: homeModulePath,
     loaded: true,
     exports: {
-      api: {
-        invalidateHomeBootstrapCache() {
-          homeInvalidated += 1;
-        },
+      invalidateHomeBootstrapCache() {
+        homeInvalidated += 1;
       },
     },
   };
@@ -57,10 +55,8 @@ function loadHomeModuleSettingsWithMocks(initialRaw = null) {
     filename: productModulePath,
     loaded: true,
     exports: {
-      api: {
-        clearCatalogCache() {
-          catalogCleared += 1;
-        },
+      clearCatalogCache() {
+        catalogCleared += 1;
       },
     },
   };

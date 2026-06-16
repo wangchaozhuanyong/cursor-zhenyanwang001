@@ -44,6 +44,14 @@ type ProductImpressionHandler = () => void;
 const productImpressionHandlers = new WeakMap<Element, ProductImpressionHandler>();
 let sharedProductImpressionObserver: IntersectionObserver | null = null;
 
+function activityBadgeLabel(type: string | undefined) {
+  if (type === "flash_sale") return "秒杀";
+  if (type === "limited_time_discount") return "折扣";
+  if (type === "member_price") return "会员";
+  if (type === "points_reward" || type === "checkin_reward") return "积分";
+  return "满减";
+}
+
 function getSharedProductImpressionObserver() {
   if (typeof IntersectionObserver === "undefined") return null;
   if (!sharedProductImpressionObserver) {
@@ -304,7 +312,7 @@ function ProductCardInner({
                 <div className="flex flex-wrap gap-1">
                   {product.active_activity ? (
                     <StoreBadge type="sale">
-                      {product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}
+                      {activityBadgeLabel(product.active_activity.type)}
                     </StoreBadge>
                   ) : null}
                   {product.is_hot ? <StoreBadge type="hot">热销</StoreBadge> : null}
@@ -356,7 +364,7 @@ function ProductCardInner({
         <div className="absolute left-2 top-2 z-[1] flex flex-wrap gap-1">
           {product.active_activity && (
             <StoreBadge type="sale" onMedia>
-              {product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}
+              {activityBadgeLabel(product.active_activity.type)}
             </StoreBadge>
           )}
           {product.is_hot ? <StoreBadge type="hot" onMedia>热销</StoreBadge> : null}

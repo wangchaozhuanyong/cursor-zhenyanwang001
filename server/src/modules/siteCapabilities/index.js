@@ -1,9 +1,5 @@
-const service = require('./service/siteCapabilities.service');
+const publicApi = require('./publicApi');
 
 module.exports = {
-  api: {
-    getSiteCapabilities: service.getSiteCapabilities,
-    isCapabilityEnabled: service.isCapabilityEnabled,
-    saveSiteCapabilities: service.saveSiteCapabilities,
-  },
+  api: publicApi,
 };

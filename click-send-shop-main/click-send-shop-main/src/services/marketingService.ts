@@ -1,5 +1,5 @@
 import * as marketingApi from "@/api/modules/marketing";
-import type { FlashSaleHomeActivity } from "@/api/modules/marketing";
+import type { FlashSaleHomeActivity, PromotionType } from "@/api/modules/marketing";
 import type { CouponClaimability } from "@/types/coupon";
 
 export type MarketingCouponPublic = CouponClaimability & {
@@ -30,6 +30,7 @@ export type MarketingCouponPublic = CouponClaimability & {
 
 export type MarketingActivitySummary = {
   id: string;
+  slug?: string;
   type: string;
   title: string;
   subtitle: string;
@@ -91,4 +92,21 @@ export async function fetchFullReductionNotices(position = "full_reduction_notic
   return (res.data || []) as MarketingActivitySummary[];
 }
 
+export async function fetchPromotions(params?: { page?: number; pageSize?: number; type?: PromotionType | "" }) {
+  const res = await marketingApi.getPromotions(params);
+  return res.data;
+}
+
+export async function fetchPromotionBySlug(slug: string) {
+  const res = await marketingApi.getPromotionBySlug(slug);
+  return res.data;
+}
+
 export type { FlashSaleHomeActivity };
+export type {
+  StorefrontPromotion,
+  StorefrontPromotionCoupon,
+  StorefrontPromotionItem,
+  StorefrontPromotionList,
+  PromotionType,
+} from "@/api/modules/marketing";

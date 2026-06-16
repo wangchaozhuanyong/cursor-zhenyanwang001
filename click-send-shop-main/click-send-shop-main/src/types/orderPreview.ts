@@ -1,5 +1,5 @@
 export type OrderDiscountLine = {
-  type: "flash_sale" | "full_reduction" | "coupon" | "points" | "reward_cash";
+  type: string;
   label: string;
   amount: number;
 };
@@ -9,6 +9,40 @@ export type OrderPointsBonusLine = {
   label: string;
   multiplier_percent: number;
   activity_id?: string;
+};
+
+export type PromotionUnavailableReason = {
+  promotion_id?: string | null;
+  type: string;
+  title?: string;
+  reason: string;
+  current_amount?: number;
+  threshold_amount?: number;
+  shortfall_amount?: number;
+};
+
+export type PromotionEvaluation = {
+  engine_version: string;
+  eligible: boolean;
+  applied: Array<Record<string, unknown>>;
+  unavailable_reasons: PromotionUnavailableReason[];
+  discount_lines: OrderDiscountLine[];
+  reward_lines: Array<Record<string, unknown>>;
+  matched_items: Array<Record<string, unknown>>;
+  stacking_result: Record<string, unknown>;
+  order_snapshot: OrderPricingSnapshot;
+};
+
+export type OrderPricingSnapshot = {
+  goods_amount?: number;
+  activity_discount_amount?: number;
+  coupon_discount_amount?: number;
+  shipping_fee?: number;
+  total_discount_amount?: number;
+  final_amount?: number;
+  coupon_id?: string | null;
+  item_count?: number;
+  items?: Array<Record<string, unknown>>;
 };
 
 export type OrderPreviewResult = {
@@ -37,4 +71,9 @@ export type OrderPreviewResult = {
   reward_cash_discount_amount?: number;
   discount_lines: OrderDiscountLine[];
   points_bonus_lines?: OrderPointsBonusLine[];
+  promotion_evaluation?: PromotionEvaluation | null;
+  promotion_engine_version?: string;
+  pricing_engine_version?: string;
+  pricing_engine_source?: string;
+  order_snapshot?: OrderPricingSnapshot | null;
 };

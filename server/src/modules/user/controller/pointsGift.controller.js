@@ -1,6 +1,6 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 function getLoyaltyApi() {
-  return /** @type {any} */ (require('../../loyalty')).api || {};
+  return /** @type {any} */ (require('../../loyalty/publicApi')) || {};
 }
 
 exports.listGifts = asyncRoute(async (_req, res) => {

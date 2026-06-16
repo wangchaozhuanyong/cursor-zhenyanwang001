@@ -28,6 +28,36 @@ export type OrderTab =
   | "after_sale"
   | "cancelled";
 
+export interface OrderLogisticsSnapshot {
+  status?: string;
+  status_label?: string;
+  exception_type?: string;
+  exception_message?: string;
+  has_exception?: boolean;
+  latest_event_at?: string | null;
+  last_synced_at?: string | null;
+}
+
+export interface OrderLogisticsTrack {
+  id: string;
+  order_id: string;
+  return_id?: string | null;
+  return_shipment_id?: string | null;
+  direction?: string;
+  tracking_no: string;
+  carrier: string;
+  carrier_code: string;
+  status: string;
+  status_label?: string;
+  exception_type?: string;
+  severity?: "info" | "warning" | "error" | string;
+  title: string;
+  description: string;
+  location: string;
+  event_time: string;
+  source: string;
+}
+
 export interface Order {
   id: string;
   order_no: string;
@@ -106,25 +136,20 @@ export interface Order {
   address: string;
   tracking_no?: string;
   carrier?: string;
+  logistics_status?: string;
+  logistics_status_label?: string;
+  logistics_exception_type?: string;
+  logistics_exception_message?: string;
+  logistics_latest_event_at?: string | null;
+  logistics_last_synced_at?: string | null;
+  logistics_snapshot?: OrderLogisticsSnapshot;
   logistics_provider?: {
     carrier: string;
     carrier_code: string;
     tracking_no: string;
     tracking_url: string;
   } | null;
-  logistics_timeline?: {
-    id: string;
-    order_id: string;
-    tracking_no: string;
-    carrier: string;
-    carrier_code: string;
-    status: string;
-    title: string;
-    description: string;
-    location: string;
-    event_time: string;
-    source: string;
-  }[];
+  logistics_timeline?: OrderLogisticsTrack[];
   /** 订单类型：normal | points_gift */
   order_type?: string;
   /** 下单/支付方式：whatsapp | online | reward_wallet | points_gift | points_plus_cash */
@@ -238,6 +263,7 @@ export interface ShortageAdjustmentPreview {
 }
 
 export interface SubmitOrderParams {
+  idempotency_key?: string;
   items: { product_id: string; variant_id?: string; sku_code?: string; qty: number }[];
   contact_name: string;
   contact_phone: string;

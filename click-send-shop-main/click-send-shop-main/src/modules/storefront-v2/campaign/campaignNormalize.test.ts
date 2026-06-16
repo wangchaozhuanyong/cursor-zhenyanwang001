@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCampaignProgress, normalizeHomeMarketingCampaigns, parseFullReductionText } from "./campaignNormalize";
+import { buildCampaignProgress, normalizeHomeMarketingCampaigns, parseFullDiscountText, parseFullReductionText } from "./campaignNormalize";
 
 describe("campaignNormalize", () => {
   it("parses full reduction labels", () => {
@@ -9,10 +9,18 @@ describe("campaignNormalize", () => {
     });
   });
 
+  it("parses full discount labels", () => {
+    expect(parseFullDiscountText("满100打8.5折")).toEqual({
+      thresholdAmount: 100,
+      discountPercent: 85,
+    });
+  });
+
   it("normalizes home marketing into ordered campaigns", () => {
     const campaigns = normalizeHomeMarketingCampaigns({
       flashSale: {
         id: "flash-1",
+        slug: "flash-slug",
         title: "今日秒杀",
         subtitle: "限时",
         start_at: "2026-06-01T00:00:00Z",
@@ -42,12 +50,24 @@ describe("campaignNormalize", () => {
           end_at: "2026-06-03T00:00:00Z",
           link_url: "/categories",
         },
+        {
+          id: "discount-1",
+          type: "full_discount",
+          title: "满折",
+          subtitle: "满100打9折",
+          promo_label: "满100打9折",
+          start_at: "2026-06-01T00:00:00Z",
+          end_at: "2026-06-03T00:00:00Z",
+          link_url: "/promotions/discount-1",
+        },
       ],
     });
 
-    expect(campaigns.map((campaign) => campaign.type)).toEqual(["flash_sale", "full_reduction"]);
+    expect(campaigns.map((campaign) => campaign.type)).toEqual(["flash_sale", "full_reduction", "full_discount"]);
+    expect(campaigns[0]?.href).toBe("/promotions/flash-slug");
     expect(campaigns[0]?.products[0]?.href).toBe("/product/p1");
     expect(campaigns[1]?.thresholdAmount).toBe(100);
+    expect(campaigns[2]?.discountPercent).toBe(90);
   });
 
   it("builds cart progress from full reduction campaign", () => {
@@ -68,6 +88,30 @@ describe("campaignNormalize", () => {
       missingAmount: 50,
       thresholdAmount: 200,
       discountAmount: 30,
+      discountPercent: undefined,
+    });
+  });
+
+  it("builds cart progress from full discount campaign", () => {
+    const [campaign] = normalizeHomeMarketingCampaigns({
+      fullReductionNotices: [
+        {
+          id: "discount-1",
+          type: "full_discount",
+          title: "满折",
+          promo_label: "满200打8折",
+          start_at: "2026-06-01T00:00:00Z",
+          end_at: "2026-06-03T00:00:00Z",
+        },
+      ],
+    });
+
+    expect(buildCampaignProgress(campaign, 150)).toEqual({
+      reached: false,
+      missingAmount: 50,
+      thresholdAmount: 200,
+      discountAmount: undefined,
+      discountPercent: 80,
     });
   });
 });

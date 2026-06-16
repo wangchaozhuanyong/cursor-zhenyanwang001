@@ -32,7 +32,7 @@ function setIconCacheEntry(cacheKey, buffer) {
 }
 
 function getProductApi() {
-  return /** @type {any} */ (require('../../product')).api || {};
+  return /** @type {any} */ (require('../../product/publicApi')) || {};
 }
 
 function hashBrand(input) {

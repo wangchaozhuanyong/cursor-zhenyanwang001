@@ -1,7 +1,7 @@
-const monitoringModule = require('../../monitoring');
+const monitoringApi = /** @type {any} */ (require('../../monitoring/publicApi'));
 
 function getMonitoringApi() {
-  return /** @type {any} */ (monitoringModule).api || {};
+  return monitoringApi || {};
 }
 
 function requireMonitoringApi(name) {

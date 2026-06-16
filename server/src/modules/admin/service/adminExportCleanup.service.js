@@ -1,7 +1,7 @@
-const dataRetentionModule = require('../../dataRetention');
+const dataRetentionApi = /** @type {any} */ (require('../../dataRetention/publicApi'));
 
 function getDataRetentionApi() {
-  return /** @type {any} */ (dataRetentionModule).api || {};
+  return dataRetentionApi || {};
 }
 
 function requireDataRetentionApi(name) {

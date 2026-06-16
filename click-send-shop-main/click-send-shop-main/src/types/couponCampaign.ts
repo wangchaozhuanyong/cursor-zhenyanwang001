@@ -1,4 +1,4 @@
-import type { Coupon } from "@/types/coupon";
+import type { Coupon, CouponDisplayCategory } from "@/types/coupon";
 
 export type CouponCampaignType =
   | "public_claim"
@@ -9,11 +9,21 @@ export type CouponCampaignType =
   | "seasonal"
   | "compensation";
 
-export type CouponCampaignStatus = "draft" | "scheduled" | "active" | "ended" | "disabled";
+export type CouponCampaignStatus =
+  | "draft"
+  | "scheduled"
+  | "active"
+  | "paused"
+  | "ended"
+  | "disabled"
+  | "archived";
+
+export type CouponCampaignStatusAction = "pause" | "resume" | "end" | "archive" | "disable" | "enable";
 
 export type CouponCampaignAudienceType = "all" | "new_user" | "member_level" | "user_tag" | "old_user";
 
 export type CouponCampaignIssueMode = "self_claim" | "auto_register" | "admin_issue" | "code_redeem";
+export type CouponCampaignDisplayCategory = CouponDisplayCategory;
 
 export interface CouponCampaignItem {
   id?: string;
@@ -48,6 +58,7 @@ export interface CouponCampaign {
   status: CouponCampaignStatus;
   disabled?: boolean;
   display_positions?: string[];
+  display_category?: CouponCampaignDisplayCategory | "";
   audience_type?: CouponCampaignAudienceType;
   audience_config?: Record<string, unknown> | null;
   audience_ids?: string[];
@@ -60,6 +71,7 @@ export interface CouponCampaign {
   coupon_count?: number;
   claimed_count?: number;
   used_count?: number;
+  discount_total?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -74,6 +86,7 @@ export interface CouponCampaignPayload {
   end_at: string;
   status?: CouponCampaignStatus;
   disabled?: boolean;
+  display_category?: CouponCampaignDisplayCategory | "";
   audience_type?: CouponCampaignAudienceType;
   audience_config?: Record<string, unknown> | null;
   audience_ids?: string[];

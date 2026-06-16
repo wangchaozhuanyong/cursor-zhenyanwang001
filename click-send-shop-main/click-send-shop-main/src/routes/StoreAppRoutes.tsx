@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Navigate, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigationType, useParams } from "react-router-dom";
 import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback, { DelayedRouteFallback, HomeShellSkeleton, StoreOutletFallback } from "@/components/AppRouteFallback";
 import AppBootReady from "@/components/AppBootReady";
@@ -41,9 +41,15 @@ import {
 } from "@/utils/storeScrollRestoration";
 import { logPerf, markPerfStart, observeLongTasksAndLcp } from "@/utils/performanceDebug";
 import {
+  isPublicLocale,
+  PublicLocaleProvider,
+  stripPublicLocaleFromPathname,
+  usePublicLocale,
+} from "@/i18n/publicLocale";
+import {
   StoreHomeV2, Login, BindWechatPhone,
-  Categories, ProductDetail, Search,
-  Cart, Checkout, Orders, OrderDetail, Returns, ReturnDetail, PendingReviews,
+  Categories, ProductDetail, Search, Promotions, PromotionDetail,
+  Cart, Checkout, PaymentResult, Orders, OrderDetail, Returns, ReturnDetail, PendingReviews,
   Profile, Feedback, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
   Help, About, ContentCmsPage, SupportDownload, TikTokLanding, NotFound,
 } from "@/routes/publicLazyPages";
@@ -61,11 +67,11 @@ const ChinaBrowserCompatNotice = lazy(() => import("@/components/ChinaBrowserCom
 const PwaUpdateToast = lazy(() => import("@/components/PwaUpdateToast"));
 
 function shouldDeferNonCriticalWidgets(pathname: string) {
-  return !/^\/(cart|checkout|orders|payment|login)(\/|$)/.test(pathname);
+  return !/^\/(cart|checkout|orders|payment|login)(\/|$)/.test(stripPublicLocaleFromPathname(pathname));
 }
 
 function shouldSuppressMarketingPopups(pathname: string) {
-  return /^\/(checkout|cart|orders|payment)(\/|$)/.test(pathname);
+  return /^\/(checkout|cart|orders|payment)(\/|$)/.test(stripPublicLocaleFromPathname(pathname));
 }
 
 function StoreScrollRestoration() {
@@ -367,10 +373,11 @@ function HomeRoute() {
 
 function LoyaltyRouteGuard({ feature, children }: { feature: "points" | "reward" | "referral"; children: ReactNode }) {
   const capabilities = useSiteCapabilities();
+  const { localizedPath } = usePublicLocale();
   const { config, loading } = useLoyaltyVisibility();
   const enabled = isLoyaltyFeatureEnabled(feature, capabilities, config);
   if (loading) return <AppRouteFallback />;
-  if (!enabled) return <Navigate to="/profile" replace />;
+  if (!enabled) return <Navigate to={localizedPath("/profile")} replace />;
   return <>{children}</>;
 }
 
@@ -381,11 +388,103 @@ function CapabilityRoute({ enabled, children }: { enabled: boolean; children: Re
   return <>{children}</>;
 }
 
+function PublicLocaleRouteScope() {
+  const { locale } = useParams();
+  if (!isPublicLocale(locale)) return <NotFound />;
+  return <Outlet />;
+}
+
+function publicRoutePath(path: string, localized: boolean) {
+  return localized ? path.replace(/^\//, "") : path;
+}
+
+function publicNavigatePath(path: string, localized: boolean) {
+  if (localized && path === "/") return ".";
+  return localized ? path.replace(/^\//, "") : path;
+}
+
+function renderFrontLayoutRoutes(capabilities: ReturnType<typeof useSiteCapabilities>, localized = false) {
+  return (
+    <Route element={<FrontLayout />}>
+      {localized ? <Route index element={<HomeRoute />} /> : <Route path="/" element={<HomeRoute />} />}
+      <Route path={publicRoutePath("/categories", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><Categories /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/new-arrivals", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><Navigate to={publicNavigatePath(NEW_ARRIVAL_CATEGORY_PATH, localized)} replace /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/support-download", localized)} element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><SupportDownload /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/search", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><Search /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/promotions", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><Promotions /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/promotions/:slug", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><PromotionDetail /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/cart", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><Cart /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/profile", localized)} element={<Profile />} />
+      <Route path={publicRoutePath("/product/:id", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><ProductDetail /></CapabilityRoute>} />
+    </Route>
+  );
+}
+
+function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCapabilities>, localized = false) {
+  return (
+    <>
+      <Route path={publicRoutePath("/login", localized)} element={<Login />} />
+      <Route path={publicRoutePath("/register", localized)} element={<Login />} />
+      <Route path={publicRoutePath("/login/bind-phone", localized)} element={<BindWechatPhone />} />
+      <Route path={publicRoutePath("/help", localized)} element={<Help />} />
+      <Route path={publicRoutePath("/about", localized)} element={<About />} />
+      <Route path={publicRoutePath("/feedback", localized)} element={<Feedback />} />
+      <Route path={publicRoutePath("/favorites", localized)} element={<Favorites />} />
+      <Route
+        path={publicRoutePath("/install", localized)}
+        element={capabilities.customerServiceDownloadEnabled ? (
+          <Navigate to={publicNavigatePath("/support-download?tab=download", localized)} replace />
+        ) : (
+          <Navigate to={publicNavigatePath("/", localized)} replace />
+        )}
+      />
+      <Route path={publicRoutePath("/content/:slug", localized)} element={<ContentCmsPage />} />
+
+      <Route path={publicRoutePath("/checkout", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.mallEnabled}><Checkout /></CapabilityRoute></ProtectedRoute>} />
+      <Route path={publicRoutePath("/payment/result", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><PaymentResult /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/settings", localized)} element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/member/benefits", localized)} element={<ProtectedRoute><MemberBenefits /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/orders", localized)} element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/orders/:id", localized)} element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/invite", localized)} element={<ProtectedRoute><LoyaltyRouteGuard feature="referral"><Invite /></LoyaltyRouteGuard></ProtectedRoute>} />
+      <Route path={publicRoutePath("/points", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.pointsEnabled}><LoyaltyRouteGuard feature="points"><Points /></LoyaltyRouteGuard></CapabilityRoute></ProtectedRoute>} />
+      <Route
+        path={publicRoutePath("/points/gifts", localized)}
+        element={
+          POINTS_GIFT_REDEEM_CLIENT_ENABLED ? (
+            <ProtectedRoute>
+              <CapabilityRoute enabled={capabilities.pointsEnabled}>
+                <LoyaltyRouteGuard feature="points">
+                  <PointsGiftShop />
+                </LoyaltyRouteGuard>
+              </CapabilityRoute>
+            </ProtectedRoute>
+          ) : (
+            <Navigate to={publicNavigatePath("/points", localized)} replace />
+          )
+        }
+      />
+      <Route path={publicRoutePath("/rewards", localized)} element={<ProtectedRoute><LoyaltyRouteGuard feature="reward"><Rewards /></LoyaltyRouteGuard></ProtectedRoute>} />
+      <Route path={publicRoutePath("/address", localized)} element={<ProtectedRoute><AddressManage /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/coupons", localized)} element={<CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute>} />
+      <Route path={publicRoutePath("/notifications", localized)} element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/returns", localized)} element={<ProtectedRoute><Returns /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/returns/:id", localized)} element={<ProtectedRoute><ReturnDetail /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/reviews/pending", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.reviewEnabled}><PendingReviews /></CapabilityRoute></ProtectedRoute>} />
+      <Route path={publicRoutePath("/history", localized)} element={<History />} />
+    </>
+  );
+}
+
 export function StoreAppRoutes() {
   const location = useLocation();
   if (/^\/tiktok\/?$/.test(location.pathname)) return <TikTokStandaloneRoutes />;
 
-  return <MainStoreRoutes />;
+  return (
+    <PublicLocaleProvider>
+      <MainStoreRoutes />
+    </PublicLocaleProvider>
+  );
 }
 
 function MainStoreRoutes() {
@@ -417,61 +516,14 @@ function MainStoreRoutes() {
           <Suspense fallback={<DelayedRouteFallback fallback={<StoreOutletFallback />} delayMs={180} />}>
             <AppBootReady />
             <Routes>
-              <Route path="/zh" element={<Navigate to="/" replace />} />
-              <Route path="/en" element={<Navigate to="/" replace />} />
+              {renderFrontLayoutRoutes(capabilities)}
+              {renderStandalonePublicRoutes(capabilities)}
 
-              <Route element={<FrontLayout />}>
-                <Route path="/" element={<HomeRoute />} />
-                <Route path="/categories" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Categories /></CapabilityRoute>} />
-                <Route path="/new-arrivals" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Navigate to={NEW_ARRIVAL_CATEGORY_PATH} replace /></CapabilityRoute>} />
-                <Route path="/support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><SupportDownload /></CapabilityRoute>} />
-                <Route path="/search" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Search /></CapabilityRoute>} />
-                <Route path="/cart" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Cart /></CapabilityRoute>} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/product/:id" element={<CapabilityRoute enabled={capabilities.mallEnabled}><ProductDetail /></CapabilityRoute>} />
+              <Route path="/:locale" element={<PublicLocaleRouteScope />}>
+                {renderFrontLayoutRoutes(capabilities, true)}
+                {renderStandalonePublicRoutes(capabilities, true)}
+                <Route path="*" element={<NotFound />} />
               </Route>
-
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Login />} />
-              <Route path="/login/bind-phone" element={<BindWechatPhone />} />
-              <Route path="/help" element={<Help />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/feedback" element={<Feedback />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/install" element={capabilities.customerServiceDownloadEnabled ? <Navigate to="/support-download?tab=download" replace /> : <Navigate to="/" replace />} />
-              <Route path="/content/:slug" element={<ContentCmsPage />} />
-
-              <Route path="/checkout" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.mallEnabled}><Checkout /></CapabilityRoute></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/member/benefits" element={<ProtectedRoute><MemberBenefits /></ProtectedRoute>} />
-              <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-              <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
-              <Route path="/invite" element={<ProtectedRoute><LoyaltyRouteGuard feature="referral"><Invite /></LoyaltyRouteGuard></ProtectedRoute>} />
-              <Route path="/points" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.pointsEnabled}><LoyaltyRouteGuard feature="points"><Points /></LoyaltyRouteGuard></CapabilityRoute></ProtectedRoute>} />
-              <Route
-                path="/points/gifts"
-                element={
-                  POINTS_GIFT_REDEEM_CLIENT_ENABLED ? (
-                    <ProtectedRoute>
-                      <CapabilityRoute enabled={capabilities.pointsEnabled}>
-                        <LoyaltyRouteGuard feature="points">
-                          <PointsGiftShop />
-                        </LoyaltyRouteGuard>
-                      </CapabilityRoute>
-                    </ProtectedRoute>
-                  ) : (
-                    <Navigate to="/points" replace />
-                  )
-                }
-              />
-              <Route path="/rewards" element={<ProtectedRoute><LoyaltyRouteGuard feature="reward"><Rewards /></LoyaltyRouteGuard></ProtectedRoute>} />
-              <Route path="/address" element={<ProtectedRoute><AddressManage /></ProtectedRoute>} />
-              <Route path="/coupons" element={<CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
-              <Route path="/returns/:id" element={<ProtectedRoute><ReturnDetail /></ProtectedRoute>} />
-              <Route path="/reviews/pending" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.reviewEnabled}><PendingReviews /></CapabilityRoute></ProtectedRoute>} />
-              <Route path="/history" element={<History />} />
 
               <Route path="/admin/*" element={<NotFound />} />
               <Route path="*" element={<NotFound />} />

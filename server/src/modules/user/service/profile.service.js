@@ -1,7 +1,7 @@
-const authModule = require('../../auth');
+const authApi = /** @type {any} */ (require('../../auth/publicApi'));
 
 function getAuthApi() {
-  return /** @type {any} */ (authModule).api || {};
+  return authApi || {};
 }
 
 function requireAuthApi(name) {

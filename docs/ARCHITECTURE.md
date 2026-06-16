@@ -218,10 +218,13 @@ payment/repository -> user/repository
 
 ```text
 order/service -> require('../user').api
-payment/service -> require('../admin').api
+payment/service -> require('../admin/publicApi')
+admin/controller -> require('../../payment/publicApi')
 ```
 
-前提是目标模块在 `index.js` 明确暴露公开能力，并且调用方仍在自己的 service 层做编排。
+前提是目标模块明确暴露公开能力，并且调用方仍在自己的 service 层做编排。
+新代码必须使用 `server/src/modules/<module>/publicApi.js`，`index.js` 上的 `router.api` 只作为兼容旧调用的挂载点。
+`npm run arch:check` 中的 `check-public-api-boundaries.js` 会防止代码回退到 `require(...).api`。
 
 如果无法判断归属模块，必须停止。
 如果需要新的跨模块流程，必须先说明风险、影响范围和回滚方案。

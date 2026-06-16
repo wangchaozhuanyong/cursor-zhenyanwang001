@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { adminTableClassName } from "@/utils/adminTableClasses";
 
 export const INVENTORY_SKU_TABLE_CLASS = adminTableClassName(
-  "admin-inventory-sku-table w-full min-w-[1480px] text-left text-sm",
+  "admin-inventory-sku-table w-full min-w-[1560px] text-left text-sm",
 );
 
 export function inventorySkuTd(extra?: string) {

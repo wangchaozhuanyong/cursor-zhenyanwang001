@@ -24,23 +24,257 @@ import {
   getReturnStatusLabel,
   getReturnTypeLabel,
 } from "./returnProgress";
+import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 
-const ORDER_REFUND_STATUS_LABELS: Record<string, string> = {
-  pending: "待处理",
-  paid: "未退款",
-  partially_refunded: "部分退款",
-  refunded: "已退款",
-  refunding: "退款中",
+const ORDER_REFUND_STATUS_LABELS: Record<PublicLocale, Record<string, string>> = {
+  zh: {
+    pending: "待处理",
+    paid: "未退款",
+    partially_refunded: "部分退款",
+    refunded: "已退款",
+    refunding: "退款中",
+  },
+  en: {
+    pending: "Pending",
+    paid: "Not refunded",
+    partially_refunded: "Partially refunded",
+    refunded: "Refunded",
+    refunding: "Refunding",
+  },
+  ms: {
+    pending: "Menunggu proses",
+    paid: "Belum dibayar balik",
+    partially_refunded: "Sebahagian dibayar balik",
+    refunded: "Dibayar balik",
+    refunding: "Sedang dibayar balik",
+  },
 };
 
-function getOrderRefundStatusLabel(status?: string) {
-  return ORDER_REFUND_STATUS_LABELS[status || ""] || status || "暂无退款";
+const RETURN_DETAIL_COPY: Record<PublicLocale, {
+  loadFailed: string;
+  uploadLimit: string;
+  uploadFailed: string;
+  actionFailed: string;
+  evidenceRequired: string;
+  evidenceSubmitted: string;
+  logisticsRequired: string;
+  logisticsSubmitted: string;
+  cancelConfirm: string;
+  cancelSubmitted: string;
+  completedSubmitted: string;
+  title: string;
+  backToProgress: string;
+  loading: string;
+  order: string;
+  quantity: string;
+  refund: string;
+  nextStep: string;
+  progress: string;
+  evidenceTitle: string;
+  evidencePlaceholder: string;
+  uploadImage: string;
+  submitEvidence: string;
+  evidenceAlt: string;
+  evidenceSupplementAlt: string;
+  deleteImage: string;
+  logisticsTitle: string;
+  carrier: string;
+  trackingNo: string;
+  contactPhone: string;
+  noteOptional: string;
+  submitLogistics: string;
+  confirmTitle: string;
+  confirmDescription: string;
+  confirmButton: string;
+  cancelTitle: string;
+  cancelDescription: string;
+  cancelButton: string;
+  refundStatus: string;
+  orderRefundStatus: string;
+  currentRefund: string;
+  orderRefunded: string;
+  noRefundRecords: string;
+  applicationInfo: string;
+  reason: string;
+  description: string;
+  merchantNote: string;
+  returnShipments: string;
+  logisticsTracks: string;
+  noCarrierTracks: string;
+  noRefund: string;
+}> = {
+  zh: {
+    loadFailed: "售后详情加载失败",
+    uploadLimit: "最多上传 6 张凭证图片",
+    uploadFailed: "图片上传失败",
+    actionFailed: "操作失败",
+    evidenceRequired: "请填写说明或上传凭证图片",
+    evidenceSubmitted: "凭证已提交",
+    logisticsRequired: "请填写快递公司和物流单号",
+    logisticsSubmitted: "退货物流已提交",
+    cancelConfirm: "确定取消这次售后申请吗？",
+    cancelSubmitted: "售后申请已取消",
+    completedSubmitted: "售后已确认完成",
+    title: "售后详情",
+    backToProgress: "返回售后进度",
+    loading: "加载中...",
+    order: "订单",
+    quantity: "申请数量",
+    refund: "退款",
+    nextStep: "下一步",
+    progress: "售后进度",
+    evidenceTitle: "补充凭证",
+    evidencePlaceholder: "请补充商品问题、包装情况、沟通过程等说明",
+    uploadImage: "上传图片",
+    submitEvidence: "提交凭证",
+    evidenceAlt: "售后凭证",
+    evidenceSupplementAlt: "售后补充凭证",
+    deleteImage: "删除图片",
+    logisticsTitle: "填写退货物流",
+    carrier: "快递公司",
+    trackingNo: "物流单号",
+    contactPhone: "联系电话",
+    noteOptional: "备注，可不填",
+    submitLogistics: "提交退货物流",
+    confirmTitle: "确认完成",
+    confirmDescription: "确认收到换货商品，或确认退款无误后，可以结束本次售后。",
+    confirmButton: "确认售后完成",
+    cancelTitle: "取消申请",
+    cancelDescription: "如果不需要继续售后，可以取消申请。若商品已经寄出，请先联系客服确认。",
+    cancelButton: "取消售后申请",
+    refundStatus: "退款状态",
+    orderRefundStatus: "订单退款状态",
+    currentRefund: "本次退款",
+    orderRefunded: "订单累计已退",
+    noRefundRecords: "暂无支付渠道退款记录，商家处理退款后这里会同步显示。",
+    applicationInfo: "申请信息",
+    reason: "原因",
+    description: "说明",
+    merchantNote: "商家备注",
+    returnShipments: "退货包裹",
+    logisticsTracks: "退货物流轨迹",
+    noCarrierTracks: "已收到退货物流单号，暂无承运商轨迹。物流接口接通或商家刷新后会显示完整轨迹。",
+    noRefund: "暂无退款",
+  },
+  en: {
+    loadFailed: "Failed to load return details",
+    uploadLimit: "Upload up to 6 evidence images",
+    uploadFailed: "Image upload failed",
+    actionFailed: "Action failed",
+    evidenceRequired: "Add notes or upload evidence images",
+    evidenceSubmitted: "Evidence submitted",
+    logisticsRequired: "Enter the courier and tracking number",
+    logisticsSubmitted: "Return logistics submitted",
+    cancelConfirm: "Cancel this after-sales request?",
+    cancelSubmitted: "Request cancelled",
+    completedSubmitted: "After-sales case confirmed completed",
+    title: "After-sales details",
+    backToProgress: "Back to progress",
+    loading: "Loading...",
+    order: "Order",
+    quantity: "Request quantity",
+    refund: "Refund",
+    nextStep: "Next step",
+    progress: "Progress",
+    evidenceTitle: "Add evidence",
+    evidencePlaceholder: "Add item issue, packaging condition, or conversation details",
+    uploadImage: "Upload image",
+    submitEvidence: "Submit evidence",
+    evidenceAlt: "After-sales evidence",
+    evidenceSupplementAlt: "Additional after-sales evidence",
+    deleteImage: "Delete image",
+    logisticsTitle: "Submit return logistics",
+    carrier: "Courier",
+    trackingNo: "Tracking number",
+    contactPhone: "Contact phone",
+    noteOptional: "Note, optional",
+    submitLogistics: "Submit return logistics",
+    confirmTitle: "Confirm completion",
+    confirmDescription: "Finish this case after you receive the exchange or confirm the refund.",
+    confirmButton: "Confirm completed",
+    cancelTitle: "Cancel request",
+    cancelDescription: "You can cancel if you no longer need service. Contact support first if the item has already been shipped back.",
+    cancelButton: "Cancel request",
+    refundStatus: "Refund status",
+    orderRefundStatus: "Order refund status",
+    currentRefund: "This refund",
+    orderRefunded: "Total refunded",
+    noRefundRecords: "No payment-provider refund records yet. They will appear after the merchant processes the refund.",
+    applicationInfo: "Request information",
+    reason: "Reason",
+    description: "Description",
+    merchantNote: "Merchant note",
+    returnShipments: "Return shipments",
+    logisticsTracks: "Return logistics tracking",
+    noCarrierTracks: "The return tracking number has been received, but no carrier events are available yet. Events will appear after carrier integration or merchant refresh.",
+    noRefund: "No refund yet",
+  },
+  ms: {
+    loadFailed: "Gagal memuatkan butiran selepas jualan",
+    uploadLimit: "Muat naik maksimum 6 gambar bukti",
+    uploadFailed: "Muat naik gambar gagal",
+    actionFailed: "Tindakan gagal",
+    evidenceRequired: "Tambah penerangan atau muat naik gambar bukti",
+    evidenceSubmitted: "Bukti dihantar",
+    logisticsRequired: "Isi kurier dan nombor penjejakan",
+    logisticsSubmitted: "Logistik pemulangan dihantar",
+    cancelConfirm: "Batalkan permohonan selepas jualan ini?",
+    cancelSubmitted: "Permohonan dibatalkan",
+    completedSubmitted: "Kes selepas jualan disahkan selesai",
+    title: "Butiran selepas jualan",
+    backToProgress: "Kembali ke kemajuan",
+    loading: "Memuatkan...",
+    order: "Pesanan",
+    quantity: "Kuantiti dimohon",
+    refund: "Bayaran balik",
+    nextStep: "Langkah seterusnya",
+    progress: "Kemajuan",
+    evidenceTitle: "Tambah bukti",
+    evidencePlaceholder: "Tambah isu barang, keadaan bungkusan atau butiran perbualan",
+    uploadImage: "Muat naik gambar",
+    submitEvidence: "Hantar bukti",
+    evidenceAlt: "Bukti selepas jualan",
+    evidenceSupplementAlt: "Bukti tambahan selepas jualan",
+    deleteImage: "Padam gambar",
+    logisticsTitle: "Isi logistik pemulangan",
+    carrier: "Kurier",
+    trackingNo: "Nombor penjejakan",
+    contactPhone: "Telefon untuk dihubungi",
+    noteOptional: "Nota, pilihan",
+    submitLogistics: "Hantar logistik pemulangan",
+    confirmTitle: "Sahkan selesai",
+    confirmDescription: "Tamatkan kes selepas menerima barang tukaran atau mengesahkan bayaran balik.",
+    confirmButton: "Sahkan selesai",
+    cancelTitle: "Batalkan permohonan",
+    cancelDescription: "Anda boleh batalkan jika tidak lagi perlukan servis. Hubungi sokongan dahulu jika barang sudah dihantar balik.",
+    cancelButton: "Batalkan permohonan",
+    refundStatus: "Status bayaran balik",
+    orderRefundStatus: "Status bayaran balik pesanan",
+    currentRefund: "Bayaran balik ini",
+    orderRefunded: "Jumlah sudah dibayar balik",
+    noRefundRecords: "Tiada rekod bayaran balik saluran pembayaran buat masa ini. Rekod akan dipaparkan selepas peniaga memproses bayaran balik.",
+    applicationInfo: "Maklumat permohonan",
+    reason: "Sebab",
+    description: "Penerangan",
+    merchantNote: "Nota peniaga",
+    returnShipments: "Bungkusan pemulangan",
+    logisticsTracks: "Jejak logistik pemulangan",
+    noCarrierTracks: "Nombor penjejakan pemulangan sudah diterima, tetapi tiada jejak kurier buat masa ini. Jejak akan dipaparkan selepas integrasi kurier atau peniaga memuat semula.",
+    noRefund: "Tiada bayaran balik",
+  },
+};
+
+function getOrderRefundStatusLabel(status?: string, locale: PublicLocale = "zh") {
+  const labels = ORDER_REFUND_STATUS_LABELS[locale] || ORDER_REFUND_STATUS_LABELS.zh;
+  return labels[status || ""] || status || RETURN_DETAIL_COPY[locale]?.noRefund || RETURN_DETAIL_COPY.zh.noRefund;
 }
 
 export default function ReturnDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const goBack = useGoBack("/returns");
+  const { localizedPath, locale } = usePublicLocale();
+  const copy = RETURN_DETAIL_COPY[locale];
+  const goBack = useGoBack(localizedPath("/returns"));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [detail, setDetail] = useState<ReturnRequest | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,12 +295,12 @@ export default function ReturnDetail() {
       setDetail(data);
       setContactPhone(data.contact_phone || "");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "售后详情加载失败");
-      navigate("/returns", { replace: true });
+      toast.error(error instanceof Error ? error.message : copy.loadFailed);
+      navigate(localizedPath("/returns"), { replace: true });
     } finally {
       setLoading(false);
     }
-  }, [id, navigate]);
+  }, [copy.loadFailed, id, localizedPath, navigate]);
 
   useEffect(() => {
     void loadDetail();
@@ -75,7 +309,7 @@ export default function ReturnDetail() {
   const uploadImages = async (files: File[]) => {
     if (!files.length) return;
     if (evidenceImages.length + files.length > 6) {
-      toast.error("最多上传 6 张凭证图片");
+      toast.error(copy.uploadLimit);
       return;
     }
     setUploading(true);
@@ -83,7 +317,7 @@ export default function ReturnDetail() {
       const uploaded = await uploadService.uploadFiles(files, { mode: "image" });
       setEvidenceImages((prev) => [...prev, ...uploaded.map((item) => item.url)]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "图片上传失败");
+      toast.error(error instanceof Error ? error.message : copy.uploadFailed);
     } finally {
       setUploading(false);
     }
@@ -101,7 +335,7 @@ export default function ReturnDetail() {
       setLogisticsNote("");
       await loadDetail();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "操作失败");
+      toast.error(error instanceof Error ? error.message : copy.actionFailed);
     } finally {
       setSubmitting(false);
     }
@@ -110,7 +344,7 @@ export default function ReturnDetail() {
   const submitEvidence = () => {
     if (!id) return;
     if (!evidenceText.trim() && evidenceImages.length === 0) {
-      toast.error("请填写说明或上传凭证图片");
+      toast.error(copy.evidenceRequired);
       return;
     }
     void runAction(
@@ -119,14 +353,14 @@ export default function ReturnDetail() {
         images: evidenceImages,
         proof_images: evidenceImages,
       }),
-      "凭证已提交",
+      copy.evidenceSubmitted,
     );
   };
 
   const submitLogistics = () => {
     if (!id) return;
     if (!carrier.trim() || !trackingNo.trim()) {
-      toast.error("请填写快递公司和物流单号");
+      toast.error(copy.logisticsRequired);
       return;
     }
     void runAction(
@@ -136,29 +370,29 @@ export default function ReturnDetail() {
         contact_phone: contactPhone.trim(),
         note: logisticsNote.trim(),
       }),
-      "退货物流已提交",
+      copy.logisticsSubmitted,
     );
   };
 
   const cancelReturn = () => {
     if (!id) return;
-    if (!window.confirm("确定取消这次售后申请吗？")) return;
-    void runAction(() => returnService.cancelReturn(id), "售后申请已取消");
+    if (!window.confirm(copy.cancelConfirm)) return;
+    void runAction(() => returnService.cancelReturn(id), copy.cancelSubmitted);
   };
 
   const confirmCompleted = () => {
     if (!id) return;
-    void runAction(() => returnService.confirmCompleted(id), "售后已确认完成");
+    void runAction(() => returnService.confirmCompleted(id), copy.completedSubmitted);
   };
 
-  const action = detail ? getBuyerReturnAction(detail) : null;
-  const timeline = detail ? buildReturnTimeline(detail) : [];
+  const action = detail ? getBuyerReturnAction(detail, locale) : null;
+  const timeline = detail ? buildReturnTimeline(detail, locale) : [];
   const image = detail ? getReturnItemImage(detail) : "";
 
   return (
-    <StoreAccountLayout title="售后详情" onBack={goBack} backFallback="/returns" desktopBackLabel="返回售后进度" mainClassName="sm:px-4 xl:py-6">
+    <StoreAccountLayout title={copy.title} onBack={goBack} backFallback={localizedPath("/returns")} desktopBackLabel={copy.backToProgress} mainClassName="sm:px-4 xl:py-6">
       <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
-        {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">加载中...</p> : null}
+        {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">{copy.loading}</p> : null}
         {detail ? (
           <>
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -167,7 +401,7 @@ export default function ReturnDetail() {
                   {image ? (
                     <ProductCoverImage
                       url={image}
-                      alt={getReturnItemName(detail)}
+                      alt={getReturnItemName(detail, locale)}
                       className="h-full w-full"
                       imgClassName="object-cover"
                     />
@@ -175,30 +409,30 @@ export default function ReturnDetail() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="truncate text-base font-semibold text-foreground">{getReturnItemName(detail)}</h1>
+                    <h1 className="truncate text-base font-semibold text-foreground">{getReturnItemName(detail, locale)}</h1>
                     <span className={`rounded-full px-2 py-0.5 text-[10px] ${getReturnStatusBadgeClass(detail.status)}`}>
-                      {getReturnStatusLabel(detail.status)}
+                      {getReturnStatusLabel(detail.status, locale)}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {getReturnTypeLabel(detail.type)} · 订单 {detail.order_no}
+                    {getReturnTypeLabel(detail.type, locale)} · {copy.order} {detail.order_no}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    申请数量 {detail.quantity || detail.item_info?.request_qty || 1}
-                    {detail.refund_amount != null && Number(detail.refund_amount) > 0 ? ` · 退款 RM ${Number(detail.refund_amount).toFixed(2)}` : ""}
+                    {copy.quantity} {detail.quantity || detail.item_info?.request_qty || 1}
+                    {detail.refund_amount != null && Number(detail.refund_amount) > 0 ? ` · ${copy.refund} RM ${Number(detail.refund_amount).toFixed(2)}` : ""}
                   </p>
                 </div>
               </div>
               {action ? (
                 <div className="mt-4 rounded-xl bg-[var(--theme-primary)]/10 p-3">
-                  <p className="font-medium text-[var(--theme-primary)]">下一步：{action.label}</p>
+                  <p className="font-medium text-[var(--theme-primary)]">{copy.nextStep}: {action.label}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{action.description}</p>
                 </div>
               ) : null}
             </section>
 
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <h2 className="font-semibold text-foreground">售后进度</h2>
+              <h2 className="font-semibold text-foreground">{copy.progress}</h2>
               <div className="mt-4 space-y-4">
                 {timeline.map((item, index) => (
                   <div key={item.key} className="grid grid-cols-[24px_1fr] gap-3">
@@ -218,22 +452,22 @@ export default function ReturnDetail() {
 
             {action?.key === "evidence" ? (
               <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="font-semibold text-foreground">补充凭证</h2>
+                <h2 className="font-semibold text-foreground">{copy.evidenceTitle}</h2>
                 <textarea
                   value={evidenceText}
                   onChange={(e) => setEvidenceText(e.target.value)}
                   rows={4}
-                  placeholder="请补充商品问题、包装情况、沟通过程等说明"
+                  placeholder={copy.evidencePlaceholder}
                   className="mt-3 w-full rounded-xl border border-border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
                 />
                 <div className="mt-3 flex items-center justify-between">
                   <UnifiedButton type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs disabled:opacity-60">
                     {uploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} />}
-                    上传图片
+                    {copy.uploadImage}
                   </UnifiedButton>
                   <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { void uploadImages(Array.from(e.target.files || [])); e.currentTarget.value = ""; }} />
                   <UnifiedButton type="button" onClick={submitEvidence} disabled={submitting || uploading} className="rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
-                    提交凭证
+                    {copy.submitEvidence}
                   </UnifiedButton>
                 </div>
                 {evidenceImages.length > 0 ? (
@@ -242,11 +476,11 @@ export default function ReturnDetail() {
                       <div key={url} className="relative overflow-hidden rounded-lg border border-border">
                         <StableImage
                           src={url}
-                          alt="售后补充凭证"
+                          alt={copy.evidenceSupplementAlt}
                           className="aspect-square w-full"
                           imgClassName="object-cover"
                         />
-                        <UnifiedButton type="button" aria-label="删除图片" onClick={() => setEvidenceImages((prev) => prev.filter((item) => item !== url))} className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white">
+                        <UnifiedButton type="button" aria-label={copy.deleteImage} onClick={() => setEvidenceImages((prev) => prev.filter((item) => item !== url))} className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white">
                           <X size={13} />
                         </UnifiedButton>
                       </div>
@@ -258,49 +492,49 @@ export default function ReturnDetail() {
 
             {action?.key === "logistics" ? (
               <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="flex items-center gap-2 font-semibold text-foreground"><Truck size={16} />填写退货物流</h2>
+                <h2 className="flex items-center gap-2 font-semibold text-foreground"><Truck size={16} />{copy.logisticsTitle}</h2>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <input value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder="快递公司" className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-                  <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder="物流单号" className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-                  <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="联系电话" className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-                  <input value={logisticsNote} onChange={(e) => setLogisticsNote(e.target.value)} placeholder="备注，可不填" className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
+                  <input value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder={copy.carrier} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
+                  <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder={copy.trackingNo} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
+                  <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder={copy.contactPhone} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
+                  <input value={logisticsNote} onChange={(e) => setLogisticsNote(e.target.value)} placeholder={copy.noteOptional} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
                 </div>
                 <UnifiedButton type="button" onClick={submitLogistics} disabled={submitting} className="mt-3 w-full rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
-                  提交退货物流
+                  {copy.submitLogistics}
                 </UnifiedButton>
               </section>
             ) : null}
 
             {action?.key === "confirm" ? (
               <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="flex items-center gap-2 font-semibold text-foreground"><PackageCheck size={16} />确认完成</h2>
-                <p className="mt-2 text-xs text-muted-foreground">确认收到换货商品，或确认退款无误后，可以结束本次售后。</p>
+                <h2 className="flex items-center gap-2 font-semibold text-foreground"><PackageCheck size={16} />{copy.confirmTitle}</h2>
+                <p className="mt-2 text-xs text-muted-foreground">{copy.confirmDescription}</p>
                 <UnifiedButton type="button" onClick={confirmCompleted} disabled={submitting} className="mt-3 w-full rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
-                  确认售后完成
+                  {copy.confirmButton}
                 </UnifiedButton>
               </section>
             ) : null}
 
             {action?.key === "cancel" ? (
               <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="flex items-center gap-2 font-semibold text-foreground"><RotateCcw size={16} />取消申请</h2>
-                <p className="mt-2 text-xs text-muted-foreground">如果不需要继续售后，可以取消申请。若商品已经寄出，请先联系客服确认。</p>
+                <h2 className="flex items-center gap-2 font-semibold text-foreground"><RotateCcw size={16} />{copy.cancelTitle}</h2>
+                <p className="mt-2 text-xs text-muted-foreground">{copy.cancelDescription}</p>
                 <UnifiedButton type="button" onClick={cancelReturn} disabled={submitting} className="mt-3 w-full rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-60">
-                  取消售后申请
+                  {copy.cancelButton}
                 </UnifiedButton>
               </section>
             ) : null}
 
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <h2 className="flex items-center gap-2 font-semibold text-foreground"><CreditCard size={16} />退款状态</h2>
+              <h2 className="flex items-center gap-2 font-semibold text-foreground"><CreditCard size={16} />{copy.refundStatus}</h2>
               <div className="mt-3 rounded-xl bg-secondary/60 p-3 text-xs text-muted-foreground">
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                  <span>订单退款状态：{getOrderRefundStatusLabel(detail.refund_summary?.order_refund_status || detail.refund_summary?.order_payment_status)}</span>
+                  <span>{copy.orderRefundStatus}: {getOrderRefundStatusLabel(detail.refund_summary?.order_refund_status || detail.refund_summary?.order_payment_status, locale)}</span>
                   {Number(detail.refund_summary?.refund_amount || detail.refund_amount || 0) > 0 ? (
-                    <span>本次退款：RM {Number(detail.refund_summary?.refund_amount || detail.refund_amount || 0).toFixed(2)}</span>
+                    <span>{copy.currentRefund}: RM {Number(detail.refund_summary?.refund_amount || detail.refund_amount || 0).toFixed(2)}</span>
                   ) : null}
                   {Number(detail.refund_summary?.order_refunded_amount || 0) > 0 ? (
-                    <span>订单累计已退：RM {Number(detail.refund_summary?.order_refunded_amount || 0).toFixed(2)}</span>
+                    <span>{copy.orderRefunded}: RM {Number(detail.refund_summary?.order_refunded_amount || 0).toFixed(2)}</span>
                   ) : null}
                 </div>
               </div>
@@ -309,7 +543,7 @@ export default function ReturnDetail() {
                   {detail.refund_records.map((record) => (
                     <div key={record.id} className="rounded-xl border border-border bg-background/60 p-3 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-medium text-foreground">{getRefundRecordStatusLabel(record)}</p>
+                        <p className="font-medium text-foreground">{getRefundRecordStatusLabel(record, locale)}</p>
                         <p className="text-muted-foreground">{formatDateTime(record.created_at)}</p>
                       </div>
                       <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
@@ -323,17 +557,17 @@ export default function ReturnDetail() {
                 </div>
               ) : (
                 <p className="mt-3 rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
-                  暂无支付渠道退款记录，商家处理退款后这里会同步显示。
+                  {copy.noRefundRecords}
                 </p>
               )}
             </section>
 
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <h2 className="font-semibold text-foreground">申请信息</h2>
+              <h2 className="font-semibold text-foreground">{copy.applicationInfo}</h2>
               <div className="mt-3 space-y-2 text-xs text-muted-foreground">
-                <p>原因：{detail.reason || "-"}</p>
-                {detail.description ? <p className="whitespace-pre-wrap">说明：{detail.description}</p> : null}
-                {detail.admin_remark ? <p className="whitespace-pre-wrap">商家备注：{detail.admin_remark}</p> : null}
+                <p>{copy.reason}: {detail.reason || "-"}</p>
+                {detail.description ? <p className="whitespace-pre-wrap">{copy.description}: {detail.description}</p> : null}
+                {detail.admin_remark ? <p className="whitespace-pre-wrap">{copy.merchantNote}: {detail.admin_remark}</p> : null}
               </div>
               {detail.images?.length ? (
                 <div className="mt-3 grid grid-cols-3 gap-2">
@@ -341,7 +575,7 @@ export default function ReturnDetail() {
                     <StableImage
                       key={url}
                       src={url}
-                      alt="售后凭证"
+                      alt={copy.evidenceAlt}
                       className="aspect-square w-full rounded-lg"
                       imgClassName="object-cover"
                     />
@@ -352,7 +586,7 @@ export default function ReturnDetail() {
 
             {detail.shipments?.length ? (
               <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="font-semibold text-foreground">退货包裹</h2>
+                <h2 className="font-semibold text-foreground">{copy.returnShipments}</h2>
                 <div className="mt-3 space-y-2">
                   {detail.shipments.map((item) => (
                     <div key={item.id} className="rounded-xl bg-secondary/60 p-3 text-xs">
@@ -367,7 +601,7 @@ export default function ReturnDetail() {
 
             {detail.shipments?.length || detail.logistics_tracks?.length ? (
               <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="flex items-center gap-2 font-semibold text-foreground"><Truck size={16} />退货物流轨迹</h2>
+                <h2 className="flex items-center gap-2 font-semibold text-foreground"><Truck size={16} />{copy.logisticsTracks}</h2>
                 {detail.logistics_tracks?.length ? (
                   <div className="mt-3 space-y-3">
                     {detail.logistics_tracks.map((track, index) => (
@@ -378,7 +612,7 @@ export default function ReturnDetail() {
                         </div>
                         <div className="min-w-0 rounded-xl bg-background/60 p-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="font-medium text-foreground">{getLogisticsTrackTitle(track)}</p>
+                            <p className="font-medium text-foreground">{getLogisticsTrackTitle(track, locale)}</p>
                             <p className="text-muted-foreground">{track.event_time ? formatDateTime(track.event_time) : "-"}</p>
                           </div>
                           <p className="mt-1 break-words text-muted-foreground">{track.description || track.location || "-"}</p>
@@ -391,7 +625,7 @@ export default function ReturnDetail() {
                   </div>
                 ) : (
                   <p className="mt-3 rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
-                    已收到退货物流单号，暂无承运商轨迹。物流接口接通或商家刷新后会显示完整轨迹。
+                    {copy.noCarrierTracks}
                   </p>
                 )}
               </section>

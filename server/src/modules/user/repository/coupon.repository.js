@@ -117,9 +117,11 @@ async function selectUserCouponsPage(userId, status, pageSize, offset) {
               c.usable_category_ids, c.stackable_with_activity,
               c.deleted_at, c.archived_at, c.invalidated_at, c.stop_use_at,
               c.campaign_start_at, c.campaign_end_at, c.post_end_valid_days,
+              ccp.display_category AS source_display_category,
               ${COUPON_CATEGORY_SELECT}
        FROM user_coupons uc
        LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+       LEFT JOIN coupon_campaigns ccp ON BINARY uc.issue_activity_id = BINARY ccp.id
        ${where}
        ORDER BY uc.claimed_at DESC, uc.id DESC
        LIMIT ? OFFSET ?`,
@@ -135,6 +137,7 @@ async function selectUserCouponsPage(userId, status, pageSize, offset) {
               c.id AS coupon_id, c.code, c.title, c.type, c.value,
               c.min_amount, c.start_date, c.end_date, c.status AS coupon_status,
               c.description, c.scope_type, c.display_badge,
+              '' AS source_display_category,
               ${COUPON_CATEGORY_SELECT}
        FROM user_coupons uc
        LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id

@@ -69,11 +69,26 @@ export function getCustomersAnalysis(params?: ReportQuery) {
 export function getActivitiesAnalysis(params?: ReportQuery) {
   return get<Record<string, unknown>>("/admin/reports/activities/analysis", params as unknown as Record<string, unknown>);
 }
+export function getPromotionConversion(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/promotions/conversion", params as unknown as Record<string, unknown>);
+}
 export function getCouponsAnalysis(params?: ReportQuery) {
   return get<Record<string, unknown>>("/admin/reports/coupons/analysis", params as unknown as Record<string, unknown>);
 }
+export function getDiscountCost(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/discounts/cost", params as unknown as Record<string, unknown>);
+}
+export function getPaymentFailures(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/payments/failures", params as unknown as Record<string, unknown>);
+}
 export function getInventoryAnalysis(params?: ReportQuery) {
   return get<Record<string, unknown>>("/admin/reports/inventory/analysis", params as unknown as Record<string, unknown>);
+}
+export function getInventoryOccupancy(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/inventory/occupancy", params as unknown as Record<string, unknown>);
+}
+export function getOrderCancelReasons(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/orders/cancel-reasons", params as unknown as Record<string, unknown>);
 }
 export function getSearchAnalysis(params?: ReportQuery) {
   return get<Record<string, unknown>>("/admin/reports/search/analysis", params as unknown as Record<string, unknown>);

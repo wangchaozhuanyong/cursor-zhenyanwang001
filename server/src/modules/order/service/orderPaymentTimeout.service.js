@@ -3,11 +3,11 @@ const orderRepo = require('../repository/order.repository');
 const siteSettingsRepo = require('../repository/siteSettings.repository');
 
 function getOrderApi() {
-  return /** @type {any} */ (require('../../order')).api || {};
+  return /** @type {any} */ (require('../../order/publicApi')) || {};
 }
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function requireOrderApi(name) {
@@ -49,7 +49,7 @@ async function loadPaymentTimeoutSettings() {
   return {
     enabled: parseEnabled(
       map.orderPaymentTimeoutEnabled,
-      parseEnabled(process.env.ORDER_PAYMENT_TIMEOUT_ENABLED, false),
+      parseEnabled(process.env.ORDER_PAYMENT_TIMEOUT_ENABLED, true),
     ),
     minutes: parseMinutes(
       map.orderPaymentTimeoutMinutes,
@@ -143,6 +143,5 @@ module.exports = {
   startPaymentTimeoutScheduler,
   autoCancelOneOrder,
 };
-
 
 

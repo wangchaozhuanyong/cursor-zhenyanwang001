@@ -15,6 +15,11 @@ export interface InventorySummary {
   total_products: number;
   total_skus: number;
   total_stock: number;
+  total_reserved_stock?: number;
+  total_available_stock?: number;
+  locked_stock?: number;
+  pending_order_locked_stock?: number;
+  pending_order_count?: number;
   low_stock_skus: number;
   out_of_stock_skus: number;
   today_in_qty: number;
@@ -39,6 +44,9 @@ export interface InventorySku {
   stock: number;
   unit_name: string;
   reserved_stock: number;
+  pending_order_locked_stock?: number;
+  pending_order_count?: number;
+  locked_stock?: number;
   available_stock: number;
   stock_warning_threshold: number;
   low_stock: boolean;

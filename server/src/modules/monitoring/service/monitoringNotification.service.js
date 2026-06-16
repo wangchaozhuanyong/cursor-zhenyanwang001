@@ -1,5 +1,5 @@
 function getAdminApi() {
-  return /** @type {any} */ (require('../../admin')).api || {};
+  return /** @type {any} */ (require('../../admin/publicApi')) || {};
 }
 
 async function notifyHighRisk(anomaly) {

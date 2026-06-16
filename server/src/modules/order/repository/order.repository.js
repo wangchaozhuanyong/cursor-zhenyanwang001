@@ -1,5 +1,5 @@
 /**
- * ????????SQL ???????????? mock? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
+ * 订单域数据访问层：集中处理订单、订单项、库存与幂等记录的 SQL。
  */
 const db = require('../../../config/db');
 const {
@@ -19,6 +19,52 @@ function getPool() {
 
 async function getConnection() {
   return db.getConnection();
+}
+
+async function insertOrderIdempotencyKey(q, params) {
+  const { userId, idempotencyKey, payloadHash } = params;
+  const [result] = await q.query(
+    `INSERT IGNORE INTO order_idempotency_keys
+       (id, user_id, idempotency_key, payload_hash, status)
+     VALUES (?, ?, ?, ?, 'processing')`,
+    [generateId(), userId, idempotencyKey, payloadHash],
+  );
+  return Number(result?.affectedRows || 0) === 1;
+}
+
+async function selectOrderIdempotencyForUpdate(q, userId, idempotencyKey) {
+  const [[row]] = await q.query(
+    `SELECT *
+       FROM order_idempotency_keys
+      WHERE user_id = ? AND idempotency_key = ?
+      LIMIT 1
+      FOR UPDATE`,
+    [userId, idempotencyKey],
+  );
+  return row || null;
+}
+
+async function markOrderIdempotencyCompleted(q, params) {
+  const { userId, idempotencyKey, orderId } = params;
+  await q.query(
+    `UPDATE order_idempotency_keys
+        SET order_id = ?,
+            status = 'completed',
+            error_message = ''
+      WHERE user_id = ? AND idempotency_key = ?`,
+    [orderId, userId, idempotencyKey],
+  );
+}
+
+async function markOrderIdempotencyFailed(q, params) {
+  const { userId, idempotencyKey, errorMessage } = params;
+  await q.query(
+    `UPDATE order_idempotency_keys
+        SET status = 'failed',
+            error_message = ?
+      WHERE user_id = ? AND idempotency_key = ?`,
+    [String(errorMessage || '').slice(0, 500), userId, idempotencyKey],
+  );
 }
 
 async function selectProductsForUpdate(q, productIds) {
@@ -73,6 +119,13 @@ const ACTIVITY_SELECT_FIELDS = `
        a.discount_amount,
        a.activity_config,
        a.scope_type,
+       a.rule_config,
+       a.priority,
+       a.stackable,
+       a.exclusive_with,
+       a.usage_limit_total,
+       a.usage_limit_per_user,
+       a.version,
        a.allow_coupon_stack,
        a.allow_points_stack,
        a.allow_reward,
@@ -143,7 +196,8 @@ async function selectFlashSaleActivityItemsForUpdate(q, productIds) {
      WHERE ap.product_id IN (${productIds.map(() => '?').join(',')})
        AND a.deleted_at IS NULL
        AND a.disabled = 0
-       AND a.type = 'flash_sale'
+       AND a.type IN ('flash_sale', 'limited_time_discount')
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
        AND NOW() BETWEEN a.start_at AND a.end_at
        AND ap.activity_price > 0
        AND ap.activity_stock > ap.sold_count
@@ -163,7 +217,8 @@ async function selectFlashSaleActivityItemsRead(q, productIds) {
      WHERE ap.product_id IN (${productIds.map(() => '?').join(',')})
        AND a.deleted_at IS NULL
        AND a.disabled = 0
-       AND a.type = 'flash_sale'
+       AND a.type IN ('flash_sale', 'limited_time_discount')
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
        AND NOW() BETWEEN a.start_at AND a.end_at
        AND ap.activity_price > 0
        AND ap.activity_stock > ap.sold_count
@@ -192,12 +247,14 @@ async function loadActivityScopes(q, activityIds) {
 async function selectActiveFullReductionActivitiesForUpdate(q) {
   const [rows] = await q.query(
     `SELECT a.id AS activity_id, a.title, a.type, a.threshold_amount, a.discount_amount,
-            a.activity_config, a.scope_type, a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
+            a.activity_config, a.rule_config, a.scope_type, a.priority, a.stackable, a.exclusive_with,
+            a.usage_limit_total, a.usage_limit_per_user, a.version,
+            a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
      FROM marketing_activities a
      WHERE a.deleted_at IS NULL
        AND a.disabled = 0
-       AND a.type = 'full_reduction'
-       AND a.status NOT IN ('draft', 'disabled')
+       AND a.type IN ('full_reduction', 'full_discount')
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
        AND NOW() BETWEEN a.start_at AND a.end_at
      ORDER BY a.sort_order ASC, a.start_at DESC
      FOR UPDATE`,
@@ -209,12 +266,51 @@ async function selectActiveFullReductionActivitiesForUpdate(q) {
 async function selectActiveFullReductionActivitiesRead(q) {
   const [rows] = await q.query(
     `SELECT a.id AS activity_id, a.title, a.type, a.threshold_amount, a.discount_amount,
-            a.activity_config, a.scope_type, a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
+            a.activity_config, a.rule_config, a.scope_type, a.priority, a.stackable, a.exclusive_with,
+            a.usage_limit_total, a.usage_limit_per_user, a.version,
+            a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
      FROM marketing_activities a
      WHERE a.deleted_at IS NULL
        AND a.disabled = 0
-       AND a.type = 'full_reduction'
-       AND a.status NOT IN ('draft', 'disabled')
+       AND a.type IN ('full_reduction', 'full_discount')
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
+       AND NOW() BETWEEN a.start_at AND a.end_at
+     ORDER BY a.sort_order ASC, a.start_at DESC`,
+  );
+  const scopeMap = await loadActivityScopes(q, rows.map((r) => r.activity_id));
+  return rows.map((r) => ({ ...r, scopes: scopeMap.get(r.activity_id) || [] }));
+}
+
+async function selectActiveMemberPriceActivitiesForUpdate(q) {
+  const [rows] = await q.query(
+    `SELECT a.id AS activity_id, a.title, a.type, a.activity_config, a.rule_config,
+            a.scope_type, a.priority, a.stackable, a.exclusive_with,
+            a.usage_limit_total, a.usage_limit_per_user, a.version,
+            a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
+     FROM marketing_activities a
+     WHERE a.deleted_at IS NULL
+       AND a.disabled = 0
+       AND a.type IN ('member_price', 'member_activity')
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
+       AND NOW() BETWEEN a.start_at AND a.end_at
+     ORDER BY a.sort_order ASC, a.start_at DESC
+     FOR UPDATE`,
+  );
+  const scopeMap = await loadActivityScopes(q, rows.map((r) => r.activity_id));
+  return rows.map((r) => ({ ...r, scopes: scopeMap.get(r.activity_id) || [] }));
+}
+
+async function selectActiveMemberPriceActivitiesRead(q) {
+  const [rows] = await q.query(
+    `SELECT a.id AS activity_id, a.title, a.type, a.activity_config, a.rule_config,
+            a.scope_type, a.priority, a.stackable, a.exclusive_with,
+            a.usage_limit_total, a.usage_limit_per_user, a.version,
+            a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
+     FROM marketing_activities a
+     WHERE a.deleted_at IS NULL
+       AND a.disabled = 0
+       AND a.type IN ('member_price', 'member_activity')
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
        AND NOW() BETWEEN a.start_at AND a.end_at
      ORDER BY a.sort_order ASC, a.start_at DESC`,
   );
@@ -225,12 +321,14 @@ async function selectActiveFullReductionActivitiesRead(q) {
 async function selectActivePointsBonusActivitiesForUpdate(q) {
   const [rows] = await q.query(
     `SELECT a.id AS activity_id, a.title, a.type, a.activity_config, a.scope_type,
+            a.rule_config, a.priority, a.stackable, a.exclusive_with,
+            a.usage_limit_total, a.usage_limit_per_user, a.version,
             a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
      FROM marketing_activities a
      WHERE a.deleted_at IS NULL
        AND a.disabled = 0
-       AND a.type = 'points_bonus'
-       AND a.status NOT IN ('draft', 'disabled')
+       AND a.type IN ('points_bonus', 'points_reward')
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
        AND NOW() BETWEEN a.start_at AND a.end_at
      ORDER BY a.sort_order ASC, a.start_at DESC
      FOR UPDATE`,
@@ -242,12 +340,14 @@ async function selectActivePointsBonusActivitiesForUpdate(q) {
 async function selectActivePointsBonusActivitiesRead(q) {
   const [rows] = await q.query(
     `SELECT a.id AS activity_id, a.title, a.type, a.activity_config, a.scope_type,
+            a.rule_config, a.priority, a.stackable, a.exclusive_with,
+            a.usage_limit_total, a.usage_limit_per_user, a.version,
             a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
      FROM marketing_activities a
      WHERE a.deleted_at IS NULL
        AND a.disabled = 0
-       AND a.type = 'points_bonus'
-       AND a.status NOT IN ('draft', 'disabled')
+       AND a.type IN ('points_bonus', 'points_reward')
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
        AND NOW() BETWEEN a.start_at AND a.end_at
      ORDER BY a.sort_order ASC, a.start_at DESC`,
   );
@@ -297,6 +397,98 @@ async function decrementActivitySold(q, activityId, productId, qty) {
   return result.affectedRows;
 }
 
+async function selectPromotionUsageCounts(q, params = {}) {
+  const ids = [...new Set((params.promotionIds || []).map(String).filter(Boolean))];
+  if (!ids.length) return { byPromotionId: {} };
+  const activeStatuses = ['locked', 'confirmed'];
+  const [totalRows] = await q.query(
+    `SELECT promotion_id, COALESCE(SUM(usage_count), 0) AS total_count
+     FROM promotion_usages
+     WHERE promotion_id IN (${ids.map(() => '?').join(',')})
+       AND status IN (${activeStatuses.map(() => '?').join(',')})
+     GROUP BY promotion_id`,
+    [...ids, ...activeStatuses],
+  );
+  const byPromotionId = {};
+  for (const id of ids) {
+    byPromotionId[id] = { total_count: 0, user_count: 0 };
+  }
+  for (const row of totalRows) {
+    byPromotionId[String(row.promotion_id)] = {
+      ...(byPromotionId[String(row.promotion_id)] || {}),
+      total_count: Number(row.total_count || 0),
+      user_count: Number(byPromotionId[String(row.promotion_id)]?.user_count || 0),
+    };
+  }
+  if (params.userId) {
+    const [userRows] = await q.query(
+      `SELECT promotion_id, COALESCE(SUM(usage_count), 0) AS user_count
+       FROM promotion_usages
+       WHERE user_id = ?
+         AND promotion_id IN (${ids.map(() => '?').join(',')})
+         AND status IN (${activeStatuses.map(() => '?').join(',')})
+       GROUP BY promotion_id`,
+      [params.userId, ...ids, ...activeStatuses],
+    );
+    for (const row of userRows) {
+      byPromotionId[String(row.promotion_id)] = {
+        ...(byPromotionId[String(row.promotion_id)] || { total_count: 0 }),
+        user_count: Number(row.user_count || 0),
+      };
+    }
+  }
+  return { byPromotionId };
+}
+
+async function insertPromotionUsage(q, params = {}) {
+  await q.query(
+    `INSERT INTO promotion_usages
+       (id, user_id, order_id, order_no, promotion_id, promotion_type, promotion_title,
+        usage_count, discount_amount, reward_snapshot, status)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)
+     ON DUPLICATE KEY UPDATE
+       promotion_type = VALUES(promotion_type),
+       promotion_title = VALUES(promotion_title),
+       usage_count = VALUES(usage_count),
+       discount_amount = VALUES(discount_amount),
+       reward_snapshot = VALUES(reward_snapshot),
+       status = VALUES(status),
+       released_at = NULL`,
+    [
+      params.id || generateId(),
+      params.userId,
+      params.orderId,
+      params.orderNo || '',
+      params.promotionId,
+      params.promotionType || '',
+      params.promotionTitle || '',
+      Math.max(1, Number(params.usageCount || 1)),
+      Number(params.discountAmount || 0),
+      params.rewardSnapshot ? JSON.stringify(params.rewardSnapshot) : null,
+      params.status || 'locked',
+    ],
+  );
+}
+
+async function confirmPromotionUsagesByOrderId(q, orderId) {
+  await q.query(
+    `UPDATE promotion_usages
+     SET status = 'confirmed', released_at = NULL
+     WHERE order_id = ? AND status = 'locked'`,
+    [orderId],
+  );
+}
+
+async function releasePromotionUsagesByOrderId(q, orderId, status = 'released') {
+  const nextStatus = status === 'cancelled' ? 'cancelled' : 'released';
+  await q.query(
+    `UPDATE promotion_usages
+     SET status = ?, released_at = NOW()
+     WHERE order_id = ? AND status IN ('locked','confirmed')`,
+    [nextStatus, orderId],
+  );
+}
+
 async function selectShippingTemplate(q, id) {
   const [[row]] = await q.query('SELECT * FROM shipping_templates WHERE id = ? AND enabled = 1', [id]);
   return row || null;
@@ -307,6 +499,13 @@ async function selectDefaultEnabledShippingTemplate(q) {
     'SELECT * FROM shipping_templates WHERE enabled = 1 ORDER BY is_default DESC, id ASC LIMIT 1',
   );
   return row || null;
+}
+
+async function selectEnabledShippingTemplates(q) {
+  const [rows] = await q.query(
+    'SELECT * FROM shipping_templates WHERE enabled = 1 ORDER BY is_default DESC, id ASC',
+  );
+  return rows;
 }
 
 async function selectUserCouponForUpdate(q, ucId, userId) {
@@ -606,6 +805,168 @@ async function deductVariantStock(q, variantId, qty, meta = {}) {
   return result.affectedRows;
 }
 
+async function reserveVariantStock(q, variantId, qty, meta = {}) {
+  const [[beforeRow]] = await q.query(
+    `SELECT v.stock, COALESCE(v.reserved_stock,0) AS reserved_stock,
+            v.product_id, v.title, v.sku_code, p.name AS product_name
+     FROM product_variants v
+     JOIN products p ON p.id = v.product_id
+     WHERE v.id = ?
+     FOR UPDATE`,
+    [variantId],
+  );
+  if (!beforeRow) return 0;
+  const n = Math.max(0, Number(qty) || 0);
+  if (n <= 0) return 0;
+  const beforeStock = Number(beforeRow.stock || 0);
+  const beforeReserved = Number(beforeRow.reserved_stock || 0);
+  if (beforeStock - beforeReserved < n) return 0;
+  const afterReserved = beforeReserved + n;
+  await q.query(
+    'UPDATE product_variants SET reserved_stock = reserved_stock + ? WHERE id = ? AND (stock - COALESCE(reserved_stock,0)) >= ?',
+    [n, variantId, n],
+  );
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id,
+        product_name_snapshot, variant_name_snapshot, sku_code_snapshot, order_no_snapshot, source_no, remark, created_by_type)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      beforeRow.product_id,
+      variantId,
+      'order_lock',
+      0,
+      beforeStock,
+      beforeStock,
+      meta.reason || '订单下单锁定 SKU 库存',
+      meta.refType || 'order',
+      meta.refId || '',
+      meta.operatorId || null,
+      beforeRow.product_name || '',
+      beforeRow.title || '',
+      beforeRow.sku_code || '',
+      meta.orderNo || '',
+      '',
+      JSON.stringify({ before_reserved_stock: beforeReserved, after_reserved_stock: afterReserved, qty: n }),
+      'system',
+    ],
+  );
+  return 1;
+}
+
+async function orderHasReservedInventoryLock(q, orderId) {
+  const [[row]] = await q.query(
+    `SELECT 1 AS found
+       FROM inventory_stock_records
+      WHERE ref_type = 'order'
+        AND ref_id = ?
+        AND change_type = 'order_lock'
+      LIMIT 1`,
+    [orderId],
+  );
+  return Boolean(row?.found);
+}
+
+async function releaseReservedVariantStock(q, variantId, qty, meta = {}) {
+  const [[beforeRow]] = await q.query(
+    `SELECT v.stock, COALESCE(v.reserved_stock,0) AS reserved_stock,
+            v.product_id, v.title, v.sku_code, p.name AS product_name
+     FROM product_variants v
+     JOIN products p ON p.id = v.product_id
+     WHERE v.id = ?
+     FOR UPDATE`,
+    [variantId],
+  );
+  if (!beforeRow) return 0;
+  const n = Math.max(0, Number(qty) || 0);
+  if (n <= 0) return 0;
+  const beforeStock = Number(beforeRow.stock || 0);
+  const beforeReserved = Number(beforeRow.reserved_stock || 0);
+  const releaseQty = Math.min(beforeReserved, n);
+  const afterReserved = beforeReserved - releaseQty;
+  await q.query('UPDATE product_variants SET reserved_stock = ? WHERE id = ?', [afterReserved, variantId]);
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id,
+        product_name_snapshot, variant_name_snapshot, sku_code_snapshot, order_no_snapshot, source_no, remark, created_by_type)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      beforeRow.product_id,
+      variantId,
+      'order_lock_release',
+      0,
+      beforeStock,
+      beforeStock,
+      meta.reason || '订单取消释放预留库存',
+      meta.refType || 'order',
+      meta.refId || '',
+      meta.operatorId || null,
+      beforeRow.product_name || '',
+      beforeRow.title || '',
+      beforeRow.sku_code || '',
+      meta.orderNo || '',
+      '',
+      JSON.stringify({ before_reserved_stock: beforeReserved, after_reserved_stock: afterReserved, qty: releaseQty }),
+      'system',
+    ],
+  );
+  return 1;
+}
+
+async function confirmReservedVariantStock(q, variantId, qty, meta = {}) {
+  const [[beforeRow]] = await q.query(
+    `SELECT v.stock, COALESCE(v.reserved_stock,0) AS reserved_stock,
+            v.product_id, v.title, v.sku_code, p.name AS product_name
+     FROM product_variants v
+     JOIN products p ON p.id = v.product_id
+     WHERE v.id = ?
+     FOR UPDATE`,
+    [variantId],
+  );
+  if (!beforeRow) return 0;
+  const n = Math.max(0, Number(qty) || 0);
+  if (n <= 0) return 0;
+  const beforeStock = Number(beforeRow.stock || 0);
+  const beforeReserved = Number(beforeRow.reserved_stock || 0);
+  if (beforeReserved < n || beforeStock < n) return 0;
+  const afterStock = beforeStock - n;
+  const afterReserved = beforeReserved - n;
+  await q.query('UPDATE product_variants SET stock = ?, reserved_stock = ? WHERE id = ?', [afterStock, afterReserved, variantId]);
+  await syncProductStockFromVariants(q, beforeRow.product_id);
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id,
+        product_name_snapshot, variant_name_snapshot, sku_code_snapshot, order_no_snapshot, source_no, remark, created_by_type)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      beforeRow.product_id,
+      variantId,
+      'order_lock_confirm',
+      -n,
+      beforeStock,
+      afterStock,
+      meta.reason || '订单支付成功确认扣减预留库存',
+      meta.refType || 'order',
+      meta.refId || '',
+      meta.operatorId || null,
+      beforeRow.product_name || '',
+      beforeRow.title || '',
+      beforeRow.sku_code || '',
+      meta.orderNo || '',
+      '',
+      JSON.stringify({ before_reserved_stock: beforeReserved, after_reserved_stock: afterReserved, qty: n }),
+      'system',
+    ],
+  );
+  return 1;
+}
+
 function createAutoConversionOrderNo() {
   const now = new Date();
   const y = now.getFullYear();
@@ -617,7 +978,8 @@ function createAutoConversionOrderNo() {
 
 async function ensureVariantStockWithAutoUnpack(q, variantId, requiredQty, meta = {}) {
   const [[child]] = await q.query(
-    `SELECT v.id, v.product_id, v.title, v.sku_code, v.stock, COALESCE(v.unit_name, '件') AS unit_name,
+    `SELECT v.id, v.product_id, v.title, v.sku_code, v.stock, COALESCE(v.reserved_stock,0) AS reserved_stock,
+            COALESCE(v.unit_name, '件') AS unit_name,
             p.name AS product_name
        FROM product_variants v
        JOIN products p ON p.id = v.product_id
@@ -627,8 +989,10 @@ async function ensureVariantStockWithAutoUnpack(q, variantId, requiredQty, meta 
   );
   if (!child) return { ok: false, stock: 0, unpacked: false };
   const childStock = Number(child.stock || 0);
+  const childReserved = Number(child.reserved_stock || 0);
+  const childAvailable = Math.max(0, childStock - childReserved);
   const needQty = Number(requiredQty || 0);
-  if (childStock >= needQty) return { ok: true, stock: childStock, unpacked: false };
+  if (childAvailable >= needQty) return { ok: true, stock: childAvailable, unpacked: false };
 
   const [[rule]] = await q.query(
     `SELECT *
@@ -642,16 +1006,17 @@ async function ensureVariantStockWithAutoUnpack(q, variantId, requiredQty, meta 
       FOR UPDATE`,
     [variantId],
   );
-  if (!rule) return { ok: false, stock: childStock, unpacked: false };
+  if (!rule) return { ok: false, stock: childAvailable, unpacked: false };
 
   const ruleParentQty = Math.max(1, Number(rule.parent_qty || 1));
   const childQty = Number(rule.child_qty || 0);
-  if (!childQty || childQty <= 1) return { ok: false, stock: childStock, unpacked: false };
-  const shortage = needQty - childStock;
+  if (!childQty || childQty <= 1) return { ok: false, stock: childAvailable, unpacked: false };
+  const shortage = needQty - childAvailable;
   const needParentQty = Math.ceil((shortage * ruleParentQty) / childQty);
 
   const [[parent]] = await q.query(
-    `SELECT v.id, v.product_id, v.title, v.sku_code, v.stock, COALESCE(v.unit_name, '件') AS unit_name,
+    `SELECT v.id, v.product_id, v.title, v.sku_code, v.stock, COALESCE(v.reserved_stock,0) AS reserved_stock,
+            COALESCE(v.unit_name, '件') AS unit_name,
             p.name AS product_name
        FROM product_variants v
        JOIN products p ON p.id = v.product_id
@@ -659,12 +1024,13 @@ async function ensureVariantStockWithAutoUnpack(q, variantId, requiredQty, meta 
       FOR UPDATE`,
     [rule.parent_variant_id],
   );
-  if (!parent) return { ok: false, stock: childStock, unpacked: false };
+  if (!parent) return { ok: false, stock: childAvailable, unpacked: false };
   const parentBefore = Number(parent.stock || 0);
-  if (parentBefore < needParentQty) return { ok: false, stock: childStock, unpacked: false };
+  const parentAvailable = Math.max(0, parentBefore - Number(parent.reserved_stock || 0));
+  if (parentAvailable < needParentQty) return { ok: false, stock: childAvailable, unpacked: false };
 
   const childTotalQty = Math.floor((needParentQty * childQty) / ruleParentQty);
-  if (childTotalQty <= 0) return { ok: false, stock: childStock, unpacked: false };
+  if (childTotalQty <= 0) return { ok: false, stock: childAvailable, unpacked: false };
   const parentAfter = parentBefore - needParentQty;
   const childAfter = childStock + childTotalQty;
   await q.query('UPDATE product_variants SET stock = ? WHERE id = ?', [parentAfter, parent.id]);
@@ -771,7 +1137,8 @@ async function ensureVariantStockWithAutoUnpack(q, variantId, requiredQty, meta 
       'system',
     ],
   );
-  return { ok: childAfter >= needQty, stock: childAfter, unpacked: true, conversionId, conversionNo };
+  const childAvailableAfter = Math.max(0, childAfter - childReserved);
+  return { ok: childAvailableAfter >= needQty, stock: childAvailableAfter, unpacked: true, conversionId, conversionNo };
 }
 async function ensurePointsAccount(q, userId) {
   await q.query(
@@ -1187,7 +1554,7 @@ async function decrementUserPoints(q, userId, points) {
 }
 
 async function restoreUserCouponById(q, ucId, meta = {}) {
-  return /** @type {any} */ (require('../../user')).api.restoreCouponAfterOrderCancelled(q, ucId, {
+  return /** @type {any} */ (require('../../user/publicApi')).restoreCouponAfterOrderCancelled(q, ucId, {
     ...meta,
     reason: '订单取消返还优惠券',
   });
@@ -1202,7 +1569,7 @@ async function restoreUserCouponHeuristic(q, userId, createdAt, meta = {}) {
     [userId, createdAt, createdAt],
   );
   if (row?.id) {
-    return /** @type {any} */ (require('../../user')).api.restoreCouponAfterOrderCancelled(q, row.id, {
+    return /** @type {any} */ (require('../../user/publicApi')).restoreCouponAfterOrderCancelled(q, row.id, {
       ...meta,
       source: meta.source || 'order_cancel_heuristic',
       reason: '订单取消返还优惠券',
@@ -1254,6 +1621,9 @@ async function updateOrderPaid(q, orderId, params = {}) {
       PAYMENT_STATUS.PENDING,
     ],
   );
+  if (result.affectedRows > 0) {
+    await confirmPromotionUsagesByOrderId(q, orderId);
+  }
   return result.affectedRows;
 }
 
@@ -1426,6 +1796,10 @@ async function updateOrderProfitAmounts(q, orderId, params = {}) {
 module.exports = {
   getPool,
   getConnection,
+  insertOrderIdempotencyKey,
+  selectOrderIdempotencyForUpdate,
+  markOrderIdempotencyCompleted,
+  markOrderIdempotencyFailed,
   selectProductsForUpdate,
   selectProductsByIds,
   selectVariantsForUpdate,
@@ -1438,14 +1812,21 @@ module.exports = {
   selectFlashSaleActivityItemsRead,
   selectActiveFullReductionActivitiesForUpdate,
   selectActiveFullReductionActivitiesRead,
+  selectActiveMemberPriceActivitiesForUpdate,
+  selectActiveMemberPriceActivitiesRead,
   selectActivePointsBonusActivitiesForUpdate,
   selectActivePointsBonusActivitiesRead,
   selectBirthdayBonusActivityIdsUsedInYear,
   selectUserCouponRead,
   incrementActivitySold,
   decrementActivitySold,
+  selectPromotionUsageCounts,
+  insertPromotionUsage,
+  confirmPromotionUsagesByOrderId,
+  releasePromotionUsagesByOrderId,
   selectShippingTemplate,
   selectDefaultEnabledShippingTemplate,
+  selectEnabledShippingTemplates,
   selectUserCouponForUpdate,
   selectCouponCategoryIds,
   updateUserCouponUsed,
@@ -1453,6 +1834,10 @@ module.exports = {
   updateOrderCouponUcId,
   insertOrderItem,
   deductVariantStock,
+  reserveVariantStock,
+  orderHasReservedInventoryLock,
+  releaseReservedVariantStock,
+  confirmReservedVariantStock,
   incrementUserPoints,
   insertPointsRecord,
   deleteCartItemsForProducts,

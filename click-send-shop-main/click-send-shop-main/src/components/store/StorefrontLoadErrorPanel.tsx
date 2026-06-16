@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { storefrontErrorHint } from "@/utils/storefrontError";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 type Props = {
   message: string;
@@ -20,6 +21,7 @@ export default function StorefrontLoadErrorPanel({
   compact = false,
 }: Props) {
   const navigate = useNavigate();
+  const { localizedPath, t } = usePublicLocale();
   const hint = storefrontErrorHint(message);
 
   return (
@@ -44,27 +46,27 @@ export default function StorefrontLoadErrorPanel({
             className="inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
           >
             <RefreshCw size={14} />
-            重试
+            {t("common.retry")}
           </UnifiedButton>
         ) : null}
         {showBrowseCategories ? (
           <UnifiedButton
             type="button"
-            onClick={() => navigate("/categories")}
+            onClick={() => navigate(localizedPath("/categories"))}
             className="inline-flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
           >
             <Grid3X3 size={14} />
-            浏览分类
+            {t("common.categories")}
           </UnifiedButton>
         ) : null}
         {showContactSupport ? (
           <UnifiedButton
             type="button"
-            onClick={() => navigate("/support-download?tab=support")}
+            onClick={() => navigate(localizedPath("/support-download?tab=support"))}
             className="inline-flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
           >
             <Headphones size={14} />
-            联系客服
+            {t("common.contactSupport")}
           </UnifiedButton>
         ) : null}
       </div>

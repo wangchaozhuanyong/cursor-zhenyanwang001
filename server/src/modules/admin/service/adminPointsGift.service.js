@@ -1,7 +1,7 @@
-const loyaltyModule = require('../../loyalty');
+const loyaltyApi = /** @type {any} */ (require('../../loyalty/publicApi'));
 
 function getLoyaltyApi() {
-  return /** @type {any} */ (loyaltyModule).api || {};
+  return loyaltyApi || {};
 }
 
 function requireLoyaltyApi(name) {

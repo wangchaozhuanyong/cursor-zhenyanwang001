@@ -6,6 +6,7 @@ import type {
   PaymentOrderAdminRow,
   PaymentEventAdminRow,
   PaymentReconciliationRow,
+  PaymentReviewStatus,
 } from "@/types/adminPayment";
 
 export async function fetchAdminPaymentChannels(): Promise<PaymentChannelRow[]> {
@@ -34,6 +35,14 @@ export async function fetchAdminPaymentEvents(
   return unwrapPaginated<PaymentEventAdminRow>(res.data);
 }
 
+export async function reviewAdminPaymentEvent(eventId: string, body: {
+  review_status: PaymentReviewStatus;
+  review_note?: string;
+}) {
+  const res = await api.patchAdminPaymentEventReview(eventId, body);
+  return res.data;
+}
+
 export async function markAdminOrderPaid(orderId: string, body: {
   reason?: string;
   channel_code?: string;
@@ -58,5 +67,13 @@ export async function fetchAdminPaymentReconciliations(
 
 export async function createAdminPaymentReconciliation(body: Parameters<typeof api.postAdminPaymentReconciliation>[0]) {
   const res = await api.postAdminPaymentReconciliation(body);
+  return res.data;
+}
+
+export async function reviewAdminPaymentReconciliation(
+  id: string,
+  body: Parameters<typeof api.patchAdminPaymentReconciliationReview>[1],
+) {
+  const res = await api.patchAdminPaymentReconciliationReview(id, body);
   return res.data;
 }

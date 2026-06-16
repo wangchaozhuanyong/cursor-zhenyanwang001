@@ -5,6 +5,7 @@ import FrontPageTransition from "@/components/FrontPageTransition";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import StoreShell from "@/layouts/StoreShell";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
+import { stripPublicLocaleFromPathname } from "@/i18n/publicLocale";
 
 const BottomNav = lazy(() => import("@/components/BottomNav"));
 
@@ -17,7 +18,7 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
   const isMobile = useMediaQuery("(max-width: 767px)");
 
   useEffect(() => {
-    const path = location.pathname;
+    const path = stripPublicLocaleFromPathname(location.pathname);
     if (!isStoreTabPath(path)) {
       document.documentElement.removeAttribute("data-store-tab-route");
       return;

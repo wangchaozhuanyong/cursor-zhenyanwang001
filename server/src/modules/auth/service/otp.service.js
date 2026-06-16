@@ -19,7 +19,7 @@ function getAuthService() {
   return require('../service/auth.service');
 }
 function getSiteCapabilitiesApi() {
-  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+  return /** @type {any} */ (require('../../siteCapabilities/publicApi')) || {};
 }
 
 const OTP_PURPOSE_LOGIN = 'login';

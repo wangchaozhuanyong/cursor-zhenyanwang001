@@ -21,7 +21,7 @@ export function CheckoutSubmitBar({
   disabledHint,
   onSubmit,
 }: CheckoutSubmitBarProps) {
-  const ctaText = disabled && disabledHint ? "完善信息" : submitCtaLabel(paymentMethod, false);
+  const ctaText = disabled && disabledHint ? disabledHint : submitCtaLabel(paymentMethod, false);
 
   return (
     <div className="store-mobile-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">

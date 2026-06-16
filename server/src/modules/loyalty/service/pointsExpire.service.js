@@ -4,7 +4,7 @@ const loyaltyRepo = require('../repository/loyalty.repository');
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function computeExpiredAmount(records, expireDays, now = new Date()) {

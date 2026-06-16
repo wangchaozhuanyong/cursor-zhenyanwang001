@@ -29,7 +29,7 @@ const { getClientIp, getHeader } = require('../../../utils/clientIp');
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 
 function getAdminApi() {
-  return /** @type {any} */ (require('../../admin')).api || {};
+  return /** @type {any} */ (require('../../admin/publicApi')) || {};
 }
 
 function getReqHeader(req, name) {
@@ -172,7 +172,7 @@ async function register(body) {
   }
 
   try {
-    const userApi = /** @type {any} */ (require('../../user')).api || {};
+    const userApi = /** @type {any} */ (require('../../user/publicApi')) || {};
     if (typeof userApi.awardConfiguredPointsBonusForUser === 'function') {
       await userApi.awardConfiguredPointsBonusForUser({
         userId: id,
@@ -187,7 +187,7 @@ async function register(body) {
   }
 
   try {
-    const marketingApi = /** @type {any} */ (require('../../marketing')).api || {};
+    const marketingApi = /** @type {any} */ (require('../../marketing/publicApi')) || {};
     if (typeof marketingApi.issueNewUserGiftPack === 'function') {
       await marketingApi.issueNewUserGiftPack(id);
     }

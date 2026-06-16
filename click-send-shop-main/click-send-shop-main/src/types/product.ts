@@ -95,7 +95,7 @@ export interface ProductCatalogTag {
 
 export interface ProductActiveActivity {
   id: string;
-  type: "flash_sale" | "full_reduction";
+  type: "flash_sale" | "limited_time_discount" | "full_reduction" | "full_discount" | "member_price" | "points_reward" | "checkin_reward" | "campaign";
   title: string;
   description?: string;
   start_at: string;

@@ -25,6 +25,11 @@ export interface PaymentOrderAdminRow {
   payment_time: string | null;
   metadata: Record<string, unknown> | null;
   buyer_phone?: string;
+  latest_error_message?: string;
+  latest_failure_reason_code?: string;
+  latest_processing_result?: string;
+  latest_review_status?: string;
+  latest_event_at?: string | null;
   created_at: string;
 }
 
@@ -39,6 +44,16 @@ export interface PaymentEventAdminRow {
   processing_result: string;
   payload_json: unknown;
   error_message: string;
+  failure_reason_code?: string;
+  expected_amount?: number | null;
+  actual_amount?: number | null;
+  expected_currency?: string;
+  actual_currency?: string;
+  risk_level?: string;
+  review_status?: string;
+  review_note?: string;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
   created_at: string;
 }
 
@@ -49,8 +64,25 @@ export interface PaymentReconciliationRow {
   channel_code: string;
   order_count: number;
   success_amount: number;
+  provider_report_amount?: number | null;
+  provider_fee_amount?: number;
+  expected_settlement_amount?: number;
   diff_amount: number;
+  provider_reference?: string;
+  difference_reason?: string;
+  review_status?: string;
+  review_notes?: string;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
   status: string;
   notes: string;
   created_at: string;
 }
+
+export type PaymentReviewStatus =
+  | "pending"
+  | "needs_review"
+  | "confirmed"
+  | "needs_followup"
+  | "rejected"
+  | "ignored";

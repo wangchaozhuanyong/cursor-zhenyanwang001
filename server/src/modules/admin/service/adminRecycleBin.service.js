@@ -1,16 +1,16 @@
 const repo = require('../repository/adminRecycleBin.repository');
-const productModule = require('../../product');
-const homeModule = require('../../home');
+const productApi = /** @type {any} */ (require('../../product/publicApi'));
+const homeApi = /** @type {any} */ (require('../../home/publicApi'));
 const { writeAuditLog } = require('../../../utils/auditLog');
 
 const NOT_IN_RECYCLE_BIN = '记录不存在或未在回收站';
 
 function getProductApi() {
-  return /** @type {any} */ (productModule).api || {};
+  return productApi || {};
 }
 
 function getHomeApi() {
-  return /** @type {any} */ (homeModule).api || {};
+  return homeApi || {};
 }
 
 const PUBLIC_CACHE_AFFECTING_TYPES = new Set([

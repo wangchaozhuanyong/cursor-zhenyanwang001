@@ -250,7 +250,20 @@ docs/DATA_REPORTING_CONTRACT.md
 - 前端展示说明。
 - 历史数据处理方式。
 
-## 20. Data Change Plan
+## 20. 交易重构并发规则
+
+订单、支付、库存、活动和物流属于高风险链路，必须遵守以下额外规则：
+
+- `POST /api/orders` 必须使用服务端幂等表校验 `idempotency_key`，重复请求返回同一订单，请求指纹不同返回冲突。
+- 支付回调以 provider event id / bill id / payment order id 做幂等，重复回调不得重复改订单、加销量、发积分、发通知。
+- 定价统一由 pricing service 输出，商品页、购物车、结算页、订单快照和支付金额不能各算各的。
+- 活动资格统一由 promotion rule engine 计算，结算和创建订单都必须重新校验活动时间、商品范围、SKU、会员等级、限购、库存和互斥叠加规则。
+- 库存通过 inventory lock service 处理锁定、释放、确认扣减和恢复。前端和普通 controller 不得直接扣减库存。
+- 未支付订单超时取消必须释放库存锁、优惠券、积分抵扣和活动库存占用。
+- 物流轨迹写入 `logistics_tracks`，订单详情读取 `logistics_snapshot`。承运商异常只同步物流状态和异常说明，不能绕过订单状态机直接改履约状态。
+- 后台高风险操作必须有审计日志，前端二次确认不能替代服务端权限、MFA 和状态校验。
+
+## 21. Data Change Plan
 
 数据任务开始前必须输出：
 

@@ -37,6 +37,7 @@ import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { resolveAuthRedirectTarget, resolveLoginCancelTarget } from "@/utils/authRedirect";
 import { buildRoutePath, readRouteBack } from "@/utils/routeBackState";
+import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
@@ -52,6 +53,8 @@ type AuthNavigationState = { from?: string; fromState?: unknown; cancelFrom?: st
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { localizedPath, t } = usePublicLocale();
+  const canonicalPathname = stripPublicLocaleFromPathname(location.pathname);
   const authStore = useAuthStore();
   const { banners } = useHomeBanners();
   const { settings: homeModules } = useHomeModuleSettings();
@@ -73,14 +76,14 @@ export default function Login() {
       cancelFrom: loginState?.cancelFrom,
       returnTo: rawFrom,
       trackedFrom,
-      fallback: "/",
+      fallback: localizedPath("/"),
     });
     navigate(target, { replace: true, state: target === from ? fromState : undefined });
-  }, [currentPath, from, fromState, location.key, loginState?.cancelFrom, navigate, rawFrom]);
+  }, [currentPath, from, fromState, localizedPath, location.key, loginState?.cancelFrom, navigate, rawFrom]);
   const [mode, setMode] = useState<AuthMode>(() =>
-    location.pathname === "/register" ? "register" : "login",
+    canonicalPathname === "/register" ? "register" : "login",
   );
-  useDocumentTitle(mode === "register" ? "注册" : "登录");
+  useDocumentTitle(mode === "register" ? t("auth.register") : t("auth.login"));
   const [credentialMode, setCredentialMode] = useState<CredentialMode>("password");
   const [countryCode, setCountryCode] = useState("+60");
   const [phone, setPhone] = useState("");
@@ -170,13 +173,13 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    if (location.pathname === "/register") {
+    if (canonicalPathname === "/register") {
       setMode("register");
       setCredentialMode("password");
-    } else if (location.pathname === "/login" && !syncLockedInviteCodeBySearch(location.search)) {
+    } else if (canonicalPathname === "/login" && !syncLockedInviteCodeBySearch(location.search)) {
       setMode("login");
     }
-  }, [location.pathname, location.search]);
+  }, [canonicalPathname, location.search]);
 
   useEffect(() => {
     const normalized = syncLockedInviteCodeBySearch(location.search);
@@ -193,8 +196,8 @@ export default function Login() {
     setFormError("");
     if (m === "register") setCredentialMode("password");
     const target = m === "register" ? "/register" : "/login";
-    if (location.pathname !== target) {
-      navigate(target, { replace: true, state: location.state });
+    if (canonicalPathname !== target) {
+      navigate(localizedPath(target), { replace: true, state: location.state });
     }
   };
 
@@ -240,7 +243,7 @@ export default function Login() {
     if (oauthErr || wechatErr) {
       const msg = decodeURIComponent((oauthErr || wechatErr || "").replace(/\+/g, " "));
       toast.error(authErrorMessage(new Error(msg), msg || "第三方登录失败"));
-      navigate("/login", { replace: true });
+      navigate(localizedPath("/login"), { replace: true });
       return;
     }
     if (wechatLogin === "1") {
@@ -294,17 +297,17 @@ export default function Login() {
           const fallback = useAuthStore.getState().error;
           toast.error(e instanceof Error ? e.message : (fallback ?? "登录失败"));
         }
-        navigate("/login", { replace: true });
+        navigate(localizedPath("/login"), { replace: true });
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [location.search, navigate, from, fromState]);
+  }, [location.search, navigate, from, fromState, localizedPath]);
 
   const loading = authStore.loading;
-  const submitLabel = mode === "login" ? "登录" : "注册";
-  const submitLoadingLabel = mode === "login" ? "登录中..." : "注册中...";
+  const submitLabel = mode === "login" ? t("auth.login") : t("auth.register");
+  const submitLoadingLabel = mode === "login" ? t("auth.loggingIn") : t("auth.registering");
 
   const handleSendOtp = async () => {
     if (!smsOtpLoginEnabled) {
@@ -529,7 +532,7 @@ export default function Login() {
           <button
             type="button"
             onClick={handleBack}
-            aria-label="返回"
+            aria-label={t("auth.back")}
             className="auth-login-back-btn"
           >
             <ArrowLeft size={19} aria-hidden="true" />
@@ -537,7 +540,7 @@ export default function Login() {
 
           <section className="auth-login-heading shrink-0">
             <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
-              {mode === "login" ? "欢迎回来" : "创建账号"}
+              {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
             </h2>
           </section>
         </div>
@@ -553,14 +556,14 @@ export default function Login() {
         {showHomeTrustBar ? <HomeTrustBar className="auth-login-trust mb-4 lg:hidden" /> : null}
 
         <section className="auth-login-mode-tabs mb-4">
-          <div className="flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录或注册">
+          <div className="flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
             {(["login", "register"] as AuthMode[]).map((m) => (
               <UnifiedButton
                 key={m}
                 type="button"
                 role="tab"
                 aria-selected={mode === m}
-                aria-label={m === "login" ? "登录" : "注册"}
+                aria-label={m === "login" ? t("auth.login") : t("auth.register")}
                 onClick={() => switchAuthMode(m)}
                 className={`relative min-h-10 flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
                   mode === m
@@ -568,7 +571,7 @@ export default function Login() {
                     : "text-muted-foreground"
                 }`}
               >
-                {m === "login" ? "登 录" : "注 册"}
+                {m === "login" ? t("auth.loginTab") : t("auth.registerTab")}
               </UnifiedButton>
             ))}
           </div>
@@ -582,7 +585,7 @@ export default function Login() {
         ) : null}
 
         {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
-          <section className="auth-login-credential-tabs mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录方式">
+          <section className="auth-login-credential-tabs mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
             {(["password", "otp"] as CredentialMode[]).map((c) => (
               <UnifiedButton
                 key={c}
@@ -601,7 +604,7 @@ export default function Login() {
                     : "text-muted-foreground"
                 }`}
               >
-                {c === "password" ? "密码登录" : "验证码登录"}
+                {c === "password" ? t("auth.passwordLogin") : t("auth.otpLogin")}
               </UnifiedButton>
             ))}
           </section>
@@ -629,9 +632,9 @@ export default function Login() {
               <input
                 id="auth-nickname"
                 type="text"
-                placeholder="昵称"
+                placeholder={t("auth.nickname")}
                 value={nickname}
-                aria-label="昵称"
+                aria-label={t("auth.nickname")}
                 aria-invalid={Boolean(fieldErrors.nickname) || undefined}
                 aria-describedby={fieldErrors.nickname ? "auth-nickname-error" : undefined}
                 onChange={(e) => {
@@ -648,9 +651,9 @@ export default function Login() {
               <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder={hasLockedInviteCode ? "邀请码（已锁定）" : "邀请码（选填）"}
+                placeholder={hasLockedInviteCode ? t("auth.inviteCodeLocked") : t("auth.inviteCodeOptional")}
                 value={inviteCode}
-                aria-label={hasLockedInviteCode ? "邀请码，已锁定" : "邀请码，可选"}
+                aria-label={hasLockedInviteCode ? t("auth.inviteCodeLockedAria") : t("auth.inviteCodeOptionalAria")}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 readOnly={hasLockedInviteCode}
                 className={cn(
@@ -691,13 +694,13 @@ export default function Login() {
                 id="auth-password"
                 name="password"
                 type={showPwd ? "text" : "password"}
-                placeholder="密码"
+                placeholder={t("auth.password")}
                 value={password}
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
                 autoCorrect="off"
                 autoCapitalize="none"
                 enterKeyHint={mode === "login" ? "go" : "done"}
-                aria-label="密码"
+                aria-label={t("auth.password")}
                 aria-invalid={Boolean(fieldErrors.password) || undefined}
                 aria-describedby={fieldErrors.password ? "auth-password-error" : undefined}
                 onChange={(e) => {
@@ -709,7 +712,7 @@ export default function Login() {
               <UnifiedButton
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
-                aria-label={showPwd ? "隐藏密码" : "显示密码"}
+                aria-label={showPwd ? t("auth.hidePassword") : t("auth.showPassword")}
                 className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 touch-target"
               >
                 {showPwd ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
@@ -727,11 +730,11 @@ export default function Login() {
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  placeholder="6 位验证码"
+                  placeholder={t("auth.otpPlaceholder")}
                   enterKeyHint="go"
                   value={otpCode}
                   maxLength={6}
-                  aria-label="6 位验证码"
+                  aria-label={t("auth.otpPlaceholder")}
                   aria-invalid={Boolean(fieldErrors.otp) || undefined}
                   aria-describedby={fieldErrors.otp ? "auth-otp-error" : undefined}
                   onChange={(e) => {
@@ -748,7 +751,7 @@ export default function Login() {
                 disabled={otpSending || otpCooldown > 0 || !authFeaturesReady}
                 className="w-full rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] py-3 text-xs font-semibold text-[var(--theme-primary)] disabled:opacity-50"
               >
-                {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "发送验证码"}
+                {otpCooldown > 0 ? `${otpCooldown}${t("auth.otpCooldownSuffix")}` : otpSending ? t("auth.otpSending") : t("auth.sendOtp")}
               </UnifiedButton>
             </>
           ) : null}
@@ -762,14 +765,14 @@ export default function Login() {
                   onChange={(e) => setRemember(e.target.checked)}
                   className="h-4 w-4 rounded border-border accent-[var(--theme-primary)]"
                 />
-                <span className="text-xs text-muted-foreground">记住账号</span>
+                <span className="text-xs text-muted-foreground">{t("auth.rememberAccount")}</span>
               </label>
               <UnifiedButton
                 type="button"
                 onClick={() => setShowReset(true)}
                 className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-medium text-theme-price active:opacity-70"
               >
-                忘记密码？
+                {t("auth.forgotPassword")}
               </UnifiedButton>
             </div>
           )}

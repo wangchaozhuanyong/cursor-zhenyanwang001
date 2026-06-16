@@ -3,6 +3,7 @@
  *   node scripts/migrate-cli.js        # 默认：执行 pending up
  *   node scripts/migrate-cli.js up
  *   node scripts/migrate-cli.js down   # 回滚最近一条（down 脚本需存在且可执行）
+ *   node scripts/migrate-cli.js down 162_order_logistics_snapshot
  *   node scripts/migrate-cli.js status
  */
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
@@ -11,6 +12,7 @@ const path = require('path');
 const {
   runPendingMigrations,
   runNamedMigrations,
+  runNamedMigrationsDown,
   runLastMigrationDown,
   migrationStatus,
 } = require('../src/db/migrateRunner');
@@ -51,7 +53,9 @@ function runPreMigrationBackup() {
 
 (async () => {
   runPreMigrationBackup();
-  if (cmd === 'down') {
+  if (cmd === 'down' && targetNames.length) {
+    await runNamedMigrationsDown(targetNames);
+  } else if (cmd === 'down') {
     await runLastMigrationDown();
   } else if (cmd === 'status') {
     await migrationStatus();

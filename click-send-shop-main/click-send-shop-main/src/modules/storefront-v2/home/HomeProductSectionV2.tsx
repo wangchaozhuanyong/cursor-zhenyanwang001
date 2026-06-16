@@ -33,7 +33,7 @@ export default function HomeProductSectionV2({
   onNavigate,
 }: HomeProductSectionV2Props) {
   return (
-    <section className="min-w-0">
+    <section className="store-home-product-shelf min-w-0">
       <StorefrontTitleRow
         title={title}
         subtitle={subtitle}
@@ -48,7 +48,7 @@ export default function HomeProductSectionV2({
           </UnifiedButton>
         )}
       />
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+      <div className="store-home-product-shelf__grid grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
         {loading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
               <ProductCardV2Skeleton key={`home-v2-skeleton-${title}-${index}`} />

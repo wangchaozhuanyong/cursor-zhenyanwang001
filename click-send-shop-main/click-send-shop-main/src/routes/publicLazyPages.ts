@@ -15,10 +15,13 @@ export const Categories = lazyWithPreload(() => import("@/modules/public/pages/p
 export const ProductDetail = lazyWithPreload(() => import("@/modules/public/pages/product/ProductDetail"));
 export const NewArrivals = lazyWithPreload(() => import("@/modules/public/pages/product/NewArrivals"));
 export const Search = lazyWithPreload(() => import("@/modules/public/pages/product/Search"));
+export const Promotions = lazyWithPreload(() => import("@/modules/public/pages/promotion/Promotions"));
+export const PromotionDetail = lazyWithPreload(() => import("@/modules/public/pages/promotion/PromotionDetail"));
 
 export const Cart = lazyWithPreload(() => import("@/modules/public/pages/cart/Cart"));
 
 export const Checkout = lazyWithPreload(() => import("@/modules/public/pages/order/Checkout"));
+export const PaymentResult = lazyWithPreload(() => import("@/modules/public/pages/order/PaymentResult"));
 export const Orders = lazyWithPreload(() => import("@/modules/public/pages/order/Orders"));
 export const OrderDetail = lazyWithPreload(() => import("@/modules/public/pages/order/OrderDetail"));
 export const Returns = lazyWithPreload(() => import("@/modules/public/pages/order/Returns"));

@@ -7,7 +7,7 @@ const {
   reportMonthExpr,
 } = require('../report/reportMetricDefinitions');
 const { getReportExprs } = require('./adminReport.expr');
-const { getProfitDailySqlParts } = require('../../../db/schemaContract');
+const { getProfitDailySqlParts, loadSchemaCapabilities } = require('../../../db/schemaContract');
 
 /** 未执行 061 迁移时 analytics_events 不存在，报表需降级避免 500 */
 let analyticsEventsReady;
@@ -1007,6 +1007,229 @@ async function selectInventoryAnalysis() {
   );
 }
 
+async function selectPromotionConversionReport(dateFrom, dateTo, filters = {}) {
+  const hasAnalytics = await isAnalyticsEventsReady();
+  const activityScope = filters.activity_id
+    ? { sql: ' AND a.id = ?', params: [filters.activity_id] }
+    : { sql: '', params: [] };
+  const analyticsJoin = hasAnalytics
+    ? `LEFT JOIN (
+        SELECT activity_id,
+          SUM(CASE WHEN event_type IN ('page_view','product_view') THEN 1 ELSE 0 END) AS view_count,
+          SUM(CASE WHEN event_type = 'add_to_cart' THEN 1 ELSE 0 END) AS add_cart_count,
+          COUNT(DISTINCT CASE WHEN event_type = 'order_submit' THEN order_id END) AS order_submit_count
+        FROM analytics_events
+        WHERE activity_id IS NOT NULL AND TRIM(activity_id) <> ''
+          AND ${rangeWhere('DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))')}
+        GROUP BY activity_id
+      ) ae ON BINARY ae.activity_id = BINARY a.id`
+    : `LEFT JOIN (
+        SELECT CAST(NULL AS CHAR(36)) AS activity_id, 0 AS view_count, 0 AS add_cart_count, 0 AS order_submit_count
+        LIMIT 0
+      ) ae ON BINARY ae.activity_id = BINARY a.id`;
+  const params = [
+    dateFrom,
+    dateTo,
+    ...(hasAnalytics ? [dateFrom, dateTo] : []),
+    ...activityScope.params,
+  ];
+  return queryList(
+    `SELECT
+      a.id AS promotion_id,
+      a.title AS promotion_title,
+      a.type AS promotion_type,
+      a.status AS promotion_status,
+      a.start_at,
+      a.end_at,
+      COUNT(DISTINCT ap.product_id) AS product_count,
+      COALESCE(MAX(ae.view_count), 0) AS view_count,
+      COALESCE(MAX(ae.add_cart_count), 0) AS add_cart_count,
+      COALESCE(MAX(ae.order_submit_count), 0) AS order_submit_count,
+      COALESCE(MAX(usage_stats.usage_count), 0) AS usage_count,
+      COALESCE(MAX(usage_stats.locked_count), 0) AS locked_count,
+      COALESCE(MAX(usage_stats.confirmed_count), 0) AS confirmed_count,
+      COALESCE(MAX(usage_stats.released_count), 0) AS released_count,
+      COALESCE(MAX(usage_stats.paid_order_count), 0) AS paid_order_count,
+      COALESCE(MAX(usage_stats.sales_amount), 0) AS sales_amount,
+      COALESCE(MAX(usage_stats.discount_amount), 0) AS discount_amount,
+      CASE
+        WHEN COALESCE(MAX(ae.view_count), 0) > 0
+        THEN ROUND(COALESCE(MAX(usage_stats.paid_order_count), 0) / MAX(ae.view_count) * 100, 2)
+        ELSE NULL
+      END AS conversion_rate,
+      CASE
+        WHEN COALESCE(MAX(usage_stats.paid_order_count), 0) > 0
+        THEN ROUND(COALESCE(MAX(usage_stats.discount_amount), 0) / MAX(usage_stats.paid_order_count), 2)
+        ELSE NULL
+      END AS cost_per_paid_order
+     FROM marketing_activities a
+     LEFT JOIN marketing_activity_products ap ON BINARY ap.activity_id = BINARY a.id
+     LEFT JOIN (
+       SELECT
+         pu.promotion_id,
+         COALESCE(SUM(pu.usage_count), 0) AS usage_count,
+         SUM(CASE WHEN pu.status = 'locked' THEN 1 ELSE 0 END) AS locked_count,
+         SUM(CASE WHEN pu.status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed_count,
+         SUM(CASE WHEN pu.status IN ('released','cancelled') THEN 1 ELSE 0 END) AS released_count,
+         COUNT(DISTINCT CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.id END) AS paid_order_count,
+         COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END), 0) AS sales_amount,
+         COALESCE(SUM(CASE WHEN pu.status = 'confirmed' THEN pu.discount_amount ELSE 0 END), 0) AS discount_amount
+       FROM promotion_usages pu
+       LEFT JOIN orders o ON BINARY o.id = BINARY pu.order_id
+       WHERE ${rangeWhere('DATE(DATE_ADD(pu.created_at, INTERVAL 8 HOUR))')}
+       GROUP BY pu.promotion_id
+     ) usage_stats ON BINARY usage_stats.promotion_id = BINARY a.id
+     ${analyticsJoin}
+     WHERE a.deleted_at IS NULL${activityScope.sql}
+     GROUP BY a.id, a.title, a.type, a.status, a.start_at, a.end_at, a.created_at
+     HAVING usage_count > 0 OR view_count > 0 OR product_count > 0
+     ORDER BY paid_order_count DESC, sales_amount DESC, a.created_at DESC
+     LIMIT 200`,
+    params,
+  );
+}
+
+async function selectDiscountCostReport(dateFrom, dateTo, filters = {}) {
+  const schema = await loadSchemaCapabilities();
+  const periodExpr = salesPeriodExpr(filters.granularity || 'day', 'o');
+  const activityExpr = schema.ordersActivityDiscount ? 'COALESCE(o.activity_discount_amount,0)' : '0';
+  const couponExpr = schema.ordersCouponDiscount ? 'COALESCE(o.coupon_discount_amount,0)' : '0';
+  const pointsExpr = schema.ordersPointsDiscount ? 'COALESCE(o.points_discount_amount,0)' : '0';
+  const rewardExpr = schema.ordersRewardCashDiscount ? 'COALESCE(o.reward_cash_discount_amount,0)' : '0';
+  const shippingExpr = schema.ordersShippingDiscount ? 'COALESCE(o.shipping_discount_amount,0)' : '0';
+  const totalExpr = schema.ordersTotalDiscount
+    ? 'COALESCE(o.total_discount_amount,0)'
+    : `(${activityExpr} + ${couponExpr} + ${pointsExpr} + ${rewardExpr} + ${shippingExpr})`;
+  return queryList(
+    `SELECT
+      ${periodExpr} AS date,
+      COUNT(DISTINCT o.id) AS order_count,
+      COUNT(DISTINCT CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.id END) AS paid_order_count,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END),0) AS paid_amount,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN ${activityExpr} ELSE 0 END),0) AS activity_discount_amount,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN ${couponExpr} ELSE 0 END),0) AS coupon_discount_amount,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN ${pointsExpr} ELSE 0 END),0) AS points_discount_amount,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN ${rewardExpr} ELSE 0 END),0) AS reward_cash_discount_amount,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN ${shippingExpr} ELSE 0 END),0) AS shipping_discount_amount,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN ${totalExpr} ELSE 0 END),0) AS total_discount_amount
+     FROM orders o
+     WHERE ${rangeWhere('DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))')}
+       AND o.status <> 'cancelled'
+     GROUP BY ${periodExpr}
+     ORDER BY date ASC
+     LIMIT 400`,
+    [dateFrom, dateTo],
+  );
+}
+
+async function selectPaymentFailureReport(dateFrom, dateTo, filters = {}) {
+  const clauses = [rangeWhere('DATE(DATE_ADD(pe.created_at, INTERVAL 8 HOUR))')];
+  const params = [dateFrom, dateTo];
+  if (filters.provider) {
+    clauses.push('pe.provider = ?');
+    params.push(filters.provider);
+  }
+  if (filters.channel_code) {
+    clauses.push('po.channel_code = ?');
+    params.push(filters.channel_code);
+  }
+  return queryList(
+    `SELECT
+      pe.provider,
+      COALESCE(NULLIF(po.channel_code,''), 'unknown') AS channel_code,
+      COALESCE(NULLIF(pe.failure_reason_code,''), NULLIF(pe.error_message,''), pe.processing_result, 'unknown') AS failure_reason,
+      pe.event_type,
+      pe.verify_status,
+      pe.processing_result,
+      pe.risk_level,
+      pe.review_status,
+      COUNT(*) AS failed_event_count,
+      COUNT(DISTINCT pe.payment_order_id) AS payment_order_count,
+      COUNT(DISTINCT pe.order_id) AS affected_order_count,
+      COALESCE(SUM(pe.expected_amount),0) AS expected_amount,
+      COALESCE(SUM(pe.actual_amount),0) AS actual_amount,
+      MAX(pe.created_at) AS latest_event_at
+     FROM payment_events pe
+     LEFT JOIN payment_orders po ON BINARY po.id = BINARY pe.payment_order_id
+     WHERE ${clauses.join(' AND ')}
+       AND (
+         pe.verify_status = 'failed'
+         OR pe.processing_result IN ('failed','rejected')
+         OR COALESCE(pe.failure_reason_code,'') <> ''
+       )
+     GROUP BY pe.provider, COALESCE(NULLIF(po.channel_code,''), 'unknown'),
+              COALESCE(NULLIF(pe.failure_reason_code,''), NULLIF(pe.error_message,''), pe.processing_result, 'unknown'),
+              pe.event_type, pe.verify_status, pe.processing_result, pe.risk_level, pe.review_status
+     ORDER BY failed_event_count DESC, latest_event_at DESC
+     LIMIT 200`,
+    params,
+  );
+}
+
+async function selectInventoryOccupancyReport() {
+  return queryList(
+    `SELECT
+      p.id AS product_id,
+      p.name AS product_name,
+      v.id AS variant_id,
+      COALESCE(NULLIF(v.title,''), NULLIF(v.sku_code,''), v.id) AS variant_name,
+      v.sku_code,
+      COALESCE(v.stock,0) AS stock,
+      COALESCE(v.reserved_stock,0) AS reserved_stock,
+      COALESCE(po.pending_order_locked_stock,0) AS pending_order_locked_stock,
+      COALESCE(po.pending_order_count,0) AS pending_order_count,
+      (COALESCE(v.reserved_stock,0) + COALESCE(po.pending_order_locked_stock,0)) AS locked_stock,
+      GREATEST(COALESCE(v.stock,0) - COALESCE(v.reserved_stock,0), 0) AS available_stock,
+      COALESCE(v.stock_warning_threshold, p.stock_warning_threshold, 0) AS warning_stock
+     FROM product_variants v
+     INNER JOIN products p ON BINARY p.id = BINARY v.product_id
+     LEFT JOIN (
+       SELECT
+         oi.variant_id,
+         COALESCE(SUM(oi.qty),0) AS pending_order_locked_stock,
+         COUNT(DISTINCT oi.order_id) AS pending_order_count
+       FROM order_items oi
+       INNER JOIN orders o ON BINARY o.id = BINARY oi.order_id
+       WHERE o.status = 'pending'
+         AND COALESCE(o.payment_status, 'pending') IN (${UNPAID_PAYMENT_SQL})
+         AND COALESCE(oi.line_status, 'active') = 'active'
+       GROUP BY oi.variant_id
+     ) po ON BINARY po.variant_id = BINARY v.id
+     WHERE p.deleted_at IS NULL
+       AND v.deleted_at IS NULL
+       AND (
+         COALESCE(v.reserved_stock,0) > 0
+         OR COALESCE(po.pending_order_locked_stock,0) > 0
+         OR GREATEST(COALESCE(v.stock,0) - COALESCE(v.reserved_stock,0), 0) <= COALESCE(v.stock_warning_threshold, p.stock_warning_threshold, 0)
+       )
+     ORDER BY locked_stock DESC, pending_order_locked_stock DESC, available_stock ASC
+     LIMIT 500`,
+  );
+}
+
+async function selectOrderCancelReasonReport(dateFrom, dateTo, filters = {}) {
+  const scope = buildOrderScopeSql(filters, 'o');
+  const dateExpr = 'DATE(DATE_ADD(COALESCE(o.cancelled_at, o.updated_at, o.created_at), INTERVAL 8 HOUR))';
+  return queryList(
+    `SELECT
+      COALESCE(NULLIF(TRIM(o.cancel_reason), ''), '未填写原因') AS cancel_reason,
+      COUNT(*) AS cancel_count,
+      COUNT(DISTINCT o.user_id) AS user_count,
+      COALESCE(SUM(o.total_amount),0) AS cancelled_amount,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END),0) AS paid_cancelled_amount,
+      MIN(COALESCE(o.cancelled_at, o.updated_at, o.created_at)) AS first_cancelled_at,
+      MAX(COALESCE(o.cancelled_at, o.updated_at, o.created_at)) AS latest_cancelled_at
+     FROM orders o
+     WHERE o.status = 'cancelled'
+       AND ${rangeWhere(dateExpr)}
+       ${scope.sql}
+     GROUP BY COALESCE(NULLIF(TRIM(o.cancel_reason), ''), '未填写原因')
+     ORDER BY cancel_count DESC, cancelled_amount DESC
+     LIMIT 100`,
+    [dateFrom, dateTo, ...scope.params],
+  );
+}
+
 function searchAnalysisOrderBy(sortBy, sortOrder, analyticsReady) {
   const direction = String(sortOrder || '').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
   const sortable = new Set([
@@ -1382,8 +1605,13 @@ module.exports = {
   selectOrderAnalysisDaily,
   selectSimpleCustomerAnalysis,
   selectSimpleActivitiesAnalysis,
+  selectPromotionConversionReport,
   selectCouponsAnalysis,
+  selectDiscountCostReport,
+  selectPaymentFailureReport,
   selectInventoryAnalysis,
+  selectInventoryOccupancyReport,
+  selectOrderCancelReasonReport,
   selectSimpleSearchAnalysis,
   selectOverviewBehaviorSummary,
   selectTrafficSummary,

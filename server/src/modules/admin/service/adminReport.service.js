@@ -749,6 +749,201 @@ async function getCouponsAnalysis(query) {
   };
 }
 
+function normalizePromotionConversionRow(row) {
+  const viewCount = Number(row.view_count || 0);
+  const paidOrderCount = Number(row.paid_order_count || 0);
+  const discountAmount = safeNumber(row.discount_amount);
+  return {
+    ...row,
+    product_count: Number(row.product_count || 0),
+    view_count: viewCount,
+    add_cart_count: Number(row.add_cart_count || 0),
+    order_submit_count: Number(row.order_submit_count || 0),
+    usage_count: Number(row.usage_count || 0),
+    locked_count: Number(row.locked_count || 0),
+    confirmed_count: Number(row.confirmed_count || 0),
+    released_count: Number(row.released_count || 0),
+    paid_order_count: paidOrderCount,
+    sales_amount: safeNumber(row.sales_amount),
+    discount_amount: discountAmount,
+    conversion_rate: row.conversion_rate == null ? null : safeNumber(row.conversion_rate),
+    cost_per_paid_order: paidOrderCount > 0 ? safeNumber(discountAmount / paidOrderCount) : null,
+  };
+}
+
+async function getPromotionConversionReport(query) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  const filters = parseReportFilters(query);
+  const list = (await repo.selectPromotionConversionReport(dateFrom, dateTo, filters))
+    .map(normalizePromotionConversionRow);
+  const summary = list.reduce((acc, row) => ({
+    活动数: acc.活动数 + 1,
+    浏览量: acc.浏览量 + row.view_count,
+    加购量: acc.加购量 + row.add_cart_count,
+    提交订单数: acc.提交订单数 + row.order_submit_count,
+    支付订单数: acc.支付订单数 + row.paid_order_count,
+    销售额: safeNumber(acc.销售额 + row.sales_amount),
+    优惠成本: safeNumber(acc.优惠成本 + row.discount_amount),
+  }), {
+    活动数: 0,
+    浏览量: 0,
+    加购量: 0,
+    提交订单数: 0,
+    支付订单数: 0,
+    销售额: 0,
+    优惠成本: 0,
+  });
+  summary.活动支付转化率 = summary.浏览量 > 0 ? safeNumber((summary.支付订单数 / summary.浏览量) * 100) : 0;
+  return { summary, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+}
+
+function normalizeDiscountCostRow(row) {
+  const paidAmount = safeNumber(row.paid_amount);
+  const totalDiscountAmount = safeNumber(row.total_discount_amount);
+  return {
+    ...row,
+    order_count: Number(row.order_count || 0),
+    paid_order_count: Number(row.paid_order_count || 0),
+    paid_amount: paidAmount,
+    activity_discount_amount: safeNumber(row.activity_discount_amount),
+    coupon_discount_amount: safeNumber(row.coupon_discount_amount),
+    points_discount_amount: safeNumber(row.points_discount_amount),
+    reward_cash_discount_amount: safeNumber(row.reward_cash_discount_amount),
+    shipping_discount_amount: safeNumber(row.shipping_discount_amount),
+    total_discount_amount: totalDiscountAmount,
+    discount_rate: paidAmount > 0 ? safeNumber((totalDiscountAmount / paidAmount) * 100) : 0,
+  };
+}
+
+async function getDiscountCostReport(query) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  const filters = parseReportFilters(query);
+  const list = (await repo.selectDiscountCostReport(dateFrom, dateTo, filters)).map(normalizeDiscountCostRow);
+  const summary = list.reduce((acc, row) => ({
+    支付订单数: acc.支付订单数 + row.paid_order_count,
+    实收金额: safeNumber(acc.实收金额 + row.paid_amount),
+    活动优惠: safeNumber(acc.活动优惠 + row.activity_discount_amount),
+    优惠券优惠: safeNumber(acc.优惠券优惠 + row.coupon_discount_amount),
+    积分抵扣: safeNumber(acc.积分抵扣 + row.points_discount_amount),
+    返现抵扣: safeNumber(acc.返现抵扣 + row.reward_cash_discount_amount),
+    运费减免: safeNumber(acc.运费减免 + row.shipping_discount_amount),
+    优惠成本: safeNumber(acc.优惠成本 + row.total_discount_amount),
+  }), {
+    支付订单数: 0,
+    实收金额: 0,
+    活动优惠: 0,
+    优惠券优惠: 0,
+    积分抵扣: 0,
+    返现抵扣: 0,
+    运费减免: 0,
+    优惠成本: 0,
+  });
+  summary.优惠成本率 = summary.实收金额 > 0 ? safeNumber((summary.优惠成本 / summary.实收金额) * 100) : 0;
+  return { summary, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+}
+
+function normalizePaymentFailureRow(row) {
+  return {
+    ...row,
+    failed_event_count: Number(row.failed_event_count || 0),
+    payment_order_count: Number(row.payment_order_count || 0),
+    affected_order_count: Number(row.affected_order_count || 0),
+    expected_amount: safeNumber(row.expected_amount),
+    actual_amount: safeNumber(row.actual_amount),
+  };
+}
+
+async function getPaymentFailureReport(query) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  const list = (await repo.selectPaymentFailureReport(dateFrom, dateTo, {
+    provider: String(query.provider || '').trim(),
+    channel_code: String(query.channel_code || '').trim(),
+  })).map(normalizePaymentFailureRow);
+  const summary = list.reduce((acc, row) => ({
+    失败事件数: acc.失败事件数 + row.failed_event_count,
+    支付单数: acc.支付单数 + row.payment_order_count,
+    影响订单数: acc.影响订单数 + row.affected_order_count,
+    需复核事件数: acc.需复核事件数 + (row.review_status === 'needs_review' ? row.failed_event_count : 0),
+  }), {
+    失败事件数: 0,
+    支付单数: 0,
+    影响订单数: 0,
+    需复核事件数: 0,
+  });
+  return { summary, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+}
+
+function normalizeInventoryOccupancyRow(row) {
+  const lockedStock = Number(row.locked_stock || 0);
+  const availableStock = Number(row.available_stock || 0);
+  const warningStock = Number(row.warning_stock || 0);
+  let stockStatus = 'normal';
+  if (availableStock <= 0) stockStatus = 'out_of_stock';
+  else if (warningStock > 0 && availableStock <= warningStock) stockStatus = 'low_stock';
+  return {
+    ...row,
+    stock: Number(row.stock || 0),
+    reserved_stock: Number(row.reserved_stock || 0),
+    pending_order_locked_stock: Number(row.pending_order_locked_stock || 0),
+    pending_order_count: Number(row.pending_order_count || 0),
+    locked_stock: lockedStock,
+    available_stock: availableStock,
+    warning_stock: warningStock,
+    stock_status: stockStatus,
+  };
+}
+
+async function getInventoryOccupancyReport(_query = {}) {
+  const list = (await repo.selectInventoryOccupancyReport()).map(normalizeInventoryOccupancyRow);
+  const summary = list.reduce((acc, row) => ({
+    SKU数: acc.SKU数 + 1,
+    锁定库存: acc.锁定库存 + row.locked_stock,
+    预留库存: acc.预留库存 + row.reserved_stock,
+    待支付占用: acc.待支付占用 + row.pending_order_locked_stock,
+    待支付订单数: acc.待支付订单数 + row.pending_order_count,
+    缺货SKU: acc.缺货SKU + (row.stock_status === 'out_of_stock' ? 1 : 0),
+    低库存SKU: acc.低库存SKU + (row.stock_status === 'low_stock' ? 1 : 0),
+  }), {
+    SKU数: 0,
+    锁定库存: 0,
+    预留库存: 0,
+    待支付占用: 0,
+    待支付订单数: 0,
+    缺货SKU: 0,
+    低库存SKU: 0,
+  });
+  return { summary, list, last_updated_at: new Date().toISOString() };
+}
+
+function normalizeOrderCancelReasonRow(row) {
+  return {
+    ...row,
+    cancel_count: Number(row.cancel_count || 0),
+    user_count: Number(row.user_count || 0),
+    cancelled_amount: safeNumber(row.cancelled_amount),
+    paid_cancelled_amount: safeNumber(row.paid_cancelled_amount),
+  };
+}
+
+async function getOrderCancelReasonReport(query) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  const filters = parseReportFilters(query);
+  const list = (await repo.selectOrderCancelReasonReport(dateFrom, dateTo, filters))
+    .map(normalizeOrderCancelReasonRow);
+  const summary = list.reduce((acc, row) => ({
+    取消订单数: acc.取消订单数 + row.cancel_count,
+    影响用户数: acc.影响用户数 + row.user_count,
+    取消订单金额: safeNumber(acc.取消订单金额 + row.cancelled_amount),
+    已支付取消金额: safeNumber(acc.已支付取消金额 + row.paid_cancelled_amount),
+  }), {
+    取消订单数: 0,
+    影响用户数: 0,
+    取消订单金额: 0,
+    已支付取消金额: 0,
+  });
+  return { summary, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+}
+
 const INVENTORY_SORT_COLUMNS = new Set(['current_stock', 'sales_7d', 'sales_30d', 'available_stock_days', 'product_name']);
 
 function resolveInventorySort(query = {}) {
@@ -1202,8 +1397,13 @@ async function exportByType(type, query) {
     getOrdersAnalysis,
     getCustomersAnalysis,
     getActivitiesAnalysis,
+    getPromotionConversionReport,
     getCouponsAnalysis,
+    getDiscountCostReport,
+    getPaymentFailureReport,
     getSearchAnalysis,
+    getInventoryOccupancyReport,
+    getOrderCancelReasonReport,
   };
   const handler = handlers[definition.serviceHandler];
   if (!handler) throw new BusinessError(400, `导出类型未绑定处理器: ${type}`);
@@ -1236,8 +1436,13 @@ module.exports = {
   getOrdersAnalysis,
   getCustomersAnalysis,
   getActivitiesAnalysis,
+  getPromotionConversionReport,
   getCouponsAnalysis,
+  getDiscountCostReport,
+  getPaymentFailureReport,
   getInventoryAnalysis,
+  getInventoryOccupancyReport,
+  getOrderCancelReasonReport,
   getSearchAnalysis,
   getTrafficAnalysis,
   listOperatingExpenses,
@@ -1246,6 +1451,3 @@ module.exports = {
   deleteOperatingExpense,
   exportByType,
 };
-
-
-

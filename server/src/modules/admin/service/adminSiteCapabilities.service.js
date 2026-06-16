@@ -1,7 +1,7 @@
-const siteCapabilitiesModule = require('../../siteCapabilities');
+const siteCapabilitiesApi = /** @type {any} */ (require('../../siteCapabilities/publicApi'));
 
 function getSiteCapabilitiesApi() {
-  return /** @type {any} */ (siteCapabilitiesModule).api || {};
+  return siteCapabilitiesApi || {};
 }
 
 function requireSiteCapabilitiesApi(name) {

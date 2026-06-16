@@ -143,3 +143,66 @@ Content-Type: application/json
 3. 模拟成功 webhook，确认订单状态变为 paid，`payment_orders`、`payment_events`、`payment_fees` 均有记录。
 4. 模拟失败 webhook，确认支付单 failed，订单仍可再次发起支付。
 5. 再跑一次 Stripe Checkout，确认现有卡支付不受影响。
+
+## Billplz / FPX（真实 provider）
+
+当前重构已新增 Billplz provider，保留 Stripe。马来西亚站前台是否展示 Billplz / FPX 由站点能力开关和渠道配置共同决定：
+
+- `billplzEnabled=false` 时，前台隐藏 Billplz / FPX 渠道。
+- `billplzEnabled=true` 且渠道启用时，`POST /api/payments/intents` 可创建 Billplz bill。
+- 前台在线支付渠道会优先选择 Billplz / FPX；Stripe 保留为备用，待支付订单继续支付也复用同一排序规则。
+- Stripe 不删除，作为兼容或备用渠道。
+
+### 环境变量
+
+生产或 sandbox 需配置：
+
+```env
+BILLPLZ_API_KEY=...
+BILLPLZ_COLLECTION_ID=...
+BILLPLZ_X_SIGNATURE_KEY=...
+BILLPLZ_API_BASE_URL=https://www.billplz.com/api/v3
+BILLPLZ_CALLBACK_URL=https://damatong.net/api/payments/webhooks/billplz
+BILLPLZ_REDIRECT_URL=https://damatong.net/payment/result
+```
+
+不要把 API key 写进代码或前端构建变量。`.env.example` 只能放占位值。
+
+### 回调校验
+
+Billplz webhook 必须校验：
+
+- `X Signature`。
+- provider event id / bill id 幂等。
+- 订单号或 payment order 归属。
+- 金额，Billplz cents 需换算为 MYR。
+- 币种必须为 `MYR`。
+- 已处理事件重复到达时不能重复改订单、加销量、发积分或通知。
+
+### 支付结果页
+
+Billplz redirect 只能把用户带回 `/payment/result`。页面外壳可公开访问，避免三方支付回跳先被登录页拦截；页面必须重新请求后端订单/支付状态，未登录或无权访问订单时显示登录/刷新失败，不信任 redirect URL 上的 paid/status 参数。
+
+### 后台对账
+
+后台支付页应核对：
+
+- `payment_events` 事件日志。
+- provider 原始事件 id。
+- 金额差异和失败原因。
+- `payment_reconciliations` 的 provider report amount、渠道手续费、差异说明和人工复核状态。
+
+### 本地专项验证
+
+本地修改支付或库存联动时，至少运行：
+
+```bash
+cd server
+node -r tsx/cjs --test test/billplz-provider.test.js test/billplz-webhook-security.test.js test/payment-reconciliation-review.test.js test/inventory-lock-v2.test.js
+
+cd ../click-send-shop-main/click-send-shop-main
+npx vitest run src/utils/checkoutPaymentMethod.test.ts src/components/PaymentMethodPicker.test.tsx
+npm run verify
+```
+
+这些命令只证明本地逻辑和构建通过；真实 Billplz sandbox、生产回调和银行对账仍需独立验证。

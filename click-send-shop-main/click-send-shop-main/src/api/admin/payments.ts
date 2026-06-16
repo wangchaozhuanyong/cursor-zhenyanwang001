@@ -1,10 +1,11 @@
-import { get, post, put } from "@/api/request";
+import { get, patch, post, put } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type {
   PaymentChannelRow,
   PaymentOrderAdminRow,
   PaymentEventAdminRow,
   PaymentReconciliationRow,
+  PaymentReviewStatus,
 } from "@/types/adminPayment";
 
 export function getAdminPaymentChannels() {
@@ -24,6 +25,13 @@ export function getAdminPaymentOrders(params?: Record<string, string>) {
 
 export function getAdminPaymentEvents(params?: Record<string, string>) {
   return get<PaginatedData<PaymentEventAdminRow>>("/admin/payments/events", params as unknown as Record<string, unknown>);
+}
+
+export function patchAdminPaymentEventReview(eventId: string, body: {
+  review_status: PaymentReviewStatus;
+  review_note?: string;
+}) {
+  return patch<{ id: string; review_status: PaymentReviewStatus }>(`/admin/payments/events/${eventId}/review`, body);
 }
 
 export function postAdminMarkOrderPaid(orderId: string, body: {
@@ -52,8 +60,22 @@ export function postAdminPaymentReconciliation(body: {
   provider: string;
   channel_code?: string;
   diff_amount?: number;
+  provider_report_amount?: number;
+  provider_fee_amount?: number;
+  provider_reference?: string;
+  difference_reason?: string;
   notes?: string;
 }) {
   return post<{ id: string }>("/admin/payments/reconciliations", body);
 }
 
+export function patchAdminPaymentReconciliationReview(id: string, body: {
+  review_status: Extract<PaymentReviewStatus, "confirmed" | "needs_followup" | "rejected" | "ignored">;
+  review_notes?: string;
+  difference_reason?: string;
+}) {
+  return patch<{ id: string; status: string; review_status: PaymentReviewStatus }>(
+    `/admin/payments/reconciliations/${id}/review`,
+    body,
+  );
+}

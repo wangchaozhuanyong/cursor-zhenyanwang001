@@ -10,7 +10,14 @@ type ProductActivityPanelProps = {
 export default function ProductActivityPanel({ activity, className = "" }: ProductActivityPanelProps) {
   if (!activity) return null;
 
-  const isFlashSale = activity.type === "flash_sale";
+  const isActivityPrice = activity.type === "flash_sale" || activity.type === "limited_time_discount";
+  const badgeLabel = activity.type === "flash_sale"
+    ? "秒杀"
+    : activity.type === "limited_time_discount"
+      ? "限时折扣"
+      : activity.type === "member_price"
+        ? "会员专享"
+        : "满减";
   const remaining = Math.max(0, Number(activity.remaining_stock ?? 0));
   const limit = Number(activity.limit_per_user ?? 0);
   const threshold = Number(activity.threshold_amount ?? 0);
@@ -24,7 +31,7 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <StorefrontBadge tone="sale">{isFlashSale ? "秒杀" : "满减"}</StorefrontBadge>
+            <StorefrontBadge tone="sale">{badgeLabel}</StorefrontBadge>
             <p className="min-w-0 text-sm font-bold leading-5 text-[var(--theme-text)]">{activity.title}</p>
           </div>
           {activity.description ? (
@@ -32,7 +39,7 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
           ) : null}
         </div>
         <div className="shrink-0 text-right text-xs font-semibold text-[var(--theme-price)]">
-          {isFlashSale ? "活动价" : "优惠"}
+          {isActivityPrice ? "活动价" : "优惠"}
         </div>
       </div>
 
@@ -46,7 +53,7 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
         <div className="flex items-center gap-1.5">
           <ShieldCheck size={14} aria-hidden />
           <span>
-            {isFlashSale
+            {isActivityPrice
               ? `剩余 ${remaining} 件${limit > 0 ? `，每人限购 ${limit} 件` : ""}`
               : threshold > 0 && discount > 0
                 ? `满 RM ${money(threshold)} 减 RM ${money(discount)}`

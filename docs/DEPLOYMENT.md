@@ -111,15 +111,16 @@ SKIP_GIT=1 bash deploy/production-deploy.sh
 GIT_BRANCH=master bash deploy/production-deploy.sh
 ```
 
-## 真实支付（Stripe）
+## 真实支付（Billplz / FPX / Stripe）
 
-1. 在 Stripe Dashboard 创建密钥与 Webhook Endpoint，URL 为 `https://你的域名/api/payment/stripe/webhook`，选择 `payment_intent.succeeded` 等事件。
-2. 将 `STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET` 写入 `server/.env`。
-3. 收银台侧需创建 **PaymentIntent**（或 Checkout Session）并在 `metadata` 中写入 `order_id`；当前仓库仍以 **mock 模拟支付** 为主流程，Stripe 为 Webhook 置订单为已付款的补充路径。
+1. 马来西亚站前台优先使用 **Billplz / FPX**。启用前需同时满足：`billplzEnabled` 能力开关已开启、后台支付渠道已配置为可用、`server/.env` 已配置 Billplz 密钥与回调校验所需参数。
+2. Billplz / FPX 回调必须校验签名、订单号、金额、币种和 provider event id；重复回调只能命中同一支付事件，不能重复改订单、加销量、发积分或发通知。详细配置和验收见 [PAYMENTS_MALAYSIA.md](./PAYMENTS_MALAYSIA.md)。
+3. Stripe 仍保留为可选支付提供方。在 Stripe Dashboard 创建密钥与 Webhook Endpoint，URL 为 `https://你的域名/api/payment/stripe/webhook`，选择 `payment_intent.succeeded` 等事件，并将 `STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET` 写入 `server/.env`。
+4. 支付跳转回站点后统一进入 `/payment/result`。该页面外壳可公开访问，但页面只查询后端订单/支付状态；未登录或无权访问订单时显示登录/刷新失败，不信任 URL 参数里的成功或失败结果。
 
-## 模拟支付（默认）
+## 模拟支付（仅内测）
 
-无需密钥；下单后走 `mock` 渠道即可，适合内测。
+无需密钥；`mock` 渠道仅适合本地内测、手动验证和回归测试，不应作为马来西亚站真实支付主流程。
 
 ## 监控与告警（需自行接入）
 

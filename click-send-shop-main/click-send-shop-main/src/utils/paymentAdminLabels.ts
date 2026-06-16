@@ -5,6 +5,9 @@ export const PAYMENT_CHANNEL_CODE_LABELS: Record<string, string> = {
   manual_bank: "银行转账 / 线下确认",
   reward_wallet: "返现钱包",
   fpx: "FPX 网上银行",
+  billplz: "Billplz",
+  billplz_fpx: "Billplz / FPX",
+  direct_fpx: "FPX Direct",
   tng_ewallet: "Touch 'n Go 电子钱包",
   grabpay: "GrabPay",
   boost: "Boost 钱包",
@@ -15,6 +18,8 @@ export const PAYMENT_PROVIDER_LABELS: Record<string, string> = {
   manual: "线下人工",
   internal: "内部记账",
   malaysia_local: "马来西亚本地支付",
+  billplz: "Billplz 网关",
+  fpx: "FPX 网关",
 };
 
 export const COUNTRY_LABELS: Record<string, string> = {
@@ -50,6 +55,13 @@ export const PAYMENT_EVENT_TYPE_LABELS: Record<string, string> = {
   manual_webhook_received: "手动 Webhook 记录",
   "refund.provider_recorded": "渠道退款记录",
   "refund.manual_recorded": "人工退款记录",
+  "billplz.paid": "Billplz 支付成功",
+  "billplz.failed": "Billplz 支付失败",
+  "billplz.webhook_rejected": "Billplz 回调拒绝",
+  "fpx.paid": "FPX 支付成功",
+  "fpx.failed": "FPX 支付失败",
+  "fpx.webhook_rejected": "FPX 回调拒绝",
+  "malaysia_local.webhook_rejected": "本地支付回调拒绝",
 };
 
 export const PAYMENT_VERIFY_STATUS_LABELS: Record<string, string> = {
@@ -71,8 +83,19 @@ export const PAYMENT_PROCESSING_RESULT_LABELS: Record<string, string> = {
 
 export const PAYMENT_RECONCILIATION_STATUS_LABELS: Record<string, string> = {
   draft: "草稿",
+  matched: "已匹配",
+  needs_review: "需复核",
   confirmed: "已确认",
   closed: "已关闭",
+};
+
+export const PAYMENT_REVIEW_STATUS_LABELS: Record<string, string> = {
+  pending: "待复核",
+  needs_review: "需复核",
+  confirmed: "已复核",
+  needs_followup: "需跟进",
+  rejected: "已驳回",
+  ignored: "已忽略",
 };
 
 export const CHECKOUT_MODE_LABELS: Record<string, string> = {
@@ -90,6 +113,10 @@ export const PAYMENT_CONFIG_KEY_LABELS: Record<string, string> = {
 };
 
 const MALAYSIA_LOCAL_EVENT_PREFIX = "malaysia_local.";
+const PROVIDER_EVENT_PREFIX_LABELS: Record<string, string> = {
+  "billplz.": "Billplz",
+  "fpx.": "FPX",
+};
 
 export function labelChannelCode(code: string, fallbackName?: string): string {
   if (!code) return "—";
@@ -128,6 +155,12 @@ export function labelPaymentEventType(eventType: string): string {
     const status = eventType.slice(MALAYSIA_LOCAL_EVENT_PREFIX.length);
     return `本地支付 · ${labelPaymentOrderStatus(status)}`;
   }
+  for (const [prefix, label] of Object.entries(PROVIDER_EVENT_PREFIX_LABELS)) {
+    if (eventType.startsWith(prefix)) {
+      const status = eventType.slice(prefix.length);
+      return `${label} · ${labelPaymentOrderStatus(status)}`;
+    }
+  }
   return "未映射事件";
 }
 
@@ -141,6 +174,10 @@ export function labelProcessingResult(result: string): string {
 
 export function labelReconciliationStatus(status: string): string {
   return PAYMENT_RECONCILIATION_STATUS_LABELS[status] || status;
+}
+
+export function labelPaymentReviewStatus(status: string): string {
+  return PAYMENT_REVIEW_STATUS_LABELS[status] || status || "待复核";
 }
 
 export function formatChannelSubtitle(row: {
@@ -184,6 +221,8 @@ export const PAYMENT_PROVIDER_FILTER_OPTIONS = [
   { value: "manual", label: "线下人工" },
   { value: "internal", label: "内部记账" },
   { value: "malaysia_local", label: "马来西亚本地支付" },
+  { value: "billplz", label: "Billplz 网关" },
+  { value: "fpx", label: "FPX 网关" },
 ] as const;
 
 export const PAYMENT_CHANNEL_FILTER_OPTIONS = [

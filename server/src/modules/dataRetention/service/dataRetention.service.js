@@ -61,7 +61,7 @@ async function auditCleanup(req, actionType, result, summary, extra = {}) {
 
 async function ensurePreCleanupBackup(req, options = {}) {
   if (PRE_CLEANUP_BACKUP_DISABLED() || options.skipPreCleanupBackup === true) return null;
-  const adminApi = /** @type {any} */ (require('../../admin')).api || {};
+  const adminApi = /** @type {any} */ (require('../../admin/publicApi')) || {};
   if (typeof adminApi.createPreCleanupBackup !== 'function') {
     throw new Error('PRE_CLEANUP_BACKUP_API_MISSING');
   }

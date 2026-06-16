@@ -1,6 +1,7 @@
 const { generateId, generateOrderNo } = require('../../../utils/helpers');
-const { computeShippingFee, estimateWeightFromItems } = require('../../../utils/shippingFee');
-const { NotFoundError, ValidationError } = require('../../../errors');
+const { createHash } = require('crypto');
+const { computeShippingFee, estimateWeightFromItems, normalizeShippingDestination } = require('../../../utils/shippingFee');
+const { ConflictError, NotFoundError, ValidationError } = require('../../../errors');
 const { formatOrderItem, formatOrder } = require('../order.mapper');
 const { enrichOrderWithPaymentDeadline } = require('../orderPaymentDeadline');
 const { enrichOrderWithAutoConfirmReceiveDeadline } = require('../orderReceiveDeadline');
@@ -10,13 +11,15 @@ const siteSettingsRepo = require('../repository/siteSettings.repository');
 const sstTax = require('../sstTax');
 const orderDb = repo.getPool();
 const orderPricing = require('../order.pricing');
+const pricingService = require('./pricing.service');
+const inventoryLockService = require('./inventoryLock.service');
 const orderPoints = require('./orderPoints.service');
 const orderCheckout = require('./orderCheckout.service');
 const { publishAdminEvent, emitAdminEvent } = require('../orderAdminEvents');
 const { allocateOrderProfitSnapshot, normalizeMalaysiaAddress } = require('./orderCreate.helpers');
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function requireApiMethod(api, name) {
@@ -24,6 +27,166 @@ function requireApiMethod(api, name) {
     throw new Error(`模块 API 未暴露方法: ${name}`);
   }
   return api[name];
+}
+
+function normalizeIdempotencyKey(value) {
+  const key = String(value || '').trim();
+  return key.length >= 8 ? key.slice(0, 128) : '';
+}
+
+function canonicalizeForHash(value) {
+  if (Array.isArray(value)) return value.map(canonicalizeForHash);
+  if (!value || typeof value !== 'object') return value;
+  return Object.keys(value)
+    .filter((key) => value[key] !== undefined && key !== 'idempotency_key')
+    .sort()
+    .reduce((acc, key) => {
+      acc[key] = canonicalizeForHash(value[key]);
+      return acc;
+    }, {});
+}
+
+function buildOrderPayloadHash(body) {
+  return createHash('sha256')
+    .update(JSON.stringify(canonicalizeForHash(body || {})))
+    .digest('hex');
+}
+
+function assertInventoryLockResult(result) {
+  if (result?.ok) return;
+  const line = result?.line || {};
+  if (result?.reason === 'activity_stock_insufficient') {
+    throw new ValidationError(`活动商品「${line.name || line.productName || line.productId || '商品'}」库存不足`);
+  }
+  if (result?.reason === 'sku_stock_insufficient') {
+    throw new ValidationError(`SKU「${line.variantName || line.skuCode || line.name || '商品'}」库存不足`);
+  }
+  if (result?.reason === 'missing_variant') {
+    throw new ValidationError(`商品「${line.name || line.productName || line.productId || '商品'}」缺少 SKU 信息，请先修复商品默认规格后再下单`);
+  }
+  throw new ValidationError('库存锁定失败，请刷新后重试');
+}
+
+function assertPromotionEvaluationEligible(evaluation) {
+  if (!evaluation || evaluation.eligible !== false) return;
+  const blocking = (evaluation.unavailable_reasons || []).find((item) => item?.blocking)
+    || (evaluation.unavailable_reasons || [])[0];
+  const title = blocking?.title ? `「${blocking.title}」` : '';
+  const reason = blocking?.reason || '活动规则已变化';
+  throw new ValidationError(`活动${title}不可用：${reason}，请刷新结算页后重试`);
+}
+
+function moneyValue(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n * 100) / 100;
+}
+
+function numberOrFallback(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function lineKey(line) {
+  return `${line.productId || line.product_id || ''}:${line.variantId || line.variant_id || ''}`;
+}
+
+function assertUnifiedPricingMatchesCatalog(pricing, { rawAmount, orderItems }) {
+  if (!pricing) {
+    throw new ValidationError('结算金额校验失败，请刷新后重试');
+  }
+  if (Math.abs(moneyValue(pricing.rawAmount) - moneyValue(rawAmount)) > 0.01) {
+    throw new ValidationError('商品金额已变化，请刷新结算页后重试');
+  }
+
+  const pricingItems = Array.isArray(pricing.orderItems) ? pricing.orderItems : [];
+  const pricingQtyByKey = new Map();
+  for (const item of pricingItems) {
+    const key = lineKey(item);
+    if (!key || key === ':') continue;
+    pricingQtyByKey.set(key, Number(pricingQtyByKey.get(key) || 0) + Number(item.qty || 0));
+  }
+
+  for (const item of orderItems || []) {
+    const key = lineKey(item);
+    if (!key || key === ':') {
+      throw new ValidationError('商品明细校验失败，请刷新后重试');
+    }
+    const expectedQty = Number(item.qty || 0);
+    const pricedQty = Number(pricingQtyByKey.get(key) || 0);
+    if (expectedQty !== pricedQty) {
+      throw new ValidationError('商品数量已变化，请刷新结算页后重试');
+    }
+  }
+}
+
+function buildPromotionUsageRows({ userId, orderId, orderNo, evaluation }) {
+  if (!evaluation || !Array.isArray(evaluation.applied)) return [];
+  const rowsByPromotionId = new Map();
+  for (const item of evaluation.applied) {
+    const promotionId = String(item?.promotion_id || '').trim();
+    if (!promotionId) continue;
+    const existing = rowsByPromotionId.get(promotionId) || {
+      userId,
+      orderId,
+      orderNo,
+      promotionId,
+      promotionType: String(item.type || ''),
+      promotionTitle: String(item.title || '').slice(0, 255),
+      usageCount: 1,
+      discountAmount: 0,
+      rewardSnapshot: null,
+      status: 'locked',
+    };
+    existing.discountAmount += Number(item.discount_amount || 0);
+    if (item.reward) {
+      existing.rewardSnapshot = {
+        ...(existing.rewardSnapshot || {}),
+        ...item.reward,
+      };
+    }
+    rowsByPromotionId.set(promotionId, existing);
+  }
+  return [...rowsByPromotionId.values()];
+}
+
+async function formatExistingOrderForIdempotency(q, orderId) {
+  const orderRow = await repo.selectOrderById(q, orderId);
+  if (!orderRow) return null;
+  const itemRows = await repo.selectOrderItems(q, orderId);
+  const formattedItems = itemRows.map(formatOrderItem);
+  const withPaymentDeadline = await enrichOrderWithPaymentDeadline(formatOrder(orderRow, formattedItems));
+  return enrichOrderWithAutoConfirmReceiveDeadline(withPaymentDeadline);
+}
+
+async function resolveOrderIdempotency(conn, userId, body) {
+  const idempotencyKey = normalizeIdempotencyKey(body?.idempotency_key);
+  if (!idempotencyKey) return { idempotencyKey: '', existingOrder: null };
+
+  const payloadHash = buildOrderPayloadHash(body);
+  const inserted = await repo.insertOrderIdempotencyKey(conn, {
+    userId,
+    idempotencyKey,
+    payloadHash,
+  });
+  const row = await repo.selectOrderIdempotencyForUpdate(conn, userId, idempotencyKey);
+  if (!row) {
+    throw new ConflictError('订单幂等记录异常，请刷新后重试');
+  }
+  if (row.payload_hash !== payloadHash) {
+    throw new ConflictError('重复提交标识已用于另一笔订单，请刷新结算页后重试');
+  }
+  if (!inserted && row.status === 'completed' && row.order_id) {
+    const existingOrder = await formatExistingOrderForIdempotency(conn, row.order_id);
+    if (existingOrder) return { idempotencyKey, existingOrder };
+  }
+  if (!inserted && row.status === 'processing') {
+    throw new ConflictError('订单正在处理中，请稍后刷新订单列表');
+  }
+  if (!inserted && row.status === 'failed') {
+    throw new ConflictError(row.error_message || '上一次下单失败，请刷新结算页后重试');
+  }
+  return { idempotencyKey, existingOrder: null };
 }
 
 async function prepareOrderCatalog(conn, items, orderId, orderNo) {
@@ -142,6 +305,7 @@ function buildOrderLineItems(items, {
       qty: item.qty,
       activityId: activity?.activity_id || null,
       activityTitle: activity?.title || null,
+      activityType: activity?.type || null,
     };
   });
   return { orderItems, rawAmount };
@@ -162,7 +326,7 @@ async function resolveOrderPricing(conn, userId, body, {
   use_reward_cash,
   reward_cash_amount,
 }) {
-  const fullReductionDiscount = orderPricing.computeFullReductionDiscount(
+  let fullReductionDiscount = orderPricing.computeFullReductionDiscount(
     orderItems,
     productMap,
     fullReductionActivities,
@@ -170,17 +334,22 @@ async function resolveOrderPricing(conn, userId, body, {
   const goodsAmountAfterFullReduction = Math.max(0, rawAmount - fullReductionDiscount);
 
   let shippingFee = 0;
-  const tpl = shipping_template_id
-    ? await repo.selectShippingTemplate(conn, shipping_template_id)
-    : await repo.selectDefaultEnabledShippingTemplate(conn);
+  const destination = normalizeShippingDestination(typeof body.address === 'object' ? body.address : {});
+  const w = estimated_weight_kg != null && Number.isFinite(Number(estimated_weight_kg))
+    ? Number(estimated_weight_kg)
+    : estimateWeightFromItems(body.items);
+  const tpl = await orderPricing.resolveShippingTemplateForPricing(
+    conn,
+    shipping_template_id,
+    destination,
+    rawAmount,
+    w,
+  );
   if (tpl) {
-    const w = estimated_weight_kg != null && Number.isFinite(Number(estimated_weight_kg))
-      ? Number(estimated_weight_kg)
-      : estimateWeightFromItems(body.items);
     shippingFee = computeShippingFee(tpl, rawAmount, w);
   }
 
-  const flashSaleDiscount = orderPricing.computeFlashSaleSavings(orderItems, activityMap, productMap);
+  let flashSaleDiscount = orderPricing.computeFlashSaleSavings(orderItems, activityMap, productMap);
   const hasActivityDiscount = flashSaleDiscount > 0 || fullReductionDiscount > 0;
   const activityAllowsCoupon = fullReductionActivities.every((a) => !!a.allow_coupon_stack)
     && [...activityMap.values()].every((f) => f.allow_coupon_stack !== 0);
@@ -224,31 +393,46 @@ async function resolveOrderPricing(conn, userId, body, {
   const sstSettings = sstTax.parseSstSettingsFromSiteSettingsRows(sstRows);
   const taxSnap = sstTax.buildOrderTaxSnapshot(sstSettings, goodsInclusiveTaxable);
 
-  const pricing = await orderPricing.buildOrderPricing(userId, {
+  const pricing = await pricingService.buildCheckoutPricing(userId, {
     ...body,
     use_points,
     points_to_use,
     use_reward_cash,
     reward_cash_amount,
   }, conn);
+  assertUnifiedPricingMatchesCatalog(pricing, { rawAmount, orderItems });
+  assertPromotionEvaluationEligible(pricing.promotion_evaluation);
   const loyalty = /** @type {any} */ (pricing.loyalty || {});
-  discountAmount = Number(pricing.discountAmount || discountAmount);
-  shippingFee = Number(pricing.shippingFee ?? shippingFee);
+  flashSaleDiscount = numberOrFallback(pricing.flashSaleDiscount, flashSaleDiscount);
+  fullReductionDiscount = numberOrFallback(pricing.fullReductionDiscount, fullReductionDiscount);
+  couponDiscountValue = numberOrFallback(pricing.couponDiscount, couponDiscountValue);
+  if (coupon_id && couponDiscountValue <= 0) {
+    throw new ValidationError('优惠券无法用于当前订单');
+  }
+  if (pricing.couponTitle) usedCouponTitle = pricing.couponTitle;
+  discountAmount = numberOrFallback(pricing.discountAmount, discountAmount);
+  shippingFee = numberOrFallback(pricing.shippingFee, shippingFee);
   const finalTaxSnap = pricing.taxSnap || taxSnap;
-  const totalAmount = Number(pricing.finalTotal || Math.max(0, rawAmount - discountAmount + shippingFee));
-  const totalPoints = Number(loyalty.earned_points || 0);
+  const totalAmount = numberOrFallback(pricing.finalTotal, Math.max(0, rawAmount - discountAmount + shippingFee));
+  const totalPoints = numberOrFallback(pricing.totalPoints, numberOrFallback(loyalty.earned_points, 0));
 
   return {
     loyalty,
     discountAmount,
     shippingFee,
+    shippingTemplateId: pricing.shippingTemplateId || tpl?.id || null,
+    shippingName: pricing.shippingName || tpl?.name || '',
+    shippingDestination: destination,
     finalTaxSnap,
     totalAmount,
     totalPoints,
     flashSaleDiscount,
     fullReductionDiscount,
     activityDiscountAmount: Number(pricing.activityDiscountAmount ?? (
-      flashSaleDiscount + fullReductionDiscount + Number(loyalty.member_level_discount || 0)
+      flashSaleDiscount
+      + fullReductionDiscount
+      + Number(loyalty.member_level_discount || 0)
+      + Number(loyalty.member_price_discount || 0)
     )),
     shippingOriginalFee: Number(pricing.shippingOriginalFee ?? shippingFee),
     shippingDiscountAmount: Number(pricing.shippingDiscountAmount ?? Number(loyalty.member_free_shipping_discount || 0)),
@@ -257,6 +441,7 @@ async function resolveOrderPricing(conn, userId, body, {
       + fullReductionDiscount
       + couponDiscountValue
       + Number(loyalty.member_level_discount || 0)
+      + Number(loyalty.member_price_discount || 0)
       + Number(loyalty.points_discount_amount || 0)
       + Number(loyalty.reward_cash_discount_amount || 0)
       + Number(loyalty.member_free_shipping_discount || 0)
@@ -270,10 +455,15 @@ async function resolveOrderPricing(conn, userId, body, {
       full_reduction_discount: fullReductionDiscount,
       coupon_discount: couponDiscountValue,
       member_level_discount: Number(loyalty.member_level_discount || 0),
+      member_price_discount: Number(loyalty.member_price_discount || 0),
       member_free_shipping: Number(loyalty.member_free_shipping_discount || 0),
       points_discount: Number(loyalty.points_discount_amount || 0),
       reward_cash_discount: Number(loyalty.reward_cash_discount_amount || 0),
       lines: pricing.discount_lines || [],
+      promotion_evaluation: pricing.promotion_evaluation || null,
+      pricing_engine_version: pricing.pricing_engine_version || '',
+      pricing_engine_source: pricing.source || '',
+      order_snapshot: pricing.promotion_evaluation?.order_snapshot || null,
     },
   };
 }
@@ -367,7 +557,7 @@ async function persistOrder(conn, {
     discountMeta,
     couponTitle: usedCouponTitle,
     shippingFee,
-    shippingName: shipping_name,
+    shippingName: pricingResult.shippingName || shipping_name,
     totalAmount,
     totalPoints,
     note,
@@ -429,6 +619,17 @@ async function persistOrder(conn, {
       discountAmount: couponDiscountValue,
     });
   }
+
+  const promotionUsageRows = buildPromotionUsageRows({
+    userId,
+    orderId,
+    orderNo,
+    evaluation: discountMeta?.promotion_evaluation,
+  });
+  for (const row of promotionUsageRows) {
+    await repo.insertPromotionUsage(conn, row);
+  }
+
   if (body.checkout_abandonment_id) {
     await checkoutAbandonmentRepo.markOrdered(conn, body.checkout_abandonment_id, userId, {
       orderId,
@@ -499,29 +700,12 @@ async function persistOrder(conn, {
     });
   }
 
-  for (const oi of orderItemsWithProfit) {
-    if (oi.activityId) {
-      const n = await repo.incrementActivitySold(conn, oi.activityId, oi.productId, oi.qty);
-      if (!n) {
-        throw new ValidationError(`活动商品「${oi.name}」库存不足`);
-      }
-    }
-    if (oi.variantId) {
-      const affected = await repo.deductVariantStock(conn, oi.variantId, oi.qty, {
-        refType: 'order',
-        refId: orderId,
-        orderNo,
-        reason: oi.activityId
-          ? `订单 ${orderNo} 活动「${oi.activityTitle || oi.activityId}」下单扣减 SKU 库存`
-          : `订单 ${orderNo} 下单扣减 SKU 库存`,
-      });
-      if (affected === 0) {
-        throw new ValidationError(`SKU「${oi.variantName || oi.skuCode || oi.name}」库存不足`);
-      }
-      continue;
-    }
-    throw new ValidationError(`商品「${oi.name}」缺少 SKU 信息，请先修复商品默认规格后再下单`);
-  }
+  const inventoryLock = await inventoryLockService.lockOrderInventory(conn, {
+    orderId,
+    orderNo,
+    lines: orderItemsWithProfit,
+  });
+  assertInventoryLockResult(inventoryLock);
 
   await repo.deleteCartItemsForLines(
     conn,
@@ -567,6 +751,12 @@ async function createOrder(userId, body) {
   const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
+    const idempotency = await resolveOrderIdempotency(conn, userId, body);
+    if (idempotency.existingOrder) {
+      await conn.commit();
+      return { data: idempotency.existingOrder, message: '下单成功' };
+    }
+
     const orderId = generateId();
     const orderNo = generateOrderNo();
 
@@ -603,6 +793,13 @@ async function createOrder(userId, body) {
       shipping_name,
       payment_method,
     });
+    if (idempotency.idempotencyKey) {
+      await repo.markOrderIdempotencyCompleted(conn, {
+        userId,
+        idempotencyKey: idempotency.idempotencyKey,
+        orderId,
+      });
+    }
 
     await conn.commit();
 
@@ -656,5 +853,11 @@ module.exports = {
   createOrder,
   prepareOrderCatalog,
   buildOrderLineItems,
+  assertUnifiedPricingMatchesCatalog,
   resolveOrderPricing,
+  __test: {
+    buildOrderPayloadHash,
+    normalizeIdempotencyKey,
+    resolveOrderIdempotency,
+  },
 };

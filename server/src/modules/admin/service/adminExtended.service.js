@@ -6,6 +6,7 @@ const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.servic
 const adminEventBus = require('./adminEventBus.service');
 const { normalizeKnownMojibakeText } = require('../../../utils/textNormalize');
 const { sanitizeCmsHtml } = require('../../../utils/cmsSanitizer');
+const { parseList } = require('../../../utils/shippingFee');
 
 function returnProgressTitle(status) {
   const titles = {
@@ -27,19 +28,19 @@ function returnProgressTitle(status) {
 }
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 function getProductApi() {
-  return /** @type {any} */ (require('../../product')).api || {};
+  return /** @type {any} */ (require('../../product/publicApi')) || {};
 }
 function getMyinvoisApi() {
-  return /** @type {any} */ (require('../../myinvois')).api || {};
+  return /** @type {any} */ (require('../../myinvois/publicApi')) || {};
 }
 function getOrderApi() {
-  return /** @type {any} */ (require('../../order')).api || {};
+  return /** @type {any} */ (require('../../order/publicApi')) || {};
 }
 function getPaymentApi() {
-  return /** @type {any} */ (require('../../payment')).api || {};
+  return /** @type {any} */ (require('../../payment/publicApi'));
 }
 
 function emitAdminEvent(event, options = {}) {
@@ -824,16 +825,79 @@ async function listShippingTemplates() {
     id: r.id,
     name: normalizeKnownMojibakeText(r.name),
     regions: normalizeKnownMojibakeText(r.regions),
+    countryCode: r.country_code || 'MY',
+    regionGroup: r.region_group || 'all',
+    stateCodes: parseList(r.state_codes),
+    cityNames: parseList(r.city_names),
+    postcodePatterns: parseList(r.postcode_patterns),
     baseFee: parseFloat(r.base_fee),
     freeAbove: parseFloat(r.free_above),
     extraPerKg: parseFloat(r.extra_per_kg),
+    minWeightKg: Number(r.min_weight_kg || 0),
+    maxWeightKg: r.max_weight_kg == null ? null : Number(r.max_weight_kg),
+    minOrderAmount: Number(r.min_order_amount || 0),
+    maxOrderAmount: r.max_order_amount == null ? null : Number(r.max_order_amount),
+    ruleConfig: r.rule_config || null,
     enabled: !!r.enabled,
     isDefault: !!Number(r.is_default),
   }));
 }
 
+function parseNullableNumber(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeShippingTemplateInput(body) {
+  const name = String(body.name || '').trim();
+  const regionGroup = String(body.regionGroup ?? body.region_group ?? 'all').trim() || 'all';
+  const stateCodes = parseList(body.stateCodes ?? body.state_codes);
+  const cityNames = parseList(body.cityNames ?? body.city_names);
+  const postcodePatterns = parseList(body.postcodePatterns ?? body.postcode_patterns);
+  const minWeightKg = Math.max(0, parseNullableNumber(body.minWeightKg ?? body.min_weight_kg) ?? 0);
+  const maxWeightKg = parseNullableNumber(body.maxWeightKg ?? body.max_weight_kg);
+  const minOrderAmount = Math.max(0, parseNullableNumber(body.minOrderAmount ?? body.min_order_amount) ?? 0);
+  const maxOrderAmount = parseNullableNumber(body.maxOrderAmount ?? body.max_order_amount);
+  const ruleConfig = {
+    country_code: String(body.countryCode ?? body.country_code ?? 'MY').trim().toUpperCase() || 'MY',
+    region_group: regionGroup,
+    state_codes: stateCodes,
+    city_names: cityNames,
+    postcode_patterns: postcodePatterns,
+    min_weight_kg: minWeightKg,
+    max_weight_kg: maxWeightKg,
+    min_order_amount: minOrderAmount,
+    max_order_amount: maxOrderAmount,
+  };
+  return {
+    name,
+    regions: String(body.regions || '').trim(),
+    baseFee: Math.max(0, Number(body.baseFee ?? body.base_fee ?? 0) || 0),
+    freeAbove: Math.max(0, Number(body.freeAbove ?? body.free_above ?? 0) || 0),
+    extraPerKg: Math.max(0, Number(body.extraPerKg ?? body.extra_per_kg ?? 0) || 0),
+    enabled: body.enabled,
+    isDefault: body.isDefault,
+    countryCode: ruleConfig.country_code,
+    regionGroup,
+    stateCodes,
+    cityNames,
+    postcodePatterns,
+    minWeightKg,
+    maxWeightKg: maxWeightKg == null || maxWeightKg < 0 ? null : maxWeightKg,
+    minOrderAmount,
+    maxOrderAmount: maxOrderAmount == null || maxOrderAmount < 0 ? null : maxOrderAmount,
+    ruleConfig,
+  };
+}
+
 async function createShippingTemplate(body, adminUserId, req) {
-  const { name, regions, baseFee, freeAbove, extraPerKg, enabled, isDefault } = body;
+  const input = normalizeShippingTemplateInput(body || {});
+  const {
+    name, regions, baseFee, freeAbove, extraPerKg, enabled, isDefault,
+    countryCode, regionGroup, stateCodes, cityNames, postcodePatterns,
+    minWeightKg, maxWeightKg, minOrderAmount, maxOrderAmount, ruleConfig,
+  } = input;
   if (!name) return { error: { code: 400, message: '名称必填' } };
   const rowsBefore = await repo.selectShippingTemplatesRaw();
   const makeActive = rowsBefore.length === 0 || isDefault === true;
@@ -844,17 +908,28 @@ async function createShippingTemplate(body, adminUserId, req) {
     freeAbove || 0,
     extraPerKg || 0,
     makeActive ? 1 : 0,
+    countryCode,
+    regionGroup,
+    JSON.stringify(stateCodes),
+    JSON.stringify(cityNames),
+    JSON.stringify(postcodePatterns),
+    minWeightKg,
+    maxWeightKg,
+    minOrderAmount,
+    maxOrderAmount,
+    JSON.stringify(ruleConfig),
   ]);
   if (makeActive) {
     await repo.activateShippingTemplateAsDefault(insertId);
   } else {
     await repo.ensureShippingTemplateHasDefault();
   }
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.create', objectType: 'shipping_template', objectId: String(insertId), summary: `创建运费模板 ${name}`, result: 'success' });
-  return { data: { id: insertId, name }, message: '创建成功' };
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.create', objectType: 'shipping_template', objectId: String(insertId), summary: `创建运费模板 ${name}`, after: input, result: 'success' });
+  return { data: { id: insertId, name, ...input }, message: '创建成功' };
 }
 
 async function updateShippingTemplate(id, body, adminUserId, req) {
+  body = body || {};
   const existing = await repo.selectShippingTemplateByIdAny(id);
   if (!existing) return { error: { code: 404, message: '运费模板不存在' } };
 
@@ -871,11 +946,39 @@ async function updateShippingTemplate(id, body, adminUserId, req) {
     }
   }
 
-  const map = { name: 'name', regions: 'regions', baseFee: 'base_fee', freeAbove: 'free_above', extraPerKg: 'extra_per_kg' };
+  const input = normalizeShippingTemplateInput({ ...body, name: body.name ?? 'placeholder' });
+  const map = {
+    name: 'name',
+    regions: 'regions',
+    baseFee: 'base_fee',
+    freeAbove: 'free_above',
+    extraPerKg: 'extra_per_kg',
+    countryCode: 'country_code',
+    regionGroup: 'region_group',
+    stateCodes: 'state_codes',
+    cityNames: 'city_names',
+    postcodePatterns: 'postcode_patterns',
+    minWeightKg: 'min_weight_kg',
+    maxWeightKg: 'max_weight_kg',
+    minOrderAmount: 'min_order_amount',
+    maxOrderAmount: 'max_order_amount',
+    ruleConfig: 'rule_config',
+  };
   const setFragments = [];
   const values = [];
+  let touchedRuleField = false;
   for (const [k, col] of Object.entries(map)) {
-    if (body[k] !== undefined) { setFragments.push(`${col} = ?`); values.push(body[k]); }
+    if (body[k] !== undefined || body[col] !== undefined) {
+      const rawValue = input[k];
+      const value = Array.isArray(rawValue) || k === 'ruleConfig' ? JSON.stringify(rawValue) : rawValue;
+      setFragments.push(`${col} = ?`);
+      values.push(value);
+      if (!['name', 'regions', 'baseFee', 'freeAbove', 'extraPerKg'].includes(k)) touchedRuleField = true;
+    }
+  }
+  if (touchedRuleField && body.ruleConfig === undefined && body.rule_config === undefined) {
+    setFragments.push('rule_config = ?');
+    values.push(JSON.stringify(input.ruleConfig));
   }
 
   if (wantsDefault) {
@@ -896,7 +999,7 @@ async function updateShippingTemplate(id, body, adminUserId, req) {
     await repo.ensureShippingTemplateHasDefault();
   }
 
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.update', objectType: 'shipping_template', objectId: String(id), summary: `更新运费模板 ${id}`, after: body, result: 'success' });
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.update', objectType: 'shipping_template', objectId: String(id), summary: `更新运费模板 ${id}`, after: input, result: 'success' });
   return { message: '更新成功' };
 }
 

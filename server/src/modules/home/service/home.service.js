@@ -51,15 +51,15 @@ function invalidateHomeBootstrapCache() {
 }
 
 function getProductApi() {
-  return /** @type {any} */ (require('../../product')).api || {};
+  return /** @type {any} */ (require('../../product/publicApi')) || {};
 }
 
 function getMarketingApi() {
-  return /** @type {any} */ (require('../../marketing')).api || {};
+  return /** @type {any} */ (require('../../marketing/publicApi')) || {};
 }
 
 function getCapabilitiesApi() {
-  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+  return /** @type {any} */ (require('../../siteCapabilities/publicApi')) || {};
 }
 
 async function buildHomeBootstrap() {

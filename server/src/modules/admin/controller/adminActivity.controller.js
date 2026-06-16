@@ -21,6 +21,11 @@ exports.update = asyncRoute(async (req, res) => {
   res.success(r.data, r.message || '更新成功');
 });
 
+exports.copy = asyncRoute(async (req, res) => {
+  const r = await svc.copyActivity(req.params.id, req.body, req.user?.id, req);
+  res.success(r.data, r.message || '复制成功');
+});
+
 exports.updateStatus = asyncRoute(async (req, res) => {
   const r = await svc.updateActivityStatus(req.params.id, req.body, req.user?.id, req);
   res.success(r.data, r.message || '状态已更新');
@@ -33,6 +38,11 @@ exports.remove = asyncRoute(async (req, res) => {
 
 exports.validateBeforePublish = asyncRoute(async (req, res) => {
   const r = await svc.validateActivityBeforePublish(req.body, req.params.id || null);
+  res.success(r.data);
+});
+
+exports.precheckBeforePublish = asyncRoute(async (req, res) => {
+  const r = await svc.precheckActivityBeforePublish(req.body, req.params.id || null);
   res.success(r.data);
 });
 

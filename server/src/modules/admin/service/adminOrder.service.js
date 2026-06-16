@@ -1,8 +1,10 @@
 /**
  * Admin Order Service
  *
- * 职责：管理员对订单的列表/详情/状态变�?发货等业务编排�? * 分层约定�? * - 不直接拼 SQL，所有数据访问通过 `./adminOrder.repository`
- * - 事务由本层控制：`repo.getConnection()` + `beginTransaction()`，并�?`conn` 传给 repository 事务方法
+ * 职责：管理员对订单列表、详情、状态变更、发货等业务做流程编排。
+ * 分层约定：
+ * - 不直接拼 SQL，所有数据访问通过 `./adminOrder.repository`。
+ * - 事务由本层控制：`repo.getConnection()` + `beginTransaction()`，并将 `conn` 传给 repository 事务方法。
  */
 const { generateId, parseBool } = require('../../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../../errors');
@@ -15,32 +17,22 @@ const adminEventService = require('./adminEvent.service');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../../constants/status');
 const { resolveOrderPayableAmount, resolveOrderPaidAmount } = require('../../../utils/orderAmountResolve');
-function getOrderApi() {
-  return /** @type {any} */ (require('../../order')).api || {};
-}
 
-function requireOrderApi(name) {
-  const fn = getOrderApi()[name];
-  if (typeof fn !== 'function') {
-    throw new Error(`Order 模块 API 未暴露方法：${name}`);
-  }
-  return fn;
-}
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 function getOrderApi() {
-  return /** @type {any} */ (require('../../order')).api || {};
+  return /** @type {any} */ (require('../../order/publicApi')) || {};
 }
 function getLogisticsApi() {
-  return /** @type {any} */ (require('../../logistics')).api || {};
+  return /** @type {any} */ (require('../../logistics/publicApi')) || {};
 }
 function getMyinvoisApi() {
-  return /** @type {any} */ (require('../../myinvois')).api || {};
+  return /** @type {any} */ (require('../../myinvois/publicApi')) || {};
 }
 
 function getTelegramApi() {
-  return /** @type {any} */ (require('../../telegram')).api || {};
+  return /** @type {any} */ (require('../../telegram/publicApi')) || {};
 }
 
 function requireUserApi(name) {
@@ -313,6 +305,7 @@ function buildOrderBadges(order) {
     const paidTime = paidAt ? new Date(paidAt).getTime() : 0;
     if (paidTime && Date.now() - paidTime > 24 * 60 * 60 * 1000) badges.push('待发货超24h');
   }
+  if (order.logistics_exception_type) badges.push('物流异常');
   return badges;
 }
 
@@ -955,7 +948,7 @@ async function applyShortageAdjustment(orderId, body, adminUserId, req) {
 }
 
 /**
- * ����Ա�ֶ���������״̬��ͳһ����״̬У�顢��桢���֡��Ż�ȯ�����뽱����֪ͨ��
+ * 管理员手动调整订单状态：统一处理状态校验、审计、积分、优惠券、邀请码奖励和通知。
  */
 async function updateOrderStatus(orderId, body, adminUserId, req) {
   const { status, remark } = body;
@@ -1006,7 +999,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
 
       const fullOrder = await repo.selectFullOrder(conn, orderId);
 
-      /** 销量计数：管理员手动确认付款时累加 sales_count；失败不阻断主流�?*/
+      /** 销量计数：管理员手动确认付款时累加 sales_count；失败不阻断主流程。 */
       if (
         newPayment === PAYMENT_STATUS.PAID
         && prevPay !== PAYMENT_STATUS.PAID
@@ -1038,22 +1031,19 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         if (beforeSnap.status !== ORDER_STATUS.CANCELLED) {
           await requireUserApi('syncStatsAfterOrderCancelled')(fullOrder.user_id, fullOrder.id, conn);
         }
-        const items = await repo.selectOrderItemPairs(conn, fullOrder.id);
         const cancelItems = await requireOrderApi('selectOrderItemQtyRows')(conn, fullOrder.id);
-        for (const item of cancelItems) {
-          if (!item.variant_id) {
-        throw new BusinessError(400, `订单 ${fullOrder.order_no} 缺失 SKU 明细，无法执行库存释放`);
+        const releaseResult = await requireOrderApi('releaseOrderInventory')(conn, {
+          orderId: fullOrder.id,
+          orderNo: fullOrder.order_no,
+          items: cancelItems,
+          operatorId: adminUserId,
+          reason: `管理员取消订单 #${fullOrder.order_no} 释放 SKU 库存`,
+        });
+        if (!releaseResult.ok) {
+          if (releaseResult.reason === 'missing_variant') {
+            throw new BusinessError(400, `订单 ${fullOrder.order_no} 缺失 SKU 明细，无法执行库存释放`);
           }
-          await repo.restoreVariantStock(conn, item.variant_id, item.qty, {
-            refType: 'order',
-            refId: fullOrder.id,
-            orderNo: fullOrder.order_no,
-            operatorId: adminUserId,
-            reason: `管理员取消订单 #${fullOrder.order_no} 释放 SKU 库存`,
-          });
-          if (item.activity_id) {
-            await requireOrderApi('decrementActivitySold')(conn, item.activity_id, item.product_id, item.qty);
-          }
+          throw new BusinessError(400, `订单 ${fullOrder.order_no} 库存释放失败，请人工复核`);
         }
         if (Number(fullOrder.reward_cash_used || 0) > 0) {
           await requireUserApi('insertRewardTransaction')(conn, {
@@ -1250,6 +1240,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
     } finally {
       pointsConn.release();
     }
+    await requireLogisticsApi('recordOrderShipmentQuietly')(orderId, { trackingNo, carrier });
     await requireLogisticsApi('refreshOrderTrackingQuietly')(orderId);
 
     const shipCopy = await getResolvedTriggerCopy('order_ship', {
@@ -1439,6 +1430,8 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
       pointsConn.release();
     }
     shipped += 1;
+    await requireLogisticsApi('recordOrderShipmentQuietly')(orderId, { trackingNo, carrier });
+    await requireLogisticsApi('refreshOrderTrackingQuietly')(orderId);
     await requireOrderApi('autoResolveOrderTimeoutEvents')(orderId, {
       trigger: 'admin_batch_ship_order',
       orderNo: row.order_no,

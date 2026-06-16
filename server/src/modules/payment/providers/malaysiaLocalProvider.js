@@ -69,8 +69,24 @@ function normalizeWebhookStatus(status) {
   return 'pending';
 }
 
+function normalizeWebhookPayload(body = {}) {
+  const status = normalizeWebhookStatus(body.status || body.payment_status);
+  return {
+    eventId: String(body.event_id || body.transaction_id || body.reference || '').trim(),
+    paymentOrderId: String(body.payment_order_id || '').trim(),
+    orderId: String(body.order_id || '').trim(),
+    transactionNo: String(body.transaction_id || body.payment_transaction_no || body.reference || '').trim(),
+    status,
+    rawStatus: String(body.status || body.payment_status || '').trim(),
+    amount: body.amount === undefined ? null : Number(body.amount),
+    currency: String(body.currency || 'MYR').toUpperCase(),
+    billId: '',
+  };
+}
+
 module.exports = {
   createIntent,
+  normalizeWebhookPayload,
   normalizeWebhookStatus,
   parseJson,
   verifySignature,

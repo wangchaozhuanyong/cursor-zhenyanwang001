@@ -6,7 +6,7 @@ const autoFix = require('./autoFix.service');
 const { localizeDbError } = require('../../../utils/localizeDbError');
 
 function getAdminApi() {
-  return /** @type {any} */ (require('../../admin')).api || {};
+  return /** @type {any} */ (require('../../admin/publicApi')) || {};
 }
 
 function normalizeAnomaly(item, rule = {}) {

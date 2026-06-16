@@ -1,22 +1,7 @@
 /**
  * User 鍩燂細浼氬憳璧勬枡銆佹敹钘忎笌娴忚鍘嗗彶銆佸湴鍧€涓庤繍璐癸紙璇伙級銆佽惀閿€鐗规潈銆佺珯鍐呴€氱煡銆佷笂浼? */
 const { Router } = require('express');
-const pointsService = require('./service/points.service');
-const rewardService = require('./service/reward.service');
-const notificationService = require('./service/notification.service');
-const memberLevelService = require('./service/memberLevel.service');
-const { UserStatsService } = require('./service/userStats.service');
-const uploadCtrl = require('./controller/upload.controller');
-const uploadPresignCtrl = require('./controller/uploadPresign.controller');
-const uploadAssetService = require('./service/uploadAsset.service');
-const uploadAssetRepo = require('./repository/uploadAsset.repository');
-const rewardServiceApi = require('./service/reward.service');
-const couponAdminIssueService = require('./service/couponAdminIssue.service');
-const couponService = require('./service/coupon.service');
-const couponLifecycle = require('./service/couponLifecycle.service');
-const couponRepo = require('./repository/coupon.repository');
-const pointsRepo = require('./repository/points.repository');
-const rewardRepo = require('./repository/reward.repository');
+const publicApi = require('./publicApi');
 
 const router = Router();
 
@@ -35,57 +20,6 @@ router.use('/invite', require('./routes/invite.routes'));
 router.use('/upload', require('./routes/upload.routes'));
 
 // Cross-module public API (do not import internal files directly from other modules)
-/** @type {any} */ (router).api = {
-  settleOrderPoints: pointsService.settleOrderPoints,
-  reverseOrderPoints: pointsService.reverseOrderPoints,
-  settleOrderRewards: rewardService.settleOrderRewards,
-  maybeSettleOrderRewardsOnPayment: rewardService.maybeSettleOrderRewardsOnPayment,
-  reverseOrderRewards: rewardService.reverseOrderRewards,
-  sumRewardTransactionsBalance: rewardService.sumRewardTransactionsBalance,
-  insertRewardTransaction: rewardService.insertRewardTransaction,
-  adjustUserPoints: pointsService.adjustUserPoints,
-  awardConfiguredPointsBonus: pointsService.awardConfiguredPointsBonus,
-  awardConfiguredPointsBonusForUser: pointsService.awardConfiguredPointsBonusForUser,
-  getAdminPointsRecords: pointsService.getAdminRecords,
-  changeUserPoints: pointsService.changeUserPoints,
-  changePoints: pointsService.changePoints,
-  insertUserNotification: notificationService.insertUserNotification,
-  refreshUserMemberLevel: memberLevelService.refreshUserMemberLevel,
-  getUserMemberLevel: memberLevelService.getUserMemberLevel,
-  normalizeMemberLevel: memberLevelService.normalizeLevel,
-  syncStatsAfterOrderPaid: UserStatsService.syncStatsAfterOrderPaid,
-  syncStatsAfterRefund: UserStatsService.syncStatsAfterRefund,
-  syncStatsAfterOrderCancelled: UserStatsService.syncStatsAfterOrderCancelled,
-  uploadMiddleware: uploadCtrl.uploadMiddleware,
-  uploadMultiple: uploadCtrl.uploadMultiple,
-  uploadFile: uploadCtrl.uploadFile,
-  uploadFiles: uploadCtrl.uploadFiles,
-  createUploadTicket: uploadPresignCtrl.createTicket,
-  completeUpload: uploadPresignCtrl.completeUpload,
-  recordUploadedAsset: uploadAssetService.recordUploadedAsset,
-  safeRecordUploadedAsset: uploadAssetService.safeRecordUploadedAsset,
-  selectPendingVideoTranscodeAssets: uploadAssetRepo.selectPendingVideoTranscodeAssets,
-  claimVideoTranscodeAsset: uploadAssetRepo.claimVideoTranscodeAsset,
-  markVideoTranscodeReady: uploadAssetRepo.markVideoTranscodeReady,
-  markVideoTranscodeFailed: uploadAssetRepo.markVideoTranscodeFailed,
-  replaceProductVideoUrl: uploadAssetRepo.replaceProductVideoUrl,
-  getAdminRewardRecords: rewardServiceApi.getAdminRecords,
-  issueCouponToUsers: couponAdminIssueService.issueCouponToUsers,
-  getAvailableCoupons: couponService.getAvailableCoupons,
-  getCouponCenter: couponService.getCouponCenter,
-  decorateCouponsWithClaimability: couponService.decorateCouponsWithClaimability,
-  buildEffectiveCoupon: couponLifecycle.buildEffectiveCoupon,
-  resolveUserCouponRuntimeStatus: couponLifecycle.resolveUserCouponRuntimeStatus,
-  restoreCouponAfterOrderCancelled: couponLifecycle.restoreCouponAfterOrderCancelled,
-  selectUserCouponsPage: couponRepo.selectUserCouponsPage,
-  selectCheckoutCandidateUserCoupons: couponRepo.selectCheckoutCandidateUserCoupons,
-  selectUserPointsBalance: pointsRepo.selectUserPointsBalance,
-  hasPendingReverse: pointsRepo.hasPendingReverse,
-  sumUserRewardTransactions: rewardRepo.sumUserRewardTransactions,
-  selectSuccessLedgerForUser: pointsRepo.selectSuccessLedgerForUser,
-  selectUserIdsWithPositiveBalance: pointsRepo.selectUserIdsWithPositiveBalance,
-  getPointsConnection: pointsRepo.getConnection,
-  selectPointsRecordByRelatedForUpdate: pointsRepo.selectRecordByRelatedForUpdate,
-};
+/** @type {any} */ (router).api = publicApi;
 
 module.exports = router;

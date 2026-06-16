@@ -3,13 +3,9 @@ const favoritesService = require('./favorites.service');
 const notificationService = require('./notification.service');
 const inviteService = require('./invite.service');
 const rewardService = require('./reward.service');
-const authModule = require('../../auth');
-const orderModule = require('../../order');
-const loyaltyModule = require('../../loyalty');
-
-function getModuleApi(moduleRef) {
-  return /** @type {any} */ (moduleRef).api || {};
-}
+const authPublicApi = /** @type {any} */ (require('../../auth/publicApi'));
+const orderPublicApi = /** @type {any} */ (require('../../order/publicApi'));
+const loyaltyPublicApi = /** @type {any} */ (require('../../loyalty/publicApi'));
 
 function requireApi(api, moduleName, methodName) {
   const fn = api[methodName];
@@ -20,15 +16,15 @@ function requireApi(api, moduleName, methodName) {
 }
 
 function authApi(methodName) {
-  return requireApi(getModuleApi(authModule), 'Auth', methodName);
+  return requireApi(authPublicApi, 'Auth', methodName);
 }
 
 function orderApi(methodName) {
-  return requireApi(getModuleApi(orderModule), 'Order', methodName);
+  return requireApi(orderPublicApi, 'Order', methodName);
 }
 
 function loyaltyApi(methodName) {
-  return requireApi(getModuleApi(loyaltyModule), 'Loyalty', methodName);
+  return requireApi(loyaltyPublicApi, 'Loyalty', methodName);
 }
 
 async function startWechatBind(userId, redirect) {

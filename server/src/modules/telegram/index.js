@@ -1,5 +1,5 @@
-const telegramService = require('./service/telegram.service');
+const publicApi = require('./publicApi');
 
 module.exports = {
-  api: telegramService,
+  api: publicApi,
 };

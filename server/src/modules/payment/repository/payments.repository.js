@@ -1,5 +1,5 @@
 /**
- * 支付域数据访�? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
+ * 支付域数据访问层：集中处理支付渠道、支付单、事件和对账 SQL。
  */
 const db = require('../../../config/db');
 
@@ -141,8 +141,10 @@ async function updatePaymentOrderMetadata(q, id, metadata) {
 async function insertPaymentEvent(q, row) {
   await q.query(
     `INSERT INTO payment_events
-      (id, payment_order_id, order_id, provider, provider_event_id, event_type, verify_status, processing_result, payload_json, error_message)
-     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      (id, payment_order_id, order_id, provider, provider_event_id, event_type, verify_status, processing_result,
+       payload_json, error_message, failure_reason_code, expected_amount, actual_amount, expected_currency,
+       actual_currency, risk_level, review_status, review_note, reviewed_by, reviewed_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       row.id,
       row.payment_order_id || null,
@@ -154,6 +156,16 @@ async function insertPaymentEvent(q, row) {
       row.processing_result || 'success',
       row.payload_json ? JSON.stringify(row.payload_json) : null,
       row.error_message || '',
+      row.failure_reason_code || '',
+      row.expected_amount ?? null,
+      row.actual_amount ?? null,
+      row.expected_currency || '',
+      row.actual_currency || '',
+      row.risk_level || '',
+      row.review_status || 'pending',
+      row.review_note || '',
+      row.reviewed_by || null,
+      row.reviewed_at || null,
     ],
   );
 }
@@ -176,8 +188,10 @@ async function insertPaymentFee(q, row) {
 async function insertReconciliation(q, row) {
   await q.query(
     `INSERT INTO payment_reconciliations
-      (id, reconcile_date, provider, channel_code, order_count, success_amount, diff_amount, status, notes, created_by)
-     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      (id, reconcile_date, provider, channel_code, order_count, success_amount, provider_report_amount,
+       provider_fee_amount, expected_settlement_amount, diff_amount, provider_reference, difference_reason,
+       status, review_status, review_notes, notes, created_by)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       row.id,
       row.reconcile_date,
@@ -185,27 +199,51 @@ async function insertReconciliation(q, row) {
       row.channel_code || '',
       row.order_count ?? 0,
       row.success_amount ?? 0,
+      row.provider_report_amount ?? null,
+      row.provider_fee_amount ?? 0,
+      row.expected_settlement_amount ?? 0,
       row.diff_amount ?? 0,
+      row.provider_reference || '',
+      row.difference_reason || '',
       row.status || 'draft',
+      row.review_status || 'pending',
+      row.review_notes || '',
       row.notes || '',
       row.created_by || null,
     ],
   );
 }
 
-async function listReconciliations(q, { page, pageSize }) {
+async function listReconciliations(q, {
+  page, pageSize, provider = '', status = '', reviewStatus = '',
+}) {
   const offset = (page - 1) * pageSize;
-  const [[{ total }]] = await q.query('SELECT COUNT(*) AS total FROM payment_reconciliations');
+  let where = 'WHERE 1=1';
+  const params = [];
+  if (provider) {
+    where += ' AND provider = ?';
+    params.push(provider);
+  }
+  if (status) {
+    where += ' AND status = ?';
+    params.push(status);
+  }
+  if (reviewStatus) {
+    where += ' AND review_status = ?';
+    params.push(reviewStatus);
+  }
+  const [[{ total }]] = await q.query(`SELECT COUNT(*) AS total FROM payment_reconciliations ${where}`, params);
   const [rows] = await q.query(
-    'SELECT * FROM payment_reconciliations ORDER BY reconcile_date DESC, created_at DESC LIMIT ? OFFSET ?',
-    [pageSize, offset],
+    `SELECT * FROM payment_reconciliations ${where}
+     ORDER BY reconcile_date DESC, created_at DESC LIMIT ? OFFSET ?`,
+    [...params, pageSize, offset],
   );
   return { list: rows, total };
 }
 
 async function listPaymentOrdersAdmin(q, filters) {
   const {
-    page, pageSize, status, channelCode, keyword, orderId,
+    page, pageSize, status, channelCode, keyword, orderId, provider,
   } = filters;
   const offset = (page - 1) * pageSize;
   let where = 'WHERE 1=1';
@@ -217,6 +255,10 @@ async function listPaymentOrdersAdmin(q, filters) {
   if (channelCode) {
     where += ' AND po.channel_code = ?';
     params.push(channelCode);
+  }
+  if (provider) {
+    where += ' AND po.provider = ?';
+    params.push(provider);
   }
   if (orderId) {
     where += ' AND po.order_id = ?';
@@ -232,7 +274,32 @@ async function listPaymentOrdersAdmin(q, filters) {
     params,
   );
   const [rows] = await q.query(
-    `SELECT po.*, o.contact_phone AS buyer_phone
+    `SELECT po.*, o.contact_phone AS buyer_phone,
+            (
+              SELECT pe.error_message FROM payment_events pe
+              WHERE BINARY pe.payment_order_id = BINARY po.id
+              ORDER BY pe.created_at DESC LIMIT 1
+            ) AS latest_error_message,
+            (
+              SELECT pe.failure_reason_code FROM payment_events pe
+              WHERE BINARY pe.payment_order_id = BINARY po.id
+              ORDER BY pe.created_at DESC LIMIT 1
+            ) AS latest_failure_reason_code,
+            (
+              SELECT pe.processing_result FROM payment_events pe
+              WHERE BINARY pe.payment_order_id = BINARY po.id
+              ORDER BY pe.created_at DESC LIMIT 1
+            ) AS latest_processing_result,
+            (
+              SELECT pe.review_status FROM payment_events pe
+              WHERE BINARY pe.payment_order_id = BINARY po.id
+              ORDER BY pe.created_at DESC LIMIT 1
+            ) AS latest_review_status,
+            (
+              SELECT pe.created_at FROM payment_events pe
+              WHERE BINARY pe.payment_order_id = BINARY po.id
+              ORDER BY pe.created_at DESC LIMIT 1
+            ) AS latest_event_at
      FROM payment_orders po
      LEFT JOIN orders o ON BINARY o.id = BINARY po.order_id
      ${where}
@@ -244,7 +311,9 @@ async function listPaymentOrdersAdmin(q, filters) {
 }
 
 async function listPaymentEventsAdmin(q, filters) {
-  const { page, pageSize, provider, orderId } = filters;
+  const {
+    page, pageSize, provider, orderId, eventType, verifyStatus, processingResult, reviewStatus, keyword,
+  } = filters;
   const offset = (page - 1) * pageSize;
   let where = 'WHERE 1=1';
   const params = [];
@@ -255,6 +324,27 @@ async function listPaymentEventsAdmin(q, filters) {
   if (orderId) {
     where += ' AND pe.order_id = ?';
     params.push(orderId);
+  }
+  if (eventType) {
+    where += ' AND pe.event_type = ?';
+    params.push(eventType);
+  }
+  if (verifyStatus) {
+    where += ' AND pe.verify_status = ?';
+    params.push(verifyStatus);
+  }
+  if (processingResult) {
+    where += ' AND pe.processing_result = ?';
+    params.push(processingResult);
+  }
+  if (reviewStatus) {
+    where += ' AND pe.review_status = ?';
+    params.push(reviewStatus);
+  }
+  if (keyword) {
+    where += ' AND (pe.provider_event_id LIKE ? OR pe.error_message LIKE ? OR pe.failure_reason_code LIKE ?)';
+    const k = `%${keyword}%`;
+    params.push(k, k, k);
   }
   const [[{ total }]] = await q.query(`SELECT COUNT(*) AS total FROM payment_events pe ${where}`, params);
   const [rows] = await q.query(
@@ -283,13 +373,26 @@ async function selectRefundEventsForReturn(q, orderId, returnId) {
 }
 
 async function aggregatePaidByDay(q, reconcileDate, provider) {
+  return aggregatePaidByDayAndChannel(q, reconcileDate, provider, '');
+}
+
+async function aggregatePaidByDayAndChannel(q, reconcileDate, provider, channelCode = '') {
+  const params = [provider, reconcileDate];
+  let channelWhere = '';
+  if (channelCode) {
+    channelWhere = ' AND po.channel_code = ?';
+    params.push(channelCode);
+  }
   const [[row]] = await q.query(
-    `SELECT COUNT(*) AS order_count,
-            COALESCE(SUM(amount),0) AS success_amount
-     FROM payment_orders
-     WHERE status = 'paid' AND provider = ?
-     AND DATE(COALESCE(payment_time, created_at)) = ?`,
-    [provider, reconcileDate],
+    `SELECT COUNT(DISTINCT po.id) AS order_count,
+            COALESCE(SUM(po.amount),0) AS success_amount,
+            COALESCE(SUM(pf.fee_amount),0) AS provider_fee_amount,
+            COALESCE(SUM(pf.net_amount),0) AS net_amount
+     FROM payment_orders po
+     LEFT JOIN payment_fees pf ON BINARY pf.payment_order_id = BINARY po.id
+     WHERE po.status = 'paid' AND po.provider = ?
+     AND DATE(COALESCE(po.payment_time, po.created_at)) = ?${channelWhere}`,
+    params,
   );
   return row;
 }
@@ -369,12 +472,59 @@ async function selectPaymentEventById(q, eventId) {
   return row || null;
 }
 
+async function selectPaymentEventByIdForUpdate(q, eventId) {
+  const [[row]] = await q.query('SELECT * FROM payment_events WHERE id = ? FOR UPDATE', [eventId]);
+  return row || null;
+}
+
+async function updatePaymentEventReview(q, eventId, row) {
+  const [result] = await q.query(
+    `UPDATE payment_events
+        SET review_status = ?, review_note = ?, reviewed_by = ?, reviewed_at = NOW()
+      WHERE id = ?`,
+    [
+      row.review_status,
+      row.review_note || '',
+      row.reviewed_by || null,
+      eventId,
+    ],
+  );
+  return result.affectedRows;
+}
+
 async function selectPaymentEventByProviderEventId(q, provider, providerEventId) {
   const [[row]] = await q.query(
     'SELECT * FROM payment_events WHERE provider = ? AND provider_event_id = ? LIMIT 1',
     [provider, providerEventId],
   );
   return row || null;
+}
+
+async function selectReconciliationByIdForUpdate(q, id) {
+  const [[row]] = await q.query('SELECT * FROM payment_reconciliations WHERE id = ? FOR UPDATE', [id]);
+  return row || null;
+}
+
+async function updateReconciliationReview(q, id, row) {
+  const [result] = await q.query(
+    `UPDATE payment_reconciliations
+        SET status = ?,
+            review_status = ?,
+            review_notes = ?,
+            difference_reason = ?,
+            reviewed_by = ?,
+            reviewed_at = NOW()
+      WHERE id = ?`,
+    [
+      row.status,
+      row.review_status,
+      row.review_notes || '',
+      row.difference_reason || '',
+      row.reviewed_by || null,
+      id,
+    ],
+  );
+  return result.affectedRows;
 }
 
 module.exports = {
@@ -400,9 +550,14 @@ module.exports = {
   listPaymentEventsAdmin,
   selectRefundEventsForReturn,
   aggregatePaidByDay,
+  aggregatePaidByDayAndChannel,
   selectLatestPendingStripePaymentOrderIdByOrderId,
   selectLatestPendingPaymentOrderId,
   insertAnalyticsEvent,
   selectPaymentEventById,
+  selectPaymentEventByIdForUpdate,
+  updatePaymentEventReview,
   selectPaymentEventByProviderEventId,
+  selectReconciliationByIdForUpdate,
+  updateReconciliationReview,
 };

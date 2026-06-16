@@ -11,9 +11,7 @@ const {
   getPublicUrlByKey,
   isS3StorageEnabled,
 } = require('../../../utils/objectStorage');
-const userModule = require('../../user');
-
-const userApi = /** @type {any} */ (userModule).api;
+const userApi = /** @type {any} */ (require('../../user/publicApi'));
 
 const DEFAULT_MAX_WIDTH = 1280;
 const DEFAULT_CRF = 26;

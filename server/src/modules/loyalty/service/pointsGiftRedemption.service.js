@@ -4,15 +4,15 @@ const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const giftRepo = require('../repository/pointsGift.repository');
 
 function getOrderApi() {
-  return /** @type {any} */ (require('../../order')).api || {};
+  return /** @type {any} */ (require('../../order/publicApi')) || {};
 }
 
 function getProductApi() {
-  return /** @type {any} */ (require('../../product')).api || {};
+  return /** @type {any} */ (require('../../product/publicApi')) || {};
 }
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function normalizeMalaysiaAddress(address, contactName, contactPhone) {
@@ -256,13 +256,17 @@ async function redeemGift(userId, body) {
       metadata: { gift_title: gift.title || product.name },
     });
 
-    const stockDeducted = await getOrderApi().deductVariantStock(conn, variantId, quantity, {
-      refType: 'order',
-      refId: orderId,
+    const inventoryLock = await getOrderApi().lockOrderInventory(conn, {
+      orderId,
       orderNo,
-      reason: `积分礼品兑换 ${orderNo} 扣减 SKU 库存`,
+      lines: [{
+        productId: gift.product_id,
+        variantId,
+        qty: quantity,
+        name: gift.title || product.name,
+      }],
     });
-    if (!stockDeducted) {
+    if (!inventoryLock?.ok) {
       throw new ValidationError('商品库存不足');
     }
 
@@ -275,6 +279,11 @@ async function redeemGift(userId, body) {
 
     if (paymentStatus === PAYMENT_STATUS.PAID) {
       await getOrderApi().updateOrderGiftRedeemPaid(conn, orderId);
+      const confirmInventory = getOrderApi().confirmOrderInventoryIfLocked;
+      if (typeof confirmInventory === 'function') {
+        const confirmResult = await confirmInventory(conn, { orderId, orderNo, trigger: 'points_gift_paid' });
+        if (!confirmResult?.ok) throw new ValidationError('商品库存确认扣减失败');
+      }
       await finalizeGiftOrderFulfillment(conn, {
         id: orderId,
         user_id: userId,
@@ -282,7 +291,7 @@ async function redeemGift(userId, body) {
         order_no: orderNo,
       }, [{ product_id: gift.product_id, qty: quantity }]);
       try {
-        const userApi = /** @type {any} */ (require('../../user')).api || {};
+        const userApi = /** @type {any} */ (require('../../user/publicApi')) || {};
         if (typeof userApi.syncStatsAfterOrderPaid === 'function') {
           await userApi.syncStatsAfterOrderPaid(userId, cashAmount, orderId, conn);
         }

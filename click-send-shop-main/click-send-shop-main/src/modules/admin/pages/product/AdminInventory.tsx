@@ -1,4 +1,4 @@
-import { Download, Plus, RefreshCcw } from "lucide-react";
+import { AlertTriangle, Download, Plus, RefreshCcw, ShieldCheck } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import {
@@ -15,7 +15,7 @@ import {
   exportInventoryRecordsCsv,
   exportInventorySkusCsv,
 } from "@/services/admin/inventoryService";
-import type { InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, PurchaseOrder } from "@/types/inventory";
+import type { InventoryConversionOrder, InventoryPackRule, InventoryReplenishmentAlert, InventorySku, InventoryStockRecord, InventorySummary, PurchaseOrder } from "@/types/inventory";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { THEME_BADGE_SUCCESS, THEME_BADGE_WARNING, THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
@@ -46,6 +46,47 @@ type AdminInventoryProps = {
   pageTitle?: string;
   pageHint?: string;
 };
+
+type InventoryHealthTone = "danger" | "warning" | "info" | "success";
+
+function buildInventoryHealthAlerts(summary: InventorySummary | undefined, L: (zh: string) => string) {
+  const alerts: Array<{ tone: InventoryHealthTone; text: string }> = [];
+  if (!summary) {
+    alerts.push({ tone: "info", text: L("库存汇总正在加载，加载完成后会显示可售、锁定、低库存和缺货风险。") });
+    return alerts;
+  }
+
+  const totalSkus = Number(summary.total_skus || 0);
+  const availableStock = Number(summary.total_available_stock || 0);
+  const lockedStock = Number(summary.locked_stock || 0);
+  const pendingLockedStock = Number(summary.pending_order_locked_stock || 0);
+  const lowStockSkus = Number(summary.low_stock_skus || 0);
+  const outOfStockSkus = Number(summary.out_of_stock_skus || 0);
+  const todayOrderDeductQty = Number(summary.today_order_deduct_qty || 0);
+
+  if (outOfStockSkus > 0) {
+    alerts.push({ tone: "danger", text: L(`当前有 ${outOfStockSkus} 个 SKU 缺货，需要优先补货或下架。`) });
+  }
+  if (lowStockSkus > 0) {
+    alerts.push({ tone: "warning", text: L(`当前有 ${lowStockSkus} 个 SKU 低库存，建议生成补货预警或采购单。`) });
+  }
+  if (pendingLockedStock > 0) {
+    alerts.push({ tone: "info", text: L(`待支付订单占用 ${pendingLockedStock} 件库存，请关注未支付释放是否正常。`) });
+  }
+  if (availableStock <= 0 && totalSkus > 0) {
+    alerts.push({ tone: "danger", text: L("全站可售库存为 0，前台下单会受到影响。") });
+  }
+  if (lockedStock > availableStock && availableStock > 0) {
+    alerts.push({ tone: "warning", text: L("锁定库存高于当前可售库存，建议核对待支付订单和库存流水。") });
+  }
+  if (todayOrderDeductQty > 0) {
+    alerts.push({ tone: "info", text: L(`今日订单扣减 ${todayOrderDeductQty} 件，库存流水应能追溯到对应订单。`) });
+  }
+  if (!alerts.length) {
+    alerts.push({ tone: "success", text: L("库存健康状态正常，暂无缺货、低库存或异常占用提醒。") });
+  }
+  return alerts;
+}
 
 export default function AdminInventory({
   initialTab = "skus",
@@ -159,6 +200,10 @@ export default function AdminInventory({
 
   const renderSkuMobileCard = (sku: InventorySku) => {
     const checked = selectedVariantIds.includes(sku.variant_id);
+    const unit = sku.unit_name || L("件");
+    const reservedStock = Number(sku.reserved_stock || 0);
+    const pendingLockedStock = Number(sku.pending_order_locked_stock || 0);
+    const lockedStock = Number(sku.locked_stock ?? reservedStock + pendingLockedStock);
     return (
       <AdminTableMobileCard>
         <div className="mb-3 flex items-start gap-2">
@@ -182,8 +227,16 @@ export default function AdminInventory({
         <div className="space-y-2">
           <AdminTableMobileCardField label={L("库存")}>
             <span className={sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium"}>
-              {sku.available_stock} {sku.unit_name || L("件")}
+              {sku.available_stock} {unit}
             </span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={L("锁定")}>
+            <span className="text-xs text-muted-foreground">
+              {lockedStock} {unit} · {L("未付")} {pendingLockedStock} / {L("保留")} {reservedStock}
+            </span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={L("总库存")}>
+            <span className="text-xs text-muted-foreground">{sku.stock} {unit}</span>
           </AdminTableMobileCardField>
           <AdminTableMobileCardField label={L("状态")}>
             <span className="text-xs">{stockStatusText(sku, L)}</span>
@@ -324,10 +377,13 @@ export default function AdminInventory({
           </div>
         )}
       >
-        <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10">
           {[
             { t: "全部 SKU", v: summary?.total_skus ?? 0 },
             { t: "总库存", v: summary?.total_stock ?? 0 },
+            { t: "可售库存", v: summary?.total_available_stock ?? 0 },
+            { t: "锁定库存", v: summary?.locked_stock ?? 0 },
+            { t: "待支付占用", v: summary?.pending_order_locked_stock ?? 0 },
             { t: "低库存 SKU", v: summary?.low_stock_skus ?? 0 },
             { t: "缺货 SKU", v: summary?.out_of_stock_skus ?? 0 },
             { t: "今日入库", v: summary?.today_in_qty ?? 0 },
@@ -335,6 +391,15 @@ export default function AdminInventory({
             { t: "今日订单扣减", v: summary?.today_order_deduct_qty ?? 0 },
           ].map((item) => <div key={item.t} className="rounded-xl border border-border bg-card p-3"><p className="text-xs text-muted-foreground">{L(item.t)}</p><p className="mt-1 text-xl font-bold text-foreground">{item.v}</p></div>)}
         </div>
+
+        <InventoryHealthPanel
+          summary={summary}
+          L={L}
+          onShowLowStock={() => { setTab("skus"); setStockStatus("low"); setPage(1); }}
+          onShowOutStock={() => { setTab("skus"); setStockStatus("out"); setPage(1); }}
+          onShowRecords={() => { setTab("records"); setChangeType(""); setRecordsPage(1); }}
+          onShowAlerts={() => { setTab("alerts"); setAlertStatus(""); setAlertsPage(1); }}
+        />
 
         <div className="rounded-xl border border-border bg-card">
           <div className="flex flex-wrap gap-2 border-b border-border p-3">
@@ -568,5 +633,105 @@ export default function AdminInventory({
         />
       </AdminPageShell>
     </PermissionGate>
+  );
+}
+
+function InventoryHealthPanel({
+  summary,
+  L,
+  onShowLowStock,
+  onShowOutStock,
+  onShowRecords,
+  onShowAlerts,
+}: {
+  summary?: InventorySummary;
+  L: (zh: string) => string;
+  onShowLowStock: () => void;
+  onShowOutStock: () => void;
+  onShowRecords: () => void;
+  onShowAlerts: () => void;
+}) {
+  const alerts = buildInventoryHealthAlerts(summary, L);
+  const hasRisk = alerts.some((alert) => alert.tone === "danger" || alert.tone === "warning");
+  const availableStock = Number(summary?.total_available_stock || 0);
+  const lockedStock = Number(summary?.locked_stock || 0);
+  const pendingLockedStock = Number(summary?.pending_order_locked_stock || 0);
+  const totalStock = Number(summary?.total_stock || 0);
+  const lockedRate = totalStock > 0 ? Math.min(100, Math.round((lockedStock / totalStock) * 100)) : 0;
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-4">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${hasRisk ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+              {hasRisk ? <AlertTriangle size={18} aria-hidden /> : <ShieldCheck size={18} aria-hidden />}
+            </span>
+            <div>
+              <h3 className="font-semibold text-foreground">{L("库存健康检查")}</h3>
+              <p className="text-xs text-muted-foreground">{L("汇总可售库存、锁定库存、待支付占用、低库存预警和流水审计入口。")}</p>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <InventoryHealthMetric label={L("可售库存")} value={availableStock} />
+            <InventoryHealthMetric label={L("锁定库存")} value={lockedStock} hint={L(`占总库存 ${lockedRate}%`)} tone={lockedStock > availableStock && availableStock > 0 ? "warning" : "default"} />
+            <InventoryHealthMetric label={L("待支付占用")} value={pendingLockedStock} tone={pendingLockedStock > 0 ? "info" : "default"} />
+            <InventoryHealthMetric label={L("缺货/低库存")} value={`${summary?.out_of_stock_skus ?? 0} / ${summary?.low_stock_skus ?? 0}`} tone={(summary?.out_of_stock_skus || summary?.low_stock_skus) ? "warning" : "default"} />
+          </div>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[30rem]">
+          {alerts.map((alert) => (
+            <p
+              key={alert.text}
+              className={`rounded-lg border px-3 py-2 text-xs ${
+                alert.tone === "danger"
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : alert.tone === "warning"
+                    ? "border-amber-200 bg-amber-50 text-amber-800"
+                    : alert.tone === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-blue-200 bg-blue-50 text-blue-800"
+              }`}
+            >
+              {alert.text}
+            </p>
+          ))}
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+        <UnifiedButton type="button" onClick={onShowLowStock} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary">
+          <Tx>查看低库存</Tx>
+        </UnifiedButton>
+        <UnifiedButton type="button" onClick={onShowOutStock} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary">
+          <Tx>查看缺货</Tx>
+        </UnifiedButton>
+        <UnifiedButton type="button" onClick={onShowAlerts} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary">
+          <Tx>补货预警</Tx>
+        </UnifiedButton>
+        <UnifiedButton type="button" onClick={onShowRecords} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary">
+          <Tx>库存流水审计</Tx>
+        </UnifiedButton>
+      </div>
+    </section>
+  );
+}
+
+function InventoryHealthMetric({
+  label,
+  value,
+  hint,
+  tone = "default",
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  tone?: "default" | "warning" | "info";
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-lg font-semibold ${tone === "warning" ? THEME_TEXT_WARNING : tone === "info" ? "text-blue-700" : "text-foreground"}`}>{value}</p>
+      {hint ? <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p> : null}
+    </div>
   );
 }

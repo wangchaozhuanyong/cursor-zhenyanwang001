@@ -39,8 +39,16 @@ npm run arch:check
 - `check-module-structure.js`
 - `check-service-layer.js`
 - `check-module-boundaries.js`，并开启 `STRICT_MODULE_BOUNDARIES=1`
+- `check-public-api-boundaries.js`
 
-它检查固定 24 个模块、四层目录、SQL 访问位置、controller/routes 越层、跨模块内部 import。
+它检查固定 24 个模块、四层目录、SQL 访问位置、controller/routes 越层、跨模块内部 import，以及跨模块调用必须使用 `publicApi` facade，不能回退到 `require(...).api`。
+
+需要单独验证 publicApi 收敛时，可运行：
+
+```bash
+cd server
+npm run check:public-api-boundaries
+```
 
 ## 4. 后端 typecheck
 
@@ -82,6 +90,15 @@ npm run check:report-registry
 ```
 
 涉及迁移或报表注册时必须运行。
+
+涉及订单/活动/支付/库存/物流重构迁移 `157` 至 `162` 时，在测试库或 staging 临时库运行：
+
+```bash
+cd server
+npm run migration:restructure-drill
+```
+
+没有 `server/.env.test` 时该命令会跳过；交付说明必须记录是“跳过”还是“演练通过”。
 
 ## 8. 前端最小门禁
 
@@ -174,9 +191,10 @@ npm run test
 ```bash
 npm run audit:overlap
 npm run audit:overlap:full
+npm run smoke:restructure
 ```
 
-涉及移动端、后台表格、弹窗、底部栏、Toast、按钮遮挡、页面布局时建议运行。视觉任务还应使用浏览器实际查看。
+涉及移动端、后台表格、弹窗、底部栏、Toast、按钮遮挡、页面布局时建议运行。涉及订单/活动/支付/库存/物流重构入口时，必须运行 `npm run smoke:restructure`；该命令会自动识别大马通前端，覆盖中文、English、Bahasa Melayu 的核心前台路径和未登录后台守卫。连接安全测试后端或 staging 时可设置 `SMOKE_REQUIRE_API=1 BASE_URL=<staging-url>`，把 API 失败也纳入失败项。视觉任务还应使用浏览器实际查看。
 
 ## 17. PWA 和 dist 验证
 
@@ -218,6 +236,23 @@ npm run test:reports
 npm run test:report-contract
 npm run test:report-export
 ```
+
+## 19. 交易和活动重构专项门禁
+
+涉及以下范围时必须至少跑对应专项命令：
+
+- 订单幂等、订单创建、未支付取消、支付成功状态：`cd server && npm run typecheck && npm run test:unit`
+- 支付 provider、Billplz / FPX、支付回调、对账：`cd server && npm run test:unit`
+- 库存锁定、释放、扣减、库存流水：`cd server && npm run test:unit`
+- 活动引擎、活动叠加、活动库存、购物车优惠预览：`cd server && npm run test:unit`
+- 报表注册、导出、数据口径：`cd server && npm run check:report-registry && npm run test:report-contract`
+- 迁移文件新增或编号变化：`cd server && npm run check:migrations`
+- 前台活动中心、商品卡片、购物车、结算页、支付结果页、物流弹窗：`cd click-send-shop-main/click-send-shop-main && npm run typecheck && npm run build && npm run smoke:restructure`
+- 已登录后台活动、支付、库存、运费、报表页：先连安全测试后端，再运行 `cd click-send-shop-main/click-send-shop-main && SMOKE_REQUIRE_API=1 BASE_URL=<staging-url> npm run smoke:restructure`
+
+本地完成但未部署时，必须在交付说明里明确“未 commit、未 push、未部署、未改生产配置”。
+
+完整重构验收项见 `docs/RESTRUCTURE_ACCEPTANCE_CHECKLIST.md`。
 
 仓库卫生：
 

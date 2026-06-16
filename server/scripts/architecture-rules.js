@@ -38,6 +38,7 @@ const architectureChecks = Object.freeze([
     script: 'check-module-boundaries.js',
     env: { STRICT_MODULE_BOUNDARIES: '1' },
   },
+  { name: 'public API boundaries', script: 'check-public-api-boundaries.js' },
 ]);
 
 module.exports = {

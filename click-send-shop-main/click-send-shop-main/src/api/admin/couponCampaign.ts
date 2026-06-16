@@ -1,6 +1,12 @@
 import { del, get, patch, post, put } from "@/api/request";
 import type { PaginatedData, PaginationParams } from "@/types/common";
-import type { CouponCampaign, CouponCampaignPayload, CouponCampaignStatus, CouponCampaignType } from "@/types/couponCampaign";
+import type {
+  CouponCampaign,
+  CouponCampaignPayload,
+  CouponCampaignStatus,
+  CouponCampaignStatusAction,
+  CouponCampaignType,
+} from "@/types/couponCampaign";
 
 export interface CouponCampaignListParams extends Partial<PaginationParams> {
   keyword?: string;
@@ -24,7 +30,10 @@ export function updateCouponCampaign(id: string, data: Partial<CouponCampaignPay
   return put<CouponCampaign>(`/admin/coupon-campaigns/${id}`, data);
 }
 
-export function updateCouponCampaignStatus(id: string, data: { status?: CouponCampaignStatus; disabled?: boolean }) {
+export function updateCouponCampaignStatus(
+  id: string,
+  data: { status?: CouponCampaignStatus; disabled?: boolean; action?: CouponCampaignStatusAction },
+) {
   return patch<CouponCampaign>(`/admin/coupon-campaigns/${id}/status`, data);
 }
 

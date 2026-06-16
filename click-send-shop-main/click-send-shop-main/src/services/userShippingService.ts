@@ -1,5 +1,5 @@
 import * as shippingApi from "@/api/modules/shipping";
-import type { ShippingTemplate } from "@/types/shipping";
+import type { ShippingDestination, ShippingTemplate } from "@/types/shipping";
 
 export async function fetchShippingTemplates(): Promise<ShippingTemplate[]> {
   const res = await shippingApi.getShippingTemplates();
@@ -10,6 +10,7 @@ export async function quoteShipping(payload: {
   shipping_template_id: string | number;
   raw_amount: number;
   estimated_weight_kg?: number;
+  destination?: ShippingDestination;
 }) {
   const res = await shippingApi.quoteShipping(payload);
   return res.data;

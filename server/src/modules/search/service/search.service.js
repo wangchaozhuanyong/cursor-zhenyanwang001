@@ -1,8 +1,6 @@
 const repo = require('../repository/search.repository');
 const { normalizeSearchKeyword, buildSearchKeywords } = require('../../../utils/searchKeywords');
-const analyticsModule = require('../../analytics');
-
-const analyticsApi = /** @type {any} */ (analyticsModule).api || {};
+const analyticsApi = /** @type {any} */ (require('../../analytics/publicApi'));
 
 function requireAnalyticsApi(name) {
   const fn = analyticsApi[name];

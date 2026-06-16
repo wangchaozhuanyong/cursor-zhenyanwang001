@@ -2,7 +2,7 @@ const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const timeoutRepo = require('../repository/orderEventTimeout.repository');
 
 function getAdminApi() {
-  return /** @type {any} */ (require('../../admin')).api || {};
+  return /** @type {any} */ (require('../../admin/publicApi')) || {};
 }
 
 let schedulerTimer = null;

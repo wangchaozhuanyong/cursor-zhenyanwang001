@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck } from "lucide-react";
+import { Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
-import { STORE_COPY } from "@/constants/storeCopy";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
@@ -13,7 +12,7 @@ import { isLoggedIn } from "@/utils/token";
 import { copyToClipboard } from "@/utils/clipboard";
 import TrustInfo from "@/components/TrustInfo";
 import { motion, AnimatePresence } from "framer-motion";
-import { AnimatedNumber, BottomSheetConfirm, SquishButton } from "@/modules/micro-interactions";
+import { AnimatedNumber, AppModal, BottomSheetConfirm, SquishButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -27,12 +26,16 @@ import CartPromotionNudge from "@/modules/storefront-v2/cart/CartPromotionNudge"
 import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
 import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
+import { fetchCartPromotionPreview } from "@/services/cartService";
+import type { PromotionEvaluation } from "@/types/orderPreview";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
 
 export default function Cart() {
-  useDocumentTitle("购物车");
+  const { localizedPath, t } = usePublicLocale();
+  useDocumentTitle(t("common.cart"));
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = `${location.pathname}${location.search}${location.hash}`;
@@ -59,7 +62,10 @@ export default function Cart() {
   const showSstCartHint = parseSstEnabled(siteInfo.sstEnabled);
   const [deleteTarget, setDeleteTarget] = useState<{ productId: string; variantId?: string; name: string } | null>(null);
   const [openActionKey, setOpenActionKey] = useState<string | null>(null);
+  const [quantityTargetKey, setQuantityTargetKey] = useState<string | null>(null);
+  const [quantityDraft, setQuantityDraft] = useState("");
   const [fullReductionCampaign, setFullReductionCampaign] = useState<StorefrontCampaignVm | null>(null);
+  const [promotionEvaluation, setPromotionEvaluation] = useState<PromotionEvaluation | null>(null);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
@@ -69,25 +75,32 @@ export default function Cart() {
   const checkoutLabel =
     selectedQty > 0 ? (
       <>
-        去结算<span className="ml-0.5 text-[0.85em] font-semibold opacity-90">({selectedQty})</span>
+        {t("cart.checkout")}<span className="ml-0.5 text-[0.85em] font-semibold opacity-90">({selectedQty})</span>
       </>
     ) : (
-      "去结算"
+      t("cart.checkout")
     );
   const isEmptyCart = !loading && items.length === 0;
+  const quantityTargetItem = quantityTargetKey
+    ? items.find((item) => cartLineKey(item.product.id, item.variant_id) === quantityTargetKey) ?? null
+    : null;
+  const quantityTargetMax = quantityTargetItem ? getCartQuantityMax(quantityTargetItem) : 1;
+  const quantityOptions = quantityTargetItem ? buildCartQuantityOptions(quantityTargetItem.qty, quantityTargetMax) : [];
   const headerTitle =
     totalQty > 0 ? (
       <>
-        购物车
+        {t("common.cart")}
         <span className="ml-1.5 text-sm font-normal text-[var(--theme-text-muted)]">({totalQty})</span>
       </>
     ) : (
-      "购物车"
+      t("common.cart")
     );
 
   useEffect(() => {
     loadCart({ force: true });
   }, [loadCart]);
+
+  const cartPreviewKey = items.map((item) => `${item.product.id}:${item.variant_id || ""}:${item.qty}`).join("|");
 
   useEffect(() => {
     let cancelled = false;
@@ -104,29 +117,63 @@ export default function Cart() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isLoggedIn() || !items.length) {
+      setPromotionEvaluation(null);
+      return;
+    }
+    let cancelled = false;
+    fetchCartPromotionPreview()
+      .then((preview) => {
+        if (!cancelled) setPromotionEvaluation(preview.promotion_evaluation || null);
+      })
+      .catch(() => {
+        if (!cancelled) setPromotionEvaluation(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cartPreviewKey, items.length]);
+
+  const effectivePromotionEvaluation = allSelected ? promotionEvaluation : null;
+
   const handleCheckout = () => {
     if (totalItemsSelected() === 0) {
-      toast.error("请先勾选要结算的商品");
+      toast.error(t("cart.selectItemsFirst"));
       return;
     }
     const couponId = (location.state as { coupon_id?: string } | null)?.coupon_id;
-    navigate(couponId ? `/checkout?coupon_id=${couponId}` : "/checkout", { state: { from: currentPath } });
+    navigate(couponId ? localizedPath(`/checkout?coupon_id=${couponId}`) : localizedPath("/checkout"), {
+      state: { from: currentPath },
+    });
   };
 
   const closeItemActions = () => setOpenActionKey(null);
+  const closeQuantitySelector = () => {
+    setQuantityTargetKey(null);
+    setQuantityDraft("");
+  };
+
+  const openQuantitySelector = (item: CartItem) => {
+    closeItemActions();
+    setQuantityTargetKey(cartLineKey(item.product.id, item.variant_id));
+    setQuantityDraft(String(item.qty));
+  };
 
   const getProductShareUrl = (productId: string) => {
-    if (typeof window === "undefined") return `/product/${productId}`;
-    return new URL(`/product/${productId}`, window.location.origin).toString();
+    const productPath = localizedPath(`/product/${productId}`);
+    if (typeof window === "undefined") return productPath;
+    return new URL(productPath, window.location.origin).toString();
   };
 
   const handlePinToTop = async (item: CartItem) => {
     try {
       await pinItemToTop(item.product.id, item.variant_id);
       closeItemActions();
-      toast.success("已置顶");
+      toast.success(t("cart.pinned"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "置顶失败");
+      toast.error(e instanceof Error ? e.message : t("cart.pinFailed"));
     }
   };
 
@@ -137,9 +184,9 @@ export default function Cart() {
       }
       await removeItem(item.product.id, item.variant_id);
       closeItemActions();
-      toast.success("已移入收藏");
+      toast.success(t("cart.movedToFavorites"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "移入收藏失败");
+      toast.error(e instanceof Error ? e.message : t("cart.moveToFavoritesFailed"));
     }
   };
 
@@ -163,7 +210,29 @@ export default function Cart() {
 
     const copied = await copyToClipboard(url);
     closeItemActions();
-    toast[copied ? "success" : "error"](copied ? "商品链接已复制" : "分享失败，请稍后重试");
+    toast[copied ? "success" : "error"](copied ? t("cart.linkCopied") : t("cart.shareFailed"));
+  };
+
+  const commitQuantitySelection = async (nextQty: number) => {
+    if (!quantityTargetItem) return;
+    const normalizedQty = Math.floor(nextQty);
+    if (!Number.isFinite(normalizedQty) || normalizedQty < 1) {
+      toast.error(t("cart.invalidQuantity"));
+      return;
+    }
+    const safeQty = Math.min(normalizedQty, quantityTargetMax);
+    if (safeQty !== normalizedQty) {
+      toast.error(`${t("cart.maxQuantityToast")} ${quantityTargetMax} ${t("cart.quantityUnit")}`);
+      setQuantityDraft(String(safeQty));
+      return;
+    }
+    try {
+      await updateQty(quantityTargetItem.product.id, safeQty, quantityTargetItem.variant_id);
+      toast.success(`${t("cart.quantityUpdated")} ${safeQty}`);
+      closeQuantitySelector();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
+    }
   };
 
   return (
@@ -180,7 +249,7 @@ export default function Cart() {
               onClick={() => setSelectAll(!allSelected)}
               className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-semibold text-[var(--theme-primary)]"
             >
-              {allSelected ? "取消全选" : "全选"}
+              {allSelected ? t("cart.cancelSelectAll") : t("cart.selectAll")}
             </UnifiedButton>
           ) : null
         }
@@ -192,39 +261,42 @@ export default function Cart() {
           <DesktopPurchaseTwoColumn
             className="xl:grid-cols-[minmax(0,1fr)_360px]"
             aside={
-              <DesktopPurchaseCard title="结算摘要" className="store-checkout-summary">
+              <DesktopPurchaseCard title={t("cart.summary")} className="store-checkout-summary">
                 <div className="space-y-2.5 text-sm">
                   <CartPromotionNudge
                     campaign={fullReductionCampaign}
                     amount={Number(totalAmountSelected() || 0)}
-                    onBrowse={() => navigate("/categories")}
+                    evaluation={effectivePromotionEvaluation}
+                    onBrowse={() => navigate(localizedPath("/categories"))}
                   />
                   <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
-                    <span className="text-muted-foreground">下单前可先领券，结算页自动匹配最优优惠</span>
+                    <span className="text-muted-foreground">{t("cart.couponHint")}</span>
                     <UnifiedButton
                       type="button"
-                      onClick={() => navigate("/coupons")}
+                      onClick={() => navigate(localizedPath("/coupons"))}
                       className="font-semibold text-[var(--theme-price)]"
                     >
-                      去领券
+                      {t("cart.claimCoupons")}
                     </UnifiedButton>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
-                    <span>已选商品</span>
-                    <span>{totalItemsSelected()} 件</span>
+                    <span>{t("cart.selectedItems")}</span>
+                    <span>
+                      {totalItemsSelected()} {t("cart.itemUnit")}
+                    </span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
-                    <span>{showSstCartHint ? "商品小计（含税）" : "商品小计"}</span>
+                    <span>{showSstCartHint ? t("cart.subtotalTaxIncluded") : t("cart.subtotal")}</span>
                     <span>RM {totalAmountSelected()}</span>
                   </div>
                   {showSstCartHint ? (
                     <p className="text-[11px] leading-relaxed text-muted-foreground">
-                      {sstCartNote || "商品价格已含 SST，运费不计税。"}
+                      {sstCartNote || t("cart.sstIncludedNote")}
                     </p>
                   ) : null}
                   <div className="my-3 border-t border-[var(--theme-border)]" />
                   <div className="flex items-baseline justify-between">
-                    <span className="text-sm text-foreground">合计</span>
+                    <span className="text-sm text-foreground">{t("cart.total")}</span>
                     <span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">
                       <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
                     </span>
@@ -249,8 +321,9 @@ export default function Cart() {
             <CartPromotionNudge
               campaign={fullReductionCampaign}
               amount={Number(totalAmountSelected() || 0)}
+              evaluation={effectivePromotionEvaluation}
               className="mb-3 md:hidden"
-              onBrowse={() => navigate("/categories")}
+              onBrowse={() => navigate(localizedPath("/categories"))}
             />
             {!isLoggedIn() && (
               <div
@@ -280,20 +353,22 @@ export default function Cart() {
                     </span>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold leading-5 text-[var(--theme-text)]">登录后同步购物车</p>
+                        <p className="text-sm font-semibold leading-5 text-[var(--theme-text)]">
+                          {t("cart.loginSyncTitle")}
+                        </p>
                       </div>
                       <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted)]">
-                        当前购物车仅保存在本机，登录后可同步到账号。
+                        {t("cart.loginSyncDesc")}
                       </p>
                     </div>
                   </div>
                   <UnifiedButton
                     type="button"
-                    onClick={() => navigate("/login", { state: { from: "/cart" } })}
+                    onClick={() => navigate(localizedPath("/login"), { state: { from: currentPath } })}
                     className="inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-full border border-[var(--theme-price)] bg-[var(--theme-price)] px-4 text-sm font-semibold text-[var(--theme-price-foreground)] shadow-sm transition hover:-translate-y-0.5 hover:bg-[var(--theme-price)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)] sm:w-auto"
                   >
                     <LogIn className="mr-1.5 h-4 w-4" />
-                    登录
+                    {t("common.login")}
                   </UnifiedButton>
                 </div>
               </div>
@@ -308,14 +383,14 @@ export default function Cart() {
                   }}
                   className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-full px-3 text-xs font-semibold underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-danger)] focus-visible:ring-offset-2"
                 >
-                  重试
+                  {t("common.retry")}
                 </UnifiedButton>
               </div>
             )}
             {loading && items.length === 0 ? (
               <div className="flex flex-col items-center py-20 text-muted-foreground" role="status" aria-live="polite">
                 <Loader2 size={24} className="animate-spin mb-3" />
-                <p className="text-sm">加载中…</p>
+                <p className="text-sm">{t("cart.loading")}</p>
               </div>
             ) : (
               <div
@@ -344,7 +419,7 @@ export default function Cart() {
                         <span className="h-2 w-2 rounded-sm bg-[var(--theme-price)]" />
                       )}
                     </span>
-                    全选 ({selectedCount}/{items.length})
+                    {t("cart.selectAll")} ({selectedCount}/{items.length})
                   </SquishButton>
                 </div>
                 <AnimatePresence>
@@ -369,7 +444,7 @@ export default function Cart() {
                           toggleSelect(item.product.id, item.variant_id);
                         }}
                         className="self-center flex h-10 w-7 flex-shrink-0 items-center justify-center rounded-none border-0 bg-transparent shadow-none !p-0"
-                        aria-label={selected ? "取消勾选" : "勾选结算"}
+                        aria-label={selected ? t("cart.unselectForCheckout") : t("cart.selectForCheckout")}
                       >
                         <span
                           className={`flex h-7 w-7 items-center justify-center rounded-full border shadow-sm transition-colors ${
@@ -396,7 +471,7 @@ export default function Cart() {
                             className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-border)] px-1 text-[11px] font-semibold text-[var(--theme-text)]"
                           >
                             <Pin size={15} />
-                            <span>置顶</span>
+                            <span>{t("cart.pin")}</span>
                           </UnifiedButton>
                           <UnifiedButton
                             type="button"
@@ -405,7 +480,7 @@ export default function Cart() {
                             className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-border)] px-1 text-[11px] font-semibold text-[var(--theme-price)]"
                           >
                             <Heart size={15} />
-                            <span>移入收藏</span>
+                            <span>{t("cart.moveToFavorite")}</span>
                           </UnifiedButton>
                           <UnifiedButton
                             type="button"
@@ -414,7 +489,7 @@ export default function Cart() {
                             className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-border)] px-1 text-[11px] font-semibold text-[var(--theme-primary)]"
                           >
                             <Share2 size={15} />
-                            <span>分享</span>
+                            <span>{t("cart.share")}</span>
                           </UnifiedButton>
                           <UnifiedButton
                             type="button"
@@ -430,7 +505,7 @@ export default function Cart() {
                             className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-danger)]/20 bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] px-1 text-[11px] font-semibold text-[var(--theme-danger)]"
                           >
                             <Trash2 size={15} />
-                            <span>删除</span>
+                            <span>{t("cart.delete")}</span>
                           </UnifiedButton>
                         </div>
                         <motion.div
@@ -452,11 +527,11 @@ export default function Cart() {
                             type="button"
                             onClick={() => {
                               closeItemActions();
-                              navigate(`/product/${item.product.id}`, { state: { from: currentPath } });
+                              navigate(localizedPath(`/product/${item.product.id}`), { state: { from: currentPath } });
                             }}
                             className="store-cart-media w-14 flex-shrink-0 self-start cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:w-16 md:w-16 lg:w-20"
                             style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
-                            aria-label={`查看 ${item.product.name}`}
+                            aria-label={`${t("common.browseProducts")} ${item.product.name}`}
                           >
                             <ProductCoverImage
                               url={item.product.cover_image}
@@ -472,7 +547,7 @@ export default function Cart() {
                               <h3
                                 onClick={() => {
                                   closeItemActions();
-                                  navigate(`/product/${item.product.id}`, { state: { from: currentPath } });
+                                  navigate(localizedPath(`/product/${item.product.id}`), { state: { from: currentPath } });
                                 }}
                                 className="store-card-title cursor-pointer break-words leading-tight text-foreground line-clamp-2 hover:text-theme-price"
                               >
@@ -493,17 +568,22 @@ export default function Cart() {
                                     try {
                                       await updateQty(item.product.id, item.qty - 1, item.variant_id);
                                     } catch (e) {
-                                      toast.error(e instanceof Error ? e.message : "更新数量失败");
+                                      toast.error(e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
                                     }
                                   }}
                                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] !p-0"
-                                  aria-label="减少数量"
+                                  aria-label={t("cart.quantityReduced")}
                                 >
                                   <Minus size={14} className="text-foreground" />
                                 </SquishButton>
-                                <span className="min-w-[28px] text-center text-sm font-semibold text-foreground">
+                                <UnifiedButton
+                                  type="button"
+                                  onClick={() => openQuantitySelector(item)}
+                                  className="flex min-w-[34px] items-center justify-center self-stretch px-1 text-center text-sm font-semibold tabular-nums text-foreground"
+                                  aria-label={`${t("cart.quantitySelectAria")}, ${t("cart.currentQuantityPrefix")} ${item.qty} ${t("cart.quantityUnit")}`}
+                                >
                                   {item.qty}
-                                </span>
+                                </UnifiedButton>
                                 <SquishButton
                                   type="button"
                                   variant="ghost"
@@ -511,11 +591,11 @@ export default function Cart() {
                                     try {
                                       await updateQty(item.product.id, item.qty + 1, item.variant_id);
                                     } catch (e) {
-                                      toast.error(e instanceof Error ? e.message : "更新数量失败");
+                                      toast.error(e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
                                     }
                                   }}
                                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] !p-0"
-                                  aria-label="增加数量"
+                                  aria-label={t("cart.quantityIncreased")}
                                 >
                                   <Plus size={14} className="text-foreground" />
                                 </SquishButton>
@@ -528,7 +608,7 @@ export default function Cart() {
                                 className="inline-flex h-8 items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs font-semibold text-[var(--theme-text-muted)] transition hover:text-[var(--theme-text)]"
                               >
                                 <Pin size={13} />
-                                置顶
+                                {t("cart.pin")}
                               </UnifiedButton>
                               <UnifiedButton
                                 type="button"
@@ -536,7 +616,15 @@ export default function Cart() {
                                 className="inline-flex h-8 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--theme-price)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_6%,var(--theme-surface))] px-3 text-xs font-semibold text-[var(--theme-price)] transition hover:bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]"
                               >
                                 <Heart size={13} />
-                                移入收藏
+                                {t("cart.moveToFavorite")}
+                              </UnifiedButton>
+                              <UnifiedButton
+                                type="button"
+                                onClick={() => handleShareProduct(item)}
+                                className="inline-flex h-8 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--theme-primary)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] px-3 text-xs font-semibold text-[var(--theme-primary)] transition hover:bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))]"
+                              >
+                                <Share2 size={13} />
+                                {t("cart.share")}
                               </UnifiedButton>
                               <UnifiedButton
                                 type="button"
@@ -551,7 +639,7 @@ export default function Cart() {
                                 className="inline-flex h-8 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--theme-danger)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-danger)_6%,var(--theme-surface))] px-3 text-xs font-semibold text-[var(--theme-danger)] transition hover:bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]"
                               >
                                 <Trash2 size={13} />
-                                删除
+                                {t("cart.delete")}
                               </UnifiedButton>
                             </div>
                           </div>
@@ -577,16 +665,16 @@ export default function Cart() {
             {loading ? (
               <div className="flex flex-col items-center py-20 text-muted-foreground" role="status" aria-live="polite">
                 <Loader2 size={24} className="animate-spin mb-3" />
-                <p className="text-sm">加载中…</p>
+                <p className="text-sm">{t("cart.loading")}</p>
               </div>
             ) : (
               <ClientEmptyState
                 icon={<ShoppingBag size={30} />}
-                title="暂无商品"
-                description="快去挑选心仪的商品吧"
+                title={t("cart.emptyTitle")}
+                description={t("cart.emptyDescription")}
                 action={
-                  <ClientButton type="button" onClick={() => navigate("/categories")}>
-                    {STORE_COPY.browseAllCategories}
+                  <ClientButton type="button" onClick={() => navigate(localizedPath("/categories"))}>
+                    {t("cart.browseCategories")}
                   </ClientButton>
                 }
                 className="max-w-none"
@@ -602,8 +690,9 @@ export default function Cart() {
             <CartPromotionNudge
               campaign={fullReductionCampaign}
               amount={Number(totalAmountSelected() || 0)}
+              evaluation={effectivePromotionEvaluation}
               className="mb-0"
-              onBrowse={() => navigate("/categories")}
+              onBrowse={() => navigate(localizedPath("/categories"))}
             />
             <SquishButton
               type="button"
@@ -623,12 +712,12 @@ export default function Cart() {
                 {allSelected && <Check size={12} strokeWidth={3} />}
                 {!allSelected && someSelected && <span className="h-2 w-2 rounded-sm bg-[var(--theme-price)]" />}
               </span>
-              全选
+              {t("cart.selectAll")}
             </SquishButton>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-foreground">
-                  合计（已选）:{" "}
+                  {t("cart.totalSelected")}:{" "}
                   <span className="text-[18px] font-extrabold text-[var(--theme-price)]">
                     <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
                   </span>
@@ -651,16 +740,111 @@ export default function Cart() {
       <BottomSheetConfirm
         open={Boolean(deleteTarget)}
         onClose={() => setDeleteTarget(null)}
-        title="移出购物车？"
-        description={deleteTarget ? `确定将「${deleteTarget.name}」从购物车中移除吗？` : undefined}
-        confirmText="删除"
+        title={t("cart.removeConfirmTitle")}
+        description={
+          deleteTarget
+            ? `${t("cart.removeConfirmPrefix")}「${deleteTarget.name}」${t("cart.removeConfirmSuffix")}`
+            : undefined
+        }
+        confirmText={t("cart.delete")}
         danger
         onConfirm={async () => {
           if (!deleteTarget) return;
           await removeItem(deleteTarget.productId, deleteTarget.variantId);
-          toast.success("已从购物车移除", { duration: 2000 });
+          toast.success(t("cart.removed"), { duration: 2000 });
         }}
       />
+      <AppModal
+        tier="standard"
+        open={Boolean(quantityTargetItem)}
+        onClose={closeQuantitySelector}
+        title={t("cart.quantityTitle")}
+        height="auto"
+        stickyFooter
+        showHandle={false}
+        footer={
+          <div className="grid grid-cols-2 gap-2">
+            <UnifiedButton
+              type="button"
+              onClick={closeQuantitySelector}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-[var(--theme-text)]"
+            >
+              <X size={16} aria-hidden />
+              {t("common.cancel")}
+            </UnifiedButton>
+            <SquishButton
+              type="button"
+              variant="gold"
+              onClick={() => {
+                const parsed = Number.parseInt(quantityDraft.replace(/[^\d]/g, ""), 10);
+                void commitQuantitySelection(parsed);
+              }}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold"
+            >
+              <Check size={16} aria-hidden />
+              {t("common.confirm")}
+            </SquishButton>
+          </div>
+        }
+      >
+        {quantityTargetItem ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3">
+              <p className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">
+                {quantityTargetItem.product.name}
+              </p>
+              <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
+                {t("cart.currentQuantityPrefix")} {quantityTargetItem.qty} {t("cart.quantityUnit")} ·{" "}
+                {t("cart.maxQuantityPrefix")} {quantityTargetMax} {t("cart.quantityUnit")}
+              </p>
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {quantityOptions.map((option) => (
+                <UnifiedButton
+                  key={option}
+                  type="button"
+                  aria-pressed={Number(quantityDraft) === option}
+                  onClick={() => void commitQuantitySelection(option)}
+                  className={`min-h-11 rounded-2xl border text-sm font-semibold tabular-nums ${
+                    Number(quantityDraft) === option
+                      ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_12%,var(--theme-surface))] text-[var(--theme-price)]"
+                      : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
+                  }`}
+                >
+                  {option}
+                </UnifiedButton>
+              ))}
+            </div>
+            <label className="block text-sm font-semibold text-[var(--theme-text)]">
+              {t("cart.customQuantity")}
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={quantityDraft}
+                onChange={(event) => setQuantityDraft(event.target.value.replace(/[^\d]/g, ""))}
+                className="mt-2 h-12 w-full rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-center text-base font-semibold tabular-nums text-[var(--theme-text)] outline-none focus:border-[var(--theme-price)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-price)_18%,transparent)]"
+                aria-label={t("cart.customQuantityAria")}
+              />
+            </label>
+          </div>
+        ) : null}
+      </AppModal>
     </div>
   );
+}
+
+function getCartQuantityMax(item: CartItem) {
+  const variantStock = item.variant_id
+    ? item.product.variants?.find((variant) => variant.id === item.variant_id)?.stock
+    : undefined;
+  const rawStock = Number(variantStock ?? item.product.stock ?? item.qty);
+  const stock = Number.isFinite(rawStock) ? rawStock : item.qty;
+  return Math.max(1, Math.min(999, Math.max(item.qty, Math.floor(stock))));
+}
+
+function buildCartQuantityOptions(currentQty: number, maxQty: number) {
+  const baseOptions = [1, 2, 3, 4, 5, 6, 8, 10, 12, currentQty - 1, currentQty, currentQty + 1];
+  const unique = Array.from(new Set(baseOptions.filter((qty) => qty >= 1 && qty <= maxQty)));
+  return unique.sort((a, b) => a - b).slice(0, 10);
 }

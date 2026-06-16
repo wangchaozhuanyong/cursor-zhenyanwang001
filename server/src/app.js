@@ -375,6 +375,7 @@ app.post(
 app.use('/api', serverTiming());
 app.use('/api', apiTimeout());
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: process.env.FORM_BODY_LIMIT || '1mb' }));
 app.use(adminCsrfGuard);
 
 const uploadsDir = path.join(__dirname, '../public/uploads');

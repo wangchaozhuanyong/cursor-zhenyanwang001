@@ -2,6 +2,12 @@ const db = require('../../../config/db');
 const { generateId } = require('../../../utils/helpers');
 
 const LEGACY_COUPON_ACTIVITY_TYPES = new Set(['coupon_activity', 'new_user_gift']);
+const LEGACY_ACTIVITY_TYPE_FILTERS = {
+  points_bonus: ['points_bonus', 'points_reward'],
+  points_reward: ['points_bonus', 'points_reward'],
+  member_activity: ['member_activity', 'member_price', 'member_level_discount', 'member_free_shipping'],
+  member_price: ['member_activity', 'member_price', 'member_level_discount', 'member_free_shipping'],
+};
 
 function listWhere(query = {}) {
   let where = 'WHERE a.deleted_at IS NULL';
@@ -9,6 +15,10 @@ function listWhere(query = {}) {
   if (query.type) {
     if (LEGACY_COUPON_ACTIVITY_TYPES.has(String(query.type))) {
       where += ' AND 1 = 0';
+    } else if (LEGACY_ACTIVITY_TYPE_FILTERS[String(query.type)]) {
+      const types = LEGACY_ACTIVITY_TYPE_FILTERS[String(query.type)];
+      where += ` AND a.type IN (${types.map(() => '?').join(',')})`;
+      params.push(...types);
     } else {
       where += ' AND a.type = ?';
       params.push(query.type);
@@ -22,12 +32,15 @@ function listWhere(query = {}) {
   }
   if (query.status === 'disabled') {
     where += " AND (a.status = 'disabled' OR a.disabled = 1)";
+  } else if (query.status === 'paused' || query.status === 'archived') {
+    where += ' AND a.status = ?';
+    params.push(query.status);
   } else if (query.status === 'scheduled' || query.status === 'not_started') {
-    where += " AND a.disabled = 0 AND a.status NOT IN ('disabled', 'draft') AND a.start_at > NOW()";
+    where += " AND a.disabled = 0 AND a.status NOT IN ('disabled', 'draft', 'paused', 'ended', 'archived') AND a.start_at > NOW()";
   } else if (query.status === 'active') {
-    where += " AND a.disabled = 0 AND a.status NOT IN ('disabled', 'draft') AND a.start_at <= NOW() AND a.end_at >= NOW()";
+    where += " AND a.disabled = 0 AND a.status NOT IN ('disabled', 'draft', 'paused', 'ended', 'archived') AND a.start_at <= NOW() AND a.end_at >= NOW()";
   } else if (query.status === 'ended') {
-    where += " AND a.end_at < NOW()";
+    where += " AND (a.status = 'ended' OR a.end_at < NOW())";
   } else if (query.status === 'draft') {
     where += " AND a.status = 'draft'";
   }
@@ -45,9 +58,29 @@ async function selectActivitiesPage(where, params, pageSize, offset) {
        a.*,
        COUNT(ap.id) AS product_count,
        COALESCE(SUM(ap.activity_stock), 0) AS activity_stock_total,
-       COALESCE(SUM(ap.sold_count), 0) AS sold_count_total
+       COALESCE(SUM(ap.sold_count), 0) AS sold_count_total,
+       COALESCE(MAX(pus.active_order_count), 0) AS active_order_count,
+       COALESCE(MAX(pus.confirmed_order_count), 0) AS confirmed_order_count,
+       COALESCE(MAX(pus.locked_order_count), 0) AS locked_order_count,
+       COALESCE(MAX(pus.active_usage_count), 0) AS active_usage_count,
+       COALESCE(MAX(pus.total_usage_count), 0) AS total_usage_count,
+       COALESCE(MAX(pus.active_discount_amount), 0) AS active_discount_amount,
+       COALESCE(MAX(pus.confirmed_discount_amount), 0) AS confirmed_discount_amount
      FROM marketing_activities a
      LEFT JOIN marketing_activity_products ap ON ap.activity_id = a.id
+     LEFT JOIN (
+       SELECT
+         promotion_id,
+         COUNT(DISTINCT CASE WHEN status IN ('locked','confirmed') THEN order_id END) AS active_order_count,
+         COUNT(DISTINCT CASE WHEN status = 'confirmed' THEN order_id END) AS confirmed_order_count,
+         COUNT(DISTINCT CASE WHEN status = 'locked' THEN order_id END) AS locked_order_count,
+         COALESCE(SUM(CASE WHEN status IN ('locked','confirmed') THEN usage_count ELSE 0 END), 0) AS active_usage_count,
+         COALESCE(SUM(usage_count), 0) AS total_usage_count,
+         COALESCE(SUM(CASE WHEN status IN ('locked','confirmed') THEN discount_amount ELSE 0 END), 0) AS active_discount_amount,
+         COALESCE(SUM(CASE WHEN status = 'confirmed' THEN discount_amount ELSE 0 END), 0) AS confirmed_discount_amount
+       FROM promotion_usages
+       GROUP BY promotion_id
+     ) pus ON pus.promotion_id = a.id
      ${where}
      GROUP BY a.id
      ORDER BY a.sort_order ASC, a.created_at DESC
@@ -58,7 +91,34 @@ async function selectActivitiesPage(where, params, pageSize, offset) {
 }
 
 async function selectActivityById(id) {
-  const [[row]] = await db.query('SELECT * FROM marketing_activities WHERE id = ? AND deleted_at IS NULL', [id]);
+  const [[row]] = await db.query(
+    `SELECT
+       a.*,
+       COALESCE(pus.active_order_count, 0) AS active_order_count,
+       COALESCE(pus.confirmed_order_count, 0) AS confirmed_order_count,
+       COALESCE(pus.locked_order_count, 0) AS locked_order_count,
+       COALESCE(pus.active_usage_count, 0) AS active_usage_count,
+       COALESCE(pus.total_usage_count, 0) AS total_usage_count,
+       COALESCE(pus.active_discount_amount, 0) AS active_discount_amount,
+       COALESCE(pus.confirmed_discount_amount, 0) AS confirmed_discount_amount
+     FROM marketing_activities a
+     LEFT JOIN (
+       SELECT
+         promotion_id,
+         COUNT(DISTINCT CASE WHEN status IN ('locked','confirmed') THEN order_id END) AS active_order_count,
+         COUNT(DISTINCT CASE WHEN status = 'confirmed' THEN order_id END) AS confirmed_order_count,
+         COUNT(DISTINCT CASE WHEN status = 'locked' THEN order_id END) AS locked_order_count,
+         COALESCE(SUM(CASE WHEN status IN ('locked','confirmed') THEN usage_count ELSE 0 END), 0) AS active_usage_count,
+         COALESCE(SUM(usage_count), 0) AS total_usage_count,
+         COALESCE(SUM(CASE WHEN status IN ('locked','confirmed') THEN discount_amount ELSE 0 END), 0) AS active_discount_amount,
+         COALESCE(SUM(CASE WHEN status = 'confirmed' THEN discount_amount ELSE 0 END), 0) AS confirmed_discount_amount
+       FROM promotion_usages
+       WHERE promotion_id = ?
+       GROUP BY promotion_id
+     ) pus ON pus.promotion_id = a.id
+     WHERE a.id = ? AND a.deleted_at IS NULL`,
+    [id, id],
+  );
   return row || null;
 }
 
@@ -85,15 +145,34 @@ async function selectActivityScopes(activityId) {
   return rows;
 }
 
+async function selectActiveCouponIdsByIds(couponIds = []) {
+  const ids = [...new Set((couponIds || []).map((id) => String(id || '').trim()).filter(Boolean))];
+  if (!ids.length) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const [rows] = await db.query(
+    `SELECT id
+       FROM coupons
+      WHERE BINARY id IN (${placeholders})
+        AND deleted_at IS NULL
+        AND archived_at IS NULL
+        AND status IN ('available', 'active')
+        AND COALESCE(publish_status, CASE WHEN status = 'available' THEN 'active' ELSE status END) = 'active'`,
+    ids,
+  );
+  return rows.map((row) => String(row.id));
+}
+
 async function insertActivity(params) {
   await db.query(
     `INSERT INTO marketing_activities
-      (id, type, title, subtitle, cover_image, display_positions, description, start_at, end_at, status, disabled,
+      (id, slug, type, title, subtitle, cover_image, display_positions, description, start_at, end_at, status, disabled,
        scope_type, allow_coupon_stack, allow_points_stack, allow_reward, publish_at, internal_note, activity_config,
-       threshold_amount, discount_amount, sort_order, created_by, updated_by)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       rule_config, stackable, exclusive_with, usage_limit_total, usage_limit_per_user,
+       threshold_amount, discount_amount, sort_order, priority, created_by, updated_by)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       params.id,
+      params.slug || null,
       params.type,
       params.title,
       params.subtitle || '',
@@ -111,20 +190,33 @@ async function insertActivity(params) {
       params.publish_at || null,
       params.internal_note || '',
       params.activity_config ? JSON.stringify(params.activity_config) : null,
+      params.rule_config ? JSON.stringify(params.rule_config) : null,
+      params.stackable ? 1 : 0,
+      params.exclusive_with ? JSON.stringify(params.exclusive_with) : null,
+      params.usage_limit_total == null ? null : params.usage_limit_total,
+      params.usage_limit_per_user == null ? null : params.usage_limit_per_user,
       params.threshold_amount,
       params.discount_amount,
       params.sort_order || 0,
+      params.priority || 0,
       params.adminUserId || null,
       params.adminUserId || null,
     ],
   );
 }
 
-async function updateActivityDynamic(id, fragments, values, adminUserId) {
-  await db.query(
-    `UPDATE marketing_activities SET ${fragments.join(', ')}, updated_by = ? WHERE id = ? AND deleted_at IS NULL`,
-    [...values, adminUserId || null, id],
+async function updateActivityDynamic(id, fragments, values, adminUserId, expectedVersion = null) {
+  const where = ['id = ?', 'deleted_at IS NULL'];
+  const params = [...values, adminUserId || null, id];
+  if (expectedVersion != null) {
+    where.push('COALESCE(version, 1) = ?');
+    params.push(expectedVersion);
+  }
+  const [result] = await db.query(
+    `UPDATE marketing_activities SET ${fragments.join(', ')}, updated_by = ? WHERE ${where.join(' AND ')}`,
+    params,
   );
+  return Number(result?.affectedRows || 0);
 }
 
 async function replaceActivityItems(activityId, items) {
@@ -185,6 +277,23 @@ async function setActivityDisabled(id, disabled, adminUserId) {
   );
 }
 
+async function setActivityRuntimeStatus(id, { status, disabled = 0, endNow = false }, adminUserId, expectedVersion = null) {
+  const endAtSql = endNow ? ', end_at = LEAST(end_at, NOW())' : '';
+  const where = ['id = ?', 'deleted_at IS NULL'];
+  const params = [disabled ? 1 : 0, status, adminUserId || null, id];
+  if (expectedVersion != null) {
+    where.push('COALESCE(version, 1) = ?');
+    params.push(expectedVersion);
+  }
+  const [result] = await db.query(
+    `UPDATE marketing_activities
+        SET disabled = ?, status = ?, updated_by = ?, version = COALESCE(version, 1) + 1${endAtSql}
+      WHERE ${where.join(' AND ')}`,
+    params,
+  );
+  return result.affectedRows;
+}
+
 async function softDeleteActivity(id, adminUserId) {
   await db.query(
     "UPDATE marketing_activities SET deleted_at = NOW(), deleted_by = ?, disabled = 1, status = 'disabled' WHERE id = ?",
@@ -220,9 +329,34 @@ async function selectConflictingActivities({ productIds = [], startAt, endAt, ex
      WHERE a.deleted_at IS NULL
        AND a.disabled = 0
        AND a.status IN ('scheduled', 'active')
+       AND a.type IN ('flash_sale', 'limited_time_discount')
        AND NOT (a.end_at <= ? OR a.start_at >= ?)
        AND ap.product_id IN (${ids.map(() => '?').join(',')})
        ${excludeSql}`,
+    params,
+  );
+  return rows;
+}
+
+async function selectOverlappingActivitiesForRuleConflict({ startAt, endAt, excludeActivityId = null }) {
+  const params = [startAt, endAt];
+  let excludeSql = '';
+  if (excludeActivityId) {
+    excludeSql = 'AND a.id <> ?';
+    params.push(excludeActivityId);
+  }
+  const [rows] = await db.query(
+    `SELECT a.id AS activity_id, a.title, a.type, a.scope_type, a.start_at, a.end_at,
+            a.stackable, a.exclusive_with, a.activity_config, a.rule_config,
+            s.scope_type AS row_scope_type, s.scope_id
+     FROM marketing_activities a
+     LEFT JOIN marketing_activity_scopes s ON s.activity_id = a.id
+     WHERE a.deleted_at IS NULL
+       AND a.disabled = 0
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
+       AND NOT (a.end_at <= ? OR a.start_at >= ?)
+       ${excludeSql}
+     ORDER BY a.start_at ASC, a.created_at DESC`,
     params,
   );
   return rows;
@@ -273,15 +407,16 @@ module.exports = {
   selectActivityById,
   selectActivityItems,
   selectActivityScopes,
+  selectActiveCouponIdsByIds,
   insertActivity,
   updateActivityDynamic,
   replaceActivityItems,
   replaceActivityScopes,
   setActivityDisabled,
+  setActivityRuntimeStatus,
   softDeleteActivity,
   selectProductStocksByIds,
   selectConflictingActivities,
+  selectOverlappingActivitiesForRuleConflict,
   searchActivityProducts,
 };
-
-

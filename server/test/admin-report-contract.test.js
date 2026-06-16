@@ -16,8 +16,13 @@ describe('admin report API contract registry', () => {
       ['order_analysis', '/admin/reports/orders/analysis'],
       ['customer_analysis', '/admin/reports/customers/analysis'],
       ['activity_analysis', '/admin/reports/activities/analysis'],
+      ['promotion_conversion', '/admin/reports/promotions/conversion'],
       ['coupon_analysis', '/admin/reports/coupons/analysis'],
+      ['discount_cost', '/admin/reports/discounts/cost'],
+      ['payment_failure', '/admin/reports/payments/failures'],
       ['inventory_analysis', '/admin/reports/inventory/analysis'],
+      ['inventory_occupancy', '/admin/reports/inventory/occupancy'],
+      ['order_cancel_reason', '/admin/reports/orders/cancel-reasons'],
       ['search_analysis', '/admin/reports/search/analysis'],
       ['traffic_analysis', '/admin/reports/traffic'],
     ]) {
@@ -65,7 +70,23 @@ describe('admin report API contract registry', () => {
 
   test('capability-gated reports declare capability in backend registry', () => {
     assert.equal(reportByType.get('inventory_analysis').capability, 'inventoryEnabled');
+    assert.equal(reportByType.get('inventory_occupancy').capability, 'inventoryEnabled');
     assert.equal(reportByType.get('coupon_analysis').capability, 'couponEnabled');
     assert.equal(reportByType.get('traffic_analysis').capability, 'trafficAnalyticsEnabled');
+  });
+
+  test('phase 7 operations reports are exportable and bound to service handlers', () => {
+    for (const type of [
+      'promotion_conversion',
+      'discount_cost',
+      'payment_failure',
+      'inventory_occupancy',
+      'order_cancel_reason',
+    ]) {
+      const report = reportByType.get(type);
+      assert.equal(report.exportPermission, 'report.export', `${type} must be exportable`);
+      assert.ok(report.serviceHandler, `${type} missing service handler`);
+      assert.ok((report.csvColumns || []).length > 0, `${type} missing csv columns`);
+    }
   });
 });

@@ -44,12 +44,32 @@ export async function fetchActivityAnalysisReport(params?: ReportQuery) {
   const res = await reportApi.getActivitiesAnalysis(params);
   return res.data;
 }
+export async function fetchPromotionConversionReport(params?: ReportQuery) {
+  const res = await reportApi.getPromotionConversion(params);
+  return res.data;
+}
 export async function fetchCouponAnalysisReport(params?: ReportQuery) {
   const res = await reportApi.getCouponsAnalysis(params);
   return res.data;
 }
+export async function fetchDiscountCostReport(params?: ReportQuery) {
+  const res = await reportApi.getDiscountCost(params);
+  return res.data;
+}
+export async function fetchPaymentFailureReport(params?: ReportQuery) {
+  const res = await reportApi.getPaymentFailures(params);
+  return res.data;
+}
 export async function fetchInventoryAnalysisReport(params?: ReportQuery) {
   const res = await reportApi.getInventoryAnalysis(params);
+  return res.data;
+}
+export async function fetchInventoryOccupancyReport(params?: ReportQuery) {
+  const res = await reportApi.getInventoryOccupancy(params);
+  return res.data;
+}
+export async function fetchOrderCancelReasonReport(params?: ReportQuery) {
+  const res = await reportApi.getOrderCancelReasons(params);
   return res.data;
 }
 export async function fetchSearchAnalysisReport(params?: ReportQuery) {

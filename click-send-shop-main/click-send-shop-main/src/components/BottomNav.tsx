@@ -1,4 +1,4 @@
-import { Headphones, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
+import { BadgePercent, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
@@ -12,14 +12,7 @@ import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
-
-const tabs = [
-  { path: "/", label: "\u9996\u9875", icon: Home },
-  { path: "/categories", label: "\u5206\u7c7b", icon: LayoutGrid },
-  { path: "/support-download?tab=support", label: "客服", icon: Headphones },
-  { path: "/cart", label: "\u8d2d\u7269\u8f66", icon: ShoppingCart },
-  { path: "/profile", label: "\u6211\u7684", icon: User },
-];
+import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 
 /** 轻触允许的最大位移（px）；略放宽，避免「刚滑完页面就点底栏」被误判为滑动 */
 const TAP_MOVE_THRESHOLD = 28;
@@ -41,11 +34,20 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { themeConfig } = useThemeRuntime();
+  const { localizedPath, t } = usePublicLocale();
   const navStyle = themeConfig.navStyle;
   const capabilities = useSiteCapabilities();
   const activePointerRef = useRef<ActivePointer | null>(null);
   const lastNavTapRef = useRef<{ path: string; at: number } | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
+  const currentPathname = stripPublicLocaleFromPathname(location.pathname);
+  const tabs = [
+    { path: "/", label: t("common.home"), icon: Home },
+    { path: "/categories", label: t("common.categories"), icon: LayoutGrid },
+    { path: "/coupons", label: t("common.coupons"), icon: BadgePercent },
+    { path: "/cart", label: t("common.cart"), icon: ShoppingCart },
+    { path: "/profile", label: t("common.myAccount"), icon: User },
+  ];
 
   useEffect(() => {
     let timer: number | undefined;
@@ -64,18 +66,18 @@ export default function BottomNav() {
   const handleNavigate = useCallback((path: string) => {
     const base = path.split("?")[0];
     const targetSearch = path.includes("?") ? `?${path.split("?")[1]}` : "";
-    if (location.pathname === base) {
+    if (currentPathname === base) {
       if (targetSearch && location.search !== targetSearch) {
         rememberCurrentStoreScrollPosition();
-        navigate(path);
+        navigate(localizedPath(path));
         return;
       }
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
       return;
     }
     rememberCurrentStoreScrollPosition();
-    navigateWithStoreTransition(navigate, path);
-  }, [location.pathname, location.search, navigate]);
+    navigateWithStoreTransition(navigate, localizedPath(path));
+  }, [currentPathname, localizedPath, location.search, navigate]);
 
   /** 避免 pointerup + click 双触发；兼容不支持 Pointer Events 的浏览器 */
   const activateTab = useCallback((path: string) => {
@@ -90,7 +92,7 @@ export default function BottomNav() {
 
   const isTabActive = (path: string) => {
     const base = path.split("?")[0];
-    return location.pathname === base;
+    return currentPathname === base;
   };
   const visibleTabs = tabs.filter((tab) => isStoreNavPathVisible(tab.path, capabilities));
 

@@ -7,10 +7,10 @@ function caps(patch: Partial<SiteCapabilities>) {
 }
 
 describe("isStoreNavPathVisible", () => {
-  it("hides support navigation when customer service/download capability is disabled", () => {
-    const disabled = caps({ customerServiceDownloadEnabled: false });
+  it("keeps support/download out of the global store navigation", () => {
+    const enabled = caps({ customerServiceDownloadEnabled: true });
 
-    expect(isStoreNavPathVisible("/support-download?tab=support", disabled)).toBe(false);
+    expect(isStoreNavPathVisible("/support-download?tab=support", enabled)).toBe(false);
   });
 
   it("hides mall-only navigation when mall capability is disabled", () => {
@@ -18,6 +18,12 @@ describe("isStoreNavPathVisible", () => {
 
     expect(isStoreNavPathVisible("/categories", disabled)).toBe(false);
     expect(isStoreNavPathVisible("/cart", disabled)).toBe(false);
+  });
+
+  it("hides coupon navigation when coupon capability is disabled", () => {
+    const disabled = caps({ couponEnabled: false });
+
+    expect(isStoreNavPathVisible("/coupons", disabled)).toBe(false);
   });
 
   it("keeps always-on store navigation visible", () => {

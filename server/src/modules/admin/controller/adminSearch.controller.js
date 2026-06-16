@@ -1,5 +1,5 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
-const searchApi = /** @type {any} */ (require('../../search')).api || {};
+const searchApi = /** @type {any} */ (require('../../search/publicApi')) || {};
 
 exports.listTerms = asyncRoute(async (req, res) => {
   res.success(await searchApi.listAdminSearchTerms(req.query || {}));

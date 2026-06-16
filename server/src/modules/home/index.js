@@ -1,12 +1,10 @@
 const { Router } = require('express');
 const routes = require('./routes/home.routes');
-const homeService = require('./service/home.service');
+const publicApi = require('./publicApi');
 
 const router = Router();
 
-/** @type {any} */ (router).api = {
-  invalidateHomeBootstrapCache: homeService.invalidateHomeBootstrapCache,
-};
+/** @type {any} */ (router).api = publicApi;
 
 router.use(routes);
 

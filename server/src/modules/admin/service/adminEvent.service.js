@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const repo = require('../repository/adminEvent.repository');
 const eventBus = require('./adminEventBus.service');
-const telegramModule = require('../../telegram');
+const telegramApi = /** @type {any} */ (require('../../telegram/publicApi'));
 
 const VALID_STATUSES = new Set(['open', 'acknowledged', 'in_progress', 'resolved', 'auto_resolved', 'ignored', 'expired']);
 const ACTIVE_STATUSES = new Set(['open', 'acknowledged', 'in_progress']);
@@ -210,7 +210,7 @@ function publishChange(type, record) {
 }
 
 function getTelegramApi() {
-  return /** @type {any} */ (telegramModule).api || {};
+  return telegramApi || {};
 }
 
 function requireTelegramApi(name) {

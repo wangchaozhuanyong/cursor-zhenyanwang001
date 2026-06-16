@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 
 const servicePath = require.resolve('../src/modules/search/service/search.service');
 const repoPath = require.resolve('../src/modules/search/repository/search.repository');
-const analyticsPath = require.resolve('../src/modules/analytics');
+const analyticsPath = require.resolve('../src/modules/analytics/publicApi');
 
 function loadService(repoOverrides = {}) {
   delete require.cache[servicePath];
@@ -39,9 +39,7 @@ function loadService(repoOverrides = {}) {
     filename: analyticsPath,
     loaded: true,
     exports: {
-      api: {
-        trackEvent: async () => {},
-      },
+      trackEvent: async () => {},
     },
   };
 
@@ -88,9 +86,7 @@ test('trackSearch uses provided result_count and writes analytics event', async 
     filename: analyticsPath,
     loaded: true,
     exports: {
-      api: {
-        trackEvent: async (payload) => calls.push(payload),
-      },
+      trackEvent: async (payload) => calls.push(payload),
     },
   };
 

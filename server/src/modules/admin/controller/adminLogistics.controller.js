@@ -1,7 +1,7 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 
 function getLogisticsApi() {
-  return /** @type {any} */ (require('../../logistics')).api || {};
+  return /** @type {any} */ (require('../../logistics/publicApi')) || {};
 }
 
 exports.refreshOrderTracking = asyncRoute(async (req, res) => {

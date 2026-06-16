@@ -19,6 +19,24 @@ async function selectInventorySummary() {
        (SELECT COUNT(*) FROM products p WHERE p.deleted_at IS NULL) AS total_products,
        (SELECT COUNT(*) FROM product_variants v JOIN products p ON p.id = v.product_id WHERE p.deleted_at IS NULL AND v.deleted_at IS NULL) AS total_skus,
        (SELECT COALESCE(SUM(v.stock),0) FROM product_variants v JOIN products p ON p.id = v.product_id WHERE p.deleted_at IS NULL AND v.deleted_at IS NULL) AS total_stock,
+       (SELECT COALESCE(SUM(COALESCE(v.reserved_stock,0)),0) FROM product_variants v JOIN products p ON p.id = v.product_id WHERE p.deleted_at IS NULL AND v.deleted_at IS NULL) AS total_reserved_stock,
+       (SELECT COALESCE(SUM(GREATEST(v.stock - COALESCE(v.reserved_stock,0),0)),0) FROM product_variants v JOIN products p ON p.id = v.product_id WHERE p.deleted_at IS NULL AND v.deleted_at IS NULL) AS total_available_stock,
+       (SELECT COALESCE(SUM(oi.qty),0)
+          FROM order_items oi
+          JOIN orders o ON o.id = oi.order_id
+         WHERE oi.variant_id IS NOT NULL
+           AND oi.variant_id <> ''
+           AND o.status = 'pending'
+           AND (o.payment_status IS NULL OR o.payment_status <> 'paid')
+           AND COALESCE(oi.line_status, 'active') = 'active') AS pending_order_locked_stock,
+       (SELECT COUNT(DISTINCT o.id)
+          FROM order_items oi
+          JOIN orders o ON o.id = oi.order_id
+         WHERE oi.variant_id IS NOT NULL
+           AND oi.variant_id <> ''
+           AND o.status = 'pending'
+           AND (o.payment_status IS NULL OR o.payment_status <> 'paid')
+           AND COALESCE(oi.line_status, 'active') = 'active') AS pending_order_count,
        (SELECT COUNT(*) FROM product_variants v JOIN products p ON p.id = v.product_id WHERE p.deleted_at IS NULL AND v.deleted_at IS NULL AND v.stock <= COALESCE(v.stock_warning_threshold,5)) AS low_stock_skus,
        (SELECT COUNT(*) FROM product_variants v JOIN products p ON p.id = v.product_id WHERE p.deleted_at IS NULL AND v.deleted_at IS NULL AND v.stock <= 0) AS out_of_stock_skus,
        (SELECT COALESCE(SUM(quantity_delta),0) FROM inventory_stock_records WHERE DATE(created_at)=CURDATE() AND change_type='in') AS today_in_qty,
@@ -65,6 +83,9 @@ async function selectSkusPage(where, params, sortSql, pageSize, offset) {
        v.stock,
        COALESCE(v.unit_name, '件') AS unit_name,
        v.reserved_stock,
+       COALESCE(po.pending_order_locked_stock,0) AS pending_order_locked_stock,
+       COALESCE(po.pending_order_count,0) AS pending_order_count,
+       (COALESCE(v.reserved_stock,0) + COALESCE(po.pending_order_locked_stock,0)) AS locked_stock,
        (v.stock - COALESCE(v.reserved_stock,0)) AS available_stock,
        v.stock_warning_threshold,
        ((v.stock - COALESCE(v.reserved_stock,0)) <= COALESCE(v.stock_lower_limit, v.stock_warning_threshold,5)) AS low_stock,
@@ -73,6 +94,20 @@ async function selectSkusPage(where, params, sortSql, pageSize, offset) {
      FROM product_variants v
      JOIN products p ON p.id = v.product_id
      LEFT JOIN categories c ON c.id = p.category_id
+     LEFT JOIN (
+       SELECT
+         oi.variant_id,
+         COALESCE(SUM(oi.qty),0) AS pending_order_locked_stock,
+         COUNT(DISTINCT o.id) AS pending_order_count
+       FROM order_items oi
+       JOIN orders o ON o.id = oi.order_id
+       WHERE oi.variant_id IS NOT NULL
+         AND oi.variant_id <> ''
+         AND o.status = 'pending'
+         AND (o.payment_status IS NULL OR o.payment_status <> 'paid')
+         AND COALESCE(oi.line_status, 'active') = 'active'
+       GROUP BY oi.variant_id
+     ) po ON po.variant_id = v.id
      ${where}
      ${sortSql}
      LIMIT ? OFFSET ?`,
@@ -315,12 +350,29 @@ async function selectSkuExportRows(where, params, sortSql) {
        v.stock,
        COALESCE(v.unit_name, '件') AS unit_name,
        v.reserved_stock,
+       COALESCE(po.pending_order_locked_stock,0) AS pending_order_locked_stock,
+       COALESCE(po.pending_order_count,0) AS pending_order_count,
+       (COALESCE(v.reserved_stock,0) + COALESCE(po.pending_order_locked_stock,0)) AS locked_stock,
        (v.stock - COALESCE(v.reserved_stock,0)) AS available_stock,
        v.stock_warning_threshold,
        v.updated_at
      FROM product_variants v
      JOIN products p ON p.id = v.product_id
      LEFT JOIN categories c ON c.id = p.category_id
+     LEFT JOIN (
+       SELECT
+         oi.variant_id,
+         COALESCE(SUM(oi.qty),0) AS pending_order_locked_stock,
+         COUNT(DISTINCT o.id) AS pending_order_count
+       FROM order_items oi
+       JOIN orders o ON o.id = oi.order_id
+       WHERE oi.variant_id IS NOT NULL
+         AND oi.variant_id <> ''
+         AND o.status = 'pending'
+         AND (o.payment_status IS NULL OR o.payment_status <> 'paid')
+         AND COALESCE(oi.line_status, 'active') = 'active'
+       GROUP BY oi.variant_id
+     ) po ON po.variant_id = v.id
      ${where}
      ${sortSql}`,
     params,
@@ -653,5 +705,4 @@ module.exports = {
   selectConversionOrdersPage,
   selectConversionOrderById,
 };
-
 

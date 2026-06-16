@@ -56,7 +56,7 @@ export function shipOrder(
 }
 
 export function refreshOrderLogistics(id: string) {
-  return post<Pick<Order, "logistics_provider" | "logistics_timeline">>(`/admin/orders/${id}/logistics/refresh`);
+  return post<Pick<Order, "logistics_provider" | "logistics_timeline" | "logistics_snapshot"> & { tracking_notice?: string }>(`/admin/orders/${id}/logistics/refresh`);
 }
 
 export function previewShortageAdjustment(id: string, payload: ShortageAdjustmentRequest) {

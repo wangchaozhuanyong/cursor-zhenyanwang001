@@ -228,7 +228,7 @@ export default function Profile() {
   const showInstallShortcut = browserEnv.platform !== "desktop";
   const installShortcutItem = useMemo<ProfileServiceItem | null>(
     () => showInstallShortcut && capabilities.customerServiceDownloadEnabled
-      ? { key: "install", label: "添加桌面", icon: Smartphone, path: "/support-download?tab=download", auth: false }
+      ? { key: "install", label: "添加桌面/下载", icon: Smartphone, path: "/support-download?tab=download", auth: false }
       : null,
     [capabilities.customerServiceDownloadEnabled, showInstallShortcut],
   );

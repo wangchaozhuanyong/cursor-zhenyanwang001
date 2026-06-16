@@ -1,11 +1,9 @@
 const { Router } = require('express');
-const analyticsService = require('./service/analytics.service');
+const publicApi = require('./publicApi');
 
 const router = Router();
 router.use('/analytics', require('./routes/analytics.routes'));
 
-/** @type {any} */ (router).api = {
-  trackEvent: analyticsService.trackEvent,
-};
+/** @type {any} */ (router).api = publicApi;
 
 module.exports = router;

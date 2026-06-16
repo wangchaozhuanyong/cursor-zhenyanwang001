@@ -1,7 +1,7 @@
 import * as couponCampaignApi from "@/api/admin/couponCampaign";
 import { unwrapPaginated } from "@/services/responseNormalize";
 import type { PaginatedData } from "@/types/common";
-import type { CouponCampaign, CouponCampaignPayload } from "@/types/couponCampaign";
+import type { CouponCampaign, CouponCampaignPayload, CouponCampaignStatusAction } from "@/types/couponCampaign";
 
 export type CouponCampaignListParams = couponCampaignApi.CouponCampaignListParams;
 
@@ -30,6 +30,14 @@ export async function setCouponCampaignDisabled(id: string, disabled: boolean): 
     disabled,
     status: disabled ? "disabled" : "active",
   });
+  return res.data;
+}
+
+export async function updateCouponCampaignAction(
+  id: string,
+  action: CouponCampaignStatusAction,
+): Promise<CouponCampaign> {
+  const res = await couponCampaignApi.updateCouponCampaignStatus(id, { action });
   return res.data;
 }
 

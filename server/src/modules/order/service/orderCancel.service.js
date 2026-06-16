@@ -4,13 +4,14 @@ const { canUserCancel } = require('../orderStateMachine');
 const repo = require('../repository/order.repository');
 const checkoutAbandonmentRepo = require('../repository/checkoutAbandonment.repository');
 const orderPoints = require('./orderPoints.service');
+const inventoryLockService = require('./inventoryLock.service');
 
 function getLoyaltyApi() {
-  return /** @type {any} */ (require('../../loyalty')).api || {};
+  return /** @type {any} */ (require('../../loyalty/publicApi')) || {};
 }
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function requireApiMethod(api, name) {
@@ -35,22 +36,21 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
   const pointReason = String(options.pointReason || `订单取消回滚积分 ${orderNo}`);
 
   await repo.updateOrderCancelled(conn, orderId, cancelReason);
+  await repo.releasePromotionUsagesByOrderId(conn, orderId);
   await checkoutAbandonmentRepo.markClosedByOrderId(conn, orderId);
 
   const lineItems = await repo.selectOrderItemQtyRows(conn, orderId);
-  for (const item of lineItems) {
-    if (!item.variant_id) {
+  const releaseResult = await inventoryLockService.releaseOrderInventory(conn, {
+    orderId,
+    orderNo,
+    items: lineItems,
+    reason: stockReason,
+  });
+  if (!releaseResult.ok) {
+    if (releaseResult.reason === 'missing_variant') {
       throw new ValidationError(`订单 ${orderNo} 存在缺失 SKU 的明细，无法执行库存释放`);
     }
-    await repo.restoreVariantStock(conn, item.variant_id, item.qty, {
-      refType: 'order',
-      refId: orderId,
-      orderNo,
-      reason: stockReason,
-    });
-    if (item.activity_id) {
-      await repo.decrementActivitySold(conn, item.activity_id, item.product_id, item.qty);
-    }
+    throw new ValidationError(`订单 ${orderNo} 库存释放失败，请人工复核`);
   }
 
   if (String(order.order_type || '') === 'points_gift') {

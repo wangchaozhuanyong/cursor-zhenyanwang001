@@ -97,6 +97,7 @@ function buildCouponSnapshot(coupon, claimedAt = new Date()) {
     follow_activity_id: coupon.follow_activity_id || null,
     description: coupon.description || '',
     display_badge: coupon.display_badge || '',
+    display_category: coupon.display_category || '',
     claimed_at: claimedAt.toISOString(),
   };
 }
@@ -137,6 +138,7 @@ function buildEffectiveCoupon(row = {}) {
     description: source.description || row.description || '',
     scope_type: source.scope_type || row.scope_type || 'all',
     display_badge: source.display_badge || row.display_badge || '',
+    display_category: source.display_category || row.display_category || '',
     category_ids: Array.isArray(source.category_ids) ? source.category_ids : parseJsonArray(row.category_ids),
     category_names: Array.isArray(source.category_names) ? source.category_names : parseJsonArray(row.category_names),
     usable_scope_type: source.usable_scope_type || row.usable_scope_type || 'all',

@@ -1,4 +1,5 @@
 import * as orderApi from "@/api/modules/order";
+import type { RequestOptions } from "@/api/request";
 import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayload, OrderSummary } from "@/types/order";
 import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { CheckoutCouponsResult } from "@/types/coupon";
@@ -46,8 +47,10 @@ export async function fetchOrderSummary(): Promise<OrderSummary> {
   }
 }
 
-export async function fetchOrderById(id: string) {
-  const res = await orderApi.getOrderById(id);
+type OrderReadOptions = Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal" | "timeoutMs" | "skipAuthRetry" | "suppressAuthExpired">;
+
+export async function fetchOrderById(id: string, options?: OrderReadOptions) {
+  const res = await orderApi.getOrderById(id, options);
   return res.data;
 }
 

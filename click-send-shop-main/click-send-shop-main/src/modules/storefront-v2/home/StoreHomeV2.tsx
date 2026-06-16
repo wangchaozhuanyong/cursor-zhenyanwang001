@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { ClipboardList, PackageSearch, RefreshCw, ShoppingCart, Sparkles, Ticket, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import HomeTrustBar from "@/components/HomeTrustBar";
@@ -29,6 +29,7 @@ import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules";
 import { STORE_COPY } from "@/constants/storeCopy";
+import { usePublicLocale } from "@/i18n/publicLocale";
 import type { FooterNavItem } from "@/types/content";
 import { useClientDesignStyle } from "../design/useClientDesignStyle";
 import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
@@ -53,6 +54,7 @@ export default function StoreHomeV2() {
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
+  const { localizedPath } = usePublicLocale();
   const clientStyle = useClientDesignStyle();
   const { settings: homeModules, ready: homeModulesReady } = useHomeModuleSettings();
   const { banners, loading: bannersLoading } = useHomeBanners();
@@ -141,7 +143,7 @@ export default function StoreHomeV2() {
     const types: Parameters<typeof buildHomeCampaignEntrances>[0] = [];
     if (isHomeModuleEnabled(homeModules, "flash_sale_section", audience)) types.push("flash_sale");
     if (isHomeModuleEnabled(homeModules, "coupon_center", audience)) types.push("coupon", "new_user_gift");
-    if (isHomeModuleEnabled(homeModules, "full_reduction_notice", audience)) types.push("full_reduction");
+    if (isHomeModuleEnabled(homeModules, "full_reduction_notice", audience)) types.push("full_reduction", "full_discount");
     return buildHomeCampaignEntrances(types);
   }, [audience, homeModules, homeModulesReady]);
 
@@ -185,7 +187,7 @@ export default function StoreHomeV2() {
       window.open(path, "_blank", "noopener,noreferrer");
       return;
     }
-    navigate(appendThemePreviewParams(path));
+    navigate(appendThemePreviewParams(localizedPath(path)));
   };
 
   const buildCampaignEventContext = useCallback(
@@ -266,6 +268,12 @@ export default function StoreHomeV2() {
           bannerEnabled={showBanner}
           themeConfig={themeConfig}
           autoRotateMs={homeModules.bannerAutoplaySeconds * 1000}
+          onNavigate={navigatePath}
+        />
+
+        <HomeProcurementCommand
+          couponEnabled={siteCapabilities.couponEnabled}
+          pointsEnabled={siteCapabilities.pointsEnabled}
           onNavigate={navigatePath}
         />
 
@@ -387,13 +395,111 @@ export default function StoreHomeV2() {
   );
 }
 
+function HomeProcurementCommand({
+  couponEnabled,
+  pointsEnabled,
+  onNavigate,
+}: {
+  couponEnabled: boolean;
+  pointsEnabled: boolean;
+  onNavigate: (path: string) => void;
+}) {
+  const { t } = usePublicLocale();
+  const actions = [
+    {
+      key: "categories",
+      label: t("homeCommand.action.categories.label"),
+      description: t("homeCommand.action.categories.desc"),
+      icon: PackageSearch,
+      path: "/categories",
+      tone: "jade",
+      enabled: true,
+    },
+    {
+      key: "new",
+      label: t("homeCommand.action.new.label"),
+      description: t("homeCommand.action.new.desc"),
+      icon: Sparkles,
+      path: NEW_ARRIVAL_CATEGORY_PATH,
+      tone: "gold",
+      enabled: true,
+    },
+    {
+      key: "coupons",
+      label: t("homeCommand.action.coupons.label"),
+      description: t("homeCommand.action.coupons.desc"),
+      icon: Ticket,
+      path: "/coupons",
+      tone: "wine",
+      enabled: couponEnabled,
+    },
+    {
+      key: "cart",
+      label: t("homeCommand.action.cart.label"),
+      description: t("homeCommand.action.cart.desc"),
+      icon: ShoppingCart,
+      path: "/cart",
+      tone: "teal",
+      enabled: true,
+    },
+    {
+      key: "orders",
+      label: t("homeCommand.action.orders.label"),
+      description: t("homeCommand.action.orders.desc"),
+      icon: ClipboardList,
+      path: "/orders",
+      tone: "slate",
+      enabled: true,
+    },
+  ].filter((item) => item.enabled);
+
+  return (
+    <section className="store-home-command-panel" aria-label={t("homeCommand.title")}>
+      <div className="store-home-command-panel__intro">
+        <h2>{t("homeCommand.title")}</h2>
+      </div>
+      <div className="store-home-command-panel__actions">
+        {actions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <UnifiedButton
+              key={action.key}
+              type="button"
+              onClick={() => onNavigate(action.path)}
+              className="store-home-command-card"
+              data-command-tone={action.tone}
+            >
+              <span className="store-home-command-card__icon">
+                <Icon size={18} aria-hidden />
+              </span>
+              <span className="store-home-command-card__copy">
+                <strong>{action.label}</strong>
+              </span>
+            </UnifiedButton>
+          );
+        })}
+      </div>
+      {pointsEnabled ? (
+        <UnifiedButton
+          type="button"
+          className="store-home-command-panel__member"
+          onClick={() => onNavigate("/points")}
+        >
+          <UserRound size={16} aria-hidden />
+          <span>{t("homeCommand.memberCta")}</span>
+        </UnifiedButton>
+      ) : null}
+    </section>
+  );
+}
+
 function isCampaignEnabled(
   campaign: StorefrontCampaignVm,
   settings: Parameters<typeof isHomeModuleEnabled>[0],
   audience: "member" | "guest",
 ) {
   if (campaign.type === "flash_sale") return isHomeModuleEnabled(settings, "flash_sale_section", audience);
-  if (campaign.type === "full_reduction") return isHomeModuleEnabled(settings, "full_reduction_notice", audience);
+  if (campaign.type === "full_reduction" || campaign.type === "full_discount") return isHomeModuleEnabled(settings, "full_reduction_notice", audience);
   if (campaign.type === "coupon" || campaign.type === "new_user_gift") return isHomeModuleEnabled(settings, "coupon_center", audience);
   if (campaign.type === "promotion") return isHomeModuleEnabled(settings, "promotion_banner", audience);
   return true;

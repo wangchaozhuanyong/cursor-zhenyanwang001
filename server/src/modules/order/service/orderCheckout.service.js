@@ -1,12 +1,12 @@
 const { ForbiddenError } = require('../../../errors');
-const orderPricing = require('../order.pricing');
+const pricingService = require('./pricing.service');
 
 function getSiteCapabilitiesApi() {
-  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+  return /** @type {any} */ (require('../../siteCapabilities/publicApi')) || {};
 }
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 async function assertOrderCapabilityUsage(body = {}) {
@@ -67,7 +67,7 @@ async function getCheckoutCoupons(userId, body) {
       continue;
     }
     try {
-      const pricing = await orderPricing.buildOrderPricing(userId, { ...body, coupon_id: row.id });
+      const pricing = await pricingService.buildCheckoutPricing(userId, { ...body, coupon_id: row.id });
       const discount = Number(pricing.couponDiscount || 0);
       if (discount > 0) usable.push({ ...base, discount_amount: discount, reason: '可使用' });
       else unusable.push({ ...base, reason: '优惠券无法用于当前订单' });
@@ -86,7 +86,7 @@ async function getCheckoutCoupons(userId, body) {
 
 async function previewOrder(userId, body) {
   await assertOrderCapabilityUsage(body);
-  const pricing = await orderPricing.buildOrderPricing(userId, body, null);
+  const pricing = await pricingService.buildCheckoutPricing(userId, body, null);
   return {
     data: {
       goods_amount: pricing.rawAmount,
@@ -114,6 +114,11 @@ async function previewOrder(userId, body) {
       reward_cash_discount_amount: pricing.loyalty?.reward_cash_discount_amount || 0,
       discount_lines: pricing.discount_lines,
       points_bonus_lines: pricing.points_bonus_lines || [],
+      promotion_evaluation: pricing.promotion_evaluation || null,
+      promotion_engine_version: pricing.promotion_evaluation?.engine_version || '',
+      pricing_engine_version: pricing.pricing_engine_version || '',
+      pricing_engine_source: pricing.source || '',
+      order_snapshot: pricing.promotion_evaluation?.order_snapshot || null,
       tax: pricing.taxSnap,
     },
   };

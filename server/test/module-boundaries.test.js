@@ -15,3 +15,15 @@ test('module boundaries check passes in strict mode', () => {
   }
   assert.match(result.stdout, /OK/);
 });
+
+test('public api boundaries check rejects router.api consumers', () => {
+  const script = path.join(__dirname, '..', 'scripts', 'check-public-api-boundaries.js');
+  const result = spawnSync(process.execPath, [script], {
+    cwd: path.join(__dirname, '..'),
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    assert.fail(result.stderr || result.stdout || 'check-public-api-boundaries failed');
+  }
+  assert.match(result.stdout, /OK/);
+});

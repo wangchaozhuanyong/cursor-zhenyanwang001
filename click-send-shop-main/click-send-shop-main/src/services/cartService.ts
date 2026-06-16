@@ -6,6 +6,11 @@ export async function fetchCart() {
   return res.data;
 }
 
+export async function fetchCartPromotionPreview() {
+  const res = await cartApi.getCartPreview();
+  return res.data;
+}
+
 export async function addToCart(productId: string, qty: number, variantId = "", skuCode = "") {
   const res = await cartApi.addToCart(productId, qty, variantId, skuCode);
   return res.data;

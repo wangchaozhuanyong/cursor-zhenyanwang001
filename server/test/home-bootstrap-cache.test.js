@@ -4,9 +4,9 @@ const assert = require('node:assert/strict');
 function loadHomeServiceWithMocks(t, options = {}) {
   const couponCapabilityEnabled = options.couponEnabled !== false;
   const servicePath = require.resolve('../src/modules/home/service/home.service');
-  const productPath = require.resolve('../src/modules/product');
-  const marketingPath = require.resolve('../src/modules/marketing');
-  const capabilitiesPath = require.resolve('../src/modules/siteCapabilities');
+  const productPath = require.resolve('../src/modules/product/publicApi');
+  const marketingPath = require.resolve('../src/modules/marketing/publicApi');
+  const capabilitiesPath = require.resolve('../src/modules/siteCapabilities/publicApi');
   const instancePath = require.resolve('../src/config/instance');
   const storagePath = require.resolve('../src/utils/objectStorage');
 
@@ -35,27 +35,25 @@ function loadHomeServiceWithMocks(t, options = {}) {
     filename: productPath,
     loaded: true,
     exports: {
-      api: {
-        async getPublicSiteInfo() {
-          calls.siteInfo += 1;
-          return { name: 'Demo Mall' };
-        },
-        async getPublicHomeOps() {
-          calls.homeOps += 1;
-          return { sections: [] };
-        },
-        async getBanners() {
-          calls.banners += 1;
-          return [];
-        },
-        async getCategories() {
-          calls.categories += 1;
-          return [];
-        },
-        async getHomeProducts() {
-          calls.products += 1;
-          return { hot: [], new_arrivals: [], recommended: [] };
-        },
+      async getPublicSiteInfo() {
+        calls.siteInfo += 1;
+        return { name: 'Demo Mall' };
+      },
+      async getPublicHomeOps() {
+        calls.homeOps += 1;
+        return { sections: [] };
+      },
+      async getBanners() {
+        calls.banners += 1;
+        return [];
+      },
+      async getCategories() {
+        calls.categories += 1;
+        return [];
+      },
+      async getHomeProducts() {
+        calls.products += 1;
+        return { hot: [], new_arrivals: [], recommended: [] };
       },
     },
   };
@@ -65,22 +63,20 @@ function loadHomeServiceWithMocks(t, options = {}) {
     filename: marketingPath,
     loaded: true,
     exports: {
-      api: {
-        async getFlashSaleForHome() { return { data: null }; },
-        async getActivitiesByPosition() { return { data: [] }; },
-        async getFullReductionNotices() { return { data: [] }; },
-        async getCouponZone() {
-          calls.couponZone += 1;
-          return { data: { coupons: [{ id: 'zone-coupon' }] } };
-        },
-        async getCouponCenter() {
-          calls.couponCenter += 1;
-          return { data: { coupons: [{ id: 'gift-coupon' }, { id: 'center-coupon' }] } };
-        },
-        async getNewUserGift() {
-          calls.newUserGift += 1;
-          return { data: { coupons: [{ id: 'gift-coupon' }] } };
-        },
+      async getFlashSaleForHome() { return { data: null }; },
+      async getActivitiesByPosition() { return { data: [] }; },
+      async getFullReductionNotices() { return { data: [] }; },
+      async getCouponZone() {
+        calls.couponZone += 1;
+        return { data: { coupons: [{ id: 'zone-coupon' }] } };
+      },
+      async getCouponCenter() {
+        calls.couponCenter += 1;
+        return { data: { coupons: [{ id: 'gift-coupon' }, { id: 'center-coupon' }] } };
+      },
+      async getNewUserGift() {
+        calls.newUserGift += 1;
+        return { data: { coupons: [{ id: 'gift-coupon' }] } };
       },
     },
   };
@@ -90,16 +86,14 @@ function loadHomeServiceWithMocks(t, options = {}) {
     filename: capabilitiesPath,
     loaded: true,
     exports: {
-      api: {
-        async getSiteCapabilities() {
-          calls.siteCapabilities += 1;
-          return { couponEnabled: couponCapabilityEnabled };
-        },
-        async isCapabilityEnabled(key) {
-          assert.equal(key, 'couponEnabled');
-          calls.couponEnabled += 1;
-          return couponCapabilityEnabled;
-        },
+      async getSiteCapabilities() {
+        calls.siteCapabilities += 1;
+        return { couponEnabled: couponCapabilityEnabled };
+      },
+      async isCapabilityEnabled(key) {
+        assert.equal(key, 'couponEnabled');
+        calls.couponEnabled += 1;
+        return couponCapabilityEnabled;
       },
     },
   };

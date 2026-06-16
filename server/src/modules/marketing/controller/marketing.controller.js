@@ -17,6 +17,20 @@ exports.getByPosition = asyncRoute(async (req, res) => {
   res.success(result.data);
 });
 
+exports.getPromotions = asyncRoute(async (req, res) => {
+  const result = await service.getPromotions(req.query);
+  res.success(result.data);
+});
+
+exports.getPromotionBySlug = asyncRoute(async (req, res) => {
+  const result = await service.getPromotionBySlug(req.params.slug, getCurrentUserContext(req));
+  if (!result.data) {
+    res.status(404).json({ code: 404, message: '活动不存在或已结束', data: null });
+    return;
+  }
+  res.success(result.data);
+});
+
 exports.getCouponCenter = asyncRoute(async (req, res) => {
   const result = await service.getCouponCenter(req.query, getCurrentUserContext(req));
   res.success(result.data);

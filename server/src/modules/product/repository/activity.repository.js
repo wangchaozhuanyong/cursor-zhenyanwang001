@@ -49,6 +49,7 @@ async function selectActiveActivitiesByProductIds(productIds) {
      WHERE ap.product_id IN (${ids.map(() => '?').join(',')})
        AND a.deleted_at IS NULL
        AND a.disabled = 0
+       AND a.status NOT IN ('draft', 'disabled', 'paused', 'ended', 'archived')
        AND NOW() BETWEEN a.start_at AND a.end_at
        AND ap.activity_price > 0
        AND ap.activity_stock > ap.sold_count
@@ -61,7 +62,6 @@ async function selectActiveActivitiesByProductIds(productIds) {
 module.exports = {
   selectActiveActivitiesByProductIds,
 };
-
 
 
 

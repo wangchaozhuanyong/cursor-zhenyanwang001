@@ -111,6 +111,9 @@ export default function InventorySkusTab({
           const specName = String(sku.variant_title || sku.spec_text || L("默认规格")).replace(/\s+/g, " ").trim();
           const skuCode = String(sku.sku_code ?? "").trim();
           const updatedLabel = sku.updated_at ? formatDateTime(sku.updated_at) : "—";
+          const reservedStock = Number(sku.reserved_stock || 0);
+          const pendingLockedStock = Number(sku.pending_order_locked_stock || 0);
+          const lockedStock = Number(sku.locked_stock ?? reservedStock + pendingLockedStock);
           return (
             <>
               <td className={inventorySkuTd("w-10")}>
@@ -139,6 +142,18 @@ export default function InventorySkusTab({
                 <span className={cn("text-sm leading-none", sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium")}>
                   {sku.available_stock} {unit}
                 </span>
+              </td>
+              <td className={inventorySkuTd()}>
+                <div className="leading-tight">
+                  <span className={cn("text-sm", lockedStock > 0 ? "font-semibold text-foreground" : "text-muted-foreground")}>
+                    {lockedStock} {unit}
+                  </span>
+                  {pendingLockedStock > 0 || reservedStock > 0 ? (
+                    <span className="block text-[11px] text-muted-foreground">
+                      {L("未付")} {pendingLockedStock} / {L("保留")} {reservedStock}
+                    </span>
+                  ) : null}
+                </div>
               </td>
               <td className={inventorySkuTd()}>
                 <span className="text-sm leading-none text-muted-foreground">{sku.stock} {unit}</span>

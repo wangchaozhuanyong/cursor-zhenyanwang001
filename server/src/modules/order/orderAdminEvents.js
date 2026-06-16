@@ -1,7 +1,7 @@
 /** 订单域管理端事件通知（经 admin 模块公开 API） */
 
 function getAdminApi() {
-  return /** @type {any} */ (require('../admin')).api || {};
+  return /** @type {any} */ (require('../admin/publicApi')) || {};
 }
 
 function publishAdminEvent(event) {

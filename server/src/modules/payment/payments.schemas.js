@@ -19,6 +19,9 @@ const paymentOrderIdParamSchema = z.object({
 const markPaidBodySchema = z.object({
   reason: z.string().trim().max(512).optional(),
   channel_code: z.string().trim().max(64).optional(),
+  payment_channel: z.string().trim().max(64).optional(),
+  payment_reference: z.string().trim().max(128).optional(),
+  admin_remark: z.string().trim().max(512).optional(),
 });
 
 const refundBodySchema = z.object({
@@ -44,6 +47,10 @@ const listAdminQuerySchema = z.object({
   keyword: z.string().trim().max(128).optional(),
   orderId: z.string().trim().optional(),
   provider: z.string().trim().max(32).optional(),
+  eventType: z.string().trim().max(64).optional(),
+  verifyStatus: z.string().trim().max(24).optional(),
+  processingResult: z.string().trim().max(32).optional(),
+  reviewStatus: z.string().trim().max(24).optional(),
 });
 
 const createReconciliationBodySchema = z.object({
@@ -51,7 +58,25 @@ const createReconciliationBodySchema = z.object({
   provider: z.string().trim().min(1).max(32),
   channel_code: z.string().trim().max(64).optional(),
   diff_amount: z.coerce.number().optional(),
+  provider_report_amount: z.coerce.number().optional(),
+  provider_fee_amount: z.coerce.number().optional(),
+  provider_reference: z.string().trim().max(128).optional(),
+  difference_reason: z.string().trim().max(512).optional(),
   notes: z.string().trim().max(512).optional(),
+});
+
+const reviewPaymentEventBodySchema = z.object({
+  review_status: z.enum(['pending', 'needs_review', 'confirmed', 'needs_followup', 'rejected', 'ignored']).default('confirmed'),
+  review_note: z.string().trim().max(512).optional(),
+  notes: z.string().trim().max(512).optional(),
+});
+
+const reviewReconciliationBodySchema = z.object({
+  review_status: z.enum(['confirmed', 'needs_followup', 'rejected', 'ignored']).default('confirmed'),
+  review_notes: z.string().trim().max(512).optional(),
+  review_note: z.string().trim().max(512).optional(),
+  notes: z.string().trim().max(512).optional(),
+  difference_reason: z.string().trim().max(512).optional(),
 });
 
 const webhookProviderBodySchema = z.object({
@@ -75,9 +100,10 @@ const webhookProviderBodySchema = z.object({
 const adminChannelIdParamSchema = z.object({ id: z.string().trim().min(1) });
 const adminOrderIdParamSchema = z.object({ orderId: z.string().trim().min(1) });
 const adminEventIdParamSchema = z.object({ eventId: z.string().trim().min(1) });
+const adminReconciliationIdParamSchema = z.object({ id: z.string().trim().min(1) });
 
 const webhookProviderParamSchema = z.object({
-  provider: z.enum(['manual', 'malaysia-local', 'malaysia_local']),
+  provider: z.enum(['manual', 'malaysia-local', 'malaysia_local', 'billplz', 'fpx']),
 });
 
 module.exports = {
@@ -89,9 +115,12 @@ module.exports = {
   updateChannelBodySchema,
   listAdminQuerySchema,
   createReconciliationBodySchema,
+  reviewPaymentEventBodySchema,
+  reviewReconciliationBodySchema,
   webhookManualBodySchema: webhookProviderBodySchema,
   adminChannelIdParamSchema,
   adminOrderIdParamSchema,
   adminEventIdParamSchema,
+  adminReconciliationIdParamSchema,
   webhookProviderParamSchema,
 };

@@ -15,12 +15,10 @@ import {
   canApplyAfterSale,
   canRepurchaseOrder,
   canUserCancelOrder,
-  getBuyerOrderStatusText,
   getOrderProgressStep,
   hasPendingReview,
   isPendingPayment,
 } from "@/utils/orderBuyerStatus";
-import { labelOrderPaymentMethod, labelPendingPaymentAction } from "@/utils/orderPaymentLabels";
 import { formatDateTime } from "@/utils/formatDateTime";
 import {
   getOrderLogisticsSnapshot,
@@ -37,8 +35,14 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
-
-const steps = ["待付款", "已付款", "已发货", "已完成"];
+import { usePublicLocale } from "@/i18n/publicLocale";
+import {
+  getBuyerOrderStatusTextLocalized,
+  getOrderCopy,
+  getOrderStepLabels,
+  labelOrderPaymentMethodLocalized,
+  labelPendingPaymentActionLocalized,
+} from "./orderPageLocale";
 
 const moreActionBtn =
   "flex w-full items-center justify-between rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--theme-text)]";
@@ -88,14 +92,16 @@ function OrderDetailQuickActions({
   className,
 }: OrderDetailQuickActionsProps) {
   const navigate = useNavigate();
+  const { localizedPath, locale } = usePublicLocale();
+  const copy = getOrderCopy(locale);
   return (
     <div className={className}>
       <UnifiedButton
         type="button"
         className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs"
-        onClick={() => navigate(SUPPORT_PAGE_PATH)}
+        onClick={() => navigate(localizedPath(SUPPORT_PAGE_PATH))}
       >
-        客服
+        {copy.support}
       </UnifiedButton>
       {reviewEnabled && hasReview ? (
         <UnifiedButton
@@ -103,7 +109,7 @@ function OrderDetailQuickActions({
           className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs"
           onClick={() => onReview(firstReviewableId)}
         >
-          评价
+          {copy.review}
         </UnifiedButton>
       ) : null}
       <UnifiedButton
@@ -111,14 +117,14 @@ function OrderDetailQuickActions({
         className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs"
         onClick={onAddToCart}
       >
-        加入购物车
+        {copy.addToCart}
       </UnifiedButton>
       <UnifiedButton
         type="button"
         className="min-w-[7rem] flex-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-medium text-[var(--theme-primary-foreground)] md:flex-none"
         onClick={onRepurchase}
       >
-        再买一单
+        {copy.repurchase}
       </UnifiedButton>
     </div>
   );
@@ -131,7 +137,9 @@ function canViewLogistics(order: Order) {
 export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const goBack = useGoBack("/orders");
+  const { localizedPath, locale } = usePublicLocale();
+  const copy = getOrderCopy(locale);
+  const goBack = useGoBack(localizedPath("/orders"));
   const isMobileSheet = usePreferBottomSheet("standard");
   const { currentOrder: order, loading, error, loadOrderDetail, cancelOrder, confirmReceive } = useOrderStore();
   const { addToCart, clearBuyNow, setSelectAll } = useCartStore();
@@ -163,7 +171,7 @@ export default function OrderDetail() {
       setLogisticsInfo(getOrderLogisticsSnapshot(target));
       return;
     }
-    toast.info("暂无物流信息");
+    toast.info(copy.noLogistics);
   };
 
   useEffect(() => {
@@ -186,9 +194,9 @@ export default function OrderDetail() {
       for (const item of order.items) {
         await addToCart(buildRepurchaseProduct(item), item.qty, buildVariantFromOrderItem(item));
       }
-      toast.success("已加入购物车");
+      toast.success(copy.cartAdded);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "加入购物车失败");
+      toast.error(e instanceof Error ? e.message : copy.addCartFailed);
     }
   };
 
@@ -200,10 +208,12 @@ export default function OrderDetail() {
       for (const item of order.items) {
         await addToCart(buildRepurchaseProduct(item), item.qty, buildVariantFromOrderItem(item));
       }
-      toast.success("已为你重新加入购物车");
-      navigate("/checkout", { state: { from: `/orders/${order.id}`, repurchaseOrderId: order.id } });
+      toast.success(copy.cartReadded);
+      navigate(localizedPath("/checkout"), {
+        state: { from: localizedPath(`/orders/${order.id}`), repurchaseOrderId: order.id },
+      });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "再买一单失败");
+      toast.error(e instanceof Error ? e.message : copy.repurchaseFailed);
     }
   };
 
@@ -229,10 +239,10 @@ export default function OrderDetail() {
         setFirstReviewableId(next[0].order_item_id!);
         setConfirmReviewOpen(true);
       } else {
-        toast.success("已确认收货");
+        toast.success(copy.received);
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "确认收货失败");
+      toast.error(e instanceof Error ? e.message : copy.receiveFailed);
     } finally {
       setConfirmingReceive(false);
     }
@@ -261,8 +271,8 @@ export default function OrderDetail() {
     if (canUserCancelOrder(target)) {
       items.push({
         key: "cancel",
-        label: "取消订单",
-        hint: "待付款订单可取消",
+        label: copy.cancelOrder,
+        hint: copy.cancelHint,
         danger: true,
         onClick: () => {
           closeMore();
@@ -273,17 +283,17 @@ export default function OrderDetail() {
     if (target.status === "paid") {
       items.push({
         key: "support",
-        label: "联系客服",
+        label: copy.support,
         onClick: () => {
           closeMore();
-          navigate(SUPPORT_PAGE_PATH);
+          navigate(localizedPath(SUPPORT_PAGE_PATH));
         },
       });
     }
     if (canViewLogistics(target)) {
       items.push({
         key: "logistics",
-        label: "查看物流",
+        label: copy.viewLogistics,
         onClick: () => {
           closeMore();
           viewLogistics(target);
@@ -293,7 +303,7 @@ export default function OrderDetail() {
     if (canApplyAfterSale(target) && (target.status === "shipped" || target.status === "completed")) {
       items.push({
         key: "after-sale",
-        label: "申请售后",
+        label: copy.applyAfterSale,
         onClick: () => {
           closeMore();
           setReturnApplyOpen(true);
@@ -303,18 +313,18 @@ export default function OrderDetail() {
     if ((target.return_request_count || 0) > 0 || target.status === "refunding" || target.status === "refunded") {
       items.push({
         key: "returns",
-        label: "查看售后进度",
+        label: copy.viewAfterSale,
         onClick: () => {
           closeMore();
-          navigate("/returns");
+          navigate(localizedPath("/returns"));
         },
       });
     }
     if (capabilities.reviewEnabled && hasPendingReview(target)) {
       items.push({
         key: "review",
-        label: "评价商品",
-        hint: "为订单内商品写评价",
+        label: copy.reviewProduct,
+        hint: copy.reviewHint,
         onClick: () => {
           closeMore();
           const id = reviewableItems[0]?.order_item_id;
@@ -325,7 +335,7 @@ export default function OrderDetail() {
     if (quickActionProps) {
       items.push({
         key: "cart",
-        label: "加入购物车",
+        label: copy.addToCart,
         onClick: () => {
           closeMore();
           void addOrderToCart();
@@ -335,8 +345,8 @@ export default function OrderDetail() {
     if (canRepurchaseOrder(target)) {
       items.push({
         key: "repurchase",
-        label: "再买一单",
-        hint: "重新加入购物车并结算",
+        label: copy.repurchase,
+        hint: copy.repurchaseHint,
         onClick: () => {
           closeMore();
           setRepurchaseConfirmOpen(true);
@@ -359,7 +369,7 @@ export default function OrderDetail() {
         ))}
         {items.length === 0 ? (
           <p className="rounded-2xl bg-[var(--theme-bg)] px-4 py-5 text-center text-sm text-[var(--theme-text-muted)]">
-            当前订单暂无更多操作
+            {copy.noMoreActions}
           </p>
         ) : null}
       </div>
@@ -368,21 +378,21 @@ export default function OrderDetail() {
 
   if (loading) {
     return (
-      <StoreAccountLayout title="订单详情" onBack={handleBack}>
-        <div className="rounded-2xl border border-border bg-card p-4 text-center text-sm text-muted-foreground">加载中...</div>
+      <StoreAccountLayout title={copy.detailTitle} onBack={handleBack}>
+        <div className="rounded-2xl border border-border bg-card p-4 text-center text-sm text-muted-foreground">{copy.loading}</div>
       </StoreAccountLayout>
     );
   }
 
   if (error || !order) {
     return (
-      <StoreAccountLayout title="订单详情" onBack={handleBack}>
+      <StoreAccountLayout title={copy.detailTitle} onBack={handleBack}>
         <ClientEmptyState
-          title={error ? "订单加载失败" : "订单不存在"}
-          description={error || "该订单可能已删除，或当前链接不可用。"}
+          title={error ? copy.loadFailed : copy.notFound}
+          description={error || copy.unavailable}
           action={
             <ClientButton type="button" onClick={() => id && loadOrderDetail(id)}>
-              重试
+              {copy.retry}
             </ClientButton>
           }
         />
@@ -390,9 +400,9 @@ export default function OrderDetail() {
     );
   }
 
-  const pageTitle = getBuyerOrderStatusText(order);
+  const pageTitle = getBuyerOrderStatusTextLocalized(order, locale);
   const showMobileBar = isMobileSheet;
-  const payActionLabel = labelPendingPaymentAction(order.payment_method, order.order_type);
+  const payActionLabel = labelPendingPaymentActionLocalized(order.payment_method, order.order_type, locale);
 
   const mobilePrimary =
     isPendingPayment(order) ? (
@@ -404,7 +414,7 @@ export default function OrderDetail() {
           void payPendingOrder(order, reload);
         }}
       >
-        {paying ? "处理中..." : payActionLabel}
+        {paying ? copy.applying : payActionLabel}
       </UnifiedButton>
     ) : order.status === "shipped" ? (
       <UnifiedButton
@@ -412,7 +422,7 @@ export default function OrderDetail() {
         className="min-h-10 flex-1 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
         onClick={() => setConfirmReceiveOpen(true)}
       >
-        确认收货
+        {copy.receive}
       </UnifiedButton>
     ) : quickActionProps ? (
       <UnifiedButton
@@ -420,7 +430,7 @@ export default function OrderDetail() {
         className="min-h-10 flex-1 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
         onClick={() => setRepurchaseConfirmOpen(true)}
       >
-        再买一单
+        {copy.repurchase}
       </UnifiedButton>
     ) : null;
 
@@ -432,12 +442,22 @@ export default function OrderDetail() {
     >
       <div className="space-y-3 text-sm">
         <div className="rounded-2xl border border-border bg-card p-3">
-          <p className="text-sm font-medium">当前状态：{pageTitle}</p>
+          <p className="text-sm font-medium">{copy.currentStatus}: {pageTitle}</p>
           <p className="mt-1 text-xs text-muted-foreground">
             {order.logistics_provider?.carrier || order.tracking_no
-              ? `物流：${order.logistics_provider?.carrier || order.carrier || ""} ${order.logistics_provider?.tracking_no || order.tracking_no || ""}`
-              : "暂无物流信息"}
+              ? `${copy.logistics}: ${order.logistics_provider?.carrier || order.carrier || ""} ${order.logistics_provider?.tracking_no || order.tracking_no || ""}`
+              : copy.noLogistics}
           </p>
+          {order.logistics_snapshot?.status_label || order.logistics_status_label ? (
+            <p className="mt-2 rounded-xl bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">
+              {copy.logisticsStatus}: {order.logistics_snapshot?.status_label || order.logistics_status_label}
+            </p>
+          ) : null}
+          {order.logistics_snapshot?.has_exception || order.logistics_exception_type ? (
+            <p className="mt-2 rounded-xl bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] px-3 py-2 text-xs text-[var(--theme-danger)]">
+              {order.logistics_snapshot?.exception_message || order.logistics_exception_message || copy.logisticsException}
+            </p>
+          ) : null}
           {order.status === "shipped" ? (
             <div className="mt-2">
               <OrderAutoConfirmCountdown order={order} />
@@ -445,11 +465,11 @@ export default function OrderDetail() {
           ) : null}
           {order.has_shortage_adjustment || order.shortage_notice ? (
             <p className="mt-2 rounded-xl bg-[color-mix(in_srgb,var(--theme-warning)_14%,var(--theme-surface))] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-warning)_76%,var(--theme-text-on-surface))]">
-              {order.shortage_notice || "部分商品因缺货已移除"}
+              {order.shortage_notice || copy.shortageFallback}
             </p>
           ) : null}
           <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px]">
-            {steps.map((s, i) => (
+            {getOrderStepLabels(locale).map((s, i) => (
               <div key={s}>
                 <div className={`mx-auto mb-1 h-2 w-2 rounded-full ${i <= step ? "bg-[var(--theme-primary)]" : "bg-[var(--theme-border)]"}`} />
                 <span className={i <= step ? "text-[var(--theme-text)]" : "text-muted-foreground"}>{s}</span>
@@ -459,7 +479,7 @@ export default function OrderDetail() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-3 space-y-3">
-          <p className="text-sm font-medium">商品信息</p>
+          <p className="text-sm font-medium">{copy.productInfo}</p>
           {order.items.map((item) => {
             const lineTotal = Number(item.subtotal ?? Number(item.unit_price || 0) * Number(item.qty || 0));
             return (
@@ -472,7 +492,7 @@ export default function OrderDetail() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="store-card-title line-clamp-2">{item.product.name}</p>
-                  <p className="store-caption mt-1 truncate text-muted-foreground">{item.variant_name || item.sku_code || "默认规格"}</p>
+                  <p className="store-caption mt-1 truncate text-muted-foreground">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
                   <p className="store-caption mt-1 text-muted-foreground">
                     RM {Number(item.unit_price ?? item.product.price ?? 0).toFixed(2)} x {item.qty}
                   </p>
@@ -484,38 +504,38 @@ export default function OrderDetail() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-3">
-          <p className="text-sm font-medium">价格明细</p>
+          <p className="text-sm font-medium">{copy.priceDetail}</p>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">商品金额</span>
+            <span className="text-muted-foreground">{copy.productAmount}</span>
             <span>RM {Number(order.raw_amount || 0).toFixed(2)}</span>
           </div>
           {Number(order.discount_amount || 0) > 0 && !(order.discount_lines || []).length ? (
             <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">优惠金额</span>
+              <span className="text-muted-foreground">{copy.discountAmount}</span>
               <span className="text-[var(--theme-danger)]">-RM {Number(order.discount_amount || 0).toFixed(2)}</span>
             </div>
           ) : null}
           {capabilities.pointsEnabled && Number(order.points_discount_amount || 0) > 0 ? (
             <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">积分抵扣</span>
+              <span className="text-muted-foreground">{copy.pointsDeduction}</span>
               <span className="text-[var(--theme-danger)]">-RM {Number(order.points_discount_amount || 0).toFixed(2)}</span>
             </div>
           ) : null}
           {Number(order.reward_cash_discount_amount || 0) > 0 ? (
             <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">返现抵扣</span>
+              <span className="text-muted-foreground">{copy.rewardDeduction}</span>
               <span className="text-[var(--theme-danger)]">-RM {Number(order.reward_cash_discount_amount || 0).toFixed(2)}</span>
             </div>
           ) : null}
           <OrderDiscountLines order={order} />
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">运费</span>
+            <span className="text-muted-foreground">{copy.shippingFee}</span>
             <span className={Number(order.shipping_fee || 0) === 0 ? "text-[var(--theme-success)]" : undefined}>
-              {Number(order.shipping_fee || 0) === 0 ? "包邮" : `RM ${Number(order.shipping_fee || 0).toFixed(2)}`}
+              {Number(order.shipping_fee || 0) === 0 ? copy.freeShipping : `RM ${Number(order.shipping_fee || 0).toFixed(2)}`}
             </span>
           </div>
           <div className="mt-3 flex items-baseline justify-between font-semibold">
-            <span className="store-body-small">实付款</span>
+            <span className="store-body-small">{copy.paidAmount}</span>
             <span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">
               RM {Number(order.total_amount || 0).toFixed(2)}
             </span>
@@ -523,15 +543,15 @@ export default function OrderDetail() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-3">
-          <p className="text-sm font-medium">订单信息</p>
+          <p className="text-sm font-medium">{copy.orderInfo}</p>
           <div className="mt-2 flex items-center justify-between gap-3 text-sm">
-            <span className="text-muted-foreground">订单号</span>
+            <span className="text-muted-foreground">{copy.orderNo}</span>
             <UnifiedButton
               type="button"
               className="inline-flex items-center gap-1 truncate rounded-full border border-[var(--theme-border)] px-2 py-1 text-xs"
               onClick={async () => {
                 await navigator.clipboard.writeText(order.order_no);
-                toast.success("订单号已复制");
+                toast.success(copy.copiedOrderNo);
               }}
             >
               {order.order_no}
@@ -539,46 +559,46 @@ export default function OrderDetail() {
             </UnifiedButton>
           </div>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">下单时间</span>
+            <span className="text-muted-foreground">{copy.createdAt}</span>
             <span>{formatDateTime(order.created_at)}</span>
           </div>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">支付方式</span>
-            <span>{labelOrderPaymentMethod(order.payment_method, order.order_type)}</span>
+            <span className="text-muted-foreground">{copy.paymentMethod}</span>
+            <span>{labelOrderPaymentMethodLocalized(order.payment_method, order.order_type, locale)}</span>
           </div>
           {order.order_type === "points_gift" ? (
             <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">订单类型</span>
-              <span>积分礼品兑换</span>
+              <span className="text-muted-foreground">{copy.orderType}</span>
+              <span>{copy.pointsGiftRedeem}</span>
             </div>
           ) : null}
           {Number(order.points_used || 0) > 0 && order.order_type === "points_gift" ? (
             <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">消耗积分</span>
+              <span className="text-muted-foreground">{copy.pointsUsed}</span>
               <span>{order.points_used}</span>
             </div>
           ) : null}
           {order.payment_time ? (
             <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">支付时间</span>
+              <span className="text-muted-foreground">{copy.paymentTime}</span>
               <span>{order.payment_time?.replace("T", " ").slice(0, 16)}</span>
             </div>
           ) : null}
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">收货人</span>
+            <span className="text-muted-foreground">{copy.recipient}</span>
             <span>{order.contact_name || "-"}</span>
           </div>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">手机号</span>
+            <span className="text-muted-foreground">{copy.phone}</span>
             <span>{order.contact_phone || "-"}</span>
           </div>
           <div className="mt-2 text-sm">
-            <span className="text-muted-foreground">收货地址</span>
+            <span className="text-muted-foreground">{copy.address}</span>
             <p className="mt-1">{order.address || "-"}</p>
           </div>
           {order.note ? (
             <div className="mt-2 text-sm">
-              <span className="text-muted-foreground">买家备注</span>
+              <span className="text-muted-foreground">{copy.buyerNote}</span>
               <p className="mt-1">{order.note}</p>
             </div>
           ) : null}
@@ -587,7 +607,7 @@ export default function OrderDetail() {
         <div className="hidden rounded-2xl border border-border bg-card p-3 md:flex md:flex-wrap md:justify-end md:gap-2">
           {canUserCancelOrder(order) ? (
             <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setCancelConfirmOpen(true)}>
-              取消订单
+              {copy.cancelOrder}
             </UnifiedButton>
           ) : null}
           {isPendingPayment(order) ? (
@@ -599,39 +619,39 @@ export default function OrderDetail() {
                 void payPendingOrder(order, reload);
               }}
             >
-              {paying ? "处理中..." : payActionLabel}
+              {paying ? copy.applying : payActionLabel}
             </UnifiedButton>
           ) : null}
           {order.status === "paid" ? (
-            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate(SUPPORT_PAGE_PATH)}>
-              联系客服
+            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate(localizedPath(SUPPORT_PAGE_PATH))}>
+              {copy.support}
             </UnifiedButton>
           ) : null}
           {order.status === "shipped" ? (
             <>
               <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => viewLogistics(order)}>
-                查看物流
+                {copy.viewLogistics}
               </UnifiedButton>
               <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setReturnApplyOpen(true)}>
-                申请售后
+                {copy.applyAfterSale}
               </UnifiedButton>
               <UnifiedButton
                 type="button"
                 className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]"
                 onClick={() => setConfirmReceiveOpen(true)}
               >
-                确认收货
+                {copy.receive}
               </UnifiedButton>
             </>
           ) : null}
           {canApplyAfterSale(order) && order.status === "completed" ? (
             <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setReturnApplyOpen(true)}>
-              申请售后
+              {copy.applyAfterSale}
             </UnifiedButton>
           ) : null}
           {(order.return_request_count || 0) > 0 || order.status === "refunding" || order.status === "refunded" ? (
-            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/returns")}>
-              查看售后进度
+            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate(localizedPath("/returns"))}>
+              {copy.viewAfterSale}
             </UnifiedButton>
           ) : null}
         </div>
@@ -652,14 +672,14 @@ export default function OrderDetail() {
               className="min-h-10 shrink-0 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-[var(--theme-text)]"
               onClick={() => setMoreMenuOpen(true)}
             >
-              更多
+              {copy.more}
             </UnifiedButton>
             {mobilePrimary}
           </div>
         </div>
       ) : null}
 
-      <AppModal tier="standard" open={moreMenuOpen} onClose={() => setMoreMenuOpen(false)} title="更多操作" height="auto">
+      <AppModal tier="standard" open={moreMenuOpen} onClose={() => setMoreMenuOpen(false)} title={copy.moreActions} height="auto">
         {renderMoreMenu(order)}
       </AppModal>
 
@@ -677,6 +697,10 @@ export default function OrderDetail() {
         onClose={() => setLogisticsInfo(null)}
         carrier={logisticsInfo?.carrier}
         trackingNo={logisticsInfo?.trackingNo}
+        statusLabel={logisticsInfo?.statusLabel}
+        exceptionMessage={logisticsInfo?.exceptionMessage}
+        hasException={logisticsInfo?.hasException}
+        timeline={logisticsInfo?.timeline}
       />
 
       <ReviewComposerSheet
@@ -693,10 +717,10 @@ export default function OrderDetail() {
       <BottomSheetConfirm
         open={cancelConfirmOpen}
         onClose={() => setCancelConfirmOpen(false)}
-        title="取消订单"
-        description="取消后订单将关闭，如需购买请重新下单。"
-        confirmText="确认取消"
-        cancelText="再想想"
+        title={copy.cancelConfirmTitle}
+        description={copy.cancelConfirmDescription}
+        confirmText={copy.cancelConfirmText}
+        cancelText={copy.rethink}
         danger
         loading={cancelling}
         onConfirm={async () => {
@@ -704,10 +728,10 @@ export default function OrderDetail() {
           try {
             await cancelOrder(order.id);
             await reload();
-            toast.success("订单已取消");
+            toast.success(copy.orderCancelled);
             setCancelConfirmOpen(false);
           } catch (e) {
-            toast.error(e instanceof Error ? e.message : "取消失败");
+            toast.error(e instanceof Error ? e.message : copy.cancelFailed);
           } finally {
             setCancelling(false);
           }
@@ -717,10 +741,10 @@ export default function OrderDetail() {
       <BottomSheetConfirm
         open={confirmReceiveOpen}
         onClose={() => setConfirmReceiveOpen(false)}
-        title="确认收货"
-        description="请确认已收到商品且无误。确认后将无法撤销。"
-        confirmText="确认收货"
-        cancelText="取消"
+        title={copy.receiveConfirmTitle}
+        description={copy.receiveConfirmDescription}
+        confirmText={copy.receiveConfirmText}
+        cancelText={copy.cancelText}
         loading={confirmingReceive}
         onConfirm={async () => {
           setConfirmReceiveOpen(false);
@@ -731,10 +755,10 @@ export default function OrderDetail() {
       <BottomSheetConfirm
         open={confirmReviewOpen}
         onClose={() => setConfirmReviewOpen(false)}
-        title="已确认收货"
-        description="现在去评价商品吗？"
-        confirmText="去评价"
-        cancelText="稍后再说"
+        title={copy.reviewConfirmTitle}
+        description={copy.reviewConfirmDescription}
+        confirmText={copy.reviewConfirmText}
+        cancelText={copy.reviewLaterText}
         onConfirm={async () => {
           setConfirmReviewOpen(false);
           openReviewComposer(firstReviewableId);
@@ -744,10 +768,10 @@ export default function OrderDetail() {
       <BottomSheetConfirm
         open={repurchaseConfirmOpen}
         onClose={() => setRepurchaseConfirmOpen(false)}
-        title="再买一单"
-        description="将把该订单商品加入购物车并前往结算页，是否继续？"
-        confirmText="前往结算"
-        cancelText="取消"
+        title={copy.repurchaseConfirmTitle}
+        description={copy.repurchaseConfirmDescription}
+        confirmText={copy.checkoutText}
+        cancelText={copy.cancelText}
         loading={repurchasing}
         onConfirm={async () => {
           setRepurchasing(true);

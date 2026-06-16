@@ -10,15 +10,161 @@ import type { CreateReturnParams, ReturnType } from "@/types/return";
 import { BottomSheetForm } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StableImage from "@/components/ui/StableImage";
+import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
+import { getReturnTypeLabel } from "./returnProgress";
 
-const RETURN_TYPES: Array<{ value: ReturnType; label: string }> = [
-  { value: "refund", label: "仅退款" },
-  { value: "return_refund", label: "退货退款" },
-  { value: "exchange", label: "换货" },
-  { value: "repair", label: "维修" },
+const RETURN_TYPES: ReturnType[] = [
+  "refund",
+  "return_refund",
+  "exchange",
+  "repair",
 ];
 
-const RETURN_REASONS = ["商品损坏", "发错货", "少发/漏发", "质量问题", "尺寸/规格不符", "不想要了", "其他原因"];
+const RETURN_REASON_VALUES = ["商品损坏", "发错货", "少发/漏发", "质量问题", "尺寸/规格不符", "不想要了", "其他原因"] as const;
+
+const RETURN_REASON_LABELS: Record<PublicLocale, Record<(typeof RETURN_REASON_VALUES)[number], string>> = {
+  zh: {
+    "商品损坏": "商品损坏",
+    "发错货": "发错货",
+    "少发/漏发": "少发/漏发",
+    "质量问题": "质量问题",
+    "尺寸/规格不符": "尺寸/规格不符",
+    "不想要了": "不想要了",
+    "其他原因": "其他原因",
+  },
+  en: {
+    "商品损坏": "Item damaged",
+    "发错货": "Wrong item sent",
+    "少发/漏发": "Missing item",
+    "质量问题": "Quality issue",
+    "尺寸/规格不符": "Size/spec mismatch",
+    "不想要了": "No longer needed",
+    "其他原因": "Other reason",
+  },
+  ms: {
+    "商品损坏": "Barang rosak",
+    "发错货": "Barang salah dihantar",
+    "少发/漏发": "Barang kurang atau tertinggal",
+    "质量问题": "Isu kualiti",
+    "尺寸/规格不符": "Saiz/spesifikasi tidak sepadan",
+    "不想要了": "Tidak mahu lagi",
+    "其他原因": "Sebab lain",
+  },
+};
+
+const RETURN_APPLY_COPY: Record<PublicLocale, {
+  loadFailed: string;
+  selectItem: string;
+  reasonRequired: string;
+  uploadPending: string;
+  submitted: string;
+  uploadLimit: string;
+  uploadFailed: string;
+  title: string;
+  loadingOrder: string;
+  orderNo: string;
+  startFromOrders: string;
+  submit: string;
+  noOrderHint: string;
+  itemLine: string;
+  quantity: string;
+  type: string;
+  reason: string;
+  reasonPlaceholder: string;
+  description: string;
+  phone: string;
+  phonePlaceholder: string;
+  evidenceImages: string;
+  uploadImage: string;
+  evidenceAlt: string;
+  deleteImage: string;
+  evidenceHint: string;
+}> = {
+  zh: {
+    loadFailed: "加载订单失败",
+    selectItem: "请选择要售后的商品",
+    reasonRequired: "请填写售后原因",
+    uploadPending: "图片还在上传中，请稍等",
+    submitted: "售后申请已提交",
+    uploadLimit: "最多上传 6 张凭证图片",
+    uploadFailed: "图片上传失败",
+    title: "申请售后",
+    loadingOrder: "加载订单中...",
+    orderNo: "订单号",
+    startFromOrders: "请从「我的订单」中已发货或已完成订单点击「申请售后」",
+    submit: "提交申请",
+    noOrderHint: "也可前往待收货/已完成订单列表发起申请。",
+    itemLine: "商品行",
+    quantity: "数量",
+    type: "类型",
+    reason: "原因（必填）",
+    reasonPlaceholder: "请选择售后原因",
+    description: "补充说明",
+    phone: "联系电话",
+    phonePlaceholder: "方便客服确认售后细节",
+    evidenceImages: "凭证图片",
+    uploadImage: "上传图片",
+    evidenceAlt: "售后凭证",
+    deleteImage: "删除图片",
+    evidenceHint: "建议上传商品破损、错发、包装面单等图片，审核会更快。",
+  },
+  en: {
+    loadFailed: "Failed to load order",
+    selectItem: "Select the item for after-sales service",
+    reasonRequired: "Select a reason",
+    uploadPending: "Images are still uploading. Please wait.",
+    submitted: "Request submitted",
+    uploadLimit: "Upload up to 6 evidence images",
+    uploadFailed: "Image upload failed",
+    title: "Request after-sales service",
+    loadingOrder: "Loading order...",
+    orderNo: "Order no.",
+    startFromOrders: "Open a shipped or completed order from My Orders to request service.",
+    submit: "Submit request",
+    noOrderHint: "You can also start from shipped or completed orders.",
+    itemLine: "Order item",
+    quantity: "Quantity",
+    type: "Type",
+    reason: "Reason (required)",
+    reasonPlaceholder: "Select a reason",
+    description: "Additional notes",
+    phone: "Contact phone",
+    phonePlaceholder: "Helps support confirm the service details",
+    evidenceImages: "Evidence images",
+    uploadImage: "Upload image",
+    evidenceAlt: "After-sales evidence",
+    deleteImage: "Delete image",
+    evidenceHint: "Upload item damage, wrong-item, packaging, or waybill photos for faster review.",
+  },
+  ms: {
+    loadFailed: "Gagal memuatkan pesanan",
+    selectItem: "Pilih barang untuk servis selepas jualan",
+    reasonRequired: "Pilih sebab permohonan",
+    uploadPending: "Gambar masih dimuat naik. Sila tunggu.",
+    submitted: "Permohonan dihantar",
+    uploadLimit: "Muat naik maksimum 6 gambar bukti",
+    uploadFailed: "Muat naik gambar gagal",
+    title: "Mohon servis selepas jualan",
+    loadingOrder: "Memuatkan pesanan...",
+    orderNo: "No. pesanan",
+    startFromOrders: "Buka pesanan yang dihantar atau selesai daripada Pesanan Saya untuk memohon servis.",
+    submit: "Hantar permohonan",
+    noOrderHint: "Anda juga boleh mula daripada senarai pesanan dihantar atau selesai.",
+    itemLine: "Item pesanan",
+    quantity: "Kuantiti",
+    type: "Jenis",
+    reason: "Sebab (wajib)",
+    reasonPlaceholder: "Pilih sebab",
+    description: "Maklumat tambahan",
+    phone: "Telefon untuk dihubungi",
+    phonePlaceholder: "Membantu sokongan mengesahkan butiran servis",
+    evidenceImages: "Gambar bukti",
+    uploadImage: "Muat naik gambar",
+    evidenceAlt: "Bukti selepas jualan",
+    deleteImage: "Padam gambar",
+    evidenceHint: "Muat naik gambar kerosakan, barang salah, bungkusan atau waybill untuk semakan lebih cepat.",
+  },
+};
 
 type Props = {
   orderId: string | null;
@@ -29,6 +175,8 @@ type Props = {
 
 export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: Props) {
   const navigate = useNavigate();
+  const { localizedPath, locale } = usePublicLocale();
+  const copy = RETURN_APPLY_COPY[locale];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
@@ -64,11 +212,11 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
         setQuantity(1);
       })
       .catch((e) => {
-        toast.error(e instanceof Error ? e.message : "加载订单失败");
+        toast.error(e instanceof Error ? e.message : copy.loadFailed);
         onClose();
       })
       .finally(() => setLoading(false));
-  }, [open, orderId, onClose]);
+  }, [copy.loadFailed, open, orderId, onClose]);
 
   const selectedItem = useMemo(
     () => order?.items.find((it) => it.order_item_id === orderItemId),
@@ -83,19 +231,19 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
   const submit = async () => {
     if (!orderId) {
       onClose();
-      navigate("/orders?tab=shipped");
+      navigate(localizedPath("/orders?tab=shipped"));
       return;
     }
     if (!order || !orderItemId) {
-      toast.error("请选择要售后的商品");
+      toast.error(copy.selectItem);
       throw new Error("validation");
     }
     if (!reason.trim()) {
-      toast.error("请填写售后原因");
+      toast.error(copy.reasonRequired);
       throw new Error("validation");
     }
     if (uploading) {
-      toast.error("图片还在上传中，请稍等");
+      toast.error(copy.uploadPending);
       throw new Error("validation");
     }
     const payload: CreateReturnParams = {
@@ -110,14 +258,14 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
       contact_phone: contactPhone.trim(),
     };
     await returnService.createReturn(payload);
-    toast.success("售后申请已提交");
+    toast.success(copy.submitted);
     onSuccess();
   };
 
   const uploadImages = async (files: File[]) => {
     if (!files.length) return;
     if (images.length + files.length > 6) {
-      toast.error("最多上传 6 张凭证图片");
+      toast.error(copy.uploadLimit);
       return;
     }
     setUploading(true);
@@ -125,7 +273,7 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
       const uploaded = await uploadService.uploadFiles(files, { mode: "image" });
       setImages((prev) => [...prev, ...uploaded.map((item) => item.url)]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "图片上传失败");
+      toast.error(error instanceof Error ? error.message : copy.uploadFailed);
     } finally {
       setUploading(false);
     }
@@ -135,26 +283,26 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
     <BottomSheetForm
       open={open}
       onClose={onClose}
-      title="申请售后"
+      title={copy.title}
       description={
         loading
-          ? "加载订单中..."
+          ? copy.loadingOrder
           : orderId
-            ? `订单号 ${order?.order_no || ""}`
-            : "请从「我的订单」中已发货或已完成订单点击「申请售后」"
+            ? `${copy.orderNo} ${order?.order_no || ""}`
+            : copy.startFromOrders
       }
-      submitText="提交申请"
+      submitText={copy.submit}
       loading={loading || uploading}
       onSubmit={submit}
       height="90vh"
     >
       {!orderId ? (
-        <p className="text-sm text-muted-foreground">也可前往待收货/已完成订单列表发起申请。</p>
+        <p className="text-sm text-muted-foreground">{copy.noOrderHint}</p>
       ) : null}
       {orderId && order ? (
         <>
           <label className="block">
-            <span className="text-muted-foreground">商品行</span>
+            <span className="text-muted-foreground">{copy.itemLine}</span>
             <select
               className="mt-1 w-full rounded-lg border border-border px-3 py-2"
               value={orderItemId}
@@ -168,7 +316,7 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
             </select>
           </label>
           <label className="block">
-            <span className="text-muted-foreground">数量</span>
+            <span className="text-muted-foreground">{copy.quantity}</span>
             <input
               type="number"
               min={1}
@@ -179,30 +327,30 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
             />
           </label>
           <label className="block">
-            <span className="text-muted-foreground">类型</span>
+            <span className="text-muted-foreground">{copy.type}</span>
             <select
               className="mt-1 w-full rounded-lg border border-border px-3 py-2"
               value={type}
               onChange={(e) => setType(e.target.value as ReturnType)}
             >
-              {RETURN_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+              {RETURN_TYPES.map((returnType) => (
+                <option key={returnType} value={returnType}>{getReturnTypeLabel(returnType, locale)}</option>
               ))}
             </select>
           </label>
           <label className="block">
-            <span className="text-muted-foreground">原因（必填）</span>
+            <span className="text-muted-foreground">{copy.reason}</span>
             <select
               className="mt-1 w-full rounded-lg border border-border px-3 py-2"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             >
-              <option value="">请选择售后原因</option>
-              {RETURN_REASONS.map((item) => <option key={item} value={item}>{item}</option>)}
+              <option value="">{copy.reasonPlaceholder}</option>
+              {RETURN_REASON_VALUES.map((item) => <option key={item} value={item}>{RETURN_REASON_LABELS[locale][item]}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="text-muted-foreground">补充说明</span>
+            <span className="text-muted-foreground">{copy.description}</span>
             <textarea
               className="mt-1 min-h-[72px] w-full rounded-lg border border-border px-3 py-2"
               value={description}
@@ -210,17 +358,17 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
             />
           </label>
           <label className="block">
-            <span className="text-muted-foreground">联系电话</span>
+            <span className="text-muted-foreground">{copy.phone}</span>
             <input
               className="mt-1 w-full rounded-lg border border-border px-3 py-2"
               value={contactPhone}
               onChange={(e) => setContactPhone(e.target.value)}
-              placeholder="方便客服确认售后细节"
+              placeholder={copy.phonePlaceholder}
             />
           </label>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">凭证图片</span>
+              <span className="text-muted-foreground">{copy.evidenceImages}</span>
               <UnifiedButton
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -228,7 +376,7 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
                 className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-60"
               >
                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} />}
-                上传图片
+                {copy.uploadImage}
               </UnifiedButton>
               <input
                 ref={fileInputRef}
@@ -248,13 +396,13 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
                   <div key={url} className="relative overflow-hidden rounded-lg border border-border bg-secondary">
                     <StableImage
                       src={url}
-                      alt="售后凭证"
+                      alt={copy.evidenceAlt}
                       className="aspect-square w-full"
                       imgClassName="object-cover"
                     />
                     <UnifiedButton
                       type="button"
-                      aria-label="删除图片"
+                      aria-label={copy.deleteImage}
                       onClick={() => setImages((prev) => prev.filter((item) => item !== url))}
                       className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white"
                     >
@@ -264,7 +412,7 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">建议上传商品破损、错发、包装面单等图片，审核会更快。</p>
+              <p className="text-xs text-muted-foreground">{copy.evidenceHint}</p>
             )}
           </div>
         </>

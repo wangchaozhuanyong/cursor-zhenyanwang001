@@ -30,6 +30,7 @@ const addressObjectSchema = z.object({
 });
 
 const createOrderBodySchema = z.object({
+  idempotency_key: z.string().trim().min(8).max(128).optional(),
   items: z.array(orderItemSchema).min(1, '订单商品不能为空'),
   contact_name: z.string().trim().min(1, '联系人姓名不能为空').max(64),
   contact_phone: z.string().trim().min(6, '联系人电话不正确').max(20),

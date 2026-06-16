@@ -2,7 +2,8 @@ const paymentService = require('../service/payment.service');
 const stripeWebhookService = require('../service/stripeWebhook.service');
 
 /**
- * Stripe Webhook：需�?Stripe Dashboard 配置 endpoint，且本路由必须在 express.json 之前挂载 raw body�? * 环境变量：STRIPE_SECRET_KEY、STRIPE_WEBHOOK_SECRET
+ * Stripe Webhook：需要在 Stripe Dashboard 配置 endpoint，且本路由必须在 express.json 之前挂载 raw body。
+ * 环境变量：STRIPE_SECRET_KEY、STRIPE_WEBHOOK_SECRET
  */
 exports.handleWebhook = async (req, res) => {
   const parsed = stripeWebhookService.verifyAndParseStripeEvent(req);
@@ -26,4 +27,3 @@ exports.handleWebhook = async (req, res) => {
 
   res.json({ received: true });
 };
-

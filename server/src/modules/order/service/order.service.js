@@ -13,10 +13,10 @@ const {
 } = require('../orderReceiveDeadline');
 const repo = require('../repository/order.repository');
 const returnRepo = require('../repository/return.repository');
-const userModule = require('../../user');
-const paymentsModule = require('../../payment');
+const userPublicApi = /** @type {any} */ (require('../../user/publicApi'));
+const paymentsPublicApi = /** @type {any} */ (require('../../payment/publicApi'));
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
-const logisticsModule = require('../../logistics');
+const logisticsPublicApi = /** @type {any} */ (require('../../logistics/publicApi'));
 const orderDb = repo.getPool();
 const orderPoints = require('./orderPoints.service');
 const orderCheckout = require('./orderCheckout.service');
@@ -24,15 +24,15 @@ const orderCreate = require('./orderCreate.service');
 const orderCancel = require('./orderCancel.service');
 
 function getUserApi() {
-  return /** @type {any} */ (userModule).api || {};
+  return userPublicApi || {};
 }
 
 function getPaymentsApi() {
-  return /** @type {any} */ (paymentsModule).api || {};
+  return paymentsPublicApi || {};
 }
 
 function getLogisticsApi() {
-  return /** @type {any} */ (logisticsModule).api || {};
+  return logisticsPublicApi || {};
 }
 
 function attachOrderItemReviewFlags(order, items) {

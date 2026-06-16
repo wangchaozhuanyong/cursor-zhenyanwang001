@@ -4,11 +4,11 @@ const orderRepo = require('../repository/order.repository');
 const SETTLE_TIMINGS = new Set(['payment_success', 'order_shipped', 'order_completed']);
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function getLoyaltyApi() {
-  return /** @type {any} */ (require('../../loyalty')).api || {};
+  return /** @type {any} */ (require('../../loyalty/publicApi')) || {};
 }
 
 function requireUserApi(name) {

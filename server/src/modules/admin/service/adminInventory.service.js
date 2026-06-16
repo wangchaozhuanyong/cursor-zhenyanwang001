@@ -170,6 +170,9 @@ function formatSku(row) {
     stock: Number(row.stock || 0),
     unit_name: row.unit_name || '件',
     reserved_stock: Number(row.reserved_stock || 0),
+    pending_order_locked_stock: Number(row.pending_order_locked_stock || 0),
+    pending_order_count: Number(row.pending_order_count || 0),
+    locked_stock: Number(row.locked_stock || 0),
     available_stock: Number(row.available_stock || 0),
     stock_warning_threshold: Number(row.stock_warning_threshold || 0),
     low_stock: !!row.low_stock,
@@ -451,6 +454,11 @@ async function getSummary() {
       total_products: Number(row.total_products || 0),
       total_skus: Number(row.total_skus || 0),
       total_stock: Number(row.total_stock || 0),
+      total_reserved_stock: Number(row.total_reserved_stock || 0),
+      total_available_stock: Number(row.total_available_stock || 0),
+      locked_stock: Number(row.total_reserved_stock || 0) + Number(row.pending_order_locked_stock || 0),
+      pending_order_locked_stock: Number(row.pending_order_locked_stock || 0),
+      pending_order_count: Number(row.pending_order_count || 0),
       low_stock_skus: Number(row.low_stock_skus || 0),
       out_of_stock_skus: Number(row.out_of_stock_skus || 0),
       today_in_qty: Number(row.today_in_qty || 0),
@@ -735,7 +743,8 @@ async function exportSkusCsv(query) {
   const skuColumns = [
     'product_id', 'product_name', 'variant_id', 'variant_title', 'spec_text', 'sku_code', 'barcode',
     'price', 'cost_price', 'enabled', 'category_name', 'lifecycle_status',
-    'stock', 'unit_name', 'reserved_stock', 'available_stock', 'stock_warning_threshold', 'updated_at',
+    'stock', 'unit_name', 'reserved_stock', 'pending_order_locked_stock', 'pending_order_count',
+    'locked_stock', 'available_stock', 'stock_warning_threshold', 'updated_at',
   ];
   const csv = rowsToCsvLocalized(skuColumns, rows.map((r) => ({
     product_id: r.product_id,
@@ -753,6 +762,9 @@ async function exportSkusCsv(query) {
     stock: Number(r.stock || 0),
     unit_name: r.unit_name || '件',
     reserved_stock: Number(r.reserved_stock || 0),
+    pending_order_locked_stock: Number(r.pending_order_locked_stock || 0),
+    pending_order_count: Number(r.pending_order_count || 0),
+    locked_stock: Number(r.locked_stock || 0),
     available_stock: Number(r.available_stock || 0),
     stock_warning_threshold: Number(r.stock_warning_threshold || 0),
     updated_at: r.updated_at ? new Date(r.updated_at).toISOString() : '',
@@ -1119,7 +1131,6 @@ module.exports = {
   listConversions,
   getConversion,
 };
-
 
 
 

@@ -4,7 +4,7 @@ const { writeAuditLog } = require('../../../utils/auditLog');
 const repo = require('../repository/adminPoints.repository');
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function requireUserApi(name) {
@@ -16,7 +16,7 @@ function requireUserApi(name) {
 }
 
 function getLoyaltyApi() {
-  return /** @type {any} */ (require('../../loyalty')).api || {};
+  return /** @type {any} */ (require('../../loyalty/publicApi')) || {};
 }
 
 function requireLoyaltyApi(name) {

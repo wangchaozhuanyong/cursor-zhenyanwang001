@@ -25,15 +25,17 @@ import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/stor
 import CheckoutPromotionExplanation from "@/modules/storefront-v2/checkout/CheckoutPromotionExplanation";
 import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
 import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 export default function Checkout() {
-  useDocumentTitle("结算");
+  const { localizedPath, t } = usePublicLocale();
+  useDocumentTitle(t("checkout.documentTitle"));
   const checkout = useCheckoutPage();
   const siteInfo = useSiteInfo();
   const payTimeout = parseOrderPaymentTimeoutFromSite(siteInfo);
   const paymentTimeoutHint =
     payTimeout.enabled && checkout.paymentMethod === "online"
-      ? `在线支付订单需在 ${payTimeout.minutes} 分钟内完成付款，超时将自动取消并释放库存。`
+      ? `${t("checkout.paymentTimeoutPrefix")} ${payTimeout.minutes} ${t("checkout.paymentTimeoutSuffix")}`
       : null;
   const isMobileSheet = usePreferBottomSheet("standard");
   const addresses = useUserStore((s) => s.addresses);
@@ -73,11 +75,14 @@ export default function Checkout() {
     checkout.shippingQuoteLoading ||
     !checkout.hasShippingTemplate ||
     Boolean(checkout.shippingRulesError || checkout.shippingQuoteError);
-  const submitDisabled = checkout.submitting || missingContact || shippingBlocked;
+  const pricingBlocked = !checkout.backendPricingReady;
+  const submitDisabled = checkout.submitting || missingContact || shippingBlocked || pricingBlocked;
   const submitDisabledHint = missingContact
-    ? "请先填写收货信息"
+    ? t("checkout.submitMissingContact")
     : shippingBlocked
-      ? "运费规则同步中"
+      ? t("checkout.shippingSyncing")
+      : pricingBlocked
+        ? checkout.orderPreviewError || "正在同步后端金额"
       : undefined;
 
   if (checkout.isEmpty) {
@@ -109,10 +114,10 @@ export default function Checkout() {
 
   return (
     <StoreStandardPageShell
-      title="确认订单"
+      title={t("checkout.confirmOrder")}
       onBack={checkout.goBack}
-      backFallback="/cart"
-      desktopBackLabel="返回购物车"
+      backFallback={localizedPath("/cart")}
+      desktopBackLabel={t("checkout.backCart")}
       className="store-conversion-page store-checkout-page store-bottom-action-space bg-[color-mix(in_srgb,var(--theme-bg)_82%,#f7f1e8)] md:pb-0"
       contentClassName="xl:max-w-screen-xl"
       rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
@@ -122,13 +127,15 @@ export default function Checkout() {
           contentClassName="space-y-4"
           aside={
             <DesktopPurchaseCard
-              title="订单摘要"
+              title={t("checkout.orderSummary")}
               className="store-checkout-card store-checkout-summary rounded-[22px] border-[color-mix(in_srgb,var(--theme-border)_75%,transparent)] shadow-[0_18px_46px_rgba(65,45,28,0.12)]"
               bodyClassName="space-y-4"
             >
               <div className="flex items-center justify-between border-b border-[var(--theme-border)] pb-3 text-sm">
-                <span className="text-muted-foreground">商品数量</span>
-                <span className="font-bold text-foreground">{itemCount} 件</span>
+                <span className="text-muted-foreground">{t("checkout.itemCount")}</span>
+                <span className="font-bold text-foreground">
+                  {itemCount} {t("checkout.unit")}
+                </span>
               </div>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
@@ -145,6 +152,8 @@ export default function Checkout() {
               <CheckoutPromotionExplanation
                 discountLines={checkout.discountLines}
                 pointsBonusLines={checkout.pointsBonusLines}
+                promotionEvaluation={checkout.promotionEvaluation}
+                orderSnapshot={checkout.orderSnapshot}
                 fullReductionCampaign={fullReductionCampaign}
                 currentAmount={checkout.rawTotal}
               />
@@ -222,7 +231,7 @@ export default function Checkout() {
             />
 
             <div className="store-checkout-card store-checkout-summary rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:hidden">
-              <h3 className="mb-3 text-[15px] font-bold text-foreground">金额明细</h3>
+              <h3 className="mb-3 text-[15px] font-bold text-foreground">{t("checkout.amountDetail")}</h3>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}
@@ -238,6 +247,8 @@ export default function Checkout() {
               <CheckoutPromotionExplanation
                 discountLines={checkout.discountLines}
                 pointsBonusLines={checkout.pointsBonusLines}
+                promotionEvaluation={checkout.promotionEvaluation}
+                orderSnapshot={checkout.orderSnapshot}
                 fullReductionCampaign={fullReductionCampaign}
                 currentAmount={checkout.rawTotal}
                 className="mt-4"

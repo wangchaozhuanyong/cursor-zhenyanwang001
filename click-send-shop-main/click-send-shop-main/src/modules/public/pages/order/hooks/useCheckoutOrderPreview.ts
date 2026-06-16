@@ -5,6 +5,7 @@ import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { SubmitOrderParams } from "@/types/order";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 import type { CartItem } from "@/types/cart";
+import type { Address } from "@/types/address";
 
 type UseCheckoutOrderPreviewParams = {
   items: CartItem[];
@@ -12,6 +13,7 @@ type UseCheckoutOrderPreviewParams = {
   name: string;
   phone: string;
   address: string;
+  selectedAddress?: Address | null;
   selectedCoupon: CheckoutPickerCoupon | null;
   selectedTemplateId: string | null;
   selectedTemplateName?: string;
@@ -37,6 +39,7 @@ export function useCheckoutOrderPreview({
   name,
   phone,
   address,
+  selectedAddress,
   selectedCoupon,
   selectedTemplateId,
   selectedTemplateName,
@@ -56,13 +59,20 @@ export function useCheckoutOrderPreview({
   setUseRewardCash,
 }: UseCheckoutOrderPreviewParams) {
   const [orderPreview, setOrderPreview] = useState<OrderPreviewResult | null>(null);
+  const [orderPreviewLoading, setOrderPreviewLoading] = useState(false);
+  const [orderPreviewError, setOrderPreviewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!items.length || submittedOrder) {
       setOrderPreview(null);
+      setOrderPreviewLoading(false);
+      setOrderPreviewError(null);
       return;
     }
     let cancelled = false;
+    setOrderPreview(null);
+    setOrderPreviewLoading(true);
+    setOrderPreviewError(null);
     const timer = window.setTimeout(() => {
       const payload: SubmitOrderParams = {
         items: items.map((item) => ({
@@ -72,7 +82,18 @@ export function useCheckoutOrderPreview({
         })),
         contact_name: name.trim() || "结算预览",
         contact_phone: phone.trim() || "60000000000",
-        address: address.trim() || "MY",
+        address: selectedAddress
+          ? {
+              recipient_name: selectedAddress.recipient_name,
+              phone: selectedAddress.phone,
+              line1: selectedAddress.line1,
+              line2: selectedAddress.line2 || "",
+              city: selectedAddress.city,
+              state: selectedAddress.state,
+              postcode: selectedAddress.postcode,
+              country: selectedAddress.country,
+            }
+          : address.trim() || "MY",
         coupon_id: couponEnabled ? selectedCoupon?.id : undefined,
         shipping_template_id: selectedTemplateId ?? undefined,
         shipping_name: selectedTemplateName,
@@ -85,10 +106,19 @@ export function useCheckoutOrderPreview({
       void orderService
         .previewOrder(payload)
         .then((data) => {
-          if (!cancelled) setOrderPreview(data);
+          if (!cancelled) {
+            setOrderPreview(data);
+            setOrderPreviewError(null);
+          }
         })
-        .catch(() => {
-          if (!cancelled) setOrderPreview(null);
+        .catch((err) => {
+          if (!cancelled) {
+            setOrderPreview(null);
+            setOrderPreviewError(err instanceof Error ? err.message : "后端金额同步失败，请稍后重试");
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setOrderPreviewLoading(false);
         });
     }, 400);
     return () => {
@@ -100,6 +130,11 @@ export function useCheckoutOrderPreview({
     name,
     phone,
     address,
+    selectedAddress?.id,
+    selectedAddress?.country,
+    selectedAddress?.city,
+    selectedAddress?.state,
+    selectedAddress?.postcode,
     selectedCoupon?.id,
     selectedTemplateId,
     selectedTemplateName,
@@ -137,7 +172,10 @@ export function useCheckoutOrderPreview({
   const discountAmount = orderPreview?.discount_amount ?? clientCouponDiscount;
   const discountLines = orderPreview?.discount_lines ?? [];
   const pointsBonusLines = orderPreview?.points_bonus_lines ?? [];
+  const promotionEvaluation = orderPreview?.promotion_evaluation ?? null;
+  const orderSnapshot = orderPreview?.order_snapshot ?? promotionEvaluation?.order_snapshot ?? null;
   const finalTotal = orderPreview?.final_amount ?? Math.max(0, rawTotal - clientCouponDiscount + shippingFee);
+  const backendPricingReady = Boolean(orderPreview && !orderPreviewLoading && !orderPreviewError);
   const totalPointsValue = useMemo(
     () => Number(orderPreview?.earned_points || orderPreview?.total_points || 0),
     [orderPreview?.earned_points, orderPreview?.total_points],
@@ -145,10 +183,15 @@ export function useCheckoutOrderPreview({
 
   return {
     orderPreview,
+    orderPreviewLoading,
+    orderPreviewError,
+    backendPricingReady,
     shippingFee,
     discountAmount,
     discountLines,
     pointsBonusLines,
+    promotionEvaluation,
+    orderSnapshot,
     finalTotal,
     totalPointsValue,
   };

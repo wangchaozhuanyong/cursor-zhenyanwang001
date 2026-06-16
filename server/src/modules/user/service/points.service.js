@@ -5,11 +5,15 @@ const { klDateString } = require('../../../utils/klDateRange');
 const repo = require('../repository/points.repository');
 
 function getLoyaltyApi() {
-  return /** @type {any} */ (require('../../loyalty')).api || {};
+  return /** @type {any} */ (require('../../loyalty/publicApi')) || {};
 }
 
 function getOrderApi() {
-  return /** @type {any} */ (require('../../order')).api || {};
+  return /** @type {any} */ (require('../../order/publicApi')) || {};
+}
+
+function getMarketingApi() {
+  return /** @type {any} */ (require('../../marketing/publicApi')) || {};
 }
 
 function toInt(value) {
@@ -248,6 +252,35 @@ async function resolveSignInAward() {
   return { points, enabled, hasRule };
 }
 
+async function resolveActiveCheckinReward() {
+  const fn = getMarketingApi().resolveCheckinReward;
+  if (typeof fn !== 'function') return null;
+  try {
+    return await fn();
+  } catch {
+    return null;
+  }
+}
+
+async function resolveSignInAwardForUser(userId) {
+  const activity = await resolveActiveCheckinReward();
+  if (activity && toInt(activity.reward_points) >= 1) {
+    return {
+      points: toInt(activity.reward_points),
+      enabled: true,
+      hasRule: true,
+      source: 'activity',
+      activity,
+    };
+  }
+  return {
+    ...(await resolveSignInAward()),
+    source: 'points_rule',
+    activity: null,
+    userId,
+  };
+}
+
 async function resolveConfiguredBonus(conn, action) {
   let rule = null;
   try {
@@ -298,7 +331,7 @@ async function awardConfiguredPointsBonusForUser(params) {
 }
 
 async function getClientPointsConfig() {
-  const { points, enabled, hasRule } = await resolveSignInAward();
+  const { points, enabled, hasRule, source, activity } = await resolveSignInAwardForUser(null);
   const pointsSettings = await getLoyaltyApi().selectPointsSettings();
   const settleTiming = pointsSettings?.settle_timing || 'order_completed';
   const p = toInt(points);
@@ -316,6 +349,9 @@ async function getClientPointsConfig() {
           : configInvalid
             ? '每日签到积分必须至少为 1'
             : null,
+      source,
+      activityId: activity?.activity_id || null,
+      activityTitle: activity?.title || '',
     },
     orderPointsHint: getLoyaltyApi().getOrderPointsHint(settleTiming),
     settleTiming,
@@ -327,20 +363,48 @@ async function signIn(userId) {
   const existing = await repo.findSignInToday(userId, today);
   if (existing) return { error: { code: 400, message: '今天已经签到过了' } };
 
-  const { points, enabled, hasRule } = await resolveSignInAward();
+  const { points, enabled, hasRule, source, activity } = await resolveSignInAwardForUser(userId);
   if (hasRule && !enabled) return { error: { code: 400, message: '每日签到积分规则已关闭' } };
   const grant = hasRule ? toInt(points) : 5;
   if (grant < 1) return { error: { code: 400, message: '每日签到积分必须至少为 1' } };
+  if (activity?.activity_id) {
+    const usage = await repo.countSignInActivityUsage(activity.activity_id, userId);
+    const totalLimit = Number(activity.usage_limit_total || 0);
+    if (totalLimit > 0 && usage.total_count + 1 > totalLimit) {
+      return { error: { code: 400, message: '签到活动总次数已达上限' } };
+    }
+    const userLimit = Number(activity.usage_limit_per_user || 0);
+    if (userLimit > 0 && usage.user_count + 1 > userLimit) {
+      return { error: { code: 400, message: '您已达到该签到活动可参与次数上限' } };
+    }
+  }
 
   await runInTransaction((conn) => changePoints(conn, {
     userId,
     amount: grant,
     action: POINTS_ACTION.SIGN_IN,
-    description: '每日签到',
+    description: activity?.title ? `签到奖励：${activity.title}` : '每日签到',
     sourceType: 'sign_in',
     relatedRecordId: `sign_in:${userId}:${today}`,
+    metadata: activity?.activity_id
+      ? {
+        source,
+        activity_id: activity.activity_id,
+        activity_title: activity.title || '',
+        activity_type: 'checkin_reward',
+        version: Number(activity.version || 1),
+        reward_points: grant,
+      }
+      : { source },
   }));
-  return { data: { points: grant }, message: '签到成功' };
+  return {
+    data: {
+      points: grant,
+      activity_id: activity?.activity_id || null,
+      activity_title: activity?.title || '',
+    },
+    message: '签到成功',
+  };
 }
 
 async function adjustUserPoints(userId, amount, reason, operatorId) {
@@ -382,4 +446,3 @@ module.exports = {
   getClientPointsConfig,
   signIn,
 };
-

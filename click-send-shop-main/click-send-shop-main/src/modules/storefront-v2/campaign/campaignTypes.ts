@@ -4,6 +4,7 @@ import type { MarketingCouponPublic } from "@/services/marketingService";
 export type StorefrontCampaignType =
   | "flash_sale"
   | "full_reduction"
+  | "full_discount"
   | "coupon"
   | "new_user_gift"
   | "promotion"
@@ -34,6 +35,7 @@ export type StorefrontCampaignVm = {
   countdownSeconds?: number;
   thresholdAmount?: number;
   discountAmount?: number;
+  discountPercent?: number;
   tone: StorefrontCampaignTone;
   products: StorefrontCampaignProduct[];
   coupons: StorefrontCampaignCoupon[];
@@ -45,4 +47,5 @@ export type CampaignProgress = {
   missingAmount: number;
   thresholdAmount: number;
   discountAmount?: number;
+  discountPercent?: number;
 };

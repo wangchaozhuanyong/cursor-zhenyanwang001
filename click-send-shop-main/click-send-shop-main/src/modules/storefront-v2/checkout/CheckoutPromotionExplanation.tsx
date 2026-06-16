@@ -1,6 +1,7 @@
 import { BadgeCheck, Tag } from "lucide-react";
 import { buildCampaignProgress } from "../campaign/campaignNormalize";
 import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
+import type { OrderPricingSnapshot, PromotionEvaluation } from "@/types/orderPreview";
 
 type DiscountLine = {
   type: string;
@@ -17,6 +18,8 @@ type PointsBonusLine = {
 type CheckoutPromotionExplanationProps = {
   discountLines?: DiscountLine[];
   pointsBonusLines?: PointsBonusLine[];
+  promotionEvaluation?: PromotionEvaluation | null;
+  orderSnapshot?: OrderPricingSnapshot | null;
   fullReductionCampaign?: StorefrontCampaignVm | null;
   currentAmount?: number;
   className?: string;
@@ -25,12 +28,15 @@ type CheckoutPromotionExplanationProps = {
 export default function CheckoutPromotionExplanation({
   discountLines = [],
   pointsBonusLines = [],
+  promotionEvaluation = null,
+  orderSnapshot = null,
   fullReductionCampaign = null,
   currentAmount = 0,
   className = "",
 }: CheckoutPromotionExplanationProps) {
   const progress = buildCampaignProgress(fullReductionCampaign, currentAmount);
-  if (!discountLines.length && !pointsBonusLines.length && !progress) return null;
+  const unavailableReasons = promotionEvaluation?.unavailable_reasons || [];
+  if (!discountLines.length && !pointsBonusLines.length && !progress && !unavailableReasons.length) return null;
   const progressPercent = progress
     ? Math.max(0, Math.min(100, (Number(currentAmount || 0) / progress.thresholdAmount) * 100))
     : 0;
@@ -77,6 +83,16 @@ export default function CheckoutPromotionExplanation({
             {pointsBonusLines.map((line) => (
               <p key={`${line.type}-${line.label}`}>{line.label}</p>
             ))}
+            {orderSnapshot?.final_amount != null ? (
+              <p>后端结算应付：RM {money(toNumber(orderSnapshot.final_amount))}</p>
+            ) : null}
+            {unavailableReasons.map((item) => (
+              <p key={`${item.promotion_id || item.type}-${item.title || item.reason}`} className="text-[var(--theme-price)]">
+                {item.title || "活动"}：{item.shortfall_amount
+                  ? `还差 RM ${money(item.shortfall_amount)} 可参与`
+                  : item.reason}
+              </p>
+            ))}
             {discountLines.length || pointsBonusLines.length ? (
               <p>满减、优惠券和积分按订单预览结果自动计算，最终优惠以后端结算为准。</p>
             ) : null}
@@ -89,4 +105,9 @@ export default function CheckoutPromotionExplanation({
 
 function money(value: number) {
   return Number(value || 0).toFixed(2).replace(/\.00$/, "");
+}
+
+function toNumber(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
 }

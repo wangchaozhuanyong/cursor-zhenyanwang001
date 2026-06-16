@@ -3,11 +3,11 @@ const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const paymentsService = require('./payments.service');
 
 function getOrderApi() {
-  return /** @type {any} */ (require('../../order')).api || {};
+  return /** @type {any} */ (require('../../order/publicApi'));
 }
 
 function getTelegramApi() {
-  return /** @type {any} */ (require('../../telegram')).api || {};
+  return /** @type {any} */ (require('../../telegram/publicApi'));
 }
 
 function getOrderDb() {
@@ -16,15 +16,15 @@ function getOrderDb() {
 }
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi'));
 }
 
 function getAdminApi() {
-  return /** @type {any} */ (require('../../admin')).api || {};
+  return /** @type {any} */ (require('../../admin/publicApi'));
 }
 
 function getMyinvoisApi() {
-  return /** @type {any} */ (require('../../myinvois')).api || {};
+  return /** @type {any} */ (require('../../myinvois/publicApi'));
 }
 
 function emitAdminEvent(event) {
@@ -191,6 +191,17 @@ async function handleStripeEvent(event) {
       await conn.beginTransaction();
       const fullOrder = await requireOrderApi('selectOrderByIdForUpdate')(conn, orderId);
       if (fullOrder) {
+        const confirmInventory = getOrderApi().confirmOrderInventoryIfLocked;
+        if (typeof confirmInventory === 'function') {
+          const inventoryResult = await confirmInventory(conn, {
+            orderId,
+            orderNo: fullOrder.order_no,
+            trigger: 'stripe_payment_success',
+          });
+          if (!inventoryResult?.ok) {
+            throw new Error(`Stripe 支付成功后库存确认扣减失败：${inventoryResult?.reason || 'unknown'}`);
+          }
+        }
         await requireOrderApi('maybeGrantOrderEarnOnPaymentSuccess')(conn, fullOrder, {
           trigger: 'stripe_payment_success',
         });
@@ -267,4 +278,3 @@ module.exports = {
   handleStripeEvent,
   validatePaymentIntentAmount,
 };
-

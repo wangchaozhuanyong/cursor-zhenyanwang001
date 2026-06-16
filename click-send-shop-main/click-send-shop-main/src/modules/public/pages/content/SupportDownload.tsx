@@ -298,7 +298,7 @@ export default function SupportDownload() {
                 ))
               ) : (
                 <section className="support-empty-panel">
-                  当前设备的添加到桌面说明未启用，请联系站点管理员。
+                  当前设备暂不支持添加到桌面，请稍后再试。
                 </section>
               )}
             </div>
@@ -306,7 +306,7 @@ export default function SupportDownload() {
 
           {queryChannelId && !pinnedChannel ? (
             <section className="support-empty-panel">
-              所选客服账号不存在或已停用，请返回首页重试或联系站点管理员。
+              所选客服账号暂不可用，请返回首页后重新进入客服中心。
             </section>
           ) : null}
 
@@ -315,8 +315,8 @@ export default function SupportDownload() {
               <strong>客服渠道暂未显示</strong>
               <span>
                 {canShowInstallView
-                  ? "请稍后再试；如果你是管理员，请到后台客服中心页面检查客服渠道和添加桌面说明是否已启用。"
-                  : "请稍后再试；如果你是管理员，请到后台客服中心页面检查微信、WhatsApp 或 Telegram 渠道是否已启用。"}
+                  ? "请稍后再试，客服渠道和添加桌面说明暂未开放。"
+                  : "请稍后再试，客服渠道暂未开放。"}
               </span>
             </section>
           ) : null}

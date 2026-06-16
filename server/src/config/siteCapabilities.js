@@ -15,6 +15,10 @@ const DEFAULT_SITE_CAPABILITIES = Object.freeze({
   restrictedProductComplianceEnabled: true,
   trafficAnalyticsEnabled: true,
   downloadConfirmEnabled: true,
+  promotionEngineV2: false,
+  pricingEngineV2: false,
+  inventoryLockV2: false,
+  billplzEnabled: false,
 });
 
 function parseBoolean(value, fallback) {

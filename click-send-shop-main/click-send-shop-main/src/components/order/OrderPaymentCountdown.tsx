@@ -2,6 +2,7 @@ import { Clock } from "lucide-react";
 import { formatPaymentCountdown } from "@/utils/orderPaymentTimeout";
 import { useOrderPaymentCountdown } from "@/hooks/useOrderPaymentCountdown";
 import type { Order } from "@/types/order";
+import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 
 type CountdownOrder = Pick<
   Order,
@@ -12,6 +13,36 @@ type CountdownOrder = Pick<
   | "payment_method"
   | "payment_status"
 >;
+
+const PAYMENT_COUNTDOWN_COPY: Record<PublicLocale, {
+  expired: string;
+  prefix: string;
+  suffix: string;
+  timeoutPrefix: string;
+  timeoutSuffix: string;
+}> = {
+  zh: {
+    expired: "支付时间已结束，订单将自动取消。请刷新页面查看最新状态。",
+    prefix: "请在",
+    suffix: "内完成支付",
+    timeoutPrefix: "超时未付款将自动取消订单并释放库存（限时",
+    timeoutSuffix: "分钟）。",
+  },
+  en: {
+    expired: "Payment time has ended. The order will be cancelled automatically. Refresh to see the latest status.",
+    prefix: "Complete payment within",
+    suffix: "",
+    timeoutPrefix: "Unpaid orders are cancelled automatically and stock is released after",
+    timeoutSuffix: "minutes.",
+  },
+  ms: {
+    expired: "Masa pembayaran telah tamat. Pesanan akan dibatalkan secara automatik. Muat semula untuk status terkini.",
+    prefix: "Lengkapkan bayaran dalam",
+    suffix: "",
+    timeoutPrefix: "Pesanan belum dibayar akan dibatalkan automatik dan stok dilepaskan selepas",
+    timeoutSuffix: "minit.",
+  },
+};
 
 export function OrderPaymentCountdown({
   order,
@@ -24,6 +55,8 @@ export function OrderPaymentCountdown({
   className?: string;
   compact?: boolean;
 }) {
+  const { locale } = usePublicLocale();
+  const copy = PAYMENT_COUNTDOWN_COPY[locale];
   const { active, secondsLeft, expired } = useOrderPaymentCountdown(order, { onExpired });
 
   if (!active || secondsLeft == null) return null;
@@ -46,15 +79,15 @@ export function OrderPaymentCountdown({
       <Clock size={compact ? 14 : 16} className="mt-0.5 shrink-0 opacity-80" />
       <div className="min-w-0 flex-1">
         {expired ? (
-          <p className="font-medium">支付时间已结束，订单将自动取消。请刷新页面查看最新状态。</p>
+          <p className="font-medium">{copy.expired}</p>
         ) : (
           <>
             <p className="font-medium text-foreground">
-              请在 <span className="font-mono tabular-nums text-[var(--theme-price)]">{timeText}</span> 内完成支付
+              {copy.prefix} <span className="font-mono tabular-nums text-[var(--theme-price)]">{timeText}</span> {copy.suffix}
             </p>
             {order.payment_timeout_minutes != null && !compact ? (
               <p className="mt-0.5 text-[11px] opacity-80">
-                超时未付款将自动取消订单并释放库存（限时 {order.payment_timeout_minutes} 分钟）。
+                {copy.timeoutPrefix} {order.payment_timeout_minutes} {copy.timeoutSuffix}
               </p>
             ) : null}
           </>
@@ -63,4 +96,3 @@ export function OrderPaymentCountdown({
     </div>
   );
 }
-

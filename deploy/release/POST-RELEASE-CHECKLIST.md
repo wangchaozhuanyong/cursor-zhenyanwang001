@@ -67,7 +67,39 @@ Nginx 需已部署 `www.damatong.net` → `https://damatong.net` 的 301（见 `
 
 本地 HTTP 联调：`AUTH_COOKIE_SECURE=0`。
 
-## 5. 用户仍白屏时
+## 5. 交易重构发布核对（涉及订单/活动/支付/库存/物流时必做）
+
+发布前确认：
+
+- 已执行数据库迁移，且 `server/migrations/157` 至 `162` 均已在目标环境生效。
+- 站点能力开关符合发布策略：`promotionEngineV2`、`pricingEngineV2`、`inventoryLockV2`、`billplzEnabled` 不要误开。
+- Billplz / FPX 环境变量只配置在服务端环境文件，不进入前端构建变量。
+- 未提交、未部署的本地改动不能混进生产发布包。
+
+发布后 smoke test：
+
+先执行可重复的前端入口检查：
+
+```bash
+cd click-send-shop-main/click-send-shop-main
+SMOKE_REQUIRE_API=1 BASE_URL=https://damatong.net npm run smoke:restructure
+```
+
+再做需要真实数据或三方平台状态的人工核对：
+
+1. 活动中心 `/promotions` 和一个活动详情页能打开。
+2. 商品页、购物车、结算页展示的活动价、优惠明细和订单创建金额一致。
+3. 重复提交 `POST /api/orders` 使用同一 `idempotency_key` 不会生成两个订单。
+4. 未支付订单超时取消后，库存锁和优惠占用能释放。
+5. Billplz / FPX 支付返回 `/payment/result` 后，只根据后端状态显示结果。
+6. 重复支付回调不会重复加销量、发积分或通知。
+7. 结算页和待支付订单继续支付默认优先使用 Billplz / FPX；Stripe 仍可作为备用渠道。
+8. 后台订单发货后，订单详情能看到物流单号、平台发货轨迹；异常轨迹能显示物流异常说明。
+9. 后台运费页能看到 West/East Malaysia、州、城市、邮编、重量、金额门槛覆盖提示。
+10. 后台库存页能看到可售库存、锁定库存、待支付占用、低库存/缺货和库存流水审计入口。
+11. 后台报表能打开活动转化、优惠成本、支付失败、库存占用、取消原因报表。
+
+## 6. 用户仍白屏时
 
 告知用户无痕打开，或在控制台执行：
 

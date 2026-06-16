@@ -80,6 +80,7 @@ export default function HomePrimaryCampaignV2({
             key={`${campaign.source}-${campaign.type}-${campaign.id}`}
             campaign={campaign}
             clientStyle={clientStyle}
+            priority={index === 0 ? "primary" : "secondary"}
             position={index === 0 ? "home_primary_campaign" : `home_secondary_campaign_${index}`}
             onClick={handleCampaignNavigate}
           />
@@ -92,20 +93,23 @@ export default function HomePrimaryCampaignV2({
 function CampaignCard({
   campaign,
   clientStyle,
+  priority,
   position,
   onClick,
 }: {
   campaign: StorefrontCampaignVm;
   clientStyle: ReturnType<typeof useClientDesignStyle>;
+  priority: "primary" | "secondary";
   position: string;
   onClick: (campaign: StorefrontCampaignVm, position: string) => void;
 }) {
-  const isHighlight = campaign.type === "flash_sale" || campaign.type === "full_reduction";
+  const isHighlight = campaign.type === "flash_sale" || campaign.type === "full_reduction" || campaign.type === "full_discount";
   return (
     <UnifiedButton
       type="button"
       onClick={() => onClick(campaign, position)}
       data-campaign-type={campaign.type}
+      data-campaign-priority={priority}
       className={cn(
         "store-home-v4-campaign-card group flex min-h-[7.25rem] min-w-0 items-center gap-3 border bg-[var(--theme-surface)] p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))] hover:shadow-[0_12px_34px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
         clientStyle === "deep_enterprise" ? "rounded-[0.875rem]" : "rounded-[1rem]",
@@ -121,14 +125,17 @@ function CampaignCard({
           ? "bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-[var(--theme-price)]"
           : "bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))]",
       )}>
-        {campaign.type === "coupon" || campaign.type === "new_user_gift" ? <Gift size={20} /> : campaign.type === "full_reduction" ? <TicketPercent size={20} /> : <Tag size={20} />}
+        {campaign.type === "coupon" || campaign.type === "new_user_gift" ? <Gift size={20} /> : campaign.type === "full_reduction" || campaign.type === "full_discount" ? <TicketPercent size={20} /> : <Tag size={20} />}
       </span>
       <span className="min-w-0 flex-1">
         <span className="mb-1 flex min-w-0 items-center gap-1.5">
-          <StorefrontBadge tone={campaign.type === "flash_sale" ? "hot" : "sale"}>
+          <StorefrontBadge
+            tone={campaign.type === "flash_sale" ? "hot" : "normal"}
+            className="store-home-v4-campaign-badge"
+          >
             {CAMPAIGN_TYPE_LABELS[campaign.type]}
           </StorefrontBadge>
-          {campaign.promoLabel ? <span className="truncate text-xs font-black text-[var(--theme-price)]">{campaign.promoLabel}</span> : null}
+          {campaign.promoLabel ? <span className="store-home-v4-campaign-promo truncate text-xs font-black text-[var(--theme-price)]">{campaign.promoLabel}</span> : null}
         </span>
         <span className="line-clamp-1 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</span>
         <CampaignMetric campaign={campaign} />
@@ -160,6 +167,15 @@ function CampaignMetric({ campaign }: { campaign: StorefrontCampaignVm }) {
       <span className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate text-xs font-semibold text-[var(--theme-text-muted)]">
         <Tag size={15} />
         满 RM {formatHomeV2Money(campaign.thresholdAmount)} 减 RM {formatHomeV2Money(campaign.discountAmount)}
+      </span>
+    );
+  }
+
+  if (campaign.type === "full_discount" && campaign.thresholdAmount) {
+    return (
+      <span className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate text-xs font-semibold text-[var(--theme-text-muted)]">
+        <Tag size={15} />
+        满 RM {formatHomeV2Money(campaign.thresholdAmount)} 打 {formatHomeV2Money((campaign.discountPercent || 0) / 10)} 折
       </span>
     );
   }

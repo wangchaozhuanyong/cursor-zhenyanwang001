@@ -70,9 +70,10 @@ function buildActivityText(product: Product) {
   const activity = product.active_activity;
   if (!activity) return undefined;
 
-  if (activity.type === "flash_sale") {
+  if (activity.type === "flash_sale" || activity.type === "limited_time_discount") {
     const remaining = positiveInteger(activity.remaining_stock);
-    return remaining > 0 ? `秒杀剩余 ${remaining}` : "限时秒杀价";
+    const label = activity.type === "limited_time_discount" ? "折扣" : "秒杀";
+    return remaining > 0 ? `${label}剩余 ${remaining}` : activity.type === "limited_time_discount" ? "限时折扣价" : "限时秒杀价";
   }
 
   const threshold = Number(activity.threshold_amount || 0);
@@ -98,9 +99,16 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
   const badges: ProductCardV2Badge[] = [];
 
   if (product.active_activity) {
+    const activityTypeLabel = product.active_activity.type === "flash_sale"
+      ? "秒杀"
+      : product.active_activity.type === "limited_time_discount"
+        ? "折扣"
+        : product.active_activity.type === "member_price"
+          ? "会员"
+          : "满减";
     badges.push({
       key: "activity",
-      label: product.active_activity.type === "flash_sale" ? "秒杀" : "满减",
+      label: activityTypeLabel,
       tone: "sale",
     });
   }

@@ -59,15 +59,6 @@ function openHomeNavTarget(
     navigate(`/categories?cat=${item.target_category_id}`);
     return;
   }
-  if (item.target_type === "support") {
-    const channelId = String(item.target_support_channel_id || "").trim();
-    if (channelId) {
-      navigate(`/support-download?channelId=${encodeURIComponent(channelId)}`);
-      return;
-    }
-    navigate("/support-download?tab=support");
-    return;
-  }
   openTarget(navigate, item.link_url || "");
 }
 
@@ -82,7 +73,7 @@ const fallbackNavItems: HomeNavItem[] = [
   { id: "fallback-3", title: "热销好物", icon_url: "hot", link_url: "/categories?sort=sales_desc", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 3, enabled: true },
   { id: "fallback-4", title: "优惠券", icon_url: "coupon", link_url: "/coupons", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 4, enabled: true },
   { id: "fallback-5", title: "我的订单", icon_url: "orders", link_url: "/orders", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 5, enabled: true },
-  { id: "fallback-6", title: "联系客服", icon_url: "support", link_url: "/support-download?tab=support", target_type: "support", target_category_id: null, target_support_channel_id: null, sort_order: 6, enabled: true },
+  { id: "fallback-6", title: "会员中心", icon_url: "gift", link_url: "/profile", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 6, enabled: true },
 ];
 
 function withFallbackNavItems(

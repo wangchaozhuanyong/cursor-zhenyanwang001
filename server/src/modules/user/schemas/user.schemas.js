@@ -104,6 +104,18 @@ const shippingQuoteBodySchema = z.object({
   shipping_template_id: z.coerce.string().trim().min(1).optional(),
   raw_amount: z.coerce.number().nonnegative('raw_amount 不能为负数'),
   estimated_weight_kg: z.coerce.number().nonnegative().optional(),
+  destination: z.object({
+    country: z.string().trim().max(8).optional(),
+    state: z.string().trim().max(80).optional(),
+    city: z.string().trim().max(80).optional(),
+    postcode: z.string().trim().max(12).optional(),
+  }).optional(),
+  address: z.object({
+    country: z.string().trim().max(8).optional(),
+    state: z.string().trim().max(80).optional(),
+    city: z.string().trim().max(80).optional(),
+    postcode: z.string().trim().max(12).optional(),
+  }).optional(),
 });
 
 const cancelAccountBodySchema = z.object({

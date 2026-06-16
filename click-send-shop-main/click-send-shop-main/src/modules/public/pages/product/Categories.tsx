@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
+import { ChevronDown, Search, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
-import StoreTabHeader from "@/components/store/StoreTabHeader";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
@@ -179,9 +179,14 @@ export default function Categories() {
     setActiveTagId(""); setSort("default"); setQuery(""); setSubmittedQuery(""); setMinPrice(""); setMaxPrice(""); setInStock(false); setIsNew(false); setIsHot(false); setIsRecommended(false);
   }, []);
 
-  const handleTopSearchSubmit = useCallback(() => {
-    setSubmittedQuery(query.trim());
+  const handleTopSearchSubmit = useCallback((nextValue?: string) => {
+    setSubmittedQuery((nextValue ?? query).trim());
   }, [query]);
+
+  const handleClearTopSearch = useCallback(() => {
+    setQuery("");
+    setSubmittedQuery("");
+  }, []);
 
   const handleSelectAll = useCallback(() => {
     setIsNew(false);
@@ -192,6 +197,14 @@ export default function Categories() {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: "system:new_arrivals" });
     setActiveCat("all");
     setIsNew(true);
+  }, []);
+
+  const handleToggleHot = useCallback(() => {
+    setIsHot((value) => !value);
+  }, []);
+
+  const handleToggleInStock = useCallback(() => {
+    setInStock((value) => !value);
   }, []);
 
   type RootRowItem = { kind: "all" } | { kind: "new" } | { kind: "root"; node: Category };
@@ -292,7 +305,9 @@ export default function Categories() {
   const categoryDescription = activeCategory?.description?.trim() || "";
   const siteName = (siteInfo.siteName || STORE_COPY.brandName).trim();
   const pageHeading = isNew ? NEW_ARRIVAL_CATEGORY_LABEL : activeCategoryName || "全部分类";
-  const categoryDescriptionText = categoryDescription || "分类说明占位";
+  const categoryDescriptionText = categoryDescription || (isNew
+    ? `查看${siteName}最近上架的商品和服务。`
+    : "用关键词、分类和筛选条件快速找到合适商品。");
   const title = isNew
     ? `新品上市｜${siteName}`
     : activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`);
@@ -313,6 +328,45 @@ export default function Categories() {
     page: pagination.page,
     totalPages: pagination.totalPages,
   });
+  const activeSearchFilterCount = activeFilterCount + (submittedQuery ? 1 : 0);
+  const searchHeroStatus = submittedQuery
+    ? `搜索「${submittedQuery}」`
+    : filterSummary
+      ? `当前筛选：${filterSummary}`
+      : loading && products.length === 0
+        ? "正在加载商品"
+        : pagination.total > 0
+          ? `${pagination.total} 款可浏览`
+          : "支持关键词、分类、标签与库存组合筛选";
+  const categorySearchQuickActions = useMemo(
+    () => [
+      {
+        key: "all",
+        label: "全部",
+        active: activeCat === "all" && !isNew,
+        onClick: handleSelectAll,
+      },
+      {
+        key: "new",
+        label: NEW_ARRIVAL_CATEGORY_LABEL,
+        active: isNew,
+        onClick: handleSelectNewArrivals,
+      },
+      {
+        key: "hot",
+        label: "热销",
+        active: isHot,
+        onClick: handleToggleHot,
+      },
+      {
+        key: "stock",
+        label: "有库存",
+        active: inStock,
+        onClick: handleToggleInStock,
+      },
+    ],
+    [activeCat, handleSelectAll, handleSelectNewArrivals, handleToggleHot, handleToggleInStock, inStock, isHot, isNew],
+  );
 
   useEffect(() => {
     if (!hasMoreProducts || loading || listRefreshing) return;
@@ -369,7 +423,7 @@ export default function Categories() {
         </div>
         <div>
           <p className="mb-1 text-xs font-semibold text-[var(--theme-text)]">商品标签</p>
-          {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <UnifiedButton key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "var(--theme-price)" : "var(--theme-text)" }}>{tag.name}</UnifiedButton>; })}</div> : <p className="text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">暂无可用标签，请先在后台给商品绑定标签</p>}
+          {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <UnifiedButton key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "var(--theme-price)" : "var(--theme-text)" }}>{tag.name}</UnifiedButton>; })}</div> : <p className="text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">暂无可用标签</p>}
         </div>
       </div>
     </ProductFilterDrawer>
@@ -385,21 +439,12 @@ export default function Categories() {
         className="store-category-showcase store-category-showcase--plain store-category-switcher"
       />
       {subCategories.length > 0 ? (
-        <div className="store-category-subtabs no-scrollbar flex flex-wrap gap-1.5">
-          {subCategories.map((child) => (
-            <CategoryTabButton
-              key={child.id}
-              active={activeCat === child.id}
-              onClick={() => handleSelectChild(child.id)}
-              layoutId="category-sub-tab"
-              activeClassName="store-category-subtab-active-bg"
-              activeTextClass="store-category-subtab-active-label"
-              className="store-category-subtab px-3"
-            >
-              {child.name}
-            </CategoryTabButton>
-          ))}
-        </div>
+        <CategorySubcategoryRail
+          categories={subCategories}
+          activeCat={activeCat}
+          onSelect={handleSelectChild}
+          layoutId="category-sub-tab"
+        />
       ) : null}
     </div>
   );
@@ -436,21 +481,13 @@ export default function Categories() {
         className="store-category-showcase store-category-showcase--plain store-category-switcher store-category-switcher--wide"
       />
       {subCategories.length > 0 ? (
-        <div className="store-category-tablet-subtabs store-category-subtabs flex flex-wrap gap-1.5">
-          {subCategories.map((child) => (
-            <CategoryTabButton
-              key={child.id}
-              active={activeCat === child.id}
-              onClick={() => handleSelectChild(child.id)}
-              layoutId="category-tablet-sub-tab"
-              activeClassName="store-category-subtab-active-bg"
-              activeTextClass="store-category-subtab-active-label"
-              className="store-category-subtab px-3"
-            >
-              {child.name}
-            </CategoryTabButton>
-          ))}
-        </div>
+        <CategorySubcategoryRail
+          categories={subCategories}
+          activeCat={activeCat}
+          onSelect={handleSelectChild}
+          layoutId="category-tablet-sub-tab"
+          className="store-category-tablet-subtabs"
+        />
       ) : null}
     </div>
   );
@@ -487,15 +524,19 @@ export default function Categories() {
           mobileChrome.mode === "hidden" && "is-hidden",
         )}
       >
-        <StoreTabHeader
-          searchMode="filter"
-          searchValue={query}
-          onSearchChange={setQuery}
-          onSearchSubmit={handleTopSearchSubmit}
-          searchPlaceholder={STORE_COPY.searchPlaceholder}
-          showSiteNameMobile
-          position="static"
-          className="store-home-topbar store-category-mobile-header store-category-topbar"
+        <CategorySearchHero
+          variant="mobile"
+          pageHeading={pageHeading}
+          description={categoryDescriptionText}
+          statusText={searchHeroStatus}
+          query={query}
+          placeholder={STORE_COPY.searchPlaceholder}
+          quickActions={categorySearchQuickActions}
+          hasActiveSearchFilters={activeSearchFilterCount > 0}
+          onQueryChange={setQuery}
+          onSubmit={handleTopSearchSubmit}
+          onClearSearch={handleClearTopSearch}
+          onResetFilters={clearFilters}
         />
       </div>
       <div
@@ -514,19 +555,21 @@ export default function Categories() {
         <div className="px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6">
           <div>
             <section className="store-category-content min-w-0">
-              <div className="store-category-desktop-title mb-4 hidden rounded-[1.125rem] border border-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] px-5 py-4 shadow-[0_12px_36px_color-mix(in_srgb,var(--theme-primary)_8%,transparent)] md:block">
-                <div className="mb-2 h-1 w-8 rounded-full bg-[var(--theme-primary)]" aria-hidden />
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--theme-primary)]">分类目录</p>
-                <h1 className="mt-1 text-2xl font-black tracking-normal text-[var(--theme-text)]">{pageHeading}</h1>
-                <p
-                  className={cn(
-                    "mt-2 min-h-[2.75rem] line-clamp-2 text-sm leading-relaxed text-[var(--theme-text-muted)]",
-                    !categoryDescription && "invisible",
-                  )}
-                  aria-hidden={!categoryDescription}
-                >
-                  {categoryDescriptionText}
-                </p>
+              <div className="mb-4 hidden md:block">
+                <CategorySearchHero
+                  variant="desktop"
+                  pageHeading={pageHeading}
+                  description={categoryDescriptionText}
+                  statusText={searchHeroStatus}
+                  query={query}
+                  placeholder={STORE_COPY.searchPlaceholder}
+                  quickActions={categorySearchQuickActions}
+                  hasActiveSearchFilters={activeSearchFilterCount > 0}
+                  onQueryChange={setQuery}
+                  onSubmit={handleTopSearchSubmit}
+                  onClearSearch={handleClearTopSearch}
+                  onResetFilters={clearFilters}
+                />
               </div>
 
               {wideCategoryRail}
@@ -633,6 +676,201 @@ export default function Categories() {
 
 const TAB_INDICATOR_SPRING = { type: "spring" as const, stiffness: 380, damping: 32 };
 
+type CategorySearchQuickAction = {
+  key: string;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+};
+
+function CategorySearchHero({
+  variant,
+  pageHeading,
+  description,
+  statusText,
+  query,
+  placeholder,
+  quickActions,
+  hasActiveSearchFilters,
+  onQueryChange,
+  onSubmit,
+  onClearSearch,
+  onResetFilters,
+}: {
+  variant: "mobile" | "desktop";
+  pageHeading: string;
+  description: string;
+  statusText: string;
+  query: string;
+  placeholder: string;
+  quickActions: CategorySearchQuickAction[];
+  hasActiveSearchFilters: boolean;
+  onQueryChange: (value: string) => void;
+  onSubmit: (value?: string) => void;
+  onClearSearch: () => void;
+  onResetFilters: () => void;
+}) {
+  const inputId = `category-search-${variant}`;
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const allAction = quickActions.find((action) => action.key === "all");
+
+  const submitCurrentQuery = () => {
+    onSubmit(inputRef.current?.value ?? query);
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitCurrentQuery();
+  };
+
+  return (
+    <section className="store-category-search-hero" data-category-search-hero={variant} aria-label="分类搜索">
+      <div className="store-category-search-hero__intro">
+        <p className="store-category-search-hero__eyebrow">分类目录</p>
+        <h1 className="store-category-search-hero__title">{pageHeading}</h1>
+        <p className="store-category-search-hero__description">{description}</p>
+      </div>
+
+      <div className="store-category-search-hero__panel">
+        <form className="store-category-search-dock" onSubmit={handleSubmit} aria-label="分类页搜索">
+          <UnifiedButton
+            type="button"
+            className="store-category-search-scope"
+            onClick={allAction?.onClick}
+            aria-label="切换到全部分类"
+          >
+            全部分类
+            <ChevronDown size={14} aria-hidden />
+          </UnifiedButton>
+          <div className="store-category-search-input-shell">
+            <Search size={18} className="store-category-search-icon" aria-hidden />
+            <label className="sr-only" htmlFor={inputId}>搜索分类商品</label>
+            <input
+              id={inputId}
+              ref={inputRef}
+              name="categoryKeyword"
+              type="search"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  submitCurrentQuery();
+                }
+              }}
+              placeholder={placeholder}
+              className="store-category-search-input"
+            />
+            {query ? (
+              <UnifiedButton
+                type="button"
+                className="store-category-search-clear"
+                onClick={onClearSearch}
+                aria-label="清空搜索关键词"
+              >
+                <X size={14} aria-hidden />
+              </UnifiedButton>
+            ) : null}
+          </div>
+          <UnifiedButton type="button" className="store-category-search-submit" onClick={submitCurrentQuery}>
+            <Search size={15} aria-hidden />
+            <span>搜索</span>
+          </UnifiedButton>
+        </form>
+
+        <div className="store-category-search-meta">
+          <div className="store-category-search-actions" role="group" aria-label="快速筛选">
+            {quickActions.map((action) => (
+              <UnifiedButton
+                key={action.key}
+                type="button"
+                aria-pressed={action.active}
+                onClick={action.onClick}
+                className={cn("store-category-search-chip", action.active && "is-active")}
+              >
+                {action.label}
+              </UnifiedButton>
+            ))}
+            {hasActiveSearchFilters ? (
+              <UnifiedButton
+                type="button"
+                className="store-category-search-chip store-category-search-chip--clear"
+                onClick={onResetFilters}
+              >
+                <X size={13} aria-hidden />
+                清空
+              </UnifiedButton>
+            ) : null}
+          </div>
+          <p className="store-category-search-status">{statusText}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CategorySubcategoryRail({
+  categories,
+  activeCat,
+  onSelect,
+  layoutId,
+  className,
+}: {
+  categories: Category[];
+  activeCat: string;
+  onSelect: (id: string) => void;
+  layoutId: string;
+  className?: string;
+}) {
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+
+  useEffect(() => {
+    const rail = railRef.current;
+    const activeButton = itemRefs.current.get(activeCat);
+    if (!rail || !activeButton) return;
+
+    const prefersReducedMotion =
+      typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const railRect = rail.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+    const centeredLeft = rail.scrollLeft + buttonRect.left - railRect.left - (rail.clientWidth - activeButton.clientWidth) / 2;
+    const maxLeft = Math.max(0, rail.scrollWidth - rail.clientWidth);
+
+    rail.scrollTo({
+      left: Math.min(Math.max(0, centeredLeft), maxLeft),
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
+  }, [activeCat, categories.length]);
+
+  return (
+    <div
+      ref={railRef}
+      className={cn("store-category-subtabs no-scrollbar flex flex-nowrap gap-1.5", className)}
+      role="tablist"
+      aria-label="子分类"
+    >
+      {categories.map((child) => (
+        <CategoryTabButton
+          key={child.id}
+          active={activeCat === child.id}
+          onClick={() => onSelect(child.id)}
+          layoutId={layoutId}
+          activeClassName="store-category-subtab-active-bg"
+          activeTextClass="store-category-subtab-active-label"
+          className="store-category-subtab px-3"
+          btnRef={(el) => {
+            if (el) itemRefs.current.set(child.id, el);
+            else itemRefs.current.delete(child.id);
+          }}
+        >
+          {child.name}
+        </CategoryTabButton>
+      ))}
+    </div>
+  );
+}
+
 function CategoryTabButton({
   active,
   onClick,
@@ -659,7 +897,6 @@ function CategoryTabButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      aria-pressed={active}
       className={cn(
         "relative flex-shrink-0 overflow-hidden rounded-full px-4 py-1.5 text-xs font-medium",
         active ? "border border-transparent" : "border border-[var(--theme-border)] bg-[var(--theme-surface)]",

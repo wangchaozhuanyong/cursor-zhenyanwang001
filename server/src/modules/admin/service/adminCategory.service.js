@@ -5,7 +5,7 @@ const { generateId } = require('../../../utils/helpers');
 
 function bumpCatalogCache() {
   try {
-    const fn = require('../../product')?.api?.clearCatalogCache;
+    const fn = require('../../product/publicApi')?.clearCatalogCache;
     if (typeof fn === 'function') fn();
   } catch (err) {
     console.warn('[adminCategory] clearCatalogCache:', err?.message || err);
@@ -274,5 +274,4 @@ module.exports = {
   deleteCategory,
   updateCategorySort,
 };
-
 

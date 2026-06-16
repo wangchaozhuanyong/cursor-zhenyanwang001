@@ -228,6 +228,7 @@ cd server && npm run arch:check
 - 用户和权限：登录、注册、后台权限、MFA、CSRF、敏感操作。
 - 报表和导出：金额、数量、时间范围、CSV 导出、统计口径。
 - 上传和媒体：图片上传、视频转码、对象存储、公开访问 URL。
+- 交易重构链路：订单幂等、pricing service、promotion rule engine、inventory lock service、Billplz / FPX、物流快照必须以后端为准；前端不得计算最终金额、优惠资格、库存扣减或支付成功状态。
 
 文档或纯检查脚本改动可以不跑完整业务测试，但必须至少做静态检查或说明未改业务代码。
 

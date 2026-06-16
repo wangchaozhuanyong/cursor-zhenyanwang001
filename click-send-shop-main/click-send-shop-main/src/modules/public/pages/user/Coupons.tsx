@@ -1,13 +1,13 @@
 import { useState, useEffect, forwardRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Ticket, Loader2 } from "lucide-react";
+import { BadgePercent, Crown, Gift, Loader2, ShoppingCart, Sparkles, Ticket, Truck } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCouponCenterStore } from "@/stores/useCouponCenterStore";
 import { useMyCouponsStore } from "@/stores/useMyCouponsStore";
 import { useCartStore } from "@/stores/useCartStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
-import type { UserCoupon } from "@/types/coupon";
+import type { CouponDisplayCategory, CouponType, UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { cn } from "@/lib/utils";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
@@ -16,16 +16,10 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
 import { useCouponAction, type CouponActionState } from "@/features/coupon/useCouponAction";
 import type { CouponClaimStatus } from "@/types/coupon";
-import {
-  THEME_ACCENT_HERO_LABEL,
-  THEME_ACCENT_HERO_MUTED,
-  THEME_ACCENT_HERO_SHELL,
-  THEME_ACCENT_HERO_SUBTLE,
-  THEME_ACCENT_HERO_VALUE,
-  THEME_BTN_PRICE,
-} from "@/utils/themeVisuals";
+import { THEME_BTN_PRICE } from "@/utils/themeVisuals";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 type DisplayStatus = "available" | "claimed" | "pending" | "used" | "expired" | "invalidated";
 
@@ -46,9 +40,12 @@ interface DisplayCoupon {
   claim_status?: CouponClaimStatus;
   claim_reason?: string;
   requires_member?: boolean;
+  requires_new_user?: boolean;
   requires_login?: boolean;
   source_campaign_id?: string;
   audience_type?: string;
+  couponType: CouponType;
+  displayCategory?: CouponDisplayCategory | string;
 }
 
 function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
@@ -80,12 +77,16 @@ function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
     claim_status: uc.claim_status || uc.coupon?.claim_status,
     claim_reason: uc.claim_reason || uc.coupon?.claim_reason,
     requires_member: uc.requires_member ?? uc.coupon?.requires_member,
+    requires_new_user: uc.requires_new_user ?? uc.coupon?.requires_new_user ?? uc.coupon?.new_user_only,
     requires_login: uc.requires_login ?? uc.coupon?.requires_login,
+    couponType: uc.coupon?.type || "fixed",
+    displayCategory: uc.display_category || uc.coupon?.display_category,
   };
 }
 
 type Tab = "all" | "mine" | "pending" | "used" | "expired" | "invalidated";
 type PageView = "mine" | "claimCenter";
+type CouponCategory = "recommended" | "all" | "new_user" | "member" | "shipping" | "fixed" | "percentage";
 
 const TAB_ITEMS: Array<{ key: Tab; label: string; badge?: boolean }> = [
   { key: "all", label: "全部" },
@@ -105,6 +106,25 @@ const EMPTY_STATE_COPY: Record<Tab, { title: string; description?: string }> = {
   invalidated: { title: "暂无已失效优惠券" },
 };
 
+const COUPON_CATEGORY_ITEMS: Array<{ key: CouponCategory; label: string; icon: typeof Ticket }> = [
+  { key: "recommended", label: "推荐", icon: Sparkles },
+  { key: "all", label: "全部", icon: Ticket },
+  { key: "new_user", label: "新人", icon: Gift },
+  { key: "member", label: "会员", icon: Crown },
+  { key: "shipping", label: "运费", icon: Truck },
+  { key: "fixed", label: "满减", icon: Ticket },
+  { key: "percentage", label: "折扣", icon: BadgePercent },
+];
+
+const COUPON_DISPLAY_CATEGORY_SET = new Set<CouponCategory>([
+  "recommended",
+  "new_user",
+  "member",
+  "shipping",
+  "fixed",
+  "percentage",
+]);
+
 const COUPON_ACTION_LABELS: Record<DisplayStatus, string> = {
   available: "立即领取",
   claimed: "使用",
@@ -113,6 +133,8 @@ const COUPON_ACTION_LABELS: Record<DisplayStatus, string> = {
   expired: "已过期",
   invalidated: "已失效",
 };
+
+const COUPON_HERO_IMAGE = "/assets/home-banners/home-hero-03-local-goods-bg.webp";
 
 function filterByTab(coupons: DisplayCoupon[], tab: Tab): DisplayCoupon[] {
   const owned = coupons;
@@ -134,10 +156,49 @@ function filterByTab(coupons: DisplayCoupon[], tab: Tab): DisplayCoupon[] {
   }
 }
 
+function getCouponCategories(coupon: DisplayCoupon): CouponCategory[] {
+  const categories = new Set<CouponCategory>(["all"]);
+  const configuredCategory = normalizeDisplayCategory(coupon.displayCategory);
+  if (configuredCategory) {
+    categories.add(configuredCategory);
+    if (coupon.status === "available" || coupon.status === "claimed" || coupon.claimable !== false) categories.add("recommended");
+    return Array.from(categories);
+  }
+
+  const title = coupon.title || "";
+  if (coupon.status === "available" || coupon.status === "claimed" || coupon.claimable !== false) categories.add("recommended");
+  if (
+    coupon.requires_new_user
+    || coupon.claim_status === "new_user_only"
+    || coupon.audience_type === "new_user"
+    || /新人|新客|首单/.test(title)
+  ) categories.add("new_user");
+  if (
+    coupon.requires_member
+    || coupon.audience_type === "member_level"
+    || /会员/.test(title)
+  ) categories.add("member");
+  if (coupon.couponType === "shipping") categories.add("shipping");
+  if (coupon.couponType === "percentage") categories.add("percentage");
+  if (coupon.couponType === "fixed") categories.add("fixed");
+  return Array.from(categories);
+}
+
+function normalizeDisplayCategory(value?: string): CouponCategory | "" {
+  const normalized = String(value || "").trim() as CouponCategory;
+  return COUPON_DISPLAY_CATEGORY_SET.has(normalized) ? normalized : "";
+}
+
+function filterByCategory(coupons: DisplayCoupon[], category: CouponCategory): DisplayCoupon[] {
+  if (category === "all") return coupons;
+  return coupons.filter((coupon) => getCouponCategories(coupon).includes(category));
+}
+
 export default function Coupons() {
   const navigate = useNavigate();
+  const { localizedPath, t } = usePublicLocale();
   const location = useLocation() as { state?: { pageView?: PageView } | null };
-  const goBack = useGoBack();
+  const goBack = useGoBack(localizedPath("/profile"));
   const {
     claimableCoupons,
     myUsableCount,
@@ -151,12 +212,13 @@ export default function Coupons() {
     error: myError,
     loadCoupons: loadMyCoupons,
   } = useMyCouponsStore();
-  const { claim: claimCouponAction, getActionState } = useCouponAction("/coupons");
+  const { claim: claimCouponAction, getActionState } = useCouponAction(localizedPath("/coupons"));
   const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const loadCart = useCartStore((s) => s.loadCart);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const authHydrated = useAuthStore((s) => s.authHydrated);
   const [tab, setTab] = useState<Tab>("mine");
+  const [category, setCategory] = useState<CouponCategory>("recommended");
   const [pageView, setPageView] = useState<PageView>(() => (isLoggedIn() ? "mine" : "claimCenter"));
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const canViewOwnedCoupons = isAuthenticated;
@@ -195,26 +257,34 @@ export default function Coupons() {
 
   const handleRetry = useCallback(() => {
     if (isSessionExpired) {
-      navigate("/login", { state: { from: "/coupons", fromState: { pageView: pageView === "claimCenter" ? "claimCenter" : "mine" } }, replace: true });
+      navigate(localizedPath("/login"), {
+        state: {
+          from: localizedPath("/coupons"),
+          fromState: { pageView: pageView === "claimCenter" ? "claimCenter" : "mine" },
+        },
+        replace: true,
+      });
       return;
     }
     if (pageView === "claimCenter") void loadCenter({ force: true });
     else void loadMyCoupons(tab === "mine" ? "available" : tab, { force: true });
-  }, [isSessionExpired, loadCenter, loadMyCoupons, navigate, pageView, tab]);
+  }, [isSessionExpired, loadCenter, loadMyCoupons, localizedPath, navigate, pageView, tab]);
   const usableCount = pageView === "mine" && tab === "mine"
     ? coupons.filter((c) => c.status === "claimed").length
     : myUsableCount;
-  const list = pageView === "claimCenter" ? available : filterByTab(coupons, tab);
+  const statusFilteredCoupons = pageView === "claimCenter" ? available : filterByTab(coupons, tab);
+  const list = filterByCategory(statusFilteredCoupons, category);
+  const blockingError = Boolean(error && rawCoupons.length === 0);
 
   const handleClaim = async (coupon: DisplayCoupon) => {
     if (!canViewOwnedCoupons) {
-      navigate("/login", { state: { from: "/coupons", fromState: { pageView: "claimCenter" } } });
+      navigate(localizedPath("/login"), { state: { from: localizedPath("/coupons"), fromState: { pageView: "claimCenter" } } });
       return;
     }
     setClaimingId(coupon.id);
     try {
       const claimed = await claimCouponAction(coupon, {
-        from: "/coupons",
+        from: localizedPath("/coupons"),
         successMessage: "领取成功！已添加到我的优惠券",
       });
       if (claimed) {
@@ -233,11 +303,11 @@ export default function Coupons() {
   const handleUseCoupon = useCallback((coupon: DisplayCoupon) => {
     if (coupon.status !== "claimed") return;
     if (selectedCartCount > 0) {
-      navigate(`/checkout?coupon_id=${coupon.id}`);
+      navigate(localizedPath(`/checkout?coupon_id=${coupon.id}`));
       return;
     }
-    navigate("/cart", { state: { coupon_id: coupon.id } });
-  }, [navigate, selectedCartCount]);
+    navigate(localizedPath("/cart"), { state: { coupon_id: coupon.id } });
+  }, [localizedPath, navigate, selectedCartCount]);
 
   const headerRightSlot = pageView === "claimCenter" ? (
     canViewOwnedCoupons ? (
@@ -251,7 +321,7 @@ export default function Coupons() {
     ) : (
       <UnifiedButton
         type="button"
-        onClick={() => navigate("/login", { state: { from: "/coupons", fromState: { pageView: "claimCenter" } } })}
+        onClick={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/coupons"), fromState: { pageView: "claimCenter" } } })}
         className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
       >
         登录领取
@@ -263,54 +333,40 @@ export default function Coupons() {
 
   if (loading && rawCoupons.length === 0) {
     return (
-      <StoreAccountLayout title="优惠券" onBack={goBack} className="store-page pb-6" mainClassName="sm:px-4 xl:py-6">
+      <StoreAccountLayout title={t("coupon.myCoupons")} onBack={goBack} className="store-page pb-6" mainClassName="sm:px-4 xl:py-6">
         <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">
-          <Loader2 size={28} className="animate-spin text-theme-price" aria-label="加载中" />
-          <p className="mt-3 text-sm">优惠券加载中...</p>
+          <Loader2 size={28} className="animate-spin text-theme-price" aria-label={t("common.loadingPromotions")} />
+          <p className="mt-3 text-sm">{t("coupon.loading")}</p>
         </div>
       </StoreAccountLayout>
     );
   }
 
-  if (error && rawCoupons.length === 0) {
-    return (
-      <div className="store-page flex min-h-screen items-center justify-center px-[var(--store-page-x)] sm:px-4">
-        <ClientEmptyState
-          title="优惠券加载失败"
-          description={error}
-          icon={<Ticket size={30} />}
-          action={
-            <ClientButton type="button" onClick={handleRetry}>
-              {isSessionExpired ? "去登录" : "重试"}
-            </ClientButton>
-          }
-        />
-      </div>
-    );
-  }
-
   return (
     <StoreAccountLayout
-      title={pageView === "claimCenter" ? "领券中心" : "优惠券"}
+      title={pageView === "claimCenter" ? t("coupon.claimCenter") : t("coupon.myCoupons")}
       onBack={pageView === "claimCenter" ? () => setPageView("mine") : goBack}
       rightSlot={headerRightSlot}
       className="store-page pb-6"
       mainClassName="sm:px-4 xl:py-6"
     >
-      {pageView === "mine" ? (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn("rounded-2xl p-5", THEME_ACCENT_HERO_SHELL)}
-        >
-          <p className={THEME_ACCENT_HERO_LABEL}>我的优惠券</p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className={`store-stat-value ${THEME_ACCENT_HERO_VALUE}`}>{usableCount}</span>
-            <span className={`text-sm ${THEME_ACCENT_HERO_MUTED}`}>张可用</span>
-          </div>
-          <p className={`mt-2 ${THEME_ACCENT_HERO_SUBTLE}`}>已领取的优惠券都在这里</p>
-        </motion.div>
-      ) : null}
+      <CouponHero
+        pageView={pageView}
+        usableCount={usableCount}
+        claimableCount={available.length}
+        selectedCartCount={selectedCartCount}
+        canViewOwnedCoupons={canViewOwnedCoupons}
+        onOpenClaimCenter={() => setPageView("claimCenter")}
+        onOpenMine={() => setPageView("mine")}
+        onOpenCart={() => navigate(localizedPath("/cart"))}
+        onLogin={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/coupons"), fromState: { pageView: "claimCenter" } } })}
+      />
+
+      <CouponCategoryRail
+        coupons={statusFilteredCoupons}
+        active={category}
+        onChange={setCategory}
+      />
 
       {pageView === "mine" ? (
         <motion.div
@@ -355,11 +411,30 @@ export default function Coupons() {
         </motion.div>
       ) : null}
 
-      <div className={cn("space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0", pageView === "mine" ? "mt-4" : "mt-0")}>
+      <div className="mt-4 space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
         <AnimatePresence mode="popLayout">
-          {list.length === 0 ? (
+          {blockingError ? (
             <motion.div
-              key={`empty-${pageView}-${tab}`}
+              key={`error-${pageView}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="xl:col-span-2"
+            >
+              <ClientEmptyState
+                title={t("coupon.loadFailed")}
+                description={error || undefined}
+                icon={<Ticket size={30} />}
+                action={
+                  <ClientButton type="button" onClick={handleRetry}>
+                    {isSessionExpired ? t("coupon.goLogin") : t("common.retry")}
+                  </ClientButton>
+                }
+              />
+            </motion.div>
+          ) : list.length === 0 ? (
+            <motion.div
+              key={`empty-${pageView}-${tab}-${category}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -389,7 +464,7 @@ export default function Coupons() {
               )}
             </motion.div>
           ) : null}
-          {list.map((coupon, i) => (
+          {!blockingError && list.map((coupon, i) => (
             <CouponCard
               key={coupon.id}
               coupon={coupon}
@@ -453,6 +528,174 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
     </motion.div>
   );
 });
+
+function CouponHero({
+  pageView,
+  usableCount,
+  claimableCount,
+  selectedCartCount,
+  canViewOwnedCoupons,
+  onOpenClaimCenter,
+  onOpenMine,
+  onOpenCart,
+  onLogin,
+}: {
+  pageView: PageView;
+  usableCount: number;
+  claimableCount: number;
+  selectedCartCount: number;
+  canViewOwnedCoupons: boolean;
+  onOpenClaimCenter: () => void;
+  onOpenMine: () => void;
+  onOpenCart: () => void;
+  onLogin: () => void;
+}) {
+  const isClaimCenter = pageView === "claimCenter";
+  const metrics = [
+    { label: "可用券", value: `${usableCount} 张`, icon: Ticket },
+    { label: "可领取", value: `${claimableCount} 张`, icon: Gift },
+    { label: "已选商品", value: `${selectedCartCount} 件`, icon: ShoppingCart },
+  ];
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 shadow-[var(--theme-shadow)] sm:px-6 sm:py-5"
+      style={{
+        backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 98%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 92%, transparent) 44%, color-mix(in srgb, var(--theme-bg) 72%, transparent) 100%), url("${COUPON_HERO_IMAGE}")`,
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+      }}
+    >
+      <div className="relative grid gap-4 md:grid-cols-[minmax(0,1fr)_15rem] md:items-stretch">
+        <div className="min-w-0">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-3 py-1 text-xs font-semibold text-[var(--theme-primary)]">
+            <Sparkles size={13} aria-hidden />
+            {isClaimCenter ? "今日领券中心" : "优惠采购钱包"}
+          </span>
+          <h2 className="mt-3 text-[24px] font-black leading-tight text-[var(--theme-text-on-surface)] sm:text-3xl">
+            {isClaimCenter ? "先领券，再结算更省" : `${usableCount} 张优惠券待使用`}
+          </h2>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {metrics.map((metric) => {
+              const Icon = metric.icon;
+              return (
+                <div
+                  key={metric.label}
+                  className="min-w-0 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] px-2.5 py-2 shadow-[0_10px_24px_-22px_color-mix(in_srgb,var(--theme-text)_44%,transparent)] backdrop-blur"
+                >
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-[var(--theme-text-muted-on-surface)]">
+                    <Icon size={12} className="shrink-0 text-[var(--theme-price)]" aria-hidden />
+                    <span className="truncate">{metric.label}</span>
+                  </div>
+                  <p className="mt-1 truncate text-sm font-black tabular-nums text-[var(--theme-text-on-surface)] sm:text-base">
+                    {metric.value}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:flex">
+            <UnifiedButton
+              type="button"
+              onClick={isClaimCenter ? (canViewOwnedCoupons ? onOpenMine : onLogin) : onOpenClaimCenter}
+              className={cn("inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-bold", THEME_BTN_PRICE)}
+            >
+              <Gift size={15} aria-hidden />
+              {isClaimCenter ? (canViewOwnedCoupons ? "查看我的券" : "登录领取") : "去领券"}
+            </UnifiedButton>
+            <UnifiedButton
+              type="button"
+              onClick={onOpenCart}
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_74%,transparent)] px-4 text-sm font-bold text-[var(--theme-text-on-surface)] backdrop-blur"
+            >
+              <ShoppingCart size={15} aria-hidden />
+              {selectedCartCount > 0 ? "去结算" : "去购物车"}
+            </UnifiedButton>
+          </div>
+        </div>
+
+        <div className="hidden min-h-full rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_68%,transparent)] p-3 shadow-[0_20px_46px_-32px_color-mix(in_srgb,var(--theme-price)_54%,transparent)] backdrop-blur md:flex md:flex-col md:justify-between">
+          <div>
+            <p className="text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">本次采购建议</p>
+            <p className="mt-2 text-2xl font-black leading-none text-[var(--theme-price)]">{isClaimCenter ? claimableCount : usableCount}</p>
+            <p className="mt-1 text-xs font-medium text-[var(--theme-text-muted-on-surface)]">
+              {isClaimCenter ? "张可领取优惠" : "张券可进入结算"}
+            </p>
+          </div>
+          <div className="mt-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">购物车联动</span>
+              <ShoppingCart size={15} className="text-[var(--theme-primary)]" aria-hidden />
+            </div>
+            <p className="mt-2 text-sm font-bold text-[var(--theme-text-on-surface)]">
+              {selectedCartCount > 0 ? `${selectedCartCount} 件商品可带券结算` : "加购后自动匹配优惠"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </motion.section>
+  );
+}
+
+function CouponCategoryRail({
+  coupons,
+  active,
+  onChange,
+}: {
+  coupons: DisplayCoupon[];
+  active: CouponCategory;
+  onChange: (category: CouponCategory) => void;
+}) {
+  return (
+    <motion.div
+      className="mt-4 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      role="tablist"
+      aria-label="优惠分类"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <div className="flex min-w-max gap-2">
+        {COUPON_CATEGORY_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const count = filterByCategory(coupons, item.key).length;
+          const selected = active === item.key;
+          return (
+            <UnifiedButton
+              key={item.key}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => onChange(item.key)}
+              className={cn(
+                "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-bold transition-all",
+                selected
+                  ? "border-[color-mix(in_srgb,var(--theme-primary)_52%,var(--theme-border))] bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-[0_16px_34px_-26px_color-mix(in_srgb,var(--theme-primary)_70%,transparent)]"
+                  : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text-on-surface)]",
+              )}
+            >
+              <Icon size={15} aria-hidden />
+              <span>{item.label}</span>
+              <span
+                className={cn(
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] tabular-nums",
+                  selected
+                    ? "bg-[color-mix(in_srgb,var(--theme-primary-foreground)_22%,transparent)] text-[var(--theme-primary-foreground)]"
+                    : "bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))] text-[var(--theme-text-muted-on-surface)]",
+                )}
+              >
+                {count}
+              </span>
+            </UnifiedButton>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
 
 function ClaimCenterButton({ count, onClick }: { count: number; onClick: () => void }) {
   return (

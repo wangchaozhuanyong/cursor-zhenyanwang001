@@ -64,6 +64,7 @@ export const INVENTORY_SKU_HEADS = [
   "SKU 编码",
   "分类",
   "可用库存",
+  "锁定库存",
   "总库存",
   "单位",
   "预警值",

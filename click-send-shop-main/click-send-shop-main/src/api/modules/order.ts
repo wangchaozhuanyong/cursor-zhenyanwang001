@@ -1,9 +1,11 @@
-import { del, get, post } from "@/api/request";
+import { del, get, post, type RequestOptions } from "@/api/request";
 import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayload } from "@/types/order";
 import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { CheckoutCouponsResult } from "@/types/coupon";
 import type { PaginatedData } from "@/types/common";
 import type { OrderSummary } from "@/types/order";
+
+type OrderReadOptions = Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal" | "timeoutMs" | "skipAuthRetry" | "suppressAuthExpired">;
 
 export function getOrders(params?: OrderListParams) {
   return get<PaginatedData<Order>>("/orders", params as unknown as Record<string, unknown>);
@@ -13,8 +15,8 @@ export function getOrderSummary() {
   return get<OrderSummary>("/orders/summary");
 }
 
-export function getOrderById(id: string) {
-  return get<Order>(`/orders/${id}`);
+export function getOrderById(id: string, options?: OrderReadOptions) {
+  return get<Order>(`/orders/${id}`, undefined, options);
 }
 
 export function submitOrder(params: SubmitOrderParams) {
@@ -45,7 +47,7 @@ export function deleteOrder(id: string) {
   return del<void>(`/orders/${id}`);
 }
 
-/** Stripe Checkout锛氳繑鍥炶烦杞?URL */
+/** Stripe Checkout：返回跳转 URL。 */
 export function createStripeCheckoutSession(id: string) {
   return post<{ url: string }>(`/orders/${id}/stripe-checkout`);
 }

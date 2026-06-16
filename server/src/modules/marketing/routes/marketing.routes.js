@@ -7,6 +7,8 @@ const authOptional = require('../../../middleware/authOptional');
 const router = Router();
 
 router.use('/campaigns', campaignRoutes);
+router.get('/promotions', authOptional, ctrl.getPromotions);
+router.get('/promotions/:slug', authOptional, ctrl.getPromotionBySlug);
 router.get('/activities/flash-sale', ctrl.getFlashSale);
 router.get('/activities/by-position', ctrl.getByPosition);
 router.get('/coupon-center', authOptional, requireSiteCapability('couponEnabled', '本站未启用优惠券功能'), ctrl.getCouponCenter);

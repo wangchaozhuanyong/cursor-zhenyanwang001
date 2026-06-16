@@ -58,6 +58,7 @@ export default function ProductCardV2({
         onClick={onClick}
         className={cn(
           storefrontCardClassName(),
+          "store-product-card-v2 store-product-card-v2--list",
           "group flex min-w-0 gap-3 p-2.5 hover:-translate-y-0.5 sm:p-3",
           cardToneClassName,
           className,
@@ -107,6 +108,7 @@ export default function ProductCardV2({
       onClick={onClick}
       className={cn(
         storefrontCardClassName(),
+        "store-product-card-v2",
         "group flex min-w-0 flex-col overflow-hidden p-1.5 hover:-translate-y-0.5",
         cardToneClassName,
         variant === "compact" && "max-w-[13rem]",

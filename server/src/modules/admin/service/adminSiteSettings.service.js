@@ -10,23 +10,23 @@ const { isS3StorageEnabled, uploadBufferToS3 } = require('../../../utils/objectS
 const { bufferMatchesDeclaredMime } = require('../../../utils/fileMagic');
 
 function getSiteCapabilitiesApi() {
-  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+  return /** @type {any} */ (require('../../siteCapabilities/publicApi')) || {};
 }
 
 function getTelegramApi() {
-  return /** @type {any} */ (require('../../telegram')).api || {};
+  return /** @type {any} */ (require('../../telegram/publicApi')) || {};
 }
 
 function getUserApi() {
-  return /** @type {any} */ (require('../../user')).api || {};
+  return /** @type {any} */ (require('../../user/publicApi')) || {};
 }
 
 function getProductApi() {
-  return /** @type {any} */ (require('../../product')).api || {};
+  return /** @type {any} */ (require('../../product/publicApi')) || {};
 }
 
 function getHomeApi() {
-  return /** @type {any} */ (require('../../home')).api || {};
+  return /** @type {any} */ (require('../../home/publicApi')) || {};
 }
 
 const LEGACY_DEFAULT_OG_IMAGE_KEY = 'defaultOgImageUrl';

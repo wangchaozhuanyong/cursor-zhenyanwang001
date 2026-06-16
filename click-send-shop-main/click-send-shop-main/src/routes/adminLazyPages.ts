@@ -84,8 +84,13 @@ export const AdminCategoryAnalysisReport = lazyWithPreload(() => import("@/modul
 export const AdminOrderAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminOrderAnalysisReport"));
 export const AdminCustomerAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminCustomerAnalysisReport"));
 export const AdminActivityAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminActivityAnalysisReport"));
+export const AdminPromotionConversionReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminPromotionConversionReport"));
 export const AdminCouponAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminCouponAnalysisReport"));
+export const AdminDiscountCostReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminDiscountCostReport"));
+export const AdminPaymentFailureReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminPaymentFailureReport"));
 export const AdminInventoryAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminInventoryAnalysisReport"));
+export const AdminInventoryOccupancyReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminInventoryOccupancyReport"));
+export const AdminOrderCancelReasonReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminOrderCancelReasonReport"));
 export const AdminSearchAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminSearchAnalysisReport"));
 export const AdminTrafficAnalysisReport = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminTrafficAnalysisReport"));
 export const AdminExportCenter = lazyWithPreload(() => import("@/modules/admin/pages/report/AdminExportCenter"));
@@ -152,6 +157,8 @@ const ADMIN_EXACT_ROUTE_PRELOADERS = new Map<string, AdminLazyComponent>([
   ["/admin/marketing/coupons", AdminCoupons],
   ["/admin/marketing/coupons/new", AdminCouponForm],
   ["/admin/marketing/coupons/records", AdminCouponRecords],
+  ["/admin/marketing/coupon-campaigns", AdminCouponCampaigns],
+  ["/admin/marketing/coupon-campaigns/new", AdminCouponCampaignForm],
   ["/admin/marketing/points", AdminMarketingPoints],
   ["/admin/marketing/rewards", AdminMarketingRewards],
   ["/admin/marketing/invites", AdminInvites],
@@ -177,10 +184,15 @@ const ADMIN_EXACT_ROUTE_PRELOADERS = new Map<string, AdminLazyComponent>([
   ["/admin/reports/products", AdminProductAnalysisReport],
   ["/admin/reports/categories", AdminCategoryAnalysisReport],
   ["/admin/reports/inventory", AdminInventoryAnalysisReport],
+  ["/admin/reports/inventory/occupancy", AdminInventoryOccupancyReport],
   ["/admin/reports/orders", AdminOrderAnalysisReport],
+  ["/admin/reports/orders/cancel-reasons", AdminOrderCancelReasonReport],
+  ["/admin/reports/payments/failures", AdminPaymentFailureReport],
   ["/admin/reports/customers", AdminCustomerAnalysisReport],
   ["/admin/reports/activities", AdminActivityAnalysisReport],
+  ["/admin/reports/promotions/conversion", AdminPromotionConversionReport],
   ["/admin/reports/coupons", AdminCouponAnalysisReport],
+  ["/admin/reports/discounts/cost", AdminDiscountCostReport],
   ["/admin/reports/search", AdminSearchAnalysisReport],
   ["/admin/reports/traffic", AdminTrafficAnalysisReport],
   ["/admin/exports", AdminExportCenter],
@@ -198,6 +210,7 @@ const ADMIN_PATTERN_ROUTE_PRELOADERS: Array<[RegExp, AdminLazyComponent]> = [
   [/^\/admin\/notifications\/[^/]+$/, AdminNotificationDetail],
   [/^\/admin\/marketing\/activities\/[^/]+\/edit$/, AdminActivityForm],
   [/^\/admin\/marketing\/coupons\/[^/]+$/, AdminCouponForm],
+  [/^\/admin\/marketing\/coupon-campaigns\/[^/]+$/, AdminCouponCampaignForm],
   [/^\/admin\/monitoring\/anomalies\/[^/]+$/, AdminMonitoringAnomalyDetail],
 ];
 

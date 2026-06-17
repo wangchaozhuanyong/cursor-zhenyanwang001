@@ -7,6 +7,11 @@ describe("shouldHideBottomNav", () => {
     expect(shouldHideBottomNav("/checkout/confirm")).toBe(true);
   });
 
+  it("hides on search paths", () => {
+    expect(shouldHideBottomNav("/search")).toBe(true);
+    expect(shouldHideBottomNav("/en/search")).toBe(true);
+  });
+
   it("shows on other paths", () => {
     expect(shouldHideBottomNav("/")).toBe(false);
     expect(shouldHideBottomNav("/cart")).toBe(false);

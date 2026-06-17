@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronDown, LayoutGrid, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
@@ -51,6 +51,7 @@ export default function Categories() {
     [siteCapabilities.restrictedProductComplianceEnabled, siteInfo],
   );
   const { viewMode, setViewMode } = useCategoryListView();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const syncedSearchKeyRef = useRef(searchParams.toString());
   const syncingFromUrlRef = useRef(false);
@@ -181,6 +182,11 @@ export default function Categories() {
   const handleTopSearchSubmit = useCallback((nextValue?: string) => {
     setSubmittedQuery((nextValue ?? query).trim());
   }, [query]);
+
+  const openSearchPage = useCallback((nextValue?: string) => {
+    const keyword = (nextValue ?? query).trim();
+    navigate(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search");
+  }, [navigate, query]);
 
   const handleClearTopSearch = useCallback(() => {
     setQuery("");
@@ -451,11 +457,9 @@ export default function Categories() {
 
   const mobileFilterBar = (
     <div className="store-category-mobile-filter-shell store-category-sticky-filter md:hidden">
-      <div className="store-category-mobile-tools flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <ProductSortBar value={sort} onChange={setSort} />
-        </div>
-        <ProductListViewToggle value={viewMode} onChange={setViewMode} />
+      <div className="store-category-mobile-tools store-category-mobile-sort-bar flex items-center">
+        <ProductSortBar value={sort} onChange={setSort} className="store-category-mobile-sort-list" />
+        <ProductListViewToggle value={viewMode} onChange={setViewMode} className="store-category-mobile-view-toggle" />
         {filterDrawer}
       </div>
     </div>
@@ -552,6 +556,7 @@ export default function Categories() {
           hasActiveSearchFilters={activeSearchFilterCount > 0}
           onQueryChange={setQuery}
           onSubmit={handleTopSearchSubmit}
+          onOpenSearch={openSearchPage}
           onClearSearch={handleClearTopSearch}
           onResetFilters={clearFilters}
         />
@@ -585,6 +590,7 @@ export default function Categories() {
                   hasActiveSearchFilters={activeSearchFilterCount > 0}
                   onQueryChange={setQuery}
                   onSubmit={handleTopSearchSubmit}
+                  onOpenSearch={openSearchPage}
                   onClearSearch={handleClearTopSearch}
                   onResetFilters={clearFilters}
                 />
@@ -842,6 +848,7 @@ function CategorySearchHero({
   hasActiveSearchFilters,
   onQueryChange,
   onSubmit,
+  onOpenSearch,
   onClearSearch,
   onResetFilters,
 }: {
@@ -855,14 +862,20 @@ function CategorySearchHero({
   hasActiveSearchFilters: boolean;
   onQueryChange: (value: string) => void;
   onSubmit: (value?: string) => void;
+  onOpenSearch?: (value?: string) => void;
   onClearSearch: () => void;
   onResetFilters: () => void;
 }) {
   const inputId = `category-search-${variant}`;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const allAction = quickActions.find((action) => action.key === "all");
+  const isMobile = variant === "mobile";
 
   const submitCurrentQuery = () => {
+    if (isMobile && onOpenSearch) {
+      onOpenSearch(inputRef.current?.value ?? query);
+      return;
+    }
     onSubmit(inputRef.current?.value ?? query);
   };
 
@@ -899,7 +912,10 @@ function CategorySearchHero({
               name="categoryKeyword"
               type="search"
               value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
+              readOnly={isMobile}
+              onClick={isMobile ? () => onOpenSearch?.(query) : undefined}
+              onFocus={isMobile ? () => onOpenSearch?.(query) : undefined}
+              onChange={isMobile ? undefined : (event) => onQueryChange(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
@@ -926,32 +942,34 @@ function CategorySearchHero({
           </UnifiedButton>
         </form>
 
-        <div className="store-category-search-meta">
-          <div className="store-category-search-actions" role="group" aria-label="快速筛选">
-            {quickActions.map((action) => (
-              <UnifiedButton
-                key={action.key}
-                type="button"
-                aria-pressed={action.active}
-                onClick={action.onClick}
-                className={cn("store-category-search-chip", action.active && "is-active")}
-              >
-                {action.label}
-              </UnifiedButton>
-            ))}
-            {hasActiveSearchFilters ? (
-              <UnifiedButton
-                type="button"
-                className="store-category-search-chip store-category-search-chip--clear"
-                onClick={onResetFilters}
-              >
-                <X size={13} aria-hidden />
-                清空
-              </UnifiedButton>
-            ) : null}
+        {!isMobile ? (
+          <div className="store-category-search-meta">
+            <div className="store-category-search-actions" role="group" aria-label="快速筛选">
+              {quickActions.map((action) => (
+                <UnifiedButton
+                  key={action.key}
+                  type="button"
+                  aria-pressed={action.active}
+                  onClick={action.onClick}
+                  className={cn("store-category-search-chip", action.active && "is-active")}
+                >
+                  {action.label}
+                </UnifiedButton>
+              ))}
+              {hasActiveSearchFilters ? (
+                <UnifiedButton
+                  type="button"
+                  className="store-category-search-chip store-category-search-chip--clear"
+                  onClick={onResetFilters}
+                >
+                  <X size={13} aria-hidden />
+                  清空
+                </UnifiedButton>
+              ) : null}
+            </div>
+            <p className="store-category-search-status">{statusText}</p>
           </div>
-          <p className="store-category-search-status">{statusText}</p>
-        </div>
+        ) : null}
       </div>
     </section>
   );

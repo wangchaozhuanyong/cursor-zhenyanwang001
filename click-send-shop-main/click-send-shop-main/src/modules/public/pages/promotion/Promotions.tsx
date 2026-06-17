@@ -26,6 +26,7 @@ import { usePublicLocale } from "@/i18n/publicLocale";
 import type { PromotionType, StorefrontHomeCampaign, StorefrontPromotion } from "@/services/marketingService";
 
 type PromotionFilter = PromotionType | "";
+type CampaignShortcutLayout = "scroll" | "single" | "pair";
 const PROMOTIONS_BASE_PATH = "/promotions";
 const LEGACY_DEALS_BASE_PATH = "/deals";
 
@@ -126,7 +127,13 @@ function campaignFallbackHref(campaign: StorefrontHomeCampaign) {
   return "/categories";
 }
 
-function CampaignShortcut({ campaign }: { campaign: StorefrontHomeCampaign }) {
+function CampaignShortcut({
+  campaign,
+  layout = "scroll",
+}: {
+  campaign: StorefrontHomeCampaign;
+  layout?: CampaignShortcutLayout;
+}) {
   const { localizedPath, t } = usePublicLocale();
   const href = localizedPath(toPromotionsHref(campaign.href || campaignFallbackHref(campaign)));
   const metric = campaign.coupons?.length
@@ -138,7 +145,12 @@ function CampaignShortcut({ campaign }: { campaign: StorefrontHomeCampaign }) {
   return (
     <Link
       to={href}
-      className="store-promotions-v12-shortcut group flex min-w-[11rem] flex-col justify-between rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_30%,var(--theme-border))] sm:min-w-0"
+      className={cn(
+        "store-promotions-v12-shortcut group flex flex-col justify-between rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_30%,var(--theme-border))]",
+        layout === "scroll" && "min-w-[11rem] sm:min-w-0",
+        layout === "pair" && "min-w-0",
+        layout === "single" && "w-full max-w-[13rem] min-w-0",
+      )}
     >
       <span className="text-[11px] font-black uppercase tracking-[0.08em] text-[var(--theme-primary)]">{metric}</span>
       <strong className="mt-2 line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</strong>
@@ -254,11 +266,9 @@ function PromotionGuardrail() {
 
 function PromotionStatePanel({
   kind,
-  selectedLabel,
   onRetry,
 }: {
   kind: "error" | "empty";
-  selectedLabel: string;
   onRetry: () => void;
 }) {
   const { localizedPath, t } = usePublicLocale();
@@ -270,15 +280,9 @@ function PromotionStatePanel({
         {isError ? <Timer size={24} aria-hidden /> : <PackageSearch size={24} aria-hidden />}
       </span>
       <div className="store-promotions-v12-state-panel__copy">
-        <p className="store-promotions-v12-state-panel__eyebrow">
-          {isError ? "活动数据暂时不可用" : selectedLabel ? `${selectedLabel} 暂无活动` : "活动排期为空"}
-        </p>
+        {isError ? <p className="store-promotions-v12-state-panel__eyebrow">活动数据暂时不可用</p> : null}
         <h2>{isError ? "活动中心还在，同步接口暂时失败" : t("promotion.emptyTitle")}</h2>
-        <p>
-          {isError
-            ? "你仍然可以先去领券、看商品或稍后重试。"
-            : "新活动发布后会自动出现在这里。你可以先浏览商品、领取优惠券，结算页会自动匹配可用优惠。"}
-        </p>
+        {isError ? <p>你仍然可以先去领券、看商品或稍后重试。</p> : null}
       </div>
       <div className="store-promotions-v12-state-panel__actions">
         {isError ? (
@@ -360,7 +364,9 @@ export default function Promotions() {
     flash: list.filter((item) => item.type === "flash_sale" || item.type === "limited_time_discount").length,
     member: list.filter((item) => ["member_price", "points_reward", "checkin_reward"].includes(item.type)).length,
   }), [list]);
-  const selectedFilterLabel = selectedType ? promotionTypeLabel(selectedType) : "";
+  const shortcutCampaigns = useMemo(() => campaigns.slice(0, 4), [campaigns]);
+  const shortcutLayout: CampaignShortcutLayout =
+    shortcutCampaigns.length === 1 ? "single" : shortcutCampaigns.length === 2 ? "pair" : "scroll";
 
   return (
     <div className="store-page-shell store-v12-page store-promotions-v12-page store-bottom-safe min-h-[100dvh] bg-[var(--theme-bg)] text-[var(--theme-text)]">
@@ -379,24 +385,7 @@ export default function Promotions() {
 
       <main className="mx-auto w-full max-w-6xl px-[var(--store-page-x)] pb-6 pt-3 md:px-6 md:py-8 lg:px-8">
         <section className="store-promotions-v12-hero overflow-hidden rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))_0%,var(--theme-surface)_58%,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))_100%)] p-4 shadow-[0_18px_50px_color-mix(in_srgb,var(--theme-price)_10%,transparent)] sm:p-6">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[1rem] bg-[color-mix(in_srgb,var(--theme-price)_16%,var(--theme-surface))] text-[var(--theme-price)]">
-              <Sparkles size={22} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="text-xs font-black uppercase tracking-[0.08em] text-[var(--theme-price)]">
-                {t("promotion.headerEyebrow")}
-              </span>
-              <h1 className="mt-1 text-2xl font-black leading-tight text-[var(--theme-text)] sm:text-3xl">
-                {t("promotion.headerTitle")}
-              </h1>
-              <p className="mt-2 text-sm leading-6 text-[var(--theme-text-muted)]">
-                {t("promotion.headerSubtitle")}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+          <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-[0.95rem] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] px-2 py-3 backdrop-blur">
               <strong className="block text-xl font-black text-[var(--theme-text)]">{formatCount(summary.active)}</strong>
               <span className="text-[11px] font-medium text-[var(--theme-text-muted)]">{t("promotion.active")}</span>
@@ -412,49 +401,38 @@ export default function Promotions() {
           </div>
         </section>
 
-        {campaigns.length ? (
+        {shortcutCampaigns.length ? (
           <section className="store-promotions-v12-strip mt-4 rounded-[1.1rem] border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] p-3">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-sm font-black text-[var(--theme-text)]">{t("common.allPromotions")}</h2>
-                <p className="text-xs text-[var(--theme-text-muted)]">{t("promotion.headerSubtitle")}</p>
               </div>
               <Link
                 to={localizedPath("/coupons")}
-                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs font-black text-[var(--theme-text)]"
+                className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 text-xs font-black text-[var(--theme-primary-foreground)] shadow-sm"
               >
-                {t("common.coupons")}
+                {t("promotion.goCoupons")}
                 <ArrowRight size={14} />
               </Link>
             </div>
-            <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4">
-              {campaigns.slice(0, 4).map((campaign) => <CampaignShortcut key={`${campaign.type}:${campaign.id}`} campaign={campaign} />)}
+            <div
+              className={cn(
+                "pb-1",
+                shortcutLayout === "single" && "flex justify-center",
+                shortcutLayout === "pair" && "grid grid-cols-2 gap-2.5 sm:mx-auto sm:max-w-md",
+                shortcutLayout === "scroll" && "no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4",
+              )}
+            >
+              {shortcutCampaigns.map((campaign) => (
+                <CampaignShortcut key={`${campaign.type}:${campaign.id}`} campaign={campaign} layout={shortcutLayout} />
+              ))}
             </div>
           </section>
         ) : null}
 
-        <section className="store-promotions-v12-coupon-cta mt-4 grid gap-3 rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[0.85rem] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">
-              <Gift size={20} />
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-sm font-black text-[var(--theme-text)]">{t("coupon.claimCenter")}</h2>
-              <p className="line-clamp-1 text-xs text-[var(--theme-text-muted)]">{t("promotion.couponRewardsHint")}</p>
-            </div>
-          </div>
-          <Link
-            to={localizedPath("/coupons")}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-black text-[var(--theme-primary-foreground)]"
-          >
-            {t("promotion.goCoupons")}
-            <ArrowRight size={15} />
-          </Link>
-        </section>
-
         <PromotionGuardrail />
 
-        <nav className="store-promotions-v12-filters no-scrollbar -mx-[var(--store-page-x)] mt-4 flex gap-2 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0" aria-label={t("promotion.quickNav")}>
+        <nav className="store-promotions-v12-filters mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-10" aria-label={t("promotion.quickNav")}>
           {FILTERS.map((filter) => {
             const Icon = filter.icon;
             const active = selectedType === filter.type;
@@ -465,14 +443,14 @@ export default function Promotions() {
                 to={localizedPath(buildFilterHref(filter.type))}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-black transition",
+                  "inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-full border px-2 text-xs font-black transition",
                   active
                     ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
                     : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]",
                 )}
               >
-                <Icon size={15} />
-                {label || filter.fallbackLabel}
+                <Icon size={15} className="shrink-0" />
+                <span className="truncate">{label || filter.fallbackLabel}</span>
               </Link>
             );
           })}
@@ -483,13 +461,13 @@ export default function Promotions() {
             {Array.from({ length: 6 }).map((_, index) => <PromotionSkeleton key={index} />)}
           </section>
         ) : error ? (
-          <PromotionStatePanel kind="error" selectedLabel={selectedFilterLabel} onRetry={() => void load()} />
+          <PromotionStatePanel kind="error" onRetry={() => void load()} />
         ) : list.length ? (
           <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((promotion) => <PromotionCard key={promotion.id} promotion={promotion} />)}
           </section>
         ) : (
-          <PromotionStatePanel kind="empty" selectedLabel={selectedFilterLabel} onRetry={() => void load()} />
+          <PromotionStatePanel kind="empty" onRetry={() => void load()} />
         )}
       </main>
     </div>

@@ -1,6 +1,8 @@
-import { useState, type CSSProperties, type FormEvent, type MouseEvent } from "react";
-import { ChevronDown, Grid3X3, Search, UserRound } from "lucide-react";
+import { useState, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { ChevronDown, Grid3X3, Search, ShoppingCart, UserRound } from "lucide-react";
 import BannerCarousel from "@/components/BannerCarousel";
+import NotificationIconButton from "@/components/NotificationIconButton";
+import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { cn } from "@/lib/utils";
 import { isDarkClientDesignStyle, type ClientDesignStyle } from "@/utils/clientDesignStyle";
@@ -8,6 +10,7 @@ import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useClientDesignStyle } from "../design/useClientDesignStyle";
 
 type HomeHeroV2Props = {
@@ -52,11 +55,15 @@ export default function HomeHeroV2({
       } as CSSProperties
     : undefined;
 
+  const openSearchPage = (value = keyword) => {
+    const trimmed = value.trim();
+    onNavigate(localizedPath(trimmed ? `/search?keyword=${encodeURIComponent(trimmed)}` : "/search"));
+  };
+
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    const value = keyword.trim();
-    onNavigate(localizedPath(value ? `/search?keyword=${encodeURIComponent(value)}` : "/search"));
+    openSearchPage();
   };
 
   return (
@@ -74,6 +81,11 @@ export default function HomeHeroV2({
       )}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--theme-primary)_32%,transparent),transparent)]" aria-hidden />
+      <HeroChrome
+        siteName={siteName}
+        logoSrc={logoSrc}
+        onNavigate={onNavigate}
+      />
       <div className="store-home-v4-hero-media relative min-w-0 overflow-hidden">
         {hasBanner ? (
           <BannerCarousel
@@ -94,11 +106,6 @@ export default function HomeHeroV2({
         )}
 
         <div className="pointer-events-none absolute inset-0 z-[35] flex flex-col">
-          <HeroChrome
-            siteName={siteName}
-            logoSrc={logoSrc}
-            onNavigate={onNavigate}
-          />
           <div className="store-home-v4-copy pointer-events-auto mt-auto w-full px-4 pb-5 sm:px-6 sm:pb-6 lg:px-9 lg:pb-8">
             {!hasBanner ? (
               <div className="store-home-v4-title-wrap mb-4 max-w-2xl text-white">
@@ -127,7 +134,10 @@ export default function HomeHeroV2({
                 id="home-v4-search"
                 type="search"
                 value={keyword}
+                readOnly
                 onChange={(event) => setKeyword(event.target.value)}
+                onClick={() => openSearchPage()}
+                onFocus={() => openSearchPage()}
                 placeholder={t("hero.searchPlaceholder")}
                 className="store-home-v4-search-input"
               />
@@ -168,20 +178,30 @@ function HeroChrome({
   onNavigate: (path: string) => void;
 }) {
   const { localizedPath, t } = usePublicLocale();
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const brandName = siteName || STORE_COPY.brandName;
   return (
-    <div className="store-home-v4-chrome pointer-events-auto mx-4 mt-4 flex items-center gap-3 rounded-[1.15rem] border px-3 py-2 text-white backdrop-blur-xl sm:mx-6 sm:mt-5 lg:mx-9">
+    <div className="store-home-v4-chrome pointer-events-auto flex items-center gap-3 rounded-[1.15rem] border px-3 py-2 text-white backdrop-blur-xl">
       <UnifiedButton
         type="button"
         onClick={() => onNavigate(localizedPath("/"))}
         className="store-home-v4-brand flex min-w-0 shrink-0 items-center gap-2 border-0 bg-transparent p-0 text-white"
-        aria-label={`${siteName || STORE_COPY.brandName} ${t("common.home")}`}
+        aria-label={`${brandName} ${t("common.home")}`}
       >
-        <span className="store-home-v4-brand-mark">
-          {logoSrc ? <img src={logoSrc} alt="" className="h-5 w-5 object-contain" /> : <Grid3X3 size={18} aria-hidden />}
+        <StoreBrandLogo
+          src={logoSrc}
+          siteName={brandName}
+          fallbackText={brandName.trim().slice(0, 1)}
+          width={34}
+          height={34}
+          className="store-home-v4-brand-logo"
+        />
+        <span className="store-home-v4-brand-copy min-w-0">
+          <span className="store-home-v4-brand-name truncate">{brandName}</span>
+          <span className="store-home-v4-brand-meta hidden truncate sm:block">{STORE_COPY.siteSlogan}</span>
         </span>
-        <span className="truncate">{siteName || STORE_COPY.brandName}</span>
       </UnifiedButton>
-      <nav className="store-home-v4-links hidden min-w-0 flex-1 items-center justify-center gap-5 text-xs font-black lg:flex" aria-label={t("hero.quickNav")}>
+      <nav className="store-home-v4-links hidden min-w-0 flex-1 items-center justify-center gap-5 text-xs font-black xl:flex" aria-label={t("hero.quickNav")}>
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/"))}>{t("common.home")}</UnifiedButton>
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories"))}>{t("common.categories")}</UnifiedButton>
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories?sort=sales_desc"))}>{t("common.flashSale")}</UnifiedButton>
@@ -189,10 +209,25 @@ function HeroChrome({
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/cart"))}>{t("common.cart")}</UnifiedButton>
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/profile"))}>{t("common.member")}</UnifiedButton>
       </nav>
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="store-home-v4-actions ml-auto flex shrink-0 items-center gap-1.5">
+        <NotificationIconButton
+          unreadCount={unreadCount}
+          onClick={() => onNavigate(localizedPath("/notifications"))}
+          className="store-home-v4-action-button"
+        />
+        <HeroChromeActionButton
+          label={t("common.categories")}
+          onClick={() => onNavigate(localizedPath("/categories"))}
+          icon={<Grid3X3 size={16} aria-hidden />}
+        />
+        <HeroChromeActionButton
+          label={t("common.cart")}
+          onClick={() => onNavigate(localizedPath("/cart"))}
+          icon={<ShoppingCart size={16} aria-hidden />}
+        />
         <UnifiedButton
           type="button"
-          className="store-home-v4-icon-button"
+          className="store-home-v4-action-button store-home-v4-icon-button"
           onClick={() => onNavigate(localizedPath("/profile"))}
           aria-label={t("common.myAccount")}
         >
@@ -200,6 +235,28 @@ function HeroChrome({
         </UnifiedButton>
       </div>
     </div>
+  );
+}
+
+function HeroChromeActionButton({
+  label,
+  icon,
+  onClick,
+}: {
+  label: string;
+  icon: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <UnifiedButton
+      type="button"
+      className="store-home-v4-action-button store-home-v4-icon-button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
+      {icon}
+    </UnifiedButton>
   );
 }
 

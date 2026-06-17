@@ -501,8 +501,10 @@ export function ProfileSecondaryLinkPanel({
             <span className="profile-secondary-icon">
               <item.icon size={18} strokeWidth={2.1} />
             </span>
-            <span className="profile-secondary-label">{item.label}</span>
-            {item.badgeText ? <span className="profile-count-badge profile-secondary-badge">{item.badgeText}</span> : null}
+            <span className="profile-secondary-label">
+              <span className="profile-secondary-label-text">{item.label}</span>
+              {item.badgeText ? <span className="profile-count-badge profile-secondary-badge">{item.badgeText}</span> : null}
+            </span>
             <ChevronRight size={16} className="profile-secondary-chevron" />
           </UnifiedButton>
         ))}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, Package, Search as SearchIcon, X } from "lucide-react";
 import { STORE_COPY } from "@/constants/storeCopy";
@@ -62,6 +62,7 @@ export default function Search() {
   const [submittedQuery, setSubmittedQuery] = useState(initialKeyword);
   const [hotTerms, setHotTerms] = useState<HotSearchTerm[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const suggestDebounceRef = useRef<ReturnType<typeof setTimeout>>();
   const pendingTrackKeywordRef = useRef(initialKeyword);
 
@@ -89,6 +90,10 @@ export default function Search() {
     fetchHotSearchTerms(10)
       .then(setHotTerms)
       .catch(() => setHotTerms([]));
+  }, []);
+
+  useEffect(() => {
+    setSearchHistory(getHistory());
   }, []);
 
   useEffect(() => {
@@ -135,6 +140,12 @@ export default function Search() {
     if (!trimmed) return;
     const newList = [trimmed, ...getHistory().filter((item) => item !== trimmed)].slice(0, MAX_HISTORY);
     saveHistory(newList);
+    setSearchHistory(newList);
+  }, []);
+
+  const clearSearchHistory = useCallback(() => {
+    saveHistory([]);
+    setSearchHistory([]);
   }, []);
 
   const commitSearch = useCallback((term: string) => {
@@ -251,6 +262,26 @@ export default function Search() {
               </div>
             </section>
 
+            {searchHistory.length > 0 ? (
+              <SearchListSection
+                title="最近搜索"
+                action={
+                  <UnifiedButton type="button" onClick={clearSearchHistory} className="store-client-search-section-action">
+                    清空
+                  </UnifiedButton>
+                }
+              >
+                {searchHistory.slice(0, 5).map((term) => (
+                  <SearchSuggestionRow
+                    key={term}
+                    label={term}
+                    meta="历史"
+                    onClick={() => commitSearch(term)}
+                  />
+                ))}
+              </SearchListSection>
+            ) : null}
+
             <SearchListSection title="最近浏览">
               {historyProducts.length > 0 ? (
                 historyProducts.slice(0, 3).map((product) => (
@@ -311,10 +342,13 @@ export default function Search() {
   );
 }
 
-function SearchListSection({ title, children }: { title: string; children: React.ReactNode }) {
+function SearchListSection({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
     <section className="store-client-search-section" aria-labelledby={`client-search-section-${title}`}>
-      <h2 id={`client-search-section-${title}`} className="store-client-search-group-label">{title}</h2>
+      <div className="store-client-search-section-head">
+        <h2 id={`client-search-section-${title}`} className="store-client-search-group-label">{title}</h2>
+        {action}
+      </div>
       <div className="store-client-search-list">{children}</div>
     </section>
   );

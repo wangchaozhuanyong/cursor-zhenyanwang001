@@ -769,7 +769,7 @@ export default function Login() {
               </label>
               <UnifiedButton
                 type="button"
-                onClick={() => setShowReset(true)}
+                onClick={() => navigate(localizedPath("/forgot"), { state: { from: localizedPath("/login") } })}
                 className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-medium text-theme-price active:opacity-70"
               >
                 {t("auth.forgotPassword")}

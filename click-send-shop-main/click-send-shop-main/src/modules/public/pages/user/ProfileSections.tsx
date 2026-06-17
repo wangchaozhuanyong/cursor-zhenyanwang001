@@ -2,14 +2,18 @@ import type { LucideIcon } from "lucide-react";
 import {
   Camera,
   ChevronRight,
+  CheckCircle2,
   Crown,
   LogOut,
+  PackageCheck,
+  ShieldCheck,
+  Ticket,
   User,
+  Wallet,
 } from "lucide-react";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import StableImage from "@/components/ui/StableImage";
 import { formatProfileHeroName } from "./profileHeroName";
 import InviteRewardCard from "./InviteRewardCard.final.jsx";
@@ -52,6 +56,17 @@ export type ProfileTrustItem = {
   icon: LucideIcon;
 };
 
+export type ProfileSnapshotItem = {
+  key: string;
+  label: string;
+  value: string;
+  hint: string;
+  icon: LucideIcon;
+  path: string;
+  auth: boolean;
+  tone?: "primary" | "price" | "success" | "neutral";
+};
+
 export type ProfileHeroProgress = {
   label: string;
   value: string;
@@ -92,11 +107,13 @@ export function ProfileHeroCard({
   userName,
   memberLevelName,
   progress,
+  assets,
   unreadCount,
   onMessageClick,
   onMemberLevelClick,
   onProfileClick,
   onViewAllBenefits,
+  onAssetNavigate,
   onAvatarClick,
 }: {
   logoSrc: string;
@@ -104,11 +121,13 @@ export function ProfileHeroCard({
   userName: string;
   memberLevelName: string;
   progress?: ProfileHeroProgress;
+  assets?: ProfileAssetItem[];
   unreadCount: number;
   onMessageClick: () => void;
   onMemberLevelClick: () => void;
   onProfileClick: () => void;
   onViewAllBenefits: () => void;
+  onAssetNavigate?: (item: ProfileAssetItem) => void;
   onAvatarClick: () => void;
 }) {
   const displayName = formatProfileHeroName(userName);
@@ -179,6 +198,26 @@ export function ProfileHeroCard({
         </div>
       ) : null}
 
+      {assets?.length ? (
+        <div className="profile-card-assets" aria-label="我的资产">
+          {assets.map((item) => (
+            <UnifiedButton
+              key={item.key}
+              type="button"
+              data-feature-key={item.key}
+              onClick={() => onAssetNavigate?.(item)}
+              className="profile-card-asset"
+            >
+              <span className="profile-card-asset-icon" aria-hidden="true">
+                <item.icon size={15} strokeWidth={2.2} />
+              </span>
+              <b>{item.value}</b>
+              <span>{item.label}</span>
+            </UnifiedButton>
+          ))}
+        </div>
+      ) : null}
+
       <div className="profile-vip-actions">
         <UnifiedButton type="button" onClick={onProfileClick} className="profile-vip-action profile-vip-action--ghost">
           <User size={19} />
@@ -194,27 +233,48 @@ export function ProfileHeroCard({
 }
 
 export function ProfileGuestCard({
-  logoSrc,
   siteName,
   onLogin,
+  onRegister,
 }: {
-  logoSrc: string;
   siteName: string;
   onLogin: () => void;
+  onRegister: () => void;
 }) {
+  const guestHighlights = [
+    { label: "订单追踪", desc: "待付款/发货/收货", icon: PackageCheck },
+    { label: "优惠资产", desc: "优惠券和积分", icon: Ticket },
+    { label: "账户余额", desc: "余额/礼品卡", icon: Wallet },
+    { label: "售后客服", desc: "退换与安装支持", icon: ShieldCheck },
+  ];
+
   return (
     <section className="store-profile-vip-card profile-guest-card client-profile-hero-card client-profile-guest-card">
-      <span className="profile-vip-watermark" aria-hidden="true">VIP</span>
+      <span className="profile-vip-watermark" aria-hidden="true" />
       <div className="profile-vip-header">
-        <StoreBrandLogo src={logoSrc} siteName={siteName} variant="profile" className="profile-brand-logo-ring" width={70} height={70} />
+        <span className="profile-guest-avatar" aria-hidden="true">?</span>
         <div className="profile-vip-copy">
-          <p className="profile-vip-name profile-guest-title">欢迎来到 {siteName}</p>
-          <p className="profile-guest-desc">登录后查看订单、优惠券、会员权益与邀请奖励</p>
+          <p className="profile-vip-name profile-guest-title">未登录</p>
+          <p className="profile-guest-desc">登录后同步 {siteName} 订单、优惠和会员权益</p>
         </div>
+      </div>
+      <div className="profile-guest-highlights" aria-label="登录后可用能力">
+        {guestHighlights.map((item) => (
+          <div key={item.label} className="profile-guest-highlight">
+            <span>
+              <item.icon size={15} strokeWidth={2.2} />
+            </span>
+            <b>{item.label}</b>
+            <small>{item.desc}</small>
+          </div>
+        ))}
       </div>
       <div className="profile-vip-actions">
         <UnifiedButton type="button" onClick={onLogin} className="profile-vip-action profile-vip-action--gold">
-          登录 / 注册
+          登录
+        </UnifiedButton>
+        <UnifiedButton type="button" onClick={onRegister} className="profile-vip-action profile-vip-action--ghost">
+          注册
         </UnifiedButton>
       </div>
     </section>
@@ -283,6 +343,57 @@ export function ProfileAssetPanel({
             </span>
             <span className="profile-asset-value">{item.value}</span>
             <span className="profile-asset-label">{item.label}</span>
+          </UnifiedButton>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ProfileSnapshotPanel({
+  items,
+  onNavigate,
+  className,
+  title = "账户工作台",
+  subtitle = "订单、资产、活动和服务状态集中查看",
+}: {
+  items: ProfileSnapshotItem[];
+  onNavigate: (item: ProfileSnapshotItem) => void;
+  className?: string;
+  title?: string;
+  subtitle?: string;
+}) {
+  if (!items.length) return null;
+
+  return (
+    <section className={cn(PROFILE_CARD_CLASS, "client-profile-snapshot-panel", className)}>
+      <div className="client-profile-snapshot-head">
+        <span className="client-profile-snapshot-head__icon" aria-hidden>
+          <CheckCircle2 size={18} strokeWidth={2.2} />
+        </span>
+        <div>
+          <h3>{title}</h3>
+          <p>{subtitle}</p>
+        </div>
+      </div>
+      <div className="client-profile-snapshot-grid">
+        {items.map((item) => (
+          <UnifiedButton
+            key={item.key}
+            type="button"
+            data-feature-key={item.key}
+            onClick={() => onNavigate(item)}
+            className={cn("client-profile-snapshot-card", item.tone && `is-${item.tone}`)}
+          >
+            <span className="client-profile-snapshot-card__icon" aria-hidden>
+              <item.icon size={18} strokeWidth={2.1} />
+            </span>
+            <span className="client-profile-snapshot-card__copy">
+              <small>{item.label}</small>
+              <strong>{item.value}</strong>
+              <em>{item.hint}</em>
+            </span>
+            <ChevronRight size={16} className="client-profile-snapshot-card__arrow" aria-hidden />
           </UnifiedButton>
         ))}
       </div>

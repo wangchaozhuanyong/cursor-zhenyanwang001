@@ -21,6 +21,7 @@ const capabilities = {
   smsOtpLoginEnabled: true,
   telegramOrderNotifyEnabled: true,
   languageGateEnabled: false,
+  storefrontMultilingualEnabled: false,
   restrictedProductComplianceEnabled: true,
   trafficAnalyticsEnabled: false,
   downloadConfirmEnabled: true,

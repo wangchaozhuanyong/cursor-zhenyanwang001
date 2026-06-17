@@ -1390,6 +1390,21 @@ async function selectOrderByIdAndUser(q, orderId, userId) {
   return row || null;
 }
 
+async function selectOrderByIdOrNoAndUser(q, orderIdOrNo, userId) {
+  const rawValue = String(orderIdOrNo || '').trim();
+  const normalizedOrderNo = rawValue.replace(/^#+/, '');
+  const prefixedOrderNo = normalizedOrderNo ? `#${normalizedOrderNo}` : rawValue;
+  const [[row]] = await q.query(
+    `SELECT * FROM orders
+     WHERE user_id = ?
+       AND buyer_deleted_at IS NULL
+       AND (id = ? OR order_no = ? OR order_no = ? OR order_no = ?)
+     LIMIT 1`,
+    [userId, rawValue, rawValue, normalizedOrderNo, prefixedOrderNo],
+  );
+  return row || null;
+}
+
 async function selectOrderByIdAndUserForUpdate(q, orderId, userId) {
   const [[row]] = await q.query(
     'SELECT * FROM orders WHERE id = ? AND user_id = ? AND buyer_deleted_at IS NULL FOR UPDATE',
@@ -1849,6 +1864,7 @@ module.exports = {
   countPriorSuccessfulNormalOrders,
   selectOrderItemsByOrderIds,
   selectOrderByIdAndUser,
+  selectOrderByIdOrNoAndUser,
   selectOrderByIdAndUserForUpdate,
   markOrderBuyerDeleted,
   selectOrderByIdForUpdate,

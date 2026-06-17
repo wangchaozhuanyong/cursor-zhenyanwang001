@@ -27,6 +27,7 @@ vi.mock("@/hooks/useSiteCapabilities", () => ({
     customerServiceDownloadEnabled: true,
     telegramOrderNotifyEnabled: true,
     languageGateEnabled: false,
+    storefrontMultilingualEnabled: false,
     restrictedProductComplianceEnabled: true,
     trafficAnalyticsEnabled: false,
     downloadConfirmEnabled: false,

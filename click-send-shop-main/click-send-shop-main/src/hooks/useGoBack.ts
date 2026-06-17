@@ -9,6 +9,7 @@ const PROFILE_HUB_PATHS = new Set([
   "/points",
   "/points/gifts",
   "/rewards",
+  "/wallet",
   "/invite",
   "/address",
   "/coupons",

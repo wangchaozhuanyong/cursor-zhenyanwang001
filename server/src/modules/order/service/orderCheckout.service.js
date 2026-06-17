@@ -1,5 +1,6 @@
 const { ForbiddenError } = require('../../../errors');
 const pricingService = require('./pricing.service');
+const { assertPromotionEvaluationEligible } = require('./orderPromotionEvaluation.service');
 
 function getSiteCapabilitiesApi() {
   return /** @type {any} */ (require('../../siteCapabilities/publicApi')) || {};
@@ -87,6 +88,7 @@ async function getCheckoutCoupons(userId, body) {
 async function previewOrder(userId, body) {
   await assertOrderCapabilityUsage(body);
   const pricing = await pricingService.buildCheckoutPricing(userId, body, null);
+  assertPromotionEvaluationEligible(pricing.promotion_evaluation);
   return {
     data: {
       goods_amount: pricing.rawAmount,

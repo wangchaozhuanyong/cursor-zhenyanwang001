@@ -9,6 +9,7 @@ export function lazyWithPreload<T extends React.ComponentType<never>>(factory: (
 
 export const StoreHomeV2 = lazyWithPreload(() => import("@/modules/storefront-v2/home/StoreHomeV2"));
 export const Login = lazyWithPreload(() => import("@/modules/public/pages/auth/Login"));
+export const ForgotPassword = lazyWithPreload(() => import("@/modules/public/pages/auth/ForgotPassword"));
 export const BindWechatPhone = lazyWithPreload(() => import("@/modules/public/pages/auth/BindWechatPhone"));
 
 export const Categories = lazyWithPreload(() => import("@/modules/public/pages/product/Categories"));
@@ -25,6 +26,7 @@ export const Checkout = lazyWithPreload(() => import("@/modules/public/pages/ord
 export const PaymentResult = lazyWithPreload(() => import("@/modules/public/pages/order/PaymentResult"));
 export const Orders = lazyWithPreload(() => import("@/modules/public/pages/order/Orders"));
 export const OrderDetail = lazyWithPreload(() => import("@/modules/public/pages/order/OrderDetail"));
+export const OrderLogistics = lazyWithPreload(() => import("@/modules/public/pages/order/OrderLogistics"));
 export const Returns = lazyWithPreload(() => import("@/modules/public/pages/order/Returns"));
 export const ReturnDetail = lazyWithPreload(() => import("@/modules/public/pages/order/ReturnDetail"));
 export const PendingReviews = lazyWithPreload(() => import("@/modules/public/pages/review/PendingReviews"));
@@ -41,12 +43,15 @@ export const Coupons = lazyWithPreload(() => import("@/modules/public/pages/user
 export const Points = lazyWithPreload(() => import("@/modules/public/pages/user/Points"));
 export const PointsGiftShop = lazyWithPreload(() => import("@/modules/public/pages/user/PointsGiftShop"));
 export const Rewards = lazyWithPreload(() => import("@/modules/public/pages/user/Rewards"));
+export const Wallet = lazyWithPreload(() => import("@/modules/public/pages/user/Wallet"));
 export const Invite = lazyWithPreload(() => import("@/modules/public/pages/user/Invite"));
 
 export const Help = lazyWithPreload(() => import("@/modules/public/pages/content/Help"));
 export const About = lazyWithPreload(() => import("@/modules/public/pages/content/About"));
 export const ContentCmsPage = lazyWithPreload(() => import("@/modules/public/pages/content/ContentCmsPage"));
 export const SupportDownload = lazyWithPreload(() => import("@/modules/public/pages/content/SupportDownload"));
+export const Delivery = lazyWithPreload(() => import("@/modules/public/pages/content/Delivery"));
+export const FeatureStatus = lazyWithPreload(() => import("@/modules/public/pages/content/FeatureStatus"));
 export const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
 
 export const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));

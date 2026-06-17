@@ -1,5 +1,20 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardList, PackageSearch, RefreshCw, ShoppingCart, Sparkles, Ticket, UserRound } from "lucide-react";
+import {
+  BadgePercent,
+  ClipboardList,
+  Download,
+  Gift,
+  Heart,
+  PackageSearch,
+  RefreshCw,
+  Share2,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  Ticket,
+  Truck,
+  UserRound,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import HomeTrustBar from "@/components/HomeTrustBar";
@@ -222,11 +237,16 @@ export default function StoreHomeV2() {
   const showHotSales = isHomeModuleEnabled(homeModules, "hot_sales", audience);
   const showRecommend = isAuthenticated && isHomeModuleEnabled(homeModules, "recommend", "member");
   const showGuestRecommend = !isAuthenticated && isHomeModuleEnabled(homeModules, "guest_recommend", "guest");
+  const pendingOrderCount = useMemo(() => orders.filter((order) => (
+    order.status === "pending" ||
+    order.status === "paid" ||
+    order.status === "shipped"
+  )).length, [orders]);
 
   return (
     <div
       className={cn(
-        "store-page-shell store-bottom-safe text-[var(--theme-text)]",
+        "store-page-shell store-v12-page store-home-v12-page store-bottom-safe text-[var(--theme-text)]",
         clientStyle === "black_gold"
           ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))_0%,var(--theme-bg)_26rem,var(--theme-bg)_100%)]"
           : clientStyle === "deep_enterprise"
@@ -274,6 +294,17 @@ export default function StoreHomeV2() {
         <HomeProcurementCommand
           couponEnabled={siteCapabilities.couponEnabled}
           pointsEnabled={siteCapabilities.pointsEnabled}
+          customerServiceDownloadEnabled={siteCapabilities.customerServiceDownloadEnabled}
+          onNavigate={navigatePath}
+        />
+
+        <HomeBuyingStatusBoard
+          authenticated={isAuthenticated}
+          cartCount={cartItems.length}
+          pendingOrderCount={pendingOrderCount}
+          favoriteCount={favoriteIds.length}
+          historyCount={historyProducts.length}
+          couponEnabled={siteCapabilities.couponEnabled}
           onNavigate={navigatePath}
         />
 
@@ -395,30 +426,133 @@ export default function StoreHomeV2() {
   );
 }
 
+function HomeBuyingStatusBoard({
+  authenticated,
+  cartCount,
+  pendingOrderCount,
+  favoriteCount,
+  historyCount,
+  couponEnabled,
+  onNavigate,
+}: {
+  authenticated: boolean;
+  cartCount: number;
+  pendingOrderCount: number;
+  favoriteCount: number;
+  historyCount: number;
+  couponEnabled: boolean;
+  onNavigate: (path: string) => void;
+}) {
+  const cards = [
+    {
+      key: "cart",
+      label: "购物车",
+      value: `${Math.max(0, cartCount)}`,
+      desc: "结算前由后端重新校验价格、活动和库存",
+      icon: ShoppingCart,
+      path: "/cart",
+    },
+    {
+      key: "orders",
+      label: authenticated ? "待处理订单" : "订单同步",
+      value: authenticated ? `${Math.max(0, pendingOrderCount)}` : "登录",
+      desc: authenticated ? "待付款、待发货、待收货集中查看" : "登录后同步订单、优惠和售后状态",
+      icon: ClipboardList,
+      path: authenticated ? "/orders" : "/login?from=/",
+    },
+    {
+      key: "saved",
+      label: "常看商品",
+      value: `${Math.max(0, favoriteCount + historyCount)}`,
+      desc: "收藏和浏览记录会辅助生成推荐",
+      icon: Heart,
+      path: authenticated ? "/favorites" : "/history",
+    },
+    {
+      key: "pricing",
+      label: couponEnabled ? "优惠裁判" : "价格裁判",
+      value: "后端",
+      desc: couponEnabled ? "优惠券、活动叠加和最终金额以后端为准" : "最终金额、运费和库存以后端为准",
+      icon: ShieldCheck,
+      path: couponEnabled ? "/promotions" : "/categories",
+    },
+  ];
+
+  return (
+    <section className="store-home-v12-status-board" aria-label="购买状态">
+      <div className="store-home-v12-status-board__head">
+        <div>
+          <span>购买状态</span>
+          <h2>从找货到结算都收在一个入口里</h2>
+        </div>
+        <UnifiedButton
+          type="button"
+          className="store-home-v12-status-board__cta"
+          onClick={() => onNavigate("/checkout")}
+        >
+          去结算
+        </UnifiedButton>
+      </div>
+      <div className="store-home-v12-status-board__grid">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <UnifiedButton
+              key={card.key}
+              type="button"
+              className="store-home-v12-status-card"
+              onClick={() => onNavigate(card.path)}
+            >
+              <span className="store-home-v12-status-card__icon">
+                <Icon size={18} aria-hidden />
+              </span>
+              <span className="store-home-v12-status-card__copy">
+                <b>{card.value}</b>
+                <strong>{card.label}</strong>
+                <small>{card.desc}</small>
+              </span>
+            </UnifiedButton>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function HomeProcurementCommand({
   couponEnabled,
   pointsEnabled,
+  customerServiceDownloadEnabled,
   onNavigate,
 }: {
   couponEnabled: boolean;
   pointsEnabled: boolean;
+  customerServiceDownloadEnabled: boolean;
   onNavigate: (path: string) => void;
 }) {
-  const { t } = usePublicLocale();
   const actions = [
     {
       key: "categories",
-      label: t("homeCommand.action.categories.label"),
-      description: t("homeCommand.action.categories.desc"),
+      label: "全部分类",
+      description: "按分类快速找货",
       icon: PackageSearch,
       path: "/categories",
       tone: "jade",
       enabled: true,
     },
     {
+      key: "promotions",
+      label: "活动中心",
+      description: "秒杀、满减、会员价",
+      icon: Gift,
+      path: "/promotions",
+      tone: "wine",
+      enabled: couponEnabled || pointsEnabled,
+    },
+    {
       key: "new",
-      label: t("homeCommand.action.new.label"),
-      description: t("homeCommand.action.new.desc"),
+      label: "新品上新",
+      description: "最近上架优先看",
       icon: Sparkles,
       path: NEW_ARRIVAL_CATEGORY_PATH,
       tone: "gold",
@@ -426,37 +560,74 @@ function HomeProcurementCommand({
     },
     {
       key: "coupons",
-      label: t("homeCommand.action.coupons.label"),
-      description: t("homeCommand.action.coupons.desc"),
+      label: "优惠券",
+      description: "可用券与活动",
       icon: Ticket,
       path: "/coupons",
       tone: "wine",
       enabled: couponEnabled,
     },
     {
+      key: "points",
+      label: "积分签到",
+      description: "签到奖励与积分福利",
+      icon: BadgePercent,
+      path: "/points",
+      tone: "gold",
+      enabled: pointsEnabled,
+    },
+    {
       key: "cart",
-      label: t("homeCommand.action.cart.label"),
-      description: t("homeCommand.action.cart.desc"),
+      label: "购物车",
+      description: "检查库存与总价",
       icon: ShoppingCart,
       path: "/cart",
       tone: "teal",
       enabled: true,
     },
     {
+      key: "logistics",
+      label: "物流售后",
+      description: "查看配送和售后进度",
+      icon: Truck,
+      path: "/orders?tab=shipped",
+      tone: "slate",
+      enabled: true,
+    },
+    {
       key: "orders",
-      label: t("homeCommand.action.orders.label"),
-      description: t("homeCommand.action.orders.desc"),
+      label: "我的订单",
+      description: "支付、配送、售后",
       icon: ClipboardList,
       path: "/orders",
       tone: "slate",
       enabled: true,
     },
+    {
+      key: "favorites",
+      label: "收藏历史",
+      description: "常买商品快速回访",
+      icon: Heart,
+      path: "/favorites",
+      tone: "jade",
+      enabled: true,
+    },
+    {
+      key: "install",
+      label: customerServiceDownloadEnabled ? "安装下载" : "邀请返现",
+      description: customerServiceDownloadEnabled ? "添加到桌面，打开更快" : "邀请好友领福利",
+      icon: customerServiceDownloadEnabled ? Download : Share2,
+      path: customerServiceDownloadEnabled ? "/install" : "/invite",
+      tone: "gold",
+      enabled: true,
+    },
   ].filter((item) => item.enabled);
 
   return (
-    <section className="store-home-command-panel" aria-label={t("homeCommand.title")}>
+    <section className="store-home-command-panel" aria-label="快捷入口">
       <div className="store-home-command-panel__intro">
-        <h2>{t("homeCommand.title")}</h2>
+        <h2>快捷入口</h2>
+        <p>活动、分类、订单和服务集中进入</p>
       </div>
       <div className="store-home-command-panel__actions">
         {actions.map((action) => {
@@ -474,6 +645,7 @@ function HomeProcurementCommand({
               </span>
               <span className="store-home-command-card__copy">
                 <strong>{action.label}</strong>
+                <small>{action.description}</small>
               </span>
             </UnifiedButton>
           );
@@ -486,7 +658,7 @@ function HomeProcurementCommand({
           onClick={() => onNavigate("/points")}
         >
           <UserRound size={16} aria-hidden />
-          <span>{t("homeCommand.memberCta")}</span>
+          <span>去积分签到</span>
         </UnifiedButton>
       ) : null}
     </section>

@@ -79,7 +79,7 @@
         margin: 0;
       }
       body {
-        background: #fffaf2;
+        background: #f7f9f6;
       }
       #root {
         min-height: 100dvh;
@@ -91,10 +91,7 @@
         display: grid;
         place-items: center;
         overflow: hidden;
-        background:
-          radial-gradient(circle at 28% 22%, rgba(15, 125, 96, 0.16), transparent 34%),
-          radial-gradient(circle at 76% 70%, rgba(213, 161, 74, 0.18), transparent 32%),
-          linear-gradient(145deg, #fffefa 0%, #fff8eb 54%, #f5fff9 100%);
+        background: linear-gradient(145deg, #f7f9f6 0%, #eef5f1 54%, #f8faf8 100%);
         color: #12362d;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
         transition:
@@ -107,21 +104,21 @@
       #app-preboot::after {
         content: "";
         position: absolute;
-        width: min(58vw, 28rem);
-        aspect-ratio: 1;
-        border-radius: 999px;
+        width: min(70vw, 30rem);
+        height: 8rem;
+        border-radius: 1.5rem;
         pointer-events: none;
       }
       #app-preboot::before {
-        left: -12vw;
+        left: -16vw;
         top: 10vh;
-        background: radial-gradient(circle, rgba(5, 117, 89, 0.18), rgba(5, 117, 89, 0));
+        background: linear-gradient(135deg, transparent 0 22%, rgba(5, 117, 89, 0.11) 22% 28%, transparent 28% 50%, rgba(5, 117, 89, 0.08) 50% 56%, transparent 56% 100%);
         animation: app-preboot-aurora-a 5.8s ease-in-out infinite alternate;
       }
       #app-preboot::after {
-        right: -14vw;
+        right: -18vw;
         bottom: 8vh;
-        background: radial-gradient(circle, rgba(219, 164, 70, 0.22), rgba(219, 164, 70, 0));
+        background: linear-gradient(135deg, transparent 0 22%, rgba(47, 96, 89, 0.1) 22% 28%, transparent 28% 50%, rgba(15, 125, 96, 0.08) 50% 56%, transparent 56% 100%);
         animation: app-preboot-aurora-b 6.2s ease-in-out infinite alternate;
       }
       #app-preboot.is-leaving {
@@ -146,8 +143,7 @@
         place-items: center;
         border-radius: 999px;
         background:
-          linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 250, 238, 0.72)),
-          radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.94), transparent 48%);
+          linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(238, 248, 243, 0.78));
         box-shadow:
           0 1.4rem 4rem rgba(10, 80, 61, 0.16),
           inset 0 0 0 1px rgba(206, 161, 82, 0.28);
@@ -169,8 +165,7 @@
         place-items: center;
         border-radius: 999px;
         background:
-          radial-gradient(circle at 36% 28%, #ffffff 0 18%, transparent 20%),
-          linear-gradient(145deg, #0a7055, #0f4e3e 58%, #d8a54d 160%);
+          linear-gradient(145deg, #0a7055, #0f4e3e 68%, #6fd2bd 160%);
         color: #fff7df;
         font-size: 2rem;
         font-weight: 800;
@@ -205,7 +200,7 @@
         font-size: 0.82rem;
         font-weight: 650;
         letter-spacing: 0.12em;
-        text-transform: uppercase;
+        text-transform: none;
       }
       .app-preboot-line {
         position: relative;
@@ -231,7 +226,7 @@
       }
       .preboot-shell {
         min-height: 100dvh;
-        background: #fffaf2;
+        background: #f7f9f6;
         color: #12362d;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
       }
@@ -425,16 +420,16 @@
   </head>
   <body>
     <div id="root"></div>
-    <div id="app-preboot" aria-busy="true" aria-label="大马通 Silk Aurora 正在启动">
+    <div id="app-preboot" aria-busy="true" aria-label="大马通正在加载">
       <div class="app-preboot-card">
         <div class="app-preboot-orbit" aria-hidden="true">
           <img class="app-preboot-logo" alt="" decoding="async" fetchpriority="high" hidden />
           <div class="app-preboot-mark">马</div>
         </div>
         <h1 class="app-preboot-title">大马通</h1>
-        <p class="app-preboot-subtitle">Silk Aurora</p>
+        <p class="app-preboot-subtitle">正在加载</p>
         <div class="app-preboot-line" aria-hidden="true"></div>
-        <p class="app-preboot-note">南洋丝光启动页</p>
+        <p class="app-preboot-note">请稍候，正在准备页面</p>
       </div>
     </div>
     <script>
@@ -442,8 +437,8 @@
         var preboot = document.getElementById("app-preboot");
         if (!preboot) return;
         var startedAt = Date.now();
-        var minVisibleMs = 650;
-        var maxVisibleMs = 6000;
+        var minVisibleMs = 260;
+        var maxVisibleMs = 2500;
         var leaving = false;
 
         (function syncPrebootLogo() {

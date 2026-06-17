@@ -11,6 +11,14 @@ import { ApiError } from "@/types/common";
 
 type ResultState = "loading" | "paid" | "pending" | "failed";
 
+const PAYMENT_STATUS_LABEL_KEYS: Record<string, string> = {
+  pending: "payment.status.pending",
+  paid: "payment.status.paid",
+  failed: "payment.status.failed",
+  refunded: "payment.status.refunded",
+  partially_refunded: "payment.status.partiallyRefunded",
+};
+
 function resolveState(order: Order | null, error: string): ResultState {
   if (error) return "failed";
   if (!order) return "loading";
@@ -18,6 +26,11 @@ function resolveState(order: Order | null, error: string): ResultState {
     return "paid";
   }
   return "pending";
+}
+
+function labelPaymentStatus(status: string | null | undefined, t: (key: string) => string) {
+  const key = PAYMENT_STATUS_LABEL_KEYS[String(status || "pending")];
+  return key ? t(key) : t("payment.status.unknown");
 }
 
 export default function PaymentResult() {
@@ -107,8 +120,8 @@ export default function PaymentResult() {
   }, [error, refreshing, state, t]);
 
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-4 py-10 text-center">
-      <section className="w-full rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 shadow-sm">
+    <main className="store-page-shell store-v12-page store-payment-result-v12-page store-bottom-safe mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-4 py-10 text-center">
+      <section className="store-payment-result-v12-card w-full rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 shadow-sm">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--theme-muted)]">
           {view.icon}
         </div>
@@ -123,7 +136,7 @@ export default function PaymentResult() {
             </div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <span>{t("payment.status")}</span>
-              <strong>{order.payment_status || t("payment.pendingStatus")}</strong>
+              <strong>{labelPaymentStatus(order.payment_status, t)}</strong>
             </div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <span>{t("payment.amountDue")}</span>

@@ -15,6 +15,7 @@ const pricingService = require('./pricing.service');
 const inventoryLockService = require('./inventoryLock.service');
 const orderPoints = require('./orderPoints.service');
 const orderCheckout = require('./orderCheckout.service');
+const { assertPromotionEvaluationEligible } = require('./orderPromotionEvaluation.service');
 const { publishAdminEvent, emitAdminEvent } = require('../orderAdminEvents');
 const { allocateOrderProfitSnapshot, normalizeMalaysiaAddress } = require('./orderCreate.helpers');
 
@@ -65,15 +66,6 @@ function assertInventoryLockResult(result) {
     throw new ValidationError(`商品「${line.name || line.productName || line.productId || '商品'}」缺少 SKU 信息，请先修复商品默认规格后再下单`);
   }
   throw new ValidationError('库存锁定失败，请刷新后重试');
-}
-
-function assertPromotionEvaluationEligible(evaluation) {
-  if (!evaluation || evaluation.eligible !== false) return;
-  const blocking = (evaluation.unavailable_reasons || []).find((item) => item?.blocking)
-    || (evaluation.unavailable_reasons || [])[0];
-  const title = blocking?.title ? `「${blocking.title}」` : '';
-  const reason = blocking?.reason || '活动规则已变化';
-  throw new ValidationError(`活动${title}不可用：${reason}，请刷新结算页后重试`);
 }
 
 function moneyValue(value) {

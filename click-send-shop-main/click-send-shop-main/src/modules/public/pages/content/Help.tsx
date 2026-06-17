@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Headphones, Search } from "lucide-react";
 import SupportContactSection from "@/components/support/SupportContactSection";
 import { DEFAULT_FAQS, DEFAULT_FAQ_CATEGORIES } from "@/constants/help";
 import SeoHead from "@/components/SeoHead";
@@ -50,6 +50,12 @@ export default function Help() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState("");
+  const categoryCounts = useMemo(() => {
+    return faqCategories.map((category) => ({
+      category,
+      count: faqs.filter((item) => item.category === category).length,
+    }));
+  }, [faqCategories, faqs]);
 
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -80,6 +86,7 @@ export default function Help() {
       onBack={goBack}
       backFallback="/profile"
       contentClassName="md:max-w-3xl xl:max-w-4xl"
+      className="store-v12-page store-help-v12-page"
     >
       <SeoHead
         title={`帮助中心｜${siteName}`}
@@ -90,46 +97,85 @@ export default function Help() {
       />
 
       <div className="mx-auto w-full max-w-lg md:max-w-none">
+        <section className="mb-3 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] md:p-5">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]">
+              <Headphones size={22} aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="text-base font-semibold text-[var(--theme-text)]">下单、配送、售后和账户问题都可以先在这里查</p>
+              <p className="mt-1 text-sm leading-relaxed text-[var(--theme-muted)]">
+                共 {faqs.length} 条常见问题，找不到答案可以直接联系官方客服。
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-[var(--theme-bg)] px-3 py-2">
+              <p className="text-[11px] text-[var(--theme-muted)]">问题分类</p>
+              <p className="mt-1 text-lg font-black text-[var(--theme-text)]">{faqCategories.length}</p>
+            </div>
+            <div className="rounded-xl bg-[var(--theme-bg)] px-3 py-2">
+              <p className="text-[11px] text-[var(--theme-muted)]">当前结果</p>
+              <p className="mt-1 text-lg font-black text-[var(--theme-text)]">{filtered.length}</p>
+            </div>
+            <div className="rounded-xl bg-[var(--theme-bg)] px-3 py-2">
+              <p className="text-[11px] text-[var(--theme-muted)]">客服入口</p>
+              <p className="mt-1 text-lg font-black text-[var(--theme-text)]">已接入</p>
+            </div>
+          </div>
+        </section>
+
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="搜索常见问题..."
-            className="w-full rounded-xl border border-border bg-card py-2.5 pl-9 pr-3 text-sm outline-none"
+            className="h-12 w-full rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] pl-10 pr-3 text-sm font-medium text-[var(--theme-text)] shadow-[var(--theme-shadow)] outline-none focus:border-[color-mix(in_srgb,var(--theme-primary)_46%,var(--theme-border))]"
           />
         </div>
         <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto md:flex-wrap md:overflow-visible">
           <UnifiedButton
             type="button"
             onClick={() => setActiveCategory(null)}
-            className={`shrink-0 rounded-full px-4 py-1.5 text-xs ${!activeCategory ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}
+            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold ${!activeCategory ? "btn-theme-price" : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
           >
-            全部
+            <span>全部</span>
+            <span>{faqs.length}</span>
           </UnifiedButton>
-          {faqCategories.map((cat) => (
-            <UnifiedButton
-              key={cat}
-              type="button"
-              onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-xs ${activeCategory === cat ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}
-            >
-              {cat}
-            </UnifiedButton>
-          ))}
+          {categoryCounts.map(({ category, count }) => {
+            const active = activeCategory === category;
+            return (
+              <UnifiedButton
+                key={category}
+                type="button"
+                onClick={() => setActiveCategory(active ? null : category)}
+                className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold ${active ? "btn-theme-price" : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
+              >
+                <span>{category}</span>
+                <span>{count}</span>
+              </UnifiedButton>
+            );
+          })}
         </div>
         <div className="mt-4 space-y-3">
+          {filtered.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-8 text-center shadow-[var(--theme-shadow)]">
+              <p className="text-sm font-semibold text-[var(--theme-text)]">没有找到匹配的问题</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">换个关键词，或直接联系官方客服。</p>
+            </div>
+          ) : null}
           {filtered.map((faq) => (
-            <div key={faq.id} className="overflow-hidden rounded-xl border border-border bg-card">
-              <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="flex w-full items-center justify-between px-4 py-3 text-left">
-                <span className="pr-2 text-sm text-foreground">{faq.question}</span>
+            <div key={faq.id} className="overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]">
+              <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="flex w-full items-center justify-between px-4 py-3.5 text-left">
+                <span className="pr-2 text-sm font-semibold text-[var(--theme-text)]">{faq.question}</span>
                 {openId === faq.id ? <ChevronUp size={16} className="text-theme-price" /> : <ChevronDown size={16} className="text-muted-foreground" />}
               </UnifiedButton>
-              {openId === faq.id ? <div className="border-t border-border px-4 py-3 text-sm leading-relaxed text-muted-foreground">{faq.answer}</div> : null}
+              {openId === faq.id ? <div className="border-t border-[var(--theme-border)] px-4 py-3 text-sm leading-relaxed text-[var(--theme-muted)]">{faq.answer}</div> : null}
             </div>
           ))}
         </div>
-        <div className="mt-6 rounded-xl border border-border bg-card p-4">
+        <div className="mt-6 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
           <SupportContactSection />
         </div>
       </div>

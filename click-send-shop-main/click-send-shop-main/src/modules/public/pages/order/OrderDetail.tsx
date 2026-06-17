@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Copy } from "lucide-react";
+import { ClipboardList, Copy, CreditCard, PackageCheck, Truck, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
-import { LogisticsInfoModal } from "@/components/order/LogisticsInfoModal";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
 import { AppModal, BottomSheetConfirm, usePreferBottomSheet } from "@/modules/micro-interactions";
@@ -20,12 +19,6 @@ import {
   isPendingPayment,
 } from "@/utils/orderBuyerStatus";
 import { formatDateTime } from "@/utils/formatDateTime";
-import {
-  getOrderLogisticsSnapshot,
-  openOrderLogisticsExternal,
-  resolveOrderLogisticsView,
-  type OrderLogisticsSnapshot,
-} from "@/utils/orderLogistics";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { OrderDiscountLines } from "./components/OrderDiscountLines";
@@ -46,6 +39,25 @@ import {
 
 const moreActionBtn =
   "flex w-full items-center justify-between rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--theme-text)]";
+
+function money(value?: number | string | null) {
+  return `RM ${Number(value || 0).toFixed(2)}`;
+}
+
+function finiteAmount(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getOrderGoodsDisplayAmount(order: Order) {
+  const snapshot = order.amount_snapshot || {};
+  const rawAmount = finiteAmount(order.raw_amount);
+  const originalAmount = finiteAmount(order.goods_original_amount ?? snapshot.goods_original_amount);
+  const activityDiscount = finiteAmount(order.activity_discount_amount ?? snapshot.activity_discount_amount);
+  if (originalAmount > rawAmount) return originalAmount;
+  if (activityDiscount > 0) return rawAmount + activityDiscount;
+  return rawAmount;
+}
 
 function buildVariantFromOrderItem(item: Order["items"][number]): ProductVariant | null {
   if (!item.variant_id) return null;
@@ -153,7 +165,6 @@ export default function OrderDetail() {
   const [confirmReceiveOpen, setConfirmReceiveOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [returnApplyOpen, setReturnApplyOpen] = useState(false);
-  const [logisticsInfo, setLogisticsInfo] = useState<OrderLogisticsSnapshot | null>(null);
   const [repurchaseConfirmOpen, setRepurchaseConfirmOpen] = useState(false);
   const [repurchasing, setRepurchasing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -162,16 +173,7 @@ export default function OrderDetail() {
   const { paying, payPendingOrder } = usePayPendingOrder();
 
   const viewLogistics = (target: Order) => {
-    const mode = resolveOrderLogisticsView(target);
-    if (mode === "external") {
-      openOrderLogisticsExternal(target);
-      return;
-    }
-    if (mode === "modal") {
-      setLogisticsInfo(getOrderLogisticsSnapshot(target));
-      return;
-    }
-    toast.info(copy.noLogistics);
+    navigate(localizedPath(`/orders/${target.id}/logistics`));
   };
 
   useEffect(() => {
@@ -378,7 +380,7 @@ export default function OrderDetail() {
 
   if (loading) {
     return (
-      <StoreAccountLayout title={copy.detailTitle} onBack={handleBack}>
+      <StoreAccountLayout title={copy.detailTitle} onBack={handleBack} className="store-v12-page store-order-detail-v12-page">
         <div className="rounded-2xl border border-border bg-card p-4 text-center text-sm text-muted-foreground">{copy.loading}</div>
       </StoreAccountLayout>
     );
@@ -386,7 +388,7 @@ export default function OrderDetail() {
 
   if (error || !order) {
     return (
-      <StoreAccountLayout title={copy.detailTitle} onBack={handleBack}>
+      <StoreAccountLayout title={copy.detailTitle} onBack={handleBack} className="store-v12-page store-order-detail-v12-page">
         <ClientEmptyState
           title={error ? copy.loadFailed : copy.notFound}
           description={error || copy.unavailable}
@@ -403,6 +405,13 @@ export default function OrderDetail() {
   const pageTitle = getBuyerOrderStatusTextLocalized(order, locale);
   const showMobileBar = isMobileSheet;
   const payActionLabel = labelPendingPaymentActionLocalized(order.payment_method, order.order_type, locale);
+  const itemQuantity = order.items.reduce((total, item) => total + Number(item.qty || 0), 0);
+  const logisticsText = order.logistics_provider?.carrier || order.carrier || order.tracking_no
+    ? `${order.logistics_provider?.carrier || order.carrier || copy.logistics} ${order.logistics_provider?.tracking_no || order.tracking_no || ""}`.trim()
+    : copy.noLogistics;
+  const logisticsStatus = order.logistics_snapshot?.status_label || order.logistics_status_label || pageTitle;
+  const paymentMethodLabel = labelOrderPaymentMethodLocalized(order.payment_method, order.order_type, locale);
+  const paidAtLabel = order.payment_time ? order.payment_time.replace("T", " ").slice(0, 16) : pageTitle;
 
   const mobilePrimary =
     isPendingPayment(order) ? (
@@ -438,16 +447,80 @@ export default function OrderDetail() {
     <StoreAccountLayout
       title={pageTitle}
       onBack={handleBack}
+      className="store-v12-page store-order-detail-v12-page"
       mainClassName="pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-0 xl:pb-12"
     >
       <div className="space-y-3 text-sm">
-        <div className="rounded-2xl border border-border bg-card p-3">
-          <p className="text-sm font-medium">{copy.currentStatus}: {pageTitle}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {order.logistics_provider?.carrier || order.tracking_no
-              ? `${copy.logistics}: ${order.logistics_provider?.carrier || order.carrier || ""} ${order.logistics_provider?.tracking_no || order.tracking_no || ""}`
-              : copy.noLogistics}
-          </p>
+        <section className="store-order-detail-v12-hero">
+          <div className="store-order-detail-v12-hero__icon">
+            <PackageCheck size={24} aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="store-order-detail-v12-eyebrow">{copy.currentStatus}</p>
+            <h1 className="store-order-detail-v12-title">{pageTitle}</h1>
+            <p className="store-order-detail-v12-subtitle">{logisticsText}</p>
+          </div>
+          <div className="store-order-detail-v12-hero__actions">
+            {canViewLogistics(order) ? (
+              <UnifiedButton
+                type="button"
+                className="store-order-detail-v12-ghost-action"
+                onClick={() => viewLogistics(order)}
+              >
+                <Truck size={15} aria-hidden />
+                {copy.viewLogistics}
+              </UnifiedButton>
+            ) : null}
+            {isPendingPayment(order) ? (
+              <UnifiedButton
+                type="button"
+                disabled={paying}
+                className="store-order-detail-v12-primary-action disabled:opacity-60"
+                onClick={() => {
+                  void payPendingOrder(order, reload);
+                }}
+              >
+                {paying ? copy.applying : payActionLabel}
+              </UnifiedButton>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="store-order-detail-v12-summary store-orders-v12-stat-grid">
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><WalletCards size={17} aria-hidden /></span>
+            <strong>{money(order.total_amount)}</strong>
+            <span>{copy.paidAmount}</span>
+            <small>{Number(order.shipping_fee || 0) === 0 ? copy.freeShipping : `${copy.shippingFee} ${money(order.shipping_fee)}`}</small>
+          </div>
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><CreditCard size={17} aria-hidden /></span>
+            <strong>{paymentMethodLabel}</strong>
+            <span>{copy.paymentMethod}</span>
+            <small>{paidAtLabel}</small>
+          </div>
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><Truck size={17} aria-hidden /></span>
+            <strong>{logisticsStatus}</strong>
+            <span>{copy.logistics}</span>
+            <small>{logisticsText}</small>
+          </div>
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><ClipboardList size={17} aria-hidden /></span>
+            <strong>{order.items.length} SKU</strong>
+            <span>{copy.productInfo}</span>
+            <small>{itemQuantity} 件商品</small>
+          </div>
+        </section>
+
+        <section className="store-order-detail-v12-progress rounded-2xl border border-border bg-card p-3">
+          <div className="store-order-detail-v12-section-head">
+            <div>
+              <p className="store-order-detail-v12-section-kicker">{copy.currentStatus}</p>
+              <h2>{pageTitle}</h2>
+            </div>
+            <span>{formatDateTime(order.created_at)}</span>
+          </div>
           {order.logistics_snapshot?.status_label || order.logistics_status_label ? (
             <p className="mt-2 rounded-xl bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">
               {copy.logisticsStatus}: {order.logistics_snapshot?.status_label || order.logistics_status_label}
@@ -468,7 +541,7 @@ export default function OrderDetail() {
               {order.shortage_notice || copy.shortageFallback}
             </p>
           ) : null}
-          <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px]">
+          <div className="store-order-detail-v12-step-grid mt-3">
             {getOrderStepLabels(locale).map((s, i) => (
               <div key={s}>
                 <div className={`mx-auto mb-1 h-2 w-2 rounded-full ${i <= step ? "bg-[var(--theme-primary)]" : "bg-[var(--theme-border)]"}`} />
@@ -476,38 +549,43 @@ export default function OrderDetail() {
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="rounded-2xl border border-border bg-card p-3 space-y-3">
-          <p className="text-sm font-medium">{copy.productInfo}</p>
+        <section className="store-order-detail-v12-products rounded-2xl border border-border bg-card p-3 space-y-3">
+          <div className="store-order-detail-v12-section-head">
+            <div>
+              <p className="store-order-detail-v12-section-kicker">{copy.productInfo}</p>
+              <h2>{order.items.length} SKU · {itemQuantity} 件</h2>
+            </div>
+          </div>
           {order.items.map((item) => {
             const lineTotal = Number(item.subtotal ?? Number(item.unit_price || 0) * Number(item.qty || 0));
             return (
-              <div key={item.order_item_id || item.id || `${item.product.id}-${item.variant_id}`} className="flex gap-2">
+              <div key={item.order_item_id || item.id || `${item.product.id}-${item.variant_id}`} className="store-order-detail-v12-product-row">
                 <ProductCoverImage
                   url={item.product.cover_image}
                   alt={item.product.name}
-                  className="w-12 self-start rounded-lg object-cover"
+                  className="store-order-detail-v12-product-media self-start object-cover"
                   imgClassName="object-cover"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="store-card-title line-clamp-2">{item.product.name}</p>
                   <p className="store-caption mt-1 truncate text-muted-foreground">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
                   <p className="store-caption mt-1 text-muted-foreground">
-                    RM {Number(item.unit_price ?? item.product.price ?? 0).toFixed(2)} x {item.qty}
+                    {money(item.unit_price ?? item.product.price ?? 0)} x {item.qty}
                   </p>
                 </div>
-                <div className="store-body-small shrink-0 text-right font-semibold">RM {lineTotal.toFixed(2)}</div>
+                <div className="store-body-small shrink-0 text-right font-semibold">{money(lineTotal)}</div>
               </div>
             );
           })}
-        </div>
+        </section>
 
         <div className="rounded-2xl border border-border bg-card p-3">
           <p className="text-sm font-medium">{copy.priceDetail}</p>
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-muted-foreground">{copy.productAmount}</span>
-            <span>RM {Number(order.raw_amount || 0).toFixed(2)}</span>
+            <span>{money(getOrderGoodsDisplayAmount(order))}</span>
           </div>
           {Number(order.discount_amount || 0) > 0 && !(order.discount_lines || []).length ? (
             <div className="mt-2 flex justify-between text-sm">
@@ -690,17 +768,6 @@ export default function OrderDetail() {
         onSuccess={() => {
           void reload();
         }}
-      />
-
-      <LogisticsInfoModal
-        open={logisticsInfo !== null}
-        onClose={() => setLogisticsInfo(null)}
-        carrier={logisticsInfo?.carrier}
-        trackingNo={logisticsInfo?.trackingNo}
-        statusLabel={logisticsInfo?.statusLabel}
-        exceptionMessage={logisticsInfo?.exceptionMessage}
-        hasException={logisticsInfo?.hasException}
-        timeline={logisticsInfo?.timeline}
       />
 
       <ReviewComposerSheet

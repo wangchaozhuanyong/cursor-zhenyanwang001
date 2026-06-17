@@ -26,6 +26,7 @@ import CheckoutPromotionExplanation from "@/modules/storefront-v2/checkout/Check
 import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
 import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { BadgeCheck, Calculator, ShieldCheck, Truck } from "lucide-react";
 
 export default function Checkout() {
   const { localizedPath, t } = usePublicLocale();
@@ -118,7 +119,7 @@ export default function Checkout() {
       onBack={checkout.goBack}
       backFallback={localizedPath("/cart")}
       desktopBackLabel={t("checkout.backCart")}
-      className="store-conversion-page store-checkout-page store-bottom-action-space bg-[color-mix(in_srgb,var(--theme-bg)_82%,#f7f1e8)] md:pb-0"
+      className="store-conversion-page store-v12-page store-checkout-v12-page store-checkout-page store-bottom-action-space bg-[color-mix(in_srgb,var(--theme-bg)_82%,#f7f1e8)] md:pb-0"
       contentClassName="xl:max-w-screen-xl"
       rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
     >
@@ -158,6 +159,8 @@ export default function Checkout() {
                 orderSnapshot={checkout.orderSnapshot}
                 fullReductionCampaign={fullReductionCampaign}
                 currentAmount={checkout.rawTotal}
+                pricingReady={checkout.backendPricingReady}
+                pricingError={checkout.orderPreviewError}
               />
               <LoadingButton
                 state={checkout.submitting ? "loading" : "normal"}
@@ -173,6 +176,11 @@ export default function Checkout() {
           }
         >
             <MarketingPositionNotices position="checkout_notice" />
+            <CheckoutTrustGuardrail
+              pricingReady={checkout.backendPricingReady}
+              pricingError={checkout.orderPreviewError}
+              shippingSyncing={shippingBlocked}
+            />
             <CheckoutAddressCard
               name={checkout.name}
               phone={checkout.phone}
@@ -255,6 +263,8 @@ export default function Checkout() {
                 orderSnapshot={checkout.orderSnapshot}
                 fullReductionCampaign={fullReductionCampaign}
                 currentAmount={checkout.rawTotal}
+                pricingReady={checkout.backendPricingReady}
+                pricingError={checkout.orderPreviewError}
                 className="mt-4"
               />
             </div>
@@ -278,5 +288,69 @@ export default function Checkout() {
         onSelect={handlePickAddress}
       />
     </StoreStandardPageShell>
+  );
+}
+
+function CheckoutTrustGuardrail({
+  pricingReady,
+  pricingError,
+  shippingSyncing,
+}: {
+  pricingReady: boolean;
+  pricingError?: string | null;
+  shippingSyncing: boolean;
+}) {
+  const blocked = Boolean(pricingError);
+  const items = [
+    {
+      icon: Calculator,
+      title: "后端金额",
+      value: pricingReady ? "已同步" : blocked ? "需处理" : "同步中",
+      hint: pricingError || "商品价、优惠、积分和返现以订单预览为准",
+      tone: pricingReady ? "is-on" : "is-warn",
+    },
+    {
+      icon: BadgeCheck,
+      title: "活动资格",
+      value: "重新校验",
+      hint: "时间、商品范围、SKU、会员等级和叠加规则都不由前端判断",
+      tone: "is-on",
+    },
+    {
+      icon: Truck,
+      title: "配送库存",
+      value: blocked ? "待复核" : shippingSyncing ? "校验中" : "已校验",
+      hint: "运费、地址、库存和限购会在提交订单前复核",
+      tone: blocked || shippingSyncing ? "is-warn" : "is-on",
+    },
+  ];
+
+  return (
+    <section className="store-checkout-v12-guardrail" aria-label="结算安全校验">
+      <div className="store-checkout-v12-guardrail__head">
+        <span className="store-checkout-v12-guardrail__icon" aria-hidden>
+          <ShieldCheck size={17} />
+        </span>
+        <div>
+          <h2>结算由后端最终裁判</h2>
+          <p>前台只展示结果，不自行决定最终价格、优惠资格、库存或支付状态。</p>
+        </div>
+      </div>
+      <div className="store-checkout-v12-guardrail__grid">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.title} className="store-checkout-v12-guardrail__item">
+              <span className={`store-checkout-v12-guardrail__status ${item.tone}`}>
+                <Icon size={15} aria-hidden />
+              </span>
+              <strong>{item.value}</strong>
+              <span>{item.title}</span>
+              <small>{item.hint}</small>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

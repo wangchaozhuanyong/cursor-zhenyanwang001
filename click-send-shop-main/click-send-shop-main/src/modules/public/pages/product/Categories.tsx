@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronDown, LayoutGrid, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { motion } from "framer-motion";
@@ -470,9 +470,10 @@ export default function Categories() {
       {filterDrawer}
     </div>
   );
+  const resultCount = pagination.total || products.length;
 
   const wideCategoryRail = (
-    <div className="store-category-tablet-rail mb-4 hidden md:block">
+    <div className="store-category-tablet-rail mb-4 hidden md:block lg:hidden">
       <CategoryKingkongRow
         items={rootKingkongItems}
         scrollKey={scrollTabKey}
@@ -491,11 +492,27 @@ export default function Categories() {
       ) : null}
     </div>
   );
+  const desktopCategoryWorkbench = (
+    <CategoryDesktopWorkbench
+      categories={categories}
+      activeCat={activeCat}
+      activeCategoryName={activeCategoryName}
+      pageHeading={pageHeading}
+      productTotal={pagination.total || products.length}
+      activeFilterCount={activeSearchFilterCount}
+      loading={loading && products.length === 0}
+      quickActions={categorySearchQuickActions}
+      onSelectAll={handleSelectAll}
+      onSelectNewArrivals={handleSelectNewArrivals}
+      onSelectCategory={handleRootCategoryClick}
+      onResetFilters={clearFilters}
+    />
+  );
 
   return (
     <div
       className={cn(
-        "store-page-shell store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]",
+        "store-page-shell store-v12-page store-categories-v12-page store-listing-page store-category-page store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]",
         clientStyle === "black_gold"
           ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_0%,var(--theme-bg)_24rem,var(--theme-bg)_100%)]"
           : clientStyle === "deep_enterprise"
@@ -553,7 +570,8 @@ export default function Categories() {
 
       <main className="store-category-main mx-auto max-w-screen-xl">
         <div className="px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6">
-          <div>
+          <div className="store-category-v12-shell">
+            {desktopCategoryWorkbench}
             <section className="store-category-content min-w-0">
               <div className="mb-4 hidden md:block">
                 <CategorySearchHero
@@ -586,6 +604,20 @@ export default function Categories() {
               >
                 当前筛选：{filterSummary || "无筛选"}
               </div>
+
+              <CategoryResultCommandBar
+                pageHeading={pageHeading}
+                resultCount={resultCount}
+                activeFilterCount={activeSearchFilterCount}
+                viewMode={viewMode}
+                loading={loading && products.length === 0}
+                sort={sort}
+                onResetFilters={clearFilters}
+                onRefresh={() => {
+                  useProductStore.getState().clearError();
+                  void loadProducts();
+                }}
+              />
 
               {error && products.length === 0 ? (
                 <div className="mb-3">
@@ -671,6 +703,208 @@ export default function Categories() {
         </div>
       </main>
     </div>
+  );
+}
+
+function CategoryResultCommandBar({
+  pageHeading,
+  resultCount,
+  activeFilterCount,
+  viewMode,
+  loading,
+  sort,
+  onResetFilters,
+  onRefresh,
+}: {
+  pageHeading: string;
+  resultCount: number;
+  activeFilterCount: number;
+  viewMode: string;
+  loading: boolean;
+  sort: ProductSortType;
+  onResetFilters: () => void;
+  onRefresh: () => void;
+}) {
+  const viewLabel = viewMode === "list" ? "列表" : "网格";
+  const stats = [
+    {
+      key: "result",
+      label: "商品结果",
+      value: loading ? "加载中" : `${Math.max(0, resultCount)}`,
+      icon: LayoutGrid,
+    },
+    {
+      key: "filter",
+      label: "筛选条件",
+      value: `${Math.max(0, activeFilterCount)}`,
+      icon: SlidersHorizontal,
+    },
+    {
+      key: "sort",
+      label: "排序视图",
+      value: `${categorySortLabel(sort)} / ${viewLabel}`,
+      icon: ShieldCheck,
+    },
+  ];
+
+  return (
+    <section className="store-category-v12-result-panel" aria-label="商品结果状态">
+      <div className="store-category-v12-result-panel__copy">
+        <span>商品结果</span>
+        <h2>{pageHeading}</h2>
+        <p>商品价、活动价、库存、限购和最终可买状态都在购物车与结算预览重新校验。</p>
+      </div>
+      <div className="store-category-v12-result-panel__stats">
+        {stats.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.key}>
+              <Icon size={15} aria-hidden />
+              <strong>{item.value}</strong>
+              <small>{item.label}</small>
+            </div>
+          );
+        })}
+      </div>
+      <div className="store-category-v12-result-panel__actions">
+        <UnifiedButton type="button" onClick={onRefresh}>刷新</UnifiedButton>
+        {activeFilterCount > 0 ? (
+          <UnifiedButton type="button" onClick={onResetFilters}>清空筛选</UnifiedButton>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function CategoryDesktopWorkbench({
+  categories,
+  activeCat,
+  activeCategoryName,
+  pageHeading,
+  productTotal,
+  activeFilterCount,
+  loading,
+  quickActions,
+  onSelectAll,
+  onSelectNewArrivals,
+  onSelectCategory,
+  onResetFilters,
+}: {
+  categories: Category[];
+  activeCat: string;
+  activeCategoryName: string;
+  pageHeading: string;
+  productTotal: number;
+  activeFilterCount: number;
+  loading: boolean;
+  quickActions: CategorySearchQuickAction[];
+  onSelectAll: () => void;
+  onSelectNewArrivals: () => void;
+  onSelectCategory: (category: Category) => void;
+  onResetFilters: () => void;
+}) {
+  const visibleCategories = categories.slice(0, 10);
+  const hasMoreCategories = categories.length > visibleCategories.length;
+
+  return (
+    <aside className="store-category-v12-sidebar hidden lg:block" aria-label="分类工作台">
+      <div className="store-category-v12-sidebar__inner">
+        <div className="store-category-v12-sidebar__head">
+          <span>
+            <LayoutGrid size={16} aria-hidden />
+            分类工作台
+          </span>
+          <h2>{pageHeading}</h2>
+          <p>左侧先锁定分类和筛选，右侧只展示后端返回的商品结果。</p>
+        </div>
+
+        <div className="store-category-v12-sidebar__stats">
+          <div>
+            <b>{loading ? "..." : Math.max(0, productTotal)}</b>
+            <span>商品结果</span>
+          </div>
+          <div>
+            <b>{Math.max(0, activeFilterCount)}</b>
+            <span>当前筛选</span>
+          </div>
+        </div>
+
+        <div className="store-category-v12-sidebar__section">
+          <div className="store-category-v12-sidebar__section-title">
+            <SlidersHorizontal size={15} aria-hidden />
+            快速筛选
+          </div>
+          <div className="store-category-v12-sidebar__chips">
+            {quickActions.map((action) => (
+              <UnifiedButton
+                key={action.key}
+                type="button"
+                aria-pressed={action.active}
+                onClick={action.onClick}
+                className={cn("store-category-v12-sidebar__chip", action.active && "is-active")}
+              >
+                {action.label}
+              </UnifiedButton>
+            ))}
+            {activeFilterCount > 0 ? (
+              <UnifiedButton
+                type="button"
+                className="store-category-v12-sidebar__chip store-category-v12-sidebar__chip--clear"
+                onClick={onResetFilters}
+              >
+                清空筛选
+              </UnifiedButton>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="store-category-v12-sidebar__section">
+          <div className="store-category-v12-sidebar__section-title">
+            <LayoutGrid size={15} aria-hidden />
+            主分类
+          </div>
+          <div className="store-category-v12-sidebar__list">
+            <UnifiedButton
+              type="button"
+              aria-pressed={activeCat === "all" && !activeCategoryName}
+              className={cn("store-category-v12-sidebar__row", activeCat === "all" && !activeCategoryName && "is-active")}
+              onClick={onSelectAll}
+            >
+              <span>全部商品</span>
+              <b>All</b>
+            </UnifiedButton>
+            <UnifiedButton
+              type="button"
+              className="store-category-v12-sidebar__row"
+              onClick={onSelectNewArrivals}
+            >
+              <span>新品上市</span>
+              <b>New</b>
+            </UnifiedButton>
+            {visibleCategories.map((category) => (
+              <UnifiedButton
+                key={category.id}
+                type="button"
+                aria-pressed={activeCat === category.id}
+                className={cn("store-category-v12-sidebar__row", activeCat === category.id && "is-active")}
+                onClick={() => onSelectCategory(category)}
+              >
+                <span>{category.name}</span>
+                <b>{category.children?.length ? `${category.children.length} 子类` : "分类"}</b>
+              </UnifiedButton>
+            ))}
+            {hasMoreCategories ? (
+              <p className="store-category-v12-sidebar__more">还有 {categories.length - visibleCategories.length} 个分类，可在上方横向分类栏继续查看。</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="store-category-v12-sidebar__guard">
+          <ShieldCheck size={17} aria-hidden />
+          <p>活动价、库存、限购、优惠券和最终金额都以后端结算预览为准。</p>
+        </div>
+      </div>
+    </aside>
   );
 }
 
@@ -923,4 +1157,12 @@ function CategoryTabButton({
 function normalizeSort(value: string | null): ProductSortType {
   if (value === "sales" || value === "newest" || value === "price-asc" || value === "price-desc") return value;
   return "default";
+}
+
+function categorySortLabel(value: ProductSortType) {
+  if (value === "sales") return "销量";
+  if (value === "newest") return "新品";
+  if (value === "price-asc") return "价格升序";
+  if (value === "price-desc") return "价格降序";
+  return "综合";
 }

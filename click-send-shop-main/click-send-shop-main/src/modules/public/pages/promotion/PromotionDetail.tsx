@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BadgePercent, CalendarDays, Clock3, Loader2, PackageSearch, ShoppingBag, TicketPercent } from "lucide-react";
+import {
+  ArrowLeft,
+  BadgePercent,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Loader2,
+  PackageSearch,
+  RefreshCw,
+  ShieldCheck,
+  ShoppingBag,
+  TicketPercent,
+} from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import * as marketingService from "@/services/marketingService";
 import type { StorefrontPromotion, StorefrontPromotionCoupon } from "@/services/marketingService";
@@ -238,6 +250,18 @@ export default function PromotionDetail() {
     }
     return { path: "/categories", label: t("common.browseProducts") };
   }, [promotion, t]);
+  const statusLabel = promotion?.runtime_status === "scheduled"
+    ? t("promotion.notStarted")
+    : promotion?.runtime_status === "ended"
+      ? t("promotion.ended")
+      : t("promotion.active");
+  const countdownLabel = promotion?.runtime_status === "scheduled"
+    ? `${t("promotion.startsIn")} ${formatDuration(promotion.starts_in_seconds)}`
+    : countdownSeconds > 0
+      ? formatDuration(countdownSeconds)
+      : t("promotion.endingSoon");
+  const itemCount = promotion?.items?.length || 0;
+  const couponCount = coupons.length;
 
   const handleClaimCoupon = async (coupon: StorefrontPromotionCoupon) => {
     setClaimingId(coupon.id);
@@ -263,7 +287,7 @@ export default function PromotionDetail() {
 
   if (loading) {
     return (
-      <main className="flex min-h-[60vh] items-center justify-center text-[var(--theme-text-muted)]">
+      <main className="store-page-shell store-v12-page store-promotion-detail-v12-page flex min-h-[60vh] items-center justify-center text-[var(--theme-text-muted)]">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         {t("promotion.loading")}
       </main>
@@ -272,20 +296,18 @@ export default function PromotionDetail() {
 
   if (error || !promotion) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-10">
-        <section className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-8 text-center">
-          <h1 className="text-2xl font-semibold text-[var(--theme-text)]">{t("promotion.detailUnavailable")}</h1>
-          <p className="mt-2 text-sm text-[var(--theme-text-muted)]">{error || t("promotion.emptyDescription")}</p>
-          <div className="mt-6 flex justify-center gap-3">
-            <UnifiedButton type="button" onClick={() => navigate(-1)} className="inline-flex items-center gap-2 rounded-full px-4 py-2">
-              <ArrowLeft size={16} />
-              {t("common.back")}
-            </UnifiedButton>
-            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath(PROMOTIONS_BASE_PATH)}>
-              {t("common.allPromotions")}
-            </Link>
-          </div>
-        </section>
+      <main className="store-page-shell store-v12-page store-promotion-detail-v12-page mx-auto max-w-4xl px-4 py-8">
+        <PromotionDetailStatePanel
+          title={t("promotion.detailUnavailable")}
+          description={error || t("promotion.emptyDescription")}
+          onBack={() => navigate(-1)}
+          onRetry={() => void load()}
+          promotionsHref={localizedPath(PROMOTIONS_BASE_PATH)}
+          categoriesHref={localizedPath("/categories")}
+          allPromotionsLabel={t("common.allPromotions")}
+          backLabel={t("common.back")}
+          browseLabel={t("common.browseProducts")}
+        />
       </main>
     );
   }
@@ -298,7 +320,7 @@ export default function PromotionDetail() {
       canonical={buildCanonical(`${PROMOTIONS_BASE_PATH}/${promotion.slug || slug}`)}
       robots="index,follow"
     />
-    <main className="mx-auto max-w-6xl px-4 py-8">
+    <main className="store-page-shell store-v12-page store-promotion-detail-v12-page mx-auto max-w-6xl px-4 py-8">
       <button
         type="button"
         className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[var(--theme-text-muted)]"
@@ -308,69 +330,98 @@ export default function PromotionDetail() {
         {t("common.back")}
       </button>
 
-      <section className="overflow-hidden rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+      <section className="store-promotion-detail-v12-hero">
         {promotion.cover_image ? (
-          <img className="h-56 w-full object-cover" src={promotion.cover_image} alt={promotion.title} />
+          <div className="store-promotion-detail-v12-hero__media">
+            <img src={promotion.cover_image} alt={promotion.title} />
+          </div>
         ) : null}
-        <div className="p-6">
-          <span className="inline-flex items-center rounded-full bg-[var(--theme-muted)] px-3 py-1 text-xs font-semibold text-[var(--theme-primary)]">
-            {promotionTypeLabel(promotion.type)}
-          </span>
-          <h1 className="mt-3 text-3xl font-bold text-[var(--theme-text)]">{promotion.title}</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--theme-text-muted)]">
-            {promotion.description || promotion.subtitle || t("promotion.detailFallback")}
-          </p>
+        <div className="store-promotion-detail-v12-hero__body">
+          <div className="store-promotion-detail-v12-hero__copy">
+            <div className="store-promotion-detail-v12-hero__badges">
+              <span>{promotionTypeLabel(promotion.type)}</span>
+              <b>{statusLabel}</b>
+              {promotion.promo_label ? <em>{promotion.promo_label}</em> : null}
+            </div>
+            <h1>{promotion.title}</h1>
+            <p>{promotion.description || promotion.subtitle || t("promotion.detailFallback")}</p>
+          </div>
 
-          <div className="mt-6 grid gap-3 md:grid-cols-4">
-            <div className="rounded-lg border border-[var(--theme-border)] p-4">
-              <CalendarDays className="mb-2 h-5 w-5 text-[var(--theme-primary)]" />
-              <span className="text-xs text-[var(--theme-text-muted)]">{t("promotion.time")}</span>
-              <strong className="mt-1 block text-sm text-[var(--theme-text)]">{formatDate(promotion.start_at)} - {formatDate(promotion.end_at)}</strong>
+          <div className="store-promotion-detail-v12-hero__stats">
+            <div>
+              <CalendarDays size={18} aria-hidden />
+              <span>{t("promotion.time")}</span>
+              <strong>{formatDate(promotion.start_at)} - {formatDate(promotion.end_at)}</strong>
             </div>
-            <div className="rounded-lg border border-[var(--theme-border)] p-4">
-              <Clock3 className="mb-2 h-5 w-5 text-[var(--theme-primary)]" />
-              <span className="text-xs text-[var(--theme-text-muted)]">{t("promotion.countdown")}</span>
-              <strong className="mt-1 block text-sm text-[var(--theme-text)]">
-                {promotion.runtime_status === "scheduled"
-                  ? `${t("promotion.startsIn")} ${formatDuration(promotion.starts_in_seconds)}`
-                  : countdownSeconds > 0
-                    ? formatDuration(countdownSeconds)
-                    : t("promotion.endingSoon")}
-              </strong>
+            <div>
+              <Clock3 size={18} aria-hidden />
+              <span>{t("promotion.countdown")}</span>
+              <strong>{countdownLabel}</strong>
             </div>
-            <div className="rounded-lg border border-[var(--theme-border)] p-4">
-              <BadgePercent className="mb-2 h-5 w-5 text-[var(--theme-primary)]" />
-              <span className="text-xs text-[var(--theme-text-muted)]">{t("promotion.stackable")}</span>
-              <strong className="mt-1 block text-sm text-[var(--theme-text)]">{promotion.stackable ? t("promotion.stackableYes") : t("promotion.stackableNo")}</strong>
+            <div>
+              <BadgePercent size={18} aria-hidden />
+              <span>{t("promotion.stackable")}</span>
+              <strong>{promotion.stackable ? t("promotion.stackableYes") : t("promotion.stackableNo")}</strong>
             </div>
-            <div className="rounded-lg border border-[var(--theme-border)] p-4">
-              <PackageSearch className="mb-2 h-5 w-5 text-[var(--theme-primary)]" />
-              <span className="text-xs text-[var(--theme-text-muted)]">{t("promotion.applyScope")}</span>
-              <strong className="mt-1 block text-sm text-[var(--theme-text)]">{promotion.scope_type || "all"}</strong>
+            <div>
+              <PackageSearch size={18} aria-hidden />
+              <span>{t("promotion.applyScope")}</span>
+              <strong>{promotion.scope_type || "all"} · {itemCount} 件商品</strong>
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="store-promotion-detail-v12-hero__guardrail">
+            <ShieldCheck size={18} aria-hidden />
+            <div>
+              <strong>结算页以后端活动引擎为准</strong>
+              <p>活动时间、商品范围、SKU、会员等级、限购、库存、优惠券和叠加/互斥规则都会在购物车与结算页重新校验。</p>
+            </div>
+          </div>
+
+          <div className="store-promotion-detail-v12-hero__actions">
             {promotion.runtime_status === "ended" ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--theme-muted)] px-5 py-2 text-sm font-semibold text-[var(--theme-text-muted)]">
+              <span className="store-promotion-detail-v12-hero__ended">
                 <ShoppingBag size={16} />
                 {t("promotion.ended")}
               </span>
             ) : (
-            <Link className="inline-flex items-center gap-2 rounded-full bg-[var(--theme-primary)] px-5 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]" to={localizedPath(primaryCta.path)}>
-              <ShoppingBag size={16} />
-              {primaryCta.label}
-            </Link>
+              <Link className="store-promotion-detail-v12-hero__primary" to={localizedPath(primaryCta.path)}>
+                <ShoppingBag size={16} />
+                {primaryCta.label}
+              </Link>
             )}
-            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-5 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath(PROMOTIONS_BASE_PATH)}>
+            {couponCount > 0 ? (
+              <Link className="store-promotion-detail-v12-hero__secondary" to={localizedPath("/coupons")}>
+                <TicketPercent size={16} />
+                {couponCount} 张券可领
+              </Link>
+            ) : null}
+            <Link className="store-promotion-detail-v12-hero__secondary" to={localizedPath(PROMOTIONS_BASE_PATH)}>
               {t("common.allPromotions")}
             </Link>
           </div>
         </div>
       </section>
 
+      <section className="store-promotion-detail-v12-checks">
+        {[
+          "命中活动后，商品页、购物车、结算预览和订单金额必须保持一致。",
+          promotion.stackable
+            ? "该活动允许与符合条件的优惠叠加，最终叠加顺序由后端规则引擎判断。"
+            : "该活动存在互斥限制，若与其他优惠冲突，结算页会给出不可用原因。",
+          promotion.usage_limit_per_user
+            ? `每人最多参与 ${promotion.usage_limit_per_user} 次，重复下单会在创建订单时再次校验。`
+            : "暂无每人参与次数限制，但库存、券余量和会员资格仍会实时校验。",
+        ].map((text) => (
+          <div key={text}>
+            <CheckCircle2 size={17} aria-hidden />
+            <span>{text}</span>
+          </div>
+        ))}
+      </section>
+
       {policies.length ? (
-        <section className="mt-6 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5">
+        <section className="mt-6 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 store-promotion-detail-v12-rules">
           <h2 className="text-lg font-semibold text-[var(--theme-text)]">{t("promotion.policyEntries")}</h2>
           <dl className="mt-4 grid gap-3 md:grid-cols-3">
             {policies.map((policy) => (
@@ -490,5 +541,77 @@ export default function PromotionDetail() {
       ) : null}
     </main>
     </>
+  );
+}
+
+type PromotionDetailStatePanelProps = {
+  allPromotionsLabel: string;
+  backLabel: string;
+  browseLabel: string;
+  categoriesHref: string;
+  description: string;
+  onBack: () => void;
+  onRetry: () => void;
+  promotionsHref: string;
+  title: string;
+};
+
+function PromotionDetailStatePanel({
+  allPromotionsLabel,
+  backLabel,
+  browseLabel,
+  categoriesHref,
+  description,
+  onBack,
+  onRetry,
+  promotionsHref,
+  title,
+}: PromotionDetailStatePanelProps) {
+  return (
+    <section className="store-promotion-detail-v12-state-panel" aria-live="polite">
+      <div className="store-promotion-detail-v12-state-panel__icon">
+        <ShieldCheck size={22} aria-hidden />
+      </div>
+      <div className="store-promotion-detail-v12-state-panel__copy">
+        <p className="store-promotion-detail-v12-state-panel__eyebrow">活动详情工作台</p>
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </div>
+
+      <div className="store-promotion-detail-v12-state-panel__checks" aria-label="活动详情安全校验">
+        {[
+          ["活动状态", "只展示后端返回的活动时间、状态和可用原因。"],
+          ["规则引擎", "优惠资格、叠加互斥、限购和库存仍由结算页重新校验。"],
+          ["交易安全", "创建订单和支付金额不会相信页面 URL 或前端估算。"],
+        ].map(([label, value]) => (
+          <div key={label}>
+            <CheckCircle2 size={16} aria-hidden />
+            <span>
+              <strong>{label}</strong>
+              <small>{value}</small>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="store-promotion-detail-v12-state-panel__actions">
+        <UnifiedButton type="button" onClick={onRetry} className="store-promotion-detail-v12-state-panel__primary">
+          <RefreshCw size={16} />
+          重新加载
+        </UnifiedButton>
+        <Link className="store-promotion-detail-v12-state-panel__secondary" to={promotionsHref}>
+          <BadgePercent size={16} />
+          {allPromotionsLabel}
+        </Link>
+        <Link className="store-promotion-detail-v12-state-panel__secondary" to={categoriesHref}>
+          <ShoppingBag size={16} />
+          {browseLabel}
+        </Link>
+        <UnifiedButton type="button" onClick={onBack} className="store-promotion-detail-v12-state-panel__ghost">
+          <ArrowLeft size={16} />
+          {backLabel}
+        </UnifiedButton>
+      </div>
+    </section>
   );
 }

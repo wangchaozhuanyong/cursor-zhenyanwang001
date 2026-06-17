@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronRight, FileText, Plus, RefreshCw } from "lucide-react";
+import { ChevronRight, Clock3, FileText, PackageCheck, Plus, RefreshCw } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import * as returnService from "@/services/returnService";
 import type { ReturnRequest } from "@/types/return";
@@ -67,20 +67,6 @@ const RETURNS_COPY: Record<PublicLocale, {
     refund: "Refund",
     nextStep: "Next step",
   },
-  ms: {
-    title: "Kemajuan selepas jualan",
-    heroTitle: "Pusat kemajuan selepas jualan",
-    heroDescription: "Jejaki bayaran balik, pemulangan, tukaran dan pembaikan.",
-    refresh: "Muat semula",
-    apply: "Mohon servis",
-    statusTabs: "Status pemulangan",
-    loading: "Memuatkan...",
-    emptyTitle: "Tiada rekod selepas jualan",
-    emptyDescription: "Anda boleh mohon servis daripada pesanan yang dihantar atau selesai.",
-    order: "Pesanan",
-    refund: "Bayaran balik",
-    nextStep: "Langkah seterusnya",
-  },
 };
 
 export default function Returns() {
@@ -129,6 +115,35 @@ export default function Returns() {
     () => list.filter((item) => shouldShowReturnInFilter(item, filter)),
     [filter, list],
   );
+  const returnStats = useMemo(() => [
+    {
+      label: "全部售后",
+      value: list.length,
+      hint: "退款/退货/换货/维修",
+      icon: FileText,
+    },
+    {
+      label: "待我操作",
+      value: list.filter((item) => {
+        const action = getBuyerReturnAction(item, locale);
+        return action?.key === "evidence" || action?.key === "logistics" || action?.key === "confirm";
+      }).length,
+      hint: "需补凭证或物流",
+      icon: Clock3,
+    },
+    {
+      label: "处理中",
+      value: list.filter((item) => shouldShowReturnInFilter(item, "processing")).length,
+      hint: "商家审核/收货中",
+      icon: RefreshCw,
+    },
+    {
+      label: "已完成",
+      value: list.filter((item) => item.status === "completed").length,
+      hint: "售后已结束",
+      icon: PackageCheck,
+    },
+  ], [list, locale]);
 
   const closeApply = () => {
     setApplyOpen(false);
@@ -140,9 +155,9 @@ export default function Returns() {
   };
 
   return (
-    <StoreAccountLayout title={copy.title} onBack={goBack} mainClassName="sm:px-4 xl:py-6">
+    <StoreAccountLayout title={copy.title} onBack={goBack} className="store-v12-page store-returns-v12-page" mainClassName="sm:px-4 xl:py-6">
       <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
-        <section className="relative overflow-hidden rounded-[28px] border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))_0%,var(--theme-surface)_56%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_100%)] p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-6">
+        <section className="store-returns-v12-hero relative overflow-hidden rounded-[28px] border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))_0%,var(--theme-surface)_56%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_100%)] p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_36%,color-mix(in_srgb,var(--theme-primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_18%_16%,rgba(255,255,255,0.9),transparent_34%)]" aria-hidden />
           <img
             src={afterSaleProgressHero}
@@ -173,6 +188,22 @@ export default function Returns() {
               </UnifiedButton>
             </div>
           </div>
+        </section>
+
+        <section className="store-returns-v12-summary store-orders-v12-stat-grid" aria-label="售后统计">
+          {returnStats.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className="store-orders-v12-stat">
+                <span className="store-orders-v12-stat__icon" aria-hidden>
+                  <Icon size={17} />
+                </span>
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+                <small>{item.hint}</small>
+              </div>
+            );
+          })}
         </section>
 
         <section className="rounded-[24px] border border-border bg-card p-3 shadow-[0_14px_34px_rgba(15,23,42,0.07)]">
@@ -230,7 +261,7 @@ export default function Returns() {
             const action = getBuyerReturnAction(item, locale);
             const image = getReturnItemImage(item);
             return (
-              <article key={item.id} className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+              <article key={item.id} className="store-returns-v12-card rounded-2xl border border-border bg-card p-3 shadow-sm">
                 <UnifiedButton
                   type="button"
                   onClick={() => navigate(localizedPath(`/returns/${item.id}`))}

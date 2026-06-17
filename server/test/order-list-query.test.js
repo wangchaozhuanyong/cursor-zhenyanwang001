@@ -32,3 +32,26 @@ test('buyer order keyword search stays user-scoped and parameterized', async () 
   assert.equal(captured.params.length, 13);
   assert.ok(captured.params.slice(1).every((param) => param === '%签证!%!_!!%'));
 });
+
+test('buyer order detail lookup accepts id or display order number within current user scope', async () => {
+  let captured = null;
+  const q = {
+    async query(sql, params) {
+      captured = { sql, params };
+      return [[{ id: 'order-1', order_no: '12899607', user_id: 'user-1' }]];
+    },
+  };
+
+  const row = await repo.selectOrderByIdOrNoAndUser(q, '#12899607', 'user-1');
+
+  assert.equal(row.id, 'order-1');
+  assert.ok(captured);
+  assert.match(captured.sql, /WHERE user_id = \?/);
+  assert.match(captured.sql, /buyer_deleted_at IS NULL/);
+  assert.match(captured.sql, /id = \?/);
+  assert.match(captured.sql, /order_no = \?/);
+  assert.deepEqual(captured.params, ['user-1', '#12899607', '#12899607', '12899607', '#12899607']);
+
+  await repo.selectOrderByIdOrNoAndUser(q, '12899607', 'user-1');
+  assert.deepEqual(captured.params, ['user-1', '12899607', '12899607', '12899607', '#12899607']);
+});

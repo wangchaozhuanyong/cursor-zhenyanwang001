@@ -178,7 +178,7 @@ export default function Search() {
   return (
     <div
       className={cn(
-        "store-page-shell store-search-page store-bottom-safe text-[var(--theme-text)]",
+        "store-page-shell store-v12-page store-search-v12-page store-search-page store-bottom-safe text-[var(--theme-text)]",
         clientStyle === "black_gold"
           ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_0%,var(--theme-bg)_22rem,var(--theme-bg)_100%)]"
           : clientStyle === "deep_enterprise"

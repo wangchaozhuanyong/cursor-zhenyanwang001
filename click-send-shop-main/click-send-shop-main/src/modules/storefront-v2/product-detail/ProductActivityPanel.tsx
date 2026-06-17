@@ -19,9 +19,27 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
         ? "会员专享"
         : "满减";
   const remaining = Math.max(0, Number(activity.remaining_stock ?? 0));
+  const soldCount = Math.max(0, Number(activity.sold_count ?? 0));
+  const stockTotal = Math.max(0, Number(activity.activity_stock ?? 0) || remaining + soldCount);
   const limit = Number(activity.limit_per_user ?? 0);
   const threshold = Number(activity.threshold_amount ?? 0);
   const discount = Number(activity.discount_amount ?? 0);
+  const progressPercent = activity.stock_progress_percent != null
+    ? Math.max(0, Math.min(100, Math.round(Number(activity.stock_progress_percent || 0))))
+    : stockTotal > 0
+      ? Math.max(0, Math.min(100, Math.round((soldCount / stockTotal) * 100)))
+      : null;
+  const normalizedStatus = String(activity.status || "").toLowerCase();
+  const normalizedStatusLabel = String(activity.status_label || "").toLowerCase();
+  const statusText = normalizedStatus === "scheduled"
+    ? "未开始"
+    : normalizedStatus === "ended"
+      ? "已结束"
+      : normalizedStatus === "paused"
+        ? "已暂停"
+        : activity.status_label && !["active", "scheduled", "ended", "paused"].includes(normalizedStatusLabel)
+          ? activity.status_label
+          : "进行中";
 
   return (
     <section
@@ -32,6 +50,7 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StorefrontBadge tone="sale">{badgeLabel}</StorefrontBadge>
+            <span className="store-product-v12-activity-status">{statusText}</span>
             <p className="min-w-0 text-sm font-bold leading-5 text-[var(--theme-text)]">{activity.title}</p>
           </div>
           {activity.description ? (
@@ -61,6 +80,26 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
           </span>
         </div>
       </div>
+
+      {progressPercent != null ? (
+        <div className="store-product-v12-activity-progress">
+          <div className="store-product-v12-activity-progress__meta">
+            <span>库存进度</span>
+            <strong>{isActivityPrice ? `已抢 ${progressPercent}%` : `剩余 ${remaining} 件`}</strong>
+          </div>
+          <div className="store-product-v12-activity-progress__track" aria-hidden>
+            <span style={{ width: `${progressPercent}%` }} />
+          </div>
+          <p>
+            {stockTotal > 0 ? `活动库存 ${stockTotal} 件，已售 ${soldCount} 件，剩余 ${remaining} 件。` : `剩余 ${remaining} 件。`}
+            {limit > 0 ? ` 每人限购 ${limit} 件。` : " 限购规则以下单校验为准。"}
+          </p>
+        </div>
+      ) : null}
+
+      <p className="store-product-v12-activity-safe-copy">
+        活动价、限购、库存和叠加关系会在购物车和结算页由后端重新校验。
+      </p>
     </section>
   );
 }

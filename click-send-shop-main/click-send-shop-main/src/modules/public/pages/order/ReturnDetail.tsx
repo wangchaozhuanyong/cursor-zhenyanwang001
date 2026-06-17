@@ -41,13 +41,6 @@ const ORDER_REFUND_STATUS_LABELS: Record<PublicLocale, Record<string, string>> =
     refunded: "Refunded",
     refunding: "Refunding",
   },
-  ms: {
-    pending: "Menunggu proses",
-    paid: "Belum dibayar balik",
-    partially_refunded: "Sebahagian dibayar balik",
-    refunded: "Dibayar balik",
-    refunding: "Sedang dibayar balik",
-  },
 };
 
 const RETURN_DETAIL_COPY: Record<PublicLocale, {
@@ -209,64 +202,15 @@ const RETURN_DETAIL_COPY: Record<PublicLocale, {
     noCarrierTracks: "The return tracking number has been received, but no carrier events are available yet. Events will appear after carrier integration or merchant refresh.",
     noRefund: "No refund yet",
   },
-  ms: {
-    loadFailed: "Gagal memuatkan butiran selepas jualan",
-    uploadLimit: "Muat naik maksimum 6 gambar bukti",
-    uploadFailed: "Muat naik gambar gagal",
-    actionFailed: "Tindakan gagal",
-    evidenceRequired: "Tambah penerangan atau muat naik gambar bukti",
-    evidenceSubmitted: "Bukti dihantar",
-    logisticsRequired: "Isi kurier dan nombor penjejakan",
-    logisticsSubmitted: "Logistik pemulangan dihantar",
-    cancelConfirm: "Batalkan permohonan selepas jualan ini?",
-    cancelSubmitted: "Permohonan dibatalkan",
-    completedSubmitted: "Kes selepas jualan disahkan selesai",
-    title: "Butiran selepas jualan",
-    backToProgress: "Kembali ke kemajuan",
-    loading: "Memuatkan...",
-    order: "Pesanan",
-    quantity: "Kuantiti dimohon",
-    refund: "Bayaran balik",
-    nextStep: "Langkah seterusnya",
-    progress: "Kemajuan",
-    evidenceTitle: "Tambah bukti",
-    evidencePlaceholder: "Tambah isu barang, keadaan bungkusan atau butiran perbualan",
-    uploadImage: "Muat naik gambar",
-    submitEvidence: "Hantar bukti",
-    evidenceAlt: "Bukti selepas jualan",
-    evidenceSupplementAlt: "Bukti tambahan selepas jualan",
-    deleteImage: "Padam gambar",
-    logisticsTitle: "Isi logistik pemulangan",
-    carrier: "Kurier",
-    trackingNo: "Nombor penjejakan",
-    contactPhone: "Telefon untuk dihubungi",
-    noteOptional: "Nota, pilihan",
-    submitLogistics: "Hantar logistik pemulangan",
-    confirmTitle: "Sahkan selesai",
-    confirmDescription: "Tamatkan kes selepas menerima barang tukaran atau mengesahkan bayaran balik.",
-    confirmButton: "Sahkan selesai",
-    cancelTitle: "Batalkan permohonan",
-    cancelDescription: "Anda boleh batalkan jika tidak lagi perlukan servis. Hubungi sokongan dahulu jika barang sudah dihantar balik.",
-    cancelButton: "Batalkan permohonan",
-    refundStatus: "Status bayaran balik",
-    orderRefundStatus: "Status bayaran balik pesanan",
-    currentRefund: "Bayaran balik ini",
-    orderRefunded: "Jumlah sudah dibayar balik",
-    noRefundRecords: "Tiada rekod bayaran balik saluran pembayaran buat masa ini. Rekod akan dipaparkan selepas peniaga memproses bayaran balik.",
-    applicationInfo: "Maklumat permohonan",
-    reason: "Sebab",
-    description: "Penerangan",
-    merchantNote: "Nota peniaga",
-    returnShipments: "Bungkusan pemulangan",
-    logisticsTracks: "Jejak logistik pemulangan",
-    noCarrierTracks: "Nombor penjejakan pemulangan sudah diterima, tetapi tiada jejak kurier buat masa ini. Jejak akan dipaparkan selepas integrasi kurier atau peniaga memuat semula.",
-    noRefund: "Tiada bayaran balik",
-  },
 };
 
 function getOrderRefundStatusLabel(status?: string, locale: PublicLocale = "zh") {
   const labels = ORDER_REFUND_STATUS_LABELS[locale] || ORDER_REFUND_STATUS_LABELS.zh;
   return labels[status || ""] || status || RETURN_DETAIL_COPY[locale]?.noRefund || RETURN_DETAIL_COPY.zh.noRefund;
+}
+
+function money(value?: number | string | null) {
+  return `RM ${Number(value || 0).toFixed(2)}`;
 }
 
 export default function ReturnDetail() {
@@ -388,14 +332,69 @@ export default function ReturnDetail() {
   const action = detail ? getBuyerReturnAction(detail, locale) : null;
   const timeline = detail ? buildReturnTimeline(detail, locale) : [];
   const image = detail ? getReturnItemImage(detail) : "";
+  const returnQuantity = detail ? detail.quantity || detail.item_info?.request_qty || 1 : 0;
+  const returnRefundAmount = detail ? Number(detail.refund_summary?.refund_amount || detail.refund_amount || 0) : 0;
+  const orderRefundedAmount = detail ? Number(detail.refund_summary?.order_refunded_amount || 0) : 0;
+  const returnStatusLabel = detail ? getReturnStatusLabel(detail.status, locale) : "";
+  const returnTypeLabel = detail ? getReturnTypeLabel(detail.type, locale) : "";
+  const refundStatusLabel = detail
+    ? getOrderRefundStatusLabel(detail.refund_summary?.order_refund_status || detail.refund_summary?.order_payment_status, locale)
+    : "";
 
   return (
-    <StoreAccountLayout title={copy.title} onBack={goBack} backFallback={localizedPath("/returns")} desktopBackLabel={copy.backToProgress} mainClassName="sm:px-4 xl:py-6">
+    <StoreAccountLayout title={copy.title} onBack={goBack} backFallback={localizedPath("/returns")} desktopBackLabel={copy.backToProgress} className="store-v12-page store-return-detail-v12-page" mainClassName="sm:px-4 xl:py-6">
       <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
         {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">{copy.loading}</p> : null}
         {detail ? (
           <>
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <section className="store-return-detail-v12-hero">
+              <div className="store-return-detail-v12-hero__icon">
+                <RotateCcw size={24} aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="store-return-detail-v12-eyebrow">{returnTypeLabel}</p>
+                <h1 className="store-return-detail-v12-title">{returnStatusLabel}</h1>
+                <p className="store-return-detail-v12-subtitle">
+                  {copy.order} {detail.order_no} · {getReturnItemName(detail, locale)}
+                </p>
+              </div>
+              {action ? (
+                <div className="store-return-detail-v12-next">
+                  <span>{copy.nextStep}</span>
+                  <strong>{action.label}</strong>
+                  <small>{action.description}</small>
+                </div>
+              ) : null}
+            </section>
+
+            <section className="store-return-detail-v12-summary store-orders-v12-stat-grid">
+              <div className="store-orders-v12-stat">
+                <span className="store-orders-v12-stat__icon"><PackageCheck size={17} aria-hidden /></span>
+                <strong>{returnQuantity}</strong>
+                <span>{copy.quantity}</span>
+                <small>{returnTypeLabel}</small>
+              </div>
+              <div className="store-orders-v12-stat">
+                <span className="store-orders-v12-stat__icon"><CreditCard size={17} aria-hidden /></span>
+                <strong>{returnRefundAmount > 0 ? money(returnRefundAmount) : copy.noRefund}</strong>
+                <span>{copy.currentRefund}</span>
+                <small>{refundStatusLabel}</small>
+              </div>
+              <div className="store-orders-v12-stat">
+                <span className="store-orders-v12-stat__icon"><Truck size={17} aria-hidden /></span>
+                <strong>{detail.shipments?.length || 0}</strong>
+                <span>{copy.returnShipments}</span>
+                <small>{detail.logistics_tracks?.length || 0} 条轨迹</small>
+              </div>
+              <div className="store-orders-v12-stat">
+                <span className="store-orders-v12-stat__icon"><RotateCcw size={17} aria-hidden /></span>
+                <strong>{orderRefundedAmount > 0 ? money(orderRefundedAmount) : "-"}</strong>
+                <span>{copy.orderRefunded}</span>
+                <small>{formatDateTime(detail.updated_at)}</small>
+              </div>
+            </section>
+
+            <section className="store-return-detail-v12-product-card rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="w-14 shrink-0 overflow-hidden rounded-xl bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
                   {image ? (
@@ -418,17 +417,11 @@ export default function ReturnDetail() {
                     {getReturnTypeLabel(detail.type, locale)} · {copy.order} {detail.order_no}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {copy.quantity} {detail.quantity || detail.item_info?.request_qty || 1}
-                    {detail.refund_amount != null && Number(detail.refund_amount) > 0 ? ` · ${copy.refund} RM ${Number(detail.refund_amount).toFixed(2)}` : ""}
+                    {copy.quantity} {returnQuantity}
+                    {detail.refund_amount != null && Number(detail.refund_amount) > 0 ? ` · ${copy.refund} ${money(detail.refund_amount)}` : ""}
                   </p>
                 </div>
               </div>
-              {action ? (
-                <div className="mt-4 rounded-xl bg-[var(--theme-primary)]/10 p-3">
-                  <p className="font-medium text-[var(--theme-primary)]">{copy.nextStep}: {action.label}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{action.description}</p>
-                </div>
-              ) : null}
             </section>
 
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">

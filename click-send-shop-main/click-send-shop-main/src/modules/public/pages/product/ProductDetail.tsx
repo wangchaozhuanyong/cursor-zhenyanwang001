@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Headphones } from "lucide-react";
+import { ArrowLeft, BadgePercent, CheckCircle2, CreditCard, Headphones, Layers3, MapPin, PackageCheck, RotateCcw, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -56,12 +56,26 @@ import { isRestrictedProduct } from "@/utils/restrictedProduct";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseActionCard } from "@/components/store/DesktopPurchasePattern";
 import ProductActivityPanel from "@/modules/storefront-v2/product-detail/ProductActivityPanel";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
+import { buildProductDisplayPriceModel } from "@/modules/storefront-v2/product/productDisplayPricing";
+import { usePublicLocale } from "@/i18n/publicLocale";
+
+function getActivityStatusLabel(status?: string, statusLabel?: string) {
+  const normalizedStatus = String(status || "").toLowerCase();
+  const normalizedStatusLabel = String(statusLabel || "").toLowerCase();
+  if (normalizedStatus === "scheduled") return "未开始";
+  if (normalizedStatus === "ended") return "已结束";
+  if (normalizedStatus === "paused") return "已暂停";
+  if (statusLabel && !["active", "scheduled", "ended", "paused"].includes(normalizedStatusLabel)) {
+    return statusLabel;
+  }
+  return "进行中";
+}
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const goBack = useGoBack("/");
+  const { localizedPath } = usePublicLocale();
+  const goBack = useGoBack(localizedPath("/"));
   const addItem = useCartStore((s) => s.addItem);
   const [qty, setQty] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
@@ -174,7 +188,7 @@ export default function ProductDetail() {
           solid={false}
           onBack={goBack}
           onShare={() => {}}
-          onCart={() => navigate("/cart")}
+          onCart={() => navigate(localizedPath("/cart"))}
         />
         <div className="relative">
           <Skeleton className="w-full" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
@@ -197,7 +211,7 @@ export default function ProductDetail() {
           solid
           onBack={goBack}
           onShare={() => {}}
-          onCart={() => navigate("/cart")}
+          onCart={() => navigate(localizedPath("/cart"))}
         />
         <div
           className="mx-auto w-full max-w-screen-sm px-[var(--store-page-x)]"
@@ -205,14 +219,12 @@ export default function ProductDetail() {
             paddingTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px) + 2rem)",
           }}
         >
-          <ClientEmptyState
+          <ProductDetailErrorPanel
             title={error ? "商品加载失败" : "商品不存在"}
             description={error ?? "该商品可能已下架，或当前链接不可用。"}
-            action={
-              <ClientButton type="button" onClick={() => id && loadProductDetail(id)}>
-                重试
-              </ClientButton>
-            }
+            onRetry={() => id && loadProductDetail(id)}
+            onBrowse={() => navigate(localizedPath("/categories"))}
+            onPromotions={() => navigate(localizedPath("/promotions"))}
           />
         </div>
       </div>
@@ -224,16 +236,11 @@ export default function ProductDetail() {
   const selectedVariant = purchaseSelectedVariant;
   const hasMultipleVariants = availableVariants.length > 1;
   const defaultVariant = purchaseDefaultVariant;
-  const productForCart = selectedVariant
-    ? { ...product, price: selectedVariant.price, stock: selectedVariant.stock }
-    : product;
-  const minPrice = Number(product.min_price ?? product.price ?? 0);
-  const maxPrice = Number(product.max_price ?? product.price ?? 0);
-  const hasPriceRange = !selectedVariant && maxPrice > minPrice;
-  const displayPrice = selectedVariant?.price ?? (hasPriceRange ? `${minPrice.toFixed(2).replace(/\.00$/, "")}-${maxPrice.toFixed(2).replace(/\.00$/, "")}` : product.price);
-  const displayPriceForCompare = selectedVariant?.price ?? (hasPriceRange ? maxPrice : Number(product.price || 0));
-  const displayPriceAmount = Number(selectedVariant?.price ?? (hasPriceRange ? minPrice : product.price) ?? 0) || 0;
-  const displayOriginalPrice = selectedVariant?.original_price ?? (hasPriceRange ? product.max_original_price : product.original_price);
+  const displayPriceModel = buildProductDisplayPriceModel(product, selectedVariant);
+  const displayPrice = displayPriceModel.displayPrice;
+  const displayPriceForCompare = displayPriceModel.comparePrice;
+  const displayPriceAmount = displayPriceModel.amount;
+  const displayOriginalPrice = displayPriceModel.originalPrice;
   const displayStock = selectedVariant?.stock ?? (hasMultipleVariants ? product.stock : defaultVariant?.stock ?? product.stock);
   const activityRemaining = activeActivity ? Math.max(0, activeActivity.remaining_stock ?? 0) : displayStock;
   const activityLimit = activeActivity?.limit_per_user && activeActivity.limit_per_user > 0
@@ -241,6 +248,64 @@ export default function ProductDetail() {
     : displayStock;
   const maxQty = Math.max(0, Math.min(displayStock, activityRemaining, activityLimit));
   const soldOut = maxQty <= 0;
+  const productFacts = [
+    {
+      label: "库存校验",
+      value: soldOut ? "已售罄" : `可售 ${Math.max(0, Number(maxQty || 0))} 件`,
+      hint: "加入购物车和提交订单前都会复核",
+      icon: PackageCheck,
+    },
+    {
+      label: "限购规则",
+      value: activeActivity && activityLimit > 0 ? `每人 ${Math.max(0, Number(activityLimit || 0))} 件` : "按规格库存",
+      hint: "活动限购以后端规则为准",
+      icon: BadgePercent,
+    },
+    {
+      label: "配送售后",
+      value: "结算确认",
+      hint: "运费、地址和售后资格由后端返回",
+      icon: Truck,
+    },
+    {
+      label: "安全裁判",
+      value: "后端计算",
+      hint: "价格、优惠和库存不由前端决定",
+      icon: ShieldCheck,
+    },
+  ];
+  const assuranceItems = [
+    {
+      label: "规格库存",
+      value: hasMultipleVariants ? `${availableVariants.length} 种可选` : "默认规格",
+      desc: soldOut ? "当前库存不足，不能提交购买" : "提交前会重新锁定可售库存",
+      icon: Layers3,
+    },
+    {
+      label: "活动资格",
+      value: activeActivity ? getActivityStatusLabel(activeActivity.status, activeActivity.status_label) : "普通价格",
+      desc: activeActivity ? "活动库存、限购和叠加关系以后端为准" : "暂无活动时按商品基础价格结算",
+      icon: BadgePercent,
+    },
+    {
+      label: "配送范围",
+      value: "结算确认",
+      desc: "地址、运费、可配送区域会在订单预览返回",
+      icon: MapPin,
+    },
+    {
+      label: "售后规则",
+      value: "订单关联",
+      desc: "签收、售后申请和退款进度跟随订单状态",
+      icon: RotateCcw,
+    },
+  ];
+  const purchaseFlow = [
+    { label: "选择规格", desc: "先确认 SKU、数量和可售库存" },
+    { label: "结算预览", desc: "后端计算活动、优惠券、积分、运费" },
+    { label: "创建订单", desc: "锁定库存并保存订单金额快照" },
+    { label: "支付发货", desc: "支付状态只以后端订单状态为准" },
+  ];
   const salesCount = hasProductSales(product.sales_count) ? getProductSalesCount(product.sales_count) : null;
   const statusBadges: { key: string; label: string; className: string }[] = [];
   if (product.is_hot) {
@@ -260,6 +325,32 @@ export default function ProductDetail() {
   }
   const showPriceMeta = salesCount !== null || statusBadges.length > 0;
   const detailSections = buildDetailSections(product.description);
+  const detailSummaryItems = [
+    {
+      label: "详情条目",
+      value: `${detailSections.length} 条`,
+      desc: detailSections.length > 1 ? "已拆分为可扫描的商品说明" : "下单前建议确认商品说明",
+      icon: CheckCircle2,
+    },
+    {
+      label: "规格库存",
+      value: hasMultipleVariants ? `${availableVariants.length} 个规格` : "默认规格",
+      desc: soldOut ? "当前不可购买" : "库存会在结算前再次校验",
+      icon: PackageCheck,
+    },
+    {
+      label: "活动规则",
+      value: activeActivity ? "已命中" : "普通价格",
+      desc: activeActivity ? "活动价、限购、互斥以后端返回为准" : "暂无活动命中，不前端猜测优惠",
+      icon: BadgePercent,
+    },
+    {
+      label: "配送售后",
+      value: "订单校验",
+      desc: "地址、运费和售后资格跟随订单状态",
+      icon: Truck,
+    },
+  ];
   const restricted = isRestrictedProduct(product);
   const showRegulatedNotice = shouldShowRegulatedNotice(
     product,
@@ -331,19 +422,29 @@ export default function ProductDetail() {
     if (intent) openPurchaseSheetCore(intent);
   };
 
+  const buildPurchaseSnapshot = (variant: typeof defaultVariant) => {
+    const productSnapshot = variant
+      ? { ...product, price: displayPriceAmount, stock: variant.stock }
+      : { ...product, price: displayPriceAmount };
+    const variantSnapshot = variant ? { ...variant, price: displayPriceAmount } : null;
+
+    return { productSnapshot, variantSnapshot };
+  };
+
   const commitAddToCart = async () => {
     const variant = ensureVariantSelected() ?? defaultVariant;
     if (availableVariants.length > 1 && !variant) {
       toast.error("请选择商品规格");
       return;
     }
+    const { productSnapshot, variantSnapshot } = buildPurchaseSnapshot(variant);
     try {
       await addItem(
-        variant ? { ...product, price: variant.price, stock: variant.stock } : productForCart,
+        productSnapshot,
         qty,
-        variant ?? defaultVariant,
+        variantSnapshot,
       );
-      trackAddToCart(productForCart, qty);
+      trackAddToCart(productSnapshot, qty);
       void trackEvent({
         event_type: "add_to_cart",
         module: "product_detail",
@@ -367,8 +468,8 @@ export default function ProductDetail() {
       toast.error("请选择商品规格");
       return;
     }
-    const p = variant ? { ...product, price: variant.price, stock: variant.stock } : productForCart;
-    useCartStore.getState().setBuyNow(p, qty, variant ?? defaultVariant, purchaseCoupon.checkoutChoice);
+    const { productSnapshot, variantSnapshot } = buildPurchaseSnapshot(variant);
+    useCartStore.getState().setBuyNow(productSnapshot, qty, variantSnapshot, purchaseCoupon.checkoutChoice);
     void trackEvent({
       event_type: "checkout_start",
       module: "product_detail",
@@ -377,7 +478,7 @@ export default function ProductDetail() {
       quantity: qty,
       amount: displayPriceAmount * Number(qty || 0),
     });
-    navigate("/checkout");
+    navigate(localizedPath("/checkout"));
   };
 
   const handleBuyNow = () => openPurchaseSheet("buy");
@@ -433,7 +534,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className={cn("store-conversion-page store-product-detail-page store-bottom-action-space min-h-screen text-[var(--theme-text)] md:pb-0 lg:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
+    <div className={cn("store-conversion-page store-v12-page store-product-detail-page store-bottom-action-space min-h-screen text-[var(--theme-text)] md:pb-0 lg:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
       <SeoHead
         title={`${product.name}｜${siteName}`}
         description={productDescription}
@@ -450,7 +551,7 @@ export default function ProductDetail() {
         solid={headerSolid}
         onBack={goBack}
         onShare={handleShare}
-        onCart={() => navigate("/cart")}
+        onCart={() => navigate(localizedPath("/cart"))}
       />
       <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6 lg:px-8">
         <UnifiedButton
@@ -524,6 +625,23 @@ export default function ProductDetail() {
                 {product.name}
               </h1>
               <ProductActivityPanel activity={activeActivity} />
+              <section className="store-product-v12-facts" aria-label="商品购买规则">
+                {productFacts.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="store-product-v12-fact">
+                      <span className="store-product-v12-fact__icon" aria-hidden>
+                        <Icon size={16} />
+                      </span>
+                      <span className="store-product-v12-fact__body">
+                        <strong>{item.value}</strong>
+                        <small>{item.label}</small>
+                        <em>{item.hint}</em>
+                      </span>
+                    </div>
+                  );
+                })}
+              </section>
               {showRegulatedNotice ? <RegulatedProductNotice {...regulatedNoticeProps} /> : null}
               {purchaseAgeBlocked ? (
                 <p className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--theme-warning)_34%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_14%,var(--theme-surface))] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-warning)_78%,var(--theme-text-on-surface))]">
@@ -550,25 +668,15 @@ export default function ProductDetail() {
               <TrustInfo variant="card" />
             </div>
 
-            {/* 描述 */}
-            <div className="store-detail-section mt-7 px-[var(--store-page-x)] pb-7 md:mt-10 md:px-0 md:pb-0">
-              <div className="rounded-[22px] border border-[var(--theme-border)]/80 bg-[var(--theme-surface)]/88 p-4 shadow-[0_10px_32px_rgba(15,23,42,0.06)] md:rounded-[var(--theme-card-radius)] md:p-6">
-                <div className="mb-2.5 flex items-center gap-3 md:mb-3">
-                  <h3 className="text-sm font-semibold text-foreground md:text-base">商品详情</h3>
-                  <span aria-hidden="true" className="h-px flex-1 bg-[var(--theme-border)]/65" />
-                </div>
-                <div className="divide-y divide-[var(--theme-border)]/55">
-                {detailSections.map((section, idx) => (
-                  <div key={`${section.slice(0, 12)}-${idx}`} className="flex gap-3 py-3.5 first:pt-2 last:pb-2 md:py-4">
-                    <span className="mt-[0.62rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--theme-primary)]/75 ring-4 ring-[var(--theme-primary)]/10" />
-                    <p className="min-w-0 text-sm leading-7 text-[var(--theme-text)]/82 md:text-[15px]">
-                      {section}
-                    </p>
-                  </div>
-                ))}
-                </div>
-              </div>
-            </div>
+            <ProductDetailAssurancePanel
+              items={assuranceItems}
+              flow={purchaseFlow}
+            />
+
+            <ProductDetailContentPanel
+              sections={detailSections}
+              summaryItems={detailSummaryItems}
+            />
           </div>
         </div>
 
@@ -577,11 +685,15 @@ export default function ProductDetail() {
 
         {/* 同类推荐 */}
         {(relatedProductsLoading || relatedProducts.length > 0) && (
-          <div className="store-related-section border-t border-[var(--theme-border)] px-[var(--store-page-x)] py-8 md:border-0 md:px-0 md:py-12">
-            <div className="mb-2 h-1 w-8 rounded-full bg-[var(--theme-primary)]" aria-hidden />
-            <h3 className="mb-4 text-sm font-black text-foreground md:mb-5 md:text-lg">
-              同类推荐
-            </h3>
+          <section className="store-product-v12-related" aria-labelledby="product-related-heading">
+            <div className="store-product-v12-related__head">
+              <span>
+                <PackageCheck size={15} aria-hidden />
+                推荐商品
+              </span>
+              <h2 id="product-related-heading">同类推荐</h2>
+              <p>继续展示真实商品卡，活动价、库存和标签仍以后端返回为准。</p>
+            </div>
             {relatedProductsLoading ? (
               <div className={`${productGridClass} md:gap-5`}>
                 {Array.from({ length: 4 }).map((_, index) => (
@@ -601,7 +713,7 @@ export default function ProductDetail() {
                 ))}
               </div>
             )}
-          </div>
+          </section>
         )}
       </main>
       {/* 底部固定操作栏 - 仅移动端 */}
@@ -687,6 +799,112 @@ export default function ProductDetail() {
   );
 }
 
+function ProductDetailAssurancePanel({
+  items,
+  flow,
+}: {
+  items: Array<{
+    label: string;
+    value: string;
+    desc: string;
+    icon: typeof ShieldCheck;
+  }>;
+  flow: Array<{
+    label: string;
+    desc: string;
+  }>;
+}) {
+  return (
+    <section className="store-product-v12-assurance" aria-label="购买前确认">
+      <div className="store-product-v12-assurance__head">
+        <span>
+          <CreditCard size={15} aria-hidden />
+          购买前确认
+        </span>
+        <h2>先看清规则，再进入结算</h2>
+        <p>商品规格、活动、库存、配送、售后和最终金额都会在结算预览重新确认。</p>
+      </div>
+      <div className="store-product-v12-assurance__grid">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.label} className="store-product-v12-assurance__item">
+              <span aria-hidden>
+                <Icon size={16} />
+              </span>
+              <div>
+                <small>{item.label}</small>
+                <strong>{item.value}</strong>
+                <p>{item.desc}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="store-product-v12-assurance__flow" aria-label="下单流程">
+        {flow.map((step, index) => (
+          <div key={step.label}>
+            <span aria-hidden>
+              <CheckCircle2 size={15} />
+            </span>
+            <b>{index + 1}. {step.label}</b>
+            <small>{step.desc}</small>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProductDetailContentPanel({
+  sections,
+  summaryItems,
+}: {
+  sections: string[];
+  summaryItems: Array<{
+    label: string;
+    value: string;
+    desc: string;
+    icon: LucideIcon;
+  }>;
+}) {
+  return (
+    <section className="store-product-v12-content-panel" aria-labelledby="product-detail-content-heading">
+      <div className="store-product-v12-content-panel__head">
+        <span>
+          <ShieldCheck size={15} aria-hidden />
+          商品详情
+        </span>
+        <h2 id="product-detail-content-heading">下单前确认这些信息</h2>
+        <p>详情文案、规格库存、活动规则和配送售后统一收口展示，最终购买资格仍以后端校验为准。</p>
+      </div>
+      <div className="store-product-v12-content-panel__summary">
+        {summaryItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.label}>
+              <span aria-hidden>
+                <Icon size={16} />
+              </span>
+              <small>{item.label}</small>
+              <strong>{item.value}</strong>
+              <p>{item.desc}</p>
+            </div>
+          );
+        })}
+      </div>
+      <div className="store-product-v12-content-panel__list">
+        {sections.map((section, idx) => (
+          <article key={`${section.slice(0, 16)}-${idx}`}>
+            <span aria-hidden>{String(idx + 1).padStart(2, "0")}</span>
+            <p>{section}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /** 详情页购买操作条：左收藏/客服，右加入购物车 + 立即购买（淘宝式双按钮） */
 function DetailPurchaseBar({
   soldOut,
@@ -769,4 +987,78 @@ function buildDetailSections(description: string): string[] {
     .map((item) => item.trim())
     .filter(Boolean);
   return parts.length > 0 ? parts : [raw];
+}
+
+function ProductDetailErrorPanel({
+  title,
+  description,
+  onRetry,
+  onBrowse,
+  onPromotions,
+}: {
+  title: string;
+  description: string;
+  onRetry: () => void;
+  onBrowse: () => void;
+  onPromotions: () => void;
+}) {
+  const guards = [
+    {
+      icon: PackageCheck,
+      title: "商品状态",
+      value: "后端同步",
+      desc: "商品上下架、SKU、库存以后端返回为准",
+    },
+    {
+      icon: BadgePercent,
+      title: "活动资格",
+      value: "不前端猜",
+      desc: "活动价、限购和叠加规则加载成功后展示",
+    },
+    {
+      icon: ShieldCheck,
+      title: "交易安全",
+      value: "结算复核",
+      desc: "价格、优惠、库存最终由订单预览确认",
+    },
+  ];
+
+  return (
+    <section className="store-product-v12-error-panel" aria-labelledby="product-detail-error-heading">
+      <div className="store-product-v12-error-panel__badge">
+        <ShieldCheck size={15} aria-hidden />
+        商品详情工作台
+      </div>
+      <div className="store-product-v12-error-panel__copy">
+        <h1 id="product-detail-error-heading">{title}</h1>
+        <p>{description}</p>
+      </div>
+      <div className="store-product-v12-error-panel__guards">
+        {guards.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.title}>
+              <span aria-hidden>
+                <Icon size={15} />
+              </span>
+              <strong>{item.value}</strong>
+              <small>{item.title}</small>
+              <em>{item.desc}</em>
+            </div>
+          );
+        })}
+      </div>
+      <div className="store-product-v12-error-panel__actions">
+        <UnifiedButton type="button" onClick={onRetry}>
+          重试
+        </UnifiedButton>
+        <UnifiedButton type="button" onClick={onBrowse}>
+          去分类
+        </UnifiedButton>
+        <UnifiedButton type="button" onClick={onPromotions}>
+          活动中心
+        </UnifiedButton>
+      </div>
+    </section>
+  );
 }

@@ -44,20 +44,6 @@ const CHECKOUT_PAYMENT_COPY: Record<PublicLocale, {
     switchHint: "Tap to switch payment method",
     sheetTitle: "Choose payment method",
   },
-  ms: {
-    methodLabels: {
-      online: "Bayaran dalam talian",
-      reward_wallet: "Dompet ganjaran",
-      whatsapp: "Hubungi sokongan",
-    },
-    disabledHint: "Bayaran dalam talian belum diaktifkan. Sila hubungi sokongan.",
-    title: "Kaedah bayaran",
-    subtitle: "Pilih kaedah bayaran yang sesuai",
-    secure: "Bayaran selamat",
-    selected: "Kaedah bayaran dipilih",
-    switchHint: "Ketik untuk tukar kaedah bayaran",
-    sheetTitle: "Pilih kaedah bayaran",
-  },
 };
 
 const PAYMENT_TRIGGER_CLASS =

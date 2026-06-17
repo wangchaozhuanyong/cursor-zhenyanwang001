@@ -124,3 +124,45 @@ test('previewOrder exposes pricing engine version and backend order snapshot', a
     pricingService.buildCheckoutPricing = originalPricing;
   }
 });
+
+test('previewOrder rejects ineligible promotion evaluation before exposing invalid totals', async () => {
+  const siteCapabilitiesPublicApi = require('../src/modules/siteCapabilities/publicApi');
+  const pricingService = require('../src/modules/order/service/pricing.service');
+  const originalCapability = siteCapabilitiesPublicApi.isCapabilityEnabled;
+  const originalPricing = pricingService.buildCheckoutPricing;
+
+  try {
+    siteCapabilitiesPublicApi.isCapabilityEnabled = async () => true;
+    pricingService.buildCheckoutPricing = async () => ({
+      rawAmount: 312,
+      discountAmount: 106.1,
+      shippingFee: 5.5,
+      finalTotal: 211.4,
+      discount_lines: [{ type: 'flash_sale', label: 'V10 秒杀测试活动', amount: 51 }],
+      promotion_evaluation: {
+        eligible: false,
+        unavailable_reasons: [
+          {
+            promotion_id: 'promo-flash',
+            title: 'V10 秒杀测试活动',
+            reason: '该活动不可与其他活动叠加',
+            blocking: true,
+          },
+        ],
+      },
+    });
+
+    await assert.rejects(
+      () => orderCheckout.previewOrder('u1', {
+        items: [{ product_id: 'p1', qty: 1 }],
+        payment_method: 'online',
+      }),
+      (err) => err.name === 'ValidationError'
+        && err.message.includes('V10 秒杀测试活动')
+        && err.message.includes('不可与其他活动叠加'),
+    );
+  } finally {
+    siteCapabilitiesPublicApi.isCapabilityEnabled = originalCapability;
+    pricingService.buildCheckoutPricing = originalPricing;
+  }
+});

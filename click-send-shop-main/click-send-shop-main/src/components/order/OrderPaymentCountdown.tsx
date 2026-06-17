@@ -35,13 +35,6 @@ const PAYMENT_COUNTDOWN_COPY: Record<PublicLocale, {
     timeoutPrefix: "Unpaid orders are cancelled automatically and stock is released after",
     timeoutSuffix: "minutes.",
   },
-  ms: {
-    expired: "Masa pembayaran telah tamat. Pesanan akan dibatalkan secara automatik. Muat semula untuk status terkini.",
-    prefix: "Lengkapkan bayaran dalam",
-    suffix: "",
-    timeoutPrefix: "Pesanan belum dibayar akan dibatalkan automatik dan stok dilepaskan selepas",
-    timeoutSuffix: "minit.",
-  },
 };
 
 export function OrderPaymentCountdown({

@@ -57,18 +57,6 @@ const PAYMENT_PICKER_COPY: Record<PublicLocale, {
     recommended: "Recommended",
     selectChannel: "Select payment channel",
   },
-  ms: {
-    online: "Bayaran dalam talian",
-    onlineDescLocal: "Menyokong FPX perbankan dalam talian / e-dompet / Stripe, bayaran disahkan automatik",
-    onlineDescCard: "Menyokong kad bank / Visa / Mastercard, bayaran disahkan automatik",
-    onlineDisabled: "Bayaran dalam talian tidak tersedia. Sila hubungi sokongan.",
-    rewardWallet: "Dompet ganjaran",
-    rewardDesc: (balance) => `Bayar dengan baki ganjaran (tersedia RM ${balance.toFixed(2)})`,
-    support: "Hubungi sokongan",
-    supportDesc: "Sahkan pesanan dan bayaran dengan sokongan melalui WhatsApp / WeChat",
-    recommended: "Disyorkan",
-    selectChannel: "Pilih saluran bayaran",
-  },
 };
 
 export default function PaymentMethodPicker({

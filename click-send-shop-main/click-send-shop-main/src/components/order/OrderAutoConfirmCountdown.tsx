@@ -31,11 +31,6 @@ function formatAutoConfirmCountdown(secondsLeft: number, locale: PublicLocale): 
     if (hours > 0) return `${hours}h ${mins}m`;
     return `${mins}m`;
   }
-  if (locale === "ms") {
-    if (days > 0) return `${days}h ${hours}j ${mins}m`;
-    if (hours > 0) return `${hours}j ${mins}m`;
-    return `${mins}m`;
-  }
   if (days > 0) return `${days}天 ${hours}小时 ${mins}分钟`;
   if (hours > 0) return `${hours}小时 ${mins}分钟`;
   return `${mins}分钟`;
@@ -61,13 +56,6 @@ const AUTO_CONFIRM_COPY: Record<PublicLocale, {
     suffix: "",
     rulePrefix: "If not manually confirmed within",
     ruleSuffix: "days after shipment, the order will be completed automatically.",
-  },
-  ms: {
-    expired: "Sistem akan mengesahkan penerimaan sebentar lagi",
-    prefix: "Penerimaan akan disahkan automatik dalam",
-    suffix: "",
-    rulePrefix: "Jika tidak disahkan secara manual dalam",
-    ruleSuffix: "hari selepas penghantaran, pesanan akan selesai secara automatik.",
   },
 };
 

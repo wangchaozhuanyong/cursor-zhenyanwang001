@@ -127,8 +127,9 @@ export function BottomSheet({
       {presented ? (
         <motion.div
           className="app-bottom-sheet-layer fixed inset-0"
+          data-open={open ? "true" : "false"}
           style={{ zIndex: overlayZ, pointerEvents: open ? "auto" : "none" }}
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: open ? 1 : 0 }}
           exit={{ opacity: 0 }}
           transition={overlayTransition}
@@ -165,6 +166,7 @@ export function BottomSheet({
           <motion.section
             ref={sheetRef}
             role="dialog"
+            data-open={open ? "true" : "false"}
             aria-modal="true"
             aria-labelledby={hasTitle ? titleId : undefined}
             aria-label={!title ? (ariaLabel || "弹窗") : undefined}
@@ -179,7 +181,7 @@ export function BottomSheet({
               zIndex: contentZ,
               color: "var(--theme-text)",
             }}
-            initial={reduced ? { opacity: 0 } : { y: "102%" }}
+            initial={false}
             animate={open ? (reduced ? { opacity: 1 } : { y: 0 }) : (reduced ? { opacity: 0 } : { y: "102%" })}
             exit={reduced ? { opacity: 0 } : { y: "102%" }}
             transition={sheetTransition}

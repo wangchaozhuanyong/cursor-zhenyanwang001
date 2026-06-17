@@ -1,9 +1,10 @@
-import { Star, ThumbsUp, Loader2 } from "lucide-react";
+import { CheckCircle2, ImageIcon, Loader2, MessageSquareText, PenLine, ShieldCheck, Star, ThumbsUp } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ProductReviewsViewModel } from "@/hooks/useProductReviews";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
 import { AppModal } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import StableImage from "@/components/ui/StableImage";
 
 interface ProductReviewsProps {
   vm: ProductReviewsViewModel;
@@ -12,6 +13,7 @@ interface ProductReviewsProps {
 export default function ProductReviews({ vm }: ProductReviewsProps) {
   const {
     reviews,
+    stats,
     loading,
     likedIds,
     avgRating,
@@ -31,44 +33,124 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
   } = vm;
 
   const selectedPendingItem = eligibility.pending_items.find((item) => item.order_item_id === selectedOrderItemId);
+  const distribution = [5, 4, 3, 2, 1].map((rating) => {
+    const count = Number(stats.rating_distribution?.[rating as 1 | 2 | 3 | 4 | 5] || 0);
+    const percent = reviewTotal > 0 ? Math.round((count / reviewTotal) * 100) : 0;
+    return { rating, count, percent };
+  });
+  const imageReviewCount = Number(stats.image_review_count || 0);
+  const reviewActionHint = !eligibility.can_review
+    ? eligibility.message || "购买并确认收货后可评价"
+    : eligibility.pending_items.length > 1
+      ? `有 ${eligibility.pending_items.length} 件商品可评价`
+      : "分享真实购买体验";
 
   return (
-    <div className="border-t border-border px-4 py-8 md:px-0 md:py-10">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="text-[15px] font-semibold text-foreground">商品评价</h3>
-          <span className="text-xs text-muted-foreground">({reviewTotal})</span>
+    <section className="store-product-v12-reviews" aria-label="商品评价">
+      <div className="store-product-v12-reviews__head">
+        <div>
+          <span>
+            <MessageSquareText size={15} aria-hidden />
+            商品评价
+          </span>
+          <h2>真实购买反馈</h2>
+          <p>{reviewActionHint}</p>
         </div>
-        <UnifiedButton type="button" onClick={openReview} className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-3 py-1.5 text-xs font-medium text-theme-price">
+        <UnifiedButton type="button" onClick={openReview} className="store-product-v12-reviews__write">
+          <PenLine size={14} aria-hidden />
           {reviewCtaText}
         </UnifiedButton>
       </div>
 
-      <div className="mt-4 flex items-center gap-3 rounded-xl bg-secondary p-3 md:p-4">
-        <span className="text-[26px] font-bold leading-none text-theme-price sm:text-[28px]">{avgRating.toFixed(1)}</span>
-        <div>
-          <div className="flex gap-0.5">{[1, 2, 3, 4, 5].map((s) => <Star key={s} size={14} className={s <= Math.round(avgRating) ? "fill-theme-price text-theme-price" : "text-border"} />)}</div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">{reviewTotal} 条评价</p>
+      <div className="store-product-v12-reviews__summary">
+        <div className="store-product-v12-reviews__score">
+          <strong>{avgRating.toFixed(1)}</strong>
+          <div>
+            <RatingStars rating={Math.round(avgRating)} size={15} />
+            <p>{reviewTotal} 条评价 · {imageReviewCount} 条带图</p>
+          </div>
+        </div>
+        <div className="store-product-v12-reviews__distribution" aria-label="评分分布">
+          {distribution.map((item) => (
+            <div key={item.rating}>
+              <span>{item.rating} 星</span>
+              <b aria-hidden><i style={{ width: `${item.percent}%` }} /></b>
+              <em>{item.count}</em>
+            </div>
+          ))}
+        </div>
+        <div className="store-product-v12-reviews__guard">
+          <ShieldCheck size={16} aria-hidden />
+          <p>评价资格来自订单状态，只有确认收货后的商品才允许提交评价。</p>
         </div>
       </div>
 
-      <div className="mt-4 space-y-4">
-        {loading ? <div className="flex items-center justify-center py-6"><Loader2 size={18} className="animate-spin text-muted-foreground" /></div> : reviews.length === 0 ? <div className="rounded-xl bg-secondary p-6 text-center text-sm text-muted-foreground">暂无评价</div> : reviews.map((review, i) => (
-          <motion.div key={review.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-sm">{review.avatar || "👤"}</span>
-              <div className="flex-1">
-                <p className="text-xs font-medium text-foreground">{review.nickname || "用户"}</p>
-                <div className="flex gap-0.5">{[1, 2, 3, 4, 5].map((s) => <Star key={s} size={10} className={s <= review.rating ? "fill-theme-price text-theme-price" : "text-border"} />)}</div>
+      <div className="store-product-v12-reviews__list">
+        {loading ? (
+          <div className="store-product-v12-reviews__loading">
+            <Loader2 size={18} className="animate-spin" />
+            正在同步评价
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className="store-product-v12-reviews__empty">
+            <MessageSquareText size={22} aria-hidden />
+            <strong>暂无评价</strong>
+            <p>确认收货后的真实反馈会展示在这里。</p>
+          </div>
+        ) : reviews.map((review, i) => (
+          <motion.article
+            key={review.id}
+            className="store-product-v12-review-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+          >
+            <div className="store-product-v12-review-card__head">
+              <ReviewAvatar avatar={review.avatar} nickname={review.nickname} />
+              <div>
+                <p>{review.nickname || "用户"}</p>
+                <RatingStars rating={review.rating} size={11} />
               </div>
-              <span className="text-[11px] text-muted-foreground">{timeAgo(review.created_at)}</span>
+              <time>{timeAgo(review.created_at)}</time>
             </div>
-            {review.is_verified_purchase && <span className="mt-1 inline-block rounded bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-1.5 py-0.5 text-[10px] text-theme-price">已购评价</span>}
-            <p className="store-body-text mt-2 text-muted-foreground">{review.content}</p>
-            <UnifiedButton type="button" onClick={() => handleLike(review.id)} className={`mt-2 flex items-center gap-1 text-xs ${likedIds.has(review.id) ? "text-theme-price" : "text-muted-foreground"}`}>
-              <ThumbsUp size={13} className={likedIds.has(review.id) ? "fill-theme-price" : ""} />{review.likes_count || 0}
+            <div className="store-product-v12-review-card__meta">
+              {review.is_verified_purchase ? (
+                <span>
+                  <CheckCircle2 size={12} aria-hidden />
+                  已购评价
+                </span>
+              ) : null}
+              {review.sku_text ? <span>{review.sku_text}</span> : null}
+              {review.images?.length ? (
+                <span>
+                  <ImageIcon size={12} aria-hidden />
+                  {review.images.length} 图
+                </span>
+              ) : null}
+            </div>
+            <p className="store-product-v12-review-card__content">{review.content}</p>
+            {review.images?.length ? (
+              <div className="store-product-v12-review-card__images">
+                {review.images.slice(0, 4).map((url) => (
+                  <StableImage key={url} src={url} alt={`${review.nickname || "用户"} 的评价图片`} />
+                ))}
+              </div>
+            ) : null}
+            {review.admin_reply ? (
+              <div className="store-product-v12-review-card__reply">
+                <strong>商家回复</strong>
+                <p>{review.admin_reply}</p>
+              </div>
+            ) : null}
+            <UnifiedButton
+              type="button"
+              onClick={() => handleLike(review.id)}
+              className={`store-product-v12-review-card__like ${likedIds.has(review.id) ? "is-liked" : ""}`}
+            >
+              <ThumbsUp size={13} className={likedIds.has(review.id) ? "fill-theme-price" : ""} />
+              {review.likes_count || 0}
             </UnifiedButton>
-          </motion.div>
+          </motion.article>
         ))}
       </div>
 
@@ -110,6 +192,33 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
           void reload();
         }}
       />
+    </section>
+  );
+}
+
+function RatingStars({ rating, size }: { rating: number; size: number }) {
+  return (
+    <div className="store-product-v12-stars" aria-label={`${rating} 星`}>
+      {[1, 2, 3, 4, 5].map((score) => (
+        <Star
+          key={score}
+          size={size}
+          className={score <= rating ? "fill-theme-price text-theme-price" : "text-border"}
+        />
+      ))}
     </div>
   );
+}
+
+function ReviewAvatar({ avatar, nickname }: { avatar?: string | null; nickname?: string | null }) {
+  const displayName = nickname?.trim() || "用户";
+  const initial = displayName.slice(0, 1).toUpperCase();
+  if (avatar && /^https?:\/\//i.test(avatar)) {
+    return (
+      <span className="store-product-v12-review-card__avatar">
+        <img src={avatar} alt={`${displayName} 头像`} loading="lazy" />
+      </span>
+    );
+  }
+  return <span className="store-product-v12-review-card__avatar">{initial}</span>;
 }

@@ -22,6 +22,8 @@ type CheckoutPromotionExplanationProps = {
   orderSnapshot?: OrderPricingSnapshot | null;
   fullReductionCampaign?: StorefrontCampaignVm | null;
   currentAmount?: number;
+  pricingReady?: boolean;
+  pricingError?: string | null;
   className?: string;
 };
 
@@ -32,18 +34,20 @@ export default function CheckoutPromotionExplanation({
   orderSnapshot = null,
   fullReductionCampaign = null,
   currentAmount = 0,
+  pricingReady = true,
+  pricingError = null,
   className = "",
 }: CheckoutPromotionExplanationProps) {
-  const progress = buildCampaignProgress(fullReductionCampaign, currentAmount);
+  const progress = pricingReady ? buildCampaignProgress(fullReductionCampaign, currentAmount) : null;
   const unavailableReasons = promotionEvaluation?.unavailable_reasons || [];
-  if (!discountLines.length && !pointsBonusLines.length && !progress && !unavailableReasons.length) return null;
+  if (!discountLines.length && !pointsBonusLines.length && !progress && !unavailableReasons.length && !pricingError) return null;
   const progressPercent = progress
     ? Math.max(0, Math.min(100, (Number(currentAmount || 0) / progress.thresholdAmount) * 100))
     : 0;
 
   return (
     <section
-      className={`rounded-2xl border border-[color-mix(in_srgb,var(--theme-success)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-success)_8%,var(--theme-surface))] px-3 py-3 ${className}`}
+      className={`store-checkout-v12-promotion-panel rounded-2xl border border-[color-mix(in_srgb,var(--theme-success)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-success)_8%,var(--theme-surface))] px-3 py-3 ${className}`}
       aria-label="优惠说明"
     >
       <div className="flex items-start gap-2.5">
@@ -51,7 +55,7 @@ export default function CheckoutPromotionExplanation({
           <BadgeCheck size={16} aria-hidden />
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-bold text-[var(--theme-text)]">已按当前订单自动匹配优惠</p>
+          <p className="text-sm font-bold text-[var(--theme-text)]">后端订单预览已接管优惠计算</p>
           <div className="mt-1 space-y-1 text-xs leading-5 text-[var(--theme-text-muted)]">
             {progress ? (
               <div className="rounded-xl border border-[color-mix(in_srgb,var(--theme-success)_20%,var(--theme-border))] bg-[var(--theme-surface)]/70 px-3 py-2">
@@ -86,6 +90,9 @@ export default function CheckoutPromotionExplanation({
             {orderSnapshot?.final_amount != null ? (
               <p>后端结算应付：RM {money(toNumber(orderSnapshot.final_amount))}</p>
             ) : null}
+            {pricingError ? (
+              <p className="text-[var(--theme-price)]">{pricingError}</p>
+            ) : null}
             {unavailableReasons.map((item) => (
               <p key={`${item.promotion_id || item.type}-${item.title || item.reason}`} className="text-[var(--theme-price)]">
                 {item.title || "活动"}：{item.shortfall_amount
@@ -96,6 +103,11 @@ export default function CheckoutPromotionExplanation({
             {discountLines.length || pointsBonusLines.length ? (
               <p>满减、优惠券和积分按订单预览结果自动计算，最终优惠以后端结算为准。</p>
             ) : null}
+            <div className="store-checkout-v12-promotion-panel__rules">
+              <span>活动时间、商品范围、SKU 和会员等级会重新校验</span>
+              <span>优惠券、积分和返现只按订单预览结果展示</span>
+              <span>提交订单时仍会再次校验库存、运费和最终金额</span>
+            </div>
           </div>
         </div>
       </div>

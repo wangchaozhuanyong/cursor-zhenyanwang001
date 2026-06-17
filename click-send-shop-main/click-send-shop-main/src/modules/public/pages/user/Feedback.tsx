@@ -24,6 +24,7 @@ import * as feedbackService from "@/services/feedbackService";
 import type { FeedbackStatus, FeedbackType, UserFeedback } from "@/services/feedbackService";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { isLoggedIn } from "@/utils/token";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 type FeedbackForm = {
   type: FeedbackType;
@@ -64,6 +65,16 @@ const STATUS_CLASS: Record<FeedbackStatus, string> = {
   dismissed: "bg-[color-mix(in_srgb,var(--theme-muted)_20%,var(--theme-surface))] text-[var(--theme-muted)]",
 };
 
+type FeedbackRecordFilter = "all" | FeedbackStatus;
+
+const RECORD_FILTERS: Array<{ key: FeedbackRecordFilter; label: string }> = [
+  { key: "all", label: "全部" },
+  { key: "pending", label: STATUS_LABEL.pending },
+  { key: "in_progress", label: STATUS_LABEL.in_progress },
+  { key: "resolved", label: STATUS_LABEL.resolved },
+  { key: "dismissed", label: STATUS_LABEL.dismissed },
+];
+
 function getStateFrom(value: unknown): string {
   if (!value || typeof value !== "object") return "";
   const from = (value as { from?: unknown }).from;
@@ -75,6 +86,22 @@ function feedbackTypeLabel(type: FeedbackType) {
 }
 
 function FeedbackRecordList({ items }: { items: UserFeedback[] }) {
+  const [filter, setFilter] = useState<FeedbackRecordFilter>("all");
+  const counts = useMemo(() => {
+    const next: Record<FeedbackRecordFilter, number> = {
+      all: items.length,
+      pending: 0,
+      in_progress: 0,
+      resolved: 0,
+      dismissed: 0,
+    };
+    items.forEach((item) => {
+      next[item.status] += 1;
+    });
+    return next;
+  }, [items]);
+  const filteredItems = filter === "all" ? items : items.filter((item) => item.status === filter);
+
   if (!items.length) {
     return (
       <p className="rounded-xl bg-[var(--theme-bg)] px-3 py-4 text-center text-sm text-[var(--theme-muted)]">
@@ -84,8 +111,35 @@ function FeedbackRecordList({ items }: { items: UserFeedback[] }) {
   }
 
   return (
-    <div className="space-y-2">
-      {items.map((item) => (
+    <div className="space-y-3">
+      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+        {RECORD_FILTERS.map((item) => {
+          const active = filter === item.key;
+          return (
+            <UnifiedButton
+              key={item.key}
+              type="button"
+              onClick={() => setFilter(item.key)}
+              className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold ${
+                active
+                  ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
+                  : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"
+              }`}
+            >
+              <span>{item.label}</span>
+              <span>{counts[item.key]}</span>
+            </UnifiedButton>
+          );
+        })}
+      </div>
+
+      {filteredItems.length === 0 ? (
+        <p className="rounded-xl bg-[var(--theme-bg)] px-3 py-4 text-center text-sm text-[var(--theme-muted)]">
+          当前状态暂无反馈记录。
+        </p>
+      ) : null}
+
+      {filteredItems.map((item) => (
         <article key={item.id} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-3">
           <div className="flex min-w-0 items-start justify-between gap-3">
             <div className="min-w-0">
@@ -117,6 +171,7 @@ function FeedbackRecordList({ items }: { items: UserFeedback[] }) {
 export default function Feedback() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { localizedPath } = usePublicLocale();
   const queryClient = useQueryClient();
   const siteInfo = useSiteInfo();
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
@@ -185,7 +240,7 @@ export default function Feedback() {
         title="意见反馈"
         backFallback="/profile"
         contentClassName="md:max-w-3xl xl:max-w-4xl"
-        className="pb-8 text-[var(--theme-text)]"
+        className="store-v12-page store-feedback-v12-page pb-8 text-[var(--theme-text)]"
       >
         <SeoHead
           title={`意见反馈｜${siteName}`}
@@ -194,7 +249,7 @@ export default function Feedback() {
           robots="noindex,follow"
         />
         <div className="mx-auto w-full max-w-lg md:max-w-none">
-          <section className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 text-center shadow-[var(--theme-shadow)]">
+          <section className="store-feedback-v12-success">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-success)_12%,var(--theme-surface))] text-[var(--theme-success)]">
               <CheckCircle2 size={30} />
             </div>
@@ -205,7 +260,7 @@ export default function Feedback() {
             <div className="mt-5 grid grid-cols-2 gap-3">
               <UnifiedButton
                 type="button"
-                onClick={() => navigate("/profile", { replace: true })}
+                onClick={() => navigate(localizedPath("/profile"), { replace: true })}
                 className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm font-semibold"
               >
                 回到我的
@@ -220,7 +275,7 @@ export default function Feedback() {
             </div>
         </section>
 
-          <section className="mt-3 rounded-2xl bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
+          <section className="store-feedback-v12-panel mt-3">
             <h2 className="text-base font-semibold text-[var(--theme-text)]">我的反馈记录</h2>
             {loggedIn ? (
               <div className="mt-3">
@@ -244,11 +299,11 @@ export default function Feedback() {
   }
 
   return (
-    <StoreStandardPageShell
+      <StoreStandardPageShell
       title="意见反馈"
       backFallback="/profile"
       contentClassName="md:max-w-3xl xl:max-w-4xl"
-      className="pb-8 text-[var(--theme-text)]"
+      className="store-v12-page store-feedback-v12-page pb-8 text-[var(--theme-text)]"
     >
       <SeoHead
         title={`意见反馈｜${siteName}`}
@@ -257,8 +312,46 @@ export default function Feedback() {
         robots="noindex,follow"
       />
 
-      <div className="mx-auto w-full max-w-lg md:max-w-none">
-        <section className="rounded-2xl bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
+      <div className="store-feedback-v12-main mx-auto w-full max-w-lg md:max-w-none">
+        <section className="store-account-v12-hero store-feedback-v12-hero">
+          <span className="store-v12-eyebrow"><MessageSquare size={14} aria-hidden /> 意见反馈</span>
+          <h2>把问题直接交给我们处理</h2>
+          <p>页面问题、订单售后、支付异常和功能建议都从这里提交；登录后可以继续查看处理状态。</p>
+          <div className="store-v12-status-strip">
+            <span>{selectedType.label}</span>
+            <span>至少 10 字</span>
+            <span>{loggedIn ? "可追踪进度" : "建议留联系方式"}</span>
+          </div>
+        </section>
+
+        <section className="store-account-v12-summary store-orders-v12-stat-grid">
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><selectedType.icon size={17} aria-hidden /></span>
+            <strong>{selectedType.label}</strong>
+            <span>当前类型</span>
+            <small>按问题类型进入后台队列</small>
+          </div>
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><Send size={17} aria-hidden /></span>
+            <strong>10+</strong>
+            <span>内容要求</span>
+            <small>越具体越容易处理</small>
+          </div>
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><CheckCircle2 size={17} aria-hidden /></span>
+            <strong>{loggedIn ? "可追踪" : "留联系"}</strong>
+            <span>处理进度</span>
+            <small>{loggedIn ? "登录态下显示记录" : "未登录需填写联系方式"}</small>
+          </div>
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><Package size={17} aria-hidden /></span>
+            <strong>订单号</strong>
+            <span>售后/支付</span>
+            <small>有订单问题建议填写</small>
+          </div>
+        </section>
+
+        <section className="store-feedback-v12-panel">
           <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
               <selectedType.icon size={22} />
@@ -271,7 +364,7 @@ export default function Feedback() {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="store-feedback-v12-type-grid mt-4">
             {TYPE_OPTIONS.map((item) => {
               const active = form.type === item.value;
               return (
@@ -279,11 +372,7 @@ export default function Feedback() {
                   key={item.value}
                   type="button"
                   onClick={() => updateForm({ type: item.value })}
-                  className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition ${
-                    active
-                      ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-                      : "border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-text)]"
-                  }`}
+                  className={`store-feedback-v12-type-option ${active ? "is-active" : ""}`}
                 >
                   <item.icon size={16} />
                   <span>{item.label}</span>
@@ -293,7 +382,7 @@ export default function Feedback() {
           </div>
         </section>
 
-        <section className="mt-3 rounded-2xl bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
+        <section className="store-feedback-v12-panel store-feedback-v12-form">
           <label className="block text-sm font-semibold">
             标题
             <input
@@ -350,9 +439,12 @@ export default function Feedback() {
             <Send size={17} />
             {submitting ? "提交中..." : "提交反馈"}
           </UnifiedButton>
+          <p className="mt-3 rounded-xl bg-[var(--theme-bg)] px-3 py-2 text-xs leading-5 text-[var(--theme-muted)]">
+            提交后会进入后台处理队列；和订单有关的问题建议填写订单号，方便客服快速定位。
+          </p>
         </section>
 
-        <section className="mt-3 rounded-2xl bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
+        <section className="store-feedback-v12-panel">
           <h2 className="text-base font-semibold text-[var(--theme-text)]">我的反馈记录</h2>
           {loggedIn ? (
             <div className="mt-3">

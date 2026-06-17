@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Trash2, Clock, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BadgePercent, Clock, History as HistoryIcon, PackageCheck, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { isLoggedIn } from "@/utils/token";
@@ -7,47 +7,111 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import ProductCoverImage from "@/components/ProductCoverImage";
 import { EmptyState as ClientEmptyState } from "@/components/client";
+import { BottomSheetConfirm } from "@/modules/micro-interactions";
+import { usePublicLocale } from "@/i18n/publicLocale";
+import AccountProductCard, { AccountProductCardSkeleton } from "./components/AccountProductCard";
 
 export default function History() {
   const navigate = useNavigate();
+  const { localizedPath } = usePublicLocale();
   const { history, loading, loadHistory, clearHistory } = useHistoryStore();
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const saleableCount = history.filter((item) => Number(item.stock) > 0).length;
+  const activityCount = history.filter((item) => item.active_activity || item.activity_promo_label).length;
 
   useEffect(() => {
     loadHistory().catch(() => toast.error("加载失败"));
   }, [loadHistory]);
 
   return (
-    <StoreAccountLayout
-      title="浏览历史"
-      rightSlot={
-        history.length > 0 ? (
-          <UnifiedButton type="button" onClick={clearHistory} className="flex items-center gap-1 text-xs text-[var(--theme-danger)] active:opacity-70">
-            <Trash2 size={14} /> 清空
-          </UnifiedButton>
-        ) : undefined
-      }
-      className="pb-6"
-      mainClassName="sm:px-4 xl:py-6"
-    >
+    <>
+      <StoreAccountLayout
+        title="浏览历史"
+        rightSlot={
+          history.length > 0 ? (
+            <UnifiedButton type="button" onClick={() => setClearConfirmOpen(true)} className="flex items-center gap-1 text-xs text-[var(--theme-danger)] active:opacity-70">
+              <Trash2 size={14} /> 清空
+            </UnifiedButton>
+          ) : undefined
+        }
+        className="store-v12-page store-account-subpage-v12-page store-history-v12-page pb-6"
+        mainClassName="sm:px-4 xl:py-6"
+      >
+        <div className="mx-auto w-full max-w-lg space-y-3 md:max-w-none">
+        <section className="store-account-v12-hero">
+          <span className="store-v12-eyebrow"><HistoryIcon size={14} aria-hidden /> 浏览足迹</span>
+          <h2>最近看过的商品，继续比较</h2>
+          <p>浏览历史会保留商品活动价、库存和标签信息，帮助你快速回到刚刚犹豫过的商品。</p>
+          <div className="store-v12-hero-actions">
+            {history.length > 0 ? (
+              <UnifiedButton
+                type="button"
+                onClick={() => setClearConfirmOpen(true)}
+                className="store-v12-secondary-action"
+              >
+                <Trash2 size={15} aria-hidden />
+                清空历史
+              </UnifiedButton>
+            ) : (
+              <UnifiedButton
+                type="button"
+                onClick={() => navigate(localizedPath("/categories"))}
+                className="store-v12-primary-action"
+              >
+                去逛商品
+              </UnifiedButton>
+            )}
+          </div>
+        </section>
+
         {!isLoggedIn() && (
-          <div className="mb-3 rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_30%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))] px-4 py-3 text-xs text-foreground">
-            <span className="text-muted-foreground">未登录时仅在本机记录浏览；</span>
+          <div className="store-account-v12-notice">
+            <span className="store-v12-card-icon"><Clock size={16} aria-hidden /></span>
+            <p>未登录时仅在本机记录浏览；登录后多端同步。</p>
             <UnifiedButton
               type="button"
-              onClick={() => navigate("/login", { state: { from: "/history" } })}
-              className="ml-1 font-semibold text-theme-price"
+              onClick={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/history") } })}
+              className="font-semibold text-theme-price"
             >
               登录
             </UnifiedButton>
-            <span className="text-muted-foreground">后多端同步</span>
           </div>
         )}
+        {history.length > 0 ? (
+          <section className="store-account-v12-summary store-orders-v12-stat-grid">
+            <div className="store-orders-v12-stat">
+              <span className="store-orders-v12-stat__icon"><Clock size={17} aria-hidden /></span>
+              <strong>{history.length}</strong>
+              <span>最近浏览</span>
+              <small>按最近访问排序</small>
+            </div>
+            <div className="store-orders-v12-stat">
+              <span className="store-orders-v12-stat__icon"><PackageCheck size={17} aria-hidden /></span>
+              <strong>{saleableCount}</strong>
+              <span>可售商品</span>
+              <small>库存大于 0</small>
+            </div>
+            <div className="store-orders-v12-stat">
+              <span className="store-orders-v12-stat__icon"><BadgePercent size={17} aria-hidden /></span>
+              <strong>{activityCount}</strong>
+              <span>活动商品</span>
+              <small>以后端活动字段为准</small>
+            </div>
+            <div className="store-orders-v12-stat">
+              <span className="store-orders-v12-stat__icon"><HistoryIcon size={17} aria-hidden /></span>
+              <strong>{Math.min(history.length, 12)}</strong>
+              <span>快速回看</span>
+              <small>优先展示近期记录</small>
+            </div>
+          </section>
+        ) : null}
         {loading && history.length === 0 ? (
-          <div className="flex flex-col items-center py-20 text-muted-foreground">
-            <Loader2 size={24} className="mb-3 animate-spin" />
-            <p className="text-sm">加载中…</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <AccountProductCardSkeleton />
+            <AccountProductCardSkeleton />
+            <AccountProductCardSkeleton />
+            <AccountProductCardSkeleton />
           </div>
         ) : history.length === 0 ? (
           <ClientEmptyState
@@ -56,7 +120,7 @@ export default function History() {
             icon={<Clock size={30} />}
           />
         ) : (
-          <div className="space-y-2">
+          <div className="store-account-v12-product-grid">
             <AnimatePresence>
               {history.map((product, i) => (
                 <motion.div
@@ -64,27 +128,28 @@ export default function History() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  onClick={() => navigate(`/product/${product.id}`)}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition-colors active:bg-muted"
+                  className="min-w-0"
                 >
-                  <ProductCoverImage
-                    url={product.cover_image}
-                    alt={product.cover_image_alt || product.name}
-                    className="w-12 flex-shrink-0 rounded-xl object-cover"
-                    imgClassName="object-cover"
-                    loading={i === 0 ? "eager" : "lazy"}
-                    fetchPriority={i === 0 ? "high" : "low"}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
-                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{product.description}</p>
-                    <p className="mt-1 text-sm font-bold text-theme-price">RM {product.price}</p>
-                  </div>
+                  <AccountProductCard product={product} index={i} />
                 </motion.div>
               ))}
             </AnimatePresence>
           </div>
         )}
-    </StoreAccountLayout>
+        </div>
+      </StoreAccountLayout>
+      <BottomSheetConfirm
+        open={clearConfirmOpen}
+        onClose={() => setClearConfirmOpen(false)}
+        title="清空浏览历史"
+        description="清空后，本机浏览记录会立即移除。"
+        confirmText="清空"
+        danger
+        onConfirm={async () => {
+          await clearHistory();
+          toast.success("浏览历史已清空");
+        }}
+      />
+    </>
   );
 }

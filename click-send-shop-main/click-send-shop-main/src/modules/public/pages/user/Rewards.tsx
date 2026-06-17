@@ -135,7 +135,7 @@ export default function Rewards() {
 
   return (
     <TooltipProvider>
-      <StoreAccountLayout title="返现记录" onBack={goBack} className="store-page pb-8" mainClassName="sm:px-4 xl:py-6">
+      <StoreAccountLayout title="返现记录" onBack={goBack} className="store-v12-page store-account-subpage-v12-page store-rewards-v12-page pb-8" mainClassName="sm:px-4 xl:py-6">
       <motion.div
         initial={false}
         animate={{ opacity: 1, y: 0 }}

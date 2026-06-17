@@ -26,12 +26,6 @@ const RETURN_TYPE_LABELS_BY_LOCALE: Record<PublicLocale, Record<string, string>>
     exchange: "Exchange",
     repair: "Repair",
   },
-  ms: {
-    refund: "Bayaran balik sahaja",
-    return_refund: "Pemulangan dan bayaran balik",
-    exchange: "Tukar barang",
-    repair: "Baiki",
-  },
 };
 
 const RETURN_STATUS_LABELS_BY_LOCALE: Record<PublicLocale, Record<ReturnStatus, string>> = {
@@ -64,21 +58,6 @@ const RETURN_STATUS_LABELS_BY_LOCALE: Record<PublicLocale, Record<ReturnStatus, 
     exchange_shipping: "Exchange shipping",
     completed: "Completed",
     cancelled: "Cancelled",
-  },
-  ms: {
-    pending: "Menunggu semakan",
-    need_evidence: "Perlu bukti tambahan",
-    approved: "Diluluskan",
-    rejected: "Ditolak",
-    processing: "Sedang diproses",
-    waiting_return: "Perlu dipulangkan",
-    return_in_transit: "Pemulangan dalam perjalanan",
-    received: "Peniaga sudah terima",
-    refund_pending: "Menunggu bayaran balik",
-    refunded: "Dibayar balik",
-    exchange_shipping: "Tukaran sedang dihantar",
-    completed: "Selesai",
-    cancelled: "Dibatalkan",
   },
 };
 
@@ -118,14 +97,6 @@ const RETURN_FILTERS_BY_LOCALE: Record<PublicLocale, Array<{ key: ReturnFilterKe
     { key: "done", label: "Completed" },
     { key: "rejected", label: "Closed" },
   ],
-  ms: [
-    { key: "all", label: "Semua" },
-    { key: "action", label: "Perlu tindakan" },
-    { key: "processing", label: "Diproses" },
-    { key: "refund", label: "Bayaran balik" },
-    { key: "done", label: "Selesai" },
-    { key: "rejected", label: "Ditutup" },
-  ],
 };
 
 export const RETURN_FILTERS = RETURN_FILTERS_BY_LOCALE.zh;
@@ -147,14 +118,6 @@ const REFUND_RESULT_LABELS_BY_LOCALE: Record<PublicLocale, Record<string, string
     partially_refunded: "Partially refunded",
     failed: "Refund failed",
   },
-  ms: {
-    pending: "Menunggu proses",
-    success: "Diproses",
-    manual: "Rekod manual",
-    refunded: "Dibayar balik",
-    partially_refunded: "Sebahagian dibayar balik",
-    failed: "Bayaran balik gagal",
-  },
 };
 
 const BUYER_ACTION_LABELS_BY_LOCALE: Record<PublicLocale, Record<BuyerReturnActionKey, { label: string; description: string }>> = {
@@ -169,12 +132,6 @@ const BUYER_ACTION_LABELS_BY_LOCALE: Record<PublicLocale, Record<BuyerReturnActi
     logistics: { label: "Submit return logistics", description: "After shipping the item back, enter the courier and tracking number." },
     confirm: { label: "Confirm completion", description: "Finish the case after you receive the exchange or confirm the refund." },
     cancel: { label: "Cancel request", description: "You can cancel this request before returning the item." },
-  },
-  ms: {
-    evidence: { label: "Tambah bukti", description: "Peniaga memerlukan gambar atau maklumat tambahan sebelum semakan diteruskan." },
-    logistics: { label: "Isi logistik pemulangan", description: "Selepas menghantar barang balik, masukkan kurier dan nombor penjejakan." },
-    confirm: { label: "Sahkan selesai", description: "Tamatkan kes selepas menerima tukaran atau mengesahkan bayaran balik." },
-    cancel: { label: "Batalkan permohonan", description: "Anda boleh batalkan sebelum barang dipulangkan." },
   },
 };
 
@@ -195,12 +152,6 @@ const FALLBACK_TEXT_BY_LOCALE: Record<PublicLocale, {
     status: "Unknown status",
     order: "Order",
     logisticsTrack: "Logistics update",
-  },
-  ms: {
-    returnType: "Selepas jualan",
-    status: "Status tidak diketahui",
-    order: "Pesanan",
-    logisticsTrack: "Kemas kini logistik",
   },
 };
 

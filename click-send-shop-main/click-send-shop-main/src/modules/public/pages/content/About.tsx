@@ -35,6 +35,7 @@ export default function About() {
       onBack={goBack}
       backFallback="/profile"
       contentClassName="md:max-w-3xl xl:max-w-4xl"
+      className="store-v12-page store-content-v12-page store-about-v12-page"
     >
       <SeoHead
         title={title}
@@ -44,14 +45,14 @@ export default function About() {
       />
       <div className="space-y-4">
         {cmsBody ? (
-          <article className="store-body-text max-w-none rounded-2xl border border-border bg-card p-5 leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />
+          <article className="store-body-text store-content-v12-article max-w-none rounded-2xl border border-border bg-card p-5 leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />
         ) : (
           <>
-            <section className="rounded-2xl border border-border bg-card p-5">
+            <section className="store-content-v12-article rounded-2xl border border-border bg-card p-5">
               <h2 className="text-lg font-semibold text-foreground">{siteName}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{siteInfo.siteSlogan || STORE_COPY.siteSlogan}</p>
             </section>
-            <section className="rounded-2xl border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
+            <section className="store-content-v12-article rounded-2xl border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
               {siteInfo.siteDescription || STORE_COPY.siteDescription}
             </section>
           </>

@@ -119,11 +119,11 @@ export default function AddressManage() {
         title={t("address.title")}
         onBack={goBack}
         rightSlot={addAddressButton}
-        className="store-page text-[var(--theme-text)]"
+        className="store-v12-page store-account-subpage-v12-page store-address-v12-page text-[var(--theme-text)]"
         mainClassName="pb-24 sm:py-4 md:pb-12"
       >
         <section
-          className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 shadow-[var(--theme-shadow)] sm:px-6 sm:py-6"
+          className="store-address-v12-hero relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 shadow-[var(--theme-shadow)] sm:px-6 sm:py-6"
           style={{
             backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 98%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 92%, transparent) 48%, color-mix(in srgb, var(--theme-bg) 70%, transparent) 100%), url("${ADDRESS_HERO_IMAGE}")`,
             backgroundPosition: "center",
@@ -145,10 +145,10 @@ export default function AddressManage() {
               <div className="mt-4 grid grid-cols-3 gap-2">
                 <AddressMetric icon={<MapPin size={13} aria-hidden />} label={t("address.addressCount")} value={`${addresses.length}${t("address.addressCountUnit") ? ` ${t("address.addressCountUnit")}` : ""}`} />
                 <AddressMetric icon={<Home size={13} aria-hidden />} label={t("address.defaultAddress")} value={defaultAddress ? t("address.set") : t("address.notSet")} />
-                <AddressMetric icon={<ShieldCheck size={13} aria-hidden />} label={t("address.deliveryArea")} value="Malaysia" />
+                <AddressMetric icon={<ShieldCheck size={13} aria-hidden />} label={t("address.deliveryArea")} value="马来西亚" />
               </div>
             </div>
-            <div className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_72%,transparent)] p-4 backdrop-blur">
+            <div className="store-address-v12-default-card rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_72%,transparent)] p-4 backdrop-blur">
               <p className="text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">{t("address.defaultCheckout")}</p>
               <p className="mt-2 line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text-on-surface)]">
                 {defaultAddress ? formatAddressForDisplay(defaultAddress) : t("address.noDefaultFallback")}
@@ -184,9 +184,9 @@ export default function AddressManage() {
             />
           </div>
         ) : (
-          <div className="mt-4 space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
+          <div className="store-address-v12-list mt-4 space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
             {addresses.map((addr) => (
-              <div key={addr.id} className={CARD}>
+              <div key={addr.id} className={`${CARD} store-address-v12-card`}>
                 <div className="flex items-start gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">
                     <MapPin size={20} aria-hidden />

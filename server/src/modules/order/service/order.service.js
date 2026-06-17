@@ -113,7 +113,7 @@ async function getOrderSummary(userId) {
 }
 
 async function getOrderById(userId, orderId) {
-  const order = await repo.selectOrderByIdAndUser(orderDb, orderId, userId);
+  const order = await repo.selectOrderByIdOrNoAndUser(orderDb, orderId, userId);
   if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItems(orderDb, order.id);
   const [returnSummary] = await returnRepo.selectReturnSummaryByOrderIds(userId, [order.id]);

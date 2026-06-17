@@ -63,7 +63,7 @@ export default function ContentCmsPage() {
       onBack={goBack}
       backFallback="/profile"
       contentClassName="md:max-w-3xl xl:max-w-4xl"
-      className="pb-8"
+      className="store-v12-page store-content-v12-page pb-8"
     >
       <SeoHead
         title={title}
@@ -88,7 +88,7 @@ export default function ContentCmsPage() {
             }
           />
         ) : null}
-        {page?.content && !loading && !error ? <article className="store-body-text max-w-none leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }} /> : null}
+        {page?.content && !loading && !error ? <article className="store-body-text store-content-v12-article max-w-none leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }} /> : null}
         {isContactUs && !loading && !error ? <ContactUsContent intro={!page?.content ? "如需订单、支付、物流、售后等协助，请通过以下方式联系我们。" : undefined} /> : null}
       </div>
     </StoreStandardPageShell>

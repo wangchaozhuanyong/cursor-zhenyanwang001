@@ -2,7 +2,7 @@ import './InviteRewardCard.final.css'
 import heroImage from './assets/reward-hero.webp'
 
 export default function InviteRewardCard({
-  badgeText = 'INVITE BONUS',
+  badgeText = '邀请奖励',
   title = '邀请好友得奖励',
   subtitle = '好友完成首单后，返现自动入账；奖励明细、邀请码和邀请记录集中管理。',
   invitedCount = 0,

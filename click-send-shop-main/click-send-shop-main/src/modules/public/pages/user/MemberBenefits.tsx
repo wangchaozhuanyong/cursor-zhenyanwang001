@@ -336,7 +336,7 @@ export default function MemberBenefits() {
     <StoreAccountLayout
       title="会员权益"
       onBack={goBack}
-      className="member-account-shell"
+      className="store-v12-page store-account-subpage-v12-page store-member-benefits-v12-page member-account-shell"
       mainClassName="member-account-main"
     >
       <div className="member-page-shell">

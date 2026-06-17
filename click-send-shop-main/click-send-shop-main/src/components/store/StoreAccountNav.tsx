@@ -27,11 +27,15 @@ export default function StoreAccountNav({ className }: { className?: string }) {
     "returns",
     "address",
     "coupons",
+    "wallet",
     "points",
+    "rewards",
+    "invite",
     "favorites",
     "history",
     "notifications",
     "feedback",
+    "support",
     "settings",
   ];
   const items = buildAccountFeaturesByKeys(navKeys, { capabilities, loyaltyConfig }, "desktop");
@@ -40,6 +44,7 @@ export default function StoreAccountNav({ className }: { className?: string }) {
     <nav className={cn("space-y-1", className)} aria-label="账户导航">
       {items.map((item) => {
         const active = isNavActive(currentPathname, item.path);
+        const Icon = item.icon;
         return (
           <UnifiedButton
             key={item.path}
@@ -48,13 +53,19 @@ export default function StoreAccountNav({ className }: { className?: string }) {
             aria-disabled={false}
             onClick={() => navigateFeature(item.key)}
             className={cn(
-              "flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors",
+              "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors",
               active
                 ? "bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]"
                 : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]",
             )}
           >
-            {item.label}
+            <Icon size={16} aria-hidden className="shrink-0" />
+            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            {item.badgeText ? (
+              <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] px-1.5 text-[10px] font-black leading-none text-[var(--theme-price-foreground)]">
+                {item.badgeText}
+              </span>
+            ) : null}
           </UnifiedButton>
         );
       })}

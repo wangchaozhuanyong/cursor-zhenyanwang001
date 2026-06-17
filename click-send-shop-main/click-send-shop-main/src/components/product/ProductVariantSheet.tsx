@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { CheckCircle2, ChevronRight, Minus, Plus, Ticket } from "lucide-react";
+import { CheckCircle2, ChevronRight, Clock3, Minus, Plus, ShieldCheck, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import CouponPicker from "@/components/CouponPicker";
-import type { Product, ProductVariant } from "@/types/product";
+import type { Product, ProductActiveActivity, ProductVariant } from "@/types/product";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 import { AppModal, SquishButton } from "@/modules/micro-interactions";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -12,6 +12,7 @@ import { ensureMediaUrl } from "@/utils/mediaUrl";
 import { stripHtml } from "@/utils/seo";
 import RatioImage from "@/components/client/RatioImage";
 import { THEME_PRODUCT_MEDIA_RATIO } from "@/constants/productMediaAspect";
+import { buildProductDisplayPriceModel } from "@/modules/storefront-v2/product/productDisplayPricing";
 
 type PurchaseIntent = "cart" | "buy";
 
@@ -45,6 +46,40 @@ function formatMoney(value: number) {
   return n.toFixed(2).replace(/\.00$/, "");
 }
 
+function clampPercent(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function formatActivityDateTime(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function activityTypeLabel(type: ProductActiveActivity["type"]) {
+  if (type === "flash_sale") return "秒杀";
+  if (type === "limited_time_discount") return "限时折扣";
+  if (type === "member_price") return "会员专享";
+  if (type === "full_reduction") return "满减";
+  if (type === "full_discount") return "满折";
+  if (type === "points_reward") return "积分奖励";
+  if (type === "checkin_reward") return "签到奖励";
+  return "活动";
+}
+
+function activityStatusLabel(activity: ProductActiveActivity) {
+  if (activity.status === "scheduled") return "未开始";
+  if (activity.status === "ended") return "已结束";
+  return activity.status_label || "进行中";
+}
+
 function buildProductDetailItems(description?: string) {
   const raw = stripHtml(description || "").trim();
   if (!raw) return ["商品详情正在完善，下单前可联系客服确认规格、配送和售后说明。"];
@@ -75,8 +110,9 @@ export default function ProductVariantSheet({
   const specGroups = product.spec_groups ?? [];
   const hasMatrix = specGroups.length > 0;
   const selectedValueIds = new Set(selected?.spec_value_ids ?? []);
-  const unitPrice = Number(selected?.price ?? product.price) || 0;
-  const originalPrice = Number(selected?.original_price ?? product.original_price ?? 0) || 0;
+  const displayPriceModel = buildProductDisplayPriceModel(product, selected);
+  const unitPrice = displayPriceModel.amount;
+  const originalPrice = Number(displayPriceModel.originalPrice ?? 0) || 0;
   const showOriginalPrice = originalPrice > unitPrice;
   const lineTotal = unitPrice * Math.max(0, qty);
   const originalTotal = (showOriginalPrice ? originalPrice : unitPrice) * Math.max(0, qty);
@@ -116,6 +152,27 @@ export default function ProductVariantSheet({
   ) : (
     footerActionLabel
   );
+  const activeActivity = product.active_activity ?? null;
+  const activityRemaining = Math.max(0, Number(activeActivity?.remaining_stock ?? 0));
+  const activitySold = Math.max(0, Number(activeActivity?.sold_count ?? 0));
+  const activityStockTotal = Math.max(0, Number(activeActivity?.activity_stock ?? 0) || activityRemaining + activitySold);
+  const activityProgressPercent = activeActivity
+    ? activeActivity.stock_progress_percent != null
+      ? clampPercent(Number(activeActivity.stock_progress_percent || 0))
+      : activityStockTotal > 0
+        ? clampPercent((activitySold / activityStockTotal) * 100)
+        : null
+    : null;
+  const activityLimit = Math.max(0, Number(activeActivity?.limit_per_user ?? 0));
+  const activityPrice = Math.max(0, Number(activeActivity?.activity_price ?? 0));
+  const activityThreshold = Math.max(0, Number(activeActivity?.threshold_amount ?? 0));
+  const activityDiscount = Math.max(0, Number(activeActivity?.discount_amount ?? 0));
+  const activitySavingAmount = Math.max(0, Number(activeActivity?.saving_amount ?? 0));
+  const isActivityPriceDeal = activeActivity
+    ? activeActivity.type === "flash_sale" ||
+      activeActivity.type === "limited_time_discount" ||
+      activeActivity.type === "member_price"
+    : false;
 
   const clampQty = (value: number) => {
     if (maxQty <= 0 || soldOut) return 0;
@@ -404,6 +461,73 @@ export default function ProductVariantSheet({
     </div>
   ) : null;
 
+  const activityRuleCard = activeActivity ? (
+    <section className="store-variant-v12-activity" aria-label="当前活动规则">
+      <div className="store-variant-v12-activity__head">
+        <div className="min-w-0">
+          <div className="store-variant-v12-activity__kicker">
+            <span>{activityTypeLabel(activeActivity.type)}</span>
+            <b>{activityStatusLabel(activeActivity)}</b>
+          </div>
+          <h3>{activeActivity.title}</h3>
+          {activeActivity.description ? <p>{activeActivity.description}</p> : null}
+        </div>
+        <div className="store-variant-v12-activity__amount">
+          {activityPrice > 0 && isActivityPriceDeal ? (
+            <>
+              <span>活动价</span>
+              <strong>RM {formatMoney(activityPrice)}</strong>
+            </>
+          ) : activityThreshold > 0 && activityDiscount > 0 ? (
+            <>
+              <span>满减</span>
+              <strong>减 RM {formatMoney(activityDiscount)}</strong>
+            </>
+          ) : (
+            <>
+              <span>优惠</span>
+              <strong>结算匹配</strong>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="store-variant-v12-activity__facts">
+        <span>
+          <Clock3 size={14} aria-hidden />
+          {formatActivityDateTime(activeActivity.start_at)} - {formatActivityDateTime(activeActivity.end_at)}
+        </span>
+        <span>
+          <ShieldCheck size={14} aria-hidden />
+          {activityLimit > 0 ? `每人限购 ${activityLimit} 件` : "限购规则以下单校验为准"}
+        </span>
+      </div>
+
+      {activityProgressPercent != null ? (
+        <div className="store-variant-v12-activity__progress">
+          <div className="store-variant-v12-activity__progress-meta">
+            <span>活动库存</span>
+            <strong>
+              {activityStockTotal > 0
+                ? `已售 ${activitySold} / 剩余 ${activityRemaining}`
+                : `剩余 ${activityRemaining}`}
+            </strong>
+          </div>
+          <div className="store-variant-v12-activity__track" aria-hidden>
+            <span style={{ width: `${activityProgressPercent}%` }} />
+          </div>
+          {activitySavingAmount > 0 ? (
+            <p>当前规格命中活动预计可省 RM {formatMoney(activitySavingAmount)}，最终优惠以结算页后端预览为准。</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <p className="store-variant-v12-activity__safe">
+        活动价、库存、限购、优惠券和叠加关系会在结算页由后端重新校验。
+      </p>
+    </section>
+  ) : null;
+
   const selectedSummary = (
     <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-xs leading-relaxed text-[var(--theme-text-muted)]">
       已选：
@@ -438,6 +562,8 @@ export default function ProductVariantSheet({
           {selected.spec_text || selected.title || selected.sku_code || "默认规格"} · 库存 {selected.stock}
         </p>
       ) : null}
+
+      {activityRuleCard}
 
       {couponSelector}
 

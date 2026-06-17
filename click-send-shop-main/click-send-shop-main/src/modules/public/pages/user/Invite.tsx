@@ -162,7 +162,7 @@ export default function Invite() {
     typeof document !== "undefined" ? readThemeCssVar("--theme-surface", "#ffffff") : "#ffffff";
 
   return (
-    <StoreAccountLayout title="邀请中心" onBack={goBack} mainClassName="sm:px-4 xl:py-6">
+    <StoreAccountLayout title="邀请中心" onBack={goBack} className="store-v12-page store-account-subpage-v12-page store-invite-v12-page" mainClassName="sm:px-4 xl:py-6">
       <main className="mx-auto w-full space-y-0 md:max-w-5xl xl:max-w-4xl">
         <section
           className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 shadow-[var(--theme-shadow)] sm:px-6 sm:py-6"

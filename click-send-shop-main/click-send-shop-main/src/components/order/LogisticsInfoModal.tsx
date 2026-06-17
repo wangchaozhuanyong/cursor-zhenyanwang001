@@ -47,16 +47,6 @@ const LOGISTICS_MODAL_COPY: Record<PublicLocale, {
     empty: "No logistics info yet",
     update: "Logistics update",
   },
-  ms: {
-    title: "Maklumat logistik",
-    copied: "Nombor penjejakan disalin",
-    copyFailed: "Gagal salin. Sila salin secara manual.",
-    copyTracking: "Salin nombor penjejakan",
-    carrier: "Kurier",
-    trackingNo: "Nombor penjejakan",
-    empty: "Tiada maklumat logistik lagi",
-    update: "Kemas kini logistik",
-  },
 };
 
 /** 无外链物流页时，展示承运商与单号（light Dialog，走全局 ModalLayer） */

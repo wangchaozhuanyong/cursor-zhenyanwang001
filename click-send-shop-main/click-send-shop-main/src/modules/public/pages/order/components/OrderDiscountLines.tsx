@@ -26,17 +26,6 @@ const DISCOUNT_LABELS: Record<PublicLocale, Record<string, string>> = {
     reward_wallet: "Reward cash deduction",
     discount: "Discount",
   },
-  ms: {
-    coupon: "Kupon",
-    full_reduction: "Potongan pesanan",
-    full_discount: "Diskaun pesanan",
-    flash_sale: "Jualan kilat",
-    limited_time_discount: "Diskaun masa terhad",
-    member_price: "Harga ahli",
-    points: "Potongan mata",
-    reward_wallet: "Potongan tunai ganjaran",
-    discount: "Potongan",
-  },
 };
 
 function getDiscountLabel(line: OrderDiscountLine, locale: PublicLocale) {

@@ -23,22 +23,11 @@ const ORDER_TABS_BY_LOCALE: Record<PublicLocale, Array<{ key: OrderTab; label: s
     { key: "after_sale", label: "Returns" },
     { key: "cancelled", label: "Cancelled" },
   ],
-  ms: [
-    { key: "all", label: "Semua" },
-    { key: "pending_payment", label: "Perlu bayar" },
-    { key: "paid", label: "Perlu dihantar" },
-    { key: "shipped", label: "Perlu diterima" },
-    { key: "pending_review", label: "Perlu ulasan" },
-    { key: "completed", label: "Selesai" },
-    { key: "after_sale", label: "Pemulangan" },
-    { key: "cancelled", label: "Dibatalkan" },
-  ],
 };
 
 const ORDER_STEPS_BY_LOCALE: Record<PublicLocale, string[]> = {
   zh: ["待付款", "已付款", "已发货", "已完成"],
   en: ["To pay", "Paid", "Shipped", "Completed"],
-  ms: ["Perlu bayar", "Dibayar", "Dihantar", "Selesai"],
 };
 
 export const ORDER_COPY: Record<PublicLocale, {
@@ -358,117 +347,7 @@ export const ORDER_COPY: Record<PublicLocale, {
     repurchaseConfirmTitle: "Buy again",
     repurchaseConfirmDescription: "Add this order's items to cart and go to checkout?",
     checkoutText: "Go to checkout",
-  },
-  ms: {
-    accountTitle: "Pesanan saya",
-    tabsAria: "Status pesanan",
-    searchPlaceholder: "Cari pesanan",
-    loading: "Memuatkan...",
-    loadFailed: "Gagal memuatkan pesanan",
-    retry: "Cuba lagi",
-    clearSearch: "Kosongkan carian",
-    browse: "Lihat produk",
-    emptyByTab: {
-      all: "Tiada pesanan lagi",
-      pending_payment: "Tiada pesanan perlu dibayar",
-      paid: "Tiada pesanan perlu dihantar",
-      shipped: "Tiada pesanan perlu diterima",
-      pending_review: "Tiada pesanan perlu diulas",
-      completed: "Tiada pesanan selesai",
-      after_sale: "Tiada rekod pemulangan",
-      cancelled: "Tiada pesanan dibatalkan",
-    },
-    emptyKeyword: (keyword) => `Tiada pesanan ditemui untuk "${keyword}"`,
-    emptyKeywordDescription: "Kosongkan kata kunci untuk lihat pesanan semula.",
-    emptyDescription: "Status pesanan anda akan dipaparkan di sini selepas checkout.",
-    giftOrder: "Hadiah mata",
-    orderProducts: "Item pesanan",
-    pointsUsed: "Mata digunakan",
-    defaultVariant: "Pilihan lalai",
-    itemCount: (count) => `${count} item`,
-    paidTotal: "Dibayar",
-    more: "Lagi",
-    support: "Hubungi sokongan",
-    cancelOrder: "Batalkan pesanan",
-    cancelHint: "Pesanan belum dibayar boleh dibatalkan",
-    applying: "Sedang diproses...",
-    receive: "Sahkan diterima",
-    applyAfterSale: "Mohon servis",
-    repurchase: "Beli lagi",
-    viewAfterSale: "Lihat pemulangan",
-    viewLogistics: "Lihat logistik",
-    review: "Ulasan",
-    reviewProduct: "Ulas produk",
-    reviewHint: "Ulas dalam butiran pesanan",
-    addToCart: "Tambah ke troli",
-    repurchaseHint: "Tambah item semula dan checkout",
-    deleteOrder: "Padam pesanan",
-    deleteHint: "Sembunyi daripada Pesanan saya sahaja",
-    noMoreActions: "Tiada tindakan lanjut untuk pesanan ini",
-    moreActions: "Tindakan lain",
-    loadingMore: "Memuatkan...",
-    loadMore: "Muat lagi",
-    allLoaded: "Semua dimuatkan",
-    noLogistics: "Tiada maklumat logistik lagi",
-    cartAdded: "Ditambah ke troli",
-    addCartFailed: "Gagal tambah ke troli",
-    cartReadded: "Item ditambah semula ke troli",
-    repurchaseFailed: "Gagal beli lagi",
-    orderDeleted: "Pesanan dipadam",
-    deleteFailed: "Gagal padam pesanan",
-    orderCancelled: "Pesanan dibatalkan",
-    cancelFailed: "Gagal batal",
-    received: "Penerimaan disahkan",
-    receiveFailed: "Gagal sahkan penerimaan",
-    detailTitle: "Butiran pesanan",
-    notFound: "Pesanan tidak ditemui",
-    unavailable: "Pesanan ini mungkin telah dipadam atau pautan tidak tersedia.",
-    currentStatus: "Status semasa",
-    logistics: "Logistik",
-    logisticsStatus: "Status logistik",
-    logisticsException: "Terdapat isu logistik. Hubungi sokongan untuk pengesahan.",
-    shortageFallback: "Beberapa item dikeluarkan kerana stok tidak mencukupi",
-    productInfo: "Item",
-    priceDetail: "Butiran harga",
-    productAmount: "Jumlah item",
-    discountAmount: "Diskaun",
-    pointsDeduction: "Potongan mata",
-    rewardDeduction: "Potongan tunai ganjaran",
-    shippingFee: "Kos penghantaran",
-    freeShipping: "Penghantaran percuma",
-    paidAmount: "Dibayar",
-    orderInfo: "Maklumat pesanan",
-    orderNo: "No. pesanan",
-    copiedOrderNo: "Nombor pesanan disalin",
-    createdAt: "Masa pesanan",
-    paymentMethod: "Kaedah bayaran",
-    orderType: "Jenis pesanan",
-    pointsGiftRedeem: "Penebusan hadiah mata",
-    paymentTime: "Masa bayaran",
-    recipient: "Penerima",
-    phone: "Telefon",
-    address: "Alamat penghantaran",
-    buyerNote: "Nota pembeli",
-    deleteConfirmTitle: "Padam pesanan",
-    deleteConfirmDescription: "Pesanan ini akan disembunyikan daripada senarai anda. Rekod perlu masih disimpan untuk selepas jualan, kewangan dan audit.",
-    deleteConfirmText: "Padam",
-    cancelConfirmTitle: "Batalkan pesanan",
-    cancelConfirmDescription: "Pesanan akan ditutup. Buat pesanan baharu jika masih mahu membeli.",
-    cancelConfirmText: "Sahkan batal",
-    cancelText: "Batal",
-    rethink: "Belum lagi",
-    receiveConfirmTitle: "Sahkan diterima",
-    receiveConfirmDescription: "Sahkan anda telah menerima barang dan semuanya betul. Tindakan ini tidak boleh dibatalkan.",
-    receiveConfirmText: "Sahkan diterima",
-    reviewConfirmTitle: "Penerimaan disahkan",
-    reviewConfirmDescription: "Ulas produk sekarang?",
-    reviewConfirmText: "Ulas sekarang",
-    reviewLaterText: "Kemudian",
-    repurchaseConfirmTitle: "Beli lagi",
-    repurchaseConfirmDescription: "Tambah item pesanan ini ke troli dan pergi ke checkout?",
-    checkoutText: "Pergi checkout",
-  },
-};
+  },};
 
 export function getOrderTabs(locale: PublicLocale) {
   return ORDER_TABS_BY_LOCALE[locale] || ORDER_TABS_BY_LOCALE.zh;
@@ -521,24 +400,7 @@ export function getBuyerOrderStatusTextLocalized(order: Order, locale: PublicLoc
     returnClosed: "After-sales closed",
     cancelled: "Cancelled",
   };
-  const ms = {
-    pendingGift: "Penebusan mata perlu dibayar",
-    paidGift: "Penebusan mata perlu dihantar",
-    shippedGift: "Penebusan mata perlu diterima",
-    completedGift: "Penebusan mata selesai",
-    cancelledGift: "Penebusan mata dibatalkan",
-    refunding: "Pemulangan/bayaran balik diproses",
-    refunded: "Dibayar balik",
-    activeReturn: "Selepas jualan diproses",
-    pending: "Perlu bayar",
-    paid: "Dibayar, menunggu penghantaran",
-    shipped: "Dihantar, menunggu penerimaan",
-    review: "Perlu ulasan",
-    completed: "Selesai",
-    returnClosed: "Selepas jualan ditutup",
-    cancelled: "Dibatalkan",
-  };
-  const labels = locale === "ms" ? ms : en;
+  const labels = en;
   if (isGift) {
     if (order.status === "pending") return labels.pendingGift;
     if (order.status === "paid") return labels.paidGift;
@@ -578,15 +440,8 @@ export function labelOrderPaymentMethodLocalized(method: string | null | undefin
     whatsapp: "WhatsApp / support",
     reward_wallet: "Reward wallet",
   };
-  const ms: Record<string, string> = {
-    points_gift: "Penebusan mata",
-    points_plus_cash: "Mata + tunai",
-    online: "Bayaran dalam talian",
-    whatsapp: "WhatsApp / sokongan",
-    reward_wallet: "Dompet ganjaran",
-  };
-  if (type === "points_gift" && m === "points_gift") return locale === "ms" ? "Penebusan mata penuh" : "Points only";
-  return (locale === "ms" ? ms[m] : en[m]) || m || "-";
+  if (type === "points_gift" && m === "points_gift") return "Points only";
+  return en[m] || m || "-";
 }
 
 export function labelPendingPaymentActionLocalized(method: string | null | undefined, orderType: string | null | undefined, locale: PublicLocale) {
@@ -597,12 +452,6 @@ export function labelPendingPaymentActionLocalized(method: string | null | undef
     if (m === "online" || m === "points_plus_cash") return "在线支付";
     if (m === "reward_wallet") return "钱包支付";
     return "联系客服付款";
-  }
-  if (locale === "ms") {
-    if (type === "points_gift" && m === "points_plus_cash") return "Bayar baki";
-    if (m === "online" || m === "points_plus_cash") return "Bayar dalam talian";
-    if (m === "reward_wallet") return "Bayar dengan dompet";
-    return "Hubungi sokongan untuk bayar";
   }
   if (type === "points_gift" && m === "points_plus_cash") return "Pay balance";
   if (m === "online" || m === "points_plus_cash") return "Pay online";

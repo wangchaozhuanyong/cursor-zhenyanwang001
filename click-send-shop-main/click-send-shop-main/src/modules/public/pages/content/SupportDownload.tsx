@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Copy, PlusSquare } from "lucide-react";
+import { Clock3, Copy, Headphones, PlusSquare, ShieldCheck, Smartphone } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -202,19 +202,22 @@ export default function SupportDownload() {
     return platforms;
   }, [platforms, recommendedPlatform]);
   const pageTitle = config.title?.trim() || "";
+  const displayTitle = pageTitle || STORE_COPY.supportCenterTitle;
+  const pageSubtitle = config.subtitle?.trim() || config.support.description?.trim() || STORE_COPY.supportSubtitle;
+  const workingHours = config.support.workingHours?.trim() || "客服时间以后台配置为准";
   const installPageUrl = useMemo(() => buildCanonical("/support-download", "tab=download"), []);
   const mobileHeader = (
     <StorePageHeader
       className={`${STORE_MOBILE_PAGE_HEADER_CLASS} support-download-mobile-header`}
       matchTabHeaderHeight
       centerTitle
-      title={pageTitle}
+      title={displayTitle}
     />
   );
 
   if (!config.enabled) {
     return (
-      <div className="store-page-shell store-bottom-safe support-download-page support-download-page--empty text-sm text-[var(--theme-text)]">
+      <div className="store-page-shell store-bottom-safe store-v12-page support-download-page support-download-v12-page support-download-page--empty text-sm text-[var(--theme-text)]">
         {mobileHeader}
         <main className="support-download-shell">
           <div className="support-empty-panel">客服中心暂未开放。</div>
@@ -224,7 +227,7 @@ export default function SupportDownload() {
   }
 
   return (
-    <div className="store-page-shell store-bottom-safe support-download-page text-[var(--theme-text)]">
+    <div className="store-page-shell store-bottom-safe store-v12-page support-download-page support-download-v12-page text-[var(--theme-text)]">
       <SeoHead
         title={pageTitle ? `${pageTitle} - ${siteInfo.siteName || STORE_COPY.brandName}` : siteInfo.siteName || STORE_COPY.brandName}
         description={config.subtitle}
@@ -235,8 +238,43 @@ export default function SupportDownload() {
 
       <main className="support-download-shell">
         <header className="support-download-hero">
-          {pageTitle ? <h1>{pageTitle}</h1> : null}
+          <span className="support-download-eyebrow">
+            <Headphones size={16} aria-hidden="true" />
+            官方客服中心
+          </span>
+          <h1>{displayTitle}</h1>
+          {pageSubtitle ? <p>{pageSubtitle}</p> : null}
         </header>
+
+        <section className="support-download-overview" aria-label="客服服务概览">
+          <article className="support-download-overview-card">
+            <span className="support-download-overview-icon" aria-hidden="true">
+              <Headphones size={18} />
+            </span>
+            <div>
+              <span>官方客服</span>
+              <strong>{channels.length > 0 ? `${channels.length} 个渠道` : "待配置"}</strong>
+            </div>
+          </article>
+          <article className="support-download-overview-card">
+            <span className="support-download-overview-icon" aria-hidden="true">
+              <Clock3 size={18} />
+            </span>
+            <div>
+              <span>服务时间</span>
+              <strong>{workingHours}</strong>
+            </div>
+          </article>
+          <article className="support-download-overview-card">
+            <span className="support-download-overview-icon" aria-hidden="true">
+              {canShowInstallView ? <Smartphone size={18} /> : <ShieldCheck size={18} />}
+            </span>
+            <div>
+              <span>{canShowInstallView ? "快捷入口" : "安全提醒"}</span>
+              <strong>{platforms.length > 0 ? "可添加桌面" : "认准官方账号"}</strong>
+            </div>
+          </article>
+        </section>
 
         {!waitingForConfiguredView && availableViews.length > 0 ? (
           <nav

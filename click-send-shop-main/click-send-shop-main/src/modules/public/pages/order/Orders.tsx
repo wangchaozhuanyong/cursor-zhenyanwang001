@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { ClipboardList, Clock3, PackageCheck, RotateCcw, Truck } from "lucide-react";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
@@ -13,14 +14,7 @@ import { canApplyAfterSale, canRepurchaseOrder, canUserCancelOrder, hasPendingRe
 import { isGiftOrder } from "@/utils/orderPaymentLabels";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
-import { LogisticsInfoModal } from "@/components/order/LogisticsInfoModal";
 import { SUPPORT_PAGE_PATH } from "@/utils/supportDownloadConfig";
-import {
-  getOrderLogisticsSnapshot,
-  openOrderLogisticsExternal,
-  resolveOrderLogisticsView,
-  type OrderLogisticsSnapshot,
-} from "@/utils/orderLogistics";
 import { AppModal, BottomSheetConfirm } from "@/modules/micro-interactions";
 import ReturnApplySheet from "./ReturnApplySheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -28,6 +22,7 @@ import StoreSearchField from "@/components/store/StoreSearchField";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { formatDateTime } from "@/utils/formatDateTime";
 import {
   getBuyerOrderStatusTextLocalized,
   getOrderCopy,
@@ -117,6 +112,11 @@ function canViewLogistics(order: Order) {
   return order.status === "shipped" || order.status === "completed" || order.status === "refunded";
 }
 
+function money(value: unknown) {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
+}
+
 export default function Orders() {
   const navigate = useNavigate();
   const { localizedPath, locale } = usePublicLocale();
@@ -140,7 +140,6 @@ export default function Orders() {
   const [cancelConfirmOrder, setCancelConfirmOrder] = useState<Order | null>(null);
   const [confirmReceiveOrder, setConfirmReceiveOrder] = useState<Order | null>(null);
   const [returnApplyOrderId, setReturnApplyOrderId] = useState<string | null>(null);
-  const [logisticsInfo, setLogisticsInfo] = useState<OrderLogisticsSnapshot | null>(null);
   const [repurchaseConfirmOrder, setRepurchaseConfirmOrder] = useState<Order | null>(null);
   const [searchText, setSearchText] = useState(keyword);
 
@@ -171,16 +170,7 @@ export default function Orders() {
   );
 
   const viewLogistics = (order: Order) => {
-    const mode = resolveOrderLogisticsView(order);
-    if (mode === "external") {
-      openOrderLogisticsExternal(order);
-      return;
-    }
-    if (mode === "modal") {
-      setLogisticsInfo(getOrderLogisticsSnapshot(order));
-      return;
-    }
-    toast.info(copy.noLogistics);
+    navigate(localizedPath(`/orders/${order.id}/logistics`));
   };
 
   useEffect(() => {
@@ -202,6 +192,32 @@ export default function Orders() {
     [orders, tab],
   );
   const currentSummary = summary || summaryFromOrders(orders);
+  const orderStats = useMemo(() => [
+    {
+      label: "全部订单",
+      value: currentSummary.total,
+      hint: "历史订单集中查看",
+      icon: ClipboardList,
+    },
+    {
+      label: "待处理",
+      value: (currentSummary.pending_payment || 0) + (currentSummary.paid || currentSummary.pending_ship || 0) + (currentSummary.shipped || currentSummary.pending_receive || 0),
+      hint: "付款、发货、收货",
+      icon: Clock3,
+    },
+    {
+      label: "售后中",
+      value: currentSummary.after_sale || 0,
+      hint: "退款/售后进度",
+      icon: RotateCcw,
+    },
+    {
+      label: "已完成",
+      value: currentSummary.completed || 0,
+      hint: "可评价或复购",
+      icon: PackageCheck,
+    },
+  ], [currentSummary]);
   const hasMoreOrders = pagination.page < pagination.totalPages;
   const showOrderPagingFooter = displayOrders.length > 0 && pagination.total > pagination.pageSize;
 
@@ -284,9 +300,36 @@ export default function Orders() {
   return (
     <StoreAccountLayout
       title={copy.accountTitle}
+      className="store-v12-page store-orders-v12-page"
       mainClassName="sm:p-0 xl:py-6"
       rightSlot={renderOrderSearchField("store-order-header-search-field w-[9.5rem] max-w-[44vw] flex-none sm:w-44 xl:hidden")}
     >
+        <section className="store-orders-v12-hero">
+          <div className="store-orders-v12-hero__copy">
+            <span className="store-v12-eyebrow">
+              <Truck size={15} aria-hidden />
+              订单中心
+            </span>
+            <h2>订单状态、物流和售后集中管理</h2>
+            <p>待付款、待发货、待收货、评价和售后进度统一在这里查看；支付状态和物流结果仍以后端订单数据为准。</p>
+          </div>
+          <div className="store-orders-v12-stat-grid" aria-label="订单统计">
+            {orderStats.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} className="store-orders-v12-stat">
+                  <span className="store-orders-v12-stat__icon" aria-hidden>
+                    <Icon size={17} />
+                  </span>
+                  <strong>{item.value}</strong>
+                  <span>{item.label}</span>
+                  <small>{item.hint}</small>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
         <div className="store-glass-surface sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b py-2 backdrop-blur-xl sm:-mx-4 md:top-[var(--store-tablet-sticky-top)] md:mx-0 md:rounded-xl md:border md:px-3 xl:top-[var(--store-desktop-sticky-top)]">
           <div className="flex flex-col gap-2 md:gap-3 xl:flex-row xl:items-center">
             <div className="relative min-w-0 overflow-hidden md:flex-1 md:overflow-visible">
@@ -366,12 +409,18 @@ export default function Orders() {
             const shownItems = order.items.slice(0, 3);
             const totalItems = order.items.reduce((s, i) => s + i.qty, 0);
             return (
-              <article key={order.id} className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3" onClick={() => openDetail(order)}>
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium">
+              <article key={order.id} className="store-orders-v12-card rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3" onClick={() => openDetail(order)}>
+                <div className="store-orders-v12-card-head">
+                  <div className="min-w-0">
+                    <span className="store-orders-v12-order-no">{order.order_no}</span>
+                    <span className="store-orders-v12-date">{formatDateTime(order.created_at)}</span>
+                  </div>
+                  <span className={`store-orders-v12-status ${getStatusTone(order)}`}>{getBuyerOrderStatusTextLocalized(order, locale)}</span>
+                </div>
+                <div className="store-orders-v12-products-label">
+                  <span>
                     {isGiftOrder(order.order_type) ? copy.giftOrder : copy.orderProducts}
                   </span>
-                  <span className={`text-xs font-medium ${getStatusTone(order)}`}>{getBuyerOrderStatusTextLocalized(order, locale)}</span>
                 </div>
                 {isGiftOrder(order.order_type) && Number(order.points_used || 0) > 0 ? (
                   <p className="mb-2 text-xs text-muted-foreground">{copy.pointsUsed} {order.points_used}</p>
@@ -410,7 +459,7 @@ export default function Orders() {
                         <p className="store-caption mt-1 truncate text-[var(--theme-text-muted)]">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-[15px] font-semibold text-[var(--theme-price)]">RM {Number(item.unit_price ?? item.product.price ?? 0).toFixed(2)}</p>
+                        <p className="text-[15px] font-semibold text-[var(--theme-price)]">RM {money(item.unit_price ?? item.product.price ?? 0)}</p>
                         <p className="mt-1 text-xs text-[var(--theme-text-muted)]">x{item.qty}</p>
                       </div>
                     </div>
@@ -420,7 +469,7 @@ export default function Orders() {
                 {order.items.length > 3 ? <p className="mt-2 text-xs text-[var(--theme-text-muted)]">{copy.itemCount(totalItems)}</p> : null}
 
                 <div className="mt-3 flex justify-end text-sm">
-                  <span className="store-body-small">{copy.itemCount(totalItems)}，{copy.paidTotal} <span className="text-[15px] font-semibold text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></span>
+                  <span className="store-body-small">{copy.itemCount(totalItems)}，{copy.paidTotal} <span className="text-[15px] font-semibold text-[var(--theme-price)]">RM {money(order.total_amount || 0)}</span></span>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between gap-2">
@@ -717,17 +766,6 @@ export default function Orders() {
           onSuccess={() => {
             void loadCurrentOrders({ force: true });
           }}
-        />
-
-        <LogisticsInfoModal
-          open={logisticsInfo !== null}
-          onClose={() => setLogisticsInfo(null)}
-          carrier={logisticsInfo?.carrier}
-          trackingNo={logisticsInfo?.trackingNo}
-          statusLabel={logisticsInfo?.statusLabel}
-          exceptionMessage={logisticsInfo?.exceptionMessage}
-          hasException={logisticsInfo?.hasException}
-          timeline={logisticsInfo?.timeline}
         />
 
         <BottomSheetConfirm

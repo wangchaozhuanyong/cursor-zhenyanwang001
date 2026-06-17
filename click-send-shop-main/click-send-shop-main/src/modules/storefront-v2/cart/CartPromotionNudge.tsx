@@ -17,7 +17,7 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
   if (engineMessage) {
     return (
       <section
-        className={`rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-3 ${className}`}
+        className={`store-cart-v12-promotion-nudge rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-3 ${className}`}
         aria-label="购物车活动提示"
       >
         <div className="flex items-start justify-between gap-3">
@@ -49,6 +49,20 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
             />
           </div>
         ) : null}
+        {evaluation.unavailable_reasons?.length ? (
+          <div className="store-cart-v12-promotion-nudge__reasons">
+            {evaluation.unavailable_reasons.slice(0, 3).map((reason) => (
+              <span key={`${reason.promotion_id || reason.type}-${reason.title || reason.reason}`}>
+                {reason.title || reason.type}：{reason.shortfall_amount
+                  ? `还差 RM ${formatMoney(reason.shortfall_amount)}`
+                  : reason.reason}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <p className="store-cart-v12-promotion-nudge__safe-copy">
+          优惠资格、叠加关系和库存会在结算页再次由后端校验。
+        </p>
       </section>
     );
   }
@@ -61,7 +75,7 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
 
   return (
     <section
-      className={`rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-3 ${className}`}
+      className={`store-cart-v12-promotion-nudge rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-3 ${className}`}
       aria-label="购物车活动提示"
     >
       <div className="flex items-start justify-between gap-3">
@@ -97,6 +111,9 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
           style={{ width: `${percent}%` }}
         />
       </div>
+      <p className="store-cart-v12-promotion-nudge__safe-copy">
+        这里只展示活动预览，最终优惠和不可用原因以结算页后端预览为准。
+      </p>
     </section>
   );
 }
@@ -114,8 +131,32 @@ function firstShortfallReason(reasons: PromotionUnavailableReason[]) {
   return reasons.find((reason) => Number(reason.shortfall_amount || 0) > 0) || null;
 }
 
+function firstBlockingReason(reasons: PromotionUnavailableReason[]) {
+  return reasons.find((reason) => reason.blocking) || reasons[0] || null;
+}
+
 function buildEngineMessage(evaluation?: PromotionEvaluation | null) {
   if (!evaluation) return null;
+  if (evaluation.eligible === false) {
+    const reason = firstBlockingReason(evaluation.unavailable_reasons || []);
+    if (reason) {
+      return {
+        title: reason.title ? `活动「${reason.title}」不可用` : "活动优惠暂不可用",
+        description: reason.shortfall_amount
+          ? `还差 RM ${formatMoney(reason.shortfall_amount)} 才能参与该活动。`
+          : reason.reason || "活动规则已变化，请在结算页重新校验。",
+        showBrowse: false,
+        percent: undefined,
+      };
+    }
+    return {
+      title: "活动优惠暂不可用",
+      description: "活动规则已变化，请在结算页重新校验。",
+      showBrowse: false,
+      percent: undefined,
+    };
+  }
+
   const discountTotal = (evaluation.discount_lines || []).reduce((sum, line) => sum + Number(line.amount || 0), 0);
   if (discountTotal > 0) {
     const labels = (evaluation.discount_lines || [])

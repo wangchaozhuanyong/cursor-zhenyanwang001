@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { CalendarDays, Camera, ChevronRight, MessageCircle, Phone, UserRound } from "lucide-react";
+import { CalendarDays, Camera, CheckCircle2, ChevronRight, MessageCircle, Phone, ShieldCheck, UserRound } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
@@ -26,6 +26,7 @@ import {
 import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birthday";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StableImage from "@/components/ui/StableImage";
+import { usePublicLocale } from "@/i18n/publicLocale";
 
 const CARD =
   "rounded-[1.25rem] border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]";
@@ -52,6 +53,7 @@ function IconBubble({ children }: { children: ReactNode }) {
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { localizedPath } = usePublicLocale();
   const [searchParams] = useSearchParams();
   const goBack = useGoBack();
   const { nickname, phone, avatar, wechat, whatsapp, profileSaving, setNickname, setWechat, setAvatar, loadProfile } = useUserStore();
@@ -103,21 +105,21 @@ export default function Settings() {
     const wechatErr = searchParams.get("wechatError");
     if (wechatErr) {
       toast.error(decodeURIComponent(wechatErr.replace(/\+/g, " ")));
-      navigate("/settings", { replace: true });
+      navigate(localizedPath("/settings"), { replace: true });
       return;
     }
     if (bindResult === "success") {
       toast.success("微信已绑定", toastPresetQuickSuccess);
       loadWechatBinding();
       loadProfile().catch(() => {});
-      navigate("/settings", { replace: true });
+      navigate(localizedPath("/settings"), { replace: true });
     }
-  }, [searchParams, navigate, loadProfile]);
+  }, [localizedPath, searchParams, navigate, loadProfile]);
 
   const handleBindWechat = async () => {
     setWechatActionLoading(true);
     try {
-      await meService.startBindWechat("/settings");
+      await meService.startBindWechat(localizedPath("/settings"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "无法发起绑定");
       setWechatActionLoading(false);
@@ -199,16 +201,84 @@ export default function Settings() {
   const birthdayReadOnly = Boolean(savedBirthday);
   const userName = nickname?.trim() || "会员用户";
   const avatarInitial = userName.slice(0, 1).toUpperCase();
+  const contactItemsReady = [phone, wechat, whatsapp].filter((value) => Boolean(value?.trim())).length;
+  const birthdayStatus = birthdayReadOnly ? "已保存" : birthday ? "待保存" : "未填写";
+  const wechatStatus = THIRD_PARTY_LOGIN_ENABLED && wechatLoginEnabled
+    ? (wechatBinding.bound ? "已绑定" : "可绑定")
+    : "未开启";
 
   return (
     <StoreAccountLayout
       title="账户设置"
       onBack={goBack}
-      className="store-page bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      className="store-v12-page store-account-subpage-v12-page store-settings-v12-page text-[var(--theme-text)]"
       mainClassName="pb-28 pt-3 sm:py-5 md:pb-12"
     >
       <div className="space-y-4 sm:space-y-5">
-      <section className={`${CARD} overflow-hidden`}>
+        <section className="store-account-v12-hero store-settings-v12-hero">
+          <span className="store-v12-eyebrow">
+            <UserRound size={14} aria-hidden />
+            账户设置
+          </span>
+          <div className="store-settings-v12-identity">
+            <UnifiedButton
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={profileSaving}
+              className="store-settings-v12-avatar disabled:cursor-not-allowed disabled:opacity-70"
+              aria-label="更换头像"
+            >
+              <span className="store-settings-v12-avatar__media">
+                {avatar ? (
+                  <StableImage src={avatar} alt="头像" className="h-full w-full" imgClassName="object-cover" />
+                ) : (
+                  <span className="store-settings-v12-avatar__initial">{avatarInitial}</span>
+                )}
+              </span>
+              <span className="store-settings-v12-avatar__camera">
+                <Camera size={15} aria-hidden />
+              </span>
+            </UnifiedButton>
+            <div className="min-w-0">
+              <h2 title={userName}>{userName}</h2>
+              <p>管理头像、基础资料、联系方式与账户安全。</p>
+              <div className="store-v12-status-strip">
+                <span>{contactItemsReady} 项联系方式</span>
+                <span>生日 {birthdayStatus}</span>
+                <span>微信 {wechatStatus}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="store-account-v12-summary store-orders-v12-stat-grid">
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><CheckCircle2 size={16} aria-hidden /></span>
+            <strong>{nickname?.trim() ? "已完善" : "待完善"}</strong>
+            <span>昵称资料</span>
+            <small>{nickname?.trim() || "建议补充常用称呼"}</small>
+          </div>
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><Phone size={16} aria-hidden /></span>
+            <strong>{contactItemsReady}/3</strong>
+            <span>联系方式</span>
+            <small>手机号、微信、WhatsApp</small>
+          </div>
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><CalendarDays size={16} aria-hidden /></span>
+            <strong>{birthdayStatus}</strong>
+            <span>生日资料</span>
+            <small>生日保存后需联系客服修改</small>
+          </div>
+          <div className="store-orders-v12-stat">
+            <span className="store-orders-v12-stat__icon"><ShieldCheck size={16} aria-hidden /></span>
+            <strong>{wechatStatus}</strong>
+            <span>登录安全</span>
+            <small>手机号登录与第三方绑定状态</small>
+          </div>
+        </section>
+
+      <section className={`${CARD} store-settings-v12-profile-card overflow-hidden`}>
         <div className="flex items-center gap-4">
           <UnifiedButton
             type="button"

@@ -4,10 +4,12 @@ import {
   ArrowRight,
   BadgePercent,
   CalendarDays,
+  Clock3,
   Gem,
   Gift,
   PackageSearch,
   RefreshCw,
+  ShieldCheck,
   Sparkles,
   TicketPercent,
   Timer,
@@ -71,6 +73,33 @@ function statusTone(status: StorefrontPromotion["runtime_status"]) {
   return "bg-[color-mix(in_srgb,var(--theme-success)_12%,var(--theme-surface))] text-[var(--theme-success)]";
 }
 
+function runtimeStatusLabel(status: StorefrontPromotion["runtime_status"], t: (key: string) => string) {
+  if (status === "scheduled") return t("promotion.notStarted");
+  if (status === "ended") return t("promotion.ended");
+  return t("promotion.active");
+}
+
+function formatDuration(seconds: unknown) {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0));
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  if (days > 0) return `${days}天${hours}小时`;
+  if (hours > 0) return `${hours}小时${minutes}分钟`;
+  if (minutes > 0) return `${minutes}分钟`;
+  return "即将变化";
+}
+
+function runtimeStatusHint(promotion: StorefrontPromotion, t: (key: string) => string) {
+  if (promotion.runtime_status === "scheduled") {
+    return promotion.starts_in_seconds > 0
+      ? `${t("promotion.startsIn")} ${formatDuration(promotion.starts_in_seconds)}`
+      : t("promotion.notStarted");
+  }
+  if (promotion.runtime_status === "ended") return t("promotion.ended");
+  return promotion.countdown_seconds > 0 ? `剩余 ${formatDuration(promotion.countdown_seconds)}` : t("promotion.endingSoon");
+}
+
 function formatCount(value: number) {
   return Math.max(0, Number(value) || 0).toLocaleString("zh-CN");
 }
@@ -109,7 +138,7 @@ function CampaignShortcut({ campaign }: { campaign: StorefrontHomeCampaign }) {
   return (
     <Link
       to={href}
-      className="group flex min-w-[11rem] flex-col justify-between rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_30%,var(--theme-border))] sm:min-w-0"
+      className="store-promotions-v12-shortcut group flex min-w-[11rem] flex-col justify-between rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_30%,var(--theme-border))] sm:min-w-0"
     >
       <span className="text-[11px] font-black uppercase tracking-[0.08em] text-[var(--theme-primary)]">{metric}</span>
       <strong className="mt-2 line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</strong>
@@ -126,7 +155,7 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
   const description = promotion.description || promotion.subtitle || t("promotion.detailFallback");
 
   return (
-    <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))]">
+    <article className="store-promotions-v12-card group flex h-full min-w-0 flex-col overflow-hidden rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))]">
       {promotion.cover_image ? (
         <Link to={detailPath} className="block aspect-[16/9] overflow-hidden bg-[color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-bg))]">
           <img
@@ -144,7 +173,7 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
             {promotionTypeLabel(promotion.type)}
           </span>
           <span className={cn("inline-flex shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold", statusTone(promotion.runtime_status))}>
-            {promotion.runtime_status === "scheduled" ? t("promotion.notStarted") : promotion.runtime_status === "ended" ? t("promotion.ended") : t("promotion.active")}
+            {runtimeStatusLabel(promotion.runtime_status, t)}
           </span>
         </div>
 
@@ -158,6 +187,10 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
         </Link>
 
         <div className="mt-3 grid gap-2 text-xs text-[var(--theme-text-muted)]">
+          <span className="store-promotions-v12-card__status-hint">
+            <Clock3 size={15} className="shrink-0" />
+            <span className="truncate">{runtimeStatusHint(promotion, t)}</span>
+          </span>
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <CalendarDays size={15} className="shrink-0" />
             <span className="truncate">{formatDate(promotion.start_at)} - {formatDate(promotion.end_at)}</span>
@@ -203,9 +236,73 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
   );
 }
 
+function PromotionGuardrail() {
+  return (
+    <section className="store-promotions-v12-guardrail" aria-label="活动规则说明">
+      <span className="store-promotions-v12-guardrail__icon">
+        <ShieldCheck size={18} aria-hidden />
+      </span>
+      <div>
+        <h2>活动资格以后端规则引擎为准</h2>
+        <p>
+          商品范围、SKU、会员等级、活动库存、限购、优惠券和叠加/互斥都会在购物车、结算预览和创建订单时重新校验。
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function PromotionStatePanel({
+  kind,
+  selectedLabel,
+  onRetry,
+}: {
+  kind: "error" | "empty";
+  selectedLabel: string;
+  onRetry: () => void;
+}) {
+  const { localizedPath, t } = usePublicLocale();
+  const isError = kind === "error";
+
+  return (
+    <section className={cn("store-promotions-v12-state-panel", isError && "is-error")}>
+      <span className="store-promotions-v12-state-panel__icon">
+        {isError ? <Timer size={24} aria-hidden /> : <PackageSearch size={24} aria-hidden />}
+      </span>
+      <div className="store-promotions-v12-state-panel__copy">
+        <p className="store-promotions-v12-state-panel__eyebrow">
+          {isError ? "活动数据暂时不可用" : selectedLabel ? `${selectedLabel} 暂无活动` : "活动排期为空"}
+        </p>
+        <h2>{isError ? "活动中心还在，同步接口暂时失败" : t("promotion.emptyTitle")}</h2>
+        <p>
+          {isError
+            ? "你仍然可以先去领券、看商品或稍后重试。页面不会在前端自行判断优惠资格，最终活动和金额仍以后端返回为准。"
+            : "新活动发布后会自动出现在这里。你可以先浏览商品、领取优惠券，结算页会自动匹配可用优惠。"}
+        </p>
+      </div>
+      <div className="store-promotions-v12-state-panel__actions">
+        {isError ? (
+          <UnifiedButton type="button" onClick={onRetry} className="store-promotions-v12-state-panel__primary">
+            <RefreshCw size={16} aria-hidden />
+            {t("common.retry")}
+          </UnifiedButton>
+        ) : null}
+        <Link className="store-promotions-v12-state-panel__primary" to={localizedPath("/categories")}>
+          <PackageSearch size={16} aria-hidden />
+          {t("common.browseProducts")}
+        </Link>
+        <Link className="store-promotions-v12-state-panel__secondary" to={localizedPath("/coupons")}>
+          <TicketPercent size={16} aria-hidden />
+          {t("promotion.goCoupons")}
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 function PromotionSkeleton() {
   return (
-    <div className="rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5">
+    <div className="store-promotions-v12-card rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5">
       <div className="skeleton-base skeleton-shimmer aspect-[16/9] rounded-[0.9rem]" />
       <div className="mt-3 space-y-2">
         <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
@@ -232,18 +329,24 @@ export default function Promotions() {
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
-    try {
-      const [data, homeCampaigns] = await Promise.all([
-        marketingService.fetchPromotions({ pageSize: 60, type: selectedType }),
-        marketingService.fetchHomeCampaigns().catch(() => []),
-      ]);
-      setList(data.list || []);
-      setCampaigns(homeCampaigns);
-    } catch {
-      setError(t("promotion.errorFallback"));
-    } finally {
-      setLoading(false);
+    const [promotionResult, campaignResult] = await Promise.allSettled([
+      marketingService.fetchPromotions({ pageSize: 60, type: selectedType }),
+      marketingService.fetchHomeCampaigns(),
+    ]);
+
+    if (campaignResult.status === "fulfilled") {
+      setCampaigns(campaignResult.value || []);
+    } else {
+      setCampaigns([]);
     }
+
+    if (promotionResult.status === "fulfilled") {
+      setList(promotionResult.value.list || []);
+    } else {
+      setList([]);
+      setError(t("promotion.errorFallback"));
+    }
+    setLoading(false);
   }, [selectedType, t]);
 
   useEffect(() => {
@@ -257,9 +360,10 @@ export default function Promotions() {
     flash: list.filter((item) => item.type === "flash_sale" || item.type === "limited_time_discount").length,
     member: list.filter((item) => ["member_price", "points_reward", "checkin_reward"].includes(item.type)).length,
   }), [list]);
+  const selectedFilterLabel = selectedType ? promotionTypeLabel(selectedType) : "";
 
   return (
-    <div className="store-page-shell store-bottom-safe min-h-[100dvh] bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell store-v12-page store-promotions-v12-page store-bottom-safe min-h-[100dvh] bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
         title={t("promotion.headerTitle")}
         description={t("promotion.headerSubtitle")}
@@ -274,7 +378,7 @@ export default function Promotions() {
       />
 
       <main className="mx-auto w-full max-w-6xl px-[var(--store-page-x)] pb-6 pt-3 md:px-6 md:py-8 lg:px-8">
-        <section className="overflow-hidden rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))_0%,var(--theme-surface)_58%,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))_100%)] p-4 shadow-[0_18px_50px_color-mix(in_srgb,var(--theme-price)_10%,transparent)] sm:p-6">
+        <section className="store-promotions-v12-hero overflow-hidden rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))_0%,var(--theme-surface)_58%,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))_100%)] p-4 shadow-[0_18px_50px_color-mix(in_srgb,var(--theme-price)_10%,transparent)] sm:p-6">
           <div className="flex items-start gap-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[1rem] bg-[color-mix(in_srgb,var(--theme-price)_16%,var(--theme-surface))] text-[var(--theme-price)]">
               <Sparkles size={22} />
@@ -309,7 +413,7 @@ export default function Promotions() {
         </section>
 
         {campaigns.length ? (
-          <section className="mt-4 rounded-[1.1rem] border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] p-3">
+          <section className="store-promotions-v12-strip mt-4 rounded-[1.1rem] border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] p-3">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-black text-[var(--theme-text)]">{t("common.allPromotions")}</h2>
@@ -329,7 +433,7 @@ export default function Promotions() {
           </section>
         ) : null}
 
-        <section className="mt-4 grid gap-3 rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <section className="store-promotions-v12-coupon-cta mt-4 grid gap-3 rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[0.85rem] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">
               <Gift size={20} />
@@ -348,7 +452,9 @@ export default function Promotions() {
           </Link>
         </section>
 
-        <nav className="no-scrollbar -mx-[var(--store-page-x)] mt-4 flex gap-2 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0" aria-label={t("promotion.quickNav")}>
+        <PromotionGuardrail />
+
+        <nav className="store-promotions-v12-filters no-scrollbar -mx-[var(--store-page-x)] mt-4 flex gap-2 overflow-x-auto px-[var(--store-page-x)] pb-1 md:mx-0 md:px-0" aria-label={t("promotion.quickNav")}>
           {FILTERS.map((filter) => {
             const Icon = filter.icon;
             const active = selectedType === filter.type;
@@ -377,36 +483,13 @@ export default function Promotions() {
             {Array.from({ length: 6 }).map((_, index) => <PromotionSkeleton key={index} />)}
           </section>
         ) : error ? (
-          <section className="mt-5 rounded-[1.1rem] border border-rose-200 bg-rose-50 p-5 text-rose-700">
-            <div className="flex items-start gap-3">
-              <Timer size={20} className="mt-0.5 shrink-0" />
-              <div>
-                <h2 className="font-black">{t("promotion.errorFallback")}</h2>
-                <p className="mt-1 text-sm leading-6">{error}</p>
-              </div>
-            </div>
-            <UnifiedButton type="button" onClick={() => void load()} className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-rose-700">
-              <RefreshCw size={16} />
-              {t("common.retry")}
-            </UnifiedButton>
-          </section>
+          <PromotionStatePanel kind="error" selectedLabel={selectedFilterLabel} onRetry={() => void load()} />
         ) : list.length ? (
           <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((promotion) => <PromotionCard key={promotion.id} promotion={promotion} />)}
           </section>
         ) : (
-          <section className="mt-5 rounded-[1.1rem] border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] p-8 text-center">
-            <PackageSearch className="mx-auto h-10 w-10 text-[var(--theme-text-muted)]" />
-            <h2 className="mt-3 text-lg font-black text-[var(--theme-text)]">{t("promotion.emptyTitle")}</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--theme-text-muted)]">{t("promotion.emptyDescription")}</p>
-            <Link
-              to={localizedPath("/categories")}
-              className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-sm font-black text-[var(--theme-primary-foreground)]"
-            >
-              {t("common.browseProducts")}
-              <ArrowRight size={15} />
-            </Link>
-          </section>
+          <PromotionStatePanel kind="empty" selectedLabel={selectedFilterLabel} onRetry={() => void load()} />
         )}
       </main>
     </div>

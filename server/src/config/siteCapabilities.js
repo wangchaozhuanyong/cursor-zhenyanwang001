@@ -12,6 +12,7 @@ const DEFAULT_SITE_CAPABILITIES = Object.freeze({
   smsOtpLoginEnabled: true,
   telegramOrderNotifyEnabled: true,
   languageGateEnabled: false,
+  storefrontMultilingualEnabled: false,
   restrictedProductComplianceEnabled: true,
   trafficAnalyticsEnabled: true,
   downloadConfirmEnabled: true,

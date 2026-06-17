@@ -83,9 +83,9 @@ describe("returnProgress", () => {
   it("localizes public labels without changing default Chinese behavior", () => {
     expect(getReturnTypeLabel("return_refund")).toBe("退货退款");
     expect(getReturnTypeLabel("return_refund", "en")).toBe("Return and refund");
-    expect(getReturnStatusLabel("need_evidence", "ms")).toBe("Perlu bukti tambahan");
+    expect(getReturnStatusLabel("need_evidence")).toBe("需补充凭证");
     expect(getReturnFilters("en").find((item) => item.key === "action")?.label).toBe("Needs action");
-    expect(getBuyerReturnAction(makeReturn("waiting_return"), "ms")?.label).toBe("Isi logistik pemulangan");
+    expect(getBuyerReturnAction(makeReturn("waiting_return"), "en")?.label).toBe("Submit return logistics");
   });
 
   it("uses logistics track title before fallback status", () => {

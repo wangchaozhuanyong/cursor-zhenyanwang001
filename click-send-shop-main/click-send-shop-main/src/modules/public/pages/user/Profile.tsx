@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ShieldCheck, Smartphone, Truck, Wallet } from "lucide-react";
+import { PackageCheck, ShieldCheck, TicketPercent, Truck, Wallet } from "lucide-react";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
@@ -29,7 +29,6 @@ import type { MemberBenefitsOverview } from "@/services/memberBenefitsService";
 import type { OrderSummary } from "@/types/order";
 import { hasPendingReview } from "@/utils/orderBuyerStatus";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
-import { detectBrowserEnv } from "@/utils/browserEnv";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { computeUpgradeProgress } from "@/utils/memberBenefitPresentation";
@@ -43,19 +42,20 @@ import { useStoreNavigationGuard } from "@/features/navigation/useStoreNavigatio
 import {
   PROFILE_CARD_CLASS,
   PROFILE_MENU_TAP,
-  ProfileAssetPanel,
   ProfileGuestCard,
   ProfileHeroCard,
+  ProfileAssetPanel,
   ProfileInviteRewardCard,
-  ProfileInstallShortcut,
   ProfileLogoutButton,
   ProfileOrderPanel,
   ProfileSecondaryLinkPanel,
   ProfileServiceGrid,
+  ProfileSnapshotPanel,
   ProfileTrustStrip,
   type ProfileAssetItem,
   type ProfileOrderAction,
   type ProfileServiceItem,
+  type ProfileSnapshotItem,
   type ProfileTrustItem,
 } from "./ProfileSections";
 
@@ -91,7 +91,6 @@ export default function Profile() {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [inviteCodeVisible, setInviteCodeVisible] = useState(false);
   const [activeReturnCount, setActiveReturnCount] = useState(0);
-  const [browserEnv, setBrowserEnv] = useState(() => detectBrowserEnv());
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const memberBenefitsQuery = useQuery<MemberBenefitsOverview>({
@@ -100,10 +99,6 @@ export default function Profile() {
     enabled: loggedIn && capabilities.memberLevelEnabled,
   });
   const memberBenefits = memberBenefitsQuery.data ?? null;
-
-  useEffect(() => {
-    setBrowserEnv(detectBrowserEnv());
-  }, []);
 
   useEffect(() => {
     if (!loggedIn) return;
@@ -188,6 +183,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (!loggedIn) return;
+    preloadStoreRoute("/wallet", "idle");
     if (inviteEnabled) preloadStoreRoute("/invite", "idle");
     if (rewardsEnabled) preloadStoreRoute("/rewards", "idle");
   }, [inviteEnabled, loggedIn, rewardsEnabled]);
@@ -225,13 +221,6 @@ export default function Profile() {
   }, [memberBenefits, pointsBalance]);
 
   const notificationBadgeText = formatUnreadBadge(unreadCount);
-  const showInstallShortcut = browserEnv.platform !== "desktop";
-  const installShortcutItem = useMemo<ProfileServiceItem | null>(
-    () => showInstallShortcut && capabilities.customerServiceDownloadEnabled
-      ? { key: "install", label: "添加桌面/下载", icon: Smartphone, path: "/support-download?tab=download", auth: false }
-      : null,
-    [capabilities.customerServiceDownloadEnabled, showInstallShortcut],
-  );
 
   const accountFeatureCtx = useMemo<AccountFeatureContext>(() => ({
     capabilities,
@@ -242,6 +231,7 @@ export default function Profile() {
       favorites: String(favoriteCount),
       coupons: String(couponCount),
       rewards: `RM ${rewardBalance.toFixed(2)}`,
+      wallet: `RM ${rewardBalance.toFixed(2)}`,
     },
     counts: {
       orderPendingPayment: loggedIn ? orderSummary?.pending_payment ?? orderPending : 0,
@@ -268,7 +258,7 @@ export default function Profile() {
   ]);
 
   const assetItems = useMemo<ProfileAssetItem[]>(
-    () => buildAccountFeaturesByKeys(["points", "favorites", "coupons", "rewards"], accountFeatureCtx, "mobile"),
+    () => buildAccountFeaturesByKeys(["wallet", "points", "coupons", "favorites"], accountFeatureCtx, "mobile"),
     [accountFeatureCtx],
   );
   const orderActions = useMemo<ProfileOrderAction[]>(
@@ -282,7 +272,18 @@ export default function Profile() {
     [accountFeatureCtx],
   );
   const shoppingServiceItems = useMemo<ProfileServiceItem[]>(
-    () => buildAccountFeaturesByKeys(["address", "returns", "support", "history"], accountFeatureCtx, "mobile"),
+    () => buildAccountFeaturesByKeys([
+      "editProfile",
+      "address",
+      "coupons",
+      "favorites",
+      "history",
+      "wallet",
+      "points",
+      "returns",
+      "support",
+      "install",
+    ], accountFeatureCtx, "mobile"),
     [accountFeatureCtx],
   );
   const secondaryItems = useMemo<ProfileServiceItem[]>(
@@ -295,6 +296,66 @@ export default function Profile() {
     navigateStorePath(fallbackPath, { requireAuth, from: "/profile" });
   };
 
+  const pendingOrderTotal = Math.max(
+    0,
+    (accountFeatureCtx.counts?.orderPendingPayment || 0)
+      + (accountFeatureCtx.counts?.orderPaid || 0)
+      + (accountFeatureCtx.counts?.orderShipped || 0)
+      + (accountFeatureCtx.counts?.orderPendingReview || 0)
+      + (accountFeatureCtx.counts?.orderAfterSale || 0),
+  );
+
+  const snapshotItems = useMemo<ProfileSnapshotItem[]>(() => [
+    {
+      key: "orders",
+      label: "待处理订单",
+      value: loggedIn ? `${pendingOrderTotal} 项` : "登录查看",
+      hint: "付款、发货、收货和售后集中跟进",
+      icon: PackageCheck,
+      path: "/orders",
+      auth: true,
+      tone: "primary",
+    },
+    {
+      key: "wallet",
+      label: "可用资产",
+      value: `RM ${rewardBalance.toFixed(2)}`,
+      hint: `${couponCount} 张券 · ${formatGrowthValue(pointsBalance)} 积分`,
+      icon: Wallet,
+      path: "/wallet",
+      auth: true,
+      tone: "price",
+    },
+    {
+      key: "promotions",
+      label: "活动中心",
+      value: "后端校验",
+      hint: "优惠资格、库存和叠加规则不在前端猜",
+      icon: TicketPercent,
+      path: "/promotions",
+      auth: false,
+      tone: "success",
+    },
+    {
+      key: "returns",
+      label: "服务状态",
+      value: activeReturnCount > 0 ? `${activeReturnCount} 处理中` : "可申请售后",
+      hint: "物流、售后和客服入口集中处理",
+      icon: Truck,
+      path: "/returns",
+      auth: true,
+      tone: "neutral",
+    },
+  ], [activeReturnCount, couponCount, loggedIn, pendingOrderTotal, pointsBalance, rewardBalance]);
+
+  const handleSnapshotNavigate = (item: ProfileSnapshotItem) => {
+    if (item.key === "promotions") {
+      navigateStorePath(item.path, { from: "/profile" });
+      return;
+    }
+    handleFeatureNavigate(item.key, item.path, item.auth);
+  };
+
   const trustItems = useMemo<ProfileTrustItem[]>(() => [
     { title: "正品保障", desc: "100% 正品保证", icon: ShieldCheck },
     { title: "本地配送", desc: "快速送达", icon: Truck },
@@ -302,7 +363,7 @@ export default function Profile() {
   ], []);
 
   return (
-    <div className="store-page store-page-shell store-profile-page client-profile-page store-bottom-safe text-[var(--theme-text)]">
+    <div className="store-page store-page-shell store-v12-page store-profile-v12-page store-profile-page client-profile-page store-bottom-safe text-[var(--theme-text)]">
       <main className="client-profile-layout mx-auto grid w-full max-w-screen-xl gap-4 px-[var(--store-page-x)] pb-5 pt-2 sm:px-4 sm:pt-3 md:max-w-5xl md:gap-5 md:px-6 md:pb-8 md:pt-4 lg:max-w-6xl lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-6 xl:max-w-screen-xl xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-8 xl:px-8 xl:pb-12 xl:pt-4">
         <aside className="client-profile-sidebar hidden lg:block">
           <StoreAccountNav className="sticky top-[var(--store-tablet-sticky-top)] xl:top-[var(--store-desktop-sticky-top)]" />
@@ -311,9 +372,9 @@ export default function Profile() {
         <div className="store-profile-stack client-profile-stack min-w-0 space-y-3 sm:space-y-4 xl:max-w-4xl">
           {!loggedIn ? (
             <ProfileGuestCard
-              logoSrc={logoSrc}
               siteName={siteName}
               onLogin={() => navigateStorePath("/login", { from: "/profile" })}
+              onRegister={() => navigateStorePath("/register", { from: "/profile" })}
             />
           ) : (
             <>
@@ -323,14 +384,21 @@ export default function Profile() {
                 userName={userName}
                 memberLevelName={memberLevelName}
                 progress={memberProgress}
+                assets={assetItems}
                 unreadCount={unreadCount}
                 onMessageClick={() => navigateFeature("notifications")}
                 onMemberLevelClick={() => navigateFeature("memberBenefits")}
                 onProfileClick={() => navigateFeature("settings")}
                 onViewAllBenefits={() => navigateFeature("memberBenefits")}
+                onAssetNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
                 onAvatarClick={() => avatarInputRef.current?.click()}
               />
               <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+              <ProfileSnapshotPanel
+                items={snapshotItems}
+                onNavigate={handleSnapshotNavigate}
+                className="client-profile-snapshot-mobile"
+              />
               {ProfileWechatBindSection ? (
                 <Suspense fallback={null}>
                   <ProfileWechatBindSection
@@ -344,54 +412,61 @@ export default function Profile() {
             </>
           )}
 
-          <ProfileOrderPanel
-            items={orderActions}
-            onViewAll={() => navigateFeature("orders")}
-            onNavigate={(item) => handleFeatureNavigate(item.key || "", item.path, item.auth)}
-          />
+          <div className="client-profile-dashboard-grid">
+            <div className="client-profile-dashboard-main">
+              {loggedIn ? (
+                <ProfileOrderPanel
+                  items={orderActions}
+                  onViewAll={() => navigateFeature("orders")}
+                  onNavigate={(item) => handleFeatureNavigate(item.key || "", item.path, item.auth)}
+                />
+              ) : null}
 
-          {loggedIn ? (
-            <ProfileAssetPanel
-              items={assetItems}
-              onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
-            />
-          ) : null}
+              {loggedIn ? (
+                <ProfileAssetPanel
+                  items={assetItems}
+                  onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
+                />
+              ) : null}
 
-          {inviteEnabled ? (
-            <ProfileInviteRewardCard
-              loggedIn={loggedIn}
-              inviteCount={inviteCount}
-              rewardBalance={rewardBalance}
-              inviteCode={code}
-              inviteCodeVisible={inviteCodeVisible}
-              onPrimaryClick={() => loggedIn ? navigateFeature("invite") : navigateStorePath("/login", { from: "/profile" })}
-              onToggleInviteCode={() => loggedIn ? setInviteCodeVisible((v) => !v) : navigateStorePath("/login", { from: "/profile" })}
-              onCopyInviteCode={handleCopyInviteCode}
-              onRecordClick={() => navigateFeature("invite")}
-            />
-          ) : null}
+              {loggedIn && inviteEnabled ? (
+                <ProfileInviteRewardCard
+                  loggedIn={loggedIn}
+                  inviteCount={inviteCount}
+                  rewardBalance={rewardBalance}
+                  inviteCode={code}
+                  inviteCodeVisible={inviteCodeVisible}
+                  onPrimaryClick={() => loggedIn ? navigateFeature("invite") : navigateStorePath("/login", { from: "/profile" })}
+                  onToggleInviteCode={() => loggedIn ? setInviteCodeVisible((v) => !v) : navigateStorePath("/login", { from: "/profile" })}
+                  onCopyInviteCode={handleCopyInviteCode}
+                  onRecordClick={() => navigateFeature("invite")}
+                />
+              ) : null}
 
-          <ProfileServiceGrid
-            title="购物服务"
-            items={shoppingServiceItems}
-            onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
-          />
+              <ProfileServiceGrid
+                title="购物服务"
+                items={shoppingServiceItems}
+                onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
+              />
+            </div>
 
-          {installShortcutItem ? (
-            <ProfileInstallShortcut
-              item={installShortcutItem}
-              onNavigate={(item) => navigateStorePath(item.path, { requireAuth: item.auth, from: "/profile" })}
-            />
-          ) : null}
+            <aside className="client-profile-dashboard-rail" aria-label="账户状态与更多功能">
+              <ProfileSnapshotPanel
+                items={snapshotItems}
+                onNavigate={handleSnapshotNavigate}
+                className="client-profile-snapshot-rail"
+              />
 
-          <ProfileSecondaryLinkPanel
-            items={secondaryItems}
-            onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
-          />
+              <ProfileSecondaryLinkPanel
+                items={secondaryItems}
+                onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
+              />
 
-          <ProfileTrustStrip items={trustItems} />
+              <ProfileTrustStrip items={trustItems} />
 
-          {loggedIn ? <ProfileLogoutButton onClick={() => setLogoutConfirmOpen(true)} /> : null}
+              {loggedIn ? <ProfileLogoutButton onClick={() => setLogoutConfirmOpen(true)} /> : null}
+            </aside>
+          </div>
         </div>
       </main>
 

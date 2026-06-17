@@ -13,6 +13,7 @@ describe('site capabilities config', () => {
   test('normalize applies defaults and languageGateEnabled defaults to false', () => {
     const caps = normalizeSiteCapabilities({});
     assert.equal(caps.languageGateEnabled, false);
+    assert.equal(caps.storefrontMultilingualEnabled, false);
     assert.equal(caps.promotionEngineV2, false);
     assert.equal(caps.pricingEngineV2, false);
     assert.equal(caps.inventoryLockV2, false);

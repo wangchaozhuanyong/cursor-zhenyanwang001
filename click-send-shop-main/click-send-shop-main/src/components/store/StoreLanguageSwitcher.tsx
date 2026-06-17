@@ -1,6 +1,7 @@
 import { Languages } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useSiteCapabilities, useSiteCapabilitiesReady } from "@/hooks/useSiteCapabilities";
 import { PUBLIC_LOCALES, type PublicLocale, usePublicLocale } from "@/i18n/publicLocale";
 
 type StoreLanguageSwitcherProps = {
@@ -12,7 +13,13 @@ export default function StoreLanguageSwitcher({
   className,
   compact = false,
 }: StoreLanguageSwitcherProps) {
+  const capabilities = useSiteCapabilities();
+  const capabilitiesReady = useSiteCapabilitiesReady();
   const { locale, switchLocalePath, t } = usePublicLocale();
+
+  if (!capabilitiesReady || !capabilities.storefrontMultilingualEnabled || PUBLIC_LOCALES.length <= 1) {
+    return null;
+  }
 
   return (
     <div

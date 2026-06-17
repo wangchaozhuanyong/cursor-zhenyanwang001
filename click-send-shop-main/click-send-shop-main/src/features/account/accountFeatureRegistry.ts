@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Package,
   Settings,
+  Smartphone,
   Star,
   Ticket,
   Truck,
@@ -22,6 +23,7 @@ import { isLoyaltyFeatureEnabled, type LoyaltyFeature } from "@/utils/loyaltyFea
 
 export type AccountFeatureKey =
   | "profile"
+  | "editProfile"
   | "orders"
   | "orderPendingPayment"
   | "orderPaid"
@@ -33,6 +35,7 @@ export type AccountFeatureKey =
   | "coupons"
   | "points"
   | "rewards"
+  | "wallet"
   | "invite"
   | "favorites"
   | "history"
@@ -41,6 +44,7 @@ export type AccountFeatureKey =
   | "settings"
   | "memberBenefits"
   | "support"
+  | "install"
   | "help"
   | "about";
 
@@ -81,6 +85,7 @@ const ALL_VIEWPORTS: AccountFeatureViewport[] = ["mobile", "tablet", "desktop"];
 
 export const ACCOUNT_FEATURE_REGISTRY: AccountFeatureItem[] = [
   { key: "profile", label: "个人概览", path: "/profile", icon: User, group: "desktopNav", visibleOn: ALL_VIEWPORTS },
+  { key: "editProfile", label: "修改资料", path: "/settings", icon: User, requireAuth: true, group: "services", visibleOn: ALL_VIEWPORTS },
   { key: "orders", label: "我的订单", path: "/orders", icon: Package, requireAuth: true, group: "desktopNav", visibleOn: ALL_VIEWPORTS },
   { key: "orderPendingPayment", label: "待付款", path: "/orders?tab=pending_payment", icon: Wallet, requireAuth: true, group: "orders", visibleOn: ALL_VIEWPORTS },
   { key: "orderPaid", label: "待发货", path: "/orders?tab=paid", icon: Package, requireAuth: true, group: "orders", visibleOn: ALL_VIEWPORTS },
@@ -92,6 +97,7 @@ export const ACCOUNT_FEATURE_REGISTRY: AccountFeatureItem[] = [
   { key: "coupons", label: "优惠券", path: "/coupons", icon: Ticket, requireAuth: true, capability: "couponEnabled", group: "assets", visibleOn: ALL_VIEWPORTS },
   { key: "points", label: "我的积分", path: "/points", icon: Coins, requireAuth: true, capability: "pointsEnabled", loyaltyFeature: "points", group: "assets", visibleOn: ALL_VIEWPORTS },
   { key: "rewards", label: "返现余额", path: "/rewards", icon: Wallet, requireAuth: true, loyaltyFeature: "reward", group: "assets", visibleOn: ALL_VIEWPORTS },
+  { key: "wallet", label: "余额/礼品卡", path: "/wallet", icon: Wallet, requireAuth: true, group: "assets", visibleOn: ALL_VIEWPORTS },
   { key: "invite", label: "邀请好友", path: "/invite", icon: User, requireAuth: true, loyaltyFeature: "referral", group: "services", visibleOn: ALL_VIEWPORTS },
   { key: "favorites", label: "我的收藏", path: "/favorites", icon: Star, group: "assets", visibleOn: ALL_VIEWPORTS },
   { key: "history", label: "浏览记录", path: "/history", icon: Clock3, group: "services", visibleOn: ALL_VIEWPORTS },
@@ -100,6 +106,7 @@ export const ACCOUNT_FEATURE_REGISTRY: AccountFeatureItem[] = [
   { key: "settings", label: "账户设置", path: "/settings", icon: Settings, requireAuth: true, group: "secondary", visibleOn: ALL_VIEWPORTS },
   { key: "memberBenefits", label: "会员权益", path: "/member/benefits", icon: User, requireAuth: true, capability: "memberLevelEnabled", group: "hero", visibleOn: ALL_VIEWPORTS },
   { key: "support", label: "客服中心", path: "/support-download?tab=support", icon: Headphones, capability: "customerServiceDownloadEnabled", group: "services", visibleOn: ALL_VIEWPORTS },
+  { key: "install", label: "添加到桌面", path: "/support-download?tab=download", icon: Smartphone, capability: "customerServiceDownloadEnabled", group: "services", visibleOn: ALL_VIEWPORTS },
   { key: "help", label: "帮助中心", path: "/help", icon: CircleHelp, group: "secondary", visibleOn: ALL_VIEWPORTS },
   { key: "about", label: "关于我们", path: "/about", icon: Info, group: "secondary", visibleOn: ALL_VIEWPORTS },
 ];

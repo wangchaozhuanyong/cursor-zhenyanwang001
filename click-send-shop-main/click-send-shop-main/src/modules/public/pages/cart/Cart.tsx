@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
+import { BadgePercent, Calculator, Heart, Minus, PackageCheck, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
@@ -236,7 +236,7 @@ export default function Cart() {
   };
 
   return (
-    <div className="store-page-shell store-cart-page store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
+    <div className="store-page-shell store-v12-page store-cart-v12-page store-cart-page store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
       <StorePageHeader
         className={`${STORE_MOBILE_PAGE_HEADER_CLASS} store-cart-mobile-header`}
         matchTabHeaderHeight
@@ -256,6 +256,17 @@ export default function Cart() {
       />
 
       <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] md:px-6 md:py-4">
+        <CartV12Overview
+          loading={loading}
+          itemCount={items.length}
+          selectedLineCount={selectedCount}
+          selectedQty={selectedQty}
+          selectedAmount={Number(totalAmountSelected() || 0)}
+          allSelected={allSelected}
+          promotionReady={Boolean(effectivePromotionEvaluation)}
+          onPromotions={() => navigate(localizedPath("/promotions"))}
+          onCoupons={() => navigate(localizedPath("/coupons"))}
+        />
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         {items.length > 0 ? (
           <DesktopPurchaseTwoColumn
@@ -687,13 +698,6 @@ export default function Cart() {
       {items.length > 0 && (
         <div className="store-mobile-submit-bar fixed bottom-[calc(var(--store-bottom-nav-height,78px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
           <div className="mx-auto flex w-full flex-col gap-2 px-[var(--store-page-x)] py-2.5 sm:max-w-lg sm:px-4">
-            <CartPromotionNudge
-              campaign={fullReductionCampaign}
-              amount={Number(totalAmountSelected() || 0)}
-              evaluation={effectivePromotionEvaluation}
-              className="mb-0"
-              onBrowse={() => navigate(localizedPath("/categories"))}
-            />
             <SquishButton
               type="button"
               variant="ghost"
@@ -847,4 +851,89 @@ function buildCartQuantityOptions(currentQty: number, maxQty: number) {
   const baseOptions = [1, 2, 3, 4, 5, 6, 8, 10, 12, currentQty - 1, currentQty, currentQty + 1];
   const unique = Array.from(new Set(baseOptions.filter((qty) => qty >= 1 && qty <= maxQty)));
   return unique.sort((a, b) => a - b).slice(0, 10);
+}
+
+function CartV12Overview({
+  loading,
+  itemCount,
+  selectedLineCount,
+  selectedQty,
+  selectedAmount,
+  allSelected,
+  promotionReady,
+  onPromotions,
+  onCoupons,
+}: {
+  loading: boolean;
+  itemCount: number;
+  selectedLineCount: number;
+  selectedQty: number;
+  selectedAmount: number;
+  allSelected: boolean;
+  promotionReady: boolean;
+  onPromotions: () => void;
+  onCoupons: () => void;
+}) {
+  const stats = [
+    {
+      label: "已选商品",
+      value: loading ? "同步中" : `${selectedLineCount}/${itemCount}`,
+      hint: allSelected && itemCount > 0 ? "已全选" : "可分批结算",
+      icon: ShoppingBag,
+    },
+    {
+      label: "结算数量",
+      value: `${selectedQty}`,
+      hint: "按购物车选中项",
+      icon: PackageCheck,
+    },
+    {
+      label: "预估小计",
+      value: `RM ${selectedAmount.toFixed(2)}`,
+      hint: "最终金额看结算预览",
+      icon: Calculator,
+    },
+    {
+      label: "活动校验",
+      value: promotionReady ? "已预览" : itemCount > 0 ? "结算复核" : "待选商品",
+      hint: "优惠资格由后端判断",
+      icon: ShieldCheck,
+    },
+  ];
+
+  return (
+    <section className="store-cart-v12-overview" aria-label="购物车工作台">
+      <div className="store-cart-v12-overview__copy">
+        <span>
+          <BadgePercent size={14} aria-hidden />
+          购物车工作台
+        </span>
+        <h1>先选商品，再进入结算预览</h1>
+        <p>活动、优惠券、积分、库存和运费会在结算页重新校验，前台只展示后端返回的结果。</p>
+      </div>
+      <div className="store-cart-v12-overview__stats">
+        {stats.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.label}>
+              <span aria-hidden>
+                <Icon size={15} />
+              </span>
+              <strong>{item.value}</strong>
+              <small>{item.label}</small>
+              <em>{item.hint}</em>
+            </div>
+          );
+        })}
+      </div>
+      <div className="store-cart-v12-overview__actions">
+        <UnifiedButton type="button" onClick={onPromotions}>
+          活动中心
+        </UnifiedButton>
+        <UnifiedButton type="button" onClick={onCoupons}>
+          先领券
+        </UnifiedButton>
+      </div>
+    </section>
+  );
 }

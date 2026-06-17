@@ -43,15 +43,16 @@ import { logPerf, markPerfStart, observeLongTasksAndLcp } from "@/utils/performa
 import {
   isPublicLocale,
   PublicLocaleProvider,
+  stripPublicLocaleFromPath,
   stripPublicLocaleFromPathname,
   usePublicLocale,
 } from "@/i18n/publicLocale";
 import {
-  StoreHomeV2, Login, BindWechatPhone,
+  StoreHomeV2, Login, ForgotPassword, BindWechatPhone,
   Categories, ProductDetail, Search, Promotions, PromotionDetail,
-  Cart, Checkout, PaymentResult, Orders, OrderDetail, Returns, ReturnDetail, PendingReviews,
-  Profile, Feedback, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
-  Help, About, ContentCmsPage, SupportDownload, TikTokLanding, NotFound,
+  Cart, Checkout, PaymentResult, Orders, OrderDetail, OrderLogistics, Returns, ReturnDetail, PendingReviews,
+  Profile, Feedback, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Wallet, Invite,
+  Help, About, ContentCmsPage, SupportDownload, Delivery, FeatureStatus, TikTokLanding, NotFound,
 } from "@/routes/publicLazyPages";
 
 const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "store-card-equal-mobile-fix";
@@ -396,9 +397,15 @@ function LegacyDealsRedirect({ detail = false }: { detail?: boolean }) {
   return <Navigate to={`${localizedPath(target)}${location.search}`} replace />;
 }
 
-function PublicLocaleRouteScope() {
+function PublicLocaleRouteScope({ multilingualEnabled }: { multilingualEnabled: boolean }) {
+  const location = useLocation();
+  const ready = useSiteCapabilitiesReady();
   const { locale } = useParams();
   if (!isPublicLocale(locale)) return <NotFound />;
+  if (!ready) return <AppRouteFallback />;
+  if (!multilingualEnabled) {
+    return <Navigate to={stripPublicLocaleFromPath(`${location.pathname}${location.search}${location.hash}`)} replace />;
+  }
   return <Outlet />;
 }
 
@@ -436,9 +443,13 @@ function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCap
     <>
       <Route path={publicRoutePath("/login", localized)} element={<Login />} />
       <Route path={publicRoutePath("/register", localized)} element={<Login />} />
+      <Route path={publicRoutePath("/forgot", localized)} element={<ForgotPassword />} />
+      <Route path={publicRoutePath("/forgot-password", localized)} element={<Navigate to={publicNavigatePath("/forgot", localized)} replace />} />
       <Route path={publicRoutePath("/login/bind-phone", localized)} element={<BindWechatPhone />} />
       <Route path={publicRoutePath("/help", localized)} element={<Help />} />
       <Route path={publicRoutePath("/about", localized)} element={<About />} />
+      <Route path={publicRoutePath("/delivery", localized)} element={<Delivery />} />
+      <Route path={publicRoutePath("/feature-status", localized)} element={<FeatureStatus />} />
       <Route path={publicRoutePath("/feedback", localized)} element={<Feedback />} />
       <Route path={publicRoutePath("/favorites", localized)} element={<Favorites />} />
       <Route
@@ -455,7 +466,9 @@ function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCap
       <Route path={publicRoutePath("/payment/result", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><PaymentResult /></CapabilityRoute>} />
       <Route path={publicRoutePath("/settings", localized)} element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path={publicRoutePath("/member/benefits", localized)} element={<ProtectedRoute><MemberBenefits /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/member-benefits", localized)} element={<Navigate to={publicNavigatePath("/member/benefits", localized)} replace />} />
       <Route path={publicRoutePath("/orders", localized)} element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/orders/:id/logistics", localized)} element={<ProtectedRoute><OrderLogistics /></ProtectedRoute>} />
       <Route path={publicRoutePath("/orders/:id", localized)} element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
       <Route path={publicRoutePath("/invite", localized)} element={<ProtectedRoute><LoyaltyRouteGuard feature="referral"><Invite /></LoyaltyRouteGuard></ProtectedRoute>} />
       <Route path={publicRoutePath("/points", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.pointsEnabled}><LoyaltyRouteGuard feature="points"><Points /></LoyaltyRouteGuard></CapabilityRoute></ProtectedRoute>} />
@@ -476,6 +489,7 @@ function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCap
         }
       />
       <Route path={publicRoutePath("/rewards", localized)} element={<ProtectedRoute><LoyaltyRouteGuard feature="reward"><Rewards /></LoyaltyRouteGuard></ProtectedRoute>} />
+      <Route path={publicRoutePath("/wallet", localized)} element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
       <Route path={publicRoutePath("/address", localized)} element={<ProtectedRoute><AddressManage /></ProtectedRoute>} />
       <Route path={publicRoutePath("/coupons", localized)} element={<CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute>} />
       <Route path={publicRoutePath("/notifications", localized)} element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
@@ -530,7 +544,7 @@ function MainStoreRoutes() {
               {renderFrontLayoutRoutes(capabilities)}
               {renderStandalonePublicRoutes(capabilities)}
 
-              <Route path="/:locale" element={<PublicLocaleRouteScope />}>
+              <Route path="/:locale" element={<PublicLocaleRouteScope multilingualEnabled={capabilities.storefrontMultilingualEnabled} />}>
                 {renderFrontLayoutRoutes(capabilities, true)}
                 {renderStandalonePublicRoutes(capabilities, true)}
                 <Route path="*" element={<NotFound />} />

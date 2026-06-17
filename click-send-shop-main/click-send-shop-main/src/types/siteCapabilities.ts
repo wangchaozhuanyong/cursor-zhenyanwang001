@@ -12,6 +12,7 @@ export interface SiteCapabilities {
   smsOtpLoginEnabled: boolean;
   telegramOrderNotifyEnabled: boolean;
   languageGateEnabled: boolean;
+  storefrontMultilingualEnabled: boolean;
   restrictedProductComplianceEnabled: boolean;
   trafficAnalyticsEnabled: boolean;
   /** 开启后，导出/下载等操作需二次确认 */
@@ -32,6 +33,7 @@ export const DEFAULT_SITE_CAPABILITIES: SiteCapabilities = {
   smsOtpLoginEnabled: true,
   telegramOrderNotifyEnabled: true,
   languageGateEnabled: false,
+  storefrontMultilingualEnabled: false,
   restrictedProductComplianceEnabled: true,
   trafficAnalyticsEnabled: true,
   downloadConfirmEnabled: true,

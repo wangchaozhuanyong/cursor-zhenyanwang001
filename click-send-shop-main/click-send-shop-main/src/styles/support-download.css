@@ -24,7 +24,26 @@ html[data-app-scope="store"] .support-download-shell {
 }
 
 html[data-app-scope="store"] .support-download-hero {
+  display: grid;
+  gap: 0.65rem;
   text-align: center;
+}
+
+html[data-app-scope="store"] .support-download-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  justify-self: center;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 20%, var(--support-line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-primary) 8%, var(--support-surface));
+  padding: 0.38rem 0.72rem;
+  color: var(--theme-primary);
+  font-size: 0.78rem;
+  font-weight: 850;
+  line-height: 1.2;
 }
 
 html[data-app-scope="store"] .support-download-hero h1 {
@@ -36,6 +55,14 @@ html[data-app-scope="store"] .support-download-hero h1 {
   line-height: 1.12;
 }
 
+html[data-app-scope="store"] .support-download-hero p {
+  margin: 0 auto;
+  max-width: 42rem;
+  color: var(--support-muted);
+  font-size: 0.95rem;
+  line-height: 1.66;
+}
+
 @media (max-width: 767px) {
   html[data-app-scope="store"] .support-download-shell {
     padding-top: 0.85rem;
@@ -44,6 +71,81 @@ html[data-app-scope="store"] .support-download-hero h1 {
   html[data-app-scope="store"] .support-download-hero {
     display: none;
   }
+
+  html[data-app-scope="store"] .support-download-v12-page .support-download-hero {
+    display: grid;
+    gap: 0.58rem;
+    margin-bottom: 0.9rem;
+    text-align: left;
+  }
+
+  html[data-app-scope="store"] .support-download-v12-page .support-download-eyebrow {
+    justify-self: start;
+  }
+
+  html[data-app-scope="store"] .support-download-v12-page .support-download-hero h1 {
+    font-size: 1.56rem;
+    line-height: 1.14;
+  }
+
+  html[data-app-scope="store"] .support-download-v12-page .support-download-hero p {
+    margin-left: 0;
+  }
+}
+
+html[data-app-scope="store"] .support-download-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.62rem;
+  margin-top: 1rem;
+}
+
+html[data-app-scope="store"] .support-download-overview-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.72rem;
+  border: 1px solid var(--support-line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--support-surface) 94%, transparent);
+  padding: 0.82rem 0.9rem;
+  box-shadow: var(--support-shadow);
+}
+
+html[data-app-scope="store"] .support-download-overview-icon {
+  display: inline-flex;
+  width: 2.35rem;
+  height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-primary) 10%, var(--support-surface));
+  color: var(--theme-primary);
+}
+
+html[data-app-scope="store"] .support-download-overview-card div {
+  min-width: 0;
+}
+
+html[data-app-scope="store"] .support-download-overview-card span:not(.support-download-overview-icon) {
+  display: block;
+  color: var(--support-muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+html[data-app-scope="store"] .support-download-overview-card strong {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  margin-top: 0.18rem;
+  color: var(--support-ink);
+  font-size: 0.98rem;
+  font-weight: 900;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 html[data-app-scope="store"] .support-download-tabs {
@@ -629,9 +731,23 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
     text-align: left;
   }
 
+  html[data-app-scope="store"] .support-download-eyebrow {
+    justify-self: start;
+  }
+
   html[data-app-scope="store"] .support-download-hero h1 {
     font-size: 2.05rem;
     line-height: 1.12;
+  }
+
+  html[data-app-scope="store"] .support-download-hero p {
+    margin-left: 0;
+  }
+
+  html[data-app-scope="store"] .support-download-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.78rem;
+    margin-top: 1.1rem;
   }
 
   html[data-app-scope="store"] .support-download-tabs {
@@ -676,6 +792,10 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
   html[data-app-scope="store"] .support-download-shell {
     width: min(100%, 80rem);
     padding-inline: 1.5rem;
+  }
+
+  html[data-app-scope="store"] .support-download-overview-card {
+    padding: 1rem;
   }
 
   html[data-app-scope="store"] .support-channel-card,

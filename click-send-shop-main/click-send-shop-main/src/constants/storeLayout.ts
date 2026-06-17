@@ -15,7 +15,7 @@ export const STORE_READING_MAIN_CLASS =
 
 /** 登录注册页：移动端全屏覆盖，桌面端居中卡片 */
 export const STORE_AUTH_SHELL_CLASS =
-  "auth-page-shell fixed inset-0 z-[80] flex flex-col overflow-hidden bg-[var(--theme-bg)] lg:static lg:min-h-[100dvh] lg:justify-center lg:bg-[color-mix(in_srgb,var(--theme-bg)_94%,var(--theme-surface))]";
+  "auth-page-shell store-v12-page auth-v12-page fixed inset-0 z-[80] flex flex-col overflow-hidden bg-[var(--theme-bg)] lg:static lg:min-h-[100dvh] lg:justify-center lg:bg-[color-mix(in_srgb,var(--theme-bg)_94%,var(--theme-surface))]";
 
 export const STORE_AUTH_MAIN_CLASS =
-  "auth-page-main relative mx-auto h-full min-h-0 w-full max-w-none flex-1 overflow-y-auto overscroll-contain border-0 bg-[var(--theme-surface)] px-[var(--store-page-x)] pb-4 pt-[calc(0.95rem+env(safe-area-inset-top,0px))] shadow-none lg:h-auto lg:max-w-md lg:flex-none lg:overflow-visible lg:rounded-2xl lg:border lg:border-[var(--theme-border)] lg:bg-[var(--theme-surface)] lg:p-8 lg:shadow-[var(--theme-shadow)]";
+  "auth-page-main auth-v12-main relative mx-auto h-full min-h-0 w-full max-w-none flex-1 overflow-y-auto overscroll-contain border-0 bg-[var(--theme-surface)] px-[var(--store-page-x)] pb-4 pt-[calc(0.95rem+env(safe-area-inset-top,0px))] shadow-none lg:h-auto lg:max-w-md lg:flex-none lg:overflow-visible lg:rounded-2xl lg:border lg:border-[var(--theme-border)] lg:bg-[var(--theme-surface)] lg:p-8 lg:shadow-[var(--theme-shadow)]";

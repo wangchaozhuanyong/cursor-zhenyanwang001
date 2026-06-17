@@ -49,6 +49,7 @@ const siteCapabilities = {
   customerServiceDownloadEnabled: true,
   telegramOrderNotifyEnabled: true,
   languageGateEnabled: false,
+  storefrontMultilingualEnabled: false,
   restrictedProductComplianceEnabled: true,
   trafficAnalyticsEnabled: true,
   downloadConfirmEnabled: true,

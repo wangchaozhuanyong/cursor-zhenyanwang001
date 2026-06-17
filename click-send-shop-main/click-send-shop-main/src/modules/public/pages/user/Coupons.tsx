@@ -333,7 +333,7 @@ export default function Coupons() {
 
   if (loading && rawCoupons.length === 0) {
     return (
-      <StoreAccountLayout title={t("coupon.myCoupons")} onBack={goBack} className="store-page pb-6" mainClassName="sm:px-4 xl:py-6">
+      <StoreAccountLayout title={t("coupon.myCoupons")} onBack={goBack} className="store-v12-page store-account-subpage-v12-page store-coupons-v12-page pb-6" mainClassName="sm:px-4 xl:py-6">
         <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">
           <Loader2 size={28} className="animate-spin text-theme-price" aria-label={t("common.loadingPromotions")} />
           <p className="mt-3 text-sm">{t("coupon.loading")}</p>
@@ -347,7 +347,7 @@ export default function Coupons() {
       title={pageView === "claimCenter" ? t("coupon.claimCenter") : t("coupon.myCoupons")}
       onBack={pageView === "claimCenter" ? () => setPageView("mine") : goBack}
       rightSlot={headerRightSlot}
-      className="store-page pb-6"
+      className="store-v12-page store-account-subpage-v12-page store-coupons-v12-page pb-6"
       mainClassName="sm:px-4 xl:py-6"
     >
       <CouponHero

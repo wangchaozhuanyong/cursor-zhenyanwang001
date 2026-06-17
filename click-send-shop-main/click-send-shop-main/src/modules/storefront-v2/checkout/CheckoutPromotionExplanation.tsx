@@ -55,7 +55,7 @@ export default function CheckoutPromotionExplanation({
           <BadgeCheck size={16} aria-hidden />
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-bold text-[var(--theme-text)]">后端订单预览已接管优惠计算</p>
+          <p className="text-sm font-bold text-[var(--theme-text)]">优惠明细已更新</p>
           <div className="mt-1 space-y-1 text-xs leading-5 text-[var(--theme-text-muted)]">
             {progress ? (
               <div className="rounded-xl border border-[color-mix(in_srgb,var(--theme-success)_20%,var(--theme-border))] bg-[var(--theme-surface)]/70 px-3 py-2">
@@ -88,7 +88,7 @@ export default function CheckoutPromotionExplanation({
               <p key={`${line.type}-${line.label}`}>{line.label}</p>
             ))}
             {orderSnapshot?.final_amount != null ? (
-              <p>后端结算应付：RM {money(toNumber(orderSnapshot.final_amount))}</p>
+              <p>应付金额：RM {money(toNumber(orderSnapshot.final_amount))}</p>
             ) : null}
             {pricingError ? (
               <p className="text-[var(--theme-price)]">{pricingError}</p>
@@ -101,12 +101,12 @@ export default function CheckoutPromotionExplanation({
               </p>
             ))}
             {discountLines.length || pointsBonusLines.length ? (
-              <p>满减、优惠券和积分按订单预览结果自动计算，最终优惠以后端结算为准。</p>
+              <p>优惠券、积分和活动优惠会自动计算。</p>
             ) : null}
             <div className="store-checkout-v12-promotion-panel__rules">
-              <span>活动时间、商品范围、SKU 和会员等级会重新校验</span>
-              <span>优惠券、积分和返现只按订单预览结果展示</span>
-              <span>提交订单时仍会再次校验库存、运费和最终金额</span>
+              <span>活动适用范围会自动确认</span>
+              <span>优惠券、积分和返现按当前订单展示</span>
+              <span>提交订单前会确认库存、运费和金额</span>
             </div>
           </div>
         </div>

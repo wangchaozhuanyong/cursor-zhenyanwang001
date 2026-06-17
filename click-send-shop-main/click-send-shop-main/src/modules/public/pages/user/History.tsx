@@ -96,7 +96,7 @@ export default function History() {
               <span className="store-orders-v12-stat__icon"><BadgePercent size={17} aria-hidden /></span>
               <strong>{activityCount}</strong>
               <span>活动商品</span>
-              <small>以后端活动字段为准</small>
+              <small>活动信息</small>
             </div>
             <div className="store-orders-v12-stat">
               <span className="store-orders-v12-stat__icon"><HistoryIcon size={17} aria-hidden /></span>

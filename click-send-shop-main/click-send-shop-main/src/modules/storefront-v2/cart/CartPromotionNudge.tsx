@@ -61,7 +61,7 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
           </div>
         ) : null}
         <p className="store-cart-v12-promotion-nudge__safe-copy">
-          优惠资格、叠加关系和库存会在结算页再次由后端校验。
+          可用优惠会在结算页自动更新。
         </p>
       </section>
     );
@@ -112,7 +112,7 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
         />
       </div>
       <p className="store-cart-v12-promotion-nudge__safe-copy">
-        这里只展示活动预览，最终优惠和不可用原因以结算页后端预览为准。
+        结算页会展示最终优惠和不可用原因。
       </p>
     </section>
   );
@@ -144,14 +144,14 @@ function buildEngineMessage(evaluation?: PromotionEvaluation | null) {
         title: reason.title ? `活动「${reason.title}」不可用` : "活动优惠暂不可用",
         description: reason.shortfall_amount
           ? `还差 RM ${formatMoney(reason.shortfall_amount)} 才能参与该活动。`
-          : reason.reason || "活动规则已变化，请在结算页重新校验。",
+          : reason.reason || "活动已更新，请在结算页确认。",
         showBrowse: false,
         percent: undefined,
       };
     }
     return {
       title: "活动优惠暂不可用",
-      description: "活动规则已变化，请在结算页重新校验。",
+      description: "活动已更新，请在结算页确认。",
       showBrowse: false,
       percent: undefined,
     };
@@ -166,7 +166,7 @@ function buildEngineMessage(evaluation?: PromotionEvaluation | null) {
       .filter(Boolean);
     return {
       title: labels.length ? labels.join("、") : "已命中活动优惠",
-      description: `后端活动引擎已计算优惠 RM ${formatMoney(discountTotal)}，结算页会再次校验最终金额。`,
+      description: `已为你计算可用优惠 RM ${formatMoney(discountTotal)}，结算页会显示最终金额。`,
       showBrowse: false,
       percent: 100,
     };

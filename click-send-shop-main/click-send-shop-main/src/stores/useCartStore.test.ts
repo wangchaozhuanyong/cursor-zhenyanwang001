@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   cartLineKey,
+  getCartLinePoints,
   getCartLinePrice,
   LOCAL_ONLY_CART_PRODUCT_PREFIX,
   useCartStore,
@@ -71,6 +72,14 @@ describe("useCartStore", () => {
     expect(getCartLinePrice(line)).toBe(36);
   });
 
+  test("getCartLinePoints multiplies product points by qty", () => {
+    const line = {
+      product: { ...sampleProduct("p1"), points: 12 },
+      qty: 3,
+    };
+    expect(getCartLinePoints(line)).toBe(36);
+  });
+
   test("setBuyNow stores coupon choice for checkout handoff", () => {
     const product = sampleProduct("buy-now-1", 20);
     useCartStore.getState().setBuyNow(product, 2, null, {
@@ -128,6 +137,24 @@ describe("useCartStore", () => {
     const { items } = useCartStore.getState();
     expect(items).toHaveLength(1);
     expect(items[0].product.id).toBe("p1");
+  });
+
+  test("totalPointsSelected only counts selected cart lines", () => {
+    const p1 = { ...sampleProduct("p1"), points: 10 };
+    const p2 = { ...sampleProduct("p2"), points: 7 };
+    useCartStore.setState({
+      items: [
+        { product: p1, qty: 2 },
+        { product: p2, qty: 3 },
+      ],
+      selection: {
+        [cartLineKey(p1.id)]: true,
+        [cartLineKey(p2.id)]: false,
+      },
+    });
+
+    expect(useCartStore.getState().totalPoints()).toBe(41);
+    expect(useCartStore.getState().totalPointsSelected()).toBe(20);
   });
 
   test("pinItemToTop moves the selected cart line to the first position", async () => {

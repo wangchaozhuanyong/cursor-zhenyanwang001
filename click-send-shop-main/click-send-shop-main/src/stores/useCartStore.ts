@@ -56,6 +56,11 @@ export function getCartLinePrice(item: CartItem) {
   return Number(unitPrice || 0) * Number(item.qty || 0);
 }
 
+export function getCartLinePoints(item: CartItem) {
+  const points = Math.max(0, Math.floor(Number(item.product.points || 0)));
+  return points * Number(item.qty || 0);
+}
+
 interface CartState {
   items: CartItem[];
   buyNowItem: CartItem | null;
@@ -319,10 +324,10 @@ export const useCartStore = create<CartState>()(
       },
 
       totalAmount: () => get().items.reduce((sum, i) => sum + getCartLinePrice(i), 0),
-      totalPoints: () => 0,
+      totalPoints: () => get().items.reduce((sum, i) => sum + getCartLinePoints(i), 0),
       totalItems: () => get().items.reduce((sum, i) => sum + i.qty, 0),
       totalAmountSelected: () => get().getSelectedItems().reduce((sum, i) => sum + getCartLinePrice(i), 0),
-      totalPointsSelected: () => 0,
+      totalPointsSelected: () => get().getSelectedItems().reduce((sum, i) => sum + getCartLinePoints(i), 0),
       totalItemsSelected: () => get().getSelectedItems().reduce((sum, i) => sum + i.qty, 0),
 
       clearError: () => set({ error: null }),

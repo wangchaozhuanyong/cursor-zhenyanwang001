@@ -19,7 +19,7 @@ const deliveryZones = [
   {
     title: "东马配送",
     description: "适用于 Sabah、Sarawak、Labuan 等东马区域。",
-    meta: "部分商品、重量或地址可能不可配送，以结算页校验为准",
+    meta: "部分商品、重量或地址可能不可配送，以结算页为准",
     icon: Truck,
   },
   {
@@ -31,9 +31,9 @@ const deliveryZones = [
 ];
 
 const ruleItems = [
-  "运费不在前端估算，最终金额只认结算页后端预览结果。",
+  "运费会在结算页自动计算。",
   "地址需要包含州属、城市、邮编和手机号，避免配送规则匹配失败。",
-  "库存、活动和运费会在提交订单前重新校验。",
+  "库存、活动和运费会在提交订单前确认。",
   "限制类商品、超重商品或特殊地址可能出现不可配送提示。",
 ];
 
@@ -54,7 +54,7 @@ export default function Delivery() {
     >
       <SeoHead
         title={`配送方式｜${siteName}`}
-        description={`${siteName} 配送方式、东西马配送说明、地址校验和物流轨迹说明。`}
+        description={`${siteName} 配送方式、东西马配送说明、地址填写和物流轨迹说明。`}
         canonical={buildCanonical("/delivery")}
         robots="index,follow"
       />
@@ -65,9 +65,9 @@ export default function Delivery() {
             <Truck size={15} aria-hidden />
             配送规则
           </span>
-          <h2>东西马配送以结算页后端规则为准</h2>
+          <h2>东西马配送在结算页确认</h2>
           <p>
-            前台只展示配送说明和地址准备状态；实际运费、不可配送原因和物流进度均由后台规则与订单数据返回。
+            这里展示配送说明和地址准备状态；实际运费、不可配送原因和物流进度会随订单更新。
           </p>
           <div className="store-v12-hero-actions">
             <UnifiedButton type="button" onClick={() => navigate(localizedPath("/address"))} className="store-v12-primary-action">
@@ -85,7 +85,7 @@ export default function Delivery() {
             结算安全规则
           </div>
           <p className="store-v12-muted">
-            商品页、购物车展示的配送信息只是提示；创建订单前会再次校验地址、库存、活动和运费。
+            商品页、购物车展示的配送信息只是提示；创建订单前会确认地址、库存、活动和运费。
           </p>
         </aside>
       </div>

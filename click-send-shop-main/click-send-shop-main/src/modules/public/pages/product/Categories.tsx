@@ -1,14 +1,13 @@
-import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChevronDown, LayoutGrid, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
-import { motion } from "framer-motion";
-import { useMotionConfig } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
 import CategoryKingkongRow, { type CategoryKingkongItem } from "@/components/CategoryKingkongRow";
+import CategorySubcategoryRail from "@/components/store/CategorySubcategoryRail";
 import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
 import * as productService from "@/services/productService";
 import type { ProductSortType, ProductTag } from "@/types/product";
@@ -444,6 +443,7 @@ export default function Categories() {
           activeCat={activeCat}
           onSelect={handleSelectChild}
           layoutId="category-sub-tab"
+          allItem={activeRootId ? { id: activeRootId } : undefined}
         />
       ) : null}
     </div>
@@ -470,7 +470,6 @@ export default function Categories() {
       {filterDrawer}
     </div>
   );
-  const resultCount = pagination.total || products.length;
 
   const wideCategoryRail = (
     <div className="store-category-tablet-rail mb-4 hidden md:block lg:hidden">
@@ -488,6 +487,7 @@ export default function Categories() {
           onSelect={handleSelectChild}
           layoutId="category-tablet-sub-tab"
           className="store-category-tablet-subtabs"
+          allItem={activeRootId ? { id: activeRootId } : undefined}
         />
       ) : null}
     </div>
@@ -605,20 +605,6 @@ export default function Categories() {
                 当前筛选：{filterSummary || "无筛选"}
               </div>
 
-              <CategoryResultCommandBar
-                pageHeading={pageHeading}
-                resultCount={resultCount}
-                activeFilterCount={activeSearchFilterCount}
-                viewMode={viewMode}
-                loading={loading && products.length === 0}
-                sort={sort}
-                onResetFilters={clearFilters}
-                onRefresh={() => {
-                  useProductStore.getState().clearError();
-                  void loadProducts();
-                }}
-              />
-
               {error && products.length === 0 ? (
                 <div className="mb-3">
                   <StorefrontLoadErrorPanel
@@ -706,76 +692,6 @@ export default function Categories() {
   );
 }
 
-function CategoryResultCommandBar({
-  pageHeading,
-  resultCount,
-  activeFilterCount,
-  viewMode,
-  loading,
-  sort,
-  onResetFilters,
-  onRefresh,
-}: {
-  pageHeading: string;
-  resultCount: number;
-  activeFilterCount: number;
-  viewMode: string;
-  loading: boolean;
-  sort: ProductSortType;
-  onResetFilters: () => void;
-  onRefresh: () => void;
-}) {
-  const viewLabel = viewMode === "list" ? "列表" : "网格";
-  const stats = [
-    {
-      key: "result",
-      label: "商品结果",
-      value: loading ? "加载中" : `${Math.max(0, resultCount)}`,
-      icon: LayoutGrid,
-    },
-    {
-      key: "filter",
-      label: "筛选条件",
-      value: `${Math.max(0, activeFilterCount)}`,
-      icon: SlidersHorizontal,
-    },
-    {
-      key: "sort",
-      label: "排序视图",
-      value: `${categorySortLabel(sort)} / ${viewLabel}`,
-      icon: ShieldCheck,
-    },
-  ];
-
-  return (
-    <section className="store-category-v12-result-panel" aria-label="商品结果状态">
-      <div className="store-category-v12-result-panel__copy">
-        <span>商品结果</span>
-        <h2>{pageHeading}</h2>
-        <p>商品价、活动价、库存、限购和最终可买状态都在购物车与结算预览重新校验。</p>
-      </div>
-      <div className="store-category-v12-result-panel__stats">
-        {stats.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.key}>
-              <Icon size={15} aria-hidden />
-              <strong>{item.value}</strong>
-              <small>{item.label}</small>
-            </div>
-          );
-        })}
-      </div>
-      <div className="store-category-v12-result-panel__actions">
-        <UnifiedButton type="button" onClick={onRefresh}>刷新</UnifiedButton>
-        {activeFilterCount > 0 ? (
-          <UnifiedButton type="button" onClick={onResetFilters}>清空筛选</UnifiedButton>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
 function CategoryDesktopWorkbench({
   categories,
   activeCat,
@@ -807,15 +723,15 @@ function CategoryDesktopWorkbench({
   const hasMoreCategories = categories.length > visibleCategories.length;
 
   return (
-    <aside className="store-category-v12-sidebar hidden lg:block" aria-label="分类工作台">
+    <aside className="store-category-v12-sidebar hidden lg:block" aria-label="商品分类">
       <div className="store-category-v12-sidebar__inner">
         <div className="store-category-v12-sidebar__head">
           <span>
             <LayoutGrid size={16} aria-hidden />
-            分类工作台
+            商品分类
           </span>
           <h2>{pageHeading}</h2>
-          <p>左侧先锁定分类和筛选，右侧只展示后端返回的商品结果。</p>
+          <p>选择分类和筛选后查看对应商品。</p>
         </div>
 
         <div className="store-category-v12-sidebar__stats">
@@ -901,14 +817,12 @@ function CategoryDesktopWorkbench({
 
         <div className="store-category-v12-sidebar__guard">
           <ShieldCheck size={17} aria-hidden />
-          <p>活动价、库存、限购、优惠券和最终金额都以后端结算预览为准。</p>
+          <p>活动价、库存和优惠会在结算页确认。</p>
         </div>
       </div>
     </aside>
   );
 }
-
-const TAB_INDICATOR_SPRING = { type: "spring" as const, stiffness: 380, damping: 32 };
 
 type CategorySearchQuickAction = {
   key: string;
@@ -1043,126 +957,7 @@ function CategorySearchHero({
   );
 }
 
-function CategorySubcategoryRail({
-  categories,
-  activeCat,
-  onSelect,
-  layoutId,
-  className,
-}: {
-  categories: Category[];
-  activeCat: string;
-  onSelect: (id: string) => void;
-  layoutId: string;
-  className?: string;
-}) {
-  const railRef = useRef<HTMLDivElement | null>(null);
-  const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-
-  useEffect(() => {
-    const rail = railRef.current;
-    const activeButton = itemRefs.current.get(activeCat);
-    if (!rail || !activeButton) return;
-
-    const prefersReducedMotion =
-      typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const railRect = rail.getBoundingClientRect();
-    const buttonRect = activeButton.getBoundingClientRect();
-    const centeredLeft = rail.scrollLeft + buttonRect.left - railRect.left - (rail.clientWidth - activeButton.clientWidth) / 2;
-    const maxLeft = Math.max(0, rail.scrollWidth - rail.clientWidth);
-
-    rail.scrollTo({
-      left: Math.min(Math.max(0, centeredLeft), maxLeft),
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-    });
-  }, [activeCat, categories.length]);
-
-  return (
-    <div
-      ref={railRef}
-      className={cn("store-category-subtabs no-scrollbar flex flex-nowrap gap-1.5", className)}
-      role="tablist"
-      aria-label="子分类"
-    >
-      {categories.map((child) => (
-        <CategoryTabButton
-          key={child.id}
-          active={activeCat === child.id}
-          onClick={() => onSelect(child.id)}
-          layoutId={layoutId}
-          activeClassName="store-category-subtab-active-bg"
-          activeTextClass="store-category-subtab-active-label"
-          className="store-category-subtab px-3"
-          btnRef={(el) => {
-            if (el) itemRefs.current.set(child.id, el);
-            else itemRefs.current.delete(child.id);
-          }}
-        >
-          {child.name}
-        </CategoryTabButton>
-      ))}
-    </div>
-  );
-}
-
-function CategoryTabButton({
-  active,
-  onClick,
-  layoutId,
-  children,
-  className,
-  btnRef,
-  activeClassName = "bg-[var(--theme-primary)]",
-  activeTextClass = "text-[var(--theme-primary-foreground)]",
-}: {
-  active: boolean;
-  onClick: () => void;
-  layoutId: string;
-  children: ReactNode;
-  className?: string;
-  btnRef?: (el: HTMLButtonElement | null) => void;
-  activeClassName?: string;
-  activeTextClass?: string;
-}) {
-  const { enabled } = useMotionConfig();
-  return (
-    <UnifiedButton
-      ref={btnRef}
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        "relative flex-shrink-0 overflow-hidden rounded-full px-4 py-1.5 text-xs font-medium",
-        active ? "border border-transparent" : "border border-[var(--theme-border)] bg-[var(--theme-surface)]",
-        active && "is-active",
-        className,
-      )}
-    >
-      {active ? (
-        enabled ? (
-          <motion.span
-            layoutId={layoutId}
-            className={cn("absolute inset-0 rounded-full", activeClassName)}
-            transition={TAB_INDICATOR_SPRING}
-          />
-        ) : (
-          <span className={cn("absolute inset-0 rounded-full", activeClassName)} />
-        )
-      ) : null}
-      <span className={cn("relative z-10", active ? activeTextClass : "text-[var(--theme-text)]")}>{children}</span>
-    </UnifiedButton>
-  );
-}
-
 function normalizeSort(value: string | null): ProductSortType {
   if (value === "sales" || value === "newest" || value === "price-asc" || value === "price-desc") return value;
   return "default";
-}
-
-function categorySortLabel(value: ProductSortType) {
-  if (value === "sales") return "销量";
-  if (value === "newest") return "新品";
-  if (value === "price-asc") return "价格升序";
-  if (value === "price-desc") return "价格降序";
-  return "综合";
 }

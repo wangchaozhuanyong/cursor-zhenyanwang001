@@ -2,7 +2,6 @@ import type { LucideIcon } from "lucide-react";
 import {
   Camera,
   ChevronRight,
-  CheckCircle2,
   Crown,
   LogOut,
   PackageCheck,
@@ -354,8 +353,8 @@ export function ProfileSnapshotPanel({
   items,
   onNavigate,
   className,
-  title = "账户工作台",
-  subtitle = "订单、资产、活动和服务状态集中查看",
+  title = "账户总览",
+  subtitle = "常用状态",
 }: {
   items: ProfileSnapshotItem[];
   onNavigate: (item: ProfileSnapshotItem) => void;
@@ -368,13 +367,8 @@ export function ProfileSnapshotPanel({
   return (
     <section className={cn(PROFILE_CARD_CLASS, "client-profile-snapshot-panel", className)}>
       <div className="client-profile-snapshot-head">
-        <span className="client-profile-snapshot-head__icon" aria-hidden>
-          <CheckCircle2 size={18} strokeWidth={2.2} />
-        </span>
-        <div>
-          <h3>{title}</h3>
-          <p>{subtitle}</p>
-        </div>
+        <h3>{title}</h3>
+        <p>{subtitle}</p>
       </div>
       <div className="client-profile-snapshot-grid">
         {items.map((item) => (

@@ -1,4 +1,4 @@
-import { ArrowRight, PackageCheck, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { Product } from "@/types/product";
 import ProductCardV2 from "../product/ProductCardV2";
@@ -32,35 +32,13 @@ export default function HomeProductSectionV2({
   showPrice = true,
   onNavigate,
 }: HomeProductSectionV2Props) {
-  const availableCount = products.filter((product) => Number(product.default_variant?.stock ?? product.stock ?? 0) > 0).length;
-  const activityCount = products.filter((product) => Boolean(product.active_activity || product.activity_promo_label)).length;
-  const shelfStats = [
-    {
-      key: "count",
-      label: "本栏商品",
-      value: loading && products.length === 0 ? "加载中" : `${products.length}`,
-      icon: PackageCheck,
-    },
-    {
-      key: "activity",
-      label: "活动命中",
-      value: activityCount > 0 ? `${activityCount}` : "以后端为准",
-      icon: Sparkles,
-    },
-    {
-      key: "stock",
-      label: "可售库存",
-      value: availableCount > 0 ? `${availableCount}` : "结算复核",
-      icon: ShieldCheck,
-    },
-  ];
-
   return (
     <section className="store-home-product-shelf store-home-v12-shelf min-w-0">
       <div className="store-home-v12-shelf__head">
         <StorefrontTitleRow
           title={title}
           subtitle={subtitle}
+          subtitlePlacement="below"
           action={(
             <UnifiedButton
               type="button"
@@ -72,18 +50,6 @@ export default function HomeProductSectionV2({
             </UnifiedButton>
           )}
         />
-        <div className="store-home-v12-shelf__stats" aria-label={`${title} 商品状态`}>
-          {shelfStats.map((item) => {
-            const Icon = item.icon;
-            return (
-              <span key={item.key}>
-                <Icon size={14} aria-hidden />
-                <b>{item.value}</b>
-                <small>{item.label}</small>
-              </span>
-            );
-          })}
-        </div>
       </div>
       <div className="store-home-product-shelf__grid grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
         {loading

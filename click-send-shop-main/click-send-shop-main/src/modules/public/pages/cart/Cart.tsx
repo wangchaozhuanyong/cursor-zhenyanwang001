@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BadgePercent, Calculator, Heart, Minus, PackageCheck, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
+import { Calculator, Coins, Heart, Minus, PackageCheck, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
@@ -22,12 +22,7 @@ import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
-import CartPromotionNudge from "@/modules/storefront-v2/cart/CartPromotionNudge";
-import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
-import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
-import { fetchCartPromotionPreview } from "@/services/cartService";
-import type { PromotionEvaluation } from "@/types/orderPreview";
 import { usePublicLocale } from "@/i18n/publicLocale";
 
 const CART_ACTION_WIDTH = 244;
@@ -52,6 +47,7 @@ export default function Cart() {
     toggleSelect,
     setSelectAll,
     totalAmountSelected,
+    totalPointsSelected,
     totalItemsSelected,
   } = useCartStore();
   const selection = useCartStore((s) => s.selection);
@@ -64,14 +60,13 @@ export default function Cart() {
   const [openActionKey, setOpenActionKey] = useState<string | null>(null);
   const [quantityTargetKey, setQuantityTargetKey] = useState<string | null>(null);
   const [quantityDraft, setQuantityDraft] = useState("");
-  const [fullReductionCampaign, setFullReductionCampaign] = useState<StorefrontCampaignVm | null>(null);
-  const [promotionEvaluation, setPromotionEvaluation] = useState<PromotionEvaluation | null>(null);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
   const someSelected = selectedCount > 0;
   const totalQty = items.reduce((s, i) => s + i.qty, 0);
   const selectedQty = totalItemsSelected();
+  const selectedPoints = totalPointsSelected();
   const checkoutLabel =
     selectedQty > 0 ? (
       <>
@@ -99,44 +94,6 @@ export default function Cart() {
   useEffect(() => {
     loadCart({ force: true });
   }, [loadCart]);
-
-  const cartPreviewKey = items.map((item) => `${item.product.id}:${item.variant_id || ""}:${item.qty}`).join("|");
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchPrimaryFullReductionCampaign()
-      .then((campaign) => {
-        if (!cancelled) setFullReductionCampaign(campaign);
-      })
-      .catch(() => {
-        if (!cancelled) setFullReductionCampaign(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isLoggedIn() || !items.length) {
-      setPromotionEvaluation(null);
-      return;
-    }
-    let cancelled = false;
-    fetchCartPromotionPreview()
-      .then((preview) => {
-        if (!cancelled) setPromotionEvaluation(preview.promotion_evaluation || null);
-      })
-      .catch(() => {
-        if (!cancelled) setPromotionEvaluation(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cartPreviewKey, items.length]);
-
-  const effectivePromotionEvaluation = allSelected ? promotionEvaluation : null;
 
   const handleCheckout = () => {
     if (totalItemsSelected() === 0) {
@@ -262,8 +219,8 @@ export default function Cart() {
           selectedLineCount={selectedCount}
           selectedQty={selectedQty}
           selectedAmount={Number(totalAmountSelected() || 0)}
+          selectedPoints={selectedPoints}
           allSelected={allSelected}
-          promotionReady={Boolean(effectivePromotionEvaluation)}
           onPromotions={() => navigate(localizedPath("/promotions"))}
           onCoupons={() => navigate(localizedPath("/coupons"))}
         />
@@ -274,12 +231,6 @@ export default function Cart() {
             aside={
               <DesktopPurchaseCard title={t("cart.summary")} className="store-checkout-summary">
                 <div className="space-y-2.5 text-sm">
-                  <CartPromotionNudge
-                    campaign={fullReductionCampaign}
-                    amount={Number(totalAmountSelected() || 0)}
-                    evaluation={effectivePromotionEvaluation}
-                    onBrowse={() => navigate(localizedPath("/categories"))}
-                  />
                   <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
                     <span className="text-muted-foreground">{t("cart.couponHint")}</span>
                     <UnifiedButton
@@ -329,13 +280,6 @@ export default function Cart() {
             }
           >
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
-            <CartPromotionNudge
-              campaign={fullReductionCampaign}
-              amount={Number(totalAmountSelected() || 0)}
-              evaluation={effectivePromotionEvaluation}
-              className="mb-3 md:hidden"
-              onBrowse={() => navigate(localizedPath("/categories"))}
-            />
             {!isLoggedIn() && (
               <div
                 className="relative mb-4 mt-3 overflow-hidden rounded-[22px] border px-4 py-4 text-[var(--theme-text)]"
@@ -859,8 +803,8 @@ function CartV12Overview({
   selectedLineCount,
   selectedQty,
   selectedAmount,
+  selectedPoints,
   allSelected,
-  promotionReady,
   onPromotions,
   onCoupons,
 }: {
@@ -869,8 +813,8 @@ function CartV12Overview({
   selectedLineCount: number;
   selectedQty: number;
   selectedAmount: number;
+  selectedPoints: number;
   allSelected: boolean;
-  promotionReady: boolean;
   onPromotions: () => void;
   onCoupons: () => void;
 }) {
@@ -890,27 +834,19 @@ function CartV12Overview({
     {
       label: "预估小计",
       value: `RM ${selectedAmount.toFixed(2)}`,
-      hint: "最终金额看结算预览",
+      hint: "去结算前可查看明细",
       icon: Calculator,
     },
     {
-      label: "活动校验",
-      value: promotionReady ? "已预览" : itemCount > 0 ? "结算复核" : "待选商品",
-      hint: "优惠资格由后端判断",
-      icon: ShieldCheck,
+      label: "预计积分",
+      value: loading ? "同步中" : `${selectedPoints}`,
+      hint: selectedPoints > 0 ? "结算页可使用" : itemCount > 0 ? "当前商品暂无积分" : "待选商品",
+      icon: Coins,
     },
   ];
 
   return (
-    <section className="store-cart-v12-overview" aria-label="购物车工作台">
-      <div className="store-cart-v12-overview__copy">
-        <span>
-          <BadgePercent size={14} aria-hidden />
-          购物车工作台
-        </span>
-        <h1>先选商品，再进入结算预览</h1>
-        <p>活动、优惠券、积分、库存和运费会在结算页重新校验，前台只展示后端返回的结果。</p>
-      </div>
+    <section className="store-cart-v12-overview" aria-label="购物车概览">
       <div className="store-cart-v12-overview__stats">
         {stats.map((item) => {
           const Icon = item.icon;

@@ -20,7 +20,7 @@ describe("CheckoutPromotionExplanation", () => {
     root = null;
   });
 
-  it("renders backend preview guardrails and discount details", async () => {
+  it("renders customer-friendly discount details", async () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -46,13 +46,13 @@ describe("CheckoutPromotionExplanation", () => {
       );
     });
 
-    expect(container.textContent).toContain("后端订单预览已接管优惠计算");
+    expect(container.textContent).toContain("优惠明细已更新");
     expect(container.textContent).toContain("优惠券：已减 RM 8");
-    expect(container.textContent).toContain("后端结算应付：RM 92");
-    expect(container.textContent).toContain("提交订单时仍会再次校验库存、运费和最终金额");
+    expect(container.textContent).toContain("应付金额：RM 92");
+    expect(container.textContent).toContain("提交订单前会确认库存、运费和金额");
   });
 
-  it("does not show campaign progress when backend preview is blocked", async () => {
+  it("does not show campaign progress when pricing is blocked", async () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);

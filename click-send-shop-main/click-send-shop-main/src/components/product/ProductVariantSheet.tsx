@@ -499,7 +499,7 @@ export default function ProductVariantSheet({
         </span>
         <span>
           <ShieldCheck size={14} aria-hidden />
-          {activityLimit > 0 ? `每人限购 ${activityLimit} 件` : "限购规则以下单校验为准"}
+          {activityLimit > 0 ? `每人限购 ${activityLimit} 件` : "下单时确认限购数量"}
         </span>
       </div>
 
@@ -517,13 +517,13 @@ export default function ProductVariantSheet({
             <span style={{ width: `${activityProgressPercent}%` }} />
           </div>
           {activitySavingAmount > 0 ? (
-            <p>当前规格命中活动预计可省 RM {formatMoney(activitySavingAmount)}，最终优惠以结算页后端预览为准。</p>
+            <p>当前规格命中活动预计可省 RM {formatMoney(activitySavingAmount)}，结算页会显示最终优惠。</p>
           ) : null}
         </div>
       ) : null}
 
       <p className="store-variant-v12-activity__safe">
-        活动价、库存、限购、优惠券和叠加关系会在结算页由后端重新校验。
+        活动价、库存、限购、优惠券和叠加关系会在结算页确认。
       </p>
     </section>
   ) : null;
@@ -684,7 +684,7 @@ export default function ProductVariantSheet({
             </span>
           </div>
           <p className="text-xs leading-relaxed text-[var(--theme-text-muted)]">
-            实际优惠和应付金额以结算页后端校验结果为准。
+            实际优惠和应付金额以结算页为准。
           </p>
         </div>
       </AppModal>

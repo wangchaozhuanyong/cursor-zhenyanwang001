@@ -250,7 +250,7 @@ export default function ProductDetail() {
   const soldOut = maxQty <= 0;
   const productFacts = [
     {
-      label: "库存校验",
+      label: "库存状态",
       value: soldOut ? "已售罄" : `可售 ${Math.max(0, Number(maxQty || 0))} 件`,
       hint: "加入购物车和提交订单前都会复核",
       icon: PackageCheck,
@@ -258,19 +258,19 @@ export default function ProductDetail() {
     {
       label: "限购规则",
       value: activeActivity && activityLimit > 0 ? `每人 ${Math.max(0, Number(activityLimit || 0))} 件` : "按规格库存",
-      hint: "活动限购以后端规则为准",
+      hint: "活动限购以结算页为准",
       icon: BadgePercent,
     },
     {
       label: "配送售后",
       value: "结算确认",
-      hint: "运费、地址和售后资格由后端返回",
+      hint: "运费、地址和售后信息会自动更新",
       icon: Truck,
     },
     {
-      label: "安全裁判",
-      value: "后端计算",
-      hint: "价格、优惠和库存不由前端决定",
+      label: "下单确认",
+      value: "系统确认",
+      hint: "价格、优惠和库存下单前确认",
       icon: ShieldCheck,
     },
   ];
@@ -284,13 +284,13 @@ export default function ProductDetail() {
     {
       label: "活动资格",
       value: activeActivity ? getActivityStatusLabel(activeActivity.status, activeActivity.status_label) : "普通价格",
-      desc: activeActivity ? "活动库存、限购和叠加关系以后端为准" : "暂无活动时按商品基础价格结算",
+      desc: activeActivity ? "活动库存、限购和叠加关系以结算页为准" : "暂无活动时按商品基础价格结算",
       icon: BadgePercent,
     },
     {
       label: "配送范围",
       value: "结算确认",
-      desc: "地址、运费、可配送区域会在订单预览返回",
+      desc: "地址、运费、可配送区域会自动确认",
       icon: MapPin,
     },
     {
@@ -302,9 +302,9 @@ export default function ProductDetail() {
   ];
   const purchaseFlow = [
     { label: "选择规格", desc: "先确认 SKU、数量和可售库存" },
-    { label: "结算预览", desc: "后端计算活动、优惠券、积分、运费" },
+    { label: "结算确认", desc: "自动汇总活动、优惠券、积分、运费" },
     { label: "创建订单", desc: "锁定库存并保存订单金额快照" },
-    { label: "支付发货", desc: "支付状态只以后端订单状态为准" },
+    { label: "支付发货", desc: "支付后可查看订单状态" },
   ];
   const salesCount = hasProductSales(product.sales_count) ? getProductSalesCount(product.sales_count) : null;
   const statusBadges: { key: string; label: string; className: string }[] = [];
@@ -335,18 +335,18 @@ export default function ProductDetail() {
     {
       label: "规格库存",
       value: hasMultipleVariants ? `${availableVariants.length} 个规格` : "默认规格",
-      desc: soldOut ? "当前不可购买" : "库存会在结算前再次校验",
+      desc: soldOut ? "当前不可购买" : "库存会在结算前确认",
       icon: PackageCheck,
     },
     {
       label: "活动规则",
       value: activeActivity ? "已命中" : "普通价格",
-      desc: activeActivity ? "活动价、限购、互斥以后端返回为准" : "暂无活动命中，不前端猜测优惠",
+      desc: activeActivity ? "活动价、限购、互斥以结算页为准" : "暂无活动优惠",
       icon: BadgePercent,
     },
     {
       label: "配送售后",
-      value: "订单校验",
+      value: "订单确认",
       desc: "地址、运费和售后资格跟随订单状态",
       icon: Truck,
     },
@@ -692,7 +692,7 @@ export default function ProductDetail() {
                 推荐商品
               </span>
               <h2 id="product-related-heading">同类推荐</h2>
-              <p>继续展示真实商品卡，活动价、库存和标签仍以后端返回为准。</p>
+              <p>继续浏览相似好物，活动价、库存和标签会自动更新。</p>
             </div>
             {relatedProductsLoading ? (
               <div className={`${productGridClass} md:gap-5`}>
@@ -822,7 +822,7 @@ function ProductDetailAssurancePanel({
           购买前确认
         </span>
         <h2>先看清规则，再进入结算</h2>
-        <p>商品规格、活动、库存、配送、售后和最终金额都会在结算预览重新确认。</p>
+        <p>商品规格、活动、库存、配送、售后和最终金额都会在结算页确认。</p>
       </div>
       <div className="store-product-v12-assurance__grid">
         {items.map((item) => {
@@ -876,7 +876,7 @@ function ProductDetailContentPanel({
           商品详情
         </span>
         <h2 id="product-detail-content-heading">下单前确认这些信息</h2>
-        <p>详情文案、规格库存、活动规则和配送售后统一收口展示，最终购买资格仍以后端校验为准。</p>
+        <p>详情、规格库存、活动和配送售后都在这里查看，下单前请确认清楚。</p>
       </div>
       <div className="store-product-v12-content-panel__summary">
         {summaryItems.map((item) => {
@@ -1006,20 +1006,20 @@ function ProductDetailErrorPanel({
     {
       icon: PackageCheck,
       title: "商品状态",
-      value: "后端同步",
-      desc: "商品上下架、SKU、库存以后端返回为准",
+      value: "自动更新",
+      desc: "商品上下架、规格和库存会及时更新",
     },
     {
       icon: BadgePercent,
       title: "活动资格",
-      value: "不前端猜",
+      value: "加载后展示",
       desc: "活动价、限购和叠加规则加载成功后展示",
     },
     {
       icon: ShieldCheck,
       title: "交易安全",
       value: "结算复核",
-      desc: "价格、优惠、库存最终由订单预览确认",
+      desc: "价格、优惠、库存在结算页确认",
     },
   ];
 
@@ -1027,7 +1027,7 @@ function ProductDetailErrorPanel({
     <section className="store-product-v12-error-panel" aria-labelledby="product-detail-error-heading">
       <div className="store-product-v12-error-panel__badge">
         <ShieldCheck size={15} aria-hidden />
-        商品详情工作台
+        商品详情
       </div>
       <div className="store-product-v12-error-panel__copy">
         <h1 id="product-detail-error-heading">{title}</h1>

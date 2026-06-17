@@ -448,7 +448,7 @@ function HomeBuyingStatusBoard({
       key: "cart",
       label: "购物车",
       value: `${Math.max(0, cartCount)}`,
-      desc: "结算前由后端重新校验价格、活动和库存",
+      desc: "结算前确认价格、活动和库存",
       icon: ShoppingCart,
       path: "/cart",
     },
@@ -456,7 +456,7 @@ function HomeBuyingStatusBoard({
       key: "orders",
       label: authenticated ? "待处理订单" : "订单同步",
       value: authenticated ? `${Math.max(0, pendingOrderCount)}` : "登录",
-      desc: authenticated ? "待付款、待发货、待收货集中查看" : "登录后同步订单、优惠和售后状态",
+      desc: authenticated ? "订单进度一目了然" : "登录后查看订单和服务",
       icon: ClipboardList,
       path: authenticated ? "/orders" : "/login?from=/",
     },
@@ -470,19 +470,19 @@ function HomeBuyingStatusBoard({
     },
     {
       key: "pricing",
-      label: couponEnabled ? "优惠裁判" : "价格裁判",
-      value: "后端",
-      desc: couponEnabled ? "优惠券、活动叠加和最终金额以后端为准" : "最终金额、运费和库存以后端为准",
+      label: couponEnabled ? "优惠确认" : "价格确认",
+      value: "系统",
+      desc: couponEnabled ? "结算页确认可用优惠" : "结算页确认金额",
       icon: ShieldCheck,
       path: couponEnabled ? "/promotions" : "/categories",
     },
   ];
 
   return (
-    <section className="store-home-v12-status-board" aria-label="购买状态">
+    <section className="store-home-v12-status-board" aria-label="快捷操作">
       <div className="store-home-v12-status-board__head">
         <div>
-          <span>购买状态</span>
+          <span>快捷操作</span>
           <h2>从找货到结算都收在一个入口里</h2>
         </div>
         <UnifiedButton

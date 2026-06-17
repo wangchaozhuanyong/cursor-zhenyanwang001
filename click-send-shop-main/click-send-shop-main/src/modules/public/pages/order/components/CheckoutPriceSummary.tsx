@@ -76,7 +76,7 @@ export function CheckoutPriceSummary({
         ) : null}
       {!pricingReady && estimatedCouponDiscount > 0 ? (
         <div className="mt-2 flex justify-between gap-4 text-xs text-muted-foreground">
-          <span>优惠预估（待后端确认）</span>
+          <span>优惠金额</span>
           <span>-RM {estimatedCouponDiscount}</span>
         </div>
       ) : null}

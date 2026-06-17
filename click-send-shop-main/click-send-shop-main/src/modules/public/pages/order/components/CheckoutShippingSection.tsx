@@ -30,7 +30,7 @@ export function CheckoutShippingSection({
         <div className="flex items-center justify-between gap-3 py-3.5">
           <div>
             <p className="text-sm font-semibold text-foreground">配送方式</p>
-            <p className="mt-1 text-xs text-muted-foreground">结算时自动应用平台运费规则</p>
+            <p className="mt-1 text-xs text-muted-foreground">结算时自动计算运费</p>
           </div>
           <span className="shrink-0 text-right text-sm font-medium text-foreground">
             {shippingName || "平台默认运费模板"}
@@ -48,11 +48,11 @@ export function CheckoutShippingSection({
         </label>
       </div>
       {(shippingRulesLoading || shippingQuoteLoading) && (
-        <p className="mt-3 text-xs text-muted-foreground">正在同步服务端运费规则...</p>
+        <p className="mt-3 text-xs text-muted-foreground">正在计算运费...</p>
       )}
       {(shippingRulesError || shippingQuoteError) && (
         <p className="mt-3 text-xs text-[var(--theme-danger)]">
-          运费规则获取失败：{shippingQuoteError || shippingRulesError}
+          运费获取失败：{shippingQuoteError || shippingRulesError}
         </p>
       )}
     </div>

@@ -92,13 +92,13 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
           </div>
           <p>
             {stockTotal > 0 ? `活动库存 ${stockTotal} 件，已售 ${soldCount} 件，剩余 ${remaining} 件。` : `剩余 ${remaining} 件。`}
-            {limit > 0 ? ` 每人限购 ${limit} 件。` : " 限购规则以下单校验为准。"}
+            {limit > 0 ? ` 每人限购 ${limit} 件。` : " 下单时确认限购数量。"}
           </p>
         </div>
       ) : null}
 
       <p className="store-product-v12-activity-safe-copy">
-        活动价、限购、库存和叠加关系会在购物车和结算页由后端重新校验。
+        活动价、限购、库存和优惠叠加会在结算页确认。
       </p>
     </section>
   );

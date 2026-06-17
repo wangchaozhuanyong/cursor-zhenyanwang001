@@ -79,7 +79,7 @@ function buildRepurchaseProduct(item: Order["items"][number]) {
   const stock = Number(item.product.stock);
   return {
     ...item.product,
-    // 历史订单商品快照通常不携带实时库存，交给购物车接口做最终校验。
+    // 历史订单商品快照通常不携带实时库存，交给购物车接口做最终确认。
     stock: Number.isFinite(stock) && stock > 0 ? stock : 999999,
   };
 }

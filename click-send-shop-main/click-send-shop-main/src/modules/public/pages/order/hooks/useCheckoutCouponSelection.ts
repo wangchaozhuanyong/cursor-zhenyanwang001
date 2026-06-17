@@ -52,7 +52,7 @@ export function useCheckoutCouponSelection({
         variant_id: item.variant_id || undefined,
         qty: item.qty,
       })),
-      contact_name: name.trim() || "结算预览",
+      contact_name: name.trim() || "结算订单",
       contact_phone: phone.trim() || "60000000000",
       address: address.trim() || "MY",
       shipping_template_id: selectedTemplateId ?? undefined,

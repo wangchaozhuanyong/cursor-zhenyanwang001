@@ -20,7 +20,7 @@ describe("ProductActivityPanel", () => {
     root = null;
   });
 
-  it("renders stock progress and backend validation copy", async () => {
+  it("renders stock progress and checkout confirmation copy", async () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -50,10 +50,10 @@ describe("ProductActivityPanel", () => {
     expect(container.textContent).toContain("周末秒杀");
     expect(container.textContent).toContain("已抢 60%");
     expect(container.textContent).toContain("每人限购 2 件");
-    expect(container.textContent).toContain("由后端重新校验");
+    expect(container.textContent).toContain("会在结算页确认");
   });
 
-  it("does not expose backend status enums to customers", async () => {
+  it("does not expose raw status enums to customers", async () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);

@@ -31,7 +31,7 @@ describe("CartPromotionNudge", () => {
     root = null;
   });
 
-  it("renders backend discount and unavailable reasons", async () => {
+  it("renders discount and unavailable reasons", async () => {
     await renderNudge({
       engine_version: "v2",
       eligible: true,
@@ -55,12 +55,12 @@ describe("CartPromotionNudge", () => {
     });
 
     expect(container?.textContent).toContain("满 100 减 10");
-    expect(container?.textContent).toContain("后端活动引擎已计算优惠 RM 10");
+    expect(container?.textContent).toContain("已为你计算可用优惠 RM 10");
     expect(container?.textContent).toContain("满折活动：还差 RM 32");
-    expect(container?.textContent).toContain("结算页再次由后端校验");
+    expect(container?.textContent).toContain("结算页会显示最终金额");
   });
 
-  it("does not present discounts as applied when backend evaluation is ineligible", async () => {
+  it("does not present discounts as applied when evaluation is ineligible", async () => {
     await renderNudge({
       engine_version: "v2",
       eligible: false,
@@ -83,7 +83,7 @@ describe("CartPromotionNudge", () => {
 
     expect(container?.textContent).toContain("活动「V10 秒杀测试活动」不可用");
     expect(container?.textContent).toContain("该活动不可与其他活动叠加使用");
-    expect(container?.textContent).not.toContain("后端活动引擎已计算优惠");
+    expect(container?.textContent).not.toContain("已为你计算可用优惠");
     expect(container?.textContent).not.toContain("RM 51");
   });
 });

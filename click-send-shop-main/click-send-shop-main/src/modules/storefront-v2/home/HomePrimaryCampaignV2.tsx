@@ -73,7 +73,7 @@ export default function HomePrimaryCampaignV2({
 
   return (
     <section className="store-home-v4-campaigns min-w-0">
-      <StorefrontTitleRow title="今日优惠" subtitle="活动、券和满减集中查看" />
+      <StorefrontTitleRow title="今日优惠" subtitle="领券和活动一处查看" />
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {visibleCampaigns.map((campaign, index) => (
           <CampaignCard

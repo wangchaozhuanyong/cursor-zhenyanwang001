@@ -80,7 +80,7 @@ export function useCheckoutOrderPreview({
           variant_id: item.variant_id || undefined,
           qty: item.qty,
         })),
-        contact_name: name.trim() || "结算预览",
+        contact_name: name.trim() || "结算订单",
         contact_phone: phone.trim() || "60000000000",
         address: selectedAddress
           ? {
@@ -114,7 +114,7 @@ export function useCheckoutOrderPreview({
         .catch((err) => {
           if (!cancelled) {
             setOrderPreview(null);
-            setOrderPreviewError(err instanceof Error ? err.message : "后端金额同步失败，请稍后重试");
+            setOrderPreviewError(err instanceof Error ? err.message : "订单金额更新失败，请稍后重试");
           }
         })
         .finally(() => {

@@ -523,7 +523,7 @@ export default function TikTokLanding() {
             </h1>
 
             <p className="mt-3 max-w-xl text-[15px] leading-7 text-[#3f4c49] sm:text-lg sm:leading-8">
-              找房安家、留学陪读、签证咨询、本地服务、商务资源，一站式集中查看。
+              找房安家、留学陪读、签证咨询、本地服务、商务资源，一站式查看。
             </p>
 
             <motion.div

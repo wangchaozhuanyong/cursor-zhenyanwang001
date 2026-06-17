@@ -11,9 +11,9 @@ const capabilityLabels = [
   { key: "mallEnabled", label: "商城购物", on: "商品浏览、购物车和订单链路可用", off: "商城购物暂时关闭" },
   { key: "couponEnabled", label: "优惠券", on: "优惠券中心和结算优惠可展示", off: "优惠券入口会降级或隐藏" },
   { key: "pointsEnabled", label: "积分", on: "积分、签到和兑换入口可展示", off: "积分相关入口会关闭" },
-  { key: "onlinePaymentEnabled", label: "在线支付", on: "可展示在线支付入口", off: "前台不展示在线支付确认入口" },
-  { key: "inventoryEnabled", label: "库存校验", on: "库存信息按后端规则展示", off: "库存维护中，提交前仍以后端为准" },
-  { key: "shippingEnabled", label: "配送规则", on: "结算页可按后台规则计算运费", off: "配送规则维护中" },
+  { key: "onlinePaymentEnabled", label: "在线支付", on: "可展示在线支付入口", off: "在线支付暂不可用" },
+  { key: "inventoryEnabled", label: "库存状态", on: "库存信息正常展示", off: "库存维护中，提交前会再次确认" },
+  { key: "shippingEnabled", label: "配送规则", on: "结算页可自动计算运费", off: "配送规则维护中" },
   { key: "memberLevelEnabled", label: "会员等级", on: "会员等级和权益入口可展示", off: "会员等级入口关闭" },
   { key: "customerServiceDownloadEnabled", label: "客服/安装", on: "客服中心和添加桌面入口可展示", off: "客服/安装入口降级到帮助中心" },
   { key: "reviewEnabled", label: "评价", on: "订单评价入口可展示", off: "评价入口关闭" },
@@ -51,7 +51,7 @@ export default function FeatureStatus() {
         </span>
         <h2>前台会按后台功能开关自动降级</h2>
         <p>
-          这里展示的是客户端可见能力状态。按钮隐藏只影响体验，权限、金额、库存和活动最终仍由后端接口裁判。
+          这里展示当前可用的购物、优惠、支付和服务入口。
         </p>
         <div className="store-v12-status-strip">
           <span>{enabledCount} 项开启</span>
@@ -86,7 +86,7 @@ export default function FeatureStatus() {
           说明
         </div>
         <p className="store-v12-muted">
-          客户端多语言当前默认关闭；后台仍可保留中文和英文管理能力。支付、库存、活动等敏感结果不能只靠前端显示决定。
+          多语言功能当前默认关闭；支付、库存和活动结果以实际订单为准。
         </p>
       </section>
     </StoreStandardPageShell>

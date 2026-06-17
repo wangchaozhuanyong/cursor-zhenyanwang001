@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { PackageCheck, ShieldCheck, TicketPercent, Truck, Wallet } from "lucide-react";
+import { Bell, PackageCheck, ShieldCheck, TicketPercent, Truck, Wallet } from "lucide-react";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
@@ -44,7 +44,6 @@ import {
   PROFILE_MENU_TAP,
   ProfileGuestCard,
   ProfileHeroCard,
-  ProfileAssetPanel,
   ProfileInviteRewardCard,
   ProfileLogoutButton,
   ProfileOrderPanel,
@@ -308,51 +307,47 @@ export default function Profile() {
   const snapshotItems = useMemo<ProfileSnapshotItem[]>(() => [
     {
       key: "orders",
-      label: "待处理订单",
-      value: loggedIn ? `${pendingOrderTotal} 项` : "登录查看",
-      hint: "付款、发货、收货和售后集中跟进",
+      label: "待办订单",
+      value: loggedIn ? (pendingOrderTotal > 0 ? `${pendingOrderTotal} 项` : "暂无") : "登录查看",
+      hint: "待付款/发货/收货",
       icon: PackageCheck,
       path: "/orders",
       auth: true,
       tone: "primary",
     },
     {
-      key: "wallet",
-      label: "可用资产",
-      value: `RM ${rewardBalance.toFixed(2)}`,
-      hint: `${couponCount} 张券 · ${formatGrowthValue(pointsBalance)} 积分`,
-      icon: Wallet,
-      path: "/wallet",
+      key: "coupons",
+      label: "优惠资产",
+      value: `${couponCount} 张券`,
+      hint: `${formatGrowthValue(pointsBalance)} 积分可用`,
+      icon: TicketPercent,
+      path: "/coupons",
       auth: true,
       tone: "price",
     },
     {
-      key: "promotions",
-      label: "活动中心",
-      value: "后端校验",
-      hint: "优惠资格、库存和叠加规则不在前端猜",
-      icon: TicketPercent,
-      path: "/promotions",
-      auth: false,
-      tone: "success",
-    },
-    {
       key: "returns",
-      label: "服务状态",
-      value: activeReturnCount > 0 ? `${activeReturnCount} 处理中` : "可申请售后",
-      hint: "物流、售后和客服入口集中处理",
+      label: "售后物流",
+      value: activeReturnCount > 0 ? `${activeReturnCount} 单` : "无处理中",
+      hint: "退换/配送跟进",
       icon: Truck,
       path: "/returns",
       auth: true,
       tone: "neutral",
     },
-  ], [activeReturnCount, couponCount, loggedIn, pendingOrderTotal, pointsBalance, rewardBalance]);
+    {
+      key: "notifications",
+      label: "消息提醒",
+      value: unreadCount > 0 ? `${notificationBadgeText} 未读` : "暂无未读",
+      hint: "订单/活动通知",
+      icon: Bell,
+      path: "/notifications",
+      auth: true,
+      tone: "success",
+    },
+  ], [activeReturnCount, couponCount, loggedIn, notificationBadgeText, pendingOrderTotal, pointsBalance, unreadCount]);
 
   const handleSnapshotNavigate = (item: ProfileSnapshotItem) => {
-    if (item.key === "promotions") {
-      navigateStorePath(item.path, { from: "/profile" });
-      return;
-    }
     handleFeatureNavigate(item.key, item.path, item.auth);
   };
 
@@ -419,13 +414,6 @@ export default function Profile() {
                   items={orderActions}
                   onViewAll={() => navigateFeature("orders")}
                   onNavigate={(item) => handleFeatureNavigate(item.key || "", item.path, item.auth)}
-                />
-              ) : null}
-
-              {loggedIn ? (
-                <ProfileAssetPanel
-                  items={assetItems}
-                  onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
                 />
               ) : null}
 

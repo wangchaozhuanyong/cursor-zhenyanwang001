@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ClipboardList, Clock3, PackageCheck, RotateCcw, Truck } from "lucide-react";
+import { ClipboardList, Clock3, PackageCheck, RotateCcw } from "lucide-react";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
@@ -91,7 +91,7 @@ function buildRepurchaseProduct(item: Order["items"][number]) {
   const stock = Number(item.product.stock);
   return {
     ...item.product,
-    // 历史订单商品快照通常不携带实时库存，交给购物车接口做最终校验。
+    // 历史订单商品快照通常不携带实时库存，交给购物车接口做最终确认。
     stock: Number.isFinite(stock) && stock > 0 ? stock : 999999,
   };
 }
@@ -196,7 +196,7 @@ export default function Orders() {
     {
       label: "全部订单",
       value: currentSummary.total,
-      hint: "历史订单集中查看",
+      hint: "查看历史订单",
       icon: ClipboardList,
     },
     {
@@ -305,14 +305,6 @@ export default function Orders() {
       rightSlot={renderOrderSearchField("store-order-header-search-field w-[9.5rem] max-w-[44vw] flex-none sm:w-44 xl:hidden")}
     >
         <section className="store-orders-v12-hero">
-          <div className="store-orders-v12-hero__copy">
-            <span className="store-v12-eyebrow">
-              <Truck size={15} aria-hidden />
-              订单中心
-            </span>
-            <h2>订单状态、物流和售后集中管理</h2>
-            <p>待付款、待发货、待收货、评价和售后进度统一在这里查看；支付状态和物流结果仍以后端订单数据为准。</p>
-          </div>
           <div className="store-orders-v12-stat-grid" aria-label="订单统计">
             {orderStats.map((item) => {
               const Icon = item.icon;
@@ -443,24 +435,27 @@ export default function Orders() {
                   </div>
                 ) : null}
 
-                <div className="space-y-2">
+                <div className="store-orders-v12-products">
                   {shownItems.map((item, itemIndex) => (
-                    <div key={item.order_item_id || item.id || item.product.id} className="flex gap-2">
+                    <div key={item.order_item_id || item.id || item.product.id} className="store-orders-v12-product-row">
                       <ProductCoverImage
                         url={item.product.cover_image}
                         alt={item.product.name}
-                        className="w-12 self-start rounded-lg object-cover"
+                        className="store-orders-v12-product-media"
                         imgClassName="object-cover"
+                        sizes="88px"
                         loading={orderIndex === 0 && itemIndex === 0 ? "eager" : "lazy"}
                         fetchPriority={orderIndex === 0 && itemIndex === 0 ? "high" : "low"}
                       />
-                      <div className="min-w-0 flex-1">
-                        <p className="store-card-title line-clamp-2">{item.product.name}</p>
-                        <p className="store-caption mt-1 truncate text-[var(--theme-text-muted)]">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-[15px] font-semibold text-[var(--theme-price)]">RM {money(item.unit_price ?? item.product.price ?? 0)}</p>
-                        <p className="mt-1 text-xs text-[var(--theme-text-muted)]">x{item.qty}</p>
+                      <div className="store-orders-v12-product-content">
+                        <div className="store-orders-v12-product-copy">
+                          <p className="store-orders-v12-product-title">{item.product.name}</p>
+                          <p className="store-orders-v12-product-variant">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
+                        </div>
+                        <div className="store-orders-v12-product-price">
+                          <p>RM {money(item.unit_price ?? item.product.price ?? 0)}</p>
+                          <span>x{item.qty}</span>
+                        </div>
                       </div>
                     </div>
                   ))}

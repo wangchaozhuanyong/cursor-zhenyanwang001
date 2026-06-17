@@ -39,7 +39,7 @@ export default function Favorites() {
         <section className="store-account-v12-hero">
           <span className="store-v12-eyebrow"><Heart size={14} aria-hidden /> 收藏夹</span>
           <h2>常买好物，一键回到商品</h2>
-          <p>收藏商品会同步展示后端返回的活动价、库存和标签，方便你比较后再加入购物车。</p>
+          <p>收藏商品会展示活动价、库存和标签，方便你比较后再加入购物车。</p>
           <div className="store-v12-status-strip">
             <span>{favoriteProducts.length} 个收藏</span>
             <span>{saleableCount} 个可售</span>
@@ -79,7 +79,7 @@ export default function Favorites() {
               <span className="store-orders-v12-stat__icon"><BadgePercent size={17} aria-hidden /></span>
               <strong>{activityCount}</strong>
               <span>活动商品</span>
-              <small>以后端活动字段为准</small>
+              <small>活动信息</small>
             </div>
           </section>
         ) : null}

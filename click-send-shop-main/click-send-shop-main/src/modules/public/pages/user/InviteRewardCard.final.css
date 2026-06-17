@@ -29,15 +29,15 @@
   height: 100%;
   border-radius: 4cqw;
   overflow: hidden;
-  border: 0.18cqw solid var(--ir-border);
+  border: 0.18cqw solid rgba(45, 184, 206, 0.32);
   background:
-    radial-gradient(circle at 78% 9%, rgba(42, 169, 255, 0.22), transparent 30%),
-    radial-gradient(circle at 96% 76%, rgba(244, 201, 93, 0.20), transparent 30%),
-    radial-gradient(circle at 14% 96%, rgba(20, 184, 166, 0.13), transparent 34%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(237, 250, 255, 0.93) 54%, rgba(255, 255, 255, 0.95));
+    radial-gradient(circle at 86% 34%, rgba(80, 188, 255, 0.22), transparent 28%),
+    radial-gradient(circle at 96% 88%, rgba(244, 201, 93, 0.22), transparent 30%),
+    radial-gradient(circle at 8% 98%, rgba(20, 184, 166, 0.12), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, rgba(239, 251, 255, 0.97) 52%, rgba(255, 250, 235, 0.94) 100%);
   box-shadow:
     inset 0 0.18cqw 0 rgba(255, 255, 255, 0.90),
-    0 3.2cqw 7.5cqw rgba(15, 105, 145, 0.16);
+    0 2.6cqw 6cqw rgba(15, 105, 145, 0.12);
 }
 
 .ir-card::before {
@@ -45,10 +45,10 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(29, 167, 229, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(29, 167, 229, 0.055) 1px, transparent 1px);
-  background-size: 5cqw 5cqw;
-  mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.82) 46%, transparent 82%);
+    linear-gradient(rgba(29, 167, 229, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29, 167, 229, 0.045) 1px, transparent 1px);
+  background-size: 5.4cqw 5.4cqw;
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.22) 36%, rgba(0, 0, 0, 0.88) 100%);
   pointer-events: none;
 }
 
@@ -66,13 +66,13 @@
 .ir-safe-overlay {
   position: absolute;
   z-index: 1;
-  right: -3cqw;
-  top: -4cqw;
-  width: 42cqw;
-  height: 35cqw;
+  right: -7cqw;
+  top: 12cqw;
+  width: 48cqw;
+  height: 34cqw;
   border-radius: 999px;
   background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.84) 0 28%, rgba(255, 226, 139, 0.20) 29% 45%, rgba(42, 169, 255, 0.12) 46% 62%, transparent 63%);
+    radial-gradient(circle, rgba(255, 255, 255, 0.82) 0 30%, rgba(255, 226, 139, 0.22) 31% 47%, rgba(42, 169, 255, 0.11) 48% 64%, transparent 65%);
   box-shadow: inset 0 0 0 0.12cqw rgba(255, 255, 255, 0.72);
   pointer-events: none;
 }
@@ -81,9 +81,9 @@
   position: absolute;
   z-index: 3;
   left: 4.4cqw;
-  top: 5cqw;
+  top: 5.2cqw;
   width: fit-content;
-  min-width: 25cqw;
+  min-width: 22cqw;
   height: 4.7cqw;
   border-radius: 999px;
   display: inline-flex;
@@ -124,9 +124,9 @@
   position: absolute;
   z-index: 3;
   left: 4.55cqw;
-  top: 14.5cqw;
+  top: 14.9cqw;
   margin: 0;
-  max-width: 52cqw;
+  max-width: 48cqw;
   color: var(--ir-ink);
   font-size: clamp(26px, 5.75cqw, 34px);
   line-height: 1.12;
@@ -139,8 +139,8 @@
   position: absolute;
   z-index: 3;
   left: 4.65cqw;
-  top: 24.3cqw;
-  width: 52cqw;
+  top: 24.4cqw;
+  width: 49cqw;
   margin: 0;
   color: var(--ir-muted);
   font-size: clamp(12px, 2.35cqw, 14px);
@@ -152,33 +152,38 @@
 .ir-hero {
   position: absolute;
   z-index: 2;
-  right: 3.8cqw;
-  top: 3.3cqw;
-  width: min(34.5cqw, 210px);
-  height: min(30cqw, 190px);
+  right: -0.8cqw;
+  top: auto;
+  bottom: -1.6cqw;
+  width: min(32cqw, 190px);
+  height: min(31cqw, 182px);
   object-fit: contain;
   object-position: center;
+  opacity: 0.9;
   pointer-events: none;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 26%);
   filter:
-    drop-shadow(0 2.6cqw 3.2cqw rgba(151, 91, 20, 0.16))
-    drop-shadow(0 1.1cqw 2.5cqw rgba(18, 113, 154, 0.12));
+    drop-shadow(0 2.2cqw 2.8cqw rgba(151, 91, 20, 0.14))
+    drop-shadow(0 1cqw 2.2cqw rgba(18, 113, 154, 0.10));
 }
 
 .ir-stats {
   position: absolute;
-  z-index: 4;
-  left: 4.5cqw;
-  bottom: 5cqw;
-  width: 41.2cqw;
-  min-height: 8.4cqw;
+  z-index: 5;
+  right: 4.4cqw;
+  top: 4.6cqw;
+  width: 43cqw;
+  min-height: 8.8cqw;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.1cqw;
   padding: 0.95cqw;
   border: 0.14cqw solid rgba(54, 191, 236, 0.28);
   border-radius: 2.25cqw;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(239, 250, 255, 0.82));
-  box-shadow: inset 0 0.18cqw 0 rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.90), rgba(239, 250, 255, 0.82));
+  box-shadow:
+    inset 0 0.18cqw 0 rgba(255, 255, 255, 0.9),
+    0 1.2cqw 2.8cqw rgba(15, 105, 145, 0.08);
 }
 
 .ir-stat {
@@ -225,12 +230,12 @@
 .ir-actions {
   position: absolute;
   z-index: 4;
-  right: 4.5cqw;
+  left: 4.5cqw;
   bottom: 5cqw;
-  width: 42.2cqw;
+  width: 54cqw;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.6cqw;
+  gap: 1.25cqw;
 }
 
 .ir-action {
@@ -337,108 +342,107 @@ html[data-app-scope="store"] .profile-invite-reward-card.client-profile-invite-p
 }
 
 @container (max-width: 460px) {
-  .ir-stage {
-    aspect-ratio: 390 / 350;
-  }
-
   .ir-card {
-    border-radius: 6.2cqw;
+    border-radius: 5.8cqw;
   }
 
   .ir-safe-overlay {
-    right: -7cqw;
-    top: 5cqw;
-    width: 37cqw;
-    height: 37cqw;
+    right: -9cqw;
+    top: 26cqw;
+    width: 48cqw;
+    height: 42cqw;
   }
 
   .ir-badge {
     left: 4.8cqw;
-    top: 7.8cqw;
-    min-width: 41cqw;
-    height: 8.6cqw;
-    gap: 2.2cqw;
-    padding-inline: 3cqw;
+    top: 5.6cqw;
+    min-width: 28cqw;
+    height: 7.4cqw;
+    gap: 1.8cqw;
+    padding-inline: 2.6cqw;
   }
 
   .ir-badgeIcon {
-    width: 5.5cqw;
-    height: 5.5cqw;
+    width: 4.8cqw;
+    height: 4.8cqw;
   }
 
   .ir-badgeIcon svg {
-    width: 2.7cqw;
-    height: 2.7cqw;
+    width: 2.35cqw;
+    height: 2.35cqw;
   }
 
   .ir-badgeText {
-    font-size: 3.1cqw;
+    font-size: 2.9cqw;
   }
 
   .ir-title {
     left: 4.8cqw;
-    top: 24cqw;
-    max-width: 56cqw;
-    font-size: 6.6cqw;
+    top: 16.5cqw;
+    max-width: 39cqw;
+    font-size: 5.6cqw;
   }
 
   .ir-subtitle {
     left: 4.8cqw;
-    top: 37cqw;
-    width: 52cqw;
-    font-size: 3.5cqw;
-    line-height: 1.38;
+    top: 27.4cqw;
+    width: 50cqw;
+    font-size: 3.15cqw;
+    line-height: 1.46;
     display: -webkit-box;
-    max-height: 9.8cqw;
+    max-height: 13.8cqw;
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
 
   .ir-hero {
-    right: -0.5cqw;
-    top: 17cqw;
-    width: 34cqw;
-    height: 34cqw;
+    right: -2.2cqw;
+    top: auto;
+    bottom: -1.5cqw;
+    width: 39cqw;
+    height: 39cqw;
+    opacity: 0.86;
   }
 
   .ir-stats {
-    left: 4.8cqw;
+    left: auto;
     right: 4.8cqw;
-    bottom: 24.8cqw;
-    width: auto;
-    min-height: 18.5cqw;
-    border-radius: 5cqw;
-    gap: 2.2cqw;
-    padding: 2.2cqw;
+    top: 5.4cqw;
+    bottom: auto;
+    width: 45cqw;
+    min-height: 17cqw;
+    border-radius: 4.6cqw;
+    gap: 1.4cqw;
+    padding: 1.6cqw;
   }
 
   .ir-stat {
-    min-height: 14cqw;
-    border-radius: 4.2cqw;
+    min-height: 12.4cqw;
+    border-radius: 3.7cqw;
   }
 
   .ir-statLabel {
-    font-size: 3.4cqw;
+    font-size: 3cqw;
   }
 
   .ir-statValue {
-    font-size: clamp(18px, 5.2cqw, 24px);
+    font-size: clamp(15px, 4.15cqw, 20px);
   }
 
   .ir-actions {
     left: 4.8cqw;
-    right: 4.8cqw;
-    bottom: 6.1cqw;
-    width: auto;
-    gap: 3cqw;
+    right: auto;
+    bottom: 7.2cqw;
+    width: 58cqw;
+    gap: 1.8cqw;
   }
 
   .ir-action {
-    height: 14.2cqw;
-    min-height: 46px;
-    border-radius: 4.2cqw;
-    font-size: 3.65cqw;
+    height: 11.8cqw;
+    min-height: 44px;
+    border-radius: 3.7cqw;
+    font-size: 3.35cqw;
   }
 
   .ir-action svg {
@@ -446,12 +450,12 @@ html[data-app-scope="store"] .profile-invite-reward-card.client-profile-invite-p
   }
 }
 
-@media (max-width: 460px) {
+@media (max-width: 520px) {
   .profile-invite-reward-card > .ir-stage,
   html[data-app-scope="store"] .profile-invite-reward-card.client-profile-invite-panel > .ir-stage {
     width: 100% !important;
     max-width: 100% !important;
-    aspect-ratio: 390 / 350;
+    aspect-ratio: 390 / 240;
   }
 }
 

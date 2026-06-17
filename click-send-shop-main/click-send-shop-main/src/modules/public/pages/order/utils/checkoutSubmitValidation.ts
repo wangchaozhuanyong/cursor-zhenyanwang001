@@ -29,7 +29,7 @@ export function validateCheckoutSubmit(
     return { ok: false, message: "运费规则未加载完成，无法提交订单" };
   }
   if (input.shippingRulesError || input.shippingQuoteError) {
-    return { ok: false, message: "运费规则校验失败，请稍后重试" };
+    return { ok: false, message: "运费确认失败，请稍后重试" };
   }
   return { ok: true };
 }

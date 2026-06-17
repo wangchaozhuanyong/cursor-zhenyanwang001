@@ -27,7 +27,7 @@ const HOME_CAMPAIGN_ENTRANCES: StorefrontCampaignVm[] = [
     id: "local-home-flash-sale",
     type: "flash_sale",
     title: "限时秒杀专区",
-    subtitle: "热销商品和限时活动集中查看",
+    subtitle: "热销商品和限时活动",
     promoLabel: "马上抢",
     href: "/promotions?type=flash_sale",
     tone: "danger",

@@ -373,8 +373,8 @@ export default function PromotionDetail() {
           <div className="store-promotion-detail-v12-hero__guardrail">
             <ShieldCheck size={18} aria-hidden />
             <div>
-              <strong>结算页以后端活动引擎为准</strong>
-              <p>活动时间、商品范围、SKU、会员等级、限购、库存、优惠券和叠加/互斥规则都会在购物车与结算页重新校验。</p>
+              <strong>结算页会自动确认可用优惠</strong>
+              <p>活动时间、商品范围、会员等级、限购、库存、优惠券和叠加关系会在结算页确认。</p>
             </div>
           </div>
 
@@ -405,13 +405,13 @@ export default function PromotionDetail() {
 
       <section className="store-promotion-detail-v12-checks">
         {[
-          "命中活动后，商品页、购物车、结算预览和订单金额必须保持一致。",
+          "命中活动后，商品页、购物车和结算页会显示对应优惠。",
           promotion.stackable
-            ? "该活动允许与符合条件的优惠叠加，最终叠加顺序由后端规则引擎判断。"
+            ? "该活动允许与符合条件的优惠叠加，结算页会展示可用组合。"
             : "该活动存在互斥限制，若与其他优惠冲突，结算页会给出不可用原因。",
           promotion.usage_limit_per_user
-            ? `每人最多参与 ${promotion.usage_limit_per_user} 次，重复下单会在创建订单时再次校验。`
-            : "暂无每人参与次数限制，但库存、券余量和会员资格仍会实时校验。",
+            ? `每人最多参与 ${promotion.usage_limit_per_user} 次。`
+            : "暂无每人参与次数限制，库存和券余量会实时更新。",
         ].map((text) => (
           <div key={text}>
             <CheckCircle2 size={17} aria-hidden />
@@ -573,16 +573,16 @@ function PromotionDetailStatePanel({
         <ShieldCheck size={22} aria-hidden />
       </div>
       <div className="store-promotion-detail-v12-state-panel__copy">
-        <p className="store-promotion-detail-v12-state-panel__eyebrow">活动详情工作台</p>
+        <p className="store-promotion-detail-v12-state-panel__eyebrow">活动详情</p>
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
 
-      <div className="store-promotion-detail-v12-state-panel__checks" aria-label="活动详情安全校验">
+      <div className="store-promotion-detail-v12-state-panel__checks" aria-label="活动详情说明">
         {[
-          ["活动状态", "只展示后端返回的活动时间、状态和可用原因。"],
-          ["规则引擎", "优惠资格、叠加互斥、限购和库存仍由结算页重新校验。"],
-          ["交易安全", "创建订单和支付金额不会相信页面 URL 或前端估算。"],
+          ["活动状态", "展示活动时间、状态和可用原因。"],
+          ["优惠组合", "优惠资格、叠加互斥、限购和库存会在结算页确认。"],
+          ["下单确认", "创建订单前会确认商品、优惠和支付金额。"],
         ].map(([label, value]) => (
           <div key={label}>
             <CheckCircle2 size={16} aria-hidden />

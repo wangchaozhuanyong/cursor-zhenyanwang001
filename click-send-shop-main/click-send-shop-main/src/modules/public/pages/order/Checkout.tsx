@@ -83,7 +83,7 @@ export default function Checkout() {
     : shippingBlocked
       ? t("checkout.shippingSyncing")
       : pricingBlocked
-        ? checkout.orderPreviewError || "正在同步后端金额"
+        ? checkout.orderPreviewError || "正在更新订单金额"
       : undefined;
 
   if (checkout.isEmpty) {
@@ -304,36 +304,36 @@ function CheckoutTrustGuardrail({
   const items = [
     {
       icon: Calculator,
-      title: "后端金额",
+      title: "订单金额",
       value: pricingReady ? "已同步" : blocked ? "需处理" : "同步中",
-      hint: pricingError || "商品价、优惠、积分和返现以订单预览为准",
+      hint: pricingError || "商品、优惠、积分和返现已汇总",
       tone: pricingReady ? "is-on" : "is-warn",
     },
     {
       icon: BadgeCheck,
       title: "活动资格",
-      value: "重新校验",
-      hint: "时间、商品范围、SKU、会员等级和叠加规则都不由前端判断",
+      value: "自动确认",
+      hint: "活动适用范围会自动确认",
       tone: "is-on",
     },
     {
       icon: Truck,
       title: "配送库存",
-      value: blocked ? "待复核" : shippingSyncing ? "校验中" : "已校验",
-      hint: "运费、地址、库存和限购会在提交订单前复核",
+      value: blocked ? "待确认" : shippingSyncing ? "确认中" : "已确认",
+      hint: "运费、地址、库存和限购会在提交订单前确认",
       tone: blocked || shippingSyncing ? "is-warn" : "is-on",
     },
   ];
 
   return (
-    <section className="store-checkout-v12-guardrail" aria-label="结算安全校验">
+    <section className="store-checkout-v12-guardrail" aria-label="结算确认">
       <div className="store-checkout-v12-guardrail__head">
         <span className="store-checkout-v12-guardrail__icon" aria-hidden>
           <ShieldCheck size={17} />
         </span>
         <div>
-          <h2>结算由后端最终裁判</h2>
-          <p>前台只展示结果，不自行决定最终价格、优惠资格、库存或支付状态。</p>
+          <h2>提交前确认订单</h2>
+          <p>价格、优惠、库存和配送会在提交前确认。</p>
         </div>
       </div>
       <div className="store-checkout-v12-guardrail__grid">

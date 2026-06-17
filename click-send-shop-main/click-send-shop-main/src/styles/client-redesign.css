@@ -993,15 +993,16 @@ html[data-app-scope="store"] .client-profile-hero-card .profile-vip-action--gold
 }
 
 html[data-app-scope="store"] .client-profile-snapshot-panel {
-  padding: 18px;
+  padding: 16px;
 }
 
 html[data-app-scope="store"] .client-profile-snapshot-head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 html[data-app-scope="store"] .client-profile-snapshot-head__icon {
@@ -1032,10 +1033,13 @@ html[data-app-scope="store"] .client-profile-snapshot-head h3 {
 }
 
 html[data-app-scope="store"] .client-profile-snapshot-head p {
+  flex: 0 1 auto;
+  max-width: 48%;
   color: var(--client-muted);
   font-size: 12px;
   font-weight: 560;
   line-height: 17px;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -1049,17 +1053,17 @@ html[data-app-scope="store"] .client-profile-snapshot-card {
   position: relative;
   display: grid;
   min-width: 0;
-  min-height: 112px;
+  min-height: 96px;
   grid-template-columns: auto minmax(0, 1fr);
   align-content: start;
-  gap: 9px;
+  gap: 8px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--client-border) 86%, transparent);
   border-radius: 17px;
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--client-surface) 94%, transparent), color-mix(in srgb, var(--client-v12-subtle) 70%, var(--client-surface))),
     var(--client-surface);
-  padding: 12px;
+  padding: 11px;
   text-align: left;
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }
@@ -1122,14 +1126,12 @@ html[data-app-scope="store"] .client-profile-snapshot-card__copy strong {
 }
 
 html[data-app-scope="store"] .client-profile-snapshot-card__copy em {
-  display: -webkit-box;
   color: var(--client-muted);
   font-size: 11px;
   font-style: normal;
   font-weight: 520;
   line-height: 16px;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  white-space: nowrap;
 }
 
 html[data-app-scope="store"] .client-profile-snapshot-card__arrow {
@@ -2038,37 +2040,48 @@ html[data-app-scope="store"] .client-profile-order-panel {
 
 html[data-app-scope="store"] .client-profile-page .profile-order-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+  gap: 8px;
 }
 
 html[data-app-scope="store"] .client-profile-page .profile-order-action {
-  min-height: 58px;
-  gap: 4px;
-  border: 0;
-  border-radius: 14px;
-  background: #fff;
+  min-height: 74px;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, #0f7b68 14%, #dce5de);
+  border-radius: 15px;
+  background:
+    linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, #0f7b68 5%, #ffffff) 100%),
+    #fff;
   color: #263a35;
-  padding: 6px 2px;
+  padding: 8px 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 8px 18px rgba(20, 45, 40, 0.05);
 }
 
 html[data-app-scope="store"] .client-profile-page .profile-order-icon {
-  width: 24px;
-  height: 24px;
-  background: transparent;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, #0f7b68 16%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), color-mix(in srgb, #0f7b68 9%, #ffffff)),
+    color-mix(in srgb, #0f7b68 8%, #ffffff);
   color: #0f7b68;
+  box-shadow: 0 5px 12px rgba(15, 123, 104, 0.08);
 }
 
 html[data-app-scope="store"] .client-profile-page .profile-order-label {
   color: #263a35;
   font-size: 11px;
-  font-weight: 760;
+  font-weight: 820;
+  letter-spacing: 0;
 }
 
 html[data-app-scope="store"] .client-profile-page .profile-count-badge {
-  right: -8px;
-  top: -8px;
+  right: -7px;
+  top: -7px;
   border-color: #fff;
   background: #cf3f4a;
+  box-shadow: 0 4px 10px rgba(207, 63, 74, 0.24);
 }
 
 html[data-app-scope="store"] .client-profile-invite-panel {
@@ -2108,6 +2121,17 @@ html[data-app-scope="store"] .client-profile-page .profile-secondary-action {
   background: #fff;
   padding: 0 12px;
   text-align: left;
+}
+
+html[data-app-scope="store"] .client-profile-page .profile-secondary-action {
+  position: relative;
+  padding-right: 42px;
+}
+
+html[data-app-scope="store"] .client-profile-page .profile-secondary-badge {
+  right: 62px;
+  top: 8px;
+  z-index: 2;
 }
 
 html[data-app-scope="store"] .client-profile-page .profile-service-icon,
@@ -2411,7 +2435,6 @@ html[data-app-scope="store"] .client-profile-page .profile-asset-label {
   font-weight: 680;
 }
 
-html[data-app-scope="store"] .client-profile-page .profile-order-action,
 html[data-app-scope="store"] .client-profile-page .profile-service-action,
 html[data-app-scope="store"] .client-profile-page .profile-secondary-action {
   background: #ffffff;
@@ -3178,7 +3201,7 @@ html[data-app-scope="store"] .store-feature-status-v12-page .store-v12-status-ro
 
 html[data-app-scope="store"] .store-orders-v12-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   margin-bottom: 14px;
   border: 1px solid color-mix(in srgb, var(--client-border) 82%, transparent);
@@ -3188,28 +3211,6 @@ html[data-app-scope="store"] .store-orders-v12-hero {
     var(--client-surface);
   padding: 18px;
   box-shadow: var(--client-v12-card-shadow);
-}
-
-html[data-app-scope="store"] .store-orders-v12-hero__copy {
-  display: grid;
-  align-content: center;
-  gap: 9px;
-  min-width: 0;
-}
-
-html[data-app-scope="store"] .store-orders-v12-hero__copy h2 {
-  margin: 0;
-  color: var(--theme-text);
-  font-size: 1.55rem;
-  font-weight: 860;
-  line-height: 1.18;
-}
-
-html[data-app-scope="store"] .store-orders-v12-hero__copy p {
-  margin: 0;
-  color: var(--client-muted);
-  font-size: 0.9rem;
-  line-height: 1.58;
 }
 
 html[data-app-scope="store"] .store-orders-v12-stat-grid {
@@ -3329,6 +3330,94 @@ html[data-app-scope="store"] .store-orders-v12-products-label {
   font-size: 0.9rem;
   font-weight: 780;
   line-height: 1.35;
+}
+
+html[data-app-scope="store"] .store-orders-v12-products {
+  display: grid;
+  gap: 10px;
+}
+
+html[data-app-scope="store"] .store-orders-v12-product-row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--client-border) 70%, transparent);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--client-v12-subtle) 62%, #ffffff), #ffffff 72%),
+    var(--client-surface);
+  padding: 10px;
+}
+
+html[data-app-scope="store"] .store-orders-v12-product-media {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  overflow: hidden;
+  border-radius: 13px;
+  background: var(--client-v12-subtle);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.78);
+}
+
+html[data-app-scope="store"] .store-orders-v12-product-content {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+html[data-app-scope="store"] .store-orders-v12-product-copy {
+  min-width: 0;
+}
+
+html[data-app-scope="store"] .store-orders-v12-product-title {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--theme-text);
+  font-size: 0.92rem;
+  font-weight: 820;
+  line-height: 1.36;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+html[data-app-scope="store"] .store-orders-v12-product-variant {
+  overflow: hidden;
+  margin: 6px 0 0;
+  color: var(--client-muted);
+  font-size: 0.75rem;
+  font-weight: 620;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"] .store-orders-v12-product-price {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  min-width: 64px;
+  text-align: right;
+}
+
+html[data-app-scope="store"] .store-orders-v12-product-price p {
+  margin: 0;
+  color: var(--theme-price);
+  font-size: 0.92rem;
+  font-weight: 860;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"] .store-orders-v12-product-price span {
+  color: var(--client-muted);
+  font-size: 0.72rem;
+  font-weight: 680;
+  line-height: 1.2;
 }
 
 html[data-app-scope="store"] .store-order-detail-v12-hero,
@@ -6754,10 +6843,6 @@ html[data-app-scope="store"] .store-return-detail-v12-hero {
     padding: 14px;
   }
 
-  html[data-app-scope="store"] .store-orders-v12-hero__copy h2 {
-    font-size: 1.38rem;
-  }
-
   html[data-app-scope="store"] .store-orders-v12-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -7105,43 +7190,6 @@ html[data-app-scope="store"] .store-cart-v12-overview {
   box-shadow: var(--client-v12-card-shadow);
 }
 
-html[data-app-scope="store"] .store-cart-v12-overview__copy {
-  display: grid;
-  min-width: 0;
-  gap: 5px;
-}
-
-html[data-app-scope="store"] .store-cart-v12-overview__copy span {
-  display: inline-flex;
-  width: fit-content;
-  max-width: 100%;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, var(--client-border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-primary) 8%, var(--client-surface));
-  padding: 5px 9px;
-  color: var(--theme-primary);
-  font-size: 11px;
-  font-weight: 840;
-  line-height: 1.2;
-}
-
-html[data-app-scope="store"] .store-cart-v12-overview__copy h1 {
-  margin: 0;
-  color: var(--theme-text);
-  font-size: 20px;
-  font-weight: 920;
-  line-height: 26px;
-}
-
-html[data-app-scope="store"] .store-cart-v12-overview__copy p {
-  margin: 0;
-  color: var(--client-muted);
-  font-size: 12px;
-  line-height: 18px;
-}
-
 html[data-app-scope="store"] .store-cart-v12-overview__stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -7356,7 +7404,7 @@ html[data-app-scope="store"] .store-product-v12-error-panel__actions button:firs
 
 @media (min-width: 768px) {
   html[data-app-scope="store"] .store-cart-v12-overview {
-    grid-template-columns: minmax(0, 0.9fr) minmax(28rem, 1.15fr) auto;
+    grid-template-columns: minmax(28rem, 1fr) auto;
     align-items: center;
     padding: 16px;
   }
@@ -7373,29 +7421,6 @@ html[data-app-scope="store"] .store-product-v12-error-panel__actions button:firs
     margin-top: 0;
     margin-bottom: 10px;
     padding: 11px;
-  }
-
-  html[data-app-scope="store"] .store-cart-v12-overview__copy {
-    gap: 4px;
-  }
-
-  html[data-app-scope="store"] .store-cart-v12-overview__copy span {
-    min-height: 22px;
-    padding-inline: 8px;
-    font-size: 10px;
-  }
-
-  html[data-app-scope="store"] .store-cart-v12-overview__copy h1 {
-    font-size: 16px;
-    line-height: 21px;
-  }
-
-  html[data-app-scope="store"] .store-cart-v12-overview__copy p {
-    display: -webkit-box;
-    font-size: 10.5px;
-    line-height: 15px;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
   }
 
   html[data-app-scope="store"] .store-cart-v12-overview__stats {
@@ -7688,8 +7713,8 @@ html[data-app-scope="store"] .store-product-v12-error-panel__actions button:firs
   }
 
   html[data-app-scope="store"] .client-profile-snapshot-head {
-    gap: 8px;
-    margin-bottom: 9px;
+    gap: 10px;
+    margin-bottom: 10px;
   }
 
   html[data-app-scope="store"] .client-profile-snapshot-head__icon {
@@ -7699,13 +7724,15 @@ html[data-app-scope="store"] .store-product-v12-error-panel__actions button:firs
   }
 
   html[data-app-scope="store"] .client-profile-snapshot-head h3 {
-    font-size: 15px;
-    line-height: 19px;
+    font-size: 16px;
+    line-height: 20px;
   }
 
   html[data-app-scope="store"] .client-profile-snapshot-head p {
+    max-width: 50%;
     font-size: 10.5px;
     line-height: 14px;
+    text-align: right;
   }
 
   html[data-app-scope="store"] .client-profile-snapshot-grid {
@@ -7713,7 +7740,7 @@ html[data-app-scope="store"] .store-product-v12-error-panel__actions button:firs
   }
 
   html[data-app-scope="store"] .client-profile-snapshot-card {
-    min-height: 78px;
+    min-height: 74px;
     gap: 6px;
     border-radius: 13px;
     padding: 8px;
@@ -7742,7 +7769,6 @@ html[data-app-scope="store"] .store-product-v12-error-panel__actions button:firs
   html[data-app-scope="store"] .client-profile-snapshot-card__copy em {
     font-size: 9.5px;
     line-height: 13px;
-    -webkit-line-clamp: 1;
   }
 
   html[data-app-scope="store"] .client-profile-snapshot-card__arrow {
@@ -7751,13 +7777,15 @@ html[data-app-scope="store"] .store-product-v12-error-panel__actions button:firs
   }
 
   html[data-app-scope="store"] .client-profile-page .profile-order-action {
-    min-height: 66px;
-    gap: 5px;
+    min-height: 70px;
+    gap: 6px;
+    border-radius: 14px;
+    padding: 7px 3px;
   }
 
   html[data-app-scope="store"] .client-profile-page .profile-order-icon {
-    width: 32px;
-    height: 32px;
+    width: 33px;
+    height: 33px;
   }
 
   html[data-app-scope="store"] .client-profile-section-title {

@@ -13192,16 +13192,112 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-hero-v4 
   border-radius: 1rem;
   border-color: color-mix(in srgb, var(--market-gold, #c69a42) 18%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 42%),
-    linear-gradient(135deg, #153a2f 0%, var(--market-jade, #0d5c48) 48%, #24372d 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.66), transparent 46%),
+    linear-gradient(135deg, #fffaf0 0%, #edf7f2 48%, #fbf6e8 100%);
   box-shadow:
-    0 22px 54px -40px rgba(5, 34, 25, 0.58),
-    0 0 0 1px color-mix(in srgb, white 8%, transparent);
+    0 22px 54px -42px rgba(37, 58, 49, 0.28),
+    0 0 0 1px color-mix(in srgb, white 62%, transparent);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-hero-media::after {
+  background:
+    linear-gradient(96deg, rgba(255, 252, 242, 0.84) 0%, rgba(255, 252, 242, 0.64) 31%, rgba(255, 252, 242, 0.24) 55%, rgba(255, 252, 242, 0.07) 74%, transparent 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.03) 44%, rgba(250, 246, 236, 0.26) 100%);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-hero-media .store-hero-text-wash {
+  background:
+    linear-gradient(98deg, rgba(255, 252, 242, 0.82) 0%, rgba(255, 252, 242, 0.56) 32%, rgba(255, 252, 242, 0.18) 54%, transparent 74%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(250, 246, 236, 0.16));
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-hero-media .store-hero-image-with-copy {
+  filter: saturate(1.08) contrast(1.02) brightness(1.08);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-hero-media .store-hero-carousel--showcase {
+  --store-hero-copy-title-color: #17211f;
+  --store-hero-copy-subtitle-color: rgba(23, 33, 31, 0.84);
+  --store-hero-copy-desc-color: rgba(38, 58, 53, 0.74);
+  --store-hero-copy-title-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+  --store-hero-copy-subtitle-shadow: 0 1px 0 rgba(255, 255, 255, 0.58);
+  --store-hero-copy-desc-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  --store-hero-copy-divider-bg: linear-gradient(90deg, rgba(15, 106, 92, 0.38) 0 38%, transparent 38% 44%, rgba(184, 138, 50, 0.28) 44% 100%);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-hero-media .store-hero-copy-panel {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.7), rgba(255, 252, 242, 0.34));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.74),
+    0 16px 34px -30px rgba(23, 33, 31, 0.36);
+  backdrop-filter: blur(8px) saturate(1.04);
+  -webkit-backdrop-filter: blur(8px) saturate(1.04);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-title-wrap {
+  width: fit-content;
+  max-width: min(37rem, 100%);
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  border-radius: 1rem;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.68), rgba(255, 252, 242, 0.32));
+  padding: 0.72rem 0.82rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.74),
+    0 16px 34px -30px rgba(23, 33, 31, 0.36);
+  backdrop-filter: blur(8px) saturate(1.04);
+  -webkit-backdrop-filter: blur(8px) saturate(1.04);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-kicker {
+  border-color: rgba(15, 106, 92, 0.14);
+  background: rgba(255, 255, 255, 0.74);
+  color: #0f6a5c;
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-title {
+  color: #17211f;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-desc {
+  color: rgba(38, 58, 53, 0.74);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-hot-terms > button {
+  border-color: rgba(15, 106, 92, 0.12);
+  background: rgba(255, 255, 255, 0.66);
+  color: rgba(23, 33, 31, 0.74);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-chrome {
   border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.74);
+  color: #17211f;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 12px 28px -24px rgba(23, 33, 31, 0.42);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-brand {
+  color: #17211f;
+  text-shadow: none;
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-links > button {
+  color: rgba(23, 33, 31, 0.72);
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-links > button:first-child,
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-links > button:hover {
+  color: #0f6a5c;
+}
+
+html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-icon-button {
+  border-color: rgba(15, 106, 92, 0.14);
+  background: rgba(255, 255, 255, 0.82);
+  color: #0f6a5c;
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-brand-mark {

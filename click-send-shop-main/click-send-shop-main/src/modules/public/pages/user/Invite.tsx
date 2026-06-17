@@ -167,7 +167,7 @@ export default function Invite() {
         <section
           className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 shadow-[var(--theme-shadow)] sm:px-6 sm:py-6"
           style={{
-            backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 98%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 92%, transparent) 46%, color-mix(in srgb, var(--theme-bg) 68%, transparent) 100%), url("${INVITE_HERO_IMAGE}")`,
+            backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 95%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 84%, transparent) 46%, color-mix(in srgb, var(--theme-bg) 42%, transparent) 100%), url("${INVITE_HERO_IMAGE}")`,
             backgroundPosition: "center",
             backgroundSize: "cover",
           }}
@@ -267,7 +267,7 @@ export default function Invite() {
           <div
             className="relative overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] px-4 py-5 text-center"
             style={{
-              backgroundImage: `linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 94%, transparent), color-mix(in srgb, var(--theme-bg) 78%, transparent)), url("${INVITE_POSTER_IMAGE}")`,
+              backgroundImage: `linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 91%, transparent), color-mix(in srgb, var(--theme-bg) 56%, transparent)), url("${INVITE_POSTER_IMAGE}")`,
               backgroundPosition: "center",
               backgroundSize: "cover",
             }}

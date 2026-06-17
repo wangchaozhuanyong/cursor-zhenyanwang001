@@ -563,7 +563,7 @@ function CouponHero({
       animate={{ opacity: 1, y: 0 }}
       className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 shadow-[var(--theme-shadow)] sm:px-6 sm:py-5"
       style={{
-        backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 98%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 92%, transparent) 44%, color-mix(in srgb, var(--theme-bg) 72%, transparent) 100%), url("${COUPON_HERO_IMAGE}")`,
+        backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 95%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 83%, transparent) 44%, color-mix(in srgb, var(--theme-bg) 42%, transparent) 100%), url("${COUPON_HERO_IMAGE}")`,
         backgroundPosition: "center",
         backgroundSize: "cover",
       }}

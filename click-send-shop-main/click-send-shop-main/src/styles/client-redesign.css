@@ -1849,8 +1849,9 @@ html[data-app-scope="store"] .client-profile-hero-card .profile-vip-watermark {
   height: 76px;
   border-radius: 18px;
   background:
-    linear-gradient(135deg, transparent 0 18%, rgba(255, 255, 255, 0.13) 18% 24%, transparent 24% 42%, rgba(118, 210, 191, 0.13) 42% 48%, transparent 48% 100%);
+    linear-gradient(135deg, transparent 0 18%, rgba(15, 106, 92, 0.1) 18% 24%, transparent 24% 42%, rgba(184, 138, 50, 0.14) 42% 48%, transparent 48% 100%);
   transform: rotate(-12deg);
+  opacity: 0.72;
   pointer-events: none;
 }
 
@@ -2188,13 +2189,34 @@ html[data-app-scope="store"] .client-profile-trust-strip {
 
 /* V12 profile polish: account workspace */
 html[data-app-scope="store"] .client-profile-page {
-  background: linear-gradient(180deg, #f7f9f6 0%, #eef4f0 30rem, #f6f8f5 100%);
+  background:
+    linear-gradient(180deg, rgba(247, 249, 246, 0.94) 0%, rgba(238, 244, 240, 0.9) 30rem, #f6f8f5 100%),
+    url("/assets/home-banners/home-hero-05-support-bg.webp");
+  background-position: center top, right top;
+  background-repeat: no-repeat;
+  background-size: auto, min(1180px, 100%) auto;
+}
+
+html[data-app-scope="store"] .store-v12-page.client-profile-page {
+  background:
+    linear-gradient(180deg, rgba(247, 249, 246, 0.94) 0%, rgba(238, 244, 240, 0.9) 30rem, #f6f8f5 100%),
+    url("/assets/home-banners/home-hero-05-support-bg.webp") !important;
+  background-position: center top, right top !important;
+  background-repeat: no-repeat !important;
+  background-size: auto, min(1180px, 100%) auto !important;
 }
 
 html[data-app-scope="store"] .client-profile-hero-card {
   border-radius: 22px;
-  background: linear-gradient(135deg, #17211f 0%, #243c36 58%, #0f7b68 100%);
-  box-shadow: 0 18px 42px rgba(14, 42, 36, 0.19);
+  background:
+    linear-gradient(105deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.88) 48%, rgba(255, 255, 255, 0.42) 72%, rgba(15, 106, 92, 0.34) 100%),
+    linear-gradient(135deg, rgba(255, 250, 239, 0.88), rgba(233, 248, 241, 0.62)),
+    url("/assets/home-banners/home-hero-01-platform-bg.webp");
+  background-position: center, center, right center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  color: #17211f;
+  box-shadow: 0 18px 42px rgba(46, 68, 58, 0.16);
 }
 
 html[data-app-scope="store"] .client-profile-card,
@@ -2208,7 +2230,12 @@ html[data-app-scope="store"] .client-profile-install-shortcut {
 html[data-app-scope="store"] .client-profile-hero-card .profile-card-asset {
   grid-template-rows: auto auto auto;
   min-height: 74px;
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(15, 106, 92, 0.1);
+  background: rgba(255, 255, 255, 0.76);
+  color: #17211f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(12px) saturate(1.08);
+  -webkit-backdrop-filter: blur(12px) saturate(1.08);
 }
 
 html[data-app-scope="store"] .client-profile-hero-card .profile-card-asset-icon {
@@ -2217,8 +2244,47 @@ html[data-app-scope="store"] .client-profile-hero-card .profile-card-asset-icon 
   height: 26px;
   place-items: center;
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.16);
-  color: #a9eadc;
+  background: rgba(15, 106, 92, 0.1);
+  color: #0f7b68;
+}
+
+html[data-app-scope="store"] .client-profile-hero-card .profile-card-asset b,
+html[data-app-scope="store"] .client-profile-hero-card .profile-vip-name {
+  color: #17211f;
+}
+
+html[data-app-scope="store"] .client-profile-hero-card .profile-card-asset span,
+html[data-app-scope="store"] .client-profile-hero-card .profile-vip-subtitle,
+html[data-app-scope="store"] .client-profile-hero-card .profile-guest-desc {
+  color: #65766f;
+}
+
+html[data-app-scope="store"] .client-profile-hero-card .profile-card-asset .profile-card-asset-icon {
+  color: #0f7b68;
+}
+
+html[data-app-scope="store"] .client-profile-hero-card .profile-vip-badge,
+html[data-app-scope="store"] .client-profile-hero-card .profile-vip-notification,
+html[data-app-scope="store"] .client-profile-hero-card .profile-vip-action--ghost {
+  border-color: rgba(15, 106, 92, 0.13);
+  background: rgba(255, 255, 255, 0.76);
+  color: #17211f;
+  box-shadow: 0 10px 24px rgba(34, 54, 48, 0.08);
+}
+
+html[data-app-scope="store"] .client-profile-hero-card .profile-vip-progress {
+  border: 1px solid rgba(15, 106, 92, 0.12);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84);
+}
+
+html[data-app-scope="store"] .client-profile-hero-card .profile-vip-progress-meta span,
+html[data-app-scope="store"] .client-profile-hero-card .profile-vip-progress-meta b {
+  color: #263a35;
+}
+
+html[data-app-scope="store"] .client-profile-hero-card .profile-vip-progress-track {
+  background: rgba(15, 106, 92, 0.12);
 }
 
 html[data-app-scope="store"] .client-profile-guest-card .profile-vip-header {
@@ -2240,9 +2306,9 @@ html[data-app-scope="store"] .client-profile-guest-card .profile-guest-highlight
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 3px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(15, 106, 92, 0.1);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.74);
   padding: 9px;
 }
 
@@ -2253,8 +2319,8 @@ html[data-app-scope="store"] .client-profile-guest-card .profile-guest-highlight
   height: 30px;
   place-items: center;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.16);
-  color: #a9eadc;
+  background: rgba(15, 106, 92, 0.1);
+  color: #0f7b68;
 }
 
 html[data-app-scope="store"] .client-profile-guest-card .profile-guest-highlight b,
@@ -2266,16 +2332,43 @@ html[data-app-scope="store"] .client-profile-guest-card .profile-guest-highlight
 }
 
 html[data-app-scope="store"] .client-profile-guest-card .profile-guest-highlight b {
-  color: #ffffff;
+  color: #17211f;
   font-size: 12px;
   font-weight: 820;
   line-height: 16px;
 }
 
 html[data-app-scope="store"] .client-profile-guest-card .profile-guest-highlight small {
-  color: rgba(255, 255, 255, 0.68);
+  color: #65766f;
   font-size: 10px;
   line-height: 14px;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"] .client-profile-page {
+    background-image:
+      linear-gradient(180deg, rgba(247, 249, 246, 0.96) 0%, rgba(238, 244, 240, 0.92) 26rem, #f6f8f5 100%),
+      url("/assets/home-banners/home-hero-05-support-bg-mobile.webp");
+    background-position: center top, center top;
+    background-size: auto, 100% auto;
+  }
+
+  html[data-app-scope="store"] .store-v12-page.client-profile-page {
+    background:
+      linear-gradient(180deg, rgba(247, 249, 246, 0.96) 0%, rgba(238, 244, 240, 0.92) 26rem, #f6f8f5 100%),
+      url("/assets/home-banners/home-hero-05-support-bg-mobile.webp") !important;
+    background-position: center top, center top !important;
+    background-repeat: no-repeat !important;
+    background-size: auto, 100% auto !important;
+  }
+
+  html[data-app-scope="store"] .client-profile-hero-card {
+    background-image:
+      linear-gradient(110deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.91) 56%, rgba(255, 255, 255, 0.5) 100%),
+      linear-gradient(135deg, rgba(255, 250, 239, 0.9), rgba(233, 248, 241, 0.66)),
+      url("/assets/home-banners/home-hero-01-platform-bg-mobile.webp");
+    background-position: center, center, right center;
+  }
 }
 
 html[data-app-scope="store"] .client-profile-asset-panel {

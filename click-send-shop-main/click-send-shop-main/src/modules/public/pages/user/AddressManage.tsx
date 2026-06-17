@@ -125,7 +125,7 @@ export default function AddressManage() {
         <section
           className="store-address-v12-hero relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 shadow-[var(--theme-shadow)] sm:px-6 sm:py-6"
           style={{
-            backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 98%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 92%, transparent) 48%, color-mix(in srgb, var(--theme-bg) 70%, transparent) 100%), url("${ADDRESS_HERO_IMAGE}")`,
+            backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 95%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 84%, transparent) 48%, color-mix(in srgb, var(--theme-bg) 42%, transparent) 100%), url("${ADDRESS_HERO_IMAGE}")`,
             backgroundPosition: "center",
             backgroundSize: "cover",
           }}

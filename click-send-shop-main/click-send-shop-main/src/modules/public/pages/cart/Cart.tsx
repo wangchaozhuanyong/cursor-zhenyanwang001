@@ -7,7 +7,7 @@ import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import ProductCoverImage from "@/components/ProductCoverImage";
-import type { CartItem } from "@/types/cart";
+import type { CartItem, CartPromotionPreview } from "@/types/cart";
 import { isLoggedIn } from "@/utils/token";
 import { copyToClipboard } from "@/utils/clipboard";
 import TrustInfo from "@/components/TrustInfo";
@@ -24,6 +24,8 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import CartPromotionNudge from "@/modules/storefront-v2/cart/CartPromotionNudge";
+import { fetchCartPromotionPreview } from "@/services/cartService";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
@@ -60,11 +62,15 @@ export default function Cart() {
   const [openActionKey, setOpenActionKey] = useState<string | null>(null);
   const [quantityTargetKey, setQuantityTargetKey] = useState<string | null>(null);
   const [quantityDraft, setQuantityDraft] = useState("");
+  const [cartPromotionPreview, setCartPromotionPreview] = useState<CartPromotionPreview | null>(null);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
   const someSelected = selectedCount > 0;
   const totalQty = items.reduce((s, i) => s + i.qty, 0);
+  const cartPreviewRefreshKey = items
+    .map((item) => `${cartLineKey(item.product.id, item.variant_id)}:${item.qty}`)
+    .join("|");
   const selectedQty = totalItemsSelected();
   const selectedPoints = totalPointsSelected();
   const checkoutLabel =
@@ -94,6 +100,24 @@ export default function Cart() {
   useEffect(() => {
     loadCart({ force: true });
   }, [loadCart]);
+
+  useEffect(() => {
+    if (!isLoggedIn() || items.length === 0) {
+      setCartPromotionPreview(null);
+      return;
+    }
+    let cancelled = false;
+    fetchCartPromotionPreview()
+      .then((preview) => {
+        if (!cancelled) setCartPromotionPreview(preview);
+      })
+      .catch(() => {
+        if (!cancelled) setCartPromotionPreview(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cartPreviewRefreshKey, items.length]);
 
   const handleCheckout = () => {
     if (totalItemsSelected() === 0) {
@@ -280,6 +304,19 @@ export default function Cart() {
             }
           >
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
+            {allSelected && cartPromotionPreview?.promotion_evaluation ? (
+              <CartPromotionNudge
+                campaign={null}
+                amount={Number(
+                  cartPromotionPreview.order_snapshot?.goods_amount
+                    ?? cartPromotionPreview.goods_amount
+                    ?? totalAmountSelected(),
+                )}
+                evaluation={cartPromotionPreview.promotion_evaluation}
+                className="mb-3"
+                onBrowse={() => navigate(localizedPath("/categories"))}
+              />
+            ) : null}
             {!isLoggedIn() && (
               <div
                 className="relative mb-4 mt-3 overflow-hidden rounded-[22px] border px-4 py-4 text-[var(--theme-text)]"

@@ -2,7 +2,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
-import { PublicLocaleProvider } from "@/i18n/publicLocale";
+import { PublicLocaleProvider } from "@/i18n/PublicLocaleProvider";
 import type { Product } from "@/types/product";
 import AccountProductCard from "./AccountProductCard";
 

@@ -61,6 +61,38 @@ export function useCheckoutOrderPreview({
   const [orderPreview, setOrderPreview] = useState<OrderPreviewResult | null>(null);
   const [orderPreviewLoading, setOrderPreviewLoading] = useState(false);
   const [orderPreviewError, setOrderPreviewError] = useState<string | null>(null);
+  const hasSelectedAddress = Boolean(selectedAddress);
+  const selectedAddressRecipientName = selectedAddress?.recipient_name;
+  const selectedAddressPhone = selectedAddress?.phone;
+  const selectedAddressLine1 = selectedAddress?.line1;
+  const selectedAddressLine2 = selectedAddress?.line2;
+  const selectedAddressCity = selectedAddress?.city;
+  const selectedAddressState = selectedAddress?.state;
+  const selectedAddressPostcode = selectedAddress?.postcode;
+  const selectedAddressCountry = selectedAddress?.country;
+  const selectedAddressPayload = useMemo<SubmitOrderParams["address"] | null>(() => {
+    if (!hasSelectedAddress) return null;
+    return {
+      recipient_name: selectedAddressRecipientName || "",
+      phone: selectedAddressPhone || "",
+      line1: selectedAddressLine1 || "",
+      line2: selectedAddressLine2 || "",
+      city: selectedAddressCity || "",
+      state: selectedAddressState || "",
+      postcode: selectedAddressPostcode || "",
+      country: selectedAddressCountry || "MY",
+    };
+  }, [
+    hasSelectedAddress,
+    selectedAddressRecipientName,
+    selectedAddressPhone,
+    selectedAddressLine1,
+    selectedAddressLine2,
+    selectedAddressCity,
+    selectedAddressState,
+    selectedAddressPostcode,
+    selectedAddressCountry,
+  ]);
 
   useEffect(() => {
     if (!items.length || submittedOrder) {
@@ -82,18 +114,7 @@ export function useCheckoutOrderPreview({
         })),
         contact_name: name.trim() || "结算订单",
         contact_phone: phone.trim() || "60000000000",
-        address: selectedAddress
-          ? {
-              recipient_name: selectedAddress.recipient_name,
-              phone: selectedAddress.phone,
-              line1: selectedAddress.line1,
-              line2: selectedAddress.line2 || "",
-              city: selectedAddress.city,
-              state: selectedAddress.state,
-              postcode: selectedAddress.postcode,
-              country: selectedAddress.country,
-            }
-          : address.trim() || "MY",
+        address: selectedAddressPayload ?? (address.trim() || "MY"),
         coupon_id: couponEnabled ? selectedCoupon?.id : undefined,
         shipping_template_id: selectedTemplateId ?? undefined,
         shipping_name: selectedTemplateName,
@@ -130,11 +151,7 @@ export function useCheckoutOrderPreview({
     name,
     phone,
     address,
-    selectedAddress?.id,
-    selectedAddress?.country,
-    selectedAddress?.city,
-    selectedAddress?.state,
-    selectedAddress?.postcode,
+    selectedAddressPayload,
     selectedCoupon?.id,
     selectedTemplateId,
     selectedTemplateName,

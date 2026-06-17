@@ -1,9 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
-import { useLocation } from "react-router-dom";
+import { createContext, useContext } from "react";
 
 export type PublicLocale = "zh" | "en";
 
-type PublicMessageKey = string;
+export type PublicMessageKey = string;
 
 export const PUBLIC_LOCALES: Array<{
   value: PublicLocale;
@@ -16,9 +15,9 @@ export const PUBLIC_LOCALES: Array<{
 ];
 
 const PUBLIC_LOCALE_VALUES = new Set<PublicLocale>(PUBLIC_LOCALES.map((item) => item.value));
-const PUBLIC_LOCALE_STORAGE_KEY = "store-public-locale";
+export const PUBLIC_LOCALE_STORAGE_KEY = "store-public-locale";
 
-const messages: Record<PublicLocale, Record<PublicMessageKey, string>> = {
+export const messages: Record<PublicLocale, Record<PublicMessageKey, string>> = {
   zh: {
     "common.allPromotions": "全部活动",
     "common.back": "返回",
@@ -604,7 +603,7 @@ const messages: Record<PublicLocale, Record<PublicMessageKey, string>> = {
     "promotion.view": "View promotion",
   },};
 
-const promotionTypeLabels: Record<PublicLocale, Record<string, string>> = {
+export const promotionTypeLabels: Record<PublicLocale, Record<string, string>> = {
   zh: {
     campaign: "主题活动",
     coupon: "优惠券",
@@ -628,7 +627,7 @@ const promotionTypeLabels: Record<PublicLocale, Record<string, string>> = {
     points_reward: "Points reward",
   },};
 
-type PublicLocaleContextValue = {
+export type PublicLocaleContextValue = {
   locale: PublicLocale;
   pathLocale: PublicLocale | null;
   localizedPath: (path: string) => string;
@@ -638,7 +637,7 @@ type PublicLocaleContextValue = {
   formatDate: (value: string) => string;
 };
 
-const PublicLocaleContext = createContext<PublicLocaleContextValue | null>(null);
+export const PublicLocaleContext = createContext<PublicLocaleContextValue | null>(null);
 
 export function isPublicLocale(value: unknown): value is PublicLocale {
   return typeof value === "string" && PUBLIC_LOCALE_VALUES.has(value.toLowerCase() as PublicLocale);
@@ -672,60 +671,6 @@ export function localizePath(path: string, locale: PublicLocale): string {
 
 export function getLocaleAwarePath(path: string, pathLocale: PublicLocale | null, locale: PublicLocale): string {
   return pathLocale ? localizePath(path, locale) : path;
-}
-
-export function PublicLocaleProvider({ children }: { children: ReactNode }) {
-  const location = useLocation();
-  const pathLocale = getPublicLocaleFromPathname(location.pathname);
-  const locale = pathLocale || "zh";
-
-  useEffect(() => {
-    const config = PUBLIC_LOCALES.find((item) => item.value === locale);
-    document.documentElement.lang = config?.htmlLang || "zh-CN";
-    if (pathLocale) {
-      window.localStorage.setItem(PUBLIC_LOCALE_STORAGE_KEY, locale);
-    }
-  }, [locale, pathLocale]);
-
-  const value = useMemo<PublicLocaleContextValue>(() => {
-    const t = (key: PublicMessageKey) => messages[locale][key] || messages.zh[key] || key;
-    const localizedPath = (path: string) => getLocaleAwarePath(path, pathLocale, locale);
-    const switchLocalePath = (nextLocale: PublicLocale) => (
-      localizePath(
-        `${stripPublicLocaleFromPathname(location.pathname)}${location.search}${location.hash}`,
-        nextLocale,
-      )
-    );
-    const promotionTypeLabel = (type: string) => (
-      promotionTypeLabels[locale][type] || promotionTypeLabels.zh[type] || type
-    );
-    const formatDate = (value: string) => {
-      if (!value) return t("promotion.lifetime");
-      const dateLocale = locale === "zh" ? "zh-CN" : "en-MY";
-      return new Intl.DateTimeFormat(dateLocale, {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date(value));
-    };
-
-    return {
-      locale,
-      pathLocale,
-      localizedPath,
-      switchLocalePath,
-      t,
-      promotionTypeLabel,
-      formatDate,
-    };
-  }, [locale, location.hash, location.pathname, location.search, pathLocale]);
-
-  return (
-    <PublicLocaleContext.Provider value={value}>
-      {children}
-    </PublicLocaleContext.Provider>
-  );
 }
 
 export function usePublicLocale() {

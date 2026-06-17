@@ -49,6 +49,8 @@ const EMPTY_FORM: ShippingForm = {
   maxOrderAmount: "",
 };
 
+const EMPTY_SHIPPING_TEMPLATES: ShippingTemplate[] = [];
+
 const REGION_GROUP_LABEL: Record<ShippingForm["regionGroup"], string> = {
   all: "全国 / 全马",
   west_malaysia: "West Malaysia",
@@ -240,7 +242,7 @@ export default function AdminShipping() {
     staleTime: 60_000,
   });
 
-  const templates = templatesQuery.data ?? [];
+  const templates = templatesQuery.data ?? EMPTY_SHIPPING_TEMPLATES;
   const loading = templatesQuery.isLoading && !templatesQuery.data;
   const sortedTemplates = useMemo(
     () => [...templates].sort((a, b) => Number(Boolean(b.isDefault)) - Number(Boolean(a.isDefault))),

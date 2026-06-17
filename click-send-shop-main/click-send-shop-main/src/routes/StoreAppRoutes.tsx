@@ -42,11 +42,11 @@ import {
 import { logPerf, markPerfStart, observeLongTasksAndLcp } from "@/utils/performanceDebug";
 import {
   isPublicLocale,
-  PublicLocaleProvider,
   stripPublicLocaleFromPath,
   stripPublicLocaleFromPathname,
   usePublicLocale,
 } from "@/i18n/publicLocale";
+import { PublicLocaleProvider } from "@/i18n/PublicLocaleProvider";
 import {
   StoreHomeV2, Login, ForgotPassword, BindWechatPhone,
   Categories, ProductDetail, Search, Promotions, PromotionDetail,

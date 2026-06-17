@@ -27,14 +27,23 @@ export function useCheckoutShipping(items: CartItem[], rawTotal: number, selecte
     : selectedTemplate;
   const effectiveTemplateName = serverTemplateName || effectiveTemplate?.name || selectedTemplate?.name || "";
   const weightKg = estimateCartWeightKg(items.map((item) => ({ qty: item.qty })));
-  const destination = selectedAddress
-    ? {
-        country: selectedAddress.country,
-        state: selectedAddress.state,
-        city: selectedAddress.city,
-        postcode: selectedAddress.postcode,
-      }
-    : undefined;
+  const hasSelectedAddress = Boolean(selectedAddress);
+  const selectedAddressCountry = selectedAddress?.country;
+  const selectedAddressState = selectedAddress?.state;
+  const selectedAddressCity = selectedAddress?.city;
+  const selectedAddressPostcode = selectedAddress?.postcode;
+  const destination = useMemo(
+    () =>
+      hasSelectedAddress
+        ? {
+            country: selectedAddressCountry,
+            state: selectedAddressState,
+            city: selectedAddressCity,
+            postcode: selectedAddressPostcode,
+          }
+        : undefined,
+    [hasSelectedAddress, selectedAddressCountry, selectedAddressState, selectedAddressCity, selectedAddressPostcode],
+  );
   const previewShippingFee = effectiveTemplate
     ? calcShippingFee(effectiveTemplate, rawTotal, { totalWeightKg: weightKg })
     : 0;
@@ -79,7 +88,7 @@ export function useCheckoutShipping(items: CartItem[], rawTotal: number, selecte
     return () => {
       cancelled = true;
     };
-  }, [selectedTemplate?.id, rawTotal, weightKg, selectedAddress?.country, selectedAddress?.state, selectedAddress?.city, selectedAddress?.postcode]);
+  }, [selectedTemplate?.id, rawTotal, weightKg, destination]);
 
   const baseShippingFee = serverShippingFee ?? previewShippingFee;
 

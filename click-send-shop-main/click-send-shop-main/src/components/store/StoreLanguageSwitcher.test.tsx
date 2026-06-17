@@ -2,7 +2,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PublicLocaleProvider } from "@/i18n/publicLocale";
+import { PublicLocaleProvider } from "@/i18n/PublicLocaleProvider";
 import StoreLanguageSwitcher from "./StoreLanguageSwitcher";
 
 const capabilityState = vi.hoisted(() => ({

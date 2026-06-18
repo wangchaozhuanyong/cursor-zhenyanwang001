@@ -95,6 +95,29 @@ async function findRecordById(eventId) {
   return row || null;
 }
 
+async function findRecordDetailById(eventId, adminUserId) {
+  const [[row]] = await db.query(
+    `SELECT
+       r.*,
+       us.read_at,
+       us.hidden_at,
+       us.sound_played_at,
+       us.popup_seen_at,
+       rule.popup_enabled,
+       rule.sound_enabled,
+       rule.escalation_minutes,
+       rule.escalation_target,
+       rule.auto_resolve_enabled
+     FROM admin_event_records r
+     LEFT JOIN admin_event_user_states us ON us.event_id = r.id AND us.admin_user_id = ?
+     LEFT JOIN admin_event_rules rule ON rule.event_type = r.event_type
+     WHERE r.id = ?
+     LIMIT 1`,
+    [adminUserId, eventId],
+  );
+  return row || null;
+}
+
 async function insertAction(payload) {
   await db.query(
     `INSERT INTO admin_event_actions
@@ -111,6 +134,18 @@ async function insertAction(payload) {
       toJson(payload.metadata || {}),
     ],
   );
+}
+
+async function listActionsByEventId(eventId) {
+  const [rows] = await db.query(
+    `SELECT *
+     FROM admin_event_actions
+     WHERE event_id = ?
+     ORDER BY created_at DESC, id DESC
+     LIMIT 100`,
+    [eventId],
+  );
+  return rows;
 }
 
 async function updateRecordStatus(eventId, status, operatorId) {
@@ -306,6 +341,17 @@ async function listRules() {
   return rows;
 }
 
+async function updateRule(eventType, setFragments, values) {
+  if (!setFragments.length) return false;
+  const [result] = await db.query(
+    `UPDATE admin_event_rules
+     SET ${setFragments.join(', ')}
+     WHERE event_type = ?`,
+    [...values, eventType],
+  );
+  return Number(result?.affectedRows || 0) > 0;
+}
+
 async function listEscalationCandidates(limit = 50) {
   const [rows] = await db.query(
     `SELECT
@@ -349,7 +395,9 @@ module.exports = {
   insertRecord,
   findRecordByActiveDedupeKey,
   findRecordById,
+  findRecordDetailById,
   insertAction,
+  listActionsByEventId,
   updateRecordStatus,
   touchEscalated,
   upsertUserState,
@@ -360,6 +408,7 @@ module.exports = {
   selectTabCounts,
   selectBossMetrics,
   listRules,
+  updateRule,
   listEscalationCandidates,
   listActiveRecordsByTypes,
 };

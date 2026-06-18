@@ -133,6 +133,37 @@ function buildUserListWhere(keyword, tagId, filters = {}) {
   return { where, params };
 }
 
+function buildUserProductActivityWhere(query = {}, activityAlias, timeColumn) {
+  let where = `WHERE u.deleted_at IS NULL ${ADMIN_ACCOUNT_EXCLUSION_SQL}`;
+  const params = [];
+  const keyword = String(query.keyword || '').trim();
+  if (keyword) {
+    where += ` AND (
+      u.nickname LIKE ? OR u.phone LIKE ? OR u.id LIKE ?
+      OR p.name LIKE ? OR p.id LIKE ?
+    )`;
+    const kw = `%${keyword}%`;
+    params.push(kw, kw, kw, kw, kw);
+  }
+  if (query.userId) {
+    where += ' AND u.id = ?';
+    params.push(query.userId);
+  }
+  if (query.productId) {
+    where += ' AND p.id = ?';
+    params.push(query.productId);
+  }
+  if (query.dateFrom) {
+    where += ` AND ${activityAlias}.${timeColumn} >= ?`;
+    params.push(query.dateFrom);
+  }
+  if (query.dateTo) {
+    where += ` AND ${activityAlias}.${timeColumn} < DATE_ADD(?, INTERVAL 1 DAY)`;
+    params.push(query.dateTo);
+  }
+  return { where, params };
+}
+
 async function getConnection() {
   return db.getConnection();
 }
@@ -454,6 +485,24 @@ async function selectUserDetailRelations(userId) {
     `SELECT id, product_id, rating, status, content, created_at FROM product_reviews WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
     [userId],
   ), [[]]);
+  const [favorites] = await safeRelation('favorite_products', () => db.query(
+    `SELECT f.id AS activity_id, f.created_at AS activity_at, p.*
+     FROM favorites f
+     INNER JOIN products p ON p.id = f.product_id
+     WHERE f.user_id = ?
+     ORDER BY f.created_at DESC
+     LIMIT 12`,
+    [userId],
+  ), [[]]);
+  const [history] = await safeRelation('browsing_history', () => db.query(
+    `SELECT bh.id AS activity_id, bh.viewed_at AS activity_at, p.*
+     FROM browsing_history bh
+     INNER JOIN products p ON p.id = bh.product_id
+     WHERE bh.user_id = ?
+     ORDER BY bh.viewed_at DESC
+     LIMIT 12`,
+    [userId],
+  ), [[]]);
   return {
     recent_orders: orders,
     addresses,
@@ -463,7 +512,79 @@ async function selectUserDetailRelations(userId) {
     invite_relation: { parent: inviteRelation || null, direct_invites: directInvites || [] },
     after_sales: returns || [],
     review_records: reviews || [],
+    favorite_products: favorites || [],
+    browsing_history: history || [],
   };
+}
+
+async function countUserFavorites(query = {}) {
+  const { where, params } = buildUserProductActivityWhere(query, 'f', 'created_at');
+  const [[row]] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM favorites f
+     INNER JOIN users u ON u.id = f.user_id
+     INNER JOIN products p ON p.id = f.product_id
+     ${where}`,
+    params,
+  );
+  return Number(row?.total || 0);
+}
+
+async function selectUserFavorites(query = {}, pageSize = 20, offset = 0) {
+  const { where, params } = buildUserProductActivityWhere(query, 'f', 'created_at');
+  const [rows] = await db.query(
+    `SELECT
+       f.id AS activity_id,
+       f.created_at AS activity_at,
+       u.id AS user_id,
+       u.nickname AS user_nickname,
+       u.phone AS user_phone,
+       u.avatar AS user_avatar,
+       p.*
+     FROM favorites f
+     INNER JOIN users u ON u.id = f.user_id
+     INNER JOIN products p ON p.id = f.product_id
+     ${where}
+     ORDER BY f.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [...params, pageSize, offset],
+  );
+  return rows;
+}
+
+async function countUserHistory(query = {}) {
+  const { where, params } = buildUserProductActivityWhere(query, 'bh', 'viewed_at');
+  const [[row]] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM browsing_history bh
+     INNER JOIN users u ON u.id = bh.user_id
+     INNER JOIN products p ON p.id = bh.product_id
+     ${where}`,
+    params,
+  );
+  return Number(row?.total || 0);
+}
+
+async function selectUserHistory(query = {}, pageSize = 20, offset = 0) {
+  const { where, params } = buildUserProductActivityWhere(query, 'bh', 'viewed_at');
+  const [rows] = await db.query(
+    `SELECT
+       bh.id AS activity_id,
+       bh.viewed_at AS activity_at,
+       u.id AS user_id,
+       u.nickname AS user_nickname,
+       u.phone AS user_phone,
+       u.avatar AS user_avatar,
+       p.*
+     FROM browsing_history bh
+     INNER JOIN users u ON u.id = bh.user_id
+     INNER JOIN products p ON p.id = bh.product_id
+     ${where}
+     ORDER BY bh.viewed_at DESC
+     LIMIT ? OFFSET ?`,
+    [...params, pageSize, offset],
+  );
+  return rows;
 }
 
 async function findPhoneDuplicateByPhones(userId, phones) {
@@ -602,7 +723,10 @@ module.exports = {
   selectUserRestrictions,
   selectLatestStatusAuditLog,
   selectUserDetailRelations,
+  countUserFavorites,
+  selectUserFavorites,
+  countUserHistory,
+  selectUserHistory,
 };
-
 
 

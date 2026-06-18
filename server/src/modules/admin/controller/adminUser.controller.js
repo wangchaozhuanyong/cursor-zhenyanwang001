@@ -8,6 +8,16 @@ exports.list = asyncRoute(async (req, res) => {
   res.success({ list: r.list, total: r.total, page: r.page, pageSize: r.pageSize, totalPages, summary: r.summary });
 });
 
+exports.listFavorites = asyncRoute(async (req, res) => {
+  const r = await svc.listUserFavorites(req.query);
+  res.paginate(r.list, r.total, r.page, r.pageSize);
+});
+
+exports.listHistory = asyncRoute(async (req, res) => {
+  const r = await svc.listUserHistory(req.query);
+  res.paginate(r.list, r.total, r.page, r.pageSize);
+});
+
 exports.exportCsv = asyncRoute(async (req, res) => {
   const { csv, filename } = await svc.exportUsersCsv(req.query);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');

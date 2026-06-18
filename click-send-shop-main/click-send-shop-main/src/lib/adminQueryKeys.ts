@@ -26,6 +26,22 @@ export type RewardRecordsListParams = {
   status?: string;
 };
 export type InviteRecordsListParams = { page?: number; pageSize?: number; keyword?: string };
+export type UserProductActivityListParams = {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  userId?: string;
+  productId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
+export type MyInvoisDocumentListParams = {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  documentType?: string;
+  orderId?: string;
+};
 export type PaymentReconciliationListParams = { page?: string; pageSize?: string };
 export type OperatingExpensesListParams = {
   range_preset?: string;
@@ -46,6 +62,7 @@ export type AuditLogListParams = {
   objectType?: string;
   objectId?: string;
   actionType?: string;
+  actionTypes?: string;
   sortOrder?: string;
 };
 export type AdminEventListParams = {
@@ -90,6 +107,8 @@ export const adminQueryKeys = {
   shippingTemplates: () => ["admin", "shipping", "templates"] as const,
   usersRoot: () => ["admin", "users"] as const,
   userDetail: (id: string) => ["admin", "users", "detail", id] as const,
+  userFavorites: (filters?: UserProductActivityListParams) => ["admin", "users", "favorites", filters ?? {}] as const,
+  userHistory: (filters?: UserProductActivityListParams) => ["admin", "users", "history", filters ?? {}] as const,
   feedbackRoot: () => ["admin", "feedback"] as const,
   feedback: (filters?: AdminFeedbackListParams) => ["admin", "feedback", filters ?? {}] as const,
   memberLevelsRoot: () => ["admin", "member-levels"] as const,
@@ -134,6 +153,10 @@ export const adminQueryKeys = {
   accountSecurity: (userId: string) => ["admin", "rbac", "accounts", userId, "security"] as const,
   auditLogsRoot: () => ["admin", "audit-logs"] as const,
   auditLogs: (filters?: AuditLogListParams) => ["admin", "audit-logs", filters ?? {}] as const,
+  privacyRequests: (filters?: AuditLogListParams) => ["admin", "privacy-requests", filters ?? {}] as const,
+  myInvoisRoot: () => ["admin", "myinvois"] as const,
+  myInvoisStatus: () => ["admin", "myinvois", "status"] as const,
+  myInvoisDocuments: (filters?: MyInvoisDocumentListParams) => ["admin", "myinvois", "documents", filters ?? {}] as const,
   dataCleanupRoot: () => ["admin", "data-cleanup"] as const,
   dataCleanupOverview: () => ["admin", "data-cleanup", "overview"] as const,
   dataCleanupPolicies: () => ["admin", "data-cleanup", "policies"] as const,

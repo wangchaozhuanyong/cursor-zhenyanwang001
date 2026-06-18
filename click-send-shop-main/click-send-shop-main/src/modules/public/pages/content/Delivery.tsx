@@ -1,4 +1,5 @@
 import { Clock3, MapPin, PackageCheck, ShieldCheck, Truck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
@@ -6,7 +7,10 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import { buildCanonical } from "@/utils/seo";
+import * as contentService from "@/services/contentService";
+import type { ContentPage } from "@/types/content";
+import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
+import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { STORE_COPY } from "@/constants/storeCopy";
 
 const deliveryZones = [
@@ -43,6 +47,28 @@ export default function Delivery() {
   const { localizedPath } = usePublicLocale();
   const siteInfo = useSiteInfo();
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
+  const [page, setPage] = useState<ContentPage | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    contentService
+      .fetchContentBySlug("shipping-policy")
+      .then((result) => {
+        if (active) setPage(result ?? null);
+      })
+      .catch(() => {
+        if (active) setPage(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const hasCmsDelivery = Boolean(page?.content?.trim());
+  const seoDescription = useMemo(() => {
+    if (page?.content) return truncateText(stripHtml(page.content), 150);
+    return `${siteName} 配送方式、东西马配送说明、地址填写和物流轨迹说明。`;
+  }, [page?.content, siteName]);
 
   return (
     <StoreStandardPageShell
@@ -54,7 +80,7 @@ export default function Delivery() {
     >
       <SeoHead
         title={`配送方式｜${siteName}`}
-        description={`${siteName} 配送方式、东西马配送说明、地址填写和物流轨迹说明。`}
+        description={seoDescription}
         canonical={buildCanonical("/delivery")}
         robots="index,follow"
       />
@@ -65,9 +91,9 @@ export default function Delivery() {
             <Truck size={15} aria-hidden />
             配送规则
           </span>
-          <h2>东西马配送在结算页确认</h2>
+          <h2>{page?.title || "东西马配送在结算页确认"}</h2>
           <p>
-            这里展示配送说明和地址准备状态；实际运费、不可配送原因和物流进度会随订单更新。
+            {hasCmsDelivery ? "配送说明由后台内容页维护；实际运费、不可配送原因和物流进度会随订单更新。" : "这里展示配送说明和地址准备状态；实际运费、不可配送原因和物流进度会随订单更新。"}
           </p>
           <div className="store-v12-hero-actions">
             <UnifiedButton type="button" onClick={() => navigate(localizedPath("/address"))} className="store-v12-primary-action">
@@ -90,36 +116,47 @@ export default function Delivery() {
         </aside>
       </div>
 
-      <section className="store-v12-grid mt-4">
-        {deliveryZones.map((item) => {
-          const Icon = item.icon;
-          return (
-            <article key={item.title} className="store-v12-info-card">
-              <span className="store-v12-card-icon" aria-hidden>
-                <Icon size={20} />
-              </span>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              <small>{item.meta}</small>
-            </article>
-          );
-        })}
-      </section>
+      {hasCmsDelivery ? (
+        <section className="store-v12-info-card mt-4">
+          <article
+            className="store-body-text store-content-v12-article max-w-none leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold"
+            dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page?.content || "") }}
+          />
+        </section>
+      ) : (
+        <>
+          <section className="store-v12-grid mt-4">
+            {deliveryZones.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article key={item.title} className="store-v12-info-card">
+                  <span className="store-v12-card-icon" aria-hidden>
+                    <Icon size={20} />
+                  </span>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                  <small>{item.meta}</small>
+                </article>
+              );
+            })}
+          </section>
 
-      <section className="store-v12-info-card mt-4">
-        <div className="store-v12-card-title">
-          <Clock3 size={18} aria-hidden />
-          下单前需要知道
-        </div>
-        <div className="store-v12-list">
-          {ruleItems.map((item) => (
-            <div key={item} className="store-v12-list-row">
-              <span className="store-v12-dot" aria-hidden />
-              <span>{item}</span>
+          <section className="store-v12-info-card mt-4">
+            <div className="store-v12-card-title">
+              <Clock3 size={18} aria-hidden />
+              下单前需要知道
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="store-v12-list">
+              {ruleItems.map((item) => (
+                <div key={item} className="store-v12-list-row">
+                  <span className="store-v12-dot" aria-hidden />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </StoreStandardPageShell>
   );
 }

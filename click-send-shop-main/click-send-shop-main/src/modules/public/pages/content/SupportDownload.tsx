@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Clock3, Copy, Headphones, PlusSquare, ShieldCheck, Smartphone } from "lucide-react";
+import { ArrowLeft, Clock3, Copy, Headphones, PlusSquare, Smartphone } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -28,6 +28,7 @@ import type { AnalyticsEventPayload } from "@/services/analyticsService";
 import type { SupportChannelType, SupportDownloadChannel } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
+import { useGoBack } from "@/hooks/useGoBack";
 
 type SupportDownloadView = SupportChannelType | "download";
 
@@ -112,8 +113,6 @@ export default function SupportDownload() {
   const pwa = usePwaInstallPrompt(handleInstalled);
   const installShownTrackedRef = useRef(false);
   const queryTab = searchParams.get("tab");
-  const requestedDownloadView = queryTab === "download";
-  const canShowInstallView = browserEnv.platform !== "desktop" || requestedDownloadView;
 
   useEffect(() => {
     if (installShownTrackedRef.current) return;
@@ -125,6 +124,7 @@ export default function SupportDownload() {
 
   const channels = useMemo(() => getEnabledSupportChannels(config), [config]);
   const platforms = useMemo(() => getEnabledDownloadPlatforms(config), [config]);
+  const canShowInstallView = config.download.enabled !== false && platforms.length > 0;
   const channelByType = useMemo(
     () => ({
       wechat: firstChannelByType(channels, "wechat"),
@@ -204,15 +204,25 @@ export default function SupportDownload() {
   }, [platforms, recommendedPlatform]);
   const pageTitle = config.title?.trim() || "";
   const displayTitle = pageTitle || STORE_COPY.supportCenterTitle;
-  const pageSubtitle = config.subtitle?.trim() || config.support.description?.trim() || STORE_COPY.supportSubtitle;
   const workingHours = config.support.workingHours?.trim() || "客服时间以后台配置为准";
   const installPageUrl = useMemo(() => buildCanonical("/support-download", "tab=download"), []);
+  const handleBack = useGoBack("/");
   const mobileHeader = (
     <StorePageHeader
       className={`${STORE_MOBILE_PAGE_HEADER_CLASS} support-download-mobile-header`}
       matchTabHeaderHeight
       centerTitle
       title={displayTitle}
+      leftSlot={
+        <UnifiedButton
+          type="button"
+          onClick={handleBack}
+          aria-label="返回上一页"
+          className="-ml-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-[var(--theme-text)] transition hover:bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] active:scale-95"
+        >
+          <ArrowLeft size={20} strokeWidth={2.25} aria-hidden="true" />
+        </UnifiedButton>
+      }
     />
   );
   const { containerRef: tabsRef, setItemRef: setTabRef, scrollToKey: scrollTabToKey } =
@@ -240,15 +250,6 @@ export default function SupportDownload() {
       {mobileHeader}
 
       <main className="support-download-shell">
-        <header className="support-download-hero">
-          <span className="support-download-eyebrow">
-            <Headphones size={16} aria-hidden="true" />
-            官方客服中心
-          </span>
-          <h1>{displayTitle}</h1>
-          {pageSubtitle ? <p>{pageSubtitle}</p> : null}
-        </header>
-
         <section className="support-download-overview" aria-label="客服服务概览">
           <article className="support-download-overview-card">
             <span className="support-download-overview-icon" aria-hidden="true">

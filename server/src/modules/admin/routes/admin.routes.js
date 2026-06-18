@@ -548,6 +548,8 @@ router.delete('/users/:userId/member-level-lock', adminAuth, memberLevelFeature,
 /* ---- Users ---- */
 router.get('/users/export', adminAuth, requirePermission('user.view'), userCtrl.exportCsv);
 router.get('/users', adminAuth, requirePermission('user.view'), userQueryLimiter, paginationCap({ max: 100, mode: 'clamp' }), userCtrl.list);
+router.get('/user-favorites', adminAuth, requirePermission('user.view'), userQueryLimiter, paginationCap({ max: 100, mode: 'clamp' }), userCtrl.listFavorites);
+router.get('/user-history', adminAuth, requirePermission('user.view'), userQueryLimiter, paginationCap({ max: 100, mode: 'clamp' }), userCtrl.listHistory);
 router.get('/user-tags', adminAuth, requirePermission('user.view'), userQueryLimiter, userCtrl.listTags);
 router.post('/user-tags', adminAuth, requirePermission('user.update'), userCtrl.createTag);
 router.put('/user-tags/:tagId', adminAuth, requirePermission('user.update'), userCtrl.updateTag);

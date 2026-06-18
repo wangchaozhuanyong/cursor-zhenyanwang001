@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { BadgePercent, ChevronRight, Clock3, Gift, Ticket, WalletCards } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Clock3, ReceiptText, Users, WalletCards } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -8,8 +8,6 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import * as rewardService from "@/services/rewardService";
-import { useCouponStore } from "@/stores/useCouponStore";
-import { useUserStore } from "@/stores/useUserStore";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 
 function money(value: unknown) {
@@ -23,26 +21,22 @@ export default function Wallet() {
   const { localizedPath } = usePublicLocale();
   const capabilities = useSiteCapabilities();
   const { config: loyaltyConfig } = useLoyaltyVisibility();
-  const pointsBalance = useUserStore((s) => s.pointsBalance);
-  const loadProfile = useUserStore((s) => s.loadProfile);
-  const coupons = useCouponStore((s) => s.coupons);
-  const loadCoupons = useCouponStore((s) => s.loadCoupons);
   const [rewardBalance, setRewardBalance] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const rewardsEnabled = isLoyaltyFeatureEnabled("reward", capabilities, loyaltyConfig);
-  const couponCount = useMemo(() => coupons.filter((item) => !item.used_at).length, [coupons]);
-
-  useEffect(() => {
-    void loadProfile();
-    if (capabilities.couponEnabled) void loadCoupons();
-  }, [capabilities.couponEnabled, loadCoupons, loadProfile]);
+  const inviteEnabled = loyaltyConfig?.reward?.referralEnabled !== false;
 
   useEffect(() => {
     if (!rewardsEnabled) {
+      setRewardBalance(0);
+      setPendingAmount(0);
+      setLoading(false);
       return;
     }
     let cancelled = false;
+    setLoading(true);
     rewardService.fetchRewardBalance()
       .then((res) => {
         if (cancelled) return;
@@ -53,112 +47,75 @@ export default function Wallet() {
         if (cancelled) return;
         setRewardBalance(0);
         setPendingAmount(0);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
   }, [rewardsEnabled]);
 
-  const assets = [
-    {
-      title: "返现余额",
-      value: rewardsEnabled ? `RM ${money(rewardBalance)}` : "未开启",
-      description: rewardsEnabled ? "" : "返现钱包功能当前关闭",
-      href: "/rewards",
-      enabled: rewardsEnabled,
-      icon: WalletCards,
-    },
-    {
-      title: "积分",
-      value: capabilities.pointsEnabled ? String(pointsBalance) : "未开启",
-      description: capabilities.pointsEnabled ? "" : "积分功能当前关闭",
-      href: "/points",
-      enabled: capabilities.pointsEnabled,
-      icon: BadgePercent,
-    },
-    {
-      title: "优惠券",
-      value: capabilities.couponEnabled ? `${couponCount} 张` : "未开启",
-      description: capabilities.couponEnabled ? "" : "优惠券功能当前关闭",
-      href: "/coupons",
-      enabled: capabilities.couponEnabled,
-      icon: Ticket,
-    },
-    {
-      title: "礼品卡",
-      value: "敬请期待",
-      description: "",
-      href: "/feature-status",
-      enabled: true,
-      icon: Gift,
-    },
-  ];
-  const walletStats = [
-    {
-      label: "可用返现",
-      value: rewardsEnabled ? `RM ${money(rewardBalance)}` : "未开启",
-      hint: "",
-      icon: WalletCards,
-    },
-    {
-      label: "待入账",
-      value: `RM ${money(pendingAmount)}`,
-      hint: "",
-      icon: Clock3,
-    },
-    {
-      label: "优惠券",
-      value: capabilities.couponEnabled ? `${couponCount} 张` : "未开启",
-      hint: "",
-      icon: Ticket,
-    },
-    {
-      label: "礼品卡",
-      value: "敬请期待",
-      hint: "",
-      icon: Gift,
-    },
-  ];
-
   return (
-    <StoreAccountLayout title="余额 / 礼品卡" onBack={goBack} className="store-v12-page store-wallet-v12-page">
-      <section className="store-wallet-v12-summary store-orders-v12-stat-grid" aria-label="资产摘要">
-        {walletStats.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.label} className="store-orders-v12-stat">
-              <span className="store-orders-v12-stat__icon" aria-hidden>
-                <Icon size={17} />
-              </span>
-              <strong>{item.value}</strong>
-              <span>{item.label}</span>
-              {item.hint ? <small>{item.hint}</small> : null}
-            </div>
-          );
-        })}
+    <StoreAccountLayout title="返现余额" onBack={goBack} className="store-v12-page store-wallet-v12-page store-account-subpage-v12-page pb-8">
+      <section className="store-wallet-v12-hero" aria-label="返现余额">
+        <div className="store-wallet-v12-hero__head">
+          <span className="store-wallet-v12-hero__icon" aria-hidden>
+            <WalletCards size={22} />
+          </span>
+          <span>返现余额</span>
+        </div>
+        <p className="store-wallet-v12-hero__label">可用返现</p>
+        <strong className="store-wallet-v12-hero__amount">
+          {loading ? "RM --" : rewardsEnabled ? `RM ${money(rewardBalance)}` : "未开启"}
+        </strong>
+        <div className="store-wallet-v12-hero__meta">
+          <span>
+            <b>{loading ? "RM --" : `RM ${money(pendingAmount)}`}</b>
+            <small>待入账</small>
+          </span>
+          <span>
+            <b>{rewardsEnabled ? "可使用" : "未开启"}</b>
+            <small>结算抵扣</small>
+          </span>
+        </div>
       </section>
 
-      <section className="store-v12-grid mt-4">
-        {assets.map((item) => {
-          const Icon = item.icon;
-          return (
-            <UnifiedButton
-              key={item.title}
-              type="button"
-              onClick={item.enabled ? () => navigate(localizedPath(item.href)) : undefined}
-              disabled={!item.enabled}
-              className="store-v12-info-card store-v12-asset-card"
-            >
-              <span className="store-v12-card-icon" aria-hidden><Icon size={20} /></span>
-              <span className="store-v12-asset-main">
-                <strong>{item.title}</strong>
-                <b>{item.value}</b>
-                {item.description ? <small>{item.description}</small> : null}
-              </span>
-              {item.enabled ? <ChevronRight size={16} aria-hidden /> : null}
-            </UnifiedButton>
-          );
-        })}
+      <section className="store-wallet-v12-actions" aria-label="返现操作">
+        <UnifiedButton
+          type="button"
+          onClick={() => navigate(localizedPath("/rewards"))}
+          disabled={!rewardsEnabled}
+          className="store-wallet-v12-action"
+        >
+          <span className="store-wallet-v12-action__icon" aria-hidden><ReceiptText size={20} /></span>
+          <span className="store-wallet-v12-action__copy">
+            <strong>返现明细</strong>
+            <small>查看入账和抵扣记录</small>
+          </span>
+          <ArrowRight size={16} aria-hidden />
+        </UnifiedButton>
+
+        {inviteEnabled ? (
+          <UnifiedButton
+            type="button"
+            onClick={() => navigate(localizedPath("/invite"))}
+            disabled={!rewardsEnabled}
+            className="store-wallet-v12-action"
+          >
+            <span className="store-wallet-v12-action__icon" aria-hidden><Users size={20} /></span>
+            <span className="store-wallet-v12-action__copy">
+              <strong>邀请返现</strong>
+              <small>好友下单后自动记录</small>
+            </span>
+            <ArrowRight size={16} aria-hidden />
+          </UnifiedButton>
+        ) : null}
+
+        <div className="store-wallet-v12-note">
+          <span aria-hidden><Clock3 size={17} /></span>
+          <p>待入账返现会在规则确认后进入可用余额。</p>
+        </div>
       </section>
     </StoreAccountLayout>
   );

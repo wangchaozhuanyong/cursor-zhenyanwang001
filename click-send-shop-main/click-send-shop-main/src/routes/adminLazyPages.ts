@@ -53,6 +53,9 @@ export const AdminShipping = lazyWithPreload(() => import("@/modules/admin/pages
 export const AdminUsers = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUsers"));
 export const AdminUserDetail = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUserDetail"));
 export const AdminUserSecurity = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUserSecurity"));
+export const AdminUserFavorites = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUserFavorites"));
+export const AdminUserHistory = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminUserHistory"));
+export const AdminPrivacyRequests = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminPrivacyRequests"));
 export const AdminFeedback = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminFeedback"));
 export const AdminMemberLevels = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminMemberLevels"));
 export const AdminInvites = lazyWithPreload(() => import("@/modules/admin/pages/user/AdminInvites"));
@@ -102,6 +105,7 @@ export const AdminTelegramSettings = lazyWithPreload(() => import("@/modules/adm
 export const AdminThemeSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
 export const AdminContent = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminContent"));
 export const AdminHomeOps = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminHomeOps"));
+export const AdminMyInvois = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminMyInvois"));
 
 export const AdminRoles = lazyWithPreload(() => import("@/modules/admin/pages/rbac/AdminRoles"));
 
@@ -140,6 +144,9 @@ const ADMIN_EXACT_ROUTE_PRELOADERS = new Map<string, AdminLazyComponent>([
   ["/admin/payments/events", AdminPaymentEvents],
   ["/admin/payments/reconciliations", AdminPaymentReconciliations],
   ["/admin/users", AdminUsers],
+  ["/admin/user-favorites", AdminUserFavorites],
+  ["/admin/user-history", AdminUserHistory],
+  ["/admin/privacy-requests", AdminPrivacyRequests],
   ["/admin/feedback", AdminFeedback],
   ["/admin/user-security", AdminUserSecurity],
   ["/admin/member-levels", AdminMemberLevels],
@@ -149,6 +156,7 @@ const ADMIN_EXACT_ROUTE_PRELOADERS = new Map<string, AdminLazyComponent>([
   ["/admin/support-download", AdminSupportDownload],
   ["/admin/settings/theme", AdminThemeSettings],
   ["/admin/home-ops", AdminHomeOps],
+  ["/admin/myinvois", AdminMyInvois],
   ["/admin/settings/shipping", AdminShipping],
   ["/admin/settings/roles", AdminRoles],
   ["/admin/marketing", AdminMarketingDashboard],

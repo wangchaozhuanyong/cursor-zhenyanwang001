@@ -29,6 +29,7 @@ export interface AuditLogListParams {
   objectType?: string;
   objectId?: string;
   actionType?: string;
+  actionTypes?: string;
   result?: "success" | "failure";
   dateFrom?: string;
   dateTo?: string;
@@ -50,4 +51,3 @@ export interface SecurityAlertSummary {
 export function getSecurityAlerts(params?: { limit?: number; sinceHours?: number }) {
   return get<SecurityAlertSummary>("/admin/security/alerts", params as unknown as Record<string, string>);
 }
-

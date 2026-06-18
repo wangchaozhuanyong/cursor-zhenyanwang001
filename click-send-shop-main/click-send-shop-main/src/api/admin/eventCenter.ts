@@ -1,4 +1,4 @@
-import { get, put } from "@/api/request";
+import { get, patch, post, put } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 
 export type AdminEventStatus = "open" | "acknowledged" | "in_progress" | "resolved" | "auto_resolved" | "ignored" | "expired";
@@ -105,6 +105,24 @@ export type AdminEventRule = {
   config?: unknown;
 };
 
+export type AdminEventAction = {
+  id: string | number;
+  eventId: string;
+  actionType: string;
+  fromStatus?: string | null;
+  toStatus?: string | null;
+  operatorId?: string | null;
+  operatorType: string;
+  remark: string;
+  metadata?: unknown;
+  createdAt: string;
+};
+
+export type AdminEventDetail = {
+  event: AdminEventRecord;
+  actions: AdminEventAction[];
+};
+
 export function getAdminEvents(params?: AdminEventListParams) {
   return get<PaginatedData<AdminEventRecord>>("/admin/event-center/events", params as unknown as Record<string, string>);
 }
@@ -119,6 +137,42 @@ export function getAdminEventBossMetrics() {
 
 export function getAdminEventRules() {
   return get<AdminEventRule[]>("/admin/event-center/rules");
+}
+
+export function updateAdminEventRule(eventType: string, payload: Partial<AdminEventRule>) {
+  return patch<AdminEventRule>(`/admin/event-center/rules/${encodeURIComponent(eventType)}`, payload);
+}
+
+export function getAdminEventDetail(id: string) {
+  return get<AdminEventDetail>(`/admin/event-center/events/${id}`);
+}
+
+export function getAdminEventActions(id: string) {
+  return get<AdminEventAction[]>(`/admin/event-center/events/${id}/actions`);
+}
+
+export function batchReadAdminEvents(ids: string[]) {
+  return post<{ affected: number; failed?: number }>("/admin/event-center/events/batch/read", { ids });
+}
+
+export function batchAcknowledgeAdminEvents(ids: string[], remark?: string) {
+  return post<{ affected: number; failed?: number }>("/admin/event-center/events/batch/acknowledge", { ids, remark });
+}
+
+export function batchIgnoreAdminEvents(ids: string[], remark?: string) {
+  return post<{ affected: number; failed?: number }>("/admin/event-center/events/batch/ignore", { ids, remark });
+}
+
+export function batchResolveAdminEvents(ids: string[], remark?: string) {
+  return post<{ affected: number; failed?: number }>("/admin/event-center/events/batch/resolve", { ids, remark });
+}
+
+export function assignAdminEvent(id: string, payload: { assigneeId?: string; assigneeName?: string; remark?: string }) {
+  return put<{ event: AdminEventRecord; assigneeId?: string; assigneeName?: string }>(`/admin/event-center/events/${id}/assign`, payload);
+}
+
+export function batchAssignAdminEvents(ids: string[], payload: { assigneeId?: string; assigneeName?: string; remark?: string }) {
+  return post<{ affected: number; failed?: number }>("/admin/event-center/events/batch/assign", { ids, ...payload });
 }
 
 export function markAdminEventRead(id: string) {

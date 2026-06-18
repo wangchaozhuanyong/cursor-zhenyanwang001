@@ -8,11 +8,24 @@ import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 import { unwrapList, unwrapPaginated } from "@/services/responseNormalize";
 
 export type UserListQuery = Parameters<typeof userApi.getUsers>[0];
+export type UserProductActivityQuery = userApi.AdminUserProductActivityQuery;
+export type AdminUserFavoriteRow = userApi.AdminUserFavoriteRow;
+export type AdminUserHistoryRow = userApi.AdminUserHistoryRow;
 
 export async function fetchUsers(params?: UserListQuery): Promise<PaginatedData<UserProfile> & { summary?: Record<string, number> }> {
   const res = await userApi.getUsers(params);
   const base = unwrapPaginated<UserProfile>(res.data);
   return { ...base, summary: (res.data as any)?.summary || {} };
+}
+
+export async function fetchUserFavorites(params?: UserProductActivityQuery): Promise<PaginatedData<AdminUserFavoriteRow>> {
+  const res = await userApi.getUserFavorites(params);
+  return unwrapPaginated<AdminUserFavoriteRow>(res.data);
+}
+
+export async function fetchUserHistory(params?: UserProductActivityQuery): Promise<PaginatedData<AdminUserHistoryRow>> {
+  const res = await userApi.getUserHistory(params);
+  return unwrapPaginated<AdminUserHistoryRow>(res.data);
 }
 
 export async function fetchUserById(id: string) {

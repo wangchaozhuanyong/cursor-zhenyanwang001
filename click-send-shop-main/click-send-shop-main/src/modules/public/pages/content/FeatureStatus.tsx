@@ -9,6 +9,7 @@ import { STORE_COPY } from "@/constants/storeCopy";
 
 const capabilityLabels = [
   { key: "mallEnabled", label: "商城购物", on: "商品浏览、购物车和订单链路可用", off: "商城购物暂时关闭" },
+  { key: "serviceEnabled", label: "服务入口", on: "签证、装修、留学等服务入口可展示", off: "服务入口暂时关闭" },
   { key: "couponEnabled", label: "优惠券", on: "优惠券中心和结算优惠可展示", off: "优惠券入口会降级或隐藏" },
   { key: "pointsEnabled", label: "积分", on: "积分、签到和兑换入口可展示", off: "积分相关入口会关闭" },
   { key: "onlinePaymentEnabled", label: "在线支付", on: "可展示在线支付入口", off: "在线支付暂不可用" },
@@ -19,6 +20,11 @@ const capabilityLabels = [
   { key: "reviewEnabled", label: "评价", on: "订单评价入口可展示", off: "评价入口关闭" },
   { key: "restrictedProductComplianceEnabled", label: "合规提示", on: "限制类商品提示开启", off: "限制类商品提示关闭" },
   { key: "storefrontMultilingualEnabled", label: "客户端多语言", on: "前台允许语言路径", off: "前台只使用中文，语言路径自动回到默认入口" },
+  { key: "smsOtpLoginEnabled", label: "短信登录", on: "手机号短信验证码登录可用", off: "短信验证码登录关闭" },
+  { key: "telegramOrderNotifyEnabled", label: "Telegram 通知", on: "订单类 Telegram 通知可用", off: "Telegram 通知关闭" },
+  { key: "languageGateEnabled", label: "语言门", on: "可按访问语言展示入口", off: "语言门关闭" },
+  { key: "trafficAnalyticsEnabled", label: "流量分析", on: "允许记录匿名访问分析", off: "流量分析关闭" },
+  { key: "downloadConfirmEnabled", label: "下载确认", on: "下载前确认流程开启", off: "下载确认流程关闭" },
 ] as const;
 
 export default function FeatureStatus() {

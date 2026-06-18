@@ -12,6 +12,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type SupportContactSectionProps = {
   className?: string;
+  hideDescription?: boolean;
 };
 
 function SupportChannelIcon({ type }: { type: SupportChannelType }) {
@@ -28,7 +29,7 @@ function channelButtonSpanClass(index: number, total: number): string {
 /**
  * 帮助中心、联系我们等页面的统一客服区块（数据来自 supportDownloadConfig）。
  */
-export default function SupportContactSection({ className }: SupportContactSectionProps) {
+export default function SupportContactSection({ className, hideDescription = false }: SupportContactSectionProps) {
   const {
     channels,
     description,
@@ -72,7 +73,7 @@ export default function SupportContactSection({ className }: SupportContactSecti
         <h3 className="text-sm font-semibold text-foreground">联系客服</h3>
       </div>
 
-      {description ? (
+      {!hideDescription && description ? (
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
       ) : null}
 

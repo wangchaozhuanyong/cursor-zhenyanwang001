@@ -1,6 +1,7 @@
 import { del, get, post, put } from "@/api/request";
 import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
 import type { PaginatedData, PaginationParams } from "@/types/common";
+import type { Product } from "@/types/product";
 
 export interface AdminUserQuery extends PaginationParams {
   keyword?: string;
@@ -28,6 +29,43 @@ export interface AdminUserQuery extends PaginationParams {
 
 export function getUsers(params?: AdminUserQuery) {
   return get<PaginatedData<UserProfile> & { summary?: Record<string, number> }>("/admin/users", params as unknown as Record<string, string>);
+}
+
+export interface AdminUserProductActivityQuery extends PaginationParams {
+  keyword?: string;
+  userId?: string;
+  productId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface AdminUserActivityUser {
+  id: string | null;
+  nickname: string;
+  phone: string;
+  avatar?: string;
+}
+
+export interface AdminUserFavoriteRow {
+  id: string | number;
+  favorited_at: string;
+  user: AdminUserActivityUser;
+  product: Product;
+}
+
+export interface AdminUserHistoryRow {
+  id: string | number;
+  viewed_at: string;
+  user: AdminUserActivityUser;
+  product: Product;
+}
+
+export function getUserFavorites(params?: AdminUserProductActivityQuery) {
+  return get<PaginatedData<AdminUserFavoriteRow>>("/admin/user-favorites", params as unknown as Record<string, string>);
+}
+
+export function getUserHistory(params?: AdminUserProductActivityQuery) {
+  return get<PaginatedData<AdminUserHistoryRow>>("/admin/user-history", params as unknown as Record<string, string>);
 }
 
 export function unbindUserWechat(id: string) {

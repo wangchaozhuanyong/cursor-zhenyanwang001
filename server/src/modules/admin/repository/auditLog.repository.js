@@ -39,7 +39,17 @@ function buildWhere(query) {
     where += ' AND object_id = ?';
     params.push(query.objectId);
   }
-  if (query.actionType) {
+  if (query.actionTypes) {
+    const actionTypes = String(query.actionTypes)
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 20);
+    if (actionTypes.length) {
+      where += ` AND action_type IN (${actionTypes.map(() => '?').join(',')})`;
+      params.push(...actionTypes);
+    }
+  } else if (query.actionType) {
     where += ' AND action_type = ?';
     params.push(query.actionType);
   }
@@ -181,6 +191,5 @@ module.exports = {
   selectOperatorDisplayByUserId,
   insertAuditLogRow,
 };
-
 
 

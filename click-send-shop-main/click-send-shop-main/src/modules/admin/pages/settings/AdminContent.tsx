@@ -36,6 +36,7 @@ interface ContentItem {
 
 /** 登录页、Cookie、页脚引用的政策页 slug（列表置顶） */
 const LOGIN_POLICY_SLUGS = ["terms-of-service", "privacy-policy"] as const;
+const CONTENT_PRIORITY_SLUGS = [...LOGIN_POLICY_SLUGS, "shipping-policy"] as const;
 
 const DEFAULT_POLICY_PATHS = {
   termsPath: "/content/terms-of-service",
@@ -190,7 +191,7 @@ export default function AdminContent() {
   };
 
   const sortedItems = useMemo(() => {
-    const order = new Map(LOGIN_POLICY_SLUGS.map((s, i) => [s, i]));
+    const order = new Map(CONTENT_PRIORITY_SLUGS.map((s, i) => [s, i]));
     return [...items].sort((a, b) => {
       const ai = order.has(a.slug) ? order.get(a.slug)! : 99;
       const bi = order.has(b.slug) ? order.get(b.slug)! : 99;
@@ -201,6 +202,7 @@ export default function AdminContent() {
 
   const termsPage = items.find((i) => i.slug === "terms-of-service");
   const privacyPage = items.find((i) => i.slug === "privacy-policy");
+  const shippingPage = items.find((i) => i.slug === "shipping-policy");
   const categories = [...helpForm.categories].sort((a, b) => a.sortOrder - b.sortOrder);
   const faqs = [...helpForm.faqs].sort((a, b) => a.sortOrder - b.sortOrder);
   const reorderCategories = (fromId: string, toId: string) => {
@@ -257,9 +259,9 @@ export default function AdminContent() {
           <h3 className="font-semibold"><Tx>登录页与合规文案</Tx></h3>
         </div>
         <p className="mb-3 text-xs text-muted-foreground">
-          <Tx>登录页底部《用户协议》《隐私政策》正文在下方列表编辑；跳转路径在站点设置中配置（一般无需修改）。</Tx>
+          <Tx>登录页底部《用户协议》《隐私政策》与前台配送说明正文在下方列表编辑；跳转路径在站点设置中配置（一般无需修改）。</Tx>
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-3">
           <div className="rounded-xl border border-border bg-background p-3 text-xs">
             <p className="font-medium text-foreground"><Tx>用户协议</Tx></p>
             <p className="mt-1 text-muted-foreground">
@@ -326,6 +328,43 @@ export default function AdminContent() {
               )}
               <Link
                 to={policyPaths.privacyPolicyPath}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 hover:bg-secondary"
+              >
+                <ExternalLink size={12} /><Tx>预览</Tx>
+              </Link>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-background p-3 text-xs">
+            <p className="font-medium text-foreground"><Tx>配送说明</Tx></p>
+            <p className="mt-1 text-muted-foreground">
+              <Tx>页面标识：</Tx>
+              <code className="rounded bg-secondary px-1 py-0.5">shipping-policy</code>
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              <Tx>前台路径：</Tx>
+              <Link
+                to="/delivery"
+                target="_blank"
+                rel="noreferrer"
+                className="admin-tech-path text-theme-price hover:underline"
+              >
+                /delivery
+              </Link>
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {shippingPage ? (
+                <PermissionGate permission="content.manage">
+                  <UnifiedButton type="button" onClick={() => openEdit(shippingPage)} className="rounded-lg border border-border px-2 py-1 hover:bg-secondary">
+                    <Tx>编辑正文</Tx>
+                  </UnifiedButton>
+                </PermissionGate>
+              ) : (
+                <span className="text-muted-foreground"><Tx>列表中暂无该页，请执行迁移或新增内容页</Tx></span>
+              )}
+              <Link
+                to="/delivery"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 hover:bg-secondary"

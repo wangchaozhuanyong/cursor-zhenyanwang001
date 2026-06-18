@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ClipboardList, Clock3, PackageCheck, RotateCcw } from "lucide-react";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
@@ -198,26 +197,18 @@ export default function Orders() {
     {
       label: "全部订单",
       value: currentSummary.total,
-      hint: "查看历史订单",
-      icon: ClipboardList,
     },
     {
       label: "待处理",
       value: (currentSummary.pending_payment || 0) + (currentSummary.paid || currentSummary.pending_ship || 0) + (currentSummary.shipped || currentSummary.pending_receive || 0),
-      hint: "付款、发货、收货",
-      icon: Clock3,
     },
     {
       label: "售后中",
       value: currentSummary.after_sale || 0,
-      hint: "退款/售后进度",
-      icon: RotateCcw,
     },
     {
       label: "已完成",
       value: currentSummary.completed || 0,
-      hint: "可评价或复购",
-      icon: PackageCheck,
     },
   ], [currentSummary]);
   const hasMoreOrders = pagination.page < pagination.totalPages;
@@ -303,19 +294,12 @@ export default function Orders() {
     >
         <section className="store-orders-v12-hero">
           <div className="store-orders-v12-stat-grid" aria-label="订单统计">
-            {orderStats.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.label} className="store-orders-v12-stat">
-                  <span className="store-orders-v12-stat__icon" aria-hidden>
-                    <Icon size={17} />
-                  </span>
-                  <strong>{item.value}</strong>
-                  <span>{item.label}</span>
-                  <small>{item.hint}</small>
-                </div>
-              );
-            })}
+            {orderStats.map((item) => (
+              <div key={item.label} className="store-orders-v12-stat">
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </div>
+            ))}
           </div>
         </section>
 

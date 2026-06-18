@@ -36,17 +36,6 @@ export default function Favorites() {
       mainClassName="sm:px-4 xl:py-6"
     >
       <div className="mx-auto w-full max-w-lg space-y-3 md:max-w-none">
-        <section className="store-account-v12-hero">
-          <span className="store-v12-eyebrow"><Heart size={14} aria-hidden /> 收藏夹</span>
-          <h2>常买好物，一键回到商品</h2>
-          <p>收藏商品会展示活动价、库存和标签，方便你比较后再加入购物车。</p>
-          <div className="store-v12-status-strip">
-            <span>{favoriteProducts.length} 个收藏</span>
-            <span>{saleableCount} 个可售</span>
-            <span>{activityCount} 个活动中</span>
-          </div>
-        </section>
-
         {!isLoggedIn() && (
           <div className="store-account-v12-notice">
             <span className="store-v12-card-icon"><Heart size={16} aria-hidden /></span>
@@ -56,7 +45,7 @@ export default function Favorites() {
         )}
 
         {favoriteProducts.length > 0 ? (
-          <section className="store-account-v12-summary store-orders-v12-stat-grid">
+          <section className="store-account-v12-summary store-orders-v12-stat-grid store-favorites-v12-summary">
             <div className="store-orders-v12-stat">
               <span className="store-orders-v12-stat__icon"><Heart size={17} aria-hidden /></span>
               <strong>{favoriteProducts.length}</strong>

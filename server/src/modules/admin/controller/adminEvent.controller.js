@@ -62,19 +62,64 @@ exports.ignore = asyncRoute(async (req, res) => {
   res.success(await service.ignore(req.params.id, req.user.id, req.body || {}));
 });
 
-function notImplemented(res, action) {
-  if (typeof res.fail === 'function') return res.fail(`事件中心能力暂未启用：${action}`, 501);
-  return res.status(501).json({ message: `事件中心能力暂未启用：${action}` });
+function csvCell(value) {
+  if (value == null) return '';
+  const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
 }
 
-// 兼容：部分分支/环境路由已引用但 controller 可能尚未实现的接口
-exports.updateRule = asyncRoute(async (_req, res) => notImplemented(res, 'updateRule'));
-exports.exportEvents = asyncRoute(async (_req, res) => notImplemented(res, 'exportEvents'));
-exports.batchRead = asyncRoute(async (_req, res) => notImplemented(res, 'batchRead'));
-exports.batchAcknowledge = asyncRoute(async (_req, res) => notImplemented(res, 'batchAcknowledge'));
-exports.batchIgnore = asyncRoute(async (_req, res) => notImplemented(res, 'batchIgnore'));
-exports.batchResolve = asyncRoute(async (_req, res) => notImplemented(res, 'batchResolve'));
-exports.batchAssign = asyncRoute(async (_req, res) => notImplemented(res, 'batchAssign'));
-exports.assign = asyncRoute(async (_req, res) => notImplemented(res, 'assign'));
-exports.detail = asyncRoute(async (_req, res) => notImplemented(res, 'detail'));
-exports.actions = asyncRoute(async (_req, res) => notImplemented(res, 'actions'));
+exports.updateRule = asyncRoute(async (req, res) => {
+  const result = await service.updateRule(req.params.eventType, req.body || {}, req.user.id);
+  res.success(result.data, result.message);
+});
+
+exports.exportEvents = asyncRoute(async (req, res) => {
+  const result = await service.exportEvents(req.query || {}, req.user.id);
+  const headers = ['id', 'eventType', 'category', 'severity', 'status', 'title', 'entityType', 'entityId', 'seenCount', 'lastSeenAt'];
+  const rows = [headers.join(',')].concat(
+    result.data.map((row) => headers.map((key) => csvCell(row[key])).join(',')),
+  );
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(result.filename)}"`);
+  res.send(`\uFEFF${rows.join('\n')}`);
+});
+
+exports.batchRead = asyncRoute(async (req, res) => {
+  const result = await service.batchRead(req.body || {}, req.user.id);
+  res.success(result.data, result.message);
+});
+
+exports.batchAcknowledge = asyncRoute(async (req, res) => {
+  const result = await service.batchAcknowledge(req.body || {}, req.user.id);
+  res.success(result.data, result.message);
+});
+
+exports.batchIgnore = asyncRoute(async (req, res) => {
+  const result = await service.batchIgnore(req.body || {}, req.user.id);
+  res.success(result.data, result.message);
+});
+
+exports.batchResolve = asyncRoute(async (req, res) => {
+  const result = await service.batchResolve(req.body || {}, req.user.id);
+  res.success(result.data, result.message);
+});
+
+exports.batchAssign = asyncRoute(async (req, res) => {
+  const result = await service.batchAssign(req.body || {}, req.user.id);
+  res.success(result.data, result.message);
+});
+
+exports.assign = asyncRoute(async (req, res) => {
+  const result = await service.assignEvent(req.params.id, req.user.id, req.body || {});
+  res.success(result.data, result.message);
+});
+
+exports.detail = asyncRoute(async (req, res) => {
+  const result = await service.getEventDetail(req.params.id, req.user.id);
+  res.success(result.data);
+});
+
+exports.actions = asyncRoute(async (req, res) => {
+  const result = await service.getEventActions(req.params.id);
+  res.success(result.data);
+});

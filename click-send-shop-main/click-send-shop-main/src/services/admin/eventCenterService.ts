@@ -4,7 +4,9 @@ import { unwrapPaginated } from "@/services/responseNormalize";
 
 export type {
   AdminEventBossMetrics,
+  AdminEventAction,
   AdminEventCategory,
+  AdminEventDetail,
   AdminEventListParams,
   AdminEventRecord,
   AdminEventRule,
@@ -43,6 +45,51 @@ export async function fetchAdminEventBossMetrics() {
 
 export async function fetchAdminEventRules() {
   const res = await eventApi.getAdminEventRules();
+  return res.data;
+}
+
+export async function updateAdminEventRule(eventType: string, payload: Partial<eventApi.AdminEventRule>) {
+  const res = await eventApi.updateAdminEventRule(eventType, payload);
+  return res.data;
+}
+
+export async function fetchAdminEventDetail(id: string) {
+  const res = await eventApi.getAdminEventDetail(id);
+  return res.data;
+}
+
+export async function fetchAdminEventActions(id: string) {
+  const res = await eventApi.getAdminEventActions(id);
+  return res.data;
+}
+
+export async function batchReadAdminEvents(ids: string[]) {
+  const res = await eventApi.batchReadAdminEvents(ids);
+  return res.data;
+}
+
+export async function batchAcknowledgeAdminEvents(ids: string[], remark?: string) {
+  const res = await eventApi.batchAcknowledgeAdminEvents(ids, remark);
+  return res.data;
+}
+
+export async function batchIgnoreAdminEvents(ids: string[], remark?: string) {
+  const res = await eventApi.batchIgnoreAdminEvents(ids, remark);
+  return res.data;
+}
+
+export async function batchResolveAdminEvents(ids: string[], remark?: string) {
+  const res = await eventApi.batchResolveAdminEvents(ids, remark);
+  return res.data;
+}
+
+export async function assignAdminEvent(id: string, payload: { assigneeId?: string; assigneeName?: string; remark?: string }) {
+  const res = await eventApi.assignAdminEvent(id, payload);
+  return res.data;
+}
+
+export async function batchAssignAdminEvents(ids: string[], payload: { assigneeId?: string; assigneeName?: string; remark?: string }) {
+  const res = await eventApi.batchAssignAdminEvents(ids, payload);
   return res.data;
 }
 

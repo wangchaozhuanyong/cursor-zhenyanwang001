@@ -41,7 +41,7 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
-const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "邀请/返现", "售后记录", "评论记录", "操作日志"] as const;
+const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "收藏/浏览", "邀请/返现", "售后记录", "评论记录", "操作日志"] as const;
 type TabType = (typeof tabs)[number];
 
 function buildUserEditForm(user: UserProfile | null): UserEditForm {
@@ -424,6 +424,12 @@ export default function AdminUserDetailPanel({
             <DataList title={tText("积分记录")} rows={user.related?.points_records} onAll={() => navigate(`/admin/marketing/points?userId=${user.id}`)} />
           </div>
         )}
+        {tab === "收藏/浏览" && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ProductActivityList title={tText("最近收藏")} rows={user.related?.favorite_products} timeKey="favorited_at" onAll={() => navigate(`/admin/user-favorites?userId=${user.id}`)} />
+            <ProductActivityList title={tText("最近浏览")} rows={user.related?.browsing_history} timeKey="viewed_at" onAll={() => navigate(`/admin/user-history?userId=${user.id}`)} />
+          </div>
+        )}
         {tab === "邀请/返现" && (
           <div className="space-y-4">
             <DataList title={tText("直属邀请")} rows={user.related?.invite_relation?.direct_invites} onAll={() => navigate(`/admin/marketing/invites?keyword=${user.invite_code || ""}`)} />
@@ -676,6 +682,38 @@ function DataList({ title, rows, onAll }: { title: string; rows?: unknown; onAll
             </article>
           ))}
           {list.length > 8 ? <ListLimitHint /> : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProductActivityList({ title, rows, timeKey, onAll }: { title: string; rows?: unknown; timeKey: "favorited_at" | "viewed_at"; onAll?: () => void }) {
+  const list = toRecordList(rows);
+  return (
+    <div className="space-y-2">
+      <ListHeader title={title} onAll={onAll} />
+      {list.length === 0 ? (
+        <EmptyList />
+      ) : (
+        <div className="space-y-2">
+          {list.slice(0, 6).map((row, i) => {
+            const product = (row.product && typeof row.product === "object" ? row.product : row) as Record<string, unknown>;
+            const image = readText(product, ["cover_image", "image_url"]);
+            return (
+              <article key={String(row.id ?? product.id ?? i)} className="grid grid-cols-[52px_minmax(0,1fr)] gap-3 rounded-lg border border-border bg-background p-3 text-xs">
+                <div className="h-[52px] w-[52px] overflow-hidden rounded-lg border border-border bg-secondary">
+                  {image ? <img src={image} alt={readText(product, ["name"]) || title} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground"><Tx>无图</Tx></div>}
+                </div>
+                <div className="min-w-0">
+                  <p className="line-clamp-2 font-medium text-foreground">{readText(product, ["name"]) || "-"}</p>
+                  <p className="mt-1 font-semibold text-[var(--theme-price)]">RM {readMoney(product, ["price", "min_sku_price", "effective_price"])}</p>
+                  <p className="mt-1 text-muted-foreground">{formatDateValue(row[timeKey])}</p>
+                </div>
+              </article>
+            );
+          })}
+          {list.length > 6 ? <ListLimitHint /> : null}
         </div>
       )}
     </div>

@@ -108,9 +108,6 @@ export default function Help() {
             </span>
             <div className="min-w-0">
               <p className="text-base font-semibold text-[var(--theme-text)]">下单、配送、售后和账户问题都可以先在这里查</p>
-              <p className="mt-1 text-sm leading-relaxed text-[var(--theme-muted)]">
-                共 {faqs.length} 条常见问题，找不到答案可以直接联系官方客服。
-              </p>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2">
@@ -189,7 +186,7 @@ export default function Help() {
           ))}
         </div>
         <div className="mt-6 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
-          <SupportContactSection />
+          <SupportContactSection hideDescription />
         </div>
       </div>
     </StoreStandardPageShell>

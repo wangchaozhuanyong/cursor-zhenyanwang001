@@ -39,31 +39,6 @@ export default function History() {
         mainClassName="sm:px-4 xl:py-6"
       >
         <div className="mx-auto w-full max-w-lg space-y-3 md:max-w-none">
-        <section className="store-account-v12-hero">
-          <span className="store-v12-eyebrow"><HistoryIcon size={14} aria-hidden /> 浏览足迹</span>
-          <h2>最近看过的商品，继续比较</h2>
-          <div className="store-v12-hero-actions">
-            {history.length > 0 ? (
-              <UnifiedButton
-                type="button"
-                onClick={() => setClearConfirmOpen(true)}
-                className="store-v12-secondary-action"
-              >
-                <Trash2 size={15} aria-hidden />
-                清空历史
-              </UnifiedButton>
-            ) : (
-              <UnifiedButton
-                type="button"
-                onClick={() => navigate(localizedPath("/categories"))}
-                className="store-v12-primary-action"
-              >
-                去逛商品
-              </UnifiedButton>
-            )}
-          </div>
-        </section>
-
         {!isLoggedIn() && (
           <div className="store-account-v12-notice">
             <span className="store-v12-card-icon"><Clock size={16} aria-hidden /></span>
@@ -78,7 +53,7 @@ export default function History() {
           </div>
         )}
         {history.length > 0 ? (
-          <section className="store-account-v12-summary store-orders-v12-stat-grid">
+          <section className="store-account-v12-summary store-orders-v12-stat-grid store-history-v12-summary">
             <div className="store-orders-v12-stat">
               <span className="store-orders-v12-stat__icon"><Clock size={17} aria-hidden /></span>
               <strong>{history.length}</strong>

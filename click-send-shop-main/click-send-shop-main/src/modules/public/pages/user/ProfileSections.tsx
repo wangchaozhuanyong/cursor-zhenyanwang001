@@ -243,7 +243,7 @@ export function ProfileGuestCard({
   const guestHighlights = [
     { label: "订单追踪", desc: "待付款/发货/收货", icon: PackageCheck },
     { label: "优惠资产", desc: "优惠券和积分", icon: Ticket },
-    { label: "账户余额", desc: "余额/礼品卡", icon: Wallet },
+    { label: "返现余额", desc: "下单可抵扣", icon: Wallet },
     { label: "售后客服", desc: "退换与安装支持", icon: ShieldCheck },
   ];
 
@@ -448,14 +448,18 @@ export function ProfileServiceGrid({
   items,
   onNavigate,
   title = "我的服务",
+  rightLabel,
+  onRightClick,
 }: {
   items: ProfileServiceItem[];
   onNavigate: (item: ProfileServiceItem) => void;
   title?: string;
+  rightLabel?: string;
+  onRightClick?: () => void;
 }) {
   return (
     <section className={cn(PROFILE_CARD_CLASS, "client-profile-service-panel", PROFILE_SECTION_PADDING)}>
-      <ProfileSectionTitle title={title} />
+      <ProfileSectionTitle title={title} rightLabel={rightLabel} onRightClick={onRightClick} />
       <div className="profile-service-grid">
         {items.map((item) => (
           <UnifiedButton
@@ -480,15 +484,17 @@ export function ProfileServiceGrid({
 export function ProfileSecondaryLinkPanel({
   items,
   onNavigate,
+  onSupportClick,
 }: {
   items: ProfileServiceItem[];
   onNavigate: (item: ProfileServiceItem) => void;
+  onSupportClick: () => void;
 }) {
   if (!items.length) return null;
 
   return (
     <section className={cn(PROFILE_CARD_CLASS, "client-profile-more-panel", PROFILE_SECTION_PADDING)}>
-      <ProfileSectionTitle title="更多功能" />
+      <ProfileSectionTitle title="更多功能" rightLabel="联系客服" onRightClick={onSupportClick} />
       <div className="profile-secondary-list">
         {items.map((item) => (
           <UnifiedButton

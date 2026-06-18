@@ -194,8 +194,6 @@ export default function Feedback() {
     return location.pathname;
   }, [location.pathname, location.state]);
 
-  const selectedType = TYPE_OPTIONS.find((item) => item.value === form.type) ?? TYPE_OPTIONS[0];
-
   const myFeedbackQuery = useQuery({
     queryKey: ["feedback", "mine", { page: 1, pageSize: 5 }],
     queryFn: () => feedbackService.fetchMyFeedback({ page: 1, pageSize: 5 }),
@@ -320,23 +318,8 @@ export default function Feedback() {
       />
 
       <div className="store-feedback-v12-main mx-auto w-full max-w-lg md:max-w-none">
-        <section className="store-account-v12-hero store-feedback-v12-hero">
-          <span className="store-v12-eyebrow"><MessageSquare size={14} aria-hidden /> 意见反馈</span>
-          <h2>把问题直接交给我们处理</h2>
-        </section>
-
         <section className="store-feedback-v12-panel">
-          <div className="flex items-start gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
-              <selectedType.icon size={22} />
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-base font-semibold">反馈类型</h2>
-              <p className="mt-1 text-sm text-[var(--theme-muted)]">{selectedType.label}</p>
-            </div>
-          </div>
-
-          <div className="store-feedback-v12-type-grid mt-4">
+          <div className="store-feedback-v12-type-grid">
             {TYPE_OPTIONS.map((item) => {
               const active = form.type === item.value;
               return (

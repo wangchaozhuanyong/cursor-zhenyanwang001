@@ -5,7 +5,7 @@ const auditRepo = require('../repository/auditLog.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { formatUserResponse } = require('../../../utils/formatUserResponse');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
-const { generateId, parseBool } = require('../../../utils/helpers');
+const { formatProduct, generateId, parseBool } = require('../../../utils/helpers');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
@@ -90,6 +90,56 @@ async function listUsers(query) {
   };
 }
 
+function normalizeActivityPage(query = {}) {
+  const page = Math.max(1, parseInt(query.page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(query.pageSize, 10) || 20));
+  return { page, pageSize, offset: (page - 1) * pageSize };
+}
+
+function mapUserProductActivity(row, timeKey) {
+  return {
+    id: row.activity_id,
+    [timeKey]: row.activity_at,
+    user: {
+      id: row.user_id || null,
+      nickname: row.user_nickname || '',
+      phone: row.user_phone || '',
+      avatar: row.user_avatar || '',
+    },
+    product: formatProduct(row),
+  };
+}
+
+async function listUserFavorites(query = {}) {
+  const { page, pageSize, offset } = normalizeActivityPage(query);
+  const [total, rows] = await Promise.all([
+    repo.countUserFavorites(query),
+    repo.selectUserFavorites(query, pageSize, offset),
+  ]);
+  return {
+    kind: 'paginate',
+    list: rows.map((row) => mapUserProductActivity(row, 'favorited_at')),
+    total,
+    page,
+    pageSize,
+  };
+}
+
+async function listUserHistory(query = {}) {
+  const { page, pageSize, offset } = normalizeActivityPage(query);
+  const [total, rows] = await Promise.all([
+    repo.countUserHistory(query),
+    repo.selectUserHistory(query, pageSize, offset),
+  ]);
+  return {
+    kind: 'paginate',
+    list: rows.map((row) => mapUserProductActivity(row, 'viewed_at')),
+    total,
+    page,
+    pageSize,
+  };
+}
+
 async function getUserById(userId) {
   const user = await assertTargetIsNormalUser(userId);
   const orderCount = await repo.countOrdersByUserId(userId);
@@ -111,6 +161,8 @@ async function getUserById(userId) {
     }
     : { bound: false };
   user.related = await repo.selectUserDetailRelations(userId);
+  user.related.favorite_products = (user.related.favorite_products || []).map((row) => mapUserProductActivity(row, 'favorited_at'));
+  user.related.browsing_history = (user.related.browsing_history || []).map((row) => mapUserProductActivity(row, 'viewed_at'));
   user.status_overview = await buildStatusOverview(userId, user);
   const { where, params } = auditRepo.buildWhere({ objectType: 'user', objectId: userId });
   user.operation_logs = await auditRepo.selectAuditLogsPage(where, params, 'ORDER BY created_at DESC', 30, 0);
@@ -451,6 +503,8 @@ async function exportUsersCsv(query) {
 
 module.exports = {
   listUsers,
+  listUserFavorites,
+  listUserHistory,
   getUserById,
   listUserTags,
   createUserTag,
@@ -470,7 +524,6 @@ module.exports = {
   getUserStatusOverview,
   assertTargetIsNormalUser,
 };
-
 
 
 

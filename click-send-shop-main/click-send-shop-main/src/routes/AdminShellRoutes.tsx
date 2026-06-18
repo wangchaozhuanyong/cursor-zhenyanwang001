@@ -23,10 +23,10 @@ import {
   AdminAccount, AdminAccounts, Dashboard,
   AdminProducts, AdminProductForm, AdminCategories, AdminInventory, AdminProductTags, AdminBanners,
   AdminOrders, AdminCheckoutAbandonments, AdminOrderDetail, AdminReturns, AdminShipping,
-  AdminUsers, AdminUserDetail, AdminUserSecurity, AdminFeedback, AdminMemberLevels, AdminInvites,
+  AdminUsers, AdminUserDetail, AdminUserSecurity, AdminUserFavorites, AdminUserHistory, AdminPrivacyRequests, AdminFeedback, AdminMemberLevels, AdminInvites,
   AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminCouponCampaigns, AdminCouponCampaignForm, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
   AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
-  AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
+  AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps, AdminMyInvois,
   AdminRoles, AdminLogs, AdminRecycleBin, AdminDataRetention, AdminBackupCenter,
   AdminPaymentChannels, AdminPaymentOrders, AdminPaymentEvents, AdminPaymentReconciliations,
   AdminMonitoringOverview, AdminMonitoringAnomalies, AdminMonitoringAnomalyDetail,
@@ -115,6 +115,9 @@ function AdminShellRouteContent() {
             <Route path="payments/reconciliations" element={<CapabilityRoute enabled={capabilities.onlinePaymentEnabled}><AdminPaymentReconciliations /></CapabilityRoute>} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="user-security" element={<AdminUserSecurity />} />
+            <Route path="user-favorites" element={<AdminUserFavorites />} />
+            <Route path="user-history" element={<AdminUserHistory />} />
+            <Route path="privacy-requests" element={<AdminPrivacyRequests />} />
             <Route path="feedback" element={<AdminFeedback />} />
             <Route path="users/:id" element={<AdminUserDetail />} />
             <Route path="member-levels" element={<CapabilityRoute enabled={capabilities.memberLevelEnabled}><AdminMemberLevels /></CapabilityRoute>} />
@@ -129,6 +132,7 @@ function AdminShellRouteContent() {
             <Route path="support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><AdminSupportDownload /></CapabilityRoute>} />
             <Route path="settings/theme" element={<AdminThemeSettings />} />
             <Route path="home-ops" element={<AdminHomeOps />} />
+            <Route path="myinvois" element={<AdminMyInvois />} />
             <Route path="settings/shipping" element={<CapabilityRoute enabled={capabilities.shippingEnabled}><AdminShipping /></CapabilityRoute>} />
             <Route path="settings/roles" element={<AdminRoles />} />
             <Route path="rbac/admin-users" element={<Navigate to="/admin/accounts" replace />} />

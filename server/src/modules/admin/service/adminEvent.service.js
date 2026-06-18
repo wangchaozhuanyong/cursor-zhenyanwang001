@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { BusinessError } = require('../../../errors/BusinessError');
 const repo = require('../repository/adminEvent.repository');
 const eventBus = require('./adminEventBus.service');
 const telegramApi = /** @type {any} */ (require('../../telegram/publicApi'));
@@ -103,6 +104,22 @@ function mapRecord(row) {
     autoResolveEnabled: Boolean(row.auto_resolve_enabled),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapAction(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    actionType: row.action_type,
+    fromStatus: row.from_status,
+    toStatus: row.to_status,
+    operatorId: row.operator_id,
+    operatorType: row.operator_type,
+    remark: row.remark || '',
+    metadata: parseJson(row.metadata),
+    createdAt: row.created_at,
   };
 }
 
@@ -298,6 +315,181 @@ async function listEvents(query = {}, adminUserId) {
   return { list: list.map(mapRecord), total, page, pageSize };
 }
 
+async function getEventDetail(eventId, adminUserId) {
+  const record = await repo.findRecordDetailById(eventId, adminUserId);
+  if (!record) throw new BusinessError(404, '事件不存在');
+  const actions = await repo.listActionsByEventId(eventId);
+  return {
+    data: {
+      event: mapRecord(record),
+      actions: actions.map(mapAction).filter(Boolean),
+    },
+  };
+}
+
+async function getEventActions(eventId) {
+  const record = await repo.findRecordById(eventId);
+  if (!record) throw new BusinessError(404, '事件不存在');
+  const actions = await repo.listActionsByEventId(eventId);
+  return { data: actions.map(mapAction).filter(Boolean) };
+}
+
+function normalizeBoolInput(value, fallback = false) {
+  if (value === undefined) return fallback;
+  if (value === true || value === 1 || value === '1' || value === 'true') return true;
+  if (value === false || value === 0 || value === '0' || value === 'false') return false;
+  return fallback;
+}
+
+function normalizeNullableInt(value) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) throw new BusinessError(400, '升级时间必须是非负整数');
+  return n;
+}
+
+async function updateRule(eventType, body = {}, operatorId) {
+  const existing = await repo.findRuleByType(eventType);
+  if (!existing) throw new BusinessError(404, '事件规则不存在');
+  const setFragments = [];
+  const values = [];
+  const push = (column, value) => {
+    setFragments.push(`${column} = ?`);
+    values.push(value);
+  };
+
+  if (body.category !== undefined) push('category', String(body.category || existing.category).trim() || existing.category);
+  if (body.title !== undefined) push('title', String(body.title || existing.title).trim() || existing.title);
+  if (body.severity !== undefined) {
+    const severity = normalizeSeverity(body.severity, existing.severity);
+    push('severity', severity);
+  }
+  if (body.enabled !== undefined) push('enabled', normalizeBoolInput(body.enabled, Boolean(existing.enabled)) ? 1 : 0);
+  if (body.popup_enabled !== undefined || body.popupEnabled !== undefined) {
+    push('popup_enabled', normalizeBoolInput(body.popup_enabled ?? body.popupEnabled, Boolean(existing.popup_enabled)) ? 1 : 0);
+  }
+  if (body.sound_enabled !== undefined || body.soundEnabled !== undefined) {
+    push('sound_enabled', normalizeBoolInput(body.sound_enabled ?? body.soundEnabled, Boolean(existing.sound_enabled)) ? 1 : 0);
+  }
+  if (body.escalation_minutes !== undefined || body.escalationMinutes !== undefined) {
+    push('escalation_minutes', normalizeNullableInt(body.escalation_minutes ?? body.escalationMinutes));
+  }
+  if (body.escalation_target !== undefined || body.escalationTarget !== undefined) {
+    const target = body.escalation_target ?? body.escalationTarget;
+    push('escalation_target', target == null || target === '' ? null : String(target).trim().slice(0, 80));
+  }
+  if (body.auto_resolve_enabled !== undefined || body.autoResolveEnabled !== undefined) {
+    push('auto_resolve_enabled', normalizeBoolInput(body.auto_resolve_enabled ?? body.autoResolveEnabled, Boolean(existing.auto_resolve_enabled)) ? 1 : 0);
+  }
+  if (body.config !== undefined) push('config', JSON.stringify(body.config || {}));
+  if (!setFragments.length) throw new BusinessError(400, '没有需要更新的规则字段');
+
+  await repo.updateRule(eventType, setFragments, values);
+  const updated = await repo.findRuleByType(eventType);
+  await repo.insertAction({
+    eventId: `rule:${eventType}`,
+    actionType: 'rule_updated',
+    operatorId,
+    operatorType: 'admin',
+    metadata: { before: existing, after: updated },
+  }).catch(() => {});
+  eventBus.publishAdminEvent({
+    type: 'admin.event.rule_updated',
+    objectId: eventType,
+    summary: updated?.title || eventType,
+    eventType,
+    severity: updated?.severity,
+    category: updated?.category,
+  });
+  return { data: updated, message: '事件规则已更新' };
+}
+
+function normalizeEventIds(body = {}) {
+  const raw = Array.isArray(body.ids) ? body.ids : Array.isArray(body.eventIds) ? body.eventIds : [];
+  const ids = [...new Set(raw.map((id) => String(id || '').trim()).filter(Boolean))].slice(0, 200);
+  if (!ids.length) throw new BusinessError(400, '请选择事件');
+  return ids;
+}
+
+async function batchRead(body = {}, operatorId) {
+  const ids = normalizeEventIds(body);
+  for (const id of ids) {
+    await markUserState(id, operatorId, 'read');
+  }
+  return { data: { affected: ids.length }, message: '已批量标记已读' };
+}
+
+async function batchChangeStatus(body = {}, operatorId, status) {
+  const ids = normalizeEventIds(body);
+  const results = [];
+  for (const id of ids) {
+    try {
+      const result = await changeStatus(id, status, operatorId, { remark: body.remark || '', metadata: { batch: true } });
+      results.push({ id, ok: true, unchanged: Boolean(result.unchanged) });
+    } catch (error) {
+      results.push({ id, ok: false, error: error?.message || String(error) });
+    }
+  }
+  return {
+    data: {
+      affected: results.filter((item) => item.ok).length,
+      failed: results.filter((item) => !item.ok).length,
+      results,
+    },
+    message: '批量处理完成',
+  };
+}
+
+async function assignEvent(eventId, operatorId, body = {}) {
+  const record = await repo.findRecordById(eventId);
+  if (!record) throw new BusinessError(404, '事件不存在');
+  const assigneeId = String(body.assigneeId || body.assignee_id || body.userId || body.user_id || '').trim();
+  const assigneeName = String(body.assigneeName || body.assignee_name || '').trim();
+  if (!assigneeId && !assigneeName) throw new BusinessError(400, '请选择指派对象');
+  await repo.insertAction({
+    eventId,
+    actionType: 'assigned',
+    fromStatus: record.status,
+    toStatus: record.status,
+    operatorId,
+    operatorType: 'admin',
+    remark: body.remark || '',
+    metadata: { assigneeId, assigneeName },
+  });
+  publishChange('admin.event.assigned', record);
+  return { data: { event: mapRecord(record), assigneeId, assigneeName }, message: '事件已指派' };
+}
+
+async function batchAssign(body = {}, operatorId) {
+  const ids = normalizeEventIds(body);
+  const results = [];
+  for (const id of ids) {
+    try {
+      await assignEvent(id, operatorId, body);
+      results.push({ id, ok: true });
+    } catch (error) {
+      results.push({ id, ok: false, error: error?.message || String(error) });
+    }
+  }
+  return {
+    data: {
+      affected: results.filter((item) => item.ok).length,
+      failed: results.filter((item) => !item.ok).length,
+      results,
+    },
+    message: '批量指派完成',
+  };
+}
+
+async function exportEvents(query = {}, adminUserId) {
+  const rows = await repo.listEvents(query, adminUserId, 5000, 0);
+  return {
+    data: rows.map(mapRecord),
+    filename: `admin_events_${Date.now()}.csv`,
+  };
+}
+
 async function getSummary(adminUserId, query = {}) {
   const [base, categoryCounts, tabCounts] = await Promise.all([
     repo.selectSummary(adminUserId, query),
@@ -466,6 +658,8 @@ module.exports = {
   VALID_STATUSES,
   emitEvent,
   listEvents,
+  getEventDetail,
+  getEventActions,
   getSummary,
   getBossMetrics,
   markUserState,
@@ -474,6 +668,14 @@ module.exports = {
   startProgress,
   resolve,
   ignore,
+  updateRule,
+  batchRead,
+  batchAcknowledge: (body, operatorId) => batchChangeStatus(body, operatorId, 'acknowledged'),
+  batchIgnore: (body, operatorId) => batchChangeStatus(body, operatorId, 'ignored'),
+  batchResolve: (body, operatorId) => batchChangeStatus(body, operatorId, 'resolved'),
+  assignEvent,
+  batchAssign,
+  exportEvents,
   autoResolveByFingerprint,
   listRules,
   scanEscalations,

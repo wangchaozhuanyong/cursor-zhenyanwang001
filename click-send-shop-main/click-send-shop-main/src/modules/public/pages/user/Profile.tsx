@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, PackageCheck, ShieldCheck, TicketPercent, Truck, Wallet } from "lucide-react";
+import { ShieldCheck, Truck, Wallet } from "lucide-react";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
@@ -49,12 +49,10 @@ import {
   ProfileOrderPanel,
   ProfileSecondaryLinkPanel,
   ProfileServiceGrid,
-  ProfileSnapshotPanel,
   ProfileTrustStrip,
   type ProfileAssetItem,
   type ProfileOrderAction,
   type ProfileServiceItem,
-  type ProfileSnapshotItem,
   type ProfileTrustItem,
 } from "./ProfileSections";
 
@@ -285,6 +283,7 @@ export default function Profile() {
     ], accountFeatureCtx, "mobile"),
     [accountFeatureCtx],
   );
+  const hasCouponEntry = shoppingServiceItems.some((item) => item.key === "coupons");
   const secondaryItems = useMemo<ProfileServiceItem[]>(
     () => buildAccountFeaturesByKeys(["help", "feedback", "about", "settings", "notifications"], accountFeatureCtx, "mobile"),
     [accountFeatureCtx],
@@ -293,62 +292,6 @@ export default function Profile() {
   const handleFeatureNavigate = (key: string, fallbackPath: string, requireAuth?: boolean) => {
     if (key && navigateFeature(key as AccountFeatureKey)) return;
     navigateStorePath(fallbackPath, { requireAuth, from: "/profile" });
-  };
-
-  const pendingOrderTotal = Math.max(
-    0,
-    (accountFeatureCtx.counts?.orderPendingPayment || 0)
-      + (accountFeatureCtx.counts?.orderPaid || 0)
-      + (accountFeatureCtx.counts?.orderShipped || 0)
-      + (accountFeatureCtx.counts?.orderPendingReview || 0)
-      + (accountFeatureCtx.counts?.orderAfterSale || 0),
-  );
-
-  const snapshotItems = useMemo<ProfileSnapshotItem[]>(() => [
-    {
-      key: "orders",
-      label: "待办订单",
-      value: loggedIn ? (pendingOrderTotal > 0 ? `${pendingOrderTotal} 项` : "暂无") : "登录查看",
-      hint: "待付款/发货/收货",
-      icon: PackageCheck,
-      path: "/orders",
-      auth: true,
-      tone: "primary",
-    },
-    {
-      key: "coupons",
-      label: "优惠资产",
-      value: `${couponCount} 张券`,
-      hint: `${formatGrowthValue(pointsBalance)} 积分可用`,
-      icon: TicketPercent,
-      path: "/coupons",
-      auth: true,
-      tone: "price",
-    },
-    {
-      key: "returns",
-      label: "售后物流",
-      value: activeReturnCount > 0 ? `${activeReturnCount} 单` : "无处理中",
-      hint: "退换/配送跟进",
-      icon: Truck,
-      path: "/returns",
-      auth: true,
-      tone: "neutral",
-    },
-    {
-      key: "notifications",
-      label: "消息提醒",
-      value: unreadCount > 0 ? `${notificationBadgeText} 未读` : "暂无未读",
-      hint: "订单/活动通知",
-      icon: Bell,
-      path: "/notifications",
-      auth: true,
-      tone: "success",
-    },
-  ], [activeReturnCount, couponCount, loggedIn, notificationBadgeText, pendingOrderTotal, pointsBalance, unreadCount]);
-
-  const handleSnapshotNavigate = (item: ProfileSnapshotItem) => {
-    handleFeatureNavigate(item.key, item.path, item.auth);
   };
 
   const trustItems = useMemo<ProfileTrustItem[]>(() => [
@@ -389,11 +332,6 @@ export default function Profile() {
                 onAvatarClick={() => avatarInputRef.current?.click()}
               />
               <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
-              <ProfileSnapshotPanel
-                items={snapshotItems}
-                onNavigate={handleSnapshotNavigate}
-                className="client-profile-snapshot-mobile"
-              />
               {ProfileWechatBindSection ? (
                 <Suspense fallback={null}>
                   <ProfileWechatBindSection
@@ -435,19 +373,20 @@ export default function Profile() {
                 title="购物服务"
                 items={shoppingServiceItems}
                 onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
+                rightLabel={hasCouponEntry ? "领取礼券" : undefined}
+                onRightClick={() => navigateStorePath("/coupons", {
+                  requireAuth: true,
+                  from: "/profile",
+                  state: { pageView: "claimCenter" },
+                })}
               />
             </div>
 
             <aside className="client-profile-dashboard-rail" aria-label="账户状态与更多功能">
-              <ProfileSnapshotPanel
-                items={snapshotItems}
-                onNavigate={handleSnapshotNavigate}
-                className="client-profile-snapshot-rail"
-              />
-
               <ProfileSecondaryLinkPanel
                 items={secondaryItems}
                 onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
+                onSupportClick={() => handleFeatureNavigate("support", "/support-download?tab=support", false)}
               />
 
               <ProfileTrustStrip items={trustItems} />
